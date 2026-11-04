@@ -166,6 +166,72 @@ else()
     add_compile_options(-Wall -Wextra -pedantic -Wno-unused-parameter)
 endif()
 
+# borg-rs: the Borg implementation is selectable.
+#   BORG_IMPL=c    (default) compile src/borg/*.c into the core library
+#   BORG_IMPL=rust link the Rust Borg staticlib (../borg-rs) instead
+set(BORG_IMPL "c" CACHE STRING "Borg implementation: c or rust")
+set(ANGBAND_BORG_C_SOURCES
+        src/borg/borg-attack-munchkin.c
+        src/borg/borg-caution.c
+        src/borg/borg-cave-light.c
+        src/borg/borg-cave-util.c
+        src/borg/borg-cave-view.c
+        src/borg/borg-cave.c
+        src/borg/borg-commands.c
+        src/borg/borg-danger.c
+        src/borg/borg-escape.c
+        src/borg/borg-fight-attack.c
+        src/borg/borg-fight-defend.c
+        src/borg/borg-fight-perm.c
+        src/borg/borg-flow-dark.c
+        src/borg/borg-flow-glyph.c
+        src/borg/borg-flow-kill.c
+        src/borg/borg-flow-misc.c
+        src/borg/borg-flow-stairs.c
+        src/borg/borg-flow-take.c
+        src/borg/borg-flow.c
+        src/borg/borg-formulas.c
+        src/borg/borg-formulas-calc.c
+        src/borg/borg-home-notice.c
+        src/borg/borg-home-power.c
+        src/borg/borg-init.c
+        src/borg/borg-inventory.c
+        src/borg/borg-io.c
+        src/borg/borg-item-activation.c
+        src/borg/borg-item-analyze.c
+        src/borg/borg-item-decurse.c
+        src/borg/borg-item-enchant.c
+        src/borg/borg-item-id.c
+        src/borg/borg-item-use.c
+        src/borg/borg-item-val.c
+        src/borg/borg-item-wear.c
+        src/borg/borg-item.c
+        src/borg/borg-junk.c
+        src/borg/borg-light.c
+        src/borg/borg-log.c
+        src/borg/borg-magic-play.c
+        src/borg/borg-magic.c
+        src/borg/borg-messages-react.c
+        src/borg/borg-messages.c
+        src/borg/borg-power.c
+        src/borg/borg-prepared.c
+        src/borg/borg-projection.c
+        src/borg/borg-recover.c
+        src/borg/borg-reincarnate.c
+        src/borg/borg-store-buy.c
+        src/borg/borg-store-sell.c
+        src/borg/borg-store.c
+        src/borg/borg-think-dungeon-util.c
+        src/borg/borg-think-dungeon.c
+        src/borg/borg-think-store.c
+        src/borg/borg-think.c
+        src/borg/borg-trait-swap.c
+        src/borg/borg-trait.c
+        src/borg/borg-update.c
+        src/borg/borg-util.c
+        src/borg/borg.c
+)
+
 add_library(OurCoreLib OBJECT
         src/buildid.c
         src/cave-map.c
@@ -317,66 +383,13 @@ add_library(OurCoreLib OBJECT
         src/z-type.c
         src/z-util.c
         src/z-virt.c
-        src/borg/borg-attack-munchkin.c
-        src/borg/borg-caution.c
-        src/borg/borg-cave-light.c
-        src/borg/borg-cave-util.c
-        src/borg/borg-cave-view.c
-        src/borg/borg-cave.c
-        src/borg/borg-commands.c
-        src/borg/borg-danger.c
-        src/borg/borg-escape.c
-        src/borg/borg-fight-attack.c
-        src/borg/borg-fight-defend.c
-        src/borg/borg-fight-perm.c
-        src/borg/borg-flow-dark.c
-        src/borg/borg-flow-glyph.c
-        src/borg/borg-flow-kill.c
-        src/borg/borg-flow-misc.c
-        src/borg/borg-flow-stairs.c
-        src/borg/borg-flow-take.c
-        src/borg/borg-flow.c
-        src/borg/borg-formulas.c
-        src/borg/borg-formulas-calc.c
-        src/borg/borg-home-notice.c
-        src/borg/borg-home-power.c
-        src/borg/borg-init.c
-        src/borg/borg-inventory.c
-        src/borg/borg-io.c
-        src/borg/borg-item-activation.c
-        src/borg/borg-item-analyze.c
-        src/borg/borg-item-decurse.c
-        src/borg/borg-item-enchant.c
-        src/borg/borg-item-id.c
-        src/borg/borg-item-use.c
-        src/borg/borg-item-val.c
-        src/borg/borg-item-wear.c
-        src/borg/borg-item.c
-        src/borg/borg-junk.c
-        src/borg/borg-light.c
-        src/borg/borg-log.c
-        src/borg/borg-magic-play.c
-        src/borg/borg-magic.c
-        src/borg/borg-messages-react.c
-        src/borg/borg-messages.c
-        src/borg/borg-power.c
-        src/borg/borg-prepared.c
-        src/borg/borg-projection.c
-        src/borg/borg-recover.c
-        src/borg/borg-reincarnate.c
-        src/borg/borg-store-buy.c
-        src/borg/borg-store-sell.c
-        src/borg/borg-store.c
-        src/borg/borg-think-dungeon-util.c
-        src/borg/borg-think-dungeon.c
-        src/borg/borg-think-store.c
-        src/borg/borg-think.c
-        src/borg/borg-trait-swap.c
-        src/borg/borg-trait.c
-        src/borg/borg-update.c
-        src/borg/borg-util.c
-        src/borg/borg.c
 )
+
+if(BORG_IMPL STREQUAL "c")
+    target_sources(OurCoreLib PRIVATE ${ANGBAND_BORG_C_SOURCES})
+elseif(NOT BORG_IMPL STREQUAL "rust")
+    message(FATAL_ERROR "BORG_IMPL must be c or rust")
+endif()
 
 set_target_properties(OurCoreLib PROPERTIES C_STANDARD 99)
 set(ANGBAND_CORE_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src")
@@ -516,6 +529,22 @@ endif()
 if(SUPPORT_TEST_FRONTEND)
     include(src/cmake/macros/TEST_Frontend.cmake)
     configure_test_frontend(OurExecutable)
+endif()
+
+# borg-rs: link the Rust Borg (staticlib built by cargo)
+if(BORG_IMPL STREQUAL "rust")
+    set(BORG_RS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
+    set(BORG_RS_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo")
+    set(BORG_RS_LIB "${BORG_RS_TARGET_DIR}/release/libborg_rs.a")
+    add_custom_target(BorgRs ALL
+        COMMAND cargo build --release -p borg-rs
+            --manifest-path "${BORG_RS_ROOT}/Cargo.toml"
+            --target-dir "${BORG_RS_TARGET_DIR}"
+        BYPRODUCTS "${BORG_RS_LIB}"
+        WORKING_DIRECTORY "${BORG_RS_ROOT}"
+        USES_TERMINAL)
+    add_dependencies(OurExecutable BorgRs)
+    target_link_libraries(OurExecutable PRIVATE "${BORG_RS_LIB}" pthread dl m)
 endif()
 
 # borg-rs: headless deterministic Borg harness (off by default)
