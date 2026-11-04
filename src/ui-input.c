@@ -131,6 +131,11 @@ struct keypress(*inkey_hack)(int flush_first) = NULL;
 
 #endif /* ALLOW_BORG */
 
+#ifdef BORG_HARNESS
+/* borg-rs harness: observer for every key returned by inkey_hack */
+void (*borgh_key_hook)(struct keypress k) = NULL;
+#endif /* BORG_HARNESS */
+
 /**
  * Get a keypress from the user.
  *
@@ -225,6 +230,10 @@ ui_event inkey_ex(void)
 	if (inkey_hack)
 	{
 		ke.key = (*inkey_hack)(inkey_xtra);
+#ifdef BORG_HARNESS
+		/* borg-rs harness: log the key (the oracle for C/Rust diffs) */
+		if (borgh_key_hook) (*borgh_key_hook)(ke.key);
+#endif /* BORG_HARNESS */
 		if (ke.key.type != EVT_NONE)
 		{
 			/* Cancel the various "global parameters" */

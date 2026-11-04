@@ -23,6 +23,9 @@
 #include "mon-group.h"
 #include "mon-lore.h"
 #include "mon-make.h"
+#ifdef BORG_HARNESS
+#include "main-borgh.h"
+#endif
 #include "mon-predicate.h"
 #include "mon-timed.h"
 #include "mon-util.h"
@@ -225,7 +228,13 @@ struct monster_race *get_mon_num(int generated_level, int current_level)
 	struct monster_race *race;
 	alloc_entry *table = alloc_race_table;
 	time_t cur_time = time(NULL);
-	struct tm *date = localtime(&cur_time);
+	struct tm *date;
+
+#ifdef BORG_HARNESS
+	/* borg-rs harness: fixed date (no holiday monsters) for determinism */
+	if (borgh_seed_set) cur_time = 0;
+#endif /* BORG_HARNESS */
+	date = localtime(&cur_time);
 
 	/* Occasionally produce a nastier monster in the dungeon */
 	if (generated_level > 0 && one_in_(z_info->ood_monster_chance))

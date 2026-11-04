@@ -18,6 +18,9 @@
  *    are included in all such copies.  Other copyrights may also apply.
  */
 #include "z-rand.h"
+#ifdef BORG_HARNESS
+#include "main-borgh.h"
+#endif
 #ifdef _WIN32
 #include <windows.h> /* GetCurrentProcessId() */
 #endif
@@ -128,11 +131,26 @@ void Rand_state_init(uint32_t seed)
 /**
  * Initialise the RNG
  */
+#ifdef BORG_HARNESS
+/* borg-rs harness: deterministic seed (see main-borgh.c) */
+bool borgh_seed_set = false;
+uint32_t borgh_seed = 0;
+#endif /* BORG_HARNESS */
+
 void Rand_init(void)
 {
 	/* Init RNG */
 	if (Rand_quick) {
 		uint32_t seed;
+
+#ifdef BORG_HARNESS
+		/* borg-rs harness: use the fixed seed if one was given */
+		if (borgh_seed_set) {
+			Rand_quick = false;
+			Rand_state_init(borgh_seed);
+			return;
+		}
+#endif /* BORG_HARNESS */
 
 		/* Basic seed */
 		seed = (uint32_t)(time(NULL));

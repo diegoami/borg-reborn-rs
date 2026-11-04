@@ -20,6 +20,7 @@ endif()
 option(SUPPORT_SPOIL_FRONTEND "Support for spoiler front end." ${SPOIL_DEFAULT})
 option(SUPPORT_STATS_FRONTEND "Support for statistics front end; requires sqlite3 development library." OFF)
 option(SUPPORT_TEST_FRONTEND "Support for test front end." OFF)
+option(SUPPORT_BORG_HARNESS "borg-rs: headless deterministic Borg harness front end." OFF)
 option(SUPPORT_WINDOWS_FRONTEND "Support for windows front end." OFF)
 option(SUPPORT_BUNDLED_PNG "Use bundled Windows PNG+Zlib (32-bit x86 only)" OFF)
 option(SUPPORT_STATIC_LINKING "Enable static linking where possible" OFF)
@@ -429,6 +430,7 @@ add_executable(OurExecutable
         $<$<BOOL:${SUPPORT_STATS_FRONTEND}>:src/main-stats.c>
         $<$<BOOL:${SUPPORT_STATS_FRONTEND}>:src/stats/db.c>
         $<$<BOOL:${SUPPORT_TEST_FRONTEND}>:src/main-test.c>
+        $<$<BOOL:${SUPPORT_BORG_HARNESS}>:src/main-borgh.c>
         $<$<NOT:$<BOOL:${SUPPORT_WINDOWS_FRONTEND}>>:src/main.c>
 )
 
@@ -514,6 +516,16 @@ endif()
 if(SUPPORT_TEST_FRONTEND)
     include(src/cmake/macros/TEST_Frontend.cmake)
     configure_test_frontend(OurExecutable)
+endif()
+
+# borg-rs: headless deterministic Borg harness (off by default)
+if(SUPPORT_BORG_HARNESS)
+    if(NOT SUPPORT_BORG)
+        message(FATAL_ERROR "SUPPORT_BORG_HARNESS requires SUPPORT_BORG")
+    endif()
+    target_compile_definitions(OurCoreLib PRIVATE -D BORG_HARNESS)
+    target_compile_definitions(OurExecutable PRIVATE -D ALLOW_BORG -D BORG_HARNESS -D USE_BORGH)
+    message(STATUS "Support for borg-rs harness front end - Ready")
 endif()
 
 if(SUPPORT_COVERAGE)

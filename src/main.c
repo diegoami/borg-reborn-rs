@@ -80,6 +80,9 @@ static const struct module modules[] =
 	{ "gcu", help_gcu, init_gcu, true, false },
 #endif /* USE_GCU */
 
+#ifdef USE_BORGH
+	{ "borgh", help_borgh, init_borgh, false, true },
+#endif /* USE_BORGH */
 #ifdef USE_TEST
 	{ "test", help_test, init_test, false, true },
 #endif /* !USE_TEST */
