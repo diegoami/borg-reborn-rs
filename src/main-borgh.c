@@ -40,6 +40,11 @@
  *   -keylog FILE  keypress log (default: none)
  *   -summary FILE summary JSON (default: stdout)
  *   -screen       dump the screen to stderr when the run ends unexpectedly
+ *   -menu-letters pick race and class with the birth menu's own letters
+ *                 (all_letters_nohjkl).  Without it the script sends
+ *                 "abc..z"[index], which skips no letters, so an index >= 7
+ *                 picks a different entry (kept as the default so the
+ *                 existing reference logs stay valid).
  */
 
 #include "angband.h"
@@ -50,6 +55,7 @@
 #include "player.h"
 #include "player-calcs.h"
 #include "ui-game.h"
+#include "ui-menu.h"
 #include "ui-term.h"
 
 #include <sys/time.h>
@@ -67,6 +73,7 @@ static int opt_depth = 0;
 static const char *opt_keylog = NULL;
 static const char *opt_summary = NULL;
 static bool opt_screen = false;
+static bool opt_menu_letters = false;
 
 /* State */
 static FILE *keylog_fp = NULL;
@@ -130,6 +137,7 @@ static void borgh_finish(const char *reason)
 	struct timeval now;
 	double secs;
 	FILE *fp = stdout;
+	bool io_error = false;
 
 	if (finished) return;
 	finished = true;
@@ -139,7 +147,8 @@ static void borgh_finish(const char *reason)
 		+ (now.tv_usec - start_tv.tv_usec) / 1e6;
 
 	if (keylog_fp) {
-		fclose(keylog_fp);
+		if (ferror(keylog_fp)) io_error = true;
+		if (fclose(keylog_fp) != 0) io_error = true;
 		keylog_fp = NULL;
 	}
 
@@ -157,6 +166,7 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, "  \"class\": ");
 	json_str(fp, (player && player->class) ? player->class->name : "");
 	fprintf(fp, ",\n  \"class_idx\": %d,\n", opt_class);
+	if (opt_menu_letters) fprintf(fp, "  \"menu_letters\": true,\n");
 	fprintf(fp, "  \"stop_reason\": ");
 	json_str(fp, reason);
 	fprintf(fp, ",\n  \"game_turns\": %ld,\n", (long)turn);
@@ -174,8 +184,17 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, ",\n  \"keys\": %lu,\n", keys_logged);
 	fprintf(fp, "  \"wall_seconds\": %.3f\n", secs);
 	fprintf(fp, "}\n");
-	if (fp != stdout) fclose(fp);
+	if (fp != stdout) {
+		if (ferror(fp)) io_error = true;
+		if (fclose(fp) != 0) io_error = true;
+	}
 	fflush(stdout);
+
+	/* A short key log or summary must not pass as a good run */
+	if (io_error) {
+		fprintf(stderr, "borgh: error writing the key log or summary\n");
+		_exit(3);
+	}
 
 	/* Do not save; do not run the normal quit hooks */
 	_exit(0);
@@ -308,6 +327,7 @@ errr init_borgh(int argc, char *argv[])
 {
 	int i;
 	const char *env;
+	const char *letters = all_letters_borgh;
 
 	gettimeofday(&start_tv, NULL);
 
@@ -339,6 +359,8 @@ errr init_borgh(int argc, char *argv[])
 			opt_summary = argv[i];
 		} else if (streq(argv[i], "-screen")) {
 			opt_screen = true;
+		} else if (streq(argv[i], "-menu-letters")) {
+			opt_menu_letters = true;
 		} else {
 			quit_fmt("borgh: bad argument '%s'", argv[i]);
 		}
@@ -364,9 +386,13 @@ errr init_borgh(int argc, char *argv[])
 	 * (the first birth has no quickstart screen).
 	 */
 	script_add(ESCAPE);                       /* pause_line() splash */
-	if (opt_race) script_add(all_letters_borgh[opt_race]);
+	if (opt_menu_letters) {
+		/* The birth menus' own tags (they skip h, j, k, l) */
+		letters = all_letters_nohjkl;
+	}
+	if (opt_race) script_add(letters[opt_race]);
 	script_add(KC_ENTER);                     /* race */
-	if (opt_class) script_add(all_letters_borgh[opt_class]);
+	if (opt_class) script_add(letters[opt_class]);
 	script_add(KC_ENTER);                     /* class */
 	script_add(KC_ENTER);                     /* point based */
 	script_add(KC_ENTER);                     /* accept points */
