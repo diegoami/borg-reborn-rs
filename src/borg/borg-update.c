@@ -1576,7 +1576,10 @@ void borg_update(void)
     /* if the old panel info is larger than the cave, reset it */
     /* this can happen if the player changes levels while there are messages */
     /* waiting to be processed */
-    if (o_w_x > cave->width || o_w_y > cave->height) {
+    /* FORK: an offset equal to the cave size is already outside it.
+     * Reset before queued detection writes into the resized arrays.
+     * neo-angband-tracker#290; mirrored in Rust. */
+    if (o_w_x >= cave->width || o_w_y >= cave->height) {
         o_w_x = o_w_y = 0;
     }
 

@@ -123,7 +123,15 @@ errr borg_what_text(int x, int y, int n, uint8_t *a, char *s)
     (*a) = d_a;
 
     /* Convert back to a char string */
-    wcstombs(s, screen_str, ABS(n) + 1);
+    /* FORK: reserve the final byte for NUL, including when UTF-8 expands
+     * the screen columns. Never expose stale caller bytes on error.
+     * neo-angband-tracker#287; mirrored in Rust. */
+    size_t converted = wcstombs(s, screen_str, ABS(n));
+    if (converted == (size_t)-1) {
+        s[0] = '\0';
+        return 1;
+    }
+    s[converted] = '\0';
     /* Too short */
     if ((n > 0) && (i != n))
         return 1;
