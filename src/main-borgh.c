@@ -81,6 +81,7 @@ static unsigned long keys_logged = 0;
 static struct timeval start_tv;
 static bool finished = false;
 static bool borg_started = false;
+static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
 
 /* Scripted keys (before the Borg is running) */
 #define SCRIPT_MAX 64
@@ -167,6 +168,8 @@ static void borgh_finish(const char *reason)
 	json_str(fp, (player && player->class) ? player->class->name : "");
 	fprintf(fp, ",\n  \"class_idx\": %d,\n", opt_class);
 	if (opt_menu_letters) fprintf(fp, "  \"menu_letters\": true,\n");
+	if (startup_acks)
+		fprintf(fp, "  \"startup_acks\": %d,\n", startup_acks);
 	fprintf(fp, "  \"stop_reason\": ");
 	json_str(fp, reason);
 	fprintf(fp, ",\n  \"game_turns\": %ld,\n", (long)turn);
@@ -234,6 +237,26 @@ static void prepare_borg_start(void)
 	borg_started = true;
 }
 
+/**
+ * Whether the top line shows the "-more-" prompt of msg_flush().
+ */
+static bool more_prompt_shown(void)
+{
+	static const wchar_t more[] = L"-more-";
+	int x, i, a;
+	wchar_t c;
+
+	if (!Term) return false;
+	for (x = 0; x + 6 <= Term->wid; x++) {
+		for (i = 0; i < 6; i++) {
+			(void)Term_what(x + i, 0, &a, &c);
+			if (c != more[i]) break;
+		}
+		if (i == 6) return true;
+	}
+	return false;
+}
+
 /* ---- terminal hooks ---- */
 
 typedef struct term_data term_data;
@@ -265,6 +288,22 @@ static errr term_xtra_borgh(int n, int v)
 				k = KTRL('Z');
 			}
 			Term_keypress(k, 0);
+			return 0;
+		}
+
+		/*
+		 * A "-more-" prompt after "^Z z" but before the Borg has
+		 * returned any key: borg_init() shows it for a borg.txt
+		 * warning (e.g. borg_uses_dynamic_calcs), before the keypress
+		 * hook is installed.  Answer it with ESC, the same way for
+		 * both Borgs.  In a run without such a warning the game never
+		 * blocks here (it would have stopped as borg_stopped with no
+		 * key), so other key logs are unchanged.
+		 */
+		if (v && borg_started && !inkey_hack && keys_logged == 0
+				&& startup_acks < 16 && more_prompt_shown()) {
+			startup_acks++;
+			Term_keypress(ESCAPE, 0);
 			return 0;
 		}
 
