@@ -63,6 +63,11 @@
 #include "z-util.h"
 #include "z-virt.h"
 
+#ifdef BORG_HARNESS
+#include "main-borgh.h"
+void (*borgh_command_hook)(void) = NULL;
+#endif
+
 
 struct savefile_getter_impl {
 	ang_dir *d;
@@ -628,6 +633,9 @@ void textui_process_command(void)
 
 errr textui_get_cmd(cmd_context context)
 {
+#ifdef BORG_HARNESS
+	if (context == CTX_GAME && borgh_command_hook) (*borgh_command_hook)();
+#endif
 	if (context == CTX_GAME)
 		textui_process_command();
 

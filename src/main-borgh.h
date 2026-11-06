@@ -38,6 +38,10 @@ extern void (*borgh_key_hook)(struct keypress k);
  */
 extern void (*borgh_message_hook)(const char *str, uint16_t type);
 
+/* Optional checkpoint capture at the top-level game command boundary.
+ * Defined by ui-game.c; NULL outside the headless harness. */
+extern void (*borgh_command_hook)(void);
+
 #endif /* BORG_HARNESS */
 
 #endif /* INCLUDED_MAIN_BORGH_H */

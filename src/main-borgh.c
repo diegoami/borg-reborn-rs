@@ -47,6 +47,9 @@
  *   -load FILE   load a living character instead of birth (omit -n);
  *                 reset RNG to -seed immediately before starting the Borg
  *   -save-on-stop FILE write a living character at the stop boundary
+ *   -checkpoint-every N capture at the first game-command boundary at or
+ *                 after each multiple of N game turns (requires directory)
+ *   -checkpoint-dir DIR directory for independent engine savefiles and index
  *   -screen       dump the screen to stderr when the run ends unexpectedly
  *   -menu-letters pick race and class with the birth menu's own letters
  *                 (all_letters_nohjkl).  Without it the script sends
@@ -85,6 +88,12 @@
 #include "ui-term.h"
 
 #include <sys/time.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <errno.h>
+#ifdef __linux__
+#include <sys/prctl.h>
+#endif
 
 #if defined(USE_BORGH) && defined(BORG_HARNESS) && defined(ALLOW_BORG)
 
@@ -108,6 +117,12 @@ static const char *opt_save = NULL;
 static long loaded_turn = 0;
 static int opt_fixture_depth = 0;
 static bool opt_near_morgoth = false;
+static long opt_checkpoint_every = 0;
+static const char *opt_checkpoint_dir = NULL;
+static FILE *checkpoint_fp = NULL;
+static long checkpoint_next = 0;
+static long checkpoint_last_seen = 0;
+static unsigned long checkpoint_count = 0;
 
 /* State */
 static FILE *keylog_fp = NULL;
@@ -440,6 +455,79 @@ static void borgh_key(struct keypress k)
 		borgh_finish("depth");
 }
 
+/* Capture only at a top-level command boundary, never inside a prompt or
+ * a Borg callback. A replay starts a NEW Borg; its private memory is not
+ * serialised. Capturing must not send keys, reseed RNG or add messages. */
+static void borgh_checkpoint(void)
+{
+	char name[128], path[1024];
+	pid_t snapshot, parent_pid;
+	int status;
+	long due;
+	if (!checkpoint_fp || !borg_started || !keys_logged || !player ||
+		player->is_dead || !character_dungeon || player->upkeep->generate_level)
+		return;
+	if (!checkpoint_next || turn < checkpoint_last_seen)
+		checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
+	checkpoint_last_seen = (long)turn;
+	if (turn < checkpoint_next) return;
+	due = checkpoint_next;
+	checkpoint_count++;
+	strnfmt(name, sizeof(name), "checkpoint-%06lu-t%010ld.save", checkpoint_count, (long)turn);
+	path_build(path, sizeof(path), opt_checkpoint_dir, name);
+	if (file_exists(path)) quit("borgh: checkpoint already exists");
+	/* The stock saver compacts monster indices and changes saved flags.
+	 * Save in a private copy of this single-threaded engine instead of
+	 * mutating the live simulation. The child never flushes inherited
+	 * oracle streams; it does not execute another Borg action. */
+	parent_pid = getpid();
+	snapshot = fork();
+	if (snapshot < 0) {
+		fprintf(stderr, "borgh: checkpoint fork failed\n");
+		_exit(3);
+	}
+	if (snapshot == 0) {
+#ifdef __linux__
+		/* Do not leave a saving child behind if the supervised engine is
+		 * killed. Check the race between fork and installing this guard. */
+		if (prctl(PR_SET_PDEATHSIG, SIGKILL) != 0 || getppid() != parent_pid)
+			_exit(3);
+#else
+		(void)parent_pid;
+#endif
+		if (keylog_fp) close(fileno(keylog_fp));
+		if (msglog_fp) close(fileno(msglog_fp));
+		if (statelog_fp) close(fileno(statelog_fp));
+		close(fileno(checkpoint_fp));
+		keylog_fp = msglog_fp = statelog_fp = checkpoint_fp = NULL;
+		_exit(savefile_save(path) ? 0 : 3);
+	}
+	while (waitpid(snapshot, &status, 0) < 0) {
+		if (errno == EINTR) continue;
+		fprintf(stderr, "borgh: checkpoint wait failed\n");
+		_exit(3);
+	}
+	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+		fprintf(stderr, "borgh: checkpoint child failed: %s\n", path);
+		_exit(3);
+	}
+	fprintf(checkpoint_fp,
+		"{\"file\":\"%s\",\"due_turn\":%ld,\"game_turn\":%ld,"
+		"\"keys\":%lu,\"seed\":%lu,\"race_idx\":%u,\"class_idx\":%u,"
+		"\"depth\":%d,\"max_depth\":%d,\"clevel\":%d,"
+		"\"capture_method\":\"fork_private_engine\"}\n",
+		name, due, (long)turn, keys_logged, (unsigned long)borgh_seed,
+		player->race->ridx, player->class->cidx, player->depth,
+		player->max_depth, player->lev);
+	if (fflush(checkpoint_fp) != 0 || ferror(checkpoint_fp)) {
+		fprintf(stderr, "borgh: checkpoint index write failed\n");
+		_exit(3);
+	}
+	/* Fixed cadence, not crash-aware cut points. A long rest can cross
+	 * several thresholds: capture once at the next safe boundary. */
+	checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
+}
+
 /**
  * Set up the Borg start (called just before ^Z is fed to the game).
  */
@@ -550,6 +638,10 @@ static void prepare_borg_start(void)
 		 * requested replay seed at exactly the same pre-Borg boundary. */
 		Rand_state_init(borgh_seed);
 		Rand_quick = false;
+	}
+	if (opt_checkpoint_every) {
+		checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
+		checkpoint_last_seen = (long)turn;
 	}
 	/* Skip the "are you sure" prompt for the borg commands */
 	player->noscore |= NOSCORE_BORG;
@@ -743,6 +835,13 @@ errr init_borgh(int argc, char *argv[])
 			opt_fixture_depth = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-near-morgoth")) {
 			opt_near_morgoth = true;
+		} else if (streq(argv[i], "-checkpoint-every")) {
+			opt_checkpoint_every = arg_long(argc, argv, &i);
+			if (opt_checkpoint_every <= 0 || opt_checkpoint_every > 1000000000L)
+				quit("borgh: checkpoint interval must be 1..1000000000");
+		} else if (streq(argv[i], "-checkpoint-dir")) {
+			if (++i >= argc) quit("borgh: missing value for -checkpoint-dir");
+			opt_checkpoint_dir = argv[i];
 		} else {
 			quit_fmt("borgh: bad argument '%s'", argv[i]);
 		}
@@ -756,6 +855,17 @@ errr init_borgh(int argc, char *argv[])
 		quit("borgh: -near-morgoth requires -make-fixture 100");
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)
 		quit("borgh: -race and -class must be explicit indices");
+	if (!!opt_checkpoint_every != !!opt_checkpoint_dir)
+		quit("borgh: checkpoint interval and directory are both required");
+	if (opt_checkpoint_dir) {
+		char path[1024];
+		if (strlen(opt_checkpoint_dir) > sizeof(path) - 128)
+			quit("borgh: checkpoint directory path too long");
+		path_build(path, sizeof(path), opt_checkpoint_dir, "index.jsonl");
+		if (file_exists(path)) quit("borgh: checkpoint index already exists");
+		checkpoint_fp = fopen(path, "w");
+		if (!checkpoint_fp) quit("borgh: cannot open checkpoint index");
+	}
 
 	if (opt_keylog) {
 		static char keylog_buf[1 << 16];
@@ -810,6 +920,7 @@ errr init_borgh(int argc, char *argv[])
 
 	borgh_key_hook = borgh_key;
 	borgh_message_hook = borgh_message;
+	borgh_command_hook = opt_checkpoint_dir ? borgh_checkpoint : NULL;
 
 	term_data_link(0);
 	return 0;
