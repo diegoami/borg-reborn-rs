@@ -40,7 +40,8 @@ extern bool borg_confirm_target;
 /*
  * Query the "attr/chars" at a given location on the screen
  */
-extern errr borg_what_text(int x, int y, int n, uint8_t *a, char *s);
+/* FORK #287: size is the output byte capacity, including NUL; n is columns. */
+extern errr borg_what_text(int x, int y, int n, uint8_t *a, char *s, size_t size);
 
 /*
  * Memorize a message, Log it, Search it, and Display it in pieces

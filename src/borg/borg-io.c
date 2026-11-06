@@ -51,7 +51,7 @@ bool borg_confirm_target;
  *
  * XXX XXX XXX We assume the given location is legal
  */
-errr borg_what_text(int x, int y, int n, uint8_t *a, char *s)
+errr borg_what_text(int x, int y, int n, uint8_t *a, char *s, size_t size)
 {
     int     i;
     wchar_t screen_str[1024];
@@ -123,10 +123,12 @@ errr borg_what_text(int x, int y, int n, uint8_t *a, char *s)
     (*a) = d_a;
 
     /* Convert back to a char string */
-    /* FORK: reserve the final byte for NUL, including when UTF-8 expands
-     * the screen columns. Never expose stale caller bytes on error.
-     * neo-angband-tracker#287; mirrored in Rust. */
-    size_t converted = wcstombs(s, screen_str, ABS(n));
+    /* FORK: n counts screen columns, not UTF-8 bytes. Use the caller's
+     * byte capacity and reserve NUL, retaining complete multibyte text
+     * whenever it fits. neo-angband-tracker#287; mirrored in Rust. */
+    if (size == 0)
+        return 1;
+    size_t converted = wcstombs(s, screen_str, size - 1);
     if (converted == (size_t)-1) {
         s[0] = '\0';
         return 1;

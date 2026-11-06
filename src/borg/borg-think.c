@@ -219,7 +219,7 @@ bool borg_think(void)
     /*** Handle stores ***/
 
     /* Check for being in a store */
-    if ((0 == borg_what_text(1, 3, 4, &t_a, buf))
+    if ((0 == borg_what_text(1, 3, 4, &t_a, buf, sizeof(buf)))
         && (streq(buf, "Stor") || streq(buf, "Home")))
         return (borg_think_store());
 
