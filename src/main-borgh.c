@@ -44,6 +44,9 @@
  *                 included (default: none)
  *   -statelog FILE engine-state log: one line per logged key (default: none)
  *   -summary FILE summary JSON (default: stdout)
+ *   -load FILE   load a living character instead of birth (omit -n);
+ *                 reset RNG to -seed immediately before starting the Borg
+ *   -save-on-stop FILE write a living character at the stop boundary
  *   -screen       dump the screen to stderr when the run ends unexpectedly
  *   -menu-letters pick race and class with the birth menu's own letters
  *                 (all_letters_nohjkl).  Without it the script sends
@@ -59,15 +62,24 @@
 
 #include "angband.h"
 #include "buildid.h"
+#include "cmds.h"
+#include "generate.h"
 #include "game-world.h"
 #include "main.h"
 #include "main-borgh.h"
 #include "init.h"
 #include "obj-knowledge.h"
+#include "obj-gear.h"
+#include "obj-make.h"
+#include "obj-pile.h"
+#include "obj-util.h"
+#include "mon-util.h"
 #include "object.h"
 #include "player.h"
 #include "player-calcs.h"
 #include "player-timed.h"
+#include "player-util.h"
+#include "savefile.h"
 #include "ui-game.h"
 #include "ui-menu.h"
 #include "ui-term.h"
@@ -91,6 +103,11 @@ static const char *opt_summary = NULL;
 static bool opt_screen = false;
 static bool opt_menu_letters = false;
 static bool opt_cheat_live = false;
+static const char *opt_load = NULL;
+static const char *opt_save = NULL;
+static long loaded_turn = 0;
+static int opt_fixture_depth = 0;
+static bool opt_near_morgoth = false;
 
 /* State */
 static FILE *keylog_fp = NULL;
@@ -185,6 +202,10 @@ static void borgh_finish(const char *reason)
 	}
 
 	if (opt_screen && !streq(reason, "turns")) dump_screen();
+	if (opt_save && (!player || player->is_dead || !savefile_save(opt_save))) {
+		fprintf(stderr, "borgh: cannot save living character to %s\n", opt_save);
+		_exit(3);
+	}
 
 	if (opt_summary) {
 		fp = fopen(opt_summary, "w");
@@ -192,6 +213,8 @@ static void borgh_finish(const char *reason)
 	}
 	fprintf(fp, "{\n");
 	fprintf(fp, "  \"seed\": %lu,\n", (unsigned long)borgh_seed);
+	if (opt_load)
+		fprintf(fp, "  \"loaded\": true,\n  \"loaded_turn\": %ld,\n", loaded_turn);
 	fprintf(fp, "  \"race\": ");
 	json_str(fp, (player && player->race) ? player->race->name : "");
 	fprintf(fp, ",\n  \"race_idx\": %d,\n", opt_race);
@@ -420,8 +443,114 @@ static void borgh_key(struct keypress k)
 /**
  * Set up the Borg start (called just before ^Z is fed to the game).
  */
+/* Wizard-created fixtures are setup data, never Borg behaviour changes.
+ * Use the engine's ordinary object, equipment and level-generation APIs. */
+static void fixture_carry(struct object *obj, bool equip)
+{
+	obj->origin = ORIGIN_CHEAT;
+	obj->known = object_new();
+	object_set_base_known(player, obj);
+	object_flavor_aware(player, obj);
+	obj->known->notice |= OBJ_NOTICE_ASSESSED;
+	player_know_object(player, obj);
+	obj->known->effect = obj->effect;
+	inven_carry(player, obj, false, false);
+	if (equip) inven_wield(obj, wield_slot(obj));
+}
+
+static void make_fixture(void)
+{
+	static const char *arts[] = {
+		"'Ringil'", "of Fëanor", "of Fingolfin", "of Thorin",
+		"of Dor-Lómin", "of Celeborn", "of Lúthien", "'Narya'",
+		"'Elessar'", "of Elendil"
+	};
+	static const struct { int tval; const char *name; int number; } kit[] = {
+		{ TV_POTION, "Healing", 30 }, { TV_POTION, "*Healing*", 20 },
+		{ TV_POTION, "Life", 5 }, { TV_POTION, "Speed", 20 },
+		{ TV_SCROLL, "Phase Door", 30 }, { TV_SCROLL, "Teleportation", 20 },
+		{ TV_SCROLL, "Banishment", 10 }, { TV_SCROLL, "Mass Banishment", 5 },
+		{ TV_SCROLL, "Word of Recall", 5 }, { TV_FOOD, "Ration of Food", 10 }
+	};
+	size_t i;
+	bool more = OPT(player, auto_more);
+	option_set("auto_more", true);
+	player->noscore |= NOSCORE_WIZARD;
+	do_cmd_wiz_advance(NULL);
+	player_learn_all_runes(player);
+	for (i = 0; i < N_ELEMENTS(arts); i++) {
+		int j;
+		struct artifact *art = NULL;
+		struct object *obj;
+		for (j = 1; j < z_info->a_max; j++)
+			if (a_info[j].name && streq(a_info[j].name, arts[i])) { art = &a_info[j]; break; }
+		if (!art) quit_fmt("borgh: fixture artifact not found: %s", arts[i]);
+		obj = object_new();
+		object_prep(obj, lookup_kind(art->tval, art->sval), art->alloc_min, RANDOMISE);
+		obj->artifact = art;
+		copy_artifact_data(obj, art);
+		mark_artifact_created(art, true);
+		fixture_carry(obj, true);
+	}
+	for (i = 0; i < N_ELEMENTS(kit); i++) {
+		struct object *obj = object_new();
+		int sval = lookup_sval(kit[i].tval, kit[i].name);
+		struct object_kind *kind = lookup_kind(kit[i].tval, sval);
+		if (!kind) quit_fmt("borgh: fixture kind not found: %s", kit[i].name);
+		object_prep(obj, kind, opt_fixture_depth, RANDOMISE);
+		obj->number = kit[i].number;
+		fixture_carry(obj, false);
+	}
+	/* Sauron must be dead for the depth-100 quest to be reachable. */
+	if (opt_fixture_depth == 100) lookup_monster("Sauron, the Sorcerer")->max_num = 0;
+	dungeon_change_level(player, opt_fixture_depth);
+	prepare_next_level(player);
+	player->upkeep->generate_level = false;
+	on_new_level();
+	if (opt_near_morgoth) {
+		struct monster *boss = NULL;
+		int j, dx, dy;
+		bool placed = false;
+		for (j = 1; j < cave_monster_max(cave); j++) {
+			struct monster *mon = cave_monster(cave, j);
+			if (mon->race && streq(mon->race->name, "Morgoth, Lord of Darkness")) { boss = mon; break; }
+		}
+		if (!boss) quit("borgh: Morgoth not generated in fixture");
+		for (dy = -1; dy <= 1 && !placed; dy++) for (dx = -1; dx <= 1 && !placed; dx++) {
+			struct loc grid = loc(boss->grid.x + dx, boss->grid.y + dy);
+			if (square_in_bounds_fully(cave, grid) && square_isempty(cave, grid)) {
+				monster_swap(player->grid, grid);
+				monster_wake(boss, false, 100);
+				placed = true;
+			}
+		}
+		if (!placed) quit("borgh: no empty square next to Morgoth");
+	}
+	player->upkeep->update |= PU_BONUS | PU_HP | PU_MANA | PU_INVEN | PU_UPDATE_VIEW | PU_MONSTERS;
+	handle_stuff(player);
+	player->chp = player->mhp;
+	player->csp = player->msp;
+	player->upkeep->energy_use = 0;
+	option_set("auto_more", more);
+	borgh_finish("fixture");
+}
+
 static void prepare_borg_start(void)
 {
+	if (opt_fixture_depth) make_fixture();
+	if (opt_load) {
+		/* A missing/dead save must never silently become a birth run. */
+		if (!player || player->is_dead || !player->race || !player->class ||
+			player->race->ridx != (unsigned)opt_race || player->class->cidx != (unsigned)opt_class)
+			quit("borgh: loaded character does not match requested race/class");
+		loaded_turn = (long)turn;
+		if (opt_turns > 0 && opt_turns <= loaded_turn)
+			quit("borgh: turn limit must be after the loaded turn");
+		/* load.c restores the saved RNG. Give both implementations the
+		 * requested replay seed at exactly the same pre-Borg boundary. */
+		Rand_state_init(borgh_seed);
+		Rand_quick = false;
+	}
 	/* Skip the "are you sure" prompt for the borg commands */
 	player->noscore |= NOSCORE_BORG;
 
@@ -604,6 +733,16 @@ errr init_borgh(int argc, char *argv[])
 			opt_menu_letters = true;
 		} else if (streq(argv[i], "-cheat-live")) {
 			opt_cheat_live = true;
+		} else if (streq(argv[i], "-load")) {
+			if (++i >= argc) quit("borgh: missing value for -load");
+			opt_load = argv[i];
+		} else if (streq(argv[i], "-save-on-stop")) {
+			if (++i >= argc) quit("borgh: missing value for -save-on-stop");
+			opt_save = argv[i];
+		} else if (streq(argv[i], "-make-fixture")) {
+			opt_fixture_depth = (int)arg_long(argc, argv, &i);
+		} else if (streq(argv[i], "-near-morgoth")) {
+			opt_near_morgoth = true;
 		} else {
 			quit_fmt("borgh: bad argument '%s'", argv[i]);
 		}
@@ -611,6 +750,10 @@ errr init_borgh(int argc, char *argv[])
 
 	if (!borgh_seed_set)
 		quit("borgh: a seed is required (-seed N or $ANGBAND_SEED)");
+	if (opt_fixture_depth && (opt_fixture_depth < 1 || opt_fixture_depth > 100 || !opt_save || opt_load))
+		quit("borgh: fixture requires depth 1-100, -save-on-stop, and no -load");
+	if (opt_near_morgoth && opt_fixture_depth != 100)
+		quit("borgh: -near-morgoth requires -make-fixture 100");
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)
 		quit("borgh: -race and -class must be explicit indices");
 
@@ -633,14 +776,21 @@ errr init_borgh(int argc, char *argv[])
 		setvbuf(statelog_fp, statelog_buf, _IOFBF, sizeof(statelog_buf));
 	}
 
-	/* No savefile from main.c's default: always a new character */
-	savefile[0] = '\0';
+	/* run.sh omits -n for a replay. Never accept a missing fixture. */
+	if (opt_load) {
+		if (!file_exists(opt_load)) quit("borgh: savefile does not exist");
+		if (strlen(opt_load) >= sizeof(savefile)) quit("borgh: savefile path too long");
+		my_strcpy(savefile, opt_load, sizeof(savefile));
+	} else {
+		savefile[0] = '\0';
+	}
 
 	/*
 	 * Key script.  Mirrors borg_reincarnate_start() for the birth screens
 	 * (the first birth has no quickstart screen).
 	 */
 	script_add(ESCAPE);                       /* pause_line() splash */
+	if (!opt_load) {
 	if (opt_menu_letters) {
 		/* The birth menus' own tags (they skip h, j, k, l) */
 		letters = all_letters_nohjkl;
@@ -654,6 +804,7 @@ errr init_borgh(int argc, char *argv[])
 	script_add(KC_ENTER);                     /* default name */
 	script_add('y');                          /* accept history */
 	script_add(KC_ENTER);                     /* final confirm */
+	}
 	script_add(SCRIPT_START_BORG);            /* ^Z */
 	script_add('z');                          /* activate borg */
 
