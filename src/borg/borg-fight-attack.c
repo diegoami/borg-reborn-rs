@@ -286,8 +286,9 @@ static int borg_attack_aux_thrust(void)
         int x = borg_temp_x[i];
         int y = borg_temp_y[i];
 
-        /* Require "adjacent" */
-        if (borg_distance(borg.c.y, borg.c.x, y, x) > 1)
+        /* FORK: a stale target on the player's square is not adjacent.
+         * Queuing +5 there aborts play (docs/c-bugs.md section 54). */
+        if (borg_distance(borg.c.y, borg.c.x, y, x) != 1)
             continue;
 
         /* Acquire grid */
