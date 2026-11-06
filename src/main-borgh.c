@@ -45,6 +45,11 @@
  *                 "abc..z"[index], which skips no letters, so an index >= 7
  *                 picks a different entry (kept as the default so the
  *                 existing reference logs stay valid).
+ *   -cheat-live   turn on the game option cheat_live before the Borg starts
+ *                 (with borg_cheat_death off, the Borg then answers "Die?"
+ *                 with y and reincarnates as a new character), and do not
+ *                 stop on death: the run goes on with the new character.
+ *                 The summary counts the deaths.
  */
 
 #include "angband.h"
@@ -74,6 +79,7 @@ static const char *opt_keylog = NULL;
 static const char *opt_summary = NULL;
 static bool opt_screen = false;
 static bool opt_menu_letters = false;
+static bool opt_cheat_live = false;
 
 /* State */
 static FILE *keylog_fp = NULL;
@@ -82,6 +88,8 @@ static struct timeval start_tv;
 static bool finished = false;
 static bool borg_started = false;
 static int startup_acks = 0;	/* "-more-" prompts answered before the Borg's first key */
+static int deaths = 0;		/* with -cheat-live: deaths seen after a key */
+static bool was_dead = false;
 
 /* Scripted keys (before the Borg is running) */
 #define SCRIPT_MAX 64
@@ -168,6 +176,8 @@ static void borgh_finish(const char *reason)
 	json_str(fp, (player && player->class) ? player->class->name : "");
 	fprintf(fp, ",\n  \"class_idx\": %d,\n", opt_class);
 	if (opt_menu_letters) fprintf(fp, "  \"menu_letters\": true,\n");
+	if (opt_cheat_live)
+		fprintf(fp, "  \"cheat_live\": true,\n  \"deaths\": %d,\n", deaths);
 	if (startup_acks)
 		fprintf(fp, "  \"startup_acks\": %d,\n", startup_acks);
 	fprintf(fp, "  \"stop_reason\": ");
@@ -216,7 +226,12 @@ static void borgh_key(struct keypress k)
 
 	/* Stop conditions */
 	if (opt_turns > 0 && turn >= opt_turns) borgh_finish("turns");
-	if (player && player->is_dead) borgh_finish("death");
+	if (opt_cheat_live) {
+		/* Count each death once; the Borg plays on as a new character */
+		bool dead = player && player->is_dead;
+		if (dead && !was_dead) deaths++;
+		was_dead = dead;
+	} else if (player && player->is_dead) borgh_finish("death");
 	if (opt_clev > 0 && player && player->lev >= opt_clev)
 		borgh_finish("clevel");
 	if (opt_depth > 0 && player && player->max_depth >= opt_depth)
@@ -233,6 +248,8 @@ static void prepare_borg_start(void)
 
 	/* No delays (borg-think-dungeon.c sleeps delay^2 ms per step) */
 	player->opts.delay_factor = 0;
+
+	if (opt_cheat_live) option_set("cheat_live", true);
 
 	borg_started = true;
 }
@@ -309,7 +326,7 @@ static errr term_xtra_borgh(int n, int v)
 
 		/* The game wants a real key: nothing more can happen */
 		if (v) {
-			if (player && player->is_dead)
+			if (player && player->is_dead && !opt_cheat_live)
 				borgh_finish("death");
 			else if (borg_started && !inkey_hack)
 				borgh_finish("borg_stopped");
@@ -400,6 +417,8 @@ errr init_borgh(int argc, char *argv[])
 			opt_screen = true;
 		} else if (streq(argv[i], "-menu-letters")) {
 			opt_menu_letters = true;
+		} else if (streq(argv[i], "-cheat-live")) {
+			opt_cheat_live = true;
 		} else {
 			quit_fmt("borgh: bad argument '%s'", argv[i]);
 		}
