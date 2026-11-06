@@ -536,8 +536,15 @@ if(BORG_IMPL STREQUAL "rust")
     set(BORG_RS_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/..")
     set(BORG_RS_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/cargo")
     set(BORG_RS_LIB "${BORG_RS_TARGET_DIR}/release/libborg_rs.a")
+    # Test-only cargo features (e.g. test-force-nested for
+    # harness/regress/nested); empty for every real build.
+    set(BORG_RS_FEATURES "" CACHE STRING "borg-rs cargo features (tests only)")
+    set(BORG_RS_FEATURE_ARGS "")
+    if(BORG_RS_FEATURES)
+        set(BORG_RS_FEATURE_ARGS --features "${BORG_RS_FEATURES}")
+    endif()
     add_custom_target(BorgRs ALL
-        COMMAND cargo build --release -p borg-rs
+        COMMAND cargo build --release -p borg-rs ${BORG_RS_FEATURE_ARGS}
             --manifest-path "${BORG_RS_ROOT}/Cargo.toml"
             --target-dir "${BORG_RS_TARGET_DIR}"
         BYPRODUCTS "${BORG_RS_LIB}"
