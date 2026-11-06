@@ -31,6 +31,13 @@ extern uint32_t borgh_seed;
  */
 extern void (*borgh_key_hook)(struct keypress k);
 
+/*
+ * Called by message_add() for every message added to the message log,
+ * repeats included, before the log is changed (defined in message.c, set
+ * by the harness frontend).  It must only read.
+ */
+extern void (*borgh_message_hook)(const char *str, uint16_t type);
+
 #endif /* BORG_HARNESS */
 
 #endif /* INCLUDED_MAIN_BORGH_H */

@@ -33,6 +33,12 @@
 #include "option.h"
 #include "init.h"
 #include "player.h"
+#ifdef BORG_HARNESS
+#include "main-borgh.h"
+
+/* borg-rs harness: observer for every message_add() call */
+void (*borgh_message_hook)(const char *str, uint16_t type) = NULL;
+#endif /* BORG_HARNESS */
 
 typedef struct _message_t
 {
@@ -124,6 +130,11 @@ uint16_t messages_num(void)
 void message_add(const char *str, uint16_t type)
 {
 	message_t *m;
+
+#ifdef BORG_HARNESS
+	/* borg-rs harness: log every message, repeats included (read only) */
+	if (borgh_message_hook) (*borgh_message_hook)(str, type);
+#endif /* BORG_HARNESS */
 
 	if (messages->head &&
 	    messages->head->type == type &&

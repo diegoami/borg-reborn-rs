@@ -26,6 +26,8 @@
  *    the Borg;
  *  - logs every key returned by inkey_hack (one line per key:
  *    "<game turn> <event type> <key code hex> <mods hex>");
+ *  - optionally logs every message added to the message log, and per key
+ *    a digest of the engine state (read only: no RNG, no game state);
  *  - stops on a game-turn limit, a character level or max depth limit,
  *    player death, or when the game blocks waiting for a real key;
  *  - writes a JSON summary on exit.
@@ -38,6 +40,9 @@
  *   -clev N       stop when the character level reaches N (0 = no limit)
  *   -depth N      stop when the max depth reaches N (0 = no limit)
  *   -keylog FILE  keypress log (default: none)
+ *   -msglog FILE  message log: every message_add() call, Borg notes
+ *                 included (default: none)
+ *   -statelog FILE engine-state log: one line per logged key (default: none)
  *   -summary FILE summary JSON (default: stdout)
  *   -screen       dump the screen to stderr when the run ends unexpectedly
  *   -menu-letters pick race and class with the birth menu's own letters
@@ -57,8 +62,12 @@
 #include "game-world.h"
 #include "main.h"
 #include "main-borgh.h"
+#include "init.h"
+#include "obj-knowledge.h"
+#include "object.h"
 #include "player.h"
 #include "player-calcs.h"
+#include "player-timed.h"
 #include "ui-game.h"
 #include "ui-menu.h"
 #include "ui-term.h"
@@ -76,6 +85,8 @@ static long opt_turns = 0;
 static int opt_clev = 0;
 static int opt_depth = 0;
 static const char *opt_keylog = NULL;
+static const char *opt_msglog = NULL;
+static const char *opt_statelog = NULL;
 static const char *opt_summary = NULL;
 static bool opt_screen = false;
 static bool opt_menu_letters = false;
@@ -83,6 +94,8 @@ static bool opt_cheat_live = false;
 
 /* State */
 static FILE *keylog_fp = NULL;
+static FILE *msglog_fp = NULL;
+static FILE *statelog_fp = NULL;
 static unsigned long keys_logged = 0;
 static struct timeval start_tv;
 static bool finished = false;
@@ -160,6 +173,16 @@ static void borgh_finish(const char *reason)
 		if (fclose(keylog_fp) != 0) io_error = true;
 		keylog_fp = NULL;
 	}
+	if (msglog_fp) {
+		if (ferror(msglog_fp)) io_error = true;
+		if (fclose(msglog_fp) != 0) io_error = true;
+		msglog_fp = NULL;
+	}
+	if (statelog_fp) {
+		if (ferror(statelog_fp)) io_error = true;
+		if (fclose(statelog_fp) != 0) io_error = true;
+		statelog_fp = NULL;
+	}
 
 	if (opt_screen && !streq(reason, "turns")) dump_screen();
 
@@ -205,12 +228,167 @@ static void borgh_finish(const char *reason)
 
 	/* A short key log or summary must not pass as a good run */
 	if (io_error) {
-		fprintf(stderr, "borgh: error writing the key log or summary\n");
+		fprintf(stderr, "borgh: error writing a log or the summary\n");
 		_exit(3);
 	}
 
 	/* Do not save; do not run the normal quit hooks */
 	_exit(0);
+}
+
+/* ---- message and engine-state logs (read only) ---- */
+
+/**
+ * Observer for every message_add() call (repeats included).
+ * Line: "<keys logged so far> <game turn> <message type> <text>", with
+ * bytes below 0x20, 0x7f and backslash written as \xNN.
+ */
+static void borgh_message(const char *str, uint16_t type)
+{
+	const unsigned char *c;
+
+	if (!msglog_fp) return;
+	fprintf(msglog_fp, "%lu %ld %u ", keys_logged, (long)turn,
+		(unsigned)type);
+	for (c = (const unsigned char *)str; c && *c; c++) {
+		if (*c < 0x20 || *c == 0x7f || *c == '\\')
+			fprintf(msglog_fp, "\\x%02x", *c);
+		else
+			fputc(*c, msglog_fp);
+	}
+	fputc('\n', msglog_fp);
+}
+
+/* FNV-1a, 64 bit, over values fed as little-endian 32-bit words */
+#define FNV_OFFSET 0xcbf29ce484222325ULL
+#define FNV_PRIME 0x100000001b3ULL
+
+static void fnv_int(uint64_t *h, long v)
+{
+	uint32_t u = (uint32_t)v;
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		*h ^= (u >> (8 * i)) & 0xff;
+		*h *= FNV_PRIME;
+	}
+}
+
+/**
+ * Feed the fields of one object (or of its known version) into a hash.
+ */
+static void fnv_object_fields(uint64_t *h, const struct object *obj)
+{
+	int i;
+
+	if (!obj) {
+		fnv_int(h, -1);
+		return;
+	}
+	fnv_int(h, obj->kind ? (long)obj->kind->kidx : -1);
+	fnv_int(h, obj->tval);
+	fnv_int(h, obj->sval);
+	fnv_int(h, obj->number);
+	fnv_int(h, obj->pval);
+	fnv_int(h, obj->ac);
+	fnv_int(h, obj->to_h);
+	fnv_int(h, obj->to_d);
+	fnv_int(h, obj->to_a);
+	/* obj->timeout is not hashed: it is logged on its own ("o" field) */
+	fnv_int(h, obj->notice);
+	for (i = 0; i < (int)OF_SIZE; i++) fnv_int(h, obj->flags[i]);
+	for (i = 0; i < OBJ_MOD_MAX; i++) fnv_int(h, obj->modifiers[i]);
+	for (i = 0; i < ELEM_MAX; i++) {
+		fnv_int(h, obj->el_info[i].res_level);
+		fnv_int(h, obj->el_info[i].flags);
+	}
+	fnv_int(h, obj->curses ? 1 : 0);
+	if (obj->curses) {
+		for (i = 0; i < z_info->curse_max; i++) {
+			fnv_int(h, obj->curses[i].power);
+			fnv_int(h, obj->curses[i].timeout);
+		}
+	}
+}
+
+/**
+ * Hashes of the gear, in gear-list order: pack and quiver (objects not
+ * equipped) and equipment (equipped, with the slot). Each object counts
+ * with its own fields and those of its known version (what the player
+ * knows of it: the runes learnt on it), except the timeout (light fuel,
+ * recharge), which changes nearly every turn and is logged as a number.
+ * The third hash is the player's rune knowledge (which runes are known
+ * at all).
+ */
+static void gear_hashes(uint64_t *pack, uint64_t *equip, uint64_t *runes)
+{
+	struct object *obj;
+	int i, n;
+
+	*pack = FNV_OFFSET;
+	*equip = FNV_OFFSET;
+	*runes = FNV_OFFSET;
+	for (obj = player->gear; obj; obj = obj->next) {
+		int slot = equipped_item_slot(player->body, obj);
+		uint64_t *h = (slot < player->body.count) ? equip : pack;
+
+		fnv_int(h, slot);
+		fnv_object_fields(h, obj);
+		fnv_object_fields(h, obj->known);
+	}
+	if (player->obj_k) {
+		n = max_runes();
+		for (i = 0; i < n; i++)
+			fnv_int(runes, player_knows_rune(player, i) ? 1 : 0);
+	}
+}
+
+/**
+ * One line of the state log, read when a key is returned:
+ * "<turn> <x>,<y> d<depth>/<max depth> hp<chp>/<mhp> sp<csp>/<msp>
+ *  f<food> au<gold> xp<exp> lv<level> t<index>:<value>,...|t-
+ *  o<gear index>:<timeout>,...|o- p<pack hash> e<equipment hash>
+ *  r<rune knowledge hash>".
+ * Timed effects are listed by index (list-player-timed.h order) when set;
+ * food has its own field. The o field lists the gear objects (gear-list
+ * position from 0) whose timeout is not zero.
+ */
+static void borgh_state(void)
+{
+	uint64_t ph, eh, rh;
+	const struct object *obj;
+	int i;
+	bool any = false;
+
+	if (!statelog_fp) return;
+	if (!player || !player->timed) {
+		fprintf(statelog_fp, "%ld -\n", (long)turn);
+		return;
+	}
+	gear_hashes(&ph, &eh, &rh);
+	fprintf(statelog_fp, "%ld %d,%d d%d/%d hp%d/%d sp%d/%d f%d au%ld xp%ld"
+		" lv%d t", (long)turn, player->grid.x, player->grid.y,
+		player->depth, player->max_depth, player->chp, player->mhp,
+		player->csp, player->msp, player->timed[TMD_FOOD],
+		(long)player->au, (long)player->exp, player->lev);
+	for (i = 0; i < TMD_MAX; i++) {
+		if (i == TMD_FOOD || !player->timed[i]) continue;
+		fprintf(statelog_fp, "%s%d:%d", any ? "," : "", i,
+			player->timed[i]);
+		any = true;
+	}
+	if (!any) fputc('-', statelog_fp);
+	fputs(" o", statelog_fp);
+	any = false;
+	for (obj = player->gear, i = 0; obj; obj = obj->next, i++) {
+		if (!obj->timeout) continue;
+		fprintf(statelog_fp, "%s%d:%d", any ? "," : "", i, obj->timeout);
+		any = true;
+	}
+	if (!any) fputc('-', statelog_fp);
+	fprintf(statelog_fp, " p%016llx e%016llx r%016llx\n",
+		(unsigned long long)ph, (unsigned long long)eh,
+		(unsigned long long)rh);
 }
 
 /**
@@ -223,6 +401,7 @@ static void borgh_key(struct keypress k)
 		fprintf(keylog_fp, "%ld %d %lx %x\n", (long)turn, (int)k.type,
 			(unsigned long)k.code, (unsigned)k.mods);
 	}
+	borgh_state();
 
 	/* Stop conditions */
 	if (opt_turns > 0 && turn >= opt_turns) borgh_finish("turns");
@@ -410,6 +589,12 @@ errr init_borgh(int argc, char *argv[])
 		} else if (streq(argv[i], "-keylog")) {
 			if (++i >= argc) quit("borgh: missing value for -keylog");
 			opt_keylog = argv[i];
+		} else if (streq(argv[i], "-msglog")) {
+			if (++i >= argc) quit("borgh: missing value for -msglog");
+			opt_msglog = argv[i];
+		} else if (streq(argv[i], "-statelog")) {
+			if (++i >= argc) quit("borgh: missing value for -statelog");
+			opt_statelog = argv[i];
 		} else if (streq(argv[i], "-summary")) {
 			if (++i >= argc) quit("borgh: missing value for -summary");
 			opt_summary = argv[i];
@@ -434,6 +619,18 @@ errr init_borgh(int argc, char *argv[])
 		keylog_fp = fopen(opt_keylog, "w");
 		if (!keylog_fp) quit_fmt("borgh: cannot open %s", opt_keylog);
 		setvbuf(keylog_fp, keylog_buf, _IOFBF, sizeof(keylog_buf));
+	}
+	if (opt_msglog) {
+		static char msglog_buf[1 << 16];
+		msglog_fp = fopen(opt_msglog, "w");
+		if (!msglog_fp) quit_fmt("borgh: cannot open %s", opt_msglog);
+		setvbuf(msglog_fp, msglog_buf, _IOFBF, sizeof(msglog_buf));
+	}
+	if (opt_statelog) {
+		static char statelog_buf[1 << 16];
+		statelog_fp = fopen(opt_statelog, "w");
+		if (!statelog_fp) quit_fmt("borgh: cannot open %s", opt_statelog);
+		setvbuf(statelog_fp, statelog_buf, _IOFBF, sizeof(statelog_buf));
 	}
 
 	/* No savefile from main.c's default: always a new character */
@@ -461,6 +658,7 @@ errr init_borgh(int argc, char *argv[])
 	script_add('z');                          /* activate borg */
 
 	borgh_key_hook = borgh_key;
+	borgh_message_hook = borgh_message;
 
 	term_data_link(0);
 	return 0;
