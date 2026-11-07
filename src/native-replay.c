@@ -9,6 +9,7 @@
 #include "object.h"
 #include "monster.h"
 #include "player-timed.h"
+#include "option.h"
 #include "z-quark.h"
 #include "init.h"
 #include <sys/wait.h>
@@ -338,6 +339,10 @@ void record_frame(const char *phase, long decisions)
         player->max_depth, player->max_lev, (unsigned long)player->exp,
         (unsigned long)player->au, (unsigned long)player->total_energy);
     fprintf(frames, "\"max_hp\":%d,\"max_sp\":%d,", player->mhp, player->msp);
+    fprintf(frames, "\"race_idx\":%d,\"class_idx\":%d,\"cheat_live\":%d,\"noscore\":%u,\"cause\":",
+        player->race->ridx, player->class->cidx, OPT(player, cheat_live), player->noscore);
+    json_string(player->is_dead ? player->died_from : "");
+    fprintf(frames, ",");
     if (streq(phase, "tick")) fprintf(frames, "\"world\":null,");
     else fprintf(frames, "\"world\":\"%016llx\",", world_hash());
     fprintf(frames, "\"quick\":%d,\"quick_rng\":%lu,\"rng_index\":%lu,\"rng\":\"",
