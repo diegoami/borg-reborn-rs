@@ -103,6 +103,8 @@ extern struct keypress (*inkey_hack)(int flush_first);
 static int opt_race = 0;
 static int opt_class = 0;
 static long opt_turns = 0;
+static long opt_keys = 0;
+static bool opt_stop_rune_pattern = false;
 static int opt_clev = 0;
 static int opt_depth = 0;
 static const char *opt_keylog = NULL;
@@ -114,6 +116,7 @@ static bool opt_menu_letters = false;
 static bool opt_cheat_live = false;
 static const char *opt_load = NULL;
 static const char *opt_save = NULL;
+static bool opt_save_living_only = false;
 static long loaded_turn = 0;
 static int opt_fixture_depth = 0;
 static bool opt_near_morgoth = false;
@@ -217,7 +220,8 @@ static void borgh_finish(const char *reason)
 	}
 
 	if (opt_screen && !streq(reason, "turns")) dump_screen();
-	if (opt_save && (!player || player->is_dead || !savefile_save(opt_save))) {
+	if (opt_save && !(opt_save_living_only && player && player->is_dead)
+		&& (!player || player->is_dead || !savefile_save(opt_save))) {
 		fprintf(stderr, "borgh: cannot save living character to %s\n", opt_save);
 		_exit(3);
 	}
@@ -442,6 +446,15 @@ static void borgh_key(struct keypress k)
 	borgh_state();
 
 	/* Stop conditions */
+	if (opt_keys > 0 && keys_logged >= opt_keys) borgh_finish("keys");
+	if (opt_stop_rune_pattern && player && cave && !player->is_dead) {
+		int dx, dy, runes = 0;
+		for (dy = -2; dy <= 2; dy++) for (dx = -2; dx <= 2; dx++) {
+			struct loc grid = loc(player->grid.x + dx, player->grid.y + dy);
+			if ((dx || dy) && square_in_bounds(cave, grid) && square_iswarded(cave, grid)) runes++;
+		}
+		if (runes == 24) borgh_finish("rune_pattern");
+	}
 	if (opt_turns > 0 && turn >= opt_turns) borgh_finish("turns");
 	if (opt_cheat_live) {
 		/* Count each death once; the Borg plays on as a new character */
@@ -803,6 +816,11 @@ errr init_borgh(int argc, char *argv[])
 			opt_class = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-turns")) {
 			opt_turns = arg_long(argc, argv, &i);
+		} else if (streq(argv[i], "-keys")) {
+			opt_keys = arg_long(argc, argv, &i);
+			if (opt_keys <= 0) quit("borgh: key limit must be positive");
+		} else if (streq(argv[i], "-stop-rune-pattern")) {
+			opt_stop_rune_pattern = true;
 		} else if (streq(argv[i], "-clev")) {
 			opt_clev = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-depth")) {
@@ -831,6 +849,11 @@ errr init_borgh(int argc, char *argv[])
 		} else if (streq(argv[i], "-save-on-stop")) {
 			if (++i >= argc) quit("borgh: missing value for -save-on-stop");
 			opt_save = argv[i];
+			opt_save_living_only = false;
+		} else if (streq(argv[i], "-save-living-on-stop")) {
+			if (++i >= argc) quit("borgh: missing value for -save-living-on-stop");
+			opt_save = argv[i];
+			opt_save_living_only = true;
 		} else if (streq(argv[i], "-make-fixture")) {
 			opt_fixture_depth = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-near-morgoth")) {

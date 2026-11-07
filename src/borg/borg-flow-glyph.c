@@ -144,8 +144,8 @@ bool borg_flow_glyph(void)
         return false;
     }
 
-    /* Reverse flow */
-    borg_flow_reverse(250, true, false, false, -1, false);
+    /* FORK #345: explore outlying candidates instead of stopping at origin. */
+    borg_flow_reverse(250, false, false, false, -1, false);
 
     /* Scan the entire map */
     for (y = 15; y < AUTO_MAX_Y - 15; y++) {
