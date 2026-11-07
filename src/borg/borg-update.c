@@ -325,31 +325,27 @@ static void borg_update_map(void)
                 track_shop_x[i] = x;
                 track_shop_y[i] = y;
 
-            /* this checks that the trap is visible so it isn't really */
-            /* a cheat of any information the borg couldn't get another way*/
-            } else if (square_isdisarmabletrap(cave, l)) {
-                /* Minor cheat for the borg.  If the borg is running
-                 * in the graphics mode (not the AdamBolt Tiles) he will
-                 * mis-id the glyph of warding as a trap
-                 */
-                ag->trap      = true;
-                uint8_t t_idx = square(cave, l)->trap->t_idx;
-                if (trf_has(trap_info[t_idx].flags, TRF_GLYPH)) {
-                    ag->glyph = true;
-                    /* Check for an existing glyph */
-                    for (i = 0; i < track_glyph.num; i++) {
-                        /* Stop if we already new about this glyph */
-                        if ((track_glyph.x[i] == x) && (track_glyph.y[i] == y))
-                            break;
-                    }
-
-                    /* Track the newly discovered glyph */
-                    if ((i == track_glyph.num) && (i < track_glyph.size)) {
-                        track_glyph.x[i] = x;
-                        track_glyph.y[i] = y;
-                        track_glyph.num++;
-                    }
+            } else if (g.trap && trf_has(g.trap->flags, TRF_GLYPH)) {
+                /* FORK #295: map_info reports known glyphs separately from
+                 * disarmable player traps. Do not inspect unknown runes. */
+                ag->trap = false;
+                ag->glyph = true;
+                /* Check for an existing glyph */
+                for (i = 0; i < track_glyph.num; i++) {
+                    /* Stop if we already new about this glyph */
+                    if ((track_glyph.x[i] == x) && (track_glyph.y[i] == y))
+                        break;
                 }
+
+                /* Track the newly discovered glyph */
+                if ((i == track_glyph.num) && (i < track_glyph.size)) {
+                    track_glyph.x[i] = x;
+                    track_glyph.y[i] = y;
+                    track_glyph.num++;
+                }
+            /* This predicate already requires a visible player trap. */
+            } else if (square_isdisarmabletrap(cave, l)) {
+                ag->trap = true;
             }
             /* Darkness */
             else if (g.f_idx == FEAT_NONE) {
