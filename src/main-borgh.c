@@ -65,6 +65,11 @@
 
 #include "angband.h"
 #include "buildid.h"
+#include "z-color.h"
+#include "z-quark.h"
+#include "monster.h"
+#include "object.h"
+#include "player-timed.h"
 #include "cmds.h"
 #include "generate.h"
 #include "game-world.h"
@@ -117,6 +122,14 @@ static bool opt_cheat_live = false;
 static const char *opt_load = NULL;
 static const char *opt_save = NULL;
 static bool opt_save_living_only = false;
+static bool opt_keep_load_rng = false;
+static bool opt_save_dead = false;
+static const char *opt_frames = NULL;
+static FILE *frames_fp = NULL;
+static unsigned long frame_count;
+static unsigned long long previous_details;
+static wchar_t previous_chars[24][80];
+static int previous_attrs[24][80];
 static long loaded_turn = 0;
 static int opt_fixture_depth = 0;
 static bool opt_near_morgoth = false;
@@ -186,6 +199,134 @@ static void dump_screen(void)
 	fprintf(stderr, "----------------\n");
 }
 
+/* Engine-only diagnostics adapted from diegoami/better-borg-c 08a5cd0198b2a2a9ceb426d4cc4704fd5364d519
+ * tools/native-replay.c; original dual GPL/Angband licensing is preserved.
+ * C-only Borg fields are intentionally omitted; nothing is fed back to AI. */
+static unsigned long long mix_number(unsigned long long hash, long long value)
+{
+    unsigned long long bits = (unsigned long long)value;
+    int i;
+    for (i = 0; i < 8; i++) {
+        hash = (hash ^ (bits & 255)) * 1099511628211ULL;
+        bits >>= 8;
+    }
+    return hash;
+}
+
+static unsigned long long diagnostic_hash(void)
+{
+    const struct object *obj;
+    unsigned long long hash = 14695981039346656037ULL;
+    int i;
+    for (i = 0; i < TMD_MAX; i++) hash = mix_number(hash, player->timed[i]);
+    for (obj = player->gear; obj; obj = obj->next) {
+        hash = mix_number(hash, obj->kind ? obj->kind->kidx : 0);
+        hash = mix_number(hash, obj->known && obj->known->kind ? obj->known->kind->kidx : 0);
+        hash = mix_number(hash, obj->kind ? obj->kind->aware : 0);
+        hash = mix_number(hash, obj->number); hash = mix_number(hash, obj->weight);
+        hash = mix_number(hash, obj->pval); hash = mix_number(hash, obj->timeout);
+        hash = mix_number(hash, obj->to_h); hash = mix_number(hash, obj->to_d);
+        hash = mix_number(hash, obj->to_a); hash = mix_number(hash, obj->note);
+    }
+    if (cave) for (i = 1; i < cave->mon_max; i++) {
+        const struct monster *mon = &cave->monsters[i];
+        if (!mon->race) continue;
+        hash = mix_number(hash, i); hash = mix_number(hash, mon->race->ridx);
+        hash = mix_number(hash, mon->grid.x); hash = mix_number(hash, mon->grid.y);
+        hash = mix_number(hash, mon->hp); hash = mix_number(hash, mon->maxhp);
+        hash = mix_number(hash, mon->mspeed);
+        hash = mix_number(hash, mflag_has(mon->mflag, MFLAG_VISIBLE));
+    }
+    return hash;
+}
+
+static void json_string(const char *text)
+{
+    const unsigned char *p = (const unsigned char *)(text ? text : "");
+    fputc('"', frames_fp);
+    for (; *p; p++) {
+        if (*p == '"' || *p == '\\') fprintf(frames_fp, "\\%c", *p);
+        else if (*p < 32) fprintf(frames_fp, "\\u%04x", *p);
+        else fputc(*p, frames_fp);
+    }
+    fputc('"', frames_fp);
+}
+
+static void diagnostics(void)
+{
+    const struct object *obj;
+    int comma = 0, i;
+    fprintf(frames_fp, "{\"scope\":\"diagnostic actual state; never supplied to Borg inputs\",\"gear\":[");
+    for (obj = player->gear; obj; obj = obj->next) {
+        fprintf(frames_fp, "%s{\"actual_kind\":", comma ? "," : ""); comma = 1;
+        json_string(obj->kind ? obj->kind->name : "");
+        fprintf(frames_fp, ",\"known_kind\":");
+        json_string(obj->known && obj->known->kind ? obj->known->kind->name : "");
+        fprintf(frames_fp, ",\"aware\":%d,\"quantity\":%d,\"weight\":%d,\"pval\":%d,\"timeout\":%d,\"to_h\":%d,\"to_d\":%d,\"to_a\":%d,\"inscription\":",
+            obj->kind ? obj->kind->aware : 0, obj->number, obj->weight, obj->pval,
+            obj->timeout, obj->to_h, obj->to_d, obj->to_a);
+        json_string(quark_str(obj->note)); fprintf(frames_fp, "}");
+    }
+    fprintf(frames_fp, "],\"monsters\":["); comma = 0;
+    if (cave) for (i = 1; i < cave->mon_max; i++) {
+        const struct monster *mon = &cave->monsters[i];
+        if (!mon->race) continue;
+        fprintf(frames_fp, "%s{\"id\":%d,\"name\":", comma ? "," : "", i); comma = 1;
+        json_string(mon->race->name);
+        fprintf(frames_fp, ",\"x\":%d,\"y\":%d,\"hp\":%d,\"max_hp\":%d,\"speed\":%d,\"visible\":%d}",
+            mon->grid.x, mon->grid.y, mon->hp, mon->maxhp, mon->mspeed,
+            mflag_has(mon->mflag, MFLAG_VISIBLE));
+    }
+    fprintf(frames_fp, "],\"timed\":{"); comma = 0;
+    for (i = 0; i < TMD_MAX; i++) if (player->timed[i]) {
+        if (comma) fprintf(frames_fp, ","); comma = 1;
+        json_string(timed_effects[i].name);
+        fprintf(frames_fp, ":%d", player->timed[i]);
+    }
+    fprintf(frames_fp, "},\"borg\":{}}");
+}
+
+/* Observation only. Compatible terminal-frame schema with the imported viewer;
+ * recorded headless runs replay the original Rust Borg from their origin. */
+static void borgh_frame(const char *phase)
+{
+	int x, y, attr, color;
+	wchar_t ch;
+	bool full, first = true;
+	if (!frames_fp || !Term || !player) return;
+	if (Term->wid != 80 || Term->hgt != 24) quit("borgh: unsupported recording geometry");
+	frame_count++;
+	full = frame_count == 1 || frame_count % 100 == 0;
+	fprintf(frames_fp, "{\"index\":%lu,\"turn\":%ld,\"phase\":", frame_count, (long)turn);
+	json_str(frames_fp, phase);
+	fprintf(frames_fp, ",\"width\":80,\"height\":24,\"full\":%s,\"level\":%d,\"depth\":%d,\"hp\":%d,\"sp\":%d,\"x\":%d,\"y\":%d,\"cells\":[",
+		full ? "true" : "false", player->lev, player->depth, player->chp, player->csp, player->grid.x, player->grid.y);
+	for (y = 0; y < 24; y++) for (x = 0; x < 80; x++) {
+		(void)Term_what(x, y, &attr, &ch);
+		if (full || ch != previous_chars[y][x] || attr != previous_attrs[y][x]) {
+			fprintf(frames_fp, "%s[%d,%lu,%d]", first ? "" : ",", y * 80 + x, (unsigned long)ch, attr);
+			first = false;
+		}
+		previous_chars[y][x] = ch;
+		previous_attrs[y][x] = attr;
+	}
+	fputs("],\"details\":", frames_fp);
+	{
+		unsigned long long hash = diagnostic_hash();
+		if (full || hash != previous_details) diagnostics();
+		else fputs("null", frames_fp);
+		previous_details = hash;
+	}
+	fputs(",\"palette\":", frames_fp);
+	if (full) {
+		fputc('[', frames_fp);
+		for (color = 0; color < MAX_COLORS; color++) fprintf(frames_fp, "%s[%d,%d,%d]", color ? "," : "",
+			(int)angband_color_table[color][1], (int)angband_color_table[color][2], (int)angband_color_table[color][3]);
+		fputc(']', frames_fp);
+	} else fputs("null", frames_fp);
+	fputs("}\n", frames_fp);
+}
+
 /**
  * Write the summary and exit the process without saving.
  */
@@ -198,6 +339,12 @@ static void borgh_finish(const char *reason)
 
 	if (finished) return;
 	finished = true;
+	borgh_frame(reason);
+	if (frames_fp) {
+		if (ferror(frames_fp)) io_error = true;
+		if (fclose(frames_fp)) io_error = true;
+		frames_fp = NULL;
+	}
 
 	gettimeofday(&now, NULL);
 	secs = (now.tv_sec - start_tv.tv_sec)
@@ -221,7 +368,7 @@ static void borgh_finish(const char *reason)
 
 	if (opt_screen && !streq(reason, "turns")) dump_screen();
 	if (opt_save && !(opt_save_living_only && player && player->is_dead)
-		&& (!player || player->is_dead || !savefile_save(opt_save))) {
+		&& (!player || (player->is_dead && !opt_save_dead) || !savefile_save(opt_save))) {
 		fprintf(stderr, "borgh: cannot save living character to %s\n", opt_save);
 		_exit(3);
 	}
@@ -444,6 +591,7 @@ static void borgh_key(struct keypress k)
 			(unsigned long)k.code, (unsigned)k.mods);
 	}
 	borgh_state();
+	borgh_frame("key");
 
 	/* Stop conditions */
 	if (opt_keys > 0 && keys_logged >= opt_keys) borgh_finish("keys");
@@ -649,7 +797,7 @@ static void prepare_borg_start(void)
 			quit("borgh: turn limit must be after the loaded turn");
 		/* load.c restores the saved RNG. Give both implementations the
 		 * requested replay seed at exactly the same pre-Borg boundary. */
-		Rand_state_init(borgh_seed);
+		if (!opt_keep_load_rng) Rand_state_init(borgh_seed);
 		Rand_quick = false;
 	}
 	if (opt_checkpoint_every) {
@@ -846,14 +994,26 @@ errr init_borgh(int argc, char *argv[])
 		} else if (streq(argv[i], "-load")) {
 			if (++i >= argc) quit("borgh: missing value for -load");
 			opt_load = argv[i];
+		} else if (streq(argv[i], "-keep-load-rng")) {
+			opt_keep_load_rng = true;
 		} else if (streq(argv[i], "-save-on-stop")) {
 			if (++i >= argc) quit("borgh: missing value for -save-on-stop");
 			opt_save = argv[i];
 			opt_save_living_only = false;
+			opt_save_dead = false;
 		} else if (streq(argv[i], "-save-living-on-stop")) {
 			if (++i >= argc) quit("borgh: missing value for -save-living-on-stop");
 			opt_save = argv[i];
 			opt_save_living_only = true;
+			opt_save_dead = false;
+		} else if (streq(argv[i], "-save-final-state")) {
+			if (++i >= argc) quit("borgh: missing value for -save-final-state");
+			opt_save = argv[i];
+			opt_save_living_only = false;
+			opt_save_dead = true;
+		} else if (streq(argv[i], "-frames")) {
+			if (++i >= argc) quit("borgh: missing value for -frames");
+			opt_frames = argv[i];
 		} else if (streq(argv[i], "-make-fixture")) {
 			opt_fixture_depth = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-near-morgoth")) {
@@ -872,6 +1032,10 @@ errr init_borgh(int argc, char *argv[])
 
 	if (!borgh_seed_set)
 		quit("borgh: a seed is required (-seed N or $ANGBAND_SEED)");
+	if (opt_frames) {
+		frames_fp = fopen(opt_frames, "w");
+		if (!frames_fp) quit("borgh: cannot open frame log");
+	}
 	if (opt_fixture_depth && (opt_fixture_depth < 1 || opt_fixture_depth > 100 || !opt_save || opt_load))
 		quit("borgh: fixture requires depth 1-100, -save-on-stop, and no -load");
 	if (opt_near_morgoth && opt_fixture_depth != 100)
