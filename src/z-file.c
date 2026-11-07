@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file z-file.c
  * \brief Low-level file (and directory) handling
@@ -1006,7 +1009,13 @@ ang_file *file_open(const char *fname, file_mode mode, file_type ftype)
 			break;
 		}
 		case MODE_READ:
-			f->fh = fopen(buf, "rb");
+			f->fh = fopen(
+#ifdef BORG_RECORDING
+                record_read_path(buf),
+#else
+                buf,
+#endif
+                "rb");
 			break;
 		case MODE_APPEND:
 			f->fh = fopen(buf, "a+");

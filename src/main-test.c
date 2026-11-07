@@ -279,8 +279,20 @@ static errr term_text_test(int x, int y, int n, int a, const wchar_t *s) {
 static void term_data_link(int i) {
 	term *t = &td.t;
 
+#ifdef BORG_RECORDING
+    term_init(t, getenv("BORG_REPLAY_WIDTH") ? atoi(getenv("BORG_REPLAY_WIDTH")) : 80,
+        getenv("BORG_REPLAY_HEIGHT") ? atoi(getenv("BORG_REPLAY_HEIGHT")) : 24,
+        getenv("BORG_REPLAY_KEY_SIZE") ? atoi(getenv("BORG_REPLAY_KEY_SIZE")) : 256);
+#else
 	term_init(t, 80, 24, 256);
+#endif
 
+#ifdef BORG_RECORDING
+    if (getenv("BORG_REPLAY_DIR")) {
+        t->soft_cursor = getenv("BORG_REPLAY_SOFT_CURSOR") && atoi(getenv("BORG_REPLAY_SOFT_CURSOR"));
+        t->complex_input = getenv("BORG_REPLAY_COMPLEX_INPUT") && atoi(getenv("BORG_REPLAY_COMPLEX_INPUT"));
+    }
+#endif
 	t->init_hook = term_init_test;
 	t->nuke_hook = term_nuke_test;
 
@@ -314,6 +326,9 @@ errr init_test(int argc, char *argv[]) {
 	 * Reset savefile set by main.c:  don't want it to interfere with the
 	 * test.
 	 */
+#ifdef BORG_RECORDING
+	if (!getenv("BORG_REPLAY_DIR"))
+#endif
 	savefile[0] = '\0';
 
 	term_data_link(0);

@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file ui-input.c
  * \brief Some high-level UI functions, inkey()
@@ -230,6 +233,9 @@ ui_event inkey_ex(void)
 	if (inkey_hack)
 	{
 		ke.key = (*inkey_hack)(inkey_xtra);
+#ifdef BORG_RECORDING
+		ke.key = record_borg_key(ke.key);
+#endif
 #ifdef BORG_HARNESS
 		/* borg-rs harness: log the key (the oracle for C/Rust diffs) */
 		if (borgh_key_hook) (*borgh_key_hook)(ke.key);

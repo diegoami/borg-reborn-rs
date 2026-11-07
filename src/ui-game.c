@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file ui-game.c
  * \brief Game management for the traditional text UI
@@ -633,6 +636,9 @@ void textui_process_command(void)
 
 errr textui_get_cmd(cmd_context context)
 {
+#ifdef BORG_RECORDING
+	if (context == CTX_GAME) record_frame("command", record_key_count());
+#endif
 #ifdef BORG_HARNESS
 	if (context == CTX_GAME && borgh_command_hook) (*borgh_command_hook)();
 #endif
@@ -958,6 +964,9 @@ void play_game(enum game_mode_type mode)
 		 * is needed */
 		while (!player->is_dead && player->upkeep->playing) {
 			pre_turn_refresh();
+#ifdef BORG_RECORDING
+			record_frame("tick", record_key_count());
+#endif
 			cmd_get_hook(CTX_GAME);
 			run_game_loop();
 		}

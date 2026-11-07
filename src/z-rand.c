@@ -1,3 +1,7 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#define getpid() record_pid()
+#endif
 /**
  * \file z-rand.c
  * \brief A Random Number Generator for Angband

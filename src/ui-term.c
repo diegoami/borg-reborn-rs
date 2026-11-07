@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file ui-term.c
  * \brief A generic, efficient, terminal window package
@@ -2683,7 +2686,11 @@ errr Term_event_push(const ui_event *ke)
  *
  * Remove the input event if "take" is true.
  */
+#ifdef BORG_RECORDING
+static errr recording_real_inkey(ui_event *ch, bool wait, bool take)
+#else
 errr Term_inkey(ui_event *ch, bool wait, bool take)
+#endif
 {
 	/* Assume no key */
 	memset(ch, 0, sizeof *ch);
@@ -3291,3 +3298,15 @@ int Term_get_first_tile_row(term *t)
 	}
 	return result;
 }
+
+#ifdef BORG_RECORDING
+errr Term_inkey(ui_event *ch, bool wait, bool take)
+{
+    int result;
+    if (wait) record_frame("wait", record_key_count());
+    if (!record_input_replay(ch, wait, take, &result))
+        result = recording_real_inkey(ch, wait, take);
+    record_input_result(ch, wait, take, result);
+    return result;
+}
+#endif

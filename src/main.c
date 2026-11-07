@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file main.c
  * \brief Core game initialisation for UNIX (and other) machines
@@ -136,6 +139,9 @@ static void basic_quit_hook(const char *s)
  */
 static void extended_quit_hook(const char *s)
 {
+	#ifdef BORG_RECORDING
+	record_frame("exit", record_key_count());
+	#endif
 	textui_cleanup();
 	cleanup_angband();
 #ifdef SOUND
@@ -547,6 +553,10 @@ int main(int argc, char *argv[])
 
 	/* Make sure we have a display! */
 	if (!done) quit("Unable to prepare any 'display module'!");
+
+	#ifdef BORG_RECORDING
+	record_init();
+	#endif
 
 	/* Catch nasty signals */
 	signals_init(modules[i].hup_disconnects, modules[i].tstp_default);

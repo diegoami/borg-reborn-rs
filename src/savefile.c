@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file savefile.c
  * \brief Savefile loading and saving main routines
@@ -390,6 +393,9 @@ bool savefile_save(const char *path)
 	bool ok = false;
 
 	/* Generate a CharOutput.txt, mainly for angband.live, when saving. */
+	#ifdef BORG_RECORDING
+	if (!record_in_snapshot())
+#endif
 	(void) save_charoutput();
 
 	/* New savefile */
