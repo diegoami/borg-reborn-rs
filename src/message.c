@@ -1,3 +1,6 @@
+#ifdef BORG_RECORDING
+#include "native-replay.h"
+#endif
 /**
  * \file message.c
  * \brief Message handling
@@ -135,6 +138,9 @@ void message_add(const char *str, uint16_t type)
 	/* borg-rs harness: log every message, repeats included (read only) */
 	if (borgh_message_hook) (*borgh_message_hook)(str, type);
 #endif /* BORG_HARNESS */
+#ifdef BORG_RECORDING
+	record_message(str, type);
+#endif
 
 	if (messages->head &&
 	    messages->head->type == type &&

@@ -15,7 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static FILE *inputs, *clocks, *actions, *frames, *file_inputs;
+static FILE *inputs, *clocks, *actions, *frames, *file_inputs, *native_messages;
 static FILE *replay_inputs, *replay_clocks, *replay_files;
 static const char *directory;
 static unsigned long long input_count, frame_count;
@@ -82,6 +82,7 @@ void record_init(void)
     clocks = open_record(directory, "clock.txt", "w");
     actions = open_record(directory, "actions.txt", "w");
     frames = open_record(directory, "frames.jsonl", "w");
+    native_messages = open_record(directory, "native-messages.jsonl", "w");
     file_inputs = open_record(directory, "file-inputs.txt", "w");
     {
         FILE *geometry = open_record(directory, "geometry.json", "w");
@@ -268,16 +269,28 @@ static unsigned long long diagnostic_hash(void)
     return hash;
 }
 
-static void json_string(const char *text)
+static void json_string_to(FILE *stream, const char *text)
 {
     const unsigned char *p = (const unsigned char *)(text ? text : "");
-    fputc('"', frames);
+    fputc('"', stream);
     for (; *p; p++) {
-        if (*p == '"' || *p == '\\') fprintf(frames, "\\%c", *p);
-        else if (*p < 32) fprintf(frames, "\\u%04x", *p);
-        else fputc(*p, frames);
+        if (*p == '"' || *p == '\\') fprintf(stream, "\\%c", *p);
+        else if (*p < 32) fprintf(stream, "\\u%04x", *p);
+        else fputc(*p, stream);
     }
-    fputc('"', frames);
+    fputc('"', stream);
+}
+
+static void json_string(const char *text) { json_string_to(frames, text); }
+
+void record_message(const char *text, uint16_t type)
+{
+    if (!native_messages || snapshot_child) return;
+    fprintf(native_messages, "{\"frame\":%llu,\"turn\":%ld,\"type\":%u,\"text\":",
+        frame_count, (long)turn, type);
+    json_string_to(native_messages, text);
+    fprintf(native_messages, "}\n");
+    fflush(native_messages);
 }
 
 static void diagnostics(void)
@@ -314,6 +327,10 @@ static void diagnostics(void)
     }
     fprintf(frames, "},\"borg\":{}}");
 }
+
+#define REPLAY_OBSERVATION_STREAM frames
+#include "replay-observations.h"
+#undef REPLAY_OBSERVATION_STREAM
 
 void record_frame(const char *phase, long decisions)
 {
@@ -372,6 +389,7 @@ void record_frame(const char *phase, long decisions)
     if (full || detail_hash != previous_details) diagnostics();
     else fprintf(frames, "null");
     previous_details = detail_hash;
+    replay_extra_observations(full);
     fprintf(frames, "}\n");
     fflush(frames);
 }
@@ -380,6 +398,7 @@ void record_finish(void)
 {
     FILE *done;
     if (!directory) return;
+    if (native_messages && ferror(native_messages)) return;
     if (replay_inputs) {
         int ch;
         FILE *streams[] = {replay_inputs, replay_clocks, replay_files};

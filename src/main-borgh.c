@@ -286,6 +286,12 @@ static void diagnostics(void)
     fprintf(frames_fp, "},\"borg\":{}}");
 }
 
+#define REPLAY_OBSERVATION_STREAM frames_fp
+#define REPLAY_ADD_VITALS
+#include "replay-observations.h"
+#undef REPLAY_ADD_VITALS
+#undef REPLAY_OBSERVATION_STREAM
+
 /* Observation only. Compatible terminal-frame schema with the imported viewer;
  * recorded headless runs replay the original Rust Borg from their origin. */
 static void borgh_frame(const char *phase)
@@ -324,6 +330,7 @@ static void borgh_frame(const char *phase)
 			(int)angband_color_table[color][1], (int)angband_color_table[color][2], (int)angband_color_table[color][3]);
 		fputc(']', frames_fp);
 	} else fputs("null", frames_fp);
+	replay_extra_observations(full);
 	fputs("}\n", frames_fp);
 }
 

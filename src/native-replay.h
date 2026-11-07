@@ -7,6 +7,7 @@
 #include "ui-term.h"
 #include <time.h>
 void record_init(void);
+void record_message(const char *text, uint16_t type);
 void record_finish(void);
 void record_frame(const char *phase, long decisions);
 bool record_input_replay(ui_event *event, bool wait, bool take, int *result);
