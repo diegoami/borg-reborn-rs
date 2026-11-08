@@ -1196,10 +1196,14 @@ static void borg_parse_aux(char *msg, int len)
     if (prefix(msg, "The object resists the spell")
         || prefix(msg, "There is no clear floor")) {
 
-        /* Forget the newly created-though-failed  glyph */
-        track_glyph.x[track_glyph.num] = 0;
-        track_glyph.y[track_glyph.num] = 0;
-        track_glyph.num--;
+        /* Forget the newly created-though-failed glyph.  Nothing was
+         * tracked if the list is already empty, and clearing the
+         * actually-tracked entry keeps the write inside the array. */
+        if (track_glyph.num > 0) {
+            track_glyph.num--;
+            track_glyph.x[track_glyph.num] = 0;
+            track_glyph.y[track_glyph.num] = 0;
+        }
 
         /* note it */
         borg_note("# Removing the Glyph under me, placing with broken door.");

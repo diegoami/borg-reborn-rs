@@ -397,7 +397,7 @@ bool borg_projectable_pure(int y1, int x1, int y2, int x2)
             return true;
 
         /* Stop at monsters */
-        if (ag->kill)
+        if (dist && ag->kill)
             break;
 
         /* Calculate the new location */

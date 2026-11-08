@@ -232,7 +232,9 @@ bool borg_surrounded(void)
             non_safe_grids++;
 
         /* Mega-Hack -- skip traps XXX XXX XXX */
-        if (ag->trap && !ag->glyph)
+        /* (part of the same chain: a trapped wall is one non-safe
+         * grid, not two) */
+        else if (ag->trap && !ag->glyph)
             non_safe_grids++;
     }
 

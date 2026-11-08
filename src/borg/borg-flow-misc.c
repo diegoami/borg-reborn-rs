@@ -839,6 +839,11 @@ bool borg_flow_light(int why)
             if (!(ag->info & BORG_GLOW))
                 continue;
 
+            /* Stop when the glow arrays are full: the panel can hold
+             * more glowing grids than AUTO_LIGHT_MAX. */
+            if (borg_glow_n >= AUTO_LIGHT_MAX)
+                continue;
+
             /* keep count */
             borg_glow_y[borg_glow_n] = y;
             borg_glow_x[borg_glow_n] = x;

@@ -901,6 +901,11 @@ static bool borg_think_dungeon_munchkin(void)
         /* Try to find some stairs */
         if (borg_flow_stair_both(GOAL_FLEE, false))
             return true;
+
+        /* Re-acquire the Borg's own grid: the adjacent-monster scan above
+         * leaves ag pointing at the last neighbour it examined. */
+        ag = &borg_grids[borg.c.y][borg.c.x];
+
         if (ag->feat == FEAT_LESS && !OPT(player, birth_force_descend)) {
             /* Take the Up Stair */
             borg_keypress('<');

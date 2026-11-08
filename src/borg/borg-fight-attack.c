@@ -579,11 +579,11 @@ static int borg_launch_damage_one(int i, int dam, int typ, int ammo_location)
             dam = 0;
         break;
 
-    /*  Dispel life */
+    /*  Dispel life: the game's drain only hurts living monsters
+     * (nonliving is undead or nonliving). */
     case BORG_ATTACK_DRAIN_LIFE:
-        if (!(rf_has(r_ptr->flags, RF_NONLIVING)))
-            dam = 0;
-        if (!(rf_has(r_ptr->flags, RF_UNDEAD)))
+        if (rf_has(r_ptr->flags, RF_NONLIVING)
+            || rf_has(r_ptr->flags, RF_UNDEAD))
             dam = 0;
         break;
 
@@ -1496,12 +1496,12 @@ static int borg_launch_bolt_at_location(
         }
 
         /* Collect damage (bolts/beams) */
-        if (rad <= 0 || rad == 10)
+        if (rad <= 0)
             n += borg_launch_bolt_aux_hack(ag->kill, dam, typ, ammo_location);
 
         /* Check for arrival at "final target" */
         /* except beams, which keep going. */
-        if ((rad != -1 && rad != 10) && ((x == x2) && (y == y2)))
+        if (rad != -1 && ((x == x2) && (y == y2)))
             break;
 
         /* Stop bolts at monsters  */
@@ -1784,7 +1784,7 @@ int borg_launch_bolt(int rad, int dam, int typ, int max, int ammo_location)
         }
     }
     if (b_i == -1)
-        return b_n;
+        return 0;
 
     /* Reset Teleport Other variables */
     borg_tp_other_n = 0;
@@ -1967,8 +1967,8 @@ static int borg_launch_arc_at_location(
 
             /* check on angle */
             /* Reorient current grid for table access. */
-            n2y = y - y1 + 20;
-            n2x = x - x1 + 20;
+            n2y = ry - y1 + 20;
+            n2x = rx - x1 + 20;
 
             /* Find the angular difference (/2) between the lines to
                 * the end of the arc's center-line and to the current grid.
@@ -2137,8 +2137,9 @@ int borg_attack_aux_launch(void)
         }
     }
 
-    /* Nothing to use */
-    if (b_n < 0)
+    /* Nothing to use: no candidate missile was chosen, and b_n never goes
+     * negative once initialized to zero (candidates only raise it). */
+    if (b_k < 0)
         return 0;
 
     /* Simulation */
@@ -2577,21 +2578,20 @@ static int borg_attack_aux_spell_bolt_reserve(
          * There should only be one close monster.
          * We do not want to risk fainting.
          */
-        if (d < 7)
+        if (d < 7) {
             near_monsters++;
 
-        /* If it has too many hp to be taken out with this */
-        /* spell, don't bother trying */
-        /* NOTE: the +4 is because the damage is toned down
-                 as an 'average damage' */
-        if (kill->power > (dam + 4))
-            return 0;
+            /* If it has too many hp to be taken out with this */
+            /* spell, don't bother trying */
+            /* NOTE: the +4 is because the damage is toned down
+                     as an 'average damage' */
+            if (kill->power > (dam + 4))
+                return 0;
 
-        /* Do not use it in town */
-        if (borg.trait[BI_CDEPTH] == 0)
-            return 0;
-
-        break;
+            /* Do not use it in town */
+            if (borg.trait[BI_CDEPTH] == 0)
+                return 0;
+        }
     }
 
     /* Should only be 1 near monster */
@@ -2707,11 +2707,6 @@ static int borg_attack_aux_spell_dispel(
     }
     if ((borg.trait[BI_MAXSP] > 30)
         && (borg.trait[BI_CURSP] - spell_power < penalty))
-        b_n = b_n - (spell_power * 750);
-
-    /* Really penalize use of mana needed for final teleport */
-    /* (6 pts for mage) */
-    if ((borg.trait[BI_MAXSP] > 30) && (borg.trait[BI_CURSP] - spell_power) < 6)
         b_n = b_n - (spell_power * 750);
 
     /* never tap if we previously missed a tap */
@@ -3540,7 +3535,7 @@ static int borg_attack_aux_vampire_strike(void)
         return 0;
 
     /* Nothing to attack, require relatively close */
-    if (dist >= 20)
+    if (best_dist >= 20)
         return 0;
 
     x = borg_temp_x[b_i];
@@ -3925,8 +3920,10 @@ int borg_calculate_attack_effectiveness(int attack_type)
     case BF_SPELL_BLIND_CREATURE:
         rad = 0;
         dam = 10;
+        /* Frighten is a fear effect; scoring it as confusion made the
+         * Borg expect a confused monster where the game applies fear. */
         return (borg_attack_aux_spell_bolt(
-            FRIGHTEN, rad, dam, BORG_ATTACK_OLD_CONF, z_info->max_range, false));
+            FRIGHTEN, rad, dam, BORG_ATTACK_TURN_ALL, z_info->max_range, false));
 
     /* Druid - Trance */
     case BF_SPELL_TRANCE:
@@ -4632,7 +4629,7 @@ int borg_calculate_attack_effectiveness(int attack_type)
         rad = 0;
         dam = (12 * (8 + 1) / 2);
         return (borg_attack_aux_activation(
-            act_acid_bolt2, rad, dam, BORG_ATTACK_ACID, true, -1));
+            act_acid_bolt3, rad, dam, BORG_ATTACK_ACID, true, -1));
 
     case BF_ACT_ACID_BALL:
         rad = 2;
@@ -4692,7 +4689,7 @@ int borg_calculate_attack_effectiveness(int attack_type)
         rad = 10;
         dam = 60;
         return (borg_attack_aux_activation(
-            act_dispel_undead, rad, dam, BORG_ATTACK_DISP_ALL, false, -1));
+            act_dispel_all, rad, dam, BORG_ATTACK_DISP_ALL, false, -1));
 
     case BF_ACT_LOSSLOW:
         rad = 10;
@@ -4718,6 +4715,9 @@ int borg_calculate_attack_effectiveness(int attack_type)
             act_wonder, rad, dam, BORG_ATTACK_MISSILE, true, -1));
 
     case BF_ACT_STAFF_HOLY:
+        /* The effect floods the area with goodness: an area-of-sight
+         * dispel, not a single-target bolt. */
+        rad = 10;
         if (borg.trait[BI_CURHP] < borg.trait[BI_MAXHP] / 2)
             dam = 500;
         else

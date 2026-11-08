@@ -363,7 +363,11 @@ bool borg_think_stair_scum(void)
     /* No scumming mode if starving or in town */
     if (borg.trait[BI_CDEPTH] == 0 || borg.trait[BI_ISWEAK]) {
         borg_note("# Leaving Scumming Mode. (Town or Weak)");
-        borg.lunal_mode = false;
+        /* The lunal mode is entered and left as a pair; clearing only
+         * lunal_mode here left goal.fleeing_lunal set, and the caution
+         * phase kept behaving as if the Borg were still lunal. */
+        borg.lunal_mode           = false;
+        borg.goal.fleeing_lunal   = false;
         return false;
     }
 

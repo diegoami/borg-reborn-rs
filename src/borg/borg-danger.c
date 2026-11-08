@@ -563,7 +563,6 @@ static int borg_danger_spell(
 
     int hp, total_dam = 0, av;
 
-    bool bolt       = false;
 
     borg_kill *kill = &borg_kills[i];
 
@@ -611,6 +610,7 @@ static int borg_danger_spell(
 
     /* Analyze the spells */
     for (q = 0; q < kill->ranged_attack; q++) {
+        bool bolt = false;
         int p = 0;
 
         int z = 0;
@@ -2321,7 +2321,7 @@ int borg_danger_one_kill(
      * checks in borg6.c in the defense maneuvers.
      */
     if (borg_tp_other_n) {
-        for (ii = 0; ii <= borg_tp_other_n; ii++) {
+        for (ii = 0; ii < borg_tp_other_n; ii++) {
             /* Is the current danger check same as a saved monster index? */
             if (i == borg_tp_other_index[ii]) {
                 return 0;
