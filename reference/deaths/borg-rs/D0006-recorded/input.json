@@ -1,0 +1,25 @@
+{
+  "calendar": "seeded headless harness holiday context pinned to epoch",
+  "identity": {
+    "binary": "84cece329fd2d9abeca1547da9ea9e5289c2d6edb1ce1f00ebc0db0a5b83b44d",
+    "cause": "a grey mold",
+    "config_sha256": "0690543f7419c83730dfe1458fffda4df7489b2a5bdfdc9674b01198ad98fb89",
+    "encounter_family": "start-a63e73e0d88797af457faedda0b34a7b68248c5f829ab4acb5c15583be4e9e2e",
+    "seed": 2647001198,
+    "source": "aa4ad6cfeea2cf19870e224219dfe66688175c6e",
+    "source_sha256": "91874dd5bf2cd8317dadb53193b99b10ee2c06a948e2dfb9f5b2d27ef075af42",
+    "start_save": null,
+    "turn": 22841
+  },
+  "profile": {
+    "checkpoint_every": 1000,
+    "class": 3,
+    "flags": "menu,terminal-save,frames,key-limit=50000",
+    "race": 1,
+    "seed": 2647001198,
+    "stall_seconds": 30,
+    "turn_limit": 200000,
+    "wall_seconds": 120
+  },
+  "run_kind": "new birth"
+}

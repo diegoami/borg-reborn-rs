@@ -1,0 +1,12 @@
+{
+  "complete": true,
+  "error": null,
+  "exit_code": 0,
+  "first_difference": null,
+  "interrupted": null,
+  "original": "/home/diego/projects/angband/better-borg-c/.worktrees/record-replay/artifacts/headless/runs/20261107T131841.717003Z",
+  "recording_sha256": "ecdff734f85422ec21f1f09ac4b57f3c855c8c04618e8536f13706a22b6a1ff3",
+  "schema": "borg-replay-verification@1",
+  "scope": "All recorded input, Borg actions, clock/file inputs, native-save fingerprints, RNG/player state and logical terminal frames; no checkpoint restore or new independent life",
+  "verified": true
+}

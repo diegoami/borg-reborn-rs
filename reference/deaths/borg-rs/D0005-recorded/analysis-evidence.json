@@ -1,0 +1,189 @@
+{
+  "schema": "borg-rs/death-analysis-evidence@1",
+  "case": "D0005",
+  "source_commit": "9881301ceaad91d0c68a61bed1a8ccdde100e660",
+  "source_sha256": "d247f691a3f8a7db91489456c4ccc23646a7cacbcc3816bdf142517d899b3794",
+  "original_record_sha256": "ed4c8e27e43a52709b7c4fc9c7e884c7149df54f3bc227180b818f633a898232",
+  "immutable_artifacts_verified": 24,
+  "original_raw_directory": "/home/diego/projects/borg-rs/harness/out/death-workflow/collections/2026-11-07T21-17-47.572143+00-00/game-001-seed-1532917772/recordings/20261107T211855.131284Z-CollectedBorg",
+  "supplemental_observation_directory": "/home/diego/projects/borg-rs/harness/out/death-workflow/observations/4b5397ae2365c9c7fc45ce2a98ba0b8ee2d506abac835fed7c62fe09370ea36a/run-2026-11-07T21-48-09.167006+00-00/run",
+  "qualification_path": "/home/diego/projects/borg-rs/harness/out/death-workflow/observations/4b5397ae2365c9c7fc45ce2a98ba0b8ee2d506abac835fed7c62fe09370ea36a/run-2026-11-07T21-48-09.167006+00-00/verification.json",
+  "qualification_sha256": "442dcdba53a5a300417612313a3219d55c3e97d78b58f68bfa161a7f3a81ab03",
+  "qualification": {
+    "manifest_sha256": "efb763e6934a910a8c39b588ea2dc0a061de096b45fb48a841a29b95275a0070",
+    "model": "rerun original Rust Borg from original origin; exact keys/messages/player-state/terminal frames/final save and scheduled world saves; not whole-Borg private-state shadow",
+    "native_archive_body_verified": true,
+    "native_death_log_wall_clock_differences": [
+      {
+        "line": 1,
+        "original": "2026/11/07 21:18",
+        "rerun": "2026/11/07 21:48"
+      }
+    ],
+    "observation_extension": {
+      "engine_sha256": "b23467deb46181d21b71afb9d2c4adc6aa7e80da0e9ca571cb814678ac687a50",
+      "fields": [
+        "caster",
+        "inventory",
+        "max_hp",
+        "max_sp",
+        "spells"
+      ],
+      "original_engine_sha256": "9c2b69ef98ff8324677c036b78ce7fdb8ae626ee4b7db6492fc0845321d6cc36",
+      "scope": "historical-source observation-only rebuild; every original channel/value and native save matches"
+    },
+    "observer_off_original_channels_match": true,
+    "original_death_not_new_sample": true,
+    "verified": true,
+    "verifier_sha256": "d20e8877f0586b36d18621a442fb51c392d7eb8defb2130ad233e962d1c74ef3"
+  },
+  "scope": "One original collected life, plus matched observation-only replay; no extra independent death, branch rescue or strategy experiment",
+  "time_ownership": "Key-phase frame is before its queued key applies. A messages.log key count strictly below frame.index precedes that frame; equal-count messages follow it. Same world turn alone does not order a frame and message.",
+  "terminal_final_frame": {
+    "index": 2210,
+    "turn": 36289,
+    "phase": "death",
+    "level": 2,
+    "depth": 1,
+    "hp": -2,
+    "max_hp": 15,
+    "sp": 0,
+    "max_sp": 4,
+    "x": 191,
+    "y": 28
+  },
+  "anchors": [
+    {
+      "turn": 36014,
+      "frame_index": 2110,
+      "json": "analysis-anchors/t36014-f2110.json",
+      "json_sha256": "7173d566fceefe3d55dad96388bde299a559f6a97804bcd65462dedac22b888e",
+      "text": "analysis-anchors/t36014-f2110.txt",
+      "text_sha256": "f61d19e6d767b33955152a6a57ba482d389338c48eae3e4ff86fdbd9f9e592fd"
+    },
+    {
+      "turn": 36024,
+      "frame_index": 2112,
+      "json": "analysis-anchors/t36024-f2112.json",
+      "json_sha256": "e00e91490f525173f1443c3a864b3b1cf1c353e2cf2adba2e81a5812dd482523",
+      "text": "analysis-anchors/t36024-f2112.txt",
+      "text_sha256": "dec1abeb6d12f28506611e783fb8f08e69bac1db54ab53911004b4fef6468f74"
+    },
+    {
+      "turn": 36094,
+      "frame_index": 2119,
+      "json": "analysis-anchors/t36094-f2119.json",
+      "json_sha256": "9e97b699689472d2370aebce4d5d2fa870451849670b8129f0ffa630b7a466fb",
+      "text": "analysis-anchors/t36094-f2119.txt",
+      "text_sha256": "abeb62edbb5a4e4e85bf5f00b174ac91e6c6310cafc02a54b05227ab2feea1e2"
+    },
+    {
+      "turn": 36104,
+      "frame_index": 2130,
+      "json": "analysis-anchors/t36104-f2130.json",
+      "json_sha256": "e2f6f170130de9c9af607d7ae05da872776689e2b6728c863073fc2411e79f6b",
+      "text": "analysis-anchors/t36104-f2130.txt",
+      "text_sha256": "b1ee04a8f5ef8d0d1af5ff903abe96ed700fe9fa4fe399d4fa1f2f44787517b3"
+    },
+    {
+      "turn": 36114,
+      "frame_index": 2142,
+      "json": "analysis-anchors/t36114-f2142.json",
+      "json_sha256": "241cfca5bb602f0b01ad0084707fa86f0438edc51720e4c6638e48768b1ff842",
+      "text": "analysis-anchors/t36114-f2142.txt",
+      "text_sha256": "8e67d74a39d3f7379e796fdff9de2a05f59f971ba50809a923f99886c3dc7677"
+    },
+    {
+      "turn": 36124,
+      "frame_index": 2147,
+      "json": "analysis-anchors/t36124-f2147.json",
+      "json_sha256": "a1351eb745e421fbef54a3e0ffa769f2b524ea2f33cbb1083216ffd0284bfd17",
+      "text": "analysis-anchors/t36124-f2147.txt",
+      "text_sha256": "1a21eae729f99736f4586338c6db35b40ced073045a42054ff17ef73a296ce48"
+    },
+    {
+      "turn": 36144,
+      "frame_index": 2150,
+      "json": "analysis-anchors/t36144-f2150.json",
+      "json_sha256": "40b5140f6bc484f78e7f7b55be6461bd9655f2628ab5bd196483590da823f629",
+      "text": "analysis-anchors/t36144-f2150.txt",
+      "text_sha256": "a65f4d1cd31d830ea1c5005fe04b0d5c9ee2234d309097ba0b900fef90075b24"
+    },
+    {
+      "turn": 36154,
+      "frame_index": 2151,
+      "json": "analysis-anchors/t36154-f2151.json",
+      "json_sha256": "77af5e4a62bff21168c8be977ea9109221a182a4cfa9652bfab2a0f64cc8854e",
+      "text": "analysis-anchors/t36154-f2151.txt",
+      "text_sha256": "e174a1478921a46a2c23ed85d4099fee0808e37e9690b021bc7cd8c499f694b8"
+    },
+    {
+      "turn": 36174,
+      "frame_index": 2153,
+      "json": "analysis-anchors/t36174-f2153.json",
+      "json_sha256": "e001964fde8505330e82cc08dcca5ee416b431d79e13afac35db8dfb541ca134",
+      "text": "analysis-anchors/t36174-f2153.txt",
+      "text_sha256": "882c3f47b229021015c1f12fd93754734dc500c5a10997db416b42fc7e4e60bd"
+    },
+    {
+      "turn": 36194,
+      "frame_index": 2155,
+      "json": "analysis-anchors/t36194-f2155.json",
+      "json_sha256": "71594b8cc2fe98e9f3a1a8116a4522da5a24f085248557508429c1cec7099945",
+      "text": "analysis-anchors/t36194-f2155.txt",
+      "text_sha256": "a4a5e4ab00bb3431f228c4da9445a65a805de92e374567139e07f6576ba36c82"
+    },
+    {
+      "turn": 36204,
+      "frame_index": 2168,
+      "json": "analysis-anchors/t36204-f2168.json",
+      "json_sha256": "381bf708a4d686e26f0c653a1e5a26acfa93d97c053c47a1758f040fdcc9ed48",
+      "text": "analysis-anchors/t36204-f2168.txt",
+      "text_sha256": "de8ff465f5b7e2f8ae8326cd709cc1e4a9d387d705d0bf82420b9e7164faca4d"
+    },
+    {
+      "turn": 36224,
+      "frame_index": 2171,
+      "json": "analysis-anchors/t36224-f2171.json",
+      "json_sha256": "437be1dab9b6b11a50e8895f648e5c1836e41f853b474ae5468c293f482473ef",
+      "text": "analysis-anchors/t36224-f2171.txt",
+      "text_sha256": "15956f476b31c10559327778a022d9b13a210af2f7d941d5802e9602537ca08e"
+    },
+    {
+      "turn": 36234,
+      "frame_index": 2172,
+      "json": "analysis-anchors/t36234-f2172.json",
+      "json_sha256": "c4f68081169c03f6eb4b0de04be5ea409c56cc6d15305f9ff802d2887248aafb",
+      "text": "analysis-anchors/t36234-f2172.txt",
+      "text_sha256": "8bcf0aba8846af66c96495b60a3f5e6daf36dec0b1650e2778541f6312b4a893"
+    },
+    {
+      "turn": 36263,
+      "frame_index": 2186,
+      "json": "analysis-anchors/t36263-f2186.json",
+      "json_sha256": "b138631b6eafd9b5938b75b32966e09787329f0c2ab58006d62e182943d62bc9",
+      "text": "analysis-anchors/t36263-f2186.txt",
+      "text_sha256": "4f5890d198ca5d1e56fc133ca61a339780da9c51cb9392c081831f9d140c6676"
+    },
+    {
+      "turn": 36273,
+      "frame_index": 2198,
+      "json": "analysis-anchors/t36273-f2198.json",
+      "json_sha256": "7c1a5e441397be77faaa7528500713859b79e130ae20ecab92b3de6f7c0de12b",
+      "text": "analysis-anchors/t36273-f2198.txt",
+      "text_sha256": "a759114f74dd72e0369a0768ec171e2338b21bdcf8d8669af88bfb685c35de22"
+    },
+    {
+      "turn": 36282,
+      "frame_index": 2203,
+      "json": "analysis-anchors/t36282-f2203.json",
+      "json_sha256": "48ec7f0fd257add893adc3a7aa9c4b6ff1562d5f64754ad4cce72c9a1e128b71",
+      "text": "analysis-anchors/t36282-f2203.txt",
+      "text_sha256": "0a1d54aecb47202af73697948f0d2668bab07bc479d6a5e55832248abd608774"
+    }
+  ],
+  "timeline_sha256": "9574358488b54ffd74face9fe85a2c46c761536b0a0324b7960533d94c642462",
+  "route_limits": "Captured terminal terrain and actual earlier traversal support legal NW first step; private full map/stair lists/flow costs and enemy-response branches are not reconstructed. No complete safe escape or rescue proved.",
+  "readiness_limits": "Native learned spell cost/failure/status observed in matched historical replay, not private Borg spell eligibility or scoring. Terminal Borg.map estimate is not a per-decision trace.",
+  "private_state_limits": "No whole-Borg private-memory shadow, per-frame whole-RNG comparison, selected/rejected gate trace or controlled alternate action branch was performed."
+}

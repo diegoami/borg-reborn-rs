@@ -1,0 +1,103 @@
+{
+  "checkpoint": {
+    "capture_method": "fork_private_engine",
+    "class_idx": 8,
+    "clevel": 1,
+    "depth": 1,
+    "due_turn": 6000,
+    "file": "checkpoint-000006-t0000006006.save",
+    "game_turn": 6006,
+    "keys": 858,
+    "max_depth": 1,
+    "race_idx": 4,
+    "save_sha256": "d819f7b5d83eccc5db320d20c44370916e0189c9dd442a6d2f2a94507847ea76",
+    "seed": 8408,
+    "size_bytes": 52740
+  },
+  "gear_actual_diagnostic_not_borg_input": [
+    {
+      "actual_kind": "Cure Light Wounds",
+      "aware": true,
+      "qty": 6,
+      "sval": 8,
+      "tval": 26
+    },
+    {
+      "actual_kind": "& Leather Shield~",
+      "aware": true,
+      "qty": 1,
+      "sval": 3,
+      "tval": 14
+    },
+    {
+      "actual_kind": "& Tulwar~",
+      "aware": true,
+      "qty": 1,
+      "sval": 6,
+      "tval": 9
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Ration~ of Food",
+      "aware": true,
+      "qty": 9,
+      "sval": 5,
+      "tval": 28
+    },
+    {
+      "actual_kind": "[Into the Shadows]",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 33
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 6,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "Phase Door",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 25
+    },
+    {
+      "actual_kind": "& Hard Leather Cap~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 12
+    },
+    {
+      "actual_kind": "& Pair~ of Leather Boots",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 10
+    },
+    {
+      "actual_kind": "Blindness",
+      "aware": false,
+      "qty": 4,
+      "sval": 35,
+      "tval": 26
+    },
+    {
+      "actual_kind": "Treasure Detection",
+      "aware": false,
+      "qty": 3,
+      "sval": 5,
+      "tval": 25
+    }
+  ]
+}

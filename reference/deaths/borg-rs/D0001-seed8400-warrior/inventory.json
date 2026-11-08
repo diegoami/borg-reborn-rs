@@ -1,0 +1,110 @@
+{
+  "checkpoint": {
+    "capture_method": "fork_private_engine",
+    "class_idx": 0,
+    "clevel": 6,
+    "depth": 13,
+    "due_turn": 37000,
+    "file": "checkpoint-000037-t0000037004.save",
+    "game_turn": 37004,
+    "keys": 4418,
+    "max_depth": 14,
+    "race_idx": 0,
+    "save_sha256": "56ff9b687e360161ac82ec69e771397e2cb707d40ecdfac4a5ea2c74666aac66",
+    "seed": 8400,
+    "size_bytes": 75220
+  },
+  "gear_actual_diagnostic_not_borg_input": [
+    {
+      "actual_kind": "Soft Leather Armour~",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 16
+    },
+    {
+      "actual_kind": "& Dagger~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 9
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Ration~ of Food",
+      "aware": true,
+      "qty": 7,
+      "sval": 5,
+      "tval": 28
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 12,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Wicker Shield~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 14
+    },
+    {
+      "actual_kind": "& Sling~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 5
+    },
+    {
+      "actual_kind": "& Metal Cap~",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 12
+    },
+    {
+      "actual_kind": "Cure Light Wounds",
+      "aware": true,
+      "qty": 2,
+      "sval": 8,
+      "tval": 26
+    },
+    {
+      "actual_kind": "& Apple~",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 28
+    },
+    {
+      "actual_kind": "Confusion",
+      "aware": true,
+      "qty": 2,
+      "sval": 36,
+      "tval": 26
+    },
+    {
+      "actual_kind": "Darkness",
+      "aware": false,
+      "qty": 2,
+      "sval": 38,
+      "tval": 25
+    },
+    {
+      "actual_kind": "Haste Monster",
+      "aware": true,
+      "qty": 1,
+      "sval": 30,
+      "tval": 23
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "seed": 8408,
+  "race": "Gnome",
+  "race_idx": 4,
+  "class": "Blackguard",
+  "class_idx": 8,
+  "menu_letters": true,
+  "stop_reason": "death",
+  "game_turns": 6231,
+  "player_turns": 662,
+  "resting_turns": 25,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a wild cat",
+  "keys": 921,
+  "wall_seconds": 0.907
+}

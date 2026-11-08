@@ -1,0 +1,19 @@
+{
+  "seed": 8402,
+  "race": "Half-Elf",
+  "race_idx": 1,
+  "class": "Druid",
+  "class_idx": 2,
+  "menu_letters": true,
+  "stop_reason": "death",
+  "game_turns": 5590,
+  "player_turns": 588,
+  "resting_turns": 34,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a cutpurse",
+  "keys": 856,
+  "wall_seconds": 1.917
+}

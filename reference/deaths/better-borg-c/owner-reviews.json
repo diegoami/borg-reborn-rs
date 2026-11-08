@@ -1,0 +1,29 @@
+{
+  "schema": "borg-owner-reviews@1",
+  "reviews": {
+    "start-ba8e7ba91ecaf63812f343b311e27952e5c9ee04f9a4853ed8963915298d8be2": {
+      "reviewed": true,
+      "case": "D0004",
+      "reason": "Owner reviewed the gallant recording and supplied turn-specific feedback; technical investigations remain open.",
+      "evidence": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6710312944"
+    },
+    "start-3d21766b4d7846dc1d9bb7fd31649534bfbee0927ba6e987188306e79b0c92b8": {
+      "reviewed": true,
+      "case": "D0006",
+      "reason": "Owner provided detailed replay review at71191/71511/72885, inventory/equipment and escape feedback; technical investigations remain open.",
+      "evidence": "https://github.com/diegoami/better-borg-c/issues/177"
+    },
+    "start-f7f51c4d9967fbf8c4e7ca587cbb2318ab44ee54914c312cdc61702e296398e0": {
+      "reviewed": true,
+      "case": "D0007",
+      "reason": "Owner provided detailed review of room entry, Phase Door, stair return, jelly melee and soldier death; technical investigations remain open.",
+      "evidence": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6712916845"
+    },
+    "start-8a7977170aea7f057fe101e8c7071e6f7a3fd3c0f0afe74816fb5c3b8681d1d6": {
+      "reviewed": true,
+      "case": "D0008",
+      "reason": "Owner completed grey-mold replay review and linked the corresponding Rust report; technical investigations remain open.",
+      "evidence": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6714388294"
+    }
+  }
+}

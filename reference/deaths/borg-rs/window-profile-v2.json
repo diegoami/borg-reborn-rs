@@ -1,0 +1,16 @@
+{
+  "schema": "borg-rs/death-window-profile@2",
+  "units": "engine world turns before the recorded death",
+  "offsets": [
+    5,
+    12,
+    25,
+    40,
+    60,
+    82,
+    105
+  ],
+  "legacy_windows": "Preserve existing 5/10/15/20; 10 is omitted from the new default profile",
+  "event_anchors": "Label additional earlier entry, inventory and retreat anchors separately",
+  "qualification": "Original actual build/start/options; identical prior observations and starting save; native boundary/phase recorded; no interpolation or independent-life inflation"
+}

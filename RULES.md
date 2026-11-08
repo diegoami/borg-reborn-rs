@@ -35,8 +35,13 @@ whatever the model.
 ## Play and evidence
 
 9. **The game is not changed.** The engine tree is upstream `e473720` with
-   the harness hooks and the declared fork corrections inherited from
-   borg-rs. Nothing else. Birth options are the game's defaults.
+   the harness hooks, the declared fork corrections and the adopted C Borg
+   carries inherited from borg-rs. Nothing else, except **harness-only
+   hooks** under `#ifdef BORG_HARNESS` (such as the exact-boundary
+   observation, PLAN T1.4), each shown not to change the key stream before
+   it acts. Control C Borgs are compiled from pinned sources overlaid in the
+   build directory; the tree is not edited. Birth options are the game's
+   defaults.
 10. **Determinism.** Seed, build and profile reproduce a game's key stream.
     The Borg thinks with its own RNG and never moves the game's. Wall time
     never affects play. Decisions never iterate over unordered containers.
@@ -44,9 +49,10 @@ whatever the model.
     reads. Every engine read goes through the engine boundary and is listed
     there.
 12. **Every natural death is recorded** as a dossier under `docs/deaths/`
-    (borg-rs format, plus the decision trace), with the actual source,
-    build, profile and seed. Repeats and replays never inflate independent
-    counts.
+    (borg-rs format; the decision trace from M3), with the actual source,
+    build, implementation, profile and seed. This applies from the first
+    playing run (PLAN T1.5), whichever arm died. Repeats and replays never
+    inflate independent counts.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.

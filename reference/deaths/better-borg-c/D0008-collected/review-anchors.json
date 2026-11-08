@@ -1,0 +1,140 @@
+{
+  "selection": "Last original frame at each requested turn; Borg notes have turn stamps only, no inferred within-turn order.",
+  "anchors": [
+    {
+      "index": 11851,
+      "turn": 10807,
+      "phase": "command",
+      "hp": 13,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 11865,
+      "turn": 10817,
+      "phase": "command",
+      "hp": 6,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11879,
+      "turn": 10827,
+      "phase": "command",
+      "hp": 7,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11891,
+      "turn": 10837,
+      "phase": "command",
+      "hp": 7,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 11905,
+      "turn": 10847,
+      "phase": "command",
+      "hp": 2,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11919,
+      "turn": 10857,
+      "phase": "command",
+      "hp": 13,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11931,
+      "turn": 10867,
+      "phase": "command",
+      "hp": 13,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 11945,
+      "turn": 10877,
+      "phase": "command",
+      "hp": 8,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11959,
+      "turn": 10887,
+      "phase": "command",
+      "hp": 11,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11971,
+      "turn": 10897,
+      "phase": "command",
+      "hp": 11,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 11985,
+      "turn": 10907,
+      "phase": "command",
+      "hp": 8,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 11997,
+      "turn": 10917,
+      "phase": "command",
+      "hp": 8,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 12011,
+      "turn": 10927,
+      "phase": "command",
+      "hp": 2,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    },
+    {
+      "index": 12023,
+      "turn": 10937,
+      "phase": "command",
+      "hp": 2,
+      "sp": 2,
+      "x": 53,
+      "y": 7
+    },
+    {
+      "index": 12027,
+      "turn": 10940,
+      "phase": "death",
+      "hp": -2,
+      "sp": 2,
+      "x": 54,
+      "y": 7
+    }
+  ]
+}

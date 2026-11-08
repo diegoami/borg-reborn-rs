@@ -27,7 +27,7 @@ results, measured on the same seeds by
 ```sh
 git status --short
 git log --oneline -5
-bash scripts/setup.sh            # tools check, pinned clones into vendor/; safe to rerun
+bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
 cargo test --workspace
 ```
 
@@ -69,9 +69,9 @@ both in the review PR.
 | `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
 | `borg-reborn-rs/` | The Rust crate (`staticlib` + `rlib`), linked into the engine from M1 |
-| `scripts/setup.sh` | Tools check and pinned clones into `vendor/` (ignored by git) |
+| `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `angband/`, `harness/`, `tools/`, launchers | From M1, with borg-rs's names and behaviour |
-| `docs/deaths/` | From M3: death dossiers, borg-rs format |
+| `docs/deaths/` | From M1 (T1.5): our death dossiers, borg-rs format |
 
 ## Local machine notes
 

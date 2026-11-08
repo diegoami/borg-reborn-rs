@@ -1,0 +1,22 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T055104.695636Z",
+  "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T055104.695636Z/sessions/20261108T055108.614895Z",
+  "recording_manifest_sha256": "21218a9ef18fbfac30f3ea0300f24dd1cf73044229d627a7f42cd846b3aa011e",
+  "origin_sha256": "5f6f1c5f6b795fe46e5822558ae0cf67cd1bf19bbfb745b8bd3afb4eedace940",
+  "final_save_sha256": "a3395c9f6e4810a614b0db62a1b5c645d60fb81e19edc6bb1df6f416f7501792",
+  "source_commit": "1cd426af4848f36d8f027bfae5114c7efcd572f6",
+  "start_turn": 6255,
+  "end_turn": 7303,
+  "end_level": 2,
+  "end_hp": 12,
+  "outcome": "saved",
+  "qualified_output": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/combat/afbdbb194056b011c3ea95e45effda8fe88675ec9199d81208f8bd48d2b0fe8b/run-20261108T061908.703689Z",
+  "verification_sha256": "a987a17b67742af1e8c7023d0989148b090f95a3c7655ac87cd77cbaa3ffa790",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T055104.695636Z",
+    "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T052437.926520Z/game-002-seed-2060687716",
+    "original_manifest_sha256": "387f41cfce48720780748b68c6052d3df56976c2937457a7529e8e9352148546",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}

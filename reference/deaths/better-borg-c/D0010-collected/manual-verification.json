@@ -1,0 +1,18 @@
+{
+  "complete": true,
+  "engine_mode": "separate historical read-only combat observer and wide-input compatibility",
+  "engine_sha256": "1c2108559f168ca4529b26a08cbdc12e162955419de7f8df912358d9b3b499b4",
+  "error": null,
+  "exit_code": 0,
+  "extensions": [
+    "combat-log"
+  ],
+  "first_difference": null,
+  "interrupted": null,
+  "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T055104.695636Z/sessions/20261108T055108.614895Z",
+  "original_engine_sha256": "ad135b0724749944d47c0ae4f83d7698851ee69e9d17e516b56f4d6d4ef7090d",
+  "recording_sha256": "21218a9ef18fbfac30f3ea0300f24dd1cf73044229d627a7f42cd846b3aa011e",
+  "schema": "borg-replay-verification@1",
+  "scope": "All recorded input, Borg actions, clock/file inputs, native-save fingerprints, RNG/player state and logical terminal frames; no checkpoint restore or new independent life",
+  "verified": true
+}
