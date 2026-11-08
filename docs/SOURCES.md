@@ -130,7 +130,7 @@ make and this one can.
 
 | Piece | Where in borg-rs | Use here |
 | --- | --- | --- |
-| Engine tree with harness hooks | `angband/` (subtree of upstream `e473720`, hooks under `#ifdef BORG_HARNESS`, `BORG_IMPL` in CMake) | Imported in M1 with history, unchanged; a new `BORG_IMPL=reborn` |
+| Engine tree with harness hooks | `angband/` (subtree of upstream `e473720`, hooks under `#ifdef BORG_HARNESS`, `BORG_IMPL` in CMake) | Imported in M1 with history, unchanged. `BORG_IMPL=rust` builds the reborn crate, as it builds borg-rs's. At the pin the tree's C Borg carries borg-rs's adopted fixes (22 files differ from upstream), so the controls are separate arms (`c-pristine`, `c-bbc-m7`, PLAN T1.3) |
 | Headless frontend `borgh` | `angband/src/main-borgh.c` | Seeds, scripted birth, fixed date, 80×24, `keys.log`, `summary.json`: the zoo's interface |
 | Harness scripts | `harness/build.sh`, `run.sh`, `suite.sh`, `diff`, `suites/` | Same names and semantics; suites for the reborn Borg |
 | Engine boundary | `borg-rs/src/engine.rs` (~3,300 lines, the only `unsafe`) | Reused as the substrate's foundation |
@@ -167,7 +167,7 @@ original repository stays canonical.
 | Path | From | Commit |
 | --- | --- | --- |
 | `reference/c-borg/` | neo-angband-tracker `docs/c-borg/` (spec, plan, index) | `eefc550` |
-| `reference/deaths/better-borg-c/` | better-borg-c `docs/deaths/` (README, FEEDBACK, index, and per case `report.md`, `assessment.json`, `record.json`; raw logs and snapshots left out) | `63fbc1f` |
+| `reference/deaths/better-borg-c/` | better-borg-c `docs/deaths/`: every top-level file, and every `.md`/`.json` file at the root of each case (reports, assessments, overall assessments, owner feedback, verification records); raw logs, snapshots and saves left out | `63fbc1f` |
 | `reference/deaths/borg-rs/` | borg-rs `docs/deaths/`, same selection | `6b58a46` |
 | `reference/zoo/` | borg-zoo `docs/DESIGN.md` and `catalogue/` | `ffe5a05` |
 

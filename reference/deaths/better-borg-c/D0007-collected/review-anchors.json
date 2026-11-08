@@ -1,0 +1,114 @@
+{
+  "schema": "death-review-anchors@1",
+  "qualification": "Original losslessly reconstructed frames; unchanged-engine complete rerun separately verified. Last frame of requested turn; command/tick phase is explicit.",
+  "identity": {
+    "binary": "b65812f078032ea9c23eef156466af0d453a7752afd273a1215ee07fa291f4ed",
+    "cause": "a soldier",
+    "seed": 2624955988,
+    "source": "22f817c96843cc45da41dcefb0856ca507d8c66a",
+    "start_save": "f7f51c4d9967fbf8c4e7ca587cbb2318ab44ee54914c312cdc61702e296398e0",
+    "turn": 179053
+  },
+  "original_manifest_sha256": "56d3621354d2e8c079e03c5d7c267e7877e8f04e1665e4c63faf7040b337eb13",
+  "anchors": [
+    {
+      "turn": 178286,
+      "phase": "command",
+      "frame_index": 193452,
+      "json": "snapshots/review-178286.json",
+      "json_sha256": "06221e59157ba284dc981fd364b2d8ed59f985a2efe2775c971cddcf85628bfd",
+      "text": "snapshots/review-178286.txt",
+      "text_sha256": "1ebc7bc9dcbf7edc78428eb97e27e4b48a36072bd2b084b6a70316cfc3f2e5fe"
+    },
+    {
+      "turn": 178325,
+      "phase": "tick",
+      "frame_index": 193497,
+      "json": "snapshots/review-178325.json",
+      "json_sha256": "9d0b7fda8caa3a60da7f5c0a02eff62aadd78a60d3202a69a12e5c2de932d7b5",
+      "text": "snapshots/review-178325.txt",
+      "text_sha256": "cd071b479c11ab65bd5899023dba30e0f839b3079c7bb712489a809bc53eaf2e"
+    },
+    {
+      "turn": 178379,
+      "phase": "command",
+      "frame_index": 193569,
+      "json": "snapshots/review-178379.json",
+      "json_sha256": "b498f2f48b54160747e86694f799349e430bf8001f7ef1999bc3c9961e58ab04",
+      "text": "snapshots/review-178379.txt",
+      "text_sha256": "5c657b04f5d3329fe3831f8755f60b59d8257037c99d054d07eb64e95c4c9d89"
+    },
+    {
+      "turn": 178390,
+      "phase": "tick",
+      "frame_index": 193582,
+      "json": "snapshots/review-178390.json",
+      "json_sha256": "535dae31f20bf165314f282aca0dc59a64521d4fef8ccce82936c09924411eeb",
+      "text": "snapshots/review-178390.txt",
+      "text_sha256": "c149660acbab6b5e09f55b329ce0c00c54574558fc44c7457fe8f08335d6ae73"
+    },
+    {
+      "turn": 178449,
+      "phase": "command",
+      "frame_index": 193659,
+      "json": "snapshots/review-178449.json",
+      "json_sha256": "e6cd7d31ba1138270bbdf0b4fe93706856968e3327ae86d83c984962e1a0bb4f",
+      "text": "snapshots/review-178449.txt",
+      "text_sha256": "8617cacb08f3060784be97d2c3004b721b35d243269724774241fc1f96314b78"
+    },
+    {
+      "turn": 178891,
+      "phase": "command",
+      "frame_index": 194211,
+      "json": "snapshots/review-178891.json",
+      "json_sha256": "82283789308deea42b9dacb205051997c9cfba7489129eb65b4915a429639380",
+      "text": "snapshots/review-178891.txt",
+      "text_sha256": "73dbf63e239c17c82558f68c7fe606987b254f6e96d002148deee58d007af4ef"
+    },
+    {
+      "turn": 178968,
+      "phase": "tick",
+      "frame_index": 194306,
+      "json": "snapshots/review-178968.json",
+      "json_sha256": "781cb6e7cc30e808cdd35a8bc31afa85dfd7e8501cc6a6c8df3ea94a1763ddc0",
+      "text": "snapshots/review-178968.txt",
+      "text_sha256": "13bb4dcf6881a95e6970e4df37e981868f16d378a0dac88a3050f6e686c503c5"
+    },
+    {
+      "turn": 178999,
+      "phase": "tick",
+      "frame_index": 194345,
+      "json": "snapshots/review-178999.json",
+      "json_sha256": "f55e186daaeca2cbfee396da0f1cca37e6a4ec4cfb0b789f0346576ff733916e",
+      "text": "snapshots/review-178999.txt",
+      "text_sha256": "e9efb1a9e657d8383c52237cec5ca96b8eaa36dbce203859aae6138f4198f49b"
+    },
+    {
+      "turn": 179002,
+      "phase": "command",
+      "frame_index": 194352,
+      "json": "snapshots/review-179002.json",
+      "json_sha256": "38702fd47c181967c0401f3e47f030376fc59b1dcffc587da201aecd5840f859",
+      "text": "snapshots/review-179002.txt",
+      "text_sha256": "ccd256ce34867a0028264319e560207118e73036411324492cf8f7a8cc0f3355"
+    },
+    {
+      "turn": 179022,
+      "phase": "command",
+      "frame_index": 194380,
+      "json": "snapshots/review-179022.json",
+      "json_sha256": "63bbe8fb852fdc2b65c6b048a34a71afb495fa0b7da591d2169c60d3c1956571",
+      "text": "snapshots/review-179022.txt",
+      "text_sha256": "3689af74b5f80b1ae6bcb62c8180bf13ff6b7f5263beb1d2678f57c9f7009d90"
+    },
+    {
+      "turn": 179052,
+      "phase": "command",
+      "frame_index": 194422,
+      "json": "snapshots/review-179052.json",
+      "json_sha256": "4128e3fb656b37eb4c7e8f8ed8fe30cf8693ecec8126a48019bfe0f95eded6df",
+      "text": "snapshots/review-179052.txt",
+      "text_sha256": "9876586fda222710d98abb94afb319492526e22d2c8e90e6f59a1de715f24b51"
+    }
+  ]
+}

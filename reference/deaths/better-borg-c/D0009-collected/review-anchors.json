@@ -1,0 +1,185 @@
+{
+  "selection": "Last original frame at each requested turn; same-turn Borg notes do not supply intra-turn ordering",
+  "anchors": [
+    {
+      "index": 3915,
+      "turn": 3279,
+      "phase": "command",
+      "hp": 15,
+      "sp": 1,
+      "x": 54,
+      "y": 10,
+      "depth": 0
+    },
+    {
+      "index": 4433,
+      "turn": 3699,
+      "phase": "command",
+      "hp": 15,
+      "sp": 2,
+      "x": 16,
+      "y": 11,
+      "depth": 0
+    },
+    {
+      "index": 237324,
+      "turn": 191708,
+      "phase": "command",
+      "hp": 73,
+      "sp": 11,
+      "x": 80,
+      "y": 45,
+      "depth": 6
+    },
+    {
+      "index": 237334,
+      "turn": 191718,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 11,
+      "x": 80,
+      "y": 45,
+      "depth": 6
+    },
+    {
+      "index": 242052,
+      "turn": 195000,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 2,
+      "x": 125,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 248110,
+      "turn": 200004,
+      "phase": "command",
+      "hp": 73,
+      "sp": 13,
+      "x": 126,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 248127,
+      "turn": 200017,
+      "phase": "command",
+      "hp": 73,
+      "sp": 13,
+      "x": 125,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 254296,
+      "turn": 205000,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 13,
+      "x": 126,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 260496,
+      "turn": 210000,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 13,
+      "x": 126,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 266460,
+      "turn": 214804,
+      "phase": "command",
+      "hp": 73,
+      "sp": 13,
+      "x": 126,
+      "y": 20,
+      "depth": 6
+    },
+    {
+      "index": 266530,
+      "turn": 214854,
+      "phase": "command",
+      "hp": 73,
+      "sp": 13,
+      "x": 26,
+      "y": 8,
+      "depth": 5
+    },
+    {
+      "index": 269719,
+      "turn": 216801,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 13,
+      "x": 50,
+      "y": 50,
+      "depth": 5
+    },
+    {
+      "index": 271959,
+      "turn": 218301,
+      "phase": "tick",
+      "hp": 73,
+      "sp": 13,
+      "x": 83,
+      "y": 6,
+      "depth": 5
+    },
+    {
+      "index": 272413,
+      "turn": 218567,
+      "phase": "command",
+      "hp": 25,
+      "sp": 13,
+      "x": 123,
+      "y": 12,
+      "depth": 5
+    },
+    {
+      "index": 272445,
+      "turn": 218587,
+      "phase": "command",
+      "hp": 17,
+      "sp": 13,
+      "x": 117,
+      "y": 52,
+      "depth": 5
+    },
+    {
+      "index": 272477,
+      "turn": 218607,
+      "phase": "command",
+      "hp": 7,
+      "sp": 13,
+      "x": 148,
+      "y": 5,
+      "depth": 5
+    },
+    {
+      "index": 272489,
+      "turn": 218617,
+      "phase": "command",
+      "hp": 1,
+      "sp": 13,
+      "x": 148,
+      "y": 6,
+      "depth": 5
+    },
+    {
+      "index": 272493,
+      "turn": 218620,
+      "phase": "death",
+      "hp": -5,
+      "sp": 13,
+      "x": 148,
+      "y": 5,
+      "depth": 5
+    }
+  ]
+}

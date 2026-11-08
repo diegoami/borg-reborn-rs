@@ -1,0 +1,29 @@
+{
+  "all_original_raw_frames_exact": true,
+  "manifest_sha256": "bd606c0c3b7076b11d68df155d6d12c0c4f6c0c6df083a513c47eef364face02",
+  "model": "rerun original Rust Borg from original origin; exact keys/messages/player-state/terminal frames/final save and scheduled world saves; not whole-Borg private-state shadow",
+  "native_archive_body_verified": true,
+  "native_death_log_wall_clock_differences": [
+    {
+      "line": 1,
+      "original": "2026/11/07 22:46",
+      "rerun": "2026/11/07 23:12"
+    }
+  ],
+  "observation_extension": {
+    "engine_sha256": "1d805b784c92db97085bb72cf02f34f31a79574d40882a8365493f3880267be8",
+    "fields": [
+      "caster",
+      "inventory",
+      "max_hp",
+      "max_sp",
+      "spells"
+    ],
+    "original_engine_sha256": "84cece329fd2d9abeca1547da9ea9e5289c2d6edb1ce1f00ebc0db0a5b83b44d",
+    "scope": "historical-source observation-only rebuild; every original channel/value and native save matches"
+  },
+  "original_death_not_new_sample": true,
+  "private_readonly_gate_trace": "stderr only; five declared Rust files; no new decision evaluations; observer.patch",
+  "verified": true,
+  "verifier_sha256": "95ad5e1dfb7bad33664eb25daf43dd960ddbfe3939e8945ad7695a790c7bdd36"
+}

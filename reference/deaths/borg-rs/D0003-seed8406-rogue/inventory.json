@@ -1,0 +1,89 @@
+{
+  "checkpoint": {
+    "capture_method": "fork_private_engine",
+    "class_idx": 6,
+    "clevel": 1,
+    "depth": 1,
+    "due_turn": 5000,
+    "file": "checkpoint-000005-t0000005002.save",
+    "game_turn": 5002,
+    "keys": 765,
+    "max_depth": 1,
+    "race_idx": 3,
+    "save_sha256": "06e80ceaac56c4c31c3abfef06d08b052cf7266719f940e3a4f43f24b69fab5f",
+    "seed": 8406,
+    "size_bytes": 56372
+  },
+  "gear_actual_diagnostic_not_borg_input": [
+    {
+      "actual_kind": "[First Spells]",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 30
+    },
+    {
+      "actual_kind": "Soft Leather Armour~",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 16
+    },
+    {
+      "actual_kind": "& Dagger~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 9
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Ration~ of Food",
+      "aware": true,
+      "qty": 7,
+      "sval": 5,
+      "tval": 28
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 10,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Leather Shield~",
+      "aware": true,
+      "qty": 1,
+      "sval": 3,
+      "tval": 14
+    },
+    {
+      "actual_kind": "& Metal Cap~",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 12
+    },
+    {
+      "actual_kind": "& Set~ of Gauntlets",
+      "aware": true,
+      "qty": 1,
+      "sval": 2,
+      "tval": 11
+    },
+    {
+      "actual_kind": "Deep Descent",
+      "aware": false,
+      "qty": 1,
+      "sval": 27,
+      "tval": 25
+    }
+  ]
+}

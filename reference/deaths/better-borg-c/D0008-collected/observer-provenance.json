@@ -1,0 +1,15 @@
+{
+  "qualification": "All original frames/inputs/actions/clocks/file inputs/trace/native saves match; selected reads only, no new danger evaluation or RNG draws",
+  "compared_source_files": 1569,
+  "modified_source_files": [
+    "src/borg/borg-caution.c",
+    "src/borg/borg-flow.c",
+    "src/borg/borg-think-dungeon.c"
+  ],
+  "patch_sha256": "31e7ac5bed2e999ff1c11b10b6bc7e6058ad79b909698c97b80ce407860c6fd2",
+  "engine_sha256": "00f76a6a3ac35ebc5ed64ef04ab4ff4b85745306658c4ee6671bb3b27d8f533f",
+  "source_commit": "5c23742ced30ad76ab9778cfa8bf23f04fc0eb1f",
+  "original_manifest_sha256": "cc2503d16acf44f12459a5b3e3cdcb9f4608c19ca5a6843715fcd06caca39b81",
+  "raw_observed_run": "/home/diego/projects/angband/better-borg-c/artifacts/d0008-feedback/observed-original",
+  "builder": "/home/diego/projects/angband/better-borg-c/artifacts/d0008-feedback/prepare-observer.py"
+}

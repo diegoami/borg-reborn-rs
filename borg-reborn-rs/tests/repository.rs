@@ -63,3 +63,100 @@ fn entry_documents_exist() {
 fn claude_md_only_includes_agents_md() {
     assert_eq!(read("CLAUDE.md").trim(), "@AGENTS.md");
 }
+
+/// Links between the copied files of a death registry must resolve (review
+/// finding on PR #1: copied assessments linked to absent
+/// `overall-assessment.md` files). Checked: Markdown link targets, and JSON
+/// string values starting with `./` or `../`, that end in `.md` or `.json`
+/// and land at the registry root or a case root, which is exactly what the
+/// copy includes. Links leaving the registry, or into the case
+/// subdirectories that are not copied (snapshots, logs), are listed in
+/// `reference/README.md` and not checked here.
+#[test]
+fn copied_death_registries_have_no_dangling_internal_links() {
+    let mut checked = 0;
+    let mut dangling = Vec::new();
+    for registry in ["reference/deaths/better-borg-c", "reference/deaths/borg-rs"] {
+        let base = root().join(registry).canonicalize().unwrap();
+        let mut stack = vec![base.clone()];
+        while let Some(dir) = stack.pop() {
+            for entry in std::fs::read_dir(&dir).unwrap() {
+                let path = entry.unwrap().path();
+                if path.is_dir() {
+                    stack.push(path);
+                    continue;
+                }
+                let text = std::fs::read_to_string(&path).unwrap_or_default();
+                let links = if path.extension().is_some_and(|e| e == "md") {
+                    markdown_targets(&text)
+                } else {
+                    json_relative_strings(&text)
+                };
+                for link in links {
+                    let link = link.split('#').next().unwrap_or_default().to_string();
+                    if link.contains("://") || !(link.ends_with(".md") || link.ends_with(".json")) {
+                        continue;
+                    }
+                    let target = normalize(&dir.join(&link));
+                    let Ok(rel) = target.strip_prefix(&base) else {
+                        continue;
+                    };
+                    if rel.components().count() > 2 {
+                        continue;
+                    }
+                    checked += 1;
+                    if !target.exists() {
+                        dangling.push(format!("{} -> {link}", path.display()));
+                    }
+                }
+            }
+        }
+    }
+    assert!(
+        checked > 50,
+        "only {checked} links checked: the scan is broken"
+    );
+    assert!(
+        dangling.is_empty(),
+        "dangling links:\n{}",
+        dangling.join("\n")
+    );
+}
+
+/// Targets of Markdown links: `](target)`.
+fn markdown_targets(text: &str) -> Vec<String> {
+    text.match_indices("](")
+        .filter_map(|(i, _)| {
+            let rest = &text[i + 2..];
+            let end = rest.find(')')?;
+            let target = &rest[..end];
+            (!target.contains(char::is_whitespace)).then(|| target.to_string())
+        })
+        .collect()
+}
+
+/// JSON string values that start with `./` or `../`.
+fn json_relative_strings(text: &str) -> Vec<String> {
+    text.split('"')
+        .skip(1)
+        .step_by(2)
+        .filter(|s| {
+            (s.starts_with("./") || s.starts_with("../")) && !s.contains(char::is_whitespace)
+        })
+        .map(str::to_string)
+        .collect()
+}
+
+fn normalize(path: &Path) -> PathBuf {
+    let mut out = PathBuf::new();
+    for part in path.components() {
+        match part {
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            std::path::Component::CurDir => {}
+            other => out.push(other),
+        }
+    }
+    out
+}

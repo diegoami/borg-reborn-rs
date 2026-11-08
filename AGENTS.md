@@ -18,16 +18,18 @@ The Angband Borg reborn in Rust: a ground-up redesign of how the Borg
 **plays**, with the conventions, structure, interfaces, tooling and external
 behaviour of [borg-rs](https://github.com/diegoami/borg-rs). borg-rs is a
 faithful port of the C Borg. This repository is not: parity with the C
-Borg is not a goal, and the C Borg and borg-rs are **baselines** for our
-results, measured on the same seeds by
-[borg-zoo](https://diegoami.github.io/borg-zoo/).
+Borg is not a goal. Our results are compared with **control C Borgs**
+(the original and the latest better-borg-c milestone) built here and run
+under the same run contract (docs/GOALS.md D8), on the same seeds, through
+[borg-zoo](https://diegoami.github.io/borg-zoo/). borg-rs is the source of
+our engine tree and tooling and the oracle for perception, not a control.
 
 ## Starting
 
 ```sh
 git status --short
 git log --oneline -5
-bash scripts/setup.sh            # tools check, pinned clones into vendor/; safe to rerun
+bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
 cargo test --workspace
 ```
 
@@ -69,9 +71,9 @@ both in the review PR.
 | `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
 | `borg-reborn-rs/` | The Rust crate (`staticlib` + `rlib`), linked into the engine from M1 |
-| `scripts/setup.sh` | Tools check and pinned clones into `vendor/` (ignored by git) |
+| `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `angband/`, `harness/`, `tools/`, launchers | From M1, with borg-rs's names and behaviour |
-| `docs/deaths/` | From M3: death dossiers, borg-rs format |
+| `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
 
 ## Local machine notes
 

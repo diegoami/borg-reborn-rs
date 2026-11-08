@@ -1,0 +1,19 @@
+{
+  "seed": 8406,
+  "race": "Hobbit",
+  "race_idx": 3,
+  "class": "Rogue",
+  "class_idx": 6,
+  "menu_letters": true,
+  "stop_reason": "death",
+  "game_turns": 5600,
+  "player_turns": 587,
+  "resting_turns": 0,
+  "clevel": 2,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a giant yellow centipede",
+  "keys": 857,
+  "wall_seconds": 0.994
+}

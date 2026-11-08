@@ -1,0 +1,14 @@
+{
+  "reference_case": "D0002",
+  "native_borg_notes_identical": true,
+  "noncheckpoint_states_identical": true,
+  "state_count": 23,
+  "reference_trace_sha256": "eac31d1c64dab9fac314417aff901068ae30a9d2e3d6bd0bc87d4b43b66349c5",
+  "actual_trace_sha256": "cfbbfc17d02a93353100c82fea6979d10d0843c6cc31a755d95562f61a96ba5b",
+  "recording_sha256": "7af50d59f92dd37ee47b160726293f86d393073c68687b709ccb7ac9fc0ba238",
+  "exact_replay_trace": true,
+  "native_save_anchors_identical": true,
+  "source_commit": "1b95154f65b2ac1ed5fc9a080df6cff971643b5d",
+  "mode": "visible",
+  "limit": "Diagnostic reference and its verified repeat, not another independent starting condition or survival sample."
+}

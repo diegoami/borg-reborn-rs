@@ -1,0 +1,114 @@
+[
+  {
+    "index": 7441,
+    "turn": 5867,
+    "phase": "command",
+    "hp": 15,
+    "x": 28,
+    "y": 54
+  },
+  {
+    "index": 7477,
+    "turn": 5887,
+    "phase": "command",
+    "hp": 15,
+    "x": 28,
+    "y": 54
+  },
+  {
+    "index": 7503,
+    "turn": 5907,
+    "phase": "command",
+    "hp": 15,
+    "x": 27,
+    "y": 54
+  },
+  {
+    "index": 7935,
+    "turn": 6255,
+    "phase": "command",
+    "hp": 15,
+    "x": 16,
+    "y": 50
+  },
+  {
+    "index": 7949,
+    "turn": 6265,
+    "phase": "command",
+    "hp": 15,
+    "x": 24,
+    "y": 48
+  },
+  {
+    "index": 7961,
+    "turn": 6275,
+    "phase": "command",
+    "hp": 15,
+    "x": 23,
+    "y": 48
+  },
+  {
+    "index": 7973,
+    "turn": 6285,
+    "phase": "command",
+    "hp": 15,
+    "x": 22,
+    "y": 48
+  },
+  {
+    "index": 7979,
+    "turn": 6291,
+    "phase": "tick",
+    "hp": 15,
+    "x": 21,
+    "y": 49
+  },
+  {
+    "index": 7980,
+    "turn": 6292,
+    "phase": "tick",
+    "hp": 7,
+    "x": 21,
+    "y": 49
+  },
+  {
+    "index": 7987,
+    "turn": 6295,
+    "phase": "command",
+    "hp": 7,
+    "x": 21,
+    "y": 49
+  },
+  {
+    "index": 7992,
+    "turn": 6300,
+    "phase": "tick",
+    "hp": 7,
+    "x": 21,
+    "y": 50
+  },
+  {
+    "index": 7993,
+    "turn": 6301,
+    "phase": "tick",
+    "hp": 1,
+    "x": 21,
+    "y": 50
+  },
+  {
+    "index": 8001,
+    "turn": 6305,
+    "phase": "command",
+    "hp": 1,
+    "x": 21,
+    "y": 50
+  },
+  {
+    "index": 8006,
+    "turn": 6309,
+    "phase": "death",
+    "hp": -1,
+    "x": 21,
+    "y": 50
+  }
+]

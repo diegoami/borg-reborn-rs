@@ -1,0 +1,11 @@
+{
+  "binary": "/home/diego/projects/borg-rs/build/death-workflow/5dcebddba3d910fe5517/build/game/angband",
+  "binary_sha256": "84cece329fd2d9abeca1547da9ea9e5289c2d6edb1ce1f00ebc0db0a5b83b44d",
+  "build_stamp": "aa4ad6cfeea2cf19870e224219dfe66688175c6e-death-workflow",
+  "git_dirty": "no",
+  "git_rev": "aa4ad6cfeea2cf19870e224219dfe66688175c6e",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "source_sha256": "91874dd5bf2cd8317dadb53193b99b10ee2c06a948e2dfb9f5b2d27ef075af42",
+  "source_snapshot_sha256": "f2c41edebbffa800491576f33f39f6b7370c1349bed5217ad91d54a180c01348"
+}
