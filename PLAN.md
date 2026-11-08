@@ -39,6 +39,13 @@ become issues in the next milestone.
 | **M6. The family** | Class profiles, the first class-specific strategy where M5's data shows the need, a tuning loop (screening and racing) | **G2**, confirmed on fresh seeds | not started |
 | **M7+** | Deeper suites, mid game, death-driven iterations | **G3**, then G4 | not started |
 
+## How every milestone starts
+
+With a source refresh (RULES 21): `scripts/refresh-sources.py --update` in
+its own PR, then reading what moved, new deaths first. New better-borg-c
+milestones become new control arms, and changed C Borg functions we cite
+are reviewed.
+
 ## How every milestone from M3 on is judged
 
 - **Fixtures from deaths.** Each death case in

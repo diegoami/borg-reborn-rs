@@ -31,6 +31,7 @@ git status --short
 git log --oneline -5
 gh issue list --label "in progress"   # who is working on what
 bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
+python3 scripts/refresh-sources.py   # what moved in every source since its pin (read only)
 cargo test --workspace
 ```
 
@@ -81,6 +82,8 @@ both in the review PR.
 | `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
 | `borg-reborn-rs/` | The Rust crate (`staticlib` + `rlib`), linked into the engine from M1 |
+| `scripts/refresh-sources.py` | Reports what moved since each pin: commits, new death cases, new tags (new control arms), changed C Borg functions we cite, updated issues. `--update` refreshes pins, `reference/` copies and the death index in their own PR (RULES 21) |
+| `reference/deaths/INDEX.md` | Generated index of every Borg death we know of: better-borg-c, borg-rs and ours |
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `angband/`, `harness/`, `tools/`, launchers | From M1, with borg-rs's names and behaviour |
 | `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |

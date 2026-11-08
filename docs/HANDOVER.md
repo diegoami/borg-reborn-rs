@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.0 source refresh routine (#3)
+
+- `scripts/refresh-sources.py` reports, per pin: commits since the pin, new
+  and changed death cases, new tags (new control arms), changed C Borg
+  functions we cite, and issues updated since the pin was read. `--update`
+  moves the pins, refreshes `reference/` (copy rules in `pins.json`) and
+  regenerates `reference/deaths/INDEX.md`. Tests on synthetic repositories
+  cover the report, update, dirty vendor and offline cases; CI runs them.
+- RULES 21–23: every session starts with the report, every milestone with an
+  `--update` PR; baselines are exact; lifted knowledge is watched.
+- **First real report (2026-11-09):** better-borg-c has three new deaths
+  (D0011–D0013), 25 commits and 75 updated issues; borg-rs moved 7 commits,
+  borg-zoo 3, borg-agent 9. The `--update` PR that brings them in is the
+  last step of #3.
+
 ## 2026-11-09: M0 reviewed, M1 started, backlog moved to issues
 
 - The owner merged the M0 review (#1); tag `m0` is on the merge
