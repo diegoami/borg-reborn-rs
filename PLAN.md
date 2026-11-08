@@ -55,7 +55,11 @@ are reviewed.
   the kobold, leave the mold). Seed cases: bbc D0002 and rs D0005
   (unused cure), bbc D0010 (shoot instead of flee), bbc D0008 and rs D0006
   (oscillation), bbc D0009 (food against a pickup loop), bbc D0006
-  (Deep Descent against readiness).
+  (Deep Descent against readiness), bbc D0011 (drink the known CLW; no
+  Deep Descent from depth 4 at CL10; wield the Maul), bbc D0012 (attack
+  the 2-HP mold), bbc D0013 (step back from the floating eye instead of
+  reading the only Phase Door; do not flee a level over one small kobold).
+  New deaths from the source refresh (RULES 21) add cases.
 - **Our own deaths** are recorded from the first game played in M1
   (T1.2's death export, RULES 12), whichever arm died, and each milestone
   review lists them with causes.
