@@ -164,12 +164,16 @@ Copied under [`reference/`](../reference/) so that every session can read
 them without network access. Each is a copy at a pinned commit; the
 original repository stays canonical.
 
-| Path | From | Commit |
+Commits are in `pins.json` and `reference/README.md`, which
+`scripts/refresh-sources.py --update` keeps current.
+
+| Path | From | Selection |
 | --- | --- | --- |
-| `reference/c-borg/` | neo-angband-tracker `docs/c-borg/` (spec, plan, index) | `eefc550` |
-| `reference/deaths/better-borg-c/` | better-borg-c `docs/deaths/`: every top-level file, and every `.md`/`.json` file at the root of each case (reports, assessments, overall assessments, owner feedback, verification records); raw logs, snapshots and saves left out | `63fbc1f` |
-| `reference/deaths/borg-rs/` | borg-rs `docs/deaths/`, same selection | `6b58a46` |
-| `reference/zoo/` | borg-zoo `docs/DESIGN.md` and `catalogue/` | `ffe5a05` |
+| `reference/c-borg/` | neo-angband-tracker `docs/c-borg/` | spec, plan, index |
+| `reference/deaths/better-borg-c/` | better-borg-c `docs/deaths/` | every top-level file, and every `.md`/`.json` file at the root of each case (reports, assessments, overall assessments, owner feedback, verification records); raw logs, snapshots and saves left out |
+| `reference/deaths/borg-rs/` | borg-rs `docs/deaths/` | same selection |
+| `reference/zoo/` | borg-zoo | `docs/DESIGN.md` and `catalogue/` |
+| `reference/deaths/INDEX.md` | generated | every death of every registry, ours included |
 
 The engine and the C Borg source come in with the `angband/` subtree in M1
 (T1.1, #4). Larger trees (full repositories) are cloned into `vendor/`

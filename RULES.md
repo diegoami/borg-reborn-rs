@@ -78,3 +78,22 @@ whatever the model.
 19. No secrets in the repository or in run records.
 20. Population experiments run through borg-zoo and are started by the
     owner (they hold the account's Actions capacity for hours).
+
+## Moving sources
+
+21. **Every source moves** (owner, 2026-11-08): angband, the C Borgs,
+    borg-rs, borg-agent, the specification, the zoo and the death reports.
+    Every session starts with `python3 scripts/refresh-sources.py` and reads
+    what it reports, new deaths first. Each milestone starts with a
+    `--update` PR that moves the pins and refreshes `reference/` and the
+    death index; a task may also do one when it needs a newer source. Pin
+    moves are their own PRs, never mixed with other work.
+22. **Baselines are exact.** A comparison names exact zoo specimens and
+    builds, never "latest". A new better-borg-c milestone tag is a new
+    control arm (GOALS D8); an existing arm is never redefined. Re-syncing
+    the engine tree from borg-rs is a dedicated PR and starts a new
+    measurement baseline; results stay with the build they ran on.
+23. **Lifted knowledge is watched.** Formulas, tables and key sequences
+    lifted from a C Borg cite `file:function:lines` in the form the
+    refresh report recognises, so a later fix to that function in
+    better-borg-c or borg-rs is reported and reviewed.

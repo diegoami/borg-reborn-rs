@@ -30,6 +30,11 @@ resolve here. Read them at the pinned commit, for example
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
 
+`deaths/INDEX.md` is generated from the copies and from our own
+`docs/deaths/` by `scripts/refresh-sources.py`. Refresh everything with
+`scripts/refresh-sources.py --update` (RULES 21); the copy rules are the
+`copies` section of `pins.json`.
+
 A repository test (`borg-reborn-rs/tests/repository.rs`) checks that every
 relative link between files inside a copied registry resolves.
 
