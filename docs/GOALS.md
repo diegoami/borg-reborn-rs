@@ -46,7 +46,7 @@ A, B and C together, each where it pays:
    our exact run contract (D8): the original C Borg (`c-pristine`) and the
    latest better-borg-c milestone (`c-bbc-m7` today). borg-rs is not a
    control: it is the source of our engine tree and tooling, and the
-   perception oracle (PLAN T2.5). Its zoo results, like the observer
+   perception oracle (T2.5, #16). Its zoo results, like the observer
    harness's, are context.
 
 Later, and only for narrow decisions: the decision trace (which strategy
@@ -81,7 +81,7 @@ Fixed now, before any comparison, following the Tunable Borg Plan's rule
 of the same name:
 
 - **Observed at the exact boundary.** Alive, depth and maximum depth are
-  taken at engine turn T itself, by our `borgh` (PLAN T1.4), not after the
+  taken at engine turn T itself, by our `borgh` (T1.4, #7), not after the
   first key at or past T as borg-rs's `borgh` does today.
 - **Success:** a verified victory before T, or alive at T with maximum
   depth ≥ D. The first engine turn at each depth is recorded too.
@@ -90,10 +90,10 @@ of the same name:
   non-successes, reported per arm and never relabelled as deaths.
 - **Arms:** the reborn Borg and the control C Borgs, all built from this
   repository on the same engine tree, run through the same `borgh` and the
-  same run contract (D8, PLAN T1.3). Results from the better-borg-c
+  same run contract (D8, T1.3, #6). Results from the better-borg-c
   observer harness are context, not controls: same-seed equivalence
   between the two harnesses is unverified.
-- **Calculated by** `tools/endpoint.py` (PLAN T1.7) from our outputs or
+- **Calculated by** `tools/endpoint.py` (T1.7, #10) from our outputs or
   from borg-zoo result cells. borg-zoo's own `goal_rate` excludes
   operational outcomes from its denominator and is reported per arm rather
   than per class, so it is **not** this endpoint.
@@ -124,7 +124,7 @@ These follow from the sources. Each cites the evidence behind it.
    as borg-rs's Rust Borg is. `borgh`, the launchers, replay and death
    dossiers work the same way, and the zoo can measure it with the borg-rs
    adapter. Our harness adds the exact-boundary observation and the depth
-   stream (PLAN T1.4) as harness-only hooks.
+   stream (T1.4, #7) as harness-only hooks.
 2. **Deterministic.** Same seed, build and profile, same key stream. The
    Borg thinks with its own RNG and never moves the game's. Wall time
    never affects play (spec §1.2, §16.1.4).
@@ -178,7 +178,7 @@ These follow from the sources. Each cites the evidence behind it.
 
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
   decisions. The C Borgs are controls for our results (D8); borg-rs is
-  an oracle only for perception (PLAN T2.5).
+  an oracle only for perception (T2.5, #16).
 - A model in the play loop, or machine learning at the core.
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
@@ -186,10 +186,12 @@ These follow from the sources. Each cites the evidence behind it.
 
 ## Owner decisions
 
-All are **proposed** and are confirmed or changed in the milestone 0
-review. A session does not reopen a confirmed one (RULES 3).
+**Accepted** (2026-11-09): the owner merged the milestone 0 review (#1)
+with D2, D7 and D8 as amended by the review fixes (#2), and no other
+change. A session does not reopen them (RULES 3); the owner may amend
+them.
 
-| # | Decision | Recommended |
+| # | Decision | Accepted |
 | --- | --- | --- |
 | D1 | What the reborn Borg is | **One substrate, a family of strategies, all tunable; the zoo decides** (above) |
 | D2 | Engine and game | **Angband 4.2.6 at `e473720`**, the `angband/` tree of borg-rs (harness hooks, its declared fork corrections and its adopted C Borg carries) imported with history. Birth options at the game's defaults. The tree's own C Borg is not a control (D8) |
@@ -198,7 +200,7 @@ review. A session does not reopen a confirmed one (RULES 3).
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by `tools/endpoint.py`); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Controls | **Same-frontend controls built here** (PLAN T1.3): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
+| D8 | Controls | **Same-frontend controls built here** (T1.3, #6): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent | Its reviewed claims are inputs to strategy and parameter design. No dependency on it in code or in the plan's critical path |

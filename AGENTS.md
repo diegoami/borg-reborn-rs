@@ -29,25 +29,35 @@ our engine tree and tooling and the oracle for perception, not a control.
 ```sh
 git status --short
 git log --oneline -5
+gh issue list --label "in progress"   # who is working on what
 bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
 cargo test --workspace
 ```
 
-From M1 on, also `harness/build.sh` (see PLAN.md T1.2) under the shared lock.
+From M1 on, also `harness/build.sh` (task T1.2, #5) under the shared lock.
 
 ## Choosing the work
 
 PLAN.md's milestone table says which milestone is in progress. **Work only
-inside it.** Take the first task of it whose status is `todo` and whose
-"Needs" are `done` (or in an open PR you can stack on, RULES 5). Set its
-row to `in progress` with your branch name in your first commit.
+inside it.** Tasks are GitHub issues labelled `task` in that GitHub
+milestone:
+
+```sh
+gh issue list --milestone "M1. The seam and the yardstick" --label task --state open
+```
+
+Take the lowest-numbered open task issue whose **Needs** issues are closed
+(or in an open PR you can stack on, RULES 5) and that has no `in progress`
+label. Add the `in progress` label and comment with your branch name before
+you start.
 
 At the end of a task:
 1. `cargo fmt --check`, `cargo clippy --workspace -- -D warnings` and
    `cargo test --workspace` pass, as well as the task's own checks;
-2. PLAN.md's row and docs/HANDOVER.md say what was done, what was found,
-   what is left, and anything the owner has to decide;
-3. the PR says what changed, how it was checked and what was not checked;
+2. docs/HANDOVER.md says what was done, what was found, what is left, and
+   anything the owner has to decide; anything left becomes a new issue;
+3. the PR says what changed, how it was checked and what was not checked,
+   and `Closes #N` for its issue;
 4. **you merge it yourself** once CI is green (RULES 1).
 
 When the milestone's last task is merged, **stop** and open the review PR
