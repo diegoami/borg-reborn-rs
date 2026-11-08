@@ -1,0 +1,332 @@
+{
+  "actions": [
+    {
+      "cases": [
+        "D0001"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "key": "defend-speed-eligibility",
+      "status": "investigate before changing policy",
+      "summary": "Observe actual existing speed-defense eligibility and p1/p2 in the pre-fight state"
+    },
+    {
+      "cases": [
+        "D0001"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "key": "home-escape-stock",
+      "status": "investigate before changing policy",
+      "summary": "Trace last Home/town decisions and escape-stock constraints"
+    },
+    {
+      "cases": [
+        "D0001"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "key": "pristine-attribution",
+      "status": "completed: identical death/trace; does not establish a defect",
+      "summary": "Compare pristine upstream versus carried build"
+    },
+    {
+      "cases": [
+        "D0001"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "key": "survival-stock-priority",
+      "status": "recorded owner priority; proposal, not implemented",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment"
+    },
+    {
+      "cases": [
+        "D0001"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "key": "deep-descent-escape-audit",
+      "status": "investigating recorded original-rule behavior; no defect established",
+      "summary": "Audit delayed Deep Descent escape from depth2/max7 and restock/preparedness before depth12"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005",
+        "D0006",
+        "D0007"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "key": "heal-eligibility",
+      "status": "investigate before changing policy",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee"
+    },
+    {
+      "cases": [
+        "D0002"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "key": "escape-stock-trajectory",
+      "status": "investigate before changing policy",
+      "summary": "Trace why Phase Door was exhausted and whether earlier escape was legally available"
+    },
+    {
+      "cases": [
+        "D0002"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "key": "pristine-attribution",
+      "status": "completed: pristine/five-carry identical trace; same death on six-carry; no defect established",
+      "summary": "Compare pristine upstream versus carried build"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "key": "exposure-before-crowd",
+      "status": "recorded owner observation; needs native causal investigation",
+      "summary": "Reconstruct earliest known crowd danger, entry and retreat/preparedness at level3"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "key": "phase-door-first-choice",
+      "status": "investigating; no rescue or implementation defect established",
+      "summary": "Evaluate first Phase Door20293 versus legal fight/walk alternatives and crowd retreat at next decision20303"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/154",
+      "key": "early-escape-cure-restock",
+      "status": "proposed enhancement; no implementation or survival benefit established",
+      "summary": "Evaluate early Phase Door/cure restock requirement linked to source370"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/158",
+      "key": "theft-danger-weight",
+      "status": "proposed analysis; runtime decomposition and survival/progress benefit unproved",
+      "summary": "Evaluate theft danger contribution and sensitivity of first escape choice"
+    },
+    {
+      "cases": [
+        "D0002",
+        "D0003",
+        "D0004",
+        "D0005",
+        "D0006",
+        "D0007"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "key": "attempted-room-retreat",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion"
+    },
+    {
+      "cases": [
+        "D0006"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "key": "identification-priority",
+      "status": "proposed enhancement; priority/knowledge value and costs need evidence",
+      "summary": "Evaluate identification-driven inventory and town trading, auditing existing sell-ID behavior"
+    },
+    {
+      "cases": [
+        "D0006"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/181",
+      "key": "ammunition-readiness",
+      "status": "proposed analysis; no incorrect equipment choice or benefit proved",
+      "summary": "Evaluate ammunition reserves/spending, melee alternatives and combat preparedness"
+    },
+    {
+      "cases": [
+        "D0006"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "key": "recall-deep-descent",
+      "status": "investigating; Recall at Home and two five-level drops observed; rescue untested",
+      "summary": "Evaluate early Recall retention and destination-aware delayed Deep Descent escape"
+    },
+    {
+      "cases": [
+        "D0006"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/178",
+      "key": "sidebar-redraw-clarity",
+      "status": "confirmed presentation defect; viewer correction and native-frame/PTY controls pass",
+      "summary": "Label native sidebar HP/SP redraw lag without modifying original game cells"
+    },
+    {
+      "cases": [
+        "D0007"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/193",
+      "key": "caster-escape-eligibility",
+      "status": "needs evidence; original-C defect not established",
+      "summary": "Observe actual Borg spell/teleport/phase safety gates versus native readiness at179002/179022"
+    },
+    {
+      "cases": [
+        "D0008"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/212",
+      "key": "emergency-flow-cache",
+      "status": "carried; product regression/controls verified; upstream acceptance and population benefit remain open",
+      "summary": "Narrow source404 correction verified on actual product with before/after and negative controls; track upstream acceptance and separate population evaluation"
+    },
+    {
+      "cases": [
+        "D0008"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "key": "stair-escape-intent",
+      "status": "investigating; no successful rescue established",
+      "summary": "Separate actual temporary desperate retreat from taking the known upstairs, plus melee/Phase admission; compare ordinary legal alternatives"
+    },
+    {
+      "cases": [
+        "D0008"
+      ],
+      "issue": "https://github.com/diegoami/neo-angband-tracker/issues/156",
+      "key": "excessive-danger-guard",
+      "status": "needs evidence; contributing candidate, not isolated fix proof",
+      "summary": "Audit ready_morgoth0 guard at lowHP separately from source152 flags and source404 cache reuse"
+    },
+    {
+      "cases": [
+        "D0009"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/235",
+      "key": "quiver-full-pickup",
+      "status": "investigating; recorded native failure verified, fix not carried",
+      "summary": "Minimal quiver-capacity native fixture/correction with actual-room/stack/gold/ammo controls, then separate consumer carry"
+    },
+    {
+      "cases": [
+        "D0009"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "key": "food-return-reserve",
+      "status": "needs evidence; no policy change",
+      "summary": "Earlier food budget/town-return and loot leash, accounting for REGEN and actual pack/quiver capacity"
+    },
+    {
+      "cases": [
+        "D0009"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "key": "identification",
+      "status": "proposed; shared investigation",
+      "summary": "Identify useful carried stock and compare identification/shop priority without hidden item knowledge"
+    },
+    {
+      "cases": [
+        "D0009"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "key": "recall-retention",
+      "status": "needs evidence; no rescue claimed",
+      "summary": "Recall storage/retention/reacquisition and available walking return before hunger becomes critical"
+    },
+    {
+      "cases": [
+        "D0009"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/235",
+      "key": "starvation-emergency",
+      "status": "needs evidence; no forced use implemented",
+      "summary": "Unknown-edible eligibility for caster starvation at localdanger0, retaining harmful outcomes and resource costs"
+    },
+    {
+      "cases": [
+        "D0009",
+        "D0010"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "key": "walking-return",
+      "status": "investigating; no guaranteed route asserted",
+      "summary": "Early town/upstairs commitment versus repeated normal desperate downstairs response after weakness"
+    },
+    {
+      "cases": [
+        "D0010"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/239",
+      "key": "retreat-archery",
+      "status": "investigating; no gameplay change",
+      "summary": "Inspect legal bow attacks, accepted staircase path and retreat-before-attack priority at6285/6295; account for later carries"
+    },
+    {
+      "cases": [
+        "D0010"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/240",
+      "key": "combat-log",
+      "status": "verified locally and hosted; delivery PR",
+      "summary": "Qualified native message/actual HP-loss/speed viewer channel"
+    },
+    {
+      "cases": [
+        "D0010"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/238",
+      "key": "wide-replay",
+      "status": "verified; delivery PR240",
+      "summary": "Replay valid maximized-window recordings through separately qualified reader; retain malformed-input rejection"
+    },
+    {
+      "cases": [
+        "D0010"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "key": "survival-stock",
+      "status": "proposed; shared investigation",
+      "summary": "Known cure/escape preparedness before the dive"
+    }
+  ],
+  "cases": 10,
+  "causes_by_distinct_start": {
+    "a gallant": 1,
+    "a grey mold": 1,
+    "a killer brown beetle": 1,
+    "a kobold": 1,
+    "a soldier": 1,
+    "a stegocentipede": 1,
+    "starvation": 1
+  },
+  "death_process_attempts": 18,
+  "distinct_starting_conditions": 7,
+  "limit": "Selected death cases, not a mortality-rate cohort. Repeats/reference variants/windows are not new independent starting conditions.",
+  "schema": "better-borg-c/death-index@1",
+  "versions": {
+    "127483bc4724c0f75ff7bbc4edddde9293e37c2c": 1,
+    "1b95154f65b2ac1ed5fc9a080df6cff971643b5d": 4,
+    "1cd426af4848f36d8f027bfae5114c7efcd572f6": 2,
+    "22f817c96843cc45da41dcefb0856ca507d8c66a": 1,
+    "2cebef1b0f39aa068cde45b422df681a0e80d188": 1,
+    "337e50eb6c732bf6c908ab0d7c22b12b3a82b7d3": 2,
+    "3638b690525cd8a381cb106b4c5ee40652babde2": 2,
+    "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc": 2,
+    "5c23742ced30ad76ab9778cfa8bf23f04fc0eb1f": 1,
+    "e473720ed88a0f0c7ca66815cef3000eb4a38bc3": 2
+  }
+}

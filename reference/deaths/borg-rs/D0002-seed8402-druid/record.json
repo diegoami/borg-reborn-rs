@@ -1,0 +1,93 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid",
+      "result_sha256": "f3c68cbc6cc9008dc31ee8d33c0978a2336a627329ca8565b7cfd4dccea6cecb",
+      "role": "original",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c1/live-druid",
+      "result_sha256": "e81b28e500cdd27f25242a8ec4739dc35590a8a4e204761dc1c4cae0536a8e1d",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c2/live-druid",
+      "result_sha256": "6ca53262ad879560605724bf58c401cb5a1bead99ca080a2b459ac113f32f1da",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    }
+  ],
+  "character": "Half-Elf Druid",
+  "encounter_family": "start-4e799102dc00b5a5b85db356ecdcc56ef1d7b957f76e76c8ab89191b2bf4f923",
+  "files_sha256": {
+    "build.json": "0ef0bd577cefba742f6a951aef98d4c829ac99d57510f92de93e01ba36e40e3c",
+    "config.txt": "bbe15fc2dda9cae433f3c650e10bab9c27fcf4406ecc2f524a626a1acb6c93b1",
+    "inventory.json": "40dd50c02bcd12bf2538b3319c52253a6875a3a945e09130df15b74a6929196f",
+    "summary.json": "8443f290c4bbdc7884e9c76a1bd4c6151b85fa4c54508c9afb4518b4bb569c1d"
+  },
+  "historical_evidence": {
+    "assessment": "/home/diego/projects/borg-rs/docs/deaths/seed8402-druid.md",
+    "observations_sha256": {
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/checkpoints.json": "f25eb1989da507a65a2030be56d69c5b35374a966c2887d5e59865c3cd151dd1",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/config.txt": "bbe15fc2dda9cae433f3c650e10bab9c27fcf4406ecc2f524a626a1acb6c93b1",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/keys.log.xz": "5a4ffb558c86979019956ef9221ab9d35f66260c7cede1eb73cfeb0105fa8f84",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/messages.log.xz": "78c67f6f4fc65f33afe53f2457c38528576b1edae13684feb27af6d17e3a6834",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/process.json": "37871c4e77729397aefcd5626d000ebf7f344a6ce9241d78c8708a8b30934238",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/state.log.xz": "7842cbfc81be6b1032c9f08a2db389decf3e0bf8014319ab9e2879b5ce158f41",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/stderr.log": "ab0c2b565f8a382dccadf984730b70d7ff778e0fd981286feaeb14f3fde0252b",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-druid/summary.json": "8443f290c4bbdc7884e9c76a1bd4c6151b85fa4c54508c9afb4518b4bb569c1d"
+    },
+    "receipt": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation"
+  },
+  "id": "D0002",
+  "identity": {
+    "binary": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+    "cause": "a cutpurse",
+    "config_sha256": "8901575c8657411039f94e8b774bc82dde7d5398f51452a3d4eb6d9d3f2725cb",
+    "encounter_family": "start-4e799102dc00b5a5b85db356ecdcc56ef1d7b957f76e76c8ab89191b2bf4f923",
+    "seed": 8402,
+    "source": "f772eb6dcb93dc8d53cfc0167496d6122133f42e",
+    "source_sha256": "a2a3a26a8dae33e625819303104457dea7d0fad16f067c01b3aac8fb8e08dee3",
+    "start_save": null,
+    "turn": 5590
+  },
+  "independence_note": "One original input; repeated oracle verification is not three independent deaths. Cohort denominator remains nine starts.",
+  "investigation": null,
+  "issue": null,
+  "living_checkpoints": [
+    {
+      "capture_method": "fork_private_engine",
+      "class_idx": 2,
+      "clevel": 1,
+      "depth": 1,
+      "due_turn": 5000,
+      "file": "checkpoint-000005-t0000005002.save",
+      "game_turn": 5002,
+      "keys": 760,
+      "max_depth": 1,
+      "race_idx": 1,
+      "save_sha256": "9a05277fbb400aa736c2926fe3d4a2ee5b65e20a86d9e1db5e4d789e7fd7a653",
+      "seed": 8402,
+      "size_bytes": 53388
+    }
+  ],
+  "raw_cause": "a cutpurse",
+  "recording": null,
+  "run_kind": "historical ordinary nine-class cohort; C/C/Rust three-log equality",
+  "schema": "borg-rs/death-record@1",
+  "terminal": {
+    "cause": "a cutpurse",
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "turn": 5590
+  }
+}

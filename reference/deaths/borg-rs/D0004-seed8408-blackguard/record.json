@@ -1,0 +1,93 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard",
+      "result_sha256": "a36f9e2b97e908530ae0e20ba4da566867cf62761efac27ea0887c490ec8868d",
+      "role": "original",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c1/live-blackguard",
+      "result_sha256": "037d56d4d5a253cc4b0679f415d68f0df10d9e449a9249258b24de932531769c",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c2/live-blackguard",
+      "result_sha256": "d291dc7f08b1ecc015c051cac993961968e50acb916aeb0634c91d63b03dfba0",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    }
+  ],
+  "character": "Gnome Blackguard",
+  "encounter_family": "start-eb6049d1b5144e265f601e492ae170d2a233db174f88d5d069ab03c63b9708b3",
+  "files_sha256": {
+    "build.json": "0ef0bd577cefba742f6a951aef98d4c829ac99d57510f92de93e01ba36e40e3c",
+    "config.txt": "82403235415fc3c4b355dfb8aa77c7a639db18a05a1fcc3867828ff39e05b9c0",
+    "inventory.json": "1bf29b60f36239420c1ec07689ed12c44b730937cc6a1ad0583033966916871f",
+    "summary.json": "67013d9e9b479b2c3ab3aaaecd4aa28207ebb36491b01ed2821daa9b545cadfb"
+  },
+  "historical_evidence": {
+    "assessment": "/home/diego/projects/borg-rs/docs/deaths/seed8408-blackguard.md",
+    "observations_sha256": {
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/checkpoints.json": "b39bbe76c63f87d70098b1b8a83207c4a39dd0fc332b59ab1d7228c1fb691acd",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/config.txt": "82403235415fc3c4b355dfb8aa77c7a639db18a05a1fcc3867828ff39e05b9c0",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/keys.log.xz": "6b167a51f71a221a63c91b0c7857aaed6dae2d8b3c599b2dd98e5a557a49e6d0",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/messages.log.xz": "7ab727044b1dbc76087516c8de93863a773a1266ca047f10024d1e0eb9f966de",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/process.json": "f471af39c8660afe1bf6cde8688013748120ced2522ee3b6d3d00a139f59e630",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/state.log.xz": "0c6225b0c886476b9a17f024066f9cab24d622206c6366a13ad308cb0bfa6b1e",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/stderr.log": "4534f679dc5fbb0de9c93ba3f8d2a5d4a59261d0cbda90e6ab287594f43603ee",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-blackguard/summary.json": "67013d9e9b479b2c3ab3aaaecd4aa28207ebb36491b01ed2821daa9b545cadfb"
+    },
+    "receipt": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation"
+  },
+  "id": "D0004",
+  "identity": {
+    "binary": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+    "cause": "a wild cat",
+    "config_sha256": "69e8de7cd624d3f6ebc313176c3ba3a8ac4130e9bc9ad86d0d1bf04f688cdfce",
+    "encounter_family": "start-eb6049d1b5144e265f601e492ae170d2a233db174f88d5d069ab03c63b9708b3",
+    "seed": 8408,
+    "source": "f772eb6dcb93dc8d53cfc0167496d6122133f42e",
+    "source_sha256": "a2a3a26a8dae33e625819303104457dea7d0fad16f067c01b3aac8fb8e08dee3",
+    "start_save": null,
+    "turn": 6231
+  },
+  "independence_note": "One original input; repeated oracle verification is not three independent deaths. Cohort denominator remains nine starts.",
+  "investigation": null,
+  "issue": null,
+  "living_checkpoints": [
+    {
+      "capture_method": "fork_private_engine",
+      "class_idx": 8,
+      "clevel": 1,
+      "depth": 1,
+      "due_turn": 6000,
+      "file": "checkpoint-000006-t0000006006.save",
+      "game_turn": 6006,
+      "keys": 858,
+      "max_depth": 1,
+      "race_idx": 4,
+      "save_sha256": "d819f7b5d83eccc5db320d20c44370916e0189c9dd442a6d2f2a94507847ea76",
+      "seed": 8408,
+      "size_bytes": 52740
+    }
+  ],
+  "raw_cause": "a wild cat",
+  "recording": null,
+  "run_kind": "historical ordinary nine-class cohort; C/C/Rust three-log equality",
+  "schema": "borg-rs/death-record@1",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "turn": 6231
+  }
+}

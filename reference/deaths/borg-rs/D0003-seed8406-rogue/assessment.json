@@ -1,0 +1,14 @@
+{
+  "actions": [
+    {
+      "issue": null,
+      "key": "legacy-rogue",
+      "status": "recorded; needs causal investigation",
+      "summary": "Investigate emergency unknown-scroll policy and earlier avoidance. The actual hidden kind is diagnostic information, not knowledge available to the Borg."
+    }
+  ],
+  "classification": "C/Rust parity observed; defect not established",
+  "confidence": "Actual original cohort and before-death native inventory; causal fix unproved",
+  "feedback": [],
+  "findings": []
+}

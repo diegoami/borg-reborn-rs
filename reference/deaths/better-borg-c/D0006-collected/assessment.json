@@ -1,0 +1,104 @@
+{
+  "classification": "policy/resource/escape investigation; native implementation defect not established; sidebar redraw mismatch confirmed",
+  "confidence": "High for original recorded trajectory/inventory and qualified native views; candidate rescue, route outcome and policy benefit untested.",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "dd1a4bfef6554ee5226ca7bce7de3f0bc241f5124a0d6b314fe6843cb7e35d51",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused177; native identity/source/attempts and original evidence unchanged.",
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Actual C40 source2cebef1b0f39, seed1344203209 Human Warrior, killer brown beetle death73100 atCL9/depth14/HP-6 of106; one existing independent encounter."
+    },
+    {
+      "status": "qualified historical observation replay",
+      "summary": "Separate C40 historical native observer inventory rerun matches every original field/input/action/RNG/native save; receipt review-anchors.json. This is not a new independent death or an unchanged-binary repeat claim."
+    },
+    {
+      "status": "observed",
+      "summary": "Known Deep Descent read71135 at89/89HP/danger205/avoidance89/depth4; delayed arrival71191 depth9. Second read71445 at39/100HP; delayed arrival71511 depth14/37HP. Acolyte fear message is not the cause of the five-level drop."
+    },
+    {
+      "status": "observed",
+      "summary": "Recall deposited at Home111; no carried Recall at critical events; terminal Home has one. Last town48600 CL4 with8pack stacks, no quiver,1gold. Source Recall reward beginsCLEVEL>7; actual home/preparation call-order attribution still needs proof."
+    },
+    {
+      "status": "observed",
+      "summary": "Identification via selling already used around48189; unknowns at48000 become identified by48600. New unidentified potions/ring accumulate later. Native purchases/sales identify; this run has no-selling so accepted sales give no gold."
+    },
+    {
+      "status": "observed",
+      "summary": "Sling of Accuracy equipped41477, in separate slot from Dagger.3shots at71135,2 throughout snaga fights, last shots72511/72521 at brown mold; quiver empty afterward. Source attack scores are not literal damage forecasts."
+    },
+    {
+      "status": "confirmed display ambiguity, not lost HP",
+      "summary": "Rest after71511 restores37\u219243(71600)\u219257(71800)\u219270(72000)\u2192100. Native sidebar remains37/100 until later redraw. Original game cells preserved; viewer178 labels the lag."
+    },
+    {
+      "status": "observed; route result untested",
+      "summary": "72885 original screen shows open door south(43,10), floor(43,11), no actual occupant on either. Visible pursuers north; hidden diagnostics not Borg inputs. Trace boosts bravery89\u2192178\u2192400, chooses dark-3 and moves north to(43,8),HP81 at72895. No proof all escapes blocked or south route survives."
+    },
+    {
+      "status": "observed; causal necessity unproved",
+      "summary": "73073 at17HP unknown Clear Potion(actual Infravision);73083 at10HP unknown Black Potion(actual Slowness). Eight known CLW remain at death. Knowledge/timing could matter; no claim different potion or earlier identification alone rescues it."
+    },
+    {
+      "status": "observed at exact captured boundary",
+      "summary": "72885 native action row is 72885 6825 1 56 0: numeric8/north; actual next position agrees. Only FOOD timed effect is present (no confusion). Captured Borg goal flags are leaving1/fleeing0; textual fleeing/bravery logs do not prove the flag remained set."
+    }
+  ],
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/177",
+      "summary": "Prioritise identification/shop knowledge purchases; question dagger/good sling without missiles; interpret floor events71191/71511, Recall/town escape, apparent HP mismatch and late blocked route72885. Owner prefers earlier avoidance/exploration/upstairs and suspects late survival unlikely.",
+      "status": "recorded; factual corrections and complete assessment published; policy hypotheses remain open",
+      "actions": [
+        "identification-priority",
+        "ammunition-readiness",
+        "recall-deep-descent",
+        "attempted-room-retreat",
+        "heal-eligibility",
+        "sidebar-redraw-clarity"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "identification-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Evaluate identification-driven inventory and town trading, auditing existing sell-ID behavior",
+      "status": "proposed enhancement; priority/knowledge value and costs need evidence"
+    },
+    {
+      "key": "ammunition-readiness",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/181",
+      "summary": "Evaluate ammunition reserves/spending, melee alternatives and combat preparedness",
+      "status": "proposed analysis; no incorrect equipment choice or benefit proved"
+    },
+    {
+      "key": "recall-deep-descent",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Evaluate early Recall retention and destination-aware delayed Deep Descent escape",
+      "status": "investigating; Recall at Home and two five-level drops observed; rescue untested"
+    },
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; D0006 south-door branch/Pursuit outcome untested"
+    },
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "sidebar-redraw-clarity",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/178",
+      "summary": "Label native sidebar HP/SP redraw lag without modifying original game cells",
+      "status": "confirmed presentation defect; viewer correction and native-frame/PTY controls pass"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue",
+      "result_sha256": "6d90d3c0cd7cfd77b7f71a29c8cbba0774e957fbcc186263696133570221ef98",
+      "role": "original",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c1/live-rogue",
+      "result_sha256": "0924c29360a005533014065f03a7ff18ebe6476b60cccac709ed1b03ac07884e",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c2/live-rogue",
+      "result_sha256": "d5b01865fdc6a80ec59bf7addd33b9427aeef41e83db36134472b64b0f29d467",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    }
+  ],
+  "character": "Hobbit Rogue",
+  "encounter_family": "start-170b8f642c8199ade5596968c51b6fb2f5ccb1c0eed70286e83dd3558a6a5479",
+  "files_sha256": {
+    "build.json": "0ef0bd577cefba742f6a951aef98d4c829ac99d57510f92de93e01ba36e40e3c",
+    "config.txt": "9a39435f87e2110740ede36d71a5e24f72f7b522e2591528bceafed64a8eb144",
+    "inventory.json": "d34d8cc595ff43d898b170de98644ca1a5948d010fca9dea8e19241581c2234a",
+    "summary.json": "b2456303c27b08969e1e8aeea3b6ccc5bb4ffc036e47841030dd6c00abc4dd09"
+  },
+  "historical_evidence": {
+    "assessment": "/home/diego/projects/borg-rs/docs/deaths/seed8406-rogue.md",
+    "observations_sha256": {
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/checkpoints.json": "8ebfca0d1f39affe5721692cf14fc485cccd13ca046a3bfa30eec46cf3aa099f",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/config.txt": "9a39435f87e2110740ede36d71a5e24f72f7b522e2591528bceafed64a8eb144",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/keys.log.xz": "43195adc839cded92d8f5d36eb2483a843c63b3c6aabf7edc921fe35bfcf3a7c",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/messages.log.xz": "74c351b75780de577dc806cb57757a6d2e697fda864942c7bae341ce8cde7e70",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/process.json": "a9e06817dd56530793a430ad84e3ed4fa608bee53bb97627df40fc6b6354fad4",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/state.log.xz": "4a207a9382882dcaf1486486e23d1386d29d1f169d2657453262063d32d60cb4",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/stderr.log": "1d75d2a567937039bab70187a706f436efc7630530453387020cc49eb2bcf2ba",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-rogue/summary.json": "b2456303c27b08969e1e8aeea3b6ccc5bb4ffc036e47841030dd6c00abc4dd09"
+    },
+    "receipt": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation"
+  },
+  "id": "D0003",
+  "identity": {
+    "binary": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+    "cause": "a giant yellow centipede",
+    "config_sha256": "f70b4596abb6a2814da1d1893a0d761137e0d96076b60c62e90d9f4cf07eb77d",
+    "encounter_family": "start-170b8f642c8199ade5596968c51b6fb2f5ccb1c0eed70286e83dd3558a6a5479",
+    "seed": 8406,
+    "source": "f772eb6dcb93dc8d53cfc0167496d6122133f42e",
+    "source_sha256": "a2a3a26a8dae33e625819303104457dea7d0fad16f067c01b3aac8fb8e08dee3",
+    "start_save": null,
+    "turn": 5600
+  },
+  "independence_note": "One original input; repeated oracle verification is not three independent deaths. Cohort denominator remains nine starts.",
+  "investigation": null,
+  "issue": null,
+  "living_checkpoints": [
+    {
+      "capture_method": "fork_private_engine",
+      "class_idx": 6,
+      "clevel": 1,
+      "depth": 1,
+      "due_turn": 5000,
+      "file": "checkpoint-000005-t0000005002.save",
+      "game_turn": 5002,
+      "keys": 765,
+      "max_depth": 1,
+      "race_idx": 3,
+      "save_sha256": "06e80ceaac56c4c31c3abfef06d08b052cf7266719f940e3a4f43f24b69fab5f",
+      "seed": 8406,
+      "size_bytes": 56372
+    }
+  ],
+  "raw_cause": "a giant yellow centipede",
+  "recording": null,
+  "run_kind": "historical ordinary nine-class cohort; C/C/Rust three-log equality",
+  "schema": "borg-rs/death-record@1",
+  "terminal": {
+    "cause": "a giant yellow centipede",
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "turn": 5600
+  }
+}
