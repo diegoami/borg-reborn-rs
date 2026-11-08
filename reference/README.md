@@ -10,9 +10,9 @@ PR that updates the pin and this table.
 | `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `eefc55000dd5d5f43d8f077f6543b4594807ce08` | The C Borg specification. Its relative links point into neo-angband-tracker |
 | `c-borg/TUNABLE-BORG-PLAN.md` | same | same | Revision 3 plus *What a remake leaves out* (2026-11-08) |
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
-| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `63fbc1fb7ddadb4ed9e8e404114343e43ad1383e` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
-| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `6b58a46444ab3f5d28cfd86c7ac820d54c762c47` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
-| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `ffe5a056ad1d8a31353ec536164ab9fb36bb662f` | Specimens, profiles and suites as of that commit |
+| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `8b26042e019cb97196c8afd3a5028c7a96cb07a1` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
+| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `e5cb263eed8eee93860b5cfcdc18af99e6d134f1` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `9cd742351f328fcde91ebdc70a620224e4ebfc63` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 

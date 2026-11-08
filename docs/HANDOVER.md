@@ -12,6 +12,7 @@
   cover the report, update, dirty vendor and offline cases; CI runs them.
 - RULES 21–23: every session starts with the report, every milestone with an
   `--update` PR; baselines are exact; lifted knowledge is watched.
+- **First `--update` (PR closing #3):** borg-rs `6b58a46`→`e5cb263` (impact v6; its C Borg now differs from upstream in 26 files, issue #4 updated), better-borg-c `63fbc1f`→`8b26042` (deaths D0011–D0013 copied), borg-zoo `ffe5a05`→`9cd7423`, borg-agent `697abde`→`8f1dd7f`. The new deaths are read into SOURCES/GOALS/PLAN in a separate PR (RULES 21).
 - **First real report (2026-11-09):** better-borg-c has three new deaths
   (D0011–D0013), 25 commits and 75 updated issues; borg-rs moved 7 commits,
   borg-zoo 3, borg-agent 9. The `--update` PR that brings them in is the

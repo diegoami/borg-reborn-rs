@@ -1,0 +1,29 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T224344.260556Z",
+  "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T224344.260556Z/sessions/20261108T224354.905493Z",
+  "recording_sha256": "74cd66e00427cfe8b385d143babd88f80451b4be0091f06d8dff9f726ae7aef4",
+  "origin_sha256": "dc81d2cbe0e1acecefd363da69389cbfaf89d89c50d8b293e41821642716d3ee",
+  "final_save_sha256": "40a5b9a83d0099f0079f1406fb8bf69f0570dda7487fd8a088df179b30642d48",
+  "source_commit": "867c777845fd7453f175da4692a8468c734f6380",
+  "start_turn": 27526,
+  "end_turn": 28253,
+  "end_level": 2,
+  "end_hp": 17,
+  "outcome": "saved",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "80e92308172b6af489468cb57cf5f795bd9003de59c47c33ddac8836424c6fc9",
+  "events": "27526 one blow destroys the grey mold at HP17; rest to 21/21 by 27751; two white worm masses killed west of the door, brief poison; saved 28253",
+  "other_sessions": [
+    {
+      "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T223651.378102Z",
+      "outcome": "saved at 27533 without combat"
+    }
+  ],
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T224344.260556Z",
+    "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T120815.744554Z/game-004-seed-1907608237",
+    "original_manifest_sha256": "4e0e8ed48c9b9ab97851137769925b3e0f07de8ca7af6c5c35c5e9a70f6965a7",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}

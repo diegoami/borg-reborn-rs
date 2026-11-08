@@ -1,0 +1,24 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T232258.182880Z",
+  "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T232258.182880Z/sessions/20261108T232300.251627Z",
+  "recording_sha256": "09bfcb8855e99c1b033a0b3d339659937f63bd044d5bdbcf91fd806ed6a85a7d",
+  "origin_sha256": "e7b0f6766683b0f24dbcfa40c738fabb3f3d61fe499f17acd2a7f556f8529194",
+  "final_save_sha256": "8ae4d4731a462b6e0416844ac243642a2e309de65cdddbc6329224c500aebb60",
+  "source_commit": "867c777845fd7453f175da4692a8468c734f6380",
+  "start_turn": 3651,
+  "end_turn": 4709,
+  "end_level": 1,
+  "end_hp": 13,
+  "end_depth": 0,
+  "outcome": "saved",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "8d2f7815c1e5c202b9f0a85286eefc24d9b7c422222dc335c275d354c51724e5",
+  "events": "small kobold flees after one hit; three exchanges with giant white ant (HP12->6); grey mushroom patch confuses twice (HP4->3); up stairs at (55,45) to town 3909 at 3HP; rest to 13/13; saved 4709",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261108T232258.182880Z",
+    "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T120815.744554Z/game-005-seed-1907608238",
+    "original_manifest_sha256": "c88a4bd5b892d0356c1ad0deee21c54a14cd0401126b1db7768c25a8f585dff5",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}
