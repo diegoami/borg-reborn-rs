@@ -132,7 +132,11 @@ These follow from the sources. Each cites the evidence behind it.
     candidate actions with their scores, choice, parameter-profile hash.
     Death dossiers read it; no death should need a source-level guess to
     explain.
-12. **Knowledge is carried over, code is not.** The C Borg's game knowledge
+12. **Changes are judged on populations, not on the case that motivated
+    them.** Fixes interact: a better-borg-c carry that rescued seed 29
+    killed seed 47 (better-borg-c#249, #255). A death fixture shows that a
+    rule fires. Only a paired population comparison shows that it helps.
+13. **Knowledge is carried over, code is not.** The C Borg's game knowledge
     (blow and spell damage, item values, prompt answers, store routines)
     is lifted with a `file:function:lines` citation at the pin. Its
     decision code is not translated.

@@ -107,6 +107,11 @@ The core of the redesign, computed once per think:
   resistances, and the turn order. The C Borg's danger formulas are the
   starting point for the per-monster terms. The output is in hit points
   and probabilities, so it can be compared with healing and escapes.
+  **Lethal risk and economic risk are separate outputs.** Theft, item
+  destruction and drains cost something, but they are not a reason to
+  spend the last Phase Door. In the C Borg, gold theft adds to the same
+  danger number that triggers escapes (better-borg-c#158; the gallant death
+  D0002).
 - **Calibration.** Predicted damage is checked against damage actually
   taken in recorded runs. A calibration report is a milestone deliverable,
   not an afterthought.
