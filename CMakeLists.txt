@@ -1067,6 +1067,12 @@ add_library(OurUnitTestLib OBJECT EXCLUDE_FROM_ALL
         src/tests/unit-test.c
 )
 set_target_properties(OurUnitTestLib PROPERTIES C_STANDARD 99)
+if(SUPPORT_BORG_HARNESS)
+    # Unit executables consume instrumented Borg objects without main-borgh.c.
+    target_sources(OurUnitTestLib PRIVATE src/tests/borgh-stubs.c)
+    target_compile_definitions(OurUnitTestLib PRIVATE -D BORG_HARNESS)
+endif()
+
 set(ANGBAND_UNIT_TEST_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/tests")
 target_include_directories(OurUnitTestLib PRIVATE
     ${ANGBAND_CORE_INCLUDE_DIRS}
