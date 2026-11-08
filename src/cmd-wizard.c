@@ -952,7 +952,7 @@ void do_cmd_wiz_cure_all(struct command *cmd)
 		}
 		/* FORK: forget the known curses too, so the known object does
 		 * not list curses the object no longer has (Remove Curse would
-		 * otherwise read the freed real list). */
+		 * otherwise read the freed real list). neo-angband-tracker#474. */
 		if (obj && obj->known && obj->known->curses) {
 			mem_free(obj->known->curses);
 			obj->known->curses = NULL;
