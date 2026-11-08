@@ -1,0 +1,70 @@
+{
+  "classification": "policy/call-order/escape investigation; reusable C defect not established",
+  "confidence": "High for original recorded trajectory, native inventory/spells and verified unchanged-engine rerun; Borg branch attribution and rescue outcomes untested.",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "findings": [
+    {
+      "status": "verified original recording",
+      "summary": "C42 source22f817c96843, Gnome Mage CL4/depth1, soldier death179053; seed2624955988. No new independent life."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "Room loot follows known stair departure178286; captured fleeing_to_town remains1. First Phase178379 is a spell. Return after phase follows known upstairs flow."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "Five Phase scrolls consumed178449/178529/178640/178740/178891; second Phase spell178811. Native soldier wake message178968."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "At179002 HP25/27 SP2/8 and poison5: Phase Door native-ready,2MP/8%; five known CLW retained through179052 at2HP. No carried Recall. Native ready does not prove Borg admission or safe landing."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "White jelly blocks north at179002; NE(101,7) is visible unoccupied floor, known stairs(102,3). Repeated melee observed; no successful alternative established."
+    }
+  ],
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6712916845",
+      "summary": "Question early room exposure/Phase panic, return route, failure to escape past jelly, healing and soldier wake/death.",
+      "status": "processed with qualified original timeline and full brainstorm; hypotheses remain open",
+      "actions": [
+        "attempted-room-retreat",
+        "caster-escape-eligibility",
+        "heal-eligibility"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6713938482",
+      "summary": "Prefer leaving the crowded room early rather than continuing to fight with whatever resources remain; too many enemies.",
+      "status": "recorded and linked to early-retreat comparison; owner review remains complete, alternative survival untested",
+      "actions": [
+        "attempted-room-retreat"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Prioritize evaluating early disengagement from the crowded room (178325), abandoning loot and committing to known upstairs; also test legal later bypass attempts and why stair-return is interrupted",
+      "status": "investigating; no guaranteed-safe path or survival improvement proved"
+    },
+    {
+      "key": "caster-escape-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/193",
+      "summary": "Observe actual Borg spell/teleport/phase safety gates versus native readiness at179002/179022",
+      "status": "needs evidence; original-C defect not established"
+    },
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe caution/healing eligibility and call order with recorded fleeing1 and five unused CLW",
+      "status": "investigating; guard hypothesis not actual runtime branch proof"
+    }
+  ]
+}

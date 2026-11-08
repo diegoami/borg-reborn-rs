@@ -1,0 +1,82 @@
+{
+  "checkpoint": {
+    "capture_method": "fork_private_engine",
+    "class_idx": 2,
+    "clevel": 1,
+    "depth": 1,
+    "due_turn": 5000,
+    "file": "checkpoint-000005-t0000005002.save",
+    "game_turn": 5002,
+    "keys": 760,
+    "max_depth": 1,
+    "race_idx": 1,
+    "save_sha256": "9a05277fbb400aa736c2926fe3d4a2ee5b65e20a86d9e1db5e4d789e7fd7a653",
+    "seed": 8402,
+    "size_bytes": 53388
+  },
+  "gear_actual_diagnostic_not_borg_input": [
+    {
+      "actual_kind": "[Lesser Charms]",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 32
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 6,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Whip~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 7
+    },
+    {
+      "actual_kind": "& Ration~ of Food",
+      "aware": true,
+      "qty": 7,
+      "sval": 5,
+      "tval": 28
+    },
+    {
+      "actual_kind": "& Wooden Torch~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 19
+    },
+    {
+      "actual_kind": "& Leather Shield~",
+      "aware": true,
+      "qty": 1,
+      "sval": 3,
+      "tval": 14
+    },
+    {
+      "actual_kind": "& Robe~",
+      "aware": true,
+      "qty": 1,
+      "sval": 1,
+      "tval": 16
+    },
+    {
+      "actual_kind": "Feather Falling",
+      "aware": true,
+      "qty": 1,
+      "sval": 27,
+      "tval": 21
+    },
+    {
+      "actual_kind": "Speed",
+      "aware": false,
+      "qty": 1,
+      "sval": 24,
+      "tval": 26
+    }
+  ]
+}

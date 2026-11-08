@@ -1,0 +1,14 @@
+{
+  "actions": [
+    {
+      "issue": null,
+      "key": "legacy-warrior",
+      "status": "recorded; needs causal investigation",
+      "summary": "Prioritize escape-stock/restocking and the decision to descend. A controlled rerun from original birth is needed before attributing survival to another policy; loading the prior engine save starts fresh Borg memory."
+    }
+  ],
+  "classification": "C/Rust parity observed; defect not established",
+  "confidence": "Actual original cohort and before-death native inventory; causal fix unproved",
+  "feedback": [],
+  "findings": []
+}

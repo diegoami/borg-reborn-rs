@@ -1,0 +1,67 @@
+{
+  "classification": "native emergency/normal flow cache and escape-intent investigation; original-C source404 reported",
+  "confidence": "High for original trajectory and qualified read-only C cache/control transition; isolated pristine fixture, narrow fix and rescue outcomes pending.",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6714388294",
+      "summary": "Priest appears stuck beside grey mold, heals repeatedly without fighting or escaping; suspected bug. Owner links Rust borg-rs issue5 as an identical-looking death.",
+      "status": "processed; actual stair movement/re-exposure and qualified shared cache transition established; owner review complete",
+      "actions": [
+        "emergency-flow-cache",
+        "stair-escape-intent",
+        "excessive-danger-guard"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "verified original and observational replay",
+      "summary": "C46 source5c23742ced30, seed1668846659, Human Priest CL1/depth1; grey-mold death10940. Original and stderr-only observational reruns match every original channel/frame/native save."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "Three CLW quaffs10817/10847/10877; five west retreats onto upstairs followed by east dark3 re-exposure. No melee or upstairs key in fatal tail; mold remains2HP."
+    },
+    {
+      "status": "verified original player-known views",
+      "summary": "Mace2d4, two known Phase scrolls unused,2MP and only Bless learned; no healing prayer or carried Recall. Pack not full."
+    },
+    {
+      "status": "verified selected private C trace",
+      "summary": "Desperate spread marks know0\u21921/icky0 without danger evaluation; following normal spreads reuse that entry and skip evaluation. Upstairs danger0,escape flags0,ready_morgoth0; adjacent attack phase not reached."
+    },
+    {
+      "status": "qualified related report",
+      "summary": "Owner-linked Rust issue5 independently records same cache/control pattern, but its Half-Elf Priest, seed, down-stair refuge, stock and death turn differ."
+    },
+    {
+      "status": "verified consumer carry comparison",
+      "summary": "Source404 correction applied on current48-carry product: unchanged fixture after30/30; partial-fix controls and154prior regression expectations verified. Original life exactly reproduced by current unmodified engine. Corrected diagnostic diverges10837 and reaches200000alive CL5/HP56; not population survival proof.",
+      "evidence": "../../measurement/flowcache-404/d0008-result.json"
+    }
+  ],
+  "actions": [
+    {
+      "key": "emergency-flow-cache",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/212",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/404",
+      "summary": "Narrow source404 correction verified on actual product with before/after and negative controls; track upstream acceptance and separate population evaluation",
+      "status": "carried; product regression/controls verified; upstream acceptance and population benefit remain open"
+    },
+    {
+      "key": "stair-escape-intent",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Separate actual temporary desperate retreat from taking the known upstairs, plus melee/Phase admission; compare ordinary legal alternatives",
+      "status": "investigating; no successful rescue established"
+    },
+    {
+      "key": "excessive-danger-guard",
+      "issue": "https://github.com/diegoami/neo-angband-tracker/issues/156",
+      "summary": "Audit ready_morgoth0 guard at lowHP separately from source152 flags and source404 cache reuse",
+      "status": "needs evidence; contributing candidate, not isolated fix proof"
+    }
+  ]
+}

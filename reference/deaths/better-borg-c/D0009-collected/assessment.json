@@ -1,0 +1,79 @@
+{
+  "classification": "verified starvation/resource-return failure; original-C quiver-capacity pickup defect reported as source419",
+  "confidence": "High for native inventory/messages/timeline and complete original replay; narrow correction, private branch attribution and rescue outcomes untested.",
+  "cause_category": "starvation",
+  "overall_assessment": "overall-assessment.md",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6717711058",
+      "summary": "No food/Recall, many unidentified potions/mushrooms/scrolls/staves, questions the plan and whether starvation is a munchkin characteristic.",
+      "status": "processed with qualified inventory/food/pickup/escape chronology; technical actions open, review completion not inferred",
+      "actions": [
+        "quiver-full-pickup",
+        "food-return-reserve",
+        "identification",
+        "recall-retention",
+        "starvation-emergency",
+        "walking-return"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "verified complete original replay",
+      "summary": "C50 source1cd426af4848, Half-Troll Necromancer CL10/D5/maxD9, seed2817460426; starvation218620,HP-5/73,MP13/13. Same original channels/frames/native saves."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "Last ration action191708, Recall storedHome3279, last shopping3699. No known ordinary food or carriedRecall at death; five unknown edible mushrooms and no learned food/Recall spell."
+    },
+    {
+      "status": "verified original recording and source-checked capacity",
+      "summary": "At195000\u2013214804 pack21+55quiver missiles=23/23slots.764visible BronzeWand no-room refusals194979\u2013214792; repeated failed pickup/reselection while food runs down. Pristine flow-take module uses nominal last-slot fullness."
+    },
+    {
+      "status": "verified original recording",
+      "summary": "Weak214801, munchkin bailout214804, restock notes214854, faint216801, starving218301. Late D5/D6 staircase cycling advances time but does not return to town."
+    }
+  ],
+  "actions": [
+    {
+      "key": "quiver-full-pickup",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/235",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/419",
+      "summary": "Minimal quiver-capacity native fixture/correction with actual-room/stack/gold/ammo controls, then separate consumer carry",
+      "status": "investigating; recorded native failure verified, fix not carried"
+    },
+    {
+      "key": "food-return-reserve",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Earlier food budget/town-return and loot leash, accounting for REGEN and actual pack/quiver capacity",
+      "status": "needs evidence; no policy change"
+    },
+    {
+      "key": "identification",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Identify useful carried stock and compare identification/shop priority without hidden item knowledge",
+      "status": "proposed; shared investigation"
+    },
+    {
+      "key": "recall-retention",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Recall storage/retention/reacquisition and available walking return before hunger becomes critical",
+      "status": "needs evidence; no rescue claimed"
+    },
+    {
+      "key": "starvation-emergency",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/235",
+      "summary": "Unknown-edible eligibility for caster starvation at localdanger0, retaining harmful outcomes and resource costs",
+      "status": "needs evidence; no forced use implemented"
+    },
+    {
+      "key": "walking-return",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Early town/upstairs commitment versus repeated normal desperate downstairs response after weakness",
+      "status": "investigating; no guaranteed route asserted"
+    }
+  ]
+}

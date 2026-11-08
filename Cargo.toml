@@ -1,0 +1,10 @@
+[workspace]
+members = ["borg-reborn-rs"]
+resolver = "2"
+
+[profile.release]
+debug = 1
+panic = "abort"
+
+[profile.dev]
+panic = "abort"

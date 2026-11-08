@@ -1,0 +1,261 @@
+{
+  "source_commit": "2cebef1b0f39aa068cde45b422df681a0e80d188",
+  "original_manifest_sha256": "19667165b22d255c281adf27da902212d7c6e4c49833f480c4fb7d4aba8d83cc",
+  "original_autoexport_record_sha256": "dd1a4bfef6554ee5226ca7bce7de3f0bc241f5124a0d6b314fe6843cb7e35d51",
+  "initial_autoexport_discussion": "https://github.com/diegoami/better-borg-c/issues/163",
+  "native_inventory_qualification": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/inventory/f1bbd722aa6d5485d0bb85309cff3293ca46e908f83a03ec21ee08b67b4bc477/qualified.json",
+  "native_inventory_verification_sha256": "e6a869b27cd1584604323b254c77b7b4a7febe2d3f58695b8d2139eb498480f2",
+  "anchors": [
+    {
+      "turn": 111,
+      "phase": "command",
+      "frame_index": 141,
+      "hp": 20,
+      "max_hp": 20,
+      "depth": 0,
+      "level": 1,
+      "position_xy": [
+        33,
+        13
+      ],
+      "json": "snapshots/review-111.json",
+      "text": "snapshots/review-111.txt",
+      "inventory": "snapshots/review-111-inventory.json",
+      "json_sha256": "7256bc9dbdbf8e8b814d269197b529d8db52e44c87be3c1df9383e4eef55844a",
+      "text_sha256": "95550af12f0f9698020b44d01ec441542f68e5970325ab150957ef493611bde2",
+      "inventory_sha256": "d46640d208d84ef136cc59832522c39bc915fb04bba4fc11c7c9d97fc6e95097"
+    },
+    {
+      "turn": 48600,
+      "phase": "tick",
+      "frame_index": 59136,
+      "hp": 49,
+      "max_hp": 49,
+      "depth": 0,
+      "level": 4,
+      "position_xy": [
+        43,
+        9
+      ],
+      "json": "snapshots/review-48600.json",
+      "text": "snapshots/review-48600.txt",
+      "inventory": "snapshots/review-48600-inventory.json",
+      "json_sha256": "9357de5593c015eff637bf5974aef261412f87a0711d99ee9c62d2695297d6bb",
+      "text_sha256": "3f15824d257d52c6647555e2dc2ab3d386d7d442cd50766cf80c1cdadcda1208",
+      "inventory_sha256": "bb3f9b18d0a282702caa27a740a2fc29a2973fb660eac77dfe0c589e2a850984"
+    },
+    {
+      "turn": 71135,
+      "phase": "command",
+      "frame_index": 86605,
+      "hp": 89,
+      "max_hp": 89,
+      "depth": 4,
+      "level": 7,
+      "position_xy": [
+        41,
+        25
+      ],
+      "json": "snapshots/review-71135.json",
+      "text": "snapshots/review-71135.txt",
+      "inventory": "snapshots/review-71135-inventory.json",
+      "json_sha256": "0c79318e41c310b0e574fbcec5f67a9bd7e283b066c8466b486e6d8e714d4113",
+      "text_sha256": "75f4eecdc0c36a88665e678233cc734aedc83187373c65eb13f3c2bdb320a5e2",
+      "inventory_sha256": "0cf5f24f951365637374b9ed8c509502eba529c47dbf56b5a3291f40168ae70c"
+    },
+    {
+      "turn": 71191,
+      "phase": "command",
+      "frame_index": 86693,
+      "hp": 75,
+      "max_hp": 89,
+      "depth": 9,
+      "level": 7,
+      "position_xy": [
+        94,
+        16
+      ],
+      "json": "snapshots/review-71191.json",
+      "text": "snapshots/review-71191.txt",
+      "inventory": "snapshots/review-71191-inventory.json",
+      "json_sha256": "4e8b92c23537e3de8c86b3eb3acb23fa717ed9bcc0e87c301769f0da4f0f736e",
+      "text_sha256": "f0af8a9720bbf189900ad2b6051bc887d5cca00de5fa223b7429535df3d5c1d4",
+      "inventory_sha256": "81ab21ac7b7d0bcbf42161e4a1093ac21da7b2b77b78f01cdc0e1c4489188224"
+    },
+    {
+      "turn": 71301,
+      "phase": "command",
+      "frame_index": 86809,
+      "hp": 82,
+      "max_hp": 89,
+      "depth": 9,
+      "level": 7,
+      "position_xy": [
+        94,
+        16
+      ],
+      "json": "snapshots/review-71301.json",
+      "text": "snapshots/review-71301.txt",
+      "inventory": "snapshots/review-71301-inventory.json",
+      "json_sha256": "97403d21d04e225402c46ece3b1e1e643d46ea7a9b9572e4d6460a78673ad8f0",
+      "text_sha256": "aade9a6e5338a139f5fbadb3671917deb9f91c3bf85fc0c21aa8918834e0c9d4",
+      "inventory_sha256": "22d581a616aa048e8c1b0ee02ae30ca165a7693f84bc9cdaa14edbf45ded2b17"
+    },
+    {
+      "turn": 71445,
+      "phase": "command",
+      "frame_index": 87041,
+      "hp": 39,
+      "max_hp": 100,
+      "depth": 9,
+      "level": 8,
+      "position_xy": [
+        94,
+        16
+      ],
+      "json": "snapshots/review-71445.json",
+      "text": "snapshots/review-71445.txt",
+      "inventory": "snapshots/review-71445-inventory.json",
+      "json_sha256": "221ed7106e1aeaacf73c8900d6756ee2c7227069ec2ba0a08cc897cf6fbcfbd6",
+      "text_sha256": "6f24a3aa5adaae33f1b97c125108cc915eb59dd62d69914e986f7edb1bbe858d",
+      "inventory_sha256": "88487b3078219359b4f7b848ff8183a1c29f3b4e984fd7bc3213cc0cfec92652"
+    },
+    {
+      "turn": 71511,
+      "phase": "command",
+      "frame_index": 87145,
+      "hp": 37,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        47,
+        15
+      ],
+      "json": "snapshots/review-71511.json",
+      "text": "snapshots/review-71511.txt",
+      "inventory": "snapshots/review-71511-inventory.json",
+      "json_sha256": "bccc49c14adedb737b426cc4bfbb02d073747a7712a74987c2123e55c63d9aa2",
+      "text_sha256": "feead2463e8f172807afbe04c0b91da125640c13f875cf5952f52939f7713a89",
+      "inventory_sha256": "0721da78e84adee05818a0e3131dc3c19bf2c0de13264c418787557d19b9f3b4"
+    },
+    {
+      "turn": 71600,
+      "phase": "tick",
+      "frame_index": 87234,
+      "hp": 43,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        47,
+        15
+      ],
+      "json": "snapshots/review-71600.json",
+      "text": "snapshots/review-71600.txt",
+      "inventory": "snapshots/review-71600-inventory.json",
+      "json_sha256": "548cfd88a943a6012ef154cb36ad7bd54fea8802f3a2a3dcdb17d3380240efc6",
+      "text_sha256": "f2ef1a8c65f4b5ce33dccc810e39ef6f85ef20bafc188e1d9591cda04022d5f9",
+      "inventory_sha256": "301c8673fe6e10bd8f1993ab59ca597653200be2fef9cbf1517742cf896f12a6",
+      "png": "snapshots/review-71600.png",
+      "png_sha256": "0987a0781c64c500685cd660b9bebfd3fe3e09bbbc86f261bb610d641cb2d5df"
+    },
+    {
+      "turn": 72000,
+      "phase": "tick",
+      "frame_index": 87634,
+      "hp": 70,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        47,
+        15
+      ],
+      "json": "snapshots/review-72000.json",
+      "text": "snapshots/review-72000.txt",
+      "inventory": "snapshots/review-72000-inventory.json",
+      "json_sha256": "84035b42a714b9877f3869ee1867502e08564697e769145fce11df9319b815eb",
+      "text_sha256": "b4837474cd759fb4f5047cf1adac010dda779d21be0ecdb35205d6c2c50a8f6c",
+      "inventory_sha256": "48c77417013215697f79b7cafa438d1cb506d0b48c6d56083a88d93c1b11169f"
+    },
+    {
+      "turn": 72441,
+      "phase": "command",
+      "frame_index": 88081,
+      "hp": 100,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        47,
+        13
+      ],
+      "json": "snapshots/review-72441.json",
+      "text": "snapshots/review-72441.txt",
+      "inventory": "snapshots/review-72441-inventory.json",
+      "json_sha256": "545c1d59f56d8fdce3159f3650ae71f4f5bf161704b14bd92d6919bb29d6d881",
+      "text_sha256": "916a074d7b3d879e3632e564b384126a780eb6d9860c0c323e17ca79542d699f",
+      "inventory_sha256": "3d93ca2b237a72a38fa31f2d378cb4f684de40cad12bbb7bee3b10808e792e08"
+    },
+    {
+      "turn": 72521,
+      "phase": "command",
+      "frame_index": 88189,
+      "hp": 100,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        49,
+        10
+      ],
+      "json": "snapshots/review-72521.json",
+      "text": "snapshots/review-72521.txt",
+      "inventory": "snapshots/review-72521-inventory.json",
+      "json_sha256": "d411176e90b088524a48cdf00c7ae9069691c723773a1715be085c1801ecbf89",
+      "text_sha256": "d0dc173238cfa8f1c5806a54f34609c7a4042f71bbe5b6972592ea01f6116487",
+      "inventory_sha256": "84d6cde781fec3f4c4205b49cdcbdea6b1995c59eabbc829f64ddaad447492fb"
+    },
+    {
+      "turn": 72885,
+      "phase": "command",
+      "frame_index": 88639,
+      "hp": 89,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        43,
+        9
+      ],
+      "json": "snapshots/review-72885.json",
+      "text": "snapshots/review-72885.txt",
+      "inventory": "snapshots/review-72885-inventory.json",
+      "json_sha256": "62b35aa8d4789e2c16c241ba1147ae0cbf14b85b7e3a5f17de7903d1a71ab791",
+      "text_sha256": "2be64604631fbcd66a81eafa55235979b9150a461d12f20d67f9e90790c886e1",
+      "inventory_sha256": "25b45303f78b384a4dc5a0f4ae5edf848b63043d2b07190d194cfcc6ecf6c8da",
+      "png": "snapshots/review-72885.png",
+      "png_sha256": "f61f97aa23588884ed0fa32323ccdd71e1d9b9ddab37659bc9bbf68073245849"
+    },
+    {
+      "turn": 72895,
+      "phase": "command",
+      "frame_index": 88653,
+      "hp": 81,
+      "max_hp": 100,
+      "depth": 14,
+      "level": 8,
+      "position_xy": [
+        43,
+        8
+      ],
+      "json": "snapshots/review-72895.json",
+      "text": "snapshots/review-72895.txt",
+      "inventory": "snapshots/review-72895-inventory.json",
+      "json_sha256": "c4f41526b3d76a4a60f0ea6a5292a2e308fbe27728af53072586a54a287849f5",
+      "text_sha256": "072af28d5a490319bab031ab46879fba1974a7c36d5f894a39c2878e2e127ab9",
+      "inventory_sha256": "ff15386f46fc6e7732bcf8fdb2b47994161e388b266c9954370e09b9f5446d26"
+    }
+  ]
+}

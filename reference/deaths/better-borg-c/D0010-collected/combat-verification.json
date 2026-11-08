@@ -1,0 +1,18 @@
+{
+  "complete": true,
+  "engine_mode": "separate historical read-only combat observer and wide-input compatibility",
+  "engine_sha256": "72124ebd5e8fffd391545a6c863711176aa61f2f9cb4869282292b69e5601133",
+  "error": null,
+  "exit_code": 0,
+  "extensions": [
+    "combat-log"
+  ],
+  "first_difference": null,
+  "interrupted": null,
+  "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T052437.926520Z/game-002-seed-2060687716",
+  "original_engine_sha256": "8f507b27432083659e88d495806ab89598d44dae9818e27318e3fd0dd2781827",
+  "recording_sha256": "387f41cfce48720780748b68c6052d3df56976c2937457a7529e8e9352148546",
+  "schema": "borg-replay-verification@1",
+  "scope": "All recorded input, Borg actions, clock/file inputs, native-save fingerprints, RNG/player state and logical terminal frames; no checkpoint restore or new independent life",
+  "verified": true
+}

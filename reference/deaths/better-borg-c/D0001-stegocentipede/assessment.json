@@ -1,0 +1,110 @@
+{
+  "classification": "original C behavior; defect not established",
+  "confidence": "death and replay verified; causal policy diagnosis provisional",
+  "cause_category": "monster melee",
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Tiger combat reduced84HP to30HP; a following stegocentipede killed the character at turn174862."
+    },
+    {
+      "status": "observed",
+      "summary": "Six known Speed potions remained carried; known healing/phase/teleport counters were zero; four Phase Door scrolls were at Home. Four unidentified Smoky Potions prevent a claim that no healing effect existed in the pack."
+    },
+    {
+      "status": "verified",
+      "summary": "Unchanged repeat and pristine upstream reference have identical complete observations and the same terminal state/cause."
+    },
+    {
+      "status": "unproved",
+      "summary": "Why speed and stock policy behaved this way, whether any alternative would safely avert death, and whether this is a code defect remain unproved."
+    },
+    {
+      "status": "verified",
+      "summary": "Additional five-carry3638b690 reference from batch33 matches complete original trace/start save/death and RNG. Six-carry45eac63bd has a different trajectory and survives cap400000; not causal rescue proof."
+    },
+    {
+      "status": "observed",
+      "summary": "Pack19occupied/23slots,4free; spare3weapons/4armor/emptywand, no swaps. Last recorded Phase Door read173794, restock request173901 before death174862. Terminal absence does not show zero departure stock or capacity blockage."
+    },
+    {
+      "status": "verified",
+      "summary": "Wider profile and both earlier anchors match original337build/start/prefix. Full84HP at105/82/60beforedeath,78at40,51at25,30at12; native tick states not interpolation."
+    },
+    {
+      "status": "observed",
+      "summary": "Depth2/max7,1PhaseDoor+1DeepDescent/2empty slots before last phase; DeepDescent read173862 at34HP then delayed transition12 by174751. Audit known off-level escape/resource eligibility; not proved bug/rescue."
+    }
+  ],
+  "actions": [
+    {
+      "key": "defend-speed-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "summary": "Observe actual existing speed-defense eligibility and p1/p2 in the pre-fight state",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "home-escape-stock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "summary": "Trace last Home/town decisions and escape-stock constraints",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "pristine-attribution",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "summary": "Compare pristine upstream versus carried build",
+      "status": "completed: identical death/trace; does not establish a defect"
+    },
+    {
+      "key": "survival-stock-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment",
+      "status": "recorded owner priority; proposal, not implemented"
+    },
+    {
+      "key": "deep-descent-escape-audit",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/22",
+      "summary": "Audit delayed Deep Descent escape from depth2/max7 and restock/preparedness before depth12",
+      "status": "investigating recorded original-rule behavior; no defect established"
+    }
+  ],
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/22#issuecomment-6685775530",
+      "summary": "Prioritize escape/healing/survival stock over unused spare equipment; investigate whether better inventory could avert this death.",
+      "status": "recorded; existing stock/retreat trace under investigation; policy proposal41",
+      "actions": [
+        "home-escape-stock",
+        "survival-stock-priority"
+      ]
+    }
+  ],
+  "inspection_profile": {
+    "profile": "../window-profile-v2.json",
+    "offsets_engine_turns": [
+      5,
+      12,
+      25,
+      40,
+      60,
+      82,
+      105
+    ],
+    "legacy_offsets_preserved": [
+      10,
+      15,
+      20
+    ],
+    "event_anchors": [
+      {
+        "offset_engine_turns": 1072,
+        "reason": "Before last Phase Door173794"
+      },
+      {
+        "offset_engine_turns": 1032,
+        "reason": "Before no-upstairs fallback173834"
+      }
+    ]
+  }
+}

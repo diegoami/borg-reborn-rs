@@ -1,0 +1,245 @@
+{
+  "schema": "borg-rs/death-analysis-evidence@1",
+  "case": "D0006",
+  "source_commit": "aa4ad6cfeea2cf19870e224219dfe66688175c6e",
+  "source_sha256": "91874dd5bf2cd8317dadb53193b99b10ee2c06a948e2dfb9f5b2d27ef075af42",
+  "original_record_sha256": "7489569bad588aa75720e230150ac3f33b268cb8735d0917165e8aafd948faa8",
+  "immutable_artifacts_verified": 24,
+  "original_raw_directory": "/home/diego/projects/borg-rs/harness/out/death-workflow/collections/2026-11-07T22-46-04.539957+00-00/game-001-seed-2647001198/recordings/20261107T224627.740045Z-CollectedBorg",
+  "original_manifest_sha256": "bd606c0c3b7076b11d68df155d6d12c0c4f6c0c6df083a513c47eef364face02",
+  "original_frames_sha256": "02fc29b500f2b460f7a7d1f6680831d47fa72ee4823263be72e7026fd672f86a",
+  "qualification_path": "/home/diego/projects/borg-rs/harness/out/d0006-analysis/verification/verification.json",
+  "qualification_sha256": "e31562aea925b6eae362f6fcafaaf5404ae0120b2dfa1908f0540f3aa507994b",
+  "qualification": {
+    "manifest_sha256": "bd606c0c3b7076b11d68df155d6d12c0c4f6c0c6df083a513c47eef364face02",
+    "model": "rerun original Rust Borg from original origin; exact keys/messages/player-state/terminal frames/final save and scheduled world saves; not whole-Borg private-state shadow",
+    "native_archive_body_verified": true,
+    "native_death_log_wall_clock_differences": [
+      {
+        "line": 1,
+        "original": "2026/11/07 22:46",
+        "rerun": "2026/11/07 23:06"
+      }
+    ],
+    "original_death_not_new_sample": true,
+    "verified": true,
+    "verifier_sha256": "95ad5e1dfb7bad33664eb25daf43dd960ddbfe3939e8945ad7695a790c7bdd36"
+  },
+  "verifier_source_copy": "/home/diego/projects/borg-rs/harness/out/d0006-analysis/verifier-used.py",
+  "scope": "One original collected life and original-binary qualification; no new independent death, whole-private-Borg shadow, or alternate-action rescue",
+  "time_ownership": "Key-phase frame is before queued key; messages with key count below frame index precede it, equal count follows it. Prompt acknowledgements and world ticks are not necessarily tactical decisions.",
+  "anchors": [
+    {
+      "turn": 1,
+      "frame_index": 1,
+      "phase": "key",
+      "json": "analysis-anchors/t1-f1.json",
+      "json_sha256": "81cdfb3c454e77f34025e240ea8e92640a1d9a76801f2ef2e1b7af39e147bfad",
+      "text": "analysis-anchors/t1-f1.txt",
+      "text_sha256": "efd81d5edfc42d4b0910adf2cb006d46d592cd7ec3dfb6eaac3eae1963930dae"
+    },
+    {
+      "turn": 121,
+      "frame_index": 24,
+      "phase": "key",
+      "json": "analysis-anchors/t121-f24.json",
+      "json_sha256": "e4a80a2c394156cbae48467305bd01398d53de9c157c5bed8b0a3f07de02b7e9",
+      "text": "analysis-anchors/t121-f24.txt",
+      "text_sha256": "dd8e3c00407725f5b4308e9b9395023aca9f2f0169393234a83e63302bcaa5cf"
+    },
+    {
+      "turn": 271,
+      "frame_index": 49,
+      "phase": "key",
+      "json": "analysis-anchors/t271-f49.json",
+      "json_sha256": "c9b6b12b472d487aab0ccf4b556f56bd36476a656d753c3ea173890060c4c7ef",
+      "text": "analysis-anchors/t271-f49.txt",
+      "text_sha256": "6e4d60e4e6b6bba0b23fa12edf5f1e26c7400dad364d5ee0adff816c7465afb0"
+    },
+    {
+      "turn": 281,
+      "frame_index": 59,
+      "phase": "key",
+      "json": "analysis-anchors/t281-f59.json",
+      "json_sha256": "02831685d832debffecb46594d7bd47a567b8de620e8ce0394e57dfc9f089e70",
+      "text": "analysis-anchors/t281-f59.txt",
+      "text_sha256": "4cf1ff6d94746e72b7c42c0943bac312efb21a7c636a39416381b25254f18a51"
+    },
+    {
+      "turn": 691,
+      "frame_index": 176,
+      "phase": "key",
+      "json": "analysis-anchors/t691-f176.json",
+      "json_sha256": "c147d22634ac61a1e2046f459367788c58e242c10c9d3e75b574e5ba4b588ffe",
+      "text": "analysis-anchors/t691-f176.txt",
+      "text_sha256": "649b81c1e870c619762477fce23bfcec8d9d4fbc38cf307b2f492114e7460ae1"
+    },
+    {
+      "turn": 14811,
+      "frame_index": 836,
+      "phase": "key",
+      "json": "analysis-anchors/t14811-f836.json",
+      "json_sha256": "4ebe0eb294a913ad159067f507157a88de06acc422577e57864948e88a1bde07",
+      "text": "analysis-anchors/t14811-f836.txt",
+      "text_sha256": "05e97ee7c668e6d0f536c8d8c1aeb89d0b83c7933c938894fc9a693cbc11d808"
+    },
+    {
+      "turn": 21084,
+      "frame_index": 1444,
+      "phase": "key",
+      "json": "analysis-anchors/t21084-f1444.json",
+      "json_sha256": "0447dcc977295dfe678540318839fd84a5334a660201792938a5c0a711d06897",
+      "text": "analysis-anchors/t21084-f1444.txt",
+      "text_sha256": "20d34b7662a7ebbe9c6bce30d4134c3c03605a44feb163d128d526f9b2bd9365"
+    },
+    {
+      "turn": 21774,
+      "frame_index": 1531,
+      "phase": "key",
+      "json": "analysis-anchors/t21774-f1531.json",
+      "json_sha256": "f07a35d7654dcddf1f5111f685445a896959d27cb124a0afe5ee2d2c0d13226b",
+      "text": "analysis-anchors/t21774-f1531.txt",
+      "text_sha256": "7da0873b9b155dee98099e1bf38c50fdcf833e1df3bac5a7bb9983032426e29c"
+    },
+    {
+      "turn": 22754,
+      "frame_index": 1536,
+      "phase": "key",
+      "json": "analysis-anchors/t22754-f1536.json",
+      "json_sha256": "e314054965a09695a475f5bac816033c0405931f05c35dfbceee6dc27afa1ef7",
+      "text": "analysis-anchors/t22754-f1536.txt",
+      "text_sha256": "41d03d278faa2f4c8ac37f622d4e12fe7fcd2a7904fafdfa8692aae3ee26f816"
+    },
+    {
+      "turn": 22764,
+      "frame_index": 1540,
+      "phase": "key",
+      "json": "analysis-anchors/t22764-f1540.json",
+      "json_sha256": "4c39caf351a16635ddae37349fed084ee2134d4ecb32faddd05ad7f9f2bea78d",
+      "text": "analysis-anchors/t22764-f1540.txt",
+      "text_sha256": "eb9ec1073dece696f91d5b064539ec4670916045cd2599ca9e6a45cf9f9e02a7"
+    },
+    {
+      "turn": 22774,
+      "frame_index": 1541,
+      "phase": "key",
+      "json": "analysis-anchors/t22774-f1541.json",
+      "json_sha256": "096330bded041ceec0199a3c751263ce27fa905a8ae35a51b72bdfd2c4b9ef41",
+      "text": "analysis-anchors/t22774-f1541.txt",
+      "text_sha256": "1bab823849d44d6718cade25108a38a7447aeeac7bc6b5fcd2876935ddb3de7b"
+    },
+    {
+      "turn": 22784,
+      "frame_index": 1543,
+      "phase": "key",
+      "json": "analysis-anchors/t22784-f1543.json",
+      "json_sha256": "9e643178b112101a720e547e22349a99f4f45ff63d0a806fc1fa237980bb66e0",
+      "text": "analysis-anchors/t22784-f1543.txt",
+      "text_sha256": "84ea21612a5a8c1f54a120b1c81b6a315a2fea2aa6087d764ae19f6b167442cc"
+    },
+    {
+      "turn": 22784,
+      "frame_index": 1544,
+      "phase": "key",
+      "json": "analysis-anchors/t22784-f1544.json",
+      "json_sha256": "91b13d924886b11ef7dab48685766f2481b722b486758223bc4de17a2c272297",
+      "text": "analysis-anchors/t22784-f1544.txt",
+      "text_sha256": "a42952077e38dae2444b5d0a7af67c8ed40d9d4d35c6eec23cf07fb8d045b64e"
+    },
+    {
+      "turn": 22794,
+      "frame_index": 1545,
+      "phase": "key",
+      "json": "analysis-anchors/t22794-f1545.json",
+      "json_sha256": "e59295e991b1b60bd2d5a820ee6dcba80c3b857ec0813f69ee8a87d544d63269",
+      "text": "analysis-anchors/t22794-f1545.txt",
+      "text_sha256": "c8b5e3b467a850cec7833ef025b8d2b9db0c08c2ad1bb13e82dd1cf0adbfced3"
+    },
+    {
+      "turn": 22804,
+      "frame_index": 1546,
+      "phase": "key",
+      "json": "analysis-anchors/t22804-f1546.json",
+      "json_sha256": "2ba6c41d384a52cd6e4ae83c51acf2c6324c1940dc7b16c8980fc5dce06fde9e",
+      "text": "analysis-anchors/t22804-f1546.txt",
+      "text_sha256": "4e7137d534ce0e840e9973e2c74a32a2b5bd334b1e6d326e8484facb40bed488"
+    },
+    {
+      "turn": 22804,
+      "frame_index": 1547,
+      "phase": "key",
+      "json": "analysis-anchors/t22804-f1547.json",
+      "json_sha256": "e9c87fc59bdf40edb2b96e770e3299f20b53c38295e3aa545863f506db787ed0",
+      "text": "analysis-anchors/t22804-f1547.txt",
+      "text_sha256": "728e83820f1ca9ceca3bf1cb1c799cb101bff9de28afe1ba4f781c1e23fbf286"
+    },
+    {
+      "turn": 22814,
+      "frame_index": 1548,
+      "phase": "key",
+      "json": "analysis-anchors/t22814-f1548.json",
+      "json_sha256": "13536abe6e267eba0b8d7f9fca86b4458e35eb03f5f54876a7aec258559882b2",
+      "text": "analysis-anchors/t22814-f1548.txt",
+      "text_sha256": "f49c73df0ab56cfab8fe027f5d0321187282608d732860a99935ba812264b00a"
+    },
+    {
+      "turn": 22824,
+      "frame_index": 1550,
+      "phase": "key",
+      "json": "analysis-anchors/t22824-f1550.json",
+      "json_sha256": "faa4fc88195751d072d316d6ae065b34847e0526b30d54c22eba5c87b4090894",
+      "text": "analysis-anchors/t22824-f1550.txt",
+      "text_sha256": "1317dbb48f28e554e497e46ca2078148f47b471dc76362aa209f84e5c47ec8bd"
+    },
+    {
+      "turn": 22824,
+      "frame_index": 1551,
+      "phase": "key",
+      "json": "analysis-anchors/t22824-f1551.json",
+      "json_sha256": "7efc9e65a5d9bbdb4847df5b16452a03108da2ffeff2fe19f6daa12e666d3fb2",
+      "text": "analysis-anchors/t22824-f1551.txt",
+      "text_sha256": "da9b0bfe203b4e32ac7c062134af622e212e51e67fd04d6894db9d7b749aa541"
+    },
+    {
+      "turn": 22834,
+      "frame_index": 1552,
+      "phase": "key",
+      "json": "analysis-anchors/t22834-f1552.json",
+      "json_sha256": "1f254deadf27a91186168777e2d305a4ea0d66cf2b1fdda0ad4a409b068b14e0",
+      "text": "analysis-anchors/t22834-f1552.txt",
+      "text_sha256": "429568731aa3b88250712a3cccd83b7b18c1c82b6384efc15bd0f7199f5e8a66"
+    },
+    {
+      "turn": 22841,
+      "frame_index": 1556,
+      "phase": "death",
+      "json": "analysis-anchors/t22841-f1556.json",
+      "json_sha256": "238cb4f8198a89df7c6fb6dfa942e20d812e504894f04ca6bd15b3fce7760555",
+      "text": "analysis-anchors/t22841-f1556.txt",
+      "text_sha256": "221110213908b6c87f3fc2be89d6f029e5ea2434ec04ea7146944fa8e5c6c50d"
+    }
+  ],
+  "timeline_rows": 39,
+  "timeline_sha256": "a401bad73e17c6ac2fc2407c8d6188ee577df50629a7ebbf713965a733c8d644",
+  "private_gate_trace": {
+    "scope": "Selected exact historical-source fields and existing-computed danger; read-only stderr observation, not a tactical alteration or whole-Borg shadow",
+    "build_identity": "private-gates-build.json",
+    "observer_patch": "private-gates-observer.patch",
+    "qualification": "private-gates-qualification.json",
+    "trace": "private-gates.jsonl",
+    "computed_values": "private-gates-auxiliary.log",
+    "raw_output": "/home/diego/projects/borg-rs/harness/out/d0006-analysis/gate-trace/qualification/run",
+    "raw_stderr_sha256": "7e222016760fb10616dea3fb3ec51d980741d898dfd6dbfc5cfa03e7d2b38ef9",
+    "trace_rows": 42,
+    "all_original_raw_frames_exact": true,
+    "new_independent_lives": 0,
+    "alternate_action_branches": 0,
+    "files_sha256": {
+      "private-gates-build.json": "1b3cec0e1d63e6903a386d6ad1ecc796cf46129c8f623c9b0fbdac6899c568c9",
+      "private-gates-observer.patch": "baf786829e84e94097256ebaa1df9f93be51e3b0e77efb9f64b72ee4341bb840",
+      "private-gates-qualification.json": "6ff8d690c4ff20bde043aa04f0d9f84234b98816926b192a846171db0b613365",
+      "private-gates.jsonl": "9d80c50840ab3f4a2113d004e9e9510e85a50a756341692b818aae41148e6a03",
+      "private-gates-auxiliary.log": "5fe8d6868ea7e20e3a8da5946f01350aaba814a0541dfaac1a4a9283711c8246"
+    }
+  }
+}

@@ -1,0 +1,118 @@
+{
+  "classification": "Grey-mold stair/exploration loop assessed; qualified private trace shows emergency movement and danger-cache reuse",
+  "confidence": "High for original chronology/resources, exact selected private flags and control flow/cache transition; isolated correction, native C reproduction and successful alternative remain unproved",
+  "analysis_status": "Structured observational and selected private-gate review complete; correction/rescue investigation open",
+  "review": "overall-assessment.md",
+  "evidence": "analysis-evidence.json",
+  "validation": "analysis-validation.json",
+  "timeline": "decision-timeline.csv",
+  "investigation": "https://github.com/diegoami/borg-rs/issues/5",
+  "feedback": [
+    {
+      "url": "https://github.com/diegoami/borg-rs/issues/3#issuecomment-6714194885",
+      "author": "owner",
+      "summary": "D2\u2192D1 return, door/mold22774, three back-and-forth loops, unused stairs/no fight, uncertain mace viability, no healing and many torches",
+      "status": "Evidence-assessed with direction/mechanism/resource refinements",
+      "response": "Three explicit desperate returns followed by north exploration are verified; fourth doorway exposure kills. Refuge is a D1 down stair to D2. Spores are adjacent melee. Two birth CSW sold, Recall Home, Phase spent, nine spare torches and no learned healing. Qualified private trace shows no persistent flee/descent flag and exceptional-mode doorway danger cache reused by normal exploration. No rescue demonstrated.",
+      "start_url": "https://github.com/diegoami/borg-rs/issues/3#issuecomment-6714245912",
+      "progress_url": "https://github.com/diegoami/borg-rs/issues/3#issuecomment-6714264871",
+      "investigation": "https://github.com/diegoami/borg-rs/issues/5",
+      "response_url": "https://github.com/diegoami/borg-rs/issues/3#issuecomment-6714363270"
+    }
+  ],
+  "findings": [
+    {
+      "key": "d6-original-identity",
+      "confidence": "verified",
+      "summary": "Original binary replay and isolated read-only historical gate trace match all original raw channels/final and22 scheduled native saves; only declared death-log wall-clock line differs. Original record plus24 artifacts preserved.",
+      "evidence": "analysis-evidence.json"
+    },
+    {
+      "key": "d6-observed-loop",
+      "confidence": "observed",
+      "summary": "Down stair(33,49), doorway(33,48), visible stationary2HP mold(34,47). Door complete22774; three south desperate returns22784/22804/22824 and north dark3 re-entries22794/22814/22834, followed by death22841. No attack in fatal loop.",
+      "evidence": "decision-timeline.csv"
+    },
+    {
+      "key": "d6-private-intent-priority",
+      "confidence": "selected private trace qualified, no causal intervention",
+      "summary": "Adjacent danger16 and caution early return preempt attack selection. Stair danger0, fleeing/leaving/scary/stair_more false; choose_stairs not called; GOAL_FLEE arrival alone does not commit descent.",
+      "evidence": "private-gates.jsonl",
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-mode-cache-reuse",
+      "confidence": "exact mode/cache interaction observed in Rust; minimal correction and C reproduction pending",
+      "summary": "Desperate flow marks doorway know0\u21921/icky0 while skipping danger. Next normal dark3 spread reuses know1/icky0 without doorway danger computation at fear2/2/1, then re-enters. Historical C has same source pattern; no independent native C demonstration claimed.",
+      "evidence": "private-gates.jsonl",
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-excessive-danger-guard",
+      "confidence": "existing source gate relevant at last adjacent decision; isolated effect untested",
+      "summary": "At22824 danger16>2*HP5, but observed ready_morgoth0 fails the historical excessive-danger flee conjunction. Earlier16>2*HP9/8 is false. Existing source156, not a new duplicate canonical finding.",
+      "evidence": "overall-assessment.md",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/156",
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-stock-learning",
+      "confidence": "native original knowledge/resources observed; shop valuation not traced",
+      "summary": "Birth CSW2\u21921\u21920 sold271/281, Recall stored121, last Phase spent14801. Nine spare torches at encounter; two potions remain unidentified in life. Only Detect Evil/Call Light learned1MP6%; no healing prayer. Priest random study explains Bless intention versus actual learned prayer.",
+      "evidence": "overall-assessment.md",
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-escape-combat-limits",
+      "confidence": "legal alternative/credible damage, no tested rescue",
+      "summary": "Available descent is to D2, not upstairs to town. Mace2d4 can plausibly kill2HP mold on a landed hit; native hit/timing/survival not tested. Hold/close-door and descend continuation also untested; no Rust-only translation defect or population benefit established.",
+      "evidence": "overall-assessment.md",
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    }
+  ],
+  "actions": [
+    {
+      "key": "d6-cache-mode-native-control",
+      "summary": "D0006: construct legal native mode-transition cache scenario with emergency/safe/blocked controls; coordinate existing C ownership before any correction",
+      "status": "open; next discriminating evidence, no gameplay change",
+      "priority": 1,
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-separate-counterfactuals",
+      "summary": "D0006: separately test stair descent/hold/door-close and one adjacent mace attempt with declared source/RNG/continuation limits",
+      "status": "provisional; no alternate-action branch run, distinguish serialized human branch from uninterrupted private-state continuation",
+      "priority": 2,
+      "issue": "https://github.com/diegoami/borg-rs/issues/5"
+    },
+    {
+      "key": "d6-stock-score-audit",
+      "summary": "D0006: explain actual CSW-sale and fuel/escape reserve choices from native inventory-power/shop score trace",
+      "status": "open; evidence before policy change",
+      "priority": 3,
+      "issue": "https://github.com/diegoami/borg-rs/issues/5",
+      "related_issues": [
+        "https://github.com/diegoami/better-borg-c/issues/41",
+        "https://github.com/diegoami/better-borg-c/issues/180"
+      ]
+    }
+  ],
+  "related_source_issues": [
+    "https://github.com/diegoami/neo-angband-tracker/issues/156",
+    "https://github.com/diegoami/neo-angband-tracker/issues/152"
+  ],
+  "related_consumer_issues": [
+    "https://github.com/diegoami/better-borg-c/issues/41",
+    "https://github.com/diegoami/better-borg-c/issues/180",
+    "https://github.com/diegoami/better-borg-c/issues/159"
+  ],
+  "limits": [
+    "No controlled alternate-action or correction branch was performed.",
+    "Selected private fields and exact channels/save boundaries do not compare every private Borg field or every RNG state.",
+    "Original native observations already include inventory/spells; no guessed missing views.",
+    "Postmortem potion names are not living actor knowledge.",
+    "Same C source pattern is not an independent native C reproduction or accepted milestone.",
+    "No gameplay change, general survival/progress claim, new independent life or owner-review mark follows from assessment."
+  ],
+  "investigation_update": "https://github.com/diegoami/borg-rs/issues/5#issuecomment-6714316793"
+}

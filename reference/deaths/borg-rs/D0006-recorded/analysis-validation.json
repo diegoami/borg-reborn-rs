@@ -1,0 +1,61 @@
+{
+  "schema": "borg-rs/death-analysis-validation@1",
+  "case": "D0006",
+  "source_commit": "aa4ad6cfeea2cf19870e224219dfe66688175c6e",
+  "passed": true,
+  "checks": [
+    {
+      "check": "Original dossier record and24 curated artifacts plus raw manifest unchanged",
+      "passed": true,
+      "original_hash_count": 26
+    },
+    {
+      "check": "21 exact original anchor state/screens/known inventory/prayers/native-visible monsters and hashes",
+      "passed": true,
+      "anchors": 21
+    },
+    {
+      "check": "39 original frame/key boundary timeline bindings",
+      "passed": true,
+      "rows": 39
+    },
+    {
+      "check": "Local Markdown links resolve",
+      "passed": true
+    },
+    {
+      "check": "Three exact private mode/cache transitions, adjacent early return and safe-tile exploration;42 trace rows; trace/proof/patch hashes",
+      "passed": true,
+      "rows": 42
+    },
+    {
+      "check": "Qualified read-only trace raw channels/final save/config/all22 scheduled native saves and retained verifier source",
+      "passed": true,
+      "checkpoints": 22
+    },
+    {
+      "check": "Five observer source before hashes match exact committed aa4ad6c and after hashes match isolated build",
+      "passed": true
+    }
+  ],
+  "files_sha256": {
+    "overall-assessment.md": "8d7de9bc2379b21d70215f22951d8954b2f93b1fe45c70c5159eef4d820fdbbe",
+    "assessment.json": "4c3d227d1e9ab13c228dd985b386ae251fdc04c9600c1afe3c6b6fd488bca670",
+    "report.md": "b5a17ed0cadaad8e09108ce643c2e9fdf6a0f7ab4261c1fd7702ecaebcf4a412",
+    "decision-timeline.csv": "a401bad73e17c6ac2fc2407c8d6188ee577df50629a7ebbf713965a733c8d644",
+    "analysis-evidence.json": "abd7066d093b0ea2e8634bb694924157d870d74fc08a75ed265b934af2ac777b",
+    "private-gates-build.json": "1b3cec0e1d63e6903a386d6ad1ecc796cf46129c8f623c9b0fbdac6899c568c9",
+    "private-gates-observer.patch": "baf786829e84e94097256ebaa1df9f93be51e3b0e77efb9f64b72ee4341bb840",
+    "private-gates-qualification.json": "6ff8d690c4ff20bde043aa04f0d9f84234b98816926b192a846171db0b613365",
+    "private-gates.jsonl": "9d80c50840ab3f4a2113d004e9e9510e85a50a756341692b818aae41148e6a03",
+    "private-gates-auxiliary.log": "5fe8d6868ea7e20e3a8da5946f01350aaba814a0541dfaac1a4a9283711c8246",
+    "analysis-anchors/README.md": "37e8dd9911a1e4ce628c61f6c7a262e252bac7ecbd2376dbfef1ee770dccf368"
+  },
+  "scope": "Author/analysis validation, not independent reviewer signoff; no rescue/correction branch, new life, source adoption or owner review mark",
+  "original_record_sha256": "7489569bad588aa75720e230150ac3f33b268cb8735d0917165e8aafd948faa8",
+  "immutable_original_artifacts": 24,
+  "original_frames": 1556,
+  "known_observation_anchors": 21,
+  "timeline_rows": 39,
+  "private_trace_rows": 42
+}

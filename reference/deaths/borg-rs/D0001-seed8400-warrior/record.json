@@ -1,0 +1,93 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior",
+      "result_sha256": "a73111709e8eb09d47e6bbd9c2a98fd77040ade6c0b145d05ba033344d998978",
+      "role": "original",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c1/live-warrior",
+      "result_sha256": "259b67b6ca733846e6e885bb4eff961ff1aebc098be189b8936d0e0ede5fd357",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    },
+    {
+      "binary_sha256": "b53c3b92befd00179f8e8bab1e390c9dc447c5b0247e88b3b2aa01bef51b7dee",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation/normal-c2/live-warrior",
+      "result_sha256": "97875959199a3c4dfba31331a4c090b63b9d37e57f738a52a139ff1bcdb471ce",
+      "role": "repeat",
+      "source_commit": "f772eb6dcb93dc8d53cfc0167496d6122133f42e"
+    }
+  ],
+  "character": "Human Warrior",
+  "encounter_family": "start-9137edbc887c66b39ea7ade206c1117c8a3e1649247ccc516049b480b940b781",
+  "files_sha256": {
+    "build.json": "0ef0bd577cefba742f6a951aef98d4c829ac99d57510f92de93e01ba36e40e3c",
+    "config.txt": "902970ca8ee483ea0df5d3986edd03560da81b26883032ad2d017080c0260161",
+    "inventory.json": "c4b4cb62365abea3e320b7520a2e077780814962091a8255665efcde84a8eb40",
+    "summary.json": "42e5ef1ad1736b7d93cf7e45fd737164630a87fb85a0c57908ade0b7733c0724"
+  },
+  "historical_evidence": {
+    "assessment": "/home/diego/projects/borg-rs/docs/deaths/seed8400-warrior.md",
+    "observations_sha256": {
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/checkpoints.json": "1d3f451e05554180420d31f48a8849bab375a8a06936dc0fede8cdd46d94a31e",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/config.txt": "902970ca8ee483ea0df5d3986edd03560da81b26883032ad2d017080c0260161",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/keys.log.xz": "2a7be316b98dee45dce84c3257807a190b2827886c0346700501f5fb957fb872",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/messages.log.xz": "878af063fdb6ac1fd3906097a86ea1159c6dc41baeefdce9903c43b07d8a9766",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/process.json": "83ad4114cdb00af6d9d660ba5d7f1c3aff643d3c8d7ce97ed9e79e2ceed314e3",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/state.log.xz": "13b8ecce16650886c2c7b460ef521861a3ebcd9e33e4bd11e6f8910d480a1bbd",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/stderr.log": "5d06dda33d7b67df594d304a9763be2439a13b037f3bcdc99ed1010bc1d467aa",
+      "docs/validation/2026-11-07-post-m4-investigation/normal-rust/live-warrior/summary.json": "42e5ef1ad1736b7d93cf7e45fd737164630a87fb85a0c57908ade0b7733c0724"
+    },
+    "receipt": "/home/diego/projects/borg-rs/docs/validation/2026-11-07-post-m4-investigation"
+  },
+  "id": "D0001",
+  "identity": {
+    "binary": "fcc2070b339b1c538920614adf871a030f9e34a7a4e1f98078f9c0845c5ca0e6",
+    "cause": "a pseudo-dragon",
+    "config_sha256": "f20f7ed7065a31dec52467b932f8f9ea4b17f69922732c02c583e160b6ddb419",
+    "encounter_family": "start-9137edbc887c66b39ea7ade206c1117c8a3e1649247ccc516049b480b940b781",
+    "seed": 8400,
+    "source": "f772eb6dcb93dc8d53cfc0167496d6122133f42e",
+    "source_sha256": "a2a3a26a8dae33e625819303104457dea7d0fad16f067c01b3aac8fb8e08dee3",
+    "start_save": null,
+    "turn": 37680
+  },
+  "independence_note": "One original input; repeated oracle verification is not three independent deaths. Cohort denominator remains nine starts.",
+  "investigation": null,
+  "issue": null,
+  "living_checkpoints": [
+    {
+      "capture_method": "fork_private_engine",
+      "class_idx": 0,
+      "clevel": 6,
+      "depth": 13,
+      "due_turn": 37000,
+      "file": "checkpoint-000037-t0000037004.save",
+      "game_turn": 37004,
+      "keys": 4418,
+      "max_depth": 14,
+      "race_idx": 0,
+      "save_sha256": "56ff9b687e360161ac82ec69e771397e2cb707d40ecdfac4a5ea2c74666aac66",
+      "seed": 8400,
+      "size_bytes": 75220
+    }
+  ],
+  "raw_cause": "a pseudo-dragon",
+  "recording": null,
+  "run_kind": "historical ordinary nine-class cohort; C/C/Rust three-log equality",
+  "schema": "borg-rs/death-record@1",
+  "terminal": {
+    "cause": "a pseudo-dragon",
+    "dead": true,
+    "depth": 13,
+    "level": 8,
+    "turn": 37680
+  }
+}

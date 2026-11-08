@@ -1,0 +1,24 @@
+{
+  "role": "prospective runtime/cap pilot, not an independent life",
+  "source": "337e50eb6c732bf6c908ab0d7c22b12b3a82b7d3",
+  "result": {
+    "borg_rng": 2805369156,
+    "dead": 0,
+    "decisions": 8820,
+    "depth": 5,
+    "energy": 1019697,
+    "hp": 72,
+    "kind": "turn_cap",
+    "level": 7,
+    "max_depth": 7,
+    "max_level": 7,
+    "quick": 0,
+    "quick_rng": 1858661567,
+    "rng": "0f911b4ab1b291298f0f606a895bb6b6dc1b76285c0765286ef3ae435431b2009b26fd664137e3d9d637ffb4a2cab6c423b6164f12f5b1af9d71715c9db5f572cab9a364c0c266462e6577e9cd9c461ab47297c79c577425fe6e31b47cbc31d9fb89a547712b3aaf047ad75644ffe80872d5ea650e3c4ccdcd856e5f0c61dcd2",
+    "rng_index": 5,
+    "turn": 100000,
+    "winner": 0
+  },
+  "outcome": "turn_cap",
+  "wall_seconds": 33.0457902979997
+}

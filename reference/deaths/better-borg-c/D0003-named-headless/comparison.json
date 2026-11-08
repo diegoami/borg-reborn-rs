@@ -1,0 +1,14 @@
+{
+  "reference_case": "D0002",
+  "reference_source": "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc",
+  "actual_source": "127483bc4724c0f75ff7bbc4edddde9293e37c2c",
+  "reference_trace_sha256": "eac31d1c64dab9fac314417aff901068ae30a9d2e3d6bd0bc87d4b43b66349c5",
+  "actual_trace_sha256": "04d8842392c970e98a69cae5fc34222a6b195de33ea053333a515f179b758bd2",
+  "native_borg_notes_identical": true,
+  "native_borg_notes_sha256": "e4b8285f435aa57646222a6e0926aaeb9705be2c839d281324e3b61e2aa3180e",
+  "noncheckpoint_states_identical": true,
+  "state_count": 23,
+  "states_sha256": "f25560d592facf137159449a7c9aae723a64c9326a71ad949c03a673c11ad94a",
+  "excluded": "CHARACTER name, new PLAY control metadata and periodic checkpoint ordering; complete raw traces are not claimed identical",
+  "limit": "Same-seed diagnostic reference of the recorded D0002 trajectory, not another independent starting condition or population survival result."
+}

@@ -1,0 +1,65 @@
+{
+  "classification": "verified retreat/archery opportunity investigation; no reusable gameplay defect established",
+  "confidence": "High for complete native replay, combat events and saved manual alternative; legal action scoring and rescue policy untested",
+  "cause_category": "melee",
+  "overall_assessment": "overall-assessment.md",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/163#issuecomment-6718075726",
+      "summary": "Normal mode requested; ranger phases, returns toward blocked stairs and dies without fighting. Requests combat log and timing; manually used bow/rest and saved alive.",
+      "status": "processed; verified original and manual logs; investigation open; saving does not mark owner review complete",
+      "actions": [
+        "retreat-archery",
+        "combat-log",
+        "wide-replay"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "verified complete original replay",
+      "summary": "Normal High-Elf Ranger CL1/D1, seed2060687716, source1cd426af4848; kobold death6309. Native three hits8/6/2:HP15→7→1→-1;11arrows and bow available, no known cure/Recall or available mana."
+    },
+    {
+      "status": "verified native actions and source call order",
+      "summary": "Prior bow/melee work. Fatal tail instead takes repeated desperate stairs: geometric distance2 but flowcost25 at6295, then unknown Blessing. Legal attack scoring still untested."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative",
+      "summary": "Takeover6255, saved7303/CL2/HP12/D1; six confirmed arrow hits plus melee yeek finish, kobold shot dead. Save/load, RNG and viewport differences exclude a population claim."
+    }
+  ],
+  "actions": [
+    {
+      "key": "retreat-archery",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/239",
+      "summary": "Inspect legal bow attacks, accepted staircase path and retreat-before-attack priority at6285/6295; account for later carries",
+      "status": "investigating; no gameplay change"
+    },
+    {
+      "key": "combat-log",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/240",
+      "summary": "Qualified native message/actual HP-loss/speed viewer channel",
+      "status": "verified locally and hosted; delivery PR"
+    },
+    {
+      "key": "wide-replay",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/238",
+      "summary": "Replay valid maximized-window recordings through separately qualified reader; retain malformed-input rejection",
+      "status": "verified; delivery PR240"
+    },
+    {
+      "key": "walking-return",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Compare legal walking retreat and attacking to create a path",
+      "status": "needs evidence; no guaranteed route claimed"
+    },
+    {
+      "key": "survival-stock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Known cure/escape preparedness before the dive",
+      "status": "proposed; shared investigation"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "diagnostic": "Actual recent living save loads and advances one ordinary wait; Borg not activated; no exact continuation claim",
+  "loaded_save_sha256": "e64964e684800e60244eb1d6ce40b26d8aab8c965c89674ee25a405487fddffd",
+  "checkpoint": {
+    "borg_rng": 278424594,
+    "dead": 0,
+    "decisions": 15352,
+    "depth": 12,
+    "energy": 1773285,
+    "hp": 84,
+    "kind": "checkpoint",
+    "level": 9,
+    "max_depth": 12,
+    "max_level": 9,
+    "quick": 0,
+    "quick_rng": 1858661567,
+    "rng": "9049c65b99e0085098af7560a40dc2d5e3bd83f8150d37bb5d37bfcce9bf1cde10ed9bf8b6e1bc54301651900e914edc28ea38f9ec507d480f203a5c05f7a89659c81a31d43fc3fa322141da3345598d6656f07459d38a36b5b0f2d2c3f8884d321bda0ea92a3cf726ccc07c44af2b15993c11f9a975ebaada75278695ae1b3c",
+    "rng_index": 4,
+    "turn": 174751,
+    "winner": 0
+  },
+  "end_turn": 174752,
+  "outcome": "turn_cap",
+  "command": [
+    "/home/diego/projects/angband/better-borg-c/artifacts/cold-protection-carry/main-build/build/game/angband",
+    "-mtest",
+    "-uMeasure",
+    "-duser=/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load/user",
+    "-darchive=/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load/archive",
+    "-dsave=/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load/save",
+    "-dscores=/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load/scores",
+    "-dpanic=/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load/panic",
+    "-dgamedata=/home/diego/projects/angband/better-borg-c/artifacts/cold-protection-carry/main-build/source/lib/gamedata",
+    "-dpref=/home/diego/projects/angband/better-borg-c/artifacts/cold-protection-carry/main-build/source/lib/customize"
+  ],
+  "cwd": "/home/diego/projects/angband/better-borg-c/artifacts/cold-protection-carry/main-build/source",
+  "input_sha256": "48dc375336f0af41bb3ebd010db4f25b8b7d3d9b31c7fc4a1146ca8669f2f43e",
+  "environment": {
+    "BORG_MEASURE_CAP": "174752",
+    "BORG_MEASURE_DIR": "/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/recent-save-load",
+    "BORG_MEASURE_SEED": "11",
+    "BORG_MEASURE_LOAD": "/home/diego/projects/angband/better-borg-c/artifacts/death-pilot1/seed11-cap400000/recent.save"
+  },
+  "exit": 0
+}

@@ -1,0 +1,102 @@
+{
+  "scope": "Original visible top-line changes, not every unobserved message; world turns are not all decisions",
+  "bronze_wand_rejections": 764,
+  "first_rejection": [
+    242023,
+    194979,
+    "tick",
+    "You have no room for a Bronze Wand."
+  ],
+  "last_rejection": [
+    266438,
+    214792,
+    "tick",
+    "You have no room for a Bronze Wand."
+  ],
+  "hunger_events": [
+    [
+      46636,
+      37501,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      66252,
+      52501,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      88092,
+      69001,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      109338,
+      85701,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      132922,
+      104201,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      156236,
+      123001,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      179426,
+      141701,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      200844,
+      158401,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      219050,
+      175001,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      237312,
+      191701,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      260992,
+      210401,
+      "tick",
+      "You are getting hungry."
+    ],
+    [
+      266450,
+      214801,
+      "tick",
+      "You are getting weak from hunger!"
+    ],
+    [
+      269718,
+      216801,
+      "tick",
+      "You are getting faint from hunger!"
+    ],
+    [
+      271958,
+      218301,
+      "tick",
+      "You are starving!!"
+    ]
+  ]
+}

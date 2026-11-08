@@ -1,0 +1,96 @@
+{
+  "classification": "D0002 reference replay on 29-carry build; defect not established",
+  "confidence": "All native Borg notes and 23 noncheckpoint states including sampled game/Borg RNG match D0002 six-carry; causal investigation remains open.",
+  "cause_category": "monster melee",
+  "encounter_family": "start-ba8e7ba91ecaf63812f343b311e27952e5c9ee04f9a4853ed8963915298d8be2",
+  "encounter_family_qualification": {
+    "status": "verified",
+    "reference_case": "D0002",
+    "evidence": "comparison.json",
+    "limits": "CHARACTER name, new PLAY control metadata and periodic checkpoint ordering; complete raw traces are not claimed identical"
+  },
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Actual source127483bc4724, seed29 ordinary Human Warrior, native a gallant death at20445 (20444 additional engine turns), level3/depth2/HP-3; final save is dead."
+    },
+    {
+      "status": "verified",
+      "summary": "Named headless exporter produced immutable record/build/input/terminal-map/events/assessment files and updated index; no window was opened."
+    },
+    {
+      "status": "verified reference comparison",
+      "summary": "Same-seed diagnostic reference of the recorded D0002 trajectory, not another independent starting condition or population survival result."
+    },
+    {
+      "status": "pending",
+      "summary": "Default5/12/25/40/60/82/105 windows and a faithful living-checkpoint continuation are not qualified for this observer build; older D0002 windows retain their own historical identity."
+    },
+    {
+      "status": "observed on qualified C34 family reference; causal alternatives pending",
+      "summary": "D0004 original frames20293/20294/20303/20430 retained. Danger rises188 to451 at next command; critical phase overrides failed safety sampling. Four Phase Door and twelve CLW before first jump; no tested fight or walking rescue. Preserve this dossier own source identity."
+    }
+  ],
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6709969033",
+      "summary": "Disputes first Phase Door20293 and crowded landing20294; proposes fighting single creature or immediate door retreat toward upstairs; repeated phases and late swarm20430.",
+      "status": "recorded; native anchors and danger escalation checked, alternatives and wake order unproved",
+      "actions": [
+        "phase-door-first-choice",
+        "exposure-before-crowd"
+      ],
+      "evidence": "../D0004-named-headless/owner-phase-feedback.md"
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6710312944",
+      "summary": "Require brainstorming and complete overall picture per processed death; evaluate lower theft danger and room retreat, including attempted escape after no Phase Door remains.",
+      "status": "recorded; candidates filed and overall assessment written; native mechanisms and alternative outcomes pending",
+      "actions": [
+        "theft-danger-weight",
+        "attempted-room-retreat"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "exposure-before-crowd",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Reconstruct earliest known crowd danger, entry and retreat/preparedness at level3",
+      "status": "investigating recorded original-rule behavior; no defect established"
+    },
+    {
+      "key": "phase-door-first-choice",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Evaluate first Phase Door20293 versus legal fight/walk alternatives and crowd retreat at next decision20303",
+      "status": "investigating; no rescue or implementation defect established"
+    },
+    {
+      "key": "early-escape-cure-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/154",
+      "summary": "Evaluate early Phase Door/cure restock requirement linked to source370",
+      "status": "proposed enhancement; no implementation or survival benefit established"
+    },
+    {
+      "key": "theft-danger-weight",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/158",
+      "summary": "Evaluate theft danger contribution and sensitivity of first escape choice",
+      "status": "proposed analysis; runtime decomposition and survival/progress benefit unproved"
+    },
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved"
+    }
+  ],
+  "overall_assessment": "../D0004-named-headless/overall-assessment.md"
+}

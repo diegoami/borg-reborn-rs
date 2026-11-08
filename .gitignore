@@ -1,0 +1,8 @@
+build/
+harness/out/
+target/
+vendor/
+__pycache__/
+/.angband-reborn/
+/docs/deaths/.registry.lock
+.claude/settings.local.json

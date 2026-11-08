@@ -1,0 +1,29 @@
+{
+  "source_commit": "aa4ad6cfeea2cf19870e224219dfe66688175c6e",
+  "source_archive_sha256": "c0da78e168588ac9b01fbd47e9073f87fb5a1beea54a7a768753214a49a4af82",
+  "changed_files": {
+    "borg-rs/src/lib.rs": {
+      "before_sha256": "584266142ded6dc2fab0ad047bef3a57fd031d7c207a89d780934e5648d2bfbd",
+      "after_sha256": "adc379e59d4a564a8fa3a1acd20f5e45fb3916cf1e2d49f9060a13f50c8f009d"
+    },
+    "borg-rs/src/borg_caution.rs": {
+      "before_sha256": "0534f63aae812e7bab8db79dc93b7cb9798ee6f23198c0d78d880d5b54bd9851",
+      "after_sha256": "724590d28b36313540c4c998e0569f9c58999bd5ebd955a962ac3d9d338c1b04"
+    },
+    "borg-rs/src/borg_think_dungeon.rs": {
+      "before_sha256": "6a4870fb11c5a80613550cc786ac3f9e03aae7a9a10255aceb2f49930dcd35ae",
+      "after_sha256": "900e9e0003be4ffbe3500972198584727a131b39d12acd8520ddc9a93f0ce961"
+    },
+    "borg-rs/src/borg_flow_dark.rs": {
+      "before_sha256": "5e2cb6215260c9081bf483691f3c3d60252c5507270790df9d5ce7df2efae59c",
+      "after_sha256": "c22d4c69e4e817c475a2ab1e04c1e9cd8eaadeea0c87469e0de1c24c94b8353e"
+    },
+    "borg-rs/src/borg_flow.rs": {
+      "before_sha256": "0a4250e63ddfc7a765f879e88ea567664df83856fce19855710979538c62b4ae",
+      "after_sha256": "14e5d95d383ff022587a109d7c4693d48b9113145f8940fb0ec6f6bd6dfb1e85"
+    }
+  },
+  "patch_sha256": "baf786829e84e94097256ebaa1df9f93be51e3b0e77efb9f64b72ee4341bb840",
+  "scope": "read-only existing private fields and existing-computed danger; stderr only, selected D0006 tail",
+  "binary_sha256": "1d805b784c92db97085bb72cf02f34f31a79574d40882a8365493f3880267be8"
+}

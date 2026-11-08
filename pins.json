@@ -1,0 +1,50 @@
+{
+  "schema": "borg-reborn-rs/pins@1",
+  "note": "Every related repository at the commit this repository read it. Sessions read others only at these pins (RULES 7). Update a pin in its own PR, saying why.",
+  "pins": {
+    "angband": {
+      "repository": "angband/angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; its src/borg/ is the source of the c-pristine control (T1.3)."
+    },
+    "borg-rs": {
+      "repository": "diegoami/borg-rs",
+      "commit": "6b58a46444ab3f5d28cfd86c7ac820d54c762c47",
+      "tag_of_interest": {
+        "m5": "020322749026418a666da3209c169f48ec9d608c",
+        "m0-pristine-c": "aa4ad6cfeea2cf19870e224219dfe66688175c6e"
+      },
+      "role": "Template for structure, tooling and external behaviour; source of the angband/ tree with the borgh harness (T1.1), the harness scripts (T1.2), engine.rs (T1.5) and the launchers and death tooling (T1.6); perception oracle (T2.5). Its commit aa4ad6c is the zoo specimen 4.2.6-rs-m0-c (pristine C Borg under borgh), the oracle for the c-pristine control (T1.3)."
+    },
+    "better-borg-c": {
+      "repository": "diegoami/better-borg-c",
+      "commit": "63fbc1fb7ddadb4ed9e8e404114343e43ad1383e",
+      "baseline": {
+        "tag": "4.2.6-impact-v7",
+        "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
+        "carries": 76
+      },
+      "role": "C Borg with verified fixes; the baseline tag is the source of the c-bbc-m7 control (T1.3), native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/)."
+    },
+    "neo-angband-tracker": {
+      "repository": "diegoami/neo-angband-tracker",
+      "commit": "eefc55000dd5d5f43d8f077f6543b4594807ce08",
+      "paths": [
+        "docs/c-borg/BORG_SPEC.md",
+        "docs/c-borg/TUNABLE-BORG-PLAN.md",
+        "docs/c-borg/README.md"
+      ],
+      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects."
+    },
+    "borg-zoo": {
+      "repository": "diegoami/borg-zoo",
+      "commit": "ffe5a056ad1d8a31353ec536164ab9fb36bb662f",
+      "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/."
+    },
+    "borg-agent": {
+      "repository": "diegoami/borg-agent",
+      "commit": "697abde14d642cd04a0f3a371003cb57e836ed75",
+      "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch)."
+    }
+  }
+}

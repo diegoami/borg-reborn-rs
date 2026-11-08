@@ -1,0 +1,125 @@
+{
+  "diagnostic": "Actual recent living save loaded and advanced one ordinary wait; Borg not activated; not exact Borg-memory continuation",
+  "loaded_save_sha256": "9eeef4d173e8b492ad05f86360ec34508cac785f7660a595b4419762276ae7b9",
+  "checkpoint": {
+    "borg_rng": 3272642169,
+    "dead": 0,
+    "decisions": 2026,
+    "depth": 2,
+    "energy": 204458,
+    "hp": 49,
+    "kind": "checkpoint",
+    "level": 3,
+    "max_depth": 3,
+    "max_level": 3,
+    "quick": 0,
+    "quick_rng": 2694408361,
+    "rng": "2523836e37dd89bb8e4fa63e0a13901af212a1349ce84962f7e3448bb6f80b6f1aed298a40b9fa3b73aba946d9b09035e03aa2e94bb3ee747630c1a5931e5d22bb0c2e0d77c9c806113b6cb70b6b522cf0f49683fcd2ae36657388c05d66688c52d1a5ac222e9a2457ba0d26530ab3bb01ea55c02384fdfc6061554659aad97d",
+    "rng_index": 27,
+    "turn": 20073,
+    "winner": 0
+  },
+  "command": [
+    "/home/diego/projects/angband/better-borg-c/artifacts/potion-carry/main-build/build/game/angband",
+    "-mtest",
+    "-uMeasure",
+    "-duser=/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29/user",
+    "-darchive=/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29/archive",
+    "-dsave=/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29/save",
+    "-dscores=/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29/scores",
+    "-dpanic=/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29/panic",
+    "-dgamedata=/home/diego/projects/angband/better-borg-c/artifacts/potion-carry/main-build/source/lib/gamedata",
+    "-dpref=/home/diego/projects/angband/better-borg-c/artifacts/potion-carry/main-build/source/lib/customize"
+  ],
+  "cwd": "/home/diego/projects/angband/better-borg-c/artifacts/potion-carry/main-build/source",
+  "input_sha256": "48dc375336f0af41bb3ebd010db4f25b8b7d3d9b31c7fc4a1146ca8669f2f43e",
+  "environment": {
+    "BORG_MEASURE_SEED": "29",
+    "BORG_MEASURE_CAP": "20074",
+    "BORG_MEASURE_DIR": "/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/load-recent29",
+    "BORG_MEASURE_LOAD": "/home/diego/projects/angband/better-borg-c/artifacts/deep-impact-v2/six-carry/seed29/recent.save"
+  },
+  "calendar_context": {
+    "status": "recorded",
+    "start": {
+      "utc": "2026-11-06T12:50:31.898036+00:00",
+      "local": "2026-11-06T13:50:31.898036+01:00",
+      "timezone_name": "CET",
+      "TZ_environment": null
+    },
+    "end": {
+      "utc": "2026-11-06T12:50:31.962198+00:00",
+      "local": "2026-11-06T13:50:31.962198+01:00",
+      "timezone_name": "CET",
+      "TZ_environment": null
+    }
+  },
+  "exit": 0,
+  "states": [
+    {
+      "kind": "start",
+      "turn": 20073,
+      "energy": 204458,
+      "decisions": 0,
+      "depth": 2,
+      "max_depth": 3,
+      "level": 3,
+      "max_level": 3,
+      "hp": 49,
+      "dead": 0,
+      "winner": 0,
+      "borg_rng": 0,
+      "quick": 0,
+      "quick_rng": 2694408361,
+      "rng_index": 27,
+      "rng": "2523836e37dd89bb8e4fa63e0a13901af212a1349ce84962f7e3448bb6f80b6f1aed298a40b9fa3b73aba946d9b09035e03aa2e94bb3ee747630c1a5931e5d22bb0c2e0d77c9c806113b6cb70b6b522cf0f49683fcd2ae36657388c05d66688c52d1a5ac222e9a2457ba0d26530ab3bb01ea55c02384fdfc6061554659aad97d"
+    },
+    {
+      "kind": "checkpoint",
+      "turn": 20073,
+      "energy": 204458,
+      "decisions": 0,
+      "depth": 2,
+      "max_depth": 3,
+      "level": 3,
+      "max_level": 3,
+      "hp": 49,
+      "dead": 0,
+      "winner": 0,
+      "borg_rng": 0,
+      "quick": 0,
+      "quick_rng": 2694408361,
+      "rng_index": 27,
+      "rng": "2523836e37dd89bb8e4fa63e0a13901af212a1349ce84962f7e3448bb6f80b6f1aed298a40b9fa3b73aba946d9b09035e03aa2e94bb3ee747630c1a5931e5d22bb0c2e0d77c9c806113b6cb70b6b522cf0f49683fcd2ae36657388c05d66688c52d1a5ac222e9a2457ba0d26530ab3bb01ea55c02384fdfc6061554659aad97d"
+    },
+    {
+      "kind": "turn_cap",
+      "turn": 20074,
+      "energy": 204558,
+      "decisions": 0,
+      "depth": 2,
+      "max_depth": 3,
+      "level": 3,
+      "max_level": 3,
+      "hp": 49,
+      "dead": 0,
+      "winner": 0,
+      "borg_rng": 0,
+      "quick": 0,
+      "quick_rng": 2694408361,
+      "rng_index": 26,
+      "rng": "2523836e37dd89bb8e4fa63e0a13901af212a1349ce84962f7e3448bb6f80b6f1aed298a40b9fa3b73aba946d9b09035e03aa2e94bb3ee747630c1a5931e5d22bb0c2e0d77c9c806113b6cb70b6b522cf0f49683fcd2ae36657388c05d66688c52d1a5ac222e9a2456c935c027b01ce601ea55c02384fdfc6061554659aad97d"
+    }
+  ],
+  "outcome": "turn_cap",
+  "files_sha256": {
+    "recent.save": "48b5438b489473227931f9b94b8b18f29e4eab44e7c2fb3b7062e503bcba79a8",
+    "trace.txt": "c88b60e30f97a66553d59da41f812fce8d43bda3a59e35114dfb3da9bc0fa835",
+    "terminal.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "start.save": "48b5438b489473227931f9b94b8b18f29e4eab44e7c2fb3b7062e503bcba79a8",
+    "input.txt": "48dc375336f0af41bb3ebd010db4f25b8b7d3d9b31c7fc4a1146ca8669f2f43e",
+    "user/CharOutput.txt": "72c1e3ff7ba1a01f8249dcf151a569c70718ecc22e8303c30cd193b88aa36660",
+    "user/borg.txt": "02dcae7a69bb52253ec2a3241f2223e88c3cc6c520c34df753ddc8655c10c5a9"
+  },
+  "build_record": "build.json"
+}

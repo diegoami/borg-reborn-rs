@@ -1,0 +1,54 @@
+[
+  {
+    "turn": 20293,
+    "phase": "command",
+    "frame_index": 24832,
+    "label": "before-phase-decision",
+    "png": "snapshots/owner-feedback-20293-before-phase-decision.png",
+    "json": "snapshots/owner-feedback-20293-before-phase-decision.json",
+    "text": "snapshots/owner-feedback-20293-before-phase-decision.txt",
+    "png_sha256": "27abd87b5f7c851e04dc3157e21f83c7ca106074a25e837bc44f3fb51aa3704d",
+    "json_sha256": "7d3e4558ade3ca84733843d339f28cbe49b63e1a7838bd8416b4f89e1ec76a7f",
+    "source": "1b95154f65b2ac1ed5fc9a080df6cff971643b5d",
+    "recording_sha256": "ecdff734f85422ec21f1f09ac4b57f3c855c8c04618e8536f13706a22b6a1ff3"
+  },
+  {
+    "turn": 20294,
+    "phase": "tick",
+    "frame_index": 24839,
+    "label": "phase-landing",
+    "png": "snapshots/owner-feedback-20294-phase-landing.png",
+    "json": "snapshots/owner-feedback-20294-phase-landing.json",
+    "text": "snapshots/owner-feedback-20294-phase-landing.txt",
+    "png_sha256": "8478a62b90931653023060ad723a143a5baff103797ccc77d198df1752581026",
+    "json_sha256": "37671693075f69036258f3cf52bd3808cbddf9d0b93c78d9baa1c1d9d8faab9b",
+    "source": "1b95154f65b2ac1ed5fc9a080df6cff971643b5d",
+    "recording_sha256": "ecdff734f85422ec21f1f09ac4b57f3c855c8c04618e8536f13706a22b6a1ff3"
+  },
+  {
+    "turn": 20303,
+    "phase": "command",
+    "frame_index": 24850,
+    "label": "first-post-landing-decision",
+    "png": "snapshots/owner-feedback-20303-first-post-landing-decision.png",
+    "json": "snapshots/owner-feedback-20303-first-post-landing-decision.json",
+    "text": "snapshots/owner-feedback-20303-first-post-landing-decision.txt",
+    "png_sha256": "5b46b952f2ddabe2dcbd7113ebc3895821a4d0cc608988fd551f76bed3a31f18",
+    "json_sha256": "45fc99144655958fc74a343090940b2485fcea56e522571d57079ef718f54dba",
+    "source": "1b95154f65b2ac1ed5fc9a080df6cff971643b5d",
+    "recording_sha256": "ecdff734f85422ec21f1f09ac4b57f3c855c8c04618e8536f13706a22b6a1ff3"
+  },
+  {
+    "turn": 20430,
+    "phase": "tick",
+    "frame_index": 25049,
+    "label": "late-fight",
+    "png": "snapshots/owner-feedback-20430-late-fight.png",
+    "json": "snapshots/owner-feedback-20430-late-fight.json",
+    "text": "snapshots/owner-feedback-20430-late-fight.txt",
+    "png_sha256": "1f9c47875614c95872ee85475eb25115eeec4974f70a66d086fd95dd80241acf",
+    "json_sha256": "55d682ba0fb7734ecdcc97a793d1909b5f4908c4497b163ae2c42b31e1d927df",
+    "source": "1b95154f65b2ac1ed5fc9a080df6cff971643b5d",
+    "recording_sha256": "ecdff734f85422ec21f1f09ac4b57f3c855c8c04618e8536f13706a22b6a1ff3"
+  }
+]

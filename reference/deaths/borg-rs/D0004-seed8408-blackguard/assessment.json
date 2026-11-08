@@ -1,0 +1,14 @@
+{
+  "actions": [
+    {
+      "issue": null,
+      "key": "legacy-blackguard",
+      "status": "recorded; needs causal investigation",
+      "summary": "Prioritize a controlled healing-versus-finishing-attack counterfactual. Last-checkpoint stock alone is not proof a particular alternative would survive; no tactical change is made from this observation."
+    }
+  ],
+  "classification": "C/Rust parity observed; defect not established",
+  "confidence": "Actual original cohort and before-death native inventory; causal fix unproved",
+  "feedback": [],
+  "findings": []
+}

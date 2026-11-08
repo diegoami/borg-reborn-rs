@@ -1,0 +1,19 @@
+{
+  "seed": 8400,
+  "race": "Human",
+  "race_idx": 0,
+  "class": "Warrior",
+  "class_idx": 0,
+  "menu_letters": true,
+  "stop_reason": "death",
+  "game_turns": 37680,
+  "player_turns": 3819,
+  "resting_turns": 320,
+  "clevel": 8,
+  "max_depth": 14,
+  "depth": 13,
+  "dead": true,
+  "death_cause": "a pseudo-dragon",
+  "keys": 4563,
+  "wall_seconds": 4.610
+}

@@ -1,0 +1,25 @@
+{
+  "calendar": "seeded headless harness holiday context pinned to epoch",
+  "identity": {
+    "binary": "9c2b69ef98ff8324677c036b78ce7fdb8ae626ee4b7db6492fc0845321d6cc36",
+    "cause": "Fang, Farmer Maggot's Dog",
+    "config_sha256": "9c61c9109f1ab59cfa24a6328b0726f59e7b4ee7acf3f48bb3d3188b8406f5d3",
+    "encounter_family": "start-5b1ef1f3afe8194eb7c4f977358ead9d309d8cbffabb6cfe6aa26a22f501ebf8",
+    "seed": 1532917772,
+    "source": "9881301ceaad91d0c68a61bed1a8ccdde100e660",
+    "source_sha256": "d247f691a3f8a7db91489456c4ccc23646a7cacbcc3816bdf142517d899b3794",
+    "start_save": null,
+    "turn": 36289
+  },
+  "profile": {
+    "checkpoint_every": 1000,
+    "class": 4,
+    "flags": "menu,terminal-save,frames,key-limit=50000",
+    "race": 2,
+    "seed": 1532917772,
+    "stall_seconds": 30,
+    "turn_limit": 200000,
+    "wall_seconds": 120
+  },
+  "run_kind": "new birth"
+}

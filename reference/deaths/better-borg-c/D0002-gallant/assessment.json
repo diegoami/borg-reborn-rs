@@ -1,0 +1,141 @@
+{
+  "classification": "original C behavior; final healing ineligible under recorded danger, defect not established",
+  "confidence": "death/repeat/windows verified; causal stock/escape diagnosis provisional",
+  "cause_category": "monster melee",
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Level3 Warrior died to a gallant at20445/depth2/HP-3 after exhausting Phase Door and attacking scouts/gallant while fleeing. Twelve known Cure Light Wounds remained; no CCW."
+    },
+    {
+      "status": "verified",
+      "summary": "Unchanged six-carry repeat matches entire trace/start save/final game+Borg RNG. Five-carry and pristine reference traces are byte-identical to each other; six-carry has different internal RNG/observations but same cause/death turn/final gameplay state."
+    },
+    {
+      "status": "source guard evaluated against recorded inputs",
+      "summary": "At HP3/danger507, estimated CLW heal15 fails danger<hp+heal and heal>danger/3. Outer fleeing guard may skip the function earlier; no actual runtime branch proof or rescue claim."
+    },
+    {
+      "status": "unproved",
+      "summary": "Whether earlier escape/resource decisions reveal an implementation defect or intended rules remains unproved."
+    },
+    {
+      "status": "observed",
+      "summary": "Phase Door20293 precedes the critical crowd observation20303; subsequent Phase Door attempts end20323. Reconstruct walk/flow/descent versus teleport entry and prior monster knowledge, not assume deliberate walking into the crowd."
+    },
+    {
+      "status": "verified",
+      "summary": "Wider default5/12/25/40/60/82/105 (10 omitted) and entry anchor160 match original build/start/prior observations. At40beforedeath48HP,25before31HP,5before3HP; anchor precedes PhaseDoor20293/crowd20303. No entry-cause or rescue proven."
+    },
+    {
+      "status": "observed on qualified C34 family reference; causal alternatives pending",
+      "summary": "D0004 original frames20293/20294/20303/20430 retained. Danger rises188 to451 at next command; critical phase overrides failed safety sampling. Four Phase Door and twelve CLW before first jump; no tested fight or walking rescue. Preserve this dossier own source identity."
+    }
+  ],
+  "actions": [
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "escape-stock-trajectory",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Trace why Phase Door was exhausted and whether earlier escape was legally available",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "pristine-attribution",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Compare pristine upstream versus carried build",
+      "status": "completed: pristine/five-carry identical trace; same death on six-carry; no defect established"
+    },
+    {
+      "key": "exposure-before-crowd",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Reconstruct earliest known crowd danger, entry and retreat/preparedness at level3",
+      "status": "recorded owner observation; needs native causal investigation"
+    },
+    {
+      "key": "phase-door-first-choice",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Evaluate first Phase Door20293 versus legal fight/walk alternatives and crowd retreat at next decision20303",
+      "status": "investigating; no rescue or implementation defect established"
+    },
+    {
+      "key": "early-escape-cure-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/154",
+      "summary": "Evaluate early Phase Door/cure restock requirement linked to source370",
+      "status": "proposed enhancement; no implementation or survival benefit established"
+    },
+    {
+      "key": "theft-danger-weight",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/158",
+      "summary": "Evaluate theft danger contribution and sensitivity of first escape choice",
+      "status": "proposed analysis; runtime decomposition and survival/progress benefit unproved"
+    },
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved"
+    }
+  ],
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6685824152",
+      "summary": "Character appears exposed to too many enemies too early; inspect entry/preparedness and earlier retreat.",
+      "status": "recorded; earliest-known-exposure investigation required",
+      "actions": [
+        "exposure-before-crowd"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6709969033",
+      "summary": "Disputes first Phase Door20293 and crowded landing20294; proposes fighting single creature or immediate door retreat toward upstairs; repeated phases and late swarm20430.",
+      "status": "recorded; native anchors and danger escalation checked, alternatives and wake order unproved",
+      "actions": [
+        "phase-door-first-choice",
+        "exposure-before-crowd"
+      ],
+      "evidence": "../D0004-named-headless/owner-phase-feedback.md"
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/34#issuecomment-6710312944",
+      "summary": "Require brainstorming and complete overall picture per processed death; evaluate lower theft danger and room retreat, including attempted escape after no Phase Door remains.",
+      "status": "recorded; candidates filed and overall assessment written; native mechanisms and alternative outcomes pending",
+      "actions": [
+        "theft-danger-weight",
+        "attempted-room-retreat"
+      ]
+    }
+  ],
+  "inspection_profile": {
+    "profile": "../window-profile-v2.json",
+    "offsets_engine_turns": [
+      5,
+      12,
+      25,
+      40,
+      60,
+      82,
+      105
+    ],
+    "legacy_offsets_preserved": [
+      10,
+      15,
+      20
+    ],
+    "event_anchors": [
+      {
+        "offset_engine_turns": 160,
+        "reason": "Before PhaseDoor20293 and critical crowd20303"
+      }
+    ]
+  },
+  "overall_assessment": "../D0004-named-headless/overall-assessment.md"
+}
