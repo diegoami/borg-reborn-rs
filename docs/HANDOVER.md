@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: M0 reviewed, M1 started, backlog moved to issues
+
+- The owner merged the M0 review (#1); tag `m0` is on the merge
+  (`ae64f12`). D1–D11 are accepted (GOALS.md).
+- The backlog is now GitHub issues (owner request): GitHub milestones
+  M1–M7+, labels `task`, `process`, `in progress` and `owner`, and issues
+  #3–#24 for T1.0–T3.8, each with a **Needs** line linking its
+  dependencies. PLAN.md keeps only milestones, exits and method.
+- **Next:** #3 (T1.0, the source-refresh routine over every pin, death
+  reports included; owner request), then #4 (T1.1, import the engine tree
+  at refreshed pins).
+
 ## 2026-11-08: M0 review findings addressed (T0.4)
 
 The owner's review of PR #1 had six findings, all verified and addressed
@@ -48,9 +60,7 @@ T1.8 writes it.
   PR shows everything), as set up here.
 
 **Next**
-- After the M0 review merges: move the backlog to GitHub issues (owner
-  request), starting with the source-refresh routine, then T1.1. Read
-  PLAN.md T1.1–T1.8 first.
+- Done on 2026-11-09: see the newest entry above.
 
 **Known limits**
 - Nothing is built against the engine yet. The CI checks only the empty

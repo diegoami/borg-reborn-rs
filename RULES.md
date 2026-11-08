@@ -8,7 +8,8 @@ whatever the model.
 1. **A session merges its own task PRs** into `main` once CI is green, with
    no approval needed. The one merge a session never makes is a milestone's
    **review PR** (`main` → `reviewed`). That one is the owner's.
-2. Scope comes from [docs/GOALS.md](docs/GOALS.md) and [PLAN.md](PLAN.md).
+2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
+   the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
    for the owner. A session that finds a goal or a task wrong says so in its
    PR or in [docs/HANDOVER.md](docs/HANDOVER.md), and goes on with the rest.
@@ -19,9 +20,10 @@ whatever the model.
 
 4. No AI attribution trailers in commits or PR bodies: no `Co-Authored-By`
    lines for a model and no "Generated with" footers.
-5. One task per PR, on a branch named `task/Tn.m-short-name`. A branch may
-   start from an unmerged one; the PR then says "stacked on #n". Each PR
-   updates its task's row in PLAN.md and the handover. Never amend
+5. One task issue per PR, on a branch named `task/Tn.m-short-name`; the PR
+   says `Closes #N`. A branch may start from an unmerged one; the PR then
+   says "stacked on #n". Each PR updates the handover. Mark the issue
+   `in progress` when you start, so two sessions never take the same task. Never amend
    published commits, force-push `main` or `reviewed`, or move tags.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
@@ -38,7 +40,7 @@ whatever the model.
    the harness hooks, the declared fork corrections and the adopted C Borg
    carries inherited from borg-rs. Nothing else, except **harness-only
    hooks** under `#ifdef BORG_HARNESS` (such as the exact-boundary
-   observation, PLAN T1.4), each shown not to change the key stream before
+   observation, T1.4, #7), each shown not to change the key stream before
    it acts. Control C Borgs are compiled from pinned sources overlaid in the
    build directory; the tree is not edited. Birth options are the game's
    defaults.
@@ -51,7 +53,7 @@ whatever the model.
 12. **Every natural death is recorded** as a dossier under `docs/deaths/`
     (borg-rs format; the decision trace from M3), with the actual source,
     build, implementation, profile and seed. This applies from the first
-    game played (PLAN T1.2), whichever arm died. Repeats and replays never
+    game played (T1.2, #5), whichever arm died. Repeats and replays never
     inflate independent counts.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
