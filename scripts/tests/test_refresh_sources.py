@@ -100,6 +100,17 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('**new tags** `4.2.6-impact-v*`: 4.2.6-impact-v8', text)
         self.assertIn('**cited C Borg functions changed:** borg-danger.c:borg_danger', text)
 
+    def test_engine_tree_resync_is_flagged(self):
+        pins = json.loads((self.root / 'pins.json').read_text())
+        tree_a = sh(self.root / 'vendor/src', 'git', 'rev-parse', f'{self.a}:src/borg')
+        pins['engine_tree'] = {'pin': 'src', 'path': 'src/borg', 'tree': tree_a}
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        self.assertIn('**engine tree re-sync available:** `src/borg/`', self.report())
+        rs.update(self.root, ['src'], today='2026-11-09')
+        pins = json.loads((self.root / 'pins.json').read_text())
+        self.assertEqual(pins['engine_tree']['tree'], tree_a, 'update never re-syncs the engine tree')
+        self.assertIn('re-sync available', self.report(), 'still flagged until the re-sync PR')
+
     def test_report_is_read_only(self):
         before = (self.root / 'pins.json').read_text()
         self.report()

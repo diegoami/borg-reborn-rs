@@ -101,6 +101,24 @@
       "from": "catalogue",
       "to": "reference/zoo/catalogue",
       "select": "all"
+    },
+    {
+      "pin": "borg-rs",
+      "from": "docs",
+      "to": "reference/borg-rs",
+      "select": "files",
+      "files": [
+        "FORK-CORRECTIONS.md",
+        "adoption/status.json"
+      ]
     }
-  ]
+  ],
+  "engine_tree": {
+    "pin": "borg-rs",
+    "commit": "e5cb263eed8eee93860b5cfcdc18af99e6d134f1",
+    "path": "angband",
+    "split": "a2b6b4cbdd2f7d0360301ddb9c927037390a17bc",
+    "tree": "5cc1b1cbc2024214dd2d833c928d494abeae1042",
+    "note": "angband/ imported from borg-rs (docs/ENGINE-TREE.md). The refresh report flags when the pin's angband/ tree differs from this tree (a re-sync is available)."
+  }
 }

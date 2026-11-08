@@ -161,6 +161,15 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                     touched = sorted({p.split('/')[0] for p in changed if '/' in p} - set(new_cases))
                     if touched:
                         w(f"  - updated cases: {', '.join(touched)}\n")
+        engine = data.get('engine_tree') or {}
+        if engine.get('pin') == name:
+            r = git(src.repo, 'rev-parse', '-q', '--verify', f"{src.head}:{engine['path']}")
+            head_tree = r.stdout.strip()
+            if head_tree and head_tree != engine['tree']:
+                w(f"- **engine tree re-sync available:** `{engine['path']}/` at head is {head_tree[:12]}, "
+                  f"ours is {engine['tree'][:12]} (docs/ENGINE-TREE.md, RULES 22)\n")
+            elif head_tree:
+                w(f"- engine tree: `{engine['path']}/` unchanged at head\n")
         tag_pattern = pin.get('watch_tags')
         if tag_pattern:
             tags = git(src.repo, 'tag', '--list', tag_pattern, '--contains', pin['commit']).stdout.split()
