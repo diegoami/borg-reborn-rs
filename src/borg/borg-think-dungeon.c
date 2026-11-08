@@ -582,8 +582,12 @@ static bool borg_think_dungeon_munchkin(void)
     borg.goal.fleeing_munchkin = true;
     borg.goal.fleeing          = true;
 
-    /* Increase the range of the borg a bit */
-    if (borg.trait[BI_CDEPTH] <= 10)
+    /* Increase the range of the borg a bit.  Only when the character
+     * level term can be positive: below level 10 it is negative and the
+     * "increase" would shrink the range instead (a level-5 borg at depth
+     * 10 would get range 3 against the base 8, and stop climbing toward
+     * stairs it can see). */
+    if (borg.trait[BI_CDEPTH] <= 10 && borg.trait[BI_CLEVEL] > 10)
         closeness
             += (borg.trait[BI_CLEVEL] - 10) + (10 - borg.trait[BI_CDEPTH]);
 
@@ -1283,13 +1287,15 @@ bool borg_think_dungeon(void)
         return true;
     }
 
-    /* Prevent clock wrapping Step 2 */
+    /* Prevent clock wrapping Step 2: reset the clock gracefully and keep
+     * playing.  This must run before any panic: the borg_think() overflow
+     * check remains as a failsafe in case the reset was somehow missed.
+     * The previous version aborted the borg here, which fired about 2900
+     * turns earlier than the reset threshold and made the graceful reset
+     * unreachable. */
     if (borg.time.now >= BORG_TIME_MAX - 3000) {
-        /* Panic */
-        borg_oops("clock overflow");
-
-        /* Oops */
-        return true;
+        borg.time.now = 1;
+        borg_warning("*****WARNING***** Borg Clock Overflow");
     }
 
     /* no longer trying an unknown object */

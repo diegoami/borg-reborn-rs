@@ -1185,6 +1185,7 @@ static int32_t borg_power_inventory(void)
             && borg.trait[BI_MAXCLEVEL] < borg_cfg[BORG_MUNCHKIN_LEVEL]) {
             /* Do not carry these until later */
         } else {
+            k = 0;
             for (; k < 4 && k < borg.trait[BI_ARESPOIS]; k++)
                 value += 300L;
         }
@@ -1209,6 +1210,7 @@ static int32_t borg_power_inventory(void)
                 for (; k < 4 && k < borg.trait[BI_ARESCOLD]; k++)
                     value += 500L;
             }
+            k = 0;
             /* collect pots if not immune */
             if (!borg.trait[BI_IPOIS]) {
                 for (; k < 4 && k < borg.trait[BI_ARESPOIS]; k++)

@@ -138,13 +138,15 @@ static bool borg_proc_setting(
             }
             if (isdigit((unsigned char)ch)) {
                 borg_cfg[setting] = atoi(line);
+                if (negative)
+                    borg_cfg[setting] *= -1;
                 break;
             }
         }
-    }
 
-    if (negative)
-        borg_cfg[setting] *= -1;
+        /* anything else is not a value: keep the default */
+        break;
+    }
 
     return true;
 }
@@ -186,6 +188,13 @@ bool borg_init_txt_file(void)
         borg_init_failure = true;
     }
 
+    /* allocate the config data */
+    borg_cfg = mem_alloc(sizeof(int) * BORG_MAX_SETTINGS);
+
+    /* start the config with the default values */
+    for (i = 0; i < BORG_MAX_SETTINGS; i++)
+        borg_cfg[i] = borg_settings[i].default_value;
+
     char buf[1024];
     path_build(buf, 1024, ANGBAND_DIR_USER, "borg.txt");
 
@@ -222,14 +231,11 @@ bool borg_init_txt_file(void)
         }
         file_close(fp);
         fp = file_open(buf, MODE_READ, -1);
+        if (!fp) {
+            borg_warning("*****WARNING***** unable to read default BORG.TXT file!");
+            return true;
+        }
     }
-
-    /* allocate the config data */
-    borg_cfg = mem_alloc(sizeof(int) * BORG_MAX_SETTINGS);
-
-    /* start the config with the default values */
-    for (i = 0; i < BORG_MAX_SETTINGS; i++)
-        borg_cfg[i] = borg_settings[i].default_value;
 
     /* Parse the file */
     while (file_getl(fp, buf, sizeof(buf) - 1)) {

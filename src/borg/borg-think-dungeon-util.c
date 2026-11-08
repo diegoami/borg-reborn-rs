@@ -730,8 +730,12 @@ bool borg_leave_level(bool bored)
     if (sellable_item_count >= 12)
         try_not_to_descend = true;
 
-    /* Do not dive when drained */
-    if (g && borg.trait[BI_ISFIXEXP])
+    /* Do not dive when drained.  This applies whenever the experience is
+     * drained, not only when an earlier check already chose to head up:
+     * the original borg cancelled a decided dive here (g = 0), and the
+     * sibling "full of items" check was translated to an unconditional
+     * try_not_to_descend while this one kept the dead g gate. */
+    if (borg.trait[BI_ISFIXEXP])
         try_not_to_descend = true;
 
     /* Rise a level if bored and unable to dive. */

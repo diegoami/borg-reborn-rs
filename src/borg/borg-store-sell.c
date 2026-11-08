@@ -1221,7 +1221,7 @@ int borg_count_sell(void)
         if (borg_item_note_needs_id(item)) {
             /* note if we have more than one */
             if (!borg_has_mutiple(item))
-                return false;
+                continue;
         }
 
         /* Don't sell my needed potion/wands/staff/scroll collection */

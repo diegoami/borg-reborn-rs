@@ -1089,7 +1089,7 @@ bool borg_caution(void)
         /* do not flee level if going after Morgoth or fighting a unique */
         if (!borg.goal.fleeing && !borg.near.unique
             && (borg.trait[BI_CLEVEL] < 50) && !borg.status.vault
-            && (borg.trait[BI_CDEPTH] < 100 && borg.ready_morgoth == 1)) {
+            && (borg.trait[BI_CDEPTH] < 100 && borg.ready_morgoth != 1)) {
             /* Note */
             borg_note("# Fleeing (excessive danger)");
 
@@ -1306,8 +1306,8 @@ bool borg_caution(void)
             if (ag->kill)
                 continue;
 
-            /* skip the closer ones */
-            if (b_j >= j)
+            /* skip the farther ones */
+            if (b_j <= j && b_j != -1)
                 continue;
 
             /* track it */
@@ -1321,15 +1321,15 @@ bool borg_caution(void)
 
             ag = &borg_grids[y][x];
 
-            /* How far is the nearest up stairs */
+            /* How far is the nearest down stairs */
             m = distance(borg.c, loc(x, y));
 
             /* Skip stairs if a monster is on the stair */
             if (ag->kill)
                 continue;
 
-            /* skip the closer ones */
-            if (b_m >= m)
+            /* skip the farther ones */
+            if (b_m <= m && b_m != -1)
                 continue;
 
             /* track it */
@@ -1719,7 +1719,7 @@ bool borg_caution(void)
 
             /* Mega-Hack -- skip traps XXX XXX XXX */
             if (ag->trap && !ag->glyph)
-                break;
+                continue;
 
             /* If i was here last round and 3 rounds ago, suggesting a "bounce"
              */
@@ -1736,6 +1736,7 @@ bool borg_caution(void)
              * Skip this grid if it is adjacent to a monster.  He will just hit
              * me when I land on that grid.
              */
+            adjacent_monster = false;
             for (ii = 1; ii < borg_kills_nxt; ii++) {
                 borg_kill *kill;
 
@@ -1983,7 +1984,7 @@ bool borg_caution(void)
     if (borg.goal.recalling && (pos_danger > borg.avoidance * 2)) {
         if (!borg.trait[BI_ISCONFUSED] && !borg.trait[BI_ISBLIND]
             && borg.trait[BI_MAXSP] > 60
-            && borg.trait[BI_CURSP] < (borg.trait[BI_CURSP] / 4)
+            && borg.trait[BI_CURSP] < (borg.trait[BI_MAXSP] / 4)
             && (borg_quaff_potion(sv_potion_restore_mana)
                 || borg_activate_item(act_restore_mana))) {
             borg_note("# Buying time waiting for Recall.(1)");
