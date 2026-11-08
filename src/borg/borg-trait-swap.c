@@ -850,6 +850,7 @@ void borg_notice_armour_swap(void)
         case TV_HELM:
         case TV_CROWN:
         case TV_SHIELD:
+        case TV_GLOVES:
         case TV_CLOAK:
         case TV_SOFT_ARMOR:
         case TV_HARD_ARMOR:

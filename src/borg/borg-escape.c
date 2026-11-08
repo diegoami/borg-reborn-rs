@@ -98,9 +98,9 @@ bool borg_recall(void)
                     else if (borg.trait[BI_MAXDEPTH] == 99
                         && borg_numb_live_unique < 5) {
                         /* Do reset Depth, cleaning up last uniques to hit */
-                        /* Morgoth.  Want to keep using up the stock of potions */
-                        borg_note("# Not Resetting recall depth.");
-                        borg_keypress('n');
+                        /* Morgoth. */
+                        borg_note("# Resetting recall depth.");
+                        borg_keypress('y');
                     }
                     else {
                         /* Do reset Depth */
