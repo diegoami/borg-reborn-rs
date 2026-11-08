@@ -944,10 +944,18 @@ void do_cmd_wiz_cure_all(struct command *cmd)
 
 	/* Remove curses */
 	for (i = 0; i < player->body.count; i++) {
-		if (player->body.slots[i].obj &&
-				player->body.slots[i].obj->curses) {
-			mem_free(player->body.slots[i].obj->curses);
-			player->body.slots[i].obj->curses = NULL;
+		struct object *obj = player->body.slots[i].obj;
+
+		if (obj && obj->curses) {
+			mem_free(obj->curses);
+			obj->curses = NULL;
+		}
+		/* FORK: forget the known curses too, so the known object does
+		 * not list curses the object no longer has (Remove Curse would
+		 * otherwise read the freed real list). */
+		if (obj && obj->known && obj->known->curses) {
+			mem_free(obj->known->curses);
+			obj->known->curses = NULL;
 		}
 	}
 
