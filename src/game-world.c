@@ -20,6 +20,10 @@
 #include "cmds.h"
 #include "effects.h"
 #include "game-world.h"
+#ifdef BORG_HARNESS
+#include "main-borgh.h"
+void (*borgh_turn_hook)(void) = NULL;
+#endif
 #include "generate.h"
 #include "init.h"
 #include "mon-make.h"
@@ -1088,6 +1092,9 @@ void run_game_loop(void)
 
 			/* Count game turns */
 			turn++;
+#ifdef BORG_HARNESS
+			if (borgh_turn_hook) borgh_turn_hook();
+#endif
 		}
 
 		/* Make a new level if requested */

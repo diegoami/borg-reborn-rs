@@ -34,9 +34,13 @@
  *
  * Usage: angband -mborgh -n -u<name> -d... -- [options]
  *   -seed N       seed the game RNG (also settable with $ANGBAND_SEED)
- *   -race N       race index (0-based, as in p_race.txt); -1 = random
- *   -class N      class index (0-based, as in class.txt); -1 = random
+ *   -race N       race index (0-based, as in p_race.txt); explicit only
+ *   -class N      class index (0-based, as in class.txt); explicit only
  *   -turns N      stop when the game turn reaches N (0 = no limit)
+ *   -states FILE  native-observer STATE stream, every 100 think decisions
+ *   -stall-decisions N  stop after N decisions without a world-turn advance
+ *   -exact-turns  stop at the world-turn increment, before another key
+ *   -random-birth choose race and class using the seeded birth menu's *
  *   -clev N       stop when the character level reaches N (0 = no limit)
  *   -depth N      stop when the max depth reaches N (0 = no limit)
  *   -keylog FILE  keypress log (default: none)
@@ -105,6 +109,19 @@
 extern struct keypress (*inkey_hack)(int flush_first);
 
 /* Options */
+static FILE *states_fp;
+static bool opt_exact_turns;
+static bool opt_random_birth;
+static long opt_stall_decisions;
+static unsigned long decisions;
+static long stall_turn;
+static unsigned long stall_start_decisions;
+static unsigned long stall_start_energy;
+static uint32_t borg_rng;
+#define BORGH_SETTINGS_MAX 256
+static char setting_names[BORGH_SETTINGS_MAX][96];
+static int setting_values[BORGH_SETTINGS_MAX];
+static int setting_count;
 static int opt_race = 0;
 static int opt_class = 0;
 static long opt_turns = 0;
@@ -334,6 +351,24 @@ static void borgh_frame(const char *phase)
 	fputs("}\n", frames_fp);
 }
 
+/* Same names and integer energy units as native-observer.c STATE records.
+ * total_energy is cumulative energy spent, not the player's current budget. */
+static void borgh_measure_state(const char *kind)
+{
+    int i;
+    if (!states_fp || !player) return;
+    fprintf(states_fp, "STATE %s turn=%ld energy=%lu decisions=%lu depth=%d max_depth=%d level=%d max_level=%d hp=%d max_hp=%d dead=%d winner=%d borg_rng=%lu quick=%d quick_rng=%lu rng_index=%lu rng=",
+        kind, (long)turn, (unsigned long)player->total_energy, decisions,
+        player->depth, player->max_depth, player->lev, player->max_lev,
+        player->chp, player->mhp, player->is_dead, player->total_winner,
+        (unsigned long)borg_rng, Rand_quick, (unsigned long)Rand_value,
+        (unsigned long)state_i);
+    for (i = 0; i < RAND_DEG; ++i)
+        fprintf(states_fp, "%08lx", (unsigned long)STATE[i]);
+    fputc('\n', states_fp);
+    fflush(states_fp);
+}
+
 /**
  * Write the summary and exit the process without saving.
  */
@@ -343,9 +378,20 @@ static void borgh_finish(const char *reason)
 	double secs;
 	FILE *fp = stdout;
 	bool io_error = false;
+    /* Native saving may mutate state. Preserve the RNG at the stop. */
+    bool stop_quick = Rand_quick;
+    uint32_t stop_value = Rand_value, stop_index = state_i;
+    uint32_t stop_rng[RAND_DEG];
+    memcpy(stop_rng, STATE, sizeof(stop_rng));
 
 	if (finished) return;
 	finished = true;
+	borgh_measure_state(reason);
+    if (states_fp) {
+        if (ferror(states_fp)) io_error = true;
+        if (fclose(states_fp)) io_error = true;
+        states_fp = NULL;
+    }
 	borgh_frame(reason);
 	if (frames_fp) {
 		if (ferror(frames_fp)) io_error = true;
@@ -414,6 +460,34 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, "  \"death_cause\": ");
 	json_str(fp, (player && player->is_dead) ? player->died_from : "");
 	fprintf(fp, ",\n  \"keys\": %lu,\n", keys_logged);
+    fprintf(fp, "  \"calendar\": \"fixed\",\n");
+    fprintf(fp, "  \"max_clevel\": %d,\n  \"hp\": %d,\n  \"max_hp\": %d,\n",
+        player ? player->max_lev : 0, player ? player->chp : 0, player ? player->mhp : 0);
+    fprintf(fp, "  \"borg_decisions\": %lu,\n  \"player_energy\": %lu,\n",
+        decisions, player ? (unsigned long)player->total_energy : 0UL);
+    fprintf(fp, "  \"borg_rng\": %lu,\n  \"game_rng\": {\"quick\": %s, \"quick_rng\": %lu, \"rng_index\": %lu, \"rng\": \"",
+        (unsigned long)borg_rng, stop_quick ? "true" : "false",
+        (unsigned long)stop_value, (unsigned long)stop_index);
+    {
+        int j;
+        for (j = 0; j < RAND_DEG; ++j) fprintf(fp, "%08lx", (unsigned long)stop_rng[j]);
+        fprintf(fp, "\"},\n  \"effective_settings\": {");
+        for (j = 0; j < setting_count; ++j) {
+            if (j) fprintf(fp, ",");
+            json_str(fp, setting_names[j]);
+            fprintf(fp, ": %d", setting_values[j]);
+        }
+        fprintf(fp, "},\n");
+    }
+    if (opt_exact_turns) fprintf(fp, "  \"exact_turns\": true,\n");
+    if (opt_random_birth) {
+        fprintf(fp, "  \"random_birth\": true,\n  \"played_race_idx\": %u,\n  \"played_class_idx\": %u,\n",
+            player->race->ridx, player->class->cidx);
+    }
+    if (streq(reason, "stalled"))
+        fprintf(fp, "  \"stall_turn\": %ld,\n  \"stall_decisions\": %lu,\n  \"stall_energy_delta\": %lu,\n",
+            stall_turn, decisions - stall_start_decisions,
+            (unsigned long)player->total_energy - stall_start_energy);
 	fprintf(fp, "  \"wall_seconds\": %.3f\n", secs);
 	fprintf(fp, "}\n");
 	if (fp != stdout) {
@@ -430,6 +504,39 @@ static void borgh_finish(const char *reason)
 
 	/* Do not save; do not run the normal quit hooks */
 	_exit(0);
+}
+
+void borgh_setting(int index, const char *name, int value)
+{
+    if (!borg_started) return;
+    if (index < 0 || index >= BORGH_SETTINGS_MAX) quit("borgh: too many settings");
+    my_strcpy(setting_names[index], name, sizeof(setting_names[index]));
+    setting_values[index] = value;
+    if (setting_count <= index) setting_count = index + 1;
+}
+
+void borgh_rng(uint32_t rng) { borg_rng = rng; }
+
+void borgh_decision(uint32_t rng)
+{
+    if (!borg_started) return;
+    borg_rng = rng;
+    ++decisions;
+    if (decisions == 1) borgh_measure_state("borg_start");
+    if (decisions == 1 || turn != stall_turn) {
+        stall_turn = turn;
+        stall_start_decisions = decisions;
+        stall_start_energy = player->total_energy;
+    }
+    if (!(decisions % 100)) borgh_measure_state("progress");
+    if (opt_stall_decisions > 0 && decisions - stall_start_decisions >= (unsigned long)opt_stall_decisions)
+        borgh_finish("stalled");
+}
+
+static void borgh_tick(void)
+{
+    if (borg_started && opt_exact_turns && opt_turns > 0 && turn >= opt_turns)
+        borgh_finish("turns");
 }
 
 /* ---- message and engine-state logs (read only) ---- */
@@ -870,6 +977,7 @@ static errr term_xtra_borgh(int n, int v)
 			}
 			if (k == SCRIPT_START_BORG) {
 				prepare_borg_start();
+                borgh_measure_state("start");
 				k = KTRL('Z');
 			}
 			Term_keypress(k, 0);
@@ -971,7 +1079,18 @@ errr init_borgh(int argc, char *argv[])
 			opt_class = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-turns")) {
 			opt_turns = arg_long(argc, argv, &i);
-		} else if (streq(argv[i], "-keys")) {
+		} else if (streq(argv[i], "-states")) {
+            if (++i >= argc) quit("borgh: missing value for -states");
+            states_fp = fopen(argv[i], "w");
+            if (!states_fp) quit("borgh: cannot open states stream");
+        } else if (streq(argv[i], "-exact-turns")) {
+            opt_exact_turns = true;
+        } else if (streq(argv[i], "-random-birth")) {
+            opt_random_birth = true;
+        } else if (streq(argv[i], "-stall-decisions")) {
+            opt_stall_decisions = arg_long(argc, argv, &i);
+            if (opt_stall_decisions <= 0) quit("borgh: stall decisions must be positive");
+        } else if (streq(argv[i], "-keys")) {
 			opt_keys = arg_long(argc, argv, &i);
 			if (opt_keys <= 0) quit("borgh: key limit must be positive");
 		} else if (streq(argv[i], "-stop-rune-pattern")) {
@@ -1049,6 +1168,8 @@ errr init_borgh(int argc, char *argv[])
 		quit("borgh: -near-morgoth requires -make-fixture 100");
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)
 		quit("borgh: -race and -class must be explicit indices");
+	if (opt_random_birth && opt_load) quit("borgh: random birth cannot load a save");
+	if (opt_exact_turns && opt_turns <= 0) quit("borgh: exact turns requires a positive turn limit");
 	if (!!opt_checkpoint_every != !!opt_checkpoint_dir)
 		quit("borgh: checkpoint interval and directory are both required");
 	if (opt_checkpoint_dir) {
@@ -1099,10 +1220,12 @@ errr init_borgh(int argc, char *argv[])
 		/* The birth menus' own tags (they skip h, j, k, l) */
 		letters = all_letters_nohjkl;
 	}
-	if (opt_race) script_add(letters[opt_race]);
-	script_add(KC_ENTER);                     /* race */
-	if (opt_class) script_add(letters[opt_class]);
-	script_add(KC_ENTER);                     /* class */
+	if (opt_random_birth) script_add('*');
+	else if (opt_race) script_add(letters[opt_race]);
+	if (!opt_random_birth) script_add(KC_ENTER); /* race: * selects immediately */
+	if (opt_random_birth) script_add('*');
+	else if (opt_class) script_add(letters[opt_class]);
+	if (!opt_random_birth) script_add(KC_ENTER); /* class */
 	script_add(KC_ENTER);                     /* point based */
 	script_add(KC_ENTER);                     /* accept points */
 	script_add(KC_ENTER);                     /* default name */
@@ -1112,6 +1235,7 @@ errr init_borgh(int argc, char *argv[])
 	script_add(SCRIPT_START_BORG);            /* ^Z */
 	script_add('z');                          /* activate borg */
 
+	borgh_turn_hook = borgh_tick;
 	borgh_key_hook = borgh_key;
 	borgh_message_hook = borgh_message;
 	borgh_command_hook = opt_checkpoint_dir ? borgh_checkpoint : NULL;

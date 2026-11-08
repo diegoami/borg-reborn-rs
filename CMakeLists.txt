@@ -554,6 +554,15 @@ if(BORG_IMPL STREQUAL "rust")
     if(BORG_RS_FEATURES)
         set(BORG_RS_FEATURE_ARGS --features "${BORG_RS_FEATURES}")
     endif()
+    if(SUPPORT_BORG_HARNESS)
+        find_package(Python3 REQUIRED COMPONENTS Interpreter)
+        set(BORG_RS_ORIGINAL_ROOT "${BORG_RS_ROOT}")
+        set(BORG_RS_ROOT "${CMAKE_CURRENT_BINARY_DIR}/measurement-rust")
+        add_custom_target(BorghOverlay
+            COMMAND "${Python3_EXECUTABLE}"
+                "${BORG_RS_ORIGINAL_ROOT}/harness/measurement/rust-overlay.py"
+                "${BORG_RS_ORIGINAL_ROOT}" "${BORG_RS_ROOT}")
+    endif()
     add_custom_target(BorgRs ALL
         COMMAND cargo build --release -p borg-rs ${BORG_RS_FEATURE_ARGS}
             --manifest-path "${BORG_RS_ROOT}/Cargo.toml"
@@ -561,6 +570,9 @@ if(BORG_IMPL STREQUAL "rust")
         BYPRODUCTS "${BORG_RS_LIB}"
         WORKING_DIRECTORY "${BORG_RS_ROOT}"
         USES_TERMINAL)
+    if(SUPPORT_BORG_HARNESS)
+        add_dependencies(BorgRs BorghOverlay)
+    endif()
     add_dependencies(OurExecutable BorgRs)
     target_link_libraries(OurExecutable PRIVATE "${BORG_RS_LIB}" pthread dl m)
 endif()
@@ -572,6 +584,10 @@ if(SUPPORT_BORG_HARNESS)
     endif()
     target_compile_definitions(OurCoreLib PRIVATE -D BORG_HARNESS)
     target_compile_definitions(OurExecutable PRIVATE -D ALLOW_BORG -D BORG_HARNESS -D USE_BORGH)
+    if(BORG_IMPL STREQUAL "c")
+        set_source_files_properties(src/borg/borg.c PROPERTIES
+            COMPILE_OPTIONS "-include;${CMAKE_CURRENT_SOURCE_DIR}/../harness/measurement/c-adapter.h")
+    endif()
     message(STATUS "Support for borg-rs harness front end - Ready")
 endif()
 
@@ -1051,6 +1067,12 @@ add_library(OurUnitTestLib OBJECT EXCLUDE_FROM_ALL
         src/tests/unit-test.c
 )
 set_target_properties(OurUnitTestLib PROPERTIES C_STANDARD 99)
+if(SUPPORT_BORG_HARNESS)
+    # Unit executables consume instrumented Borg objects without main-borgh.c.
+    target_sources(OurUnitTestLib PRIVATE src/tests/borgh-stubs.c)
+    target_compile_definitions(OurUnitTestLib PRIVATE -D BORG_HARNESS)
+endif()
+
 set(ANGBAND_UNIT_TEST_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src/tests")
 target_include_directories(OurUnitTestLib PRIVATE
     ${ANGBAND_CORE_INCLUDE_DIRS}

@@ -42,6 +42,12 @@ extern void (*borgh_message_hook)(const char *str, uint16_t type);
  * Defined by ui-game.c; NULL outside the headless harness. */
 extern void (*borgh_command_hook)(void);
 
+/* Harness build adapters; copies only, never retains Borg-owned pointers. */
+extern void borgh_setting(int index, const char *name, int value);
+extern void borgh_decision(uint32_t rng);
+extern void borgh_rng(uint32_t rng);
+extern void (*borgh_turn_hook)(void);
+
 #endif /* BORG_HARNESS */
 
 #endif /* INCLUDED_MAIN_BORGH_H */
