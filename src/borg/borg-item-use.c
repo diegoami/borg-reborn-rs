@@ -56,7 +56,8 @@ bool borg_quaff_crit(bool no_check)
     }
 
     /* Avoid drinking CCW twice in a row */
-    if (borg_timer(when_last_quaff) > 4 && borg_timer(when_last_quaff) > 0
+    if (when_last_quaff && borg_timer(when_last_quaff) <= 4
+        && borg_timer(when_last_quaff) > 0
         && (randint1(100) < 75))
         return false;
 
@@ -728,7 +729,7 @@ bool borg_equips_ring(int ring_sval)
     int lev, fail, i;
     int skill;
 
-    for (i = INVEN_RIGHT; i < INVEN_LEFT; i++) {
+    for (i = INVEN_RIGHT; i <= INVEN_LEFT; i++) {
         borg_item *item = &borg_items[i];
 
         if (!item->iqty || !item->aware)
@@ -783,7 +784,7 @@ bool borg_activate_ring(int ring_sval)
     int i;
 
     /* Check the equipment */
-    for (i = INVEN_RIGHT; i < INVEN_LEFT; i++) {
+    for (i = INVEN_RIGHT; i <= INVEN_LEFT; i++) {
         borg_item *item = &borg_items[i];
 
         /*  Make Sure item is IDed */

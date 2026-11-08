@@ -1287,7 +1287,7 @@ int borg_locate_kill(char *who, struct loc c, int r)
 
     /* Handle invisible monsters */
     if (my_strnicmp(who, "Something", 9) == 0
-        || my_strnicmp(who, "It", 2) == 0) {
+        || my_stricmp(who, "It") == 0) {
         /* Note */
         borg_note("# Invisible monster nearby.");
         /* if I can, cast detect inviso--time stamp it

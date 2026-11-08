@@ -459,6 +459,10 @@ static int borg_perma_aux_regen(void)
                                    : borg.trait[BI_CURSP] / 10))
         return 0;
 
+    /* Simulation */
+    if (borg_simulate)
+        return 1;
+
     /* do it! */
     if (borg_spell(RAPID_REGENERATION)) {
         /* No resting to recoup mana */
