@@ -134,27 +134,35 @@ These follow from the sources. Each cites the evidence behind it.
 4. **Danger is the central concept** (owner direction), redesigned. Its
    unit is something an evaluation can compare (expected and worst-case
    damage over a horizon, and the chance of dying), not a capped scalar
-   (spec §8).
+   (spec §8). No hard-coded fear lists: whether a monster is a reason to
+   leave the level is a risk decision (bbc D0012 and D0013 fled whole
+   levels over two worm masses and one small kobold).
 5. **Alternatives are compared on one scale.** When the character is
    threatened, every available response (attack, shoot, cast, quaff,
    read, step, stairs, escape) is scored against the same risk model.
    The first applicable rule does not decide. *Evidence:* unused Cure Light
-   Wounds (bbc D0002, rs D0005), the Ranger who fled instead of shooting
-   (bbc D0010).
+   Wounds (bbc D0002, D0011, rs D0005), the Ranger who fled instead of
+   shooting (bbc D0010), the only Phase Door spent where a step back would
+   do (bbc D0013), a 2-HP mold never attacked (bbc D0012).
 6. **Commitment and progress.** A goal, once chosen, keeps priority
    (hysteresis) until it succeeds, becomes unsafe, or exhausts a budget in
    *game* turns. A goal that does not progress is blocked for a while, and
    loops in which no game time passes are detected. *Evidence:* mold
-   oscillation (bbc D0008, rs D0006), starvation by pickup loop (bbc D0009),
+   oscillation (bbc D0008, D0012, rs D0006), starvation by pickup loop (bbc
+   D0009), 63k turns failing to climb to town (bbc D0011),
    munchkin loop ([#403](https://github.com/diegoami/neo-angband-tracker/issues/403)).
 7. **Survival invariants are explicit.** Light, food, a cure and an escape
    are reserves with declared minimums per depth and class, checked every
-   think. They are not side effects of the shopping list. *Evidence:* bbc
-   D0001 (Phase Door at home), bbc D0009 (food), owner priority
-   [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41).
+   think. They are not side effects of the shopping list, and identifying
+   carried potions is part of keeping them. *Evidence:* bbc D0001 (Phase
+   Door at home), bbc D0009 (food), bbc D0011–D0012 (unidentified cures),
+   bbc D0013 (rings bought, no cure), owner priorities
+   [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41)
+   and [#180](https://github.com/diegoami/better-borg-c/issues/180).
 8. **Depth readiness is one policy, per class.** Stairs, Deep Descent,
    trapdoors and recall depth all go through it. *Evidence:* bbc D0006 (Deep
-   Descent to depth 14); TUNABLE plan (the biggest single lever).
+   Descent to depth 14), bbc D0011 (three reads, CL10 at depth 18); TUNABLE
+   plan (the biggest single lever).
 9. **No exploits** (owner decision). No munchkin start, no lunal mode, no
    money or self scum, no stair-scumming to a target depth, no cheat death
    inside the Borg (it is a runner setting).

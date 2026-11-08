@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: new deaths read into the evidence
+
+better-borg-c D0011–D0013 (from the first refresh) are folded in. SOURCES
+has three new death patterns (fear by list, unknown items left unknown,
+wrong kit valuation) and extended rows. GOALS principles 4–8 cite them, and
+PLAN's death fixtures include them. The research digest
+(`docs/research/DEATHS-AND-ISSUES.md`) is a dated snapshot of 2026-11-08;
+`reference/deaths/INDEX.md` is the live list.
+
+**Next:** #4 (T1.1, import the engine tree from borg-rs at `e5cb263`).
+
 ## 2026-11-09: T1.0 source refresh routine (#3)
 
 - `scripts/refresh-sources.py` reports, per pin: commits since the pin, new
