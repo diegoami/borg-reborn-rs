@@ -149,8 +149,9 @@ bool borg_think_dungeon_light(void)
     if (borg.trait[BI_ISHUNGRY] && borg_use_things())
         return true;
 
-    if (!borg.trait[BI_LIGHT]
-        && (borg.trait[BI_LIGHT] <= 0 || borg_items[INVEN_LIGHT].timeout <= 3)
+    if ((!borg.trait[BI_LIGHT]
+        || (borg_items[INVEN_LIGHT].timeout <= 3
+            && !of_has(borg_items[INVEN_LIGHT].flags, OF_NO_FUEL)))
         && borg.trait[BI_CDEPTH] >= 1) {
         enum borg_need need;
 
@@ -191,6 +192,9 @@ bool borg_think_dungeon_light(void)
                 borg_note("# Testing for stairs .");
 
                 borg_keypress('<');
+
+                /* Done */
+                return true;
             }
         }
 
@@ -403,8 +407,10 @@ bool borg_think_stair_scum(void)
         /* Check for an existing "up stairs" */
         for (i = 0; i < track_less.num; i++) {
             /* We already knew about this one */
+            /* (break, like the down-stair loop above: continuing past a
+             * match re-adds the known staircase as a duplicate) */
             if ((track_less.x[i] == borg.c.x) && (track_less.y[i] == borg.c.y))
-                continue;
+                break;
         }
 
         /* Track the newly discovered "up stairs" */

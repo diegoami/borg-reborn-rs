@@ -1116,11 +1116,14 @@ bool borg_use_things(void)
         /* Process "force" items */
         switch (item->tval) {
         case TV_POTION: {
-            /* Check the scroll */
+            /* Check the potion */
             if (item->sval == sv_potion_enlightenment) {
                 /* Never quaff these in town */
                 if (!borg.trait[BI_CDEPTH])
                     break;
+
+                if (borg_quaff_potion(item->sval))
+                    return true;
             } else if (item->sval == sv_potion_inc_all)
                 /* Try quaffing the potion */
                 if (borg_quaff_potion(item->sval))

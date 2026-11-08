@@ -286,6 +286,10 @@ static void borg_update_map(void)
             /* Notice "on-screen" */
             ag->info |= BORG_OKAY;
 
+            /* Save the old "wall" or "door", before the feature below is
+             * overwritten with what the game shows now */
+            old_wall = !borg_cave_floor_grid(ag);
+
             /* Notice "knowledge" */
             /* if this square is not in view and the borg previously */
             /* cast stone to mud here, ignore the map info so repeated */
@@ -308,9 +312,6 @@ static void borg_update_map(void)
                 borg.c.x = x;
                 borg.c.y = y;
             }
-
-            /* Save the old "wall" or "door" */
-            old_wall = !borg_cave_floor_grid(ag);
 
             /* Analyze know information about grid */
             /* Shop Doors */

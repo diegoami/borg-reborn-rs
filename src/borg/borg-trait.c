@@ -1192,21 +1192,6 @@ static void borg_notice_ammo(int slot)
             }
         }
     } /* Ammo Power > 3 */
-
-    /* Only enchant ammo if we have a good shooter,
-     * otherwise, store the enchants in the home.
-     */
-    if (borg.trait[BI_AMMO_POWER] < 3)
-        return;
-
-    if ((borg_equips_item(act_firebrand, false)
-            || borg_spell_legal_fail(BRAND_AMMUNITION, 65))
-        && item->iqty >= 5 &&
-        /* Skip artifacts and ego-items */
-        !item->art_idx && !item->ego_idx && item->ident
-        && item->tval == borg.trait[BI_AMMO_TVAL]) {
-        borg.trait[BI_NEED_BRAND_WEAPON] += 10L;
-    }
 }
 
 /* don't give credit for perm-cursed non-artifacts */
