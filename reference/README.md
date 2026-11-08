@@ -12,6 +12,7 @@ PR that updates the pin and this table.
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `8b26042e019cb97196c8afd3a5028c7a96cb07a1` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
 | `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `e5cb263eed8eee93860b5cfcdc18af99e6d134f1` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in the engine tree we import (docs/ENGINE-TREE.md) |
 | `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `9cd742351f328fcde91ebdc70a620224e4ebfc63` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository

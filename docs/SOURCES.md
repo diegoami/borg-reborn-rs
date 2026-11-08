@@ -178,9 +178,10 @@ Commits are in `pins.json` and `reference/README.md`, which
 | `reference/deaths/better-borg-c/` | better-borg-c `docs/deaths/` | every top-level file, and every `.md`/`.json` file at the root of each case (reports, assessments, overall assessments, owner feedback, verification records); raw logs, snapshots and saves left out |
 | `reference/deaths/borg-rs/` | borg-rs `docs/deaths/` | same selection |
 | `reference/zoo/` | borg-zoo | `docs/DESIGN.md` and `catalogue/` |
+| `reference/borg-rs/` | borg-rs `docs/` | `FORK-CORRECTIONS.md`, `adoption/status.json`: what the imported engine tree carries |
 | `reference/deaths/INDEX.md` | generated | every death of every registry, ours included |
 
-The engine and the C Borg source come in with the `angband/` subtree in M1
-(T1.1, #4). Larger trees (full repositories) are cloned into `vendor/`
+The engine and the C Borg source are in `angband/`, imported from borg-rs
+with history (T1.1, #4; [ENGINE-TREE.md](ENGINE-TREE.md)). Larger trees (full repositories) are cloned into `vendor/`
 by `scripts/setup.sh` at the commits in `pins.json`; `vendor/` is not
 committed.

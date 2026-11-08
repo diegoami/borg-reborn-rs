@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.1 engine tree imported (#4)
+
+- `angband/` is borg-rs `e5cb263` (impact v6) `angband/`, split with
+  `git subtree --ignore-joins` into 29 commits and added unsquashed. The tree id
+  `5cc1b1c…` is recorded in `pins.json` (`engine_tree`), and a repository test
+  pins it.
+- [ENGINE-TREE.md](ENGINE-TREE.md) lists what differs from upstream
+  `e473720`:
+  - 8 added files (borgh, recording);
+  - 14 engine files, all behind `BORG_HARNESS`/`BORG_RECORDING` except
+    CMake, `main.h` declarations and the #474 cure-all correction;
+  - 26 C Borg files (borg-rs's adopted milestones 2–6).
+- It also gives the re-sync procedure.
+- borg-rs's `FORK-CORRECTIONS.md` and `adoption/status.json` are copied to
+  `reference/borg-rs/` by a new copy rule. The refresh report flags when
+  borg-rs's `angband/` tree moves.
+- Nothing is built yet: building and the harness are T1.2 (#5).
+
+**Next:** #5 (T1.2: harness, build identity, death export before the first
+game).
+
 ## 2026-11-09: new deaths read into the evidence
 
 better-borg-c D0011–D0013 (from the first refresh) are folded in. SOURCES

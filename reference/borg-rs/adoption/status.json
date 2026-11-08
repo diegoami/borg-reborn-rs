@@ -1,0 +1,282 @@
+{
+  "schema": "borg-rs/c-consumer-adoption@1",
+  "phase": "impact_v6_accepted",
+  "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
+  "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
+  "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
+  "m5_tag": "m5",
+  "historical_m4": "3923a21e75dfb94053d4cc787d81c5baf638d62e",
+  "post_m5_delivery_source": "https://github.com/diegoami/better-borg-c",
+  "source_tracker_role": "historical/source provenance; no independent post-M5 Rust adoption queue",
+  "accepted_c_target": {
+    "milestone": 2,
+    "repository": "https://github.com/diegoami/better-borg-c",
+    "commit": "2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
+    "baseline": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+    "review": "https://github.com/diegoami/better-borg-c/issues/38#issuecomment-6705894080",
+    "verdict": "approved; observations only; no required M2 fixes",
+    "owner_selection": "2026-11-08: start carrying milestone 2 bug fixes",
+    "rust_tracking_issue": "https://github.com/diegoami/borg-rs/issues/6",
+    "review_package_commit": "9929eb4eb16412ef2415a5711a3eecab92fa1288"
+  },
+  "adopted_batches": [
+    {
+      "id": "c-m2",
+      "target_commit": "2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
+      "state": "reviewed_qualified_pass_owner_acceptance_pending",
+      "fixes": 7,
+      "source_issues": [
+        82,
+        14,
+        110,
+        26,
+        78,
+        77,
+        102
+      ],
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/6",
+      "receipt": "docs/validation/2026-11-08-c-m2/README.md",
+      "game_cases": 131,
+      "full_native_saves": 131,
+      "native_correctness_cases": 49,
+      "shared_environment_kernel_cases": 1785,
+      "rust_milestone_accepted": false,
+      "implementation_commit": "9cfbbffdeea946f9fad96fbf4522295633945b7b",
+      "independent_review": {
+        "verdict": "qualified pass",
+        "reviewed_source": "0bc7a09fb41a01cfbc4f5bb86b89002b074f3712",
+        "comment": "https://github.com/diegoami/borg-rs/issues/6#issuecomment-6716468916",
+        "acceptance_blockers": false,
+        "independent_complete_cases": 125,
+        "planned_cases": 131,
+        "wall_seconds": 300,
+        "qualifications": [
+          "131/131 author coverage is hardware/load dependent; reviewer C1 reproduced131, complete three-role join125; completed channels/saves and timeout prefixes match.",
+          "Native C49, controlled body/seam comparisons and whole-private-Borg equivalence are distinct; whole-private equivalence is not established."
+        ],
+        "findings": {
+          "F1": "stale Rust source comment; deferred from harness-only task because Rust Borg files must remain untouched",
+          "F2": "wall-time qualification added beside author131-case count",
+          "F3": "audit hint added for asymmetric unit-test object lists; matching criteria unchanged"
+        },
+        "owner_accepted": false
+      },
+      "game_cases_basis": "Author qualified case join on recorded hardware/load under300s; independent complete three-role join125/131 under the same wall."
+    },
+    {
+      "id": "c-m3",
+      "target_commit": "702f091f6ac06cae1014df2f85ac218be0189813",
+      "state": "reviewed_qualified_pass_owner_accepted",
+      "consumer_patches": 27,
+      "carried_c_and_rust": 22,
+      "carried_c_only": 3,
+      "equivalent_local": 1,
+      "not_imported_covered_by_local": 1,
+      "superseded_local": "290 equality reset",
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/8",
+      "receipt": "docs/validation/2026-11-08-c-m3/README.md",
+      "native_modes_before_after": "37/64 -> 62/64 (2 pinned dispel-259 reds)",
+      "game_cases": 131,
+      "c_rust_parity": 131,
+      "changed_vs_m2": 79,
+      "rust_fault_controls_detected": "6/22",
+      "rust_milestone_accepted": true,
+      "implementation_commit": "4fe376e",
+      "starting_rust_main": "0bc7a09fb41a01cfbc4f5bb86b89002b074f3712",
+      "c_approval": "https://github.com/diegoami/better-borg-c/issues/128#issuecomment-6705894431",
+      "independent_review": {
+        "verdict": "qualified pass",
+        "acceptance_blockers": false,
+        "reviewed_source": "1f7211ba678d740b9a06e43499cfaf6909b88fda",
+        "comment": "https://github.com/diegoami/borg-rs/issues/8#issuecomment-6720857563",
+        "findings": {
+          "1": "minor: native-checker attribution for 0032 corrected",
+          "2": "minor: matrix.py now exits nonzero on missing/failed evidence",
+          "3": "observation: undetected fault controls worded as not detected on this subset",
+          "4": "observation: CLAUDE.md M2 sentence scoped"
+        },
+        "findings_addressed_in": "ec13462"
+      },
+      "owner_acceptance": {
+        "instruction": "if accepted, create the milestone and the tag",
+        "date": "2026-11-08",
+        "basis": "independent qualified pass without blocker/major findings",
+        "tag": "4.2.6-impact-v3",
+        "github_milestone": "4.2.6 impact v3",
+        "tagging_delegated": true,
+        "scope": "Tag 4.2.6-impact-v3 marks main with the C milestone3 carry (after 4.2.6-impact-v2 for milestone2)",
+        "naming": "Owner correction: named after the C milestone (impact v3), not a new Rust M6",
+        "integrated_by": "https://github.com/diegoami/borg-rs/pull/9"
+      }
+    },
+    {
+      "id": "c-m4",
+      "target_commit": "70993393a1c946ce8cd38ee558bf1ce6464350e7",
+      "consumer_tag": "4.2.6-impact-v4",
+      "state": "reviewed_qualified_pass_owner_accepted",
+      "consumer_patches": 8,
+      "carried_c_and_rust": 8,
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/11",
+      "receipt": "docs/validation/2026-11-08-c-m4/README.md",
+      "native_modes_before_after": "15/24 -> 24/24",
+      "game_cases": 131,
+      "c_rust_parity": 131,
+      "rust_fault_controls_detected": "3/8",
+      "implementation_commit": "a9bfd80",
+      "starting_rust_main": "3211e91c39ddf8480357193a9ea0a426e93a7c61",
+      "rust_milestone_accepted": true,
+      "engine_correction": {
+        "file": "angband/src/cmd-wizard.c",
+        "commits": [
+          "eb29098",
+          "9a78e32"
+        ],
+        "summary": "do_cmd_wiz_cure_all also frees obj->known->curses; fixes the cfg-lunal-deep-warrior Remove Curse SIGSEGV (C and Rust)",
+        "upstream": "https://github.com/diegoami/neo-angband-tracker/issues/474",
+        "fork_corrections": "docs/FORK-CORRECTIONS.md",
+        "c_bugs": "section 59"
+      },
+      "harness_diff_note": "harness/diff now accepts a borg_stopped run whose last key precedes summary.game_turns (owner decision; mid-command auto-stop in opt-stopclevel-war); exit 0, matrix.py PASS; controls harness/regress/diff-consistency-test.py",
+      "build_receipt_commit": "9a78e32",
+      "independent_review": {
+        "verdict": "qualified pass",
+        "reviewed_source": "80614e4 (plus eb29098)",
+        "comment": "https://github.com/diegoami/borg-rs/issues/11#issuecomment-6723532162",
+        "findings_addressed": "0afdcfd and the receipt commit"
+      },
+      "owner_acceptance": {
+        "instruction": "allow the mid-command stop, then merge and accept",
+        "date": "2026-11-08",
+        "basis": "independent qualified pass (issue11); findings addressed; harness check decision applied",
+        "tag": "4.2.6-impact-v4",
+        "tag_note": "annotated tag to be pushed by the owner on the merged main commit (session git proxy refuses tag pushes)"
+      }
+    },
+    {
+      "id": "c-m5",
+      "target_commit": "5384f12ed51e8fef6f31353fd2daaf0e7fb43856",
+      "consumer_tag": "4.2.6-impact-v5",
+      "state": "reviewed_qualified_pass_owner_accepted",
+      "consumer_patches": 8,
+      "carried_c_and_rust": 8,
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/13",
+      "receipt": "docs/validation/2026-11-08-c-m5/README.md",
+      "native_modes_before_after": "9/16 -> 16/16",
+      "flowcache_contract": "19/30 -> 30/30 (matches EXPECTED_FAIL)",
+      "game_cases": 131,
+      "c_rust_parity": 131,
+      "harness_diff_exit": 0,
+      "rust_fault_controls_detected": "2/8",
+      "implementation_commit": "7a0728f",
+      "starting_rust_main": "d3e94d3eb939ea9bf22a1a1ab2e8e38d60c78cf4",
+      "rust_milestone_accepted": true,
+      "independent_review": {
+        "verdict": "qualified pass",
+        "reviewed_source": "ca30c5d",
+        "comment": "https://github.com/diegoami/borg-rs/issues/13#issuecomment-6725849799",
+        "findings_addressed_in": "b35d112"
+      },
+      "owner_acceptance": {
+        "instruction": "accept, merge and tag",
+        "date": "2026-11-08",
+        "tag": "4.2.6-impact-v5",
+        "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it"
+      }
+    },
+    {
+      "id": "c-m6",
+      "target_commit": "b3c825c97c8aef18b252a7fb7d9b7dceef83d586",
+      "consumer_tag": "4.2.6-impact-v6",
+      "state": "reviewed_qualified_pass_owner_accepted",
+      "consumer_patches": 13,
+      "carried_c_and_rust": 13,
+      "source250": "already carried as 0012 (impact v3)",
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/15",
+      "receipt": "docs/validation/2026-11-08-c-m6/README.md",
+      "native_modes_before_after": "13/31 -> 30/31 (recallmana lowmana red both, as the consumer asserts; adapted fixture fail->pass)",
+      "game_cases": 131,
+      "c_rust_parity": 131,
+      "harness_diff_exit": 0,
+      "rust_fault_controls_detected": "4/12 units",
+      "implementation_commit": "30d1e4e",
+      "starting_rust_main": "6b58a46444ab3f5d28cfd86c7ac820d54c762c47",
+      "rust_milestone_accepted": true,
+      "independent_review": {
+        "verdict": "qualified pass",
+        "reviewed_source": "6b2ef2d",
+        "comment": "https://github.com/diegoami/borg-rs/issues/15",
+        "findings_addressed_in": "975fdb0",
+        "tip_rerun": "975fdb0 builds: 131/131 parity, streams identical to 30d1e4e run"
+      },
+      "owner_acceptance": {
+        "instruction": "accept, merge and tag",
+        "date": "2026-11-08",
+        "tag": "4.2.6-impact-v6",
+        "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it"
+      }
+    }
+  ],
+  "unchanged_engine_base": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+  "policy": "docs/C-CONSUMER-ADOPTION.md",
+  "next_action": "Impact v6 (C milestone6) accepted; tag 4.2.6-impact-v6 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
+  "independent_review": {
+    "verdict": "pass",
+    "acceptance_blockers": false,
+    "reviewed_source": "28468aa9fdc74cbb65d351349b973835d8c42af9",
+    "comment": "https://github.com/diegoami/borg-rs/issues/2#issuecomment-6712010550",
+    "author_disposition": "https://github.com/diegoami/borg-rs/issues/2#issuecomment-6711790956",
+    "author_fixes": "M1/L1/L2 verified fixed; I1 narrowed; I2/I3/Q1 verified",
+    "original_verdict": "qualified pass",
+    "original_comment": "https://github.com/diegoami/borg-rs/issues/2#issuecomment-6711741153",
+    "verified_followup_source": "020322749026418a666da3209c169f48ec9d608c",
+    "followup_status": "independently verified; no open findings",
+    "open_findings": []
+  },
+  "m5_verified_source": "020322749026418a666da3209c169f48ec9d608c",
+  "m5_tag_object": "f1cdf2167ef1f66fda15afc6aecbbffbb7553dc4",
+  "m5_review_closed": true,
+  "owner_acceptance": {
+    "instruction": "yes accepted, tag it",
+    "date": "2026-11-07",
+    "recorded_at": "https://github.com/diegoami/borg-rs/issues/2#issuecomment-6712169628",
+    "tagging_delegated": true
+  },
+  "active_batch": {
+    "id": "c-m6",
+    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/15",
+    "starting_rust_main": "6b58a46444ab3f5d28cfd86c7ac820d54c762c47",
+    "state": "accepted_impact_v6",
+    "ledger": "docs/adoption/c-m6/ledger.json",
+    "receipt": "docs/validation/2026-11-08-c-m6/README.md",
+    "branch": "claude/wonderful-bell-3a7j6m"
+  },
+  "m2_active_batch_record": {
+    "id": "c-m2",
+    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/6",
+    "starting_rust_main": "379728289dbce6c2ba2d017073d5d639bcbbd65c",
+    "state": "reviewed_qualified_pass_owner_acceptance_pending",
+    "ledger": "docs/adoption/c-m2/ledger.json",
+    "receipt": "docs/validation/2026-11-08-c-m2/README.md",
+    "reference": "harness/reference/better-borg-c/m2-2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
+    "implementation_commit": "9cfbbffdeea946f9fad96fbf4522295633945b7b",
+    "independent_review": {
+      "verdict": "qualified pass",
+      "reviewed_source": "0bc7a09fb41a01cfbc4f5bb86b89002b074f3712",
+      "comment": "https://github.com/diegoami/borg-rs/issues/6#issuecomment-6716468916",
+      "acceptance_blockers": false,
+      "independent_complete_cases": 125,
+      "planned_cases": 131,
+      "wall_seconds": 300,
+      "qualifications": [
+        "131/131 author coverage is hardware/load dependent; reviewer C1 reproduced131, complete three-role join125; completed channels/saves and timeout prefixes match.",
+        "Native C49, controlled body/seam comparisons and whole-private-Borg equivalence are distinct; whole-private equivalence is not established."
+      ],
+      "findings": {
+        "F1": "stale Rust source comment; deferred from harness-only task because Rust Borg files must remain untouched",
+        "F2": "wall-time qualification added beside author131-case count",
+        "F3": "audit hint added for asymmetric unit-test object lists; matching criteria unchanged"
+      },
+      "owner_accepted": false
+    }
+  }
+}
