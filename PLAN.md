@@ -31,7 +31,7 @@ next milestone.
 | Milestone | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- |
 | **M0. Foundation** | Research, goals, plan, repository conventions, reference sources, an empty crate that builds | Owner confirms or amends D1–D11 in [GOALS.md](docs/GOALS.md) | **in review** |
-| **M1. The seam and the yardstick** | The engine and harness from borg-rs; the reborn crate linked behind `inkey_hack` as `BORG_IMPL=rust`; same-frontend control C Borgs; the run contract (exact boundary, depth stream); death export before the first playing run; a minimal Borg; same launchers; the endpoint calculator | `harness/build.sh` builds `c`, `c-pristine`, `c-bbc-m7` and `rust`; `c-pristine` reproduces borg-rs's pristine-C references (T1.3); a seed run twice gives identical `keys.log`; the smoke suite runs end to end on every arm with no harness failure; every natural death has a dossier; launchers start a GUI game with Ctrl-Z, z; the zoo change request is with the owner (T1.8) | not started |
+| **M1. The seam and the yardstick** | The engine and harness from borg-rs; the reborn crate linked behind `inkey_hack` as `BORG_IMPL=rust`; same-frontend control C Borgs; the run contract (exact boundary, depth stream); death export before the first playing run; a minimal Borg; same launchers; the endpoint calculator | `harness/build.sh` builds `c`, `c-pristine`, `c-bbc-m7` and `rust`; `c-pristine` reproduces borg-rs's pristine-C references (T1.3); a seed run twice gives identical `keys.log`; on every arm, `rust` included, the smoke suite runs end to end with no harness failure and the run-contract check holds (T1.8); every natural death has a dossier, from the first game played; launchers start a GUI game with Ctrl-Z, z; the zoo change request is with the owner (T1.8) | not started |
 | **M2. Perception and world model** | `Observation`, world model, knowledge tables, decision trace, parameter table | Perception agrees with borg-rs's state on recorded runs (declared exceptions only); observations serialise and replay into the world model without the game; every engine read is listed (D3 audit) | not started |
 | **M3. A Borg that plays** | Executor and prompts, paths, exploration, melee, pickup, stairs, rest, town restock; the first strategy without the full tactical layer; death dossiers | **G0**: no stall, crash or harness failure on the smoke suites; deterministic replay; every natural death recorded with its decision trace | not started |
 | **M4. Danger and survival** | The threat model and its calibration, reserves, escapes, the tactical layer, survival invariants | Calibration report on recorded runs; fixtures from the death cases (below) pass; early-suite deaths measured against the C Borg (descriptive) | not started |
@@ -49,8 +49,9 @@ next milestone.
   (unused cure), bbc D0010 (shoot instead of flee), bbc D0008 and rs D0006
   (oscillation), bbc D0009 (food against a pickup loop), bbc D0006
   (Deep Descent against readiness).
-- **Our own deaths** are recorded from the first playing run in M1
-  (T1.5, RULES 12), and each milestone review lists them with causes.
+- **Our own deaths** are recorded from the first game played in M1
+  (T1.2's death export, RULES 12), whichever arm died, and each milestone
+  review lists them with causes.
 - **Population numbers** come from borg-zoo. Locally we run identity and
   smoke suites only.
 
@@ -65,13 +66,13 @@ next milestone.
 | T0.3 Plan, rules, agent entry, crate skeleton, CI | M0 | done | T0.2 |
 | T0.4 M0 review findings (PR #1) | M0 | done | T0.3 |
 | T1.1 Import the engine tree | M1 | todo | M0 review |
-| T1.2 Harness and build identity | M1 | todo | T1.1 |
+| T1.2 Harness, build identity, death export | M1 | todo | T1.1 |
 | T1.3 Control C Borgs on the same frontend | M1 | todo | T1.2 |
-| T1.4 Run contract: exact boundary and depth stream | M1 | todo | T1.2 |
-| T1.5 Engine boundary, minimal Borg, death export | M1 | todo | T1.4 |
+| T1.4 Run contract: exact boundary and depth stream | M1 | todo | T1.3 |
+| T1.5 Engine boundary and minimal Borg | M1 | todo | T1.4 |
 | T1.6 Launchers, recording, replay, death tooling | M1 | todo | T1.5 |
 | T1.7 Endpoint calculator | M1 | todo | T1.4 |
-| T1.8 Zoo compatibility and change request | M1 | todo | T1.3, T1.5, T1.7 |
+| T1.8 Every-arm check, zoo compatibility and change request | M1 | todo | T1.5, T1.6, T1.7 |
 | T2.1 Observation | M2 | todo | M1 |
 | T2.2 World model | M2 | todo | T2.1 |
 | T2.3 Knowledge tables | M2 | todo | T2.1 |
@@ -101,16 +102,28 @@ better-borg-c milestone 7, and it is never used as a baseline (T1.3
 builds those). Copy `FORK-CORRECTIONS.md`, list the corrections and the
 adopted C carries that are in the tree, and change nothing in the engine.
 
-### T1.2 Harness and build identity
+### T1.2 Harness, build identity, death export
 
 Copy borg-rs's `harness/` scripts (`build.sh`, `run.sh`, `suite.sh`,
 `identity.sh`, `diff`, `supervise.py`, `suites/smoke`, `borg.txt`) with
 the same names, arguments and outputs (`keys.log`, `summary.json`,
-`BUILD_ID`, `build/<impl>/`). `BORG_IMPL=rust` builds **this** crate.
-`BORG_IMPL=c` builds the tree's own C Borg. Keep borg-rs's reference logs
-out unless a test needs them. Exit: `BORG_IMPL=c` reproduces borg-rs's C
-smoke references at the pinned borg-rs commit byte for byte, which proves
-the import.
+`BUILD_ID`, `build/<impl>/`). `BORG_IMPL=rust` builds **this** crate (no
+Borg plays there until T1.5). `BORG_IMPL=c` builds the tree's own C Borg.
+Keep borg-rs's reference logs out unless a test needs them.
+
+**Death export comes first, before any game is played** (RULES 12). Add
+`tools/export-death.py` and wire it into `run.sh` and `suite.sh`, so a
+natural death in any harness run, on any arm, writes a basic dossier
+under `docs/deaths/`. The dossier holds a borg-rs-format `record.json` (case
+id, seed, build identity, implementation, summary, `keys.log` hash,
+terminal state, cause) and an `assessment.json` with status "unassessed".
+Test the exporter on synthetic run directories before the first real run.
+T1.6 upgrades basic dossiers in place to the full format, and T3.6 adds the
+decision trace.
+
+Exit, in this order: the exporter's tests pass; then `BORG_IMPL=c`
+reproduces borg-rs's C smoke references at the pinned borg-rs commit byte
+for byte, which proves the import; any death in those runs has a dossier.
 
 ### T1.3 Control C Borgs on the same frontend
 
@@ -149,12 +162,14 @@ Add to our `borgh`, as harness-only hooks under `#ifdef BORG_HARNESS`:
   maximum depth, character level, HP), giving the first engine turn at
   each depth.
 
-Exit: for every arm, the keys before the boundary are byte-identical to an
+Exit, on the arms that exist at this point (`c`, `c-pristine`,
+`c-bbc-m7`): the keys before the boundary are byte-identical to an
 unmodified-`borgh` run of the same seed (so the hooks do not change play),
 and the boundary and the stream are checked on seeds that die before T,
-survive to T, and change depth.
+survive to T, and change depth. The `rust` arm gets the same check in T1.8,
+once T1.5 has made it play.
 
-### T1.5 Engine boundary, minimal Borg, death export
+### T1.5 Engine boundary and minimal Borg
 
 Bring `engine.rs` over from borg-rs, narrowed to what is used, with
 attribution. Implement the control loop of ARCHITECTURE.md (queue,
@@ -162,14 +177,9 @@ attribution. Implement the control loop of ARCHITECTURE.md (queue,
 yes/no). The minimal Borg reads its HP and position and does something
 harmless and progressing: walk, take stairs when on them, rest when hurt.
 
-**Before the first playing run**, add minimal death export: a natural death
-in any harness run writes a basic dossier under `docs/deaths/` in borg-rs's
-`record.json` format (case id, seed, build identity, implementation,
-summary, `keys.log` hash, terminal state, cause), plus an `assessment.json`
-with status "unassessed". T1.6 upgrades basic dossiers in place to the full
-format, and T3.6 adds the decision trace. Exit: two runs of the same seed
-give identical `keys.log`; no harness failure on `smoke`; a run that dies
-produces a dossier.
+Exit: two runs of the same seed give identical `keys.log`; no harness
+failure on `smoke`; a `rust` run that dies produces a dossier through
+T1.2's exporter.
 
 ### T1.6 Launchers, recording, replay, death tooling
 
@@ -179,7 +189,8 @@ produces a dossier.
 `tools/`: same commands and options as borg-rs. Save directory
 `.angband-reborn/`, so it does not collide with borg-rs's `.angband-rust/`.
 Exit: GUI start with Ctrl-Z, z; a headless recording replays with
-`--verify-only`; the dossiers from T1.5 are upgraded and aggregated.
+`--verify-only`; the basic dossiers written since T1.2 are upgraded and
+aggregated.
 
 ### T1.7 Endpoint calculator
 
@@ -194,9 +205,15 @@ divides by `death`/`turn_cap`/`completion` cells only (`zoo/stats.py` at
 the pin), which is not this endpoint. Exit: unit tests on synthetic cells
 covering every outcome kind; a run on real smoke outputs.
 
-### T1.8 Zoo compatibility and change request
+### T1.8 Every-arm check, zoo compatibility and change request
 
-Run borg-zoo's borg-rs adapter (`zoo/borgrs.py`, at the pinned zoo commit)
+First, the M1-wide check, now that every arm plays: on `c`, `c-pristine`,
+`c-bbc-m7` and `rust`, the smoke suite runs with no harness failure; the
+run contract of T1.4 holds (keys before the boundary byte-identical to an
+unmodified-`borgh` run, boundary and depth stream checked); a seed run
+twice gives identical `keys.log`.
+
+Then run borg-zoo's borg-rs adapter (`zoo/borgrs.py`, at the pinned zoo commit)
 locally against this repository for `rust`, `c-pristine` and `c-bbc-m7`
 on the smoke suite, without changing the zoo. Then write the change
 request for the owner to route to borg-zoo (RULES 7):

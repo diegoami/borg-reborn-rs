@@ -51,7 +51,7 @@ whatever the model.
 12. **Every natural death is recorded** as a dossier under `docs/deaths/`
     (borg-rs format; the decision trace from M3), with the actual source,
     build, implementation, profile and seed. This applies from the first
-    playing run (PLAN T1.5), whichever arm died. Repeats and replays never
+    game played (PLAN T1.2), whichever arm died. Repeats and replays never
     inflate independent counts.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a

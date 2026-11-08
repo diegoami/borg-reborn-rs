@@ -130,7 +130,7 @@ make and this one can.
 
 | Piece | Where in borg-rs | Use here |
 | --- | --- | --- |
-| Engine tree with harness hooks | `angband/` (subtree of upstream `e473720`, hooks under `#ifdef BORG_HARNESS`, `BORG_IMPL` in CMake) | Imported in M1 with history, unchanged. `BORG_IMPL=rust` builds the reborn crate, as it builds borg-rs's. At the pin the tree's C Borg carries borg-rs's adopted fixes (22 files differ from upstream), so the baselines are separate arms (`c-pristine`, `c-bbc-m7`, PLAN T1.3) |
+| Engine tree with harness hooks | `angband/` (subtree of upstream `e473720`, hooks under `#ifdef BORG_HARNESS`, `BORG_IMPL` in CMake) | Imported in M1 with history, unchanged. `BORG_IMPL=rust` builds the reborn crate, as it builds borg-rs's. At the pin the tree's C Borg carries borg-rs's adopted fixes (22 files differ from upstream), so the controls are separate arms (`c-pristine`, `c-bbc-m7`, PLAN T1.3) |
 | Headless frontend `borgh` | `angband/src/main-borgh.c` | Seeds, scripted birth, fixed date, 80×24, `keys.log`, `summary.json`: the zoo's interface |
 | Harness scripts | `harness/build.sh`, `run.sh`, `suite.sh`, `diff`, `suites/` | Same names and semantics; suites for the reborn Borg |
 | Engine boundary | `borg-rs/src/engine.rs` (~3,300 lines, the only `unsafe`) | Reused as the substrate's foundation |

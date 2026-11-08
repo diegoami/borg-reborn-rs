@@ -42,8 +42,12 @@ A, B and C together, each where it pays:
    parameter values; profiles per class are expected.
 4. **The zoo decides.** A strategy or profile is kept when it beats the
    current best on the prespecified objective, on seeds it was not
-   developed on. The C Borg (`4.2.6`), the latest better-borg-c milestone
-   and borg-rs are the baselines in every comparison.
+   developed on. The **controls** in every comparison are C Borgs run under
+   our exact run contract (D8): the original C Borg (`c-pristine`) and the
+   latest better-borg-c milestone (`c-bbc-m7` today). borg-rs is not a
+   control: it is the source of our engine tree and tooling, and the
+   perception oracle (PLAN T2.5). Its zoo results, like the observer
+   harness's, are context.
 
 Later, and only for narrow decisions: the decision trace (which strategy
 and which rule chose each action, with the alternatives' scores) is the
@@ -62,7 +66,7 @@ We adopt the Tunable Borg Plan's doctrine ([SOURCES.md](SOURCES.md#s3-the-measur
   separately, never relabelled as deaths.
 - **Reported alongside:** deaths with cause, survival curves by engine turn,
   maximum depth and character level, operational outcomes.
-- **Comparison:** per class, against the baselines, on frozen suites, with
+- **Comparison:** per class, against the control C Borgs (D8), on frozen suites, with
   paired seeds where the harnesses allow it. A claim of improvement needs
   a prespecified endpoint, a sized comparison and a confirmation suite
   (borg-zoo RULES 8).
@@ -173,7 +177,8 @@ These follow from the sources. Each cites the evidence behind it.
 ## Non-goals
 
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
-  decisions; both are baselines for our results.
+  decisions. The C Borgs are controls for our results (D8); borg-rs is
+  an oracle only for perception (PLAN T2.5).
 - A model in the play loop, or machine learning at the core.
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
@@ -187,13 +192,13 @@ review. A session does not reopen a confirmed one (RULES 3).
 | # | Decision | Recommended |
 | --- | --- | --- |
 | D1 | What the reborn Borg is | **One substrate, a family of strategies, all tunable; the zoo decides** (above) |
-| D2 | Engine and game | **Angband 4.2.6 at `e473720`**, the `angband/` tree of borg-rs (harness hooks, its declared fork corrections and its adopted C Borg carries) imported with history. Birth options at the game's defaults. The tree's own C Borg is not a baseline (D8) |
+| D2 | Engine and game | **Angband 4.2.6 at `e473720`**, the `angband/` tree of borg-rs (harness hooks, its declared fork corrections and its adopted C Borg carries) imported with history. Birth options at the game's defaults. The tree's own C Borg is not a control (D8) |
 | D3 | Information level | **The C Borg's two channels, no more**: screen (message line, store header) plus the direct reads of spec §1.1. Revisit only with a separate "fair-play" profile, measured separately |
 | D4 | Code reuse | **The substrate may reuse borg-rs code** (engine boundary first; perception, item analysis and flow where they survive review), with attribution. Decision code is new. C Borg knowledge is lifted with citations |
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by `tools/endpoint.py`); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Baselines | **Same-frontend controls built here** (PLAN T1.3): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. Observer-harness zoo results are context only |
+| D8 | Controls | **Same-frontend controls built here** (PLAN T1.3): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent | Its reviewed claims are inputs to strategy and parameter design. No dependency on it in code or in the plan's critical path |
