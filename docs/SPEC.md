@@ -325,8 +325,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `tools/endpoint.py` | ours: the primary endpoint over local outputs and zoo cells | **Drop** | the zoo computes every statistic (§6) |
 | `harness/reference/smoke-c`, `smoke-pristine`, `full-pristine`, `smoke-c-bbc-m7` | references of the C arms | **Drop** | §6 |
 | Arms `c`, `c-pristine`, `c-bbc-m7`; #56 (`c-bbc-m8`) | C Borgs built here | **Drop**; #56 is closed for borg-zoo#36 | §6 |
-| The death tooling: `tools/record-death.py`, `death_workflow.py`, `borg_deaths.py`, `borg_saves.py` and their tests | copied from borg-rs in T1.6 | **Keep** as ours, adapted to the new frontend (owner, §11 q1) | M4 re-reads recorded deaths |
-| The rest of `tools/` (GUI, replay viewer, human takeover, native recording, their tests, 2 C files with 2 headers) and the root launchers but one | copied from borg-rs and better-borg-c in T1.6 | **Drop**, except one launcher to watch the Borg play (Ctrl-Z, z) | borg-rs's recording format (§11 q1) |
+| The copied `tools/` (GUI recording, replay viewer, human takeover, native recording, the death workflow, their tests, 2 C files with 2 headers) and the root launchers | copied from borg-rs and better-borg-c in T1.6 | **Dropped** in TE.6, all of it (owner, §11 q1): the death tooling imports the recording toolkit | replaced by `tools/rerun-death.py` (rerun a death with the Borg's logs), `tools/death_registry.py` (the index) and `watch-borg.sh` (one launcher) |
 | `tools/IMPORTED.json`, `tools/README.md` | the import record of T1.6 | **Replace** with `docs/PROVENANCE.md` | §2.2 |
 | `engine.rs`, `borg.rs`, `observation.rs`, `world.rs`, `knowledge.rs`, `params.rs`, `trace.rs` | ours (M1, T2.1–T2.4) | **Keep**, re-based on the new bindings | the Borg layers are ours |
 | `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own | §4 |
@@ -407,10 +406,12 @@ after it runs on it.
 
 ## 11. Decisions on the open questions (owner, 2026-11-09)
 
-1. **Tools:** the death tooling (`record-death.py`, `death_workflow.py`,
-   `borg_deaths.py`, `borg_saves.py`, with their tests) is kept as ours and
-   adapted to the new frontend. The GUI, replay viewer, human takeover and
-   native recording are dropped. One launcher to watch the Borg play stays.
+1. **Tools:** first, keep the death tooling and drop the rest. Then
+   (TE.6), since the death tooling imports borg-rs's whole recording
+   toolkit: drop all copied tools and write one lean tool of ours instead.
+   `tools/rerun-death.py` reruns a death from its build and seed with the
+   Borg's logs and checkpoint saves. One launcher, `watch-borg.sh`, stays to
+   watch the Borg play.
 2. **The zoo:** the interface its current adapter calls is kept and
    written down as the zoo contract (§4, `docs/ZOO-INTERFACE.md`).
 3. **Controls:** borg-zoo does every comparison, and this repository

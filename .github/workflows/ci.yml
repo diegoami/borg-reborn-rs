@@ -76,5 +76,5 @@ jobs:
       - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths"
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       - run: for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
-      # borg-rs's tool tests (T1.6): recording, replay, death records.
-      - run: python3 -m unittest discover -s tools -p 'test_*.py'
+      # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
+      - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D*-rust-* | head -1)" "$RUNNER_TEMP/rerun"

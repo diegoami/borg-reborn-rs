@@ -13,6 +13,9 @@ sync. Licence of every source below: GPL-2.0.*
 
 `borg-reborn-rs/src/headers/` (c2rust bindings copied from borg-rs `e5cb263` in M1) was replaced in TE.3 by bindings we generate (`engine/bindings/generate.sh`); nothing of it remains.
 
-The files copied before docs/SPEC.md took effect are listed in
-`tools/IMPORTED.json` and in the T1.6 notes of `tools/README.md`. TE.6 moves
-the ones kept into this table.
+`tools/death_registry.py` keeps borg-rs's `tools/borg_deaths.py`'s
+registry index (`registry_lock`, `canonical_identity`, `aggregate`), with the
+same output, so the existing index regenerates byte for byte. The rest of
+the tools copied in T1.6 (recorded in `tools/IMPORTED.json` until then) were
+removed in TE.6, and so were borg-rs's `angband/` tree, the `borg-rs/` shim
+crate and `harness/measurement/`.

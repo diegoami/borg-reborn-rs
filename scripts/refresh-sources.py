@@ -174,15 +174,6 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                     changed_docs = [p for p in changed if '/' not in p]
                     if changed_docs:
                         w(f"  - changed registry documents: {', '.join(changed_docs)}\n")
-        engine = data.get('engine_tree') or {}
-        if engine.get('pin') == name:
-            r = git(src.repo, 'rev-parse', '-q', '--verify', f"{src.head}:{engine['path']}")
-            head_tree = r.stdout.strip()
-            if head_tree and head_tree != engine['tree']:
-                w(f"- **engine tree re-sync available:** `{engine['path']}/` at head is {head_tree[:12]}, "
-                  f"ours is {engine['tree'][:12]} (docs/ENGINE-TREE.md, RULES 22)\n")
-            elif head_tree:
-                w(f"- engine tree: `{engine['path']}/` unchanged at head\n")
         tag_pattern = pin.get('watch_tags')
         if tag_pattern:
             # Tags after the baseline in use, not after the pin: a milestone

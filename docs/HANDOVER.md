@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.6, our death tools; the copied tooling and borg-rs's tree gone (#76)
+
+- **Decision (owner):** the death tooling to keep imported borg-rs's whole
+  recording toolkit (GUI, replay viewer, runtime: about 2,000 lines), so
+  all copied tools are dropped and replaced by lean tools of ours.
+- **New:**
+  - `tools/rerun-death.py` reruns a dossier's game from its build and seed
+    with the observation, world and knowledge logs and checkpoint saves,
+    and checks that the keys are the recorded ones. D0664 reproduces, and
+    CI reruns one of its own deaths.
+  - `tools/death_registry.py` regenerates the registry index, taken from
+    `borg_deaths.py` with the same output (byte for byte).
+  - `watch-borg.sh` builds our integration with X11 and opens the game.
+- **Removed:**
+  - the copied tools and their tests (25 Python files, 2 C files, 2
+    headers) and 7 root launchers;
+  - borg-rs's `angband/` tree, the `borg-rs/` shim crate and
+    `harness/measurement/`;
+  - `pins.json`'s `engine_tree` and the re-sync report;
+  - the repository test `engine_tree_matches_its_record`;
+  - `run.sh`'s `frames` flag.
+
+  No file of borg-rs's engine tree is left, and no build reads one.
+- **Docs:** README's *Playing*, AGENTS.md, `tools/README.md`,
+  `docs/PROVENANCE.md` and SPEC §8 and §11 are updated.
+- **Deaths:** the Rust deaths are recorded again, as D0665–D0710
+  (`Cargo.toml` is a build input and lost the shim member). Play still
+  matches the references: full 45/45, smoke 3/3.
+
 ## 2026-11-09: TE.5, the harness and run contract on our build (#75)
 
 - **`run.sh`:** the C Borgs' flags (`cheat`, `cheatlive`, `munchkin`,

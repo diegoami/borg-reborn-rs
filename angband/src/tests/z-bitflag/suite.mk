@@ -1,1 +1,0 @@
-TESTPROGS += z-bitflag/bitflag

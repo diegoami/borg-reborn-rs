@@ -1,17 +1,18 @@
 //! The Angband Borg reborn.
 //!
-//! An automatic player for Angband 4.2.6, linked into the engine behind the
-//! `inkey_hack` seam as borg-rs is. Nothing plays yet: milestone 0 is the
-//! foundation. The layers this crate will hold are described in
-//! `docs/ARCHITECTURE.md`:
+//! An automatic player for Angband 4.2.6, linked into upstream's own Borg
+//! seam (`do_cmd_borg`, `inkey_hack`) by our build (docs/SPEC.md §3,
+//! docs/ENGINE.md). The layers this crate holds or will hold are described
+//! in `docs/ARCHITECTURE.md`:
 //!
 //! * substrate: engine boundary, perception, world model, knowledge,
 //!   assessment (danger and risk), executor, decision trace, parameters;
 //! * strategies: the family of decision layers behind one trait.
 //!
-//! The engine boundary is `engine`; it links behind the seam package
-//! `borg-rs` (see `borg-rs/Cargo.toml`). `borg` holds the control loop and,
-//! for now, the minimal Borg of T1.5 (a placeholder until M3).
+//! The engine boundary is `engine`, over the generated `bindings`; the crate
+//! is also a staticlib, which `engine/CMakeLists.txt` links into the game.
+//! `borg` holds the control loop and, for now, the minimal Borg of T1.5 (a
+//! placeholder until M3).
 
 #![deny(unsafe_code)]
 
