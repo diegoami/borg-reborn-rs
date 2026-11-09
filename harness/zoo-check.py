@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Run borg-zoo's own borg-rs adapter against this checkout (task T1.8, #11).
 
-  harness/zoo-check.py [--impl rust c-pristine c-bbc-m7 ...] [--suite smoke] [--work DIR]
+  harness/zoo-check.py [--suite smoke] [--work DIR]
+
+The contract it checks is docs/ZOO-INTERFACE.md. Only the Rust Borg is built
+here (docs/SPEC.md §6).
 
 Loads the zoo at its pin (vendor/borg-zoo, scripts/setup.sh), adds in memory
 one specimen per implementation: kind "borg-rs", repository
@@ -93,7 +96,7 @@ def repatriate(impl, rec, suite, work, cat_mod):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--impl', nargs='+', default=['rust', 'c-pristine', 'c-bbc-m7'])
+    ap.add_argument('--impl', nargs='+', default=['rust'], choices=['rust'])
     ap.add_argument('--suite', default='smoke')
     ap.add_argument('--work', type=Path, default=ROOT / 'harness/out/zoo-check')
     a = ap.parse_args(argv)

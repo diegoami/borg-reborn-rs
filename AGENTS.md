@@ -97,9 +97,9 @@ milestone. Name both in the review PR.
 | `harness/` | borg-rs's harness (build, run, suite, diff, identity) with the differences listed in [harness/README.md](harness/README.md) |
 | `borg-rs/` | The seam package: the name the imported CMake builds; it only re-exports `borg-reborn-rs` |
 | `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
-| `tools/endpoint.py` | The primary endpoint of GOALS.md per arm and class (all attempted runs, exact boundary, Wilson CI, paired McNemar) over local suite outputs and borg-zoo cells |
 | `watch-borg.sh`, `tools/rerun-death.py`, `tools/death_registry.py` | the launcher to watch the Borg (X11), the rerun of a recorded death with its logs, the registry's index (TE.6; the copied GUI, recording and replay tools are gone) |
 | (removed) | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
+| `docs/ZOO-INTERFACE.md` | The contract borg-zoo's adapter calls: build, run, outputs (TE.7) |
 | `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
 
 ## Local machine notes
