@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0503-rust-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5089,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "384eba93097a78c8eac90f018de3d80606c98129",
+    "git_dirty": "yes",
+    "source_sha256": "efc974bb5acadfa3549c11950ed0bfddc9e62282666d312c081ba73987bd86c2",
+    "binary_sha256": "5bd0c0c545bf71dec49ace47741227869fb2f8c34e012cd8a1bbc5879468a8e1",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 513
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/r66-full/full-6-rogue-3",
+      "result_sha256": "c3b20ca25a0c3140ed04f4b4dae90f65ca010bc280d738842de727ba78ff4cb8",
+      "raw_sha256": {
+        "keys.log": "c3b20ca25a0c3140ed04f4b4dae90f65ca010bc280d738842de727ba78ff4cb8",
+        "messages.log": "f60b65628828ec5b5b5daf00cd284f0e651f96a1ffa1333666b2ee319a9c7c1d",
+        "state.log": "3c31bc534430f925823ec296206916a5b3821a835e331a2edbfedc66e51769e8"
+      },
+      "source_commit": "384eba93097a78c8eac90f018de3d80606c98129",
+      "binary_sha256": "5bd0c0c545bf71dec49ace47741227869fb2f8c34e012cd8a1bbc5879468a8e1"
+    }
+  ],
+  "encounter_family": "start-df9be5098c64e05a022161d87fc9ac57bc088e33b8b18b746fb849e16288bba6",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "30a18b52a8eb76da376b172d979115968ea6b409b12b9b02562db3b8e3c0b4d9",
+    "config.txt": "effe932533c4b386072ae8aeb89a96380c0bfbffb6a48dd6e62f9dd58edbe2ed",
+    "depths.json": "9b73c2570b50fb1ea4d84ff4b4dbb021dcaccadd3b5baaf523da581af901baa8",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "af181f9eb9ed3a50d61081e3198098eb5747eeb4a20ec19432ddf91c63cd9160",
+    "trace-tail.jsonl": "09047afbf51610c5bb5cee97a355fb200e4659507164938723e0a09ff3c6a0c0"
+  },
+  "investigation": null,
+  "issue": null
+}

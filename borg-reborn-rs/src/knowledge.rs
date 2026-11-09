@@ -41,6 +41,9 @@ pub struct Knowledge {
     /// `adj_str_blow[]` as the engine has it (player-calcs.c:548), read to
     /// check the lifted copy ([`ADJ_STR_BLOW`]).
     pub adj_str_blow: Vec<i32>,
+    /// `adj_str_hold[]` as the engine has it (player-calcs.c:456), read to
+    /// check the lifted copy ([`ADJ_STR_HOLD`]).
+    pub adj_str_hold: Vec<i32>,
 }
 
 /// A monster race (`struct monster_race`): the spoiler data, not lore.
@@ -234,6 +237,21 @@ pub const ADJ_STR_BLOW: [i32; 38] = [
     120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240,
 ];
 
+/// `adj_str_hold[]` (`angband/src/player-calcs.c:456-495`): the weight in
+/// pounds a character can wield without penalty, by strength index.
+pub const ADJ_STR_HOLD: [i32; 38] = [
+    4, 5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 30, 35, 40, 45, 50, 55, 60, 65, 70,
+    80, 80, 80, 80, 80, 90, 90, 90, 90, 90, 100, 100, 100,
+];
+
+/// Whether a weapon of this weight (tenths of a pound) is too heavy to
+/// wield well (`player-calcs.c:calc_bonuses:2296-2301`: `hold < weight /
+/// 10`). Then the engine does not compute blows at all and the character
+/// keeps one blow (`num_blows` 100, `:1900`).
+pub fn heavy_wield(str_index: usize, weight: i32) -> bool {
+    ADJ_STR_HOLD[str_index.min(37)] < weight / 10
+}
+
 /// `adj_dex_blow[]` (`angband/src/player-calcs.c:594-633`, file-local in
 /// the engine; the C Borg keeps a copy, `borg_adj_dex_blow`).
 pub const ADJ_DEX_BLOW: [i32; 38] = [
@@ -399,6 +417,17 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn heavy_wield_follows_calc_bonuses() {
+        // STR 10 (index 7: hold 14 lb): a 15 lb weapon is too heavy, 14 lb is not.
+        assert!(heavy_wield(7, 150));
+        assert!(!heavy_wield(7, 140));
+        assert!(!heavy_wield(7, 149), "integer division: 149 / 10 = 14");
+        // STR 18/100 (index 25: hold 80 lb).
+        assert!(!heavy_wield(25, 800));
+        assert!(heavy_wield(25, 810));
+    }
+
+    #[test]
     fn energy_scales_with_speed() {
         // extract_energy (game-world.c:72-134) at a few speeds.
         let mut e = vec![1u8; 200];
@@ -444,6 +473,11 @@ pub(crate) mod tests {
             k.adj_str_blow,
             ADJ_STR_BLOW.to_vec(),
             "the lifted adj_str_blow"
+        );
+        assert_eq!(
+            k.adj_str_hold,
+            ADJ_STR_HOLD.to_vec(),
+            "the lifted adj_str_hold"
         );
         assert_eq!(k.extract_energy.len(), 200);
         assert_eq!((k.extract_energy[110], k.extract_energy[120]), (10, 20));

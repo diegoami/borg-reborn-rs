@@ -25,6 +25,8 @@ pub const ELEM_MAX: usize = 25;
 pub const EQUIP_WEAPON: u16 = 1;
 /// `OBJ_MOD_BLOWS` (list-object-modifiers.h).
 pub const OBJ_MOD_BLOWS: usize = 10;
+/// `TMD_BLOODLUST` (list-player-timed.h).
+pub const TMD_BLOODLUST: usize = 49;
 
 /// Everything the Borg remembers.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -221,18 +223,27 @@ impl Character {
             .and_then(|s| s.item.as_ref())
     }
 
-    /// Blows per round times 100 with the current gear, by the engine's
-    /// formula ([`knowledge::blows`]), from the stats in use and the known
-    /// `OBJ_MOD_BLOWS` of the equipment.
+    /// Blows per round times 100 with the current gear, as the engine sets
+    /// `state.num_blows` (`player-calcs.c:calc_bonuses:2296-2318`): a
+    /// weapon too heavy to wield ([`knowledge::heavy_wield`]) leaves one blow;
+    /// otherwise [`knowledge::blows`] with the stats in use, the known
+    /// `OBJ_MOD_BLOWS` of the equipment and bloodlust's `timed / 20`
+    /// (`:2207-2209`). Shapechanges (`calc_shapechange`) are not modelled.
     pub fn blows(&self, k: &Knowledge) -> Option<i32> {
         let s = self.status.as_ref()?;
         let class = k.class(s.class)?;
-        let extra = self.gear.modifiers.get(OBJ_MOD_BLOWS).copied().unwrap_or(0);
+        let str_index = knowledge::stat_index(s.stat_use[0]);
+        let weight = self.weapon().map_or(0, |w| i32::from(w.weight));
+        if self.weapon().is_some() && knowledge::heavy_wield(str_index, weight) {
+            return Some(100);
+        }
+        let bloodlust = s.timed.get(TMD_BLOODLUST).map_or(0, |&t| i32::from(t) / 20);
+        let extra = self.gear.modifiers.get(OBJ_MOD_BLOWS).copied().unwrap_or(0) + bloodlust;
         Some(knowledge::blows(
             class,
-            knowledge::stat_index(s.stat_use[0]),
+            str_index,
             knowledge::stat_index(s.stat_use[3]),
-            self.weapon().map_or(0, |w| i32::from(w.weight)),
+            weight,
             extra,
             s.percent_damage,
         ))
@@ -488,6 +499,10 @@ mod tests {
             Some(2.5),
             "the world is unchanged"
         );
+        // A 30 lb weapon at STR 17 (hold 28 lb) is too heavy: one blow.
+        let mut heavy = w.character.equipment[0].item.clone().unwrap();
+        heavy.weight = 300;
+        assert_eq!(w.character.wearing(0, Some(heavy)).blows(&k), Some(100));
     }
 
     fn world_of(o: &Observation) -> World {
