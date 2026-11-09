@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: REDESIGN-LESSONS.md read into the design
+
+- better-borg-c wrote `docs/deaths/REDESIGN-LESSONS.md` for this repository:
+  thirteen lessons from D0001–D0014 and four owner manual takeovers. It came
+  in with refresh #31, together with death D0014.
+- [LESSONS-TRACE.md](LESSONS-TRACE.md) maps each lesson to our principle,
+  our architecture section and the task that builds it.
+- GOALS principles 4–8 are extended, and principle 14 is new (equipment by
+  what it does). D3 now states that the threat model uses full race data
+  (spoiler knowledge), as the C Borg does.
+- ARCHITECTURE adds monster-track confidence, one assessment and tolerance
+  for every consumer, cache validity, the escape ladder, consumable value
+  and destination-aware level changes.
+- PLAN adds D0014 to the fixtures, and owner manual branches as scenario
+  tests.
+- The refresh report now names new and changed registry documents.
+
+**Next:** #6 (T1.3, control C Borgs).
+
 ## 2026-11-09: T1.2 harness, build identity, death export (#5)
 
 - `harness/` is borg-rs's at `e5cb263`, with three adaptations listed in

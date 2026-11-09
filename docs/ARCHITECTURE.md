@@ -80,6 +80,11 @@ Map memory per level (the C Borg's grid record without the panel
 artefacts), monster tracks (position, last seen, awake, hit points,
 speed), object memory, store memory, and a character model (stats,
 resistances, abilities, spells, blows, all derived from the gear).
+A monster out of view is not forgotten. Its track keeps a confidence that
+decays with time since it was seen and with its speed (REDESIGN-LESSONS
+L11; bbc D0014). The character model gives expected damage per turn for
+any weapon, so equipment is compared by effect (GOALS principle 14). Pack
+capacity is the engine's own count, quiver included (L8; source419).
 
 Rules (GOALS principle 10): updated once per think from the `Observation`.
 The strategy gets `&World`, never `&mut World`. "Try this item on"
@@ -111,7 +116,11 @@ The core of the redesign, computed once per think:
   destruction and drains cost something, but they are not a reason to
   spend the last Phase Door. In the C Borg, gold theft adds to the same
   danger number that triggers escapes (better-borg-c#158; the gallant death
-  D0002).
+  D0002). Groups, breeders and status effects (paralysis, blindness,
+  confusion) are part of the estimate. A special monster is data in the
+  model, never a parallel trigger. **There is one assessment and one risk
+  tolerance for every consumer** (planner, movement, retreat, combat), so
+  layers cannot disagree (REDESIGN-LESSONS L1, L2).
 - **Calibration.** Predicted damage is checked against damage actually
   taken in recorded runs. A calibration report is a milestone deliverable,
   not an afterthought.
@@ -121,7 +130,9 @@ The core of the redesign, computed once per think:
 - **Paths.** Distance maps (flow) with costs that include threat, to
   stairs, to unexplored areas, to targets. They are built from the world
   model and cached per think, never across thinks without invalidation.
-  That stale-cache reuse is the mold death in rs D0006.
+  That stale-cache reuse is the mold death in rs D0006. A cached entry
+  carries the observation it was computed from and is invalid after a
+  newer one (L2; source404).
 
 ### L5 Strategy
 
@@ -144,7 +155,15 @@ The first strategy has two layers:
   it (one-step look-ahead with the threat model) and by what it gains (a
   kill, distance, healing). Choose under explicit constraints, for example
   "probability of death next turn below p_max". It is one scale, so a cure
-  in the pack is always considered (GOALS principle 5).
+  in the pack is always considered (GOALS principle 5). Within it:
+  - **Escape ladder:** step out of reach, walk, Phase, teleport, leave the
+    level, by cost and sufficiency. Landing risk counts remembered monsters.
+    The last escape item needs a higher expected gain. Stationary monsters
+    are left by a step, or killed when fragile (REDESIGN-LESSONS L3, L4).
+  - **Consumable value:** the expected survival gained now. Buffs early,
+    cures for status effects, turns bought. No class exclusions (L5).
+  - **Information:** detection is an option, scored by what it changes in
+    the decision (L11).
 - **Strategic layer** (runs when no immediate threat applies). A small set
   of modes: *recover* (rest, cure), *engage* (hunt a target worth its
   risk), *loot*, *explore*, *descend*, *ascend*, *return to town*,
@@ -154,10 +173,13 @@ The first strategy has two layers:
   (principle 6). *Descend* asks the **readiness policy**: may this
   character be at depth d, given class, level, resistances, reserves, speed
   and kit? Every route to depth goes through it: stairs, trapdoors, Deep
-  Descent, recall depth (principle 8).
+  Descent (destination max_depth + 5), recall depth. An escape that changes
+  level is judged by where it lands (principle 8; L6). *Ascend* and
+  *return to town* explore for up stairs before taking a down stair, and
+  oscillating depth escalates the strategy (L7).
 - **Invariants** (checked first, every think): reserves below their minimum
-  for this depth turn into goals (*return to town*, *buy*) before anything
-  discretionary (principle 7).
+  for this depth, including a way home, turn into goals (*return to town*,
+  *buy*, *identify*) before anything discretionary (principle 7; L7–L9).
 
 All thresholds live in the strategy's `ParamTable`.
 

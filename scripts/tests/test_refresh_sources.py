@@ -79,6 +79,8 @@ class RefreshTest(unittest.TestCase):
             'docs/deaths/D0002-b/report.md': '# D0002 second death\n',
             'docs/deaths/D0002-b/record.json': json.dumps({'character': 'Gnome Mage', 'raw_cause': 'a soldier'}),
             'docs/deaths/D0002-b/assessment.json': json.dumps({'classification': 'unassessed'}),
+            'docs/deaths/LESSONS.md': '# lessons for a redesign\n',
+            'docs/deaths/README.md': 'registry, updated\n',
             'src/borg/borg-danger.c': DANGER_B,
         }, 'B')
         sh(self.origin, 'git', 'tag', '4.2.6-impact-v8')
@@ -94,7 +96,9 @@ class RefreshTest(unittest.TestCase):
     def test_report_lists_what_moved(self):
         text = self.report()
         self.assertIn('**1 commits** since pin', text)
-        self.assertIn('3 added, 1 changed, 0 removed', text)
+        self.assertIn('4 added, 2 changed, 0 removed', text)
+        self.assertIn('**new registry documents:** LESSONS.md', text)
+        self.assertIn('changed registry documents: README.md', text)
         self.assertIn('**new death cases:** D0002-b', text)
         self.assertIn('updated cases: D0001-a', text)
         self.assertIn('**new tags** `4.2.6-impact-v*`: 4.2.6-impact-v8', text)
@@ -132,6 +136,7 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('D0002-b', index)
         self.assertIn('a soldier', index)
         self.assertIn('2 cases.', index)
+        self.assertTrue((ref / 'LESSONS.md').exists())
         self.assertIn('at pin', self.report(), 'after the update the pin is current')
 
     def test_dirty_vendor_is_not_moved(self):

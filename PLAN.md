@@ -58,8 +58,15 @@ are reviewed.
   (Deep Descent against readiness), bbc D0011 (drink the known CLW; no
   Deep Descent from depth 4 at CL10; wield the Maul), bbc D0012 (attack
   the 2-HP mold), bbc D0013 (step back from the floating eye instead of
-  reading the only Phase Door; do not flee a level over one small kobold).
+  reading the only Phase Door; do not flee a level over one small kobold),
+  bbc D0014 (drink Speed and CLW against the blood falcon; keep the last
+  Phase Door at full HP; no Deep Descent from depth 2).
   New deaths from the source refresh (RULES 21) add cases.
+- **Owner manual branches as scenario tests** (REDESIGN-LESSONS L13): the
+  `owner-manual-branch.json` of bbc D0010, D0012, D0013 and D0014 gives a
+  verified prefix and a known-feasible alternative. Starting from the same
+  state, our decision must be at least as good. The full lesson-to-design
+  map is [docs/LESSONS-TRACE.md](docs/LESSONS-TRACE.md).
 - **Our own deaths** are recorded from the first game played in M1
   (T1.2's death export, RULES 12), whichever arm died, and each milestone
   review lists them with causes.
