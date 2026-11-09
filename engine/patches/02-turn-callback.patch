@@ -1,0 +1,29 @@
+Call a harness hook after every game turn, for the exact turn boundary
+(stop at engine turn T itself). Guarded by BORG_HARNESS.
+
+From borg-rs 286215c angband/src (game-world.c), its BORG_HARNESS and
+USE_BORGH hunks only (docs/PROVENANCE.md). Apply with patch -p1 in the tree.
+
+--- a/src/game-world.c
++++ b/src/game-world.c
+@@ -20,6 +20,10 @@
+ #include "cmds.h"
+ #include "effects.h"
+ #include "game-world.h"
++#ifdef BORG_HARNESS
++#include "main-borgh.h"
++void (*borgh_turn_hook)(void) = NULL;
++#endif
+ #include "generate.h"
+ #include "init.h"
+ #include "mon-make.h"
+@@ -1088,6 +1092,9 @@
+ 
+ 			/* Count game turns */
+ 			turn++;
++#ifdef BORG_HARNESS
++			if (borgh_turn_hook) borgh_turn_hook();
++#endif
+ 		}
+ 
+ 		/* Make a new level if requested */
