@@ -2,6 +2,36 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T2.1, the Observation (#12)
+
+`borg-reborn-rs/src/observation.rs` holds the L1 `Observation`. It is
+plain, serde-serialisable data, one per think, with what the C Borg's two
+channels give it (spec §1.1, GOALS D3):
+- from the screen: the message line (row 0, split into messages by
+  `parse_messages`) and the store header (row 3, columns 1–4, raw: the
+  C Borg compares it with "Stor"/"Home");
+- from direct reads: status and timed effects, every equipment slot, the
+  quiver and the pack through the C Borg's item analysis (`ODESC_FULL`
+  descriptions, the known part unless the item is fully known), the
+  class's spells (`spell_flags`, base fail), the map panel through
+  `map_info()` (clipped to the level, with known trap, shop number and
+  web), the monsters `map_info()` shows with their real race, hit points,
+  timers and speed, and the real kind of the top object that is not
+  ignored on each grid with a seen object.
+
+`engine::perceive()` does the reads, so `engine.rs` is still the only
+`unsafe` module. The Borg perceives on every think, after the minimal
+Borg's own reads. The placeholder strategy does not use the observation
+yet, and play is unchanged (Rust smoke 3/3, full 45/45 and hallucination
+smoke identical). `BORG_OBSERVATION_LOG=FILE` writes one JSON line per
+think, about 270 KB each. CI records a 500-turn run and checks that every
+line round-trips canonically. New dependencies: `serde` and `serde_json`.
+The Rust deaths are recorded again as D0296–D0341.
+
+Not in it yet, for T2.2–T2.5: the store's own inventory (when the Borg is
+in a shop), item curses and activations, monster messages beyond the
+line, and the oracle comparison with borg-rs's `BorgState` (T2.5).
+
 ## 2026-11-09: engine tree re-synced from borg-rs 286215c
 
 `angband/` is now borg-rs `286215c:angband` (tree `3fc0c9f`, split

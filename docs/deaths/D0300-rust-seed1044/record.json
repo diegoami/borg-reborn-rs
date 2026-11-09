@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0300-rust-seed1044",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1429,
+    "race_idx": 8,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1044,
+    "flags": "-",
+    "git_rev": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+    "git_dirty": "yes",
+    "source_sha256": "332e2ee4aac37089c1b505a1d17a530053ef1278d8e126f969b8b5b7537a9a1b",
+    "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7",
+    "borg_txt_sha256": "b5f9f4658a9720cd8bcf5142afd62ab783d015e415408a9e0b475bdf20cdab6b"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-4-necro-4",
+      "result_sha256": "643d6b1eb71ff042a991cce80cc2d473082f90c77c50244a12816af91177d683",
+      "raw_sha256": {
+        "keys.log": "643d6b1eb71ff042a991cce80cc2d473082f90c77c50244a12816af91177d683",
+        "messages.log": "a3311bc12149e5e27e13e9c67699eb1b74f37b0ee6bf4c1f727e62e2310ff3af",
+        "state.log": "d184761c228ad9616d8a7538d78accc2db2641c82f9226d80bb5976715d658a2"
+      },
+      "source_commit": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+      "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7"
+    }
+  ],
+  "encounter_family": "start-4ef0d05c2c149907042989ad7c90c087f629bba1145fc9de1405580e026a6826",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "655aaad81674317b9d2898938f444c64d267ae6fb9f36232124f68302c4f85e9",
+    "config.txt": "af623e3c7dfeba12ac45dff0febabf5d3b09db07d7e2329813311e6f745216ae",
+    "depths.json": "777a6ed20bb72f8de484acf31a0ed135d0e866a20c53b9300401df400a415c44",
+    "summary.json": "feb285d8682b0e8a79980ba9017818e3328d07ae5ac91f5efbdd28fe3f95daaa"
+  },
+  "investigation": null,
+  "issue": null
+}

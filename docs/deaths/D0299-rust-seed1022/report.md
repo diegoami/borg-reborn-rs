@@ -1,0 +1,7 @@
+# D0299-rust-seed1022: a cave spider at turn 539
+
+Gnome Druid, character level 1, depth 1 (max 1), seed 1022, implementation `rust`, flags `-`.
+
+Build `9e8c7ec068d24718b675b81b425d7f80c4be7627` (dirty: yes), binary `f898be33b7e2`. Keys `b9b130e1512d`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-2-druid-2` (not committed).
+
+**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run (RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.
