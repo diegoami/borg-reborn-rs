@@ -1,0 +1,18 @@
+{
+  "seed": 1024,
+  "race": "Half-Orc",
+  "race_idx": 6,
+  "class": "Druid",
+  "class_idx": 2,
+  "stop_reason": "turns",
+  "game_turns": 101191,
+  "player_turns": 10239,
+  "resting_turns": 3771,
+  "clevel": 6,
+  "max_depth": 2,
+  "depth": 2,
+  "dead": false,
+  "death_cause": "",
+  "keys": 10173,
+  "wall_seconds": 12.059
+}

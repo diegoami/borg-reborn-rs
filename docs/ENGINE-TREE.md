@@ -58,7 +58,9 @@ their own pinned `src/borg/` at build time (T1.3, #6).
 `c-pristine` is checked key for key against the zoo's `4.2.6-rs-m0-c`
 (borg-rs `aa4ad6c`), whose engine predates #474 and the later harness hooks.
 A divergence that reaches the wizard cure-all, which only cheat death uses,
-is attributed to #474. Any other divergence is a defect (T1.3).
+is attributed to #474. Any other divergence is a defect (T1.3). **Checked
+on 2026-11-09:** smoke 3/3 and full 45/45 are byte-identical to borg-rs's
+pristine references, so #474 was not reached there (cheat death is off).
 
 ## Re-syncing
 

@@ -9,6 +9,12 @@ BORG_IMPL=c    flock /tmp/angband-validation.lock harness/build.sh      # build/
 BORG_IMPL=rust flock /tmp/angband-validation.lock harness/build.sh      # build/rust: this repository's Borg
 BORG_IMPL=c    flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke-c
 harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
+
+# Controls (T1.3): same engine tree and borgh, pinned C Borg overlaid at build time
+BORG_IMPL=c-pristine flock /tmp/angband-validation.lock harness/build.sh
+BORG_IMPL=c-pristine flock /tmp/angband-validation.lock harness/suite.sh full harness/out/full-c-pristine
+harness/diff --suite full --expect-impl c-pristine harness/out/full-c-pristine harness/reference/full-pristine
+BORG_IMPL=c-bbc-m7   flock /tmp/angband-validation.lock harness/build.sh
 ```
 
 ## What differs from borg-rs
@@ -18,6 +24,9 @@ harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference
 | `identity.sh` | The Rust build inputs are `angband borg-reborn-rs borg-rs Cargo.toml Cargo.lock harness/measurement`. Here `borg-rs/` is the seam package (see `borg-rs/Cargo.toml`): the imported CMake builds `-p borg-rs` and links `libborg_rs.a`, and the seam re-exports the reborn crate. |
 | `run.sh` | Its last step calls `tools/export-death.py`: a natural death in any run, on any arm, writes a basic dossier to `docs/deaths/` (or to `$BORG_DEATH_RECORDS_DIR`), as RULES 12 requires. Repeats are recognised. If the export fails, the run fails. |
 | `measurement/rust-overlay.py` | Copies both workspace members (`borg-rs/` seam and `borg-reborn-rs/`) into the build-only overlay the imported CMake builds from when the harness is on. Its instrumentation targets borg-rs's own source files and applies to nothing here. |
+| `control-overlay.py` (new) | Writes `build/<impl>.src/`, a copy of `angband/` whose `src/borg/` is the control's pinned C Borg (`controls` in `pins.json`), checked blob for blob. The tree itself is never edited. |
+| `build.sh`, `suite.sh`, `identity.sh`, `diff` | Accept the controls `c-pristine` and `c-bbc-m7`. `build.sh` compiles the overlay as CMake `BORG_IMPL=c` into `build/<impl>/`. `suite.sh` maps the executable's and CMake's `c` to the control's name, and the `BUILD_ID` names it. `identity.sh` adds the control's pinned source (commit and tree) to the build-input hash. |
+| `suites/full` | Copied from borg-rs: 9 classes × 5 seeds × 100,000 turns. Without the `menu` flag, class indices of 7 and above pick other birth entries (borg-rs `docs/harness.md`), so the `-8-blackguard-` runs play other classes. |
 | `README.md` | This file. |
 
 All other files are byte-identical to borg-rs's.
@@ -27,14 +36,13 @@ All other files are byte-identical to borg-rs's.
 | Directory | What it is | Use |
 | --- | --- | --- |
 | `reference/smoke-c/` | The smoke suite run by borg-rs's own C build at `e5cb263`: impact v6, the same `angband/` tree as ours. Keys, messages and state, produced on 2026-11-09 | Oracle for `BORG_IMPL=c` here. Our build reproduced it byte for byte, which proves the import (T1.2). Before `measurement/rust-overlay.py` was adapted, the build-input hash was also identical (`d6ada527…`). The adaptation changes that hash but not the C binary |
-| `reference/smoke-pristine/` | borg-rs's committed smoke reference, unchanged from `aa4ad6c` (the zoo's `4.2.6-rs-m0-c`, pristine C Borg) to `e5cb263` | Oracle for the `c-pristine` control (T1.3, #6). It does **not** match `BORG_IMPL=c`, whose C Borg carries the milestone 2–6 fixes |
+| `reference/smoke-pristine/`, `reference/full-pristine/` | borg-rs's committed smoke and full references, unchanged from `aa4ad6c` (the zoo's `4.2.6-rs-m0-c`, pristine C Borg) to `e5cb263` | Oracle for the `c-pristine` control. **Checked 2026-11-09: smoke 3/3 and full 45/45 byte-identical** (keys, messages, state). They do **not** match `BORG_IMPL=c`, whose C Borg carries the milestone 2–6 fixes |
 
 A reference is never rewritten. A new tree (an engine re-sync, RULES 22)
 gets a new reference directory.
 
 ## Not here yet
 
-- The control arms `c-pristine` and `c-bbc-m7`: T1.3 (#6).
 - The exact-boundary stop and the depth stream: T1.4 (#7). borg-rs's `borgh`
   at this pin already has an exact-turns option (`opt_exact_turns`); T1.4
   starts from it.

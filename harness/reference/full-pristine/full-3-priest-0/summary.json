@@ -1,0 +1,18 @@
+{
+  "seed": 1030,
+  "race": "Hobbit",
+  "race_idx": 3,
+  "class": "Priest",
+  "class_idx": 3,
+  "stop_reason": "death",
+  "game_turns": 22136,
+  "player_turns": 2275,
+  "resting_turns": 447,
+  "clevel": 2,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "Fang, Farmer Maggot's Dog",
+  "keys": 2527,
+  "wall_seconds": 3.686
+}

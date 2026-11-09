@@ -1,0 +1,18 @@
+{
+  "seed": 1034,
+  "race": "Human",
+  "race_idx": 7,
+  "class": "Priest",
+  "class_idx": 3,
+  "stop_reason": "turns",
+  "game_turns": 100703,
+  "player_turns": 10302,
+  "resting_turns": 6612,
+  "clevel": 4,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 6252,
+  "wall_seconds": 9.888
+}

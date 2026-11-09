@@ -1,0 +1,18 @@
+{
+  "seed": 1043,
+  "race": "Human",
+  "race_idx": 7,
+  "class": "Necromancer",
+  "class_idx": 4,
+  "stop_reason": "death",
+  "game_turns": 23381,
+  "player_turns": 2361,
+  "resting_turns": 1924,
+  "clevel": 3,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a cave spider",
+  "keys": 1195,
+  "wall_seconds": 0.769
+}

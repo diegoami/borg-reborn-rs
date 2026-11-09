@@ -31,7 +31,8 @@ inputs_of() {
     case "$1" in
         c) echo "angband harness/measurement";;
         rust) echo "angband borg-reborn-rs borg-rs Cargo.toml Cargo.lock harness/measurement";;
-        *) echo "identity.sh: implementation must be c or rust, not '$1'" >&2; exit 2;;
+        c-pristine|c-bbc-m7) echo "angband harness/measurement harness/control-overlay.py";;
+        *) echo "identity.sh: implementation must be c, rust, c-pristine or c-bbc-m7, not '$1'" >&2; exit 2;;
     esac
 }
 
@@ -62,7 +63,9 @@ case "${1:-}" in
         # process substitution and followed by a successful partial hash.
         (cd "$ROOT" && xargs -0 git hash-object -- < "$HASH_TMP/paths") > "$HASH_TMP/blobs"
         paste -d' ' "$HASH_TMP/blobs" <(tr '\0' '\n' < "$HASH_TMP/paths") \
-          | { echo "borg-rs build inputs v1 impl=$2"; cat; } \
+          | { echo "borg-rs build inputs v1 impl=$2"; cat;
+              # A control's C Borg source is pinned in pins.json, not in the tree.
+              case "$2" in c-*) python3 "$ROOT/harness/control-overlay.py" --identity "$2";; esac; } \
           | sha256sum | cut -d' ' -f1;;
     inputs-dirty)
         # shellcheck disable=SC2046

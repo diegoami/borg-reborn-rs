@@ -120,5 +120,22 @@
     "split": "a2b6b4cbdd2f7d0360301ddb9c927037390a17bc",
     "tree": "5cc1b1cbc2024214dd2d833c928d494abeae1042",
     "note": "angband/ imported from borg-rs (docs/ENGINE-TREE.md). The refresh report flags when the pin's angband/ tree differs from this tree (a re-sync is available)."
+  },
+  "controls": {
+    "c-pristine": {
+      "pin": "angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg",
+      "oracle": "borg-zoo 4.2.6-rs-m0-c (borg-rs aa4ad6c, impl c); harness/reference/smoke-pristine, full-pristine",
+      "note": "The original C Borg, upstream e473720."
+    },
+    "c-bbc-m7": {
+      "pin": "better-borg-c",
+      "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
+      "path": "src/borg",
+      "tag": "4.2.6-impact-v7",
+      "oracle": "none under borgh yet; overlay checked blob for blob",
+      "note": "better-borg-c milestone 7 (76 carries). The tag changes nothing outside src/borg in the engine; the only declared engine difference from better-borg-c's own build is our tree's #474 cure-all correction (wizard mode / cheat death only)."
+    }
   }
 }

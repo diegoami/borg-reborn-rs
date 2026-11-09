@@ -1,0 +1,18 @@
+{
+  "seed": 1083,
+  "race": "Human",
+  "race_idx": 0,
+  "class": "Ranger",
+  "class_idx": 8,
+  "stop_reason": "turns",
+  "game_turns": 100003,
+  "player_turns": 10239,
+  "resting_turns": 628,
+  "clevel": 7,
+  "max_depth": 3,
+  "depth": 3,
+  "dead": false,
+  "death_cause": "",
+  "keys": 13973,
+  "wall_seconds": 21.122
+}

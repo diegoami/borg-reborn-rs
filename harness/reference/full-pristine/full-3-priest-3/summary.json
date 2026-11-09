@@ -1,0 +1,18 @@
+{
+  "seed": 1033,
+  "race": "Half-Orc",
+  "race_idx": 6,
+  "class": "Priest",
+  "class_idx": 3,
+  "stop_reason": "turns",
+  "game_turns": 100201,
+  "player_turns": 10351,
+  "resting_turns": 5908,
+  "clevel": 3,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 8161,
+  "wall_seconds": 9.238
+}
