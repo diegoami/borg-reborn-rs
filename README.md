@@ -12,8 +12,13 @@ seam, launched the same way (**Ctrl-Z**, **z**), measured by the same
 headless harness and by [borg-zoo](https://diegoami.github.io/borg-zoo/)
 on the same seeds.
 
-**Status (2026-11-08):** milestone 0, *foundation*. There is no playing Borg
-yet. This milestone delivers the research, the goals and the plan:
+**Status (2026-11-09):** milestone 1, *the seam and the yardstick*, in
+progress. M0 (research, goals, plan) is reviewed (tag `m0`). The engine and
+borg-rs's harness, launchers, recording and replay are in place. The
+original and better-borg-c C Borgs build as byte-checked controls, and every
+run has an exact-boundary contract and a death record. The Rust Borg plays,
+but only as a placeholder until M3. Tasks are GitHub issues
+([milestones](https://github.com/diegoami/borg-reborn-rs/milestones)).
 
 | Document | What it holds |
 | --- | --- |
