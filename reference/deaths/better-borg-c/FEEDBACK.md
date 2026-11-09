@@ -166,3 +166,10 @@ six confirmed arrow hits and a melee yeek finish killed both enemies. This is a
 save/load diagnostic, not an independent Borg life or a population benefit.
 [240](https://github.com/diegoami/better-borg-c/pull/240) supplies the qualified
 native fighting log and valid wide-window reader. Saving did not mark review done.
+
+## Lessons for a redesign
+
+Findings across reviewed deaths and the owner's verified manual takeovers are
+consolidated as design requirements in [REDESIGN-LESSONS.md](REDESIGN-LESSONS.md),
+intended for the owner's ground-up borg-reborn-rs redesign. Update it in the same
+PR whenever a death review adds or changes evidence.

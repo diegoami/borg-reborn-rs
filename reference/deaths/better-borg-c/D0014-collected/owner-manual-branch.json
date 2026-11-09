@@ -1,0 +1,25 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T005413.244461Z",
+  "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T005413.244461Z/sessions/20261109T005740.324261Z",
+  "recording_sha256": "47051825c75c448d00c20ff0263b90cbb2ab81cfbfb7235cbd2f54aacdc08002",
+  "origin_sha256": "f74cffc1459611da87f55d172f3ed1eecabf2833e1dea1adc78b14bcec7412de",
+  "final_save_sha256": "900be9a334a86cfa3105a89550f4653b5cb8fd0ef71dbd3063ba25b4a350a1cb",
+  "source_commit": "867c777845fd7453f175da4692a8468c734f6380",
+  "start_turn": 306703,
+  "end_turn": 306980,
+  "end_level": 11,
+  "end_hp": 88,
+  "end_max_hp": 91,
+  "end_depth": 20,
+  "outcome": "saved",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "bbef6947e50d78641664ac18bdfdb9a53f54ade3f1dadfbfb2fc475a0bc45b45",
+  "events": "no Phase read; Speed potion on sight of the falcon; first falcon 87->60 then killed; illusionist blindness/confusion cured with CLW; second falcon killed; illusionist flees and teleports; Detect Monsters; earth hound shards/bleeding cured, pack avoided; 1 Speed and 5 CLW used; saved 306980 HP88/91",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T005413.244461Z",
+    "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T120815.744554Z/game-009-seed-1907608242",
+    "original_manifest_sha256": "f7a6a583455025f8c3ab2fd67553a3cbce38966301072f40f851788c552b56a7",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}

@@ -54,7 +54,8 @@
         "D0005",
         "D0006",
         "D0007",
-        "D0012"
+        "D0012",
+        "D0014"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/34",
       "key": "heal-eligibility",
@@ -136,7 +137,8 @@
         "D0005",
         "D0006",
         "D0007",
-        "D0013"
+        "D0013",
+        "D0014"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/159",
       "key": "attempted-room-retreat",
@@ -166,7 +168,8 @@
     {
       "cases": [
         "D0006",
-        "D0011"
+        "D0011",
+        "D0014"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/183",
       "key": "recall-deep-descent",
@@ -331,7 +334,8 @@
     },
     {
       "cases": [
-        "D0011"
+        "D0011",
+        "D0014"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/321",
       "key": "climb-restock",
@@ -356,10 +360,20 @@
       "key": "worm-scary-rule",
       "status": "needs evidence; owner manual branch verified; no gameplay change",
       "summary": "Measure low-level worm-mass scary triggers and compare with the breeder caution threshold"
+    },
+    {
+      "cases": [
+        "D0014"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/340",
+      "key": "speed-emergency",
+      "status": "needs evidence; source-checked; no gameplay change",
+      "summary": "Observe borg_defend_aux_speed p1/p2/avoidance at lethal danger; count unused Speed at death"
     }
   ],
-  "cases": 13,
+  "cases": 14,
   "causes_by_distinct_start": {
+    "a blood falcon": 1,
     "a gallant": 1,
     "a grey mold": 1,
     "a griffon": 1,
@@ -371,8 +385,8 @@
     "poison": 1,
     "starvation": 1
   },
-  "death_process_attempts": 21,
-  "distinct_starting_conditions": 10,
+  "death_process_attempts": 22,
+  "distinct_starting_conditions": 11,
   "limit": "Selected death cases, not a mortality-rate cohort. Repeats/reference variants/windows are not new independent starting conditions.",
   "schema": "better-borg-c/death-index@1",
   "versions": {
@@ -385,7 +399,7 @@
     "3638b690525cd8a381cb106b4c5ee40652babde2": 2,
     "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc": 2,
     "5c23742ced30ad76ab9778cfa8bf23f04fc0eb1f": 1,
-    "867c777845fd7453f175da4692a8468c734f6380": 3,
+    "867c777845fd7453f175da4692a8468c734f6380": 4,
     "e473720ed88a0f0c7ca66815cef3000eb4a38bc3": 2
   }
 }

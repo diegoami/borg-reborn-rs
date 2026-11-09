@@ -24,7 +24,7 @@
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "8b26042e019cb97196c8afd3a5028c7a96cb07a1",
+      "commit": "b1588cc908c667a859db9a60e9d109766fe366c4",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
@@ -50,14 +50,14 @@
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "9cd742351f328fcde91ebdc70a620224e4ebfc63",
+      "commit": "3f6b76e27dba3ddd238b2104fff4d344165cb28f",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
       "read_on": "2026-11-09",
       "issues": true
     },
     "borg-agent": {
       "repository": "diegoami/borg-agent",
-      "commit": "8f1dd7f2f41d516d2b68556d810652c65011292f",
+      "commit": "9c58125effcb9b62dd5f3d2b2ae980851319f107",
       "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch).",
       "read_on": "2026-11-09",
       "issues": true
