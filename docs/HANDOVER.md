@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: review of #66 (MiniMax-M3): code findings
+
+MiniMax-M3 reviewed the spec and the work since `m1` on #66: the spec is
+"yes, with changes", and the code is sound. Code findings:
+- **C1, fixed here:** `Character::blows` now follows the engine for a
+  weapon too heavy to wield (one blow, `calc_bonuses:2296-2318`, with
+  `adj_str_hold` lifted and checked against the engine's copy), and adds
+  bloodlust's `timed / 20`. No recorded run heavy-wields yet, so the rule
+  is unit-tested only.
+- **C5, fixed here:** `with_borg_rng` restores the game's RNG through a
+  drop guard, on every path.
+- **C2** (the Rust Borg's game options differ from the C Borg's) goes to
+  the spec's run contract.
+- **C3** (a key aborts the Borg in a shop, which the C Borg does not) is for
+  M3, when the Rust Borg first enters shops.
+- **C4** (flushing the trace each think) is kept: a dossier needs the trace
+  on disk when the game ends, and one write costs microseconds against
+  borgh's stall limit of seconds.
+
+The Rust deaths are recorded again as D0480–D0525.
+
 ## 2026-11-09: the spec (docs/SPEC.md), and a stop
 
 The owner decided to move completely away from borg-rs. The game stays

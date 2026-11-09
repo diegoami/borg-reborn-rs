@@ -128,8 +128,16 @@ fn set_game_rng(r: &GameRng) {
 /// swap in `generate_keypress()` (borg.c:355-374), extended to the whole
 /// state.
 pub fn with_borg_rng<T>(borg_value: &mut u32, f: impl FnOnce() -> T) -> T {
-    let saved = game_rng();
-    // SAFETY: plain engine globals; restored below.
+    /// Restores the game's RNG when dropped, so it is restored on every
+    /// path out of `f`, a panic included (M2 review C5).
+    struct Restore(GameRng);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            set_game_rng(&self.0);
+        }
+    }
+    let saved = Restore(game_rng());
+    // SAFETY: plain engine globals; restored by `saved`.
     unsafe {
         headers::z_rand_h::Rand_quick = true;
         headers::z_rand_h::Rand_value = *borg_value;
@@ -137,7 +145,7 @@ pub fn with_borg_rng<T>(borg_value: &mut u32, f: impl FnOnce() -> T) -> T {
     let out = f();
     // SAFETY: as above.
     *borg_value = unsafe { headers::z_rand_h::Rand_value };
-    set_game_rng(&saved);
+    drop(saved);
     out
 }
 
@@ -639,6 +647,7 @@ extern "C" {
     static mut races: *mut headers::player_h::player_race;
     static extract_energy: [u8; 200];
     static adj_str_blow: [c_int; 38];
+    static adj_str_hold: [c_int; 38];
 }
 
 fn text(p: *const c_char) -> String {
@@ -681,6 +690,7 @@ pub fn knowledge() -> Option<Knowledge> {
             extract_energy: extract_energy.to_vec(),
             move_energy: i32::from(z.move_energy),
             adj_str_blow: adj_str_blow.to_vec(),
+            adj_str_hold: adj_str_hold.to_vec(),
             ..Default::default()
         };
         for i in 0..usize::from(z.r_max) {
