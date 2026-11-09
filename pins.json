@@ -11,7 +11,7 @@
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "e5cb263eed8eee93860b5cfcdc18af99e6d134f1",
+      "commit": "286215c5cbb0c37002447c530a66ad3b92014a36",
       "tag_of_interest": {
         "m5": "020322749026418a666da3209c169f48ec9d608c",
         "m0-pristine-c": "aa4ad6cfeea2cf19870e224219dfe66688175c6e"
@@ -24,7 +24,7 @@
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "b1588cc908c667a859db9a60e9d109766fe366c4",
+      "commit": "eb9a78edde6c1909b1430f6c93c3944998b774af",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
@@ -51,22 +51,22 @@
     },
     "strategy-manual": {
       "repository": "diegoami/neo-angband-tracker",
-      "branch": "c-borg-reference",
-      "vendor": "neo-angband-tracker-c-borg-reference",
-      "commit": "e67fd7dbce189a3e3a2f4d4910c8367fa93af605",
-      "role": "The Angband Strategy Manual (docs/strategy/ on the c-borg-reference branch, not the default branch): game mechanics, races and classes, resistances, equipment, monsters and uniques, the dungeon and a game plan by phase, grounded in Angband 4.2.6 source and lib/gamedata, with generated appendices. Game knowledge for strategy design (copied in reference/strategy/). A work in progress at the pin: chapter 3 is not yet written.",
+      "branch": "workbench/c-borg",
+      "vendor": "neo-angband-tracker-workbench-c-borg",
+      "commit": "86349ca8419721d6595844569ab3ca999b960801",
+      "role": "The Angband Strategy Manual (docs/strategy/ on the workbench/c-borg branch, not the default branch; it moved there from c-borg-reference on 2026-11-09, when c-borg-reference became pristine upstream): game mechanics, races and classes, resistances, equipment, monsters and uniques, the dungeon and a game plan by phase, grounded in Angband 4.2.6 source and lib/gamedata, with generated appendices. Game knowledge for strategy design (copied in reference/strategy/). A work in progress at the pin: chapter 3 is not yet written.",
       "read_on": "2026-11-09"
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "3f6b76e27dba3ddd238b2104fff4d344165cb28f",
+      "commit": "e56d5faa8face1cecf03b3cc49f850e1b48f0d75",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
       "read_on": "2026-11-09",
       "issues": true
     },
     "borg-agent": {
       "repository": "diegoami/borg-agent",
-      "commit": "9c58125effcb9b62dd5f3d2b2ae980851319f107",
+      "commit": "77e48c9a73e06f5b077cacb380718d5b7e52ec82",
       "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch).",
       "read_on": "2026-11-09",
       "issues": true

@@ -21,6 +21,9 @@ they match the game exactly. If you change the data files, re-run:
 python3 docs/strategy/tools/gen_appendices.py
 ```
 
+For a single-file reference to commands, options and the user interface, see the
+[complete user manual](../user-manual.md).
+
 ## How to use this manual
 
 * **New to Angband?** Read [Chapter 2](02-races-classes.md) to choose a

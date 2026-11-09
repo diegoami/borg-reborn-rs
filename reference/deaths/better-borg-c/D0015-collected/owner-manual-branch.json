@@ -1,0 +1,55 @@
+{
+  "scope": "owner-played save-load diagnostic alternatives, not independent Borg lives or population evaluations",
+  "branches": [
+    {
+      "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+      "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T013648.673073Z",
+      "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T013648.673073Z/sessions/20261109T013650.742386Z",
+      "recording_sha256": "01b0f75700697e449f236342b0b0bfd44851a0511fee930993ca9379216554e2",
+      "origin_sha256": "2108d470cf3cec2f6a8726b3fd31a8b2656b0f0d41d19221e9e57817f16a7d47",
+      "final_save_sha256": "70c87d0fe166659ac3b6b0428f6bb338a79f6fe11fb44e6ec6de3831ad43c290",
+      "source_commit": "867c777845fd7453f175da4692a8468c734f6380",
+      "requested_turn": 4110,
+      "start_turn": 4118,
+      "end_turn": 4190,
+      "end_level": 1,
+      "end_hp": -1,
+      "outcome": "death (a fatal wound)",
+      "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+      "verification_sha256": "de959a90ae7c45cd7d64c686973d9d91f5001aa990818d07c0b0d5ba6fffbc97",
+      "events": "bitten twice before first step (13->10->8); Fang blocks row 44; detour north; Nether Bolt (yelps in pain); graze, no potions; dies at (103,44) three squares from the up staircase at 4190",
+      "counterfactual_of": {
+        "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T013648.673073Z",
+        "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T120815.744554Z/game-010-seed-1907608243",
+        "original_manifest_sha256": "78b3e607c9cba8dffdcfa6b374a012c5d6eff66a5d85a9bcdc5072b8beef7cad",
+        "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+      }
+    },
+    {
+      "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+      "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T014719.071739Z",
+      "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T014719.071739Z/sessions/20261109T014741.166092Z",
+      "recording_sha256": "4a94ba3215cdb13cf4bb5bdcf4b47e85041380fcd51a04b7cfc62789ab6228a7",
+      "origin_sha256": "8e95491acf005d90db0ca02a7513faa63c452609f90c667727b239cef9eae2bc",
+      "final_save_sha256": "ac6cc2f1d1235df2b6a748e97996a70134e91e0b7f9d4ceb4f381a865f55de91",
+      "source_commit": "867c777845fd7453f175da4692a8468c734f6380",
+      "requested_turn": 1,
+      "start_turn": 1,
+      "end_turn": 6889,
+      "end_level": 1,
+      "end_hp": 13,
+      "end_depth": 0,
+      "end_gold": 926,
+      "outcome": "saved",
+      "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+      "verification_sha256": "7ac29a69fc5e972e3e4867384fc721ccdb54902d4d3695d8010a43a074d8bebc",
+      "events": "re-shopped from 357 gold: second Word of Recall 125, 4 Phase Door 60, 3 Cure Light Wounds 60, Monster Confusion 30, Detect Invisible 15, Remove Hunger 10, flask of oil 3, Robe [2,+0] 14, Sandals 6; DL1 2689-6779 found 910 gold and a Hazy Potion; never met Fang; saved in town 6889 with 926 gold",
+      "counterfactual_of": {
+        "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T014719.071739Z",
+        "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T120815.744554Z/game-010-seed-1907608243",
+        "original_manifest_sha256": "78b3e607c9cba8dffdcfa6b374a012c5d6eff66a5d85a9bcdc5072b8beef7cad",
+        "qualification": "manual counterfactual from turn 1; RNG diverges immediately; not a test of the Fang encounter; excluded from independent Borg survival counts"
+      }
+    }
+  ]
+}

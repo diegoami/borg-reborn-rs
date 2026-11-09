@@ -103,7 +103,11 @@ def dice_range(dice, vars_):
     s = dice
     for k, v in vars_.items():
         s = s.replace("$" + k, str(v))
-    m = re.fullmatch(r"(-?\d+)?\+?(?:(\d+)d(\d+))?(?:M(\d+))?", s.replace(" ", ""))
+    s = s.replace(" ", "")
+    if re.fullmatch(r"-?\d+", s):
+        v = int(s)
+        return (v, v, v)
+    m = re.fullmatch(r"(?:(-?\d+)\+)?(?:(\d+)d(\d+))?(?:M(\d+))?", s)
     if not m:
         return None
     base = int(m.group(1)) if m.group(1) else 0
