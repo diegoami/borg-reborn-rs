@@ -104,7 +104,10 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
             'cause': summary.get('death_cause') or 'unknown', 'dead': True,
             'depth': summary.get('depth'), 'max_depth': summary.get('max_depth'),
             'level': summary.get('clevel'), 'turn': summary.get('game_turns'),
-            'race_idx': summary.get('race_idx'), 'class_idx': summary.get('class_idx'),
+            # The character played (a random birth reports it apart from the
+            # requested indices), as borg-rs's full exporter does.
+            'race_idx': summary.get('played_race_idx', summary.get('race_idx')),
+            'class_idx': summary.get('played_class_idx', summary.get('class_idx')),
         },
         'identity': {
             'impl': impl, 'seed': summary.get('seed'), 'flags': flags,
@@ -140,9 +143,10 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
     return files
 
 
-# Causes that are not deaths by play (engine: cmd-misc.c "Retiring"; the
-# player quitting).
-NOT_NATURAL_CAUSES = {'Retiring', 'Quitting', 'Ripe Old Age'}
+# Causes that are not deaths by play (engine: cmd-misc.c "Retiring";
+# ui-signals.c "Interrupting", a signal; the player quitting). borg-rs's full
+# exporter (tools/borg_deaths.py) rejects the same, and an empty cause.
+NOT_NATURAL_CAUSES = {'Retiring', 'Quitting', 'Interrupting', 'Ripe Old Age'}
 
 
 def not_natural(summary, flags='-'):
@@ -155,6 +159,8 @@ def not_natural(summary, flags='-'):
         return f"not natural: stop reason {summary.get('stop_reason')!r}"
     if summary.get('cheat_live') or 'cheatlive' in flag_set or 'cheat' in flag_set:
         return 'not natural: cheat death or cheat_live'
+    if not (summary.get('death_cause') or '').strip():
+        return 'not natural: no cause of death'
     if summary.get('death_cause') in NOT_NATURAL_CAUSES:
         return f"not natural: cause {summary.get('death_cause')!r}"
     return None
@@ -190,8 +196,10 @@ def export(run_dir, impl, build_id_path, flags='-'):
     keys_sha = sha256_file(keys)
     flag_set = set(flags.split(','))
     # A loaded save that keeps its own RNG starts the same game whatever the
-    # seed; a random birth starts from the character actually played.
-    seed = None if 'keep-load-rng' in flag_set else summary.get('seed')
+    # seed; keep-load-rng without a save has no effect, so the seed stays. A
+    # random birth starts from the character actually played.
+    loads_save = any(f.startswith('save=') for f in flag_set)
+    seed = None if loads_save and 'keep-load-rng' in flag_set else summary.get('seed')
     race = summary.get('played_race_idx', summary.get('race_idx'))
     cls = summary.get('played_class_idx', summary.get('class_idx'))
     family = family_of(impl, seed, race, cls,

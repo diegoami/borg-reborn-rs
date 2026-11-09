@@ -137,7 +137,8 @@ class ExportTest(unittest.TestCase):
     def test_only_natural_deaths_are_exported(self):
         for extra, flags in (({'stop_reason': 'turns'}, '-'), ({'cheat_live': True}, '-'), ({}, 'cheatlive'),
                              ({}, 'cheat,menu'), ({'death_cause': 'Quitting'}, '-'),
-                             ({'death_cause': 'Retiring'}, '-')):
+                             ({'death_cause': 'Retiring'}, '-'), ({'death_cause': 'Interrupting'}, '-'),
+                             ({'death_cause': ''}, '-'), ({'death_cause': None}, '-')):
             run = make_run(self.base / f'case{len(list(self.base.iterdir()))}', 'r', **extra)
             case, what = ed.export(run, 'c', self.build, flags)
             self.assertIsNone(case, (extra, flags))
@@ -145,14 +146,23 @@ class ExportTest(unittest.TestCase):
         self.assertFalse(self.reg.exists() and any(d.is_dir() for d in self.reg.iterdir()))
 
     def test_saved_rng_ignores_the_seed_and_random_birth_uses_the_played_character(self):
-        a, _ = ed.export(make_run(self.base, 'a', seed=1), 'c', self.build, 'keep-load-rng')
-        self.assertEqual(ed.export(make_run(self.base, 'b', seed=2), 'c', self.build, 'keep-load-rng'), (a, 'repeat'))
+        loaded = 'save=fixture.sav,keep-load-rng'
+        a, _ = ed.export(make_run(self.base, 'a', seed=1), 'c', self.build, loaded)
+        self.assertEqual(ed.export(make_run(self.base, 'b', seed=2), 'c', self.build, loaded), (a, 'repeat'))
+        # Re-review N7: keep-load-rng without a save has no effect; the seed counts.
+        n1, _ = ed.export(make_run(self.base, 'n1', seed=1), 'c', self.build, 'keep-load-rng')
+        n2, what_n2 = ed.export(make_run(self.base, 'n2', seed=2), 'c', self.build, 'keep-load-rng')
+        self.assertNotEqual(n1, n2)
+        self.assertEqual(what_n2, 'exported')
         b, what = ed.export(make_run(self.base, 'c', seed=3, played_race_idx=4, played_class_idx=5), 'c', self.build,
                             'random-birth')
         c, what2 = ed.export(make_run(self.base, 'd', seed=3, played_race_idx=6, played_class_idx=1), 'c', self.build,
                              'random-birth')
         fam = lambda case: json.loads((self.reg / case / 'record.json').read_text())['encounter_family']
         self.assertNotEqual(fam(b), fam(c), 'different played characters are different starts')
+        # Re-review N8: the terminal record names the character played.
+        term = json.loads((self.reg / b / 'record.json').read_text())['terminal']
+        self.assertEqual((term['race_idx'], term['class_idx']), (4, 5))
 
     def test_a_repeat_repairs_a_stale_index(self):
         run = make_run(self.base, 'dead')
