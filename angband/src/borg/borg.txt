@@ -309,6 +309,14 @@ borg_munchkin_start = FALSE
 borg_munchkin_level = 12
 borg_munchkin_depth = 16
 
+# Munchkin start by class: with borg_munchkin_start FALSE, Warriors, Druids
+# and Rangers still take the munchkin start, stair-scumming at
+# borg_munchkin_class_depth. Every other class plays without it. Set this
+# FALSE to play every class as borg_munchkin_start says.
+
+borg_munchkin_by_class = TRUE
+borg_munchkin_class_depth = 6
+
 
 ### Enchant Limit ###
 

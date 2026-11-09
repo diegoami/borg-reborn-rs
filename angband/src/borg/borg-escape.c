@@ -575,6 +575,7 @@ bool borg_dimension_door(int allow_fail)
     struct loc best;
     int        d, best_d = 0;
     struct loc target;
+    borg_grid *ag;
 
     /* for now keep the range at under 50, for performance */
     int range = 50;
@@ -599,6 +600,14 @@ bool borg_dimension_door(int allow_fail)
             target = loc(borg.c.x + x_off, borg.c.y + y_off);
 
             if (!square_in_bounds_fully(cave, target))
+                continue;
+
+            /* Only aim at a known floor grid without a monster, as the
+             * game moves the player elsewhere when the target is not a
+             * legal landing grid */
+            ag = &borg_grids[t_y][t_x];
+            if (ag->feat == FEAT_NONE || ag->feat == FEAT_LAVA
+                || !borg_cave_floor_grid(ag) || ag->kill)
                 continue;
 
             d = borg_danger(t_y, t_x, 2, true, false);

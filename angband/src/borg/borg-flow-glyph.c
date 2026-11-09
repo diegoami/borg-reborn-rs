@@ -144,7 +144,8 @@ bool borg_flow_glyph(void)
         return false;
     }
 
-    /* FORK #345: explore outlying candidates instead of stopping at origin. */
+    /* Reverse flow, not optimized: it starts at the borg's own grid (cost 0)
+     * and an optimized spread stops before reaching any other grid. */
     borg_flow_reverse(250, false, false, false, -1, false);
 
     /* Scan the entire map */

@@ -135,8 +135,8 @@ void borg_update_light(void)
         /* West of the player */
         if (borg_cave_floor_bold(borg.c.y, borg.c.x - 2)) {
             borg_cave_light_hack(borg.c.y, borg.c.x - 2);
-            borg_cave_light_hack(borg.c.y + 2, borg.c.x - 2);
-            borg_cave_light_hack(borg.c.y - 2, borg.c.x - 2);
+            borg_cave_light_hack(borg.c.y + 1, borg.c.x - 2);
+            borg_cave_light_hack(borg.c.y - 1, borg.c.x - 2);
         }
     }
 
