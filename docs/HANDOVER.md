@@ -2,6 +2,45 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T2.3, knowledge tables (#14)
+
+`borg-reborn-rs/src/knowledge.rs` holds the L3 `Knowledge`. The Borg reads
+it once from the engine's parsed data at its first think
+(`engine::knowledge()`):
+- monster races (spoiler data, GOALS D3: level, speed, HP, AC, sleep,
+  frequencies, race and spell flags, and blows with method, effect, power
+  and dice);
+- object kinds, egos and artifacts;
+- classes with their blows parameters and spell books;
+- player races;
+- what each store always and normally stocks;
+- the engine's `extract_energy` table and `move_energy`.
+
+Lifted, with citations at the pinned engine:
+- `stat_index` (`calc_bonuses:2065-2073`);
+- `blows` (`calc_blows:1703-1735`, with `adj_str_blow`, `adj_dex_blow` and
+  `blows_table`). better-borg-c milestone 8's fix to the C Borg's copy
+  (`668ac32`, weigh one weapon, not the stack) agrees with the engine, so
+  the engine's formula is used.
+
+Uses:
+- `Knowledge::turns_per_action` replaces the placeholder speed rule in
+  `Track::confidence`;
+- `Character::blows` and `melee_per_turn` give expected damage per turn for
+  any weapon (blows times mean dice plus known to-dam, before hit chance,
+  criticals and slays, which belong to M4's threat model).
+
+The Observation gained the engine's own `stat_ind`, `num_blows` and the
+O-combat option, as checks. Tests:
+- unit tests use the C values worked by hand;
+- `BORG_KNOWLEDGE_LOG=FILE` dumps the knowledge, and CI checks it against
+  monster.txt and class.txt values and against the engine's `adj_str_blow`;
+- on every recorded think our stat indices and blows equal the engine's:
+  locally 595 thinks over all 9 classes, and in CI the Warrior run.
+
+Play is unchanged (smoke 3/3, full 45/45, hallucination smoke 3/3). The
+Rust deaths are recorded again as D0388–D0433.
+
 ## 2026-11-09: T2.2, the world model (#13)
 
 `borg-reborn-rs/src/world.rs` holds the L2 `World`. It changes only in

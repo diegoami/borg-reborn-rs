@@ -26,6 +26,7 @@ pub(crate) mod headers;
 
 pub mod borg;
 pub mod engine;
+pub mod knowledge;
 pub mod observation;
 pub mod world;
 

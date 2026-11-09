@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0426-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Half-Troll Rogue",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 44680,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "7333bbd27a21a09e4a74fcee94fd434a712081e329e8f564c2e958854c17ceb3"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-6-rogue-2",
+      "result_sha256": "dca04cae2884dece5eb91ee1d0090e145e11cf6a634d2b8c6f61def267fbc2c2",
+      "raw_sha256": {
+        "keys.log": "dca04cae2884dece5eb91ee1d0090e145e11cf6a634d2b8c6f61def267fbc2c2",
+        "messages.log": "b3e7534a7c19298b2ecfcaf10b5c45224d066a09398fbe976da4dc80d63aeb0f",
+        "state.log": "04c06f5156ac770a2e86343b5d9e143e147584d8fdf853fba612bf6a8d859bc2"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-a159c086437558747221be302f323590c7f940f02b48511ec272c0f8447577ac",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "1cdb0db5078112d297a0a080e9ab591e6d9211d4d99f0f8337f06ee89f5dd5af",
+    "depths.json": "005a13c1f6ac582f04a2756dfa53149cad44b7fb3c3e6a4d29b852de06b01d51",
+    "summary.json": "7d9284c5b6e0631d423d0a16348e7a088a001eb2275188e0d91074a9ce93d9fb"
+  },
+  "investigation": null,
+  "issue": null
+}
