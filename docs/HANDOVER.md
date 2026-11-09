@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09, end of session: M1 under review
+
+**State**
+- M0 is reviewed (tag `m0`). **M1 is complete and in review:** PR #39
+  (`main` → `reviewed`). All M1 issues (#3–#11) are closed. Do **not** start
+  M2 (#12–#16) before the owner merges #39 (RULES 6).
+- CI on `main` is green: the `rust` and `engine` jobs, with all four arms,
+  controls against references, Rust determinism and exact boundary, and the
+  tool tests.
+
+**Waiting on the owner**
+1. The M1 review on PR #39. Its body has the reviewer prompt.
+2. Tag `m1` on the merge of #39. The zoo specimens should point at it.
+3. Routing the zoo change request. The owner asked for a prompt for a
+   borg-zoo session; it is the appendix of
+   [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md). The zoo work happens in
+   borg-zoo, not here.
+4. Whether the self-produced `harness/reference/smoke-c-bbc-m7` is enough as a
+   regression reference.
+
+**Next session, in order**
+1. `git pull`, `bash scripts/setup.sh`, and `python3 scripts/refresh-sources.py`.
+   Read new deaths first; better-borg-c moves daily (RULES 21).
+2. If #39 has review findings: one fix PR into `main` per finding set, a
+   reply on each comment, and the re-review. If it is merged: tag `m1` (if the
+   owner has not), then start M2 with an `--update` refresh PR (PLAN: *How
+   every milestone starts*), then #12 (T2.1 Observation).
+3. Check whether borg-zoo has the reborn specimens and exact-boundary cells.
+   If it does, the next comparison is G1, which comes after M5 (GOALS), so
+   nothing to run yet.
+
+**Local state (not in Git)**
+- `build/` (all four arms, the GUI build `build/play-rust`, the death-workflow
+  caches), `harness/out/` (all suite outputs, including `t18/`), `vendor/`
+  (pinned clones) and the scratch play data. All of it can be regenerated
+  with the commands in harness/README.md and AGENTS.md.
+
+
 ## 2026-11-09: T1.8 every-arm check, zoo compatibility and change request (#11) — M1 complete
 
 - **Every arm** (`c`, `c-pristine`, `c-bbc-m7`, `rust`) × smoke and full:
