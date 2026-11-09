@@ -297,6 +297,11 @@ def record_run(args, *, prepared=None, profile_root=None, export_death=True):
         except (OSError, ValueError) as error:
             record['publication'] = 'refused: ' + str(error)
             write(bundle / 'recording.json', record)
+            # borg-reborn-rs (M1 review): a confirmed natural death is recorded
+            # even when the save cannot be published (RULES 12).
+            if export_death and summary['dead']:
+                import borg_deaths
+                borg_deaths.maybe_register(bundle, issue=getattr(args, 'death_issue', None) or os.environ.get('BORG_DEATH_ISSUE'))
             raise ValueError(f'{error}; complete recording retained at {bundle}') from error
         record.update(publication='published', published_save_sha256=sha(save))
         write(bundle / 'recording.json', record)

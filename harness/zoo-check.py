@@ -9,7 +9,14 @@ diegoami/borg-reborn-rs, ref = this checkout's HEAD. It then calls the zoo's
 own harness.build and harness.run_cell, exactly as a zoo workflow would. The
 zoo's files are not changed. It prints one line per cell (outcome, max depth,
 turn, play hash) and exits 1 if a cell is a harness failure or a config error.
-Commit first: the zoo refuses a checkout that is not at the specimen's ref.
+
+Evidence rules (M1 review):
+* the checkout must be clean (the specimen's ref is HEAD, and the adapter
+  checks only the commit) and vendor/borg-zoo must be at its pin;
+* the zoo adapter deletes keys.log, so a natural death would leave no
+  dossier: every death cell is rerun through harness/run.sh (same seed,
+  character, cap and menu letters), its key stream is checked against the
+  cell's play hash, and run.sh's exporter records it (RULES 12).
 """
 
 import argparse
@@ -22,6 +29,27 @@ ROOT = Path(__file__).resolve().parent.parent
 ZOO = ROOT / 'vendor' / 'borg-zoo'
 
 
+def repatriate(impl, rec, suite, work, cat_mod):
+    """Rerun a zoo death through harness/run.sh, check the keys, record the dossier."""
+    import hashlib
+    race, cls = cat_mod.character(suite, rec['seed']) or ('Human', 'Warrior')
+    out = work / 'repatriated' / impl / str(rec['seed'])
+    if out.exists():
+        import shutil
+        shutil.rmtree(out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    env = dict(__import__('os').environ, BORG_IMPL=impl)
+    r = subprocess.run([str(ROOT / 'harness/run.sh'), str(out), str(rec['seed']),
+                        str(cat_mod.RACES.index(race)), str(cat_mod.CLASSES.index(cls)), str(suite['cap']), 'menu'],
+                       env=env, capture_output=True, text=True)
+    keys = out / 'keys.log'
+    got = hashlib.sha256(keys.read_bytes()).hexdigest() if keys.exists() else None
+    ok = r.returncode == 0 and got == rec.get('play_sha256')
+    print(f"    death repatriated through harness/run.sh: {'keys match the zoo cell' if ok else 'MISMATCH'}"
+          f"{(' ' + r.stderr.strip().splitlines()[-1]) if r.stderr.strip() else ''}")
+    return ok
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--impl', nargs='+', default=['rust', 'c-pristine', 'c-bbc-m7'])
@@ -31,6 +59,12 @@ def main(argv=None):
     sys.path.insert(0, str(ZOO))
     from zoo import catalogue as cat_mod, harness  # noqa: E402 (the pinned zoo)
     head = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
+    if subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip():
+        raise SystemExit('zoo-check: the checkout has uncommitted changes; commit first (the cells name HEAD)')
+    pin = json.loads((ROOT / 'pins.json').read_text())['pins']['borg-zoo']['commit']
+    zoo_head = subprocess.check_output(['git', '-C', str(ZOO), 'rev-parse', 'HEAD'], text=True).strip()
+    if zoo_head != pin:
+        raise SystemExit(f'zoo-check: vendor/borg-zoo is at {zoo_head[:12]}, pin {pin[:12]} (scripts/setup.sh --checkout)')
     cat = cat_mod.catalogue(ZOO)
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {
@@ -53,6 +87,8 @@ def main(argv=None):
             with (a.work / 'cells.jsonl').open('a') as f:
                 f.write(json.dumps(rec) + '\n')
             bad += rec['outcome'] in ('harness_failure', 'config_error')
+            if rec['outcome'] == 'death':
+                bad += not repatriate(impl, rec, suite, a.work, cat_mod)
     print(f'{bad} cells with harness failure or config error')
     return 1 if bad else 0
 

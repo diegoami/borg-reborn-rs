@@ -37,14 +37,15 @@
     "poison": 1,
     "starvation": 6
   },
-  "death_process_attempts": 92,
+  "death_process_attempts": 94,
   "distinct_starting_conditions": 94,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
     "321db9028fb3785bd5dbb2320a2e4bd06896fb5c": 1,
-    "3a3d36d5a2d16bb75e01609cec6764c3813e17e8": 30,
+    "3a3d36d5a2d16bb75e01609cec6764c3813e17e8": 31,
     "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d": 46,
+    "b80ed55657bd45241b712d19a87a7c2665a7dd16": 1,
     "ea6c91678d304d9aa73647fb6881278d846e95d2": 15
   }
 }
