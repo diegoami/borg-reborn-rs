@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: a new control arm, c-bbc-m8 (#56)
+
+better-borg-c tagged milestone 8 (`4.2.6-impact-v8`, `017e038`) before
+our better-borg-c pin moved past it. The refresh report listed only tags
+after the pin, so it never showed the tag. It now lists tags after the
+baseline in use (`baseline.commit`, else the pin), which flags v8. Under
+RULES 22, v8 is a new arm, `c-bbc-m8`, filed as #56 in M4, the first
+milestone that measures against the controls. `c-bbc-m7` stays as it is,
+and the GOALS wording "`c-bbc-m7` today" changes when #56 lands.
+
 ## 2026-11-09: M1 done; M2 starts
 
 The owner merged the M1 review PR #39 (`main` → `reviewed`, merge

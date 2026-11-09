@@ -104,6 +104,20 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('**new tags** `4.2.6-impact-v*`: 4.2.6-impact-v8', text)
         self.assertIn('**cited C Borg functions changed:** borg-danger.c:borg_danger', text)
 
+    def test_a_milestone_tag_before_the_pin_is_still_new(self):
+        # better-borg-c 4.2.6-impact-v8 was tagged before the pin moved past
+        # it; the arm in use is still v7, so v8 must be reported.
+        sh(self.origin, 'git', 'tag', '4.2.6-impact-v7', self.a)
+        commit(self.origin, {'docs/after-v8.md': 'later\n'}, 'C')
+        sh(self.root / 'vendor/src', 'git', 'fetch', '-q', '--tags', 'origin')
+        pins = json.loads((self.root / 'pins.json').read_text())
+        pins['pins']['src']['baseline'] = {'tag': '4.2.6-impact-v7', 'commit': self.a}
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        rs.update(self.root, ['src'], fetch=True, today='2026-11-09')  # the pin moves to C, past v8
+        text = self.report()
+        self.assertIn('**new tags** `4.2.6-impact-v*`: 4.2.6-impact-v8', text)
+        self.assertNotIn('4.2.6-impact-v7,', text)
+
     def test_engine_tree_resync_is_flagged(self):
         pins = json.loads((self.root / 'pins.json').read_text())
         tree_a = sh(self.root / 'vendor/src', 'git', 'rev-parse', f'{self.a}:src/borg')
