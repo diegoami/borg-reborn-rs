@@ -121,5 +121,6 @@ are not independent.*
 | borg-reborn-rs | [D0092-rust-seed1033](../../docs/deaths/D0092-rust-seed1033/report.md) | Half-Orc Priest | starvation | 89210 | 1 | 1 | — | unassessed | D0092-rust-seed1033: starvation at turn 89210 |
 | borg-reborn-rs | [D0093-rust-seed1072](../../docs/deaths/D0093-rust-seed1072/report.md) | Human Warrior | starvation | 89250 | 1 | 1 | — | unassessed | D0093-rust-seed1072: starvation at turn 89250 |
 | borg-reborn-rs | [D0094-rust-seed1061](../../docs/deaths/D0094-rust-seed1061/report.md) | Human Rogue | starvation | 89220 | 1 | 1 | — | unassessed | D0094-rust-seed1061: starvation at turn 89220 |
+| borg-reborn-rs | [D0095-rust-seed102](../../docs/deaths/D0095-rust-seed102/report.md) | Elf Mage | a rock lizard | 743 | 1 | 1 | — | unassessed | D0095-rust-seed102: a rock lizard at turn 743 |
 
-114 cases.
+115 cases.

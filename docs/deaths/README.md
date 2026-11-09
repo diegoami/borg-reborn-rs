@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 94; distinct starting conditions: 94; retained process attempts: 94 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 95; distinct starting conditions: 95; retained process attempts: 95 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -100,6 +100,7 @@ Dossiers: 94; distinct starting conditions: 94; retained process attempts: 94 (i
 | [D0092-rust-seed1033](D0092-rust-seed1033/report.md) | unassigned | `a4b37e7fed36` | 1033 | starvation | 89210 | unassessed |
 | [D0093-rust-seed1072](D0093-rust-seed1072/report.md) | unassigned | `a4b37e7fed36` | 1072 | starvation | 89250 | unassessed |
 | [D0094-rust-seed1061](D0094-rust-seed1061/report.md) | unassigned | `a4b37e7fed36` | 1061 | starvation | 89220 | unassessed |
+| [D0095-rust-seed102](D0095-rust-seed102/report.md) | unassigned | `ad7bf0f0646c` | 102 | a rock lizard | 743 | unassessed |
 
 ## Aggregated actions
 
