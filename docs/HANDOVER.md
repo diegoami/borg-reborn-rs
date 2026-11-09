@@ -2,6 +2,15 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: the owner chooses the reviewer (RULES 6)
+
+The review of #66 was started by the session: MiniMax-M3, picked through
+the quota service. The owner then ruled: "next time give me the prompt and
+I will chose the reviewer". RULES 6 and AGENTS.md (*Models*) now say so.
+For every review the session writes the prompt and the owner chooses and
+runs the reviewer. A second pass on #66 (for #67 and #68) therefore waits for
+the owner's choice.
+
 ## 2026-11-09: review of #66 (MiniMax-M3): spec findings
 
 The spec findings S1–S10 and the missed risks are answered in
