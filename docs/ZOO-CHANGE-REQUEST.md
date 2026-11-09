@@ -105,9 +105,10 @@ as requested in borg-reborn-rs `docs/ZOO-CHANGE-REQUEST.md`. Read that file at t
 with `docs/GOALS.md` (section "Observation and scoring rule"), `harness/README.md`, `tools/depth-stream.py`
 and `tools/endpoint.py`.
 
-borg-reborn-rs commit to use: the commit of tag `m1` if it exists
-(`git ls-remote --tags https://github.com/diegoami/borg-reborn-rs m1`), otherwise
-the head of borg-reborn-rs `main`, which carries the M1 review fixes; do not use an earlier commit. Say in the PR which one you used.
+borg-reborn-rs commit to use: the commit of tag `m1`
+(`git ls-remote --tags https://github.com/diegoami/borg-reborn-rs m1`, the M1 review merge).
+If the tag does not exist yet, stop and ask the owner for the exact commit to use; do not
+take the head of a branch, which moves. Write that full commit hash in the catalogue and in the PR.
 
 ## What already works (verify, do not assume)
 

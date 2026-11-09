@@ -152,6 +152,27 @@ class RefreshTest(unittest.TestCase):
         self.assertEqual((self.root / 'pins.json').read_bytes(), pins_before)
         self.assertEqual(sh(self.root / 'vendor/src', 'git', 'rev-parse', 'HEAD'), self.a)
 
+    def test_failure_while_writing_restores_everything(self):
+        # Re-review N10: phase two fails after the copies, the README and the
+        # vendor checkout were written; all of them must come back.
+        before = {p: p.read_bytes() for p in (self.root / 'reference').rglob('*') if p.is_file()}
+        pins_before = (self.root / 'pins.json').read_bytes()
+        real = rs.write_index
+
+        def fail(root):
+            raise OSError('disk full')
+        rs.write_index = fail
+        try:
+            with self.assertRaises(OSError):
+                rs.update(self.root, ['src'], today='2026-11-09')
+        finally:
+            rs.write_index = real
+        after = {p: p.read_bytes() for p in (self.root / 'reference').rglob('*') if p.is_file()}
+        self.assertEqual(before, after, 'copies or README changed although the update failed')
+        self.assertEqual((self.root / 'pins.json').read_bytes(), pins_before)
+        self.assertEqual(sh(self.root / 'vendor/src', 'git', 'rev-parse', 'HEAD'), self.a)
+        self.assertFalse(list((self.root / 'reference').rglob('.refresh-backup-*')), 'backups left behind')
+
     def test_dirty_vendor_is_not_moved(self):
         (self.root / 'vendor/src/local.txt').write_text('mine\n')
         rs.update(self.root, ['src'], today='2026-11-09')
