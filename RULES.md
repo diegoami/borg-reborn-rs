@@ -60,14 +60,20 @@ whatever the model.
 11. **Fair information** (GOALS D3): the Borg reads only what the C Borg
     reads. Every engine read goes through the engine boundary and is listed
     there.
-12. **Every natural death is recorded** as a dossier under `docs/deaths/`
-    (borg-rs format; the decision trace from M3), with the actual source,
-    build, implementation, profile and seed. This applies from the first
-    game played (T1.2, #5), whichever arm died. Repeats and replays never
-    inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in `docs/deaths/`
-    (`tools/reconcile-deaths.py`); deaths of test-feature builds are not
-    natural deaths of an arm and are kept apart.
+12. **Every natural death of a measured run is recorded** as a dossier
+    under `docs/deaths/` (borg-rs format; the decision trace from M3), with
+    the actual source, build, implementation, profile and seed. A measured
+    run is one played through `harness/run.sh`: a suite, a single run, CI
+    or the zoo's cells. This applies from the first game played (T1.2, #5),
+    whichever arm died. Games watched with `watch-borg.sh` are not measured
+    runs and are not recorded (owner, 2026-11-10, E review finding 3): they
+    have no seed, key log or summary; a death seen there that matters is
+    reproduced as a measured run and recorded then. Repeats and replays
+    never inflate independent counts. CI writes its dossiers to a temporary
+    registry, uploads it, and fails if a death is not in `docs/deaths/` or
+    a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
+    deaths of test-feature builds are not natural deaths of an arm and are
+    kept apart.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.

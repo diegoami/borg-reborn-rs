@@ -10,10 +10,9 @@ gave is covered by determinism and the Borg's own logs.*
 | --- | --- |
 | `export-death.py` | Run by `harness/run.sh` after every run: a natural death gets a dossier in `docs/deaths/` (RULES 12), with the trace tail and the parameters |
 | `death_registry.py` | Regenerates `docs/deaths/index.json` and `README.md` (`python3 tools/death_registry.py`) |
-| `rerun-death.py` | Reruns a dossier's game from its build and seed with the Borg's logs on (observations, world digests, knowledge; checkpoint saves with `--checkpoint-every N`) and checks that the keys are the recorded ones |
-| `reconcile-deaths.py` | CI: every death of a CI run is in `docs/deaths/` |
+| `rerun-death.py` | Reruns a dossier's game from its build and seed with the Borg's logs on (observations, world digests, knowledge; checkpoint saves with `--checkpoint-every N`) and checks that the keys are the recorded ones and the logs were written. It always runs `build/rust` (an inherited `ANGBAND_BIN` is dropped), and refuses a death that loaded a save (`save=NAME` or an extra `-load`): the dossier alone cannot restart that game |
+| `reconcile-deaths.py` | CI: every death of a CI run is in `docs/deaths/`; with `--runs DIR …`, every natural death in those run outputs has a dossier (E review, finding 3) |
 | `depth-stream.py` | Run by `harness/run.sh`: `depths.json`, the first turn at each depth |
-| `endpoint.py` | The primary endpoint over local outputs and zoo cells; goes in TE.7 (the zoo computes every statistic) |
 | `tests/` | Unit tests of the above (`python3 -m unittest discover -s tools/tests`) |
 
 To watch the Borg play: `./watch-borg.sh` at the repository's root.

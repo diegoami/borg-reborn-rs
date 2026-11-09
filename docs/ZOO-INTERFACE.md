@@ -45,14 +45,17 @@ cannot pass unnoticed.
 the level stop is `clev`, but ours writes `clevel`. The zoo never passes
 `-clev`, so no cell can stop that way.
 
-Further fields of `summary.json` (`game_options`, `exact_turns`, the RNG
-states, …) are ours. The zoo may read them, but doesn't depend on them.
+Further fields of `summary.json` (`game_options`, `exact_turns`, `loaded`,
+the RNG states, …) are ours. The zoo may read them, but doesn't depend on
+them. `exact_turns` and `loaded` are in every summary, `true` or `false`
+(since the E review).
 
 ## Specimens
 
 - `4.2.6-reborn-rust`: `impl` `rust`, `exact_turns` and `depth_stream` on.
-  Its `ref` is to move to E's tag once milestone E is merged. It's
-  `2dd11fd` today (M1, built on borg-rs's tree).
+  Its `ref` is `2dd11fd` today (M1, built on borg-rs's tree). Milestone E
+  is merged (tag `e`); the `ref` moves to the commit that fixes E's review
+  (borg-zoo#48), since those fixes change the full suite's play.
 - `4.2.6-reborn-c-pristine` and `4.2.6-reborn-c-bbc-m7` were built by this
   repository at `2dd11fd`. Since milestone E it builds no C Borg (docs/SPEC.md
   §6), so those specimens keep their old `ref` or are retired: the zoo's

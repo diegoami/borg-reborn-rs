@@ -24,7 +24,13 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
       - run: cargo install bindgen-cli --version 0.73.2 --locked
       - run: engine/bindings/generate.sh --check
-      - run: python3 -m unittest discover -s engine/tests
+      # Upstream's own commit, so that test_engine checks that engine/UPSTREAM's
+      # tree really is e473720's (E review, finding 7); without it, it fails.
+      - run: |
+          commit=$(sed -n 's/^commit=//p' engine/UPSTREAM)
+          git init -q vendor/angband
+          git -C vendor/angband fetch -q --depth 1 --filter=tree:0 https://github.com/angband/angband "$commit"
+      - run: ENGINE_UPSTREAM_REQUIRED=1 python3 -m unittest discover -s engine/tests
 
   engine:
     # Builds the Rust Borg on our own integration (engine/, docs/SPEC.md §3,

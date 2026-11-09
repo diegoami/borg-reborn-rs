@@ -6,20 +6,33 @@
 
 Kimi's review of E (on #92) has ten findings. They are fixed in three PRs
 into `main`:
-1. **The frontend (this PR, RULES 22):** `loaded` and `exact_turns` are in
+1. **The frontend (#95, RULES 22):** `loaded` and `exact_turns` are in
    every summary (finding 5).
    - Play doesn't change: keys, messages and states equal the references
      (smoke 3/3, smoke-exact 3/3, full 45/45).
    - `harness/diff` compares the two fields when both sides have them, as
      it does `game_options`.
    - Its deaths are recorded at its source (D0712–D0757).
-2. **The code:** suites, perception while hallucinating, the death and
+2. **The code (#96):** suites, perception while hallucinating, the death and
    reference tools.
    - References are regenerated: the full suite's `menu` fix changes
      exactly the 20 runs whose character changes.
    - Smoke, smoke-exact and the other 25 full runs are unchanged.
    - Its deaths are D0758–D0803.
-3. **Documents, rules and CI (#94),** RULES 12 narrowed by the owner.
+3. **Documents, rules and CI (#94):**
+   - findings 6, 7, 9 and 10's document nits;
+   - RULES 12 narrowed by the owner: measured runs only, not watched games;
+   - CI fetches upstream `e473720`, so the tree check no longer skips.
+
+**Left:**
+- ENGINE-READS' types table (`term`, `monster`, `player_class`, `store`):
+  T2.5's D3 recheck (#16).
+- borg-zoo#48: `4.2.6-reborn-rust`'s `ref` moves to the commit that merges
+  #94, not to `e`, since #96 changes the full suite's play (the zoo's own
+  cells pass `-race`/`-class` with `-menu-letters`; whether its play
+  changed is for the zoo's check).
+- Whether the fixes get a re-review is the owner's call (RULES 6).
+- Then T2.5 (#16) and M3.
 
 ## 2026-11-09: E merged before its review; a review after the fact
 

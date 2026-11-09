@@ -2,8 +2,9 @@
 
 Ours since TE.6 (#76): taken from borg-rs's tools/borg_deaths.py (its
 registry_lock, canonical_identity and aggregate; docs/PROVENANCE.md) when the
-copied recording toolkit was dropped, with the same output, so the index of
-D0001-D0664 regenerates byte for byte. It reads the dossiers of
+copied recording toolkit was dropped. index.json and the README's case rows
+regenerate byte for byte; the README's closing instructions name our tools,
+not the removed ones. It reads the dossiers of
 tools/export-death.py (schema borg-reborn-rs/death-record@1) and the ones the
 copied GUI tooling wrote before TE.6 (borg-rs/death-record@1, e.g. D0526).
 """

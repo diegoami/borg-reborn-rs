@@ -13,7 +13,7 @@ PR that updates the pin and this table.
 | `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `eb9a78edde6c1909b1430f6c93c3944998b774af` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
 | `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `286215c5cbb0c37002447c530a66ad3b92014a36` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
-| `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in the engine tree we import (docs/ENGINE-TREE.md) |
+| `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
 | `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `e56d5faa8face1cecf03b3cc49f850e1b48f0d75` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
@@ -34,12 +34,10 @@ resolve here. Read them at the pinned commit, for example
 
 `c-manual/` links its own copy of the official manual (`user-manual/`); its
 source references (`src/...`, `lib/gamedata/...`) are relative to
-an Angband tree: here `angband/src/` and `angband/lib/gamedata/`.
+an Angband tree: here `engine/angband/src/` and `engine/angband/lib/gamedata/`.
 
-The strategy manual's links to the official manual (`../birth.rst`,
-`../command.rst` and the other `docs/*.rst`) and its source references
-(`src/...`, `lib/gamedata/...`) are relative to an Angband tree: here they are
-`angband/docs/` and `angband/src/`, `angband/lib/gamedata/` in our engine tree.
+The retired draft strategy manual (S12) had the same convention; its copy
+is in git history.
 
 `deaths/INDEX.md` is generated from the copies and from our own
 `docs/deaths/` by `scripts/refresh-sources.py`. Refresh everything with
