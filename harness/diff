@@ -78,8 +78,10 @@ IGNORED_FIELDS = {"wall_seconds"}
 MEASUREMENT_FIELDS = {"calendar", "max_clevel", "hp", "max_hp", "borg_decisions",
                       "player_energy", "borg_rng", "game_rng", "effective_settings"}
 # Run-record fields added after the first references (TE.5: the game options
-# in force). Compared whenever both sides have them.
-RECORD_FIELDS = {"game_options"}
+# in force; the E review: `exact_turns` and `loaded` in every summary, where
+# earlier references have them only when true). Compared whenever both sides
+# have them.
+RECORD_FIELDS = {"game_options", "exact_turns", "loaded"}
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 

@@ -67,8 +67,11 @@ class BinaryContractTest(unittest.TestCase):
     def test_the_summary_has_the_contract_fields(self):
         s = json.loads((self.out / 'summary.json').read_text())
         for field in ('seed', 'race', 'race_idx', 'class', 'class_idx', 'stop_reason', 'game_turns', 'player_turns',
-                      'depth', 'max_depth', 'clevel', 'max_clevel', 'dead', 'death_cause', 'keys', 'exact_turns'):
+                      'depth', 'max_depth', 'clevel', 'max_clevel', 'dead', 'death_cause', 'keys', 'exact_turns',
+                      'loaded', 'effective_settings', 'game_options'):
             self.assertIn(field, s)
+        self.assertIs(s['exact_turns'], True)
+        self.assertIs(s['loaded'], False)
         self.assertEqual(s['seed'], 101)
         self.assertEqual(s['stop_reason'], 'turns')
         self.assertEqual(s['game_turns'], 200, 'the exact boundary')
@@ -82,6 +85,23 @@ class BinaryContractTest(unittest.TestCase):
                            cwd=BIN.parent, capture_output=True, text=True, timeout=60)
         self.assertNotEqual(r.returncode, 0)
 
+
+
+@unittest.skipUnless(BIN.exists(), 'no build (harness/build.sh)')
+class NormalRunTest(unittest.TestCase):
+    """A run without -exact-turns and without a save says so (E review, finding 5)."""
+
+    def test_the_summary_says_not_exact_and_not_loaded(self):
+        with tempfile.TemporaryDirectory() as t:
+            out = Path(t) / 'run'
+            env = dict(os.environ, BORG_IMPL='rust', BORG_DEATH_RECORDS_DIR=str(Path(t) / 'deaths'))
+            r = subprocess.run([str(ROOT / 'harness/run.sh'), str(out), '101', '0', '0', '200', 'menu'],
+                               env=env, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 0, r.stderr[-2000:])
+            s = json.loads((out / 'summary.json').read_text())
+        self.assertIs(s['exact_turns'], False)
+        self.assertIs(s['loaded'], False)
+        self.assertNotIn('loaded_turn', s)
 
 if __name__ == '__main__':
     unittest.main()
