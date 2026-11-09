@@ -329,6 +329,8 @@ def prepare_runtime(args, commit, hashes):
     runner.mkdir()
     for name in ('run.sh', 'supervise.py'):
         shutil.copy2(ROOT / 'harness' / name, runner / name)
+    # borg-reborn-rs (T2.4): run.sh needs the reborn Borg's profiles.
+    shutil.copytree(ROOT / 'harness/profiles', runner / 'profiles')
     config = cache / 'borg.txt'
     text = (source / 'harness/borg.txt').read_text()
     for name, value in [('borg_cheat_death', 'FALSE'), ('borg_respawn_winners', 'FALSE'), ('borg_save_death', '1')]:

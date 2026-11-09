@@ -215,6 +215,10 @@ def record_run(args, *, prepared=None, profile_root=None, export_death=True):
             shutil.copytree(source_root / 'angband/lib' / name, runtime / 'game/lib' / name)
         for name in ('run.sh', 'supervise.py'):
             shutil.copy2(runner_root / name, runtime / 'harness' / name)
+        # borg-reborn-rs (T2.4): the reborn Borg's profiles are run inputs too;
+        # run.sh refuses to start the Rust arm without one.
+        if (runner_root / 'profiles').is_dir():
+            shutil.copytree(runner_root / 'profiles', runtime / 'harness/profiles')
         tool_source = Path((prepared or cached)['tool_source_root'])
         shutil.copytree(tool_source, runtime / 'tool-source')
         config = data_directory / 'user/borg.txt'
