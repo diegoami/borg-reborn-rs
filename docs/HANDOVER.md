@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: milestone E planned
+
+PLAN.md follows docs/SPEC.md §10. **E. Our own integration** is in
+progress: the GitHub milestone E, tasks #71 (TE.1) to #79 (TE.9), linked by
+their Needs. M2 is paused (T2.1–T2.4 done; T2.5, #16, needs E). Order:
+- TE.1 tree and patches, then TE.2 frontend and TE.3 bindings;
+- TE.4 build, then TE.5 harness and the reproduction check;
+- TE.6 death tooling, TE.7 zoo contract and TE.8 removals and documents;
+- TE.9 CI and E's review (the owner chooses the reviewer).
+
 ## 2026-11-09: the spec is in effect; only our Borg
 
 The owner merged #66 (`main` → `reviewed`, `37bcb97`), so `docs/SPEC.md`
