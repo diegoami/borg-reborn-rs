@@ -1,9 +1,11 @@
 # borg-reborn-rs: specification
 
-*Draft for the owner's approval (2026-11-09). Nothing below is implemented
-until this document is merged. Once merged, it is the top-level contract
-of the repository: README, RULES, GOALS, ARCHITECTURE and PLAN follow it,
-and where they disagree it wins until they are brought into line (§9).*
+*Written 2026-11-09 at the owner's request. The owner accepted the draft
+and sent it to review with the work since `m1`. It takes effect when the
+owner merges that review PR (`main` → `reviewed`). Until then nothing below
+is implemented. From then on it is the top-level contract of the
+repository: README, RULES, GOALS, ARCHITECTURE and PLAN follow it, and
+where they disagree it wins until they are brought into line (§9).*
 
 ## 1. What it is
 
