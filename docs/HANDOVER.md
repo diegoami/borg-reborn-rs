@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.6 launchers, recording, replay, death tooling (#9)
+
+- borg-rs's launchers and `tools/` are copied from `e5cb263`, with the same
+  commands. The adaptations are listed at the top of `tools/README.md`:
+  `.angband-reborn/`, build-input lists naming our crate, two tests on `HEAD`
+  instead of `m5`, and the aggregator accepting our basic dossiers.
+- `run.sh` calls the depth stream and the basic exporter only when `tools/`
+  is present. The recording launchers run a frozen copy without it and record
+  deaths in borg-rs's full format, so there is no double record.
+- The Rust Borg now honours **any key stops it** (`Term_inkey`, as the C
+  Borg's `user_abort`). Harness keys are unchanged (3/3 identical).
+- **Checked:**
+  - a headless recording (`run-borg-headless.py`) replays **VERIFIED**;
+  - a GUI session under Xvfb (`run-rust-borg.sh`, Ctrl-Z, z, Escape stops,
+    Ctrl-X saves and quits) records completely and replays **VERIFIED**;
+  - borg-rs's 12 GUI-recording tests pass with that fixture;
+  - the tool suite passes 87 tests (26 skip for lack of fixtures) and now
+    runs in CI's engine job.
+- `docs/deaths/` now has borg-rs's aggregated `index.json` and `README.md`,
+  regenerated after every export.
+- Observed during the GUI test: the placeholder Borg dies quickly (an
+  apprentice on level 2), as expected until M3.
+
+**Next:** #10 (T1.7, endpoint calculator), then #11 (T1.8).
+
 ## 2026-11-09: T1.5 engine boundary and minimal Borg (#8)
 
 - `borg-reborn-rs/src/headers/` holds borg-rs's c2rust engine bindings,

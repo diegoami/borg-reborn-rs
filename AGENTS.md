@@ -95,7 +95,7 @@ both in the review PR.
 | `harness/` | borg-rs's harness (build, run, suite, diff, identity) with the differences listed in [harness/README.md](harness/README.md) |
 | `borg-rs/` | The seam package: the name the imported CMake builds; it only re-exports `borg-reborn-rs` |
 | `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
-| launchers, the rest of `tools/` | From T1.6, with borg-rs's names and behaviour |
+| launchers, the rest of `tools/` | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
 | `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
 
 ## Local machine notes

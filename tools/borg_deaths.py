@@ -20,6 +20,9 @@ import borg_replay_viewer as movie
 
 ROOT = runtime.ROOT
 SCHEMA = 'borg-rs/death-record@1'
+# borg-reborn-rs: basic dossiers written by tools/export-death.py at the end
+# of every harness run (RULES 12). They are aggregated with the full ones.
+BASIC_SCHEMA = 'borg-reborn-rs/death-record@1'
 OFFSETS = (5, 12, 25, 40, 60, 82, 105)
 
 
@@ -64,6 +67,11 @@ def family(seed, race, cls, config, origin):
 def canonical_identity(record):
     """Compare legacy continuation dossiers without rewriting their identity."""
     identity = dict(record['identity'])
+    if record.get('schema') == BASIC_SCHEMA:
+        identity.setdefault('source', identity.get('git_rev') or 'unknown')
+        identity.setdefault('turn', record['terminal'].get('turn'))
+        identity.setdefault('encounter_family', record.get('encounter_family'))
+        return identity
     if record.get('recording_schema') == runtime.SCHEMA and identity.get('start_save') is not None:
         terminal = record['terminal']
         identity['seed'] = None
@@ -279,7 +287,7 @@ def aggregate(root):
     records, causes, actions = [], defaultdict(set), {}
     for path in sorted(root.glob('D*/record.json')):
         record = read(path)
-        if record['schema'] != SCHEMA:
+        if record['schema'] not in (SCHEMA, BASIC_SCHEMA):
             raise ValueError('Unknown death record schema: ' + str(path))
         assessment = read(path.with_name('assessment.json'))
         records.append((path, record, assessment))
@@ -302,14 +310,18 @@ def aggregate(root):
     text += '| Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |\n| --- | --- | --- | --- | --- | --- | --- |\n'
     for path, record, assessment in records:
         discussion = f'[Discuss]({record["investigation"]})' if record.get('investigation') else 'unassigned'
-        effective_seed = canonical_identity(record)['seed']
+        ident = canonical_identity(record)
+        effective_seed = ident['seed']
         seed_label = effective_seed if effective_seed is not None else 'not used (saved RNG)' if record.get('recording_schema') == runtime.SCHEMA else 'recorded GUI inputs'
-        text += f'| [{record["id"]}]({path.parent.name}/report.md) | {discussion} | `{record["identity"]["source"][:12]}` | {seed_label} | {record["raw_cause"]} | {record["identity"]["turn"]} | {assessment["classification"]} |\n'
+        text += f'| [{record["id"]}]({path.parent.name}/report.md) | {discussion} | `{str(ident["source"])[:12]}` | {seed_label} | {record["raw_cause"]} | {ident["turn"]} | {assessment["classification"]} |\n'
     text += '\n## Aggregated actions\n\n'
     for action in actions.values():
         link = f'[{action["summary"]}]({action["issue"]})' if action.get('issue') else action['summary']
         text += f'- {link} — {action["status"]}; cases {", ".join(action["cases"])}.\n'
-    text += '\n[Earlier nine-class cohort and assessments](cohort-2026-11-07.md) · [Feedback process](FEEDBACK.md).\n\n'
+    links = [f'[{label}]({name})' for name, label in (('cohort-2026-11-07.md', 'Earlier nine-class cohort and assessments'),
+                                                       ('FEEDBACK.md', 'Feedback process')) if (root / name).exists()]
+    if links:
+        text += '\n' + ' · '.join(links) + '.\n\n'
     text += 'Export with tools/record-death.py, curate assessment.json/report.md, regenerate with tools/aggregate-deaths.py. Original-C defect leads go to neo-angband-tracker under the repository policy; no automatic issues or gameplay changes are made by the logger.\n'
     return summary, text
 

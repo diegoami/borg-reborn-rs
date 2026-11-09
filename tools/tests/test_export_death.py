@@ -127,6 +127,13 @@ class ExportTest(unittest.TestCase):
         case, what = ed.export(make_run(self.base, 'two'), 'c', changed)
         self.assertEqual((case, what), ('D0002-c-seed101', 'exported'))
 
+    def test_main_aggregates_the_registry(self):
+        run = make_run(self.base, 'dead')
+        self.assertEqual(ed.main([str(run), '--impl', 'c', '--build-id', str(self.build)]), 0)
+        index = json.loads((self.reg / 'index.json').read_text())
+        self.assertEqual((index['cases'], index['distinct_starting_conditions']), (1, 1))
+        self.assertIn('D0001-c-seed101', (self.reg / 'README.md').read_text())
+
     def test_numbering_and_family(self):
         ed.export(make_run(self.base, 'one'), 'c', self.build)
         case, _ = ed.export(make_run(self.base, 'two', seed=102), 'rust', self.build)

@@ -199,6 +199,12 @@ pub fn next_key(flush: bool) -> Key {
     if let Some(k) = b.queue.pop_front() {
         return Key::Code(k);
     }
+    // Any real key stops the Borg (spec §2.2 step 8; the GUI's "any key
+    // stops it").
+    if engine::take_user_key().is_some() {
+        engine::set_hook(false);
+        return Key::Code(ESCAPE);
+    }
     let Some(view) = engine::player_view() else {
         return Key::Code(ESCAPE);
     };

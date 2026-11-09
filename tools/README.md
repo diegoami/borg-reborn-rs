@@ -1,3 +1,15 @@
+> **borg-reborn-rs note (T1.6, #9).** The launchers (`run-rust-borg.sh`,
+> `start-borg.sh`, `run-borg-headless.py`, `replay-borg.py`, `produce_death.py`,
+> `replay_next_death.py`, `play-branch.py`) and the files of this directory were
+> copied from borg-rs `e5cb263` with the same commands and options. Adaptations:
+> the save directory is `.angband-reborn/`; the build-input lists name our crate
+> `borg-reborn-rs/` as well as the seam package `borg-rs/`; two tests use `HEAD`
+> instead of borg-rs's tag `m5`; `borg_deaths.py` also aggregates the basic
+> dossiers `tools/export-death.py` writes for harness runs (schema
+> `borg-reborn-rs/death-record@1`). Format identifiers (`borg-rs/...@1`) are
+> kept so dossiers stay compatible. `export-death.py`, `depth-stream.py` and
+> `tests/` are this repository's own. The rest of this file is borg-rs's text.
+
 # Rust launch and recording adapters
 
 The current connected workflow is documented in [the Rust toolkit guide](../docs/REPLAY-TOOLKIT.md),

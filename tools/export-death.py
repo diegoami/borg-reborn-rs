@@ -201,6 +201,15 @@ def export(run_dir, impl, build_id_path, flags='-'):
         return case, 'exported'
 
 
+def aggregate(reg):
+    """Regenerate the registry's index.json and README.md (borg-rs's
+    aggregate-deaths.py), as borg-rs's own registration does after an export."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import borg_deaths
+    with borg_deaths.registry_lock(reg):
+        borg_deaths.update_index(reg)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('run_dir')
@@ -211,6 +220,7 @@ def main(argv=None):
     case, what = export(a.run_dir, a.impl, a.build_id, a.flags)
     if what == 'exported':
         print(f'export-death: natural death recorded as {registry_dir() / case}', file=sys.stderr)
+        aggregate(registry_dir())
     elif what == 'repeat':
         print(f'export-death: repeat of {case}; not a new case', file=sys.stderr)
     elif what.startswith('repaired'):
