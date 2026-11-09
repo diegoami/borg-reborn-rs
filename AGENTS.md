@@ -75,11 +75,12 @@ When the milestone's last task is merged, **stop** and open the review PR
 
 This repository is **model agnostic**. Nothing in it depends on which model
 or tool writes the code, and the Borg itself uses no model when it plays.
-Which model works on a task, and which reviews a milestone, is decided
-outside the repository by the owner's general rules. The one requirement
-here is that a milestone review is done by the owner or by a model of a
-**different family** from the one that wrote most of the milestone. Name
-both in the review PR.
+Which model works on a task is decided outside the repository by the
+owner's general rules. **The reviewer is always the owner's choice**
+(RULES 6). The session writes the review prompt and hands it over; it does
+not pick or launch a reviewer. A milestone review is done by the owner or by
+a model of a **different family** from the one that wrote most of the
+milestone. Name both in the review PR.
 
 ## Where things are
 
