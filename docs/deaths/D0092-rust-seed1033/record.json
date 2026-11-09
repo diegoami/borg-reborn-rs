@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0092-rust-seed1033",
+  "run_kind": "harness",
+  "character": "Half-Orc Priest",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89210,
+    "race_idx": 6,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1033,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "59486c12550ee81d34f53842d12dc8d1e78ef62961face36d5982b4ede28e7c9"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-3-priest-3",
+      "result_sha256": "9c1c68f02eeae14809124cb56ac231ef361a7211fd30651c2414397b03340f7b",
+      "raw_sha256": {
+        "keys.log": "9c1c68f02eeae14809124cb56ac231ef361a7211fd30651c2414397b03340f7b",
+        "messages.log": "3cb6bcc2ead839e3a9b8340de763c228a5cb5ee684f86a62ec06c1b405d45f62",
+        "state.log": "96bf76480f9d836ae2c5dfac22e253a35044b0da58a6bb5d947d85ef1036db10"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-85281a347ce15652a1ea8f8457eba7c8812260f6d15011b79ad096b33afc8798",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "0cc7a4d12a4cf91288dc87a14a6dd4acf92d04826f64875e8abcade5f2c8c697",
+    "depths.json": "32f104c1b00f3e3543ec297e53f911ed3c816b1c2304c6294bf5db4763fde87e",
+    "summary.json": "86fbbb129af2e8142bbc6e49ba7be676e34ba63b8fb387c27b88a8ae04771d6b"
+  },
+  "investigation": null,
+  "issue": null
+}

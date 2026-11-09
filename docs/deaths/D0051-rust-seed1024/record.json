@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0051-rust-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "a blue yeek",
+  "terminal": {
+    "cause": "a blue yeek",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 278,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1024,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-2-druid-4",
+      "result_sha256": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+      "raw_sha256": {
+        "keys.log": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+        "messages.log": "3823c72cebc34151b880ed48d2b9cfa7fadc4949be39e54c6e55e126cefe45b6",
+        "state.log": "724f03d4f368dd0db4c61bc7a8d6676d9c6206d865db09952b3f12bc53463474"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-e2ba444f9b80894b398fd46d925483849cf36f2ff5d45c4088ecf476386faaa9",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "d9e7051c3de94ea273bca316b855652e7e7cee76798588bb545b4e1430aa1fc0",
+    "depths.json": "b07fc6a8b257cabfb7e0ed48afa6693a2aeeb5401a20f94b7c53e72b46b2dccd",
+    "summary.json": "62093483966b5c1eb1cb82555a1a23400298e105b85296674c3f9a2718647afd"
+  },
+  "investigation": null,
+  "issue": null
+}
