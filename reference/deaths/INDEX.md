@@ -74,5 +74,6 @@ are not independent.*
 | borg-reborn-rs | [D0045-c-seed1024](../../docs/deaths/D0045-c-seed1024/report.md) | Half-Orc Druid | an acolyte | 80669 | 2 | 6 | — | unassessed | D0045-c-seed1024: an acolyte at turn 80669 |
 | borg-reborn-rs | [D0046-c-seed1074](../../docs/deaths/D0046-c-seed1074/report.md) | Human Warrior | a giant red scorpion | 60527 | 20 | 13 | — | unassessed | D0046-c-seed1074: a giant red scorpion at turn 60527 |
 | borg-reborn-rs | [D0047-c-seed1071](../../docs/deaths/D0047-c-seed1071/report.md) | Half-Troll Warrior | a warrior | 81154 | 4 | 8 | — | unassessed | D0047-c-seed1071: a warrior at turn 81154 |
+| borg-reborn-rs | [D0048-rust-seed102](../../docs/deaths/D0048-rust-seed102/report.md) | Elf Mage | a rock lizard | 743 | 1 | 1 | — | unassessed | D0048-rust-seed102: a rock lizard at turn 743 |
 
-67 cases.
+68 cases.
