@@ -10,8 +10,9 @@
 //! The minimal Borg is a placeholder for M2–M3: it rests when hurt, takes a
 //! down staircase when standing on one, and otherwise walks to a random
 //! neighbour that is not known to be a wall or a shop. A think that finds no
-//! game time passed since a refused rest walks instead, so it cannot loop
-//! without time passing.
+//! game time passed since a refused rest walks instead, and after
+//! [`MAX_TRIES_PER_TURN`] such thinks it takes an action that always uses
+//! game time (see [`stand_still`]), so it cannot loop without time passing.
 
 use crate::engine::{self, Key, PlayerView, ESCAPE, KC_ENTER};
 use std::collections::VecDeque;
@@ -26,6 +27,8 @@ mod feat {
     pub const BROKEN: u32 = 4;
     pub const LESS: u32 = 5;
     pub const MORE: u32 = 6;
+    pub const STORE_GENERAL: u32 = 7;
+    pub const HOME: u32 = 14;
     pub const PASS_RUBBLE: u32 = 24;
 }
 
@@ -42,7 +45,7 @@ const DIRS: [(u8, i32, i32); 8] = [
 ];
 
 /// A decision of the minimal Borg.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
     /// Rest 75 turns ('R' '7' '5' Enter, as the C Borg does).
     Rest,
@@ -50,7 +53,8 @@ pub enum Action {
     Descend,
     /// Walk one step in a direction 1–9.
     Walk(u8),
-    /// Stand still one turn (','): always uses game time.
+    /// Stand still one turn (','): uses game time, except on a shop
+    /// entrance, where it enters the store (see [`stand_still`]).
     Hold,
 }
 
@@ -84,6 +88,38 @@ pub fn walkable(f: Option<u32>) -> bool {
                 | feat::PASS_RUBBLE
         )
     )
+}
+
+/// Whether a known feature is a shop entrance (the home included).
+pub fn is_shop(f: Option<u32>) -> bool {
+    matches!(f, Some(feat::STORE_GENERAL..=feat::HOME))
+}
+
+/// The action that takes game time where the Borg stands. `Hold` does,
+/// except on a shop entrance: there `do_cmd_hold` enters the store and sets
+/// `energy_use = 0` ("turn will be taken exiting the shop",
+/// `angband/src/cmd-cave.c`), so repeated holds would stay at one turn
+/// (M1 re-review N2). On a shop the Borg steps off instead, trying a
+/// different direction at each think of the same turn: known passable grids
+/// first, then unknown ones, then the rest; `attempt` counts the earlier
+/// forced tries at this turn. Every shop entrance borders the town's floor,
+/// so within eight thinks a step takes time.
+pub fn stand_still(
+    here: Option<u32>,
+    around: impl Fn(i32, i32) -> Option<u32>,
+    attempt: u32,
+) -> Action {
+    if !is_shop(here) {
+        return Action::Hold;
+    }
+    let rank = |f: Option<u32>| match f {
+        Some(feat::NONE) => 1,
+        f if walkable(f) => 0,
+        _ => 2,
+    };
+    let mut dirs: Vec<(u8, i32, i32)> = DIRS.to_vec();
+    dirs.sort_by_key(|(_, dx, dy)| rank(around(*dx, *dy)));
+    Action::Walk(dirs[attempt as usize % dirs.len()].0)
 }
 
 /// The Borg's own random numbers (xorshift64*). Seeded with a constant, so
@@ -152,8 +188,9 @@ impl Memory {
     }
 }
 
-/// After this many thinks without game time passing, the Borg stands still,
-/// which always takes a turn (GOALS principle 6: no loop without time).
+/// After this many thinks without game time passing, the Borg takes the
+/// action that uses time where it stands, [`stand_still`] (GOALS principle
+/// 6: no loop without time).
 pub const MAX_TRIES_PER_TURN: u32 = 2;
 
 /// Choose an action. `here` is the known feature underfoot, `around(dx, dy)`
@@ -170,7 +207,7 @@ pub fn decide(
     // after a few tries the Borg stands still.
     let tries = mem.tries_at(view.turn);
     if tries >= MAX_TRIES_PER_TURN {
-        return Action::Hold;
+        return stand_still(here, around, tries - MAX_TRIES_PER_TURN);
     }
     if here == Some(feat::MORE) {
         return Action::Descend;
@@ -185,7 +222,7 @@ pub fn decide(
         .collect();
     if options.is_empty() {
         // Boxed in by known walls: a walk would take no time.
-        return Action::Hold;
+        return stand_still(here, around, tries);
     }
     Action::Walk(options[rng.below(options.len())])
 }
@@ -383,6 +420,38 @@ mod tests {
         );
         assert_eq!(a, Action::Hold);
         assert_eq!(a.keys(), vec![ESCAPE, b',' as u32]);
+    }
+
+    /// M1 re-review N2: on a shop entrance ',' enters the store and takes
+    /// no time, so the Borg must never hold there; it steps off, known
+    /// floor first, and tries every direction within eight thinks.
+    #[test]
+    fn on_a_shop_it_steps_off_instead_of_holding() {
+        // Shop walls (permanent, 22) all round, floor to the south (direction 2).
+        let around = |dx: i32, dy: i32| Some(if (dx, dy) == (0, 1) { feat::FLOOR } else { 22 });
+        let mut mem = Memory::default();
+        let mut first_forced = None;
+        for _ in 0..12 {
+            let a = decide(
+                &view(20, 9),
+                Some(feat::STORE_GENERAL),
+                around,
+                &mem,
+                &mut Rng::new(),
+            );
+            assert_ne!(a, Action::Hold, "held on a shop");
+            if mem.tries_at(9) >= MAX_TRIES_PER_TURN && first_forced.is_none() {
+                first_forced = Some(a);
+            }
+            mem.record(9, a);
+        }
+        assert_eq!(first_forced, Some(Action::Walk(2)), "known floor first");
+        // Unknown neighbours only: eight thinks at one turn try all eight directions.
+        let seen: std::collections::BTreeSet<_> = (0..8)
+            .map(|t| stand_still(Some(feat::HOME), |_, _| Some(feat::NONE), t))
+            .collect();
+        assert_eq!(seen.len(), 8);
+        assert_eq!(stand_still(Some(feat::FLOOR), around, 5), Action::Hold);
     }
 
     #[test]
