@@ -255,8 +255,10 @@ static void borgh_finish(const char *reason)
 	}
 	fprintf(fp, "{\n");
 	fprintf(fp, "  \"seed\": %lu,\n", (unsigned long)borgh_seed);
+	/* Every summary says whether a save was loaded (docs/SPEC.md §3.5). */
+	fprintf(fp, "  \"loaded\": %s,\n", opt_load ? "true" : "false");
 	if (opt_load)
-		fprintf(fp, "  \"loaded\": true,\n  \"loaded_turn\": %ld,\n", loaded_turn);
+		fprintf(fp, "  \"loaded_turn\": %ld,\n", loaded_turn);
 	fprintf(fp, "  \"race\": ");
 	json_str(fp, (player && player->race) ? player->race->name : "");
 	fprintf(fp, ",\n  \"race_idx\": %d,\n", opt_race);
@@ -316,7 +318,7 @@ static void borgh_finish(const char *reason)
         }
         fprintf(fp, "},\n");
     }
-    if (opt_exact_turns) fprintf(fp, "  \"exact_turns\": true,\n");
+    fprintf(fp, "  \"exact_turns\": %s,\n", opt_exact_turns ? "true" : "false");
     if (opt_random_birth) {
         fprintf(fp, "  \"random_birth\": true,\n  \"played_race_idx\": %u,\n  \"played_class_idx\": %u,\n",
             player->race->ridx, player->class->cidx);
