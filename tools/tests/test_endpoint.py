@@ -94,20 +94,83 @@ class EndpointTest(unittest.TestCase):
         self.assertEqual(ep.mcnemar_exact(0, 0), 1.0)
         self.assertAlmostEqual(ep.mcnemar_exact(1, 2), 1.0)
 
-    def test_local_suite_dir_counts_missing_runs_as_harness_failures(self):
+    def local(self, t, runs, failed=()):
+        """A suite output: runs = [(name, seed, class_idx, summary or None)]."""
+        d = Path(t) / 'out'
+        suite = Path(t) / 'suite'
+        suite.write_text(''.join(f'{n} {seed} 0 {c} 1000 exact\n' for n, seed, c, _ in runs))
+        for n, seed, c, summ in runs:
+            (d / n).mkdir(parents=True)
+            ok = n not in failed
+            (d / n / 'process.json').write_text(json.dumps(
+                {'status': 'success' if ok else 'failure', 'exit_code': 0 if ok else 1,
+                 'timed_out': False, 'stalled': False}))
+            if summ is not None:
+                (d / n / 'summary.json').write_text(json.dumps(summ))
+        (d / 'manifest').write_text(f'suite=suite\nsuite_file={suite}\n')
+        return d
+
+    def alive(self, seed, turn=1000, depth=5, cls='Warrior'):
+        return {'seed': seed, 'class': cls, 'stop_reason': 'turns', 'game_turns': turn,
+                'max_depth': depth, 'dead': False, 'exact_turns': True}
+
+    def test_missing_run_stays_in_its_class(self):
         with tempfile.TemporaryDirectory() as t:
-            d = Path(t) / 'out'
-            suite = Path(t) / 'suite'
-            suite.write_text('one 1 0 0 1000 exact\ntwo 2 0 0 1000 exact\n')
-            (d / 'one').mkdir(parents=True)
-            (d / 'one' / 'summary.json').write_text(json.dumps(
-                {'seed': 1, 'class': 'Warrior', 'stop_reason': 'turns', 'game_turns': 1000,
-                 'max_depth': 5, 'dead': False, 'exact_turns': True}))
-            (d / 'manifest').write_text(f'suite={suite}\n')
+            d = self.local(t, [('one', 1, 0, self.alive(1)), ('two', 2, 0, None)])
+            _, out = run_main(['--local', f'x={d}', '--depth', '5', '--turns', '1000', '--json'])
+            rows = {r['cls']: r for r in json.loads(out)['rows']}
+            self.assertEqual((rows['Warrior']['attempted'], rows['Warrior']['successes']), (2, 1))
+            self.assertEqual(rows['Warrior']['operational'], {'harness_failure': 1})
+            self.assertNotIn('unknown', rows)
+
+    def test_exact_survivor_past_the_cap_is_not_a_success(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1, turn=1001))])
+            _, out = run_main(['--local', f'x={d}', '--depth', '5', '--turns', '1000', '--json'])
+            self.assertEqual(json.loads(out)['rows'][0]['successes'], 0)
+
+    def test_failed_process_is_a_harness_failure_whatever_the_summary_says(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1))], failed={'one'})
             _, out = run_main(['--local', f'x={d}', '--depth', '5', '--turns', '1000', '--json'])
             row = json.loads(out)['rows'][0]
-            self.assertEqual((row['attempted'], row['successes']), (2, 1))
-            self.assertEqual(row['operational'], {'harness_failure': 1})
+            self.assertEqual((row['successes'], row['operational']), (0, {'harness_failure': 1}))
+
+    def test_unresolvable_suite_is_refused(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1))])
+            (d / 'manifest').write_text('suite=no-such-suite\nsuite_file=/nowhere/suite\n')
+            with self.assertRaises(SystemExit):
+                run_main(['--local', f'x={d}', '--depth', '5', '--turns', '1000'])
+
+    def test_victory_needs_a_turn_before_t(self):
+        r = ep.run('a', 1, 'Warrior', 'completion', True, 50, None, 'exact', 's', victory=True)
+        for turn, ok in ((None, False), (5000, True), (100000, False), (100001, False)):
+            r['stop_turn'] = turn
+            self.assertEqual(ep.success(r, 5, 100000), ok, turn)
+
+    def test_duplicate_pair_keys_are_refused(self):
+        with tempfile.TemporaryDirectory() as t:
+            f = write_cells(t, [cell(1, 'turn_cap', specimen='A'), cell(1, 'death', specimen='A'),
+                                cell(1, 'turn_cap', specimen='B')])
+            with self.assertRaises(SystemExit):
+                run_main(['--zoo', f'A={f}:A', '--zoo', f'B={f}:B', '--depth', '5', '--turns', '100000',
+                          '--pair', 'A', 'B'])
+
+    def test_zoo_boundary_by_harness_kind(self):
+        with tempfile.TemporaryDirectory() as t:
+            for kind in ('neo-original', 'mandos', 'borg-rs'):
+                f = write_cells(t, [cell(1, 'turn_cap', kind=kind)])
+                code, _ = run_main(['--zoo', f'a={f}', '--depth', '5', '--turns', '100000'])
+                self.assertEqual(code, 2, kind)
+            f = write_cells(t, [cell(1, 'turn_cap', kind='something-new')])
+            with self.assertRaises(SystemExit):
+                run_main(['--zoo', f'a={f}', '--depth', '5', '--turns', '100000', '--allow-after-key'])
+            c = cell(1, 'turn_cap', kind='something-new')
+            c['boundary'] = 'exact'
+            f = write_cells(t, [c])
+            code, out = run_main(['--zoo', f'a={f}', '--depth', '5', '--turns', '100000', '--json'])
+            self.assertEqual((code, json.loads(out)['rows'][0]['successes']), (0, 1))
 
 
 if __name__ == '__main__':

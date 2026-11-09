@@ -22,15 +22,37 @@ def runs(d):
     return sorted(p.name for p in Path(d).iterdir() if (p / 'summary.json').exists())
 
 
+def listed(d):
+    """The runs the suite in d's manifest lists, or None without a manifest."""
+    m = Path(d) / 'manifest'
+    if not m.exists():
+        return None
+    kv = dict(l.split('=', 1) for l in m.read_text().splitlines() if '=' in l)
+    root = Path(__file__).resolve().parent.parent
+    for c in (kv.get('suite_file'), root / 'harness/suites' / kv.get('suite', '')):
+        if c and Path(c).is_file():
+            return sorted(l.split('#', 1)[0].split()[0] for l in Path(c).read_text().splitlines()
+                          if len(l.split('#', 1)[0].split()) >= 5)
+    return None
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__, file=sys.stderr)
         return 2
     exact, normal = Path(argv[0]), Path(argv[1])
     names = runs(exact)
+    if not names:
+        print(f'FAIL: no runs with a summary in {exact}')
+        return 1
     if names != runs(normal):
         print(f'FAIL: run sets differ: {names} vs {runs(normal)}')
         return 1
+    for d in (exact, normal):
+        want = listed(d)
+        if want is not None and want != names:
+            print(f'FAIL: {d}: runs without a summary: {sorted(set(want) - set(names))}')
+            return 1
     bad = 0
     for n in names:
         e, m = exact / n, normal / n

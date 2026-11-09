@@ -142,6 +142,7 @@ GIT_REV=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
 if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; else DIRTY=no; fi
 {
     echo "suite=$SUITE"
+    echo "suite_file=$SFILE"   # borg-reborn-rs: the resolved suite (tools/endpoint.py)
     echo "suite_sha256=$(sha256sum < "$SFILE" | cut -d' ' -f1)"
     echo "borg_txt_sha256=$(sha256sum < "$ROOT/harness/borg.txt" | cut -d' ' -f1)"
     echo "borg_impl_env=$IMPL"

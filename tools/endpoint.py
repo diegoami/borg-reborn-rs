@@ -37,6 +37,13 @@ from collections import defaultdict
 from pathlib import Path
 
 SUCCESS_KINDS = ('turn_cap', 'completion')
+# Boundary rule of zoo cells without a "boundary" field, by harness kind, at
+# borg-zoo 3f6b76e: the better-borg-c observer stops at turn T itself; the
+# borg-rs adapter after the first key at or past T; Neo-original turns an
+# after-cap death into turn_cap and Mandos stops at the first loop boundary at
+# or after the cap (docs/DESIGN.md). Any other kind must carry the field.
+ZOO_BOUNDARY = {'better-borg-c': 'exact', 'borg-rs': 'after-key', 'neo-original': 'after-key',
+                'mandos': 'after-key'}
 STOP_TO_OUTCOME = {'turns': 'turn_cap', 'death': 'death', 'winner': 'completion', 'stalled': 'stalled',
                    'borg_stopped': 'borg_stopped', 'blocked': 'harness_failure', 'keys': 'decision_cap',
                    'clev': 'turn_cap', 'depth': 'turn_cap'}
@@ -69,42 +76,66 @@ def run(arm, seed, cls, outcome, alive, max_depth, stop_turn, boundary, source, 
 
 
 def suite_runs(suite_file):
-    names = []
+    """[(name, seed, class index)] of a suite file."""
+    out = []
     for line in Path(suite_file).read_text().splitlines():
         line = line.split('#', 1)[0].split()
         if len(line) >= 5:
-            names.append((line[0], int(line[1])))
-    return names
+            out.append((line[0], int(line[1]), int(line[3])))
+    return out
+
+
+def resolve_suite(d, manifest):
+    """The suite file a local output ran: the manifest's resolved path (suite.sh
+    since the M1 review), else a stock suite of that name verified by its hash.
+    Refuses rather than guessing, so no attempted run can disappear."""
+    import hashlib
+    root = Path(__file__).resolve().parent.parent
+    want = manifest.get('suite_sha256')
+    candidates = [manifest.get('suite_file'), root / 'harness/suites' / str(manifest.get('suite'))]
+    for c in candidates:
+        if c and Path(c).is_file():
+            if want and hashlib.sha256(Path(c).read_bytes()).hexdigest() != want:
+                continue
+            return Path(c)
+    raise SystemExit(f'endpoint: cannot resolve the suite of {d} (manifest suite={manifest.get("suite")}, '
+                     f'suite_file={manifest.get("suite_file")}); refusing to guess its attempted runs')
 
 
 def load_local(arm, d):
     d = Path(d)
-    manifest = {}
-    if (d / 'manifest').exists():
-        manifest = dict(l.split('=', 1) for l in (d / 'manifest').read_text().splitlines() if '=' in l)
-    suite = manifest.get('suite_file') or manifest.get('suite')
-    root = Path(__file__).resolve().parent.parent
-    listed = None
-    for candidate in (suite, root / 'harness/suites' / str(suite)):
-        if candidate and Path(candidate).is_file():
-            listed = suite_runs(candidate)
-            break
-    if listed is None:
-        listed = [(p.name, None) for p in sorted(d.iterdir()) if p.is_dir()]
+    if not (d / 'manifest').exists():
+        raise SystemExit(f'endpoint: {d} has no manifest (not a harness/suite.sh output)')
+    manifest = dict(l.split('=', 1) for l in (d / 'manifest').read_text().splitlines() if '=' in l)
+    listed = suite_runs(resolve_suite(d, manifest))
+    raw = []
+    for name, seed, cls_idx in listed:
+        run_dir = d / name
+        summ = json.loads((run_dir / 'summary.json').read_text()) if (run_dir / 'summary.json').exists() else None
+        proc = json.loads((run_dir / 'process.json').read_text()) if (run_dir / 'process.json').exists() else None
+        raw.append((name, seed, cls_idx, run_dir, summ, proc))
+    # Class names by index from the runs that have a summary, so a run without
+    # one still counts in its class (borgh without menu letters maps indices
+    # of 7 and above to other classes: take the name the suite actually played).
+    names = {}
+    for _, _, idx, _, summ, _ in raw:
+        if summ and summ.get('class'):
+            names.setdefault(idx, summ['class'])
     out = []
-    for name, seed in listed:
-        s = d / name / 'summary.json'
-        if not s.exists():
-            out.append(run(arm, seed, None, 'harness_failure', False, 0, None, 'unknown', f'{d}/{name}'))
+    for name, seed, idx, run_dir, summ, proc in raw:
+        cls = (summ or {}).get('class') or names.get(idx) or f'class index {idx}'
+        failed = proc is None or proc.get('status') != 'success' or proc.get('exit_code') != 0 \
+            or proc.get('timed_out') or proc.get('stalled')
+        if summ is None or failed:
+            outcome = 'wall_timeout' if proc and proc.get('timed_out') else \
+                'stalled' if proc and proc.get('stalled') else 'harness_failure'
+            out.append(run(arm, seed, cls, outcome, False, 0, None, 'unknown', str(run_dir)))
             continue
-        summ = json.loads(s.read_text())
-        depths = {}
-        if (d / name / 'depths.json').exists():
-            depths = json.loads((d / name / 'depths.json').read_text())
+        depths = json.loads((run_dir / 'depths.json').read_text()) if (run_dir / 'depths.json').exists() else {}
         boundary = depths.get('boundary') or ('exact' if summ.get('exact_turns') else 'after-key')
         outcome = 'death' if summ.get('dead') else STOP_TO_OUTCOME.get(summ.get('stop_reason'), 'harness_failure')
-        out.append(run(arm, summ.get('seed', seed), summ.get('class'), outcome, not summ.get('dead'),
-                       summ.get('max_depth'), summ.get('game_turns'), boundary, f'{d}/{name}',
+        out.append(run(arm, summ.get('seed', seed), cls, outcome, not summ.get('dead'),
+                       summ.get('max_depth'), summ.get('game_turns'), boundary, str(run_dir),
                        victory=summ.get('stop_reason') == 'winner'))
     return out
 
@@ -121,7 +152,10 @@ def load_zoo(arm, spec):
         if specimen and c.get('specimen') != specimen or profile and c.get('profile') != profile:
             continue
         final = c.get('final') or {}
-        boundary = c.get('boundary') or ('after-key' if c.get('harness_kind') == 'borg-rs' else 'exact')
+        boundary = c.get('boundary') or ZOO_BOUNDARY.get(c.get('harness_kind') or 'better-borg-c')
+        if boundary is None:
+            raise SystemExit(f"endpoint: zoo cell {path}:{c.get('specimen')}:{c.get('seed')} has harness kind "
+                             f"{c.get('harness_kind')!r} and no boundary field; refusing to assume one")
         out.append(run(arm, c.get('seed'), c.get('played_class') or c.get('class'), c.get('outcome'),
                        c.get('outcome') in SUCCESS_KINDS, final.get('max_depth'), final.get('turn'),
                        boundary, f"{path}:{c.get('specimen')}:{c.get('seed')}",
@@ -130,10 +164,14 @@ def load_zoo(arm, spec):
 
 
 def success(r, depth, turns):
-    if r['victory'] and (r['stop_turn'] is None or r['stop_turn'] <= turns):
-        return True
-    return (r['outcome'] == 'turn_cap' and r['alive'] and r['max_depth'] >= depth
-            and r['stop_turn'] is not None and r['stop_turn'] >= turns)
+    """GOALS: a verified victory before T, or alive at T with max depth >= D.
+    At the exact boundary a survivor must stop at T itself; an after-key
+    survivor (only with --allow-after-key) at or after T."""
+    if r['victory']:
+        return r['stop_turn'] is not None and r['stop_turn'] < turns
+    if r['outcome'] != 'turn_cap' or not r['alive'] or r['max_depth'] < depth or r['stop_turn'] is None:
+        return False
+    return r['stop_turn'] == turns if r['boundary'] == 'exact' else r['stop_turn'] >= turns
 
 
 def summarise(runs, depth, turns):
@@ -159,8 +197,15 @@ def summarise(runs, depth, turns):
 
 def paired(runs, a, b, depth, turns):
     key = lambda r: (r['seed'], r['cls'])
-    ra = {key(r): r for r in runs if r['arm'] == a}
-    rb = {key(r): r for r in runs if r['arm'] == b}
+    ra, rb = {}, {}
+    for arm, table in ((a, ra), (b, rb)):
+        for r in runs:
+            if r['arm'] != arm:
+                continue
+            if key(r) in table:
+                raise SystemExit(f'endpoint: arm {arm} has two runs for seed {r["seed"]} class {r["cls"]} '
+                                 f'({table[key(r)]["source"]}, {r["source"]}); pairing needs one run per key')
+            table[key(r)] = r
     shared = sorted(set(ra) & set(rb), key=str)
     only_a = sum(success(ra[k], depth, turns) and not success(rb[k], depth, turns) for k in shared)
     only_b = sum(success(rb[k], depth, turns) and not success(ra[k], depth, turns) for k in shared)
