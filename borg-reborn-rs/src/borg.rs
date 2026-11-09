@@ -238,6 +238,9 @@ struct Borg {
     /// The quick-generator value engine reads draw from (`with_borg_rng`).
     engine_rng: u32,
     mem: Memory,
+    /// The observation log (`BORG_OBSERVATION_LOG=FILE`): one JSON line per
+    /// think (T2.1). Off by default.
+    observations: Option<std::io::BufWriter<std::fs::File>>,
 }
 
 static BORG: Mutex<Option<Borg>> = Mutex::new(None);
@@ -258,6 +261,14 @@ pub fn command() {
         rng: Rng::new(),
         engine_rng: Rng::SEED as u32,
         mem: Memory::default(),
+        observations: std::env::var_os("BORG_OBSERVATION_LOG").and_then(|path| {
+            std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(path)
+                .ok()
+                .map(std::io::BufWriter::new)
+        }),
     })
     .queue
     .clear();
@@ -312,13 +323,28 @@ fn think(b: &mut Borg, view: &PlayerView) -> Action {
                 .iter()
                 .map(|(_, dx, dy)| engine::known_feature(x + dx, y + dy))
                 .collect();
-            (here, around)
+            // L1 (T2.1): the whole observation, after the minimal Borg's own
+            // reads so their draws from the Borg's RNG are unchanged. The
+            // placeholder strategy does not use it yet; it is recorded when
+            // the observation log is on.
+            let observation = engine::perceive();
+            (here, around, observation)
         })
     };
     #[cfg(feature = "test-hallucinate")]
-    let (here, around) = engine::while_hallucinating(|| perceive(b));
+    let (here, around, observation) = engine::while_hallucinating(|| perceive(b));
     #[cfg(not(feature = "test-hallucinate"))]
-    let (here, around) = perceive(b);
+    let (here, around, observation) = perceive(b);
+    if let (Some(log), Some(o)) = (b.observations.as_mut(), observation.as_ref()) {
+        use std::io::Write;
+        // A failed write loses the log, never the game.
+        if writeln!(log, "{}", o.to_line())
+            .and_then(|_| log.flush())
+            .is_err()
+        {
+            b.observations = None;
+        }
+    }
     #[cfg(feature = "test-hallucinate")]
     assert_eq!(
         engine::game_rng(),

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0324-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Ranger",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2318,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "-",
+    "git_rev": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+    "git_dirty": "yes",
+    "source_sha256": "332e2ee4aac37089c1b505a1d17a530053ef1278d8e126f969b8b5b7537a9a1b",
+    "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7",
+    "borg_txt_sha256": "d64fd65cc2f6851678242bd70b3a513b4a7522a0b93fa8635269c1cbb0a3225d"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-8-blackguard-4",
+      "result_sha256": "f103cf88bed342a08f3dda2e509875496dfd3a43088fefa109204743ab6b0edd",
+      "raw_sha256": {
+        "keys.log": "f103cf88bed342a08f3dda2e509875496dfd3a43088fefa109204743ab6b0edd",
+        "messages.log": "f1ecee5928c27ed18e9120c04bbf86be7a88629f8d687cc3a807c5bcb1fdacbd",
+        "state.log": "610ae6745c82faa5e0b53ef67d8f597e32fa24783f3cb685271469ba83de2241"
+      },
+      "source_commit": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+      "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7"
+    }
+  ],
+  "encounter_family": "start-d227ace62c9a8ddc55699683d41eb77e2038b004196735bd63065d840a8bdfab",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "655aaad81674317b9d2898938f444c64d267ae6fb9f36232124f68302c4f85e9",
+    "config.txt": "4f49fefa149a5c362b2192af4979d70b97380a5cb8e685f465b65b71cc0dde5d",
+    "depths.json": "a4c89903af10b468fcf3072b616a3c57f3f3f9dfbdf6200d8ebd0b98aeefbc61",
+    "summary.json": "f66e6a687ed6dabcaca046f5214575e117310167e9330b31d0b7ada3c6506029"
+  },
+  "investigation": null,
+  "issue": null
+}

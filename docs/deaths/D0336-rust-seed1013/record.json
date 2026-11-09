@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0336-rust-seed1013",
+  "run_kind": "harness",
+  "character": "Gnome Mage",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 57935,
+    "race_idx": 4,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1013,
+    "flags": "-",
+    "git_rev": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+    "git_dirty": "yes",
+    "source_sha256": "332e2ee4aac37089c1b505a1d17a530053ef1278d8e126f969b8b5b7537a9a1b",
+    "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7",
+    "borg_txt_sha256": "e13e8bd7865dc4a7db4c17546bf55581ef02ea1ce9b1e29217a875eba8a99642"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-1-mage-3",
+      "result_sha256": "2b19f897d8ebcf963706deaa0ac9dade5ba458f6ce2b536fdc5e97520cf07457",
+      "raw_sha256": {
+        "keys.log": "2b19f897d8ebcf963706deaa0ac9dade5ba458f6ce2b536fdc5e97520cf07457",
+        "messages.log": "7127024ebec8fceb5acf58a32b5c67875417c6fd41c087a4197b4cd2e6f4d9d3",
+        "state.log": "f216477c34bcf10bf1507b95f39874ea7975a89e6b8d679d79a8c93b988dc66d"
+      },
+      "source_commit": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+      "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7"
+    }
+  ],
+  "encounter_family": "start-df8a64faa5b71bc33b0a4037ef0f6faac438a40c6d0562a248fb83998aec51a1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "655aaad81674317b9d2898938f444c64d267ae6fb9f36232124f68302c4f85e9",
+    "config.txt": "73ecab02b3c36dc4f7f3339bbfed6a7696c9327d1397af4e370f5d4dd6197655",
+    "depths.json": "95b2a78905dd24353dc7f04a31deec8f1012a40f9995b26f6e754c57f8f1b514",
+    "summary.json": "84e1bcb4541724a3eef983f867685201bfa3a57fc2d0325df7a6c39d1b7aacdf"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -247,3 +247,328 @@ extern "C" fn inkey_hook(flush_first: c_int) -> headers::ui_event_h::keypress {
 extern "C" fn do_cmd_borg() {
     crate::borg::command();
 }
+
+// ---------------------------------------------------------------------------
+// Perception (L1, task T2.1): the reads behind an `Observation`.
+
+use crate::observation::{
+    parse_messages, Grid, Item, MonsterSeen, ObjectSeen, Observation, Panel, Slot, Spell, Status,
+};
+
+/// The text of screen row `row`, columns `col..col + len` (all of the row
+/// if `len` is `None`), trailing blanks removed: `borg_what_text()`'s read
+/// of the terminal buffer (channel A).
+fn screen_text(row: i32, col: i32, len: Option<i32>) -> String {
+    // SAFETY: `Term` and its `scr` window are allocated by the frontend
+    // before the Borg runs; rows and columns are checked against its size.
+    unsafe {
+        let t = headers::ui_term_h::Term;
+        if t.is_null() || (*t).scr.is_null() || row < 0 || row >= (*t).hgt {
+            return String::new();
+        }
+        let wid = (*t).wid;
+        let end = len.map_or(wid, |l| (col + l).min(wid));
+        let line = *(*(*t).scr).c.add(row as usize);
+        let s: String = (col.max(0)..end)
+            .map(|x| char::from_u32(*line.add(x as usize) as u32).unwrap_or('?'))
+            .collect();
+        s.trim_end().to_string()
+    }
+}
+
+/// The C Borg's item analysis of one object (`borg_item_analyze`).
+///
+/// # Safety
+/// `obj` is a live object of the player's gear or a store.
+unsafe fn analyze(obj: *const headers::object_h::object) -> Option<Item> {
+    use headers::{obj_desc_h, obj_knowledge_h, obj_util_h};
+    let o = &*obj;
+    if o.kind.is_null() || o.number == 0 {
+        return None;
+    }
+    let fully_known = obj_knowledge_h::object_fully_known(obj);
+    let k = if fully_known || o.known.is_null() {
+        o
+    } else {
+        &*o.known
+    };
+    let mut flags = [0u8; 5];
+    obj_util_h::object_flags_known(obj, flags.as_mut_ptr());
+    let mut buf = [0 as c_char; 256];
+    obj_desc_h::object_desc(
+        buf.as_mut_ptr(),
+        buf.len(),
+        obj,
+        obj_desc_h::ODESC_FULL,
+        headers::player_h::player,
+    );
+    Some(Item {
+        kind: (*o.kind).kidx,
+        tval: o.tval,
+        sval: o.sval,
+        number: o.number,
+        weight: obj_util_h::object_weight_one(obj),
+        timeout: o.timeout,
+        level: (*o.kind).level,
+        desc: CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned(),
+        aware: obj_knowledge_h::object_flavor_is_aware(obj),
+        fully_known,
+        runes_known: obj_knowledge_h::object_runes_known(obj),
+        flags,
+        ac: k.ac,
+        dd: k.dd,
+        ds: k.ds,
+        to_h: k.to_h,
+        to_d: k.to_d,
+        to_a: k.to_a,
+        modifiers: k.modifiers.to_vec(),
+        elements: k.el_info.iter().map(|e| (e.res_level, e.flags)).collect(),
+    })
+}
+
+/// The top object on a floor grid that is not ignored, as
+/// `borg-flow-take.c:borg_get_top_object:50-64` picks it.
+///
+/// # Safety
+/// `c` is the current level and `grid` is in bounds.
+unsafe fn top_object_kind(
+    c: *mut headers::cave_h::chunk,
+    grid: headers::z_type_h::loc,
+) -> Option<u32> {
+    let mut o = headers::cave_h::square_object(c, grid);
+    while !o.is_null() {
+        let ignored = (!(*o).known.is_null()
+            && (*(*o).known).notice & headers::object_h::OBJ_NOTICE_IGNORE as u8 != 0)
+            || (*(*o).kind).ignore != 0;
+        if !ignored {
+            return Some((*(*o).kind).kidx);
+        }
+        o = (*o).next;
+    }
+    None
+}
+
+/// Perceive: one `Observation` of everything the C Borg's two channels give
+/// it (spec §1.1). `None` before a character and a level exist. Run it with
+/// the Borg's RNG (`with_borg_rng`): `map_info()` can draw.
+pub fn perceive() -> Option<Observation> {
+    use headers::{cave_h, player_h, ui_term_h, z_type_h::loc};
+    // SAFETY: engine globals read on the engine thread between game steps.
+    // `player`, its `upkeep`, `timed`, gear arrays and body are allocated
+    // once a character exists; `cave` once a level exists. Every array is
+    // read within the sizes the engine gives (`z_info`, `body.count`,
+    // `TMD_MAX`, `MON_TMD_MAX`, `total_spells`), and every grid is checked
+    // with `square_in_bounds_fully` first.
+    unsafe {
+        let p = player_h::player;
+        let c = cave_h::cave;
+        let z = headers::init_h::z_info;
+        let t = ui_term_h::Term;
+        if p.is_null()
+            || (*p).upkeep.is_null()
+            || (*p).timed.is_null()
+            || c.is_null()
+            || z.is_null()
+            || t.is_null()
+        {
+            return None;
+        }
+        let pl = &*p;
+        let up = &*pl.upkeep;
+
+        let status = Status {
+            race: if pl.race.is_null() {
+                0
+            } else {
+                (*pl.race).ridx
+            },
+            class: if pl.class.is_null() {
+                0
+            } else {
+                (*pl.class).cidx
+            },
+            x: pl.grid.x,
+            y: pl.grid.y,
+            depth: pl.depth as i32,
+            max_depth: pl.max_depth as i32,
+            level: pl.lev as i32,
+            max_level: pl.max_lev as i32,
+            exp: pl.exp,
+            max_exp: pl.max_exp,
+            gold: pl.au,
+            hp: pl.chp as i32,
+            max_hp: pl.mhp as i32,
+            sp: pl.csp as i32,
+            max_sp: pl.msp as i32,
+            stat_cur: pl.stat_cur,
+            stat_max: pl.stat_max,
+            stat_use: pl.state.stat_use,
+            speed: pl.state.speed,
+            known_ac: pl.known_state.ac + pl.known_state.to_a,
+            timed: (0..headers::player_timed_h::TMD_MAX as usize)
+                .map(|i| *pl.timed.add(i))
+                .collect(),
+            word_recall: pl.word_recall as i32,
+            deep_descent: pl.deep_descent as i32,
+            food: pl
+                .timed
+                .add(headers::list_player_timed_h::TMD_FOOD as usize)
+                .read() as i32,
+            busy: up.resting != 0 || up.running != 0 || headers::cmd_core_h::cmd_get_nrepeats() > 0,
+            dead: pl.is_dead,
+            winner: pl.total_winner != 0,
+            in_vault: cave_h::square_in_bounds_fully(c, pl.grid)
+                && cave_h::square_isvault(c, pl.grid),
+        };
+
+        let mut equipment = Vec::new();
+        let mut slot = pl.body.slots;
+        for _ in 0..pl.body.count {
+            if slot.is_null() {
+                break;
+            }
+            let s = &*slot;
+            equipment.push(Slot {
+                slot_type: s.type_0,
+                item: if s.obj.is_null() {
+                    None
+                } else {
+                    analyze(s.obj)
+                },
+            });
+            slot = slot.add(1);
+        }
+        let list = |arr: *mut *mut headers::object_h::object, n: u16| -> Vec<Item> {
+            if arr.is_null() {
+                return Vec::new();
+            }
+            (0..n as usize)
+                .map(|i| *arr.add(i))
+                .filter(|o| !o.is_null())
+                .filter_map(|o| analyze(o))
+                .collect()
+        };
+        let quiver = list(up.quiver, (*z).quiver_size);
+        let inventory = list(up.inven, (*z).pack_size);
+
+        let mut spells = Vec::new();
+        if !pl.class.is_null() && !pl.spell_flags.is_null() {
+            let magic = &(*pl.class).magic;
+            for i in 0..magic.total_spells {
+                let sp = headers::player_spell_h::spell_by_index(p, i);
+                if sp.is_null() {
+                    continue;
+                }
+                spells.push(Spell {
+                    book: (*sp).bidx,
+                    level: (*sp).slevel,
+                    mana: (*sp).smana,
+                    base_fail: (*sp).sfail,
+                    flags: *pl.spell_flags.add(i as usize),
+                });
+            }
+        }
+
+        // The map panel: SCREEN_HGT x SCREEN_WID grids from the term's
+        // offset (ui-term.h), clipped to the level.
+        let term = &*t;
+        let mode = (term.sidebar_mode as usize).min(2);
+        let screen_hgt =
+            (term.hgt - ui_term_h::row_top_map[mode] - ui_term_h::row_bottom_map[mode])
+                / i32::from(ui_term_h::tile_height).max(1);
+        let screen_wid =
+            (term.wid - ui_term_h::col_map[mode] - 1) / i32::from(ui_term_h::tile_width).max(1);
+        let (lw, lh) = ((*c).width, (*c).height);
+        let (x0, y0) = (term.offset_x.max(0), term.offset_y.max(0));
+        let width = screen_wid.min(lw - x0).max(0);
+        let height = screen_hgt.min(lh - y0).max(0);
+        let mut grids = Vec::with_capacity((width * height) as usize);
+        let mut monsters = Vec::new();
+        let mut objects = Vec::new();
+        for y in y0..y0 + height {
+            for x in x0..x0 + width {
+                let grid = loc { x, y };
+                if !cave_h::square_in_bounds_fully(c, grid) {
+                    grids.push(Grid {
+                        feat: 0,
+                        in_view: false,
+                        lighting: 0,
+                        monster: false,
+                        object_kind: None,
+                        multiple_objects: false,
+                        unseen_object: false,
+                        unseen_money: false,
+                        trap: false,
+                        shop: -1,
+                        webbed: false,
+                    });
+                    continue;
+                }
+                let mut g: cave_h::grid_data = core::mem::zeroed();
+                cave_h::map_info(grid, &mut g);
+                let object_kind = (!g.first_kind.is_null()).then(|| (*g.first_kind).kidx);
+                if g.m_idx > 0 {
+                    let m = cave_h::cave_monster(c, g.m_idx as c_int);
+                    if !m.is_null() && !(*m).race.is_null() {
+                        let m = &*m;
+                        monsters.push(MonsterSeen {
+                            index: m.midx,
+                            x,
+                            y,
+                            race: (*m.race).ridx,
+                            hp: m.hp as i32,
+                            max_hp: m.maxhp as i32,
+                            timed: m.m_timed,
+                            speed: m.mspeed,
+                            attr: m.attr,
+                            mimicking: !m.mimicked_obj.is_null(),
+                        });
+                    }
+                }
+                if object_kind.is_some() {
+                    objects.push(ObjectSeen {
+                        x,
+                        y,
+                        kind: top_object_kind(c, grid),
+                    });
+                }
+                grids.push(Grid {
+                    feat: g.f_idx,
+                    in_view: g.in_view,
+                    lighting: g.lighting,
+                    monster: g.m_idx > 0,
+                    object_kind,
+                    multiple_objects: g.multiple_objects,
+                    unseen_object: g.unseen_object,
+                    unseen_money: g.unseen_money,
+                    trap: !g.trap.is_null(),
+                    shop: cave_h::square_shopnum(c, grid),
+                    webbed: cave_h::square_iswebbed(c, grid),
+                });
+            }
+        }
+        let message_line = screen_text(0, 0, None);
+        Some(Observation {
+            turn: headers::game_world_h::turn as i64,
+            status,
+            equipment,
+            quiver,
+            inventory,
+            spells,
+            panel: Panel {
+                x0,
+                y0,
+                width,
+                height,
+                level_width: lw,
+                level_height: lh,
+                grids,
+            },
+            messages: parse_messages(&message_line),
+            message_line,
+            store_header: screen_text(3, 1, Some(4)),
+            monsters,
+            objects,
+        })
+    }
+}
