@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0344-rust-seed1052",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 135,
+    "race_idx": 7,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1052,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "f54d85e81835f2d7514dbe48211a5959dcb38a144289ef95cc1706e01d1d9cfa"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-5-paladin-2",
+      "result_sha256": "9513106543242734af10dbeafebaaf2da251b02f1bc2fdd7d8000d943361569e",
+      "raw_sha256": {
+        "keys.log": "9513106543242734af10dbeafebaaf2da251b02f1bc2fdd7d8000d943361569e",
+        "messages.log": "f24431dffde9e003cddeaf4541efcc90a7293383c40643e0beb794105b503ca6",
+        "state.log": "0452f5ce6b8a08c60c74f56b759ae91fc0f0d5248ee0af694d37fff963e44214"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-c438cab7f3353e0431e71c4361e8dba72f8c05232384ae3dbcac589ce848d7dc",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "3a06afa4b85e6e70b0419880b47744072861353e0114b4ec219545328f992946",
+    "depths.json": "3b3b7de0fc44632d1fc46bb40612597ece2fecc5af225a614bb36c822086af95",
+    "summary.json": "48539716b95223e06d2a2552081af544f118ca420e79f94801e73f69fc7ffb74"
+  },
+  "investigation": null,
+  "issue": null
+}

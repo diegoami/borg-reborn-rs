@@ -2,6 +2,43 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T2.2, the world model (#13)
+
+`borg-reborn-rs/src/world.rs` holds the L2 `World`. It changes only in
+`World::update(&Observation)`, once per think. It has:
+- the current level's map memory: the feature last shown, when the grid
+  was last in view, the remembered and the real top object, trap and web.
+  An unknown grid never erases what was known. Leaving the level (a depth
+  or level-size change) forgets it, as the C Borg does;
+- monster tracks keyed by the game's monster index: race, position, first
+  and last seen, HP, timers and speed. An index reused for another race is
+  a new monster. A track out of view is kept, and `Track::confidence`
+  falls with the time since it was seen and with the monster's speed
+  (asleep, a quarter as fast). Its shape is a placeholder for M4's
+  calibration;
+- the town's shop entrances (kept across levels) with the last visit (the
+  store header "Stor"/"Home" while standing on the entrance), and every
+  store's stock and the home's, as last read;
+- the character model: the latest status and gear, plus `GearBonuses`
+  (to-hit, to-dam, AC, known flags and modifiers, and resistances combined
+  as `calc_bonuses` does). `Character::wearing` gives a changed copy for
+  "try this on", and `pack_free` uses the engine's own count.
+
+The Observation gained the engine's pack count (`pack_slots_used`,
+`z_info->pack_size`) and every store's stock (`borg_notice_store`: each
+ware through the item analysis, with the shop's `price_item`).
+`BORG_WORLD_LOG=FILE` writes the world's digest after every think. CI
+records a 3,000-turn run with both logs, and checks that replaying the
+observations without the game rebuilds the live world think by think (302
+of 302 locally). Play is unchanged (Rust smoke 3/3, full 45/45 and
+hallucination smoke identical), but the store reads and the update make the
+suites about 25% slower. The Rust deaths are recorded again as
+D0342–D0387.
+
+Left for later tasks: expected damage per turn needs blows and the other
+formulas of L3 (T2.3). Item curses and activations are not observed yet.
+The strategy doesn't read the world until M3.
+
 ## 2026-11-09: T2.1, the Observation (#12)
 
 `borg-reborn-rs/src/observation.rs` holds the L1 `Observation`. It is

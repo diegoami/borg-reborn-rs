@@ -241,6 +241,23 @@ struct Borg {
     /// The observation log (`BORG_OBSERVATION_LOG=FILE`): one JSON line per
     /// think (T2.1). Off by default.
     observations: Option<std::io::BufWriter<std::fs::File>>,
+    /// L2: what the Borg remembers, updated once per think (T2.2).
+    world: crate::world::World,
+    /// The world log (`BORG_WORLD_LOG=FILE`): the world's digest after each
+    /// think, to check that replaying the observation log rebuilds it.
+    worlds: Option<std::io::BufWriter<std::fs::File>>,
+}
+
+/// An append-only log named by an environment variable, if it is set.
+fn open_log(var: &str) -> Option<std::io::BufWriter<std::fs::File>> {
+    std::env::var_os(var).and_then(|path| {
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .ok()
+            .map(std::io::BufWriter::new)
+    })
 }
 
 static BORG: Mutex<Option<Borg>> = Mutex::new(None);
@@ -261,14 +278,9 @@ pub fn command() {
         rng: Rng::new(),
         engine_rng: Rng::SEED as u32,
         mem: Memory::default(),
-        observations: std::env::var_os("BORG_OBSERVATION_LOG").and_then(|path| {
-            std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path)
-                .ok()
-                .map(std::io::BufWriter::new)
-        }),
+        observations: open_log("BORG_OBSERVATION_LOG"),
+        world: crate::world::World::new(),
+        worlds: open_log("BORG_WORLD_LOG"),
     })
     .queue
     .clear();
@@ -335,14 +347,25 @@ fn think(b: &mut Borg, view: &PlayerView) -> Action {
     let (here, around, observation) = engine::while_hallucinating(|| perceive(b));
     #[cfg(not(feature = "test-hallucinate"))]
     let (here, around, observation) = perceive(b);
-    if let (Some(log), Some(o)) = (b.observations.as_mut(), observation.as_ref()) {
+    if let Some(o) = observation.as_ref() {
         use std::io::Write;
+        b.world.update(o);
         // A failed write loses the log, never the game.
-        if writeln!(log, "{}", o.to_line())
-            .and_then(|_| log.flush())
-            .is_err()
-        {
-            b.observations = None;
+        if let Some(log) = b.observations.as_mut() {
+            if writeln!(log, "{}", o.to_line())
+                .and_then(|_| log.flush())
+                .is_err()
+            {
+                b.observations = None;
+            }
+        }
+        if let Some(log) = b.worlds.as_mut() {
+            if writeln!(log, "{}", b.world.digest())
+                .and_then(|_| log.flush())
+                .is_err()
+            {
+                b.worlds = None;
+            }
         }
     }
     #[cfg(feature = "test-hallucinate")]

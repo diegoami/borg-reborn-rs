@@ -48,6 +48,26 @@ pub struct Observation {
     /// The grids of the panel where the player sees an object, in grid
     /// order, with the real kind of the top object there.
     pub objects: Vec<ObjectSeen>,
+    /// Every store's stock, the home included, read on every think as the
+    /// C Borg does (`borg-store.c:borg_notice_store:144-189`).
+    pub stores: Vec<StoreStock>,
+}
+
+/// One store's wares, in the store's own order.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StoreStock {
+    /// The store's index (`stores[]`, store.txt order; the home is 7).
+    pub number: i32,
+    pub wares: Vec<Ware>,
+}
+
+/// One ware: the item as the item analysis sees it (always aware in a
+/// shop, as the player is), and the price the shop asks for one
+/// (`price_item(store, obj, false, 1)`; 0 at home).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Ware {
+    pub item: Item,
+    pub price: i32,
 }
 
 /// The character's own state (`player->`, `player->state`).
@@ -82,6 +102,11 @@ pub struct Status {
     pub word_recall: i32,
     pub deep_descent: i32,
     pub food: i32,
+    /// Pack slots in use, the quiver's share included: the engine's own
+    /// count (`pack_slots_used`, obj-gear.c; REDESIGN-LESSONS L8).
+    pub pack_used: i32,
+    /// `z_info->pack_size`.
+    pub pack_size: i32,
     /// Resting, running or repeating a command (spec §2.7).
     pub busy: bool,
     pub dead: bool,
@@ -273,7 +298,7 @@ impl Observation {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
 
     pub(crate) fn sample() -> Observation {
@@ -312,6 +337,7 @@ mod tests {
             shop: -1,
             webbed: false,
         };
+        let equipment_item = item.clone();
         let mut grids = vec![grid(1); 6];
         grids[4].monster = true;
         grids[5].object_kind = Some(300);
@@ -342,6 +368,8 @@ mod tests {
                 word_recall: 0,
                 deep_descent: 0,
                 food: 8000,
+                pack_used: 1,
+                pack_size: 23,
                 busy: false,
                 dead: false,
                 winner: false,
@@ -394,6 +422,13 @@ mod tests {
                 x: 12,
                 y: 21,
                 kind: Some(300),
+            }],
+            stores: vec![StoreStock {
+                number: 0,
+                wares: vec![Ware {
+                    item: equipment_item,
+                    price: 25,
+                }],
             }],
         }
     }
