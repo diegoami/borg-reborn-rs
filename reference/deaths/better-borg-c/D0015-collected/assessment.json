@@ -1,0 +1,118 @@
+{
+  "classification": "preparation failure (330 of 357 starting gold on AC) plus deliberate no-dash rule; owner's verified retry at 4118 dies, owner's verified re-shop from turn 1 survives a DL1 tour with 926 gold; no reusable original-C defect established",
+  "confidence": "High for native positions, visibility, notes and inventory; rule effects source-checked; dash outcome untested",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "71a886270854d6366ed9ce8f6a759e89e1e8a131b838f123e51d49c9f120b43b",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused348; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/348",
+      "summary": "Chat 2026-11-09: CL1 necromancer surprised by Fang at 4119; escape route open but goes the opposite way into a dead end; not cornered at 4124; neither runs nor fights, no spells, then melees and dies. Escaping is a no-brainer as the dog is erratic and does not block the way. Owner will retry.",
+      "status": "processed; recorded verbatim on 348; findings replied; first manual retry recorded",
+      "actions": [
+        "attempted-room-retreat",
+        "worm-scary-rule",
+        "survival-stock-priority"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/348",
+      "summary": "Chat 2026-11-09: retried from 4110 and also died; Fang blocked the way, Nether Bolt only tickled, ran for the exit but a graze killed. The Necromancer is utterly unprepared (no CLW, no Phase); asks whether he was broke; will try earlier.",
+      "status": "processed; manual death VERIFIED and recorded; shop ledger shows 330/357 gold on AC",
+      "actions": [
+        "survival-stock-priority",
+        "attempted-room-retreat"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/348",
+      "summary": "Chat 2026-11-09: replayed from the start, bought the right stuff, toured DL1 at CL1 and came back with 900 gold; did not meet Fang; buying the right gear at the start is half the battle.",
+      "status": "processed; manual branch VERIFIED and recorded as a reference loadout on 41",
+      "actions": [
+        "survival-stock-priority"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/348",
+      "summary": "Chat 2026-11-09: the second Word of Recall was an accident; some consumables are bought only to learn their flavour so dungeon finds are identified.",
+      "status": "processed; reference loadout corrected; flavour-learning strategy added to 180",
+      "actions": [
+        "survival-stock-priority",
+        "identification-priority"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Dunadan Necromancer CL1/DL1, seed1907608243, source867c777845fd; Fang death4158, HP-1/13. Up staircase (100,44) at the west end of a corridor; dead end (108,44)."
+    },
+    {
+      "status": "observed",
+      "summary": "4099-4114 explores east into the dead end while Fang approaches (109,42)->(106,43) marked not visible; no Borg note of Fang until bitten; Necromancer carries no light."
+    },
+    {
+      "status": "observed",
+      "summary": "Bites 4119 (13->10) and 4124 (->8) before the next Borg decision 4128; from 4128 'Scary guy' fleeing, yet melee with Main Gauche (1d5) three times from (107,44); never moves again."
+    },
+    {
+      "status": "source-checked",
+      "summary": "borg-caution.c disables the desperate stair dash ('Don't run from Grip or Fang ... you cant outrun them') for a near unique on DL1-5 or any faster adjacent monster; borg_attack explicitly permits fighting Grip/Fang; the scary scan lists them as flee-level triggers at CL<=5."
+    },
+    {
+      "status": "observed",
+      "summary": "Only castable spell Nether Bolt (1 SP of 2, 14% fail) cast last at HP2 and failed. Fang: speed+20, 25HP, bite 1d4, RAND_25; observed about one damaging bite per player action."
+    },
+    {
+      "status": "observed",
+      "summary": "Starting gold spent on Robe, Iron Shod Boots, Cloak and Ring of Protection [+6] (6 gold left); single Phase Door read at 3511; no cures."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative (death)",
+      "summary": "Owner branch 20261109T013648Z from 4118 (requested 4110): two bites before the first step, Fang blocks row 44, detour north, Nether Bolt, graze without potions; dies at (103,44) three squares from the stair at 4190; complete rerun VERIFIED."
+    },
+    {
+      "status": "observed",
+      "summary": "Starting gold 357: food 12, one Phase Door 15, Ring of Protection [+6] 150, Robe 84, Iron Shod Boots 84, Cloak 6; 6 left. Starting Word of Recall deposited at Home 1891. Town revisits 3181 and 4028 with 6 gold."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative",
+      "summary": "Owner branch 20261109T014719Z from turn 1: same 357 gold buys a second Recall, 4 Phase Door, 3 CLW, Monster Confusion, Detect Invisible, Remove Hunger, oil, 20 gold of armour; DL1 tour 2689-6779 finds 910 gold; saved in town 6889 with 926 gold; Fang not met (different path)."
+    },
+    {
+      "status": "source-checked",
+      "summary": "Pristine borg-store-buy.c and borg-think-store.c contain no awareness/flavour logic; purchases are driven by power/value only, so the Borg never buys a cheap copy to learn a flavour."
+    }
+  ],
+  "actions": [
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved"
+    },
+    {
+      "key": "worm-scary-rule",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/327",
+      "summary": "Measure low-level worm-mass scary triggers and compare with the breeder caution threshold",
+      "status": "needs evidence; owner manual branch verified; no gameplay change"
+    },
+    {
+      "key": "survival-stock-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment",
+      "status": "recorded owner priority; proposal, not implemented"
+    },
+    {
+      "key": "identification-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Evaluate identification-driven inventory and town trading, auditing existing sell-ID behavior",
+      "status": "proposed enhancement; priority/knowledge value and costs need evidence"
+    }
+  ]
+}

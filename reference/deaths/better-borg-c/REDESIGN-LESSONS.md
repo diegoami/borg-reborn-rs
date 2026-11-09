@@ -5,9 +5,9 @@ designing a new Angband automaton. This document distils the reviewed deaths in 
 repository into design requirements. It does not ask for C patches. Every lesson links back
 to its evidence. Read the linked dossier before relying on a detail.
 
-Snapshot: 2026-11-09. It covers the reviewed cases **D0001–D0014**, which are 11 distinct
+Snapshot: 2026-11-09. It covers the reviewed cases **D0001–D0016**, which are 13 distinct
 starting conditions; D0003–D0005 are reference replays of D0002. It includes four verified
-owner manual takeovers. Later dossiers (D0015+) are not yet reviewed. Update this file when
+owner manual takeovers. Later dossiers (D0017+) are not yet reviewed. Update this file when
 they are.
 
 ## How to read the evidence
@@ -38,6 +38,8 @@ learned lore. A redesign must decide explicitly whether it may use that spoiler 
 | [D0012](D0012-collected/report.md) | Gnome Paladin CL2 | DL1 | poison (worm mass) | survived (1-hit mold) | [#325](https://github.com/diegoami/better-borg-c/issues/325) |
 | [D0013](D0013-collected/report.md) | Dunadan Druid CL1 | DL1 | small kobold | survived (fled ant) | [#332](https://github.com/diegoami/better-borg-c/issues/332) |
 | [D0014](D0014-collected/report.md) | High-Elf Rogue CL11 | DL20 | blood falcon | survived (Speed, CLW, detection) | [#341](https://github.com/diegoami/better-borg-c/issues/341) |
+| [D0015](D0015-collected/report.md) | Dunadan Necromancer CL1 | DL1 | Fang | died (from 4118); re-shop from turn 1 survived | [#348](https://github.com/diegoami/better-borg-c/issues/348) |
+| [D0016](D0016-collected/report.md) | Human Necromancer CL1 | DL1 | crow (after a teleport trap) | survived (bolted the crow first) | [#353](https://github.com/diegoami/better-borg-c/issues/353) |
 
 What the owner keeps saying, across reviews: the Borg had the tools and the knowledge, but
 its decision layers did not use them, or worked against each other.
@@ -53,6 +55,8 @@ which contradict the Borg's own danger estimate.
 - **D0013:** a single small kobold at CL1 triggered flight. Its logged danger was **5**.
   Meanwhile the giant white ant that actually killed the druid rated **18–38**, and the Borg
   aimed both of its final attacks at the ant instead of finishing the kobold.
+- **D0015:** Fang is on the flee-the-level list, yet `borg_attack` explicitly allows fighting
+  Grip and Fang, and caution refuses to run from them. Three layers, two opposite answers.
 - **D0002–D0005:** a gallant/cutpurse threat rose to danger 188–451, inflated by the theft
   weighting (#158).
 
@@ -78,6 +82,10 @@ then overrides it.
 - Disengage from the monster that rates dangerous, not from the whole level by default.
 - Target selection should prefer finishing weak, damaging enemies when that reduces incoming
   damage.
+- **D0016 manual counterfactual:** after a teleport trap the owner's first action was a Nether
+  Bolt that killed the speed +20 crow. The Borg had spent that action and its only Phase Door
+  escaping from it, was out of escapes and mana two turns later, and the crow killed it.
+  Removing the fastest killable threat is often worth more than an escape.
 
 Issues: [#327](https://github.com/diegoami/better-borg-c/issues/327),
 [#158](https://github.com/diegoami/better-borg-c/issues/158).
@@ -150,6 +158,11 @@ back-away. Phase landing safety is sampled, but a critical fallback spends the p
 - Order escape options by cost and sufficiency: step, walk, Phase, teleport, level exit.
 - Estimate landing risk from known monsters, including unseen but remembered ones.
 - Treat the last escape item as a reserve with a higher bar.
+- Don't hard-code "never run from fast monsters". In **D0015** pristine caution turns off the
+  stair dash for any faster adjacent monster or a unique on DL1–5 ("you cant outrun them"). A
+  CL1 Necromancer then meleed Fang (25 HP, +20 speed, *erratic*, 1d4 bite) to death 7 open
+  squares from an up staircase. Weigh the expected damage of the dash, including erratic
+  movement and a weak bite, against fighting.
 - After the last escape is gone, still consider attempting a walking retreat. Don't fall back
   to "fight to the death" (#159).
 
@@ -169,6 +182,7 @@ using them are tuned for low danger.
 | D0007 | 5 known CLW (and a ready Phase spell) | HP 2 |
 | D0011 | 8 known CLW, 2 Speed | HP 42 → 11 against a griffon |
 | D0014 | **21 known CLW, 5 Speed** | danger 399–1325 |
+| D0016 | 2 known CLW | HP 5/12 against a speed +20 crow, while fleeing |
 
 **Source-checked mechanisms.**
 - **Speed** (`borg_defend_aux_speed`): a potion is drunk only if the hasted danger falls to
@@ -231,7 +245,8 @@ turns.
   and **563** "no up stairs found, going down" fallbacks.
 - **D0014:** about 21k turns on DL20.
 - **D0009:** D5/D6 cycling while starving.
-- Recall was deposited at Home and never carried in D0006 and D0009.
+- The starting Word of Recall was deposited at Home and never carried in D0006, D0009, D0015 and
+  D0016.
 
 **Source-checked.** With no known up staircase, the climb goal takes a down staircase ("go
 down then back up"). With connected stairs this can cycle without progress
@@ -251,7 +266,20 @@ Issues: [#321](https://github.com/diegoami/better-borg-c/issues/321),
 **Failure.**
 - **D0013:** starting gold went on a Ring of Protection [+10] (266) and an unknown ring (50).
   It bought **one** Phase Door and **no** CLW.
+- **D0015:** of **357** starting gold, **330** went on AC (ring 150, robe 84, boots 84,
+  cloak 6) and only 15 on a single Phase Door. The starting Word of Recall was deposited at
+  Home. The owner's verified manual takeover at the first bite also died, three squares from
+  the stair, unable to cure a graze. Preparation, not tactics, decided it.
+  From the **same 357 gold**, the owner's verified re-shop from turn 1 kept the starting
+  Recall and bought 4 Phase Door, 3 CLW, single copies of Monster Confusion, Detect Invisible
+  and Remove Hunger, a flask of oil, and only 20 gold of armour. He also bought a second
+  Recall, which he says was an accident and is not part of the reference. He then toured DL1
+  and returned with 926 gold. Owner: "buying the right gear at the shop at the beginning is
+  half the battle." Use this as a reference starting loadout.
 - **D0001:** Phase Door was stored at Home while spare weapons and armour were carried.
+- **D0016:** about 290 of 360 starting gold went on armour and two unidentified rings (they
+  were Searching and Feather Falling), with one Phase Door and two CLW. Owner: "inventory is
+  definitely an area a borg reborn should work on."
 - **D0011:** died carrying 4 Rings of Searching, 9 spare torches and sandals, with no Phase
   Door, Recall or teleport.
 - **D0006, D0014:** slings carried with **no ammunition**.
@@ -282,7 +310,12 @@ Issues: [#41](https://github.com/diegoami/better-borg-c/issues/41),
 In the C Borg, unknown potions are tried essentially only in emergencies, and selling (which
 identifies) needs town visits.
 
-**Requirement.** Identify by use, scroll or sale when safe and cheap. Treat "unknown
+**Owner strategy (D0015).** Buy one cheap copy of a consumable in town just to learn its
+flavour, so later floor finds are already identified. The pristine Borg's buying code has no
+awareness or flavour logic; purchases are chosen by power and value alone.
+
+**Requirement.** Identify by use, scroll, sale or a cheap learning purchase when safe and
+cheap. Treat "unknown
 consumable" as an information-gathering task with value, not as inert inventory.
 
 Issue: [#180](https://github.com/diegoami/better-borg-c/issues/180).
@@ -312,8 +345,12 @@ Issue: [#320](https://github.com/diegoami/better-borg-c/issues/320).
 - **D0014:** the logged danger was **22** while a known speed +30 blood falcon (2d10/2d10/3d8)
   was 3–4 squares away out of view. It then did 63 damage before the rogue's next action.
 
+- **D0015:** a lightless Necromancer explored into a dead end while Fang approached unseen. It
+  had no warning until the first bite.
+
 **Requirement.**
-- Use detection before committing to a route or a fight.
+- Use detection before committing to a route or a fight, and account for the class's own
+  sight limits (e.g. Necromancer unlight).
 - Keep remembered-but-unseen monsters, especially fast ones, in the threat estimate, with
   decaying confidence rather than dropping them.
 - Model speed differences as the number of enemy actions per player action.
@@ -341,7 +378,7 @@ See `patches/series.json` and the per-carry measurement notes in `docs/measureme
 ## L13. How to evaluate a redesign against this evidence
 
 - **Fixtures.** Each dossier records the source, build, seed and options. Owner manual branches
-  (`owner-manual-branch.json` in D0010, D0012, D0013, D0014) give a verified prefix and a
+  (`owner-manual-branch.json` in D0010, D0012, D0013, D0014, D0015, D0016) give a verified prefix and a
   known-feasible alternative. Use them as scenario tests: start from the same state, check
   that the decision is at least as good.
 - **Do not count replays.** Repeated runs of the same start, reference variants and manual

@@ -9,7 +9,7 @@
 > ignored here.
 >
 > Spells, prayers and shapechanges are covered in detail in
-> [Chapter 3 — Magic](03-magic.md). This chapter covers what your race and class
+> [Chapter 3 — Spells and Prayers](03-magic.md). This chapter covers what your race and class
 > *are*, how the numbers combine, and how to play each class.
 
 ---
@@ -717,7 +717,7 @@ with a whip and no armour.
   wielded weapon, only the attack verb changes — `py_attack_real()`), but you cannot
   use items, read, quaff, cast or enter shops other than your home while changed.
   Any such command asks whether to change back; answering `y` reverts and performs
-  the command in the same action. Full shape stats in Chapter 3 §6.
+  the command in the same action. Full shape stats in Chapter 3 §13.
 * *Charm.* +50% power for sleep, slow, confusion, hold and stun effects against
   animals (`project-mon.c`): Confuse Monster, Slow Monster, Trance and Mass Sleep are
   noticeably better versus animal packs.
@@ -766,8 +766,8 @@ two Potions of Cure Serious Wounds.
   prayer from the book you study (`do_cmd_study_book()`). You can still control
   *which book* you study from.
 * *Blessed fighter.* +2 to-hit/+2 to-dam with hafted or blessed weapons.
-* *Healing.* The only class with Healing (2000 HP, CL30) and Holy Word, plus
-  Restoration and Remembrance.
+* *Healing.* Shares Healing (2000 HP, CL30) only with the Paladin, and alone has
+  Holy Word (heal 1000 + dispel evil), Restoration and Remembrance.
 
 **Stat priorities.** WIS >> CON > STR = DEX. INT is irrelevant.
 

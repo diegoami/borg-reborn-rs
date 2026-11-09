@@ -2,6 +2,42 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: M2 source refresh
+
+The M2 `--update` (RULES 21) moved five pins:
+- borg-rs `e5cb263` → `286215c`: two docs changed, and the engine tree
+  re-sync is available (next PR);
+- better-borg-c `b1588cc` → `eb9a78e`: new deaths D0015 and D0016;
+- strategy-manual `e67fd7d` → `86349ca`;
+- borg-zoo `3f6b76e` → `e56d5fa`;
+- borg-agent `9c58125` → `77e48c9`.
+
+angband and neo-angband-tracker are at their pins.
+- **S12 repointed**: the pin `strategy-manual` now follows
+  neo-angband-tracker `workbench/c-borg` (its own clone
+  `vendor/neo-angband-tracker-workbench-c-borg`), since `c-borg-reference`
+  is now pristine upstream. The manual is complete there: chapter 3
+  (`03-magic.md`) is new. S12 stays the draft of S14 until the owner
+  retires it.
+- **New deaths** (better-borg-c, both CL1 Necromancers, original-C
+  mechanisms):
+  - D0015: Fang, in a dark dead end seven squares from an up staircase.
+    The C Borg forbids the stair dash from Grip or Fang, while another rule
+    lists Fang as a reason to leave the level.
+  - D0016: a fast crow after a teleport trap. The starting gold went on
+    armour and unidentified rings, Recall stayed at home, and two known
+    Cure Light Wounds were never offered while fleeing.
+
+  Both are input for M4 (escapes, the tactical layer: retreat to stairs,
+  healing while fleeing) and M5 (readiness: a survival stock before
+  descending).
+- **borg-zoo** at `e56d5fa` has borg-zoo#30 done (borg-zoo#32): the
+  specimens `4.2.6-reborn-rust`, `-c-pristine` and `-c-bbc-m7` use
+  `ref` `2dd11fd`, with `exact_turns`, the depth stream and kept death
+  evidence. A comment on borg-zoo#30 gives them the `m1` commit
+  (`fab7155`), and says what changed since `2dd11fd`: no keys change in
+  our suites, but the Rust source hash does.
+
 ## 2026-11-09: a new control arm, c-bbc-m8 (#56)
 
 better-borg-c tagged milestone 8 (`4.2.6-impact-v8`, `017e038`) before
