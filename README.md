@@ -9,9 +9,10 @@ harness hooks, the headless frontend, the bindings, the build, the harness) is
 ours ([docs/SPEC.md](docs/SPEC.md)). [borg-zoo](https://diegoami.github.io/borg-zoo/)
 measures it and compares it with other Borgs.
 
-**Status (2026-11-09):** M1 is reviewed (tag `m1`); M2 has its Observation,
+**Status (2026-11-10):** M1 is reviewed (tag `m1`); M2 has its Observation,
 world model, knowledge tables, decision trace and parameters (T2.1–T2.4);
-milestone **E, our own integration**, is in progress (docs/SPEC.md §10). The
+milestone **E, our own integration** (docs/SPEC.md §10), is merged (tag `e`)
+and its review's findings are being fixed. M2 resumes with T2.5. The
 Rust Borg plays, but only as a placeholder until M3. Tasks are GitHub issues
 ([milestones](https://github.com/diegoami/borg-reborn-rs/milestones)).
 
@@ -40,7 +41,7 @@ follows the same files.
 | [angband/angband](https://github.com/angband/angband) | The game and the original C Borg (`src/borg/`), at the pin above. Read only. |
 | [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | The C Borg specification and the Tunable Borg Plan (`docs/c-borg/`); the issue board for C Borg defects. |
 | [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes; native measurement runner; death dossiers. |
-| [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. Our template for structure and tooling, and the source of the engine boundary we reuse. |
+| [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. A reference to copy from, never a dependency (docs/SPEC.md §2); what was copied is ours and listed in docs/PROVENANCE.md. |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
 | [borg-agent](https://github.com/diegoami/borg-agent) | A language-model player that writes down game knowledge with evidence, meant as an input to this Borg. |
 

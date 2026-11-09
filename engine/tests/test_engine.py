@@ -4,6 +4,7 @@ Run: python3 -m unittest discover -s engine/tests
 """
 
 import re
+import os
 import subprocess
 import tempfile
 import unittest
@@ -39,6 +40,9 @@ class EngineTreeTest(unittest.TestCase):
     def test_the_recorded_tree_is_the_commits(self):
         vendor = ROOT / 'vendor/angband'
         if not (vendor / '.git').exists():
+            # CI fetches the commit and requires the check (E review, finding 7).
+            if os.environ.get('ENGINE_UPSTREAM_REQUIRED'):
+                self.fail('no vendor/angband checkout, and ENGINE_UPSTREAM_REQUIRED is set')
             self.skipTest('no vendor/angband checkout (scripts/setup.sh)')
         r = subprocess.run(['git', '-C', str(vendor), 'rev-parse', UPSTREAM['commit'] + '^{tree}'],
                            capture_output=True, text=True)

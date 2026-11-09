@@ -16,8 +16,8 @@ build time (`engine/apply-patches.sh DEST`).
 One file, `lib/user/save/Makefile`, is ignored by upstream's own
 `.gitignore` but tracked upstream, so it is force-added here too.
 
-Today's `angband/` (borg-rs's tree) stays until TE.4 switches the build to
-`engine/`. Then it goes.
+borg-rs's tree (`angband/` at the root) was used until TE.4 switched the
+build to `engine/`, and removed in TE.6.
 
 ## The patch series: `engine/patches/`
 

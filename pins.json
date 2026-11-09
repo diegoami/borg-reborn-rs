@@ -5,7 +5,7 @@
     "angband": {
       "repository": "angband/angband",
       "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
-      "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; its src/borg/ is the source of the c-pristine control (T1.3).",
+      "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; engine/angband/ is its tree byte for byte (docs/SPEC.md §3). Its src/borg/ was the source of the c-pristine control built here until milestone E (T1.3); the zoo builds the controls now (SPEC §6).",
       "read_on": "2026-11-09",
       "borg_dir": "src/borg"
     },

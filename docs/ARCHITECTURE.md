@@ -221,7 +221,7 @@ loops become visible.
 | --- | --- | --- |
 | Engine tree, frontend, bindings, build, harness | upstream Angband (byte for byte) and ours | docs/SPEC.md §3–§4; hooks and frontend copied from borg-rs once and owned (docs/PROVENANCE.md) |
 | L0 | ours, over generated bindings | `engine.rs`; started from borg-rs's in M1, re-based on bindgen in TE.3 |
-| L1 | borg-rs perception (`borg_update*`, `borg_item_analyze`) | Reused where it survives review against spec §11; otherwise rewritten against the same reads |
+| L1 | ours (`engine.rs` `perceive`, `observation.rs`) | Written here against the reads of docs/ENGINE-READS.md and checked against the engine (T2.5, docs/SPEC.md §7). *borg-rs's perception was once a candidate for reuse; SPEC settled that it is not (2026-11-09)* |
 | L2, L4, L5 | new | Designed here; C Borg formulas cited where lifted |
 | L3 | engine data + C Borg knowledge | Lifted with citations |
 | L6 | C Borg key sequences and prompt answers | Lifted with citations, new structure |
