@@ -15,6 +15,29 @@ go in PRs into `main`:
   and never guesses the class of a run when its index played two classes.
   `harness/check-boundary.py` checks the suite hash and fails survivors
   that stopped before the cap.
+- #48, N2: on a shop entrance `,` enters the store and takes no time, so
+  `stand_still()` steps off instead of holding. Rust play is unchanged
+  (full 45/45, smoke 3/3 identical), but the source moved, so the Rust deaths
+  are recorded again as D0142–D0187.
+- #49, death exporter: N4, N7 and N8. `Interrupting` and empty causes are not
+  natural; `keep-load-rng` drops the seed only with `save=`; a random
+  birth's terminal record names the played indices.
+- sources (this PR): N9, N10 and N11. zoo-check refuses a modified zoo at
+  its pin; `--update` rolls back a failed phase two; the zoo prompt needs
+  tag `m1` or an exact commit from the owner. The prompt already on
+  borg-zoo#30 still has the old fallback, so update it when the link is
+  recorded.
+
+**Source moved (owner, 2026-11-10):** neo-angband-tracker's
+`c-borg-reference` branch is now pristine upstream (`e473720`), with no
+`docs/strategy/`. The manuals live on `workbench/c-borg` (`842dc5d`):
+`docs/user-manual.md` and `docs/strategy/`. The S12 pin `e67fd7d` is still
+reachable from `workbench/c-borg` (and from `docs/strategy-manual`, which
+the owner may delete). Do not run `--update` on `strategy-manual` before
+the pin is moved: it follows `c-borg-reference`, which no longer has the
+directory. In the post-review refresh PR, repoint the pin to branch
+`workbench/c-borg`, or retire S12 in favour of S14 (owner's call, still
+open).
 
 ## 2026-11-10: source S14, the complete Angband Strategy Manual
 

@@ -12,7 +12,9 @@ turn, play hash) and exits 1 if a cell is a harness failure or a config error.
 
 Evidence rules (M1 review):
 * the checkout must be clean (the specimen's ref is HEAD, and the adapter
-  checks only the commit) and vendor/borg-zoo must be at its pin;
+  checks only the commit); vendor/borg-zoo must be at its pin and clean
+  too (re-review N9: tracked changes and untracked files outside its
+  .gitignore are refused), since its adapter is the code under check;
 * the zoo adapter deletes keys.log, so a natural death would leave no
   dossier: every death cell is rerun through harness/run.sh (same seed,
   character, cap and menu letters), its key stream is checked against the
@@ -27,6 +29,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ZOO = ROOT / 'vendor' / 'borg-zoo'
+
+
+def zoo_identity_error(zoo, pin):
+    """None if the zoo checkout is exactly the pinned commit, else why not."""
+    head = subprocess.check_output(['git', '-C', str(zoo), 'rev-parse', 'HEAD'], text=True).strip()
+    if head != pin:
+        return f'vendor/borg-zoo is at {head[:12]}, pin {pin[:12]} (scripts/setup.sh --checkout)'
+    dirty = subprocess.check_output(['git', '-C', str(zoo), 'status', '--porcelain', '--untracked-files=all'],
+                                    text=True).strip()
+    if dirty:
+        return f'vendor/borg-zoo has changes at its pin: {dirty.splitlines()[0].strip()} ...'
+    return None
 
 
 def repatriate(impl, rec, suite, work, cat_mod):
@@ -56,15 +70,16 @@ def main(argv=None):
     ap.add_argument('--suite', default='smoke')
     ap.add_argument('--work', type=Path, default=ROOT / 'harness/out/zoo-check')
     a = ap.parse_args(argv)
-    sys.path.insert(0, str(ZOO))
-    from zoo import catalogue as cat_mod, harness  # noqa: E402 (the pinned zoo)
     head = subprocess.check_output(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], text=True).strip()
     if subprocess.check_output(['git', '-C', str(ROOT), 'status', '--porcelain'], text=True).strip():
         raise SystemExit('zoo-check: the checkout has uncommitted changes; commit first (the cells name HEAD)')
     pin = json.loads((ROOT / 'pins.json').read_text())['pins']['borg-zoo']['commit']
-    zoo_head = subprocess.check_output(['git', '-C', str(ZOO), 'rev-parse', 'HEAD'], text=True).strip()
-    if zoo_head != pin:
-        raise SystemExit(f'zoo-check: vendor/borg-zoo is at {zoo_head[:12]}, pin {pin[:12]} (scripts/setup.sh --checkout)')
+    why = zoo_identity_error(ZOO, pin)
+    if why:
+        raise SystemExit(f'zoo-check: {why}')
+    # Checked before the import, which then loads exactly the pinned code.
+    sys.path.insert(0, str(ZOO))
+    from zoo import catalogue as cat_mod, harness  # noqa: E402 (the pinned zoo)
     cat = cat_mod.catalogue(ZOO)
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {

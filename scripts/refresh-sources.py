@@ -222,8 +222,9 @@ def update(root, pins, fetch=True, today=None):
     """Move pins to their heads and refresh their copies, in two phases (M1
     review): first resolve every head and read every blob into memory,
     writing nothing; only when all of that succeeded, write copies, README
-    pins, pins.json, vendor checkouts and the index. A failure in the first
-    phase leaves the repository exactly as it was."""
+    pins, pins.json, vendor checkouts and the index. A failure in either
+    phase leaves the repository as it was: the first writes nothing, the
+    second restores what it had written."""
     path = root / 'pins.json'
     data = json.loads(path.read_text())
     today = today or datetime.date.today().isoformat()
@@ -237,23 +238,85 @@ def update(root, pins, fetch=True, today=None):
             raise SystemExit(f'{name}: cannot update: {"; ".join(src.problems)}')
         copies = [(rule, read_copy(src, rule, src.head)) for rule in data.get('copies', []) if rule['pin'] == name]
         plans.append((name, pin, src, copies))
-    moved = []
-    for name, pin, src, copies in plans:
-        for rule, files in copies:
-            write_copy(root, rule, files)
-        old = pin['commit']
-        if old != src.head:
-            moved.append((name, old, src.head))
-            if readme.exists():
-                readme.write_text(readme.read_text().replace(old, src.head))
-        pin['commit'] = src.head
-        pin['read_on'] = today
-        # Keep vendor/ at the pin, as scripts/setup.sh expects, unless it has local changes.
-        if git(src.repo, 'status', '--porcelain').stdout == '':
-            git(src.repo, 'checkout', '-q', '--detach', src.head)
-    path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n')
-    write_index(root)
+    # Phase two writes. Everything it can touch is saved first, so a failure
+    # part-way (a write, a checkout) restores the copies, the README,
+    # pins.json, the index and the vendor checkouts it moved (re-review N10).
+    saved = Snapshot(root, [rule for _, _, _, copies in plans for rule, _ in copies],
+                     [path, readme, root / INDEX])
+    vendor_moved = []
+    try:
+        moved = []
+        for name, pin, src, copies in plans:
+            for rule, files in copies:
+                write_copy(root, rule, files)
+            old = pin['commit']
+            if old != src.head:
+                moved.append((name, old, src.head))
+                if readme.exists():
+                    readme.write_text(readme.read_text().replace(old, src.head))
+            pin['commit'] = src.head
+            pin['read_on'] = today
+            # Keep vendor/ at the pin, as scripts/setup.sh expects, unless it has local changes.
+            if git(src.repo, 'status', '--porcelain').stdout == '':
+                was = git(src.repo, 'rev-parse', 'HEAD').stdout.strip()
+                r = git(src.repo, 'checkout', '-q', '--detach', src.head)
+                if r.returncode:
+                    raise SystemExit(f'{name}: checkout of {src.head[:12]} failed: {r.stderr.strip()}')
+                vendor_moved.append((src.repo, was))
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n')
+        write_index(root)
+    except BaseException:
+        saved.restore()
+        for repo, was in reversed(vendor_moved):
+            git(repo, 'checkout', '-q', '--detach', was)
+        raise
+    saved.discard()
     return moved
+
+
+class Snapshot:
+    """The state of every path an update writes: copy destinations (moved
+    aside whole, or the listed files of a 'files' rule) and single files."""
+
+    def __init__(self, root, rules, files):
+        self.root = root
+        self.aside = []   # (dest, backup dir or None if dest did not exist)
+        self.files = {}   # path: bytes, or None if it did not exist
+        for rule in rules:
+            dest = root / rule['to']
+            if rule.get('select', 'files') == 'files':
+                for f in rule['files']:
+                    self.keep(dest / f)
+            elif not any(d == dest for d, _ in self.aside):
+                backup = dest.with_name(f'.refresh-backup-{dest.name}') if dest.exists() else None
+                if backup:
+                    shutil.rmtree(backup, ignore_errors=True)
+                    shutil.copytree(dest, backup, symlinks=True)
+                self.aside.append((dest, backup))
+        for f in files:
+            self.keep(f)
+
+    def keep(self, f):
+        if f not in self.files:
+            self.files[f] = f.read_bytes() if f.exists() else None
+
+    def restore(self):
+        for dest, backup in self.aside:
+            if dest.exists():
+                shutil.rmtree(dest)
+            if backup:
+                backup.rename(dest)
+        for f, content in self.files.items():
+            if content is None:
+                f.unlink(missing_ok=True)
+            else:
+                f.parent.mkdir(parents=True, exist_ok=True)
+                f.write_bytes(content)
+
+    def discard(self):
+        for _, backup in self.aside:
+            if backup:
+                shutil.rmtree(backup, ignore_errors=True)
 
 
 def read_copy(src, rule, commit):
