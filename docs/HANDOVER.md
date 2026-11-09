@@ -14,8 +14,11 @@ into `main`:
      it does `game_options`.
    - Its deaths are recorded at its source (D0712–D0757).
 2. **The code:** suites, perception while hallucinating, the death and
-   reference tools. References are regenerated there: the full suite's
-   `menu` fix changes 20 runs.
+   reference tools.
+   - References are regenerated: the full suite's `menu` fix changes
+     exactly the 20 runs whose character changes.
+   - Smoke, smoke-exact and the other 25 full runs are unchanged.
+   - Its deaths are D0758–D0803.
 3. **Documents, rules and CI (#94),** RULES 12 narrowed by the owner.
 
 ## 2026-11-09: E merged before its review; a review after the fact

@@ -2,7 +2,7 @@
 # Run a seed suite in parallel.
 # Usage: harness/suite.sh SUITE [OUTDIR]
 #   SUITE = name in harness/suites/, or a path to a suite file
-#   Env: BORG_IMPL=c|rust (default c), JOBS (default nproc), ANGBAND_BIN
+#   Env: BORG_IMPL=rust (the default and the only one), JOBS (default nproc), ANGBAND_BIN
 #        (as run.sh), ALLOW_UNKNOWN_IMPL=1, ALLOW_STALE_BUILD=1 (below)
 # Suite file lines: NAME SEED RACE CLASS TURNS [FLAGS]
 #   '#' starts a comment (whole line or end of line); FLAGS as in run.sh.
@@ -26,9 +26,7 @@
 #   OUTDIR/timing.txt  one line per run (FAILED/MISSING marked)
 #   OUTDIR/DONE        last, only if every run succeeded (harness/diff
 #                      refuses an output dir without it)
-#   OUTDIR/RUN/run_exit  run.sh's exit status for that run (borg-reborn-rs:
-#                      tools/endpoint.py scores a run of a FAILED suite only
-#                      if its run.sh succeeded)
+#   OUTDIR/RUN/run_exit  run.sh's exit status for that run
 #   OUTDIR/FAILED      instead of DONE if any run failed, or if the binary
 #                      changed while the suite ran
 # A failed run does not stop the others. Exit status: 0 if all runs
@@ -39,8 +37,9 @@ SUITE="$1"
 SFILE="$ROOT/harness/suites/$SUITE"
 case "$SUITE" in */*) SFILE="$(realpath -m "$SUITE")"; SUITE="$(basename "$SUITE")";; esac
 [ -f "$SFILE" ] || { echo "no suite $SFILE" >&2; exit 2; }
-IMPL="${BORG_IMPL:-c}"
-case "$IMPL" in c|rust|c-pristine|c-bbc-m7) ;; *) echo "BORG_IMPL must be c, rust, c-pristine or c-bbc-m7" >&2; exit 2;; esac
+IMPL="${BORG_IMPL:-rust}"
+# Only the Rust Borg is built here (docs/SPEC.md §6).
+[ "$IMPL" = rust ] || { echo "BORG_IMPL must be rust" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
 [ -x "$BIN" ] || { echo "missing $BIN (run harness/build.sh)" >&2; exit 2; }
 RBIN="$(realpath "$BIN")"   # for the build dir; runs use BIN as given
@@ -139,7 +138,7 @@ GIT_REV=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)
 if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; else DIRTY=no; fi
 {
     echo "suite=$SUITE"
-    echo "suite_file=$SFILE"   # borg-reborn-rs: the resolved suite (tools/endpoint.py)
+    echo "suite_file=$SFILE"   # the resolved suite (harness/check-characters.py)
     echo "suite_sha256=$(sha256sum < "$SFILE" | cut -d' ' -f1)"
     echo "borg_txt_sha256=$(sha256sum < "$ROOT/harness/borg.txt" | cut -d' ' -f1)"
     echo "borg_impl_env=$IMPL"
@@ -149,7 +148,7 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     echo "binary_elf_impl=$IMPL_ELF"
     echo "binary_cmake_borg_impl=$CACHE_IMPL"
     echo "build_id_impl=$BID_IMPL"
-    for k in git_rev git_dirty inputs_dirty source_sha256 binary_sha256 cc rustc built_utc; do
+    for k in git_rev git_dirty inputs_dirty source_sha256 engine_upstream binary_sha256 cc rustc built_utc; do
         v=$(bid "$k"); if [ -n "$v" ]; then echo "build_id_$k=$v"; fi
     done
     echo "checkout_source_sha256=$CUR_SRC"
@@ -181,6 +180,8 @@ FAIL=0
 for d in "${NAMES[@]}"; do
     [ -s "$WORK/$d/summary.json" ] || { echo "MISSING $d" >&2; FAIL=1; }
 done
+# Each run plays the character its line asks for (E review, finding 1).
+python3 "$ROOT/harness/check-characters.py" "$WORK" "$(dirname "$BIN")/lib/gamedata" || FAIL=1
 BIN_SHA_END=$(sha256sum < "$BIN" | cut -d' ' -f1)
 if [ "$BIN_SHA_END" != "$BIN_SHA" ]; then
     echo "$BIN changed while the suite ran (sha256 now $BIN_SHA_END)" >&2; FAIL=1
