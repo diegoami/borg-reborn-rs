@@ -122,5 +122,6 @@ are not independent.*
 | borg-reborn-rs | [D0093-rust-seed1072](../../docs/deaths/D0093-rust-seed1072/report.md) | Human Warrior | starvation | 89250 | 1 | 1 | — | unassessed | D0093-rust-seed1072: starvation at turn 89250 |
 | borg-reborn-rs | [D0094-rust-seed1061](../../docs/deaths/D0094-rust-seed1061/report.md) | Human Rogue | starvation | 89220 | 1 | 1 | — | unassessed | D0094-rust-seed1061: starvation at turn 89220 |
 | borg-reborn-rs | [D0095-rust-seed102](../../docs/deaths/D0095-rust-seed102/report.md) | Elf Mage | a rock lizard | 743 | 1 | 1 | — | unassessed | D0095-rust-seed102: a rock lizard at turn 743 |
+| borg-reborn-rs | [D0096-rust-seed29](../../docs/deaths/D0096-rust-seed29/report.md) | Human Warrior | Grip, Farmer Maggot's Dog | 666 | 1 | 1 | — | unassessed | D0096-rust-seed29: Grip, Farmer Maggot's Dog at turn 666 |
 
-115 cases.
+116 cases.
