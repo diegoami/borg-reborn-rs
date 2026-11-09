@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0030-c-bbc-m7-seed1073",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 39417,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1073,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "9879ff34e80d65b349e0a74cd5ff0f43adb270f355a23efda5cde9e1c6f9de59"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-7-ranger-3",
+      "result_sha256": "1bf9507cbd26ba352d7e4cf394f760fd91b0310c65b4979532d8a10d721ec929",
+      "raw_sha256": {
+        "keys.log": "1bf9507cbd26ba352d7e4cf394f760fd91b0310c65b4979532d8a10d721ec929",
+        "messages.log": "1128638acfc67e4d5c30c117ff441083ee04945c1b23c45aaa1114d3f8c92427",
+        "state.log": "de34f32e44027d853d579348011e06e4937617332a9fa9634a2e994c75ac432f"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-08516c0f79a3f97826d2aab7e6268d8012cd56ed1b0a0b2c5199c73718fe0a05",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "43d9ca20dbfeed8b5d3ee7c3787214417f094716c585b9efbec72a74ffec2462",
+    "summary.json": "42c1df8beaeaf0758290afe57d09a5bd1df90c6600c17c56b734095f3e8360e7"
+  },
+  "investigation": null,
+  "issue": null
+}

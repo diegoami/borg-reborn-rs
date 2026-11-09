@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0012-c-pristine-seed1030",
+  "run_kind": "harness",
+  "character": "Hobbit Priest",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 22136,
+    "race_idx": 3,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1030,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "2471be3f0edeaa3a7ea314b4d49f691e70b3fd34825be6bbfdda01452233366f"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-3-priest-0",
+      "result_sha256": "8e439477d741915d672c3312cdce893f526a9deb91251e13aa1cd642a63c37de",
+      "raw_sha256": {
+        "keys.log": "8e439477d741915d672c3312cdce893f526a9deb91251e13aa1cd642a63c37de",
+        "messages.log": "dedf086316463e6ee9e102a6c6b995e0d8322d674b186e10af12ca7cc42a9ead",
+        "state.log": "434de387507e68d2494b9ed70ccf4dbcd4b191655450880fbb230d939cc695c8"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-bdf0c22163cbf1d9bdc408dbde30141590b8a6e3ab9791c375d84fcd951ec2a9",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "9fc9607caf5eb59e6b68650fd91d3d98b4d0ba8a039fe4f1f9427442b59157e9",
+    "summary.json": "fe9bfd0d65bb27ebc5100b4d6bd67d0a1411648a49dea58bd7422b032c7a1350"
+  },
+  "investigation": null,
+  "issue": null
+}

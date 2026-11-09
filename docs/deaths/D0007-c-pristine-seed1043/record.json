@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0007-c-pristine-seed1043",
+  "run_kind": "harness",
+  "character": "Human Necromancer",
+  "raw_cause": "a cave spider",
+  "terminal": {
+    "cause": "a cave spider",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 3,
+    "turn": 23381,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1043,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-4-necro-3",
+      "result_sha256": "384c5cbaf7c6a460c5c479c915681ac21fbc9ac383efce54c004de5f4dab0e06",
+      "raw_sha256": {
+        "keys.log": "384c5cbaf7c6a460c5c479c915681ac21fbc9ac383efce54c004de5f4dab0e06",
+        "messages.log": "73382e5ad54163704104a044d085d459c2e814cad9e11cebc59c58524407547f",
+        "state.log": "2dc50493c08f5ca3857f88225b9fb9b86750afcb9d2e3e368d5a3fb9bc7ceadb"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-d9a36f31834667ddada8b9a874269dd81b8891cf5576dbaa203746f6fdfd46d3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "9e7071b7bc1302edc293dd80a181fd5e39f176eac99ba9c922cb62656da7c137",
+    "summary.json": "855b71376e8c225ac1f195e5961a84998c7dc5d5a72b36eae806505c9c2ef9eb"
+  },
+  "investigation": null,
+  "issue": null
+}

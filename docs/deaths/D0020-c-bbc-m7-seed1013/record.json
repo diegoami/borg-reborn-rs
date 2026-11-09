@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0020-c-bbc-m7-seed1013",
+  "run_kind": "harness",
+  "character": "Gnome Mage",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 25688,
+    "race_idx": 4,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1013,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "e13e8bd7865dc4a7db4c17546bf55581ef02ea1ce9b1e29217a875eba8a99642"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-1-mage-3",
+      "result_sha256": "362852e712da3a3fd688934e1b6b8c0b16067a11f72f7b5650b5514c9887c899",
+      "raw_sha256": {
+        "keys.log": "362852e712da3a3fd688934e1b6b8c0b16067a11f72f7b5650b5514c9887c899",
+        "messages.log": "b3060379cf00e6bc7f943de2a2118351e8c70a56675acb57135d035a8dbb7a32",
+        "state.log": "988879386bad4190257d6da112bcbf3f900096736da112d4f3c07bd984675998"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-93c3e3780f4f546abfbe24bf1cb4f65eb6394f0252c5bfdff372ddeee67f6dab",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "73ecab02b3c36dc4f7f3339bbfed6a7696c9327d1397af4e370f5d4dd6197655",
+    "summary.json": "b1c134dc68dd6e48b2095243a1b960b5749ae62107a35d52f153b1520aade319"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,18 @@
+{
+  "seed": 1021,
+  "race": "Hobbit",
+  "race_idx": 3,
+  "class": "Druid",
+  "class_idx": 2,
+  "stop_reason": "death",
+  "game_turns": 5865,
+  "player_turns": 609,
+  "resting_turns": 55,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a blue yeek",
+  "keys": 881,
+  "wall_seconds": 1.561
+}

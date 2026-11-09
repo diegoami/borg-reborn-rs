@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0016-c-pristine-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 5,
+    "turn": 78062,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-2-druid-0",
+      "result_sha256": "85dbd295beab1ea4840b84a91e6b7eb2e3a3a55782b9d6fb7206e494b04ce3b4",
+      "raw_sha256": {
+        "keys.log": "85dbd295beab1ea4840b84a91e6b7eb2e3a3a55782b9d6fb7206e494b04ce3b4",
+        "messages.log": "61860a531c4ff2cdb4b9c476d9ae08677520a2fad659bf31c7840722995595c5",
+        "state.log": "0d4d2f13846bdeaab563e618bd69cda5c73aacbca7363afb5cff377b02ad979a"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-6cafa7dfd6f9d85fd34fc69df5945fca4e618f808b58509ff37a7b684cf35677",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "40ed31228733c3bbebe39eb711056c0e1f3ec5ead832417dea2869b9a94e9b2a",
+    "summary.json": "bf9c12f6880a3ddad79735564a80a6d3ab1ad184f13aad2737c68b0cbbf95b61"
+  },
+  "investigation": null,
+  "issue": null
+}

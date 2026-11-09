@@ -1,0 +1,18 @@
+{
+  "seed": 1051,
+  "race": "Half-Orc",
+  "race_idx": 6,
+  "class": "Paladin",
+  "class_idx": 5,
+  "stop_reason": "turns",
+  "game_turns": 100352,
+  "player_turns": 10177,
+  "resting_turns": 4964,
+  "clevel": 5,
+  "max_depth": 4,
+  "depth": 2,
+  "dead": false,
+  "death_cause": "",
+  "keys": 7159,
+  "wall_seconds": 13.139
+}

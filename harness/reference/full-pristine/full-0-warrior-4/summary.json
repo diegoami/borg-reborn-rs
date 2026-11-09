@@ -1,0 +1,18 @@
+{
+  "seed": 1004,
+  "race": "Gnome",
+  "race_idx": 4,
+  "class": "Warrior",
+  "class_idx": 0,
+  "stop_reason": "turns",
+  "game_turns": 100008,
+  "player_turns": 10292,
+  "resting_turns": 381,
+  "clevel": 7,
+  "max_depth": 4,
+  "depth": 4,
+  "dead": false,
+  "death_cause": "",
+  "keys": 14158,
+  "wall_seconds": 21.425
+}

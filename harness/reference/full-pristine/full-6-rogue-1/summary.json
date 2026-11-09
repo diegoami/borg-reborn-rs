@@ -1,0 +1,18 @@
+{
+  "seed": 1061,
+  "race": "Human",
+  "race_idx": 7,
+  "class": "Rogue",
+  "class_idx": 6,
+  "stop_reason": "turns",
+  "game_turns": 100001,
+  "player_turns": 10205,
+  "resting_turns": 582,
+  "clevel": 6,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 12596,
+  "wall_seconds": 27.677
+}

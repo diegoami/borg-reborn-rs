@@ -1,0 +1,18 @@
+{
+  "seed": 1050,
+  "race": "Dwarf",
+  "race_idx": 5,
+  "class": "Paladin",
+  "class_idx": 5,
+  "stop_reason": "turns",
+  "game_turns": 100001,
+  "player_turns": 10249,
+  "resting_turns": 6011,
+  "clevel": 4,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 7386,
+  "wall_seconds": 13.244
+}

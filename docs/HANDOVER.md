@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.3 control C Borgs (#6)
+
+- `BORG_IMPL=c-pristine` and `c-bbc-m7` build our engine tree with a pinned C
+  Borg overlaid in `build/<impl>.src/` (`harness/control-overlay.py`,
+  `controls` in `pins.json`). The overlay is checked blob for blob, and the
+  pinned source is part of the build-input hash.
+- **`c-pristine` is byte-identical to borg-rs's pristine-C references** (the
+  zoo's `4.2.6-rs-m0-c`): smoke 3/3 and full 45/45, in keys, messages and
+  state. Our engine's only gameplay correction (#474) was not reached.
+- **`c-bbc-m7`:** tag `4.2.6-impact-v7` changes nothing in the engine outside
+  `src/borg/` (audited). It ran smoke and full with no harness failure. No
+  byte oracle exists under borgh.
+- **Deaths recorded (RULES 12):** 15 `c-pristine` and 16 `c-bbc-m7` deaths on
+  the full suite are in `docs/deaths/`, unassessed. This is one run each, so
+  it is descriptive, not a comparison (RULES 14).
+- **Note for T1.8 (#11):** without the `menu` flag, borg-rs's full suite plays
+  other classes for index 8; the zoo passes `-menu-letters`.
+- Controls are not in CI yet: they need `vendor/` (scripts/setup.sh). The
+  local commands are in harness/README.md.
+
+**Next:** #7 (T1.4, run contract: exact boundary and depth stream; borgh
+already has `opt_exact_turns`).
+
 ## 2026-11-09: REDESIGN-LESSONS.md read into the design
 
 - better-borg-c wrote `docs/deaths/REDESIGN-LESSONS.md` for this repository:

@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0027-c-bbc-m7-seed1074",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a metallic green centipede",
+  "terminal": {
+    "cause": "a metallic green centipede",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 21836,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1074,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-7-ranger-4",
+      "result_sha256": "dc0e2b1356a9fafb088736802627b0f33d3838c73cd1bf63d90b54d4fcd4702a",
+      "raw_sha256": {
+        "keys.log": "dc0e2b1356a9fafb088736802627b0f33d3838c73cd1bf63d90b54d4fcd4702a",
+        "messages.log": "485c2abe307b38c9c5cb643e40d8e22ea50d1c6cbec503cc6226dd534fee595f",
+        "state.log": "e97e715a27efe935b533ed2b773f60fbc8c457b2eb0c16fa95ae39e42771d6e1"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-6e6ae5fc4469616b949517a1cb4c6eaa00df9b082305d6c54ce4298a4cab9aab",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "3a2860e19b5c4dc7f4f5d43e6b833a3b4190059a434fd264318c5ae15a2179d3",
+    "summary.json": "c29f9a915a02a8391021dee12a85caf231f470b969db7202d9efa366bb18dd10"
+  },
+  "investigation": null,
+  "issue": null
+}

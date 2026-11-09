@@ -1,0 +1,18 @@
+{
+  "seed": 1042,
+  "race": "Half-Orc",
+  "race_idx": 6,
+  "class": "Necromancer",
+  "class_idx": 4,
+  "stop_reason": "death",
+  "game_turns": 6416,
+  "player_turns": 650,
+  "resting_turns": 344,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "Fang, Farmer Maggot's Dog",
+  "keys": 639,
+  "wall_seconds": 0.483
+}

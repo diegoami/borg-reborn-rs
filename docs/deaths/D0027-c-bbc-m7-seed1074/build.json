@@ -1,0 +1,11 @@
+{
+  "binary": "/home/diego/projects/borg-reborn-rs/build/c-bbc-m7/game/angband",
+  "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+  "built_utc": "2026-11-09T01:50:37Z",
+  "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "git_dirty": "no",
+  "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+  "impl": "c-bbc-m7",
+  "inputs_dirty": "no",
+  "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76"
+}

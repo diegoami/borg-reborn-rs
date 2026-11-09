@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0028-c-bbc-m7-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 30374,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-6-rogue-3",
+      "result_sha256": "6202c96f9602eb3bb8b5e2249bbff25bf8a25b2fde220a2a9c7d8e153d042d9c",
+      "raw_sha256": {
+        "keys.log": "6202c96f9602eb3bb8b5e2249bbff25bf8a25b2fde220a2a9c7d8e153d042d9c",
+        "messages.log": "3997518a5319fc77398c8e00a287c2e11975a2bbc8a511e7368a3ca7f31186e3",
+        "state.log": "63fe2a6303d9732f56bb44388fa2199dbaf68bc9276ad97958a99b62e372b616"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-a7beb31bdcdb0c21f0f37944c3af0caa4702ff75e25ad688d2af3ec49fa4adad",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "b6a2ef45933cee68d35d6e780b05cf8ab12da8fde289aaeebb0eed489c00f990",
+    "summary.json": "f27b55bda0b198b8637ad5f56c07b7c338cb746dbe6f09ce894ddb5da822d6ce"
+  },
+  "investigation": null,
+  "issue": null
+}

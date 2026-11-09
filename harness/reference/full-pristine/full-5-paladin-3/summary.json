@@ -1,0 +1,18 @@
+{
+  "seed": 1053,
+  "race": "Half-Troll",
+  "race_idx": 8,
+  "class": "Paladin",
+  "class_idx": 5,
+  "stop_reason": "turns",
+  "game_turns": 100009,
+  "player_turns": 10223,
+  "resting_turns": 3830,
+  "clevel": 7,
+  "max_depth": 4,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 9640,
+  "wall_seconds": 10.107
+}

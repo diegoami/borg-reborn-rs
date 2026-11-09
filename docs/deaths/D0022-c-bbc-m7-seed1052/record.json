@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0022-c-bbc-m7-seed1052",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 24647,
+    "race_idx": 7,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1052,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "f54d85e81835f2d7514dbe48211a5959dcb38a144289ef95cc1706e01d1d9cfa"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-5-paladin-2",
+      "result_sha256": "e7d83acdf2ce63634bf8603080aaaedc414dfb0dfec5976c980e3bdef1bd219a",
+      "raw_sha256": {
+        "keys.log": "e7d83acdf2ce63634bf8603080aaaedc414dfb0dfec5976c980e3bdef1bd219a",
+        "messages.log": "72e5b62b9036b7ccab253eab480b9363e7be8759c0c89bde9d78fe8d4a696b1d",
+        "state.log": "de432d8e78a2afda70f88ab6a59d9d997408539463336fb16a75c7f9fca7277c"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-e8b8816043cd32a5bc54e9d337b8b54a01bd187de9e0c8ca05c3430fffd625e1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "3a06afa4b85e6e70b0419880b47744072861353e0114b4ec219545328f992946",
+    "summary.json": "6f894218b4304116d9ea4ca70b947d66de41af72154c7062dbe5172ce29f4835"
+  },
+  "investigation": null,
+  "issue": null
+}

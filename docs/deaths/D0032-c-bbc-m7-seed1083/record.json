@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0032-c-bbc-m7-seed1083",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 4,
+    "turn": 67785,
+    "race_idx": 0,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1083,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "5042da45245dbf69c8f85635d2f2cbf253facc12a97b2c85860490094c7b639e"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-8-blackguard-3",
+      "result_sha256": "34ee1e87ed2a911ab737bc0a9592b1d85bfa276428ce500c3fd1bd3f0d8cb1e3",
+      "raw_sha256": {
+        "keys.log": "34ee1e87ed2a911ab737bc0a9592b1d85bfa276428ce500c3fd1bd3f0d8cb1e3",
+        "messages.log": "56d3b9e1ea3b7dbfa249402601e5274bd315dba26c155da7b38a522ff32d33c7",
+        "state.log": "364d4bff0a510d0aa42c578be852671487a92164685db3232dc2e98978f6fa62"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-1181fef86c3594afcb0a82f90035ea79d5a208dad0821eac999b7c3b4dcb5f64",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "16a10a60df947e9a5eb46617649a5238514f9281826d77ec8bf7176ac9667d91",
+    "summary.json": "a4cbf0f849a850827eacda62429d6e9c25819f8f4d6f15cb5eec3bde21469058"
+  },
+  "investigation": null,
+  "issue": null
+}
