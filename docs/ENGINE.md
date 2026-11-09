@@ -105,9 +105,9 @@ writes `build/rust/BUILD_ID`. The build inputs (`harness/identity.sh`) are
 messages and states to its build on borg-rs's tree: smoke 3/3, full 45/45,
 smoke-exact 3/3, and the hallucination test smoke 3/3.
 
-Until TE.6, borg-rs's tree (`angband/`), the `borg-rs/` shim crate and
-`harness/measurement/` stay only for the copied death tooling, which still
-builds its own binary from them.
+borg-rs's tree (`angband/`), the `borg-rs/` shim crate and
+`harness/measurement/` were kept until TE.6 for the copied death tooling,
+and removed with it.
 
 ## Determinism
 

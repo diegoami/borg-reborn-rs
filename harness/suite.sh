@@ -77,12 +77,6 @@ BIN_SHA=$(sha256sum < "$BIN" | cut -d' ' -f1)
 IMPL_ELF=$("$ID" binary-impl "$BIN")
 CACHE_IMPL=$(sed -n 's/^BORG_IMPL:[A-Z]*=//p' "$BUILD_DIR/CMakeCache.txt" 2>/dev/null || true)
 CACHE_IMPL=${CACHE_IMPL:-unknown}
-# borg-reborn-rs controls (T1.3): the executable and CMake see a C Borg; the
-# BUILD_ID names the control, whose pinned source is in the build-input hash.
-case "$IMPL" in c-*)
-    [ "$IMPL_ELF" = c ] && IMPL_ELF="$IMPL"
-    [ "$CACHE_IMPL" = c ] && CACHE_IMPL="$IMPL";;
-esac
 BID="$BUILD_DIR/BUILD_ID"
 bid() { [ -f "$BID" ] && sed -n "s/^$1=//p" "$BID" | head -1 || true; }
 BID_IMPL=$(bid impl); BID_IMPL=${BID_IMPL:-unknown}

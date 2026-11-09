@@ -16,7 +16,7 @@ above all, the death reports. This tool is how a session keeps up
 The report covers, per pin: commits since the pin on the default branch (or
 on the pin's `branch`, when it names one);
 files of each copy rule added, changed or removed; new death cases; new tags
-(a new better-borg-c milestone tag means a new control arm, GOALS D8); C
+(a new better-borg-c milestone tag: a new specimen for borg-zoo to consider); C
 Borg functions cited in this repository whose code changed; issues updated
 since the pin was read (when `gh` works). Network or `gh` failures are
 reported, never fatal. Standard library only.
@@ -177,14 +177,14 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
         tag_pattern = pin.get('watch_tags')
         if tag_pattern:
             # Tags after the baseline in use, not after the pin: a milestone
-            # tagged before the pin moved past it is still a new control arm.
+            # tagged before the pin moved past it is still new.
             baseline = pin.get('baseline') or {}
             since = baseline.get('commit') or pin['commit']
             tags = git(src.repo, 'tag', '--list', tag_pattern, '--contains', since).stdout.split()
             known = set(baseline.get('tag', '').split())
             new_tags = [t for t in tags if t not in known]
             if new_tags:
-                w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone means a new control arm, GOALS D8)\n")
+                w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone: a new specimen for borg-zoo to consider)\n")
         borg_dir = pin.get('borg_dir')
         if borg_dir:
             if not cited:
