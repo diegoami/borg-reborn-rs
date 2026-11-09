@@ -39,3 +39,5 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # borg-rs's tool tests (T1.6): recording, replay, death records.
+      - run: python3 -m unittest discover -s tools -p 'test_*.py'

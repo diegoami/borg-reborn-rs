@@ -89,6 +89,23 @@ pub fn read_command() -> Option<u8> {
     ok.then_some(ch as u8)
 }
 
+/// A real key the user pressed (or a terminal disconnect), taken from the
+/// terminal's queue without waiting: the C Borg's `user_abort` (spec §2.2
+/// step 8). `None` when nothing is pending, as always under borgh after its
+/// start script.
+pub fn take_user_key() -> Option<u32> {
+    // SAFETY: `ui_event` is a C union of plain-data structs that all start
+    // with the type; `Term_inkey` zeroes it first, so reading the key
+    // variant is defined (as in borg-rs's `term_inkey`).
+    let (kind, code) = unsafe {
+        let mut ev: headers::ui_event_h::ui_event = core::mem::zeroed();
+        headers::ui_term_h::Term_inkey(&mut ev, false, true);
+        (ev.type_0, ev.key.code)
+    };
+    let keyboard = kind & headers::ui_event_h::EVT_KBRD != 0 && code > 0 && code != 10;
+    (keyboard || kind == headers::ui_event_h::EVT_DISCONNECT).then_some(code)
+}
+
 /// Set a game option by name; false if the engine does not know it.
 pub fn set_option(name: &CStr, on: bool) -> bool {
     // SAFETY: `option_set` looks the name up in the option table.

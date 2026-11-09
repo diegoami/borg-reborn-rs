@@ -1,0 +1,41 @@
+{
+  "actions": [],
+  "cases": 48,
+  "causes_by_distinct_start": {
+    "Fang, Farmer Maggot's Dog": 8,
+    "Grip, Farmer Maggot's Dog": 5,
+    "a blue yeek": 1,
+    "a cave spider": 1,
+    "a crow": 2,
+    "a fatal wound": 1,
+    "a fruit bat": 1,
+    "a giant green frog": 1,
+    "a giant red scorpion": 1,
+    "a giant white mouse": 4,
+    "a giant yellow centipede": 1,
+    "a grey mushroom patch": 1,
+    "a kobold": 1,
+    "a kobold shaman": 1,
+    "a metallic green centipede": 1,
+    "a metallic red centipede": 2,
+    "a rock lizard": 1,
+    "a small kobold": 1,
+    "a soldier": 1,
+    "a soldier ant": 1,
+    "a warrior": 2,
+    "a wild cat": 6,
+    "an acolyte": 2,
+    "an apprentice": 1,
+    "poison": 1
+  },
+  "death_process_attempts": 47,
+  "distinct_starting_conditions": 48,
+  "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
+  "schema": "borg-rs/death-index@1",
+  "versions": {
+    "321db9028fb3785bd5dbb2320a2e4bd06896fb5c": 1,
+    "3a3d36d5a2d16bb75e01609cec6764c3813e17e8": 30,
+    "b80ed55657bd45241b712d19a87a7c2665a7dd16": 1,
+    "ea6c91678d304d9aa73647fb6881278d846e95d2": 15
+  }
+}
