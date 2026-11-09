@@ -2,6 +2,39 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: review of #66 (MiniMax-M3): spec findings
+
+The spec findings S1–S10 and the missed risks are answered in
+`docs/SPEC.md`:
+- **S1:** the zoo contract is written down. It covers the build entry point
+  and layout, `harness/borg.txt`, and the frontend's mode `borgh`, flags
+  and `summary.json` fields. The harness may change everywhere else.
+- **S2:** the frontend registration (`main.c`, `main.h`) joins the patch
+  series, and the line counts are corrected.
+- **S3:** our CMake carries a copy of upstream's source list, checked
+  against it; upstream's file can't be used as it stands.
+- **S4, C2:** the configuration (the C Borgs' `borg.txt` with every D5
+  exploit off, the game option set) and the environment (`TZ`, locale)
+  become part of the run contract.
+- **S5:** E's exit requires the new integration to reproduce today's
+  `c-pristine` and Rust smoke and full keys before any old reference is
+  replaced.
+- **S6:** `docs/ENGINE-READS.md` is normative; channel A gains the
+  message line's attribute and cursor; the four extra reads are declared.
+- **S7, S9:** the inventory and the document lists are completed.
+- **S8:** `c-pristine` is a control, not an oracle.
+- **S10 and the risks:** configuration hashes and what CI must prove are
+  in E's exit; the death registry's two generations are described.
+- The reviewer's answers to §11 are recorded as recommendations; the owner
+  decides.
+
+**A finding for the owner (S4):** `harness/borg.txt` has
+`borg_self_scum = TRUE`, upstream's default too. So in every control run so
+far, a C Borg could money-scum for a ware from character level 10
+(`borg-store-buy.c:141-153`), which D5 excludes. Its effect on M1's
+numbers (c-pristine 1/45 and c-bbc-m7 2/45 at the full-exact cap) has not
+been measured. The configuration is corrected in milestone E.
+
 ## 2026-11-09: the spec (docs/SPEC.md), and a stop
 
 The owner decided to move completely away from borg-rs. The game stays
