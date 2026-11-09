@@ -85,7 +85,7 @@ both in the review PR.
 | Path | What |
 | --- | --- |
 | `pins.json` | The pinned commits of every related repository |
-| `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, the Angband Strategy Manual, curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
+| `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, the Angband Strategy Manual (`c-manual/`, complete; `strategy/`, the earlier draft), curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
 | `borg-reborn-rs/` | The Rust crate: `engine.rs` (the only `unsafe`, the engine boundary), `borg.rs` (control loop and, until M3, a placeholder policy), `headers/` (borg-rs's generated engine bindings, copied unchanged) |
 | `scripts/refresh-sources.py` | Reports what moved since each pin: commits, new death cases, new tags (new control arms), changed C Borg functions we cite, updated issues. `--update` refreshes pins, `reference/` copies and the death index in their own PR (RULES 21) |
