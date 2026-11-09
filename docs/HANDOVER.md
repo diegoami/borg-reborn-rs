@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: owner decisions
+
+Asked again and answered on 2026-11-09:
+1. **c-bbc-m8** (#56) runs with `borg_munchkin_by_class = FALSE`, so every
+   arm keeps D5. Its label must say so. GOALS D8 is amended.
+2. **The `smoke-c-bbc-m7` reference** is accepted as a self-produced
+   regression reference (harness/README.md).
+3. **S12 is retired** in favour of S14. The pin, its copy rule and
+   `reference/strategy/` go in their own pin PR (RULES 21).
+4. **T2.5: the engine is the truth, not borg-rs** (option D). borg-rs's
+   perception can't be run on its own: it lives inside its decision loop.
+   Perception is checked against engine facts reached by other routes
+   than the Observation's reads, and every engine read is listed (the D3
+   audit). GOALS D8, ARCHITECTURE L1, AGENTS.md and #16 are amended.
+
 ## 2026-11-09: T2.4, decision trace and parameter table (#15)
 
 - `params.rs`: the parameter table has name, unit, range, default and

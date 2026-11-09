@@ -22,7 +22,8 @@ Borg is not a goal. Our results are compared with **control C Borgs**
 (the original and the latest better-borg-c milestone) built here and run
 under the same run contract (docs/GOALS.md D8), on the same seeds, through
 [borg-zoo](https://diegoami.github.io/borg-zoo/). borg-rs is the source of
-our engine tree and tooling and the oracle for perception, not a control.
+our engine tree and tooling, not a control; perception is checked against the
+engine itself (T2.5).
 
 ## Starting
 

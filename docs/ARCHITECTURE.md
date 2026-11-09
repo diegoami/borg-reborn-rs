@@ -70,9 +70,13 @@ holds plain data with no references into the engine, so it can be
 serialised. That makes recorded observations replayable into the decision
 layers without the game, which unit tests and the situation suite need.
 
-**Check:** for the same game state, the reborn Borg's `Observation` agrees
-with what borg-rs's `BorgState` holds after its update, on recorded runs.
-borg-rs is the oracle for perception only, never for decisions.
+**Check:** the engine is the truth (owner, 2026-11-09). On recorded runs,
+each think's `Observation` and world model agree with what the engine
+gives through other routes than the observation's own reads. Examples: the
+player's own map memory (`player->cave`), the engine's visibility of every
+monster, the harness's independent state log. Each difference is fixed or
+declared (T2.5). borg-rs is not consulted: its perception lives inside its
+decision loop.
 
 ### L2 World model
 
