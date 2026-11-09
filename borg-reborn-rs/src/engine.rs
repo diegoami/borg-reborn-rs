@@ -81,6 +81,89 @@ pub fn known_feature(x: i32, y: i32) -> Option<u32> {
     }
 }
 
+/// The game's whole RNG state (z-rand.c): the quick flag and value, and the
+/// complex generator's index and state.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GameRng {
+    quick: bool,
+    value: u32,
+    index: u32,
+    state: [u32; 32],
+}
+
+extern "C" {
+    // z-rand.h; not in the copied bindings.
+    static mut state_i: u32;
+    static mut STATE: [u32; 32];
+}
+
+/// A snapshot of the game's RNG.
+pub fn game_rng() -> GameRng {
+    // SAFETY: plain engine globals, read on the engine thread.
+    unsafe {
+        GameRng {
+            quick: headers::z_rand_h::Rand_quick,
+            value: headers::z_rand_h::Rand_value,
+            index: state_i,
+            state: STATE,
+        }
+    }
+}
+
+fn set_game_rng(r: &GameRng) {
+    // SAFETY: as above; restores values read by `game_rng`.
+    unsafe {
+        headers::z_rand_h::Rand_quick = r.quick;
+        headers::z_rand_h::Rand_value = r.value;
+        state_i = r.index;
+        STATE = r.state;
+    }
+}
+
+/// Run engine reads with the Borg's own RNG (spec §1.2; RULES 10): the
+/// game's RNG is saved, the quick generator is seeded with `borg_value`, and
+/// afterwards `borg_value` keeps the Borg's advanced value and the game's
+/// whole RNG is restored. Engine reads can draw: `map_info()` does so for a
+/// hallucinating player (cave-map.c, `one_in_(128)`). This is the C Borg's
+/// swap in `generate_keypress()` (borg.c:355-374), extended to the whole
+/// state.
+pub fn with_borg_rng<T>(borg_value: &mut u32, f: impl FnOnce() -> T) -> T {
+    let saved = game_rng();
+    // SAFETY: plain engine globals; restored below.
+    unsafe {
+        headers::z_rand_h::Rand_quick = true;
+        headers::z_rand_h::Rand_value = *borg_value;
+    }
+    let out = f();
+    // SAFETY: as above.
+    *borg_value = unsafe { headers::z_rand_h::Rand_value };
+    set_game_rng(&saved);
+    out
+}
+
+/// Test builds only (cargo feature `test-hallucinate`): make the player
+/// hallucinate for the duration of `f`, then restore the timer exactly.
+/// Used by the RNG-isolation regression (CI): perception then takes the
+/// random `map_info()` path on every think.
+#[cfg(feature = "test-hallucinate")]
+pub fn while_hallucinating<T>(f: impl FnOnce() -> T) -> T {
+    // SAFETY: `player->timed` has TMD_MAX entries; the value is restored.
+    unsafe {
+        let p = headers::player_h::player;
+        if p.is_null() || (*p).timed.is_null() {
+            return f();
+        }
+        let slot = (*p)
+            .timed
+            .add(headers::list_player_timed_h::TMD_IMAGE as usize);
+        let old = *slot;
+        *slot = 100;
+        let out = f();
+        *slot = old;
+        out
+    }
+}
+
 /// Read the `^Z` command key ("Borg command"), or `None` if cancelled.
 pub fn read_command() -> Option<u8> {
     let mut ch: c_char = 0;

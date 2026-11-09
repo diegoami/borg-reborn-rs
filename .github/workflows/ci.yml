@@ -47,6 +47,10 @@ jobs:
       - run: BORG_IMPL=c-bbc-m7 harness/build.sh
       - run: BORG_IMPL=c-bbc-m7 harness/suite.sh smoke harness/out/smoke-c-bbc-m7
       - run: harness/diff --suite smoke --expect-impl c-bbc-m7 harness/out/smoke-c-bbc-m7 harness/reference/smoke-c-bbc-m7
+      # RNG isolation (M1 review): perception while hallucinating must not move
+      # the game's RNG; each think asserts it (feature test-hallucinate).
+      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate harness/build.sh
+      - run: ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1

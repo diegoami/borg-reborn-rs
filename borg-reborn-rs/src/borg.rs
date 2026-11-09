@@ -50,6 +50,8 @@ pub enum Action {
     Descend,
     /// Walk one step in a direction 1–9.
     Walk(u8),
+    /// Stand still one turn (','): always uses game time.
+    Hold,
 }
 
 impl Action {
@@ -60,6 +62,7 @@ impl Action {
             Action::Rest => k.extend([b'R' as u32, b'7' as u32, b'5' as u32, KC_ENTER]),
             Action::Descend => k.push(b'>' as u32),
             Action::Walk(d) => k.push((b'0' + d) as u32),
+            Action::Hold => k.push(b',' as u32),
         }
         k
     }
@@ -124,7 +127,34 @@ impl Default for Rng {
 pub struct Memory {
     /// The game turn and action of the last think.
     pub last: Option<(i64, Action)>,
+    /// How many earlier thinks saw the current game turn: actions that the
+    /// game refused, or that took no time (a walk into a known wall, a rest
+    /// it would not start).
+    pub same_turn: u32,
 }
+
+impl Memory {
+    /// Record a think at `turn` that chose `action`.
+    pub fn record(&mut self, turn: i64, action: Action) {
+        self.same_turn = match self.last {
+            Some((t, _)) if t == turn => self.same_turn + 1,
+            _ => 0,
+        };
+        self.last = Some((turn, action));
+    }
+
+    /// Thinks already made at `turn` (0 if game time has passed since).
+    pub fn tries_at(&self, turn: i64) -> u32 {
+        match self.last {
+            Some((t, _)) if t == turn => self.same_turn + 1,
+            _ => 0,
+        }
+    }
+}
+
+/// After this many thinks without game time passing, the Borg stands still,
+/// which always takes a turn (GOALS principle 6: no loop without time).
+pub const MAX_TRIES_PER_TURN: u32 = 2;
 
 /// Choose an action. `here` is the known feature underfoot, `around(dx, dy)`
 /// the known feature of a neighbour. Pure: no engine access.
@@ -135,13 +165,17 @@ pub fn decide(
     mem: &Memory,
     rng: &mut Rng,
 ) -> Action {
-    // A rest that was refused (no game time passed since) is not repeated:
-    // the Borg would ask again forever (GOALS principle 6).
-    let rest_refused = matches!(mem.last, Some((t, Action::Rest)) if t == view.turn);
+    // No loop without game time (GOALS principle 6): an earlier action at
+    // this same turn took no time, so only time-taking actions remain, and
+    // after a few tries the Borg stands still.
+    let tries = mem.tries_at(view.turn);
+    if tries >= MAX_TRIES_PER_TURN {
+        return Action::Hold;
+    }
     if here == Some(feat::MORE) {
         return Action::Descend;
     }
-    if view.hp * 10 < view.max_hp * 7 && !rest_refused {
+    if view.hp * 10 < view.max_hp * 7 && tries == 0 {
         return Action::Rest;
     }
     let options: Vec<u8> = DIRS
@@ -150,9 +184,8 @@ pub fn decide(
         .map(|(d, _, _)| *d)
         .collect();
     if options.is_empty() {
-        // Boxed in by known walls: try any direction (a door or an
-        // unknown wall may still give way).
-        return Action::Walk(DIRS[rng.below(DIRS.len())].0);
+        // Boxed in by known walls: a walk would take no time.
+        return Action::Hold;
     }
     Action::Walk(options[rng.below(options.len())])
 }
@@ -160,6 +193,8 @@ pub fn decide(
 struct Borg {
     queue: VecDeque<u32>,
     rng: Rng,
+    /// The quick-generator value engine reads draw from (`with_borg_rng`).
+    engine_rng: u32,
     mem: Memory,
 }
 
@@ -179,6 +214,7 @@ pub fn command() {
     b.get_or_insert_with(|| Borg {
         queue: VecDeque::new(),
         rng: Rng::new(),
+        engine_rng: Rng::SEED as u32,
         mem: Memory::default(),
     })
     .queue
@@ -216,17 +252,43 @@ pub fn next_key(flush: bool) -> Key {
         return Key::None;
     }
     engine::report_decision(b.rng.state());
-    let here = engine::known_feature(view.x, view.y);
-    let action = decide(
-        &view,
-        here,
-        |dx, dy| engine::known_feature(view.x + dx, view.y + dy),
-        &b.mem,
-        &mut b.rng,
-    );
-    b.mem.last = Some((view.turn, action));
+    let action = think(b, &view);
+    b.mem.record(view.turn, action);
     b.queue.extend(action.keys());
     Key::Code(b.queue.pop_front().unwrap_or(ESCAPE))
+}
+
+/// Perceive and decide. Every engine read runs with the Borg's own RNG.
+fn think(b: &mut Borg, view: &PlayerView) -> Action {
+    #[cfg(feature = "test-hallucinate")]
+    let before = engine::game_rng();
+    let perceive = |b: &mut Borg| {
+        let (x, y) = (view.x, view.y);
+        engine::with_borg_rng(&mut b.engine_rng, || {
+            let here = engine::known_feature(x, y);
+            let around: Vec<Option<u32>> = DIRS
+                .iter()
+                .map(|(_, dx, dy)| engine::known_feature(x + dx, y + dy))
+                .collect();
+            (here, around)
+        })
+    };
+    #[cfg(feature = "test-hallucinate")]
+    let (here, around) = engine::while_hallucinating(|| perceive(b));
+    #[cfg(not(feature = "test-hallucinate"))]
+    let (here, around) = perceive(b);
+    #[cfg(feature = "test-hallucinate")]
+    assert_eq!(
+        engine::game_rng(),
+        before,
+        "perception moved the game's RNG"
+    );
+    let lookup = |dx: i32, dy: i32| {
+        DIRS.iter()
+            .position(|(_, x, y)| (*x, *y) == (dx, dy))
+            .and_then(|i| around[i])
+    };
+    decide(view, here, lookup, &b.mem, &mut b.rng)
 }
 
 #[cfg(test)]
@@ -261,41 +323,77 @@ mod tests {
     #[test]
     fn rests_when_hurt_but_not_again_without_time_passing() {
         let mut rng = Rng::new();
-        let a = decide(
-            &view(10, 7),
-            Some(feat::FLOOR),
-            |_, _| Some(feat::FLOOR),
-            &Memory::default(),
-            &mut rng,
-        );
+        let floor = |_, _| Some(feat::FLOOR);
+        let mut mem = Memory::default();
+        let a = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
         assert_eq!(a, Action::Rest);
-        let refused = Memory {
-            last: Some((7, Action::Rest)),
-        };
-        let b = decide(
-            &view(10, 7),
-            Some(feat::FLOOR),
-            |_, _| Some(feat::FLOOR),
-            &refused,
-            &mut rng,
-        );
+        mem.record(7, a);
+        let b = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
         assert!(
             matches!(b, Action::Walk(_)),
             "a refused rest is not repeated: {b:?}"
         );
-        let later = Memory {
-            last: Some((6, Action::Rest)),
-        };
+        mem.record(7, b);
+        let mut later = Memory::default();
+        later.record(6, Action::Rest);
         assert_eq!(
-            decide(
-                &view(10, 7),
-                Some(feat::FLOOR),
-                |_, _| Some(feat::FLOOR),
-                &later,
-                &mut rng
-            ),
+            decide(&view(10, 7), Some(feat::FLOOR), floor, &later, &mut rng),
             Action::Rest
         );
+    }
+
+    /// Review finding on #39: Rest -> Walk -> Rest at one unchanged turn, and
+    /// walks into known walls, were possible. Simulate a game that refuses
+    /// every action: the Borg must reach Hold (which always takes time)
+    /// within MAX_TRIES_PER_TURN thinks and never rest twice at one turn.
+    #[test]
+    fn no_loop_without_game_time() {
+        let mut rng = Rng::new();
+        let mut mem = Memory::default();
+        let mut rests = 0;
+        let mut held = false;
+        for _ in 0..10 {
+            let a = decide(
+                &view(10, 42),
+                Some(feat::FLOOR),
+                |_, _| Some(feat::FLOOR),
+                &mem,
+                &mut rng,
+            );
+            rests += (a == Action::Rest) as u32;
+            mem.record(42, a);
+            if a == Action::Hold {
+                held = true;
+                break;
+            }
+        }
+        assert!(held, "no Hold after repeated refusals");
+        assert!(mem.same_turn < MAX_TRIES_PER_TURN + 1);
+        assert!(rests <= 1, "rested {rests} times at one turn");
+    }
+
+    #[test]
+    fn boxed_in_by_known_walls_holds() {
+        let a = decide(
+            &view(20, 1),
+            Some(feat::FLOOR),
+            |_, _| Some(21),
+            &Memory::default(),
+            &mut Rng::new(),
+        );
+        assert_eq!(a, Action::Hold);
+        assert_eq!(a.keys(), vec![ESCAPE, b',' as u32]);
+    }
+
+    #[test]
+    fn time_passing_resets_the_count() {
+        let mut mem = Memory::default();
+        mem.record(5, Action::Walk(2));
+        mem.record(5, Action::Walk(2));
+        assert_eq!(mem.tries_at(5), 2);
+        assert_eq!(mem.tries_at(6), 0);
+        mem.record(6, Action::Walk(2));
+        assert_eq!(mem.same_turn, 0);
     }
 
     #[test]
