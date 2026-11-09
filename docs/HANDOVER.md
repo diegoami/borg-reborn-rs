@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: the spec (docs/SPEC.md), and a stop
+
+The owner decided to move completely away from borg-rs. The game stays
+upstream C Angband. Our own integration (hooks, frontend, bindings, build,
+harness) is built first, and borg-rs is only a reference to copy from.
+Before anything more is implemented, `docs/SPEC.md` states that project:
+- the parts it keeps, replaces or drops (§8);
+- the documents and rules that change (§9);
+- a re-plan with a new milestone E, our own integration, first (§10);
+- four open questions (§11).
+
+The owner accepted it and sent it to review with the work since `m1`. It
+takes effect when the owner merges that review PR. Until then: **no
+implementation**, and the M2 task list after T2.4 (T2.5, then M3+) is on
+hold for the re-plan.
+
 ## 2026-11-09: owner decisions
 
 Asked again and answered on 2026-11-09:
