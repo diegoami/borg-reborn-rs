@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0041-c-seed1031",
+  "run_kind": "harness",
+  "character": "Gnome Priest",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 29151,
+    "race_idx": 4,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1031,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "5fb413cb0514c57ce6a01ef5aaebc6ff1b870eda6438f479dddc1a770e85c9e1"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-3-priest-1",
+      "result_sha256": "145ec28033369cf7537bb09b96f2a5ff3f83ef368a936c8768d6996c1dbd48ee",
+      "raw_sha256": {
+        "keys.log": "145ec28033369cf7537bb09b96f2a5ff3f83ef368a936c8768d6996c1dbd48ee",
+        "messages.log": "7c242466261da61976357faa215b3f7f69f25ec8c8b620b2e7f8b06fb66f079d",
+        "state.log": "e16d17fe59ca5e3c32f80680bf56479b1eb92cd29ef3e84658fef1e14e4eb081"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-d5fbf620f2c8d2642afe64e3080cf1385c5538d1cc0c06e025f2b94b4bb20636",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "2ba8874c5187ec74a694959c903a51a3ca7996e393f80ccc007d919433f8048d",
+    "depths.json": "deb34fce0f5422e3e8f36af4d08657e141153661074d46e296021c5edf04bafe",
+    "summary.json": "490daba8edf3ef16f80cfabac15d33214d361acca74e2a3da332df233a18a647"
+  },
+  "investigation": null,
+  "issue": null
+}

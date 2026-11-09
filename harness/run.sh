@@ -2,6 +2,10 @@
 # One deterministic Borg run.
 # Usage: harness/run.sh OUTDIR SEED RACE CLASS TURNS [FLAGS] [-- extra borgh options]
 #   FLAGS: comma-separated, "-" for none.
+#     exact  (borg-reborn-rs, T1.4) passes -exact-turns: the run stops at
+#            engine turn TURNS itself, from borgh's per-turn hook, instead of
+#            after the first key at or past it; summary.json then says
+#            "exact_turns": true and game_turns equals TURNS for a survivor
 #     cheat  sets borg_cheat_death = TRUE
 #     menu   passes -menu-letters: race/class are picked with the birth
 #            menu's own letters, so the indices mean p_race.txt/class.txt
@@ -60,6 +64,7 @@ if [ "$FLAGS" != "-" ]; then
         case "$fl" in
             cheat) CHEAT=TRUE;;
             menu) BORGH_FLAGS+=(-menu-letters);;
+            exact) BORGH_FLAGS+=(-exact-turns);;  # borg-reborn-rs run contract (T1.4)
             random-birth) BORGH_FLAGS+=(-random-birth);;
             finalsave) BORGH_FLAGS+=(-save-on-stop "$OUT/final.save");;
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
@@ -167,6 +172,8 @@ set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
 fi
+# borg-reborn-rs: the depth stream (T1.4), then the death dossier (RULES 12).
+python3 "$ROOT/tools/depth-stream.py" "$OUT" --cap "$TURNS"
 # borg-reborn-rs: every natural death leaves a dossier (RULES 12), on any arm.
 python3 "$ROOT/tools/export-death.py" "$OUT" --impl "$IMPL" \
     --build-id "$(dirname "$(dirname "$BIN")")/BUILD_ID" --flags "$FLAGS"

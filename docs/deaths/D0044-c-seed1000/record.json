@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0044-c-seed1000",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a warrior",
+  "terminal": {
+    "cause": "a warrior",
+    "dead": true,
+    "depth": 8,
+    "max_depth": 8,
+    "level": 8,
+    "turn": 58318,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1000,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "f20f7ed7065a31dec52467b932f8f9ea4b17f69922732c02c583e160b6ddb419"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-0-warrior-0",
+      "result_sha256": "fee23ada2e267adcee1b828e8e2541a801b3f7cae54f5cf7b9d6c741ffc7d7e0",
+      "raw_sha256": {
+        "keys.log": "fee23ada2e267adcee1b828e8e2541a801b3f7cae54f5cf7b9d6c741ffc7d7e0",
+        "messages.log": "40aed3558ec2528bdce21f096f024ef8e1bac076020550aedde6bdc342169287",
+        "state.log": "f807d6d2afca1ede33f267914cd7e9084ab139cab22955d1d2df3d67300908ef"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-453a14ce279c2d9e3138e11c0c614fbe5da8d9ff6e8cdecf226d5f04f1d2adea",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "f8a1d4530dc7f44010b00b0537e1b434d32372386ac3d311b7bad30053929cd3",
+    "depths.json": "af28ddb18c492d9207f0dad40359c4d00047047b0973c411ed494574c6931d13",
+    "summary.json": "b76d752e7a7386d1e38bb0b7f0a04130fb4a017cce5a3007ed8dff39daf1958f"
+  },
+  "investigation": null,
+  "issue": null
+}

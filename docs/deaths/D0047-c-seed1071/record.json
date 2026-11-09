@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0047-c-seed1071",
+  "run_kind": "harness",
+  "character": "Half-Troll Warrior",
+  "raw_cause": "a warrior",
+  "terminal": {
+    "cause": "a warrior",
+    "dead": true,
+    "depth": 4,
+    "max_depth": 5,
+    "level": 8,
+    "turn": 81154,
+    "race_idx": 8,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1071,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "2fc19df7b5112ffffb073a980bc93b8c7170000f9707d1545a2272274db029d8"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-7-ranger-1",
+      "result_sha256": "b55f015d18d50f5654ade41f7c8dbc4b9e72602f4218295563b43c34a3d5caae",
+      "raw_sha256": {
+        "keys.log": "b55f015d18d50f5654ade41f7c8dbc4b9e72602f4218295563b43c34a3d5caae",
+        "messages.log": "e7dace60210ec16d10d64c878fb814790320f0003ee9a7f422d57afe4007964b",
+        "state.log": "c73f57ce5a0e3919c6a3b969e89aa9e6b8a5ca9737689be1f37ce45d2991bf05"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-4d2c97e69cec1f11b6c95b894ed7faafedb106e1c441c8ee1d3555456b609adb",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "cdb6ee17b530497ac2f576aa8074f67c30d232a8d33d42f21e862c03be9db901",
+    "depths.json": "1aacb8577f9465358cacd5577219159afafab0d476dd5c2355a59bbb75f2dd0f",
+    "summary.json": "77ac28e0a406b3145d34c7af576dca7b2ab066058777a5551d9cbeaf902b4fe6"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -59,5 +59,20 @@ are not independent.*
 | borg-reborn-rs | [D0030-c-bbc-m7-seed1073](../../docs/deaths/D0030-c-bbc-m7-seed1073/report.md) | Human Warrior | a wild cat | 39417 | 2 | 4 | — | unassessed | D0030-c-bbc-m7-seed1073: a wild cat at turn 39417 |
 | borg-reborn-rs | [D0031-c-bbc-m7-seed1082](../../docs/deaths/D0031-c-bbc-m7-seed1082/report.md) | Human Ranger | a giant green frog | 53459 | 2 | 3 | — | unassessed | D0031-c-bbc-m7-seed1082: a giant green frog at turn 53459 |
 | borg-reborn-rs | [D0032-c-bbc-m7-seed1083](../../docs/deaths/D0032-c-bbc-m7-seed1083/report.md) | Human Ranger | a wild cat | 67785 | 2 | 4 | — | unassessed | D0032-c-bbc-m7-seed1083: a wild cat at turn 67785 |
+| borg-reborn-rs | [D0033-c-seed1011](../../docs/deaths/D0033-c-seed1011/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 2070 | 1 | 3 | — | unassessed | D0033-c-seed1011: Fang, Farmer Maggot's Dog at turn 2070 |
+| borg-reborn-rs | [D0034-c-seed1022](../../docs/deaths/D0034-c-seed1022/report.md) | Gnome Druid | Fang, Farmer Maggot's Dog | 3612 | 1 | 1 | — | unassessed | D0034-c-seed1022: Fang, Farmer Maggot's Dog at turn 3612 |
+| borg-reborn-rs | [D0035-c-seed1023](../../docs/deaths/D0035-c-seed1023/report.md) | Dwarf Druid | a fatal wound | 4730 | 1 | 1 | — | unassessed | D0035-c-seed1023: a fatal wound at turn 4730 |
+| borg-reborn-rs | [D0036-c-seed1042](../../docs/deaths/D0036-c-seed1042/report.md) | Half-Orc Necromancer | Grip, Farmer Maggot's Dog | 15117 | 1 | 1 | — | unassessed | D0036-c-seed1042: Grip, Farmer Maggot's Dog at turn 15117 |
+| borg-reborn-rs | [D0037-c-seed1030](../../docs/deaths/D0037-c-seed1030/report.md) | Hobbit Priest | a kobold shaman | 4853 | 1 | 1 | — | unassessed | D0037-c-seed1030: a kobold shaman at turn 4853 |
+| borg-reborn-rs | [D0038-c-seed1040](../../docs/deaths/D0038-c-seed1040/report.md) | Gnome Necromancer | a soldier ant | 13436 | 1 | 1 | — | unassessed | D0038-c-seed1040: a soldier ant at turn 13436 |
+| borg-reborn-rs | [D0039-c-seed1072](../../docs/deaths/D0039-c-seed1072/report.md) | Human Warrior | a giant white mouse | 7119 | 1 | 2 | — | unassessed | D0039-c-seed1072: a giant white mouse at turn 7119 |
+| borg-reborn-rs | [D0040-c-seed1063](../../docs/deaths/D0040-c-seed1063/report.md) | Human Rogue | a wild cat | 15108 | 1 | 2 | — | unassessed | D0040-c-seed1063: a wild cat at turn 15108 |
+| borg-reborn-rs | [D0041-c-seed1031](../../docs/deaths/D0041-c-seed1031/report.md) | Gnome Priest | a wild cat | 29151 | 1 | 2 | — | unassessed | D0041-c-seed1031: a wild cat at turn 29151 |
+| borg-reborn-rs | [D0042-c-seed1012](../../docs/deaths/D0042-c-seed1012/report.md) | Hobbit Mage | Grip, Farmer Maggot's Dog | 59923 | 1 | 3 | — | unassessed | D0042-c-seed1012: Grip, Farmer Maggot's Dog at turn 59923 |
+| borg-reborn-rs | [D0043-c-seed1064](../../docs/deaths/D0043-c-seed1064/report.md) | Human Rogue | a kobold | 27452 | 7 | 4 | — | unassessed | D0043-c-seed1064: a kobold at turn 27452 |
+| borg-reborn-rs | [D0044-c-seed1000](../../docs/deaths/D0044-c-seed1000/report.md) | Human Warrior | a warrior | 58318 | 8 | 8 | — | unassessed | D0044-c-seed1000: a warrior at turn 58318 |
+| borg-reborn-rs | [D0045-c-seed1024](../../docs/deaths/D0045-c-seed1024/report.md) | Half-Orc Druid | an acolyte | 80669 | 2 | 6 | — | unassessed | D0045-c-seed1024: an acolyte at turn 80669 |
+| borg-reborn-rs | [D0046-c-seed1074](../../docs/deaths/D0046-c-seed1074/report.md) | Human Warrior | a giant red scorpion | 60527 | 20 | 13 | — | unassessed | D0046-c-seed1074: a giant red scorpion at turn 60527 |
+| borg-reborn-rs | [D0047-c-seed1071](../../docs/deaths/D0047-c-seed1071/report.md) | Half-Troll Warrior | a warrior | 81154 | 4 | 8 | — | unassessed | D0047-c-seed1071: a warrior at turn 81154 |
 
-52 cases.
+67 cases.

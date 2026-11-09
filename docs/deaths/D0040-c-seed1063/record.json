@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0040-c-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 15108,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-6-rogue-3",
+      "result_sha256": "a9141c6a84c52417fb829639b5cbda3dbed57b19cd9cf3a63dd2ac4b60f1bf92",
+      "raw_sha256": {
+        "keys.log": "a9141c6a84c52417fb829639b5cbda3dbed57b19cd9cf3a63dd2ac4b60f1bf92",
+        "messages.log": "f6fef22c2560ece484a8a9c4b96b31a3219b9c57f3b88e61397b9ae2716efae2",
+        "state.log": "86e891ad065c19bd2806c47e575f098104671c0e97bb2de98b3cd40f58a6aa49"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-3793137e93983c17d6854e637eb056fc964949638f3810bd349119374fb744e7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "b6a2ef45933cee68d35d6e780b05cf8ab12da8fde289aaeebb0eed489c00f990",
+    "depths.json": "a2d0c87210b6d3a8822a33624048b627e4590d18b8aadf47a6d7cf8214662091",
+    "summary.json": "2650d38eb82572d205ea591ed24c71a039d79deb3f817c31025586f2ac65b029"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -27,6 +27,9 @@ BORG_IMPL=c-bbc-m7   flock /tmp/angband-validation.lock harness/build.sh
 | `control-overlay.py` (new) | Writes `build/<impl>.src/`, a copy of `angband/` whose `src/borg/` is the control's pinned C Borg (`controls` in `pins.json`), checked blob for blob. The tree itself is never edited. |
 | `build.sh`, `suite.sh`, `identity.sh`, `diff` | Accept the controls `c-pristine` and `c-bbc-m7`. `build.sh` compiles the overlay as CMake `BORG_IMPL=c` into `build/<impl>/`. `suite.sh` maps the executable's and CMake's `c` to the control's name, and the `BUILD_ID` names it. `identity.sh` adds the control's pinned source (commit and tree) to the build-input hash. |
 | `suites/full` | Copied from borg-rs: 9 classes × 5 seeds × 100,000 turns. Without the `menu` flag, class indices of 7 and above pick other birth entries (borg-rs `docs/harness.md`), so the `-8-blackguard-` runs play other classes. |
+| `run.sh` flag `exact` (T1.4) | Passes borgh's existing `-exact-turns`, so the run stops at engine turn TURNS itself (the per-turn hook in `game-world.c`), not after the first key at or past it. Existing suites keep their semantics; `suites/smoke-exact` and `suites/full-exact` use it. |
+| `run.sh` → `tools/depth-stream.py` (T1.4) | After every run, writes `depths.json`: the boundary rule (`exact` or `after-key`), whether the character is alive at the stop, its maximum depth there, and the first engine turn at each depth (the first Borg key after arrival, from `state.log`). An exact survivor that did not stop at the cap fails the run. |
+| `check-boundary.py` (T1.4, new) | For a suite run with and without `exact`: keys before the boundary are a prefix of the normal run's keys, survivors stop at the cap, deaths are the same, and `depths.json` agrees with `summary.json`. |
 | `README.md` | This file. |
 
 All other files are byte-identical to borg-rs's.
@@ -43,9 +46,6 @@ gets a new reference directory.
 
 ## Not here yet
 
-- The exact-boundary stop and the depth stream: T1.4 (#7). borg-rs's `borgh`
-  at this pin already has an exact-turns option (`opt_exact_turns`); T1.4
-  starts from it.
 - A playing Rust Borg: T1.5 (#8). Until then `do_cmd_borg` is a no-op, so
   `BORG_IMPL=rust` builds and links, but no Borg starts on that arm.
 - The reborn Borg does not yet call borgh's measurement hooks

@@ -1,0 +1,18 @@
+{
+  "schema": "borg-reborn-rs/depths@1",
+  "boundary": "after-key",
+  "cap": 100000,
+  "stop_turn": 81154,
+  "stop_reason": "death",
+  "alive": false,
+  "max_depth_at_stop": 5,
+  "first_turn_at_depth": {
+    "1": 141,
+    "2": 42195,
+    "3": 55064,
+    "4": 57428,
+    "5": 66516
+  },
+  "granularity": "first Borg key after arrival (state.log); final depth from summary.json",
+  "source": "state.log"
+}

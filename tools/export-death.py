@@ -87,7 +87,7 @@ def existing(reg):
 def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_sha, family):
     """The files of a basic dossier, {name: bytes}."""
     files = {}
-    for name in ('summary.json', 'config.txt'):
+    for name in ('summary.json', 'config.txt', 'depths.json'):
         if (run_dir / name).exists():
             files[name] = (run_dir / name).read_bytes()
     files['build.json'] = (json.dumps(build, indent=2, sort_keys=True) + '\n').encode()

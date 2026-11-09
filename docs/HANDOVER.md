@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.4 run contract: exact boundary and depth stream (#7)
+
+- **No engine-tree edit was needed.** borg-rs's borgh already stops at engine
+  turn T from its per-turn hook (`-exact-turns`) and logs depth on every key.
+  `run.sh` gains the flag `exact`. `tools/depth-stream.py` writes
+  `depths.json` after every run (boundary rule, alive at stop, maximum depth
+  at stop, first turn at each depth), and dossiers include it. There are new
+  suites `smoke-exact` and `full-exact`; the existing suites keep their
+  semantics and references.
+- **Checked on every C arm** (`c`, `c-pristine`, `c-bbc-m7`), smoke and full
+  (144 runs) with `harness/check-boundary.py`. Keys before the boundary are
+  byte-identical to the normal runs, survivors stop exactly at the cap, and
+  deaths before the cap are the same deaths. The `rust` arm gets the same
+  check in T1.8.
+- The `c` arm's first full-suite deaths are recorded, from a clean build.
+
+**Next:** #10 (T1.7, endpoint calculator; needs only T1.4) and #8 (T1.5,
+the minimal Borg).
+
 ## 2026-11-09: T1.3 control C Borgs (#6)
 
 - `BORG_IMPL=c-pristine` and `c-bbc-m7` build our engine tree with a pinned C
