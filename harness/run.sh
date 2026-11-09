@@ -106,6 +106,19 @@ if [ "$FLAGS" != "-" ]; then
     done
 fi
 [ ! -e "$OUT" ] || { echo "run.sh: output exists; preserve it and use a new directory: $OUT" >&2; exit 2; }
+# Extra borgh options that change which game starts (re-review R3): a save
+# loaded with -load, and -keep-load-rng. config.txt records them for the
+# death exporter.
+EXTRA_LOAD=""
+EXTRA_KEEP_RNG=0
+EXTRA=("$@")
+for ((i = 0; i < ${#EXTRA[@]}; i++)); do
+    case "${EXTRA[$i]}" in
+        -load) EXTRA_LOAD="${EXTRA[$((i + 1))]:-}"
+               [ -f "$EXTRA_LOAD" ] || { echo "run.sh: -load: no save file '$EXTRA_LOAD'" >&2; exit 2; };;
+        -keep-load-rng) EXTRA_KEEP_RNG=1;;
+    esac
+done
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
 if [ "${BORG_TOOLKIT_NATIVE:-0}" = 1 ]; then
     mkdir "$OUT/native"
@@ -149,7 +162,12 @@ done
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ]; then
         echo "save_sha256=$(sha256sum < "$OUT/save/input.save" | cut -d' ' -f1)"
+    elif [ -n "$EXTRA_LOAD" ]; then
+        # A save loaded through the extra options (re-review R3): its hash
+        # is part of the death's encounter family, like save=NAME's.
+        echo "save_sha256=$(sha256sum < "$EXTRA_LOAD" | cut -d' ' -f1)"
     fi
+    if [ "$EXTRA_KEEP_RNG" = 1 ]; then echo "keep_load_rng=1"; fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
 } > "$OUT/config.txt"
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd

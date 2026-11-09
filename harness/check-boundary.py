@@ -94,9 +94,11 @@ def main(argv):
             problems.append(f"survivor stopped at {se.get('game_turns')}, not {cap}")
         try:
             d = json.loads((e / 'depths.json').read_text())
-            if d['boundary'] != 'exact' or d['max_depth_at_stop'] != se.get('max_depth') \
-                    or d['alive'] == bool(se.get('dead')):
-                problems.append('depths.json disagrees with summary.json')
+            want = {'boundary': 'exact', 'max_depth_at_stop': se.get('max_depth'),
+                    'alive': not se.get('dead'), 'stop_turn': se.get('game_turns')}
+            off = [f'{k} {d[k]!r} vs {v!r}' for k, v in want.items() if d[k] != v]
+            if off:
+                problems.append('depths.json disagrees with summary.json: ' + ', '.join(off))
         except (OSError, ValueError, KeyError) as x:
             problems.append(f'depths.json unreadable: {x}')
         status = 'ok' if not problems else 'FAIL: ' + '; '.join(problems)

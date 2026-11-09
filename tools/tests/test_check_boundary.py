@@ -22,7 +22,7 @@ def summary(stop='turns', turn=CAP, dead=False, exact=True):
             'exact_turns': exact, 'death_cause': 'Grip' if dead else None}
 
 
-def output(root, name, summ, keys=b'a\nb\n', suite_sha=None):
+def output(root, name, summ, keys=b'a\nb\n', suite_sha=None, stop_turn=None):
     d = Path(root) / name
     suite = Path(root) / 'suite'
     suite.write_text(f'one 1 0 0 {CAP} exact\n')
@@ -31,7 +31,8 @@ def output(root, name, summ, keys=b'a\nb\n', suite_sha=None):
     (d / 'one' / 'keys.log').write_bytes(keys)
     (d / 'one' / 'depths.json').write_text(json.dumps(
         {'boundary': 'exact' if summ['exact_turns'] else 'after-key', 'cap': CAP,
-         'max_depth_at_stop': 2, 'alive': not summ['dead']}))
+         'max_depth_at_stop': 2, 'alive': not summ['dead'],
+         'stop_turn': summ['game_turns'] if stop_turn is None else stop_turn}))
     sha = suite_sha or hashlib.sha256(suite.read_bytes()).hexdigest()
     (d / 'manifest').write_text(f'suite=suite\nsuite_file={suite}\nsuite_sha256={sha}\n')
     return d
@@ -49,6 +50,15 @@ class CheckBoundaryTest(unittest.TestCase):
             e = output(t, 'e', summary())
             n = output(t, 'n', summary(turn=CAP + 3, exact=False), keys=b'a\nb\nc\n')
             self.assertEqual(check(e, n)[0], 0)
+
+    def test_depth_stream_turn_must_match_the_summary(self):
+        # Re-review R1: a survivor whose depth stream stopped at turn 10.
+        with tempfile.TemporaryDirectory() as t:
+            e = output(t, 'e', summary(), stop_turn=10)
+            n = output(t, 'n', summary(turn=CAP + 3, exact=False), keys=b'a\nb\nc\n')
+            code, out = check(e, n)
+            self.assertEqual(code, 1)
+            self.assertIn('stop_turn 10 vs 1000', out)
 
     def test_wrong_suite_hash_fails(self):
         with tempfile.TemporaryDirectory() as t:

@@ -1,0 +1,12 @@
+{
+  "binary": "/tmp/claude-1000/-home-diego-projects-borg-reborn-rs/5e26c85b-10c7-4fa3-ae88-6116caaefc5d/scratchpad/wt/build/rust/game/angband",
+  "binary_sha256": "524aea38073ee2100b9dedd3780f41acf0c0cc6b5f842185f22e0b1a55be51e3",
+  "built_utc": "2026-11-09T12:06:29Z",
+  "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "git_dirty": "no",
+  "git_rev": "457559ec3d5fa04b86c8a2030a112d91e1f7d11d",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "source_sha256": "1d99185da7870b5ef4a8fb9633f1bdfa34d4ea6bf9f04e3167f4b12c609798cc"
+}

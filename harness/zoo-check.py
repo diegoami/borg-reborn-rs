@@ -15,6 +15,9 @@ Evidence rules (M1 review):
   checks only the commit); vendor/borg-zoo must be at its pin and clean
   too (re-review N9: tracked changes and untracked files outside its
   .gitignore are refused), since its adapter is the code under check;
+  the code imported is then a fresh `git archive` of the pin, so an ignored
+  file in the checkout (a cached .pyc, an extension module) cannot stand in
+  for the pinned source (re-review R4);
 * the zoo adapter deletes keys.log, so a natural death would leave no
   dossier: every death cell is rerun through harness/run.sh (same seed,
   character, cap and menu letters), its key stream is checked against the
@@ -22,9 +25,12 @@ Evidence rules (M1 review):
 """
 
 import argparse
+import io
 import json
 import subprocess
 import sys
+import tarfile
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -41,6 +47,27 @@ def zoo_identity_error(zoo, pin):
     if dirty:
         return f'vendor/borg-zoo has changes at its pin: {dirty.splitlines()[0].strip()} ...'
     return None
+
+
+def pinned_tree(zoo, pin, dest):
+    """Write the pinned zoo tree, exactly the committed files, to dest."""
+    data = subprocess.check_output(['git', '-C', str(zoo), 'archive', '--format=tar', pin])
+    with tarfile.open(fileobj=io.BytesIO(data)) as tar:
+        tar.extractall(dest, filter='data')
+    return Path(dest)
+
+
+def import_zoo(tree):
+    """Import the zoo's catalogue and harness from tree, and only from there."""
+    if any(m == 'zoo' or m.startswith('zoo.') for m in sys.modules):
+        raise SystemExit('zoo-check: a zoo package is already imported; run zoo-check in a fresh process')
+    sys.dont_write_bytecode = True
+    sys.path.insert(0, str(tree))
+    from zoo import catalogue, harness  # noqa: E402 (the pinned zoo)
+    for mod in (catalogue, harness):
+        if not Path(mod.__file__).resolve().is_relative_to(Path(tree).resolve()):
+            raise SystemExit(f'zoo-check: {mod.__name__} came from {mod.__file__}, not the pinned tree')
+    return catalogue, harness
 
 
 def repatriate(impl, rec, suite, work, cat_mod):
@@ -77,10 +104,10 @@ def main(argv=None):
     why = zoo_identity_error(ZOO, pin)
     if why:
         raise SystemExit(f'zoo-check: {why}')
-    # Checked before the import, which then loads exactly the pinned code.
-    sys.path.insert(0, str(ZOO))
-    from zoo import catalogue as cat_mod, harness  # noqa: E402 (the pinned zoo)
-    cat = cat_mod.catalogue(ZOO)
+    tmp = tempfile.TemporaryDirectory(prefix='zoo-check-pin-')
+    tree = pinned_tree(ZOO, pin, tmp.name)
+    cat_mod, harness = import_zoo(tree)
+    cat = cat_mod.catalogue(tree)
     for impl in a.impl:
         cat['specimens']['specimens'][f'reborn-{impl}'] = {
             'kind': 'borg-rs', 'impl': impl, 'repository': 'diegoami/borg-reborn-rs', 'ref': head,
