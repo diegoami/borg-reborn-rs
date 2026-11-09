@@ -8,7 +8,7 @@
 > dossiers `tools/export-death.py` writes for harness runs (schema
 > `borg-reborn-rs/death-record@1`). Format identifiers (`borg-rs/...@1`) are
 > kept so dossiers stay compatible. `export-death.py`, `depth-stream.py` and
-> `tests/` are this repository's own. The rest of this file is borg-rs's text.
+> `tests/` are this repository's own. The frozen runtime also copies `harness/profiles/`, the reborn Borg's profiles, which run.sh needs since T2.4. The rest of this file is borg-rs's text.
 
 # Rust launch and recording adapters
 
