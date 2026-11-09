@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.5 engine boundary and minimal Borg (#8)
+
+- `borg-reborn-rs/src/headers/` holds borg-rs's c2rust engine bindings,
+  copied unchanged with attribution. `engine.rs` is our own small boundary:
+  the player view, `map_info` terrain, the `^Z` command key, options, the
+  `inkey_hack` hook, `do_cmd_borg`, and `borgh_decision` behind the `borgh`
+  feature. It is the only module with `unsafe`.
+- `borg.rs` is the control loop of ARCHITECTURE.md. Queued keys go first;
+  rest and repeat get `EVT_NONE`; every action starts with `ESCAPE`; the
+  Borg's own RNG is used and the game's never. On top of it sits a
+  **placeholder** policy: take a down stair underfoot, rest when below 70%
+  HP (never twice without time passing), else walk to a random neighbour
+  not known to be a wall or shop. Six unit tests cover the policy.
+- `^Z z` starts it, so borgh's start script and the GUI work unchanged. It
+  sets `auto_more` and `easy_alter`.
+- **Checked:** the Rust smoke suite runs with no harness failure, and two
+  runs give byte-identical keys (3/3). The Elf Mage of seed 102 dies to a
+  rock lizard at turn 743, and its dossier is recorded. CI now runs Rust
+  smoke twice and compares.
+- Not here: launchers (T1.6), and the Rust arm's exact-boundary check (T1.8).
+
 ## 2026-11-09: T1.4 run contract: exact boundary and depth stream (#7)
 
 - **No engine-tree edit was needed.** borg-rs's borgh already stops at engine

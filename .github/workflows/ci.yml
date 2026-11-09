@@ -35,3 +35,7 @@ jobs:
       - run: harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # The reborn Borg plays (T1.5): smoke twice, same keys both times.
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
+      - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2

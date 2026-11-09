@@ -11,4 +11,9 @@ name = "borg_reborn_rs"
 path = "src/lib.rs"
 crate-type = ["rlib"]
 
+[features]
+# Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+borgh = []
+
 [dependencies]
+libc = "0.2"
