@@ -185,8 +185,12 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                 w(f"- engine tree: `{engine['path']}/` unchanged at head\n")
         tag_pattern = pin.get('watch_tags')
         if tag_pattern:
-            tags = git(src.repo, 'tag', '--list', tag_pattern, '--contains', pin['commit']).stdout.split()
-            known = set((pin.get('baseline') or {}).get('tag', '').split())
+            # Tags after the baseline in use, not after the pin: a milestone
+            # tagged before the pin moved past it is still a new control arm.
+            baseline = pin.get('baseline') or {}
+            since = baseline.get('commit') or pin['commit']
+            tags = git(src.repo, 'tag', '--list', tag_pattern, '--contains', since).stdout.split()
+            known = set(baseline.get('tag', '').split())
             new_tags = [t for t in tags if t not in known]
             if new_tags:
                 w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone means a new control arm, GOALS D8)\n")
