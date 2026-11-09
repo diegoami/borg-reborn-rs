@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0197-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Human Necromancer",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 507,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "-",
+    "git_rev": "ae1e601929446af672a57007d73b385cb38e5331",
+    "git_dirty": "no",
+    "source_sha256": "1d99185da7870b5ef4a8fb9633f1bdfa34d4ea6bf9f04e3167f4b12c609798cc",
+    "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-r2/full-4-necro-3",
+      "result_sha256": "37683517110bf3f6057b66710bebc49daaec05442da853ad80c8182ff22da6f8",
+      "raw_sha256": {
+        "keys.log": "37683517110bf3f6057b66710bebc49daaec05442da853ad80c8182ff22da6f8",
+        "messages.log": "e4574c37a907cd9137b8db0e606290ea52b875ed55fedf9896b58dc7a0920771",
+        "state.log": "3dac07ea9c9583908fff294a2c10ef8de1149f7243da9263be5357bca7ef7ef8"
+      },
+      "source_commit": "ae1e601929446af672a57007d73b385cb38e5331",
+      "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5"
+    }
+  ],
+  "encounter_family": "start-9750fc75eb4b177bb2f5cebeb294379d4b4c8fbe5d71dea918dd888fba57f579",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6f07e63afe158e9e9d48ae3d6d462c577e1be1cdbfb348a0aceee9e8ec160195",
+    "config.txt": "9e7071b7bc1302edc293dd80a181fd5e39f176eac99ba9c922cb62656da7c137",
+    "depths.json": "0a0d8a33d1c5c19cfaf65c73744ff2e25b5d6785f1a300713d6bd57dabd6e3da",
+    "summary.json": "418e2b4d5f07b9e95758ef0af6ff2446d6fe3cfa50124daaebd5c83380b296ab"
+  },
+  "investigation": null,
+  "issue": null
+}

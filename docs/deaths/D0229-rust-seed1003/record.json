@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0229-rust-seed1003",
+  "run_kind": "harness",
+  "character": "Hobbit Warrior",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89230,
+    "race_idx": 3,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1003,
+    "flags": "-",
+    "git_rev": "ae1e601929446af672a57007d73b385cb38e5331",
+    "git_dirty": "no",
+    "source_sha256": "1d99185da7870b5ef4a8fb9633f1bdfa34d4ea6bf9f04e3167f4b12c609798cc",
+    "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5",
+    "borg_txt_sha256": "a58947f4c56a7c1c53d41d377a15594a905b7f561c3d0db4e8306efa559eca39"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-r2/full-0-warrior-3",
+      "result_sha256": "61f90123980f74e29bf3964216ed0d91a3777633c1a21965fe94577711ab9d87",
+      "raw_sha256": {
+        "keys.log": "61f90123980f74e29bf3964216ed0d91a3777633c1a21965fe94577711ab9d87",
+        "messages.log": "9d13c17105ce4d16496ff2a5a523f24ab9f522b6fb566495a99c9a2952ecac72",
+        "state.log": "371a0c525134103f8ce5c31daa1f701b69827ec8c1e01b90820daaea722a0a39"
+      },
+      "source_commit": "ae1e601929446af672a57007d73b385cb38e5331",
+      "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5"
+    }
+  ],
+  "encounter_family": "start-8e00f191af3703c2834c94183e5017a9c908bc44a86fd9048d66f195757586aa",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6f07e63afe158e9e9d48ae3d6d462c577e1be1cdbfb348a0aceee9e8ec160195",
+    "config.txt": "10f51d629f718d83e43786842af89b1c36bc424d1b39349bc1f083c8ac475acc",
+    "depths.json": "5812723641a2400cd987224018dd75288f7246111fb25bdc681d2117cdb0ca25",
+    "summary.json": "0cc2351ef7ab3274e2bb0b3b61c2c16e453a08a235431ea06fa1816d4fd7f073"
+  },
+  "investigation": null,
+  "issue": null
+}

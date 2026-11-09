@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0212-rust-seed1080",
+  "run_kind": "harness",
+  "character": "Half-Troll Ranger",
+  "raw_cause": "a giant white centipede",
+  "terminal": {
+    "cause": "a giant white centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 643,
+    "race_idx": 8,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1080,
+    "flags": "-",
+    "git_rev": "ae1e601929446af672a57007d73b385cb38e5331",
+    "git_dirty": "no",
+    "source_sha256": "1d99185da7870b5ef4a8fb9633f1bdfa34d4ea6bf9f04e3167f4b12c609798cc",
+    "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5",
+    "borg_txt_sha256": "5a115e258eb24c49b272fa6919f303e8b2f08b6f4f078111e02f55aafb9f22d3"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-r2/full-8-blackguard-0",
+      "result_sha256": "776def6eec57976d2fbf35710c4774b8b93b656a287d3fec40eca32f74c43a47",
+      "raw_sha256": {
+        "keys.log": "776def6eec57976d2fbf35710c4774b8b93b656a287d3fec40eca32f74c43a47",
+        "messages.log": "6a02b4be1fa0b41ae1cdc5c1f8a5f35c7098624bb26945afa8e3e8370c33f0c9",
+        "state.log": "21b2a2f802498fbccee74d6078f7018b1f079804c0579cacaedfd26842495d02"
+      },
+      "source_commit": "ae1e601929446af672a57007d73b385cb38e5331",
+      "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5"
+    }
+  ],
+  "encounter_family": "start-47023d8d8e6432fc2a496b1b1f92df59ce54bfb4610eee7fde2b175b3a624cd9",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6f07e63afe158e9e9d48ae3d6d462c577e1be1cdbfb348a0aceee9e8ec160195",
+    "config.txt": "99a496123c5e30d14033f0fcce5b1ae5290e00fffd90af76e7d09148a79eeb9a",
+    "depths.json": "79dad66640d4dde78db4a39286bd9dc058390a2a754794c70c7e7e212c59b899",
+    "summary.json": "36dff475f8c33b7bc0d61da869ef9149b7c2b08bb8a7c884d17a13a25007f954"
+  },
+  "investigation": null,
+  "issue": null
+}
