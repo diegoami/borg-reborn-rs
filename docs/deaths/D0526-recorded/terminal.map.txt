@@ -1,0 +1,24 @@
+                                                                                
+                                                                                
+            _______________________                i) Information               
+           /                       \         ___   m) Messages                  
+          /                         \ ___   /   \  f) File dump                 
+         /            RIP            \   \  :   :  v) View scores               
+        /                             \  : _;,,,;_ x) Examine items             
+       /           RustBorg            \,;_        h) History                   
+      |               the               |   ___    s) Spoilers                  
+      |            Wanderer             |  /   \   n) New Game                  
+      |                                 |  :   :   q) Quit                      
+      |              Druid              | _;,,,;_   ____                        
+      |            Level: 1             |          /    \                       
+      |             Exp: 0              |          :    :                       
+      |             AU: 373             |          :    :                       
+      |        Killed on Level 1        |         _;,,,,;_                      
+      |        by a rock lizard.        |                                       
+      |                                 |                                       
+      |   on Mon Nov  9 18:42:17 2026   |                                       
+     *|   *     *     *    *   *     *  | *                                     
+_____)/\\_)_/___(\/___(//_\)/_\//__\\(/_|_)__________________________           
+                                                                                
+                                                                                
+                                                                                

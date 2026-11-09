@@ -353,7 +353,10 @@ def maybe_register(bundle, issue=None):
                     update_index(root)
                 print('Death already recorded:', path.parent, flush=True)
                 return path.parent
-        numbers = [int(read(p)['id'][1:]) for p in root.glob('D*/record.json')]
+        # Case ids are D<number>, optionally with a suffix: export-death.py
+        # writes D0129-rust-seed1074, this module D0130 (and its directory
+        # D0130-recorded). Only the number counts.
+        numbers = [int(re.match(r'D(\d+)', read(p)['id']).group(1)) for p in root.glob('D*/record.json')]
         case = f'D{max(numbers, default=0) + 1:04d}'
         output = root / (case + '-recorded')
         write_dossier(bundle, output, case, issue=issue)
