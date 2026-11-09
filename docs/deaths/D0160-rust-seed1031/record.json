@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0160-rust-seed1031",
+  "run_kind": "harness",
+  "character": "Gnome Priest",
+  "raw_cause": "a large white snake",
+  "terminal": {
+    "cause": "a large white snake",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 10239,
+    "race_idx": 4,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1031,
+    "flags": "-",
+    "git_rev": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+    "git_dirty": "no",
+    "source_sha256": "c8651abcaf45a60d9be3e1b68abcc1051e59c2081fb88f6e54c126cf91e2bd9e",
+    "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575",
+    "borg_txt_sha256": "5fb413cb0514c57ce6a01ef5aaebc6ff1b870eda6438f479dddc1a770e85c9e1"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-n2/full-3-priest-1",
+      "result_sha256": "2e3ae84585d088cf81626c935be11daeec54f61afcc6a4d38f4627f844a4e239",
+      "raw_sha256": {
+        "keys.log": "2e3ae84585d088cf81626c935be11daeec54f61afcc6a4d38f4627f844a4e239",
+        "messages.log": "688ce0043fe03f92411942b7b6f8d301c4ad91123164046052f42e50fcae9dea",
+        "state.log": "a2f0f3b71da95b6db78b75a3e52c36d5f4ea32f0762df6a6437408680e70faa4"
+      },
+      "source_commit": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+      "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575"
+    }
+  ],
+  "encounter_family": "start-22d12644af8da4f5e2be4a2b4ce2c2db95edae86378d17d44f10b69c8ebf1da8",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "8d0cc1de0fa2b1fdea2658b623919c06295f6825429df378694e5827fbaad023",
+    "config.txt": "2ba8874c5187ec74a694959c903a51a3ca7996e393f80ccc007d919433f8048d",
+    "depths.json": "9287ba19508e56db40383d8d45982c6414bd3f1861a79f7ec0757ced8b0e9e42",
+    "summary.json": "b02a2d582f80fc33bcd9ba5735134dedf4b177dea6eec3cac0687e9a9ca774e6"
+  },
+  "investigation": null,
+  "issue": null
+}
