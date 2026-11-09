@@ -56,6 +56,9 @@ pub enum Action {
     /// Stand still one turn (','): uses game time, except on a shop
     /// entrance, where it enters the store (see [`stand_still`]).
     Hold,
+    /// Alter the grid in a direction 1–9 ('+' and the direction): always
+    /// uses game time (see [`stand_still`]).
+    Alter(u8),
 }
 
 impl Action {
@@ -67,6 +70,7 @@ impl Action {
             Action::Descend => k.push(b'>' as u32),
             Action::Walk(d) => k.push((b'0' + d) as u32),
             Action::Hold => k.push(b',' as u32),
+            Action::Alter(d) => k.extend([b'+' as u32, (b'0' + d) as u32]),
         }
         k
     }
@@ -99,16 +103,15 @@ pub fn is_shop(f: Option<u32>) -> bool {
 /// except on a shop entrance: there `do_cmd_hold` enters the store and sets
 /// `energy_use = 0` ("turn will be taken exiting the shop",
 /// `angband/src/cmd-cave.c`), so repeated holds would stay at one turn
-/// (M1 re-review N2). On a shop the Borg steps off instead, trying a
-/// different direction at each think of the same turn: known passable grids
-/// first, then unknown ones, then the rest; `attempt` counts the earlier
-/// forced tries at this turn. Every shop entrance borders the town's floor,
-/// so within eight thinks a step takes time.
-pub fn stand_still(
-    here: Option<u32>,
-    around: impl Fn(i32, i32) -> Option<u32>,
-    attempt: u32,
-) -> Action {
+/// (M1 re-review N2). A step off is not certain to take time either: an
+/// afraid player walking into a visible monster is refused before any
+/// energy is spent (`do_cmd_walk_test`; re-review R2). So on a shop the
+/// Borg alters a neighbouring grid instead: `do_cmd_alter_aux` spends a
+/// move's energy before it looks at the grid, and its attack path charges
+/// every blow even when afraid (`py_attack`). It picks a known passable
+/// neighbour first, where altering just spins it around, then an unknown
+/// one, then the rest.
+pub fn stand_still(here: Option<u32>, around: impl Fn(i32, i32) -> Option<u32>) -> Action {
     if !is_shop(here) {
         return Action::Hold;
     }
@@ -117,9 +120,11 @@ pub fn stand_still(
         f if walkable(f) => 0,
         _ => 2,
     };
-    let mut dirs: Vec<(u8, i32, i32)> = DIRS.to_vec();
-    dirs.sort_by_key(|(_, dx, dy)| rank(around(*dx, *dy)));
-    Action::Walk(dirs[attempt as usize % dirs.len()].0)
+    let (d, _, _) = DIRS
+        .iter()
+        .min_by_key(|(_, dx, dy)| rank(around(*dx, *dy)))
+        .expect("eight directions");
+    Action::Alter(*d)
 }
 
 /// The Borg's own random numbers (xorshift64*). Seeded with a constant, so
@@ -207,7 +212,7 @@ pub fn decide(
     // after a few tries the Borg stands still.
     let tries = mem.tries_at(view.turn);
     if tries >= MAX_TRIES_PER_TURN {
-        return stand_still(here, around, tries - MAX_TRIES_PER_TURN);
+        return stand_still(here, around);
     }
     if here == Some(feat::MORE) {
         return Action::Descend;
@@ -222,7 +227,7 @@ pub fn decide(
         .collect();
     if options.is_empty() {
         // Boxed in by known walls: a walk would take no time.
-        return stand_still(here, around, tries);
+        return stand_still(here, around);
     }
     Action::Walk(options[rng.below(options.len())])
 }
@@ -422,16 +427,16 @@ mod tests {
         assert_eq!(a.keys(), vec![ESCAPE, b',' as u32]);
     }
 
-    /// M1 re-review N2: on a shop entrance ',' enters the store and takes
-    /// no time, so the Borg must never hold there; it steps off, known
-    /// floor first, and tries every direction within eight thinks.
+    /// M1 re-review N2 and R2: on a shop entrance ',' enters the store and
+    /// takes no time, and a step can be refused without time (fear), so the
+    /// Borg alters a neighbour instead, known floor first.
     #[test]
-    fn on_a_shop_it_steps_off_instead_of_holding() {
+    fn on_a_shop_it_alters_instead_of_holding() {
         // Shop walls (permanent, 22) all round, floor to the south (direction 2).
         let around = |dx: i32, dy: i32| Some(if (dx, dy) == (0, 1) { feat::FLOOR } else { 22 });
         let mut mem = Memory::default();
-        let mut first_forced = None;
-        for _ in 0..12 {
+        let mut forced = Vec::new();
+        for _ in 0..6 {
             let a = decide(
                 &view(20, 9),
                 Some(feat::STORE_GENERAL),
@@ -440,18 +445,23 @@ mod tests {
                 &mut Rng::new(),
             );
             assert_ne!(a, Action::Hold, "held on a shop");
-            if mem.tries_at(9) >= MAX_TRIES_PER_TURN && first_forced.is_none() {
-                first_forced = Some(a);
+            if mem.tries_at(9) >= MAX_TRIES_PER_TURN {
+                forced.push(a);
             }
             mem.record(9, a);
         }
-        assert_eq!(first_forced, Some(Action::Walk(2)), "known floor first");
-        // Unknown neighbours only: eight thinks at one turn try all eight directions.
-        let seen: std::collections::BTreeSet<_> = (0..8)
-            .map(|t| stand_still(Some(feat::HOME), |_, _| Some(feat::NONE), t))
-            .collect();
-        assert_eq!(seen.len(), 8);
-        assert_eq!(stand_still(Some(feat::FLOOR), around, 5), Action::Hold);
+        assert!(!forced.is_empty());
+        assert!(forced.iter().all(|a| *a == Action::Alter(2)), "{forced:?}");
+        assert_eq!(
+            Action::Alter(2).keys(),
+            vec![ESCAPE, b'+' as u32, b'2' as u32]
+        );
+        // Boxed in on the home by unknown grids and walls: still an Alter.
+        let a = stand_still(Some(feat::HOME), |dx, _| {
+            Some(if dx == 1 { feat::NONE } else { 21 })
+        });
+        assert_eq!(a, Action::Alter(3));
+        assert_eq!(stand_still(Some(feat::FLOOR), around), Action::Hold);
     }
 
     #[test]
