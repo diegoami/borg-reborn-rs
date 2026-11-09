@@ -39,5 +39,16 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # The controls (T1.3, T1.8): built from a fresh checkout (the pinned C Borg
+      # sources are cloned on demand) and checked against their references.
+      - run: BORG_IMPL=c-pristine harness/build.sh
+      - run: BORG_IMPL=c-pristine harness/suite.sh smoke harness/out/smoke-c-pristine
+      - run: harness/diff --suite smoke --expect-impl c-pristine harness/out/smoke-c-pristine harness/reference/smoke-pristine
+      - run: BORG_IMPL=c-bbc-m7 harness/build.sh
+      - run: BORG_IMPL=c-bbc-m7 harness/suite.sh smoke harness/out/smoke-c-bbc-m7
+      - run: harness/diff --suite smoke --expect-impl c-bbc-m7 harness/out/smoke-c-bbc-m7 harness/reference/smoke-c-bbc-m7
+      # The run contract on the Rust arm (T1.4, T1.8).
+      - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
+      - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
       # borg-rs's tool tests (T1.6): recording, replay, death records.
       - run: python3 -m unittest discover -s tools -p 'test_*.py'

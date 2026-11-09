@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.8 every-arm check, zoo compatibility and change request (#11) — M1 complete
+
+- **Every arm** (`c`, `c-pristine`, `c-bbc-m7`, `rust`) × smoke and full:
+  - no harness failure;
+  - the exact-boundary contract holds (`harness/check-boundary.py`,
+    192/192 runs);
+  - a rerun gives byte-identical keys (192/192);
+  - the oracles still hold (`c` = `smoke-c`, `c-pristine` = `full-pristine`
+    45/45).
+- **Zoo:** `harness/zoo-check.py` runs the pinned zoo's own borg-rs adapter
+  (in-memory specimens, no zoo change). All three arms run on the zoo's
+  smoke with no harness failure or config error. The gaps are survivors
+  stopping after the cap and an empty `first_turn_at_depth`.
+  [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md) is **for the owner to
+  route**: three catalogue specimens; the adapter's `-exact-turns`,
+  boundary field and depth stream; optionally the endpoint in stats.
+- Controls now build from a fresh checkout: the pinned sources are cloned on
+  demand and missing blobs fetched in one batch (`c-bbc-m7` in 16 s). CI
+  builds both controls, checks them against `smoke-pristine` and the new
+  self-produced `smoke-c-bbc-m7`, and checks the Rust arm's exact boundary.
+- The Rust arm's first full-suite deaths are recorded.
+
+**Next:** the **M1 review PR** (`main` → `reviewed`). Do not start M2 before
+the owner merges it (RULES 6).
+
 ## 2026-11-09: T1.7 endpoint calculator (#10)
 
 - `tools/endpoint.py` computes the GOALS primary endpoint per arm and class:
