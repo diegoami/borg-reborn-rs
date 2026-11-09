@@ -251,7 +251,8 @@ bool borg_think_shop_buy_useful(void)
         if ((borg.trait[BI_LIGHT] == 0 || borg.trait[BI_FOOD] == 0) && k != 0
             && k != BORG_HOME)
             continue;
-        if ((borg.trait[BI_ISCUT] || borg.trait[BI_ISPOISONED]) && k != 3)
+        /* Cures for poison and cuts are sold in the Alchemy shop */
+        if ((borg.trait[BI_ISCUT] || borg.trait[BI_ISPOISONED]) && k != 4)
             continue;
 
         /* Scan the wares */

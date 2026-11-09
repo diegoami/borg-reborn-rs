@@ -818,9 +818,9 @@ bool borg_light_beam(bool simulation)
     /* Don't do it if on the edge of shifting the panel. */
     if (dir == 5 || spell_ok == false || blocked == true
         || (dir == 2
-            && (borg.c.y > borg_panel_hgt() - 2))
+            && (borg.c.y - Term->offset_y > borg_panel_hgt() - 2))
         || (dir == 8
-            && (borg.c.y > borg_panel_hgt() - 2)))
+            && (borg.c.y - Term->offset_y > borg_panel_hgt() - 2)))
         return false;
 
     /* simulation */

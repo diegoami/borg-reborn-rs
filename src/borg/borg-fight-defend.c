@@ -2495,7 +2495,7 @@ static int borg_defend_aux_banishment(int p1)
         return 0;
 
     using_artifact
-        = borg_equips_item(act_loskill, true) && borg.has[BI_CURHP] > 100;
+        = borg_equips_item(act_loskill, true) && borg.trait[BI_CURHP] > 100;
 
     if (!using_artifact && !borg_spell_okay_fail(BANISH_EVIL, fail_allowed))
         return 0;

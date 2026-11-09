@@ -708,7 +708,8 @@ bool borg_flow_spastic(bool bored)
 
             /* Tweak -- Reward walls, punish visitation, distance, time on level
              */
-            v = (supp * 500) + (diag * 100) - (ag->xtra * 40) - (cost * 2)
+            v = (supp * 500) + (diag * 100) - (borg_grids[y][x].xtra * 40)
+                - (cost * 2)
                 - borg_timer(borg.time.level);
 
             /* Punish low level and searching too much */
@@ -1242,9 +1243,6 @@ bool borg_check_rest(int y, int x)
         && (borg.trait[BI_CURHP] >= borg.trait[BI_MAXHP] * 8 / 10)
         && (borg.trait[BI_CURSP] >= borg.trait[BI_MAXSP] * 7 / 10))
         return false;
-
-    /* Set this to Zero */
-    borg.time.last_kill_mult = 0;
 
     /* Most of the time, its ok to rest in a vault */
     if (borg.status.vault) {

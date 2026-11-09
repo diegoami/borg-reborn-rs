@@ -102,9 +102,9 @@ bool borg_choose_shop(void)
     if (borg.goal.shop != -1 && borg.goal.ware != -1)
         return true;
 
-    /* If poisoned or bleeding -- flow to temple */
+    /* If poisoned or bleeding -- flow to the Alchemy shop */
     if (borg.trait[BI_ISCUT] || borg.trait[BI_ISPOISONED])
-        borg.goal.shop = 3;
+        borg.goal.shop = 4;
 
     /* If Starving  -- flow to general store */
     if (borg.trait[BI_FOOD] == 0

@@ -321,8 +321,6 @@ static int32_t borg_power_home_aux1(void)
         value -= (num_rings - 4) * 2000L;
     if (num_neck > 3)
         value -= (num_neck - 3) * 1500L;
-    else if (num_neck > 3)
-        value -= (num_neck - 3) * 700L;
     if (num_armor > 6)
         value -= (num_armor - 6) * 1000L;
     if (num_cloaks > 3)
