@@ -103,8 +103,8 @@ c2rust headers copied from borg-rs are retired.
 
 ### 3.5 The headless frontend
 
-Our own frontend, `frontend/main-borgh.c` (outside `angband/`, compiled
-with it, registered as mode `borgh`), runs a game without a terminal. Its
+Our own frontend, `engine/frontend/main-borgh.c` (outside the pristine
+tree, compiled with it, registered as mode `borgh`), runs a game without a terminal. Its
 command line and outputs are a **fixed contract**, because borg-zoo calls
 them (§4, `docs/ZOO-INTERFACE.md`). The names below are today's, and they
 stay.
