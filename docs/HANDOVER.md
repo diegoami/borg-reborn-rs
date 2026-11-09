@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.7, the zoo contract (#77)
+
+- **`docs/ZOO-INTERFACE.md`:** the contract the zoo's borg-rs adapter
+  (`zoo/borgrs.py` at our pin `e56d5fa`) calls. It covers the build
+  (`harness/build.sh`, `build/rust/game/`, `BUILD_ID`'s `binary_sha256` and
+  `rustc`, `harness/borg.txt`), the run (`-mborgh` and its flags,
+  `TZ`/locale), and what the zoo reads (`summary.json`'s 10 fields,
+  `keys.log`, `state.log`). One mismatch is on the zoo's side: its `STOP`
+  map knows `clev`, while our frontend writes `clevel`. It's harmless,
+  since the zoo never passes `-clev`.
+- **`engine/tests/test_zoo_contract.py`:** runs the binary with exactly the
+  zoo's command line and checks every field and log format, plus that
+  `BUILD_ID` matches the binary and another `BORG_IMPL` fails loudly. CI's
+  engine job runs it.
+- **`harness/zoo-check.py`:** checks only the Rust arm. End to end with the
+  zoo's adapter: 3/3 cells with no harness failure or config error, and
+  **play hashes identical to M1's**. The seed-29 death is recorded as D0711.
+- **Retired:** `tools/endpoint.py` and its test (borg-zoo computes every
+  statistic). GOALS D7 is amended.
+- **After E is merged:** ask borg-zoo (an issue, RULES 7) to move
+  `4.2.6-reborn-rust`'s `ref` to E's tag and to decide on the two C
+  specimens.
+
 ## 2026-11-09: TE.6, our death tools; the copied tooling and borg-rs's tree gone (#76)
 
 - **Decision (owner):** the death tooling to keep imported borg-rs's whole
