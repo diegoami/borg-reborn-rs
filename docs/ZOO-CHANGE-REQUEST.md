@@ -73,3 +73,88 @@ kept in the denominator.
 - No change to how better-borg-c observer specimens run.
 - No new suites. The class suites (`classes-1800`, `classes-1800-b`) and the
   deep suite are what G1–G3 use.
+
+## Appendix: prompt for a borg-zoo session
+
+Given to the owner on 2026-11-09 to start the work in borg-zoo. It follows
+borg-zoo's own rules: catalogue changes by PR, read-only pins, append-only
+results, and the owner starting large experiments.
+
+````text
+You are working in diegoami/borg-zoo. Read AGENTS.md, RULES.md and docs/DESIGN.md first, and follow them
+(catalogue changes by PR; other repositories read only, at pinned commits; append-only results; no AI
+attribution trailers; local heavy runs under `flock /tmp/angband-validation.lock`; large experiments are
+started by the owner, not by you).
+
+## Goal
+
+Make borg-zoo able to measure diegoami/borg-reborn-rs, and record runs at the exact turn boundary,
+as requested in borg-reborn-rs `docs/ZOO-CHANGE-REQUEST.md`. Read that file at the commit below, together
+with `docs/GOALS.md` (section "Observation and scoring rule"), `harness/README.md`, `tools/depth-stream.py`
+and `tools/endpoint.py`.
+
+borg-reborn-rs commit to use: the commit of tag `m1` if it exists
+(`git ls-remote --tags https://github.com/diegoami/borg-reborn-rs m1`), otherwise
+`b5b8fa468e573473c068008f4e00a8166fae6f21` (the M1 candidate under review). Say in the PR which one you used.
+
+## What already works (verify, do not assume)
+
+borg-reborn-rs is a borg-rs-style tree: `harness/build.sh` with `BORG_IMPL=<impl>` builds `build/<impl>/`
+behind the same borgh frontend, so zoo/borgrs.py builds and runs it unchanged. Three implementations matter:
+- `rust`: the reborn Borg (a placeholder strategy until its M3; its results mean nothing yet);
+- `c-pristine`: the original C Borg (upstream e473720 src/borg) on borg-reborn-rs's engine tree;
+  byte-identical to the zoo's `4.2.6-rs-m0-c` on borg-rs's smoke (3/3) and full (45/45) suites;
+- `c-bbc-m7`: better-borg-c tag 4.2.6-impact-v7's src/borg on the same tree.
+The controls fetch their pinned C sources on demand (one batched git fetch), so a fresh checkout builds them.
+borg-reborn-rs's `harness/zoo-check.py` ran this zoo's adapter (at 3f6b76e) on all three with no
+harness failure or config error. Reproduce that with your real catalogue entries before changing code.
+
+## Tasks (one PR each, or one PR with separate commits; say which)
+
+1. **Catalogue specimens** (catalogue/specimens.json), kind "borg-rs", repository "diegoami/borg-reborn-rs",
+   ref = the commit above:
+   - `4.2.6-reborn-rust` (impl rust, carries 0)
+   - `4.2.6-reborn-c-pristine` (impl c-pristine, carries 0; label: original C Borg built by borg-reborn-rs
+     under borgh, byte-identical to 4.2.6-rs-m0-c on borg-rs's smoke and full suites)
+   - `4.2.6-reborn-c-bbc-m7` (impl c-bbc-m7, carries 76; label: better-borg-c milestone 7's C Borg under borgh)
+   Check that the adapter's build accepts `impl` values other than c/rust everywhere (it passes BORG_IMPL
+   through and reads build/<impl>/BUILD_ID); fix any place that assumes only c/rust.
+
+2. **Exact boundary, opt-in per specimen.** A specimen field `"exact_turns": true` makes zoo/borgrs.py pass
+   `-exact-turns` to borgh (present in borg-rs since e5cb263 and in borg-reborn-rs). The run then stops at
+   engine turn = cap. Set it on the three reborn specimens only; existing borg-rs specimens keep their meaning.
+   A specimen whose binary lacks the option must fail loudly, not silently fall back.
+
+3. **Record the boundary rule.** Every cell gets `"boundary": "exact"` or `"after-key"`
+   (better-borg-c observer cells: "exact"; borg-rs cells without the flag: "after-key"). borg-reborn-rs's
+   tools/endpoint.py already reads this field.
+
+4. **Depth stream.** Pass `-statelog FILE` and fill `first_turn_at_depth` from it: each line starts
+   `<game turn> <x>,<y> d<depth>/<max depth>`; for each depth d, the turn of the first line whose max depth
+   is >= d; depths reached only in the final state take the stop turn (same rule as borg-reborn-rs
+   tools/depth-stream.py). Do not keep the state log in results (size); keep only the derived field.
+
+5. **Statistics (optional, ask the owner first if unsure).** Today zoo/stats.py computes goal_rate over
+   death/turn_cap/completion cells only, per arm. borg-reborn-rs's primary endpoint counts every attempted
+   run, per class, at the exact boundary. Either add that as a clearly named extra statistic (do not change
+   the meaning of goal_rate), or document that tools/endpoint.py computes it from the cells.
+
+## Checks before you open the PR
+
+- Unit tests for each change (`python3 -m unittest discover -s tests`), including: exact flag passed only
+  when the specimen asks; the boundary field on every cell kind; the depth-stream parser on a synthetic
+  state log; an unknown impl still builds.
+- A local smoke experiment on the three new specimens (3 seeds, under the lock): no harness failure or config
+  error; survivors with `exact_turns` stop at exactly the cap; `first_turn_at_depth` is filled; the
+  c-pristine cells' play hashes equal those of `4.2.6-rs-m0-c` run with the same flags (pairing check).
+- Existing experiments' plans are unchanged (`python3 -m zoo plan` on each experiment file).
+
+## Do not
+
+- Start a classes-1800 or larger run, or any GitHub Actions experiment: propose the experiment file and
+  leave the start to the owner.
+- Change the borg-rs or better-borg-c specimens' behaviour, or rewrite existing results.
+- Open issues or PRs in other repositories; report anything they need in your PR.
+
+In the PR say what changed, what was verified, what was not, and the open questions for the owner.
+````
