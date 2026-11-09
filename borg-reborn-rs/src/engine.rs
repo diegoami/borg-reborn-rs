@@ -293,12 +293,14 @@ unsafe fn analyze(obj: *const b::object, in_store: bool) -> Option<Item> {
     if o.kind.is_null() || o.number == 0 {
         return None;
     }
+    // The engine's knowledge functions dereference `obj->known`
+    // (`object_flags_known`, obj-util.c:364-368): gear and wares always have
+    // one; an object without is not analysed (E review, nit).
+    if o.known.is_null() {
+        return None;
+    }
     let fully_known = b::object_fully_known(obj);
-    let k = if fully_known || o.known.is_null() {
-        o
-    } else {
-        &*o.known
-    };
+    let k = if fully_known { o } else { &*o.known };
     let mut flags = [0u8; 5];
     b::object_flags_known(obj, flags.as_mut_ptr());
     let mut buf = [0 as c_char; 256];
@@ -506,24 +508,35 @@ pub fn perceive() -> Option<Observation> {
                 }
                 let mut g: b::grid_data = core::mem::zeroed();
                 b::map_info(grid, &mut g);
-                let object_kind = (!g.first_kind.is_null()).then(|| (*g.first_kind).kidx);
-                if g.m_idx > 0 {
+                // A hallucinating player sees fabricated display data on an
+                // empty grid: `m_idx = 1` or `first_kind = k_info`, the unused
+                // kind 0 (cave-map.c:178-186; E review, finding 2). Only real
+                // data is observed: a monster whose own grid is this one, an
+                // object of a real kind.
+                let object_kind = (!g.first_kind.is_null())
+                    .then(|| (*g.first_kind).kidx)
+                    .filter(|&k| k != 0);
+                let monster = if g.m_idx > 0 {
                     let m = b::cave_monster(c, g.m_idx as c_int);
-                    if !m.is_null() && !(*m).race.is_null() {
-                        let m = &*m;
-                        monsters.push(MonsterSeen {
-                            index: m.midx,
-                            x,
-                            y,
-                            race: (*m.race).ridx,
-                            hp: m.hp as i32,
-                            max_hp: m.maxhp as i32,
-                            timed: m.m_timed,
-                            speed: m.mspeed,
-                            attr: m.attr,
-                            mimicking: !m.mimicked_obj.is_null(),
-                        });
-                    }
+                    (!m.is_null() && !(*m).race.is_null() && (*m).grid.x == x && (*m).grid.y == y)
+                        .then_some(m)
+                } else {
+                    None
+                };
+                if let Some(m) = monster {
+                    let m = &*m;
+                    monsters.push(MonsterSeen {
+                        index: m.midx,
+                        x,
+                        y,
+                        race: (*m.race).ridx,
+                        hp: m.hp as i32,
+                        max_hp: m.maxhp as i32,
+                        timed: m.m_timed,
+                        speed: m.mspeed,
+                        attr: m.attr,
+                        mimicking: !m.mimicked_obj.is_null(),
+                    });
                 }
                 if object_kind.is_some() {
                     objects.push(ObjectSeen {
@@ -536,7 +549,7 @@ pub fn perceive() -> Option<Observation> {
                     feat: g.f_idx,
                     in_view: g.in_view,
                     lighting: g.lighting,
-                    monster: g.m_idx > 0,
+                    monster: monster.is_some(),
                     object_kind,
                     multiple_objects: g.multiple_objects,
                     unseen_object: g.unseen_object,

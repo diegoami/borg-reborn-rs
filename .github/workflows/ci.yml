@@ -79,7 +79,8 @@ jobs:
           name: ci-death-registry
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths"
+      # Every natural death in the run outputs has a dossier (E review, finding 3).
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       - run: for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).

@@ -494,6 +494,28 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     };
     #[cfg(feature = "test-hallucinate")]
     let (here, around, observation) = engine::while_hallucinating(|| perceive(b));
+    // ... and hallucination changes only what is drawn, never what is
+    // observed: the same think without it sees the same monsters, objects
+    // and grid entities (E review, finding 2).
+    #[cfg(feature = "test-hallucinate")]
+    {
+        let plain = engine::with_borg_rng(&mut b.engine_rng, engine::perceive);
+        let entities = |o: &Option<crate::observation::Observation>| {
+            o.as_ref().map(|o| {
+                let grids: Vec<_> = o
+                    .panel
+                    .grids
+                    .iter()
+                    .map(|g| (g.monster, g.object_kind))
+                    .collect();
+                (o.monsters.clone(), o.objects.clone(), grids)
+            })
+        };
+        assert!(
+            entities(&observation) == entities(&plain),
+            "hallucination changed what is observed"
+        );
+    }
     #[cfg(not(feature = "test-hallucinate"))]
     let (here, around, observation) = perceive(b);
     if let Some(o) = observation.as_ref() {

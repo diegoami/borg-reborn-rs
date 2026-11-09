@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: E's review is in; fixes in three PRs
+
+Kimi's review of E (on #92) has ten findings. They are fixed in three PRs
+into `main`:
+1. **The frontend (this PR, RULES 22):** `loaded` and `exact_turns` are in
+   every summary (finding 5).
+   - Play doesn't change: keys, messages and states equal the references
+     (smoke 3/3, smoke-exact 3/3, full 45/45).
+   - `harness/diff` compares the two fields when both sides have them, as
+     it does `game_options`.
+   - Its deaths are recorded at its source (D0712–D0757).
+2. **The code:** suites, perception while hallucinating, the death and
+   reference tools.
+   - References are regenerated: the full suite's `menu` fix changes
+     exactly the 20 runs whose character changes.
+   - Smoke, smoke-exact and the other 25 full runs are unchanged.
+   - Its deaths are D0758–D0803.
+3. **Documents, rules and CI (#94),** RULES 12 narrowed by the owner.
+
 ## 2026-11-09: E merged before its review; a review after the fact
 
 The owner had the session merge #92 (`main` → `reviewed`). Tag `e`

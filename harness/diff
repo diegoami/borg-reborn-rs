@@ -2,7 +2,7 @@
 """Compare Borg keypress logs and print the first divergence.
 
 Usage:
-  harness/diff [--suite NAME] [--save-root DIR] [--expect-impl c|rust|c-pristine|c-bbc-m7] [--allow-incomplete]
+  harness/diff [--suite NAME] [--save-root DIR] [--expect-impl rust] [--allow-incomplete]
               [--allow-unverified] [--allow-legacy-logs] A B
 
   A and B are either two key logs (keys.log or keys.log.xz) or two
@@ -78,8 +78,10 @@ IGNORED_FIELDS = {"wall_seconds"}
 MEASUREMENT_FIELDS = {"calendar", "max_clevel", "hp", "max_hp", "borg_decisions",
                       "player_energy", "borg_rng", "game_rng", "effective_settings"}
 # Run-record fields added after the first references (TE.5: the game options
-# in force). Compared whenever both sides have them.
-RECORD_FIELDS = {"game_options"}
+# in force; the E review: `exact_turns` and `loaded` in every summary, where
+# earlier references have them only when true). Compared whenever both sides
+# have them.
+RECORD_FIELDS = {"game_options", "exact_turns", "loaded"}
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -577,7 +579,7 @@ def main(argv):
             allow_unverified = True
         elif opt == "--allow-legacy-logs":
             allow_legacy = True
-        elif opt == "--expect-impl" and args and args[0] in ("c", "rust", "c-pristine", "c-bbc-m7"):
+        elif opt == "--expect-impl" and args and args[0] == "rust":
             expect_impl = args.pop(0)
         else:
             print(__doc__)

@@ -12,15 +12,18 @@ rd = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(rd)
 
 
-def dossier(root, schema='borg-reborn-rs/death-record@1', impl='rust', flags='menu,exact', seed=102):
+def dossier(root, schema='borg-reborn-rs/death-record@1', impl='rust', flags='menu,exact', seed=102,
+            summary_extra=None, config_extra=''):
     d = Path(root) / 'D0001-rust-seed102'
     d.mkdir()
     (d / 'record.json').write_text(json.dumps({
         'schema': schema, 'identity': {'impl': impl, 'seed': seed, 'flags': flags, 'source_sha256': 'abc', 'git_rev': 'f00'},
         'terminal': {'turn': 743, 'race_idx': 2, 'class_idx': 1},
         'attempts': [{'outcome': 'death', 'result_sha256': 'k' * 64}]}))
-    (d / 'summary.json').write_text(json.dumps({'seed': seed, 'race_idx': 2, 'class_idx': 1, 'game_turns': 743}))
-    (d / 'config.txt').write_text(f'flags={flags}\nborg_txt_sha256=x\nprofile=harness/profiles/reborn-default.txt\n')
+    (d / 'summary.json').write_text(json.dumps({'seed': seed, 'race_idx': 2, 'class_idx': 1, 'game_turns': 743,
+                                                **(summary_extra or {})}))
+    (d / 'config.txt').write_text(f'flags={flags}\nborg_txt_sha256=x\nprofile=harness/profiles/reborn-default.txt\n'
+                                  + config_extra)
     return d
 
 
@@ -44,6 +47,15 @@ class PlanTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as t:
             with self.assertRaises(SystemExit):
                 rd.plan(dossier(t, flags='save=x.save,keep-load-rng'))
+
+    def test_a_load_through_the_extra_options_is_refused(self):
+        # E review, finding 4: run.sh -- -load FILE has flags=-.
+        with tempfile.TemporaryDirectory() as t:
+            with self.assertRaises(SystemExit):
+                rd.plan(dossier(t, flags='-', config_extra='save_sha256=ab\n'))
+        with tempfile.TemporaryDirectory() as t:
+            with self.assertRaises(SystemExit):
+                rd.plan(dossier(t, flags='-', summary_extra={'loaded': True}))
 
     def test_another_build_is_refused(self):
         with tempfile.TemporaryDirectory() as t:
