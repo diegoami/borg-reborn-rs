@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0648-rust-seed1032",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a metallic red centipede",
+  "terminal": {
+    "cause": "a metallic red centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 19474,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1032,
+    "flags": "-",
+    "git_rev": "9a4757481dac9a7e72959002d7ffd10f27959861",
+    "git_dirty": "yes",
+    "source_sha256": "cbffb4ed34ffb6390d98dbef55d9e2d321adf9c0558705976558d673e502306e",
+    "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1836
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te5-full/full-3-priest-2",
+      "result_sha256": "1d6729c6247fb87651e584fc61739c3bb8bd10418fa518ce1d617722b9e2121b",
+      "raw_sha256": {
+        "keys.log": "1d6729c6247fb87651e584fc61739c3bb8bd10418fa518ce1d617722b9e2121b",
+        "messages.log": "22dc6e6dcce64fb029151154619dc0467e6965380da0e4870e982692241d06f0",
+        "state.log": "aacc1e9569334f909b79379b49e16db93b18c3cf4b160edc61c0e4fda2286ab4"
+      },
+      "source_commit": "9a4757481dac9a7e72959002d7ffd10f27959861",
+      "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed"
+    }
+  ],
+  "encounter_family": "start-33c40d526cd31d231d90377bcd0b0b3abaeaf233c9c0c291a2424b4442a306bf",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c7515beaa087d0bd752a840e6e471b62af722c7c6591cc02117d5dfff0e9deb0",
+    "config.txt": "c2fbb94557ced43f7b76150241b01a363ffa333d0722633e43af715546c8a125",
+    "depths.json": "9654c1985f70ff448c8a79dfb8ff7b77bef765b414cacbb07c8bc98b96f9d470",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "a39ff91b893951d4cda90780dec1568bf19636897e23a6cde64395df621ca884",
+    "trace-tail.jsonl": "4b4b52d42ba782527bda52f5dbac92141e7e810927d123a4e8ec93bbb97c60b6"
+  },
+  "investigation": null,
+  "issue": null
+}

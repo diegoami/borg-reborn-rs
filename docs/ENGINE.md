@@ -111,7 +111,44 @@ builds its own binary from them.
 
 ## Determinism
 
-The seed, the fixed date and the environment (`TZ=UTC`, `LANG` and
-`LC_ALL` set to `C.UTF-8`: the date is turned into a calendar date in the
-run's time zone) fix a run (docs/SPEC.md §4). The game options the Borg
-sets are listed here once they are settled (TE.5).
+A run is fixed by four things (docs/SPEC.md §4):
+- the seed;
+- the fixed date;
+- the environment. `harness/run.sh` runs the game with `TZ=UTC`,
+  `LANG=C.UTF-8` and `LC_ALL=C.UTF-8`, because `localtime()` turns the
+  fixed date into a calendar date in the run's time zone;
+- the configuration below.
+
+## The game options
+
+The Rust Borg sets one game option when it starts (`GAME_OPTIONS` in
+`borg.rs`), and an option the engine does not know stops it. The frontend
+writes every option in force at the stop into `summary.json`
+(`game_options`), so each run records them.
+
+| Option | Rust Borg | C Borg (`borg_reinit_options`, `borg-init.c:403-444`) | Why we differ |
+| --- | --- | --- | --- |
+| `auto_more` | **on** | off | The C Borg reads `-more-` off the message line and answers it. The Rust Borg has no prompt catcher yet (M3, the executor), so the game must not stop on `-more-`. Revisit in M3. |
+| `rogue_like_commands`, `pickup_always`, `pickup_inven`, `pickup_detail`, `use_old_target`, `show_piles`, `show_labels`, `show_flavors`, `hitpoint_warn` | not set (the game's defaults) | set | The Rust Borg's keys do not depend on them yet. M3's executor decides each one and records it here. |
+
+**Not options in 4.2.6:** `easy_alter` and `easy_open`. The Rust Borg set
+`easy_alter` until TE.5, and the engine ignored it without a word
+(`option_set` returns false). The C Borg's calls for both are leftovers too.
+Walking into a closed door opens it in 4.2.6 anyway (`move_player` calls
+`do_cmd_alter_aux`).
+
+spec §1.2 warns that the options change the screen the Borg reads. Each
+difference from the C set is declared here, with its reason.
+
+## References
+
+`harness/reference/smoke-rust/` and `full-rust/` hold the Rust Borg's
+smoke and full outputs (keys, messages and state, xz-compressed, plus
+`summary.json`) at the commit recorded in each `REFERENCE` file. They are
+regression references, not oracles (docs/SPEC.md §4). CI compares smoke
+with them. Full is compared locally, under the lock, when the Borg's code
+changes.
+
+TE.5 made them from the build on our own integration, after TE.4's
+reproduction check: that build plays the same keys as the build on
+borg-rs's tree, smoke and full.
