@@ -20,6 +20,7 @@ are not independent.*
 | better-borg-c | [D0011-collected](../../reference/deaths/better-borg-c/D0011-collected/report.md) | Measure Half-Elf Warrior | a griffon | 119600 |  |  | — | escape/equipment/healing-policy investigation; three source-checked mechanisms with native evidence; no reusable origina | D0011: a griffon at turn 119600 |
 | better-borg-c | [D0012-collected](../../reference/deaths/better-borg-c/D0012-collected/report.md) | Measure Gnome Paladin | poison | 27770 |  |  | — | retreat/re-approach loop under worm-mass flight; owner's verified manual branch kills the mold in one blow and survives; | D0012: poison at turn 27770 |
 | better-borg-c | [D0013-collected](../../reference/deaths/better-borg-c/D0013-collected/report.md) | Measure Dunadan Druid | a small kobold | 3716 |  |  | — | escape-order, scary-list flight and stock investigation; owner's verified manual branch survives by disengaging from the | D0013: a small kobold at turn 3716 |
+| better-borg-c | [D0014-collected](../../reference/deaths/better-borg-c/D0014-collected/report.md) | Measure High-Elf Rogue | a blood falcon | 306771 |  |  | — | deep-descent depth, escape and emergency-resource investigation; owner's verified manual branch survives with Speed, CLW | D0014: a blood falcon at turn 306771 |
 | borg-rs | [D0001-seed8400-warrior](../../reference/deaths/borg-rs/D0001-seed8400-warrior/report.md) | Human Warrior | a pseudo-dragon | 37680 | 13 | 8 | — | C/Rust parity observed; defect not established | Natural death: seed8400 Human Warrior |
 | borg-rs | [D0002-seed8402-druid](../../reference/deaths/borg-rs/D0002-seed8402-druid/report.md) | Half-Elf Druid | a cutpurse | 5590 | 1 | 1 | — | C/Rust parity observed; defect not established | Natural death: seed8402 Half-Elf Druid |
 | borg-rs | [D0003-seed8406-rogue](../../reference/deaths/borg-rs/D0003-seed8406-rogue/report.md) | Hobbit Rogue | a giant yellow centipede | 5600 | 1 | 2 | — | C/Rust parity observed; defect not established | Natural death: seed8406 Hobbit Rogue |
@@ -28,4 +29,4 @@ are not independent.*
 | borg-rs | [D0006-recorded](../../reference/deaths/borg-rs/D0006-recorded/report.md) | CollectedBorg | a grey mold | 22841 | 1 | 2 | — | Grey-mold stair/exploration loop assessed; qualified private trace shows emergency movement and danger-cache reuse | D0006: a grey mold at turn 22841 |
 | borg-reborn-rs | [D0001-c-seed102](../../docs/deaths/D0001-c-seed102/report.md) | Elf Mage | an acolyte | 7195 | 1 | 1 | — | unassessed | D0001-c-seed102: an acolyte at turn 7195 |
 
-20 cases.
+21 cases.

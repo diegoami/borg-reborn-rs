@@ -1,0 +1,95 @@
+{
+  "classification": "deep-descent depth, escape and emergency-resource investigation; owner's verified manual branch survives with Speed, CLW and detection; no reusable original-C defect established",
+  "confidence": "High for native trajectory, positions, monsters (diagnostic) and inventory; escape/speed/heal branch outcomes source-derived; no rescue claimed",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "f7e5da9016e1f1ba9aaff87fa2d3f938d525aa87a0cba54da8b17d71432e8bef",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused341; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/341",
+      "summary": "Chat 2026-11-09: digging rogue meets a falcon and phases at 306703; lands by an orc archer and an elemental; smashes the archer with a lance of slay orc; surrounded with no Phase but a gap at 306726; kills a falcon; illusionist; backs up and gets stuck 306747; second falcon kills him. Speed and CLW could have helped; wants to try before and after the Phase.",
+      "status": "processed; recorded verbatim on 341; findings replied; before-Phase manual try recorded; after-Phase try open",
+      "actions": [
+        "recall-deep-descent",
+        "climb-restock",
+        "speed-emergency",
+        "heal-eligibility",
+        "attempted-room-retreat"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/341",
+      "summary": "Chat 2026-11-09: played from 306700 before the Phase; drank Speed on seeing the falcon; handled the illusionist and another falcon; Detect Monsters let him retreat to recover; earth hounds too many so retreated; alive.",
+      "status": "processed; manual branch VERIFIED and recorded",
+      "actions": [
+        "speed-emergency",
+        "heal-eligibility"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode High-Elf Rogue CL11 (306736)/DL20/max20, seed1907608242, source867c777845fd; blood falcon death306771, HP-4/91."
+    },
+    {
+      "status": "observed",
+      "summary": "Max depth 5 until 282983; Deep Descent DL2 HP85/85 danger97 -> DL10; 284602 DL9 HP85/85 danger87 -> DL15; 284961 DL15 HP38/85 -> DL20 at CL9; ~21k turns on DL20 wanting to climb."
+    },
+    {
+      "status": "observed",
+      "summary": "306703 digging at (72,37), HP87/87, danger141 -> last Phase Door scroll; lands (82,36) beside orc archer and fire spirit, earth hounds and blood falcon nearby; danger 399/1046/1325."
+    },
+    {
+      "status": "observed",
+      "summary": "First blood falcon (speed+30, 2d10/2d10/3d8, 6HP) hits 87->60, killed in one lance hit; backs up to (81,35) and stays; second falcon seen 306746; logged danger 22 at 306756-306763 with it 3-4 squares away unseen; two rounds 59->29->-4."
+    },
+    {
+      "status": "observed; rules source-checked",
+      "summary": "Died carrying 21 known CLW, 5 known Speed, Phase Door spell at 42% fail with 9 SP, two slings without ammunition. Speed requires hasted danger <= HP/3; CLW needs danger < HP+heal; last-resort unknown use excludes MAXSP>0."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative",
+      "summary": "Owner branch 20261109T005413Z from 306703: no Phase; Speed on first sight; both falcons killed in one hit each; CLW cures blind/confusion/bleeding; Detect Monsters before retreating from earth hounds; 1 Speed, 5 CLW used; saved 306980 HP88/91; complete rerun VERIFIED."
+    },
+    {
+      "status": "observed",
+      "summary": "Original Borg cast Detect Monsters 234 times as routine detection upkeep (borg-light.c evil timer); last cast 300483, about 6300 turns before death; not used tactically during the fatal encounter."
+    }
+  ],
+  "actions": [
+    {
+      "key": "recall-deep-descent",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Evaluate early Recall retention and destination-aware delayed Deep Descent escape",
+      "status": "investigating; Recall at Home and two five-level drops observed; rescue untested"
+    },
+    {
+      "key": "climb-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/321",
+      "summary": "Classify every level change 55624-118552 and the no-known-up-stair fallback; compare D0009/235 and 159",
+      "status": "needs evidence"
+    },
+    {
+      "key": "speed-emergency",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/340",
+      "summary": "Observe borg_defend_aux_speed p1/p2/avoidance at lethal danger; count unused Speed at death",
+      "status": "needs evidence; source-checked; no gameplay change"
+    },
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved"
+    }
+  ]
+}
