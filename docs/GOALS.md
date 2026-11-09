@@ -45,9 +45,9 @@ A, B and C together, each where it pays:
    developed on. The **controls** in every comparison are C Borgs run under
    our exact run contract (D8): the original C Borg (`c-pristine`) and the
    latest better-borg-c milestone (`c-bbc-m7` today). borg-rs is not a
-   control: it is the source of our engine tree and tooling, and the
-   perception oracle (T2.5, #16). Its zoo results, like the observer
-   harness's, are context.
+   control: it is the source of our engine tree and tooling. Perception is
+   checked against the engine itself (T2.5, #16; owner, 2026-11-09). Its
+   zoo results, like the observer harness's, are context.
 
 Later, and only for narrow decisions: the decision trace (which strategy
 and which rule chose each action, with the alternatives' scores) is the
@@ -238,7 +238,7 @@ them.
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by `tools/endpoint.py`); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Controls | **Same-frontend controls built here** (T1.3, #6): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
+| D8 | Controls | **Same-frontend controls built here** (T1.3, #6): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling. Its zoo specimens and the observer-harness zoo results are context only. *Amended by the owner, 2026-11-09:* borg-rs is no longer the perception oracle; perception is checked against the engine itself (T2.5). The control `c-bbc-m8` (#56) runs better-borg-c v8 with `borg_munchkin_by_class = FALSE`, so every arm keeps D5 |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent | Its reviewed claims are inputs to strategy and parameter design. No dependency on it in code or in the plan's critical path |
