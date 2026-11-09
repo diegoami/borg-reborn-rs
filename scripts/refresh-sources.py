@@ -29,6 +29,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -275,26 +276,34 @@ def update(root, pins, fetch=True, today=None):
 
 
 class Snapshot:
-    """The state of every path an update writes: copy destinations (moved
-    aside whole, or the listed files of a 'files' rule) and single files."""
+    """The state of every path an update writes: copy destinations (copied
+    whole into a fresh backup directory of its own, or the listed files of a
+    'files' rule) and single files. The backup directory is new and owned by
+    the snapshot, so nothing that was already there is touched (re-review
+    R5); it is on the same filesystem as the copies, so restore can move
+    them back."""
 
     def __init__(self, root, rules, files):
         self.root = root
         self.aside = []   # (dest, backup dir or None if dest did not exist)
         self.files = {}   # path: bytes, or None if it did not exist
-        for rule in rules:
-            dest = root / rule['to']
-            if rule.get('select', 'files') == 'files':
-                for f in rule['files']:
-                    self.keep(dest / f)
-            elif not any(d == dest for d, _ in self.aside):
-                backup = dest.with_name(f'.refresh-backup-{dest.name}') if dest.exists() else None
-                if backup:
-                    shutil.rmtree(backup, ignore_errors=True)
-                    shutil.copytree(dest, backup, symlinks=True)
-                self.aside.append((dest, backup))
-        for f in files:
-            self.keep(f)
+        self.dir = Path(tempfile.mkdtemp(prefix='.refresh-backup-', dir=root))
+        try:
+            for rule in rules:
+                dest = root / rule['to']
+                if rule.get('select', 'files') == 'files':
+                    for f in rule['files']:
+                        self.keep(dest / f)
+                elif not any(d == dest for d, _ in self.aside):
+                    backup = self.dir / str(len(self.aside)) if dest.exists() else None
+                    if backup:
+                        shutil.copytree(dest, backup, symlinks=True)
+                    self.aside.append((dest, backup))
+            for f in files:
+                self.keep(f)
+        except BaseException:
+            self.discard()
+            raise
 
     def keep(self, f):
         if f not in self.files:
@@ -312,11 +321,10 @@ class Snapshot:
             else:
                 f.parent.mkdir(parents=True, exist_ok=True)
                 f.write_bytes(content)
+        self.discard()
 
     def discard(self):
-        for _, backup in self.aside:
-            if backup:
-                shutil.rmtree(backup, ignore_errors=True)
+        shutil.rmtree(self.dir, ignore_errors=True)
 
 
 def read_copy(src, rule, commit):
