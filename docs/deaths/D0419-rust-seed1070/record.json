@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0419-rust-seed1070",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 12310,
+    "race_idx": 7,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1070,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "e4164d3484a44de22fb275de68d0d691d30bdbd4ab3e670ac06601d1a48961a8"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-7-ranger-0",
+      "result_sha256": "a7c83a8187a52680ce65eca5b9389bf7e09fa5f5acdef59c0217e60671775bb4",
+      "raw_sha256": {
+        "keys.log": "a7c83a8187a52680ce65eca5b9389bf7e09fa5f5acdef59c0217e60671775bb4",
+        "messages.log": "edd30aac714930d400cab9fb0bf36fd5de8e12a5179d47a1c5aad887a77f9e5c",
+        "state.log": "77e0b1ab0b7afeee8dcce8b7903d4b6881f322311734b50f7d251ee31f9cf89f"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-2c07ac4be67686fd049e733ebc9400a1f83552b6538f00105f8d694f958d4304",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "611fadf4f1eae66629d504b2f5de0b0af9512678b54aebc5391d7b731f902052",
+    "depths.json": "ebb2c7128e2c0871058994a4f0ac88d7e7cae7df50a0608429bf149b37790b3a",
+    "summary.json": "e9c1c514678b08484b4ad15527fdbcf12053cd7ca1779b0fabae6663ae66a53b"
+  },
+  "investigation": null,
+  "issue": null
+}

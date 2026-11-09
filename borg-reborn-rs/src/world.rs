@@ -13,6 +13,7 @@
 //! a recorded observation log gives the same world as live play (the T2.2
 //! exit check, [`World::digest`]).
 
+use crate::knowledge::{self, Knowledge};
 use crate::observation::{Grid, Item, MonsterSeen, Observation, Slot, Status, StoreStock};
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +21,10 @@ use serde::{Deserialize, Serialize};
 const MON_TMD_SLEEP: usize = 0;
 /// `ELEM_MAX` (list-elements.h).
 pub const ELEM_MAX: usize = 25;
+/// `EQUIP_WEAPON` (list-equip-slots.h).
+pub const EQUIP_WEAPON: u16 = 1;
+/// `OBJ_MOD_BLOWS` (list-object-modifiers.h).
+pub const OBJ_MOD_BLOWS: usize = 10;
 
 /// Everything the Borg remembers.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -95,19 +100,17 @@ impl Track {
 
     /// How sure the Borg can be that the monster is still where it was
     /// seen: 1 while in view, then falling with the moves it may have made
-    /// since. A monster of speed 110 moves once per 10 game turns, and each
-    /// 10 points of speed double that, as the game's energy table roughly
-    /// does (`turn_energy`, player-calcs.c). A sleeping monster counts a
-    /// quarter of its moves. The exact shape is a parameter for M4's
+    /// since, from the game's energy table at its speed
+    /// ([`Knowledge::turns_per_action`]). A sleeping monster counts a
+    /// quarter of its moves. The shape is a parameter for M4's
     /// calibration; this one only has to fall with time and speed.
-    pub fn confidence(&self, now: i64) -> f64 {
+    pub fn confidence(&self, now: i64, k: &Knowledge) -> f64 {
         if self.in_view {
             return 1.0;
         }
         let elapsed = (now - self.last_seen).max(0) as f64;
-        let rate = 2f64.powf((f64::from(self.speed) - 110.0) / 10.0) / 10.0;
-        let moves = elapsed * rate * if self.awake() { 1.0 } else { 0.25 };
-        1.0 / (1.0 + moves)
+        let moves = elapsed / k.turns_per_action(i32::from(self.speed));
+        1.0 / (1.0 + moves * if self.awake() { 1.0 } else { 0.25 })
     }
 }
 
@@ -208,6 +211,45 @@ impl Character {
         }
         c.gear = GearBonuses::of(&c.equipment);
         c
+    }
+
+    /// The wielded weapon, if any.
+    pub fn weapon(&self) -> Option<&Item> {
+        self.equipment
+            .iter()
+            .find(|s| s.slot_type == EQUIP_WEAPON)
+            .and_then(|s| s.item.as_ref())
+    }
+
+    /// Blows per round times 100 with the current gear, by the engine's
+    /// formula ([`knowledge::blows`]), from the stats in use and the known
+    /// `OBJ_MOD_BLOWS` of the equipment.
+    pub fn blows(&self, k: &Knowledge) -> Option<i32> {
+        let s = self.status.as_ref()?;
+        let class = k.class(s.class)?;
+        let extra = self.gear.modifiers.get(OBJ_MOD_BLOWS).copied().unwrap_or(0);
+        Some(knowledge::blows(
+            class,
+            knowledge::stat_index(s.stat_use[0]),
+            knowledge::stat_index(s.stat_use[3]),
+            self.weapon().map_or(0, |w| i32::from(w.weight)),
+            extra,
+            s.percent_damage,
+        ))
+    }
+
+    /// Expected melee damage per player turn against a monster with no
+    /// resistances, if every blow hits: blows times the weapon's mean dice
+    /// plus the known to-dam of the gear (`calc_bonuses` adds every item's
+    /// to-dam to each blow). Hit chance, criticals, slays and brands come
+    /// with the threat model (M4). Compare weapons by trying them on a
+    /// copy: `character.wearing(slot, Some(item)).melee_per_turn(k)`.
+    pub fn melee_per_turn(&self, k: &Knowledge) -> Option<f64> {
+        let blows = f64::from(self.blows(k)?) / 100.0;
+        let dice = self
+            .weapon()
+            .map_or(0.0, |w| f64::from(w.dd) * (f64::from(w.ds) + 1.0) / 2.0);
+        Some(blows * (dice + f64::from(self.gear.to_d)).max(0.0))
     }
 
     /// Free pack slots, by the engine's own count (quiver included).
@@ -407,6 +449,47 @@ mod tests {
     use crate::observation::tests::sample;
     use crate::observation::ObjectSeen;
 
+    /// Knowledge with the game's energy table around normal speed and the
+    /// Warrior class.
+    fn energy() -> Knowledge {
+        let mut e = vec![1u8; 200];
+        for (s, v) in [(110, 10), (120, 20), (130, 30)] {
+            e[s] = v;
+        }
+        Knowledge {
+            extract_energy: e,
+            move_energy: 100,
+            classes: vec![crate::knowledge::tests::warrior()],
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn blows_and_melee_come_from_the_gear() {
+        let o = sample();
+        let w = world_of(&o);
+        let k = energy();
+        // STR 17, DEX 14 (stat_use), a 12 lb dagger (weight 120): the
+        // hand-worked C value of knowledge::blows.
+        assert_eq!(w.character.blows(&k), Some(100));
+        assert_eq!(w.character.melee_per_turn(&k), Some(2.5), "1d4: 2.5 a blow");
+        let mut better = w.character.equipment[0].item.clone().unwrap();
+        better.dd = 2;
+        better.ds = 5;
+        better.to_d = 3;
+        let tried = w.character.wearing(0, Some(better));
+        assert_eq!(
+            tried.melee_per_turn(&k),
+            Some(9.0),
+            "2d5+3 is compared by effect"
+        );
+        assert_eq!(
+            w.character.melee_per_turn(&k),
+            Some(2.5),
+            "the world is unchanged"
+        );
+    }
+
     fn world_of(o: &Observation) -> World {
         let mut w = World::new();
         w.update(o);
@@ -446,18 +529,19 @@ mod tests {
         w.update(&o);
         let t = w.level.track(7).expect("not forgotten");
         assert!(!t.in_view);
-        let (soon, later) = (t.confidence(o.turn), t.confidence(o.turn + 500));
+        let k = energy();
+        let (soon, later) = (t.confidence(o.turn, &k), t.confidence(o.turn + 500, &k));
         assert!(soon < 1.0 && later < soon, "{soon} {later}");
         let mut fast = t.clone();
         fast.speed = 130;
         assert!(
-            fast.confidence(o.turn) < soon,
+            fast.confidence(o.turn, &k) < soon,
             "a fast monster is less certain"
         );
         let mut asleep = t.clone();
         asleep.timed[MON_TMD_SLEEP] = 50;
         assert!(
-            asleep.confidence(o.turn) > soon,
+            asleep.confidence(o.turn, &k) > soon,
             "a sleeping monster stays put"
         );
     }
@@ -581,6 +665,46 @@ mod tests {
             assert_eq!(&w.digest(), live, "think {} differs from live play", i + 1);
         }
         eprintln!("{} thinks replayed into the same world", obs.len());
+    }
+
+    /// T2.3's check against the engine: on every think of a recorded run,
+    /// the stat indices and the blows computed here equal the engine's own
+    /// (`state.stat_ind`, `state.num_blows`). CI records the observations
+    /// and the knowledge of one run; without them this test has nothing to
+    /// read.
+    #[test]
+    fn recorded_blows_match_the_engine() {
+        let (Some(obs), Some(know)) = (
+            std::env::var_os("BORG_OBSERVATION_LOG_CHECK"),
+            std::env::var_os("BORG_KNOWLEDGE_LOG_CHECK"),
+        ) else {
+            return;
+        };
+        let know = std::fs::read_to_string(know).expect("the knowledge log");
+        let k = Knowledge::from_line(know.lines().next().unwrap()).unwrap();
+        let obs = std::fs::read_to_string(obs).expect("the observation log");
+        let mut w = World::new();
+        let mut n = 0;
+        for (i, line) in obs.lines().enumerate() {
+            let o = Observation::from_line(line).unwrap();
+            w.update(&o);
+            let s = &o.status;
+            let ind: Vec<i32> = s
+                .stat_use
+                .iter()
+                .map(|&v| knowledge::stat_index(v) as i32)
+                .collect();
+            assert_eq!(ind, s.stat_ind.to_vec(), "think {}: stat indices", i + 1);
+            assert_eq!(
+                w.character.blows(&k),
+                Some(s.blows),
+                "think {}: blows",
+                i + 1
+            );
+            n += 1;
+        }
+        assert!(n > 0);
+        eprintln!("{n} thinks: blows and stat indices equal the engine's");
     }
 
     #[test]

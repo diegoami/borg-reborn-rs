@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0406-rust-seed1004",
+  "run_kind": "harness",
+  "character": "Gnome Warrior",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 10112,
+    "race_idx": 4,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1004,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "da9434e9c2c823d9c0050bbcf1175bae01df1cc7b9b2c180dd28bbdf077cd334"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-0-warrior-4",
+      "result_sha256": "5f8eae0e5b1ef2fb57d1156f07bb5434af297e33aa474feb47e8fedecaba9c34",
+      "raw_sha256": {
+        "keys.log": "5f8eae0e5b1ef2fb57d1156f07bb5434af297e33aa474feb47e8fedecaba9c34",
+        "messages.log": "b5eabf306dd918f418b99f311b56ad81ad596cf245cdc3ef0adbd3a823d4a311",
+        "state.log": "272787eb0717c3b98728230d348d31b9d7c51dcb13344b9d9ac5e209bdfb4bf1"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-1b6098deff1fe22f5a8620c891e1bee1eaa1518513c46c3dedb8f2235eb19888",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "fd2a9a30c0892e8622afdc7e02e7a5661b7d28b231d6fb097cce41c068780cba",
+    "depths.json": "8b3d8b586c5e871973b858548bc7cebf81688eccd31ea70260e0c5e7a1694ff3",
+    "summary.json": "089bcff82b23fea42e99249e6436feae8d88176a54df1c3995ffaeb0ef2216a6"
+  },
+  "investigation": null,
+  "issue": null
+}

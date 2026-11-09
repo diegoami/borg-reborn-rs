@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 387; distinct starting conditions: 387; retained process attempts: 387 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 433; distinct starting conditions: 433; retained process attempts: 433 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -393,6 +393,52 @@ Dossiers: 387; distinct starting conditions: 387; retained process attempts: 387
 | [D0385-rust-seed1061](D0385-rust-seed1061/report.md) | unassigned | `8f5e6313f9a4` | 1061 | starvation | 89220 | unassessed |
 | [D0386-rust-seed1072](D0386-rust-seed1072/report.md) | unassigned | `8f5e6313f9a4` | 1072 | starvation | 89250 | unassessed |
 | [D0387-rust-seed102](D0387-rust-seed102/report.md) | unassigned | `8f5e6313f9a4` | 102 | a rock lizard | 743 | unassessed |
+| [D0388-rust-seed1010](D0388-rust-seed1010/report.md) | unassigned | `991e0fe41560` | 1010 | Grip, Farmer Maggot's Dog | 320 | unassessed |
+| [D0389-rust-seed1000](D0389-rust-seed1000/report.md) | unassigned | `991e0fe41560` | 1000 | Grip, Farmer Maggot's Dog | 170 | unassessed |
+| [D0390-rust-seed1024](D0390-rust-seed1024/report.md) | unassigned | `991e0fe41560` | 1024 | a blue yeek | 278 | unassessed |
+| [D0391-rust-seed1021](D0391-rust-seed1021/report.md) | unassigned | `991e0fe41560` | 1021 | Grip, Farmer Maggot's Dog | 116 | unassessed |
+| [D0392-rust-seed1052](D0392-rust-seed1052/report.md) | unassigned | `991e0fe41560` | 1052 | Grip, Farmer Maggot's Dog | 135 | unassessed |
+| [D0393-rust-seed1023](D0393-rust-seed1023/report.md) | unassigned | `991e0fe41560` | 1023 | a white worm mass | 553 | unassessed |
+| [D0394-rust-seed1043](D0394-rust-seed1043/report.md) | unassigned | `991e0fe41560` | 1043 | a grey mold | 507 | unassessed |
+| [D0395-rust-seed1011](D0395-rust-seed1011/report.md) | unassigned | `991e0fe41560` | 1011 | a soldier ant | 1038 | unassessed |
+| [D0396-rust-seed1022](D0396-rust-seed1022/report.md) | unassigned | `991e0fe41560` | 1022 | a cave spider | 539 | unassessed |
+| [D0397-rust-seed1020](D0397-rust-seed1020/report.md) | unassigned | `991e0fe41560` | 1020 | a rock lizard | 1529 | unassessed |
+| [D0398-rust-seed1044](D0398-rust-seed1044/report.md) | unassigned | `991e0fe41560` | 1044 | a fruit bat | 1429 | unassessed |
+| [D0399-rust-seed1051](D0399-rust-seed1051/report.md) | unassigned | `991e0fe41560` | 1051 | a soldier ant | 1688 | unassessed |
+| [D0400-rust-seed1050](D0400-rust-seed1050/report.md) | unassigned | `991e0fe41560` | 1050 | an apprentice | 1017 | unassessed |
+| [D0401-rust-seed1012](D0401-rust-seed1012/report.md) | unassigned | `991e0fe41560` | 1012 | a clear icky thing | 2756 | unassessed |
+| [D0402-rust-seed1054](D0402-rust-seed1054/report.md) | unassigned | `991e0fe41560` | 1054 | a large white snake | 2075 | unassessed |
+| [D0403-rust-seed1030](D0403-rust-seed1030/report.md) | unassigned | `991e0fe41560` | 1030 | a wild dog | 3477 | unassessed |
+| [D0404-rust-seed1041](D0404-rust-seed1041/report.md) | unassigned | `991e0fe41560` | 1041 | a soldier ant | 4659 | unassessed |
+| [D0405-rust-seed1001](D0405-rust-seed1001/report.md) | unassigned | `991e0fe41560` | 1001 | a kobold shaman | 8659 | unassessed |
+| [D0406-rust-seed1004](D0406-rust-seed1004/report.md) | unassigned | `991e0fe41560` | 1004 | a grey mold | 10112 | unassessed |
+| [D0407-rust-seed1031](D0407-rust-seed1031/report.md) | unassigned | `991e0fe41560` | 1031 | a large white snake | 10239 | unassessed |
+| [D0408-rust-seed1060](D0408-rust-seed1060/report.md) | unassigned | `991e0fe41560` | 1060 | a salamander | 10172 | unassessed |
+| [D0409-rust-seed1040](D0409-rust-seed1040/report.md) | unassigned | `991e0fe41560` | 1040 | a clear icky thing | 11988 | unassessed |
+| [D0410-rust-seed1002](D0410-rust-seed1002/report.md) | unassigned | `991e0fe41560` | 1002 | a salamander | 11618 | unassessed |
+| [D0411-rust-seed1081](D0411-rust-seed1081/report.md) | unassigned | `991e0fe41560` | 1081 | Grip, Farmer Maggot's Dog | 326 | unassessed |
+| [D0412-rust-seed1080](D0412-rust-seed1080/report.md) | unassigned | `991e0fe41560` | 1080 | a giant white centipede | 643 | unassessed |
+| [D0413-rust-seed1082](D0413-rust-seed1082/report.md) | unassigned | `991e0fe41560` | 1082 | Fang, Farmer Maggot's Dog | 206 | unassessed |
+| [D0414-rust-seed1064](D0414-rust-seed1064/report.md) | unassigned | `991e0fe41560` | 1064 | Grip, Farmer Maggot's Dog | 4044 | unassessed |
+| [D0415-rust-seed1063](D0415-rust-seed1063/report.md) | unassigned | `991e0fe41560` | 1063 | a wild dog | 5089 | unassessed |
+| [D0416-rust-seed1084](D0416-rust-seed1084/report.md) | unassigned | `991e0fe41560` | 1084 | a wild dog | 2318 | unassessed |
+| [D0417-rust-seed1032](D0417-rust-seed1032/report.md) | unassigned | `991e0fe41560` | 1032 | a metallic red centipede | 19474 | unassessed |
+| [D0418-rust-seed1083](D0418-rust-seed1083/report.md) | unassigned | `991e0fe41560` | 1083 | a giant white mouse | 7655 | unassessed |
+| [D0419-rust-seed1070](D0419-rust-seed1070/report.md) | unassigned | `991e0fe41560` | 1070 | a floating eye | 12310 | unassessed |
+| [D0420-rust-seed1014](D0420-rust-seed1014/report.md) | unassigned | `991e0fe41560` | 1014 | a crow | 29255 | unassessed |
+| [D0421-rust-seed1074](D0421-rust-seed1074/report.md) | unassigned | `991e0fe41560` | 1074 | a grey mushroom patch | 18658 | unassessed |
+| [D0422-rust-seed1073](D0422-rust-seed1073/report.md) | unassigned | `991e0fe41560` | 1073 | a crow | 24844 | unassessed |
+| [D0423-rust-seed1034](D0423-rust-seed1034/report.md) | unassigned | `991e0fe41560` | 1034 | an apprentice | 51519 | unassessed |
+| [D0424-rust-seed1071](D0424-rust-seed1071/report.md) | unassigned | `991e0fe41560` | 1071 | a rock lizard | 41045 | unassessed |
+| [D0425-rust-seed1053](D0425-rust-seed1053/report.md) | unassigned | `991e0fe41560` | 1053 | starvation | 44690 | unassessed |
+| [D0426-rust-seed1062](D0426-rust-seed1062/report.md) | unassigned | `991e0fe41560` | 1062 | starvation | 44680 | unassessed |
+| [D0427-rust-seed1042](D0427-rust-seed1042/report.md) | unassigned | `991e0fe41560` | 1042 | a giant white centipede | 65087 | unassessed |
+| [D0428-rust-seed1013](D0428-rust-seed1013/report.md) | unassigned | `991e0fe41560` | 1013 | a soldier ant | 57935 | unassessed |
+| [D0429-rust-seed1003](D0429-rust-seed1003/report.md) | unassigned | `991e0fe41560` | 1003 | starvation | 89230 | unassessed |
+| [D0430-rust-seed1061](D0430-rust-seed1061/report.md) | unassigned | `991e0fe41560` | 1061 | starvation | 89220 | unassessed |
+| [D0431-rust-seed1033](D0431-rust-seed1033/report.md) | unassigned | `991e0fe41560` | 1033 | starvation | 89210 | unassessed |
+| [D0432-rust-seed1072](D0432-rust-seed1072/report.md) | unassigned | `991e0fe41560` | 1072 | starvation | 89250 | unassessed |
+| [D0433-rust-seed102](D0433-rust-seed102/report.md) | unassigned | `991e0fe41560` | 102 | a rock lizard | 743 | unassessed |
 
 ## Aggregated actions
 

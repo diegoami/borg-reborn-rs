@@ -92,8 +92,16 @@ pub struct Status {
     pub stat_max: [i16; 5],
     /// `player->state.stat_use`: the values in use, with equipment.
     pub stat_use: [i32; 5],
+    /// `player->state.stat_ind`: the engine's index of each stat into its
+    /// tables (the C Borg's `BI_STR_INDEX` ...).
+    pub stat_ind: [i32; 5],
     /// `player->state.speed` (110 = normal).
     pub speed: i32,
+    /// `player->state.num_blows`: blows per round times 100, as the engine
+    /// computed them; the check for `knowledge::blows`.
+    pub blows: i32,
+    /// The birth option `birth_percent_damage` (O-combat).
+    pub percent_damage: bool,
     /// `player->known_state.ac + known_state.to_a`: the armour class the
     /// player is shown.
     pub known_ac: i32,
@@ -362,7 +370,10 @@ pub(crate) mod tests {
                 stat_cur: [17, 10, 10, 14, 15],
                 stat_max: [17, 10, 10, 14, 15],
                 stat_use: [17, 10, 10, 14, 15],
+                stat_ind: [14, 7, 7, 11, 12],
                 speed: 110,
+                blows: 105,
+                percent_damage: false,
                 known_ac: 12,
                 timed: vec![0; 53],
                 word_recall: 0,

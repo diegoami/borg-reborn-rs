@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0420-rust-seed1014",
+  "run_kind": "harness",
+  "character": "Dwarf Mage",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 29255,
+    "race_idx": 5,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1014,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "b80b179079aa0dfd8f0abc147016a187c1a6b39cc35e03adaa268227bc71f054"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-1-mage-4",
+      "result_sha256": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+      "raw_sha256": {
+        "keys.log": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+        "messages.log": "3a527cbdbd7ddc595599fa9c9aa7927241d109a5e2ebdfb27aefcb22a7906133",
+        "state.log": "5272af9ab397907b3e724578431b23066b640d3767172808b28e5f5770e0f37c"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-44c5f27ff6b8adfe69d5d34cb80163e1cc613f6474c16a50939cd7ca61ac41e3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "582d65d6d62b2e4d0a8cb65e9f9ec8f9b05f14dde67e3d1caa9e85f321753b70",
+    "depths.json": "0513fb19aa584519e9455c09956ac4bca52ea6f1a927246ce4f0444d98b76530",
+    "summary.json": "71a96e19fce2d665b2e47879f80c4bc4e8050565118632fa5a5205c374af38c7"
+  },
+  "investigation": null,
+  "issue": null
+}

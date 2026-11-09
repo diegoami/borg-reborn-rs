@@ -246,6 +246,9 @@ struct Borg {
     /// The world log (`BORG_WORLD_LOG=FILE`): the world's digest after each
     /// think, to check that replaying the observation log rebuilds it.
     worlds: Option<std::io::BufWriter<std::fs::File>>,
+    /// L3: the game's static data, read at the first think (T2.3). Written
+    /// once to `BORG_KNOWLEDGE_LOG=FILE` when that is set.
+    knowledge: Option<crate::knowledge::Knowledge>,
 }
 
 /// An append-only log named by an environment variable, if it is set.
@@ -281,6 +284,7 @@ pub fn command() {
         observations: open_log("BORG_OBSERVATION_LOG"),
         world: crate::world::World::new(),
         worlds: open_log("BORG_WORLD_LOG"),
+        knowledge: None,
     })
     .queue
     .clear();
@@ -349,6 +353,13 @@ fn think(b: &mut Borg, view: &PlayerView) -> Action {
     let (here, around, observation) = perceive(b);
     if let Some(o) = observation.as_ref() {
         use std::io::Write;
+        if b.knowledge.is_none() {
+            b.knowledge = engine::knowledge();
+            if let (Some(k), Some(mut log)) = (b.knowledge.as_ref(), open_log("BORG_KNOWLEDGE_LOG"))
+            {
+                let _ = writeln!(log, "{}", k.to_line()).and_then(|_| log.flush());
+            }
+        }
         b.world.update(o);
         // A failed write loses the log, never the game.
         if let Some(log) = b.observations.as_mut() {

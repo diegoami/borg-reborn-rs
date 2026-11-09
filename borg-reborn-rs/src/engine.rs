@@ -419,7 +419,10 @@ pub fn perceive() -> Option<Observation> {
             stat_cur: pl.stat_cur,
             stat_max: pl.stat_max,
             stat_use: pl.state.stat_use,
+            stat_ind: pl.state.stat_ind,
             speed: pl.state.speed,
+            blows: pl.state.num_blows,
+            percent_damage: pl.opts.opt[headers::list_options_h::OPT_birth_percent_damage as usize],
             known_ac: pl.known_state.ac + pl.known_state.to_a,
             timed: (0..headers::player_timed_h::TMD_MAX as usize)
                 .map(|i| *pl.timed.add(i))
@@ -620,5 +623,256 @@ pub fn perceive() -> Option<Observation> {
             objects,
             stores,
         })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Knowledge (L3, task T2.3): the engine's parsed game data, read once.
+
+use crate::knowledge::{
+    Artifact, Blow, Book, Class, ClassSpell, Dice, Ego, Knowledge, MonsterRace, ObjectKind,
+    PlayerRace, StoreKind,
+};
+
+extern "C" {
+    // player.h, game-world.h, player-calcs.h; not in the copied bindings.
+    static mut races: *mut headers::player_h::player_race;
+    static extract_energy: [u8; 200];
+    static adj_str_blow: [c_int; 38];
+}
+
+fn text(p: *const c_char) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    // SAFETY: the engine's names are NUL-terminated C strings that live as
+    // long as the game data.
+    unsafe { CStr::from_ptr(p).to_string_lossy().into_owned() }
+}
+
+fn dice(r: &headers::z_rand_h::random_value) -> Dice {
+    Dice {
+        base: r.base,
+        dice: r.dice,
+        sides: r.sides,
+        m_bonus: r.m_bonus,
+    }
+}
+
+fn elements(e: &[headers::object_h::element_info]) -> Vec<(i16, u8)> {
+    e.iter().map(|x| (x.res_level, x.flags)).collect()
+}
+
+/// Read the game's static data (L3). `None` before the game data is loaded.
+/// It only reads: the arrays are indexed within `z_info`'s counts, and the
+/// lists (classes, races, blows, books, store tables) end where the engine
+/// ends them.
+pub fn knowledge() -> Option<Knowledge> {
+    use headers::{init_h, monster_h, object_h, player_h, store_h};
+    // SAFETY: engine globals read on the engine thread after the game data
+    // is parsed (the Borg runs only inside a game); see above for bounds.
+    unsafe {
+        let z = init_h::z_info;
+        if z.is_null() || monster_h::r_info.is_null() || object_h::k_info.is_null() {
+            return None;
+        }
+        let z = &*z;
+        let mut k = Knowledge {
+            extract_energy: extract_energy.to_vec(),
+            move_energy: i32::from(z.move_energy),
+            adj_str_blow: adj_str_blow.to_vec(),
+            ..Default::default()
+        };
+        for i in 0..usize::from(z.r_max) {
+            let r = &*monster_h::r_info.add(i);
+            let mut blows = Vec::new();
+            let mut b = r.blow;
+            while !b.is_null() && !(*b).method.is_null() {
+                let bl = &*b;
+                blows.push(Blow {
+                    method: text((*bl.method).name),
+                    effect: if bl.effect.is_null() {
+                        String::new()
+                    } else {
+                        text((*bl.effect).name)
+                    },
+                    power: if bl.effect.is_null() {
+                        0
+                    } else {
+                        (*bl.effect).power
+                    },
+                    dice: dice(&bl.dice),
+                });
+                b = bl.next;
+            }
+            k.races.push(MonsterRace {
+                index: r.ridx,
+                name: text(r.name),
+                base: if r.base.is_null() {
+                    String::new()
+                } else {
+                    text((*r.base).name)
+                },
+                level: r.level,
+                rarity: r.rarity,
+                speed: r.speed,
+                avg_hp: r.avg_hp,
+                ac: r.ac,
+                sleep: r.sleep,
+                hearing: r.hearing,
+                smell: r.smell,
+                exp: r.mexp,
+                freq_innate: r.freq_innate,
+                freq_spell: r.freq_spell,
+                spell_power: r.spell_power,
+                flags: r.flags.to_vec(),
+                spell_flags: r.spell_flags.to_vec(),
+                blows,
+                glyph: r.d_char as u32,
+                attr: r.d_attr,
+            });
+        }
+        for i in 0..usize::from(z.k_max) {
+            let o = &*object_h::k_info.add(i);
+            k.kinds.push(ObjectKind {
+                index: o.kidx,
+                name: text(o.name),
+                tval: o.tval,
+                sval: o.sval,
+                level: o.level,
+                cost: o.cost,
+                weight: o.weight,
+                ac: o.ac,
+                dd: o.dd,
+                ds: o.ds,
+                to_h: dice(&o.to_h),
+                to_d: dice(&o.to_d),
+                to_a: dice(&o.to_a),
+                pval: dice(&o.pval),
+                flags: o.flags.to_vec(),
+                kind_flags: o.kind_flags.to_vec(),
+                elements: elements(&o.el_info),
+            });
+        }
+        if !object_h::e_info.is_null() {
+            for i in 0..usize::from(z.e_max) {
+                let e = &*object_h::e_info.add(i);
+                k.egos.push(Ego {
+                    index: e.eidx,
+                    name: text(e.name),
+                    cost: e.cost,
+                    rating: e.rating,
+                    flags: e.flags.to_vec(),
+                    to_h: dice(&e.to_h),
+                    to_d: dice(&e.to_d),
+                    to_a: dice(&e.to_a),
+                    modifiers: e.modifiers.iter().map(dice).collect(),
+                    elements: elements(&e.el_info),
+                });
+            }
+        }
+        if !object_h::a_info.is_null() {
+            for i in 0..usize::from(z.a_max) {
+                let a = &*object_h::a_info.add(i);
+                k.artifacts.push(Artifact {
+                    index: a.aidx,
+                    name: text(a.name),
+                    tval: a.tval,
+                    sval: a.sval,
+                    level: a.level,
+                    cost: a.cost,
+                    weight: a.weight,
+                    ac: a.ac,
+                    dd: a.dd,
+                    ds: a.ds,
+                    to_h: a.to_h,
+                    to_d: a.to_d,
+                    to_a: a.to_a,
+                    flags: a.flags.to_vec(),
+                    modifiers: a.modifiers.to_vec(),
+                    elements: elements(&a.el_info),
+                });
+            }
+        }
+        let mut c = player_h::classes;
+        while !c.is_null() {
+            let cl = &*c;
+            let m = &cl.magic;
+            let mut books = Vec::new();
+            for bi in 0..m.num_books.max(0) as usize {
+                let b = &*m.books.add(bi);
+                let spells = (0..b.num_spells.max(0) as usize)
+                    .map(|si| {
+                        let s = &*b.spells.add(si);
+                        ClassSpell {
+                            index: s.sidx,
+                            name: text(s.name),
+                            level: s.slevel,
+                            mana: s.smana,
+                            fail: s.sfail,
+                            exp: s.sexp,
+                        }
+                    })
+                    .collect();
+                books.push(Book {
+                    tval: b.tval,
+                    sval: b.sval,
+                    dungeon: b.dungeon,
+                    spells,
+                });
+            }
+            k.classes.push(Class {
+                index: cl.cidx,
+                name: text(cl.name),
+                stat_adj: cl.c_adj,
+                skills: cl.c_skills,
+                hit_die: cl.c_mhp,
+                max_attacks: cl.max_attacks,
+                min_weight: cl.min_weight,
+                att_multiply: cl.att_multiply,
+                spell_first: m.spell_first,
+                spell_weight: m.spell_weight,
+                books,
+            });
+            c = cl.next;
+        }
+        k.classes.sort_by_key(|c| c.index);
+        let mut r = races;
+        while !r.is_null() {
+            let ra = &*r;
+            k.player_races.push(PlayerRace {
+                index: ra.ridx,
+                name: text(ra.name),
+                stat_adj: ra.r_adj,
+                skills: ra.r_skills,
+                hit_die: ra.r_mhp,
+                exp_factor: ra.r_exp,
+                infravision: ra.infra,
+                elements: elements(&ra.el_info),
+            });
+            r = ra.next;
+        }
+        k.player_races.sort_by_key(|r| r.index);
+        if !store_h::stores.is_null() {
+            for n in 0..usize::from(z.store_max) {
+                let s = &*store_h::stores.add(n);
+                let kinds = |t: *mut *mut object_h::object_kind, len: usize| -> Vec<u32> {
+                    if t.is_null() {
+                        return Vec::new();
+                    }
+                    (0..len)
+                        .map(|i| *t.add(i))
+                        .filter(|p| !p.is_null())
+                        .map(|p| (*p).kidx)
+                        .collect()
+                };
+                k.stores.push(StoreKind {
+                    number: n as i32,
+                    always: kinds(s.always_table, s.always_num),
+                    normal: kinds(s.normal_table, s.normal_num),
+                });
+            }
+        }
+        Some(k)
     }
 }
