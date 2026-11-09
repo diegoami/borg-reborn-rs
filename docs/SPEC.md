@@ -1,19 +1,19 @@
 # borg-reborn-rs: specification
 
-*Written 2026-11-09 at the owner's request. The owner accepted the draft
-and sent it to review with the work since `m1`. It takes effect when the
-owner merges that review PR (`main` → `reviewed`). Until then nothing below
-is implemented. From then on it is the top-level contract of the
-repository: README, RULES, GOALS, ARCHITECTURE and PLAN follow it, and
-where they disagree it wins until they are brought into line (§9).*
+*In effect since the owner merged the review PR #66 (2026-11-09). It is
+the top-level contract of the repository: README, RULES, GOALS,
+ARCHITECTURE and PLAN follow it, and where they disagree it wins until they
+are brought into line (§9). Amended the same day: borg-zoo does every
+comparison, and this repository delivers only our Borg (§6, §11).*
 
 ## 1. What it is
 
 borg-reborn-rs is an automatic player (a Borg) for **Angband 4.2.6**,
 upstream commit `e473720ed88a0f0c7ca66815cef3000eb4a38bc3`, written in Rust
-and designed from the ground up in how it plays. Its results are compared
-with control C Borgs on the same seeds, under the same run contract, through
-our own harness and borg-zoo.
+and designed from the ground up in how it plays. **borg-zoo measures it and
+compares it with other Borgs**: the comparisons, the controls and the
+statistics are borg-zoo's (owner, 2026-11-09). This repository delivers one
+Borg, ours, through the zoo contract (§4).
 
 It is **independent**: it owns every part it builds on, namely the
 integration with the game, the seam, the bindings, the headless frontend,
@@ -50,8 +50,8 @@ particular.
 - The game rules are never changed. The only differences from upstream are
   the patches of §3.3, each one a harness hook that is inert unless a
   harness build turns it on.
-- Upstream's own Borg (`src/borg/`, 118 files) stays in the tree unmodified.
-  It is the original C Borg, the control `c-pristine` (§6).
+- Upstream's own Borg (`src/borg/`, 118 files) stays in the tree unmodified
+  and is not built here: the Rust Borg takes its place at link time (§3.6).
 
 ### 3.2 The seam
 
@@ -60,12 +60,12 @@ Upstream already has the whole Borg seam, and we use it as it is:
 | Seam | Upstream | Our use |
 | --- | --- | --- |
 | Build switch | CMake `SUPPORT_BORG`, define `ALLOW_BORG` | on in every build |
-| Entry | `^Z` → `do_cmd_try_borg()` (`cmd-misc.c:115`) → `do_cmd_borg()` | the Rust Borg exports `do_cmd_borg`; the C Borgs provide their own |
-| Keys | `inkey_hack` (`ui-input.c:130`), read before every key | the Rust Borg installs its hook; the C Borgs install theirs |
+| Entry | `^Z` → `do_cmd_try_borg()` (`cmd-misc.c:115`) → `do_cmd_borg()` | the Rust Borg exports `do_cmd_borg`, in place of upstream's `src/borg/` |
+| Keys | `inkey_hack` (`ui-input.c:130`), read before every key | the Rust Borg installs its hook |
 | Reads | the game's globals and functions (`player`, `cave`, `map_info()`, `r_info`, …) | through generated bindings (§3.4), only the reads of the D3 list (§5) |
 
-The Borg implementation is chosen at build time (§3.6). Exactly one of the
-Rust Borg or a C Borg's `src/borg/` is linked.
+The build links the Rust Borg and leaves out upstream's `src/borg/`
+(§3.6).
 
 ### 3.3 Harness hooks (our patch series)
 
@@ -150,17 +150,14 @@ every field.
   `src/borg/*.c` inside its core library, and the Rust Borg exports
   `do_cmd_borg` itself, so upstream's file cannot be used as it stands
   (the symbol would be defined twice). Ours carries a copy of upstream's
-  source list, recorded in `docs/PROVENANCE.md`. The `rust` arm leaves out
-  `src/borg/*.c`. A test compares the copy with upstream's list, so a
-  difference is caught.
+  source list, recorded in `docs/PROVENANCE.md`, without `src/borg/*.c`. A
+  test compares the copy with upstream's list, so a difference is caught.
 - **Entry point:** `harness/build.sh` with `BORG_IMPL=<impl>` builds
   `build/<impl>/game/angband` and writes `build/<impl>/BUILD_ID`. Both the
   name and the layout are part of the zoo contract (§4).
-- **Implementations** (`BORG_IMPL`):
-  - `rust`: the Rust staticlib, built by cargo;
-  - `c-pristine`: upstream `src/borg/` as is;
-  - `c-bbc-mN`: a better-borg-c milestone tag's `src/borg/`, pinned by
-    commit.
+- **One implementation:** `BORG_IMPL=rust`, the Rust staticlib built by
+  cargo. The variable and `build/rust/` stay because the zoo contract names
+  them. No C Borg is built here (§6).
 - **Identity:** `BUILD_ID` holds the hashes of the build's inputs (engine
   tree, patches, frontend, Borg sources, Cargo.lock), the binary's
   `binary_sha256` and the implementation. A run records it.
@@ -181,27 +178,23 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
   - every attempted run counts;
   - the **configuration** and the **environment** below.
 
-  `check-boundary.py` and `tools/endpoint.py` (ours) are kept.
-- **Configuration**, the same for every arm and part of the run record:
-  - **The C Borgs' `harness/borg.txt`** (kept, ours, its hash in
-    `config.txt`). Every exploit GOALS D5 excludes is off:
-    - `borg_munchkin_start = FALSE`;
-    - `borg_munchkin_by_class = FALSE` (milestone 8 on);
-    - `borg_lunal_mode = FALSE`, `borg_self_lunal = FALSE`;
-    - `borg_money_scum_amount = 0`, `borg_self_scum = FALSE`;
-    - `borg_cheat_death = FALSE`.
-
-    Today's file has **`borg_self_scum = TRUE`** (upstream's default too).
-    That lets a C control money-scum for a ware from character level 10
-    (`borg-store-buy.c:141-153`), which D5 excludes. It is corrected in E.
-  - **The game options** every arm runs with are decided in one place
-    (`docs/ENGINE.md`). The C Borgs set theirs in `borg_reinit_options`
-    (`borg-init.c:403-444`: `auto_more` and `easy_alter` off,
-    `pickup_always` on, …). The Rust Borg sets `auto_more` and `easy_alter`
-    **on**. In E either the Rust Borg adopts the C set, or each difference is
-    declared with its reason. The options in force go into `summary.json`.
+  `check-boundary.py` (ours) is kept. The primary endpoint and every other
+  statistic are computed by borg-zoo, so `tools/endpoint.py` goes (§8).
+- **Configuration**, part of the run record:
   - **The Rust Borg's profile** (`harness/profiles/`, its hash in
     `config.txt`).
+  - **The game options** the Rust Borg sets, decided in `docs/ENGINE.md`
+    and written into `summary.json`. The C Borg sets its own in
+    `borg_reinit_options` (`borg-init.c:403-444`: `auto_more` and
+    `easy_alter` off, `pickup_always` on, …). The Rust Borg sets `auto_more`
+    and `easy_alter` **on**. Each difference from the C set is declared
+    with its reason (spec §1.2 warns that the options change the screen the
+    Borg reads).
+  - **`harness/borg.txt`** stays only because the zoo's adapter copies it
+    (§4, the zoo). The Rust Borg does not read it. Its `borg_self_scum =
+    TRUE` (upstream's default) let the C Borgs money-scum in the zoo's
+    `4.2.6-reborn-c-*` specimens, which this repository built. The zoo is
+    told (RULES 7).
 - **Environment:** `TZ=UTC`, `LANG=C.UTF-8` and `LC_ALL=C.UTF-8` for every
   run. The fixed-date hook sets the time `mon-make.c` reads to 0, but
   `localtime()` still turns it into a calendar date in the run's time zone
@@ -210,10 +203,10 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
 - **Suites** (`harness/suites/`, kept): our own files of runs (name, seed,
   race, class, cap, flags): smoke, full, the class suites, and their
   exact-boundary variants. Seeds are chosen once and frozen.
-- **References:** each arm's smoke and full outputs at a reviewed commit.
-  They are regression references, not oracles; none comes from another
-  project. Before today's references are dropped, the new integration must
-  reproduce them (§10, E's exit).
+- **References:** the Rust Borg's smoke and full outputs at a reviewed
+  commit. They are regression references, not oracles; none comes from
+  another project. Before today's references are dropped, the new
+  integration must reproduce them (§10, E's exit).
 - **Deaths:** every natural death gets a dossier (RULES 12).
   `tools/export-death.py` (ours) is kept, with the trace tail and the
   parameters (T2.4).
@@ -222,7 +215,7 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     the runs after E as new encounter families.
   - `tools/reconcile-deaths.py` keys on (family, key stream), so the two
     never mix.
-- **The zoo:** borg-zoo measures our arms through **the zoo contract**,
+- **The zoo:** borg-zoo measures our Borg through **the zoo contract**,
   written down in `docs/ZOO-INTERFACE.md`:
   - `harness/build.sh`, `build/<impl>/game/angband` and
     `build/<impl>/BUILD_ID` (with `binary_sha256`);
@@ -267,32 +260,25 @@ justification. A test fails when the boundary uses a symbol not on it.
 - **Writes** are limited to the key hook, the game options (§4) and the RNG
   swap.
 
-## 6. The controls
+## 6. Controls and comparisons: borg-zoo's
 
-Every comparison runs our Rust Borg against **control C Borgs built by
-the same integration**, on the same tree, frontend, patches, configuration,
-seeds and contract (GOALS D8):
+borg-zoo chooses the Borgs it compares ours with, runs them, and computes
+every endpoint and statistic (owner, 2026-11-09). This repository builds and
+measures no control:
 
-- **`c-pristine`** is upstream's own `src/borg/`: the original C Borg, its
-  defects included (better-borg-c's milestones exist to fix them). A test
-  checks that its sources are upstream's bytes. That proves **provenance,
-  not correctness**: it is a control, not an oracle.
-  - Today's tree is different: its `src/borg/` is borg-rs's adopted C Borg,
-    39 files changed from upstream, and `c-pristine` is built by overlaying
-    upstream's sources on it. On the pristine tree, no overlay is needed.
-- **`c-bbc-mN`** is a better-borg-c milestone tag's `src/borg/`:
-  - the overlay equals the tag's blobs, which a test checks;
-  - better-borg-c's engine-side changes up to that milestone are
-    inventoried before the arm reports any result (§11 q4);
-  - the configuration of §4 applies, `borg_munchkin_by_class = FALSE`
-    included from milestone 8 on (owner, #56).
-- A new better-borg-c milestone is a new arm; an existing arm is never
-  redefined (RULES 22).
-- borg-rs's Borg is **not** a control. borg-zoo's results for it are
-  context, like any other zoo result.
-
-The tree's own C Borg is upstream's, so today's arm `c` (borg-rs's adopted
-C Borg) disappears.
+- The C Borgs (upstream's original, better-borg-c's milestones) are zoo
+  specimens, built and run by the zoo. Same-seed pairing with them is the
+  zoo's concern: for example, it can build a C Borg on our engine and
+  frontend, since both are open and documented (`docs/ENGINE.md`,
+  `docs/ZOO-INTERFACE.md`).
+- What this repository owes the zoo is the zoo contract (§4): a Borg that
+  builds and runs under it, deterministic, with its run record and its
+  death evidence.
+- Today's arms `c`, `c-pristine` and `c-bbc-m7`, their overlays and
+  references, and #56 (`c-bbc-m8`) are dropped. better-borg-c's milestone 8
+  is borg-zoo#36.
+- borg-rs's Borg is not compared here either. Its zoo results, like all zoo
+  results, are context for our design.
 
 ## 7. The Borg
 
@@ -330,15 +316,16 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `borg-rs/` shim package, its `Cargo.toml` workspace member | exists so borg-rs's CMake finds a crate of that name | **Drop** | §3.6: our CMake builds our crate |
 | `Cargo.toml`, `Cargo.lock` | the workspace | **Keep**, without the shim member | |
 | `harness/build.sh` | borg-rs's build with our overlays | **Re-found** on §3.6, same name and layout | the zoo calls it |
-| `harness/measurement/`, `control-overlay.py` | borg-rs-specific overlay helpers | **Replace** with §3.6 | |
+| `harness/measurement/`, `control-overlay.py` | borg-rs-specific build helpers and the C controls' overlays | **Drop** | §3.6, §6 |
 | `run.sh`, `suite.sh`, `diff`, `identity.sh`, `supervise.py` | copied from borg-rs, adapted | **Keep** as ours, adapt to the new frontend | §4 |
-| `harness/borg.txt` | the C Borgs' configuration, from borg-rs | **Keep**, ours, corrected to §4 (`borg_self_scum = FALSE`) | zoo contract; D5 |
+| `harness/borg.txt` | the C Borgs' configuration, from borg-rs | **Keep**, only because the zoo's adapter copies it | §4 |
 | `harness/suites/`, `harness/profiles/` | ours | **Keep** | §4 |
-| `check-boundary.py`, `check-extra-load.sh`, `zoo-check.py`; `tools/depth-stream.py`, `endpoint.py`, `export-death.py`, `reconcile-deaths.py`, `tools/tests/` | ours | **Keep** | §4 |
-| `harness/reference/smoke-c`, `smoke-pristine`, `full-pristine` | outputs of borg-rs's builds | **Drop after** the new integration reproduces them (§10) | §4 |
-| `harness/reference/smoke-c-bbc-m7` | ours | **Regenerate** on the new integration, after the same check | |
-| Arm `c` | borg-rs's adopted C Borg | **Drop** | §6 |
-| The rest of `tools/` (25 Python files, 8 of them tests, and 2 C files with 2 headers) and the 7 root launchers | copied from borg-rs and better-borg-c in T1.6 | **Drop**, except what §11 q1 keeps and one launcher to watch the Borg play (Ctrl-Z, z) | most of it is borg-rs's recording format |
+| `check-boundary.py`, `check-extra-load.sh`, `zoo-check.py`; `tools/depth-stream.py`, `export-death.py`, `reconcile-deaths.py`, `tools/tests/` | ours | **Keep** | §4 |
+| `tools/endpoint.py` | ours: the primary endpoint over local outputs and zoo cells | **Drop** | the zoo computes every statistic (§6) |
+| `harness/reference/smoke-c`, `smoke-pristine`, `full-pristine`, `smoke-c-bbc-m7` | references of the C arms | **Drop** | §6 |
+| Arms `c`, `c-pristine`, `c-bbc-m7`; #56 (`c-bbc-m8`) | C Borgs built here | **Drop**; #56 is closed for borg-zoo#36 | §6 |
+| The death tooling: `tools/record-death.py`, `death_workflow.py`, `borg_deaths.py`, `borg_saves.py` and their tests | copied from borg-rs in T1.6 | **Keep** as ours, adapted to the new frontend (owner, §11 q1) | M4 re-reads recorded deaths |
+| The rest of `tools/` (GUI, replay viewer, human takeover, native recording, their tests, 2 C files with 2 headers) and the root launchers but one | copied from borg-rs and better-borg-c in T1.6 | **Drop**, except one launcher to watch the Borg play (Ctrl-Z, z) | borg-rs's recording format (§11 q1) |
 | `tools/IMPORTED.json`, `tools/README.md` | the import record of T1.6 | **Replace** with `docs/PROVENANCE.md` | §2.2 |
 | `engine.rs`, `borg.rs`, `observation.rs`, `world.rs`, `knowledge.rs`, `params.rs`, `trace.rs` | ours (M1, T2.1–T2.4) | **Keep**, re-based on the new bindings | the Borg layers are ours |
 | `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own | §4 |
@@ -347,7 +334,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `reference/c-borg/`, `reference/c-manual/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
 | S12 (`reference/strategy/`) | draft manual | **Retire** (owner, 2026-11-09) | S14 supersedes it |
 | `docs/ZOO-CHANGE-REQUEST.md` | the request done by borg-zoo#32 | **Superseded** by `docs/ZOO-INTERFACE.md`; kept as history | §4 |
-| borg-zoo specimens `4.2.6-reborn-*` | at `2dd11fd`, through the zoo's borg-rs adapter | **Re-specify** after the new integration | §4 |
+| borg-zoo specimens `4.2.6-reborn-*` | at `2dd11fd`, through the zoo's borg-rs adapter | **Re-specify** `4.2.6-reborn-rust` after the new integration; the `-c-*` specimens are the zoo's to keep or retire | §4, §6 |
 | `.github/workflows/ci.yml` | CI on today's tree | **Rewrite** in E (§10) | |
 
 ## 9. Documents and rules that change
@@ -363,8 +350,10 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
     patches;
   - D4 ("the substrate may reuse borg-rs code") becomes §2.2: copy, then
     own;
-  - D8: borg-rs's roles go, and the oracle for `c-pristine` (the zoo's
-    `4.2.6-rs-m0-c`) becomes the reproduction check of §10.
+  - D7: the primary endpoint is computed by borg-zoo, not by
+    `tools/endpoint.py`;
+  - D8 ("same-frontend controls built here"): the controls and every
+    comparison are borg-zoo's (§6), and borg-rs's roles go.
 - **docs/SOURCES.md:** borg-rs's row becomes "reference, copied from
   where useful".
 - **harness/README.md:** rewritten for the new build and frontend.
@@ -384,26 +373,23 @@ are done and kept; T2.5 and the milestones after it are re-planned:
 
 | Milestone | Delivers | Exit |
 | --- | --- | --- |
-| **E. Our own integration** | §3 and §4: pristine `angband/`, patch series, our frontend, generated bindings, our CMake, the arms (rust, c-pristine, c-bbc-m7, and c-bbc-m8 if §11 q3 says so), the harness and run contract on it, the configuration of §4, new references, CI; the `tools/` and arm-`c` removals; the documents of §9 | see below |
+| **E. Our own integration** | §3 and §4: pristine `angband/`, patch series, our frontend, generated bindings, our CMake, the Rust Borg built on them, the harness and run contract on it, the configuration of §4, new references, the zoo contract written down and checked, CI; the removals of §8; the documents of §9 | see below |
 | **M2 (rest). Perception, checked** | T2.5 against the engine (§7), the D3 list and its test (§5); T2.1–T2.4 re-checked on the new integration | the M2 exit of PLAN.md, with the engine as truth |
 | **M3–M7** | as PLAN.md: a Borg that plays; danger and survival; readiness; the family; deeper | unchanged |
 
 **E's exit** (all must hold):
 
-1. `angband/` equals upstream `e473720`, and every arm builds from it, our
-   patches, our frontend and its own Borg sources only.
-2. **Reproduction before replacement.** With today's configuration, the
-   new `c-pristine` reproduces today's `c-pristine` smoke and full key
-   streams, and the new `rust` arm reproduces today's Rust smoke and full
-   key streams. Any difference is explained and recorded before an old
-   reference is replaced (RULES 22). Then the configuration of §4 is
-   applied (`borg_self_scum = FALSE`, the option set), and new references
-   are made with their configuration hashes.
-3. A seed run twice gives identical logs on every arm.
-4. The run contract holds on smoke-exact for every arm.
+1. `angband/` equals upstream `e473720`, and the Rust Borg builds from
+   it, our patches and our frontend only.
+2. **Reproduction before replacement.** The new build reproduces today's
+   Rust smoke and full key streams. Any difference is explained and
+   recorded before the old references are replaced (RULES 22). Then the
+   option set of §4 is settled, and new references are made with their
+   configuration hashes.
+3. A seed run twice gives identical logs.
+4. The run contract holds on smoke-exact.
 5. Every natural death has a dossier.
-6. The zoo's adapter, at its pin, builds and runs a specimen of each arm
-   (§4).
+6. The zoo's adapter, at its pin, builds and runs our Borg (§4).
 7. **CI proves:**
    - the tree equals upstream;
    - the patches apply;
@@ -418,31 +404,17 @@ are done and kept; T2.5 and the milestones after it are re-planned:
 E comes first, and nothing else starts before it is reviewed: everything
 after it runs on it.
 
-## 11. Open questions for approval
+## 11. Decisions on the open questions (owner, 2026-11-09)
 
-The reviewer of #66 (MiniMax-M3) answered each question; its answers are
-given as recommendations. The owner decides.
-
-1. **Tools:** drop all of `tools/` except one launcher (§8), or keep some?
-   *Recommendation:*
-   - keep the death tooling as ours: `record-death.py`,
-     `death_workflow.py`, `borg_deaths.py`, `borg_saves.py` and their tests.
-     M4's calibration and fixtures from deaths need to re-read recorded runs,
-     and `export-death.py`'s dossiers point to that tooling;
-   - drop the GUI, replay viewer, human takeover and native recording.
-2. **The zoo:** keep the interface the zoo's current adapter calls, or ask
-   for a new adapter at once? *Recommendation:* keep it, written down as the
-   zoo contract (§4). Asking now would leave the project without a
-   yardstick in M3–M5.
-3. **c-bbc-m8** (#56): build it in milestone E, or keep it in M4 as filed?
-   *Recommendation:* build it in E as an arm, since E pins the arms'
-   configuration anyway. E's exit must not depend on it.
-4. **better-borg-c's engine-side changes** in `c-bbc-mN`: carry them as
-   declared patches, or run every arm on the identical engine?
-   *Recommendation:* run every arm on the identical engine (upstream plus
-   our patch series). Then, case by case:
-   - a change to the game rules is not carried; it is declared as a
-     difference;
-   - a fix for a crash or undefined behaviour that would make a control
-     fail for reasons unrelated to play is carried as a declared patch;
-   - the inventory is a precondition for the arm's first result.
+1. **Tools:** the death tooling (`record-death.py`, `death_workflow.py`,
+   `borg_deaths.py`, `borg_saves.py`, with their tests) is kept as ours and
+   adapted to the new frontend. The GUI, replay viewer, human takeover and
+   native recording are dropped. One launcher to watch the Borg play stays.
+2. **The zoo:** the interface its current adapter calls is kept and
+   written down as the zoo contract (§4, `docs/ZOO-INTERFACE.md`).
+3. **Controls:** borg-zoo does every comparison, and this repository
+   delivers only our Borg (§6). `c-bbc-m8` is the zoo's (borg-zoo#36); #56
+   is closed.
+4. **Engine changes of other Borgs:** the question goes with the controls.
+   For the record: better-borg-c's milestones 7 and 8 change nothing in
+   upstream's `src/` and `lib/` outside `src/borg/`.

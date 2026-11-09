@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: the spec is in effect; only our Borg
+
+The owner merged #66 (`main` → `reviewed`, `37bcb97`), so `docs/SPEC.md`
+is in effect. There is no tag: it is not the end of a milestone. The owner
+then decided:
+- **borg-zoo does every comparison.** This repository delivers only our
+  Borg, through the zoo contract. The C arms (`c`, `c-pristine`,
+  `c-bbc-m7`), their overlays and references, `tools/endpoint.py` and #56
+  (`c-bbc-m8`, now borg-zoo#36) are dropped in milestone E. GOALS D7 and D8
+  change accordingly.
+- **§11:** keep the death tooling and drop the GUI, replay and takeover
+  tools; keep the zoo's current interface, written down; the engine-change
+  question goes with the controls.
+
+The `borg_self_scum = TRUE` finding concerns the zoo's
+`4.2.6-reborn-c-*` specimens, which were built from this repository. It
+is reported on borg-zoo#30.
+
+Next: plan milestone E as issues (PLAN.md re-planned), then build it.
+
 ## 2026-11-09: the owner chooses the reviewer (RULES 6)
 
 The review of #66 was started by the session: MiniMax-M3, picked through
