@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.5, the harness and run contract on our build (#75)
+
+- **`run.sh`:** the C Borgs' flags (`cheat`, `cheatlive`, `munchkin`,
+  `lunal`, `selflunal`, borg.txt rewrites) and the dropped frontend options
+  (`frames`, `rune-pattern`) are gone. `BORG_IMPL` defaults to `rust`, and
+  the run's `user/borg.txt` is written as before (the zoo copies the file;
+  its hash is in a death's family). The environment is fixed (`TZ=UTC`,
+  locale).
+- **Option set:** the frontend writes every game option in force into
+  `summary.json` (`game_options`), and `docs/ENGINE.md` declares the Rust
+  Borg's options against the C Borg's.
+  - **Found:** 4.2.6 has no `easy_alter`. The Rust Borg had been setting it,
+    and the engine ignored it silently. It's removed, and an unknown option
+    now stops the Borg (`GAME_OPTIONS` in `borg.rs`). Play can't change,
+    since the call never did anything.
+- **Reproduction:** the Rust Borg on our build reproduces the borg-rs-tree
+  outputs: full 45/45, smoke 3/3, smoke-exact 3/3, hallucination smoke 3/3.
+  `harness/diff` compares `game_options` only when both sides have it.
+- **References:** `harness/reference/smoke-rust`, `full-rust` and
+  `smoke-exact-rust`, made by `harness/make-reference.sh` with a
+  `REFERENCE` file (source, binary, profile, borg.txt hashes,
+  environment). CI compares smoke and smoke-exact with them. The C arms'
+  references go in TE.8.
+- **Deaths:** the Rust deaths are recorded again at the new source, as
+  D0619–D0664.
+
 ## 2026-11-09: TE.4, our build (#74)
 
 - **The build:** `engine/CMakeLists.txt` builds the Rust Borg from the

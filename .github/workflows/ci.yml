@@ -44,6 +44,8 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # ... and the same keys, messages and states as the reference (TE.5).
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
       - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
       # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
@@ -62,6 +64,7 @@ jobs:
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
+      - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
       # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
       # died a death that docs/deaths/ does not record.
       - uses: actions/upload-artifact@v4

@@ -72,6 +72,10 @@ class BinaryContractTest(unittest.TestCase):
         self.assertEqual(s['seed'], 101)
         self.assertEqual(s['stop_reason'], 'turns')
         self.assertEqual(s['game_turns'], 200, 'the exact boundary')
+        # The options the Rust Borg sets (docs/ENGINE.md).
+        self.assertIs(s['game_options']['auto_more'], True)
+        self.assertNotIn('easy_alter', s['game_options'], 'not an option of 4.2.6')
+        self.assertIs(s['game_options']['cheat_live'], False)
 
     def test_an_unknown_flag_is_refused(self):
         r = subprocess.run([str(BIN), '-mborgh', '-n', '--', '-seed', '1', '-frames', 'x'],

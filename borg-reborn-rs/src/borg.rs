@@ -353,16 +353,26 @@ fn open_log(var: &str) -> Option<std::io::BufWriter<std::fs::File>> {
 
 static BORG: Mutex<Option<Borg>> = Mutex::new(None);
 
+/// The game options the Borg sets when it starts (docs/ENGINE.md).
+pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {
     if engine::read_command() != Some(b'z') {
         return;
     }
-    // Settings the Borg relies on (spec §1.2: the C Borg sets options too):
-    // no -more- prompts, and walking into a door opens it.
-    engine::set_option(c"auto_more", true);
-    engine::set_option(c"easy_alter", true);
+    // The game options the Borg relies on (spec §1.2; docs/ENGINE.md): no
+    // -more- prompts. Walking into a closed door opens it in 4.2.6 without
+    // an option (`move_player` calls `do_cmd_alter_aux`); the `easy_alter`
+    // the Borg used to set does not exist in 4.2.6, and setting it did
+    // nothing. An option the engine does not know stops the Borg.
+    for (name, on) in GAME_OPTIONS {
+        assert!(
+            engine::set_option(name, *on),
+            "borg-reborn-rs: the engine has no option {name:?}"
+        );
+    }
     let mut b = BORG.lock().unwrap_or_else(|e| e.into_inner());
     b.get_or_insert_with(|| {
         let params = load_params();

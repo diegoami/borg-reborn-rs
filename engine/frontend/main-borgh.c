@@ -300,6 +300,22 @@ static void borgh_finish(const char *reason)
         }
         fprintf(fp, "},\n");
     }
+    /* The game options in force at the stop, as the Borg set them: part of
+     * the run record (docs/SPEC.md §4, docs/ENGINE.md). */
+    if (player) {
+        int j;
+        bool first = true;
+        fprintf(fp, "  \"game_options\": {");
+        for (j = 1; j < OPT_MAX; ++j) {
+            const char *name = option_name(j);
+            if (!name) continue;
+            fprintf(fp, "%s", first ? "" : ",");
+            first = false;
+            json_str(fp, name);
+            fprintf(fp, ": %s", player->opts.opt[j] ? "true" : "false");
+        }
+        fprintf(fp, "},\n");
+    }
     if (opt_exact_turns) fprintf(fp, "  \"exact_turns\": true,\n");
     if (opt_random_birth) {
         fprintf(fp, "  \"random_birth\": true,\n  \"played_race_idx\": %u,\n  \"played_class_idx\": %u,\n",

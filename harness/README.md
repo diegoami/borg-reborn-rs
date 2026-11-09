@@ -1,3 +1,5 @@
+> **TE.5 (2026-11-09):** the harness runs the Rust Borg on our own integration (docs/SPEC.md, docs/ENGINE.md). `run.sh`'s flags for the C Borgs and for the dropped frontend options are gone, `BORG_IMPL` defaults to `rust`, and the Rust references are `reference/smoke-rust`, `full-rust` and `smoke-exact-rust` (`make-reference.sh`). `diff` compares `summary.json`'s `game_options` when both sides have it. The rest of this file describes the harness copied from borg-rs and is rewritten in TE.8.
+
 # Harness
 
 The deterministic headless harness of [borg-rs](https://github.com/diegoami/borg-rs),
