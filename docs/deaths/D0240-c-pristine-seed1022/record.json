@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0240-c-pristine-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 7367,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1022,
+    "flags": "-",
+    "git_rev": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+    "git_dirty": "yes",
+    "source_sha256": "09011590405e4ec4836caa15b6f2fb100ea12254d96d1c7ada33243ca6cf859f",
+    "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9",
+    "borg_txt_sha256": "ffb38dfa422f79eb8b9d030f317394fcb4dec4d7461fce78d88cd905230680f2"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/rs-full-c-pristine/full-2-druid-2",
+      "result_sha256": "7ccf5461651f9cc126c3a41498dfa96ed00d623dafafd08cb1463d22ea490eb5",
+      "raw_sha256": {
+        "keys.log": "7ccf5461651f9cc126c3a41498dfa96ed00d623dafafd08cb1463d22ea490eb5",
+        "messages.log": "05b1d13a9e76def013b53a047ba465c9109e669268d4b2046f9e8620ae28ef48",
+        "state.log": "45e60b011d16515b78e2460e6fd7c3bc20ef87b179d978cee3d5037caa65892b"
+      },
+      "source_commit": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+      "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9"
+    }
+  ],
+  "encounter_family": "start-10c288aaf1706d726e6877b4d66cd42543f593f4d430cdd81fe3e642e92b230e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a3db4490fa6b6a1dfdba1ce0737fc28359526a7488a757e47f8f973724044e35",
+    "config.txt": "ac0f16096921e078e13431d367e2c2a33b5c5a1d611c7b77bd2f018aa1742c27",
+    "depths.json": "8bc129f1acbe940cd8dc00225295acba8431105fa7b819ac0044ac268077017d",
+    "summary.json": "79ec55a1c384c8f47caa409485a81df766b079973a66cde0a043eff097ffb696"
+  },
+  "investigation": null,
+  "issue": null
+}

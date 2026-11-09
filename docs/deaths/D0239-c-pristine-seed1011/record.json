@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0239-c-pristine-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 14534,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1011,
+    "flags": "-",
+    "git_rev": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+    "git_dirty": "yes",
+    "source_sha256": "09011590405e4ec4836caa15b6f2fb100ea12254d96d1c7ada33243ca6cf859f",
+    "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/rs-full-c-pristine/full-1-mage-1",
+      "result_sha256": "6349411ff24911ef1938dedbbb039c485ad9c4a18fa05c3834c340486c8a13f1",
+      "raw_sha256": {
+        "keys.log": "6349411ff24911ef1938dedbbb039c485ad9c4a18fa05c3834c340486c8a13f1",
+        "messages.log": "67aca5c64af8e537c86c09a224aec3f291f9c271dbd136b6bccd5815d41c41af",
+        "state.log": "4f9e6c272842c666b7e70332fe0b05d828c8dfec16a6acaba8fdabf80f0bfe9b"
+      },
+      "source_commit": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+      "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9"
+    }
+  ],
+  "encounter_family": "start-2a7b3ab02b46b44d9ad06849cd17322cbbd82c15b723f3596b92d913a8404ffa",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a3db4490fa6b6a1dfdba1ce0737fc28359526a7488a757e47f8f973724044e35",
+    "config.txt": "9b12cebb09c024bbac847c009a76be2b75624ff726824557bb09fee1c5650e7f",
+    "depths.json": "2fe3532a0051457c377139e5ca942407f465a5cf958b5a9a2dba2dd281f5a36f",
+    "summary.json": "84035f6cc341ff34d45fedc604305ad9cb4fa96e632874b90bfd1728b06d0c40"
+  },
+  "investigation": null,
+  "issue": null
+}
