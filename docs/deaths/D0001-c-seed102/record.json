@@ -39,7 +39,7 @@
       "binary_sha256": "c3d47032771c363f9844a2923de73744c8eb9aa3aea8ba56f39417a2bd3a87b7"
     }
   ],
-  "encounter_family": "start-c27847c17a797e57334e41d61e20d8006038f86c235feb77373ee455bcd1bbf7",
+  "encounter_family": "start-1b65fd9fa9299d763ad0f6c2d52032c59054cb586ad3e32f161cfb1c8199a583",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
     "summary.json": "3fcb2c1c6eb8b529c75b92bf45eb67f079207b5e0b0da7a245cdd28770ea4f31",
@@ -47,5 +47,6 @@
     "build.json": "8a97c74c9ecb729175a81bad2f5b28911a8ad565ef8c74c2b5a98bcdbe61be28"
   },
   "investigation": null,
-  "issue": null
+  "issue": null,
+  "encounter_family_note": "Recomputed on 2026-11-09 with the v2 family (build-input hash instead of binary hash, PR #30 review); the case and its evidence are unchanged."
 }

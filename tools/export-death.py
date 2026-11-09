@@ -57,22 +57,103 @@ def registry_dir():
     return Path(os.environ.get('BORG_DEATH_RECORDS_DIR') or ROOT / 'docs' / 'deaths')
 
 
+REQUIRED = ('record.json', 'assessment.json', 'report.md', 'build.json', 'summary.json')
+
+
 def existing(reg):
-    """(case dirs sorted, {result_sha256: case name})."""
+    """(case dirs sorted, {(family, result_sha256): case name}).
+
+    A case directory without a readable record.json is an export that
+    failed before this tool wrote atomically; it is reported, never
+    silently skipped or renumbered around.
+    """
     cases = sorted(d for d in reg.iterdir() if d.is_dir() and re.match(r'D\d{4}', d.name)) if reg.exists() else []
-    seen = {}
+    seen, broken = {}, []
     for d in cases:
         try:
             rec = json.loads((d / 'record.json').read_text())
         except (OSError, ValueError):
+            broken.append(d.name)
             continue
         for a in rec.get('attempts', []):
             if a.get('result_sha256'):
                 seen.setdefault((rec.get('encounter_family'), a['result_sha256']), d.name)
+    if broken:
+        raise SystemExit('export-death: case directories without a readable record.json: '
+                         + ', '.join(broken) + '. Repair or remove them by hand, then rerun.')
     return cases, seen
 
 
+def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_sha, family):
+    """The files of a basic dossier, {name: bytes}."""
+    files = {}
+    for name in ('summary.json', 'config.txt'):
+        if (run_dir / name).exists():
+            files[name] = (run_dir / name).read_bytes()
+    files['build.json'] = (json.dumps(build, indent=2, sort_keys=True) + '\n').encode()
+    raw = {n: sha256_file(run_dir / n) for n in ('keys.log', 'messages.log', 'state.log')
+           if (run_dir / n).exists()}
+    character = ' '.join(x for x in (summary.get('race'), summary.get('class')) if x)
+    record = {
+        'schema': SCHEMA,
+        'id': case,
+        'run_kind': 'harness',
+        'character': character,
+        'raw_cause': summary.get('death_cause') or 'unknown',
+        'terminal': {
+            'cause': summary.get('death_cause') or 'unknown', 'dead': True,
+            'depth': summary.get('depth'), 'max_depth': summary.get('max_depth'),
+            'level': summary.get('clevel'), 'turn': summary.get('game_turns'),
+            'race_idx': summary.get('race_idx'), 'class_idx': summary.get('class_idx'),
+        },
+        'identity': {
+            'impl': impl, 'seed': summary.get('seed'), 'flags': flags,
+            'git_rev': build.get('git_rev'), 'git_dirty': build.get('git_dirty'),
+            'source_sha256': build.get('source_sha256'), 'binary_sha256': build.get('binary_sha256'),
+            'borg_txt_sha256': config.get('borg_txt_sha256'),
+        },
+        'attempts': [{
+            'role': 'original', 'outcome': 'death', 'raw_directory': final_dir,
+            'result_sha256': keys_sha, 'raw_sha256': raw,
+            'source_commit': build.get('git_rev'), 'binary_sha256': build.get('binary_sha256'),
+        }],
+        'encounter_family': family,
+        'independence_note': 'One independent death per encounter family; repeats of the same run are not new cases.',
+        'files_sha256': {n: hashlib.sha256(b).hexdigest() for n, b in sorted(files.items())},
+        'investigation': None,
+        'issue': None,
+    }
+    files['record.json'] = (json.dumps(record, indent=2) + '\n').encode()
+    files['assessment.json'] = (json.dumps({
+        'classification': 'unassessed', 'confidence': 'none',
+        'cause_category': None, 'findings': [], 'actions': [], 'feedback': []}, indent=2) + '\n').encode()
+    files['report.md'] = (
+        f"# {case}: {record['raw_cause']} at turn {summary.get('game_turns')}\n\n"
+        f"{character}, character level {summary.get('clevel')}, depth {summary.get('depth')} "
+        f"(max {summary.get('max_depth')}), seed {summary.get('seed')}, implementation `{impl}`, "
+        f"flags `{flags}`.\n\n"
+        f"Build `{build.get('git_rev', 'unknown')}` (dirty: {build.get('git_dirty', '?')}), binary "
+        f"`{(build.get('binary_sha256') or 'unknown')[:12]}`. Keys `{keys_sha[:12]}`; raw logs stay in "
+        f"`{final_dir}` (not committed).\n\n"
+        "**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run "
+        "(RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.\n").encode()
+    return files
+
+
+def family_of(impl, seed, race_idx, class_idx, source_sha256, borg_txt_sha256, save_sha256=None):
+    """The encounter family: what fixes the starting game. It uses the build-input
+    hash (harness/identity.sh source-hash), not the binary's bytes: rebuilding the
+    same source gives a different binary hash (the build stamps the commit) but the
+    same game, so a rerun of the same run is a repeat, not a new death."""
+    start = '|'.join(str(x) for x in ('v2', impl, seed, race_idx, class_idx, source_sha256 or 'unknown',
+                                       borg_txt_sha256 or 'unknown', save_sha256 or ''))
+    return 'start-' + hashlib.sha256(start.encode()).hexdigest()
+
+
 def export(run_dir, impl, build_id_path, flags='-'):
+    """Returns (case, what): what is 'not dead', 'exported', 'repeat', or
+    'repaired: NAMES' when a repeat found its dossier incomplete and wrote
+    the missing files (existing files are never overwritten)."""
     run_dir = Path(run_dir).resolve()
     # harness/suite.sh runs into OUTDIR.partial.<pid> and renames it to OUTDIR
     # when the suite ends: record where the logs will be.
@@ -86,74 +167,35 @@ def export(run_dir, impl, build_id_path, flags='-'):
     build = read_kv(build_id_path)
     config = read_kv(run_dir / 'config.txt')
     keys_sha = sha256_file(keys)
-    start = '|'.join(str(x) for x in (build.get('binary_sha256', 'unknown'), impl, summary.get('seed'),
-                                       summary.get('race_idx'), summary.get('class_idx'),
-                                       config.get('borg_txt_sha256', 'unknown'), config.get('save_sha256', '')))
-    family = 'start-' + hashlib.sha256(start.encode()).hexdigest()
+    family = family_of(impl, summary.get('seed'), summary.get('race_idx'), summary.get('class_idx'),
+                       build.get('source_sha256'), config.get('borg_txt_sha256'), config.get('save_sha256'))
     reg = registry_dir()
     reg.mkdir(parents=True, exist_ok=True)
     with open(reg / '.registry.lock', 'w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        # Leftovers of an export interrupted before its rename: never a case.
+        for stale in reg.glob('.tmp-*'):
+            shutil.rmtree(stale)
         cases, seen = existing(reg)
+        args = (run_dir, final_dir, impl, flags, summary, build, config, keys_sha, family)
         if (family, keys_sha) in seen:
-            return seen[(family, keys_sha)], 'repeat'
+            case = seen[(family, keys_sha)]
+            out = reg / case
+            missing = [n for n in REQUIRED if not (out / n).exists()]
+            if not missing:
+                return case, 'repeat'
+            files = dossier(case, *args)
+            for name in missing:
+                if name in files:
+                    (out / name).write_bytes(files[name])
+            return case, 'repaired: ' + ', '.join(missing)
         n = max([int(d.name[1:5]) for d in cases] + [0]) + 1
         case = f"D{n:04d}-{impl}-seed{summary.get('seed')}"
-        out = reg / case
-        out.mkdir()
-        files = {}
-        for name in ('summary.json', 'config.txt'):
-            if (run_dir / name).exists():
-                shutil.copy(run_dir / name, out / name)
-                files[name] = sha256_file(out / name)
-        (out / 'build.json').write_text(json.dumps(build, indent=2, sort_keys=True) + '\n')
-        files['build.json'] = sha256_file(out / 'build.json')
-        raw = {n: sha256_file(run_dir / n) for n in ('keys.log', 'messages.log', 'state.log')
-               if (run_dir / n).exists()}
-        character = ' '.join(x for x in (summary.get('race'), summary.get('class')) if x)
-        record = {
-            'schema': SCHEMA,
-            'id': case,
-            'run_kind': 'harness',
-            'character': character,
-            'raw_cause': summary.get('death_cause') or 'unknown',
-            'terminal': {
-                'cause': summary.get('death_cause') or 'unknown', 'dead': True,
-                'depth': summary.get('depth'), 'max_depth': summary.get('max_depth'),
-                'level': summary.get('clevel'), 'turn': summary.get('game_turns'),
-                'race_idx': summary.get('race_idx'), 'class_idx': summary.get('class_idx'),
-            },
-            'identity': {
-                'impl': impl, 'seed': summary.get('seed'), 'flags': flags,
-                'git_rev': build.get('git_rev'), 'git_dirty': build.get('git_dirty'),
-                'source_sha256': build.get('source_sha256'), 'binary_sha256': build.get('binary_sha256'),
-                'borg_txt_sha256': config.get('borg_txt_sha256'),
-            },
-            'attempts': [{
-                'role': 'original', 'outcome': 'death', 'raw_directory': final_dir,
-                'result_sha256': keys_sha, 'raw_sha256': raw,
-                'source_commit': build.get('git_rev'), 'binary_sha256': build.get('binary_sha256'),
-            }],
-            'encounter_family': family,
-            'independence_note': 'One independent death per encounter family; repeats of the same run are not new cases.',
-            'files_sha256': files,
-            'investigation': None,
-            'issue': None,
-        }
-        (out / 'record.json').write_text(json.dumps(record, indent=2) + '\n')
-        (out / 'assessment.json').write_text(json.dumps({
-            'classification': 'unassessed', 'confidence': 'none',
-            'cause_category': None, 'findings': [], 'actions': [], 'feedback': []}, indent=2) + '\n')
-        (out / 'report.md').write_text(
-            f"# {case}: {record['raw_cause']} at turn {summary.get('game_turns')}\n\n"
-            f"{character}, character level {summary.get('clevel')}, depth {summary.get('depth')} "
-            f"(max {summary.get('max_depth')}), seed {summary.get('seed')}, implementation `{impl}`, "
-            f"flags `{flags}`.\n\n"
-            f"Build `{build.get('git_rev', 'unknown')}` (dirty: {build.get('git_dirty', '?')}), binary "
-            f"`{(build.get('binary_sha256') or 'unknown')[:12]}`. Keys `{keys_sha[:12]}`; raw logs stay in "
-            f"`{final_dir}` (not committed).\n\n"
-            "**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run "
-            "(RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.\n")
+        tmp = reg / f'.tmp-{case}'
+        tmp.mkdir()
+        for name, data in dossier(case, *args).items():
+            (tmp / name).write_bytes(data)
+        os.rename(tmp, reg / case)  # atomic: a case directory is complete or absent
         return case, 'exported'
 
 
@@ -169,6 +211,8 @@ def main(argv=None):
         print(f'export-death: natural death recorded as {registry_dir() / case}', file=sys.stderr)
     elif what == 'repeat':
         print(f'export-death: repeat of {case}; not a new case', file=sys.stderr)
+    elif what.startswith('repaired'):
+        print(f'export-death: repeat of {case}; its dossier was incomplete, {what}', file=sys.stderr)
     return 0
 
 

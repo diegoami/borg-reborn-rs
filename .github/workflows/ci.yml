@@ -25,9 +25,8 @@ jobs:
     # and checks that the C smoke suite reproduces harness/reference/smoke-c
     # (T1.2). Deaths in CI go to a temporary registry, never to docs/deaths.
     runs-on: ubuntu-latest
-    env:
-      BORG_DEATH_RECORDS_DIR: ${{ runner.temp }}/deaths
     steps:
+      - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev

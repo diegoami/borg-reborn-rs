@@ -75,6 +75,52 @@ class ExportTest(unittest.TestCase):
         self.assertEqual(ed.export(make_run(self.base, 'two'), 'c', self.build), ('D0001-c-seed101', 'repeat'))
         self.assertEqual(len([d for d in self.reg.iterdir() if d.is_dir()]), 1)
 
+    def test_interrupted_dossier_is_repaired_not_accepted(self):
+        case, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
+        d = self.reg / case
+        (d / 'report.md').unlink()
+        (d / 'assessment.json').unlink()
+        record_before = (d / 'record.json').read_bytes()
+        got = ed.export(make_run(self.base, 'two'), 'c', self.build)
+        self.assertEqual(got, (case, 'repaired: assessment.json, report.md'))
+        self.assertTrue((d / 'report.md').exists() and (d / 'assessment.json').exists())
+        self.assertEqual((d / 'record.json').read_bytes(), record_before, 'existing files are kept')
+        self.assertEqual(ed.export(make_run(self.base, 'three'), 'c', self.build), (case, 'repeat'))
+
+    def test_filled_in_assessment_is_never_overwritten(self):
+        case, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
+        a = self.reg / case / 'assessment.json'
+        a.write_text('{"classification": "assessed by a person"}')
+        (self.reg / case / 'report.md').unlink()
+        ed.export(make_run(self.base, 'two'), 'c', self.build)
+        self.assertIn('assessed by a person', a.read_text())
+
+    def test_stale_temporary_directory_is_removed(self):
+        self.reg.mkdir(parents=True)
+        (self.reg / '.tmp-D0001-c-seed101').mkdir()
+        (self.reg / '.tmp-D0001-c-seed101' / 'record.json').write_text('{half')
+        case, what = ed.export(make_run(self.base, 'one'), 'c', self.build)
+        self.assertEqual((case, what), ('D0001-c-seed101', 'exported'))
+        self.assertFalse((self.reg / '.tmp-D0001-c-seed101').exists())
+
+    def test_case_without_record_fails_loudly(self):
+        (self.reg / 'D0001-c-seed101').mkdir(parents=True)
+        with self.assertRaises(SystemExit):
+            ed.export(make_run(self.base, 'one'), 'c', self.build)
+
+    def test_rebuilt_binary_of_same_source_is_a_repeat(self):
+        case, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
+        rebuilt = self.base / 'BUILD_ID2'
+        rebuilt.write_text('impl=c\ngit_rev=89abcde\ngit_dirty=yes\nbinary_sha256=0ther\nsource_sha256=cafe\n')
+        self.assertEqual(ed.export(make_run(self.base, 'two'), 'c', rebuilt), (case, 'repeat'))
+
+    def test_changed_source_is_a_new_family(self):
+        ed.export(make_run(self.base, 'one'), 'c', self.build)
+        changed = self.base / 'BUILD_ID2'
+        changed.write_text('impl=c\ngit_rev=89abcde\ngit_dirty=no\nbinary_sha256=beef\nsource_sha256=d1ff\n')
+        case, what = ed.export(make_run(self.base, 'two'), 'c', changed)
+        self.assertEqual((case, what), ('D0002-c-seed101', 'exported'))
+
     def test_numbering_and_family(self):
         ed.export(make_run(self.base, 'one'), 'c', self.build)
         case, _ = ed.export(make_run(self.base, 'two', seed=102), 'rust', self.build)
