@@ -12,8 +12,13 @@ seam, launched the same way (**Ctrl-Z**, **z**), measured by the same
 headless harness and by [borg-zoo](https://diegoami.github.io/borg-zoo/)
 on the same seeds.
 
-**Status (2026-11-08):** milestone 0, *foundation*. There is no playing Borg
-yet. This milestone delivers the research, the goals and the plan:
+**Status (2026-11-09):** milestone 1, *the seam and the yardstick*, in
+progress. M0 (research, goals, plan) is reviewed (tag `m0`). The engine and
+borg-rs's harness, launchers, recording and replay are in place. The
+original and better-borg-c C Borgs build as byte-checked controls, and every
+run has an exact-boundary contract and a death record. The Rust Borg plays,
+but only as a placeholder until M3. Tasks are GitHub issues
+([milestones](https://github.com/diegoami/borg-reborn-rs/milestones)).
 
 | Document | What it holds |
 | --- | --- |
@@ -23,6 +28,23 @@ yet. This milestone delivers the research, the goals and the plan:
 | [PLAN.md](PLAN.md) | Step 3: milestones and tasks, and when we stop for a review |
 | [docs/HANDOVER.md](docs/HANDOVER.md) | Where the work stands, for the next session |
 | [reference/](reference/) | Copies of the sources we read most: the C Borg specification, the Tunable Borg Plan, curated death dossiers, the zoo's catalogue |
+
+## Playing
+
+The same commands as borg-rs (tools copied in T1.6). Saves and settings are
+in `.angband-reborn/`.
+
+```sh
+./run-rust-borg.sh                   # build, open the X11 game; create/load a character, then Ctrl-Z, z
+./start-borg.sh MyCharacter          # a named, recorded GUI session
+./run-borg-headless.py NewCharacter --new --seed 42 --class 0 --race 0 --turns 100000
+./replay-borg.py .angband-reborn/recordings/RUN --verify-only
+./produce_death.py                   # bounded death collection
+```
+
+Until M3 the Borg is a placeholder (it walks, rests and descends; see
+[docs/HANDOVER.md](docs/HANDOVER.md)). [tools/README.md](tools/README.md)
+documents recording, replay, human takeover and death records.
 
 Working on this repository: start at [AGENTS.md](AGENTS.md), then
 [RULES.md](RULES.md). It is model agnostic: any coding agent, or a person,

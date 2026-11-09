@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0166-rust-seed1002",
+  "run_kind": "harness",
+  "character": "Elf Warrior",
+  "raw_cause": "a salamander",
+  "terminal": {
+    "cause": "a salamander",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 11618,
+    "race_idx": 2,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1002,
+    "flags": "-",
+    "git_rev": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+    "git_dirty": "no",
+    "source_sha256": "c8651abcaf45a60d9be3e1b68abcc1051e59c2081fb88f6e54c126cf91e2bd9e",
+    "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575",
+    "borg_txt_sha256": "7c6b535de377cb223ac64fd314076fb456f4ee9eac294d9a26b6ce8b36ade81b"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-n2/full-0-warrior-2",
+      "result_sha256": "781da02eff205933bea0766d49b0c5fb8ffe6d7635fe61bb2ab8e9a8695b8615",
+      "raw_sha256": {
+        "keys.log": "781da02eff205933bea0766d49b0c5fb8ffe6d7635fe61bb2ab8e9a8695b8615",
+        "messages.log": "8504c34d2fba22e4f54468e520bef9e9bc6445be5442c22f3c6e67f1728e5b95",
+        "state.log": "8e615bc346d1cc1cc396ded09aa01972ffa3f23592b81ae9d77bbf8c703a01fe"
+      },
+      "source_commit": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+      "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575"
+    }
+  ],
+  "encounter_family": "start-a039252e237eb1bf38fee6a8fa1c40d5105e7d57a4aa343129a49d625d8faeab",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "8d0cc1de0fa2b1fdea2658b623919c06295f6825429df378694e5827fbaad023",
+    "config.txt": "b718bef1090ef88a8dee7e49078a97bb116b6a12546f121493ad0052f16d3d19",
+    "depths.json": "fd005901eb52434a5098fd8a197bc1d4809d43237f38a3524cf384cd2e6e5932",
+    "summary.json": "16b4d5c9c987014d2e40ecb842d9050bf0666155e5aa0b1093442298f28624ea"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0046-c-seed1074",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a giant red scorpion",
+  "terminal": {
+    "cause": "a giant red scorpion",
+    "dead": true,
+    "depth": 20,
+    "max_depth": 20,
+    "level": 13,
+    "turn": 60527,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1074,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-7-ranger-4",
+      "result_sha256": "97889e0a3d547c29e1b776b95bd5e9d3ecd1a1c547e7ec9eea5fc7eccf9fcbcf",
+      "raw_sha256": {
+        "keys.log": "97889e0a3d547c29e1b776b95bd5e9d3ecd1a1c547e7ec9eea5fc7eccf9fcbcf",
+        "messages.log": "aaacdcc9387d96a48a82db7972caeef4d3c767bf1b195c1ba886c8fcbbdd12d2",
+        "state.log": "b550606b4b261fa1fe9279fff4ab6feaae0c2bd369be0679b780ac1d54fdcefb"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-85ee515eebcbada32a255d1ad7ab27a4c183173cb015fcefe80cb6ba3b0ee416",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "3a2860e19b5c4dc7f4f5d43e6b833a3b4190059a434fd264318c5ae15a2179d3",
+    "depths.json": "607cc8b764531abe73a61269f7a9fa8719d8b16bdd97f4212b122d4f749f221b",
+    "summary.json": "a69ed0faa85028b95f658b49b7903842e2bc7ec85c821e8c950241c20a723f53"
+  },
+  "investigation": null,
+  "issue": null
+}

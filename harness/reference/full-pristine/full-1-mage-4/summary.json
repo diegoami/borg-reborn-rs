@@ -1,0 +1,18 @@
+{
+  "seed": 1014,
+  "race": "Dwarf",
+  "race_idx": 5,
+  "class": "Mage",
+  "class_idx": 1,
+  "stop_reason": "turns",
+  "game_turns": 100321,
+  "player_turns": 10282,
+  "resting_turns": 6723,
+  "clevel": 3,
+  "max_depth": 2,
+  "depth": 0,
+  "dead": false,
+  "death_cause": "",
+  "keys": 6904,
+  "wall_seconds": 9.301
+}

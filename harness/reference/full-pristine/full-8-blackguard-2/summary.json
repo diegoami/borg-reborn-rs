@@ -1,0 +1,18 @@
+{
+  "seed": 1082,
+  "race": "Human",
+  "race_idx": 10,
+  "class": "Ranger",
+  "class_idx": 8,
+  "stop_reason": "death",
+  "game_turns": 5757,
+  "player_turns": 607,
+  "resting_turns": 7,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "an apprentice",
+  "keys": 992,
+  "wall_seconds": 1.083
+}

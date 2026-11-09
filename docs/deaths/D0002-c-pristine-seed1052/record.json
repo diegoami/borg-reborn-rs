@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0002-c-pristine-seed1052",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5021,
+    "race_idx": 7,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1052,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "f54d85e81835f2d7514dbe48211a5959dcb38a144289ef95cc1706e01d1d9cfa"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-5-paladin-2",
+      "result_sha256": "c59c7f050c477c05335e543b734f73d6d5f71479aac1acc03e84abd7cecb2aa9",
+      "raw_sha256": {
+        "keys.log": "c59c7f050c477c05335e543b734f73d6d5f71479aac1acc03e84abd7cecb2aa9",
+        "messages.log": "689281f0cc6dc83031cc72839f1be2c1604759fb023c9c34f29b3975833cb5e0",
+        "state.log": "2679e9b7e34f8c649a72724cdc966598a88dfb9d28e99f3137e81fab8ee40b15"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-69e9a2bbfde06bf63a6b74eceeff45ff3c556b56fcbd3cf9854c73cc781a4e0b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "3a06afa4b85e6e70b0419880b47744072861353e0114b4ec219545328f992946",
+    "summary.json": "82f6c0b9deb16f533136eaf80871cee8692b3992c0e23135b44526b9c229695f"
+  },
+  "investigation": null,
+  "issue": null
+}

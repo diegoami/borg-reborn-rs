@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0025-c-bbc-m7-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 26203,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-2-druid-0",
+      "result_sha256": "ebe72e338369af9fa79da746e36c72c5b00f607800e609efc38d35f9a9d19d88",
+      "raw_sha256": {
+        "keys.log": "ebe72e338369af9fa79da746e36c72c5b00f607800e609efc38d35f9a9d19d88",
+        "messages.log": "d7756a1026af576d903ba592473116f7d8332c4472bef4111bbd06817f5ce165",
+        "state.log": "e8d16a595c5872cf7111dd6924737e307c9ccecebac03975f5fba2ed895c7cdc"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-82150ec4a0bd5bb3e2124c85eac45b5e8e5afd33cac23102f41e340926ad9af1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "40ed31228733c3bbebe39eb711056c0e1f3ec5ead832417dea2869b9a94e9b2a",
+    "summary.json": "cd3dd9ac5d243da9e07a12aeb36af38d6e9af26e4a4bdb5b3af0f01612876dbf"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,18 @@
+{
+  "seed": 1031,
+  "race": "Gnome",
+  "race_idx": 4,
+  "class": "Priest",
+  "class_idx": 3,
+  "stop_reason": "death",
+  "game_turns": 11722,
+  "player_turns": 1219,
+  "resting_turns": 151,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a giant yellow centipede",
+  "keys": 1434,
+  "wall_seconds": 3.305
+}

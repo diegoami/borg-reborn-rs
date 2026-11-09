@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0063-rust-seed1051",
+  "run_kind": "harness",
+  "character": "Half-Orc Paladin",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1688,
+    "race_idx": 6,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1051,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "1d940c7533fd05bba936c5f8d9d65b784991a61b55e8703068fb2a614cb09152"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-5-paladin-1",
+      "result_sha256": "68672fe19f3e572b1b04d1b40eddadcb164412abbd8f6b6a7be46f24cfe4a224",
+      "raw_sha256": {
+        "keys.log": "68672fe19f3e572b1b04d1b40eddadcb164412abbd8f6b6a7be46f24cfe4a224",
+        "messages.log": "835328b5af346435c6e97e787caa237bc2a9eb80a1136467573c52cf8207aace",
+        "state.log": "7e05688b717258fc833b573b694185b3f6bc7188d462042861344181ad9b88c5"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-2cc6ee527de12b4cdb67e196d244277c3c73992bc3bb0cac90cd05d7563540e4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "ab2f4ce0490b3eb7ac7e771779f5db1b4303d92c06f918afa5487234315aad2e",
+    "depths.json": "d39a8fa26251bbc4ebc0fba5ffa17bbdc70dc593a99b8f309f918f4bb22596fa",
+    "summary.json": "2ad22f4c64216c20aaf47b6c3393b4f96f6c37b5fa6b67b7a45da01e0fffc520"
+  },
+  "investigation": null,
+  "issue": null
+}

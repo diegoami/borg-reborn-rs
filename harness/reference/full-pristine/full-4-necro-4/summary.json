@@ -1,0 +1,18 @@
+{
+  "seed": 1044,
+  "race": "Half-Troll",
+  "race_idx": 8,
+  "class": "Necromancer",
+  "class_idx": 4,
+  "stop_reason": "turns",
+  "game_turns": 100245,
+  "player_turns": 10109,
+  "resting_turns": 6573,
+  "clevel": 5,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 6617,
+  "wall_seconds": 6.300
+}

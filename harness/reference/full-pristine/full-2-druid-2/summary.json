@@ -1,0 +1,18 @@
+{
+  "seed": 1022,
+  "race": "Gnome",
+  "race_idx": 4,
+  "class": "Druid",
+  "class_idx": 2,
+  "stop_reason": "death",
+  "game_turns": 7367,
+  "player_turns": 767,
+  "resting_turns": 16,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "a crow",
+  "keys": 1085,
+  "wall_seconds": 1.622
+}

@@ -1,0 +1,18 @@
+{
+  "seed": 1062,
+  "race": "Half-Troll",
+  "race_idx": 8,
+  "class": "Rogue",
+  "class_idx": 6,
+  "stop_reason": "turns",
+  "game_turns": 100004,
+  "player_turns": 10199,
+  "resting_turns": 319,
+  "clevel": 7,
+  "max_depth": 2,
+  "depth": 1,
+  "dead": false,
+  "death_cause": "",
+  "keys": 15251,
+  "wall_seconds": 24.066
+}

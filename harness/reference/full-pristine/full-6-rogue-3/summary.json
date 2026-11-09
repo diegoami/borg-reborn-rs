@@ -1,0 +1,18 @@
+{
+  "seed": 1063,
+  "race": "Human",
+  "race_idx": 9,
+  "class": "Rogue",
+  "class_idx": 6,
+  "stop_reason": "death",
+  "game_turns": 3376,
+  "player_turns": 355,
+  "resting_turns": 6,
+  "clevel": 1,
+  "max_depth": 1,
+  "depth": 1,
+  "dead": true,
+  "death_cause": "Grip, Farmer Maggot's Dog",
+  "keys": 564,
+  "wall_seconds": 0.644
+}

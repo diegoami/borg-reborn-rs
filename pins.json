@@ -1,50 +1,162 @@
 {
   "schema": "borg-reborn-rs/pins@1",
-  "note": "Every related repository at the commit this repository read it. Sessions read others only at these pins (RULES 7). Update a pin in its own PR, saying why.",
+  "note": "Every related repository at the commit this repository read it. Sessions read others only at these pins (RULES 7). Update a pin in its own PR, saying why. read_on is the date a pin was last read; copies are the rules scripts/refresh-sources.py uses to refresh reference/; watch_tags and borg_dir drive its report. A pin with a branch follows that branch instead of the default one, in its own clone vendor/<vendor>.",
   "pins": {
     "angband": {
       "repository": "angband/angband",
       "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
-      "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; its src/borg/ is the source of the c-pristine control (T1.3)."
+      "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; its src/borg/ is the source of the c-pristine control (T1.3).",
+      "read_on": "2026-11-09",
+      "borg_dir": "src/borg"
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "6b58a46444ab3f5d28cfd86c7ac820d54c762c47",
+      "commit": "e5cb263eed8eee93860b5cfcdc18af99e6d134f1",
       "tag_of_interest": {
         "m5": "020322749026418a666da3209c169f48ec9d608c",
         "m0-pristine-c": "aa4ad6cfeea2cf19870e224219dfe66688175c6e"
       },
-      "role": "Template for structure, tooling and external behaviour; source of the angband/ tree with the borgh harness (T1.1), the harness scripts (T1.2), engine.rs (T1.5) and the launchers and death tooling (T1.6); perception oracle (T2.5). Its commit aa4ad6c is the zoo specimen 4.2.6-rs-m0-c (pristine C Borg under borgh), the oracle for the c-pristine control (T1.3)."
+      "role": "Template for structure, tooling and external behaviour; source of the angband/ tree with the borgh harness (T1.1), the harness scripts (T1.2), engine.rs (T1.5) and the launchers and death tooling (T1.6); perception oracle (T2.5). Its commit aa4ad6c is the zoo specimen 4.2.6-rs-m0-c (pristine C Borg under borgh), the oracle for the c-pristine control (T1.3).",
+      "read_on": "2026-11-09",
+      "issues": true,
+      "borg_dir": "angband/src/borg",
+      "watch_tags": "m*"
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "63fbc1fb7ddadb4ed9e8e404114343e43ad1383e",
+      "commit": "b1588cc908c667a859db9a60e9d109766fe366c4",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
         "carries": 76
       },
-      "role": "C Borg with verified fixes; the baseline tag is the source of the c-bbc-m7 control (T1.3), native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/)."
+      "role": "C Borg with verified fixes; the baseline tag is the source of the c-bbc-m7 control (T1.3), native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/).",
+      "read_on": "2026-11-09",
+      "issues": true,
+      "watch_tags": "4.2.6-impact-v*",
+      "borg_dir": "src/borg"
     },
     "neo-angband-tracker": {
       "repository": "diegoami/neo-angband-tracker",
-      "commit": "eefc55000dd5d5f43d8f077f6543b4594807ce08",
+      "commit": "777eea1d9bd6c4094e87fff23af3984dd23f7edb",
       "paths": [
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
-        "docs/c-borg/README.md"
+        "docs/c-borg/README.md",
+        "docs/c-manual/"
       ],
-      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects."
+      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects. Also the Angband Strategy Manual (docs/c-manual/ on the default branch, the complete version of S12's draft): copied in reference/c-manual/, with its copy of the official user manual.",
+      "read_on": "2026-11-09",
+      "issues": true
+    },
+    "strategy-manual": {
+      "repository": "diegoami/neo-angband-tracker",
+      "branch": "c-borg-reference",
+      "vendor": "neo-angband-tracker-c-borg-reference",
+      "commit": "e67fd7dbce189a3e3a2f4d4910c8367fa93af605",
+      "role": "The Angband Strategy Manual (docs/strategy/ on the c-borg-reference branch, not the default branch): game mechanics, races and classes, resistances, equipment, monsters and uniques, the dungeon and a game plan by phase, grounded in Angband 4.2.6 source and lib/gamedata, with generated appendices. Game knowledge for strategy design (copied in reference/strategy/). A work in progress at the pin: chapter 3 is not yet written.",
+      "read_on": "2026-11-09"
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "ffe5a056ad1d8a31353ec536164ab9fb36bb662f",
-      "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/."
+      "commit": "3f6b76e27dba3ddd238b2104fff4d344165cb28f",
+      "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
+      "read_on": "2026-11-09",
+      "issues": true
     },
     "borg-agent": {
       "repository": "diegoami/borg-agent",
-      "commit": "697abde14d642cd04a0f3a371003cb57e836ed75",
-      "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch)."
+      "commit": "9c58125effcb9b62dd5f3d2b2ae980851319f107",
+      "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch).",
+      "read_on": "2026-11-09",
+      "issues": true
+    }
+  },
+  "copies": [
+    {
+      "pin": "neo-angband-tracker",
+      "from": "docs/c-borg",
+      "to": "reference/c-borg",
+      "select": "files",
+      "files": [
+        "BORG_SPEC.md",
+        "TUNABLE-BORG-PLAN.md",
+        "README.md"
+      ]
+    },
+    {
+      "pin": "strategy-manual",
+      "from": "docs/strategy",
+      "to": "reference/strategy",
+      "select": "all"
+    },
+    {
+      "pin": "better-borg-c",
+      "from": "docs/deaths",
+      "to": "reference/deaths/better-borg-c",
+      "select": "death-registry"
+    },
+    {
+      "pin": "borg-rs",
+      "from": "docs/deaths",
+      "to": "reference/deaths/borg-rs",
+      "select": "death-registry"
+    },
+    {
+      "pin": "borg-zoo",
+      "from": "docs",
+      "to": "reference/zoo",
+      "select": "files",
+      "files": [
+        "DESIGN.md"
+      ]
+    },
+    {
+      "pin": "borg-zoo",
+      "from": "catalogue",
+      "to": "reference/zoo/catalogue",
+      "select": "all"
+    },
+    {
+      "pin": "borg-rs",
+      "from": "docs",
+      "to": "reference/borg-rs",
+      "select": "files",
+      "files": [
+        "FORK-CORRECTIONS.md",
+        "adoption/status.json"
+      ]
+    },
+    {
+      "pin": "neo-angband-tracker",
+      "from": "docs/c-manual",
+      "to": "reference/c-manual",
+      "select": "all"
+    }
+  ],
+  "engine_tree": {
+    "pin": "borg-rs",
+    "commit": "e5cb263eed8eee93860b5cfcdc18af99e6d134f1",
+    "path": "angband",
+    "split": "a2b6b4cbdd2f7d0360301ddb9c927037390a17bc",
+    "tree": "5cc1b1cbc2024214dd2d833c928d494abeae1042",
+    "note": "angband/ imported from borg-rs (docs/ENGINE-TREE.md). The refresh report flags when the pin's angband/ tree differs from this tree (a re-sync is available)."
+  },
+  "controls": {
+    "c-pristine": {
+      "pin": "angband",
+      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "path": "src/borg",
+      "oracle": "borg-zoo 4.2.6-rs-m0-c (borg-rs aa4ad6c, impl c); harness/reference/smoke-pristine, full-pristine",
+      "note": "The original C Borg, upstream e473720."
+    },
+    "c-bbc-m7": {
+      "pin": "better-borg-c",
+      "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
+      "path": "src/borg",
+      "tag": "4.2.6-impact-v7",
+      "oracle": "none under borgh yet; overlay checked blob for blob",
+      "note": "better-borg-c milestone 7 (76 carries). The tag changes nothing outside src/borg in the engine; the only declared engine difference from better-borg-c's own build is our tree's #474 cure-all correction (wizard mode / cheat death only)."
     }
   }
 }

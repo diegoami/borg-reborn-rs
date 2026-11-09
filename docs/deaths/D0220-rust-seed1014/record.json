@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0220-rust-seed1014",
+  "run_kind": "harness",
+  "character": "Dwarf Mage",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 29255,
+    "race_idx": 5,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1014,
+    "flags": "-",
+    "git_rev": "ae1e601929446af672a57007d73b385cb38e5331",
+    "git_dirty": "no",
+    "source_sha256": "1d99185da7870b5ef4a8fb9633f1bdfa34d4ea6bf9f04e3167f4b12c609798cc",
+    "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5",
+    "borg_txt_sha256": "b80b179079aa0dfd8f0abc147016a187c1a6b39cc35e03adaa268227bc71f054"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-r2/full-1-mage-4",
+      "result_sha256": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+      "raw_sha256": {
+        "keys.log": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+        "messages.log": "3a527cbdbd7ddc595599fa9c9aa7927241d109a5e2ebdfb27aefcb22a7906133",
+        "state.log": "5272af9ab397907b3e724578431b23066b640d3767172808b28e5f5770e0f37c"
+      },
+      "source_commit": "ae1e601929446af672a57007d73b385cb38e5331",
+      "binary_sha256": "453be7dbe96624a50c2ebb9b55d97acf08bfe04eb72de40da6c0bbd89d07bcd5"
+    }
+  ],
+  "encounter_family": "start-a41f71cdfe6431f3f6ef437d6777752fa85a7d560887602f45f2693f2e69c0c3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6f07e63afe158e9e9d48ae3d6d462c577e1be1cdbfb348a0aceee9e8ec160195",
+    "config.txt": "582d65d6d62b2e4d0a8cb65e9f9ec8f9b05f14dde67e3d1caa9e85f321753b70",
+    "depths.json": "0513fb19aa584519e9455c09956ac4bca52ea6f1a927246ce4f0444d98b76530",
+    "summary.json": "8ba2935288c87464c156a01961072f876273403dea78d35708ee7241d6624201"
+  },
+  "investigation": null,
+  "issue": null
+}

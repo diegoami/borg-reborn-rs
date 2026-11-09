@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0029-c-bbc-m7-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Ranger",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 3,
+    "turn": 23240,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1084,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "d64fd65cc2f6851678242bd70b3a513b4a7522a0b93fa8635269c1cbb0a3225d"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-8-blackguard-4",
+      "result_sha256": "e1adaa2387e78d7fa6d54a1c69d31b8c1ae3d0fe2cfba57f3c6192bbc21c4c66",
+      "raw_sha256": {
+        "keys.log": "e1adaa2387e78d7fa6d54a1c69d31b8c1ae3d0fe2cfba57f3c6192bbc21c4c66",
+        "messages.log": "47d052942d3d0ead375419d77028e483759b21db46b8abe37e1a038baadb056e",
+        "state.log": "f3dfff78abd2dfc11cea8042c93e4b8a46acd192533b8c8978ad1f532acd5cd2"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-d594cd6f9e0efcc63875e3641d848bfe5b46c5e8279fb0417ce2d9f3051b92d4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "4f49fefa149a5c362b2192af4979d70b97380a5cb8e685f465b65b71cc0dde5d",
+    "summary.json": "6d9bb968bc670922ee0e32e7ffb588fece490e2d614fa760f2260a133fbe1b77"
+  },
+  "investigation": null,
+  "issue": null
+}

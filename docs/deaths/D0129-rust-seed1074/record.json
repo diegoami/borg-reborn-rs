@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0129-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 18658,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "-",
+    "git_rev": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+    "git_dirty": "no",
+    "source_sha256": "2d1aed0fcfc0672f8ade128f46f1050a7eb19bf7cee7bcc7059c9dc98f190dc4",
+    "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/ci-like/full-rust/full-7-ranger-4",
+      "result_sha256": "86e4fe517d09a82379c54b29be3cb5bd60498e49683c9b3af9e7b463bfa4f277",
+      "raw_sha256": {
+        "keys.log": "86e4fe517d09a82379c54b29be3cb5bd60498e49683c9b3af9e7b463bfa4f277",
+        "messages.log": "bbe2cc9165ce2f42b72383075f69572be42d7e0d6a6d763c79405edadb4e7b83",
+        "state.log": "d91df3b192badcb6e3564237eb5ca0566f4827d8a7be15fde852e848d2b04a9b"
+      },
+      "source_commit": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+      "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03"
+    }
+  ],
+  "encounter_family": "start-8936a743c438c4066f6bfa9a14e86503200494c70ed04fc7701529f64677d279",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "94e38b92bb28e72389e8d40493e42d827afc79cb46583fac66390ed59149146f",
+    "config.txt": "3a2860e19b5c4dc7f4f5d43e6b833a3b4190059a434fd264318c5ae15a2179d3",
+    "depths.json": "6b3fd89e1d5cde533a6fd904ac04af9c69bef3fb89f3c4947ee636805fe496d7",
+    "summary.json": "aca346b2d2b00092399067ee361cc9944b84294dd49641cf15fa6239e0256c21"
+  },
+  "investigation": null,
+  "issue": null
+}

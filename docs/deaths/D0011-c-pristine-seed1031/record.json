@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0011-c-pristine-seed1031",
+  "run_kind": "harness",
+  "character": "Gnome Priest",
+  "raw_cause": "a giant yellow centipede",
+  "terminal": {
+    "cause": "a giant yellow centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 11722,
+    "race_idx": 4,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1031,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "5fb413cb0514c57ce6a01ef5aaebc6ff1b870eda6438f479dddc1a770e85c9e1"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-3-priest-1",
+      "result_sha256": "8914a4975d35357fef5e9e0be8418f4f261c6f4ed4db3d2d6cce4c2cd769abd2",
+      "raw_sha256": {
+        "keys.log": "8914a4975d35357fef5e9e0be8418f4f261c6f4ed4db3d2d6cce4c2cd769abd2",
+        "messages.log": "f8151ab3a8d534e8737c7e04163af788d9c233f0e9cac5dbec82989d15c8fff3",
+        "state.log": "c4d7d6833b3bf89f95e77ce665fb81f1261f9f75e0cb17bbb1d25bbbb68b3d26"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-2099c02d7ad612b80c3da7387d6d6f590446463f97219ddbe5288096eb94f26f",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "2ba8874c5187ec74a694959c903a51a3ca7996e393f80ccc007d919433f8048d",
+    "summary.json": "ded79a72eff3c5318b12c64d0ecf9e4a4722944f8d610f8e76c01b346f86a088"
+  },
+  "investigation": null,
+  "issue": null
+}

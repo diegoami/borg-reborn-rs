@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0014-c-pristine-seed1082",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "an apprentice",
+  "terminal": {
+    "cause": "an apprentice",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5757,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1082,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "2766360d6049eb06a55c6d80676a700914570e6ba0ca14ea33dd001ea282c83d"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-8-blackguard-2",
+      "result_sha256": "58a5b64d233576e12a677bda1cff9e25736945006222e82b5c2cf2284061e5d3",
+      "raw_sha256": {
+        "keys.log": "58a5b64d233576e12a677bda1cff9e25736945006222e82b5c2cf2284061e5d3",
+        "messages.log": "7b0b98ff714305f17540815d77a5abde8efeaa984d443dd918a97f8ebd394fd6",
+        "state.log": "3c0faeb4d3a23b140c71294264546220bf8fc26a6cb1766653f31b3ebbcf7c26"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-e7ec033d2fee6ccde7f5f3ae7b0c038dbf8c737ffdda961e808c84c2cb545bbe",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "8abef3241836bc0581a78a3548a226779119dca92bcd5e5b99798fe42b9073e0",
+    "summary.json": "a184e614954f6d54c61e9c6d9e4d38c63d8ebdf4b10e2976022977168dfcdda1"
+  },
+  "investigation": null,
+  "issue": null
+}

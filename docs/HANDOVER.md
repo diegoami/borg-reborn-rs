@@ -2,6 +2,406 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M1 fourth review pass, findings S1–S2 (#39)
+
+The fourth pass (Kimi K3.1 Pro, at `eff27c9`) resolved R1, R2, R4, R5 and
+R6, and partly resolved R3. It added two should-fix findings in R3's new
+extra-option load path; nothing blocks. Both are fixed in #54. run.sh now
+handles `-- -load FILE` like `save=NAME`: it copies the file to
+`OUT/save/input.save`, passes that absolute path to borgh, and drops `-n`.
+Before, borgh received `-n`, so it started a new character that the summary
+called loaded (S1). A relative path also failed after run.sh's `cd` (S2).
+`harness/check-extra-load.sh`, now in CI, checks that a relative extra
+load resumes the saved game and plays the same keys as `save=NAME`.
+
+## 2026-11-10: M1 third review pass, findings R1–R6 (#39)
+
+The third pass (Kimi K3.1 Pro, at `42ee347`) resolved N1, N3, N4, N5 and
+N8, and resolved N6 and N10 for their cases. It partly resolved N2, N7, N9
+and N11, and added six should-fix findings, R1–R6. Nothing blocks. The fixes
+go in three PRs into `main`:
+- #51, R2: a step off a shop can be refused without time (an afraid player
+  walking into a visible monster), so on a shop `stand_still()` now alters
+  a neighbour (`+` and a direction), which always spends a move's energy.
+  Rust play is unchanged (full 45/45, smoke 3/3, smoke-exact 3/3
+  identical); the deaths are recorded again as D0188–D0233.
+- #52, evidence: R1, R3 and R4. check-boundary compares `depths.json`'s
+  `stop_turn` with the summary. The death exporter takes a loaded save
+  from borgh's `loaded`, so `run.sh ... -- -load FILE` counts, and run.sh
+  records that save's hash and an extra `-keep-load-rng` in `config.txt`.
+  zoo-check imports the zoo from a `git archive` of the pin, not the
+  checkout, so an ignored `.pyc` cannot replace pinned code.
+- sources (this PR): R5 and R6. The update snapshot backs up into a fresh
+  directory of its own and never touches an existing `.refresh-backup-*`.
+  The zoo prompt peels annotated tag `m1` to its commit (`m1^{}`). The
+  copy on borg-zoo#30 needs the same fix, with N11's, when its link is
+  recorded.
+
+## 2026-11-10: M1 re-review findings N1–N11 (#39)
+
+The re-review (Kimi K3.1 Pro, at `2dd11fd` and `16af1ad`) resolved 12 of
+the 19 findings, partly resolved 7, and added N1–N11. N1 blocks. The fixes
+go in PRs into `main`:
+- measurement: N1, N3, N5 and N6. `suite.sh` writes each run's
+  `run_exit`. `tools/endpoint.py` scores no run of a suite whose binary
+  changed (`binary_changed`), and in a `FAILED` suite only a run whose
+  run.sh succeeded. A `depths.json` that contradicts `summary.json` is an
+  `evidence_conflict`. It refuses outputs with no DONE or FAILED marker,
+  and never guesses the class of a run when its index played two classes.
+  `harness/check-boundary.py` checks the suite hash and fails survivors
+  that stopped before the cap.
+- #48, N2: on a shop entrance `,` enters the store and takes no time, so
+  `stand_still()` steps off instead of holding. Rust play is unchanged
+  (full 45/45, smoke 3/3 identical), but the source moved, so the Rust deaths
+  are recorded again as D0142–D0187.
+- #49, death exporter: N4, N7 and N8. `Interrupting` and empty causes are not
+  natural; `keep-load-rng` drops the seed only with `save=`; a random
+  birth's terminal record names the played indices.
+- sources (this PR): N9, N10 and N11. zoo-check refuses a modified zoo at
+  its pin; `--update` rolls back a failed phase two; the zoo prompt needs
+  tag `m1` or an exact commit from the owner. The prompt already on
+  borg-zoo#30 still has the old fallback, so update it when the link is
+  recorded.
+
+**Source moved (owner, 2026-11-10):** neo-angband-tracker's
+`c-borg-reference` branch is now pristine upstream (`e473720`), with no
+`docs/strategy/`. The manuals live on `workbench/c-borg` (`842dc5d`):
+`docs/user-manual.md` and `docs/strategy/`. The S12 pin `e67fd7d` is still
+reachable from `workbench/c-borg` (and from `docs/strategy-manual`, which
+the owner may delete). Do not run `--update` on `strategy-manual` before
+the pin is moved: it follows `c-borg-reference`, which no longer has the
+directory. In the post-review refresh PR, repoint the pin to branch
+`workbench/c-borg`, or retire S12 in favour of S14 (owner's call, still
+open).
+
+## 2026-11-10: source S14, the complete Angband Strategy Manual
+
+The owner added neo-angband-tracker `docs/c-manual/` (default branch) as a
+source. It is copied to `reference/c-manual/` by a new copy rule on the
+`neo-angband-tracker` pin, moved to `777eea1` with `--update` (the C Borg
+spec and plan copies are unchanged there). It is the finished version of
+S12's draft: 17 chapters, appendices A1–A10, and the official manual. Chapter
+15, *Notes for the borg*, is direct input for M2–M6 strategy and parameters.
+S12 stays pinned until the owner retires it.
+
+## 2026-11-10: M1 review findings (#39)
+
+The M1 review (Kimi K3.1 Pro, on #39) had 4 blocking, 13 should-fix and 2
+nit findings. They are answered in four PRs into `main`, each with a reply
+on its comments:
+- #42: RNG isolation of perception (`with_borg_rng`, hallucination
+  regression in CI), and no loop without game time.
+- #43: endpoint scoring (exact boundary, process receipts, per-class
+  attempts, victory, pairing, zoo boundary by kind) and suite manifests.
+- #44: death records (natural-death checks, family identity, index repair,
+  attempt dedupe, registration on publication refusal, zoo deaths
+  repatriated, CI death reconciliation).
+- the sources PR: an atomic `--update`, and the zoo request (death
+  evidence, boundary for every adapter, no stale fallback ref).
+
+Rust play is unchanged by the fixes (full suite 45/45 identical), but #42
+changed the Rust build inputs, so the Rust deaths are re-recorded at the new
+source. The zoo change request was filed as borg-zoo#30 at the owner's
+request; the issue needs the corrections of this PR (owner's call).
+
+**After the re-review and the owner's merge of #39:** tag `m1`; amend
+RULES 7 (owner decision 2026-11-10: sessions may open issues, not push,
+on the family's repositories) and record borg-zoo#30 in this file and in
+ZOO-CHANGE-REQUEST.md; then start M2 with a refresh PR (better-borg-c
+D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
+
+## 2026-11-09: two sources added (owner request)
+
+- **S12, the Angband Strategy Manual:** neo-angband-tracker `docs/strategy/`
+  on branch `c-borg-reference` (not the default branch), copied in
+  `reference/strategy/` at `e67fd7d`. A new pin `strategy-manual` with two new
+  pin fields: `branch` (the branch the refresh report and `--update` follow)
+  and `vendor` (its own clone, `vendor/neo-angband-tracker-c-borg-reference`,
+  so it never fights the default-branch clone over a checkout).
+  `scripts/refresh-sources.py` and `scripts/setup.sh` support both; a new test
+  covers a branch pin. The manual is a work in progress (chapter 3 missing)
+  and moved twice on 2026-11-09: expect the refresh report to show it.
+- **S13, the official command descriptions**
+  (angband.readthedocs.io `command.html`): built from upstream
+  `docs/command.rst`. Upstream `master` is at our engine pin `e473720`, so the
+  page is `angband/docs/command.rst` in our tree; nothing copied.
+- Not done: no strategy is taken from either yet. That is M3+ work; lifted
+  knowledge cites the engine source, not the manual (docs/SOURCES.md S12).
+
+## 2026-11-09, end of session: M1 under review
+
+**State**
+- M0 is reviewed (tag `m0`). **M1 is complete and in review:** PR #39
+  (`main` → `reviewed`). All M1 issues (#3–#11) are closed. Do **not** start
+  M2 (#12–#16) before the owner merges #39 (RULES 6).
+- CI on `main` is green: the `rust` and `engine` jobs, with all four arms,
+  controls against references, Rust determinism and exact boundary, and the
+  tool tests.
+
+**Waiting on the owner**
+1. The M1 review on PR #39. Its body has the reviewer prompt.
+2. Tag `m1` on the merge of #39. The zoo specimens should point at it.
+3. Routing the zoo change request. The owner asked for a prompt for a
+   borg-zoo session; it is the appendix of
+   [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md). The zoo work happens in
+   borg-zoo, not here.
+4. Whether the self-produced `harness/reference/smoke-c-bbc-m7` is enough as a
+   regression reference.
+
+**Next session, in order**
+1. `git pull`, `bash scripts/setup.sh`, and `python3 scripts/refresh-sources.py`.
+   Read new deaths first; better-borg-c moves daily (RULES 21).
+2. If #39 has review findings: one fix PR into `main` per finding set, a
+   reply on each comment, and the re-review. If it is merged: tag `m1` (if the
+   owner has not), then start M2 with an `--update` refresh PR (PLAN: *How
+   every milestone starts*), then #12 (T2.1 Observation).
+3. Check whether borg-zoo has the reborn specimens and exact-boundary cells.
+   If it does, the next comparison is G1, which comes after M5 (GOALS), so
+   nothing to run yet.
+
+**Local state (not in Git)**
+- `build/` (all four arms, the GUI build `build/play-rust`, the death-workflow
+  caches), `harness/out/` (all suite outputs, including `t18/`), `vendor/`
+  (pinned clones) and the scratch play data. All of it can be regenerated
+  with the commands in harness/README.md and AGENTS.md.
+
+
+## 2026-11-09: T1.8 every-arm check, zoo compatibility and change request (#11) — M1 complete
+
+- **Every arm** (`c`, `c-pristine`, `c-bbc-m7`, `rust`) × smoke and full:
+  - no harness failure;
+  - the exact-boundary contract holds (`harness/check-boundary.py`,
+    192/192 runs);
+  - a rerun gives byte-identical keys (192/192);
+  - the oracles still hold (`c` = `smoke-c`, `c-pristine` = `full-pristine`
+    45/45).
+- **Zoo:** `harness/zoo-check.py` runs the pinned zoo's own borg-rs adapter
+  (in-memory specimens, no zoo change). All three arms run on the zoo's
+  smoke with no harness failure or config error. The gaps are survivors
+  stopping after the cap and an empty `first_turn_at_depth`.
+  [ZOO-CHANGE-REQUEST.md](ZOO-CHANGE-REQUEST.md) is **for the owner to
+  route**: three catalogue specimens; the adapter's `-exact-turns`,
+  boundary field and depth stream; optionally the endpoint in stats.
+- Controls now build from a fresh checkout: the pinned sources are cloned on
+  demand and missing blobs fetched in one batch (`c-bbc-m7` in 16 s). CI
+  builds both controls, checks them against `smoke-pristine` and the new
+  self-produced `smoke-c-bbc-m7`, and checks the Rust arm's exact boundary.
+- The Rust arm's first full-suite deaths are recorded.
+
+**Next:** the **M1 review PR** (`main` → `reviewed`). Do not start M2 before
+the owner merges it (RULES 6).
+
+## 2026-11-09: T1.7 endpoint calculator (#10)
+
+- `tools/endpoint.py` computes the GOALS primary endpoint per arm and class:
+  alive at T with max depth ≥ D, or a victory before T, over **every
+  attempted run**. Operational outcomes are listed separately, with Wilson
+  95% CIs and paired exact McNemar tests on shared (seed, class).
+- Inputs are local suite outputs (runs listed in the suite but missing count
+  as harness failures) and borg-zoo cells (filtered by specimen and profile).
+  Survivors not observed at the exact boundary are refused unless
+  `--allow-after-key`; zoo borg-rs-adapter cells are after-key until T1.8's
+  request is done. Seven unit tests.
+- **Demonstrations (descriptive, not claims):**
+  - our full-exact suite at D=5, T=100k: `c` 2/45, `c-bbc-m7` 2/45,
+    `c-pristine` 1/45;
+  - zoo `classes-milestones` (observer, 1800 per specimen): pristine 3.0%
+    [2.3, 3.9], bbc-m4 4.7% [3.8, 5.7]; Warrior 15.5% against 20.0%,
+    Druid 0.5% against 0.0%. That is post hoc on existing data.
+
+**Next:** #11 (T1.8: every-arm check including `rust`, zoo compatibility,
+change request). Then the M1 review PR.
+
+## 2026-11-09: T1.6 launchers, recording, replay, death tooling (#9)
+
+- borg-rs's launchers and `tools/` are copied from `e5cb263`, with the same
+  commands. The adaptations are listed at the top of `tools/README.md`:
+  `.angband-reborn/`, build-input lists naming our crate, two tests on `HEAD`
+  instead of `m5`, and the aggregator accepting our basic dossiers.
+- `run.sh` calls the depth stream and the basic exporter only when `tools/`
+  is present. The recording launchers run a frozen copy without it and record
+  deaths in borg-rs's full format, so there is no double record.
+- The Rust Borg now honours **any key stops it** (`Term_inkey`, as the C
+  Borg's `user_abort`). Harness keys are unchanged (3/3 identical).
+- **Checked:**
+  - a headless recording (`run-borg-headless.py`) replays **VERIFIED**;
+  - a GUI session under Xvfb (`run-rust-borg.sh`, Ctrl-Z, z, Escape stops,
+    Ctrl-X saves and quits) records completely and replays **VERIFIED**;
+  - borg-rs's 12 GUI-recording tests pass with that fixture;
+  - the tool suite passes 87 tests (26 skip for lack of fixtures) and now
+    runs in CI's engine job.
+- `docs/deaths/` now has borg-rs's aggregated `index.json` and `README.md`,
+  regenerated after every export.
+- Observed during the GUI test: the placeholder Borg dies quickly (an
+  apprentice on level 2), as expected until M3.
+
+**Next:** #10 (T1.7, endpoint calculator), then #11 (T1.8).
+
+## 2026-11-09: T1.5 engine boundary and minimal Borg (#8)
+
+- `borg-reborn-rs/src/headers/` holds borg-rs's c2rust engine bindings,
+  copied unchanged with attribution. `engine.rs` is our own small boundary:
+  the player view, `map_info` terrain, the `^Z` command key, options, the
+  `inkey_hack` hook, `do_cmd_borg`, and `borgh_decision` behind the `borgh`
+  feature. It is the only module with `unsafe`.
+- `borg.rs` is the control loop of ARCHITECTURE.md. Queued keys go first;
+  rest and repeat get `EVT_NONE`; every action starts with `ESCAPE`; the
+  Borg's own RNG is used and the game's never. On top of it sits a
+  **placeholder** policy: take a down stair underfoot, rest when below 70%
+  HP (never twice without time passing), else walk to a random neighbour
+  not known to be a wall or shop. Six unit tests cover the policy.
+- `^Z z` starts it, so borgh's start script and the GUI work unchanged. It
+  sets `auto_more` and `easy_alter`.
+- **Checked:** the Rust smoke suite runs with no harness failure, and two
+  runs give byte-identical keys (3/3). The Elf Mage of seed 102 dies to a
+  rock lizard at turn 743, and its dossier is recorded. CI now runs Rust
+  smoke twice and compares.
+- Not here: launchers (T1.6), and the Rust arm's exact-boundary check (T1.8).
+
+## 2026-11-09: T1.4 run contract: exact boundary and depth stream (#7)
+
+- **No engine-tree edit was needed.** borg-rs's borgh already stops at engine
+  turn T from its per-turn hook (`-exact-turns`) and logs depth on every key.
+  `run.sh` gains the flag `exact`. `tools/depth-stream.py` writes
+  `depths.json` after every run (boundary rule, alive at stop, maximum depth
+  at stop, first turn at each depth), and dossiers include it. There are new
+  suites `smoke-exact` and `full-exact`; the existing suites keep their
+  semantics and references.
+- **Checked on every C arm** (`c`, `c-pristine`, `c-bbc-m7`), smoke and full
+  (144 runs) with `harness/check-boundary.py`. Keys before the boundary are
+  byte-identical to the normal runs, survivors stop exactly at the cap, and
+  deaths before the cap are the same deaths. The `rust` arm gets the same
+  check in T1.8.
+- The `c` arm's first full-suite deaths are recorded, from a clean build.
+
+**Next:** #10 (T1.7, endpoint calculator; needs only T1.4) and #8 (T1.5,
+the minimal Borg).
+
+## 2026-11-09: T1.3 control C Borgs (#6)
+
+- `BORG_IMPL=c-pristine` and `c-bbc-m7` build our engine tree with a pinned C
+  Borg overlaid in `build/<impl>.src/` (`harness/control-overlay.py`,
+  `controls` in `pins.json`). The overlay is checked blob for blob, and the
+  pinned source is part of the build-input hash.
+- **`c-pristine` is byte-identical to borg-rs's pristine-C references** (the
+  zoo's `4.2.6-rs-m0-c`): smoke 3/3 and full 45/45, in keys, messages and
+  state. Our engine's only gameplay correction (#474) was not reached.
+- **`c-bbc-m7`:** tag `4.2.6-impact-v7` changes nothing in the engine outside
+  `src/borg/` (audited). It ran smoke and full with no harness failure. No
+  byte oracle exists under borgh.
+- **Deaths recorded (RULES 12):** 15 `c-pristine` and 16 `c-bbc-m7` deaths on
+  the full suite are in `docs/deaths/`, unassessed. This is one run each, so
+  it is descriptive, not a comparison (RULES 14).
+- **Note for T1.8 (#11):** without the `menu` flag, borg-rs's full suite plays
+  other classes for index 8; the zoo passes `-menu-letters`.
+- Controls are not in CI yet: they need `vendor/` (scripts/setup.sh). The
+  local commands are in harness/README.md.
+
+**Next:** #7 (T1.4, run contract: exact boundary and depth stream; borgh
+already has `opt_exact_turns`).
+
+## 2026-11-09: REDESIGN-LESSONS.md read into the design
+
+- better-borg-c wrote `docs/deaths/REDESIGN-LESSONS.md` for this repository:
+  thirteen lessons from D0001–D0014 and four owner manual takeovers. It came
+  in with refresh #31, together with death D0014.
+- [LESSONS-TRACE.md](LESSONS-TRACE.md) maps each lesson to our principle,
+  our architecture section and the task that builds it.
+- GOALS principles 4–8 are extended, and principle 14 is new (equipment by
+  what it does). D3 now states that the threat model uses full race data
+  (spoiler knowledge), as the C Borg does.
+- ARCHITECTURE adds monster-track confidence, one assessment and tolerance
+  for every consumer, cache validity, the escape ladder, consumable value
+  and destination-aware level changes.
+- PLAN adds D0014 to the fixtures, and owner manual branches as scenario
+  tests.
+- The refresh report now names new and changed registry documents.
+
+**Next:** #6 (T1.3, control C Borgs).
+
+## 2026-11-09: T1.2 harness, build identity, death export (#5)
+
+- `harness/` is borg-rs's at `e5cb263`, with three adaptations listed in
+  [harness/README.md](../harness/README.md):
+  - `identity.sh` names our crates;
+  - `run.sh` ends with `tools/export-death.py`;
+  - `measurement/rust-overlay.py` copies both workspace members.
+- `BORG_IMPL=rust` links through the seam package `borg-rs/` (the name the
+  imported CMake builds), which re-exports `borg-reborn-rs`. The engine
+  boundary module `engine` has a no-op `do_cmd_borg` until T1.5.
+- **Import proved:** the `c` smoke suite is byte-identical (keys, messages,
+  state) to borg-rs's own C build at `e5cb263`. That output is
+  `harness/reference/smoke-c`. borg-rs's committed smoke reference is the
+  pristine-C one (unchanged since `aa4ad6c`) and is kept as
+  `harness/reference/smoke-pristine` for T1.3.
+- **First death:** smoke-mage-2 (seed 102, Elf Mage, `c` arm) dies to an
+  acolyte at turn 7195. It is the same as in borg-rs. Its dossier is our first
+  case in `docs/deaths/`.
+- CI gains an `engine` job: build `c`, run smoke, diff against `smoke-c`,
+  build `rust`, check that the binary reads as `rust`.
+
+**Next:** #6 (T1.3, control C Borgs) and #7 (T1.4, which needs T1.3).
+
+## 2026-11-09: T1.1 engine tree imported (#4)
+
+- `angband/` is borg-rs `e5cb263` (impact v6) `angband/`, split with
+  `git subtree --ignore-joins` into 29 commits and added unsquashed. The tree id
+  `5cc1b1c…` is recorded in `pins.json` (`engine_tree`), and a repository test
+  pins it.
+- [ENGINE-TREE.md](ENGINE-TREE.md) lists what differs from upstream
+  `e473720`:
+  - 8 added files (borgh, recording);
+  - 14 engine files, all behind `BORG_HARNESS`/`BORG_RECORDING` except
+    CMake, `main.h` declarations and the #474 cure-all correction;
+  - 26 C Borg files (borg-rs's adopted milestones 2–6).
+- It also gives the re-sync procedure.
+- borg-rs's `FORK-CORRECTIONS.md` and `adoption/status.json` are copied to
+  `reference/borg-rs/` by a new copy rule. The refresh report flags when
+  borg-rs's `angband/` tree moves.
+- Nothing is built yet: building and the harness are T1.2 (#5).
+
+**Next:** #5 (T1.2: harness, build identity, death export before the first
+game).
+
+## 2026-11-09: new deaths read into the evidence
+
+better-borg-c D0011–D0013 (from the first refresh) are folded in. SOURCES
+has three new death patterns (fear by list, unknown items left unknown,
+wrong kit valuation) and extended rows. GOALS principles 4–8 cite them, and
+PLAN's death fixtures include them. The research digest
+(`docs/research/DEATHS-AND-ISSUES.md`) is a dated snapshot of 2026-11-08;
+`reference/deaths/INDEX.md` is the live list.
+
+**Next:** #4 (T1.1, import the engine tree from borg-rs at `e5cb263`).
+
+## 2026-11-09: T1.0 source refresh routine (#3)
+
+- `scripts/refresh-sources.py` reports, per pin: commits since the pin, new
+  and changed death cases, new tags (new control arms), changed C Borg
+  functions we cite, and issues updated since the pin was read. `--update`
+  moves the pins, refreshes `reference/` (copy rules in `pins.json`) and
+  regenerates `reference/deaths/INDEX.md`. Tests on synthetic repositories
+  cover the report, update, dirty vendor and offline cases; CI runs them.
+- RULES 21–23: every session starts with the report, every milestone with an
+  `--update` PR; baselines are exact; lifted knowledge is watched.
+- **First `--update` (PR closing #3):** borg-rs `6b58a46`→`e5cb263` (impact v6; its C Borg now differs from upstream in 26 files, issue #4 updated), better-borg-c `63fbc1f`→`8b26042` (deaths D0011–D0013 copied), borg-zoo `ffe5a05`→`9cd7423`, borg-agent `697abde`→`8f1dd7f`. The new deaths are read into SOURCES/GOALS/PLAN in a separate PR (RULES 21).
+- **First real report (2026-11-09):** better-borg-c has three new deaths
+  (D0011–D0013), 25 commits and 75 updated issues; borg-rs moved 7 commits,
+  borg-zoo 3, borg-agent 9. The `--update` PR that brings them in is the
+  last step of #3.
+
+## 2026-11-09: M0 reviewed, M1 started, backlog moved to issues
+
+- The owner merged the M0 review (#1); tag `m0` is on the merge
+  (`ae64f12`). D1–D11 are accepted (GOALS.md).
+- The backlog is now GitHub issues (owner request): GitHub milestones
+  M1–M7+, labels `task`, `process`, `in progress` and `owner`, and issues
+  #3–#24 for T1.0–T3.8, each with a **Needs** line linking its
+  dependencies. PLAN.md keeps only milestones, exits and method.
+- **Next:** #3 (T1.0, the source-refresh routine over every pin, death
+  reports included; owner request), then #4 (T1.1, import the engine tree
+  at refreshed pins).
+
 ## 2026-11-08: M0 review findings addressed (T0.4)
 
 The owner's review of PR #1 had six findings, all verified and addressed
@@ -48,9 +448,7 @@ T1.8 writes it.
   PR shows everything), as set up here.
 
 **Next**
-- After the M0 review merges: move the backlog to GitHub issues (owner
-  request), starting with the source-refresh routine, then T1.1. Read
-  PLAN.md T1.1–T1.8 first.
+- Done on 2026-11-09: see the newest entry above.
 
 **Known limits**
 - Nothing is built against the engine yet. The CI checks only the empty

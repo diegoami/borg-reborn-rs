@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0035-c-seed1023",
+  "run_kind": "harness",
+  "character": "Dwarf Druid",
+  "raw_cause": "a fatal wound",
+  "terminal": {
+    "cause": "a fatal wound",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4730,
+    "race_idx": 5,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1023,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "7a94cde1684c095b4cbe387aaef64f3b173ce31b0af2c703abaf8658ee27a4df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-2-druid-3",
+      "result_sha256": "b72fb97ab58782e8e3dfd18b64743615c69db0ca00f5a3950b9c20f04e440e2d",
+      "raw_sha256": {
+        "keys.log": "b72fb97ab58782e8e3dfd18b64743615c69db0ca00f5a3950b9c20f04e440e2d",
+        "messages.log": "37613910f60e4b44665fe53533a3a7050b92ccf0878b34d484ab826ed2f6eb86",
+        "state.log": "10d55056d14043639ec905db6b3b550830a12cb3fcfc991c4feb0cc2993fcd55"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-4b1a7ce70fe1dcd1bdd11a4aca41bd303cee4f73d6e53bbbdc59096549330fe3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "c22ec137abbfb4b07f5cbc510d1879639d810ad6b32cecbe38ef0fc5cb97d991",
+    "depths.json": "6b1ff8893ad0893b4e28e89cec3e3918b7accad68af71b637d68b17ca80e9fa3",
+    "summary.json": "dfa27a3407eb8d37d1ae5e8fb086e064c9f9de78ea211c6dd6c28080f1fe073d"
+  },
+  "investigation": null,
+  "issue": null
+}

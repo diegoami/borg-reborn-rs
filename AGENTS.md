@@ -29,25 +29,42 @@ our engine tree and tooling and the oracle for perception, not a control.
 ```sh
 git status --short
 git log --oneline -5
+gh issue list --label "in progress"   # who is working on what
 bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
+python3 scripts/refresh-sources.py   # what moved in every source since its pin (read only)
 cargo test --workspace
 ```
 
-From M1 on, also `harness/build.sh` (see PLAN.md T1.2) under the shared lock.
+Engine builds and suites (see [harness/README.md](harness/README.md)) run under the shared lock:
+
+```sh
+BORG_IMPL=c flock /tmp/angband-validation.lock harness/build.sh
+BORG_IMPL=c flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke-c
+harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
+```
 
 ## Choosing the work
 
 PLAN.md's milestone table says which milestone is in progress. **Work only
-inside it.** Take the first task of it whose status is `todo` and whose
-"Needs" are `done` (or in an open PR you can stack on, RULES 5). Set its
-row to `in progress` with your branch name in your first commit.
+inside it.** Tasks are GitHub issues labelled `task` in that GitHub
+milestone:
+
+```sh
+gh issue list --milestone "M1. The seam and the yardstick" --label task --state open
+```
+
+Take the lowest-numbered open task issue whose **Needs** issues are closed
+(or in an open PR you can stack on, RULES 5) and that has no `in progress`
+label. Add the `in progress` label and comment with your branch name before
+you start.
 
 At the end of a task:
 1. `cargo fmt --check`, `cargo clippy --workspace -- -D warnings` and
    `cargo test --workspace` pass, as well as the task's own checks;
-2. PLAN.md's row and docs/HANDOVER.md say what was done, what was found,
-   what is left, and anything the owner has to decide;
-3. the PR says what changed, how it was checked and what was not checked;
+2. docs/HANDOVER.md says what was done, what was found, what is left, and
+   anything the owner has to decide; anything left becomes a new issue;
+3. the PR says what changed, how it was checked and what was not checked,
+   and `Closes #N` for its issue;
 4. **you merge it yourself** once CI is green (RULES 1).
 
 When the milestone's last task is merged, **stop** and open the review PR
@@ -68,11 +85,18 @@ both in the review PR.
 | Path | What |
 | --- | --- |
 | `pins.json` | The pinned commits of every related repository |
-| `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
+| `reference/` | Copies of sources read often: C Borg spec and Tunable Borg Plan, the Angband Strategy Manual (`c-manual/`, complete; `strategy/`, the earlier draft), curated death dossiers, the zoo's catalogue (see docs/SOURCES.md) |
 | `docs/research/` | Research digests (deaths and issues by subsystem) |
-| `borg-reborn-rs/` | The Rust crate (`staticlib` + `rlib`), linked into the engine from M1 |
+| `borg-reborn-rs/` | The Rust crate: `engine.rs` (the only `unsafe`, the engine boundary), `borg.rs` (control loop and, until M3, a placeholder policy), `headers/` (borg-rs's generated engine bindings, copied unchanged) |
+| `scripts/refresh-sources.py` | Reports what moved since each pin: commits, new death cases, new tags (new control arms), changed C Borg functions we cite, updated issues. `--update` refreshes pins, `reference/` copies and the death index in their own PR (RULES 21) |
+| `reference/deaths/INDEX.md` | Generated index of every Borg death we know of: better-borg-c, borg-rs and ours |
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
-| `angband/`, `harness/`, `tools/`, launchers | From M1, with borg-rs's names and behaviour |
+| `angband/` | The engine tree from borg-rs, with history; never edited here (RULES 9). What it contains and how to re-sync it: [docs/ENGINE-TREE.md](docs/ENGINE-TREE.md) |
+| `harness/` | borg-rs's harness (build, run, suite, diff, identity) with the differences listed in [harness/README.md](harness/README.md) |
+| `borg-rs/` | The seam package: the name the imported CMake builds; it only re-exports `borg-reborn-rs` |
+| `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
+| `tools/endpoint.py` | The primary endpoint of GOALS.md per arm and class (all attempted runs, exact boundary, Wilson CI, paired McNemar) over local suite outputs and borg-zoo cells |
+| launchers, the rest of `tools/` | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
 | `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
 
 ## Local machine notes

@@ -9,6 +9,14 @@ publish = false
 [lib]
 name = "borg_reborn_rs"
 path = "src/lib.rs"
-crate-type = ["staticlib", "rlib"]
+crate-type = ["rlib"]
+
+[features]
+# Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+borgh = []
+# Test builds only (CI): perception runs while the player hallucinates, and
+# each think asserts the game's RNG is unchanged (RULES 10 regression).
+test-hallucinate = []
 
 [dependencies]
+libc = "0.2"

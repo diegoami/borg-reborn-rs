@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0093-rust-seed1072",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89250,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "ea743d09d98ba69aefd5ca3560bb149f21cc5d77b611147855e4acb779eb56df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-7-ranger-2",
+      "result_sha256": "44c2e9e133ce58deb9a730c373a843751a4d4e9c6eac48f174741358de875bd4",
+      "raw_sha256": {
+        "keys.log": "44c2e9e133ce58deb9a730c373a843751a4d4e9c6eac48f174741358de875bd4",
+        "messages.log": "447e227708eec119d1156733fc832fc56b243a344f62274cf88296fb93a5bdfa",
+        "state.log": "a6ac153af1e1b922c62ebb0ff126dbde7545f2202d0a13c3f7f9bd7fd4c2c537"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-0ee8c177e2b13653b6f4d33a25d599fad31aa2077486b832505dfd4dae560a26",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "3954f1111dbc0b1975c0b352913a3bc05aace85078ed22087b85400c9fc43e06",
+    "depths.json": "157b1501318670efcc429f6723b645bf17f403721cee72fd3cff1e9becf38fac",
+    "summary.json": "57f9d30c5c7afe9f3aa7841e2919f1af5cf7e2ce11288162c39110d44017f419"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0026-c-bbc-m7-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 49175,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1010,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "e6d6978ca7222fc2ddc12072c2b6bb9d677a1890e958498c72793f5430a25375"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-1-mage-0",
+      "result_sha256": "b791e7a77c1601372ce294c78e5594b66a61d6e14053baf82f37e0d67302993a",
+      "raw_sha256": {
+        "keys.log": "b791e7a77c1601372ce294c78e5594b66a61d6e14053baf82f37e0d67302993a",
+        "messages.log": "e49100c1678bfe667cd30f151d42f06896b1afc6933fa4acd9bc1e6315615a23",
+        "state.log": "efab8135fbf5bd4652c64d411af0cef8a320ec22b0262c557ae8db070f76670e"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-68ca8416e9eefbca360e7fe597be039cc09618ba224f49ebcd40d7619ff27beb",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "de07143f8cdc73e05ce5b31e4ebd0c48f813d2d8eb76056eca2fcbe3906a2ed9",
+    "summary.json": "97e085f5f601fae80b7a131da6e4880e32c138c296678c65db0af5675010a21b"
+  },
+  "investigation": null,
+  "issue": null
+}

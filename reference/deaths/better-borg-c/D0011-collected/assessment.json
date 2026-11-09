@@ -1,0 +1,103 @@
+{
+  "classification": "escape/equipment/healing-policy investigation; three source-checked mechanisms with native evidence; no reusable original-C defect established",
+  "confidence": "High for the native trajectory, inventory and wield/read events; source-derived causes for the weapon swap and unused CLW are not yet observed at runtime; no rescue claimed",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "33d112e68fbd12ea85d1c972c975ea6054c325e898c31a02a6bffecadc1c0011",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused322; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/322",
+      "summary": "Chat 2026-11-08: floor opens 118711; wolves/fruit flies, incomplete rest; griffon 119278; no healing potions; Phase 119308; leaves a safe spot 119422/119433; illusionist and last Phase 119466; griffon kills. No Word of Recall, many useless objects, unused potions.",
+      "status": "processed; recorded verbatim on 322; findings replied; owner review completion not inferred",
+      "actions": [
+        "clw-tier",
+        "weapon-swap",
+        "climb-restock",
+        "recall-deep-descent",
+        "identification-priority",
+        "survival-stock",
+        "theft-danger-weight"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Half-Elf Warrior, seed1907608236, source867c777845fd; griffon death119600 at CL11 (reached119587)/DL18/max18, HP-2/111."
+    },
+    {
+      "status": "observed",
+      "summary": "Three known Deep Descent reads: 54903 town CL4 HP59/60 danger377 (two street urchins) to DL7; 118552 DL4/max8 HP102/102 danger313 to DL13; 118641 DL13 HP98/102 danger705 to DL18. Game targets max_depth+5."
+    },
+    {
+      "status": "observed",
+      "summary": "No town visit 55624-118552 (~63k turns): 430 restock-phase and 82 recall preparation notes, 563 'no up stairs found, going down' fallbacks, 10 up-stair departures; max depth stayed 8. Last purchase 29180; 1769 gold at death."
+    },
+    {
+      "status": "observed; cause source-derived",
+      "summary": "118611 on arrival at DL13 wields Dagger (1d4)(+0,+0) over the unidentified Maul (4d4)(+7,+6)<+2>. borg-power gives +1,000,000 to an unidentified wielded weapon only below DL10 and +45,000 per blow at CL<=10; computed blows dagger~3.0, maul~1.3 (dmg/turn ~7.6 vs ~21)."
+    },
+    {
+      "status": "observed; cause source-derived",
+      "summary": "8 known CLW never drunk while HP fell 86 to -2. At CL>=10 the CLW rung needs 30-40% down; fatal decisions were 58-90% down. 9 Hazy Potions were unaware Cure Serious Wounds; no CCW/heal device; rest healing excludes CLW; unknown-quaff last resort needs danger>4xHP (25 vs 24/11)."
+    },
+    {
+      "status": "observed",
+      "summary": "Rests at 118761-119094 are repeatedly cut short by the adjacent seven-wolf pack entering view; HP ends ~86/102 before the griffon."
+    },
+    {
+      "status": "observed",
+      "summary": "119427 leaving the hidden spot is the climb goal falling back to exploration ('no up stairs found, going down', bravery boost 36 to 72), not a fight choice. 119467 last Phase Door against a logged warrior and two wolves; 119547 'failed to teleport'."
+    },
+    {
+      "status": "observed",
+      "summary": "Unused at death: 2 Speed, 3 Neutralize Poison, unaware True Seeing/Infravision/Monster Confusion, unworn unaware Azure Amulet (Trickery). Junk: 4 Darkness, 4 Rings of Searching, 9 spare torches, 2 sandals. Speed's value competition against attack value 38 is unobserved."
+    }
+  ],
+  "actions": [
+    {
+      "key": "clw-tier",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/319",
+      "summary": "Observe borg_heal rungs/chance/fleeing guard at 119268-119596; assess the CL10 CLW tier when CLW is the only known cure",
+      "status": "investigating; source-checked; no gameplay change"
+    },
+    {
+      "key": "weapon-swap",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/320",
+      "summary": "Observe borg_power/BI_BLOWS for Dagger vs Maul at 118611; assess depth-tied unidentified-weapon bonus and the CL<=10 blows bonus",
+      "status": "needs evidence; source-derived cause"
+    },
+    {
+      "key": "climb-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/321",
+      "summary": "Classify every level change 55624-118552 and the no-known-up-stair fallback; compare D0009/235 and 159",
+      "status": "needs evidence"
+    },
+    {
+      "key": "recall-deep-descent",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Destination-aware Deep Descent: three max_depth+5 reads including full-HP DL4 to DL13",
+      "status": "investigating; evidence added"
+    },
+    {
+      "key": "identification-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Nine unidentified CSW carried ~47k turns; unknown tests only in emergencies",
+      "status": "investigating; evidence added"
+    },
+    {
+      "key": "survival-stock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "No Phase/Recall/teleport stock at DL18 while carrying junk",
+      "status": "proposed"
+    },
+    {
+      "key": "theft-danger-weight",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/158",
+      "summary": "Town Deep Descent at danger377 from two 3-HP street urchins",
+      "status": "needs evidence"
+    }
+  ]
+}

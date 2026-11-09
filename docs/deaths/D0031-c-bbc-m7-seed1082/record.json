@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0031-c-bbc-m7-seed1082",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a giant green frog",
+  "terminal": {
+    "cause": "a giant green frog",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 3,
+    "turn": 53459,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1082,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "2766360d6049eb06a55c6d80676a700914570e6ba0ca14ea33dd001ea282c83d"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-8-blackguard-2",
+      "result_sha256": "877a647885781a68513a1963325016dc291eccd1f5239acb4e65b2b918d5bb0f",
+      "raw_sha256": {
+        "keys.log": "877a647885781a68513a1963325016dc291eccd1f5239acb4e65b2b918d5bb0f",
+        "messages.log": "8332c16874c97bb73a4731c2f18b5ca2b9e5545c7d718b35a73ed485a7c52b8b",
+        "state.log": "2eb7e5b1788d5fbf7273faf257f734a1dba5825c3a340b56cd6dcce16ab7c1ec"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-09625c16783bdb37d62349838e0f8e4522035f25fcc691605e18ea161024bfdb",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "8abef3241836bc0581a78a3548a226779119dca92bcd5e5b99798fe42b9073e0",
+    "summary.json": "24710ff97b0bb99aecec26cf7600267a94e35e59bbbba093b7cc543acd08d990"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -46,7 +46,7 @@ A, B and C together, each where it pays:
    our exact run contract (D8): the original C Borg (`c-pristine`) and the
    latest better-borg-c milestone (`c-bbc-m7` today). borg-rs is not a
    control: it is the source of our engine tree and tooling, and the
-   perception oracle (PLAN T2.5). Its zoo results, like the observer
+   perception oracle (T2.5, #16). Its zoo results, like the observer
    harness's, are context.
 
 Later, and only for narrow decisions: the decision trace (which strategy
@@ -81,7 +81,7 @@ Fixed now, before any comparison, following the Tunable Borg Plan's rule
 of the same name:
 
 - **Observed at the exact boundary.** Alive, depth and maximum depth are
-  taken at engine turn T itself, by our `borgh` (PLAN T1.4), not after the
+  taken at engine turn T itself, by our `borgh` (T1.4, #7), not after the
   first key at or past T as borg-rs's `borgh` does today.
 - **Success:** a verified victory before T, or alive at T with maximum
   depth ≥ D. The first engine turn at each depth is recorded too.
@@ -90,10 +90,10 @@ of the same name:
   non-successes, reported per arm and never relabelled as deaths.
 - **Arms:** the reborn Borg and the control C Borgs, all built from this
   repository on the same engine tree, run through the same `borgh` and the
-  same run contract (D8, PLAN T1.3). Results from the better-borg-c
+  same run contract (D8, T1.3, #6). Results from the better-borg-c
   observer harness are context, not controls: same-seed equivalence
   between the two harnesses is unverified.
-- **Calculated by** `tools/endpoint.py` (PLAN T1.7) from our outputs or
+- **Calculated by** `tools/endpoint.py` (T1.7, #10) from our outputs or
   from borg-zoo result cells. borg-zoo's own `goal_rate` excludes
   operational outcomes from its denominator and is reported per arm rather
   than per class, so it is **not** this endpoint.
@@ -124,7 +124,7 @@ These follow from the sources. Each cites the evidence behind it.
    as borg-rs's Rust Borg is. `borgh`, the launchers, replay and death
    dossiers work the same way, and the zoo can measure it with the borg-rs
    adapter. Our harness adds the exact-boundary observation and the depth
-   stream (PLAN T1.4) as harness-only hooks.
+   stream (T1.4, #7) as harness-only hooks.
 2. **Deterministic.** Same seed, build and profile, same key stream. The
    Borg thinks with its own RNG and never moves the game's. Wall time
    never affects play (spec §1.2, §16.1.4).
@@ -134,27 +134,59 @@ These follow from the sources. Each cites the evidence behind it.
 4. **Danger is the central concept** (owner direction), redesigned. Its
    unit is something an evaluation can compare (expected and worst-case
    damage over a horizon, and the chance of dying), not a capped scalar
-   (spec §8).
+   (spec §8). No hard-coded fear lists: whether a monster is a reason to
+   leave the level is a risk decision (bbc D0012 and D0013 fled whole
+   levels over two worm masses and one small kobold). The Borg disengages
+   from the monster that is dangerous, not from the whole level by
+   default. Remembered monsters it cannot see stay in the estimate, with
+   decaying confidence, and speed counts as enemy actions per player action
+   (bbc D0014: danger 22 while a known speed +30 blood falcon was out of
+   view; REDESIGN-LESSONS L1, L11).
 5. **Alternatives are compared on one scale.** When the character is
    threatened, every available response (attack, shoot, cast, quaff,
    read, step, stairs, escape) is scored against the same risk model.
-   The first applicable rule does not decide. *Evidence:* unused Cure Light
-   Wounds (bbc D0002, rs D0005), the Ranger who fled instead of shooting
-   (bbc D0010).
+   The first applicable rule does not decide. Consumables are valued by the
+   survival they buy now: buffs such as Speed are drunk early, when they
+   change the exchange rate. The Borg never dies holding the potion that
+   fits, and no class is excluded from an emergency fallback. Escapes are
+   tried in order of cost and sufficiency (step, walk, Phase, teleport,
+   leave the level), with landing risk estimated. The last escape item has
+   a higher bar, and walking away stays an option after it is gone.
+   Detection is one of the options. *Evidence:* unused Cure Light Wounds
+   (bbc D0002, D0011, D0014, rs D0005), 5 Speed unused (bbc D0014), the
+   Ranger who fled instead of shooting (bbc D0010), the only Phase Door
+   spent where a step back would do (bbc D0013), the last Phase Door spent
+   at full HP (bbc D0014), a 2-HP mold never attacked (bbc D0012);
+   REDESIGN-LESSONS L3–L5, L11.
 6. **Commitment and progress.** A goal, once chosen, keeps priority
    (hysteresis) until it succeeds, becomes unsafe, or exhausts a budget in
    *game* turns. A goal that does not progress is blocked for a while, and
-   loops in which no game time passes are detected. *Evidence:* mold
-   oscillation (bbc D0008, rs D0006), starvation by pickup loop (bbc D0009),
+   loops in which no game time passes are detected. Planning, movement,
+   retreat and combat share one danger evaluation and one risk tolerance,
+   so the planner never walks into what caution then retreats from.
+   *Evidence:* mold oscillation (bbc D0008, D0012, rs D0006; in D0012 the
+   flee flow accepted 3 × HP while caution retreated above HP/3), starvation
+   by pickup loop (bbc D0009), 63k turns failing to climb to town (bbc
+   D0011), REDESIGN-LESSONS L2 and L7,
    munchkin loop ([#403](https://github.com/diegoami/neo-angband-tracker/issues/403)).
-7. **Survival invariants are explicit.** Light, food, a cure and an escape
-   are reserves with declared minimums per depth and class, checked every
-   think. They are not side effects of the shopping list. *Evidence:* bbc
-   D0001 (Phase Door at home), bbc D0009 (food), owner priority
-   [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41).
+7. **Survival invariants are explicit.** Light, food, a cure, an escape
+   and a way home (Recall or a known route) are reserves with declared
+   minimums per depth and class, checked every think. They outrank
+   equipment upgrades. They are not side effects of the shopping list, and
+   identifying carried potions is part of keeping them. Pack capacity is
+   counted exactly, quiver included, and a launcher without ammunition is
+   not a weapon (REDESIGN-LESSONS L7–L9). *Evidence:* bbc D0001 (Phase
+   Door at home), bbc D0009 (food), bbc D0011–D0012 (unidentified cures),
+   bbc D0013 (rings bought, no cure), owner priorities
+   [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41)
+   and [#180](https://github.com/diegoami/better-borg-c/issues/180).
 8. **Depth readiness is one policy, per class.** Stairs, Deep Descent,
-   trapdoors and recall depth all go through it. *Evidence:* bbc D0006 (Deep
-   Descent to depth 14); TUNABLE plan (the biggest single lever).
+   trapdoors and recall depth all go through it, and every level change is
+   judged by its destination. In 4.2, Deep Descent goes to max_depth + 5,
+   so it is not a generic escape. *Evidence:* bbc D0006 (Deep Descent to
+   depth 14), bbc D0011 (three reads, CL10 at depth 18), bbc D0014 (three
+   reads, CL9 at depth 20); TUNABLE plan (the biggest single lever);
+   REDESIGN-LESSONS L6.
 9. **No exploits** (owner decision). No munchkin start, no lunal mode, no
    money or self scum, no stair-scumming to a target depth, no cheat death
    inside the Borg (it is a runner setting).
@@ -173,12 +205,18 @@ These follow from the sources. Each cites the evidence behind it.
     (blow and spell damage, item values, prompt answers, store routines)
     is lifted with a `file:function:lines` citation at the pin. Its
     decision code is not translated.
+14. **Equipment is valued by what it does.** Expected damage per turn
+    (blows, to-hit, slays, criticals, the monster's AC) plus defence, from
+    the character model. Identification incentives are kept apart and never
+    invert a combat choice. *Evidence:* bbc D0011 wielded a Dagger over a
+    Maul (about 7.6 against 21 damage per turn) because of an
+    unidentified-weapon bonus and a per-blow weight (REDESIGN-LESSONS L10).
 
 ## Non-goals
 
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
   decisions. The C Borgs are controls for our results (D8); borg-rs is
-  an oracle only for perception (PLAN T2.5).
+  an oracle only for perception (T2.5, #16).
 - A model in the play loop, or machine learning at the core.
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
@@ -186,19 +224,21 @@ These follow from the sources. Each cites the evidence behind it.
 
 ## Owner decisions
 
-All are **proposed** and are confirmed or changed in the milestone 0
-review. A session does not reopen a confirmed one (RULES 3).
+**Accepted** (2026-11-09): the owner merged the milestone 0 review (#1)
+with D2, D7 and D8 as amended by the review fixes (#2), and no other
+change. A session does not reopen them (RULES 3); the owner may amend
+them.
 
-| # | Decision | Recommended |
+| # | Decision | Accepted |
 | --- | --- | --- |
 | D1 | What the reborn Borg is | **One substrate, a family of strategies, all tunable; the zoo decides** (above) |
 | D2 | Engine and game | **Angband 4.2.6 at `e473720`**, the `angband/` tree of borg-rs (harness hooks, its declared fork corrections and its adopted C Borg carries) imported with history. Birth options at the game's defaults. The tree's own C Borg is not a control (D8) |
-| D3 | Information level | **The C Borg's two channels, no more**: screen (message line, store header) plus the direct reads of spec §1.1. Revisit only with a separate "fair-play" profile, measured separately |
+| D3 | Information level | **The C Borg's two channels, no more**: screen (message line, store header) plus the direct reads of spec §1.1. That includes **full monster race data** (`r_info`: spoiler knowledge, not learned lore), as the C Borg uses (REDESIGN-LESSONS L13 asks for this to be stated). Revisit only with a separate "fair-play" or lore-only profile, measured separately |
 | D4 | Code reuse | **The substrate may reuse borg-rs code** (engine boundary first; perception, item analysis and flow where they survive review), with attribution. Decision code is new. C Borg knowledge is lifted with citations |
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by `tools/endpoint.py`); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Controls | **Same-frontend controls built here** (PLAN T1.3): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
+| D8 | Controls | **Same-frontend controls built here** (T1.3, #6): `c-pristine` (upstream `e473720` C Borg, checked against the zoo's `4.2.6-rs-m0-c`) and `c-bbc-m7` (better-borg-c tag `4.2.6-impact-v7`), on our engine tree through our `borgh`. A later better-borg-c milestone is a new arm. **borg-rs is not a control**: it is the source of the engine tree and tooling and the perception oracle. Its zoo specimens and the observer-harness zoo results are context only |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent | Its reviewed claims are inputs to strategy and parameter design. No dependency on it in code or in the plan's critical path |

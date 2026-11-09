@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0048-rust-seed102",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 743,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 102,
+    "flags": "-",
+    "git_rev": "b80ed55657bd45241b712d19a87a7c2665a7dd16",
+    "git_dirty": "no",
+    "source_sha256": "3df6357bd0d95f3132d1922bef5644d2c119654b5d2f62ce81d4fc2498c38d04",
+    "binary_sha256": "2f7099172baa5d53198c5bd65319ef58a228d0a8cbb3145bdbbfaf7645572422",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/smoke-rust/smoke-mage-2",
+      "result_sha256": "4666bb12b3e1d3a87aff5fc82848686fe49007fcc39baf1386f566a59c630934",
+      "raw_sha256": {
+        "keys.log": "4666bb12b3e1d3a87aff5fc82848686fe49007fcc39baf1386f566a59c630934",
+        "messages.log": "a8f6eb40f318e25d7ba04d8a29031011a5490432cddbc0ffdb4eae9c4e42758a",
+        "state.log": "de4c8653a7c463f803c9db12c9fde9781f1a07153c5f27f75ca53cf17469d488"
+      },
+      "source_commit": "b80ed55657bd45241b712d19a87a7c2665a7dd16",
+      "binary_sha256": "2f7099172baa5d53198c5bd65319ef58a228d0a8cbb3145bdbbfaf7645572422"
+    }
+  ],
+  "encounter_family": "start-3a2494719132910b61757fbae07bcb91f5ccbca08fee70cd1501bf1cc01daff6",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6c2db3dc864f65e359c044ca97711c2b0455d785226868f61e6391a9b1675be9",
+    "config.txt": "9b12cebb09c024bbac847c009a76be2b75624ff726824557bb09fee1c5650e7f",
+    "depths.json": "a781e129fae4adbce92192345c5aa41665608c86691c8f25ffc77944ec797ab6",
+    "summary.json": "4e4cc6d03f83372d1a38715a7fc6df0eaa3af79aa372a3cb48503a711f97e855"
+  },
+  "investigation": null,
+  "issue": null
+}
