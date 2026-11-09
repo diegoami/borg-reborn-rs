@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0705-rust-seed1013",
+  "run_kind": "harness",
+  "character": "Gnome Mage",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 57935,
+    "race_idx": 4,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1013,
+    "flags": "-",
+    "git_rev": "2609bab55560219592baa9dc41bad4d1a33d0360",
+    "git_dirty": "yes",
+    "source_sha256": "c68b03c49f8a567c0c8af3dabf1402a301812c90713c521b4d4a4b1f469f4a4e",
+    "binary_sha256": "de35d4c27fcc80e068db0a5343dd804957cf30c0970ab31f75021fe3eb7361ac",
+    "borg_txt_sha256": "e13e8bd7865dc4a7db4c17546bf55581ef02ea1ce9b1e29217a875eba8a99642",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 5795
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te6-full/full-1-mage-3",
+      "result_sha256": "2b19f897d8ebcf963706deaa0ac9dade5ba458f6ce2b536fdc5e97520cf07457",
+      "raw_sha256": {
+        "keys.log": "2b19f897d8ebcf963706deaa0ac9dade5ba458f6ce2b536fdc5e97520cf07457",
+        "messages.log": "7127024ebec8fceb5acf58a32b5c67875417c6fd41c087a4197b4cd2e6f4d9d3",
+        "state.log": "f216477c34bcf10bf1507b95f39874ea7975a89e6b8d679d79a8c93b988dc66d"
+      },
+      "source_commit": "2609bab55560219592baa9dc41bad4d1a33d0360",
+      "binary_sha256": "de35d4c27fcc80e068db0a5343dd804957cf30c0970ab31f75021fe3eb7361ac"
+    }
+  ],
+  "encounter_family": "start-d05890dcfacdd98aeeaf98dcbbe9d71e86988aee3dcaf85de8696cf14bf12af7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2a2dfcae300722049f7217d6f970770ba05cbc35c966de83510f82f12ea389dc",
+    "config.txt": "7a8ceb9cfc5ec77ff2cc2e55ee52b7ac3b67e2ef0e803b7bc3d569800539ec1a",
+    "depths.json": "95b2a78905dd24353dc7f04a31deec8f1012a40f9995b26f6e754c57f8f1b514",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "b6d89db1d2485cebf73d5101a59945d831a3e5a720449994c25db7a1b5512e06",
+    "trace-tail.jsonl": "4966bd07df5b1af224c0764ecaa2bc582f07f6059e0a090d548d68fe525db32d"
+  },
+  "investigation": null,
+  "issue": null
+}

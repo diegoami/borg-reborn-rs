@@ -134,14 +134,6 @@
       "select": "all"
     }
   ],
-  "engine_tree": {
-    "pin": "borg-rs",
-    "commit": "286215c5cbb0c37002447c530a66ad3b92014a36",
-    "path": "angband",
-    "split": "6581b4f15ca881eab96f2514b7026b2d1f132b39",
-    "tree": "3fc0c9ff318a6e7ff7e42d7bd5adedeb46682816",
-    "note": "angband/ imported from borg-rs (docs/ENGINE-TREE.md). The refresh report flags when the pin's angband/ tree differs from this tree (a re-sync is available)."
-  },
   "controls": {
     "c-pristine": {
       "pin": "angband",

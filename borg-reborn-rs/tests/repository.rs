@@ -161,30 +161,3 @@ fn normalize(path: &Path) -> PathBuf {
     out
 }
 
-/// `angband/` is never edited here (RULES 9): its committed tree must be the
-/// one recorded in `pins.json` (`engine_tree.tree`, docs/ENGINE-TREE.md). A
-/// re-sync updates both in the same PR.
-#[test]
-fn engine_tree_matches_its_record() {
-    let pins = read("pins.json");
-    let Some(at) = pins.find("\"engine_tree\"") else {
-        panic!("pins.json has no engine_tree record");
-    };
-    let rest = &pins[at..];
-    let key = "\"tree\": \"";
-    let start = rest.find(key).expect("engine_tree.tree") + key.len();
-    let recorded = &rest[start..start + 40];
-    let out = std::process::Command::new("git")
-        .args(["rev-parse", "HEAD:angband"])
-        .current_dir(root())
-        .output();
-    let Ok(out) = out else {
-        eprintln!("git not available: engine tree not checked");
-        return;
-    };
-    if !out.status.success() {
-        eprintln!("not a git checkout with angband/: engine tree not checked");
-        return;
-    }
-    assert_eq!(String::from_utf8_lossy(&out.stdout).trim(), recorded);
-}

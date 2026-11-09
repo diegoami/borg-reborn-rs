@@ -31,20 +31,17 @@ but only as a placeholder until M3. Tasks are GitHub issues
 
 ## Playing
 
-The same commands as borg-rs (tools copied in T1.6). Saves and settings are
-in `.angband-reborn/`.
-
 ```sh
-./run-rust-borg.sh                   # build, open the X11 game; create/load a character, then Ctrl-Z, z
-./start-borg.sh MyCharacter          # a named, recorded GUI session
-./run-borg-headless.py NewCharacter --new --seed 42 --class 0 --race 0 --turns 100000
-./replay-borg.py .angband-reborn/recordings/RUN --verify-only
-./produce_death.py                   # bounded death collection
+./watch-borg.sh [NAME]               # build (X11) and open the game; create/load a character, then Ctrl-Z, z
+BORG_IMPL=rust harness/build.sh      # the headless build (the zoo's entry point)
+harness/run.sh OUT SEED RACE CLASS TURNS menu   # one deterministic headless run
+tools/rerun-death.py docs/deaths/DXXXX-... OUT  # rerun a recorded death with the Borg's logs
 ```
 
-Until M3 the Borg is a placeholder (it walks, rests and descends; see
+Saves and settings of `watch-borg.sh` are in `.angband-reborn/`. Until M3
+the Borg is a placeholder (it walks, rests and descends; see
 [docs/HANDOVER.md](docs/HANDOVER.md)). [tools/README.md](tools/README.md)
-documents recording, replay, human takeover and death records.
+documents the death records.
 
 Working on this repository: start at [AGENTS.md](AGENTS.md), then
 [RULES.md](RULES.md). It is model agnostic: any coding agent, or a person,
