@@ -1,68 +1,39 @@
 #!/usr/bin/env bash
-# Build the harness binary.
-#   BORG_IMPL=c    (default) engine + C Borg            -> build/c
-#   BORG_IMPL=rust engine + Rust Borg staticlib         -> build/rust
-#   BORG_IMPL=c-pristine, c-bbc-m7 (borg-reborn-rs controls, T1.3): our
-#                  engine tree with a pinned C Borg src/borg overlaid in
-#                  build/<impl>.src (harness/control-overlay.py; the tree
-#                  is not edited), compiled as CMake BORG_IMPL=c -> build/<impl>
-# Usage: harness/build.sh            (uses $BORG_IMPL)
-# After a successful build it writes build/<impl>/BUILD_ID (key=value
-# lines): the implementation, the git revision and dirty flags, the sha256
-# of the build inputs (harness/identity.sh source-hash) and the sha256 of
-# the linked binary. harness/suite.sh refuses a binary that does not match
-# its BUILD_ID, or whose BUILD_ID does not match the current checkout. A
-# failed build leaves no BUILD_ID.
+# Build the Rust Borg on our own integration (docs/SPEC.md §3.6; task TE.4).
+#   BORG_IMPL=rust harness/build.sh       -> build/rust/game/angband
+#   BORG_TEST_FEATURES=F harness/build.sh -> build/rust-test/ (test builds)
+# The zoo calls this script by name and reads build/<impl>/game/angband and
+# build/<impl>/BUILD_ID (docs/ZOO-INTERFACE.md). BORG_IMPL defaults to rust,
+# the only implementation built here (docs/SPEC.md §6). Prints the binary.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IMPL="${BORG_IMPL:-c}"
+IMPL="${BORG_IMPL:-rust}"
+[ "$IMPL" = rust ] || { echo "build.sh: BORG_IMPL must be rust (docs/SPEC.md §6), not '$IMPL'" >&2; exit 2; }
 BUILD="$ROOT/build/$IMPL"
-# borg-reborn-rs: BORG_TEST_FEATURES (rust only, e.g. test-hallucinate) adds
-# test-only cargo features and builds into build/<impl>-test, never build/<impl>.
 TEST_FEATURES="${BORG_TEST_FEATURES:-}"
-if [ -n "$TEST_FEATURES" ]; then
-    [ "$IMPL" = rust ] || { echo "BORG_TEST_FEATURES is for BORG_IMPL=rust only" >&2; exit 2; }
-    BUILD="$ROOT/build/$IMPL-test"
-fi
+[ -z "$TEST_FEATURES" ] || BUILD="$ROOT/build/$IMPL-test"
 mkdir -p "$ROOT/build"
-SRC="$ROOT/angband"
-CMAKE_IMPL="$IMPL"
-case "$IMPL" in
-    c|rust) ;;
-    *) if python3 "$ROOT/harness/control-overlay.py" --list | grep -qx -- "$IMPL"; then
-           SRC="$ROOT/build/$IMPL.src/angband"; CMAKE_IMPL=c
-       else
-           echo "BORG_IMPL must be c, rust or a control ($(python3 "$ROOT/harness/control-overlay.py" --list | tr '\n' ' '))" >&2; exit 2
-       fi;;
-esac
 ID="$ROOT/harness/identity.sh"
 rm -f "$BUILD/BUILD_ID"
-SRC_BEFORE=$("$ID" source-hash "$IMPL")
-if [ "$SRC" != "$ROOT/angband" ]; then
-    python3 "$ROOT/harness/control-overlay.py" --make "$IMPL" "$(dirname "$SRC")"
+# A build directory configured from another source (borg-rs's tree before
+# TE.4) is replaced, not reused.
+if [ -f "$BUILD/CMakeCache.txt" ] && ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=$ROOT/engine" "$BUILD/CMakeCache.txt"; then
+    rm -rf "$BUILD"
 fi
-# Always pass BORG_IMPL: it is a CMake cache variable, so a build dir once
-# configured with another value would otherwise keep it.
-# borg-reborn-rs: harness builds of the Rust Borg report decisions to borgh
-# (cargo feature borgh, through the imported CMake's BORG_RS_FEATURES).
-RUST_ARGS=()
-[ "$IMPL" = rust ] && RUST_ARGS=(-DBORG_RS_FEATURES="borgh${TEST_FEATURES:+,$TEST_FEATURES}")
-cmake -S "$SRC" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release \
-    -DSUPPORT_BORG_HARNESS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBORG_IMPL="$CMAKE_IMPL" "${RUST_ARGS[@]}" >"$BUILD.cmake.log" 2>&1 || {
+SRC_BEFORE=$("$ID" source-hash "$IMPL")
+cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
     cat "$BUILD.cmake.log"; exit 1; }
 make -C "$BUILD" -j"$(nproc)" >"$BUILD.make.log" 2>&1 || {
     tail -50 "$BUILD.make.log"; exit 1; }
 BIN="$BUILD/game/angband"
-
-# Build identity
 SRC_AFTER=$("$ID" source-hash "$IMPL")
 if [ "$SRC_BEFORE" != "$SRC_AFTER" ]; then
     echo "build inputs changed during the build; no BUILD_ID written" >&2; exit 1
 fi
 ELF_IMPL=$("$ID" binary-impl "$BIN")
-if [ "$ELF_IMPL" != "$CMAKE_IMPL" ]; then
-    echo "$BIN reads as implementation '$ELF_IMPL', expected '$CMAKE_IMPL'" >&2; exit 1
+if [ "$ELF_IMPL" != rust ]; then
+    echo "$BIN reads as implementation '$ELF_IMPL', expected 'rust'" >&2; exit 1
 fi
 if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; else DIRTY=no; fi
 {
@@ -71,10 +42,11 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     echo "git_dirty=$DIRTY"
     echo "inputs_dirty=$("$ID" inputs-dirty "$IMPL")"
     echo "source_sha256=$SRC_AFTER"
+    echo "engine_upstream=$(sed -n 's/^commit=//p' "$ROOT/engine/UPSTREAM")"
     echo "binary=$BIN"
     echo "binary_sha256=$(sha256sum < "$BIN" | cut -d' ' -f1)"
     echo "cc=$(cc --version 2>/dev/null | head -1)"
-    if [ "$IMPL" = rust ]; then echo "rustc=$(rustc --version 2>/dev/null || echo unknown)"; fi
+    echo "rustc=$(rustc --version 2>/dev/null || echo unknown)"
     echo "built_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     [ -z "$TEST_FEATURES" ] || echo "test_features=$TEST_FEATURES"
 } > "$BUILD/BUILD_ID.tmp"

@@ -6,19 +6,15 @@
 #   harness/identity.sh inputs-dirty IMPL yes/no: inputs differ from HEAD
 #   harness/identity.sh binary-impl BIN   c, rust or unknown, read from BIN
 #
-# Build inputs (paths relative to the checkout root):
-#   c     angband/ harness/measurement/
-#   rust  angband/ borg-reborn-rs/ borg-rs/ Cargo.toml Cargo.lock harness/measurement/
-#         (borg-rs/ here is the shim package the imported CMake builds; see
-#         borg-rs/Cargo.toml)
+# Build inputs (paths relative to the checkout root), docs/SPEC.md §3.6:
+#   rust  engine/angband/ engine/patches/ engine/frontend/ engine/CMakeLists.txt
+#         engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM
+#         borg-reborn-rs/ Cargo.toml Cargo.lock
 # They are the files git tracks under those paths plus the untracked files
 # that .gitignore does not exclude, as they are in the working tree (not as
 # committed): source-hash is sha256 over "<git blob id> <path>" lines, so
 # it depends only on file contents and names. It does not change when a
-# change is committed, nor when files outside the inputs (docs/, harness/)
-# change, except harness/measurement adapters which are explicit inputs.
-# The C build does not read the Rust crates, so a Rust change leaves the
-# C binary's identity valid.
+# change is committed, nor when files outside the inputs change.
 #
 # binary-impl reads the executable itself: "rust" if its .comment section
 # names rustc (the Rust staticlib is linked in), "c" if not and it defines
@@ -29,10 +25,10 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
 inputs_of() {
     case "$1" in
-        c) echo "angband harness/measurement";;
-        rust) echo "angband borg-reborn-rs borg-rs Cargo.toml Cargo.lock harness/measurement";;
-        c-pristine|c-bbc-m7) echo "angband harness/measurement harness/control-overlay.py";;
-        *) echo "identity.sh: implementation must be c, rust, c-pristine or c-bbc-m7, not '$1'" >&2; exit 2;;
+        # docs/SPEC.md §3.6: the pristine tree, our patches, frontend and build
+        # files, and the Rust Borg (engine/tests/ are not build inputs).
+        rust) echo "engine/angband engine/patches engine/frontend engine/CMakeLists.txt engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM borg-reborn-rs Cargo.toml Cargo.lock";;
+        *) echo "identity.sh: the only implementation is rust, not '$1' (docs/SPEC.md §6)" >&2; exit 2;;
     esac
 }
 
@@ -63,9 +59,8 @@ case "${1:-}" in
         # process substitution and followed by a successful partial hash.
         (cd "$ROOT" && xargs -0 git hash-object -- < "$HASH_TMP/paths") > "$HASH_TMP/blobs"
         paste -d' ' "$HASH_TMP/blobs" <(tr '\0' '\n' < "$HASH_TMP/paths") \
-          | { echo "borg-rs build inputs v1 impl=$2"; cat;
-              # A control's C Borg source is pinned in pins.json, not in the tree.
-              case "$2" in c-*) python3 "$ROOT/harness/control-overlay.py" --identity "$2";; esac; } \
+          | { echo "borg-reborn-rs build inputs v2 impl=$2"; cat;
+              } \
           | sha256sum | cut -d' ' -f1;;
     inputs-dirty)
         # shellcheck disable=SC2046

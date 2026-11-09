@@ -77,6 +77,38 @@ headers copied from borg-rs are gone.
   listed one is used;
 - only `engine.rs` touches the bindings.
 
+## The build: `engine/CMakeLists.txt`
+
+Our CMake project (docs/SPEC.md §3.6; task TE.4):
+- it compiles a patched copy of the pristine tree (`build/<impl>/tree/`,
+  remade by `engine/apply-patches.sh` whenever a patch changes), our
+  frontend, and the Rust Borg's staticlib (`cargo build -p borg-reborn-rs
+  --features borgh`), into `game/angband`, with the data in `game/lib`;
+- it does not build the C Borg (`src/borg/`): the Rust Borg exports
+  `do_cmd_borg` in its place;
+- the source list is a copy of upstream's (`engine/sources.cmake`, 150 of
+  upstream's 209 core sources: all but the 59 of `src/borg/`), and
+  `engine/tests/test_build.py` checks that it is upstream's list minus the C
+  Borg;
+- the flags are upstream's: C99 with GNU extensions, `-O3` in Release, the
+  warnings, `ALLOW_BORG`, the self-contained data paths `./lib/`, plus
+  `BORG_HARNESS` and `USE_BORGH` for our hooks and frontend;
+- the version is upstream's own: no `BUILD_ID` from our checkout's git state,
+  so the binary does not depend on the checkout;
+- `-DSUPPORT_X11=ON` also builds the X11 frontend (for the launcher, TE.6).
+
+`harness/build.sh` (`BORG_IMPL=rust`, the zoo's entry point) runs it and
+writes `build/rust/BUILD_ID`. The build inputs (`harness/identity.sh`) are
+`engine/` (tests aside), `borg-reborn-rs/`, `Cargo.toml` and `Cargo.lock`.
+
+**Reproduction (TE.4):** the Rust Borg built here plays byte-identical keys,
+messages and states to its build on borg-rs's tree: smoke 3/3, full 45/45,
+smoke-exact 3/3, and the hallucination test smoke 3/3.
+
+Until TE.6, borg-rs's tree (`angband/`), the `borg-rs/` shim crate and
+`harness/measurement/` stay only for the copied death tooling, which still
+builds its own binary from them.
+
 ## Determinism
 
 The seed, the fixed date and the environment (`TZ=UTC`, `LANG` and
