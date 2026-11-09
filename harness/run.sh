@@ -166,10 +166,8 @@ set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
 fi
-# borg-reborn-rs: the depth stream (T1.4), then the death dossier (RULES 12),
-# on any arm. The recording launchers (run-borg-headless.py, start-borg.sh,
-# produce_death.py) run a frozen copy of this script without tools/; they
-# record deaths themselves in borg-rs's full dossier format (tools/README.md).
+# borg-reborn-rs: the depth stream (T1.4), then the death dossier
+# (tools/export-death.py, RULES 12) for every run that died a natural death.
 if [ -f "$ROOT/tools/depth-stream.py" ]; then
     python3 "$ROOT/tools/depth-stream.py" "$OUT" --cap "$TURNS"
 fi

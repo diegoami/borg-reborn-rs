@@ -49,10 +49,12 @@ def plan(case_dir):
         raise SystemExit(f'rerun-death: {case_dir.name} is a {ident.get("impl")} death; only the Rust Borg is built here')
     config = read_kv(case_dir / 'config.txt')
     flags = config.get('flags', ident.get('flags') or '-')
-    if 'save=' in flags:
-        raise SystemExit('rerun-death: a run that loaded a save fixture cannot be rerun from the dossier alone')
     # Requested indices: the run's own (summary.json), not the played ones.
     summary = json.loads((case_dir / 'summary.json').read_text())
+    # A loaded save (save=NAME, or -load among the extra options) starts
+    # another game than the seed's: the dossier alone cannot replay it.
+    if 'save=' in flags or 'save_sha256' in config or summary.get('loaded'):
+        raise SystemExit(f'rerun-death: {case_dir.name} loaded a save; it cannot be rerun from the dossier alone')
     return {
         'seed': ident['seed'] if ident.get('seed') is not None else summary.get('seed'),
         'race': summary.get('race_idx', term.get('race_idx')),
@@ -74,6 +76,8 @@ def main(argv=None):
     ap.add_argument('--checkpoint-every', type=int, default=0)
     ap.add_argument('--any-build', action='store_true')
     a = ap.parse_args(argv)
+    # run.sh runs in its own directory: relative paths would land elsewhere.
+    a.case, a.out = a.case.resolve(), a.out.resolve()
     p = plan(a.case)
     build = read_kv(ROOT / 'build/rust/BUILD_ID')
     if build.get('source_sha256') != p['source_sha256'] and not a.any_build:
@@ -83,7 +87,9 @@ def main(argv=None):
     if a.out.exists():
         raise SystemExit(f'rerun-death: {a.out} exists')
     a.out.mkdir(parents=True)
-    env = dict(os.environ, BORG_IMPL='rust',
+    # The build checked above, never an inherited ANGBAND_BIN.
+    env = {k: v for k, v in os.environ.items() if k != 'ANGBAND_BIN'}
+    env.update(BORG_IMPL='rust',
                BORG_OBSERVATION_LOG=str(a.out / 'observations.jsonl'),
                BORG_WORLD_LOG=str(a.out / 'worlds.txt'),
                BORG_KNOWLEDGE_LOG=str(a.out / 'knowledge.json'),
@@ -101,10 +107,14 @@ def main(argv=None):
     print(f"{a.case.name}: rerun {'reproduces' if same else 'DOES NOT reproduce'} the recorded keys "
           f"({str(got)[:12]} vs {p['keys_sha256'][:12]}); {summary.get('stop_reason')} at turn {summary.get('game_turns')}"
           f"{' (' + summary['death_cause'] + ')' if summary.get('death_cause') else ''}")
+    missing = [n for n in ('observations.jsonl', 'worlds.txt', 'knowledge.json')
+               if not (a.out / n).exists() or not (a.out / n).stat().st_size]
+    if missing:
+        print(f"rerun-death: no logs written: {', '.join(missing)}", file=sys.stderr)
     print(f'logs in {a.out}')
     if r.returncode and not same:
         sys.stderr.write(r.stderr[-2000:])
-    return 0 if same or a.any_build else 1
+    return 0 if (same or a.any_build) and not missing else 1
 
 
 if __name__ == '__main__':
