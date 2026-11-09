@@ -45,8 +45,9 @@ particular.
 
 ### 3.1 The game
 
-- Upstream Angband at `e473720`, vendored **byte for byte** as `angband/`.
-  A test checks that the tree equals upstream's tree at that commit.
+- Upstream Angband at `e473720`, vendored **byte for byte** as
+  `engine/angband/`, next to the patch series and our build (TE.1). A test
+  checks that the tree equals upstream's tree at that commit.
 - The game rules are never changed. The only differences from upstream are
   the patches of §3.3, each one a harness hook that is inert unless a
   harness build turns it on.
@@ -86,8 +87,8 @@ which are not carried.
 | Message log | `message.c` | every message, Borg notes included, to `messages.log` |
 | Key and state logs | `ui-input.c`, `ui-game.c` | `keys.log` (the determinism oracle) and `state.log` |
 
-The patch series is applied at build time to the pristine tree (§3.6), so
-`angband/` stays upstream's bytes. borg-rs's equivalents may be copied as a
+The patch series is applied at build time to a copy of the pristine tree
+(§3.6), so `engine/angband/` stays upstream's bytes. borg-rs's equivalents may be copied as a
 starting point. borg-rs's other engine changes are **not** carried: its
 recording hooks, its wizard cure-all correction (reached only by cheat
 death, which D5 excludes) and its adopted C Borg carries.
