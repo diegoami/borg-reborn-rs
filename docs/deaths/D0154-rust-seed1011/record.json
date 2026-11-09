@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0154-rust-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1038,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1011,
+    "flags": "-",
+    "git_rev": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+    "git_dirty": "no",
+    "source_sha256": "c8651abcaf45a60d9be3e1b68abcc1051e59c2081fb88f6e54c126cf91e2bd9e",
+    "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-rust-n2/full-1-mage-1",
+      "result_sha256": "93861cbe67be90c61ae6c793b64aa1dbd55f2b102730b3567dfd8240299b1cce",
+      "raw_sha256": {
+        "keys.log": "93861cbe67be90c61ae6c793b64aa1dbd55f2b102730b3567dfd8240299b1cce",
+        "messages.log": "aa15180d8bd54fdafd93825a67b4627066784a232bbcaf3019083113137e6367",
+        "state.log": "c6e36257090584ad1f11049f3a0e609b2d6745b0e4b76cd3dd94e9755b74cacc"
+      },
+      "source_commit": "96f5fd0e3620608523d74553ad0f79e03b8cd9de",
+      "binary_sha256": "74b6077177c3b1a1b7f1039da4bdc1ce4f9fb486a93d465e61576596993ce575"
+    }
+  ],
+  "encounter_family": "start-5b4edca44340491378aa2d85c91c325d67f5fa37912c70c561822d651fd4fb7e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "8d0cc1de0fa2b1fdea2658b623919c06295f6825429df378694e5827fbaad023",
+    "config.txt": "9b12cebb09c024bbac847c009a76be2b75624ff726824557bb09fee1c5650e7f",
+    "depths.json": "d602e8588ebbe4b0cc299dafb889a52bb117b76f223fdd08a180f6842a603f40",
+    "summary.json": "8b579906f90f32c5269c215cdbb0d2e3d75fb68e9b485ae2950fa6948b9c9d11"
+  },
+  "investigation": null,
+  "issue": null
+}
