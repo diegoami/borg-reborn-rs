@@ -22,7 +22,8 @@ Borg is not a goal. Our results are compared with **control C Borgs**
 (the original and the latest better-borg-c milestone) built here and run
 under the same run contract (docs/GOALS.md D8), on the same seeds, through
 [borg-zoo](https://diegoami.github.io/borg-zoo/). borg-rs is the source of
-our engine tree and tooling and the oracle for perception, not a control.
+our engine tree and tooling, not a control; perception is checked against the
+engine itself (T2.5).
 
 ## Starting
 
@@ -50,7 +51,7 @@ inside it.** Tasks are GitHub issues labelled `task` in that GitHub
 milestone:
 
 ```sh
-gh issue list --milestone "M1. The seam and the yardstick" --label task --state open
+gh issue list --milestone "M2. Perception and world model" --label task --state open
 ```
 
 Take the lowest-numbered open task issue whose **Needs** issues are closed
@@ -74,11 +75,12 @@ When the milestone's last task is merged, **stop** and open the review PR
 
 This repository is **model agnostic**. Nothing in it depends on which model
 or tool writes the code, and the Borg itself uses no model when it plays.
-Which model works on a task, and which reviews a milestone, is decided
-outside the repository by the owner's general rules. The one requirement
-here is that a milestone review is done by the owner or by a model of a
-**different family** from the one that wrote most of the milestone. Name
-both in the review PR.
+Which model works on a task is decided outside the repository by the
+owner's general rules. **The reviewer is always the owner's choice**
+(RULES 6). The session writes the review prompt and hands it over; it does
+not pick or launch a reviewer. A milestone review is done by the owner or by
+a model of a **different family** from the one that wrote most of the
+milestone. Name both in the review PR.
 
 ## Where things are
 

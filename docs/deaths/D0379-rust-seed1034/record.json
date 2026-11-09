@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0379-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Human Priest",
+  "raw_cause": "an apprentice",
+  "terminal": {
+    "cause": "an apprentice",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 51519,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-3-priest-4",
+      "result_sha256": "a45845916b2b6e2be6b81f1439c9a399db3bc4434e958e62bba644085d90a6e5",
+      "raw_sha256": {
+        "keys.log": "a45845916b2b6e2be6b81f1439c9a399db3bc4434e958e62bba644085d90a6e5",
+        "messages.log": "36f4a07b68b9379ee0b89e9e8a897659bb6a0c9e6d7c5f127c79ca1ea35db434",
+        "state.log": "2fe1438ceec7b2b1466ab06e435e44799b58611a869c3ec4457ab355b4de28b7"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-f437299c310829eb1374b8e0e400e19e5dbb0b74ae525689e59d0f3861e49a78",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "88adf3c2818844b9199d28c9f4929b2851621f713f3eb555e7b0eb959e21a65b",
+    "depths.json": "b175e66749ae59998bbee9023a9e27da9a7429e01c58f1968388765cb186363c",
+    "summary.json": "33ecdee172d19def982ae8a263ec3144f5eed54a15127bd867fde73d1d1ed6ba"
+  },
+  "investigation": null,
+  "issue": null
+}

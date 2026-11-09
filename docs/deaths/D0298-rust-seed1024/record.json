@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0298-rust-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "a blue yeek",
+  "terminal": {
+    "cause": "a blue yeek",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 278,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1024,
+    "flags": "-",
+    "git_rev": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+    "git_dirty": "yes",
+    "source_sha256": "332e2ee4aac37089c1b505a1d17a530053ef1278d8e126f969b8b5b7537a9a1b",
+    "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-2-druid-4",
+      "result_sha256": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+      "raw_sha256": {
+        "keys.log": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+        "messages.log": "3823c72cebc34151b880ed48d2b9cfa7fadc4949be39e54c6e55e126cefe45b6",
+        "state.log": "724f03d4f368dd0db4c61bc7a8d6676d9c6206d865db09952b3f12bc53463474"
+      },
+      "source_commit": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+      "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7"
+    }
+  ],
+  "encounter_family": "start-c75a5bec419734c98c1b1c25dace934bd824980afd7709aba59185d4462e7508",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "655aaad81674317b9d2898938f444c64d267ae6fb9f36232124f68302c4f85e9",
+    "config.txt": "d9e7051c3de94ea273bca316b855652e7e7cee76798588bb545b4e1430aa1fc0",
+    "depths.json": "b07fc6a8b257cabfb7e0ed48afa6693a2aeeb5401a20f94b7c53e72b46b2dccd",
+    "summary.json": "9e32bbebb6b7088b84816fcc5dcbcead70f040b41a1f41242d0ae01cb31f4460"
+  },
+  "investigation": null,
+  "issue": null
+}

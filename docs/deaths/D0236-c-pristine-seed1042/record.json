@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0236-c-pristine-seed1042",
+  "run_kind": "harness",
+  "character": "Half-Orc Necromancer",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 6416,
+    "race_idx": 6,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1042,
+    "flags": "-",
+    "git_rev": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+    "git_dirty": "yes",
+    "source_sha256": "09011590405e4ec4836caa15b6f2fb100ea12254d96d1c7ada33243ca6cf859f",
+    "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9",
+    "borg_txt_sha256": "bd1fad7705c0d09d21f383b79f51a50445beaa00ed904f5227e14aa5e08b4cf7"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/rs-full-c-pristine/full-4-necro-2",
+      "result_sha256": "6b294cd881c7d9230649c2b7988881abaa4e7d65c5c390da2198ff30b665ed6e",
+      "raw_sha256": {
+        "keys.log": "6b294cd881c7d9230649c2b7988881abaa4e7d65c5c390da2198ff30b665ed6e",
+        "messages.log": "39e9ed0f23cc5a5d8d251c8ed1961b457f8c39a5aa055e8b07cc4d9aa27cabcb",
+        "state.log": "3f2adb8f3350f4c98bf63c605b7117ba2b7860628b6b508b686b6b51a126e88f"
+      },
+      "source_commit": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+      "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9"
+    }
+  ],
+  "encounter_family": "start-db4ba2c0cd94ef8421641a8cdfb58ac9e62edbdf1a09233ea377b018fe720dc1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a3db4490fa6b6a1dfdba1ce0737fc28359526a7488a757e47f8f973724044e35",
+    "config.txt": "d0a26dec439d16dfc9c8316b336c7aa5da7950c0939f86b735e16e5aadcdaf51",
+    "depths.json": "909412cf80272d1986551f78b1ef3c866c1e4812cbdda98a64603abe47f2ea8c",
+    "summary.json": "3a13ab8d3e0040ad47a4458a2238bd3b5aa9ad70a5a6f903bca8cb971fe98afd"
+  },
+  "investigation": null,
+  "issue": null
+}

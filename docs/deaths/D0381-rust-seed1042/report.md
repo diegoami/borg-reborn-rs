@@ -1,0 +1,7 @@
+# D0381-rust-seed1042: a giant white centipede at turn 65087
+
+Half-Orc Necromancer, character level 1, depth 1 (max 1), seed 1042, implementation `rust`, flags `-`.
+
+Build `8f5e6313f9a4facf993863f44e29e35350613334` (dirty: yes), binary `39ed7e6049ce`. Keys `19fb2fb55960`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-4-necro-2` (not committed).
+
+**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run (RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.

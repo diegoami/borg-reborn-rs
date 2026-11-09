@@ -1084,10 +1084,11 @@ static bool borg_one_step_wearing_best(int skip)
     if (!borg.goal.best_item)
         return false;
 
+    /* skip some if there are issues with full inventory */
+    int skipping = skip;
+
     /* find a change */
     while (true) {
-        /* skip some if there are issues with full inventory */
-        int skipping = skip;
         if (borg.goal.best_item[item_num].tval
             || borg.goal.best_item[item_num].pval
             || borg.goal.best_item[item_num].sval) {

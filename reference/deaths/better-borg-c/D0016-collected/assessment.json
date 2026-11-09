@@ -1,0 +1,69 @@
+{
+  "classification": "teleport-trap exposure, target choice, fleeing-mode healing gates and starting inventory; owner's verified manual branch survives by killing the crow first; no reusable original-C defect established",
+  "confidence": "High for native trajectory, shop ledger and inventory; healing gates source-derived; no rescue claimed",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "f0518fb8aebe220121bf4432846409f9c8e2b016624ccead87be60257b6f29e3",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused353; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/353",
+      "summary": "Chat 2026-11-09: CL1 necromancer hits a teleport trap at 3965 into a room without clean exit; takes on wild dogs, a centipede and a crow; the crow kills him; questionable inventory and equipment; inventory is an area borg reborn should work on. Owner may retry from 3974.",
+      "status": "processed; recorded verbatim on 353; findings replied; manual retry recorded",
+      "actions": [
+        "heal-eligibility",
+        "survival-stock-priority"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/353",
+      "summary": "Chat 2026-11-09: retried from 3974; it was close but got away.",
+      "status": "processed; manual branch VERIFIED and recorded",
+      "actions": [
+        "heal-eligibility"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Human Necromancer CL1/DL1, seed2993630921, source5cd2258dd78d (67 carries); crow death4199, HP-1/12."
+    },
+    {
+      "status": "observed",
+      "summary": "Starting gold 360: Soft Leather Armour 84, Leather Shield 66, Gauntlets 24, two unknown rings 116 (Searching<+1>, Feather Falling), 2 CLW 40, one Phase Door 15, rations 15; starting Word of Recall deposited at Home 831."
+    },
+    {
+      "status": "observed",
+      "summary": "3964->3974 teleport trap from (67,16) to (7,32) beside a crow, three wild dogs and a giant yellow centipede; crow bite 12->10; only Phase Door at 3983; two Nether Bolts (all 2 SP) rout the centipede and kill a dog."
+    },
+    {
+      "status": "observed",
+      "summary": "4013 'Fleeing (excessive danger)' sets goal.fleeing; melee routs the crow and dogs; 4162 crow returns; 4182-4199 melee hit/miss while the speed+20 crow (9HP, two 1d3 bites) takes HP 11->7->5->-1."
+    },
+    {
+      "status": "source-checked",
+      "summary": "Two known CLW unused at 5/12: caution skips borg_heal while fleeing; and danger 18 >= HP 5 applies the -75 chance adjustment that makes the 51-65% band skip certain (neo-angband-tracker 364)."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative",
+      "summary": "Owner branch 20261109T022217Z from 3983: first action Nether Bolt kills the crow; bolt and melee kill the dogs; Phase Door and CLW against the centipede at no mana; low point 6 HP; CL3; saved in town 10743 CL3 HP19. Borg instead spent its first action and only Phase Door escaping the crow."
+    }
+  ],
+  "actions": [
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe existing heal eligibility/call order and fleeing flag before the fatal melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "survival-stock-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment",
+      "status": "recorded owner priority; proposal, not implemented"
+    }
+  ]
+}

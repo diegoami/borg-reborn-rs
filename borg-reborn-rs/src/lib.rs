@@ -26,6 +26,11 @@ pub(crate) mod headers;
 
 pub mod borg;
 pub mod engine;
+pub mod knowledge;
+pub mod observation;
+pub mod params;
+pub mod trace;
+pub mod world;
 
 /// The name the Borg reports in run records and notes.
 pub const BORG_NAME: &str = "borg-reborn-rs";

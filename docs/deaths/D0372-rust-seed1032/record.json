@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0372-rust-seed1032",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a metallic red centipede",
+  "terminal": {
+    "cause": "a metallic red centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 19474,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1032,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-3-priest-2",
+      "result_sha256": "1d6729c6247fb87651e584fc61739c3bb8bd10418fa518ce1d617722b9e2121b",
+      "raw_sha256": {
+        "keys.log": "1d6729c6247fb87651e584fc61739c3bb8bd10418fa518ce1d617722b9e2121b",
+        "messages.log": "22dc6e6dcce64fb029151154619dc0467e6965380da0e4870e982692241d06f0",
+        "state.log": "aacc1e9569334f909b79379b49e16db93b18c3cf4b160edc61c0e4fda2286ab4"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-93d2a42547864d92ac436f15cc241c6470a3000608b4baf35faebcec3536788e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "d131a4c067457516e9918b3b9560b5651e49e96886df89cf21cbfad7a4d264bd",
+    "depths.json": "9654c1985f70ff448c8a79dfb8ff7b77bef765b414cacbb07c8bc98b96f9d470",
+    "summary.json": "b4d17900cf9b0e555ca4c431eab73871144d8160bda02c678bf7d5202866d073"
+  },
+  "investigation": null,
+  "issue": null
+}

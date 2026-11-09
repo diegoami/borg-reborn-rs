@@ -29,6 +29,23 @@ Reported upstream as
 for that repository's own process; evidence is in
 [validation/2026-11-08-c-m4](validation/2026-11-08-c-m4/README.md).
 
+The C milestone7 adoption (better-borg-c `3573d741e`,
+[Rust#17](https://github.com/diegoami/borg-rs/issues/17),
+[adoption/c-m7](adoption/c-m7/README.md)) supersedes two local corrections
+below with consumer patches. 0068 corrects the consumer's 0025 to pass the
+destination size, which replaces local #287 in C and Rust. The only
+behavioural difference is the `wcstombs()` error path: it now terminates at 0
+and goes on to the normal return instead of returning an error at once. 0065 replaces local #345
+with the same call, so behaviour is unchanged. #322 and #295 remain. The
+sections below are kept as history.
+
+The C milestone8 adoption (better-borg-c `017e038e8`,
+[Rust#19](https://github.com/diegoami/borg-rs/issues/19),
+[adoption/c-m8](adoption/c-m8/README.md)) also carries the owner's
+munchkin-by-class change (better-borg-c PR302). That change is a behaviour
+default, not a crash correction: Warriors, Druids and Rangers take the
+munchkin start unless `borg_munchkin_by_class` is set FALSE in borg.txt.
+
 The sections below record the original M4 and post-M4 correction history.
 
 Owner direction, 2026-11-06: inherited C behavior may be corrected when

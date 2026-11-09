@@ -1588,9 +1588,12 @@ Recharging:
 | Staff of the Magi (lvl 70) | 0 | 1 in 9 (11%) | 2+1d1 (= 3) |
 
 Rules: **recharge only empty (or nearly empty) devices**, because every
-remaining charge makes failure much more likely; split a stack before
-recharging if you can't afford to lose the whole thing; a Mage's recharge
-spell is stronger than the scroll. The Inspect screen of a wand or staff shows
+remaining charge makes failure much more likely. For a stack the penalty uses
+charges *per item* and a backfire destroys only one item of the stack, so
+a backfire on a stack of empty wands costs only one of them (but the charges
+gained are shared by the whole stack). The Mage spell *Recharging* has
+strength `6 + CL/8` (12 at CL50) and the Rogue version `4 + CL/10`
+(`class.txt`), both better than the scroll's 6 at high level. The game shows
 the backfire chance next to each item while you are choosing what to
 recharge (`ui-object.c`).
 
@@ -1838,10 +1841,10 @@ fastest way to gear up.
   two extra artifact rolls (`extra_roll`).
 * `DROP_GOOD` monsters drop only good items; `DROP_GREAT` monsters drop only
   great items (so every non-artifact item they drop is an ego). `ONLY_ITEM` /
-  `ONLY_GOLD` restrict the type; `DROP_40`, `DROP_60`, `DROP_1`… set counts;
-  some monsters have specific drops (e.g. potions from alchemist-type
-  monsters).
-* Monster lore (`/` or `r` in the monster recall) tells you what a monster
+  `ONLY_GOLD` restrict the type; `DROP_20`, `DROP_40`, `DROP_60` and
+  `DROP_1`…`DROP_4` set the number of items; some monsters also have specific
+  `drop:` lines in `monster.txt`.
+* Monster recall (look at a monster with `l`, then `r`) tells you what it
   drops once you have seen enough kills; the [unique cards](A2-uniques.md) list
   every unique's drop flags.
 
@@ -1873,3 +1876,164 @@ without regret.
 
 ---
 
+## 14. Swap gear and the ideal kit by stage
+
+### 14.1 Swap gear
+
+4.2 has no swap slot: changing an item is a normal wield (`w`), which takes a
+full turn, and removing it (`t`) takes another unless you simply wield the
+replacement over it. Swaps are therefore for **planned** fights, not
+emergencies. Worth carrying (inscribe them, e.g. `@w1`, so you can swap with
+one keystroke):
+
+* **A resistance swap**: a Ring of Resist Poison, a Cloak of Protection
+  (rShards), Boots of Stability (rNexus) or a high-resist armour, for the one
+  fight that needs it (a nexus hound pack, a basilisk, Drolem's poison breath).
+* **A slay swap weapon**: ×5 *\*Slay Dragon\** / *\*Slay Demon\** /
+  *\*Slay Undead\** for a dragon/demon/undead unique your main weapon lacks a
+  multiplier for.
+* **A digger** (or a weapon with tunnelling) for treasure veins and vaults.
+* **Free Action / See Invisible swaps** while you still lack them
+  permanently: Gloves of Free Action, a Ring of See Invisible, a Lantern of
+  True Sight.
+* **A stealth set** for diving: a Ring of the Mouse, Boots or Cloak of
+  Stealth, swapped out before a fight.
+* **The home** (24 slots) is where the rest lives: second-choice armour with
+  different resists, a launcher for a different ammo type, spare devices.
+
+Weight: every swap item counts towards your weight limit
+([§1.2](#12-weight-speed-and-the-weight-limit)). A swap that costs −1 speed
+permanently is usually worse than not having it.
+
+### 14.2 Priorities
+
+The order in which to acquire abilities (justified in
+[Chapter 4](04-resistances-afflictions.md) and [Chapter 8](08-phase-strategy.md)):
+
+1. A ranged attack and an escape (flasks of oil, Phase Door, CLW) — DL1.
+2. **Free Action** — before DL20 (paralysis = death).
+3. **See Invisible** — before DL25–30 (ghosts, invisible casters).
+4. **Base four resists** — by DL30 (one armour of Resistance does it).
+5. **Resist Poison** — before DL35–40 (drakes, AMHD, Drolem later).
+6. **Speed +10** — by DL40 (the most important "stat"; [Chapter 1](01-mechanics.md)).
+7. **Protection from confusion and blindness, rNether, rNexus, rChaos,
+   rDisen, rSound, rShards, rLight, rDark**, Hold Life — DL40–80.
+8. **ESP** — whenever possible; it changes how you play.
+9. **Speed +20 or more**, and immunities — for Sauron and Morgoth.
+
+### 14.3 Early game (CL1–15, DL1–10)
+
+| Slot | Typical kit |
+|---|---|
+| Weapon | starting weapon → Tulwar / Trident / Main Gauche (fighters), any artifact dagger |
+| Launcher | Sling (cheap) → **Long Bow** (×3) |
+| Rings | Protection, Open Wounds, Resist Fire and Cold |
+| Amulet | Slow Digestion, Resist Acid |
+| Light | 3–5 torches → Lantern → Phial |
+| Body | Soft Leather Armour → Hard Leather / Leather Scale |
+| Other armour | leather cap, cloak, leather boots, gloves, Wicker/Leather shield |
+| Pack | **15–25 Flasks of oil**, 5 CLW, 10 Phase Door, 1–2 Word of Recall, 4 rations, Wand of Magic Missile or Stinking Cloud (non-casters), Wand of Stone to Mud |
+
+### 14.4 Early-mid game (CL15–28, DL10–30)
+
+| Slot | Typical kit |
+|---|---|
+| Weapon | an ego: (Defender), of Westernesse, (Holy Avenger), of Gondolin, *of Extra Attacks*; or 'Sting', 'Elvagil', 'Forasgil' |
+| Launcher | Long Bow / Light Crossbow of Power or Accuracy |
+| Rings | **Free Action** (unless elsewhere), Resist Fire and Cold / Damage / DEX |
+| Amulet | Resist Lightning / Regeneration / Wisdom |
+| Light | Lantern (of Brightness / True Sight) or Phial |
+| Body | **armour of Resistance** or Resist X |
+| Other armour | Gloves of Free Action, Helm of Seeing (SI), Cloak of Protection/Stealth, Boots of Free Action / Stability |
+| Pack | 5–10 CSW/CCW, 15 Phase, 3–5 Teleportation or a **Staff of Teleportation**, 2–3 Recall, 1–2 Teleport Level, Speed potions, Wand of Stone to Mud, **Wand of Teleport Other**, Staff of Detect Evil / Mapping, Rod of Treasure Location |
+
+### 14.5 Mid game (CL28–35, DL30–50)
+
+| Slot | Typical kit |
+|---|---|
+| Weapon | best ego or artifact with slay evil; FA/SI if your other gear lacks them |
+| Launcher | of Extra Might / Extra Shots / Lothlórien / the Haradrim; Heavy Crossbow for fighters |
+| Rings | Resist Poison, See Invisible or a damage ring; **Speed** if one drops |
+| Amulet | ESP if found, else Resistance / Regeneration |
+| Light | Phial / Star of Elendil / Lantern of True Sight |
+| Body | of Elvenkind / Resistance / a DSM (any colour) |
+| Other armour | Shield of Resistance/Elvenkind, Helm of Telepathy or Seeing, Cloak of Aman, **Boots of Speed** if found, Gloves of Free Action / Slaying / Power |
+| Pack | 10+ CCW, 2–5 Healing, Staff of Teleportation, 5+ Teleport Level, Speed potions, Rod of Recall, Wand of Teleport Other, Rod of Treasure Location / Detection, Restore Mana (casters), Banishment if found |
+
+### 14.6 Late game (CL35–45, DL50–80)
+
+| Slot | Typical kit |
+|---|---|
+| Weapon | top artifact ('Ringil', 'Andúril', of Eönwë…) or a super-charged *\*Slay Evil\** / Holy Avenger |
+| Launcher | an artifact or a two-ego-property launcher; slaying ammo stacks |
+| Rings | **Speed**, and one of Resist Poison / a Ring of Power / a stat ring |
+| Amulet | ESP, Weaponmastery, Trickery, the Magi or Devotion |
+| Light | Star of Elendil / Arkenstone |
+| Body | high-resist DSM (Chaos, Law, Balance, Shining), Elvenkind or an artifact |
+| Other armour | Crown of Serenity (pConf, rSound), Shield of Preservation, Cloak of Aman, Boots of Speed, gloves with FA or a stat |
+| Pack | 5+ \*Healing\*, 5–10 Speed potions, Rod of Detection, Rod of Teleport Other, Staff of Teleportation, Teleport Level, Mass Banishment, Banishment, \*Destruction\*, Rod of Recall, Restore Mana / Staff of the Magi (casters), CCW for stun/confusion |
+
+### 14.7 Endgame (CL45–50, DL80–100, Sauron and Morgoth)
+
+Requirements by this point: all four base resists (ideally double or immune
+to one or two), rPois, rLight, rDark, rSound, rShards, rNexus, rNether,
+rChaos, rDisen, **FA, SI, pConf, pBlind**, Hold Life, ESP, and **+20 speed or
+more** (+30 is comfortable). Example set built only from standard-set items
+and common egos, with where each requirement comes from:
+
+| Slot | Item | Supplies |
+|---|---|---|
+| Weapon | **'Ringil'** | +10 speed, FA, SI, regeneration, rCold, rLight; slay evil, undead ×3, demon ×5 |
+| Launcher | **'Belthronding'** (Long Bow) + Arrows of Holy Might / Slay Evil | +1 speed, +1 shot, rDisen |
+| Ring | **Ring of Speed** (+10 or so) | speed |
+| Ring | **'Nenya'** | +5 speed, all stats +2, FA, SI, **ESP**, Hold Life, **pBlind**, **cold immunity** |
+| Amulet | **Amulet of Trickery** | speed +1–3, DEX, **rPois, rNexus** |
+| Light | **Arkenstone of Thráin** | **rLight, rDark**, SI, Hold Life, Clairvoyance |
+| Body | **Chaos Dragon Scale Mail of Resistance** | **rChaos, rDisen, rAcid, rElec, rFire, rCold** |
+| Cloak | **Cloak of Protection** (or of Aman) | **rShards** (Aman: a random high resist) |
+| Shield | **Shield of Preservation** (random high resist: nether) | **rNether**, rDisen, Hold Life, sustains |
+| Head | **Crown of Serenity** | **pConf**, pStun, pFear, **rSound** |
+| Gloves | **Gloves of Power** / of Fingolfin | STR, to-hit/to-dam (FA is already covered) |
+| Feet | **Boots of Speed** (+7 to +10) | speed |
+
+Total speed ≈ +10 (Ringil) +10 (ring) +5 (Nenya) +8 (boots) +2 (amulet)
++1 (bow) = **+36**, before potions. Every resist in the game is covered once,
+cold is immune, and blindness/confusion are prevented. If the Preservation
+shield's random high resist isn't nether, replace it (or the cloak) with an
+item that has rNether — e.g. 'Hithlomir', of Himring, 'Soulkeeper', of
+Eärendil, 'Evenstar', of Fundin — and move the lost resist elsewhere. The
+same coverage can be had in fewer slots with 'Bladeturner' (every high resist
+plus pConf/pBlind in the body slot) or the One Ring (four immunities, but
+aggravation).
+
+Pack for the final fights: 15+ \*Healing\*, 5+ Life, 20+ Speed potions (or a
+Staff/Rod of Speed), Rod of Healing, Mass Banishment, Teleport Level, Staff
+of Teleportation, Rod of Detection, Restore Mana (casters), CCW for
+stun/confusion, and an artifact or ego with Teleport Other.
+
+### 14.8 A one-page evaluation checklist
+
+When you find an item, ask in order:
+
+1. **Does it give an ability I lack and need now?** (FA, SI, rPois, rConf/pConf,
+   pBlind, a missing high resist, speed, ESP.) If yes, wear it even at a cost
+   elsewhere.
+2. **Does it give speed?** Every point is ~10% more actions. +3 speed beats
+   +10 to-dam for nearly every character.
+3. **For weapons: what are my blows and damage per turn?** Use the Inspect
+   screen; compare against the monsters you fight (evil? dragons? undead?).
+4. **What does it cost?** Weight (speed and SP), aggravation, experience
+   drain, a curse you can't remove, lost stealth.
+5. **Can it free another slot?** An armour of Resistance that replaces two
+   base-resist rings is a big upgrade even if its AC is lower.
+6. **If unknown, how do I learn it?** Wear it, get hit by the element, read
+   Identify Rune — or hand a duplicate to a shop.
+
+---
+
+*See also: [Chapter 1 — Core Mechanics](01-mechanics.md) for the to-hit,
+critical and speed formulas; [Chapter 4](04-resistances-afflictions.md) for
+what each resistance protects against; [Chapter 8](08-phase-strategy.md) for
+how this kit fits a whole-game plan; and Appendices [A4](A4-artifacts.md),
+[A5](A5-ego-items.md) and [A6](A6-objects.md) for every artifact, ego and
+object row.*

@@ -1,0 +1,26 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T022217.862222Z",
+  "session": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T022217.862222Z/sessions/20261109T022219.524502Z",
+  "recording_sha256": "f05a3da76ba1df0e6cf2d5899d4d5e8c75e8945f2f2ae54755d2cd600575125f",
+  "origin_sha256": "113fda4d600f525550d189cea2c829b2608200c17c1678fba7c320e6e42ea1e3",
+  "final_save_sha256": "d2980a477c420a9719199108de11706e353af726b98202674746727530d14263",
+  "source_commit": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+  "requested_turn": 3974,
+  "start_turn": 3983,
+  "end_turn": 10743,
+  "end_level": 3,
+  "end_hp": 19,
+  "end_depth": 0,
+  "min_hp": 6,
+  "outcome": "saved",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "131e55b777512e6f347eedb1724cc24f02c0ef9b03380562954de9e2199c6a04",
+  "events": "first action Nether Bolt kills the crow (CL2); bolt kills a wild dog, melee kills two more; centipede bite/sting at no mana -> Phase Door -> CLW; CL3 learns Create Darkness and Bat Form; small kobold fight uses last CLW; town 10653 with 225 gold, buys Cure Serious Wounds; saved 10743 CL3 HP19",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/takeover/branches/20261109T022217.862222Z",
+    "original": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-002-seed-2993630921",
+    "original_manifest_sha256": "998ee01b7893ec0705e4728ec5b434fc36d25ac67828ddcb00ec69a63620ffc3",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}

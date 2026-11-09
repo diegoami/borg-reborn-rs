@@ -412,8 +412,8 @@ void borg_flow_spread(int depth, bool optimize, bool avoid, bool tunneling,
 
             /* Avoid shop entry points if I am not heading to that shop */
             if (borg.goal.shop >= 0 && feat_is_shop(ag->feat)
-                && (ag->store != borg.goal.shop) && y != borg.c.y
-                && x != borg.c.x)
+                && (ag->store != borg.goal.shop)
+                && (y != borg.c.y || x != borg.c.x))
                 continue;
 
             /* Avoid Traps if low level-- unless brave */

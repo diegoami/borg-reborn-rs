@@ -1,9 +1,10 @@
 # Change request for borg-zoo
 
-*From task T1.8 (#11), 2026-11-09. For the owner to route to
-[diegoami/borg-zoo](https://github.com/diegoami/borg-zoo) (RULES 7: nothing
-is filed in other repositories from here). Read against borg-zoo `3f6b76e`
-(the pin in `pins.json`).*
+*From task T1.8 (#11), 2026-11-09. Filed as
+[diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30) at
+the owner's request (RULES 7). Read against borg-zoo `3f6b76e` (the pin in
+`pins.json`). The M1 review merge is tagged `m1`: commit
+`fab71554fd32e3dbcbcf3b12daac29a02806fb13`.*
 
 ## What already works, unchanged
 
@@ -39,7 +40,8 @@ The table also shows what is missing: survivors stop **after** the cap
                             "label": "better-borg-c milestone 7's C Borg (4.2.6-impact-v7 src/borg) built by borg-reborn-rs under borgh"}
 ```
 
-`<tag m1 commit>` is the commit of the M1 review merge. These three are the
+`<tag m1 commit>` is the commit of the M1 review merge,
+`fab71554fd32e3dbcbcf3b12daac29a02806fb13`. These three are the
 arms of every comparison in GOALS D8. `4.2.6-reborn-c-pristine` plays the same
 keys as `4.2.6-rs-m0-c` on borg-rs's suites, so the two can be paired.
 

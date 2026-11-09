@@ -2,6 +2,334 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: the owner chooses the reviewer (RULES 6)
+
+The review of #66 was started by the session: MiniMax-M3, picked through
+the quota service. The owner then ruled: "next time give me the prompt and
+I will chose the reviewer". RULES 6 and AGENTS.md (*Models*) now say so.
+For every review the session writes the prompt and the owner chooses and
+runs the reviewer. A second pass on #66 (for #67 and #68) therefore waits for
+the owner's choice.
+
+## 2026-11-09: review of #66 (MiniMax-M3): spec findings
+
+The spec findings S1–S10 and the missed risks are answered in
+`docs/SPEC.md`:
+- **S1:** the zoo contract is written down. It covers the build entry point
+  and layout, `harness/borg.txt`, and the frontend's mode `borgh`, flags
+  and `summary.json` fields. The harness may change everywhere else.
+- **S2:** the frontend registration (`main.c`, `main.h`) joins the patch
+  series, and the line counts are corrected.
+- **S3:** our CMake carries a copy of upstream's source list, checked
+  against it; upstream's file can't be used as it stands.
+- **S4, C2:** the configuration (the C Borgs' `borg.txt` with every D5
+  exploit off, the game option set) and the environment (`TZ`, locale)
+  become part of the run contract.
+- **S5:** E's exit requires the new integration to reproduce today's
+  `c-pristine` and Rust smoke and full keys before any old reference is
+  replaced.
+- **S6:** `docs/ENGINE-READS.md` is normative; channel A gains the
+  message line's attribute and cursor; the four extra reads are declared.
+- **S7, S9:** the inventory and the document lists are completed.
+- **S8:** `c-pristine` is a control, not an oracle.
+- **S10 and the risks:** configuration hashes and what CI must prove are
+  in E's exit; the death registry's two generations are described.
+- The reviewer's answers to §11 are recorded as recommendations; the owner
+  decides.
+
+**A finding for the owner (S4):** `harness/borg.txt` has
+`borg_self_scum = TRUE`, upstream's default too. So in every control run so
+far, a C Borg could money-scum for a ware from character level 10
+(`borg-store-buy.c:141-153`), which D5 excludes. Its effect on M1's
+numbers (c-pristine 1/45 and c-bbc-m7 2/45 at the full-exact cap) has not
+been measured. The configuration is corrected in milestone E.
+## 2026-11-09: review of #66 (MiniMax-M3): code findings
+
+MiniMax-M3 reviewed the spec and the work since `m1` on #66: the spec is
+"yes, with changes", and the code is sound. Code findings:
+- **C1, fixed here:** `Character::blows` now follows the engine for a
+  weapon too heavy to wield (one blow, `calc_bonuses:2296-2318`, with
+  `adj_str_hold` lifted and checked against the engine's copy), and adds
+  bloodlust's `timed / 20`. No recorded run heavy-wields yet, so the rule
+  is unit-tested only.
+- **C5, fixed here:** `with_borg_rng` restores the game's RNG through a
+  drop guard, on every path.
+- **C2** (the Rust Borg's game options differ from the C Borg's) goes to
+  the spec's run contract.
+- **C3** (a key aborts the Borg in a shop, which the C Borg does not) is for
+  M3, when the Rust Borg first enters shops.
+- **C4** (flushing the trace each think) is kept: a dossier needs the trace
+  on disk when the game ends, and one write costs microseconds against
+  borgh's stall limit of seconds.
+
+The Rust deaths are recorded again as D0480–D0525.
+
+## 2026-11-09: the spec (docs/SPEC.md), and a stop
+
+The owner decided to move completely away from borg-rs. The game stays
+upstream C Angband. Our own integration (hooks, frontend, bindings, build,
+harness) is built first, and borg-rs is only a reference to copy from.
+Before anything more is implemented, `docs/SPEC.md` states that project:
+- the parts it keeps, replaces or drops (§8);
+- the documents and rules that change (§9);
+- a re-plan with a new milestone E, our own integration, first (§10);
+- four open questions (§11).
+
+The owner accepted it and sent it to review with the work since `m1`. It
+takes effect when the owner merges that review PR. Until then: **no
+implementation**, and the M2 task list after T2.4 (T2.5, then M3+) is on
+hold for the re-plan.
+
+## 2026-11-09: owner decisions
+
+Asked again and answered on 2026-11-09:
+1. **c-bbc-m8** (#56) runs with `borg_munchkin_by_class = FALSE`, so every
+   arm keeps D5. Its label must say so. GOALS D8 is amended.
+2. **The `smoke-c-bbc-m7` reference** is accepted as a self-produced
+   regression reference (harness/README.md).
+3. **S12 is retired** in favour of S14. The pin, its copy rule and
+   `reference/strategy/` go in their own pin PR (RULES 21).
+4. **T2.5: the engine is the truth, not borg-rs** (option D). borg-rs's
+   perception can't be run on its own: it lives inside its decision loop.
+   Perception is checked against engine facts reached by other routes
+   than the Observation's reads, and every engine read is listed (the D3
+   audit). GOALS D8, ARCHITECTURE L1, AGENTS.md and #16 are amended.
+
+## 2026-11-09: T2.4, decision trace and parameter table (#15)
+
+- `params.rs`: the parameter table has name, unit, range, default and
+  the evidence for the default. It holds the minimal Borg's three numbers:
+  `max_tries_per_turn` 2, `rest_below_hp_pct` 70 (integer percent, so
+  `hp * 100 < max * 70` is the old test exactly) and `rest_turns` 75
+  (`Action::Rest(n)`, whose keys are still `R75` Enter).
+- Profiles are `name = value` files in borg.txt's syntax, read at start
+  (`BORG_PROFILE`; run.sh defaults to
+  `harness/profiles/reborn-default.txt`). An unknown name, a malformed
+  line or an out-of-range value stops the game.
+- The profile's SHA-256 is in `config.txt` (run.sh), `params.json` and
+  every trace line.
+- `trace.rs` plus `decide_with`: the decision now carries its goal,
+  budget, scored candidates and violations; the guard of principle 6 is
+  recorded as one. The Borg writes `params.json` and `trace.jsonl` to
+  the run directory (`BORG_RUN_DIR`, from run.sh, Rust arm only). The trace
+  is written after the decision from what the decision made, so play is
+  unchanged (full 45/45, smoke 3/3, hallucination smoke 3/3 identical).
+- Dossiers keep `params.json` and `trace-tail.jsonl` (the last 200
+  thinks), and `record.json` gains `identity.profile_sha256` and
+  `decision_trace`. CI checks the trace and parameters in run outputs and
+  in Rust dossiers.
+- The Rust deaths are recorded again as D0434–D0479, now with traces. The
+  C arms' outputs and dossiers are unchanged.
+
+## 2026-11-09: T2.3, knowledge tables (#14)
+
+`borg-reborn-rs/src/knowledge.rs` holds the L3 `Knowledge`. The Borg reads
+it once from the engine's parsed data at its first think
+(`engine::knowledge()`):
+- monster races (spoiler data, GOALS D3: level, speed, HP, AC, sleep,
+  frequencies, race and spell flags, and blows with method, effect, power
+  and dice);
+- object kinds, egos and artifacts;
+- classes with their blows parameters and spell books;
+- player races;
+- what each store always and normally stocks;
+- the engine's `extract_energy` table and `move_energy`.
+
+Lifted, with citations at the pinned engine:
+- `stat_index` (`calc_bonuses:2065-2073`);
+- `blows` (`calc_blows:1703-1735`, with `adj_str_blow`, `adj_dex_blow` and
+  `blows_table`). better-borg-c milestone 8's fix to the C Borg's copy
+  (`668ac32`, weigh one weapon, not the stack) agrees with the engine, so
+  the engine's formula is used.
+
+Uses:
+- `Knowledge::turns_per_action` replaces the placeholder speed rule in
+  `Track::confidence`;
+- `Character::blows` and `melee_per_turn` give expected damage per turn for
+  any weapon (blows times mean dice plus known to-dam, before hit chance,
+  criticals and slays, which belong to M4's threat model).
+
+The Observation gained the engine's own `stat_ind`, `num_blows` and the
+O-combat option, as checks. Tests:
+- unit tests use the C values worked by hand;
+- `BORG_KNOWLEDGE_LOG=FILE` dumps the knowledge, and CI checks it against
+  monster.txt and class.txt values and against the engine's `adj_str_blow`;
+- on every recorded think our stat indices and blows equal the engine's:
+  locally 595 thinks over all 9 classes, and in CI the Warrior run.
+
+Play is unchanged (smoke 3/3, full 45/45, hallucination smoke 3/3). The
+Rust deaths are recorded again as D0388–D0433.
+
+## 2026-11-09: T2.2, the world model (#13)
+
+`borg-reborn-rs/src/world.rs` holds the L2 `World`. It changes only in
+`World::update(&Observation)`, once per think. It has:
+- the current level's map memory: the feature last shown, when the grid
+  was last in view, the remembered and the real top object, trap and web.
+  An unknown grid never erases what was known. Leaving the level (a depth
+  or level-size change) forgets it, as the C Borg does;
+- monster tracks keyed by the game's monster index: race, position, first
+  and last seen, HP, timers and speed. An index reused for another race is
+  a new monster. A track out of view is kept, and `Track::confidence`
+  falls with the time since it was seen and with the monster's speed
+  (asleep, a quarter as fast). Its shape is a placeholder for M4's
+  calibration;
+- the town's shop entrances (kept across levels) with the last visit (the
+  store header "Stor"/"Home" while standing on the entrance), and every
+  store's stock and the home's, as last read;
+- the character model: the latest status and gear, plus `GearBonuses`
+  (to-hit, to-dam, AC, known flags and modifiers, and resistances combined
+  as `calc_bonuses` does). `Character::wearing` gives a changed copy for
+  "try this on", and `pack_free` uses the engine's own count.
+
+The Observation gained the engine's pack count (`pack_slots_used`,
+`z_info->pack_size`) and every store's stock (`borg_notice_store`: each
+ware through the item analysis, with the shop's `price_item`).
+`BORG_WORLD_LOG=FILE` writes the world's digest after every think. CI
+records a 3,000-turn run with both logs, and checks that replaying the
+observations without the game rebuilds the live world think by think (302
+of 302 locally). Play is unchanged (Rust smoke 3/3, full 45/45 and
+hallucination smoke identical), but the store reads and the update make the
+suites about 25% slower. The Rust deaths are recorded again as
+D0342–D0387.
+
+Left for later tasks: expected damage per turn needs blows and the other
+formulas of L3 (T2.3). Item curses and activations are not observed yet.
+The strategy doesn't read the world until M3.
+
+## 2026-11-09: T2.1, the Observation (#12)
+
+`borg-reborn-rs/src/observation.rs` holds the L1 `Observation`. It is
+plain, serde-serialisable data, one per think, with what the C Borg's two
+channels give it (spec §1.1, GOALS D3):
+- from the screen: the message line (row 0, split into messages by
+  `parse_messages`) and the store header (row 3, columns 1–4, raw: the
+  C Borg compares it with "Stor"/"Home");
+- from direct reads: status and timed effects, every equipment slot, the
+  quiver and the pack through the C Borg's item analysis (`ODESC_FULL`
+  descriptions, the known part unless the item is fully known), the
+  class's spells (`spell_flags`, base fail), the map panel through
+  `map_info()` (clipped to the level, with known trap, shop number and
+  web), the monsters `map_info()` shows with their real race, hit points,
+  timers and speed, and the real kind of the top object that is not
+  ignored on each grid with a seen object.
+
+`engine::perceive()` does the reads, so `engine.rs` is still the only
+`unsafe` module. The Borg perceives on every think, after the minimal
+Borg's own reads. The placeholder strategy does not use the observation
+yet, and play is unchanged (Rust smoke 3/3, full 45/45 and hallucination
+smoke identical). `BORG_OBSERVATION_LOG=FILE` writes one JSON line per
+think, about 270 KB each. CI records a 500-turn run and checks that every
+line round-trips canonically. New dependencies: `serde` and `serde_json`.
+The Rust deaths are recorded again as D0296–D0341.
+
+Not in it yet, for T2.2–T2.5: the store's own inventory (when the Borg is
+in a shop), item curses and activations, monster messages beyond the
+line, and the oracle comparison with borg-rs's `BorgState` (T2.5).
+
+## 2026-11-09: engine tree re-synced from borg-rs 286215c
+
+`angband/` is now borg-rs `286215c:angband` (tree `3fc0c9f`, split
+`6581b4f`), merged as a subtree (docs/ENGINE-TREE.md). Only
+`angband/src/borg/` changed: borg-rs carried better-borg-c milestones 7
+and 8. So the tree's own C Borg (`BORG_IMPL=c`, never a control) goes
+from impact v6 to v8. It includes `borg_munchkin_by_class`, TRUE by
+default: Warriors, Druids and Rangers take the munchkin start. The engine
+and borg-rs's generated headers are unchanged.
+- `harness/reference/smoke-c/` is replaced by a smoke run of borg-rs's own
+  C build at `286215c`. Ours reproduces it byte for byte (3/3), the same
+  import check as T1.2.
+- A re-sync starts a new measurement baseline (RULES 22). The source hash
+  of every arm includes `angband/`, so deaths from runs after this PR
+  are new encounter families.
+- `harness/borg.txt` is unchanged. Whether a control should run with
+  `borg_munchkin_by_class = FALSE` (GOALS D5) is asked on #56: better-borg-c
+  v8 has the option too.
+
+## 2026-11-09: M2 source refresh
+
+The M2 `--update` (RULES 21) moved five pins:
+- borg-rs `e5cb263` → `286215c`: two docs changed, and the engine tree
+  re-sync is available (next PR);
+- better-borg-c `b1588cc` → `eb9a78e`: new deaths D0015 and D0016;
+- strategy-manual `e67fd7d` → `86349ca`;
+- borg-zoo `3f6b76e` → `e56d5fa`;
+- borg-agent `9c58125` → `77e48c9`.
+
+angband and neo-angband-tracker are at their pins.
+- **S12 repointed**: the pin `strategy-manual` now follows
+  neo-angband-tracker `workbench/c-borg` (its own clone
+  `vendor/neo-angband-tracker-workbench-c-borg`), since `c-borg-reference`
+  is now pristine upstream. The manual is complete there: chapter 3
+  (`03-magic.md`) is new. S12 stays the draft of S14 until the owner
+  retires it.
+- **New deaths** (better-borg-c, both CL1 Necromancers, original-C
+  mechanisms):
+  - D0015: Fang, in a dark dead end seven squares from an up staircase.
+    The C Borg forbids the stair dash from Grip or Fang, while another rule
+    lists Fang as a reason to leave the level.
+  - D0016: a fast crow after a teleport trap. The starting gold went on
+    armour and unidentified rings, Recall stayed at home, and two known
+    Cure Light Wounds were never offered while fleeing.
+
+  Both are input for M4 (escapes, the tactical layer: retreat to stairs,
+  healing while fleeing) and M5 (readiness: a survival stock before
+  descending).
+- **borg-zoo** at `e56d5fa` has borg-zoo#30 done (borg-zoo#32): the
+  specimens `4.2.6-reborn-rust`, `-c-pristine` and `-c-bbc-m7` use
+  `ref` `2dd11fd`, with `exact_turns`, the depth stream and kept death
+  evidence. A comment on borg-zoo#30 gives them the `m1` commit
+  (`fab7155`), and says what changed since `2dd11fd`: no keys change in
+  our suites, but the Rust source hash does.
+
+## 2026-11-09: a new control arm, c-bbc-m8 (#56)
+
+better-borg-c tagged milestone 8 (`4.2.6-impact-v8`, `017e038`) before
+our better-borg-c pin moved past it. The refresh report listed only tags
+after the pin, so it never showed the tag. It now lists tags after the
+baseline in use (`baseline.commit`, else the pin), which flags v8. Under
+RULES 22, v8 is a new arm, `c-bbc-m8`, filed as #56 in M4, the first
+milestone that measures against the controls. `c-bbc-m7` stays as it is,
+and the GOALS wording "`c-bbc-m7` today" changes when #56 lands.
+
+## 2026-11-09: M1 done; M2 starts
+
+The owner merged the M1 review PR #39 (`main` → `reviewed`, merge
+`fab7155`) after four review passes by Kimi K3.1 Pro. Tag `m1` is
+annotated and points to that commit. Its message says "merged 2026-11-10",
+following the dates of the entries below, but the merge was on
+2026-11-09; tags are not moved (RULES 5). Those entries, marked
+2026-11-10, are from 2026-11-09 too. The GitHub milestone M1 is closed,
+and PLAN.md marks M2 in progress.
+
+After the review, as the owner decided:
+- RULES 7 now lets a session open issues, and keep its own issues up to
+  date, on borg-zoo, borg-rs, better-borg-c, neo-angband-tracker and
+  borg-agent, when the owner asks or when this repository needs a change
+  there. Nothing is pushed or merged there, and angband/angband stays
+  off limits.
+- The zoo change request is
+  [diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30).
+  docs/ZOO-CHANGE-REQUEST.md names the `m1` commit `fab71554fd32`.
+  The issue's prompt is updated to that exact commit after this PR is
+  merged, because its old fallback (`4236081`, unpeeled tag) is obsolete.
+
+Found while re-reading RULES: commits and PR bodies since M0 carried
+`Co-Authored-By` and "Generated with" lines, which RULES 4 forbids. They
+stay, since published commits are not amended (RULES 5), and no new
+commit has them.
+
+Next, in M2 (each its own PR):
+1. The source refresh: `--update` for better-borg-c (new deaths D0015 and
+   D0016) and the other moved pins. Repoint `strategy-manual` (S12) to
+   neo-angband-tracker `workbench/c-borg` so the copy keeps a source; the
+   owner may still retire S12 in favour of S14.
+2. The borg-rs impact-v7 engine re-sync (docs/ENGINE-TREE.md).
+3. Then #12 (T2.1, Observation) and the rest of M2 in order.
+
+Still open for the owner: whether the self-produced `smoke-c-bbc-m7`
+reference is acceptable, and S12's retirement.
+
 ## 2026-11-10: M1 fourth review pass, findings S1–S2 (#39)
 
 The fourth pass (Kimi K3.1 Pro, at `eff27c9`) resolved R1, R2, R4, R5 and

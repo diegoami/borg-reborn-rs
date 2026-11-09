@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0359-rust-seed1001",
+  "run_kind": "harness",
+  "character": "Half-Elf Warrior",
+  "raw_cause": "a kobold shaman",
+  "terminal": {
+    "cause": "a kobold shaman",
+    "dead": true,
+    "depth": 4,
+    "max_depth": 4,
+    "level": 1,
+    "turn": 8659,
+    "race_idx": 1,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1001,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "fb095ac33a6f655e1391c88b415a723f733d3ccbf06f8c99e8d0553eda308d8a"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-0-warrior-1",
+      "result_sha256": "04893bb17f50a34e1bc7ef85e17452371d2b2116f35007e38a523b383c326076",
+      "raw_sha256": {
+        "keys.log": "04893bb17f50a34e1bc7ef85e17452371d2b2116f35007e38a523b383c326076",
+        "messages.log": "9ded583d37b1e5ed96e70c247e7613e1066913df79e221810e908dc924675c7b",
+        "state.log": "a1b23632f5206097ed576b4a4bc6b9959eda5c2c6eebd07ee0233170b9f180c7"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-f7e9ae6a7aadd889647e841a686847583b6a73c8b050df8406fe96f3b6a6fc77",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "2230f160e856250979c78111b0c6750aec1ddc1b63bfbeac8512d4e959400047",
+    "depths.json": "6ff9940e8574e986c3e8bdfa61cb543746cfe537977622ae5392acc7f2732422",
+    "summary.json": "6f99c3a5d164510d9b613a5b51a1ddfb29c037aef36e3809af19566699d09289"
+  },
+  "investigation": null,
+  "issue": null
+}

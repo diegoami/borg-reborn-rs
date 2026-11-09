@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0388-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 3,
+    "level": 1,
+    "turn": 320,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "e6d6978ca7222fc2ddc12072c2b6bb9d677a1890e958498c72793f5430a25375"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-1-mage-0",
+      "result_sha256": "420a619f84ef2da34be4ad50dbbab8c0f9eb5e81f9a4ead922e395a30dd37f64",
+      "raw_sha256": {
+        "keys.log": "420a619f84ef2da34be4ad50dbbab8c0f9eb5e81f9a4ead922e395a30dd37f64",
+        "messages.log": "c3978fe6517965430e7bd739dba1ca5f6fe40d3d6cf1337a73ea161aff4d983c",
+        "state.log": "79500453289d41849ec3112f0edda78c6700a77dc395004687b4f848097e53d3"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-ef239a9d722034d9fc67c9516fab2ab2de111b1d7f500790eecd3ec6216f7c65",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "de07143f8cdc73e05ce5b31e4ebd0c48f813d2d8eb76056eca2fcbe3906a2ed9",
+    "depths.json": "fb17264afd529e8b19bce7acfdaa90e7a844a690d39d9b69038a6a90496a01ec",
+    "summary.json": "05126d6f461484b4aac11a1f594312ac95b4718579b60e910a4eac1ae4c2cb1f"
+  },
+  "investigation": null,
+  "issue": null
+}

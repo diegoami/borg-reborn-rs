@@ -404,7 +404,7 @@ void borg_notice_weapon_swap(void)
             if (!borg.trait[BI_WS_ORC] && weapon_swap_slay_orc)
                 v += (dam * weapon_swap_slay_orc) / 2;
             if (!borg.trait[BI_WS_TROLL] && weapon_swap_slay_troll)
-                v += (dam * 2) / 2;
+                v += (dam * weapon_swap_slay_troll) / 2;
 
             if (!borg.trait[BI_WS_UNDEAD] && weapon_swap_slay_undead)
                 v += (dam * weapon_swap_slay_undead) / 2;
@@ -711,7 +711,7 @@ void borg_notice_weapon_swap(void)
         weapon_swap_immune_elec = true;
 
     /* Resistance flags */
-    if (item->el_info[ELEM_ELEC].res_level > 0)
+    if (item->el_info[ELEM_ACID].res_level > 0)
         weapon_swap_resist_acid = true;
     if (item->el_info[ELEM_ELEC].res_level > 0)
         weapon_swap_resist_elec = true;

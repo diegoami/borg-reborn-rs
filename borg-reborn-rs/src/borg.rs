@@ -11,10 +11,12 @@
 //! down staircase when standing on one, and otherwise walks to a random
 //! neighbour that is not known to be a wall or a shop. A think that finds no
 //! game time passed since a refused rest walks instead, and after
-//! [`MAX_TRIES_PER_TURN`] such thinks it takes an action that always uses
+//! `max_tries_per_turn` such thinks (a parameter, [`crate::params`]) it takes an action that always uses
 //! game time (see [`stand_still`]), so it cannot loop without time passing.
 
 use crate::engine::{self, Key, PlayerView, ESCAPE, KC_ENTER};
+use crate::params::Params;
+use crate::trace::{Budget, Candidate, TraceLine};
 use std::collections::VecDeque;
 use std::sync::Mutex;
 
@@ -47,8 +49,9 @@ const DIRS: [(u8, i32, i32); 8] = [
 /// A decision of the minimal Borg.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Action {
-    /// Rest 75 turns ('R' '7' '5' Enter, as the C Borg does).
-    Rest,
+    /// Rest this many player turns ('R', the count, Enter; the C Borg's
+    /// 'R' '7' '5' Enter at the default `rest_turns`).
+    Rest(u32),
     /// Take the down staircase underfoot ('>').
     Descend,
     /// Walk one step in a direction 1–9.
@@ -66,7 +69,11 @@ impl Action {
     pub fn keys(self) -> Vec<u32> {
         let mut k = vec![ESCAPE];
         match self {
-            Action::Rest => k.extend([b'R' as u32, b'7' as u32, b'5' as u32, KC_ENTER]),
+            Action::Rest(n) => {
+                k.push(b'R' as u32);
+                k.extend(n.to_string().bytes().map(u32::from));
+                k.push(KC_ENTER);
+            }
             Action::Descend => k.push(b'>' as u32),
             Action::Walk(d) => k.push((b'0' + d) as u32),
             Action::Hold => k.push(b',' as u32),
@@ -193,13 +200,22 @@ impl Memory {
     }
 }
 
-/// After this many thinks without game time passing, the Borg takes the
-/// action that uses time where it stands, [`stand_still`] (GOALS principle
-/// 6: no loop without time).
-pub const MAX_TRIES_PER_TURN: u32 = 2;
+/// A decision and what led to it: the decision trace's content
+/// (`trace::TraceLine`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Decision {
+    pub action: Action,
+    pub goal: &'static str,
+    /// Thinks left at this game turn before the Borg must take an action
+    /// that uses time (`max_tries_per_turn`).
+    pub budget_left: i64,
+    /// The actions considered, with their scores.
+    pub candidates: Vec<(Action, f64)>,
+    pub violations: Vec<String>,
+}
 
-/// Choose an action. `here` is the known feature underfoot, `around(dx, dy)`
-/// the known feature of a neighbour. Pure: no engine access.
+/// Choose an action with the default parameters (tests and callers that
+/// need only the action).
 pub fn decide(
     view: &PlayerView,
     here: Option<u32>,
@@ -207,18 +223,43 @@ pub fn decide(
     mem: &Memory,
     rng: &mut Rng,
 ) -> Action {
+    decide_with(view, here, around, mem, rng, &Params::default()).action
+}
+
+/// Choose an action. `here` is the known feature underfoot, `around(dx, dy)`
+/// the known feature of a neighbour. Pure: no engine access.
+pub fn decide_with(
+    view: &PlayerView,
+    here: Option<u32>,
+    around: impl Fn(i32, i32) -> Option<u32>,
+    mem: &Memory,
+    rng: &mut Rng,
+    p: &Params,
+) -> Decision {
+    let one = |action: Action, goal: &'static str, left: i64, violations: Vec<String>| Decision {
+        action,
+        goal,
+        budget_left: left,
+        candidates: vec![(action, 1.0)],
+        violations,
+    };
     // No loop without game time (GOALS principle 6): an earlier action at
     // this same turn took no time, so only time-taking actions remain, and
-    // after a few tries the Borg stands still.
+    // after `max_tries_per_turn` tries the Borg stands still.
     let tries = mem.tries_at(view.turn);
-    if tries >= MAX_TRIES_PER_TURN {
-        return stand_still(here, around);
+    let left = i64::from(p.max_tries_per_turn) - i64::from(tries);
+    if tries >= p.max_tries_per_turn {
+        let why = format!(
+            "{tries} thinks at game turn {} took no time (GOALS principle 6)",
+            view.turn
+        );
+        return one(stand_still(here, around), "stand still", left, vec![why]);
     }
     if here == Some(feat::MORE) {
-        return Action::Descend;
+        return one(Action::Descend, "descend", left, vec![]);
     }
-    if view.hp * 10 < view.max_hp * 7 && tries == 0 {
-        return Action::Rest;
+    if view.hp * 100 < view.max_hp * p.rest_below_hp_pct && tries == 0 {
+        return one(Action::Rest(p.rest_turns), "rest", left, vec![]);
     }
     let options: Vec<u8> = DIRS
         .iter()
@@ -227,9 +268,22 @@ pub fn decide(
         .collect();
     if options.is_empty() {
         // Boxed in by known walls: a walk would take no time.
-        return stand_still(here, around);
+        return one(
+            stand_still(here, around),
+            "stand still (boxed in)",
+            left,
+            vec![],
+        );
     }
-    Action::Walk(options[rng.below(options.len())])
+    let action = Action::Walk(options[rng.below(options.len())]);
+    let score = 1.0 / options.len() as f64;
+    Decision {
+        action,
+        goal: "explore (random walk)",
+        budget_left: left,
+        candidates: options.iter().map(|&d| (Action::Walk(d), score)).collect(),
+        violations: vec![],
+    }
 }
 
 struct Borg {
@@ -238,6 +292,63 @@ struct Borg {
     /// The quick-generator value engine reads draw from (`with_borg_rng`).
     engine_rng: u32,
     mem: Memory,
+    /// The observation log (`BORG_OBSERVATION_LOG=FILE`): one JSON line per
+    /// think (T2.1). Off by default.
+    observations: Option<std::io::BufWriter<std::fs::File>>,
+    /// L2: what the Borg remembers, updated once per think (T2.2).
+    world: crate::world::World,
+    /// The world log (`BORG_WORLD_LOG=FILE`): the world's digest after each
+    /// think, to check that replaying the observation log rebuilds it.
+    worlds: Option<std::io::BufWriter<std::fs::File>>,
+    /// L3: the game's static data, read at the first think (T2.3). Written
+    /// once to `BORG_KNOWLEDGE_LOG=FILE` when that is set.
+    knowledge: Option<crate::knowledge::Knowledge>,
+    /// The parameters, from the profile read at start (T2.4).
+    params: Params,
+    /// The decision trace (`BORG_RUN_DIR/trace.jsonl`), one line per think.
+    trace: Option<std::io::BufWriter<std::fs::File>>,
+    thinks: u64,
+}
+
+/// The parameters of this run: the profile named by `BORG_PROFILE`, or the
+/// defaults. A profile that cannot be read or does not parse stops the
+/// game: a run must never play with parameters it did not ask for.
+fn load_params() -> Params {
+    let Some(path) = std::env::var_os("BORG_PROFILE") else {
+        return Params::default();
+    };
+    // The name records keep (run.sh: relative to the checkout).
+    let name =
+        std::env::var("BORG_PROFILE_NAME").unwrap_or_else(|_| path.to_string_lossy().into_owned());
+    let bytes =
+        std::fs::read(&path).unwrap_or_else(|e| panic!("borg-reborn-rs: profile {name}: {e}"));
+    Params::from_profile(&name, &bytes).unwrap_or_else(|e| panic!("borg-reborn-rs: {e}"))
+}
+
+/// The run's outputs (`BORG_RUN_DIR`, set by harness/run.sh): the parameter
+/// table goes to `params.json` now, and the trace is opened.
+fn open_run_outputs(params: &Params) -> Option<std::io::BufWriter<std::fs::File>> {
+    let dir = std::path::PathBuf::from(std::env::var_os("BORG_RUN_DIR")?);
+    let table = serde_json::to_string_pretty(&params.table()).expect("plain data");
+    std::fs::write(dir.join("params.json"), table + "\n").ok()?;
+    std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("trace.jsonl"))
+        .ok()
+        .map(std::io::BufWriter::new)
+}
+
+/// An append-only log named by an environment variable, if it is set.
+fn open_log(var: &str) -> Option<std::io::BufWriter<std::fs::File>> {
+    std::env::var_os(var).and_then(|path| {
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .ok()
+            .map(std::io::BufWriter::new)
+    })
 }
 
 static BORG: Mutex<Option<Borg>> = Mutex::new(None);
@@ -253,11 +364,22 @@ pub fn command() {
     engine::set_option(c"auto_more", true);
     engine::set_option(c"easy_alter", true);
     let mut b = BORG.lock().unwrap_or_else(|e| e.into_inner());
-    b.get_or_insert_with(|| Borg {
-        queue: VecDeque::new(),
-        rng: Rng::new(),
-        engine_rng: Rng::SEED as u32,
-        mem: Memory::default(),
+    b.get_or_insert_with(|| {
+        let params = load_params();
+        let trace = open_run_outputs(&params);
+        Borg {
+            queue: VecDeque::new(),
+            rng: Rng::new(),
+            engine_rng: Rng::SEED as u32,
+            mem: Memory::default(),
+            observations: open_log("BORG_OBSERVATION_LOG"),
+            world: crate::world::World::new(),
+            worlds: open_log("BORG_WORLD_LOG"),
+            knowledge: None,
+            params,
+            trace,
+            thinks: 0,
+        }
     })
     .queue
     .clear();
@@ -294,14 +416,54 @@ pub fn next_key(flush: bool) -> Key {
         return Key::None;
     }
     engine::report_decision(b.rng.state());
-    let action = think(b, &view);
+    let d = think(b, &view);
+    let action = d.action;
+    b.thinks += 1;
+    write_trace(b, &view, &d);
     b.mem.record(view.turn, action);
     b.queue.extend(action.keys());
     Key::Code(b.queue.pop_front().unwrap_or(ESCAPE))
 }
 
+/// One line of the decision trace, after the decision: it reads only what
+/// the decision made, so it cannot change play. A failed write loses the
+/// trace, never the game.
+fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
+    use std::io::Write;
+    let Some(log) = b.trace.as_mut() else {
+        return;
+    };
+    let line = TraceLine {
+        turn: view.turn,
+        think: b.thinks,
+        mode: "placeholder".into(),
+        goal: d.goal.into(),
+        budget: Some(Budget {
+            unit: "thinks at this game turn".into(),
+            left: d.budget_left,
+        }),
+        candidates: d
+            .candidates
+            .iter()
+            .map(|(a, s)| Candidate {
+                action: format!("{a:?}"),
+                score: *s,
+            })
+            .collect(),
+        choice: format!("{:?}", d.action),
+        violations: d.violations.clone(),
+        profile_sha256: b.params.profile_sha256.clone(),
+    };
+    if writeln!(log, "{}", line.to_line())
+        .and_then(|_| log.flush())
+        .is_err()
+    {
+        b.trace = None;
+    }
+}
+
 /// Perceive and decide. Every engine read runs with the Borg's own RNG.
-fn think(b: &mut Borg, view: &PlayerView) -> Action {
+fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     #[cfg(feature = "test-hallucinate")]
     let before = engine::game_rng();
     let perceive = |b: &mut Borg| {
@@ -312,13 +474,46 @@ fn think(b: &mut Borg, view: &PlayerView) -> Action {
                 .iter()
                 .map(|(_, dx, dy)| engine::known_feature(x + dx, y + dy))
                 .collect();
-            (here, around)
+            // L1 (T2.1): the whole observation, after the minimal Borg's own
+            // reads so their draws from the Borg's RNG are unchanged. The
+            // placeholder strategy does not use it yet; it is recorded when
+            // the observation log is on.
+            let observation = engine::perceive();
+            (here, around, observation)
         })
     };
     #[cfg(feature = "test-hallucinate")]
-    let (here, around) = engine::while_hallucinating(|| perceive(b));
+    let (here, around, observation) = engine::while_hallucinating(|| perceive(b));
     #[cfg(not(feature = "test-hallucinate"))]
-    let (here, around) = perceive(b);
+    let (here, around, observation) = perceive(b);
+    if let Some(o) = observation.as_ref() {
+        use std::io::Write;
+        if b.knowledge.is_none() {
+            b.knowledge = engine::knowledge();
+            if let (Some(k), Some(mut log)) = (b.knowledge.as_ref(), open_log("BORG_KNOWLEDGE_LOG"))
+            {
+                let _ = writeln!(log, "{}", k.to_line()).and_then(|_| log.flush());
+            }
+        }
+        b.world.update(o);
+        // A failed write loses the log, never the game.
+        if let Some(log) = b.observations.as_mut() {
+            if writeln!(log, "{}", o.to_line())
+                .and_then(|_| log.flush())
+                .is_err()
+            {
+                b.observations = None;
+            }
+        }
+        if let Some(log) = b.worlds.as_mut() {
+            if writeln!(log, "{}", b.world.digest())
+                .and_then(|_| log.flush())
+                .is_err()
+            {
+                b.worlds = None;
+            }
+        }
+    }
     #[cfg(feature = "test-hallucinate")]
     assert_eq!(
         engine::game_rng(),
@@ -330,12 +525,20 @@ fn think(b: &mut Borg, view: &PlayerView) -> Action {
             .position(|(_, x, y)| (*x, *y) == (dx, dy))
             .and_then(|i| around[i])
     };
-    decide(view, here, lookup, &b.mem, &mut b.rng)
+    let mut d = decide_with(view, here, lookup, &b.mem, &mut b.rng, &b.params);
+    if observation.is_none() {
+        d.violations
+            .push("no observation: perception found no character or level".into());
+    }
+    d
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The table default of `max_tries_per_turn`.
+    const MAX_TRIES_PER_TURN: u32 = 2;
 
     fn view(hp: i32, turn: i64) -> PlayerView {
         PlayerView {
@@ -368,7 +571,7 @@ mod tests {
         let floor = |_, _| Some(feat::FLOOR);
         let mut mem = Memory::default();
         let a = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
-        assert_eq!(a, Action::Rest);
+        assert_eq!(a, Action::Rest(75));
         mem.record(7, a);
         let b = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
         assert!(
@@ -377,10 +580,10 @@ mod tests {
         );
         mem.record(7, b);
         let mut later = Memory::default();
-        later.record(6, Action::Rest);
+        later.record(6, Action::Rest(75));
         assert_eq!(
             decide(&view(10, 7), Some(feat::FLOOR), floor, &later, &mut rng),
-            Action::Rest
+            Action::Rest(75)
         );
     }
 
@@ -402,7 +605,7 @@ mod tests {
                 &mem,
                 &mut rng,
             );
-            rests += (a == Action::Rest) as u32;
+            rests += (a == Action::Rest(75)) as u32;
             mem.record(42, a);
             if a == Action::Hold {
                 held = true;
@@ -503,10 +706,68 @@ mod tests {
     }
 
     #[test]
+    fn the_decision_explains_itself() {
+        let floor = |_: i32, _: i32| Some(feat::FLOOR);
+        let d = decide_with(
+            &view(20, 1),
+            Some(feat::FLOOR),
+            floor,
+            &Memory::default(),
+            &mut Rng::new(),
+            &Params::default(),
+        );
+        assert_eq!(d.goal, "explore (random walk)");
+        assert_eq!(d.candidates.len(), 8);
+        assert!(d.candidates.iter().any(|(a, _)| *a == d.action));
+        assert_eq!(d.budget_left, 2);
+        assert!(d.violations.is_empty());
+        // The guard of principle 6 is a violation the trace shows.
+        let mut mem = Memory::default();
+        mem.record(1, Action::Walk(2));
+        mem.record(1, Action::Walk(2));
+        let d = decide_with(
+            &view(20, 1),
+            Some(feat::FLOOR),
+            floor,
+            &mem,
+            &mut Rng::new(),
+            &Params::default(),
+        );
+        assert_eq!(d.goal, "stand still");
+        assert_eq!(d.violations.len(), 1, "{:?}", d.violations);
+        // A profile changes the decision: rest at 99% instead of 70%.
+        let p = Params::from_profile("t", b"rest_below_hp_pct = 99\nrest_turns = 12\n").unwrap();
+        let d = decide_with(
+            &view(19, 1),
+            Some(feat::FLOOR),
+            floor,
+            &Memory::default(),
+            &mut Rng::new(),
+            &p,
+        );
+        assert_eq!(d.action, Action::Rest(12));
+        let default = decide(
+            &view(19, 1),
+            Some(feat::FLOOR),
+            floor,
+            &Memory::default(),
+            &mut Rng::new(),
+        );
+        assert!(
+            matches!(default, Action::Walk(_)),
+            "the defaults do not rest at 95%"
+        );
+    }
+
+    #[test]
     fn keys_open_with_escape() {
         assert_eq!(Action::Descend.keys(), vec![ESCAPE, b'>' as u32]);
         assert_eq!(Action::Walk(3).keys(), vec![ESCAPE, b'3' as u32]);
-        assert_eq!(Action::Rest.keys()[0], ESCAPE);
+        assert_eq!(
+            Action::Rest(Params::default().rest_turns).keys(),
+            vec![ESCAPE, b'R' as u32, b'7' as u32, b'5' as u32, KC_ENTER],
+            "the default rest is the C Borg's R75"
+        );
     }
 
     #[test]

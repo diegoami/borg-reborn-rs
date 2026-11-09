@@ -54,43 +54,43 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 | 42 | [Rogrog the Black Troll](#rogrog-the-black-troll) | `T` | +10 | 2000 | melee round 156 |
 | 42 | [The Queen Ant](#the-queen-ant) | `a` | +10 | 1500 | melee round 80 |
 | 43 | [Ariel, Queen of Air](#ariel-queen-of-air) | `E` | +20 | 2700 | melee round 80 |
-| 43 | [Quaker, Master of Earth](#quaker-master-of-earth) | `E` | +0 | 2800 | BA_ACID 144 |
+| 43 | [Quaker, Master of Earth](#quaker-master-of-earth) | `E` | +0 | 2800 | melee round 208 |
 | 43 | [Vargo, Tyrant of Fire](#vargo-tyrant-of-fire) | `E` | +10 | 2400 | BA_FIRE 160 |
 | 43 | [Waldern, King of Water](#waldern-king-of-water) | `E` | +10 | 2500 | BA_WATE 157 |
 | 49 | [Eöl, the Dark Elf](#eöl-the-dark-elf) | `h` | +20 | 2400 | BA_NETH 296 |
 | 50 | [The Balrog of Moria](#the-balrog-of-moria) | `U` | +20 | 3000 | BR_FIRE 1000 |
-| 51 | [Harowen the Black Hand](#harowen-the-black-hand) | `p` | +30 | 2500 | melee round 91 |
+| 51 | [Harowen the Black Hand](#harowen-the-black-hand) | `p` | +30 | 2500 | melee round 140 |
 | 52 | [Itangast the Fire Drake](#itangast-the-fire-drake) | `D` | +10 | 2200 | BR_FIRE 733 |
 | 53 | [Scatha the Worm](#scatha-the-worm) | `D` | +10 | 2500 | BR_COLD 833 |
 | 54 | [The Phoenix](#the-phoenix) | `B` | +10 | 3600 | BR_FIRE 1200 |
 | 55 | [Ar-Pharazôn the Golden](#ar-pharazôn-the-golden) | `p` | +20 | 4000 | melee round 256 |
 | 55 | [Shelob, Spider of Darkness](#shelob-spider-of-darkness) | `S` | +10 | 3500 | BR_POIS 800 |
-| 58 | [Baphomet the Minotaur Lord](#baphomet-the-minotaur-lord) | `H` | +20 | 4700 | BR_WALL 200 |
+| 58 | [Baphomet the Minotaur Lord](#baphomet-the-minotaur-lord) | `H` | +20 | 4700 | melee round 512 |
 | 59 | [Fundin Bluecloak](#fundin-bluecloak) | `h` | +20 | 5000 | melee round 256 |
-| 60 | [Gilim, the Giant of Eruman](#gilim-the-giant-of-eruman) | `P` | +10 | 4000 | melee round 182 |
+| 60 | [Gilim, the Giant of Eruman](#gilim-the-giant-of-eruman) | `P` | +10 | 4000 | melee round 360 |
 | 60 | [Saruman of Many Colours](#saruman-of-many-colours) | `A` | +10 | 5000 | BA_FIRE 220 |
 | 62 | [Smaug the Golden](#smaug-the-golden) | `D` | +10 | 4200 | BR_FIRE 1400 |
 | 65 | [The Mouth of Sauron](#the-mouth-of-sauron) | `p` | +20 | 7000 | BA_MANA 425 |
-| 66 | [Tevildo, Prince of Cats](#tevildo-prince-of-cats) | `f` | +20 | 4800 | melee round 56 |
+| 66 | [Tevildo, Prince of Cats](#tevildo-prince-of-cats) | `f` | +20 | 4800 | melee round 233 |
 | 67 | [Thuringwethil, the Vampire Messenger](#thuringwethil-the-vampire-messenger) | `V` | +20 | 5000 | BA_NETH 368 |
 | 68 | [Tselakus, the Dreadlord](#tselakus-the-dreadlord) | `G` | +20 | 6500 | BA_DARK 372 |
-| 69 | [Nan, the Giant](#nan-the-giant) | `P` | +10 | 3344 | BA_FIRE 307 |
+| 69 | [Nan, the Giant](#nan-the-giant) | `P` | +10 | 3344 | melee round 576 |
 | 72 | [Ossë, Herald of Ulmo](#ossë-herald-of-ulmo) | `A` | +20 | 6000 | BR_DISE 500 |
 | 73 | [Omarax, the Eye Tyrant](#omarax-the-eye-tyrant) | `e` | +20 | 6500 | BA_DARK 392 |
 | 75 | [Glaurung, Father of the Dragons](#glaurung-father-of-the-dragons) | `D` | +20 | 7500 | BR_FIRE 1600 |
 | 75 | [Ungoliant, the Unlight](#ungoliant-the-unlight) | `S` | +20 | 13000 | BR_POIS 800 |
-| 76 | [Makar, the Warrior](#makar-the-warrior) | `A` | +10 | 6000 | melee round 160 |
+| 76 | [Makar, the Warrior](#makar-the-warrior) | `A` | +10 | 6000 | melee round 676 |
 | 77 | [Feagwath, the Undead Sorcerer](#feagwath-the-undead-sorcerer) | `L` | +20 | 5000 | BA_MANA 485 |
-| 77 | [Uvatha the Horseman](#uvatha-the-horseman) | `W` | +10 | 4200 | BO_NETH 170 |
-| 78 | [Adunaphel the Quiet](#adunaphel-the-quiet) | `W` | +10 | 4300 | BO_NETH 172 |
-| 79 | [Akhorahil the Blind](#akhorahil-the-blind) | `W` | +10 | 4400 | melee round 198 |
+| 77 | [Uvatha the Horseman](#uvatha-the-horseman) | `W` | +10 | 4200 | WOUND 250 |
+| 78 | [Adunaphel the Quiet](#adunaphel-the-quiet) | `W` | +10 | 4300 | WOUND 260 |
+| 79 | [Akhorahil the Blind](#akhorahil-the-blind) | `W` | +10 | 4400 | WOUND 260 |
 | 79 | [Qlzqqlzuup, the Emperor Quylthulg](#qlzqqlzuup-the-emperor-quylthulg) | `Q` | +20 | 5000 | — |
 | 80 | [Ren the Unclean](#ren-the-unclean) | `W` | +10 | 4500 | BA_FIRE 290 |
 | 80 | [Wiruin, the Maelstrom](#wiruin-the-maelstrom) | `v` | +30 | 3500 | BR_COLD 1166 |
 | 81 | [Ji Indur Dawndeath](#ji-indur-dawndeath) | `W` | +10 | 4600 | BA_NETH 424 |
 | 81 | [Maeglin, the Traitor of Gondolin](#maeglin-the-traitor-of-gondolin) | `h` | +20 | 6000 | melee round 256 |
 | 82 | [Dwar, Dog Lord of Waw](#dwar-dog-lord-of-waw) | `W` | +10 | 4700 | BA_NETH 428 |
-| 82 | [Pazuzu, Lord of Air](#pazuzu-lord-of-air) | `U` | +30 | 5500 | BO_MANA 255 |
+| 82 | [Pazuzu, Lord of Air](#pazuzu-lord-of-air) | `U` | +30 | 5500 | melee round 576 |
 | 83 | [Draugluin, Sire of All Werewolves](#draugluin-sire-of-all-werewolves) | `C` | +20 | 7000 | melee round 168 |
 | 83 | [Hoarmurath of Dir](#hoarmurath-of-dir) | `W` | +10 | 4800 | BA_NETH 432 |
 | 84 | [Cantoras, the Skeletal Lord](#cantoras-the-skeletal-lord) | `s` | +30 | 7500 | BA_NETH 540 |
@@ -98,14 +98,14 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 | 85 | [Ancalagon the Black](#ancalagon-the-black) | `D` | +20 | 10000 | BR_ACID 1600 |
 | 85 | [The Witch-King of Angmar](#the-witch-king-of-angmar) | `W` | +20 | 5000 | BA_NETH 440 |
 | 86 | [The Tarrasque](#the-tarrasque) | `R` | +20 | 8500 | BR_COLD 1600 |
-| 87 | [Meássë, the Bloody](#meássë-the-bloody) | `A` | +10 | 7000 | BR_SOUN 500 |
+| 87 | [Meássë, the Bloody](#meássë-the-bloody) | `A` | +10 | 7000 | melee round 576 |
 | 88 | [Lungorthin, the Balrog of White Fire](#lungorthin-the-balrog-of-white-fire) | `U` | +20 | 7000 | BR_FIRE 1600 |
 | 90 | [Carcharoth, the Jaws of Thirst](#carcharoth-the-jaws-of-thirst) | `C` | +20 | 8000 | BR_FIRE 1600 |
 | 90 | [Huan, Wolfhound of the Valar](#huan-wolfhound-of-the-valar) | `C` | +20 | 8000 | BR_COLD 1600 |
 | 92 | [Vecna, the Emperor Lich](#vecna-the-emperor-lich) | `L` | +20 | 6000 | BA_MANA 560 |
 | 95 | [Gothmog, the High Captain of Balrogs](#gothmog-the-high-captain-of-balrogs) | `U` | +20 | 8000 | BR_FIRE 1600 |
 | 99 | [Sauron, the Sorcerer](#sauron-the-sorcerer) | `A` | +20 | 8000 | BA_DARK 620 |
-| 99 | [Serpent-Sauron](#serpent-sauron) | `J` | +20 | 1 | melee round 312 |
+| 99 | [Serpent-Sauron](#serpent-sauron) | `J` | +20 | 1 | WOUND 360 |
 | 99 | [Vampire-Sauron](#vampire-sauron) | `V` | +20 | 1 | BA_NETH 620 |
 | 99 | [Wolf-Sauron](#wolf-sauron) | `C` | +30 | 1 | BA_DARK 520 |
 | 100 | [Morgoth, Lord of Darkness](#morgoth-lord-of-darkness) | `P` | +30 | 20000 | BA_MANA 600 |
@@ -353,7 +353,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 3d5, hit 3d5, hit 3d5, hit 3d5
 * **Spells** (1_IN_6, power 17):
   * `BLIND` blind
-  * `WOUND` cause medium wounds — max 1 dmg (avg 1)
+  * `WOUND` cause medium wounds — max 50 dmg (avg 30)
   * `CONF` confuse
   * `HEAL` heal-self
   * `MIND_BLAST` cause mind blasting — max 64 dmg (avg 36)
@@ -739,7 +739,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 41 · **Speed** +10 · **HP** 1600 · **AC** 144 · **Exp** 7000×level · **Rarity** 3 · **Sleep** 40 · **Hearing** 20
 * **Melee**: hit 8d6, hit 8d6, hit disenchant 6d8, hit disenchant 6d8
 * **Spells** (1_IN_2, power 41):
-  * `WOUND` cause serious wounds — max 32 dmg (avg 20)
+  * `WOUND` cause serious wounds — max 130 dmg (avg 78)
   * `BO_MANA` produce mana bolts — max 152 dmg (avg 102)
   * `BO_WATE` produce water bolts — max 141 dmg (avg 96)
 * **Defences**: IM\_ACID, IM\_ELEC, IM\_COLD, IM\_POIS, NO\_CONF, NO\_SLEEP, NO\_HOLD
@@ -873,7 +873,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Spells** (1_IN_2, power 49):
   * `BLIND` blind
   * `BLINK` blink-self
-  * `WOUND` cause serious wounds — max 13 dmg (avg 9)
+  * `WOUND` cause serious wounds — max 160 dmg (avg 96)
   * `CONF` confuse
   * `DARKNESS` create darkness — max 10 dmg (avg 10)
   * `HEAL` heal-self
@@ -940,7 +940,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 52 · **Speed** +10 · **HP** 2200 · **AC** 144 · **Exp** 20000×level · **Rarity** 2 · **Sleep** 70 · **Hearing** 30
 * **Melee**: claw 4d11, claw 4d11, bite fire 4d15, bite fire 4d15
 * **Spells** (1_IN_8/innate 1_IN_8, power 52):
-  * `WOUND` cause critical wounds — max 23 dmg (avg 15)
+  * `WOUND` cause critical wounds — max 170 dmg (avg 102)
   * `CONF` confuse
   * `BR_FIRE` fire — max 733 dmg
 * **Defences**: IM\_FIRE, NO\_CONF, NO\_SLEEP, NO\_HOLD
@@ -956,7 +956,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 53 · **Speed** +10 · **HP** 2500 · **AC** 156 · **Exp** 18000×level · **Rarity** 2 · **Sleep** 70 · **Hearing** 30
 * **Melee**: claw 4d11, claw 4d11, claw cold 4d15, bite cold 4d15
 * **Spells** (1_IN_8/innate 1_IN_8, power 53):
-  * `WOUND` cause critical wounds — max 23 dmg (avg 15)
+  * `WOUND` cause critical wounds — max 170 dmg (avg 102)
   * `CONF` confuse
   * `BR_COLD` frost — max 833 dmg
 * **Defences**: IM\_COLD, NO\_CONF, NO\_SLEEP, NO\_HOLD
@@ -1010,7 +1010,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: claw poison 5d6, claw poison 5d6, bite paralyze 5d10, sting lose\_str 5d4
 * **Spells** (1_IN_4/innate 1_IN_20, power 55):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 33 dmg (avg 21)
+  * `WOUND` cause critical wounds — max 180 dmg (avg 108)
   * `CONF` confuse
   * `HEAL` heal-self
   * `SCARE` terrify
@@ -1053,8 +1053,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 8d8, hit 8d8, hit 8d8, hit 8d8
 * **Spells** (1_IN_4, power 59):
   * `BLIND` blind
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
-  * `WOUND` cause critical wounds — max 43 dmg (avg 27)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
+  * `WOUND` cause critical wounds — max 190 dmg (avg 114)
   * `CONF` confuse
   * `HEAL` heal-self
   * `SCARE` terrify
@@ -1091,7 +1091,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit disenchant 6d8, hit disenchant 6d8, hit 5d5, hit 5d5
 * **Spells** (1_IN_2, power 60):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 4 dmg (avg 4)
+  * `WOUND` cause critical wounds — max 200 dmg (avg 120)
   * `FORGET` cause amnesia
   * `HASTE` haste-self
   * `HEAL` heal-self
@@ -1124,7 +1124,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 62 · **Speed** +10 · **HP** 4200 · **AC** 195 · **Exp** 30000×level · **Rarity** 2 · **Sleep** 120 · **Hearing** 30
 * **Melee**: claw 6d12, claw 6d12, bite fire 7d14, bite fire 7d14
 * **Spells** (1_IN_8/innate 1_IN_5, power 62):
-  * `WOUND` cause critical wounds — max 4 dmg (avg 4)
+  * `WOUND` cause critical wounds — max 200 dmg (avg 120)
   * `CONF` confuse
   * `BR_FIRE` fire — max 1400 dmg
 * **Defences**: IM\_FIRE, NO\_CONF, NO\_SLEEP, NO\_HOLD
@@ -1140,7 +1140,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 65 · **Speed** +20 · **HP** 7000 · **AC** 120 · **Exp** 38000×level · **Rarity** 3 · **Sleep** 10 · **Hearing** 60
 * **Melee**: hit disenchant 6d8, hit disenchant 6d8, hit drain\_charges 5d5, hit drain\_charges 5d5
 * **Spells** (1_IN_2, power 65):
-  * `WOUND` cause critical wounds — max 14 dmg (avg 10)
+  * `WOUND` cause critical wounds — max 210 dmg (avg 126)
   * `HOLD` paralyze
   * `TELE_TO` teleport to
   * `TRAPS` create traps
@@ -1182,8 +1182,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: bite exp\_80 6d6, bite exp\_80 6d6, hit confuse 6d6, hit confuse 6d6
 * **Spells** (1_IN_3, power 67):
   * `BLIND` blind
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
-  * `WOUND` cause critical wounds — max 24 dmg (avg 16)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
+  * `WOUND` cause critical wounds — max 220 dmg (avg 132)
   * `DRAIN_MANA` drain mana
   * `BA_NETH` produce nether balls — max 368 dmg (avg 323)
   * `S_HI_UNDEAD` summon greater undead
@@ -1223,7 +1223,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 69 · **Speed** +10 · **HP** 3344 · **AC** 150 · **Exp** 23500×level · **Rarity** 3 · **Sleep** 15 · **Hearing** 30
 * **Melee**: hit 12d12, hit 12d12, hit confuse 12d12, hit confuse 12d12
 * **Spells** (1_IN_4/innate 1_IN_6, power 85):
-  * `BOULDER` throw boulders — max 37 dmg (avg 20)
+  * `BOULDER` throw boulders — max 156 dmg (avg 84)
   * `BO_PLAS` produce plasma bolts — max 151 dmg (avg 127)
   * `BA_FIRE` produce firestorms — max 307 dmg (avg 159)
   * `S_MONSTERS` summon monsters
@@ -1263,7 +1263,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: gaze disenchant 6d6, gaze drain\_charges 6d6, gaze lose\_int 6d6, bite exp\_80 8d8
 * **Spells** (1_IN_2, power 73):
   * `BLIND` blind
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `CONF` confuse
   * `DRAIN_MANA` drain mana
   * `FORGET` cause amnesia
@@ -1288,7 +1288,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 75 · **Speed** +20 · **HP** 7500 · **AC** 210 · **Exp** 55000×level · **Rarity** 3 · **Sleep** 20 · **Hearing** 30
 * **Melee**: claw 6d12, claw 6d12, bite poison 8d14, bite fire 8d14
 * **Spells** (1_IN_3/innate 1_IN_5, power 75):
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `FORGET` cause amnesia
   * `SCARE` terrify
   * `BR_FIRE` fire — max 1600 dmg
@@ -1344,10 +1344,10 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Spells** (1_IN_2, power 77):
   * `BLIND` blind
   * `BLINK` blink-self
-  * `WOUND` cause critical wounds — max 5 dmg (avg 5)
+  * `WOUND` cause critical wounds — max 250 dmg (avg 150)
   * `HOLD` paralyze
   * `SCARE` terrify
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `TELE_TO` teleport to
   * `TRAPS` create traps
   * `BA_MANA` invoke mana storms — max 485 dmg (avg 440)
@@ -1371,7 +1371,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 6d9, hit black\_breath 6d9, hit exp\_80 4d6, hit exp\_80 4d6
 * **Spells** (1_IN_3, power 77):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 5 dmg (avg 5)
+  * `WOUND` cause critical wounds — max 250 dmg (avg 150)
   * `FORGET` cause amnesia
   * `HOLD` paralyze
   * `SCARE` terrify
@@ -1393,7 +1393,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 6d9, hit black\_breath 6d9, touch exp\_80 5d6, touch exp\_80 5d6
 * **Spells** (1_IN_3, power 78):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 15 dmg (avg 11)
+  * `WOUND` cause critical wounds — max 260 dmg (avg 156)
   * `FORGET` cause amnesia
   * `HOLD` paralyze
   * `SCARE` terrify
@@ -1417,7 +1417,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 7d9, hit black\_breath 7d9, gaze exp\_80 6d6, wail terrify 6d6
 * **Spells** (1_IN_3, power 79):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 15 dmg (avg 11)
+  * `WOUND` cause critical wounds — max 260 dmg (avg 156)
   * `DARKNESS` create darkness — max 10 dmg (avg 10)
   * `HOLD` paralyze
   * `SCARE` terrify
@@ -1464,7 +1464,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 7d9, hit black\_breath 7d9, touch exp\_80 6d7, wail terrify 6d7
 * **Spells** (1_IN_3, power 80):
   * `BLIND` blind
-  * `WOUND` cause critical wounds — max 15 dmg (avg 11)
+  * `WOUND` cause critical wounds — max 260 dmg (avg 156)
   * `HOLD` paralyze
   * `SCARE` terrify
   * `BA_FIRE` produce fire balls — max 290 dmg (avg 150)
@@ -1502,7 +1502,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 8d9, hit black\_breath 8d9, touch exp\_40 6d7, touch exp\_40 6d7
 * **Spells** (1_IN_3, power 81):
   * `BLIND` blind
-  * `WOUND` cause mortal wounds — max 25 dmg (avg 17)
+  * `WOUND` cause mortal wounds — max 270 dmg (avg 162)
   * `HOLD` paralyze
   * `SCARE` terrify
   * `BA_ACID` produce acid balls — max 258 dmg (avg 137)
@@ -1545,7 +1545,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 9d9, hit black\_breath 8d9, bite exp\_40 6d7, wail terrify 6d7
 * **Spells** (1_IN_3, power 82):
   * `BLIND` blind
-  * `WOUND` cause mortal wounds — max 25 dmg (avg 17)
+  * `WOUND` cause mortal wounds — max 270 dmg (avg 162)
   * `HOLD` paralyze
   * `SCARE` terrify
   * `BA_FIRE` produce firestorms — max 297 dmg (avg 154)
@@ -1603,7 +1603,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 9d9, hit black\_breath 9d9, touch exp\_80 6d7, wail terrify 6d7
 * **Spells** (1_IN_3, power 83):
   * `BLIND` blind
-  * `WOUND` cause mortal wounds — max 25 dmg (avg 17)
+  * `WOUND` cause mortal wounds — max 270 dmg (avg 162)
   * `HOLD` paralyze
   * `MIND_BLAST` cause mind blasting — max 64 dmg (avg 36)
   * `SCARE` terrify
@@ -1625,8 +1625,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 84 · **Speed** +30 · **HP** 7500 · **AC** 180 · **Exp** 45000×level · **Rarity** 2 · **Sleep** 40 · **Hearing** 20
 * **Melee**: gaze exp\_80 5d5, gaze exp\_80 5d5, touch poison 5d5, touch poison 5d5
 * **Spells** (1_IN_2, power 110):
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
-  * `WOUND` cause mortal wounds — max 17 dmg (avg 13)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
+  * `WOUND` cause mortal wounds — max 360 dmg (avg 216)
   * `SCARE` terrify
   * `TELE_TO` teleport to
   * `BA_NETH` produce nether storms — max 540 dmg (avg 495)
@@ -1648,7 +1648,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 9d10, hit black\_breath 9d10, touch exp\_40 7d7, touch exp\_40 7d7
 * **Spells** (1_IN_2, power 84):
   * `BLIND` blind
-  * `WOUND` cause mortal wounds — max 35 dmg (avg 23)
+  * `WOUND` cause mortal wounds — max 280 dmg (avg 168)
   * `HOLD` paralyze
   * `SCARE` terrify
   * `TELE_LEVEL` teleport level
@@ -1693,8 +1693,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit 10d10, hit black\_breath 10d10, hit exp\_80 7d7, hit exp\_80 7d7
 * **Spells** (1_IN_2, power 85):
   * `BLIND` blind
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
-  * `WOUND` cause mortal wounds — max 35 dmg (avg 23)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
+  * `WOUND` cause mortal wounds — max 280 dmg (avg 168)
   * `HOLD` paralyze
   * `SCARE` terrify
   * `TELE_AWAY` teleport away
@@ -1738,7 +1738,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Spells** (1_IN_5/innate 1_IN_6, power 87):
   * `HEAL` heal-self
   * `HEAL_KIN` heal kin
-  * `BOULDER` throw boulders — max 37 dmg (avg 20)
+  * `BOULDER` throw boulders — max 156 dmg (avg 84)
   * `BA_SHAR` invoke storms of knives — max 140 dmg (avg 76)
   * `BR_SOUN` sound — max 500 dmg
   * `S_KIN` summon similar monsters
@@ -1814,10 +1814,10 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Melee**: hit exp\_80 7d12, hit lose\_dex 7d12, hit drain\_charges 7d12, hit drain\_charges 7d12
 * **Spells** (1_IN_2, power 92):
   * `BLIND` blind
-  * `WOUND` cause mortal wounds — max 6 dmg (avg 6)
+  * `WOUND` cause mortal wounds — max 300 dmg (avg 180)
   * `SCARE` terrify
   * `TPORT` teleport-self
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `BA_FIRE` produce firestorms — max 332 dmg (avg 172)
   * `BA_MANA` invoke mana storms — max 560 dmg (avg 515)
   * `BA_NETH` produce nether storms — max 468 dmg (avg 423)
@@ -1861,8 +1861,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 99 · **Speed** +20 · **HP** 8000 · **AC** 192 · **Exp** 50000×level · **Rarity** 1 · **Sleep** 0 · **Hearing** 100
 * **Melee**: hit disenchant 10d12, hit disenchant 10d12, hit drain\_charges 8d12, hit drain\_charges 8d12
 * **Spells** (1_IN_2, power 130):
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
-  * `WOUND` cause mortal wounds — max 38 dmg (avg 26)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
+  * `WOUND` cause mortal wounds — max 430 dmg (avg 258)
   * `TELE_LEVEL` teleport level
   * `TPORT` teleport-self
   * `BA_DARK` invoke darkness storms — max 620 dmg (avg 575)
@@ -1899,8 +1899,8 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
   * `BLIND` blind
   * `CONF` confuse
   * `SCARE` terrify
-  * `WOUND` cause mortal wounds — max 17 dmg (avg 13)
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `WOUND` cause mortal wounds — max 360 dmg (avg 216)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `FORGET` cause amnesia
   * `BR_POIS` poison — max 0 dmg
   * `BR_CHAO` chaos — max 0 dmg
@@ -1926,7 +1926,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
   * `TELE_LEVEL` teleport level
   * `BLIND` blind
   * `CONF` confuse
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `FORGET` cause amnesia
   * `BO_ICE` produce ice bolts — max 166 dmg (avg 151)
   * `BO_PLAS` produce plasma bolts — max 196 dmg (avg 172)
@@ -1934,7 +1934,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
   * `BA_NETH` produce nether storms — max 620 dmg (avg 575)
   * `STORM` create tempests — max 245 dmg (avg 159)
   * `BA_DARK` invoke darkness storms — max 620 dmg (avg 575)
-  * `BA_POIS` produce storms of poison — max 38 dmg (avg 26)
+  * `BA_POIS` produce storms of poison — max 272 dmg (avg 170)
   * `BA_ACID` produce acid balls — max 405 dmg (avg 210)
   * `S_DRAGON` summon a dragon
   * `S_HI_DEMON` summon greater demons
@@ -1959,7 +1959,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
   * `BLIND` blind
   * `CONF` confuse
   * `SCARE` terrify
-  * `WOUND` cause mortal wounds — max 7 dmg (avg 7)
+  * `WOUND` cause mortal wounds — max 350 dmg (avg 210)
   * `BR_FIRE` fire — max 0 dmg
   * `BR_NETH` nether — max 0 dmg
   * `BA_DARK` invoke darkness storms — max 520 dmg (avg 475)
@@ -1980,7 +1980,7 @@ There are **101** unique monsters. Uniques always have exactly their listed HP (
 * **Depth** 100 · **Speed** +30 · **HP** 20000 · **AC** 180 · **Exp** 60000×level · **Rarity** 1 · **Sleep** 0 · **Hearing** 100
 * **Melee**: hit shatter 20d10, hit shatter 20d10, hit lose\_all 10d12, touch drain\_charges
 * **Spells** (1_IN_3, power 100):
-  * `BRAIN_SMASH` cause brain smashing — max 31 dmg (avg 17)
+  * `BRAIN_SMASH` cause brain smashing — max 180 dmg (avg 96)
   * `BA_MANA` invoke mana storms — max 600 dmg (avg 555)
   * `BA_NETH` produce nether storms — max 500 dmg (avg 455)
   * `BO_MANA` produce mana bolts — max 300 dmg (avg 176)

@@ -1,0 +1,7 @@
+# D0326-rust-seed1070: a floating eye at turn 12310
+
+Human Warrior, character level 2, depth 1 (max 1), seed 1070, implementation `rust`, flags `-`.
+
+Build `9e8c7ec068d24718b675b81b425d7f80c4be7627` (dirty: yes), binary `f898be33b7e2`. Keys `a7c83a8187a5`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-7-ranger-0` (not committed).
+
+**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run (RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0414-rust-seed1064",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 4044,
+    "race_idx": 10,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1064,
+    "flags": "-",
+    "git_rev": "991e0fe4156018c99fd1663f110307fcb1baf494",
+    "git_dirty": "yes",
+    "source_sha256": "8b03d14b23823743a3bbe30cdff924beaf1db6c346f30fe29bdaa7be646fd77f",
+    "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f",
+    "borg_txt_sha256": "9f2d2a66b14eddc64864c5b4b1c065eccf5a9a8b75166a0b1847fbb1bffb1b2b"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t23d-full/full-6-rogue-4",
+      "result_sha256": "d6d6e43f3ddba43b540882dce78ab9c140e6d0ec2acb63e4eac83850ec3d8f15",
+      "raw_sha256": {
+        "keys.log": "d6d6e43f3ddba43b540882dce78ab9c140e6d0ec2acb63e4eac83850ec3d8f15",
+        "messages.log": "cc3390b16408d9e64b1500076042d3cb5be1f269fc09c80e9ce48b398f1fb570",
+        "state.log": "12c2fd74fa8f8e333f0c452640ee50e87bf526f1c8fdf6f36ed5a17252d7b22f"
+      },
+      "source_commit": "991e0fe4156018c99fd1663f110307fcb1baf494",
+      "binary_sha256": "79d207dbfc07a44241578e66d73dbe7235298888a47f1e17ff91a34c8a9fcf2f"
+    }
+  ],
+  "encounter_family": "start-6635e1e26b7a68104010a689883c4058136d6fa9bbcf7671a0ba12de1225254e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e53be41efd8c1cd2e5f91301628e4e3a495cb7659d8ce6f89ffd01d76bc4602d",
+    "config.txt": "e43aca8db62c1fee56425a0138ac2dee9a6d46c7e04974005f26f63ed8c146cc",
+    "depths.json": "aa15f98bff6434c7737673d4a63940e85dbf1c18493d00ae05ec073ef72df68d",
+    "summary.json": "dd2615f192dbec3ca06ffeba8890346fc99da0648e50fd1f7a01ed78bcfdfde7"
+  },
+  "investigation": null,
+  "issue": null
+}

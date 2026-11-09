@@ -128,8 +128,16 @@ fn set_game_rng(r: &GameRng) {
 /// swap in `generate_keypress()` (borg.c:355-374), extended to the whole
 /// state.
 pub fn with_borg_rng<T>(borg_value: &mut u32, f: impl FnOnce() -> T) -> T {
-    let saved = game_rng();
-    // SAFETY: plain engine globals; restored below.
+    /// Restores the game's RNG when dropped, so it is restored on every
+    /// path out of `f`, a panic included (M2 review C5).
+    struct Restore(GameRng);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            set_game_rng(&self.0);
+        }
+    }
+    let saved = Restore(game_rng());
+    // SAFETY: plain engine globals; restored by `saved`.
     unsafe {
         headers::z_rand_h::Rand_quick = true;
         headers::z_rand_h::Rand_value = *borg_value;
@@ -137,7 +145,7 @@ pub fn with_borg_rng<T>(borg_value: &mut u32, f: impl FnOnce() -> T) -> T {
     let out = f();
     // SAFETY: as above.
     *borg_value = unsafe { headers::z_rand_h::Rand_value };
-    set_game_rng(&saved);
+    drop(saved);
     out
 }
 
@@ -246,4 +254,635 @@ extern "C" fn inkey_hook(flush_first: c_int) -> headers::ui_event_h::keypress {
 #[no_mangle]
 extern "C" fn do_cmd_borg() {
     crate::borg::command();
+}
+
+// ---------------------------------------------------------------------------
+// Perception (L1, task T2.1): the reads behind an `Observation`.
+
+use crate::observation::{
+    parse_messages, Grid, Item, MonsterSeen, ObjectSeen, Observation, Panel, Slot, Spell, Status,
+    StoreStock, Ware,
+};
+
+extern "C" {
+    // obj-gear.h; not in the copied bindings. Reads the gear only.
+    fn pack_slots_used(p: *const headers::player_h::player) -> c_int;
+    // store.h; not in the copied bindings. A price from the store's owner
+    // and the object's value; no state changes, no random draws.
+    fn price_item(
+        store: *mut headers::store_h::store,
+        obj: *const headers::object_h::object,
+        store_buying: bool,
+        qty: c_int,
+    ) -> c_int;
+}
+
+/// The text of screen row `row`, columns `col..col + len` (all of the row
+/// if `len` is `None`), trailing blanks removed: `borg_what_text()`'s read
+/// of the terminal buffer (channel A).
+fn screen_text(row: i32, col: i32, len: Option<i32>) -> String {
+    // SAFETY: `Term` and its `scr` window are allocated by the frontend
+    // before the Borg runs; rows and columns are checked against its size.
+    unsafe {
+        let t = headers::ui_term_h::Term;
+        if t.is_null() || (*t).scr.is_null() || row < 0 || row >= (*t).hgt {
+            return String::new();
+        }
+        let wid = (*t).wid;
+        let end = len.map_or(wid, |l| (col + l).min(wid));
+        let line = *(*(*t).scr).c.add(row as usize);
+        let s: String = (col.max(0)..end)
+            .map(|x| char::from_u32(*line.add(x as usize) as u32).unwrap_or('?'))
+            .collect();
+        s.trim_end().to_string()
+    }
+}
+
+/// The C Borg's item analysis of one object (`borg_item_analyze`). In a
+/// shop (`in_store`) the player is always aware of the flavour, and the
+/// description is the store's (`ODESC_STORE`).
+///
+/// # Safety
+/// `obj` is a live object of the player's gear or a store.
+unsafe fn analyze(obj: *const headers::object_h::object, in_store: bool) -> Option<Item> {
+    use headers::{obj_desc_h, obj_knowledge_h, obj_util_h};
+    let o = &*obj;
+    if o.kind.is_null() || o.number == 0 {
+        return None;
+    }
+    let fully_known = obj_knowledge_h::object_fully_known(obj);
+    let k = if fully_known || o.known.is_null() {
+        o
+    } else {
+        &*o.known
+    };
+    let mut flags = [0u8; 5];
+    obj_util_h::object_flags_known(obj, flags.as_mut_ptr());
+    let mut buf = [0 as c_char; 256];
+    obj_desc_h::object_desc(
+        buf.as_mut_ptr(),
+        buf.len(),
+        obj,
+        obj_desc_h::ODESC_FULL | if in_store { obj_desc_h::ODESC_STORE } else { 0 },
+        headers::player_h::player,
+    );
+    Some(Item {
+        kind: (*o.kind).kidx,
+        tval: o.tval,
+        sval: o.sval,
+        number: o.number,
+        weight: obj_util_h::object_weight_one(obj),
+        timeout: o.timeout,
+        level: (*o.kind).level,
+        desc: CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned(),
+        aware: in_store || obj_knowledge_h::object_flavor_is_aware(obj),
+        fully_known,
+        runes_known: obj_knowledge_h::object_runes_known(obj),
+        flags,
+        ac: k.ac,
+        dd: k.dd,
+        ds: k.ds,
+        to_h: k.to_h,
+        to_d: k.to_d,
+        to_a: k.to_a,
+        modifiers: k.modifiers.to_vec(),
+        elements: k.el_info.iter().map(|e| (e.res_level, e.flags)).collect(),
+    })
+}
+
+/// The top object on a floor grid that is not ignored, as
+/// `borg-flow-take.c:borg_get_top_object:50-64` picks it.
+///
+/// # Safety
+/// `c` is the current level and `grid` is in bounds.
+unsafe fn top_object_kind(
+    c: *mut headers::cave_h::chunk,
+    grid: headers::z_type_h::loc,
+) -> Option<u32> {
+    let mut o = headers::cave_h::square_object(c, grid);
+    while !o.is_null() {
+        let ignored = (!(*o).known.is_null()
+            && (*(*o).known).notice & headers::object_h::OBJ_NOTICE_IGNORE as u8 != 0)
+            || (*(*o).kind).ignore != 0;
+        if !ignored {
+            return Some((*(*o).kind).kidx);
+        }
+        o = (*o).next;
+    }
+    None
+}
+
+/// Perceive: one `Observation` of everything the C Borg's two channels give
+/// it (spec §1.1). `None` before a character and a level exist. Run it with
+/// the Borg's RNG (`with_borg_rng`): `map_info()` can draw.
+pub fn perceive() -> Option<Observation> {
+    use headers::{cave_h, player_h, ui_term_h, z_type_h::loc};
+    // SAFETY: engine globals read on the engine thread between game steps.
+    // `player`, its `upkeep`, `timed`, gear arrays and body are allocated
+    // once a character exists; `cave` once a level exists. Every array is
+    // read within the sizes the engine gives (`z_info`, `body.count`,
+    // `TMD_MAX`, `MON_TMD_MAX`, `total_spells`), and every grid is checked
+    // with `square_in_bounds_fully` first.
+    unsafe {
+        let p = player_h::player;
+        let c = cave_h::cave;
+        let z = headers::init_h::z_info;
+        let t = ui_term_h::Term;
+        if p.is_null()
+            || (*p).upkeep.is_null()
+            || (*p).timed.is_null()
+            || c.is_null()
+            || z.is_null()
+            || t.is_null()
+        {
+            return None;
+        }
+        let pl = &*p;
+        let up = &*pl.upkeep;
+
+        let status = Status {
+            race: if pl.race.is_null() {
+                0
+            } else {
+                (*pl.race).ridx
+            },
+            class: if pl.class.is_null() {
+                0
+            } else {
+                (*pl.class).cidx
+            },
+            x: pl.grid.x,
+            y: pl.grid.y,
+            depth: pl.depth as i32,
+            max_depth: pl.max_depth as i32,
+            level: pl.lev as i32,
+            max_level: pl.max_lev as i32,
+            exp: pl.exp,
+            max_exp: pl.max_exp,
+            gold: pl.au,
+            hp: pl.chp as i32,
+            max_hp: pl.mhp as i32,
+            sp: pl.csp as i32,
+            max_sp: pl.msp as i32,
+            stat_cur: pl.stat_cur,
+            stat_max: pl.stat_max,
+            stat_use: pl.state.stat_use,
+            stat_ind: pl.state.stat_ind,
+            speed: pl.state.speed,
+            blows: pl.state.num_blows,
+            percent_damage: pl.opts.opt[headers::list_options_h::OPT_birth_percent_damage as usize],
+            known_ac: pl.known_state.ac + pl.known_state.to_a,
+            timed: (0..headers::player_timed_h::TMD_MAX as usize)
+                .map(|i| *pl.timed.add(i))
+                .collect(),
+            word_recall: pl.word_recall as i32,
+            deep_descent: pl.deep_descent as i32,
+            food: pl
+                .timed
+                .add(headers::list_player_timed_h::TMD_FOOD as usize)
+                .read() as i32,
+            pack_used: pack_slots_used(p),
+            pack_size: i32::from((*z).pack_size),
+            busy: up.resting != 0 || up.running != 0 || headers::cmd_core_h::cmd_get_nrepeats() > 0,
+            dead: pl.is_dead,
+            winner: pl.total_winner != 0,
+            in_vault: cave_h::square_in_bounds_fully(c, pl.grid)
+                && cave_h::square_isvault(c, pl.grid),
+        };
+
+        let mut equipment = Vec::new();
+        let mut slot = pl.body.slots;
+        for _ in 0..pl.body.count {
+            if slot.is_null() {
+                break;
+            }
+            let s = &*slot;
+            equipment.push(Slot {
+                slot_type: s.type_0,
+                item: if s.obj.is_null() {
+                    None
+                } else {
+                    analyze(s.obj, false)
+                },
+            });
+            slot = slot.add(1);
+        }
+        let list = |arr: *mut *mut headers::object_h::object, n: u16| -> Vec<Item> {
+            if arr.is_null() {
+                return Vec::new();
+            }
+            (0..n as usize)
+                .map(|i| *arr.add(i))
+                .filter(|o| !o.is_null())
+                .filter_map(|o| analyze(o, false))
+                .collect()
+        };
+        let quiver = list(up.quiver, (*z).quiver_size);
+        let inventory = list(up.inven, (*z).pack_size);
+
+        let mut spells = Vec::new();
+        if !pl.class.is_null() && !pl.spell_flags.is_null() {
+            let magic = &(*pl.class).magic;
+            for i in 0..magic.total_spells {
+                let sp = headers::player_spell_h::spell_by_index(p, i);
+                if sp.is_null() {
+                    continue;
+                }
+                spells.push(Spell {
+                    book: (*sp).bidx,
+                    level: (*sp).slevel,
+                    mana: (*sp).smana,
+                    base_fail: (*sp).sfail,
+                    flags: *pl.spell_flags.add(i as usize),
+                });
+            }
+        }
+
+        // The map panel: SCREEN_HGT x SCREEN_WID grids from the term's
+        // offset (ui-term.h), clipped to the level.
+        let term = &*t;
+        let mode = (term.sidebar_mode as usize).min(2);
+        let screen_hgt =
+            (term.hgt - ui_term_h::row_top_map[mode] - ui_term_h::row_bottom_map[mode])
+                / i32::from(ui_term_h::tile_height).max(1);
+        let screen_wid =
+            (term.wid - ui_term_h::col_map[mode] - 1) / i32::from(ui_term_h::tile_width).max(1);
+        let (lw, lh) = ((*c).width, (*c).height);
+        let (x0, y0) = (term.offset_x.max(0), term.offset_y.max(0));
+        let width = screen_wid.min(lw - x0).max(0);
+        let height = screen_hgt.min(lh - y0).max(0);
+        let mut grids = Vec::with_capacity((width * height) as usize);
+        let mut monsters = Vec::new();
+        let mut objects = Vec::new();
+        for y in y0..y0 + height {
+            for x in x0..x0 + width {
+                let grid = loc { x, y };
+                if !cave_h::square_in_bounds_fully(c, grid) {
+                    grids.push(Grid {
+                        feat: 0,
+                        in_view: false,
+                        lighting: 0,
+                        monster: false,
+                        object_kind: None,
+                        multiple_objects: false,
+                        unseen_object: false,
+                        unseen_money: false,
+                        trap: false,
+                        shop: -1,
+                        webbed: false,
+                    });
+                    continue;
+                }
+                let mut g: cave_h::grid_data = core::mem::zeroed();
+                cave_h::map_info(grid, &mut g);
+                let object_kind = (!g.first_kind.is_null()).then(|| (*g.first_kind).kidx);
+                if g.m_idx > 0 {
+                    let m = cave_h::cave_monster(c, g.m_idx as c_int);
+                    if !m.is_null() && !(*m).race.is_null() {
+                        let m = &*m;
+                        monsters.push(MonsterSeen {
+                            index: m.midx,
+                            x,
+                            y,
+                            race: (*m.race).ridx,
+                            hp: m.hp as i32,
+                            max_hp: m.maxhp as i32,
+                            timed: m.m_timed,
+                            speed: m.mspeed,
+                            attr: m.attr,
+                            mimicking: !m.mimicked_obj.is_null(),
+                        });
+                    }
+                }
+                if object_kind.is_some() {
+                    objects.push(ObjectSeen {
+                        x,
+                        y,
+                        kind: top_object_kind(c, grid),
+                    });
+                }
+                grids.push(Grid {
+                    feat: g.f_idx,
+                    in_view: g.in_view,
+                    lighting: g.lighting,
+                    monster: g.m_idx > 0,
+                    object_kind,
+                    multiple_objects: g.multiple_objects,
+                    unseen_object: g.unseen_object,
+                    unseen_money: g.unseen_money,
+                    trap: !g.trap.is_null(),
+                    shop: cave_h::square_shopnum(c, grid),
+                    webbed: cave_h::square_iswebbed(c, grid),
+                });
+            }
+        }
+        // Every store's stock (borg_notice_store). The home's wares are
+        // analysed as gear, not as shop wares (`in_store` false), as there.
+        let mut stores = Vec::new();
+        let home = 7;
+        let st = headers::store_h::stores;
+        let max_wares = usize::from((*z).store_inven_max);
+        if !st.is_null() {
+            let mut list: Vec<*mut headers::object_h::object> =
+                vec![core::ptr::null_mut(); max_wares];
+            for n in 0..i32::from((*z).store_max) {
+                let store = st.add(n as usize);
+                list.iter_mut().for_each(|o| *o = core::ptr::null_mut());
+                headers::store_h::store_stock_list(store, list.as_mut_ptr(), max_wares as c_int);
+                let wares = list
+                    .iter()
+                    .take_while(|o| !o.is_null())
+                    .filter_map(|&o| {
+                        let item = analyze(o, n != home)?;
+                        (item.desc != "(nothing)").then(|| Ware {
+                            price: if n == home {
+                                0
+                            } else {
+                                price_item(store, o, false, 1)
+                            },
+                            item,
+                        })
+                    })
+                    .collect();
+                stores.push(StoreStock { number: n, wares });
+            }
+        }
+        let message_line = screen_text(0, 0, None);
+        Some(Observation {
+            turn: headers::game_world_h::turn as i64,
+            status,
+            equipment,
+            quiver,
+            inventory,
+            spells,
+            panel: Panel {
+                x0,
+                y0,
+                width,
+                height,
+                level_width: lw,
+                level_height: lh,
+                grids,
+            },
+            messages: parse_messages(&message_line),
+            message_line,
+            store_header: screen_text(3, 1, Some(4)),
+            monsters,
+            objects,
+            stores,
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Knowledge (L3, task T2.3): the engine's parsed game data, read once.
+
+use crate::knowledge::{
+    Artifact, Blow, Book, Class, ClassSpell, Dice, Ego, Knowledge, MonsterRace, ObjectKind,
+    PlayerRace, StoreKind,
+};
+
+extern "C" {
+    // player.h, game-world.h, player-calcs.h; not in the copied bindings.
+    static mut races: *mut headers::player_h::player_race;
+    static extract_energy: [u8; 200];
+    static adj_str_blow: [c_int; 38];
+    static adj_str_hold: [c_int; 38];
+}
+
+fn text(p: *const c_char) -> String {
+    if p.is_null() {
+        return String::new();
+    }
+    // SAFETY: the engine's names are NUL-terminated C strings that live as
+    // long as the game data.
+    unsafe { CStr::from_ptr(p).to_string_lossy().into_owned() }
+}
+
+fn dice(r: &headers::z_rand_h::random_value) -> Dice {
+    Dice {
+        base: r.base,
+        dice: r.dice,
+        sides: r.sides,
+        m_bonus: r.m_bonus,
+    }
+}
+
+fn elements(e: &[headers::object_h::element_info]) -> Vec<(i16, u8)> {
+    e.iter().map(|x| (x.res_level, x.flags)).collect()
+}
+
+/// Read the game's static data (L3). `None` before the game data is loaded.
+/// It only reads: the arrays are indexed within `z_info`'s counts, and the
+/// lists (classes, races, blows, books, store tables) end where the engine
+/// ends them.
+pub fn knowledge() -> Option<Knowledge> {
+    use headers::{init_h, monster_h, object_h, player_h, store_h};
+    // SAFETY: engine globals read on the engine thread after the game data
+    // is parsed (the Borg runs only inside a game); see above for bounds.
+    unsafe {
+        let z = init_h::z_info;
+        if z.is_null() || monster_h::r_info.is_null() || object_h::k_info.is_null() {
+            return None;
+        }
+        let z = &*z;
+        let mut k = Knowledge {
+            extract_energy: extract_energy.to_vec(),
+            move_energy: i32::from(z.move_energy),
+            adj_str_blow: adj_str_blow.to_vec(),
+            adj_str_hold: adj_str_hold.to_vec(),
+            ..Default::default()
+        };
+        for i in 0..usize::from(z.r_max) {
+            let r = &*monster_h::r_info.add(i);
+            let mut blows = Vec::new();
+            let mut b = r.blow;
+            while !b.is_null() && !(*b).method.is_null() {
+                let bl = &*b;
+                blows.push(Blow {
+                    method: text((*bl.method).name),
+                    effect: if bl.effect.is_null() {
+                        String::new()
+                    } else {
+                        text((*bl.effect).name)
+                    },
+                    power: if bl.effect.is_null() {
+                        0
+                    } else {
+                        (*bl.effect).power
+                    },
+                    dice: dice(&bl.dice),
+                });
+                b = bl.next;
+            }
+            k.races.push(MonsterRace {
+                index: r.ridx,
+                name: text(r.name),
+                base: if r.base.is_null() {
+                    String::new()
+                } else {
+                    text((*r.base).name)
+                },
+                level: r.level,
+                rarity: r.rarity,
+                speed: r.speed,
+                avg_hp: r.avg_hp,
+                ac: r.ac,
+                sleep: r.sleep,
+                hearing: r.hearing,
+                smell: r.smell,
+                exp: r.mexp,
+                freq_innate: r.freq_innate,
+                freq_spell: r.freq_spell,
+                spell_power: r.spell_power,
+                flags: r.flags.to_vec(),
+                spell_flags: r.spell_flags.to_vec(),
+                blows,
+                glyph: r.d_char as u32,
+                attr: r.d_attr,
+            });
+        }
+        for i in 0..usize::from(z.k_max) {
+            let o = &*object_h::k_info.add(i);
+            k.kinds.push(ObjectKind {
+                index: o.kidx,
+                name: text(o.name),
+                tval: o.tval,
+                sval: o.sval,
+                level: o.level,
+                cost: o.cost,
+                weight: o.weight,
+                ac: o.ac,
+                dd: o.dd,
+                ds: o.ds,
+                to_h: dice(&o.to_h),
+                to_d: dice(&o.to_d),
+                to_a: dice(&o.to_a),
+                pval: dice(&o.pval),
+                flags: o.flags.to_vec(),
+                kind_flags: o.kind_flags.to_vec(),
+                elements: elements(&o.el_info),
+            });
+        }
+        if !object_h::e_info.is_null() {
+            for i in 0..usize::from(z.e_max) {
+                let e = &*object_h::e_info.add(i);
+                k.egos.push(Ego {
+                    index: e.eidx,
+                    name: text(e.name),
+                    cost: e.cost,
+                    rating: e.rating,
+                    flags: e.flags.to_vec(),
+                    to_h: dice(&e.to_h),
+                    to_d: dice(&e.to_d),
+                    to_a: dice(&e.to_a),
+                    modifiers: e.modifiers.iter().map(dice).collect(),
+                    elements: elements(&e.el_info),
+                });
+            }
+        }
+        if !object_h::a_info.is_null() {
+            for i in 0..usize::from(z.a_max) {
+                let a = &*object_h::a_info.add(i);
+                k.artifacts.push(Artifact {
+                    index: a.aidx,
+                    name: text(a.name),
+                    tval: a.tval,
+                    sval: a.sval,
+                    level: a.level,
+                    cost: a.cost,
+                    weight: a.weight,
+                    ac: a.ac,
+                    dd: a.dd,
+                    ds: a.ds,
+                    to_h: a.to_h,
+                    to_d: a.to_d,
+                    to_a: a.to_a,
+                    flags: a.flags.to_vec(),
+                    modifiers: a.modifiers.to_vec(),
+                    elements: elements(&a.el_info),
+                });
+            }
+        }
+        let mut c = player_h::classes;
+        while !c.is_null() {
+            let cl = &*c;
+            let m = &cl.magic;
+            let mut books = Vec::new();
+            for bi in 0..m.num_books.max(0) as usize {
+                let b = &*m.books.add(bi);
+                let spells = (0..b.num_spells.max(0) as usize)
+                    .map(|si| {
+                        let s = &*b.spells.add(si);
+                        ClassSpell {
+                            index: s.sidx,
+                            name: text(s.name),
+                            level: s.slevel,
+                            mana: s.smana,
+                            fail: s.sfail,
+                            exp: s.sexp,
+                        }
+                    })
+                    .collect();
+                books.push(Book {
+                    tval: b.tval,
+                    sval: b.sval,
+                    dungeon: b.dungeon,
+                    spells,
+                });
+            }
+            k.classes.push(Class {
+                index: cl.cidx,
+                name: text(cl.name),
+                stat_adj: cl.c_adj,
+                skills: cl.c_skills,
+                hit_die: cl.c_mhp,
+                max_attacks: cl.max_attacks,
+                min_weight: cl.min_weight,
+                att_multiply: cl.att_multiply,
+                spell_first: m.spell_first,
+                spell_weight: m.spell_weight,
+                books,
+            });
+            c = cl.next;
+        }
+        k.classes.sort_by_key(|c| c.index);
+        let mut r = races;
+        while !r.is_null() {
+            let ra = &*r;
+            k.player_races.push(PlayerRace {
+                index: ra.ridx,
+                name: text(ra.name),
+                stat_adj: ra.r_adj,
+                skills: ra.r_skills,
+                hit_die: ra.r_mhp,
+                exp_factor: ra.r_exp,
+                infravision: ra.infra,
+                elements: elements(&ra.el_info),
+            });
+            r = ra.next;
+        }
+        k.player_races.sort_by_key(|r| r.index);
+        if !store_h::stores.is_null() {
+            for n in 0..usize::from(z.store_max) {
+                let s = &*store_h::stores.add(n);
+                let kinds = |t: *mut *mut object_h::object_kind, len: usize| -> Vec<u32> {
+                    if t.is_null() {
+                        return Vec::new();
+                    }
+                    (0..len)
+                        .map(|i| *t.add(i))
+                        .filter(|p| !p.is_null())
+                        .map(|p| (*p).kidx)
+                        .collect()
+                };
+                k.stores.push(StoreKind {
+                    number: n as i32,
+                    always: kinds(s.always_table, s.always_num),
+                    normal: kinds(s.normal_table, s.normal_num),
+                });
+            }
+        }
+        Some(k)
+    }
 }

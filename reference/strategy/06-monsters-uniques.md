@@ -26,6 +26,7 @@ general are in [Chapter 1](01-mechanics.md).
    4. [How often monsters cast, and how often they fail](#14-how-often-monsters-cast-and-how-often-they-fail)
    5. [Flags that matter tactically](#15-flags-that-matter-tactically)
    6. [What monsters drop](#16-what-monsters-drop)
+   7. [Melee damage and your armour](#17-melee-damage-and-your-armour)
 2. [Monster families by glyph](#2-monster-families-by-glyph)
 3. [The killers list, by depth](#3-the-killers-list-by-depth)
 4. [Monster spells](#4-monster-spells)
@@ -129,8 +130,8 @@ Consequences:
 * **Uniques have exactly their listed HP** (`mon-make.c`: *Uniques get a fixed
   amount of HP*).
 * **Ordinary monsters roll HP from a normal distribution** around the listed
-  average with a standard deviation of about 1/8 of it (`mon_hp()`), clipped to
-  ±4 SD. A pack of 200-HP monsters will contain some with ~150 and some with
+  average with a standard deviation of about 1/8 of it (`mon_hp()`; the game treats
+  ±4 SD as the minimum and maximum). A pack of 200-HP monsters will contain some with ~150 and some with
   ~250.
 * **Regeneration**: every 100 game turns (10 normal-speed player turns),
   each wounded monster regains `maxhp/100` HP, doubled for `REGENERATE`
@@ -225,8 +226,8 @@ change what you do:
 
 | Flag | Meaning |
 |---|---|
-| `SMART` | Uses everything it knows about your resistances; never wastes protected-against status spells; uses desperation spells at low HP; always wakes from noise in `cave-map.c`. |
-| `STUPID` | Never filters spells; never fails spells; rarely woken by disturbance. Jellies, mushrooms. |
+| `SMART` | Uses everything it knows about your resistances; never wastes protected-against status spells; uses desperation spells at low HP; always wakes when you light the room it is in (`cave_light()` in `cave-map.c`: smart 100%, normal 25%, stupid 10%) — don't light rooms with sleeping smart monsters. |
+| `STUPID` | Never filters spells; never fails spells; only 10% woken by room lighting. Jellies, mushrooms. |
 | `SPIRIT` | Detected by "detect spirits"-type effects and teleported by `AWAY_SPIRIT` projections (`project-mon.c`). |
 | `POWERFUL` | Bigger balls (+1 radius) and breath that stays at full strength further out (breath "diameter" ×1.5); the side effects of its breaths use power ≥ 80 (e.g. nether breath that also drains mana and energy, §4.3). |
 | `GROUP_AI` | Pack tactics: will not follow you into a corridor while you are above half HP; tries to surround you in rooms (see §7.6). Hounds `Z`, wolves, cave spiders, army ants, hellhounds, craban. |
@@ -282,15 +283,44 @@ From `mon_create_drop_count()` and `monster_death()` in `mon-make.c`:
 | `ONLY_GOLD` / `ONLY_ITEM` | no objects / no gold; otherwise 50/50 per drop |
 | `DROP_GOOD` | every object is at least "good" |
 | `DROP_GREAT` | every object is "great" (ego or artifact level rolls) |
-| `drop:` / `drop-base:` lines | specific items with a percentage (only 2 non-uniques in 4.2.6 use `drop:`, both Phase Door; Farmer Maggot drops mushrooms via `drop-base:`) |
+| `drop:` / `drop-base:` lines | specific items or item bases with a percentage: cutpurses (35%, 1–2) and rogues (70%, 2–5) carry Phase Door; most human and humanoid spellcasters have a 3–15% chance per line of a **spellbook of their realm** (`drop-base:magic book`, `prayer book`, `nature book`, `shadow book`) — a useful source of town books; Farmer Maggot drops mushrooms |
 
 Uniques get a bonus: the object level is
 `max((monlevel + depth)/2, monlevel)` where `monlevel = min(level+15, 2×level)`
 for uniques, plus an extra "good" roll (`extra_roll`). Killing a unique **in or
 above** its native depth still rolls from its own (boosted) level, which is why
 early uniques are worth hunting. **Morgoth** additionally drops every artifact
-whose kind has `QUEST_ART` — *Grond* and the *Massive Iron Crown of Morgoth* (`'Grond'` and `of Morgoth`
-in `artifact.txt`, section "Quest artifacts").
+whose object kind has `QUEST_ART` (`object.txt`) — *Grond* and the *Massive
+Iron Crown of Morgoth* (`'Grond'` and `of Morgoth` in `artifact.txt`, section
+"Quest artifacts").
+
+### 1.7 Melee damage and your armour
+
+How a monster's blow becomes damage to you (`mon-blows.c`, `mon-attack.c`):
+
+* **Plain hits** (`HURT`) and **`SHATTER`** are reduced by armour:
+  `damage − damage × min(AC, 240) / 400` (`adjust_dam_armor()`), i.e. at most
+  −60% at AC 240. `SHATTER` blows that still do more than 23 damage cause an
+  earthquake around the monster, and above 100 can knock you back.
+* **Elemental blows** (`ACID`, `ELEC`, `FIRE`, `COLD`) do the larger of the
+  resisted elemental damage and the armour-reduced physical damage (armour
+  counted +50) — immunity does not make them harmless — and the elemental
+  part also damages your inventory.
+* **Status blows** deal their damage and then apply the effect unless you
+  have the protection: `PARALYZE` (Free Action; also a saving throw) for
+  **3 + 1d(monster level)** turns, `TERRIFY` (pFear; also a save), `CONFUSE`
+  (pConf; **no save**) for 3 + 1d(level), `BLIND` (pBlind; no save) for
+  10 + 1d(level) (`mon-blows.c`). The level scaling is why a paralysing
+  touch from a DL55+ monster is a death sentence without Free Action.
+* **Drain blows**: `EXP_10/20/40/80` (Hold Life), `LOSE_STR` … `LOSE_ALL`
+  (sustains), `DISENCHANT` (rDisen), `DRAIN_CHARGES` (heals the monster by
+  its level × the charges drained), `EAT_GOLD`/`EAT_ITEM` (DEX + level save,
+  then the thief teleports), `EAT_FOOD`, `EAT_LIGHT`.
+* **Critical hits** from monsters (95%+ of maximum damage) cause **cuts and
+  stuns** (`monster_critical()`), which is why big single blows are worse
+  than the same total in small blows.
+
+The per-unique "Melee avg (max)" figures in §6 are before armour.
 
 ---
 
@@ -316,7 +346,7 @@ members' depth range and the representative or dangerous members with
 | `d` | dragon | 29 | 9–43 | DRAGON, EVIL, FORCE_SLEEP | breaths (HP/3 base elements) | base resists; kill asleep |
 | `D` | ancient dragon | 24 | 50–82 | DRAGON, EVIL, SMART, POWERFUL, DROP_4, NO_CONF/SLEEP/HOLD | huge breaths, summons at the top end | resists, HP, speed |
 | `e` | eye | 10 | 1–67 | — (eyes vary) | paralysis gaze, mana drain, forget | FA; kill at range |
-| `E` | elemental | 16 | 12–65 | EMPTY_MIND, IM_POIS, NONLIVING | invisible air things, PASS_WALL earth things | SI; Stone to Mud |
+| `E` | elemental | 14 | 12–38 | EMPTY_MIND, IM_POIS, NONLIVING | invisible air things, PASS_WALL earth things | SI; Stone to Mud |
 | `f` | feline | 6 | 0–26 | ANIMAL | fast melee; displacer beast invisible | — |
 | `F` | dragon fly | 4 | 5–6 | ANIMAL, WEIRD_MIND, RAND_50 | weak breaths | — |
 | `g` | golem | 13 | 14–75 | EMPTY_MIND, IM_ELEC, NONLIVING | slow but huge HP; drolem breath; silent watcher | avoid unless worth it |
@@ -851,7 +881,7 @@ their level*. Each entry says why it kills and what to do. All stats from
 | cave spider swarm | 2 | +10 | 7 ×(3–17) | `friends:100:2d8`, GROUP_AI, double speed | corridor at once; or stairs/Phase Door and leave the level |
 | floating eye | 1 | +0 | 11 | paralysing gaze if you melee it | don't melee without Free Action; throw/shoot |
 | kobold archer, kobold shaman | 4, 3 | +0 | 24, 11 | arrows 1/2, magic missile — first ranged damage | close the distance or break line of sight |
-| wild dog / jackal-like packs | 1 | +0 | 3 | numbers in open rooms | corridor |
+| wild dog packs (friends 2d7) | 1 | +0 | 3 | numbers in open rooms | corridor |
 | ★ Bullroarer the Hobbit | 5 | +10 | 60 | double-speed melee 1d8×2 at DL5 | be clvl 10+, or Phase/Flee |
 | shrieker mushroom | 2 | +0 | 1 | `SHRIEK` wakes the level and hastes what can see you | kill it first |
 | ★ Wormtongue | 8 | +0 | 250 | frost bolt (max 50), stinking cloud, SLOW, traps, heals | ranged attacks, rPois helps |
@@ -1131,8 +1161,8 @@ consequences:
   do not get a delay (`delay=false` for monster summons).
 * **Summons need an empty floor grid within 2 squares of the summoner in its
   line of sight** (`summon_possible()` in `mon-attack.c`), and none can be
-  placed on a **glyph of warding**. Smart monsters will not even try in a
-  corridor where they are boxed in. This is the basis of the anti-summon
+  placed on a **glyph of warding**. Any monster that is not `STUPID` checks
+  this first and does not even try when boxed in. This is the basis of the anti-summon
   corridor (§7.2).
 
 ### 4.3 Breaths
@@ -1245,7 +1275,8 @@ December, per `get_mon_num()` in `mon-make.c`) and four *shape-only* forms
   (stun, confusion, fear, slow, hold, sleep) with chance
   `min(90, level + max(0, 25 − duration/2))`, and **uniques roll this twice**
   (`saving_throw()` in `mon-timed.c`). A level-40 unique resists a 10-turn
-  confusion about 64% per roll, ~87% overall; anything level 65+ resists ~99%.
+  effect 60% per roll, 84% overall; from level 70 the per-roll chance is capped
+  at 90%, i.e. 99% overall.
   On top of that most uniques of note have `NO_CONF`, `NO_SLEEP` and often
   `NO_HOLD`. Plan to kill uniques with damage, not with tricks.
 * **Better drops.** See §1.6: object level is boosted to
@@ -1284,7 +1315,20 @@ Then the notable uniques get a paragraph of tactics.
 
 ### 6.3 DL0–10: the town and the first levels
 
-@@BAND 0-10@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Farmer Maggot | 0 | +0 | 350 | 0 (0) | — | — | — |
+| Father Christmas | 0 | -10 | 1000 | 0 (0) | [1/4] BLINK HEAL | — | — |
+| Fang, Farmer Maggot's Dog | 2 | +10 | 25 | 2 (4) | — | — · rand_25 | — |
+| Grip, Farmer Maggot's Dog | 2 | +10 | 25 | 2 (4) | — | — · rand_25 | — |
+| Sméagol | 3 | +20 | 400 | 2 (4) eat_gold | — | — · invisible rand_25 rand_50 hurt_light | — |
+| Bullroarer the Hobbit | 5 | +10 | 60 | 9 (16) | — | — | Scruffy looking hobbit |
+| Mughash the Kobold Lord | 7 | +0 | 150 | 16 (30) | — | POIS | Small kobold, Kobold, Kobold shaman, Kobold archer, Large kobold |
+| Lagduf, the Snaga | 8 | +0 | 190 | 21 (38) | — | — | Wolf, snaga |
+| Wormtongue, Agent of Saruman | 8 | +0 | 250 | 6 (10) eat_gold | [1/5] HEAL SLOW TRAPS BA_POIS BO_COLD | — | — |
+| Brodda, the Easterling | 9 | +0 | 210 | 26 (48) | — | — | — |
+| Grishnákh, the Hill Orc | 10 | +0 | 230 | 24 (44) | — | — | snaga, Wolf, cave orc |
+| Orfax, Son of Boldor | 10 | +10 | 120 | 10 (17) | [1/4] BLINK CONF HEAL SLOW TELE_TO S_MONSTER | ACID | terrified yeek, Blue yeek, Master yeek |
 
 **Farmer Maggot** (town/DL0, 350 HP, no attacks but `MOAN`) is harmless and
 drops 1–2 mushrooms (`drop-base:mushroom:100:1:2`) plus a good object
@@ -1337,7 +1381,17 @@ fast with your best attack before he heals.
 
 ### 6.4 DL11–20: orc captains, dwarves and the Willow
 
-@@BAND 11-20@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Golfimbul, the Hill Orc Chief | 12 | +0 | 240 | 24 (44) | — | COLD ELEC FIRE POIS | snaga, Warg, cave orc, Bullroarer the Hobbit, Grishnákh, the Hill Orc |
+| Boldor, King of the Yeeks | 13 | +10 | 180 | 14 (26) | [1/3] BLIND BLINK HEAL SLOW TPORT S_KIN S_MONSTER | ACID | terrified yeek, Blue yeek, Master yeek, Orfax, Son of Boldor |
+| Ufthak of Cirith Ungol | 14 | +0 | 320 | 30 (48) | — | COLD | orc archer, snaga, cave orc |
+| Ulfast, Son of Ulfang | 16 | +0 | 340 | 36 (60) | — | — | warrior |
+| Nár, the Dwarf | 17 | +0 | 450 | 36 (60) | [1/6] BLIND WOUND CONF HEAL MIND_BLAST | COLD FIRE POIS | — |
+| Gorbag, the Orc Captain | 19 | +0 | 400 | 45 (78) | — | — | snaga, cave orc, orc tracker, orc archer, uruk |
+| Old Man Willow | 19 | +0 | 1000 | 28 (52) paralyze | [1/10] TELE_TO HOLD | POIS ACID WATER · never_move regenerate hurt_fire | — |
+| Shagrat, the Orc Captain | 19 | +0 | 400 | 45 (78) | — | — | snaga, cave orc, orc tracker, orc archer, uruk |
+| Bolg, Son of Azog | 20 | +10 | 500 | 42 (72) | — | — | cave orc, Warg, orc tracker, orc archer, Uruk |
 
 **Golfimbul, the Hill Orc Chief** (DL12, 240 HP, 4 hits up to 44, immune to
 cold, electricity, fire and poison) arrives with **Bullroarer and
@@ -1386,7 +1440,24 @@ Serious Wounds. Do not fight him and his archers in a room.
 
 ### 6.5 DL21–30: the uruks, the Mîm family and the stone trolls
 
-@@BAND 21-30@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Lugdush, the Uruk | 21 | +0 | 640 | 42 (72) | — | — | Half-orc, Warg, Orc captain, Uruk |
+| Uglúk, the Uruk | 22 | +0 | 720 | 45 (78) | — | COLD FIRE POIS | Half-orc, Warg, Uruk, Orc captain, Lugdush, the Uruk |
+| Azog, Enemy of the Dwarves | 23 | +10 | 900 | 45 (75) | — | — | cave orc, Warg, orc tracker, orc archer, Uruk, Orc captain, Bolg, son of Azog |
+| Angamaitë of Umbar | 24 | +0 | 800 | 56 (96) | [1/4] CONF SLOW | ELEC FIRE | Sangahyando of Umbar |
+| Ibun, Son of Mîm | 24 | +0 | 820 | 32 (54) disenchant | [1/8] HEAL SLOW BO_FIRE | COLD FIRE | — |
+| Khîm, Son of Mîm | 24 | +0 | 820 | 32 (54) disenchant | [1/8] HEAL SLOW BO_FIRE | COLD FIRE | — |
+| Sangahyando of Umbar | 24 | +0 | 800 | 56 (96) | [1/4] CONF SLOW | ELEC FIRE | Angamaitë of Umbar |
+| Ulwarth, Son of Ulfang | 26 | +0 | 850 | 42 (72) | — | — | Easterling champion, Ulfast, Son of Ulfang |
+| Mîm, Betrayer of Turin | 27 | +10 | 1100 | 40 (72) disenchant | [1/6] HEAL SCARE BA_ACID BO_ACID | ACID COLD ELEC FIRE POIS | Ibun, Son of Mîm, Khîm, Son of Mîm |
+| Beorn, the Mountain Bear | 28 | +10 | form | 50 (90) | — | — | — |
+| Beorn, the Shape-Changer | 28 | +0 | 1400 | 32 (56) | [1/2] SHAPECHANGE | — | Cave bear, Grizzly bear, Werebear |
+| Draebor, the Imp | 28 | +10 | 520 | 22 (36) poison | [1/5] BLIND BLINK CONF SCARE TELE_AWAY TELE_LEVEL TELE_TO TPORT S_KIN | FIRE · invisible rand_25 | minor demon, minor demon, minor demon, Imp |
+| Uldor the Accursed | 28 | +0 | 1000 | 56 (96) | [1/10] S_KIN | — | — |
+| Bert the Stone Troll | 30 | +10 | 1100 | 58 (102) | [inn 1/7] BOULDER | COLD · hurt_rock hurt_light | Tom the Stone Troll, Bill the Stone Troll |
+| Bill the Stone Troll | 30 | +10 | 1100 | 58 (102) | [inn 1/7] BOULDER | COLD · hurt_rock hurt_light | Bert the Stone Troll, Tom the Stone Troll |
+| Tom the Stone Troll | 30 | +10 | 1100 | 58 (102) | [inn 1/7] BOULDER | COLD · hurt_rock hurt_light | Bert the Stone Troll, Bill the Stone Troll |
 
 **Lugdush** (DL21, 640 HP) and **Uglúk** (DL22, 720 HP, immune to
 cold/fire/poison, `NO_CONF | NO_SLEEP | NO_HOLD`) are pure melee uruks
@@ -1447,7 +1518,12 @@ free extra damage; slay troll. 2000 XP per level each.
 
 ### 6.6 DL31–40: Easterling chiefs, ogres and Castamir
 
-@@BAND 31-40@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Ulfang the Black | 34 | +10 | 1000 | 60 (100) | [1/10] S_KIN | — | Mûmak, Easterling champion, Ulfast, Son of Ulfang, Ulwarth, Son of Ulfang |
+| Lokkak, the Ogre Chieftain | 35 | +10 | 1500 | 63 (108) | — | — | Ogre, Black ogre, Cave ogre, Ogre mage, Ogre shaman, Ogre chieftain |
+| Lorgan, Chief of the Easterlings | 36 | +10 | 1800 | 69 (120) | [1/4] TELE_TO S_MONSTERS | ACID COLD ELEC FIRE POIS | Mûmak, Easterling champion |
+| Castamir the Usurper | 38 | +10 | 880 | 60 (100) | [1/2] HEAL TRAPS BO_COLD BO_ELEC BO_FIRE BO_ICE | — | — |
 
 **Ulfang the Black** (DL34, +10, 1000 HP, 4 × 5d5 = up to 100 per round,
 `S_KIN` 1/10) brings Ulfast, Ulwarth, 3d3 Easterling champions and sometimes
@@ -1471,7 +1547,18 @@ him quickly before he heals.
 
 ### 6.7 DL41–50: Gorlim, Kavlax, the elementals, Eöl and Durin's Bane
 
-@@BAND 41-50@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Gorlim, Betrayer of Barahir | 41 | +10 | 1600 | 110 (192) disenchant | [1/2] WOUND BO_MANA BO_WATE | ACID COLD ELEC POIS | — |
+| Kavlax the Many-Headed | 41 | +10 | 1300 | 52 (96) | [inn 1/4] BR_ACID BR_COLD BR_CHAO BR_ELEC BR_FIRE BR_GRAV BR_NEXU BR_SHAR BR_SOUN | ACID COLD ELEC FIRE NEXUS | — |
+| Rogrog the Black Troll | 42 | +10 | 2000 | 88 (156) acid | [inn 1/7] BOULDER | COLD · regenerate | troll scavenger, cave troll, hill troll, mountain troll, olog |
+| The Queen Ant | 42 | +10 | 1500 | 44 (80) | [1/2] S_KIN | — | Soldier ant, Giant silver ant, Giant grey ant, Giant blue ant, Giant fire ant, Giant army ant |
+| Ariel, Queen of Air | 43 | +20 | 2700 | 48 (80) confuse | [1/5] BA_COLD BA_ELEC BO_ELEC | ACID COLD ELEC POIS · rand_25 | — |
+| Quaker, Master of Earth | 43 | +0 | 2800 | 118 (208) shatter | [1/6] BA_ACID BA_SHAR BO_ACID | COLD ELEC FIRE POIS · pass_wall hurt_rock | — |
+| Vargo, Tyrant of Fire | 43 | +10 | 2400 | 56 (96) fire | [1/4] BA_FIRE BO_PLAS | ACID ELEC FIRE POIS · rand_25 hurt_cold | — |
+| Waldern, King of Water | 43 | +10 | 2500 | 60 (100) | [1/4] BA_COLD BA_WATE BO_ICE BO_WATE | ACID COLD FIRE WATER POIS · rand_25 | — |
+| Eöl, the Dark Elf | 49 | +20 | 2400 | 40 (72) | [1/2] BLIND BLINK WOUND CONF DARKNESS HEAL TELE_TO BA_ACID BA_COLD BA_ELEC BA_FIRE BA_NETH BO_MANA S_DEMON S_DRAGON S_MONSTERS S_UNDEAD | COLD FIRE POIS · hurt_light | — |
+| The Balrog of Moria | 50 | +20 | 3000 | 110 (204) fire,drain_charges | [1/5 inn 1/15] CONF SCARE BR_FIRE S_DEMON S_UNDEAD | FIRE | cave orc, cave troll |
 
 **Gorlim, Betrayer of Barahir** (DL41, +10, 1600 HP, 2 × 8d6 + 2 × 6d8
 disenchant hits = up to 192 per round, spells **1/2**: `WOUND BO_MANA
@@ -1528,7 +1615,18 @@ good items. He reappears as Gothmog's servant at DL95.
 
 ### 6.8 DL51–60: thieves, drakes, Shelob and Saruman
 
-@@BAND 51-60@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Harowen the Black Hand | 51 | +30 | 2500 | 84 (140) eat_gold,eat_item,blind,poison | [1/4] TELE_TO TELE_SELF_TO BLINK TRAPS DARKNESS BLIND HOLD | POIS | — |
+| Itangast the Fire Drake | 52 | +10 | 2200 | 112 (208) fire | [1/8 inn 1/8] WOUND CONF BR_FIRE | FIRE | — |
+| Scatha the Worm | 53 | +10 | 2500 | 112 (208) cold | [1/8 inn 1/8] WOUND CONF BR_COLD | COLD | — |
+| The Phoenix | 54 | +10 | 3600 | 201 (360) fire | [1/5 inn 1/6] BA_FIRE BO_FIRE BO_PLAS BR_FIRE BR_LIGHT BR_PLAS S_KIN | ACID ELEC FIRE POIS PLASMA | — |
+| Ar-Pharazôn the Golden | 55 | +20 | 4000 | 144 (256) | [1/6] HEAL TELE_AWAY S_KIN S_MONSTERS | ELEC FIRE POIS | — |
+| Shelob, Spider of Darkness | 55 | +10 | 3500 | 75 (130) poison,paralyze,lose_str | [1/4 inn 1/20] BLIND WOUND CONF HEAL SCARE SLOW WEAVE BR_DARK BR_POIS S_KIN | ACID POIS · hurt_light | uruk, mirkwood spider |
+| Baphomet the Minotaur Lord | 58 | +20 | 4700 | 278 (512) | [1/8 inn 1/10] ARROW SLOW BA_ELEC BO_MANA BO_PLAS BR_WALL | FIRE | — |
+| Fundin Bluecloak | 59 | +20 | 5000 | 144 (256) | [1/4] BLIND BRAIN_SMASH WOUND CONF HEAL SCARE S_ANIMAL S_MONSTERS | ACID COLD ELEC FIRE POIS | — |
+| Gilim, the Giant of Eruman | 60 | +10 | 4000 | 199 (360) cold,confuse | [1/3 inn 1/6] BOULDER BO_ICE STORM S_MONSTERS | COLD | — |
+| Saruman of Many Colours | 60 | +10 | 5000 | 84 (146) disenchant | [1/2] BLIND WOUND FORGET HASTE HEAL MIND_BLAST SCARE TELE_AWAY TPORT TRAPS BA_ACID BA_COLD BA_FIRE BA_WATE BO_ICE S_ANIMAL S_DEMON S_HI_DRAGON S_MONSTERS S_UNDEAD | ELEC COLD FIRE POIS | Wormtongue, Agent of Saruman |
 
 **Harowen the Black Hand** (DL51, **+30**, 2500 HP, touches steal gold and
 items, hits blind 10d5 and poison 8d5, spells 1/4: `TELE_TO TELE_SELF_TO
@@ -1560,8 +1658,8 @@ Low AC (54) — easy to hit. Speed and big damage; `DROP_GREAT` is the prize.
 
 **Baphomet the Minotaur Lord** (DL58, **+20**, 4700 HP, butts 2 × 12d13 + hits
 2 × 10d10 = **up to 512 per round**, arrows, slow, lightning ball, mana bolt,
-plasma bolt, **force breath 200**). The hardest-hitting melee monster before
-the DL70s. Do not melee him without +20 speed and 700+ HP; ranged combat in a
+plasma bolt, **force breath 200**). The hardest-hitting melee monster until
+Nan (DL69). Do not melee him without +20 speed and 700+ HP; ranged combat in a
 long corridor is the standard answer.
 
 **Fundin Bluecloak** (DL59, +20, 5000 HP, 4 × 8d8, spells 1/4: `BLIND
@@ -1585,7 +1683,14 @@ few turns once he starts (anti-summon corridor helps). He is one of the best
 
 ### 6.9 DL61–70: Smaug, the Mouth of Sauron and the vampires
 
-@@BAND 61-70@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Smaug the Golden | 62 | +10 | 4200 | 183 (340) fire | [1/8 inn 1/5] WOUND CONF BR_FIRE | FIRE | — |
+| The Mouth of Sauron | 65 | +20 | 7000 | 84 (146) disenchant,drain_charges | [1/2] WOUND HOLD TELE_TO TRAPS BA_DARK BA_FIRE BA_MANA BA_NETH BA_WATE BO_PLAS S_HI_DEMON S_HI_UNDEAD | COLD ELEC FIRE · invisible | — |
+| Tevildo, Prince of Cats | 66 | +20 | 4800 | 136 (233) confuse,lose_dex,blind,paralyze | [1/3] TELE_TO S_KIN | COLD FIRE · invisible | Tiger, Sabre-tooth tiger, Displacer beast |
+| Thuringwethil, the Vampire Messenger | 67 | +20 | 5000 | 84 (144) exp_80,confuse | [1/3] BLIND BRAIN_SMASH WOUND DRAIN_MANA BA_NETH S_HI_UNDEAD S_KIN HOLD SCARE | COLD POIS · regenerate hurt_light hurt_fire | — |
+| Tselakus, the Dreadlord | 68 | +20 | 6500 | 138 (248) lose_str | [1/3] BLIND CONF HOLD BA_DARK BA_NETH S_HI_UNDEAD S_KIN | COLD POIS · invisible pass_wall | — |
+| Nan, the Giant | 69 | +10 | 3344 | 312 (576) confuse | [1/4 inn 1/6] BOULDER BO_PLAS BA_FIRE S_MONSTERS | FIRE | — |
 
 **Smaug the Golden** (DL62, +10, 4200 HP, fire breath **1400**, claws 6d12 ×2
 and fire bites 7d14 ×2 = up to 340 per round, `WOUND`/`CONF` 1/8). Fire
@@ -1621,7 +1726,20 @@ Never melee range without pConf; slay giant and ranged attacks.
 
 ### 6.10 DL71–80: Ainur, Glaurung, Ungoliant and the first Nazgûl
 
-@@BAND 71-80@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Ossë, Herald of Ulmo | 72 | +20 | 6000 | 170 (300) disenchant | [1/2 inn 1/4] BLIND TELE_TO WHIP BA_WATE STORM BO_MANA BO_WATE BR_DISE S_AINU | ACID ELEC WATER DISEN COLD FIRE POIS | — |
+| Omarax, the Eye Tyrant | 73 | +20 | 6500 | 99 (172) disenchant,drain_charges,lose_int,exp_80 | [1/2] BLIND BRAIN_SMASH CONF DRAIN_MANA FORGET SCARE BA_ACID BA_COLD BA_DARK BA_FIRE BA_NETH BO_MANA S_KIN | ACID COLD FIRE POIS | — |
+| Glaurung, Father of the Dragons | 75 | +20 | 7500 | 198 (368) poison,fire | [1/3 inn 1/5] BRAIN_SMASH FORGET SCARE BR_FIRE BR_POIS S_HI_DRAGON | FIRE POIS | — |
+| Ungoliant, the Unlight | 75 | +20 | 13000 | 120 (208) poison,paralyze,lose_str | [1/4 inn 1/11] BLIND CONF HEAL SCARE WEAVE BA_DARK BR_DARK BR_POIS S_KIN | ACID POIS · hurt_light | — |
+| Makar, the Warrior | 76 | +10 | 6000 | 364 (676) shatter,confuse | — | ACID ELEC COLD FIRE POIS · kill_wall | — |
+| Feagwath, the Undead Sorcerer | 77 | +20 | 5000 | 156 (288) exp_80,drain_charges,lose_dex | [1/2] BLIND BLINK WOUND HOLD SCARE BRAIN_SMASH TELE_TO TRAPS BA_MANA BA_NETH BO_MANA S_KIN S_MONSTERS S_UNDEAD | COLD POIS | Dread, Dreadmaster, Dreadlord, Lich, Master lich, Archlich |
+| Uvatha the Horseman | 77 | +10 | 4200 | 88 (156) black_breath,exp_80 | [1/3] BLIND WOUND FORGET HOLD SCARE BO_COLD BO_NETH S_MONSTER S_WRAITH | COLD POIS · hurt_light | — |
+| Adunaphel the Quiet | 78 | +10 | 4300 | 95 (168) black_breath,exp_80 | [1/3] BLIND WOUND FORGET HOLD SCARE BO_ACID BO_COLD BO_FIRE BO_NETH S_MONSTER S_WRAITH | COLD POIS · hurt_light | — |
+| Akhorahil the Blind | 79 | +10 | 4400 | 112 (198) black_breath,exp_80,terrify | [1/3] BLIND WOUND DARKNESS HOLD SCARE BO_COLD BO_FIRE BO_NETH S_MONSTERS S_WRAITH | COLD POIS · hurt_light | — |
+| Qlzqqlzuup, the Emperor Quylthulg | 79 | +20 | 5000 | 0 (0) | [1/1] S_AINU S_ANIMAL S_HI_DEMON S_HI_DRAGON S_HI_UNDEAD S_HOUND S_HYDRA S_KIN S_MONSTERS S_SPIDER S_UNIQUE | — · invisible never_move | — |
+| Ren the Unclean | 80 | +10 | 4500 | 118 (210) black_breath,exp_80,terrify | [1/3] BLIND WOUND HOLD SCARE BA_FIRE BO_FIRE BO_NETH S_MONSTER S_WRAITH | FIRE COLD POIS · invisible hurt_light | — |
+| Wiruin, the Maelstrom | 80 | +30 | 3500 | 32 (54) cold,confuse | [1/5 inn 1/3] BR_COLD BR_SOUN S_KIN | COLD FIRE ACID POIS · never_move rand_50 | — |
 
 **Ossë, Herald of Ulmo** (DL72, +20, 6000 HP, disenchant hits, spells 1/2:
 `BLIND TELE_TO WHIP`, water ball, **storm** (avg 286, max 430), mana and water
@@ -1645,7 +1763,8 @@ rDark, pBlind, pConf. Long fight — bring lots of healing.
 
 **Makar, the Warrior** (DL76, +10, 6000 HP, **2 × SHATTER 13d13 + 2 × confusing
 13d13 = up to 676 per round**, `KILL_WALL`, `KILL_BODY`, no spells). The
-hardest single melee round in the game apart from Morgoth's and Baphomet's.
+hardest single melee round in the game (676; next are Nan, Pazuzu and Meássë
+at 576, Morgoth at 520 and Baphomet at 512).
 SHATTER blows also cause earthquakes. Never let him reach you: ranged
 attacks only, or avoid. He bores through walls (`KILL_WALL`).
 
@@ -1682,7 +1801,25 @@ sight; rCold+temp and rSound if you must pass.
 
 ### 6.11 DL81–95: the Nazgûl, Ancalagon, the Balrogs, Carcharoth and Vecna
 
-@@BAND 81-95@@
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Ji Indur Dawndeath | 81 | +10 | 4600 | 128 (228) black_breath,exp_40 | [1/3] BLIND WOUND HOLD SCARE BA_ACID BA_COLD BA_ELEC BA_FIRE BA_NETH S_UNDEAD S_WRAITH | FIRE COLD POIS · invisible hurt_light | — |
+| Maeglin, the Traitor of Gondolin | 81 | +20 | 6000 | 144 (256) | [1/6] S_ANIMAL S_HI_DEMON S_HI_DRAGON S_HI_UNDEAD S_MONSTERS S_UNIQUE | COLD FIRE POIS · kill_wall | — |
+| Dwar, Dog Lord of Waw | 82 | +10 | 4700 | 133 (237) black_breath,exp_40,terrify | [1/3] BLIND WOUND HOLD SCARE BA_FIRE BA_NETH S_HOUND S_UNDEAD S_WRAITH | COLD POIS · hurt_light | — |
+| Pazuzu, Lord of Air | 82 | +30 | 5500 | 312 (576) elec | [1/3] MIND_BLAST BA_ELEC BO_ELEC BO_MANA S_HI_DEMON | ACID COLD ELEC FIRE POIS · invisible | Giant roc |
+| Draugluin, Sire of All Werewolves | 83 | +20 | 7000 | 96 (168) poison | [1/3] SCARE S_HOUND S_MONSTERS | POIS · rand_25 | Werewolf, Wolf Chieftain |
+| Hoarmurath of Dir | 83 | +10 | 4800 | 138 (246) black_breath,exp_80,terrify | [1/3] BLIND WOUND HOLD MIND_BLAST SCARE BA_COLD BA_NETH BE_NETH S_UNDEAD S_WRAITH | COLD POIS · hurt_light | — |
+| Cantoras, the Skeletal Lord | 84 | +30 | 7500 | 60 (100) exp_80,poison | [1/2] BRAIN_SMASH WOUND SCARE TELE_TO BA_NETH BA_WATE BO_ICE BO_MANA S_HI_UNDEAD | FIRE COLD POIS | — |
+| Khamûl, the Black Easterling | 84 | +10 | 4900 | 155 (278) black_breath,exp_40 | [1/2] BLIND WOUND HOLD SCARE TELE_LEVEL BA_COLD BA_FIRE BA_NETH BO_MANA S_HI_UNDEAD S_WRAITH | ACID FIRE COLD POIS · hurt_light | — |
+| Ancalagon the Black | 85 | +20 | 10000 | 254 (472) | [1/10 inn 1/4] BR_ACID BR_COLD BR_ELEC BR_FIRE BR_POIS S_HI_DRAGON S_KIN | ACID COLD ELEC FIRE POIS | Kavlax the Many-Headed, Scatha the Worm, Itangast the Fire Drake, Smaug the Golden, Glaurung, Father of the Dragons |
+| The Witch-King of Angmar | 85 | +20 | 5000 | 166 (298) black_breath,exp_80 | [1/2] BLIND BRAIN_SMASH WOUND HOLD SCARE TELE_AWAY BA_NETH BO_MANA S_HI_DEMON S_HI_DRAGON S_HI_UNDEAD S_KIN S_MONSTERS S_WRAITH | COLD POIS · hurt_light | Winged Horror |
+| The Tarrasque | 86 | +20 | 8500 | 110 (200) drain_charges | [inn 1/2] BR_COLD BR_DISE BR_FIRE | COLD FIRE DISEN · hurt_cold | — |
+| Meássë, the Bloody | 87 | +10 | 7000 | 312 (576) confuse | [1/5 inn 1/6] HEAL HEAL_KIN BOULDER BA_SHAR BR_SOUN S_KIN S_MONSTERS | ACID ELEC COLD FIRE POIS | Maia of Oromë, Maia of Aulë, Lesser titan, Greater titan, Makar, the Warrior |
+| Lungorthin, the Balrog of White Fire | 88 | +20 | 7000 | 156 (288) fire,drain_charges | [1/6 inn 1/12] BLIND CONF SCARE BR_FIRE BR_PLAS S_HI_DEMON S_UNDEAD | FIRE PLASMA | Lesser Balrog, Greater Balrog, The Balrog of Moria |
+| Carcharoth, the Jaws of Thirst | 90 | +20 | 8000 | 234 (432) fire | [1/15 inn 1/3] BR_DARK BR_FIRE BR_NETH BR_POIS S_HOUND | FIRE POIS NETHER | — |
+| Huan, Wolfhound of the Valar | 90 | +20 | 8000 | 234 (432) cold | [inn 1/5] BR_COLD BR_LIGHT BR_SHAR BR_SOUN | ACID COLD ELEC | — |
+| Vecna, the Emperor Lich | 92 | +20 | 6000 | 182 (336) exp_80,lose_dex,drain_charges | [1/2] BLIND WOUND SCARE TPORT BRAIN_SMASH BA_FIRE BA_MANA BA_NETH BO_MANA S_HI_DEMON S_HI_UNDEAD S_KIN S_MONSTERS | ELEC FIRE COLD POIS | mummified chieftain, Skeleton etten, Night mare, Dreadlord, Archlich, Nightwing, Nightcrawler, Nightwalker, Bone golem, Black reaver |
+| Gothmog, the High Captain of Balrogs | 95 | +20 | 8000 | 169 (312) fire,drain_charges | [1/4 inn 1/8] BLIND CONF SCARE BR_FIRE BR_PLAS S_HI_DEMON S_HI_UNDEAD | ELEC FIRE PLASMA | Lesser Balrog, Osyluth, Gelugon, Pit fiend, Greater Balrog, The Balrog of Moria, Lungorthin, the Balrog of White Fire |
 
 **The Nazgûl, in detail.** Their damage is moderate for their depth —
 melee up to 156–298 per round, `WOUND` up to 250–280, nether balls (Dwar,
@@ -1718,8 +1855,11 @@ who digs to you.
 **Pazuzu, Lord of Air** (DL82, **+30**, 5500 HP, **invisible**, 4 lightning hits
 12d12 = up to 576 per round, `MIND_BLAST`, lightning ball/bolt, mana bolt
 (max 255), `S_HI_DEMON`, escort of giant rocs, immune to all base elements).
-Electricity immunity makes his melee harmless-ish (the elemental part is
-cancelled; check your immunity before closing). SI is a must.
+Elemental melee blows do the **larger** of (a) the damage after your
+resistance and (b) the physical damage after armour with a +50 AC bonus
+(`melee_effect_elemental()` in `mon-blows.c`). So electricity immunity does not
+make his hits harmless — it turns them into ordinary blows reduced by your
+armour (at AC 150+50 that is half: still up to 288 per round). SI is a must.
 
 **Draugluin, Sire of All Werewolves** (DL83, +20, 7000 HP, `S_HOUND`,
 `S_MONSTERS`, scare; werewolves and wolf chieftains). Summons hound packs
@@ -1776,3 +1916,456 @@ fiends; `DROP_GREAT`; immune to elec, fire, plasma). Fire immunity, pConf,
 pBlind, pFear; anti-summon corridor; enough damage to kill 8000 HP before the
 Balrogs surround you.
 
+### 6.12 DL99–100: the quest — Sauron and Morgoth
+
+| Unique | DL | Spd | HP | Melee avg (max) / effects | Spells | Immunities · quirks | Escort |
+|---|--:|--:|--:|---|---|---|---|
+| Sauron, the Sorcerer | 99 | +20 | 8000 | 234 (432) disenchant,drain_charges | [1/2] BRAIN_SMASH WOUND TELE_LEVEL TPORT BA_DARK BA_FIRE BA_NETH BO_ICE BO_MANA BO_PLAS SHAPECHANGE S_HI_DEMON S_HI_DRAGON S_HI_UNDEAD S_UNIQUE S_WRAITH | ELEC COLD FIRE POIS · regenerate | Khamûl, the Black Easterling, The Witch-King of Angmar |
+| Serpent-Sauron | 99 | +20 | form | 169 (312) poison,acid | [1/4 inn 1/4] BLINK TPORT TELE_LEVEL TELE_SELF_TO BLIND CONF SCARE WOUND BRAIN_SMASH FORGET BR_POIS BR_CHAO BR_ACID S_DRAGON S_HI_DEMON S_HI_UNDEAD | POIS ACID ELEC COLD · regenerate hurt_cold | — |
+| Vampire-Sauron | 99 | +20 | form | 195 (360) exp_80,terrify,drain_charges | [1/2] BLINK TPORT TELE_LEVEL BLIND CONF BRAIN_SMASH FORGET BO_ICE BO_PLAS BE_NETH BA_NETH STORM BA_DARK BA_POIS BA_ACID S_DRAGON S_HI_DEMON S_HI_UNDEAD | ELEC COLD POIS · regenerate hurt_light hurt_fire | — |
+| Wolf-Sauron | 99 | +30 | form | 142 (256) poison,confuse,paralyze | [1/3 inn 1/3] BLINK TPORT TELE_LEVEL TELE_SELF_TO BLIND CONF SCARE WOUND BR_FIRE BR_NETH BA_DARK S_HOUND S_DRAGON S_HI_DEMON S_HI_UNDEAD | POIS ELEC FIRE COLD NETHER · regenerate | — |
+| Morgoth, Lord of Darkness | 100 | +30 | 20000 | 285 (520) shatter,lose_all,drain_charges | [1/3] BRAIN_SMASH BA_MANA BA_NETH BO_MANA S_HI_DEMON S_HI_DRAGON S_HI_UNDEAD S_MONSTERS S_UNIQUE | ACID COLD ELEC FIRE POIS · regenerate | — |
+
+#### How the quest works (code)
+
+`lib/gamedata/quest.txt` defines exactly two quests:
+
+```
+name:Sauron
+level:99
+race:Sauron, the Sorcerer
+number:1
+
+name:Morgoth
+level:100
+race:Morgoth, Lord of Darkness
+number:1
+```
+
+Both races carry `QUESTOR` and `FORCE_DEPTH`. What follows from the code:
+
+* **A quest level is a dead end downwards until its quest is done.**
+  `is_quest()` (`player-quest.c`) is true for DL99 while Sauron lives and for
+  DL100 while Morgoth lives. On such a level:
+  * no down staircases are generated (`random_staircase_terrain()` in
+    `cave.c`), and the level always uses the `classic` cave profile
+    (`choose_profile()` in `generate.c`);
+  * no trapdoors are placed (`trap.c`);
+  * `Teleport Level` (yours or a monster's) can only take you up
+    (`effect_handler_TELEPORT_LEVEL`);
+  * `dungeon_get_next_level()` (`player-util.c`) stops at any quest level on
+    the way down, so stairs, Deep Descent (5 levels below your *maximum* depth at the default
+    `stair_skip`, `effect_handler_DEEP_DESCENT`) and recall can take you *to* DL99 but never past it;
+  * with `birth_force_descend`, Word of Recall does nothing on a quest level.
+* **Sauron is always there.** When DL99 is generated and Sauron is alive and
+  not already on a level, he is placed by force ("Ensure quest monsters" in
+  `cave_generate()`, `generate.c`) — with his `friends:` Khamûl and the Witch-king
+  if they are still alive. `FORCE_DEPTH` stops him appearing anywhere
+  shallower.
+* **Killing Sauron opens the way.** `quest_check()` (called from
+  `monster_death()` in `mon-util.c`) marks the quest done and builds a
+  **magical staircase down** where he died ("A magical staircase appears...").
+  Only then can DL100 be reached, and Morgoth is force-placed there the same
+  way. (*Destruction* or Teleport Other on Sauron only moves the problem: he
+  is placed again on the next DL99 you generate.)
+* **Killing Morgoth wins.** When no quest is left, `quest_check()` sets
+  `total_winner`, prints *"\*\*\* CONGRATULATIONS \*\*\* You have won the
+  game!"* and you may retire (`Q`). Morgoth also drops *Grond* and the *Massive
+  Iron Crown of Morgoth* (the `QUEST_ART` artifacts, `monster_death()` →
+  `mon-make.c`), plus 2–6 great items.
+* Levels deeper than 100 exist (`world:max-depth:128`, so DL127 is the
+  bottom) and are reachable only after Morgoth's quest level is done.
+
+#### Sauron, the Sorcerer (DL99)
+
+From `monster.txt` (base `ainu`, so he also gets `IM_COLD | IM_FIRE | IM_POIS
+| NO_CONF | NO_SLEEP | NO_HOLD | SMART | POWERFUL | SPIRIT`):
+
+| Stat | Value |
+|---|---|
+| Speed | 130 (**+20**, 3.0× normal) |
+| HP | **8000**, `REGENERATE` (160 HP per 100 game turns) |
+| AC | 192 |
+| Spell frequency / power | **1/2**, spell power **130** |
+| Melee | `HIT:DISENCHANT 10d12` ×2, `HIT:DRAIN_CHARGES 8d12` ×2 — up to 432 per round before armour |
+| Immune | elec, cold, fire, poison; `NO_FEAR`, `NO_CONF`, `NO_SLEEP`, `NO_HOLD` |
+| Escort | Khamûl and the Witch-King of Angmar (100% each, if alive) |
+| Drops | `DROP_4`, `DROP_GOOD`, `DROP_GREAT` (2–6 great objects) |
+| Shapes | Wolf-Sauron, Serpent-Sauron, Vampire-Sauron (`SHAPECHANGE`, 5+1d10 turns) |
+
+His spells at power 130 (formulas in §4.2):
+
+| Spell | Damage avg / max | Notes |
+|---|---|---|
+| `BA_NETH` | 575 / 620 | rNether → about ×0.5–0.67 (max ~413); Hold Life/rNether stop the drain; power ≥ 80 adds mana and **energy loss** |
+| `BA_DARK` | 575 / 620 | rDark → ×0.5–0.67; blindness unless rDark/pBlind |
+| `BA_FIRE` | 238 / 465 | he is a firestorm caster; rFire ×1/3, double ×1/9, immune 0 |
+| `BO_MANA` | 213 / 375 | **unresistable** |
+| `BO_PLAS` | 172 / 196 | unresistable, stuns (pStun) |
+| `BO_ICE` | 151 / 166 | cold resistance applies; cuts and stuns |
+| `WOUND` | 258 / 430 | **saving throw negates** |
+| `BRAIN_SMASH` | 96 / 180 | save negates; FA, pConf, pBlind block the riders |
+| `TELE_LEVEL` | — | rNexus or save; on DL99 it can only send you **up** — and you must come back to a fresh DL99 where he is waiting |
+| `TPORT` | — | he teleports away when hurt; `REGENERATE` then refills him |
+| `S_HI_DEMON`, `S_HI_DRAGON`, `S_HI_UNDEAD`, `S_WRAITH`, `S_UNIQUE` | — | 8 attempts each, budget 99×99 = 9801 per cast (§4.2) |
+
+**His shapes are worse than he is.** `SHAPECHANGE` swaps his race but keeps his
+current HP (`monster_change_shape()` in `mon-util.c`), and breath damage
+comes from current HP — so at full health:
+
+| Form | Speed | Melee | Spells (power) | Breath at 8000 HP |
+|---|---|---|---|---|
+| **Wolf-Sauron** | **+30** | `BITE:POISON 8d10` ×2, `CLAW:CONFUSE 6d8`, **`CLAW:PARALYZE 6d8`** | 1/3, innate 1/3 (105): BLINK, TPORT, TELE_LEVEL, TELE_SELF_TO, BLIND, CONF, SCARE, WOUND (max 350), dark ball (max 520), S_HOUND, S_DRAGON, S_HI_DEMON, S_HI_UNDEAD | **fire 1600**, nether 600 |
+| **Serpent-Sauron** | +20 | `BITE:POISON 7d12` ×2, `CRUSH 8d12`, `SPIT:ACID 4d12` | 1/4, innate 1/4 (108): BLINK, TPORT, TELE_LEVEL, TELE_SELF_TO, BLIND, CONF, SCARE, WOUND (max 360), BRAIN_SMASH, FORGET, S_DRAGON, S_HI_DEMON, S_HI_UNDEAD | **acid 1600**, poison 800, chaos 600 |
+| **Vampire-Sauron** | +20 | `BITE:EXP_80 6d12`, `CLAW:TERRIFY 8d12`, `HIT:DRAIN_CHARGES 8d12` ×2 | 1/2 (130): BLINK, TPORT, TELE_LEVEL, BLIND, CONF, BRAIN_SMASH, FORGET, BO_ICE, BO_PLAS, **BE_NETH (max 315)**, nether ball (max 620), **STORM** (max 715 over three balls), dark ball (max 620), poison ball (max 272), acid ball (max 405), S_DRAGON, S_HI_DEMON, S_HI_UNDEAD | — |
+
+Defences differ by form: the wolf is immune to fire, cold, elec, poison
+and nether (its own flags); the serpent form is immune to
+poison, acid, elec, cold and is `HURT_COLD` from the `snake` base (immunity
+wins); the vampire form is `HURT_LIGHT` and `HURT_FIRE` (vampire base) but
+`IM_COLD/POIS/ELEC`. Changing your attack element to match the current form
+is rarely worth it — physical damage and mana/light attacks are reliable.
+
+**Preparation derived from his numbers:**
+
+* **Speed**: his base form is +20 and the wolf form +30. At +20 yourself you
+  match the sorcerer; at +30 you match the wolf. Since every one of his turns
+  carries a 50% spell chance at power 130, double moves are what kill. Aim
+  for **+30 or more** (permanent + temporary haste).
+* **HP**: his worst *resisted* single actions are the dark/nether balls
+  (max ~413 after resistance), the 1600 fire/acid breaths of his shapes
+  (533 with one resist, ~178 with resist + temporary resist; acid is halved
+  again by armour), `WOUND` (430 if the save fails) and the mana bolt (375,
+  unresistable). Two such actions in a row (a double move) are ~800. **700+ HP
+  is the practical minimum; 900+ is comfortable.**
+* **Resistances**: all four base elements (fire **and** acid immunity or
+  double resistance for the shapes), poison, nether, dark (or pBlind), chaos
+  (serpent), nexus (stops `TELE_LEVEL` and nexus side effects), disenchantment
+  (his melee), sound and shards (the summoned dragons), plus **Free Action**
+  (wolf's paralysing claw, `HOLD` from summons), **pConf**, **pBlind**, **pFear**,
+  **Hold Life** (vampire bite, nether), **See Invisible** (Ren, Ji Indur, the
+  Mouth if summoned via `S_UNIQUE`). A saving throw near 95%+ makes `WOUND`,
+  `BRAIN_SMASH` and `FORGET` mostly irrelevant.
+* **Consumables**: a stack of *\*Healing\** and *Life* potions, Restore Mana
+  if you cast, Speed potions, Teleportation in some form (he teleports too;
+  you need to break off when summons pile up), and a glyph of warding or
+  corridor setup (§7.2) to stop the summons.
+* **Kill his escort first** if you can: Khamûl and the Witch-king arrive with
+  him if alive; meeting them separately earlier (DL84–85) makes the Sauron
+  fight much simpler.
+
+**The fight.** He arrives on a classic-profile DL99. Find him with detection,
+set up where his summons have no open floor near him (a corridor), and use
+your best sustained damage. When he teleports away (`TPORT`) he regenerates
+160 HP per 100 game turns — chase him with detection and keep the pressure
+on, or leave and come back (a new DL99 places him again, at whatever HP he
+has recovered to by then). When he dies, a magical staircase down appears on
+his square.
+
+#### Morgoth, Lord of Darkness (DL100)
+
+Morgoth has his own base (`Morgoth`, glyph `P`, no inherited flags):
+
+| Stat | Value |
+|---|---|
+| Speed | 140 (**+30**, 3.8× normal) |
+| HP | **20000**, `REGENERATE` (400 HP per 100 game turns) |
+| AC | 180 |
+| Spell frequency / power | **1/3**, spell power 100 (= level; no `spell-power:` line) |
+| Melee | `HIT:SHATTER 20d10` ×2, `HIT:LOSE_ALL 10d12`, `TOUCH:DRAIN_CHARGES` — avg 285 / **max 520** per round before armour |
+| Immune | acid, cold, elec, fire, poison; `NO_FEAR`, `NO_CONF`, `NO_SLEEP`, `NO_HOLD` |
+| Movement | `SMASH_WALL` (walls don't stop him), `MOVE_BODY` |
+| Other | `SMART`, `SPIRIT`, `EVIL`, `FORCE_DEPTH`, `ATTR_FLICKER` |
+| Drops | Grond, the Massive Iron Crown of Morgoth, plus `DROP_4`, `DROP_GOOD`, `DROP_GREAT` |
+
+Spells at power 100:
+
+| Spell | Damage avg / max | Notes |
+|---|---|---|
+| `BA_MANA` | **555 / 600** | **unresistable** — the number that decides your HP target |
+| `BA_NETH` | 455 / 500 | rNether → ×6/(8+1d4) (max ~333); undead summons are immune to it |
+| `BO_MANA` | 176 / 300 | unresistable |
+| `BRAIN_SMASH` | 96 / 180 | save negates; FA, pConf, pBlind block slow/paralysis/confusion/blindness |
+| `S_HI_DEMON`, `S_HI_DRAGON`, `S_HI_UNDEAD`, `S_MONSTERS`, `S_UNIQUE` | — | 8 attempts each, budget 100×100 = 10000 per cast; S_UNIQUE falls back to greater undead once uniques run out |
+
+Melee details (`mon-blows.c`):
+
+* **SHATTER** damage is reduced by armour like ordinary hits
+  (`adjust_dam_armor()`: `dam − dam × min(AC,240)/400`, so at most −60%),
+  then, if it did more than 23, triggers an **earthquake** centred on Morgoth
+  with radius damage/12, and above 100 damage may **throw you back**
+  (`thrust_away()`). Earthquakes destroy walls and items and can drop rocks on
+  you.
+* **LOSE_ALL** drains every stat (sustains protect individual stats).
+* **DRAIN_CHARGES** empties a wand/staff/rod charge stack and heals him.
+
+**Preparation derived from his numbers:**
+
+* **Speed +30 or better.** At +30 vs +30 you trade 1:1. At +20 he gets about
+  1.27 actions per yours (38 vs 30 energy per game turn), meaning roughly one
+  double move in four of your turns. One mana storm is 600; two in a row are
+  1200.
+* **HP**: his worst single action is a 600 mana storm or a ~400+ melee round
+  after armour (two 200-max shatters at ~50% armour reduction plus 120 from
+  LOSE_ALL). **Have at least 700 HP, preferably 900+**, and heal back above
+  ~650 every time you drop below it — never let yourself sit where one mana
+  storm kills you.
+* **Resistances**: rNether (nether ball), Free Action, pConf, pBlind, pStun
+  (plasma from summoned Balrogs/dragons), plus everything needed against the
+  summons (`S_HI_DRAGON` brings great wyrms; `S_UNIQUE` can bring anyone still
+  alive — kill the dangerous uniques *before* you go down).
+* **Saving throw**: high saving throw neutralises brain smash.
+* **Status effects on him do not work.** He has `NO_CONF`, `NO_SLEEP`,
+  `NO_HOLD`, `NO_FEAR`, and as a level-100 unique he resists anything else
+  (stun, slow) with two 90% rolls (§6.1).
+* **Damage race**: at 20000 HP and 400 regeneration per 100 game turns, you
+  need sustained damage well above his regeneration — at +30 you get about
+  3.8 actions per 10 game turns, i.e. ~38 per 100 game turns, so his
+  regeneration is worth ~10.5 HP per action of yours. Melee with a top
+  weapon (Grond itself is only available after the fight), or a caster's
+  biggest repeatable spell, comfortably exceeds that; what kills you is the
+  summons stacking up. Use the corridor/glyph trick, *Banishment* of the
+  summoned types (Morgoth himself is unique and unaffected), and Teleport
+  Other on the most dangerous summon.
+* **Glyphs of warding** stop summons from appearing on them and block monster
+  movement until broken: Morgoth breaks a glyph with chance
+  `randint1(550) < 100`, about 18% per attempt (`mon-play:break-glyph:550`,
+  `monster_turn_attack_glyph()` in `mon-move.c`).
+
+---
+
+## 7. General combat tactics
+
+### 7.1 Fighting in corridors
+
+The corridor is the strongest tool in Angband because of how monsters
+target and move:
+
+* **Only monsters adjacent to you can melee you.** In a straight corridor that
+  is one (two at a corner). Against groups (orcs, trolls, wolves, ants, cave
+  spiders) this turns a room fight against fifteen into fifteen fights against
+  one.
+* **Only monsters with a clear line can cast bolts** (`make_ranged_attack()`
+  drops bolt spells when another monster is in the way). Balls and breaths are
+  not blocked by monsters, but in a corridor fewer breathers have line of
+  sight at once.
+* **`GROUP_AI` packs refuse to follow you into corridors while you are above
+  half HP** (`get_move()` in `mon-move.c`): they look for a hiding place
+  nearby and wait. Expect hounds and wolves to lurk just around the corner.
+  You can (a) shoot or throw down the corridor at the ones in view, (b) step
+  forward to the corridor mouth so that only 2–3 grids around you are open
+  (the AI counts open grids next to you: with fewer than 5 it still treats you
+  as "in a corridor"), or (c) simply walk away — packs that won't engage
+  cannot hurt you.
+* **`PASS_WALL` and `KILL_WALL` monsters ignore all this.** Ghosts, dreads,
+  xorns, death drakes, the earth elementals, Quaker and Makar come out of the
+  walls beside you. Against them prefer the middle of a lit room where you can
+  see them coming.
+
+### 7.2 Anti-summoning: corridors and glyphs
+
+`summon_possible()` (`mon-attack.c`) lets a monster try a summon only if there
+is an **empty floor grid within distance 2 of the summoner, in its line of
+sight, without a glyph of warding**. And each summoned monster must be
+placed in such a grid (`scatter_ext()` with `square_allows_summon`, up to 4
+grids away). Therefore:
+
+* **Lure summoners into a corridor** and fight them there: in a 1-wide
+  corridor with you on one side and walls around, the only empty grids near the
+  summoner are the corridor squares behind it. If those are filled (by its own
+  escort, or by your positioning in a dead end) it cannot summon at all, and
+  (unless `STUPID`) it won't even waste a turn trying.
+* **A glyph of warding** (`Rune of Protection` scroll, or the Priest spell *Glyph of Warding*,
+  clvl 20) under you blocks monsters from stepping onto your square and stops
+  summons appearing on it; monsters must break it first (`randint1(550) <
+  monster level` per attempt, `monster_turn_attack_glyph()`). The classic
+  glyph setup: stand on a glyph in a corridor so only one or two monsters can
+  be adjacent; melee monsters must break the glyph before they can hit you
+  (the class description: *"If a monster attempts to move onto the glyph or
+  melee you while you are standing on the glyph, it must first succeed in
+  breaking the glyph"*), and a summoner standing next to you in that corridor
+  has few or no legal grids for its summons (they need floor within 2 grids
+  of *it*, and your glyph square is excluded). Glyphs do nothing against
+  spells and breaths.
+* **Summons arrive awake and join the summoner's group**; killing the summoner
+  first is almost always right.
+* **Line of sight is required to cast.** A monster that cannot see you cannot
+  summon. Breaking line of sight around a corner stops all of it.
+
+### 7.3 Luring, and pillar dancing
+
+* **Luring**: wake one monster of a group (shoot it, or let it notice you), then
+  retreat down a corridor; the woken monster follows, the sleepers do not. Kill
+  it out of sight of the rest.
+* **Pillar dancing** (for a character faster than the monster): stand next to a
+  single pillar or a block of rock; when the monster steps adjacent, attack;
+  when it is about to get a free hit, step around the pillar. Works against slow
+  melee-only monsters (e.g. +0 uniques like Shagrat when you are +10). Useless
+  against casters and breathers, and against anything as fast as you.
+* **Hit and run with Phase Door**: Phase Door teleports you ~10 squares. A
+  ranged attacker (archer, mage, thrower) can phase, shoot as the monster
+  approaches, and phase again. Against +0 melee monsters with a +10 character,
+  this kills almost anything for free; it fails against casters, fast monsters
+  and anything with `TELE_TO`.
+
+### 7.4 Stairs: the universal escape
+
+* **Taking a staircase is instant safety**: you leave the level entirely and
+  everything on it stays behind.
+* With the birth option **`birth_connect_stairs`** (on by default, "Generate
+  connected stairs") you arrive on a staircase leading **back the way you
+  came**: take a down staircase and you arrive on an up staircase, and vice
+  versa (`create_up_stair`/`create_down_stair` in `cmd-cave.c`, placed by
+  `new_player_spot()` in `gen-util.c`; with `birth_force_descend` no up
+  staircase is created). That enables *stair-scumming*: if the new level looks
+  bad (level feeling, something nasty in view, a hound pack), take the stair
+  you are standing on at once. Each trip generates a brand-new level, so you
+  bounce between two depths until you get one you like.
+* **Fight next to stairs** when meeting something unknown: if it turns out to
+  be too strong, one keypress ends the fight.
+* **Uniques you flee from are not lost.** They will be generated again, and
+  you will be stronger next time.
+
+### 7.5 When to leave the level
+
+Leave (stairs, Deep Descent, Teleport Level, Word of Recall) when any of these
+is true:
+
+* A breeder colony has spread (§5).
+* A pack of hounds you cannot resist (gravity, inertia, time, nexus without
+  rNexus, chaos without rChaos, Tindalos) is on the level.
+* A unique you are not equipped for is awake and hunting you (check its
+  recall: if its spells are coloured "hurts you fully", that's the answer).
+* A quylthulg of the summoning kind has seen you and you cannot reach it.
+* Something invisible is hurting you and you have no See Invisible.
+* You are out of escapes or healing (count your Teleportation/Phase/CCW
+  before every big fight).
+* The level feeling says "omens of death" or similar and you are not
+  hunting.
+
+Leaving is free. Dying is not.
+
+### 7.6 Packs
+
+* **Fight packs at a corridor entrance.** See §7.1 for the `GROUP_AI`
+  behaviour.
+* **Use area damage.** Balls, breaths (from activations), *Dispel* spells,
+  *Banishment* of the symbol (non-unique only) — packs are many low-HP
+  monsters.
+* **Kill the casters/archers first** in mixed groups (orc archers, kobold
+  shamans, mage-priest-warrior groups of `p`).
+* **Escorts of uniques** are generated as servants/bodyguards; the unique is
+  often at the back. Teleport Other on the unique separates it from its gang
+  — or Teleport Other the gang's worst member.
+
+### 7.7 Hounds, specifically
+
+* Hounds are generated as a pack that often **starts awake and moves
+  together**; the first sign is several `Z` appearing at once.
+* Read the colour/name: the danger is the element, not the hound (§2, hounds
+  table). Gravity, inertia, impact, time, nexus, plasma and chaos packs are
+  the ones that turn fights.
+* Corridor + one-at-a-time; ranged attacks on the ones that peek. If you are
+  above half HP they may refuse to come in — use that time to leave or to
+  prepare.
+* `S_HOUND` (Draugluin, Carcharoth, Dwar, Wolf-Sauron, Maia of Oromë, grand
+  master mystics, werewolves of Sauron) brings 12 attempts' worth of hounds
+  and dogs: break line of sight from the summoner.
+
+### 7.8 Breathers out of line of sight
+
+* **A breath needs line of sight** (`monster_can_cast()` requires a
+  projectable path within range 20). Approach big breathers around corners and
+  attack only when you can hit hard; step back out of sight to heal or
+  re-buff.
+* **Damage it first**: breath is current HP divided by 3 or 6. A dragon at
+  30% breathes for 30%.
+* **Sleeping breathers don't breathe.** Dragons and many others are
+  `FORCE_SLEEP`. Use stealth, get a big opening hit or a series of ranged
+  attacks before it wakes.
+* **Don't stand at preferred range.** Casters/breathers cast twice as often at
+  their `best_range` (§1.4). Either close to melee range or get out of line of
+  sight; standing at mid-range in the open is the worst choice.
+
+### 7.9 Invisible monsters
+
+* **See Invisible** (equipment, `True Seeing` potions, `Detect Invisible`
+  scrolls, several class spells) is required by DL30 and strongly
+  recommended by DL20 (ghosts from DL3, moaning spirits DL12, imps DL17,
+  dreads DL44).
+* **Telepathy** shows invisible monsters with minds — not the `EMPTY_MIND`
+  ones (quylthulgs, invisible elementals such as the air spirit and the
+  invisible stalker, lurkers, trappers) and only 1 in 10 of the `WEIRD_MIND`
+  ones (e.g. clear worm masses).
+* Signs of an invisible attacker: "It hits you", "Something mumbles",
+  objects disappearing, doors opening. Respond by moving to a corridor (most
+  invisible things are ghosts that come through walls anyway) or leaving.
+* Light attacks are not a general answer to invisible undead: ghosts are not
+  `HURT_LIGHT` by base (only the poltergeist has the flag), though wraiths and
+  vampires are.
+
+### 7.10 Thieves
+
+`EAT_GOLD` / `EAT_ITEM` touches steal and the thief then teleports away
+(cutpurses, Sméagol, master thieves, brigands, Harowen). Kill thieves at range
+or before they touch you; protect key consumables by carrying them in
+quantity. Theft is avoided with chance `adj_dex_safe[DEX] + character
+level` percent unless you are paralysed (`melee_effect_handler_EAT_GOLD()` in
+`mon-blows.c`), so high DEX and level help; the normal saving throw does not.
+
+---
+
+## 8. Quick reference
+
+### 8.1 Protection milestones (by when the monsters in this chapter demand them)
+
+| By DL | Get | Because of |
+|--:|---|---|
+| 5 | Phase Door, CLW potions, Flasks of oil | Grip/Fang, Bullroarer, cave spiders, blacklock mages |
+| 15 | See Invisible *or* the habit of leaving | moaning spirits, poltergeists, imps |
+| 20 | **Free Action** | homunculus, Old Man Willow, carrion crawlers, ghouls, basilisks |
+| 25–30 | rFire, rCold, rElec, rAcid; See Invisible | young/mature dragons, hounds, vortices, ghosts |
+| 30 | rPois, pConf, a good saving throw | basilisks, mind flayers, Drolem later, sorcerers |
+| 35 | pStun or rSound, rNexus, speed +10 | vibration/gravity/impact/nexus hounds |
+| 40 | pBlind or rLight/rDark, Hold Life, rNether | dreads, death drakes, wights/wraiths, Eöl |
+| 50 | double base resists, rChaos, rDisen, 500+ HP | AMHD, the Balrog of Moria, dracolich, Drolem |
+| 60–75 | rShards, rSound, speed +20, 700+ HP | great wyrms, gelugons, the Mouth of Sauron, Glaurung |
+| 99 | +30 speed, 700–900+ HP, everything above | Sauron (and his shapes), Morgoth |
+
+### 8.2 Monsters to never melee
+
+floating eye (paralysis), disenchanter eye/mold/bat (disenchant), death mold,
+gelatinous cube (if you care about your floor items), Makar, Baphomet,
+Nan, Meássë (confusing hits), anything with `PARALYZE` blows if you lack Free
+Action, jellies with drain/eat effects.
+
+### 8.3 Monsters to never stay in line of sight of
+
+quylthulgs (all, especially nexus, greater and master quylthulgs and
+Qlzqqlzuup), the druj, Wiruin, time/gravity/inertia hound packs, the Mouth of
+Sauron, Cantoras, Feagwath, Vecna without full preparation.
+
+### 8.4 Uniques worth hunting early for their drops
+
+`DROP_GREAT`: Sméagol (DL3, hard to pin down), **Wormtongue** (DL8), **Mîm**
+(DL27). `DROP_2`+good: Bullroarer, Golfimbul, Bolg, Azog, Beorn, Ulfang,
+Lokkak, Lorgan, Castamir, Gorlim. Uniques with **no** drop: Grip, Fang, the
+four elemental lords, Qlzqqlzuup has `DROP_4` but you can rarely get to it.
+
+### 8.5 Source map
+
+| Topic | Code / data |
+|---|---|
+| speed table | `src/game-world.c: extract_energy[]`, `turn_energy()` |
+| monster HP, speed variance, drops | `src/mon-make.c: mon_hp()`, `place_new_monster_one()`, `mon_create_drop_count()` |
+| spell frequency, failure, choice | `src/mon-attack.c: monster_can_cast()`, `monster_spell_failrate()`, `make_ranged_attack()`, `summon_possible()` |
+| spell formulas | `lib/gamedata/monster_spell.txt` |
+| saving throw | `src/mon-spell.c: do_mon_spell()` |
+| breath damage | `src/mon-spell.c: breath_dam()`, `lib/gamedata/projection.txt` |
+| element side effects on you | `src/project-player.c` |
+| melee effects | `src/mon-blows.c`, `lib/gamedata/blow_effects.txt` |
+| group AI, movement | `src/mon-move.c: get_move()` |
+| breeding | `src/mon-move.c: monster_turn_multiply()`, `constants.txt: repro-max, mult-rate` |
+| summons | `src/effect-handler-general.c: effect_handler_SUMMON()`, `src/mon-summon.c: summon_specific()`, `lib/gamedata/summon.txt` |
+| monster status resistance | `src/mon-timed.c: saving_throw()` |
+| quests | `lib/gamedata/quest.txt`, `src/player-quest.c`, `src/generate.c`, `src/cave.c` |

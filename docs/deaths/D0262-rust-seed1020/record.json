@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0262-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1529,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+    "git_dirty": "yes",
+    "source_sha256": "8bf8fd29de788da5b7469c05132e649272c459e28add6f6cd75aef444f1a56bc",
+    "binary_sha256": "df4b4c77e1e71b7d360201dcf0761ef6cc777c0a8e9452f72a7666af32676c6b",
+    "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/rs-full-rust/full-2-druid-0",
+      "result_sha256": "2e0912dc2be191c8fcd25169d01d72faf82b77def24e3dcc5a2aab9332d0a597",
+      "raw_sha256": {
+        "keys.log": "2e0912dc2be191c8fcd25169d01d72faf82b77def24e3dcc5a2aab9332d0a597",
+        "messages.log": "f1ce9e72869a8ceb1f6e5365e58f70aca01a961f1cd0be9cc8e786ee3bad82e9",
+        "state.log": "f10220c92e0308804fed6322fb4e725d350f00f9ff26c2533fc38903e3028c34"
+      },
+      "source_commit": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+      "binary_sha256": "df4b4c77e1e71b7d360201dcf0761ef6cc777c0a8e9452f72a7666af32676c6b"
+    }
+  ],
+  "encounter_family": "start-4a6871e618ed7a6e78b489f4f80842ca90e157b009bcac2ef28e59261aec6d13",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a8926bffa2ec497f58f6f4ac0fc78d85065c6b4fc9737a4f5b969b5300cd78ea",
+    "config.txt": "40ed31228733c3bbebe39eb711056c0e1f3ec5ead832417dea2869b9a94e9b2a",
+    "depths.json": "97d94f15ca29fd1f6c28e827113d4d62ea3604ea9f18b56ac31a5fa1603b7c15",
+    "summary.json": "67f744944bcf3831e80f60d00c0bf94cd5e16a0375b891656b91827b1e700bfd"
+  },
+  "investigation": null,
+  "issue": null
+}

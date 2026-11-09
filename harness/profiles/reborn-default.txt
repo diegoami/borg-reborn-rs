@@ -1,0 +1,10 @@
+# The reborn Borg's default profile (borg-reborn-rs/src/params.rs, T2.4).
+# One "name = value" per line; a name left out keeps its table default.
+# Its SHA-256 is in every run record (config.txt, params.json, the trace).
+
+# Thinks at one game turn before an action that always uses time.
+max_tries_per_turn = 2
+# Rest below this percent of maximum hit points (the T1.5 placeholder).
+rest_below_hp_pct = 70
+# Player turns per rest command.
+rest_turns = 75

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0312-rust-seed1041",
+  "run_kind": "harness",
+  "character": "Dwarf Necromancer",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4659,
+    "race_idx": 5,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1041,
+    "flags": "-",
+    "git_rev": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+    "git_dirty": "yes",
+    "source_sha256": "332e2ee4aac37089c1b505a1d17a530053ef1278d8e126f969b8b5b7537a9a1b",
+    "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7",
+    "borg_txt_sha256": "40ef20ebcf1f307acd31a85914a29aeed6dd3c4b12c53a5598505e22df9b2b42"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t21d-full/full-4-necro-1",
+      "result_sha256": "ea587e936a274ccef9bb6bdcb6b751526a204b762ad41301ee84567780b61d89",
+      "raw_sha256": {
+        "keys.log": "ea587e936a274ccef9bb6bdcb6b751526a204b762ad41301ee84567780b61d89",
+        "messages.log": "f3d5695daebdfb5246fcd32d03782cf98da29014c151bce068ad6e068f74e2f3",
+        "state.log": "a36ac4ea54cb1300f05f045d5cf608338b22db38e08a6ff715ba817660f2549d"
+      },
+      "source_commit": "9e8c7ec068d24718b675b81b425d7f80c4be7627",
+      "binary_sha256": "f898be33b7e2ad4dc6636e9f5d61d38be960608c038f949383c383dc3e8b39b7"
+    }
+  ],
+  "encounter_family": "start-d18c0307e48782ce184961f239dce085fccc2497af3f2c1dd4f77d04df33f977",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "655aaad81674317b9d2898938f444c64d267ae6fb9f36232124f68302c4f85e9",
+    "config.txt": "cf87156d3ab8b27ab44f0d04f5af4d2c8de3ba722ec1575f0b494ecdb52556f6",
+    "depths.json": "f6492ccb8c5b1736a74b8d107b5b324587053d45714023607b58f713a42c5372",
+    "summary.json": "d0cc9bf7624ce45e1114be86f44224961e94d79d4ce26397b0b695b58d383b91"
+  },
+  "investigation": null,
+  "issue": null
+}
