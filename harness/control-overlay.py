@@ -17,6 +17,7 @@ result blob for blob against the pinned tree. Any difference is an error.
 """
 
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -70,7 +71,20 @@ def pinned_tree(s):
         out[p[len(s['path']):].lstrip('/')] = meta.split()[2]
     if not out:
         raise SystemExit(f"control-overlay: {s['path']} is empty at {s['commit']}")
+    prefetch(s['repo'], sorted(set(out.values())))
     return out
+
+
+def prefetch(repo, blobs):
+    """Fetch the blobs a partial clone lacks in one request: fetching them one
+    by one through lazy fetches is slow and fails on large sets."""
+    env = dict(os.environ, GIT_NO_LAZY_FETCH='1')
+    r = subprocess.run(['git', '-C', str(repo), 'cat-file', '--batch-check'], input='\n'.join(blobs) + '\n',
+                       capture_output=True, text=True, env=env)
+    missing = [line.split()[0] for line in r.stdout.splitlines() if line.endswith(' missing')]
+    if missing:
+        subprocess.run(['git', '-C', str(repo), '-c', 'fetch.negotiationAlgorithm=noop', 'fetch', '-q',
+                        '--no-tags', '--no-write-fetch-head', '--filter=blob:none', 'origin', *missing], check=True)
 
 
 def identity(impl):
