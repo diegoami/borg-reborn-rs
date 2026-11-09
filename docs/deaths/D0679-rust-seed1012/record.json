@@ -18,9 +18,9 @@
     "impl": "rust",
     "seed": 1012,
     "flags": "-",
-    "git_rev": "2609bab55560219592baa9dc41bad4d1a33d0360",
+    "git_rev": "83f6799f794383f31e57a9f7d7617187020554ef",
     "git_dirty": "yes",
-    "source_sha256": "c68b03c49f8a567c0c8af3dabf1402a301812c90713c521b4d4a4b1f469f4a4e",
+    "source_sha256": "f3fee683d392cc2a32158ff76c0cbb59cf3d008a53ece64607a112f67c0affe5",
     "binary_sha256": "de35d4c27fcc80e068db0a5343dd804957cf30c0970ab31f75021fe3eb7361ac",
     "borg_txt_sha256": "32e88143092ebdb099b0f6341a5abe15f21cf964838d17bf9cab2d704a93635a",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
@@ -34,25 +34,25 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te6-full/full-1-mage-2",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te6b-full/full-1-mage-2",
       "result_sha256": "436a6ceb8152b93583893e7d4b308f8af46dd40f4a64e76928e39a9494d18322",
       "raw_sha256": {
         "keys.log": "436a6ceb8152b93583893e7d4b308f8af46dd40f4a64e76928e39a9494d18322",
         "messages.log": "a0f98683a07e3d5a67d23a4c6a29eed4fb41f4eff2c9ba66ae6d36278b74b8e2",
         "state.log": "cfcffd9873313dc73e6fbf37b3280faac2869f8fcc4f635ef983c583b2eb3125"
       },
-      "source_commit": "2609bab55560219592baa9dc41bad4d1a33d0360",
+      "source_commit": "83f6799f794383f31e57a9f7d7617187020554ef",
       "binary_sha256": "de35d4c27fcc80e068db0a5343dd804957cf30c0970ab31f75021fe3eb7361ac"
     }
   ],
-  "encounter_family": "start-c44480ee2f6df1a128639baf2beec05a1bb9a08b720282796780cd36e044ecd3",
+  "encounter_family": "start-e2456286b7b190e3d102eed1532c35f941a7b7c89929421f59fadc2527d88af6",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "2a2dfcae300722049f7217d6f970770ba05cbc35c966de83510f82f12ea389dc",
+    "build.json": "a93a8bfce31889edc9eea7756d375099bcd64620fdc129367c6d4f05c6d3ca77",
     "config.txt": "aa7495a2ea27db710bd8e081fe6732a3add03f978502c41f5b6c171e18b85f37",
     "depths.json": "f3dfc7b90459ebe3075799875721a5cc11dd53f72978b338845ca8188c25f171",
     "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
-    "summary.json": "bbc41665e4e8b3034ae4542ca6fd7a74ba93b8ac8ca8facb3f68381a1b6a4045",
+    "summary.json": "0e093d2f3f9f170f5ffdc5369c233f8e2c47fbc7d88bf323e44ad7645db73c20",
     "trace-tail.jsonl": "39fc3210dce1b262960517e08a795db6a1d227b91da992d7536e5d9489529c7a"
   },
   "investigation": null,

@@ -2,7 +2,7 @@
 
 Dwarf Mage, character level 1, depth 2 (max 2), seed 1014, implementation `rust`, flags `-`.
 
-Build `2609bab55560219592baa9dc41bad4d1a33d0360` (dirty: yes), binary `de35d4c27fcc`. Keys `f00858963d84`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te6-full/full-1-mage-4` (not committed).
+Build `83f6799f794383f31e57a9f7d7617187020554ef` (dirty: yes), binary `de35d4c27fcc`. Keys `f00858963d84`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te6b-full/full-1-mage-4` (not committed).
 
 Decision trace: the last 200 of 2926 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 

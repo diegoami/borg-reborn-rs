@@ -160,4 +160,3 @@ fn normalize(path: &Path) -> PathBuf {
     }
     out
 }
-
