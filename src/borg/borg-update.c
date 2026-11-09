@@ -364,22 +364,25 @@ static void borg_update_map(void)
                     /* Nothing */
                 }
 
-                /* Handle "dark" floors.  square_islit() is the grid's
-                 * permanent-glow flag, matching the CAVE_GLOW test this
-                 * branch transcribed from the original borg; the lighting
-                 * enum in grid_data cannot express it (LIGHTING_LIT is
-                 * map_info's default for grids whose lighting is not
-                 * otherwise established). */
-                if (!square_islit(cave, l)) {
+                /* Handle "dark" floors */
+                if (!square_isglow(cave, l) && !square_islit(cave, l)) {
                     /* Dark floor grid */
                     ag->info |= BORG_DARK;
                     ag->info &= ~BORG_GLOW;
                 }
 
                 /* Handle Glowing floors */
-                else {
+                else if (square_isglow(cave, l)) {
                     /* Perma Glowing Grid */
                     ag->info |= BORG_GLOW;
+
+                    /* Assume not dark */
+                    ag->info &= ~BORG_DARK;
+                }
+
+                /* torch-lit or line of sight grids */
+                else {
+                    ag->info |= BORG_LIGHT;
 
                     /* Assume not dark */
                     ag->info &= ~BORG_DARK;

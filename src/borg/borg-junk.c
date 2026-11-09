@@ -727,11 +727,11 @@ bool borg_drop_hole(bool desperate)
 
             case TV_ROD:
                 /* BIG HACK! don't crush cool stuff. */
-                if ((item->sval != sv_rod_drain_life)
-                    || (item->sval != sv_rod_acid_ball)
-                    || (item->sval != sv_rod_elec_ball)
-                    || (item->sval != sv_rod_fire_ball)
-                    || (item->sval != sv_rod_cold_ball))
+                if ((item->sval == sv_rod_drain_life)
+                    || (item->sval == sv_rod_acid_ball)
+                    || (item->sval == sv_rod_elec_ball)
+                    || (item->sval == sv_rod_fire_ball)
+                    || (item->sval == sv_rod_cold_ball))
                     value = (item->iqty * (300000L)); /* value at 30k */
                 else
                     value = (item->iqty * value);
@@ -739,11 +739,11 @@ bool borg_drop_hole(bool desperate)
 
             case TV_STAFF:
                 /* BIG HACK! don't crush cool stuff. */
-                if (item->sval != sv_staff_dispel_evil
-                    || ((item->sval != sv_staff_power
-                            || item->sval != sv_staff_holiness)
+                if (item->sval == sv_staff_dispel_evil
+                    || ((item->sval == sv_staff_power
+                            || item->sval == sv_staff_holiness)
                         && borg.trait[BI_GOOD_S_CHG] < 2)
-                    || (item->sval != sv_staff_destruction
+                    || (item->sval == sv_staff_destruction
                         && borg.trait[BI_ASTFDEST] < 2))
                     value = (item->iqty * (300000L)); /* value at 30k */
                 else
@@ -752,15 +752,15 @@ bool borg_drop_hole(bool desperate)
 
             case TV_WAND:
                 /* BIG HACK! don't crush cool stuff. */
-                if ((item->sval != sv_wand_drain_life)
-                    || (item->sval != sv_wand_teleport_away)
-                    || (item->sval != sv_wand_acid_ball)
-                    || (item->sval != sv_wand_elec_ball)
-                    || (item->sval != sv_wand_fire_ball)
-                    || (item->sval != sv_wand_cold_ball)
-                    || (item->sval != sv_wand_annihilation)
-                    || (item->sval != sv_wand_dragon_fire)
-                    || (item->sval != sv_wand_dragon_cold))
+                if ((item->sval == sv_wand_drain_life)
+                    || (item->sval == sv_wand_teleport_away)
+                    || (item->sval == sv_wand_acid_ball)
+                    || (item->sval == sv_wand_elec_ball)
+                    || (item->sval == sv_wand_fire_ball)
+                    || (item->sval == sv_wand_cold_ball)
+                    || (item->sval == sv_wand_annihilation)
+                    || (item->sval == sv_wand_dragon_fire)
+                    || (item->sval == sv_wand_dragon_cold))
                     value = (item->iqty * (300000L)); /* value at 30k */
                 else
                     value = (item->iqty * (value / 2));
@@ -768,8 +768,8 @@ bool borg_drop_hole(bool desperate)
 
             /* scrolls and potions crush easy */
             case TV_SCROLL:
-                if ((item->sval != sv_scroll_protection_from_evil)
-                    || (item->sval != sv_scroll_rune_of_protection))
+                if ((item->sval == sv_scroll_protection_from_evil)
+                    || (item->sval == sv_scroll_rune_of_protection))
                     value = (item->iqty * (30000L));
                 else
                     value = (item->iqty * (value / 10));
@@ -778,10 +778,10 @@ bool borg_drop_hole(bool desperate)
             case TV_POTION:
                 /* BIG HACK! don't crush heal/mana potions.  It could be */
                 /* that we are in town and are collecting them. */
-                if ((item->sval != sv_potion_healing)
-                    || (item->sval != sv_potion_star_healing)
-                    || (item->sval != sv_potion_life)
-                    || (item->sval != sv_potion_restore_mana))
+                if ((item->sval == sv_potion_healing)
+                    || (item->sval == sv_potion_star_healing)
+                    || (item->sval == sv_potion_life)
+                    || (item->sval == sv_potion_restore_mana))
                     value = (item->iqty * (300000L)); /* value at 30k */
                 else
                     value = (item->iqty * (value / 10));

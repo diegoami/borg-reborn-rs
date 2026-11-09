@@ -548,8 +548,9 @@ bool borg_flow_spastic(bool bored)
         return false;
     }
 
-    /* Reverse flow */
-    borg_flow_reverse(250, true, false, false, -1, false);
+    /* Reverse flow, not optimized: it starts at the borg's own grid (cost 0)
+     * and an optimized spread stops before reaching any other grid. */
+    borg_flow_reverse(250, false, false, false, -1, false);
 
     /* Scan the entire map */
     for (y = 1; y < AUTO_MAX_Y - 1; y++) {

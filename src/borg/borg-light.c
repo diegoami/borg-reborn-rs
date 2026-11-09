@@ -559,7 +559,13 @@ static bool borg_refuel_lantern(void)
     /* None available check for lantern */
     if (i < 0) {
         /* get first lantern */
-        i = borg_slot(TV_LIGHT, sv_light_lantern);
+        for (i = 0; i < z_info->pack_size; i++) {
+            if (borg_items[i].iqty && borg_items[i].tval == TV_LIGHT
+                && borg_items[i].sval == sv_light_lantern)
+                break;
+        }
+        if (i >= z_info->pack_size)
+            i = -1;
 
         if (i >= 0) {
             /* loop through lanterns (they should be next to each other) */

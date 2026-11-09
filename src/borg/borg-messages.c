@@ -190,7 +190,8 @@ bool borg_get_messages(struct keypress* key, struct loc cursor)
 
     /* get everything on the message line */
     buf = buffer;
-    borg_what_text(0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buffer, sizeof(buffer));
+    borg_what_text(
+        0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buffer, sizeof(buffer));
 #if 0
     /* just used for debugging.  Not so useful in general */
     if (borg_cfg[BORG_VERBOSE])
@@ -228,14 +229,16 @@ bool borg_get_messages(struct keypress* key, struct loc cursor)
     /* And that text is "-more-" */
     buf = buffer;
     if (borg_prompt && !inkey_flag && (cursor.y == 0) && (cursor.x >= 7)
-        && (0 == borg_what_text(cursor.x - 7, cursor.y, 7, &t_a, buffer, sizeof(buffer)))
+        && (0 == borg_what_text(
+            cursor.x - 7, cursor.y, 7, &t_a, buffer, sizeof(buffer)))
         && (suffix(buf, " -more-"))) {
 
         if (borg_cfg[BORG_VERBOSE])
             borg_note("# message with -more-");
 
         /* Get the message */
-        if (0 == borg_what_text(0, 0, cursor.x - 7, &t_a, buffer, sizeof(buffer))) {
+        if (0 == borg_what_text(
+                0, 0, cursor.x - 7, &t_a, buffer, sizeof(buffer))) {
             /* Parse it */
             borg_parse(buf);
         }
@@ -271,7 +274,8 @@ bool borg_get_messages(struct keypress* key, struct loc cursor)
         buf = buffer;
         if (0
             == borg_what_text(
-                0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buffer, sizeof(buffer))) {
+                0, 0, ((Term->wid - 1) / (tile_width)), &t_a, buffer,
+                sizeof(buffer))) {
             int k = strlen(buf);
 
             /* Strip trailing spaces */
@@ -621,8 +625,11 @@ static void borg_parse_aux(char *msg, int len)
                         }
                         track_glyph.num = 0;
 
-                        /* Check for glyphs under player -- Cheat*/
-                        if (square_iswarded(cave, borg.c)) {
+                        /* Check for glyphs under player -- Cheat.  The
+                         * position may still be on the previous level when
+                         * this is parsed just after a level change. */
+                        if (square_in_bounds(cave, borg.c)
+                            && square_iswarded(cave, borg.c)) {
                             track_glyph.x[track_glyph.num] = borg.c.x;
                             track_glyph.y[track_glyph.num] = borg.c.y;
                             track_glyph.num++;
@@ -1184,8 +1191,11 @@ static void borg_parse_aux(char *msg, int len)
         /* no known glyphs */
         track_glyph.num = 0;
 
-        /* Check for glyphs under player -- Cheat*/
-        if (square_iswarded(cave, borg.c)) {
+        /* Check for glyphs under player -- Cheat.  The position may still
+         * be on the previous level when this is parsed just after a level
+         * change. */
+        if (square_in_bounds(cave, borg.c)
+            && square_iswarded(cave, borg.c)) {
             track_glyph.x[track_glyph.num] = borg.c.x;
             track_glyph.y[track_glyph.num] = borg.c.y;
             track_glyph.num++;
@@ -1618,7 +1628,8 @@ static void borg_init_spell_messages(void)
 /* load monster in pain messages */
 static char *borg_get_parsed_pain(const char *pain, bool do_plural)
 {
-    size_t buflen = strlen(pain) + 1;
+    /* Room for the leading space, the text and the terminator */
+    size_t buflen = strlen(pain) + 2;
     char  *buf    = mem_zalloc(buflen);
 
     int    state  = MSG_PARSE_NORMAL;

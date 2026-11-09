@@ -737,6 +737,8 @@ static void borg_notice_home_aux(borg_item *in_item, bool no_items)
                 num_teleport_level += item->iqty;
             else if (item->sval == sv_scroll_recharging)
                 num_recharge += item->iqty;
+            else if (item->sval == sv_scroll_banishment)
+                num_genocide += item->iqty;
             else if (item->sval == sv_scroll_mass_banishment)
                 num_mass_genocide += item->iqty;
 

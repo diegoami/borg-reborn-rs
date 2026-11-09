@@ -32,8 +32,9 @@ bool borg_confirm_target;
  * Query the "attr/chars" at a given location on the screen
  *
  * Note that "a" points to a single "attr", and "s" to an array
- * of "chars", into which the attribute and text at the given
- * location are stored.
+ * of "size" "chars", into which the attribute and text at the given
+ * location are stored.  The text is truncated to fit and always
+ * terminated.
  *
  * We will not grab more than "ABS(n)" characters for the string.
  * If "n" is "positive", we will grab exactly "n" chars, or fail.
@@ -54,6 +55,7 @@ bool borg_confirm_target;
 errr borg_what_text(int x, int y, int n, uint8_t *a, char *s, size_t size)
 {
     int     i;
+    size_t  len;
     wchar_t screen_str[1024];
 
     int     t_a;
@@ -122,18 +124,10 @@ errr borg_what_text(int x, int y, int n, uint8_t *a, char *s, size_t size)
     /* Save the attribute */
     (*a) = d_a;
 
-    /* Convert back to a char string */
-    /* FORK: n counts screen columns, not UTF-8 bytes. Use the caller's
-     * byte capacity and reserve NUL, retaining complete multibyte text
-     * whenever it fits. neo-angband-tracker#287; mirrored in Rust. */
-    if (size == 0)
-        return 1;
-    size_t converted = wcstombs(s, screen_str, size - 1);
-    if (converted == (size_t)-1) {
-        s[0] = '\0';
-        return 1;
-    }
-    s[converted] = '\0';
+    /* Convert back to a char string that fits the buffer; wcstombs()
+     * does not terminate a result it had to truncate */
+    len = wcstombs(s, screen_str, size - 1);
+    s[(len == (size_t)-1) ? 0 : len] = '\0';
     /* Too short */
     if ((n > 0) && (i != n))
         return 1;

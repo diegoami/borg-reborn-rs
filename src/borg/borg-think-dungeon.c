@@ -458,6 +458,17 @@ static bool borg_think_dungeon_munchkin(void)
         return false;
     }
 
+    /* Not while poisoned or hallucinating. Stair travel does not age the
+     * world clock (level entry grants minimum move energy and the world
+     * tick is skipped during level generation), so these timed ailments
+     * can never wear off while the borg shuttles between stairs. Leave
+     * them to the ordinary recovery path, which ages turns normally. */
+    if (borg.trait[BI_ISPOISONED] || borg.trait[BI_ISIMAGE]) {
+        borg_note("# Leaving munchkin Mode. (Poisoned or Hallucinating)");
+        borg.munchkin_mode = false;
+        return false;
+    }
+
     /* if borg is just starting on this level, he may not
      * know that a stair is under him.  Cheat to see if one is
      * there
