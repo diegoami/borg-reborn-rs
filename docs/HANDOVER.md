@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: E merged before its review; a review after the fact
+
+The owner had the session merge #92 (`main` → `reviewed`). Tag `e`
+(`0a92da0`) was pushed, milestone E closed and borg-zoo#48 filed (move
+`4.2.6-reborn-rust` to `e`), all **before any review**. The owner then
+asked for the review after the fact:
+- the reviewer, the owner's choice, reviews `55d7476` (the tree of `e`) and
+  posts on #92;
+- findings are fixed in PRs into `main`;
+- tags are not moved (RULES 5);
+- borg-zoo#48's first request is on hold until the review is clean.
+
+Other work (T2.5, #16) may go on meanwhile.
+
 ## 2026-11-09: TE.9 and milestone E complete; E's review
 
 - **TE.9:** `engine/tests/test_independence.py` (CI, rust job) checks that
