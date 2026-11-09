@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0039-c-seed1072",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 7119,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1072,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "ea743d09d98ba69aefd5ca3560bb149f21cc5d77b611147855e4acb779eb56df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-7-ranger-2",
+      "result_sha256": "e5130bb1bfed3dc6512c9af580d2da2f94b06b4806748ba5c1fdc09a89c847e2",
+      "raw_sha256": {
+        "keys.log": "e5130bb1bfed3dc6512c9af580d2da2f94b06b4806748ba5c1fdc09a89c847e2",
+        "messages.log": "ea8fb8a496b545181d833ee43db1aa1ecdba2bfb27b518b5f76175671ff47620",
+        "state.log": "8edf7799fa522bf57109aacd6d47f74bc08ccba27d6aaae72ea9edfb08744f19"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-c129329f1b49e40823b4673693ae3d73446246aad20cd9148aa1fa297a2d20df",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "3954f1111dbc0b1975c0b352913a3bc05aace85078ed22087b85400c9fc43e06",
+    "depths.json": "c213bbe97532f859442764af0136557f46966403ad8062ff62cdd13af86b17a6",
+    "summary.json": "8c0c5f9252814a32fc3422364111f689507f8235fff76bfa7acc971058cb843d"
+  },
+  "investigation": null,
+  "issue": null
+}

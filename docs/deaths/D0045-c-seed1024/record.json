@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0045-c-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "an acolyte",
+  "terminal": {
+    "cause": "an acolyte",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 6,
+    "turn": 80669,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1024,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-2-druid-4",
+      "result_sha256": "a9c682ee04d156e216ce12fe0e249eb952e5f28733b15534c61db85cd7b3715c",
+      "raw_sha256": {
+        "keys.log": "a9c682ee04d156e216ce12fe0e249eb952e5f28733b15534c61db85cd7b3715c",
+        "messages.log": "f0facb48a99e5a471e14e404d41eb1822464a0358047b55c32a877a61263775d",
+        "state.log": "b50ae51fa9163be085c6e77077b5d8a33b9952d8741ef30e43c92d3d7c7a37a6"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-dcfa8976f851ab3e6ffec53d0b648d31820687c469713680ddd14ddda33d09d5",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "d9e7051c3de94ea273bca316b855652e7e7cee76798588bb545b4e1430aa1fc0",
+    "depths.json": "fea5d6c02ac5407682cb3281b9b24fb39d63faaed9e9f010d840a117430a743c",
+    "summary.json": "4584873ca0a32c128a7110e6bdb38ee4c3c8bac52065c78ce22426e76c11b123"
+  },
+  "investigation": null,
+  "issue": null
+}

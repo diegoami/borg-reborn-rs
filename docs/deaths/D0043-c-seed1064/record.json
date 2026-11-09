@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0043-c-seed1064",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a kobold",
+  "terminal": {
+    "cause": "a kobold",
+    "dead": true,
+    "depth": 7,
+    "max_depth": 7,
+    "level": 4,
+    "turn": 27452,
+    "race_idx": 10,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 1064,
+    "flags": "-",
+    "git_rev": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46",
+    "borg_txt_sha256": "9f2d2a66b14eddc64864c5b4b1c065eccf5a9a8b75166a0b1847fbb1bffb1b2b"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c/full-6-rogue-4",
+      "result_sha256": "93288eb65f9ec4d73de2ee2c36b15fe3eb2cc1233a9d787560decafd800beb0a",
+      "raw_sha256": {
+        "keys.log": "93288eb65f9ec4d73de2ee2c36b15fe3eb2cc1233a9d787560decafd800beb0a",
+        "messages.log": "d43957c1683594e6a97c1a5e5aca80c3a0ea5b400f385a680140075a0e054f97",
+        "state.log": "af3367a9c2c2657a7e14dd512ebbe734e85a1452c1b1087af53522bf6e8d90c2"
+      },
+      "source_commit": "ea6c91678d304d9aa73647fb6881278d846e95d2",
+      "binary_sha256": "bbf6ff6c84e06c8cd36b94046cfbb64ae725f7e5294e3f75632553753b69bd46"
+    }
+  ],
+  "encounter_family": "start-9e8a3ea1de9165f4656460254504512e9fa9be49a6161d7b89148afed09ff9bc",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "bf0d0501c39483b2256b481f7fdc0c9041831583ffe5ea1b627655960e4853f3",
+    "config.txt": "e43aca8db62c1fee56425a0138ac2dee9a6d46c7e04974005f26f63ed8c146cc",
+    "depths.json": "e935774167144e1a6e1349d96462de4cc54ebb0331ebd4caf18b424290251fb4",
+    "summary.json": "afec0ae4b5344cf4b2caaece9946e358868b25145143ff23894568d40966bed6"
+  },
+  "investigation": null,
+  "issue": null
+}
