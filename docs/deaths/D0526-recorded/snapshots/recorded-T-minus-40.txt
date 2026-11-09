@@ -1,0 +1,27 @@
+Original frame 290; engine turn 631; phase command; HP 3, SP 2, depth 1
+Logical cells; diagnostics are actual engine state, not extra Borg knowledge.
+
+                                                                                
+Kobold                                                                          
+Wanderer                                                                        
+Druid                                                                           
+LEVEL      1                                                                    
+NXT       12                                                                    
+AU       373                                                                    
+\    ~                                                                          
+STR:      14                                  #####                             
+INT:       9                                 ##···                              
+WIS:   18/10                                ##··#                               
+DEX:      10                               ##···#                               
+CON:      18                              ##·####                               
+                                          #@R'<·#                               
+Cur AC     0                              ##·####                               
+HP    3/  11                               ##···#                               
+SP    2/   2                                ##··#                               
+                                               )·                               
+                                                ##                              
+                                                                                
+                                                                                
+                                                                                
+50' (L1)                                                                        
+             LF:2-? Light 3  Study (1) Fed 89 % Open floor                      

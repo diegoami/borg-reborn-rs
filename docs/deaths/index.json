@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 525,
+  "cases": 526,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 21,
     "Grip, Farmer Maggot's Dog": 68,
@@ -23,7 +23,7 @@
     "a large white snake": 20,
     "a metallic green centipede": 1,
     "a metallic red centipede": 13,
-    "a rock lizard": 31,
+    "a rock lizard": 32,
     "a salamander": 20,
     "a small kobold": 2,
     "a soldier": 2,
@@ -37,8 +37,8 @@
     "poison": 1,
     "starvation": 60
   },
-  "death_process_attempts": 525,
-  "distinct_starting_conditions": 525,
+  "death_process_attempts": 526,
+  "distinct_starting_conditions": 526,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -57,6 +57,7 @@
     "ae1e601929446af672a57007d73b385cb38e5331": 46,
     "b80ed55657bd45241b712d19a87a7c2665a7dd16": 1,
     "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a": 61,
-    "ea6c91678d304d9aa73647fb6881278d846e95d2": 15
+    "ea6c91678d304d9aa73647fb6881278d846e95d2": 15,
+    "f71a88a0a31002a9e659dbe8075b277717a7f4c5": 1
   }
 }

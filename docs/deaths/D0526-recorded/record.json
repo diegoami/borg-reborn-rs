@@ -1,0 +1,191 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "93ad137225ad0ff47f4f58c8efd4b13eb066e00cfb4e817eaef770e04982688c",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/.angband-reborn/recordings/20261109T174102.764074Z-RustBorg",
+      "requested_seed": null,
+      "result_sha256": "c93c50346bf614ca4b5783ae3863316070e3cb21f5987c69b73ec8260c75b5f0",
+      "role": "original",
+      "seed_role": "recorded GUI inputs",
+      "source_commit": "f71a88a0a31002a9e659dbe8075b277717a7f4c5"
+    }
+  ],
+  "build": {
+    "binary_sha256": "93ad137225ad0ff47f4f58c8efd4b13eb066e00cfb4e817eaef770e04982688c",
+    "git_rev": "f71a88a0a31002a9e659dbe8075b277717a7f4c5",
+    "source_sha256": "efc974bb5acadfa3549c11950ed0bfddc9e62282666d312c081ba73987bd86c2"
+  },
+  "calendar_context": "frozen-file",
+  "character": "RustBorg",
+  "collection_context": null,
+  "encounter_family": "start-7eccd9119e20e4f61e050592c8337fbc82259a9fa1e147bb71d1170e18cc7980",
+  "files_sha256": {
+    "actions.txt": "c895556032f6b76583c124683ab2505017a431c9bf43a4ddb9fcae50bde8fdc5",
+    "build.json": "bdb3621e3eba071252bbce82271dbec0bc69438361d331cb00809c8b61f2c688",
+    "input.json": "ccaff7f69823268bb617c539a66d93f2f9fca4d914650905468a73120d083db0",
+    "snapshots/recorded-T-minus-40.json": "d39703ecc8da107d91c93fed84eef416e2af462240f2a8cff24bfbce5b6009b5",
+    "snapshots/recorded-T-minus-40.txt": "2a650878c51dca350c4b1e228334fc89c9a51069778a85b84d5bbaf5ced6dafc",
+    "snapshots/recorded-T-minus-60.json": "0fefa7da66ef2a18672af937482aae0db1f6f7a0388a18c37d06257664da9fe2",
+    "snapshots/recorded-T-minus-60.txt": "cd89801ce81bdca8ee18a19c9f989c854fdd0bf3c1989cf8defd16b28ef411a9",
+    "snapshots/recorded-anchor-t561.json": "cb1cd5c108ec5ae8400e028ca367177269a64d40e0911006f32376cde39b2e66",
+    "snapshots/recorded-anchor-t561.txt": "2012289c6816608637509413765aaac1e722d0a4200ffe750aa33d3d5c626c9f",
+    "snapshots/recorded-anchor-t581.json": "38c91b8d4248db35c1c1c800c85a2dae3004dd0bd0c8b2a3c3dd34071d5b49ae",
+    "snapshots/recorded-anchor-t581.txt": "35eb2292249284585d54ed59b3b349c2c91e4a4868b1b2299d9f138976772146",
+    "snapshots/recorded-anchor-t641.json": "7c1f93452d8eda5eb83fe45649467b9f61d3a65045301bb8d7540cc1332bb6fc",
+    "snapshots/recorded-anchor-t641.txt": "d1b13c6980d1c728e6f0ffb931591a89bc412280b5a339e3d2ad0dc9567d7a54",
+    "snapshots/recorded-anchor-t651.json": "5eed0cb1909df056969bf438c06dbbddfd65541af547cf876b4b46588dc0a753",
+    "snapshots/recorded-anchor-t651.txt": "eff4ce9bfb74af7f8eef7dbedbf1133e002d6da4db5205daaa0aa5a32dc2864f",
+    "snapshots/recorded-anchor-t661.json": "540ea7493d0ebaebf3f797b27952b31c10daf67af04f398d59237676c24b574f",
+    "snapshots/recorded-anchor-t661.txt": "db875febbb3f107a0f5842920c49bd43d9172ca9181284fdebba57100c719e29",
+    "terminal.map.txt": "57ea01c0048c50ceb494ced7f5ace8f9fe5ea9c117ce73ccab975aba1b6d6095"
+  },
+  "id": "D0526",
+  "identity": {
+    "binary": "93ad137225ad0ff47f4f58c8efd4b13eb066e00cfb4e817eaef770e04982688c",
+    "cause": "a rock lizard",
+    "config_sha256": "2b047f4d3880457fb71732f948dd0f86f307cf0289cc4707045fb362619d628f",
+    "encounter_family": "start-7eccd9119e20e4f61e050592c8337fbc82259a9fa1e147bb71d1170e18cc7980",
+    "seed": null,
+    "source": "f71a88a0a31002a9e659dbe8075b277717a7f4c5",
+    "source_sha256": "efc974bb5acadfa3549c11950ed0bfddc9e62282666d312c081ba73987bd86c2",
+    "start_save": null,
+    "turn": 671
+  },
+  "independence_note": "Curated case; repeats, continuations, GUI intervention and backup branches are not an independent mortality cohort",
+  "investigation": null,
+  "issue": null,
+  "limits": {
+    "duration_seconds": 81.44851086899871,
+    "frontend": "x11"
+  },
+  "living_checkpoints": [],
+  "raw_cause": "a rock lizard",
+  "recording": {
+    "frames_sha256": "28375c27b7b0d72b84f5748e4f606aed2080e98772395393387440372ddf0010",
+    "manifest_sha256": "c93c50346bf614ca4b5783ae3863316070e3cb21f5987c69b73ec8260c75b5f0",
+    "nearby_original_anchors": [
+      {
+        "frame_index": 302,
+        "json": "snapshots/recorded-anchor-t661.json",
+        "offset_engine_turns": 10,
+        "phase": "command",
+        "qualification": "Nearest earlier actual observation; not an exact requested offset or interpolated state",
+        "requested_offsets_engine_turns": [
+          5
+        ],
+        "text": "snapshots/recorded-anchor-t661.txt",
+        "turn": 661
+      },
+      {
+        "frame_index": 298,
+        "json": "snapshots/recorded-anchor-t651.json",
+        "offset_engine_turns": 20,
+        "phase": "command",
+        "qualification": "Nearest earlier actual observation; not an exact requested offset or interpolated state",
+        "requested_offsets_engine_turns": [
+          12
+        ],
+        "text": "snapshots/recorded-anchor-t651.txt",
+        "turn": 651
+      },
+      {
+        "frame_index": 294,
+        "json": "snapshots/recorded-anchor-t641.json",
+        "offset_engine_turns": 30,
+        "phase": "command",
+        "qualification": "Nearest earlier actual observation; not an exact requested offset or interpolated state",
+        "requested_offsets_engine_turns": [
+          25
+        ],
+        "text": "snapshots/recorded-anchor-t641.txt",
+        "turn": 641
+      },
+      {
+        "frame_index": 270,
+        "json": "snapshots/recorded-anchor-t581.json",
+        "offset_engine_turns": 90,
+        "phase": "command",
+        "qualification": "Nearest earlier actual observation; not an exact requested offset or interpolated state",
+        "requested_offsets_engine_turns": [
+          82
+        ],
+        "text": "snapshots/recorded-anchor-t581.txt",
+        "turn": 581
+      },
+      {
+        "frame_index": 262,
+        "json": "snapshots/recorded-anchor-t561.json",
+        "offset_engine_turns": 110,
+        "phase": "command",
+        "qualification": "Nearest earlier actual observation; not an exact requested offset or interpolated state",
+        "requested_offsets_engine_turns": [
+          105
+        ],
+        "text": "snapshots/recorded-anchor-t561.txt",
+        "turn": 561
+      }
+    ],
+    "qualification": "Original frames, not an assumed verified rerun or mid-run Borg-memory restore",
+    "raw_directory": "/home/diego/projects/borg-reborn-rs/.angband-reborn/recordings/20261109T174102.764074Z-RustBorg",
+    "replay_command": "./replay-borg.py /home/diego/projects/borg-reborn-rs/docs/deaths/D0526-recorded --from-turn 566",
+    "schema": "borg-rs-gui-recording@1",
+    "selected_original_frames": [
+      {
+        "frame_index": 290,
+        "json": "snapshots/recorded-T-minus-40.json",
+        "offset_engine_turns": 40,
+        "phase": "command",
+        "text": "snapshots/recorded-T-minus-40.txt",
+        "turn": 631
+      },
+      {
+        "frame_index": 282,
+        "json": "snapshots/recorded-T-minus-60.json",
+        "offset_engine_turns": 60,
+        "phase": "command",
+        "text": "snapshots/recorded-T-minus-60.txt",
+        "turn": 611
+      }
+    ],
+    "unavailable_offsets": [
+      {
+        "offset_engine_turns": 5,
+        "reason": "No original frame at this exact engine turn",
+        "requested_turn": 666
+      },
+      {
+        "offset_engine_turns": 12,
+        "reason": "No original frame at this exact engine turn",
+        "requested_turn": 659
+      },
+      {
+        "offset_engine_turns": 25,
+        "reason": "No original frame at this exact engine turn",
+        "requested_turn": 646
+      },
+      {
+        "offset_engine_turns": 82,
+        "reason": "No original frame at this exact engine turn",
+        "requested_turn": 589
+      },
+      {
+        "offset_engine_turns": 105,
+        "reason": "No original frame at this exact engine turn",
+        "requested_turn": 566
+      }
+    ]
+  },
+  "recording_schema": "borg-rs-gui-recording@1",
+  "run_kind": "interactive GUI; recorded human inputs",
+  "schema": "borg-rs/death-record@1",
+  "terminal": {
+    "cause": "a rock lizard",
+    "class_idx": 2,
+    "dead": 1,
+    "depth": 1,
+    "level": 1,
+    "race_idx": 10,
+    "turn": 671
+  }
+}

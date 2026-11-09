@@ -1,0 +1,19 @@
+{
+  "calendar": "frozen-file",
+  "identity": {
+    "binary": "93ad137225ad0ff47f4f58c8efd4b13eb066e00cfb4e817eaef770e04982688c",
+    "cause": "a rock lizard",
+    "config_sha256": "2b047f4d3880457fb71732f948dd0f86f307cf0289cc4707045fb362619d628f",
+    "encounter_family": "start-7eccd9119e20e4f61e050592c8337fbc82259a9fa1e147bb71d1170e18cc7980",
+    "seed": null,
+    "source": "f71a88a0a31002a9e659dbe8075b277717a7f4c5",
+    "source_sha256": "efc974bb5acadfa3549c11950ed0bfddc9e62282666d312c081ba73987bd86c2",
+    "start_save": null,
+    "turn": 671
+  },
+  "profile": {
+    "duration_seconds": 81.44851086899871,
+    "frontend": "x11"
+  },
+  "run_kind": "interactive GUI; recorded human inputs"
+}
