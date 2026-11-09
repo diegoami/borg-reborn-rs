@@ -52,8 +52,20 @@ Needed before G1 (GOALS, *Observation and scoring rule*):
   run then stops at engine turn T itself. Keep it opt-in per specimen
   (e.g. `"exact_turns": true`), so existing borg-rs cells keep their meaning.
 - **Record the rule.** Add `"boundary": "exact"` or `"after-key"` to every
-  cell. `tools/endpoint.py` here already reads that field, and refuses
-  after-key survivors unless told otherwise.
+  cell, of every adapter: the better-borg-c observer is exact; borg-rs
+  without the flag, Neo-original (it turns an after-cap death into
+  `turn_cap`) and Mandos (it stops at the first loop boundary at or after the
+  cap) are after-key. `tools/endpoint.py` here already reads that field,
+  assumes these values for cells without it, refuses any other kind without
+  it, and refuses after-key survivors unless told otherwise.
+- **Keep death evidence.** The adapter deletes `keys.log` after a run, so a
+  natural death in a zoo cell leaves nothing to record. Keep the key log
+  (and the summary) of every `death` cell, for example as a workflow
+  artifact, so the measured repository can record the death (its RULES 12).
+  Until then, borg-reborn-rs's `harness/zoo-check.py` reruns each death
+  through `harness/run.sh` and checks its keys against the cell's play hash.
+  The smoke death above (rust, seed 29, Grip at turn 666) is recorded this
+  way as D0096.
 - **Depth stream.** Pass `-statelog FILE` and fill `first_turn_at_depth`
   from it. Each line starts `<game turn> <x>,<y> d<depth>/<max depth>`; the
   first line at which the maximum depth reaches d gives the turn for d. This
@@ -95,7 +107,7 @@ and `tools/endpoint.py`.
 
 borg-reborn-rs commit to use: the commit of tag `m1` if it exists
 (`git ls-remote --tags https://github.com/diegoami/borg-reborn-rs m1`), otherwise
-`b5b8fa468e573473c068008f4e00a8166fae6f21` (the M1 candidate under review). Say in the PR which one you used.
+the head of borg-reborn-rs `main`, which carries the M1 review fixes; do not use an earlier commit. Say in the PR which one you used.
 
 ## What already works (verify, do not assume)
 
@@ -125,9 +137,12 @@ harness failure or config error. Reproduce that with your real catalogue entries
    engine turn = cap. Set it on the three reborn specimens only; existing borg-rs specimens keep their meaning.
    A specimen whose binary lacks the option must fail loudly, not silently fall back.
 
-3. **Record the boundary rule.** Every cell gets `"boundary": "exact"` or `"after-key"`
-   (better-borg-c observer cells: "exact"; borg-rs cells without the flag: "after-key"). borg-reborn-rs's
-   tools/endpoint.py already reads this field.
+3. **Record the boundary rule.** Every cell of every adapter gets `"boundary": "exact"` or `"after-key"`
+   (better-borg-c observer cells: "exact"; borg-rs cells without the flag, Neo-original and Mandos:
+   "after-key"). borg-reborn-rs's tools/endpoint.py already reads this field.
+
+3b. **Keep death evidence.** zoo/borgrs.py deletes keys.log; keep the key log and summary of every
+   `death` cell (e.g. a workflow artifact) so the measured repository can record the death.
 
 4. **Depth stream.** Pass `-statelog FILE` and fill `first_turn_at_depth` from it: each line starts
    `<game turn> <x>,<y> d<depth>/<max depth>`; for each depth d, the turn of the first line whose max depth
