@@ -105,9 +105,11 @@ as requested in borg-reborn-rs `docs/ZOO-CHANGE-REQUEST.md`. Read that file at t
 with `docs/GOALS.md` (section "Observation and scoring rule"), `harness/README.md`, `tools/depth-stream.py`
 and `tools/endpoint.py`.
 
-borg-reborn-rs commit to use: the commit of tag `m1`
-(`git ls-remote --tags https://github.com/diegoami/borg-reborn-rs m1`, the M1 review merge).
-If the tag does not exist yet, stop and ask the owner for the exact commit to use; do not
+borg-reborn-rs commit to use: the commit that tag `m1` points to (the M1 review merge). `m1` is an
+annotated tag, so plain `ls-remote --tags ... m1` prints the tag object, not the commit; peel it:
+`git ls-remote https://github.com/diegoami/borg-reborn-rs 'refs/tags/m1^{}'`, or, in a clone,
+`git rev-parse 'm1^{commit}'`. Check that the hash is a commit (`git cat-file -t HASH` prints
+`commit`). If the tag does not exist yet, stop and ask the owner for the exact commit to use; do not
 take the head of a branch, which moves. Write that full commit hash in the catalogue and in the PR.
 
 ## What already works (verify, do not assume)

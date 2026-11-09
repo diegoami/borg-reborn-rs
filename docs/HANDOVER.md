@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M1 third review pass, findings R1–R6 (#39)
+
+The third pass (Kimi K3.1 Pro, at `42ee347`) resolved N1, N3, N4, N5 and
+N8, and resolved N6 and N10 for their cases. It partly resolved N2, N7, N9
+and N11, and added six should-fix findings, R1–R6. Nothing blocks. The fixes
+go in three PRs into `main`:
+- #51, R2: a step off a shop can be refused without time (an afraid player
+  walking into a visible monster), so on a shop `stand_still()` now alters
+  a neighbour (`+` and a direction), which always spends a move's energy.
+  Rust play is unchanged (full 45/45, smoke 3/3, smoke-exact 3/3
+  identical); the deaths are recorded again as D0188–D0233.
+- #52, evidence: R1, R3 and R4. check-boundary compares `depths.json`'s
+  `stop_turn` with the summary. The death exporter takes a loaded save
+  from borgh's `loaded`, so `run.sh ... -- -load FILE` counts, and run.sh
+  records that save's hash and an extra `-keep-load-rng` in `config.txt`.
+  zoo-check imports the zoo from a `git archive` of the pin, not the
+  checkout, so an ignored `.pyc` cannot replace pinned code.
+- sources (this PR): R5 and R6. The update snapshot backs up into a fresh
+  directory of its own and never touches an existing `.refresh-backup-*`.
+  The zoo prompt peels annotated tag `m1` to its commit (`m1^{}`). The
+  copy on borg-zoo#30 needs the same fix, with N11's, when its link is
+  recorded.
+
 ## 2026-11-10: M1 re-review findings N1–N11 (#39)
 
 The re-review (Kimi K3.1 Pro, at `2dd11fd` and `16af1ad`) resolved 12 of

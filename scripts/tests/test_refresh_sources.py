@@ -171,7 +171,29 @@ class RefreshTest(unittest.TestCase):
         self.assertEqual(before, after, 'copies or README changed although the update failed')
         self.assertEqual((self.root / 'pins.json').read_bytes(), pins_before)
         self.assertEqual(sh(self.root / 'vendor/src', 'git', 'rev-parse', 'HEAD'), self.a)
-        self.assertFalse(list((self.root / 'reference').rglob('.refresh-backup-*')), 'backups left behind')
+        self.assertFalse(list(self.root.rglob('.refresh-backup-*')), 'backups left behind')
+
+    def test_snapshot_leaves_existing_files_alone(self):
+        # Re-review R5: a directory named like an old backup is not the
+        # snapshot's; it must survive the update, and a failed snapshot
+        # leaves nothing of its own behind.
+        old = self.root / 'reference/deaths/.refresh-backup-better-borg-c'  # the old fixed name
+        old.mkdir(parents=True)
+        (old / 'sentinel').write_text('mine\n')
+        rs.update(self.root, ['src'], today='2026-11-09')
+        self.assertEqual((old / 'sentinel').read_text(), 'mine\n')
+        real = rs.shutil.copytree
+
+        def fail(*a, **k):
+            raise OSError('disk full')
+        rs.shutil.copytree = fail
+        try:
+            with self.assertRaises(OSError):
+                rs.Snapshot(self.root, [{'to': 'reference', 'select': 'all'}], [])
+        finally:
+            rs.shutil.copytree = real
+        self.assertEqual([p.name for p in self.root.glob('.refresh-backup-*')], [])
+        self.assertEqual((old / 'sentinel').read_text(), 'mine\n')
 
     def test_dirty_vendor_is_not_moved(self):
         (self.root / 'vendor/src/local.txt').write_text('mine\n')
