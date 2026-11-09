@@ -108,14 +108,20 @@ fi
 [ ! -e "$OUT" ] || { echo "run.sh: output exists; preserve it and use a new directory: $OUT" >&2; exit 2; }
 # Extra borgh options that change which game starts (re-review R3): a save
 # loaded with -load, and -keep-load-rng. config.txt records them for the
-# death exporter.
+# death exporter. An extra -load is handled like save=NAME (re-review S1,
+# S2): its file is copied to OUT/save/input.save, which borgh is given by
+# absolute path (run.sh changes directory before it starts the game), and
+# -n is dropped, since borgh loads only without it.
 EXTRA_LOAD=""
 EXTRA_KEEP_RNG=0
 EXTRA=("$@")
 for ((i = 0; i < ${#EXTRA[@]}; i++)); do
     case "${EXTRA[$i]}" in
         -load) EXTRA_LOAD="${EXTRA[$((i + 1))]:-}"
-               [ -f "$EXTRA_LOAD" ] || { echo "run.sh: -load: no save file '$EXTRA_LOAD'" >&2; exit 2; };;
+               [ -f "$EXTRA_LOAD" ] || { echo "run.sh: -load: no save file '$EXTRA_LOAD'" >&2; exit 2; }
+               [ -z "$SAVE_NAME" ] || { echo "run.sh: both save=$SAVE_NAME and -load given" >&2; exit 2; }
+               EXTRA[$((i + 1))]="$OUT/save/input.save"
+               i=$((i + 1));;
         -keep-load-rng) EXTRA_KEEP_RNG=1;;
     esac
 done
@@ -130,6 +136,9 @@ if [ -n "$SAVE_NAME" ]; then
     cp "$SAVE_ROOT/$SAVE_NAME" "$OUT/save/input.save"
     BIRTH_ARGS=()
     BORGH_FLAGS+=(-load "$OUT/save/input.save")
+elif [ -n "$EXTRA_LOAD" ]; then
+    cp "$EXTRA_LOAD" "$OUT/save/input.save"
+    BIRTH_ARGS=()
 fi
 if [ "$CHECKPOINT_EVERY" != 0 ]; then
     mkdir -p "$OUT/checkpoints"
@@ -160,12 +169,9 @@ done
 {
     echo "flags=$FLAGS"
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
-    if [ -n "$SAVE_NAME" ]; then
+    if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
+        # The loaded save's hash is part of a death's encounter family.
         echo "save_sha256=$(sha256sum < "$OUT/save/input.save" | cut -d' ' -f1)"
-    elif [ -n "$EXTRA_LOAD" ]; then
-        # A save loaded through the extra options (re-review R3): its hash
-        # is part of the death's encounter family, like save=NAME's.
-        echo "save_sha256=$(sha256sum < "$EXTRA_LOAD" | cut -d' ' -f1)"
     fi
     if [ "$EXTRA_KEEP_RNG" = 1 ]; then echo "keep_load_rng=1"; fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
@@ -183,7 +189,7 @@ TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 python3 "$ROOT/harness/supervise.py" \
     -dpanic="$OUT/panic" -dscores="$OUT/scores" "${DATA_ARGS[@]}" -- \
     -seed "$SEED" -race "$RACE" -class "$CLASS" -turns "$TURNS" \
     -keylog "$OUT/keys.log" -msglog "$OUT/messages.log" -statelog "$OUT/state.log" \
-    -summary "$OUT/summary.json" -screen "${BORGH_FLAGS[@]}" "$@" \
+    -summary "$OUT/summary.json" -screen "${BORGH_FLAGS[@]}" "${EXTRA[@]}" \
     2>"$OUT/stderr.log"
 RC=$?
 set -e

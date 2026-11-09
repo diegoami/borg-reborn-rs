@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M1 fourth review pass, findings S1–S2 (#39)
+
+The fourth pass (Kimi K3.1 Pro, at `eff27c9`) resolved R1, R2, R4, R5 and
+R6, and partly resolved R3. It added two should-fix findings in R3's new
+extra-option load path; nothing blocks. Both are fixed in #54. run.sh now
+handles `-- -load FILE` like `save=NAME`: it copies the file to
+`OUT/save/input.save`, passes that absolute path to borgh, and drops `-n`.
+Before, borgh received `-n`, so it started a new character that the summary
+called loaded (S1). A relative path also failed after run.sh's `cd` (S2).
+`harness/check-extra-load.sh`, now in CI, checks that a relative extra
+load resumes the saved game and plays the same keys as `save=NAME`.
+
 ## 2026-11-10: M1 third review pass, findings R1–R6 (#39)
 
 The third pass (Kimi K3.1 Pro, at `42ee347`) resolved N1, N3, N4, N5 and
