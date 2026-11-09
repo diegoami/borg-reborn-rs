@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T2.4, decision trace and parameter table (#15)
+
+- `params.rs`: the parameter table has name, unit, range, default and
+  the evidence for the default. It holds the minimal Borg's three numbers:
+  `max_tries_per_turn` 2, `rest_below_hp_pct` 70 (integer percent, so
+  `hp * 100 < max * 70` is the old test exactly) and `rest_turns` 75
+  (`Action::Rest(n)`, whose keys are still `R75` Enter).
+- Profiles are `name = value` files in borg.txt's syntax, read at start
+  (`BORG_PROFILE`; run.sh defaults to
+  `harness/profiles/reborn-default.txt`). An unknown name, a malformed
+  line or an out-of-range value stops the game.
+- The profile's SHA-256 is in `config.txt` (run.sh), `params.json` and
+  every trace line.
+- `trace.rs` plus `decide_with`: the decision now carries its goal,
+  budget, scored candidates and violations; the guard of principle 6 is
+  recorded as one. The Borg writes `params.json` and `trace.jsonl` to
+  the run directory (`BORG_RUN_DIR`, from run.sh, Rust arm only). The trace
+  is written after the decision from what the decision made, so play is
+  unchanged (full 45/45, smoke 3/3, hallucination smoke 3/3 identical).
+- Dossiers keep `params.json` and `trace-tail.jsonl` (the last 200
+  thinks), and `record.json` gains `identity.profile_sha256` and
+  `decision_trace`. CI checks the trace and parameters in run outputs and
+  in Rust dossiers.
+- The Rust deaths are recorded again as D0434–D0479, now with traces. The
+  C arms' outputs and dossiers are unchanged.
+
 ## 2026-11-09: T2.3, knowledge tables (#14)
 
 `borg-reborn-rs/src/knowledge.rs` holds the L3 `Knowledge`. The Borg reads

@@ -32,6 +32,11 @@
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
 #     SAVE_ROOT=DIR fixture root for save=NAME (default harness/saves).
+#     BORG_PROFILE=FILE the reborn Borg's profile (rust arm only; default
+#            harness/profiles/reborn-default.txt). Its SHA-256 goes into
+#            config.txt; the Borg writes OUTDIR/params.json (the parameter
+#            table with the values used) and OUTDIR/trace.jsonl (one line
+#            per think), T2.4.
 #   process.json records the supervised child result, never a forged summary.
 # Produces OUTDIR/keys.log (the oracle), OUTDIR/messages.log (every message
 # added to the message log, Borg notes included), OUTDIR/state.log (one
@@ -126,6 +131,15 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
     esac
 done
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
+# The reborn Borg's profile and outputs (T2.4); the C Borgs ignore both.
+if [ "$IMPL" = rust ]; then
+    PROFILE="$(realpath "${BORG_PROFILE:-$ROOT/harness/profiles/reborn-default.txt}")"
+    [ -f "$PROFILE" ] || { echo "run.sh: no profile $PROFILE" >&2; exit 2; }
+    # Records name the profile relative to the checkout (no machine paths
+    # in dossiers); the Borg reads it by its absolute path.
+    PROFILE_NAME="${PROFILE#"$ROOT"/}"
+    export BORG_PROFILE="$PROFILE" BORG_PROFILE_NAME="$PROFILE_NAME" BORG_RUN_DIR="$OUT"
+fi
 if [ "${BORG_TOOLKIT_NATIVE:-0}" = 1 ]; then
     mkdir "$OUT/native"
     export BORG_RECORD_DIR="$OUT/native"
@@ -174,6 +188,10 @@ done
         echo "save_sha256=$(sha256sum < "$OUT/save/input.save" | cut -d' ' -f1)"
     fi
     if [ "$EXTRA_KEEP_RNG" = 1 ]; then echo "keep_load_rng=1"; fi
+    if [ "$IMPL" = rust ]; then
+        echo "profile=$PROFILE_NAME"
+        echo "profile_sha256=$(sha256sum < "$PROFILE" | cut -d' ' -f1)"
+    fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
 } > "$OUT/config.txt"
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd

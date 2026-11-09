@@ -64,6 +64,27 @@ class ExportTest(unittest.TestCase):
         self.assertIn('a cave spider at turn 12345', (d / 'report.md').read_text())
         self.assertFalse((d / 'keys.log').exists(), 'raw logs are not copied into the dossier')
 
+    def test_trace_and_parameters_go_into_the_dossier(self):
+        # T2.4: the reborn Borg's params.json and the end of its trace.
+        run = make_run(self.base, 'traced')
+        (run / 'params.json').write_text('{"profile_sha256": "abc"}\n')
+        (run / 'trace.jsonl').write_text(''.join(f'{{"think": {i}}}\n' for i in range(1, 251)))
+        (run / 'config.txt').write_text('flags=-\nborg_txt_sha256=feed\nprofile_sha256=abc123\n')
+        case, _ = ed.export(run, 'rust', self.build)
+        d = self.reg / case
+        tail = (d / 'trace-tail.jsonl').read_text().splitlines()
+        self.assertEqual(len(tail), ed.TRACE_TAIL)
+        self.assertEqual((tail[0], tail[-1]), ('{"think": 51}', '{"think": 250}'), 'the last thinks')
+        self.assertEqual((d / 'params.json').read_text(), '{"profile_sha256": "abc"}\n')
+        rec = json.loads((d / 'record.json').read_text())
+        self.assertEqual(rec['identity']['profile_sha256'], 'abc123')
+        self.assertEqual(rec['decision_trace'], {'file': 'trace-tail.jsonl', 'lines': 200, 'of': 250})
+        self.assertIn('trace-tail.jsonl', rec['files_sha256'])
+        self.assertIn('Decision trace: the last 200 of 250 thinks', (d / 'report.md').read_text())
+        # A C run has neither: the record says so.
+        c, _ = ed.export(make_run(self.base, 'untraced', seed=7), 'c', self.build)
+        self.assertIsNone(json.loads((self.reg / c / 'record.json').read_text())['decision_trace'])
+
     def test_partial_suite_directory_is_recorded_as_final(self):
         run = make_run(self.base / 'out.partial.4242', 'dead')
         case, _ = ed.export(run, 'c', self.build)

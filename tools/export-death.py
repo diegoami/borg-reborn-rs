@@ -57,6 +57,9 @@ def registry_dir():
     return Path(os.environ.get('BORG_DEATH_RECORDS_DIR') or ROOT / 'docs' / 'deaths')
 
 
+# Thinks of the decision trace a dossier keeps.
+TRACE_TAIL = 200
+
 REQUIRED = ('record.json', 'assessment.json', 'report.md', 'build.json', 'summary.json', 'config.txt')
 
 
@@ -87,9 +90,16 @@ def existing(reg):
 def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_sha, family):
     """The files of a basic dossier, {name: bytes}."""
     files = {}
-    for name in ('summary.json', 'config.txt', 'depths.json'):
+    for name in ('summary.json', 'config.txt', 'depths.json', 'params.json'):
         if (run_dir / name).exists():
             files[name] = (run_dir / name).read_bytes()
+    # The reborn Borg's decision trace (T2.4): its last TRACE_TAIL lines,
+    # the thinks that led to the death.
+    trace_lines = 0
+    if (run_dir / 'trace.jsonl').exists():
+        lines = (run_dir / 'trace.jsonl').read_bytes().splitlines(keepends=True)
+        trace_lines = len(lines)
+        files['trace-tail.jsonl'] = b''.join(lines[-TRACE_TAIL:])
     files['build.json'] = (json.dumps(build, indent=2, sort_keys=True) + '\n').encode()
     raw = {n: sha256_file(run_dir / n) for n in ('keys.log', 'messages.log', 'state.log')
            if (run_dir / n).exists()}
@@ -114,7 +124,10 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
             'git_rev': build.get('git_rev'), 'git_dirty': build.get('git_dirty'),
             'source_sha256': build.get('source_sha256'), 'binary_sha256': build.get('binary_sha256'),
             'borg_txt_sha256': config.get('borg_txt_sha256'),
+            'profile_sha256': config.get('profile_sha256'),
         },
+        'decision_trace': ({'file': 'trace-tail.jsonl', 'lines': min(trace_lines, TRACE_TAIL), 'of': trace_lines}
+                           if 'trace-tail.jsonl' in files else None),
         'attempts': [{
             'role': 'original', 'outcome': 'death', 'raw_directory': final_dir,
             'result_sha256': keys_sha, 'raw_sha256': raw,
@@ -138,7 +151,10 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
         f"Build `{build.get('git_rev', 'unknown')}` (dirty: {build.get('git_dirty', '?')}), binary "
         f"`{(build.get('binary_sha256') or 'unknown')[:12]}`. Keys `{keys_sha[:12]}`; raw logs stay in "
         f"`{final_dir}` (not committed).\n\n"
-        "**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run "
+        + (f"Decision trace: the last {min(trace_lines, TRACE_TAIL)} of {trace_lines} thinks in "
+           f"`trace-tail.jsonl`; parameters in `params.json` (profile "
+           f"`{(config.get('profile_sha256') or 'unknown')[:12]}`).\n\n" if 'trace-tail.jsonl' in files else '')
+        + "**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run "
         "(RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.\n").encode()
     return files
 
