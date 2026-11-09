@@ -197,9 +197,12 @@ def export(run_dir, impl, build_id_path, flags='-'):
     flag_set = set(flags.split(','))
     # A loaded save that keeps its own RNG starts the same game whatever the
     # seed; keep-load-rng without a save has no effect, so the seed stays. A
-    # random birth starts from the character actually played.
-    loads_save = any(f.startswith('save=') for f in flag_set)
-    seed = None if loads_save and 'keep-load-rng' in flag_set else summary.get('seed')
+    # random birth starts from the character actually played. Whether a save
+    # was loaded is borgh's own evidence (summary "loaded"), which also covers
+    # `run.sh ... -- -load FILE`; run.sh writes keep_load_rng=1 to config.txt
+    # when -keep-load-rng came that way too (re-review R3).
+    keeps_rng = 'keep-load-rng' in flag_set or config.get('keep_load_rng') == '1'
+    seed = None if summary.get('loaded') and keeps_rng else summary.get('seed')
     race = summary.get('played_race_idx', summary.get('race_idx'))
     cls = summary.get('played_class_idx', summary.get('class_idx'))
     family = family_of(impl, seed, race, cls,

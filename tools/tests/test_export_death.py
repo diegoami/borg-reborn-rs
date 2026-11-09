@@ -147,8 +147,9 @@ class ExportTest(unittest.TestCase):
 
     def test_saved_rng_ignores_the_seed_and_random_birth_uses_the_played_character(self):
         loaded = 'save=fixture.sav,keep-load-rng'
-        a, _ = ed.export(make_run(self.base, 'a', seed=1), 'c', self.build, loaded)
-        self.assertEqual(ed.export(make_run(self.base, 'b', seed=2), 'c', self.build, loaded), (a, 'repeat'))
+        a, _ = ed.export(make_run(self.base, 'a', seed=1, loaded=True), 'c', self.build, loaded)
+        self.assertEqual(ed.export(make_run(self.base, 'b', seed=2, loaded=True), 'c', self.build, loaded),
+                         (a, 'repeat'))
         # Re-review N7: keep-load-rng without a save has no effect; the seed counts.
         n1, _ = ed.export(make_run(self.base, 'n1', seed=1), 'c', self.build, 'keep-load-rng')
         n2, what_n2 = ed.export(make_run(self.base, 'n2', seed=2), 'c', self.build, 'keep-load-rng')
@@ -163,6 +164,22 @@ class ExportTest(unittest.TestCase):
         # Re-review N8: the terminal record names the character played.
         term = json.loads((self.reg / b / 'record.json').read_text())['terminal']
         self.assertEqual((term['race_idx'], term['class_idx']), (4, 5))
+
+    def test_a_save_loaded_through_extra_options_ignores_the_seed(self):
+        # Re-review R3: run.sh ... -- -load FILE -keep-load-rng. borgh says
+        # "loaded"; run.sh records the save's hash and keep_load_rng=1.
+        def run(name, seed, save='5a7e'):
+            r = make_run(self.base, name, seed=seed, loaded=True)
+            (r / 'config.txt').write_text(f'flags=-\nborg_txt_sha256=feed\nsave_sha256={save}\nkeep_load_rng=1\n')
+            return r
+        a, _ = ed.export(run('a', 1), 'c', self.build)
+        self.assertEqual(ed.export(run('b', 2), 'c', self.build), (a, 'repeat'))
+        other, what = ed.export(run('c', 2, save='0ther'), 'c', self.build)
+        self.assertEqual(what, 'exported', 'another save is another start')
+        # Loaded but with the game's RNG reseeded: the seed counts.
+        r1 = make_run(self.base, 'r1', seed=1, loaded=True)
+        r2 = make_run(self.base, 'r2', seed=2, loaded=True)
+        self.assertNotEqual(ed.export(r1, 'c', self.build)[0], ed.export(r2, 'c', self.build)[0])
 
     def test_a_repeat_repairs_a_stale_index(self):
         run = make_run(self.base, 'dead')
