@@ -32,6 +32,14 @@ BORG_IMPL=c-bbc-m7   flock /tmp/angband-validation.lock harness/build.sh
 | `check-boundary.py` (T1.4, new) | For a suite run with and without `exact`: keys before the boundary are a prefix of the normal run's keys, survivors stop at the cap, deaths are the same, and `depths.json` agrees with `summary.json`. |
 | `README.md` | This file. |
 
+Compute the primary endpoint from exact-boundary outputs:
+
+```sh
+tools/endpoint.py --local c-pristine=harness/out/full-exact-c-pristine \
+                  --local c-bbc-m7=harness/out/full-exact-c-bbc-m7 \
+                  --depth 5 --turns 100000 --pair c-pristine c-bbc-m7
+```
+
 All other files are byte-identical to borg-rs's.
 
 ## References
