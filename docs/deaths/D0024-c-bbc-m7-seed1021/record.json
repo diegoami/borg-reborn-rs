@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0024-c-bbc-m7-seed1021",
+  "run_kind": "harness",
+  "character": "Hobbit Druid",
+  "raw_cause": "a metallic red centipede",
+  "terminal": {
+    "cause": "a metallic red centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 26361,
+    "race_idx": 3,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1021,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "460972a4b269504a082bbead7d487a5e7bb6b02fdaf15171e1bddb544681d855"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-2-druid-1",
+      "result_sha256": "d9823326f085f83b616b3fe42da673da4f3c0d1a93b409869d8ddcf75ae5117f",
+      "raw_sha256": {
+        "keys.log": "d9823326f085f83b616b3fe42da673da4f3c0d1a93b409869d8ddcf75ae5117f",
+        "messages.log": "de3047b96e2ffb19ca542aac6c04105b861cbce94f2c0fb588c9ccde664bb266",
+        "state.log": "2d75969683ef5eed9f447b357a864b9ebf645e2a591aa2f3f66ea86c30d10d4b"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-8f2ff77cb435fbb2c06dfb468cdc75d6087a025cb614a591edebd74e4ace8e29",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "c513a1aaaa2008eb4eff3e5d2a8ba0f2f43079b45bbd6289d243e66072e0b0e9",
+    "summary.json": "ec8306c6894cbac05fb18680a227c62c6ea81fd2dddbc201e93a67454bed0723"
+  },
+  "investigation": null,
+  "issue": null
+}

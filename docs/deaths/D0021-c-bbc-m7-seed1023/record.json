@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0021-c-bbc-m7-seed1023",
+  "run_kind": "harness",
+  "character": "Dwarf Druid",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 12612,
+    "race_idx": 5,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1023,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "7a94cde1684c095b4cbe387aaef64f3b173ce31b0af2c703abaf8658ee27a4df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-2-druid-3",
+      "result_sha256": "ea8d80a09d642b584da34ed84ee1ed9a0910348805259df9412e576883320875",
+      "raw_sha256": {
+        "keys.log": "ea8d80a09d642b584da34ed84ee1ed9a0910348805259df9412e576883320875",
+        "messages.log": "0d51253cd81a31a971f3b24e3f52c207c9cf8468d269342a1824d64eaaf42e51",
+        "state.log": "aa999c2551fa22f0120ddbf2fb25ba28f1f52b2c019a06fa798a5ffc889426aa"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-3d481cd911f0970b2321bf55fb1540b8cfb68debf14c25462f1b2ffd6cd75f9a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "c22ec137abbfb4b07f5cbc510d1879639d810ad6b32cecbe38ef0fc5cb97d991",
+    "summary.json": "d7b169095e5468dd15baee490e6f312e6d2ee0c1b9c3c9e757d70453315ce8f6"
+  },
+  "investigation": null,
+  "issue": null
+}

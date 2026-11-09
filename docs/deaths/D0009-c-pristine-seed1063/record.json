@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0009-c-pristine-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3376,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-6-rogue-3",
+      "result_sha256": "00ccd07e2ac50aa6eefe0831473750150699cb522a399190ef5bf303c7c7ab6a",
+      "raw_sha256": {
+        "keys.log": "00ccd07e2ac50aa6eefe0831473750150699cb522a399190ef5bf303c7c7ab6a",
+        "messages.log": "8bf9607b9a3d1cb0db8c1ce9b71f4683825649b19ad80c8973f1d8cb27be4ce6",
+        "state.log": "e56183f3a9b8c6b86eed913f3e5c0fe2bcbfcba7f926a8ab897284fed41de1a6"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-4c5d14481c7e6a98fda55db125506ef05a93b97b78c8b3e7ff38272ac09df7d2",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "b6a2ef45933cee68d35d6e780b05cf8ab12da8fde289aaeebb0eed489c00f990",
+    "summary.json": "ccab2161f7123a8e46a231cc30c19f4dff7a0ccd3d9b9343373c2946117fc499"
+  },
+  "investigation": null,
+  "issue": null
+}

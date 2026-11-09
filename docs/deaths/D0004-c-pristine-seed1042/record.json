@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0004-c-pristine-seed1042",
+  "run_kind": "harness",
+  "character": "Half-Orc Necromancer",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 6416,
+    "race_idx": 6,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1042,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "bd1fad7705c0d09d21f383b79f51a50445beaa00ed904f5227e14aa5e08b4cf7"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-4-necro-2",
+      "result_sha256": "6b294cd881c7d9230649c2b7988881abaa4e7d65c5c390da2198ff30b665ed6e",
+      "raw_sha256": {
+        "keys.log": "6b294cd881c7d9230649c2b7988881abaa4e7d65c5c390da2198ff30b665ed6e",
+        "messages.log": "39e9ed0f23cc5a5d8d251c8ed1961b457f8c39a5aa055e8b07cc4d9aa27cabcb",
+        "state.log": "3f2adb8f3350f4c98bf63c605b7117ba2b7860628b6b508b686b6b51a126e88f"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-d758d564b22946fa3a656b11ff7cb19f128ad2a550cfce77657f75c4db19424f",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "d0a26dec439d16dfc9c8316b336c7aa5da7950c0939f86b735e16e5aadcdaf51",
+    "summary.json": "bd9260da42068b19977d0c4ea00dac7c740291991add55ab14cbccd945654e11"
+  },
+  "investigation": null,
+  "issue": null
+}

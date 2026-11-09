@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0003-c-pristine-seed1013",
+  "run_kind": "harness",
+  "character": "Gnome Mage",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 9782,
+    "race_idx": 4,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1013,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "e13e8bd7865dc4a7db4c17546bf55581ef02ea1ce9b1e29217a875eba8a99642"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-1-mage-3",
+      "result_sha256": "e40edab40e320dba5870cfad8dbd2e95f906282b47ea527c7dba261f246f0300",
+      "raw_sha256": {
+        "keys.log": "e40edab40e320dba5870cfad8dbd2e95f906282b47ea527c7dba261f246f0300",
+        "messages.log": "a88c419a1b964a9114ad9f20f1ec770c86c3c5c19b9f18d5cc1414566158fcdf",
+        "state.log": "304edc5021d00269d856e20043c1a39205e73e47e7d57f492d2908715f563fff"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-76ed170704daf9c030112d84fa6d0219dad505cdd9f6743c31a0b6b7a1f91c18",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "73ecab02b3c36dc4f7f3339bbfed6a7696c9327d1397af4e370f5d4dd6197655",
+    "summary.json": "80251ec1c24d34e0a87fd7472eaf57dbd20ca18990e137c7601c121045ac3c58"
+  },
+  "investigation": null,
+  "issue": null
+}

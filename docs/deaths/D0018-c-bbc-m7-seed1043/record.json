@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0018-c-bbc-m7-seed1043",
+  "run_kind": "harness",
+  "character": "Human Necromancer",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 6680,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "c-bbc-m7",
+    "seed": 1043,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "567022781837366da5462361e649aabad4ee9be84510d044fb9c634bfe237e76",
+    "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-bbc-m7/full-4-necro-3",
+      "result_sha256": "a3cc7a1354040e3cf72614f25f1b4093e05e632c31afb49e3c87c172f333bdeb",
+      "raw_sha256": {
+        "keys.log": "a3cc7a1354040e3cf72614f25f1b4093e05e632c31afb49e3c87c172f333bdeb",
+        "messages.log": "bec15ccb86baef667504100a4912af7a00251ebcfd23235f2318d366a3722bcd",
+        "state.log": "52b284245a68f8139489ba3c176c5b542e9a0e587f4ed3c6c2341fc31810831f"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "4c0a2ab11af68918421dad0637a68788951350dfc49d60837f29eeba2c4c67c8"
+    }
+  ],
+  "encounter_family": "start-6fe9705a3579cbf92328cc645c8c2a209deb71c8918f5c9e486372d1f4f868fd",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "270ce75be9cd6777e31c7825bb9af88bbabffd9b2b989e8c2fd0ba226f50a567",
+    "config.txt": "9e7071b7bc1302edc293dd80a181fd5e39f176eac99ba9c922cb62656da7c137",
+    "summary.json": "54a804a172768742db3c32bd3cfda5ad5bf88d49178baaeb860274a54296a0a9"
+  },
+  "investigation": null,
+  "issue": null
+}

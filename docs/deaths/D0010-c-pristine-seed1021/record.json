@@ -1,0 +1,51 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0010-c-pristine-seed1021",
+  "run_kind": "harness",
+  "character": "Hobbit Druid",
+  "raw_cause": "a blue yeek",
+  "terminal": {
+    "cause": "a blue yeek",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5865,
+    "race_idx": 3,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1021,
+    "flags": "-",
+    "git_rev": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+    "git_dirty": "no",
+    "source_sha256": "21b66e77fe4e06dfbe4cbc1562d6bb41ba9c000cbb1743522e78e807fc7b8835",
+    "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc",
+    "borg_txt_sha256": "460972a4b269504a082bbead7d487a5e7bb6b02fdaf15171e1bddb544681d855"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-c-pristine/full-2-druid-1",
+      "result_sha256": "cde7e44bad8aed93946e80ede09ca7bbd0f90f49db086e5a54cb48abb1756ade",
+      "raw_sha256": {
+        "keys.log": "cde7e44bad8aed93946e80ede09ca7bbd0f90f49db086e5a54cb48abb1756ade",
+        "messages.log": "60388075e52a6bc35a0c562abfb6ec95cd5bc0061957e9297e5ee1e010ab5b66",
+        "state.log": "afb60c14e861fc1c81375e1f3fae9e383cc429fa350564f4164d9e11c409786a"
+      },
+      "source_commit": "3a3d36d5a2d16bb75e01609cec6764c3813e17e8",
+      "binary_sha256": "d288f58b8043d49d52fc6c4118483efa72db7293e51755e7920b43e122129ecc"
+    }
+  ],
+  "encounter_family": "start-2b44b12f826e6b852c5890c1a8a721da25c9bcc1853f9442862f44d34efc25e5",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "73818b0a25c2692346a3ab12a1798da6cbae8a450c1d23239f30a71bfbbe73f7",
+    "config.txt": "c513a1aaaa2008eb4eff3e5d2a8ba0f2f43079b45bbd6289d243e66072e0b0e9",
+    "summary.json": "d29e0826ac96d0eba59834a733935e7bc417779aba834c85ed9cf1631ad99172"
+  },
+  "investigation": null,
+  "issue": null
+}
