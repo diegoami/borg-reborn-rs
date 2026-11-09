@@ -44,14 +44,6 @@
       "read_on": "2026-11-09",
       "issues": true
     },
-    "strategy-manual": {
-      "repository": "diegoami/neo-angband-tracker",
-      "branch": "workbench/c-borg",
-      "vendor": "neo-angband-tracker-workbench-c-borg",
-      "commit": "86349ca8419721d6595844569ab3ca999b960801",
-      "role": "The Angband Strategy Manual (docs/strategy/ on the workbench/c-borg branch, not the default branch; it moved there from c-borg-reference on 2026-11-09, when c-borg-reference became pristine upstream): game mechanics, races and classes, resistances, equipment, monsters and uniques, the dungeon and a game plan by phase, grounded in Angband 4.2.6 source and lib/gamedata, with generated appendices. Game knowledge for strategy design (copied in reference/strategy/). A work in progress at the pin: chapter 3 is not yet written.",
-      "read_on": "2026-11-09"
-    },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
       "commit": "e56d5faa8face1cecf03b3cc49f850e1b48f0d75",
@@ -78,12 +70,6 @@
         "TUNABLE-BORG-PLAN.md",
         "README.md"
       ]
-    },
-    {
-      "pin": "strategy-manual",
-      "from": "docs/strategy",
-      "to": "reference/strategy",
-      "select": "all"
     },
     {
       "pin": "better-borg-c",

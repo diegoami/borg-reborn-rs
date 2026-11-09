@@ -2,6 +2,14 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: S12 retired (pin PR, #78)
+
+The owner retired S12, the draft strategy manual, in favour of S14, the
+complete one. This pin PR (RULES 21) removes the `strategy-manual` pin, its
+copy rule and `reference/strategy/`, and updates SOURCES, reference/README
+and AGENTS.md. Its local clone, `vendor/neo-angband-tracker-workbench-c-borg`,
+is no longer used.
+
 ## 2026-11-09: TE.8, removals, documents and rules (#78)
 
 - **Removed:**

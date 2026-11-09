@@ -332,7 +332,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | `pins.json`: borg-rs | build source, `engine_tree` record, `borg_dir` | **Reference only**: `engine_tree` and borg-rs's `borg_dir` removed; the refresh report's watch of cited C Borg functions uses the angband pin's `src/borg` | §2 |
 | `reference/borg-rs/` | copies of borg-rs docs | **Keep** as reference | §2.3 |
 | `reference/c-borg/`, `reference/c-manual/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |
-| S12 (`reference/strategy/`) | draft manual | **Retire** (owner, 2026-11-09) | S14 supersedes it |
+| S12 (`reference/strategy/`) | draft manual | **Retired** in TE.8 (owner, 2026-11-09) | S14 supersedes it |
 | `docs/ZOO-CHANGE-REQUEST.md` | the request done by borg-zoo#32 | **Superseded** by `docs/ZOO-INTERFACE.md`; kept as history | §4 |
 | borg-zoo specimens `4.2.6-reborn-*` | at `2dd11fd`, through the zoo's borg-rs adapter | **Re-specify** `4.2.6-reborn-rust` after the new integration; the `-c-*` specimens are the zoo's to keep or retire | §4, §6 |
 | `.github/workflows/ci.yml` | CI on today's tree | **Rewrite** in E (§10) | |
