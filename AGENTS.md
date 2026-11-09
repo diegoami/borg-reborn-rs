@@ -50,7 +50,7 @@ inside it.** Tasks are GitHub issues labelled `task` in that GitHub
 milestone:
 
 ```sh
-gh issue list --milestone "M1. The seam and the yardstick" --label task --state open
+gh issue list --milestone "M2. Perception and world model" --label task --state open
 ```
 
 Take the lowest-numbered open task issue whose **Needs** issues are closed

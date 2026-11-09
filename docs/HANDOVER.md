@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: M1 done; M2 starts
+
+The owner merged the M1 review PR #39 (`main` → `reviewed`, merge
+`fab7155`) after four review passes by Kimi K3.1 Pro. Tag `m1` is
+annotated and points to that commit. Its message says "merged 2026-11-10",
+following the dates of the entries below, but the merge was on
+2026-11-09; tags are not moved (RULES 5). Those entries, marked
+2026-11-10, are from 2026-11-09 too. The GitHub milestone M1 is closed,
+and PLAN.md marks M2 in progress.
+
+After the review, as the owner decided:
+- RULES 7 now lets a session open issues, and keep its own issues up to
+  date, on borg-zoo, borg-rs, better-borg-c, neo-angband-tracker and
+  borg-agent, when the owner asks or when this repository needs a change
+  there. Nothing is pushed or merged there, and angband/angband stays
+  off limits.
+- The zoo change request is
+  [diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30).
+  docs/ZOO-CHANGE-REQUEST.md names the `m1` commit `fab71554fd32`.
+  The issue's prompt is updated to that exact commit after this PR is
+  merged, because its old fallback (`4236081`, unpeeled tag) is obsolete.
+
+Found while re-reading RULES: commits and PR bodies since M0 carried
+`Co-Authored-By` and "Generated with" lines, which RULES 4 forbids. They
+stay, since published commits are not amended (RULES 5), and no new
+commit has them.
+
+Next, in M2 (each its own PR):
+1. The source refresh: `--update` for better-borg-c (new deaths D0015 and
+   D0016) and the other moved pins. Repoint `strategy-manual` (S12) to
+   neo-angband-tracker `workbench/c-borg` so the copy keeps a source; the
+   owner may still retire S12 in favour of S14.
+2. The borg-rs impact-v7 engine re-sync (docs/ENGINE-TREE.md).
+3. Then #12 (T2.1, Observation) and the rest of M2 in order.
+
+Still open for the owner: whether the self-produced `smoke-c-bbc-m7`
+reference is acceptable, and S12's retirement.
+
 ## 2026-11-10: M1 fourth review pass, findings S1–S2 (#39)
 
 The fourth pass (Kimi K3.1 Pro, at `eff27c9`) resolved R1, R2, R4, R5 and

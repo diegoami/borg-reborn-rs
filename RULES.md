@@ -29,9 +29,14 @@ whatever the model.
    task is merged, the session stops and opens the review PR (PLAN.md).
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo, borg-agent) are **read only**, at pinned commits
-   ([pins.json](pins.json)). Nothing is posted, filed or pushed there. A
-   needed change there, or a C Borg defect found here, is described in
-   the handover for the owner to route.
+   ([pins.json](pins.json)). Nothing is pushed or merged there. A session
+   may open **issues**, and keep its own issues up to date, on borg-zoo,
+   borg-rs, better-borg-c, neo-angband-tracker and borg-agent, when the
+   owner asks or when this repository needs a change there. It follows
+   that repository's own conventions and links the issue in the handover.
+   Anything else needed there, or a C Borg defect found here, is described
+   in the handover for the owner to route. angband/angband stays off limits
+   (RULES 8). (Owner decision, 2026-11-09, applied after the M1 review.)
 8. No posts to angband/angband or any other upstream project or forum.
 
 ## Play and evidence
