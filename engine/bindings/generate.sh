@@ -40,7 +40,10 @@ trap 'rm -f "$tmp"' EXIT
         -- -I"$ROOT/engine/angband/src" -DALLOW_BORG -std=gnu99 2>/dev/null
 } > "$tmp"
 if [ "${1:-}" = --check ]; then
-    cmp -s "$tmp" "$OUT" || { echo "generate.sh: borg-reborn-rs/src/bindings.rs is not what the headers generate; run engine/bindings/generate.sh" >&2; exit 1; }
+    cmp -s "$tmp" "$OUT" || {
+        diff -u "$OUT" "$tmp" | head -60 >&2
+        echo "generate.sh: borg-reborn-rs/src/bindings.rs is not what the headers generate (libclang $(clang --version 2>/dev/null | head -1)); run engine/bindings/generate.sh" >&2
+        exit 1; }
     echo "bindings: up to date"
 else
     cp "$tmp" "$OUT"
