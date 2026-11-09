@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: two sources added (owner request)
+
+- **S12, the Angband Strategy Manual:** neo-angband-tracker `docs/strategy/`
+  on branch `c-borg-reference` (not the default branch), copied in
+  `reference/strategy/` at `e67fd7d`. A new pin `strategy-manual` with two new
+  pin fields: `branch` (the branch the refresh report and `--update` follow)
+  and `vendor` (its own clone, `vendor/neo-angband-tracker-c-borg-reference`,
+  so it never fights the default-branch clone over a checkout).
+  `scripts/refresh-sources.py` and `scripts/setup.sh` support both; a new test
+  covers a branch pin. The manual is a work in progress (chapter 3 missing)
+  and moved twice on 2026-11-09: expect the refresh report to show it.
+- **S13, the official command descriptions**
+  (angband.readthedocs.io `command.html`): built from upstream
+  `docs/command.rst`. Upstream `master` is at our engine pin `e473720`, so the
+  page is `angband/docs/command.rst` in our tree; nothing copied.
+- Not done: no strategy is taken from either yet. That is M3+ work; lifted
+  knowledge cites the engine source, not the manual (docs/SOURCES.md S12).
+
 ## 2026-11-09, end of session: M1 under review
 
 **State**

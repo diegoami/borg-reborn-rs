@@ -149,6 +149,28 @@ class RefreshTest(unittest.TestCase):
         text = self.report()
         self.assertIn('fetch failed, using what is already fetched', text)
 
+    def test_branch_pin_follows_its_branch_in_its_own_clone(self):
+        sh(self.origin, 'git', 'checkout', '-q', '-b', 'manual', self.a)
+        c = commit(self.origin, {'docs/strategy/README.md': '# manual\n'}, 'C')
+        sh(self.origin, 'git', 'checkout', '-q', 'main')
+        sh(self.root, 'git', 'clone', '-q', str(self.origin), str(self.root / 'vendor' / 'src-manual'))
+        pins = json.loads((self.root / 'pins.json').read_text())
+        pins['pins']['manual'] = {'repository': 'someone/src', 'branch': 'manual', 'vendor': 'src-manual',
+                                  'commit': self.a, 'read_on': '2026-11-08'}
+        pins['copies'].append({'pin': 'manual', 'from': 'docs/strategy', 'to': 'reference/strategy',
+                               'select': 'all'})
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        out = io.StringIO()
+        rs.report(self.root, ['manual'], issues=False, out=out)
+        self.assertIn('## manual (someone/src, branch manual)', out.getvalue())
+        self.assertIn('**1 commits** since pin', out.getvalue())
+        self.assertIn('copy `docs/strategy` → `reference/strategy`: 1 added', out.getvalue())
+        self.assertEqual(rs.update(self.root, ['manual'], today='2026-11-09'), [('manual', self.a, c)])
+        self.assertEqual((self.root / 'reference/strategy/README.md').read_text(), '# manual\n')
+        self.assertEqual(sh(self.root / 'vendor/src-manual', 'git', 'rev-parse', 'HEAD'), c)
+        self.assertEqual(sh(self.root / 'vendor/src', 'git', 'rev-parse', 'HEAD'), self.a,
+                         'the default-branch clone is not touched')
+
     def test_no_fetch_uses_local_state(self):
         text = self.report(fetch=False)
         self.assertIn('nothing new', text)
