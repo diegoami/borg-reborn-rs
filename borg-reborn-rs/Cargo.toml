@@ -9,6 +9,6 @@ publish = false
 [lib]
 name = "borg_reborn_rs"
 path = "src/lib.rs"
-crate-type = ["staticlib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]

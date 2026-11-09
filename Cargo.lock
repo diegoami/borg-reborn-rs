@@ -5,3 +5,10 @@ version = 4
 [[package]]
 name = "borg-reborn-rs"
 version = "0.0.0"
+
+[[package]]
+name = "borg-rs"
+version = "0.0.0"
+dependencies = [
+ "borg-reborn-rs",
+]

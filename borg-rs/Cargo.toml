@@ -1,0 +1,20 @@
+# The seam package. The engine tree imported from borg-rs (angband/, never
+# edited here, RULES 9) builds `cargo build -p borg-rs` at the repository
+# root and links `libborg_rs.a` when BORG_IMPL=rust (angband/CMakeLists.txt).
+# This package has exactly that name and only re-exports the reborn crate,
+# so the staticlib carries the reborn Borg's `do_cmd_borg`.
+[package]
+name = "borg-rs"
+version = "0.0.0"
+edition = "2021"
+license = "GPL-2.0-only"
+description = "Seam: links borg-reborn-rs into the engine under the name the imported CMake expects"
+publish = false
+
+[lib]
+name = "borg_rs"
+path = "src/lib.rs"
+crate-type = ["staticlib"]
+
+[dependencies]
+borg-reborn-rs = { path = "../borg-reborn-rs" }
