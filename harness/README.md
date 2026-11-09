@@ -49,7 +49,7 @@ All other files are byte-identical to borg-rs's.
 
 | Directory | What it is | Use |
 | --- | --- | --- |
-| `reference/smoke-c/` | The smoke suite run by borg-rs's own C build at `e5cb263`: impact v6, the same `angband/` tree as ours. Keys, messages and state, produced on 2026-11-09 | Oracle for `BORG_IMPL=c` here. Our build reproduced it byte for byte, which proves the import (T1.2). Before `measurement/rust-overlay.py` was adapted, the build-input hash was also identical (`d6ada527…`). The adaptation changes that hash but not the C binary |
+| `reference/smoke-c/` | The smoke suite run by borg-rs's own C build at `286215c` (impact v8, with `borg_munchkin_by_class` on by default), the same `angband/` tree as ours since the M2 re-sync. Keys, messages and state, produced on 2026-11-09 | Oracle for `BORG_IMPL=c` here: our build reproduced it byte for byte (3/3) after the re-sync, as it did borg-rs `e5cb263`'s run in T1.2. The M1 reference (impact v6) is in git history |
 | `reference/smoke-c-bbc-m7/` | Our own `c-bbc-m7` smoke run of 2026-11-09 (T1.8). It is **self-produced**: no outside oracle runs better-borg-c milestone 7 under borgh | Regression reference: CI checks that the control has not changed |
 | `reference/smoke-pristine/`, `reference/full-pristine/` | borg-rs's committed smoke and full references, unchanged from `aa4ad6c` (the zoo's `4.2.6-rs-m0-c`, pristine C Borg) to `e5cb263` | Oracle for the `c-pristine` control. **Checked 2026-11-09: smoke 3/3 and full 45/45 byte-identical** (keys, messages, state). They do **not** match `BORG_IMPL=c`, whose C Borg carries the milestone 2–6 fixes |
 
