@@ -36,9 +36,13 @@ if [ "$SRC" != "$ROOT/angband" ]; then
 fi
 # Always pass BORG_IMPL: it is a CMake cache variable, so a build dir once
 # configured with another value would otherwise keep it.
+# borg-reborn-rs: harness builds of the Rust Borg report decisions to borgh
+# (cargo feature borgh, through the imported CMake's BORG_RS_FEATURES).
+RUST_ARGS=()
+[ "$IMPL" = rust ] && RUST_ARGS=(-DBORG_RS_FEATURES=borgh)
 cmake -S "$SRC" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release \
     -DSUPPORT_BORG_HARNESS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBORG_IMPL="$CMAKE_IMPL" >"$BUILD.cmake.log" 2>&1 || {
+    -DBORG_IMPL="$CMAKE_IMPL" "${RUST_ARGS[@]}" >"$BUILD.cmake.log" 2>&1 || {
     cat "$BUILD.cmake.log"; exit 1; }
 make -C "$BUILD" -j"$(nproc)" >"$BUILD.make.log" 2>&1 || {
     tail -50 "$BUILD.make.log"; exit 1; }

@@ -46,8 +46,6 @@ gets a new reference directory.
 
 ## Not here yet
 
-- A playing Rust Borg: T1.5 (#8). Until then `do_cmd_borg` is a no-op, so
-  `BORG_IMPL=rust` builds and links, but no Borg starts on that arm.
-- The reborn Borg does not yet call borgh's measurement hooks
-  (`borgh_setting`, `borgh_decision`, `borgh_rng`). borg-rs's overlay patched
-  them into its own sources; ours will call them directly (T1.4/T1.5).
+- The reborn Borg reports each decision to borgh (`borgh_decision`, cargo
+  feature `borgh`, which `build.sh` turns on for `BORG_IMPL=rust` through
+  `-DBORG_RS_FEATURES=borgh`). It has no `borg.txt` settings to report.
