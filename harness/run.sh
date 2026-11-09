@@ -17,7 +17,8 @@
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
-#   options (frames, rune-pattern) are gone: only the Rust Borg is built here
+#   options (rune-pattern; frames stays for the copied tooling until TE.6)
+#   are gone: only the Rust Borg is built here
 #   (docs/SPEC.md §6), and it does not read borg.txt.
 #   Env: BORG_IMPL=rust (the default; build/rust), ANGBAND_BIN (override binary)
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
@@ -61,6 +62,10 @@ if [ "$FLAGS" != "-" ]; then
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
             terminal-save) BORGH_FLAGS+=(-save-final-state "$OUT/final.save");;
             keep-load-rng) BORGH_FLAGS+=(-keep-load-rng);;
+            # Only for the copied recording tooling and its own binary built
+            # from borg-rs's tree (tools/borg_runtime.py); our frontend refuses
+            # -frames. Goes with that tooling in TE.6.
+            frames) BORGH_FLAGS+=(-frames "$OUT/frames.jsonl");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }
