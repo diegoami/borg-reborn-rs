@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0083-rust-seed1073",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 3,
+    "turn": 24844,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1073,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "9879ff34e80d65b349e0a74cd5ff0f43adb270f355a23efda5cde9e1c6f9de59"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-7-ranger-3",
+      "result_sha256": "e76bf04387019152054455bc0512cca6def33728c57946a32ca867cc5169e62b",
+      "raw_sha256": {
+        "keys.log": "e76bf04387019152054455bc0512cca6def33728c57946a32ca867cc5169e62b",
+        "messages.log": "76e74502cfac69086fb8b9ff8139553e8e4f54a45848f465bcaf7aa6a1e789c9",
+        "state.log": "50f5130b88e22174bf6262ae65db3d0e00daa6466a6dacf175097e123f3a6607"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-cdc5f942ec170021e2fc5fdbb0675e05f7e64b602ec8b301c891f43221f36488",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "43d9ca20dbfeed8b5d3ee7c3787214417f094716c585b9efbec72a74ffec2462",
+    "depths.json": "c67b71d69bbafe22c08c7dafb85429bec9f67f7a9b5885233ec9dce3789bb495",
+    "summary.json": "7a4d1602e3dbe06447912aacfd706f42eea9a61461aa9d75295e46f97cb5a1bb"
+  },
+  "investigation": null,
+  "issue": null
+}

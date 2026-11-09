@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0072-rust-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5089,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+    "git_dirty": "no",
+    "source_sha256": "616eb1581b93c70909db3c69b29e3483ad434110ac8d7d292288d4eaf5668436",
+    "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t18/full-rust/full-6-rogue-3",
+      "result_sha256": "c3b20ca25a0c3140ed04f4b4dae90f65ca010bc280d738842de727ba78ff4cb8",
+      "raw_sha256": {
+        "keys.log": "c3b20ca25a0c3140ed04f4b4dae90f65ca010bc280d738842de727ba78ff4cb8",
+        "messages.log": "f60b65628828ec5b5b5daf00cd284f0e651f96a1ffa1333666b2ee319a9c7c1d",
+        "state.log": "3c31bc534430f925823ec296206916a5b3821a835e331a2edbfedc66e51769e8"
+      },
+      "source_commit": "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d",
+      "binary_sha256": "0d67b75c7f2d2686be56bb4c502214a8dde8063e5f9242b58606813a5cd9cb96"
+    }
+  ],
+  "encounter_family": "start-f3795c1f71bf25931eeaf81c3dea6c63cdfa825f6abc93512e80b021c1d03392",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b0d391b98e42dab9384d0d19782984182c993b991af0c0b61e1a3af27f9c4d8f",
+    "config.txt": "b6a2ef45933cee68d35d6e780b05cf8ab12da8fde289aaeebb0eed489c00f990",
+    "depths.json": "9b73c2570b50fb1ea4d84ff4b4dbb021dcaccadd3b5baaf523da581af901baa8",
+    "summary.json": "29cf683864f15d47b6d74350b8ae5d9df49427f6aabc6696bc13fb605ab28b94"
+  },
+  "investigation": null,
+  "issue": null
+}
