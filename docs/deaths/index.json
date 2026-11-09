@@ -1,9 +1,9 @@
 {
   "actions": [],
-  "cases": 233,
+  "cases": 234,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 12,
-    "Grip, Farmer Maggot's Dog": 30,
+    "Grip, Farmer Maggot's Dog": 31,
     "a blue yeek": 5,
     "a cave spider": 5,
     "a clear icky thing": 8,
@@ -37,14 +37,15 @@
     "poison": 1,
     "starvation": 24
   },
-  "death_process_attempts": 233,
-  "distinct_starting_conditions": 233,
+  "death_process_attempts": 234,
+  "distinct_starting_conditions": 234,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
     "03a7b8e2f5cf569953774a512dc291099f74c2df": 46,
     "321db9028fb3785bd5dbb2320a2e4bd06896fb5c": 1,
     "3a3d36d5a2d16bb75e01609cec6764c3813e17e8": 31,
+    "457559ec3d5fa04b86c8a2030a112d91e1f7d11d": 1,
     "96f5fd0e3620608523d74553ad0f79e03b8cd9de": 46,
     "a4b37e7fed3658a33ea0ae92c57607e2e0c13c7d": 46,
     "ad7bf0f0646c5a8319fc307a4d06a66ccd43dc46": 1,
