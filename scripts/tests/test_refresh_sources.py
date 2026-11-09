@@ -139,6 +139,19 @@ class RefreshTest(unittest.TestCase):
         self.assertTrue((ref / 'LESSONS.md').exists())
         self.assertIn('at pin', self.report(), 'after the update the pin is current')
 
+    def test_failed_update_changes_nothing(self):
+        pins = json.loads((self.root / 'pins.json').read_text())
+        pins['pins']['broken'] = {'repository': 'someone/missing', 'commit': self.a, 'read_on': '2026-11-08'}
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        before = {p: p.read_bytes() for p in (self.root / 'reference').rglob('*') if p.is_file()}
+        pins_before = (self.root / 'pins.json').read_bytes()
+        with self.assertRaises(SystemExit):
+            rs.update(self.root, ['src', 'broken'], today='2026-11-09')
+        after = {p: p.read_bytes() for p in (self.root / 'reference').rglob('*') if p.is_file()}
+        self.assertEqual(before, after, 'copies changed although the update failed')
+        self.assertEqual((self.root / 'pins.json').read_bytes(), pins_before)
+        self.assertEqual(sh(self.root / 'vendor/src', 'git', 'rev-parse', 'HEAD'), self.a)
+
     def test_dirty_vendor_is_not_moved(self):
         (self.root / 'vendor/src/local.txt').write_text('mine\n')
         rs.update(self.root, ['src'], today='2026-11-09')

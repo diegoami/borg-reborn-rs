@@ -219,20 +219,28 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
 
 
 def update(root, pins, fetch=True, today=None):
+    """Move pins to their heads and refresh their copies, in two phases (M1
+    review): first resolve every head and read every blob into memory,
+    writing nothing; only when all of that succeeded, write copies, README
+    pins, pins.json, vendor checkouts and the index. A failure in the first
+    phase leaves the repository exactly as it was."""
     path = root / 'pins.json'
     data = json.loads(path.read_text())
     today = today or datetime.date.today().isoformat()
     readme = root / 'reference/README.md'
-    moved = []
+    plans = []
     for name in pins:
         pin = data['pins'][name]
         src = Source(root, name, pin)
         src.resolve_head(fetch)
         if not src.head:
             raise SystemExit(f'{name}: cannot update: {"; ".join(src.problems)}')
-        rules = [r for r in data.get('copies', []) if r['pin'] == name]
-        for rule in rules:
-            write_copy(root, src, rule, src.head)
+        copies = [(rule, read_copy(src, rule, src.head)) for rule in data.get('copies', []) if rule['pin'] == name]
+        plans.append((name, pin, src, copies))
+    moved = []
+    for name, pin, src, copies in plans:
+        for rule, files in copies:
+            write_copy(root, rule, files)
         old = pin['commit']
         if old != src.head:
             moved.append((name, old, src.head))
@@ -248,19 +256,29 @@ def update(root, pins, fetch=True, today=None):
     return moved
 
 
-def write_copy(root, src, rule, commit):
+def read_copy(src, rule, commit):
+    """{relative path: bytes} of a copy rule at commit; raises before any write."""
     files = selected(rule, src.tree(commit, rule['from']))
+    out = {}
+    for rel, blob in sorted(files.items()):
+        r = subprocess.run(['git', '-C', str(src.repo), 'cat-file', 'blob', blob], capture_output=True)
+        if r.returncode:
+            raise SystemExit(f'{src.name}: cannot read {rule["from"]}/{rel} ({blob[:12]}) at {commit[:12]}: '
+                             f'{r.stderr.decode().strip()}; nothing was changed')
+        out[rel] = r.stdout
+    return out
+
+
+def write_copy(root, rule, files):
     dest = root / rule['to']
     if rule.get('select', 'files') == 'files':
         for f in rule['files']:
             (dest / f).unlink(missing_ok=True)
     elif dest.exists():
         shutil.rmtree(dest)
-    for rel, blob in sorted(files.items()):
+    for rel, content in sorted(files.items()):
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
-        content = subprocess.run(['git', '-C', str(src.repo), 'cat-file', 'blob', blob],
-                                 capture_output=True, check=True).stdout
         target.write_bytes(content)
 
 

@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M1 review findings (#39)
+
+The M1 review (Kimi K3.1 Pro, on #39) had 4 blocking, 13 should-fix and 2
+nit findings. They are answered in four PRs into `main`, each with a reply
+on its comments:
+- #42: RNG isolation of perception (`with_borg_rng`, hallucination
+  regression in CI), and no loop without game time.
+- #43: endpoint scoring (exact boundary, process receipts, per-class
+  attempts, victory, pairing, zoo boundary by kind) and suite manifests.
+- #44: death records (natural-death checks, family identity, index repair,
+  attempt dedupe, registration on publication refusal, zoo deaths
+  repatriated, CI death reconciliation).
+- the sources PR: an atomic `--update`, and the zoo request (death
+  evidence, boundary for every adapter, no stale fallback ref).
+
+Rust play is unchanged by the fixes (full suite 45/45 identical), but #42
+changed the Rust build inputs, so the Rust deaths are re-recorded at the new
+source. The zoo change request was filed as borg-zoo#30 at the owner's
+request; the issue needs the corrections of this PR (owner's call).
+
+**After the re-review and the owner's merge of #39:** tag `m1`; amend
+RULES 7 (owner decision 2026-11-10: sessions may open issues, not push,
+on the family's repositories) and record borg-zoo#30 in this file and in
+ZOO-CHANGE-REQUEST.md; then start M2 with a refresh PR (better-borg-c
+D0015–D0016, borg-rs impact v7 engine re-sync as its own PR).
+
 ## 2026-11-09: two sources added (owner request)
 
 - **S12, the Angband Strategy Manual:** neo-angband-tracker `docs/strategy/`
