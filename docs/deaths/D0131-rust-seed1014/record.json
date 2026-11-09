@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0131-rust-seed1014",
+  "run_kind": "harness",
+  "character": "Dwarf Mage",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 29255,
+    "race_idx": 5,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1014,
+    "flags": "-",
+    "git_rev": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+    "git_dirty": "no",
+    "source_sha256": "2d1aed0fcfc0672f8ade128f46f1050a7eb19bf7cee7bcc7059c9dc98f190dc4",
+    "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03",
+    "borg_txt_sha256": "b80b179079aa0dfd8f0abc147016a187c1a6b39cc35e03adaa268227bc71f054"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/ci-like/full-rust/full-1-mage-4",
+      "result_sha256": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+      "raw_sha256": {
+        "keys.log": "f00858963d8406cd31ebc22f18f6cc1f9bd8d4989ea5229419db0df6c04bc8cb",
+        "messages.log": "3a527cbdbd7ddc595599fa9c9aa7927241d109a5e2ebdfb27aefcb22a7906133",
+        "state.log": "5272af9ab397907b3e724578431b23066b640d3767172808b28e5f5770e0f37c"
+      },
+      "source_commit": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+      "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03"
+    }
+  ],
+  "encounter_family": "start-8bec7fc7d0c1e300d0d031649811f8fef2a6f6b7f554e9865d09bc80c73597a1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "94e38b92bb28e72389e8d40493e42d827afc79cb46583fac66390ed59149146f",
+    "config.txt": "582d65d6d62b2e4d0a8cb65e9f9ec8f9b05f14dde67e3d1caa9e85f321753b70",
+    "depths.json": "0513fb19aa584519e9455c09956ac4bca52ea6f1a927246ce4f0444d98b76530",
+    "summary.json": "51cfcb2a1206bf75bd640c2db02951688f5e17d2b882adb9431e070f54377618"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0132-rust-seed1071",
+  "run_kind": "harness",
+  "character": "Half-Troll Warrior",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 41045,
+    "race_idx": 8,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1071,
+    "flags": "-",
+    "git_rev": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+    "git_dirty": "no",
+    "source_sha256": "2d1aed0fcfc0672f8ade128f46f1050a7eb19bf7cee7bcc7059c9dc98f190dc4",
+    "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03",
+    "borg_txt_sha256": "2fc19df7b5112ffffb073a980bc93b8c7170000f9707d1545a2272274db029d8"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/ci-like/full-rust/full-7-ranger-1",
+      "result_sha256": "087671a90f4703ef4ca5145e0987d147cef8520d64e6173a391537a1ac987a45",
+      "raw_sha256": {
+        "keys.log": "087671a90f4703ef4ca5145e0987d147cef8520d64e6173a391537a1ac987a45",
+        "messages.log": "7b81d16a2228b3330fe7bdb801c007877854f5c3c61c1f12f12e68890f7afa40",
+        "state.log": "145b015a82752bbccdc13560f7c2fddab354aa889528ac21457bcff2832d7bcd"
+      },
+      "source_commit": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+      "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03"
+    }
+  ],
+  "encounter_family": "start-d3b8d0067cb9fc95f4b04899c3923496111b5d2f75eb2a860f8d0b4898164c17",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "94e38b92bb28e72389e8d40493e42d827afc79cb46583fac66390ed59149146f",
+    "config.txt": "cdb6ee17b530497ac2f576aa8074f67c30d232a8d33d42f21e862c03be9db901",
+    "depths.json": "5c0264ff971e29a32555fc15febb6cf390e8c8e069691585f64353f903b8b0c1",
+    "summary.json": "38042f21a44bb1799936fdb31df29fb2d6ece0ba119c1fec794fc450d0696df1"
+  },
+  "investigation": null,
+  "issue": null
+}
