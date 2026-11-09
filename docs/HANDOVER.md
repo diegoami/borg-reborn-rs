@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: source S14, the complete Angband Strategy Manual
+
+The owner added neo-angband-tracker `docs/c-manual/` (default branch) as a
+source. It is copied to `reference/c-manual/` by a new copy rule on the
+`neo-angband-tracker` pin, moved to `777eea1` with `--update` (the C Borg
+spec and plan copies are unchanged there). It is the finished version of
+S12's draft: 17 chapters, appendices A1–A10, and the official manual. Chapter
+15, *Notes for the borg*, is direct input for M2–M6 strategy and parameters.
+S12 stays pinned until the owner retires it.
+
 ## 2026-11-10: M1 review findings (#39)
 
 The M1 review (Kimi K3.1 Pro, on #39) had 4 blocking, 13 should-fix and 2

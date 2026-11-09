@@ -7,9 +7,10 @@ PR that updates the pin and this table.
 
 | Path | Copied from | Commit | What is included |
 | --- | --- | --- | --- |
-| `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `eefc55000dd5d5f43d8f077f6543b4594807ce08` | The C Borg specification. Its relative links point into neo-angband-tracker |
+| `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The C Borg specification. Its relative links point into neo-angband-tracker |
 | `c-borg/TUNABLE-BORG-PLAN.md` | same | same | Revision 3 plus *What a remake leaves out* (2026-11-08) |
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
+| `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
 | `strategy/` | diegoami/neo-angband-tracker `docs/strategy/` on branch **`c-borg-reference`** (pin `strategy-manual`, its own clone `vendor/neo-angband-tracker-c-borg-reference`) | `e67fd7dbce189a3e3a2f4d4910c8367fa93af605` | The Angband Strategy Manual: every file of the directory, chapters 1–2 and 4–8, appendices A1–A6 and their generator. Work in progress at this commit: chapter 3 (`03-magic.md`) is not written yet, so its four links do not resolve |
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `b1588cc908c667a859db9a60e9d109766fe366c4` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
 | `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `e5cb263eed8eee93860b5cfcdc18af99e6d134f1` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
@@ -31,6 +32,10 @@ resolve here. Read them at the pinned commit, for example
 | borg-rs | `docs/C-CONSUMER-ADOPTION.md` | The adoption contract |
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
+
+`c-manual/` links its own copy of the official manual (`user-manual/`); its
+source references (`src/...`, `lib/gamedata/...`) are, like S12's, relative to
+an Angband tree: here `angband/src/` and `angband/lib/gamedata/`.
 
 The strategy manual's links to the official manual (`../birth.rst`,
 `../command.rst` and the other `docs/*.rst`) and its source references

@@ -38,13 +38,14 @@
     },
     "neo-angband-tracker": {
       "repository": "diegoami/neo-angband-tracker",
-      "commit": "eefc55000dd5d5f43d8f077f6543b4594807ce08",
+      "commit": "777eea1d9bd6c4094e87fff23af3984dd23f7edb",
       "paths": [
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
-        "docs/c-borg/README.md"
+        "docs/c-borg/README.md",
+        "docs/c-manual/"
       ],
-      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects.",
+      "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects. Also the Angband Strategy Manual (docs/c-manual/ on the default branch, the complete version of S12's draft): copied in reference/c-manual/, with its copy of the official user manual.",
       "read_on": "2026-11-09",
       "issues": true
     },
@@ -125,6 +126,12 @@
         "FORK-CORRECTIONS.md",
         "adoption/status.json"
       ]
+    },
+    {
+      "pin": "neo-angband-tracker",
+      "from": "docs/c-manual",
+      "to": "reference/c-manual",
+      "select": "all"
     }
   ],
   "engine_tree": {
