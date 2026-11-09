@@ -19,6 +19,11 @@ jobs:
       - run: bash -n scripts/setup.sh
       - run: python3 -m unittest discover -s scripts/tests
       - run: python3 -m unittest discover -s tools/tests
+      # The generated bindings match upstream's headers (TE.3): bindgen and
+      # libclang, so the D3 audit's regeneration check runs too.
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
+      - run: cargo install bindgen-cli --version 0.73.2 --locked
+      - run: engine/bindings/generate.sh --check
       - run: python3 -m unittest discover -s engine/tests
 
   engine:
