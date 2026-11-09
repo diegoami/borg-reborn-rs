@@ -253,7 +253,21 @@ extern "C" fn do_cmd_borg() {
 
 use crate::observation::{
     parse_messages, Grid, Item, MonsterSeen, ObjectSeen, Observation, Panel, Slot, Spell, Status,
+    StoreStock, Ware,
 };
+
+extern "C" {
+    // obj-gear.h; not in the copied bindings. Reads the gear only.
+    fn pack_slots_used(p: *const headers::player_h::player) -> c_int;
+    // store.h; not in the copied bindings. A price from the store's owner
+    // and the object's value; no state changes, no random draws.
+    fn price_item(
+        store: *mut headers::store_h::store,
+        obj: *const headers::object_h::object,
+        store_buying: bool,
+        qty: c_int,
+    ) -> c_int;
+}
 
 /// The text of screen row `row`, columns `col..col + len` (all of the row
 /// if `len` is `None`), trailing blanks removed: `borg_what_text()`'s read
@@ -276,11 +290,13 @@ fn screen_text(row: i32, col: i32, len: Option<i32>) -> String {
     }
 }
 
-/// The C Borg's item analysis of one object (`borg_item_analyze`).
+/// The C Borg's item analysis of one object (`borg_item_analyze`). In a
+/// shop (`in_store`) the player is always aware of the flavour, and the
+/// description is the store's (`ODESC_STORE`).
 ///
 /// # Safety
 /// `obj` is a live object of the player's gear or a store.
-unsafe fn analyze(obj: *const headers::object_h::object) -> Option<Item> {
+unsafe fn analyze(obj: *const headers::object_h::object, in_store: bool) -> Option<Item> {
     use headers::{obj_desc_h, obj_knowledge_h, obj_util_h};
     let o = &*obj;
     if o.kind.is_null() || o.number == 0 {
@@ -299,7 +315,7 @@ unsafe fn analyze(obj: *const headers::object_h::object) -> Option<Item> {
         buf.as_mut_ptr(),
         buf.len(),
         obj,
-        obj_desc_h::ODESC_FULL,
+        obj_desc_h::ODESC_FULL | if in_store { obj_desc_h::ODESC_STORE } else { 0 },
         headers::player_h::player,
     );
     Some(Item {
@@ -311,7 +327,7 @@ unsafe fn analyze(obj: *const headers::object_h::object) -> Option<Item> {
         timeout: o.timeout,
         level: (*o.kind).level,
         desc: CStr::from_ptr(buf.as_ptr()).to_string_lossy().into_owned(),
-        aware: obj_knowledge_h::object_flavor_is_aware(obj),
+        aware: in_store || obj_knowledge_h::object_flavor_is_aware(obj),
         fully_known,
         runes_known: obj_knowledge_h::object_runes_known(obj),
         flags,
@@ -414,6 +430,8 @@ pub fn perceive() -> Option<Observation> {
                 .timed
                 .add(headers::list_player_timed_h::TMD_FOOD as usize)
                 .read() as i32,
+            pack_used: pack_slots_used(p),
+            pack_size: i32::from((*z).pack_size),
             busy: up.resting != 0 || up.running != 0 || headers::cmd_core_h::cmd_get_nrepeats() > 0,
             dead: pl.is_dead,
             winner: pl.total_winner != 0,
@@ -433,7 +451,7 @@ pub fn perceive() -> Option<Observation> {
                 item: if s.obj.is_null() {
                     None
                 } else {
-                    analyze(s.obj)
+                    analyze(s.obj, false)
                 },
             });
             slot = slot.add(1);
@@ -445,7 +463,7 @@ pub fn perceive() -> Option<Observation> {
             (0..n as usize)
                 .map(|i| *arr.add(i))
                 .filter(|o| !o.is_null())
-                .filter_map(|o| analyze(o))
+                .filter_map(|o| analyze(o, false))
                 .collect()
         };
         let quiver = list(up.quiver, (*z).quiver_size);
@@ -547,6 +565,37 @@ pub fn perceive() -> Option<Observation> {
                 });
             }
         }
+        // Every store's stock (borg_notice_store). The home's wares are
+        // analysed as gear, not as shop wares (`in_store` false), as there.
+        let mut stores = Vec::new();
+        let home = 7;
+        let st = headers::store_h::stores;
+        let max_wares = usize::from((*z).store_inven_max);
+        if !st.is_null() {
+            let mut list: Vec<*mut headers::object_h::object> =
+                vec![core::ptr::null_mut(); max_wares];
+            for n in 0..i32::from((*z).store_max) {
+                let store = st.add(n as usize);
+                list.iter_mut().for_each(|o| *o = core::ptr::null_mut());
+                headers::store_h::store_stock_list(store, list.as_mut_ptr(), max_wares as c_int);
+                let wares = list
+                    .iter()
+                    .take_while(|o| !o.is_null())
+                    .filter_map(|&o| {
+                        let item = analyze(o, n != home)?;
+                        (item.desc != "(nothing)").then(|| Ware {
+                            price: if n == home {
+                                0
+                            } else {
+                                price_item(store, o, false, 1)
+                            },
+                            item,
+                        })
+                    })
+                    .collect();
+                stores.push(StoreStock { number: n, wares });
+            }
+        }
         let message_line = screen_text(0, 0, None);
         Some(Observation {
             turn: headers::game_world_h::turn as i64,
@@ -569,6 +618,7 @@ pub fn perceive() -> Option<Observation> {
             store_header: screen_text(3, 1, Some(4)),
             monsters,
             objects,
+            stores,
         })
     }
 }

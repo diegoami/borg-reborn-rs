@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0355-rust-seed1054",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a large white snake",
+  "terminal": {
+    "cause": "a large white snake",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2075,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-5-paladin-4",
+      "result_sha256": "f69bfccc9bbea031ba17a56d465bd4627a3759986d46e87b6cf6c245a905d225",
+      "raw_sha256": {
+        "keys.log": "f69bfccc9bbea031ba17a56d465bd4627a3759986d46e87b6cf6c245a905d225",
+        "messages.log": "e9659266a5175b2c4f8adb22ae4c8b573507fdd6966c4614555515a54eb4329c",
+        "state.log": "8edfde2d4064b8cbbbf92b22b67472769fa96182b6082eb89e6084a890b7ebba"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-d0cf04e566c756a8fb971badf6058e95d16a41780757259acd773fa5f086bae3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "f9198efb778fb39af43911700c8953884fdbd4f3c7346f29cf843ddb6211680d",
+    "depths.json": "3eada8b59718acbdd72d581d9cc99c2d00e55806cc7c053ca1031ea25efeb350",
+    "summary.json": "698872d81a89f871eb40f11f1c81e010768e25d6a061df7477f372fd9e51178b"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0383-rust-seed1003",
+  "run_kind": "harness",
+  "character": "Hobbit Warrior",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89230,
+    "race_idx": 3,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1003,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "a58947f4c56a7c1c53d41d377a15594a905b7f561c3d0db4e8306efa559eca39"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-0-warrior-3",
+      "result_sha256": "61f90123980f74e29bf3964216ed0d91a3777633c1a21965fe94577711ab9d87",
+      "raw_sha256": {
+        "keys.log": "61f90123980f74e29bf3964216ed0d91a3777633c1a21965fe94577711ab9d87",
+        "messages.log": "9d13c17105ce4d16496ff2a5a523f24ab9f522b6fb566495a99c9a2952ecac72",
+        "state.log": "371a0c525134103f8ce5c31daa1f701b69827ec8c1e01b90820daaea722a0a39"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-60302b153c5c3c3ab84abb61c1735776695815d64a7ef21855cfc9613ffa6508",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "10f51d629f718d83e43786842af89b1c36bc424d1b39349bc1f083c8ac475acc",
+    "depths.json": "5812723641a2400cd987224018dd75288f7246111fb25bdc681d2117cdb0ca25",
+    "summary.json": "49d0947050ec35804b944eb4a86820ba124840e618aa076efebf6a121a29485d"
+  },
+  "investigation": null,
+  "issue": null
+}

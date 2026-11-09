@@ -41,9 +41,10 @@ jobs:
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
       # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
       - run: BORG_IMPL=rust harness/check-extra-load.sh
-      # Recorded observations round-trip through their log lines (T2.1).
-      - run: BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 500
-      - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl cargo test -q -p borg-reborn-rs a_recorded_log_round_trips -- --nocapture
+      # Recorded observations round-trip through their log lines (T2.1), and
+      # replayed without the game they rebuild the live world model (T2.2).
+      - run: BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG=$RUNNER_TEMP/worlds.txt BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 3000
+      - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG_CHECK=$RUNNER_TEMP/worlds.txt cargo test -q -p borg-reborn-rs recorded -- --nocapture
       # The controls (T1.3, T1.8): built from a fresh checkout (the pinned C Borg
       # sources are cloned on demand) and checked against their references.
       - run: BORG_IMPL=c-pristine harness/build.sh

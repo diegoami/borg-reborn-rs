@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0356-rust-seed1012",
+  "run_kind": "harness",
+  "character": "Hobbit Mage",
+  "raw_cause": "a clear icky thing",
+  "terminal": {
+    "cause": "a clear icky thing",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2756,
+    "race_idx": 3,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1012,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "32e88143092ebdb099b0f6341a5abe15f21cf964838d17bf9cab2d704a93635a"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-1-mage-2",
+      "result_sha256": "436a6ceb8152b93583893e7d4b308f8af46dd40f4a64e76928e39a9494d18322",
+      "raw_sha256": {
+        "keys.log": "436a6ceb8152b93583893e7d4b308f8af46dd40f4a64e76928e39a9494d18322",
+        "messages.log": "a0f98683a07e3d5a67d23a4c6a29eed4fb41f4eff2c9ba66ae6d36278b74b8e2",
+        "state.log": "cfcffd9873313dc73e6fbf37b3280faac2869f8fcc4f635ef983c583b2eb3125"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-bb3622bd424a0cec8b9f276deb5e6877ed84c40919ca110d5a7df82148405e01",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "64ce79a15051fb6b57b52fe7178dfe44f3c40c9fc9fd12bd4822f21b456acd43",
+    "depths.json": "f3dfc7b90459ebe3075799875721a5cc11dd53f72978b338845ca8188c25f171",
+    "summary.json": "e289528b83d2d26e6f8d28ce10003572f96f8ef87ea21483589df929b6234758"
+  },
+  "investigation": null,
+  "issue": null
+}

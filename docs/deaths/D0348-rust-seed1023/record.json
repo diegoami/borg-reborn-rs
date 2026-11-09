@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0348-rust-seed1023",
+  "run_kind": "harness",
+  "character": "Dwarf Druid",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 553,
+    "race_idx": 5,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1023,
+    "flags": "-",
+    "git_rev": "8f5e6313f9a4facf993863f44e29e35350613334",
+    "git_dirty": "yes",
+    "source_sha256": "d12d223bca3756fed2eba79e679d6c7bb99ba262fa068ee79313529abc1f3a74",
+    "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6",
+    "borg_txt_sha256": "7a94cde1684c095b4cbe387aaef64f3b173ce31b0af2c703abaf8658ee27a4df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/t22d-full/full-2-druid-3",
+      "result_sha256": "defee68268da474c543a77ee94e6258f634f41615ad0db48a7de168b5b619f2c",
+      "raw_sha256": {
+        "keys.log": "defee68268da474c543a77ee94e6258f634f41615ad0db48a7de168b5b619f2c",
+        "messages.log": "521a0baeeb6890014fb3d462f4cb05deb62ac4f662beacada84cb343aefc8203",
+        "state.log": "6a1542afc67e6f489fa2324071684c70cb9d07651a79b48708d43c318b1fcbb3"
+      },
+      "source_commit": "8f5e6313f9a4facf993863f44e29e35350613334",
+      "binary_sha256": "39ed7e6049ce4c72be5a0fc73d04c5fb2ef54b82bbf7824e35a4144f7c3153a6"
+    }
+  ],
+  "encounter_family": "start-d0ce1bd91041ff23b62c50552895cefa674c136ca285db1f6f62b28461492430",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "759bc8d7fee8f1826cefb782e0d3b2f411e6c70b50a7d1978f98859184b07f9b",
+    "config.txt": "c22ec137abbfb4b07f5cbc510d1879639d810ad6b32cecbe38ef0fc5cb97d991",
+    "depths.json": "ec703fcd145f42f3d31c2706af26df40804ee832c8e8474cd75001130833dceb",
+    "summary.json": "11ca9fc562d77d0d2364a9a0f568916c280bae3115c1f89b45a1477fc583a24f"
+  },
+  "investigation": null,
+  "issue": null
+}
