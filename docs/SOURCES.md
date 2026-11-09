@@ -15,7 +15,7 @@ source is **for** in this project.
 | S2 | [BORG_SPEC.md](../reference/c-borg/BORG_SPEC.md) (neo-angband-tracker) | The specification of S1, cited `file:function:lines` | The map of where every decision lives; §16 (what a rebuild must preserve) as the list of contracts we keep *on purpose or not*; §11 and §17 (defect shapes a rebuild must not inherit) as design constraints | Its rule that §16 wins: we are not the C Borg and do not claim parity |
 | S3 | [TUNABLE-BORG-PLAN.md](../reference/c-borg/TUNABLE-BORG-PLAN.md) (neo-angband-tracker) | Evaluation of how to improve the Borg by experiment; its last section, *What a remake leaves out*, is written for this repository | The objective and its statistics, the seed-set discipline, the first tuning surface (which levers matter), the per-class direction, the list of what the remake drops | Its main recommendation (do not rewrite): the owner has chosen a remake, and the plan still holds for better-borg-c and borg-rs |
 | S4 | [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified fixes (76 carries at milestone 7, tag `4.2.6-impact-v7`), the native measurement runner, ten death dossiers | The death-dossier format and process; the death evidence; the list of real defects (each one is a test the reborn Borg must pass); the measurement runner as the zoo's engine | Its scope rule "no new gameplay strategies": that is exactly what we do here |
-| S5 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port: 59 modules, ~73,000 lines, key-stream identical to C on 80 suite runs; M5 accepted (tag `m5`) | **Structure, tooling and external behaviour** (owner requirement): the `angband/` subtree with the `borgh` harness, the `BORG_IMPL` CMake switch, the `staticlib` behind `inkey_hack`, the launchers, recording and replay, death dossiers. Its engine boundary (`engine.rs`) and possibly its perception code, as substrate | Its decision code. Its fidelity rule (C bugs kept on purpose) |
+| S5 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port: 59 modules, ~73,000 lines, key-stream identical to C on 80 suite runs; M5 accepted (tag `m5`) | **Structure, tooling and external behaviour** (owner requirement): the `angband/` subtree with the `borgh` harness, the `BORG_IMPL` CMake switch, the `staticlib` behind `inkey_hack`, the launchers, recording and replay, death dossiers. Its engine boundary (`engine.rs`) and possibly its perception code, as substrate | **A reference to copy from, never a dependency** (docs/SPEC.md §2, owner 2026-11-09). Its harness hooks and headless frontend were copied once and are ours (docs/PROVENANCE.md); its engine tree, shim, tools and references were removed in milestone E |
 | S6 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Seed suites × specimens × profiles, run on GitHub Actions, append-only results, [site](https://diegoami.github.io/borg-zoo/) | The yardstick: suites, outcome vocabulary (death, turn-cap survival, stall, timeout, crash, harness failure, config error), paired comparison; borg-rs specimens are already run through `harness/build.sh` and `borgh`, so the reborn Borg can be measured with the same adapter | Nothing: the zoo measures, it does not change Borgs (its RULES 1) |
 | S7 | [borg-agent](https://github.com/diegoami/borg-agent) | A language-model player behind the Borg's connection, producing *claims with evidence*; started 2026-11-08 | Its claims, once reviewed, as candidate rules and parameters; its milestone/review workflow (we use the same); its pinning pattern (`pins.json`, `scripts/setup.sh`) | A model in the play loop: the reborn Borg is deterministic and runs without a model |
 | S8 | Issue boards: [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker/issues) (291 issues, 263 `upstream-c`), [better-borg-c](https://github.com/diegoami/better-borg-c/issues), [borg-rs](https://github.com/diegoami/borg-rs/issues) | C Borg findings, adoption issues, death investigations, proposals | The defect shapes; the owner's stated preferences; the proposals that are strategy changes (now in scope here) | Their routing rules: findings about the C Borg still go to neo-angband-tracker, not here |
@@ -137,6 +137,8 @@ Door and a cure before the first dives) and
 clevel-versus-depth gate), are strategy changes the C repositories cannot
 make and this one can.
 
+*Historical (M1): since milestone E nothing below is a build input; see docs/SPEC.md §2 and §8.*
+
 ## S5: what borg-rs gives us concretely
 
 | Piece | Where in borg-rs | Use here |
@@ -193,7 +195,7 @@ The official game manual (`docs/*.rst`, published at
 [angband.readthedocs.io](https://angband.readthedocs.io/en/latest/), S13) is
 not copied: it is in the engine tree at `angband/docs/`, at the version we play.
 
-The engine and the C Borg source are in `angband/`, imported from borg-rs
-with history (T1.1, #4; [ENGINE-TREE.md](ENGINE-TREE.md)). Larger trees (full repositories) are cloned into `vendor/`
+The engine and the C Borg source are in `engine/angband/`, upstream's bytes (until milestone E: `angband/`, imported from borg-rs)
+with history (T1.1, #4; replaced in milestone E, see [ENGINE.md](ENGINE.md)). Larger trees (full repositories) are cloned into `vendor/`
 by `scripts/setup.sh` at the commits in `pins.json`; `vendor/` is not
 committed.

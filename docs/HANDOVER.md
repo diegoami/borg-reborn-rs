@@ -2,6 +2,36 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.8, removals, documents and rules (#78)
+
+- **Removed:**
+  - the C arms' references (`harness/reference/smoke-c`, `smoke-pristine`,
+    `full-pristine`, `smoke-c-bbc-m7`);
+  - `pins.json`'s `controls` and borg-rs's oracle role, `borg_dir` and
+    `tag_of_interest`;
+  - `docs/ENGINE-TREE.md` (replaced by `docs/ENGINE.md`);
+  - `suite.sh`'s dead control-arm branch.
+- **Rewritten for docs/SPEC.md:**
+  - RULES 9 (the tree is upstream's bytes plus our patch series), RULES 16
+    (copies are recorded in PROVENANCE and owned) and RULES 22 (comparisons
+    are the zoo's; a change to the integration reproduces the references
+    or explains every difference);
+  - GOALS principle 4, D2, D4 and D8, plus a superseded note on the "same
+    seam, same harness as borg-rs" principle;
+  - ARCHITECTURE L0, *What comes from where*, and the settled open
+    question;
+  - SOURCES S5 (borg-rs is a reference), with a historical note on its
+    section;
+  - README (intro, status, SPEC first in the table);
+  - AGENTS.md (intro, start commands, the `engine/` and `harness/` rows,
+    the `borg-rs/` row gone);
+  - `harness/README.md` (rewritten for our harness);
+  - the refresh report's wording (a new better-borg-c tag is a specimen for
+    the zoo to consider).
+- History stays history: PLAN's M1 row, the handover's earlier entries,
+  `docs/ZOO-CHANGE-REQUEST.md`, and the M1-era rows of SOURCES.
+- **S12's retirement** is its own pin PR (RULES 21), next.
+
 ## 2026-11-09: TE.7, the zoo contract (#77)
 
 - **`docs/ZOO-INTERFACE.md`:** the contract the zoo's borg-rs adapter
