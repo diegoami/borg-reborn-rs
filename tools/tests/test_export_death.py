@@ -87,6 +87,12 @@ class ExportTest(unittest.TestCase):
         self.assertEqual((d / 'record.json').read_bytes(), record_before, 'existing files are kept')
         self.assertEqual(ed.export(make_run(self.base, 'three'), 'c', self.build), (case, 'repeat'))
 
+    def test_missing_config_is_restored(self):
+        case, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
+        (self.reg / case / 'config.txt').unlink()
+        self.assertEqual(ed.export(make_run(self.base, 'two'), 'c', self.build), (case, 'repaired: config.txt'))
+        self.assertIn('borg_txt_sha256', (self.reg / case / 'config.txt').read_text())
+
     def test_filled_in_assessment_is_never_overwritten(self):
         case, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
         a = self.reg / case / 'assessment.json'

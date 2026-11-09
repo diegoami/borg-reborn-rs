@@ -57,7 +57,7 @@ def registry_dir():
     return Path(os.environ.get('BORG_DEATH_RECORDS_DIR') or ROOT / 'docs' / 'deaths')
 
 
-REQUIRED = ('record.json', 'assessment.json', 'report.md', 'build.json', 'summary.json')
+REQUIRED = ('record.json', 'assessment.json', 'report.md', 'build.json', 'summary.json', 'config.txt')
 
 
 def existing(reg):
@@ -185,10 +185,12 @@ def export(run_dir, impl, build_id_path, flags='-'):
             if not missing:
                 return case, 'repeat'
             files = dossier(case, *args)
-            for name in missing:
-                if name in files:
-                    (out / name).write_bytes(files[name])
-            return case, 'repaired: ' + ', '.join(missing)
+            written = [name for name in missing if name in files]
+            for name in written:
+                (out / name).write_bytes(files[name])
+            if not written:  # e.g. a run without config.txt: nothing to restore
+                return case, 'repeat'
+            return case, 'repaired: ' + ', '.join(written)
         n = max([int(d.name[1:5]) for d in cases] + [0]) + 1
         case = f"D{n:04d}-{impl}-seed{summary.get('seed')}"
         tmp = reg / f'.tmp-{case}'
