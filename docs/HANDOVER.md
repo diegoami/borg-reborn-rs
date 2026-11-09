@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.2, our headless frontend (#72)
+
+- **The frontend:** `engine/frontend/main-borgh.c` and `.h` are copied
+  from borg-rs's borgh and trimmed to the contract of SPEC §3.5 (1,247 →
+  931 lines). Dropped:
+  - `-states` (native observer);
+  - `-frames` and its diagnostics;
+  - fixture building (`-make-fixture`, `-near-morgoth`);
+  - `-stop-rune-pattern`;
+  - `-cheat-live` (D5).
+
+  Kept: every contract flag, the stall and key limits, `-clev`,
+  `-random-birth`, the save options and checkpoints (the death tooling may
+  use them).
+- **The test:** `engine/tests/test_frontend.py` checks the flags, the
+  `summary.json` fields, the mode registration, and a compile against the
+  patched tree.
+- **Not yet:** no binary until TE.4. `harness/run.sh` flags that used the
+  dropped options (`frames`, `cheatlive`, `rune-pattern`) are cleaned up
+  in TE.5.
+
 ## 2026-11-09: TE.1, the upstream tree and our patch series (#71)
 
 - **The tree:** `engine/angband/` is upstream `e473720`, byte for byte

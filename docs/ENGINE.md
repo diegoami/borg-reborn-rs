@@ -49,6 +49,17 @@ correction (`cmd-wizard.c`, reachable only by cheat death, which D5
 excludes), its CMake changes, its recording frontends, and its C Borg
 carries in `src/borg/`.
 
+## The frontend: `engine/frontend/`
+
+`main-borgh.c` and `main-borgh.h`, mode `borgh` (docs/SPEC.md §3.5; task
+TE.2). They are compiled with the patched tree; the hook variables of the
+patch series are declared in `main-borgh.h`. The command line and the
+`summary.json` fields are the zoo's contract, and
+`engine/tests/test_frontend.py` checks them in the source, together with a
+compile against the patched tree. TE.4 adds the same checks on the binary.
+The options for borg-rs's recording, fixtures, rune stop and cheat_live are
+not carried (docs/PROVENANCE.md).
+
 ## Determinism
 
 The seed, the fixed date and the environment (`TZ=UTC`, `LANG` and
