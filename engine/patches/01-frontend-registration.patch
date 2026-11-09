@@ -1,8 +1,9 @@
 Register the headless frontend as mode `borgh` in upstream's module table
 (main.c) and declare its entry points (main.h). Guarded by USE_BORGH.
 
-From borg-rs 286215c angband/src (main.c, main.h), its BORG_HARNESS and
-USE_BORGH hunks only (docs/PROVENANCE.md). Apply with patch -p1 in the tree.
+From borg-rs 286215c angband/src (main.c, main.h), its USE_BORGH hunks only;
+the main.h declarations are guarded here (borg-rs leaves them unguarded)
+(docs/PROVENANCE.md). Apply with patch -p1 in the tree.
 
 --- a/src/main.c
 +++ b/src/main.c
@@ -16,29 +17,25 @@ USE_BORGH hunks only (docs/PROVENANCE.md). Apply with patch -p1 in the tree.
  #ifdef USE_TEST
  	{ "test", help_test, init_test, false, true },
  #endif /* !USE_TEST */
-@@ -545,6 +548,7 @@
- 	/* Make sure we have a display! */
- 	if (!done) quit("Unable to prepare any 'display module'!");
- 
-+
- 	/* Catch nasty signals */
- 	signals_init(modules[i].hup_disconnects, modules[i].tstp_default);
- 
 --- a/src/main.h
 +++ b/src/main.h
-@@ -39,6 +39,7 @@
+@@ -39,6 +39,9 @@
  extern errr init_sdl(int argc, char **argv);
  extern errr init_sdl2(int argc, char **argv);
  extern errr init_test(int argc, char **argv);
++#ifdef USE_BORGH
 +extern errr init_borgh(int argc, char **argv);
++#endif /* USE_BORGH */
  extern errr init_stats(int argc, char **argv);
  extern errr init_spoil(int argc, char **argv);
  
-@@ -59,6 +60,7 @@
+@@ -59,6 +62,9 @@
  extern const char help_sdl[];
  extern const char help_sdl2[];
  extern const char help_test[];
++#ifdef USE_BORGH
 +extern const char help_borgh[];
++#endif /* USE_BORGH */
  extern const char help_stats[];
  extern const char help_spoil[];
  

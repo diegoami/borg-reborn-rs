@@ -21,8 +21,12 @@ def git(*args):
 
 def strip_guarded(text):
     """The file as a compiler sees it with the harness guards undefined."""
-    out = re.sub(r'#ifdef (?:%s)\n(?:.*\n)*?#endif[^\n]*\n' % '|'.join(GUARDS), '', text)
-    return out
+    return re.sub(r'#ifdef (?:%s)\n(?:.*\n)*?#endif[^\n]*\n' % '|'.join(GUARDS), '', text)
+
+
+def code(text):
+    """The text without its empty lines: blank lines are not code."""
+    return '\n'.join(l for l in text.splitlines() if l.strip())
 
 
 class EngineTreeTest(unittest.TestCase):
@@ -62,7 +66,7 @@ class PatchSeriesTest(unittest.TestCase):
 
     def test_with_the_guards_off_the_files_are_upstreams(self):
         # Every changed line sits inside an #ifdef BORG_HARNESS / USE_BORGH
-        # block, except one declared change: mon-make.c splits a declaration
+        # block (blank lines aside), except one declared change: mon-make.c splits a declaration
         # with an initialiser into a declaration and an assignment, so the
         # guarded line can go between them. Same code with the guards off.
         declared = {'src/mon-make.c': ('\tstruct tm *date = localtime(&cur_time);\n',
@@ -77,7 +81,7 @@ class PatchSeriesTest(unittest.TestCase):
             if rel in declared:
                 old, new = declared[rel]
                 upstream = upstream.replace(old, new)
-            self.assertEqual(patched, upstream, f'{rel}: an unguarded change')
+            self.assertEqual(code(patched), code(upstream), f'{rel}: an unguarded change')
 
     def test_the_pristine_tree_is_untouched(self):
         dirty = git('status', '--porcelain', '--', 'engine/angband').stdout.strip()

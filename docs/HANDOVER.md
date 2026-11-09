@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.1, the upstream tree and our patch series (#71)
+
+- **The tree:** `engine/angband/` is upstream `e473720`, byte for byte
+  (tree `99a0549`, `engine/UPSTREAM`), extracted from upstream, not from
+  borg-rs.
+- **The patches:** `engine/patches/` holds 7 patches for our harness hooks,
+  every changed line guarded by `BORG_HARNESS` or `USE_BORGH`, plus one
+  declared split of a declaration in `mon-make.c`.
+- **Docs and tests:** `docs/ENGINE.md` and `docs/PROVENANCE.md` are new.
+  `engine/tests/test_engine.py` checks the tree, that the series applies,
+  and that with the guards off the code is upstream's. It runs in CI.
+- **What stays:** borg-rs's `angband/` stays until TE.4 switches the build;
+  nothing builds from `engine/` yet.
+
 ## 2026-11-09: milestone E planned
 
 PLAN.md follows docs/SPEC.md §10. **E. Our own integration** is in
