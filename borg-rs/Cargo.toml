@@ -19,6 +19,7 @@ crate-type = ["staticlib"]
 [features]
 # Harness builds only: harness/build.sh passes -DBORG_RS_FEATURES=borgh.
 borgh = ["borg-reborn-rs/borgh"]
+test-hallucinate = ["borg-reborn-rs/test-hallucinate"]
 
 [dependencies]
 borg-reborn-rs = { path = "../borg-reborn-rs" }

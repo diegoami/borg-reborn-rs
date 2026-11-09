@@ -30,6 +30,7 @@ BORG_IMPL=c-bbc-m7   flock /tmp/angband-validation.lock harness/build.sh
 | `run.sh` flag `exact` (T1.4) | Passes borgh's existing `-exact-turns`, so the run stops at engine turn TURNS itself (the per-turn hook in `game-world.c`), not after the first key at or past it. Existing suites keep their semantics; `suites/smoke-exact` and `suites/full-exact` use it. |
 | `run.sh` → `tools/depth-stream.py` (T1.4) | After every run, writes `depths.json`: the boundary rule (`exact` or `after-key`), whether the character is alive at the stop, its maximum depth there, and the first engine turn at each depth (the first Borg key after arrival, from `state.log`). An exact survivor that did not stop at the cap fails the run. |
 | `check-boundary.py` (T1.4, new) | For a suite run with and without `exact`: keys before the boundary are a prefix of the normal run's keys, survivors stop at the cap, deaths are the same, and `depths.json` agrees with `summary.json`. |
+| `build.sh` `BORG_TEST_FEATURES` (M1 review) | Test-only cargo features for `BORG_IMPL=rust`, built into `build/rust-test/` so `build/rust/` is never a test build; `BUILD_ID` records them. `test-hallucinate` makes perception run while the player hallucinates and asserts on every think that the game's whole RNG is unchanged (CI). |
 | `README.md` | This file. |
 
 Compute the primary endpoint from exact-boundary outputs:

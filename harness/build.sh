@@ -17,6 +17,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMPL="${BORG_IMPL:-c}"
 BUILD="$ROOT/build/$IMPL"
+# borg-reborn-rs: BORG_TEST_FEATURES (rust only, e.g. test-hallucinate) adds
+# test-only cargo features and builds into build/<impl>-test, never build/<impl>.
+TEST_FEATURES="${BORG_TEST_FEATURES:-}"
+if [ -n "$TEST_FEATURES" ]; then
+    [ "$IMPL" = rust ] || { echo "BORG_TEST_FEATURES is for BORG_IMPL=rust only" >&2; exit 2; }
+    BUILD="$ROOT/build/$IMPL-test"
+fi
 mkdir -p "$ROOT/build"
 SRC="$ROOT/angband"
 CMAKE_IMPL="$IMPL"
@@ -39,7 +46,7 @@ fi
 # borg-reborn-rs: harness builds of the Rust Borg report decisions to borgh
 # (cargo feature borgh, through the imported CMake's BORG_RS_FEATURES).
 RUST_ARGS=()
-[ "$IMPL" = rust ] && RUST_ARGS=(-DBORG_RS_FEATURES=borgh)
+[ "$IMPL" = rust ] && RUST_ARGS=(-DBORG_RS_FEATURES="borgh${TEST_FEATURES:+,$TEST_FEATURES}")
 cmake -S "$SRC" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release \
     -DSUPPORT_BORG_HARNESS=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -DBORG_IMPL="$CMAKE_IMPL" "${RUST_ARGS[@]}" >"$BUILD.cmake.log" 2>&1 || {
@@ -69,6 +76,7 @@ if [ -n "$(git -C "$ROOT" status --porcelain 2>/dev/null)" ]; then DIRTY=yes; el
     echo "cc=$(cc --version 2>/dev/null | head -1)"
     if [ "$IMPL" = rust ]; then echo "rustc=$(rustc --version 2>/dev/null || echo unknown)"; fi
     echo "built_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    [ -z "$TEST_FEATURES" ] || echo "test_features=$TEST_FEATURES"
 } > "$BUILD/BUILD_ID.tmp"
 mv "$BUILD/BUILD_ID.tmp" "$BUILD/BUILD_ID"
 echo "$BIN"
