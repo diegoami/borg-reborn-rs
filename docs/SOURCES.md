@@ -20,6 +20,7 @@ source is **for** in this project.
 | S7 | [borg-agent](https://github.com/diegoami/borg-agent) | A language-model player behind the Borg's connection, producing *claims with evidence*; started 2026-11-08 | Its claims, once reviewed, as candidate rules and parameters; its milestone/review workflow (we use the same); its pinning pattern (`pins.json`, `scripts/setup.sh`) | A model in the play loop: the reborn Borg is deterministic and runs without a model |
 | S8 | Issue boards: [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker/issues) (291 issues, 263 `upstream-c`), [better-borg-c](https://github.com/diegoami/better-borg-c/issues), [borg-rs](https://github.com/diegoami/borg-rs/issues) | C Borg findings, adoption issues, death investigations, proposals | The defect shapes; the owner's stated preferences; the proposals that are strategy changes (now in scope here) | Their routing rules: findings about the C Borg still go to neo-angband-tracker, not here |
 | S9 | Death dossiers: [better-borg-c](../reference/deaths/better-borg-c/), [borg-rs](../reference/deaths/borg-rs/) | 16 cases (10 + 6), with replay-verified observations before death | What actually kills Borgs (below) | — |
+| S11 | [REDESIGN-LESSONS.md](../reference/deaths/better-borg-c/REDESIGN-LESSONS.md) (better-borg-c, 2026-11-09) | Requirements for this repository distilled from deaths D0001–D0014 and four owner manual takeovers, each lesson with its evidence level | All thirteen lessons; traced to our design in [LESSONS-TRACE.md](LESSONS-TRACE.md) | — |
 | S10 | Prior art outside Angband (below) | Bots for NetHack, DCSS and Rogue | Architecture lessons | — |
 
 A digest of the deaths and of the issue boards by subsystem is in
@@ -100,21 +101,23 @@ And from its section *What a remake leaves out* (owner decisions of
 
 ## S4–S5, S9: what kills Borgs
 
-Nineteen dossiers, thirteen from better-borg-c and six from borg-rs (D0011–D0013
-added by the first source refresh, 2026-11-09; `reference/deaths/INDEX.md`
-lists them all). Not all are
+Twenty dossiers, fourteen from better-borg-c and six from borg-rs (D0011–D0014
+added by the source refreshes of 2026-11-09; `reference/deaths/INDEX.md`
+lists them all, ours included). better-borg-c's
+[REDESIGN-LESSONS.md](../reference/deaths/better-borg-c/REDESIGN-LESSONS.md)
+distils D0001–D0014 into requirements for this repository (S11). Not all are
 independent: better-borg-c D0003–D0005 are verified replays of D0002, and
 borg-rs D0001–D0004 are a C/Rust parity cohort. Read them for their *shape*,
 not their statistics: they are not a sample.
 
 | Pattern | Cases | What it says about the design |
 | --- | --- | --- |
-| **Resources unused at death.** Cure Light Wounds carried and not drunk; Speed potions unused; Phase Door left at home; eight known CLW excluded by the CL10 healing tier | bbc D0001, D0002, D0011; rs D0005 | Healing and escape are separate rungs with their own guards (`!goal.fleeing`, danger-versus-heal tests); no step compares *all* options against the threat. |
+| **Resources unused at death.** Cure Light Wounds carried and not drunk; Speed potions unused; Phase Door left at home; eight known CLW excluded by the CL10 healing tier; 21 known CLW and 5 Speed carried into death | bbc D0001, D0002, D0011, D0014; rs D0005 | Healing and escape are separate rungs with their own guards (`!goal.fleeing`, danger-versus-heal tests); no step compares *all* options against the threat. |
 | **Oscillation.** Retreat to the stair, step back into the dark next to a mold, repeat until dead (a 2-HP mold the Borg never attacks) | bbc D0008, D0012; rs D0006 | First-match rules with no commitment and no memory of what was just tried; a cached danger reused. |
-| **Item use against readiness.** Deep Descent read at depth 4, arriving at depth 14 at 37 HP; three reads taking a CL10 Warrior to depth 18 | bbc D0006, D0011 | Item use is not checked against the dive policy. |
+| **Item use against readiness.** Deep Descent read at depth 4, arriving at depth 14 at 37 HP; three reads taking a CL10 Warrior to depth 18, and a CL9 Rogue to depth 20 | bbc D0006, D0011, D0014 | Item use is not checked against the dive policy. |
 | **Liveness.** Starvation while repeatedly failing to pick up into a full quiver; 63k turns wanting town with 563 "no up stairs, going down" fallbacks | bbc D0009, D0011 | No budget on a goal that does not progress; food is not a hard invariant. |
 | **The wrong alternative.** A Ranger with a bow flees by stairs and dies instead of shooting; the only Phase Door read where one step back would do; retreat chosen over killing a 2-HP mold | bbc D0010, D0012, D0013 | Fight-or-flee is not an evaluation of alternatives. |
-| **Escapes spent until none are left** | bbc D0002, D0007, D0013 | No reserve policy; no account of what the escape buys. |
+| **Escapes spent until none are left** (the last Phase Door read at full HP) | bbc D0002, D0007, D0013, D0014 | No reserve policy; no account of what the escape buys. |
 | **Fear by list, not by risk.** One small kobold, or two white worm masses, set "scary guy on level" and whole-level flight | bbc D0012, D0013 | Hard-coded scary lists stand in for the danger model; leaving the level is not weighed against what the threat can actually do. |
 | **Unknown items left unknown.** Nine unidentified Cure Serious Wounds carried for ~47k turns; eight unidentified CLW at CL2; rings bought instead of cures | bbc D0011, D0012, D0013 | Identification and stock are not part of the survival policy (owner direction, better-borg-c#180, #41). |
 | **Wrong kit valuation.** A Dagger wielded over a better unidentified Maul on arrival at depth 13 | bbc D0011 | Power has depth-tied bonuses and per-blow weights instead of expected damage per turn of the actual kit. |

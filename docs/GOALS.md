@@ -136,33 +136,57 @@ These follow from the sources. Each cites the evidence behind it.
    damage over a horizon, and the chance of dying), not a capped scalar
    (spec §8). No hard-coded fear lists: whether a monster is a reason to
    leave the level is a risk decision (bbc D0012 and D0013 fled whole
-   levels over two worm masses and one small kobold).
+   levels over two worm masses and one small kobold). The Borg disengages
+   from the monster that is dangerous, not from the whole level by
+   default. Remembered monsters it cannot see stay in the estimate, with
+   decaying confidence, and speed counts as enemy actions per player action
+   (bbc D0014: danger 22 while a known speed +30 blood falcon was out of
+   view; REDESIGN-LESSONS L1, L11).
 5. **Alternatives are compared on one scale.** When the character is
    threatened, every available response (attack, shoot, cast, quaff,
    read, step, stairs, escape) is scored against the same risk model.
-   The first applicable rule does not decide. *Evidence:* unused Cure Light
-   Wounds (bbc D0002, D0011, rs D0005), the Ranger who fled instead of
-   shooting (bbc D0010), the only Phase Door spent where a step back would
-   do (bbc D0013), a 2-HP mold never attacked (bbc D0012).
+   The first applicable rule does not decide. Consumables are valued by the
+   survival they buy now: buffs such as Speed are drunk early, when they
+   change the exchange rate. The Borg never dies holding the potion that
+   fits, and no class is excluded from an emergency fallback. Escapes are
+   tried in order of cost and sufficiency (step, walk, Phase, teleport,
+   leave the level), with landing risk estimated. The last escape item has
+   a higher bar, and walking away stays an option after it is gone.
+   Detection is one of the options. *Evidence:* unused Cure Light Wounds
+   (bbc D0002, D0011, D0014, rs D0005), 5 Speed unused (bbc D0014), the
+   Ranger who fled instead of shooting (bbc D0010), the only Phase Door
+   spent where a step back would do (bbc D0013), the last Phase Door spent
+   at full HP (bbc D0014), a 2-HP mold never attacked (bbc D0012);
+   REDESIGN-LESSONS L3–L5, L11.
 6. **Commitment and progress.** A goal, once chosen, keeps priority
    (hysteresis) until it succeeds, becomes unsafe, or exhausts a budget in
    *game* turns. A goal that does not progress is blocked for a while, and
-   loops in which no game time passes are detected. *Evidence:* mold
-   oscillation (bbc D0008, D0012, rs D0006), starvation by pickup loop (bbc
-   D0009), 63k turns failing to climb to town (bbc D0011),
+   loops in which no game time passes are detected. Planning, movement,
+   retreat and combat share one danger evaluation and one risk tolerance,
+   so the planner never walks into what caution then retreats from.
+   *Evidence:* mold oscillation (bbc D0008, D0012, rs D0006; in D0012 the
+   flee flow accepted 3 × HP while caution retreated above HP/3), starvation
+   by pickup loop (bbc D0009), 63k turns failing to climb to town (bbc
+   D0011), REDESIGN-LESSONS L2 and L7,
    munchkin loop ([#403](https://github.com/diegoami/neo-angband-tracker/issues/403)).
-7. **Survival invariants are explicit.** Light, food, a cure and an escape
-   are reserves with declared minimums per depth and class, checked every
-   think. They are not side effects of the shopping list, and identifying
-   carried potions is part of keeping them. *Evidence:* bbc D0001 (Phase
+7. **Survival invariants are explicit.** Light, food, a cure, an escape
+   and a way home (Recall or a known route) are reserves with declared
+   minimums per depth and class, checked every think. They outrank
+   equipment upgrades. They are not side effects of the shopping list, and
+   identifying carried potions is part of keeping them. Pack capacity is
+   counted exactly, quiver included, and a launcher without ammunition is
+   not a weapon (REDESIGN-LESSONS L7–L9). *Evidence:* bbc D0001 (Phase
    Door at home), bbc D0009 (food), bbc D0011–D0012 (unidentified cures),
    bbc D0013 (rings bought, no cure), owner priorities
    [better-borg-c#41](https://github.com/diegoami/better-borg-c/issues/41)
    and [#180](https://github.com/diegoami/better-borg-c/issues/180).
 8. **Depth readiness is one policy, per class.** Stairs, Deep Descent,
-   trapdoors and recall depth all go through it. *Evidence:* bbc D0006 (Deep
-   Descent to depth 14), bbc D0011 (three reads, CL10 at depth 18); TUNABLE
-   plan (the biggest single lever).
+   trapdoors and recall depth all go through it, and every level change is
+   judged by its destination. In 4.2, Deep Descent goes to max_depth + 5,
+   so it is not a generic escape. *Evidence:* bbc D0006 (Deep Descent to
+   depth 14), bbc D0011 (three reads, CL10 at depth 18), bbc D0014 (three
+   reads, CL9 at depth 20); TUNABLE plan (the biggest single lever);
+   REDESIGN-LESSONS L6.
 9. **No exploits** (owner decision). No munchkin start, no lunal mode, no
    money or self scum, no stair-scumming to a target depth, no cheat death
    inside the Borg (it is a runner setting).
@@ -181,6 +205,12 @@ These follow from the sources. Each cites the evidence behind it.
     (blow and spell damage, item values, prompt answers, store routines)
     is lifted with a `file:function:lines` citation at the pin. Its
     decision code is not translated.
+14. **Equipment is valued by what it does.** Expected damage per turn
+    (blows, to-hit, slays, criticals, the monster's AC) plus defence, from
+    the character model. Identification incentives are kept apart and never
+    invert a combat choice. *Evidence:* bbc D0011 wielded a Dagger over a
+    Maul (about 7.6 against 21 damage per turn) because of an
+    unidentified-weapon bonus and a per-blow weight (REDESIGN-LESSONS L10).
 
 ## Non-goals
 
@@ -203,7 +233,7 @@ them.
 | --- | --- | --- |
 | D1 | What the reborn Borg is | **One substrate, a family of strategies, all tunable; the zoo decides** (above) |
 | D2 | Engine and game | **Angband 4.2.6 at `e473720`**, the `angband/` tree of borg-rs (harness hooks, its declared fork corrections and its adopted C Borg carries) imported with history. Birth options at the game's defaults. The tree's own C Borg is not a control (D8) |
-| D3 | Information level | **The C Borg's two channels, no more**: screen (message line, store header) plus the direct reads of spec §1.1. Revisit only with a separate "fair-play" profile, measured separately |
+| D3 | Information level | **The C Borg's two channels, no more**: screen (message line, store header) plus the direct reads of spec §1.1. That includes **full monster race data** (`r_info`: spoiler knowledge, not learned lore), as the C Borg uses (REDESIGN-LESSONS L13 asks for this to be stated). Revisit only with a separate "fair-play" or lore-only profile, measured separately |
 | D4 | Code reuse | **The substrate may reuse borg-rs code** (engine boundary first; perception, item analysis and flow where they survive review), with attribution. Decision code is new. C Borg knowledge is lifted with citations |
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |

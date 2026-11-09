@@ -161,6 +161,12 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                     touched = sorted({p.split('/')[0] for p in changed if '/' in p} - set(new_cases))
                     if touched:
                         w(f"  - updated cases: {', '.join(touched)}\n")
+                    new_docs = [p for p in added if '/' not in p]
+                    if new_docs:
+                        w(f"  - **new registry documents:** {', '.join(new_docs)}\n")
+                    changed_docs = [p for p in changed if '/' not in p]
+                    if changed_docs:
+                        w(f"  - changed registry documents: {', '.join(changed_docs)}\n")
         engine = data.get('engine_tree') or {}
         if engine.get('pin') == name:
             r = git(src.repo, 'rev-parse', '-q', '--verify', f"{src.head}:{engine['path']}")
