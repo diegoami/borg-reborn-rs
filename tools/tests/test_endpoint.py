@@ -94,8 +94,10 @@ class EndpointTest(unittest.TestCase):
         self.assertEqual(ep.mcnemar_exact(0, 0), 1.0)
         self.assertAlmostEqual(ep.mcnemar_exact(1, 2), 1.0)
 
-    def local(self, t, runs, failed=()):
-        """A suite output: runs = [(name, seed, class_idx, summary or None)]."""
+    def local(self, t, runs, failed=(), suite_ok=None, binary_end='b' * 64, run_exit=None, depths=None):
+        """A suite output: runs = [(name, seed, class_idx, summary or None)].
+        suite_ok defaults to no failed run; run_exit and depths map run names
+        to run.sh's exit status and to a depths.json."""
         d = Path(t) / 'out'
         suite = Path(t) / 'suite'
         suite.write_text(''.join(f'{n} {seed} 0 {c} 1000 exact\n' for n, seed, c, _ in runs))
@@ -107,8 +109,64 @@ class EndpointTest(unittest.TestCase):
                  'timed_out': False, 'stalled': False}))
             if summ is not None:
                 (d / n / 'summary.json').write_text(json.dumps(summ))
-        (d / 'manifest').write_text(f'suite=suite\nsuite_file={suite}\n')
+            if n in (run_exit or {}):
+                (d / n / 'run_exit').write_text(f'{run_exit[n]}\n')
+            if n in (depths or {}):
+                (d / n / 'depths.json').write_text(json.dumps(depths[n]))
+        ok = not failed if suite_ok is None else suite_ok
+        (d / 'manifest').write_text(f'suite=suite\nsuite_file={suite}\nbinary_sha256={"b" * 64}\n'
+                                    f'binary_sha256_end={binary_end}\n'
+                                    f'finished_utc=2026-11-09T00:00:00Z result={"OK" if ok else "FAILED"}\n')
+        (d / ('DONE' if ok else 'FAILED')).write_text('x\n')
         return d
+
+    def endpoint(self, d, depth=5):
+        _, out = run_main(['--local', f'x={d}', '--depth', str(depth), '--turns', '1000', '--json'])
+        return {r['cls']: r for r in json.loads(out)['rows']}
+
+    def test_binary_changed_suite_has_no_successes(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1))], suite_ok=False, binary_end='c' * 64,
+                           run_exit={'one': 0})
+            row = self.endpoint(d)['ALL']
+            self.assertEqual((row['attempted'], row['successes'], row['operational']),
+                             (1, 0, {'binary_changed': 1}))
+
+    def test_failed_suite_scores_only_runs_whose_run_sh_succeeded(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1)), ('two', 2, 0, self.alive(2)),
+                               ('three', 3, 0, self.alive(3))],
+                           suite_ok=False, run_exit={'one': 0, 'two': 1})
+            row = self.endpoint(d)['ALL']
+            # two: run.sh failed after a good receipt; three: no exit status in a FAILED suite.
+            self.assertEqual((row['successes'], row['operational']), (1, {'harness_failure': 2}))
+
+    def test_incomplete_or_contradictory_output_is_refused(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 0, self.alive(1))])
+            (d / 'DONE').unlink()
+            with self.assertRaises(SystemExit):
+                self.endpoint(d)
+            (d / 'FAILED').write_text('x\n')   # FAILED marker, manifest says OK
+            with self.assertRaises(SystemExit):
+                self.endpoint(d)
+
+    def test_depths_contradicting_the_summary_is_not_a_success(self):
+        with tempfile.TemporaryDirectory() as t:
+            good = {'boundary': 'exact', 'stop_turn': 1000, 'alive': True, 'max_depth_at_stop': 5}
+            bad = dict(good, max_depth_at_stop=1)
+            d = self.local(t, [('one', 1, 0, self.alive(1)), ('two', 2, 0, self.alive(2))],
+                           depths={'one': good, 'two': bad})
+            row = self.endpoint(d)['ALL']
+            self.assertEqual((row['successes'], row['operational']), (1, {'evidence_conflict': 1}))
+
+    def test_missing_run_of_an_index_that_played_two_classes_is_not_guessed(self):
+        with tempfile.TemporaryDirectory() as t:
+            d = self.local(t, [('one', 1, 8, self.alive(1, cls='Mage')),
+                               ('two', 2, 8, self.alive(2, cls='Warrior')), ('three', 3, 8, None)])
+            rows = self.endpoint(d)
+            self.assertEqual((rows['Mage']['attempted'], rows['Warrior']['attempted']), (1, 1))
+            self.assertEqual(rows['class index 8 (ambiguous)']['operational'], {'harness_failure': 1})
 
     def alive(self, seed, turn=1000, depth=5, cls='Warrior'):
         return {'seed': seed, 'class': cls, 'stop_reason': 'turns', 'game_turns': turn,

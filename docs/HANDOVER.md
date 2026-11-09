@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M1 re-review findings N1–N11 (#39)
+
+The re-review (Kimi K3.1 Pro, at `2dd11fd` and `16af1ad`) resolved 12 of
+the 19 findings, partly resolved 7, and added N1–N11. N1 blocks. The fixes
+go in PRs into `main`:
+- measurement: N1, N3, N5 and N6. `suite.sh` writes each run's
+  `run_exit`. `tools/endpoint.py` scores no run of a suite whose binary
+  changed (`binary_changed`), and in a `FAILED` suite only a run whose
+  run.sh succeeded. A `depths.json` that contradicts `summary.json` is an
+  `evidence_conflict`. It refuses outputs with no DONE or FAILED marker,
+  and never guesses the class of a run when its index played two classes.
+  `harness/check-boundary.py` checks the suite hash and fails survivors
+  that stopped before the cap.
+
 ## 2026-11-10: source S14, the complete Angband Strategy Manual
 
 The owner added neo-angband-tracker `docs/c-manual/` (default branch) as a
