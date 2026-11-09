@@ -18,3 +18,20 @@ jobs:
       - run: cargo test --workspace
       - run: bash -n scripts/setup.sh
       - run: python3 -m unittest discover -s scripts/tests
+      - run: python3 -m unittest discover -s tools/tests
+
+  engine:
+    # Builds the engine with the tree's own C Borg and with the reborn crate,
+    # and checks that the C smoke suite reproduces harness/reference/smoke-c
+    # (T1.2). Deaths in CI go to a temporary registry, never to docs/deaths.
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
+      - run: BORG_IMPL=c harness/build.sh
+      - run: BORG_IMPL=c harness/suite.sh smoke harness/out/smoke-c
+      - run: harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
+      - run: BORG_IMPL=rust harness/build.sh
+      - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust

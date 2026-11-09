@@ -35,7 +35,13 @@ python3 scripts/refresh-sources.py   # what moved in every source since its pin 
 cargo test --workspace
 ```
 
-From M1 on, also `harness/build.sh` (task T1.2, #5) under the shared lock.
+Engine builds and suites (see [harness/README.md](harness/README.md)) run under the shared lock:
+
+```sh
+BORG_IMPL=c flock /tmp/angband-validation.lock harness/build.sh
+BORG_IMPL=c flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke-c
+harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
+```
 
 ## Choosing the work
 
@@ -86,7 +92,10 @@ both in the review PR.
 | `reference/deaths/INDEX.md` | Generated index of every Borg death we know of: better-borg-c, borg-rs and ours |
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `angband/` | The engine tree from borg-rs, with history; never edited here (RULES 9). What it contains and how to re-sync it: [docs/ENGINE-TREE.md](docs/ENGINE-TREE.md) |
-| `harness/`, `tools/`, launchers | From T1.2 on, with borg-rs's names and behaviour |
+| `harness/` | borg-rs's harness (build, run, suite, diff, identity) with the differences listed in [harness/README.md](harness/README.md) |
+| `borg-rs/` | The seam package: the name the imported CMake builds; it only re-exports `borg-reborn-rs` |
+| `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
+| launchers, the rest of `tools/` | From T1.6, with borg-rs's names and behaviour |
 | `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
 
 ## Local machine notes

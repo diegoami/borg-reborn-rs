@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.2 harness, build identity, death export (#5)
+
+- `harness/` is borg-rs's at `e5cb263`, with three adaptations listed in
+  [harness/README.md](../harness/README.md):
+  - `identity.sh` names our crates;
+  - `run.sh` ends with `tools/export-death.py`;
+  - `measurement/rust-overlay.py` copies both workspace members.
+- `BORG_IMPL=rust` links through the seam package `borg-rs/` (the name the
+  imported CMake builds), which re-exports `borg-reborn-rs`. The engine
+  boundary module `engine` has a no-op `do_cmd_borg` until T1.5.
+- **Import proved:** the `c` smoke suite is byte-identical (keys, messages,
+  state) to borg-rs's own C build at `e5cb263`. That output is
+  `harness/reference/smoke-c`. borg-rs's committed smoke reference is the
+  pristine-C one (unchanged since `aa4ad6c`) and is kept as
+  `harness/reference/smoke-pristine` for T1.3.
+- **First death:** smoke-mage-2 (seed 102, Elf Mage, `c` arm) dies to an
+  acolyte at turn 7195. It is the same as in borg-rs. Its dossier is our first
+  case in `docs/deaths/`.
+- CI gains an `engine` job: build `c`, run smoke, diff against `smoke-c`,
+  build `rust`, check that the binary reads as `rust`.
+
+**Next:** #6 (T1.3, control C Borgs) and #7 (T1.4, which needs T1.3).
+
 ## 2026-11-09: T1.1 engine tree imported (#4)
 
 - `angband/` is borg-rs `e5cb263` (impact v6) `angband/`, split with

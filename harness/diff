@@ -1,0 +1,670 @@
+#!/usr/bin/env python3
+"""Compare Borg keypress logs and print the first divergence.
+
+Usage:
+  harness/diff [--suite NAME] [--save-root DIR] [--expect-impl c|rust] [--allow-incomplete]
+              [--allow-unverified] [--allow-legacy-logs] A B
+
+  A and B are either two key logs (keys.log or keys.log.xz) or two
+  directories of runs (each run is a subdirectory holding keys.log[.xz]
+  and summary.json), e.g. a suite output dir and harness/reference/full.
+
+Directory mode:
+  * The runs compared are the union of the run names on both sides. A run
+    present on one side only is a failure.
+  * --suite NAME: both sides must hold exactly the runs listed in
+    harness/suites/NAME, or in the suite file NAME if it contains a '/'
+    (a missing or extra run is a failure).
+  * Each run passes only if
+      - the key logs are byte-identical,
+      - on each side the key log has summary.keys lines and its last line's
+        game turn equals summary.game_turns (or precedes an explicit exact/stall stop,
+        or a Borg self-stop that fired inside a command, so the game finished
+        that turn without a further key),
+      - the two summary.json files are equal apart from wall_seconds and new
+        measurement fields absent from historical references,
+      - the message logs (messages.log[.xz]) and the engine-state logs
+        (state.log[.xz]) are byte-identical, when compared (below); a
+        state log has summary.keys lines, and line i is at the game turn
+        of key i.
+  * Message and state logs are required in directory mode, independently
+    of compression. --allow-legacy-logs explicitly permits a reference
+    without a build-identity manifest and plain key logs to omit them;
+    skipped comparisons are printed. It never excuses missing logs in
+    a suite output. Such legacy comparisons are not full three-log passes.
+  * Roles come from the manifest, not the log format. A dir whose
+    manifest has the build identity (written by harness/suite.sh) is a
+    suite output, plain or compressed: it must hold the DONE marker
+    (--allow-incomplete makes that a warning), its build identity is
+    printed, and it fails (exit 1) if the manifest shows BORG_IMPL
+    different from the binary's implementation, a recorded override
+    (ALLOW_UNKNOWN_IMPL, ALLOW_STALE_BUILD), a failed check or a binary
+    changed during the suite. A dir with plain key logs and no manifest,
+    or with a manifest without build identity, is refused (exit 2). A dir
+    without such a manifest and without plain logs is a reference (the C
+    oracle); a manifest it keeps must record a C build.
+  * --expect-impl c|rust: a verified suite output of that implementation
+    must be one of the operands (exit 2 otherwise).
+  * --suite NAME|PATH: the runs must be the suite's scenarios, not just
+    its names: a suite output's manifest must record this suite file
+    (suite_sha256), and on both sides every run's summary must show the
+    suite's seed, race and class indices and menu-letter flag, a stop on
+    turns at or after the turn limit (an early stop before it), and a
+    config run's config.txt the suite's flags (exit 1 otherwise). Limits:
+    references do not record the cheat-death flag or an exact upper turn
+    bound (a run stops at the first key at or past the limit; up to 1191
+    game turns later in the stored references).
+  * --allow-unverified turns the manifest checks into warnings.
+
+For a key-log divergence it prints the run name, seed, game turn and key
+index of the first differing line and 20 lines of context from each side;
+for a message or state divergence, the line index, the game turn and key
+index of that line, and context the same way.
+Exit status: 0 if everything matches, 1 on any difference, 2 on bad input.
+"""
+import json
+import lzma
+import hashlib
+import os
+import re
+import sys
+
+CONTEXT = 20
+# summary.json fields that are not part of the oracle
+IGNORED_FIELDS = {"wall_seconds"}
+# Legacy references predate measurement fields. Compare each whenever both
+# sides provide it; old fields still require presence and equality.
+MEASUREMENT_FIELDS = {"calendar", "max_clevel", "hp", "max_hp", "borg_decisions",
+                      "player_energy", "borg_rng", "game_rng", "effective_settings"}
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def find_log(path):
+    if os.path.isfile(path):
+        return path
+    if os.path.isfile(path + ".xz"):
+        return path + ".xz"
+    return None
+
+
+def read_log(path):
+    """Raw bytes of a key log (decompressed), or None."""
+    p = find_log(path)
+    if p is None:
+        return None
+    if p.endswith(".xz"):
+        with lzma.open(p, "rb") as f:
+            return f.read()
+    with open(p, "rb") as f:
+        return f.read()
+
+
+def read_summary(run_dir):
+    try:
+        with open(os.path.join(run_dir, "summary.json")) as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def describe(line):
+    parts = line.split()
+    if len(parts) < 3:
+        return line
+    turn, typ, code = parts[0], parts[1], parts[2]
+    try:
+        c = int(code, 16)
+    except ValueError:
+        return line
+    ch = chr(c) if 32 <= c < 127 else "0x%x" % c
+    return "turn %s type %s key %s" % (turn, typ, ch)
+
+
+def consistency(label, data, summary):
+    """Problems between one side's key log and its summary.json."""
+    probs = []
+    if summary is None:
+        return ["%s: no readable summary.json" % label]
+    if data and not data.endswith(b"\n"):
+        probs.append("%s: key log does not end with a newline" % label)
+    lines = data.split(b"\n")
+    if lines and lines[-1] == b"":
+        lines.pop()
+    if any(field in summary for field in MEASUREMENT_FIELDS):
+        if summary.get("calendar") != "fixed":
+            probs.append("%s: measurement calendar must be fixed" % label)
+        for field in sorted(MEASUREMENT_FIELDS):
+            if field not in summary:
+                probs.append("%s: missing measurement field %s" % (label, field))
+    if summary.get("stop_reason") == "stalled":
+        if (summary.get("stall_turn") != summary.get("game_turns") or
+                not isinstance(summary.get("stall_decisions"), int) or summary["stall_decisions"] < 1 or
+                not isinstance(summary.get("stall_energy_delta"), int) or summary["stall_energy_delta"] < 0):
+            probs.append("%s: invalid stall boundary/deltas" % label)
+    keys = summary.get("keys")
+    if keys != len(lines):
+        probs.append("%s: key log has %d lines, summary keys=%s"
+                     % (label, len(lines), keys))
+    if lines:
+        try:
+            last_turn = int(lines[-1].split()[0])
+        except (ValueError, IndexError):
+            last_turn = None
+        if (last_turn != summary.get("game_turns") and not
+                (((summary.get("exact_turns") is True and summary.get("stop_reason") == "turns")
+                  or summary.get("stop_reason") == "stalled"
+                  # The Borg's auto-stop (e.g. borg_stop_clevel) can fire
+                  # inside a command; the game then completes that turn
+                  # after the keypress hook is removed. Never the reverse.
+                  or summary.get("stop_reason") == "borg_stopped")
+                 and isinstance(last_turn, int) and last_turn <= summary.get("game_turns", -1))):
+            probs.append("%s: last key at game turn %s, summary game_turns=%s"
+                         % (label, last_turn, summary.get("game_turns")))
+    return probs
+
+
+# Extra logs compared beside keys.log: file name -> label
+EXTRA_LOGS = (("messages.log", "messages"), ("state.log", "state"))
+
+
+def where(kind, line, i):
+    """(game turn, key index) of line i of a log of this kind."""
+    f = line.split()
+    if kind == "messages":
+        # "<keys logged so far> <game turn> <type> <text>"
+        return (f[1] if len(f) > 1 else "?", f[0] if f else "?")
+    # keys and state: "<game turn> ..."; line i is key i
+    return (f[0] if f else "?", str(i))
+
+
+def show_divergence(name, a, b, seed, kind="keys"):
+    la = a.decode("utf-8", "replace").split("\n")
+    lb = b.decode("utf-8", "replace").split("\n")
+    n = min(len(la), len(lb))
+    i = 0
+    while i < n and la[i] == lb[i]:
+        i += 1
+    if i < len(la) or i < len(lb):
+        ref = la[i] if i < len(la) else lb[i]
+    else:
+        ref = ""
+    turn, kidx = where(kind, ref, i)
+    if kind == "keys":
+        print("== %s: DIVERGES  seed=%s  game_turn=%s  key_index=%d"
+              "  (bytes %d vs %d)" % (name, seed, turn, i, len(a), len(b)))
+    else:
+        print("== %s: %s.log DIVERGES  seed=%s  line=%d  game_turn=%s"
+              "  key_index=%s  (bytes %d vs %d)"
+              % (name, kind, seed, i, turn, kidx, len(a), len(b)))
+    if la[:n] == lb[:n] and len(la) == len(lb):
+        # same lines, different bytes (e.g. line endings)
+        print("   (same lines, different bytes)")
+        return
+    lo = max(0, i - CONTEXT)
+    for label, lines in (("A", la), ("B", lb)):
+        hi = min(len(lines), i + CONTEXT)
+        print("--- %s lines %d..%d" % (label, lo, hi - 1))
+        for j in range(lo, hi):
+            mark = ">>" if j == i else "  "
+            if kind == "keys":
+                print("%s %7d  %-20s %s" % (mark, j, lines[j], describe(lines[j])))
+            else:
+                print("%s %7d  %s" % (mark, j, lines[j]))
+
+
+def state_consistency(label, state, keys, summary):
+    """A state log has one line per key, at that key's game turn."""
+    if summary is None:
+        return []
+    sl = state.split(b"\n")
+    if sl and sl[-1] == b"":
+        sl.pop()
+    if len(sl) != summary.get("keys"):
+        return ["%s: state log has %d lines, summary keys=%s"
+                % (label, len(sl), summary.get("keys"))]
+    kl = keys.split(b"\n")
+    for i, (s_, k_) in enumerate(zip(sl, kl)):
+        if s_.split(b" ", 1)[0] != k_.split(b" ", 1)[0]:
+            return ["%s: state log line %d at game turn %s, key %d at %s"
+                    % (label, i, s_.split(b" ", 1)[0].decode("utf-8", "replace"),
+                       i, k_.split(b" ", 1)[0].decode("utf-8", "replace"))]
+    return []
+
+
+def legacy_reference(run_dir):
+    """Only manifest-free historical reference roles can opt out of logs."""
+    return (not has_build_identity(os.path.dirname(run_dir))
+            and not os.path.isfile(os.path.join(run_dir, "keys.log")))
+
+
+# Per-diff tallies of the extra logs: label -> {"compared": n, "skipped": n}
+EXTRA_TALLY = {}
+
+
+def compare_extra(name, da, db, seed, ka, kb, sa, sb, allow_legacy=False):
+    """Compare messages.log and state.log of one run. Returns the problems
+    (a divergence is printed, not returned) and whether all compared logs
+    were identical."""
+    probs = []
+    same = True
+    for fname, kind in EXTRA_LOGS:
+        tally = EXTRA_TALLY.setdefault(kind, {"compared": 0, "skipped": 0})
+        xa = read_log(os.path.join(da, fname))
+        xb = read_log(os.path.join(db, fname))
+        if xa is None or xb is None:
+            missing = [(label, directory) for label, directory, data
+                       in (("A", da, xa), ("B", db, xb)) if data is None]
+            required = [(label, directory) for label, directory in missing
+                        if not (allow_legacy and legacy_reference(directory))]
+            if required:
+                for label, directory in required:
+                    probs.append("%s: missing required %s.log in %s"
+                                 % (label, kind, directory))
+                same = False
+            else:
+                tally["skipped"] += 1
+            continue
+        tally["compared"] += 1
+        if xa != xb:
+            show_divergence(name, xa, xb, seed, kind)
+            same = False
+        if kind == "state":
+            probs += state_consistency("A", xa, ka, sa)
+            probs += state_consistency("B", xb, kb, sb)
+    return probs, same
+
+
+def compare_run(name, da, db, allow_legacy=False):
+    """Compare one run (two run dirs). True if identical and consistent."""
+    a = read_log(os.path.join(da, "keys.log"))
+    b = read_log(os.path.join(db, "keys.log"))
+    sa, sb = read_summary(da), read_summary(db)
+    if a is None or b is None:
+        print("== %s: missing key log (%s)" % (name, "A" if a is None else "B"))
+        return False
+    ok = True
+    seed = (sa or {}).get("seed", (sb or {}).get("seed"))
+    if a != b:
+        show_divergence(name, a, b, seed)
+        ok = False
+    probs = consistency("A", a, sa) + consistency("B", b, sb)
+    xprobs, xsame = compare_extra(name, da, db, seed, a, b, sa, sb, allow_legacy)
+    probs += xprobs
+    if not xsame:
+        ok = False
+    fa = read_log(os.path.join(da, "final.save"))
+    fb = read_log(os.path.join(db, "final.save"))
+    if fa is not None or fb is not None:
+        if not fa or not fb:
+            probs.append("missing or empty final engine save")
+        elif fa != fb:
+            probs.append("final engine saves differ")
+    if sa is not None and sb is not None:
+        keys = sorted(set(sa) | set(sb))
+        for k in keys:
+            if k in MEASUREMENT_FIELDS and (sa.get("calendar") != "fixed" or sb.get("calendar") != "fixed"):
+                continue
+            if k in IGNORED_FIELDS:
+                continue
+            if sa.get(k, "<absent>") != sb.get(k, "<absent>"):
+                probs.append("summary %s: A=%r B=%r"
+                             % (k, sa.get(k, "<absent>"), sb.get(k, "<absent>")))
+    if probs:
+        print("== %s: %s" % (name, "; ".join(probs)))
+        ok = False
+    return ok
+
+
+def suite_names(suite):
+    path = suite if "/" in suite else os.path.join(ROOT, "harness", "suites", suite)
+    names = []
+    with open(path) as f:
+        for line in f:
+            line = line.split("#", 1)[0].split()
+            if line:
+                names.append(line[0])
+    return names
+
+
+def suite_path(suite):
+    return suite if "/" in suite else os.path.join(ROOT, "harness", "suites", suite)
+
+
+def suite_spec(suite):
+    """name -> (seed, race, class, turns, flags) from the suite file."""
+    spec = {}
+    with open(suite_path(suite)) as f:
+        for line in f:
+            fl = line.split("#", 1)[0].split()
+            if fl:
+                flags = set(fl[5].split(",")) - {"-", ""} if len(fl) > 5 else set()
+                spec[fl[0]] = (int(fl[1]), int(fl[2]), int(fl[3]), int(fl[4]), flags)
+    return spec
+
+
+# config flags: these names plus any NAME=VALUE option setting (run.sh)
+CONFIG_FLAGS = {"munchkin", "lunal", "selflunal"}
+
+
+def check_suite_params(label, d, suite, save_root=None):
+    """The runs in d are the suite's scenarios, not just its run names:
+    a suite output's manifest must record this suite file (suite_sha256);
+    every run's summary must show the suite's seed, race and class
+    indices, menu-letter flag and a final turn consistent with its turn
+    limit, and a config run's config.txt the suite's flags. Returns the
+    problems found."""
+    probs = []
+    spec = suite_spec(suite)
+    mpath = os.path.join(d, "manifest")
+    if os.path.isfile(mpath) and has_build_identity(d):
+        with open(suite_path(suite), "rb") as f:
+            want = hashlib.sha256(f.read()).hexdigest()
+        got = read_manifest(mpath).get("suite_sha256")
+        if got != want:
+            probs.append("%s: manifest suite_sha256 %s is not the sha256 of %s (%s): "
+                         "the output was made from another suite file"
+                         % (label, (got or "?")[:16], suite_path(suite), want[:16]))
+    for name, (seed, race, cls, turns, flags) in sorted(spec.items()):
+        sp = os.path.join(d, name, "summary.json")
+        if not os.path.isfile(sp):
+            continue  # reported as missing elsewhere
+        with open(sp) as f:
+            sm = json.load(f)
+        bad = []
+        for key, want in (("seed", seed), ("race_idx", race), ("class_idx", cls)):
+            if sm.get(key) != want:
+                bad.append("%s %s, suite says %s" % (key, sm.get(key), want))
+        if bool(sm.get("menu_letters", False)) != ("menu" in flags):
+            bad.append("menu_letters %s, suite flags %s" % (sm.get("menu_letters", False), sorted(flags)))
+        if bool(sm.get("cheat_live", False)) != ("cheatlive" in flags):
+            bad.append("cheat_live %s, suite flags %s" % (sm.get("cheat_live", False), sorted(flags)))
+        g = sm.get("game_turns", -1)
+        key_limits = [f.split("=", 1)[1] for f in flags if f.startswith("key-limit=")]
+        if key_limits:
+            if len(key_limits) != 1 or not re.fullmatch(r"[1-9][0-9]{0,8}", key_limits[0]):
+                bad.append("invalid key-limit flag")
+            elif sm.get("keys", -1) > int(key_limits[0]) or (
+                    sm.get("stop_reason") == "keys" and sm.get("keys") != int(key_limits[0])):
+                bad.append("key count does not match key-limit stop")
+        elif sm.get("stop_reason") == "keys":
+            bad.append("key stop without key-limit flag")
+        if sm.get("stop_reason") == "rune_pattern" and "rune-pattern" not in flags:
+            bad.append("Rune-pattern stop without rune-pattern flag")
+        if sm.get("stop_reason") == "turns" and g < turns:
+            bad.append("stopped on turns at %s, below the suite limit %s" % (g, turns))
+        if sm.get("stop_reason") not in ("turns", "keys", "rune_pattern") and g >= turns:
+            bad.append("stopped (%s) at %s, at or past the suite limit %s" % (sm.get("stop_reason"), g, turns))
+        cp = os.path.join(d, name, "config.txt")
+        if "finalsave" in flags and find_log(os.path.join(d, name, "final.save")) is None:
+            bad.append("missing final engine save required by finalsave flag")
+        if "living-save" in flags and not sm.get("dead") and find_log(os.path.join(d, name, "final.save")) is None:
+            bad.append("missing living final engine save")
+        want_cfg = set(f for f in flags if f in CONFIG_FLAGS or "=" in f)
+        if os.path.isfile(cp):
+            with open(cp) as f:
+                rec = dict(l.rstrip("\n").split("=", 1) for l in f if "=" in l)
+            have = set(rec.get("flags", "").split(",")) - {"-", ""}
+            if have != flags:
+                bad.append("config.txt flags %s, suite flags %s" % (sorted(have), sorted(flags)))
+        elif want_cfg:
+            bad.append("no config.txt for config flags %s" % sorted(want_cfg))
+        saves = [f[5:] for f in flags if f.startswith("save=")]
+        if bool(sm.get("loaded", False)) != bool(saves):
+            bad.append("loaded status does not match suite save flag")
+        if saves and os.path.isfile(cp):
+            if len(saves) != 1 or not re.fullmatch(r"[a-zA-Z0-9_-]+\.save", saves[0]):
+                bad.append("invalid suite save filename")
+            else:
+                fixture = os.path.join(save_root or os.path.join(ROOT, "harness", "saves"), saves[0])
+                if not os.path.isfile(fixture):
+                    bad.append("suite savefile is missing")
+                else:
+                    with open(fixture, "rb") as f:
+                        expected_hash = hashlib.sha256(f.read()).hexdigest()
+                    if rec.get("save_sha256") != expected_hash:
+                        bad.append("config.txt save_sha256 does not match suite fixture")
+            if not isinstance(sm.get("loaded_turn"), int) or sm["loaded_turn"] >= turns:
+                bad.append("invalid loaded_turn")
+        if bad:
+            probs.append("%s: %s: %s" % (label, name, "; ".join(bad)))
+    return probs
+
+
+def run_dirs(d):
+    return set(x for x in os.listdir(d) if os.path.isdir(os.path.join(d, x)))
+
+
+def has_build_identity(d):
+    """A manifest of the current harness/suite.sh format (with the build
+    identity fields): the dir is a suite output, whatever its logs'
+    compression. Role comes from the manifest, never from the log format."""
+    mpath = os.path.join(d, "manifest")
+    if not os.path.isfile(mpath):
+        return False
+    m = read_manifest(mpath)
+    return "overrides" in m and "binary_impl" in m
+
+
+def check_done(d, allow):
+    """A suite output dir (a build-identity manifest, or plain keys.log)
+    must carry DONE."""
+    plain = any(os.path.isfile(os.path.join(d, r, "keys.log"))
+                for r in run_dirs(d))
+    if os.path.isfile(os.path.join(d, "FAILED")):
+        msg = "%s is marked FAILED by harness/suite.sh" % d
+    elif not (plain or has_build_identity(d)) or os.path.isfile(os.path.join(d, "DONE")):
+        return True
+    else:
+        msg = "%s has no DONE marker (incomplete, failed or stale suite output)" % d
+    if allow:
+        print("WARNING: " + msg)
+        return True
+    print("REFUSED: " + msg + "; use --allow-incomplete to compare anyway")
+    return False
+
+
+def read_manifest(path):
+    m = {}
+    with open(path) as f:
+        for line in f:
+            k, sep, v = line.rstrip("\n").partition("=")
+            if sep and k not in m:
+                m[k] = v
+    return m
+
+
+def check_manifest(label, d, expect_impl, allow):
+    """Print a suite output dir's build identity and check it.
+
+    Returns (rc, impl): rc 0 if verified, 1 on a mismatch or a recorded
+    override, 2 if the dir has no manifest of the current format; impl is
+    the implementation of a verified suite output, else None. A dir with a
+    build-identity manifest is a suite output even if its logs are
+    compressed. A dir without one and without plain key logs is a
+    reference (C oracle): (0, None), unless a manifest it keeps records a
+    non-C build (2).
+    """
+    mpath = os.path.join(d, "manifest")
+    plain = any(os.path.isfile(os.path.join(d, r, "keys.log"))
+                for r in run_dirs(d))
+    if not plain and not has_build_identity(d):
+        # A reference (C oracle): compressed logs only. harness/reference/
+        # classes also keeps the manifest of the C suite run that made it;
+        # if present it must record a C build. References carry no build
+        # identity (they predate it); they are checked by content.
+        if not os.path.isfile(mpath):
+            print("%s: %s: reference (no manifest)" % (label, d))
+            return 0, None
+        m = read_manifest(mpath)
+        impls = {m.get(k) for k in ("borg_impl_env", "binary_cmake_borg_impl",
+                                    "binary_impl") if m.get(k)}
+        if impls - {"c"}:
+            print("REFUSED: %s: reference manifest records a non-C build (%s)"
+                  % (d, ", ".join(sorted(impls))))
+            return 2, None
+        print("%s: %s: reference (manifest of its C run: impl=c, rev %s)"
+              % (label, d, m.get("git_rev", "?")[:12]))
+        return 0, None
+    if not os.path.isfile(mpath):
+        msg = "%s has no manifest (not written by harness/suite.sh)" % d
+        if allow:
+            print("WARNING: " + msg)
+            return 0, None
+        print("REFUSED: " + msg + "; use --allow-unverified to compare anyway")
+        return 2, None
+    m = read_manifest(mpath)
+    g = lambda k: m.get(k, "?")
+    print("%s: %s: impl=%s (BORG_IMPL=%s; executable %s, CMakeCache %s, "
+          "BUILD_ID %s) binary_sha256=%s" % (
+              label, d, g("binary_impl"), g("borg_impl_env"),
+              g("binary_elf_impl"), g("binary_cmake_borg_impl"),
+              g("build_id_impl"), g("binary_sha256")[:16]))
+    print("%s:   built from %s (dirty=%s, inputs dirty=%s) source_sha256=%s;"
+          " run at %s (dirty=%s) overrides=%s" % (
+              label, g("build_id_git_rev")[:12], g("build_id_git_dirty"),
+              g("build_id_inputs_dirty"), g("build_id_source_sha256")[:16],
+              g("git_rev")[:12], g("git_dirty"), g("overrides")))
+    if "overrides" not in m or "binary_impl" not in m:
+        msg = ("%s: manifest has no build identity (written by an older "
+               "harness/suite.sh)" % d)
+        if allow:
+            print("WARNING: " + msg)
+            return 0, None
+        print("REFUSED: " + msg + "; use --allow-unverified to compare anyway")
+        return 2, None
+    probs = []
+    env, impl = m.get("borg_impl_env"), m.get("binary_impl")
+    if env != impl:
+        probs.append("implementation mismatch: BORG_IMPL=%s, binary %s"
+                     % (env, impl))
+    if m.get("overrides") != "none":
+        probs.append("suite ran with override(s) %s" % m.get("overrides"))
+    for k in ("impl_check", "build_check"):
+        if m.get(k) != "ok":
+            probs.append("%s: %s" % (k, m.get(k)))
+    if m.get("binary_sha256_end", m.get("binary_sha256")) != m.get("binary_sha256"):
+        probs.append("binary changed while the suite ran")
+    if not probs:
+        return 0, impl
+    for p in probs:
+        print("%s %s: %s" % ("WARNING:" if allow else "UNVERIFIED:", label, p))
+    return (0 if allow else 1), None
+
+
+def main(argv):
+    args = argv[1:]
+    suite = None
+    allow = False
+    allow_unverified = False
+    allow_legacy = False
+    expect_impl = None
+    save_root = None
+    while args and args[0].startswith("--"):
+        opt = args.pop(0)
+        if opt == "--suite" and args:
+            suite = args.pop(0)
+        elif opt == "--save-root" and args:
+            save_root = os.path.abspath(args.pop(0))
+        elif opt == "--allow-incomplete":
+            allow = True
+        elif opt == "--allow-unverified":
+            allow_unverified = True
+        elif opt == "--allow-legacy-logs":
+            allow_legacy = True
+        elif opt == "--expect-impl" and args and args[0] in ("c", "rust"):
+            expect_impl = args.pop(0)
+        else:
+            print(__doc__)
+            return 2
+    if len(args) != 2:
+        print(__doc__)
+        return 2
+    A, B = args
+    if os.path.isdir(A) and os.path.isdir(B):
+        if not (check_done(A, allow) & check_done(B, allow)):
+            return 2
+        res = [check_manifest(label, d, expect_impl, allow_unverified)
+               for label, d in (("A", A), ("B", B))]
+        mrc = [r for r, _ in res]
+        if 2 in mrc:
+            return 2
+        unverified = 1 in mrc
+        if expect_impl is not None and expect_impl not in [i for _, i in res]:
+            # --expect-impl X: a verified suite output of X must take part.
+            msg = ("--expect-impl %s: no verified %s suite output among the "
+                   "operands (got: %s)" % (expect_impl, expect_impl,
+                   ", ".join(i or "reference/unverified" for _, i in res)))
+            if allow_unverified:
+                print("WARNING: " + msg)
+            else:
+                print("REFUSED: " + msg)
+                return 2
+        na, nb = run_dirs(A), run_dirs(B)
+        ok = True
+        if suite is not None:
+            expected = suite_names(suite)
+            if len(set(expected)) != len(expected):
+                print("suite %s lists a run name twice" % suite)
+                return 2
+            for label, d, have in (("A", A, na), ("B", B, nb)):
+                missing = sorted(set(expected) - have)
+                extra = sorted(have - set(expected))
+                for r in missing:
+                    print("== %s: MISSING in %s (%s)" % (r, label, d))
+                for r in extra:
+                    print("== %s: not in suite %s, present in %s (%s)"
+                          % (r, suite, label, d))
+                ok &= not missing and not extra
+            for label, d in (("A", A), ("B", B)):
+                for p in check_suite_params(label, d, suite, save_root):
+                    print("== SUITE MISMATCH " + p)
+                    ok = False
+            names = sorted(set(expected) | na | nb)
+        else:
+            names = sorted(na | nb)
+            expected = names
+        if not names:
+            print("no runs in %s or %s" % (A, B))
+            return 2
+        same = 0
+        for d in names:
+            if d not in na or d not in nb:
+                if suite is None:
+                    print("== %s: only in %s" % (d, "A" if d in na else "B"))
+                ok = False
+                continue
+            r = compare_run(d, os.path.join(A, d), os.path.join(B, d), allow_legacy)
+            same += r
+            ok &= r
+        print("%d/%d runs identical (expected %d)"
+              % (same, len(names), len(expected)))
+        for _, kind in EXTRA_LOGS:
+            t = EXTRA_TALLY.get(kind, {"compared": 0, "skipped": 0})
+            note = ""
+            if t["skipped"]:
+                note = ("; NOTE: not compared in %d run(s): --allow-legacy-logs "
+                        "permits missing %s.log in a historical reference"
+                        % (t["skipped"], kind))
+            print("%s.log compared in %d run(s)%s" % (kind, t["compared"], note))
+        if same != len(expected):
+            ok = False
+        if unverified:
+            print("FAIL: build identity not verified (see UNVERIFIED above);"
+                  " --allow-unverified to ignore")
+            ok = False
+    else:
+        a, b = read_log(A), read_log(B)
+        if a is None or b is None:
+            print("missing log (%s)" % ("A" if a is None else "B"))
+            return 1
+        ok = a == b
+        if not ok:
+            s = read_summary(os.path.dirname(A)) or {}
+            show_divergence(os.path.basename(A), a, b, s.get("seed"))
+        else:
+            print("identical")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

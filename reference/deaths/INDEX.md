@@ -26,5 +26,6 @@ are not independent.*
 | borg-rs | [D0004-seed8408-blackguard](../../reference/deaths/borg-rs/D0004-seed8408-blackguard/report.md) | Gnome Blackguard | a wild cat | 6231 | 1 | 1 | — | C/Rust parity observed; defect not established | Natural death: seed8408 Gnome Blackguard |
 | borg-rs | [D0005-recorded](../../reference/deaths/borg-rs/D0005-recorded/report.md) | CollectedBorg | Fang, Farmer Maggot's Dog | 36289 | 1 | 2 | — | Fang death assessed; recovery/retreat gates and spell-confidence causality unresolved | D0005: Fang, Farmer Maggot's Dog at turn 36289 |
 | borg-rs | [D0006-recorded](../../reference/deaths/borg-rs/D0006-recorded/report.md) | CollectedBorg | a grey mold | 22841 | 1 | 2 | — | Grey-mold stair/exploration loop assessed; qualified private trace shows emergency movement and danger-cache reuse | D0006: a grey mold at turn 22841 |
+| borg-reborn-rs | [D0001-c-seed102](../../docs/deaths/D0001-c-seed102/report.md) | Elf Mage | an acolyte | 7195 | 1 | 1 | — | unassessed | D0001-c-seed102: an acolyte at turn 7195 |
 
-19 cases.
+20 cases.

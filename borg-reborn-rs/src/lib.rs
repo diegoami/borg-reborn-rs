@@ -9,7 +9,12 @@
 //!   assessment (danger and risk), executor, decision trace, parameters;
 //! * strategies: the family of decision layers behind one trait.
 //!
-//! The engine seam arrives in milestone 1 (`PLAN.md`, T1.3).
+//! The engine boundary is `engine`; it links behind the seam package
+//! `borg-rs` (see `borg-rs/Cargo.toml`). The Borg itself arrives in T1.5.
+
+#![deny(unsafe_code)]
+
+pub mod engine;
 
 /// The name the Borg reports in run records and notes.
 pub const BORG_NAME: &str = "borg-reborn-rs";

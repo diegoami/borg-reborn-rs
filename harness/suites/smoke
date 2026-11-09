@@ -1,0 +1,5 @@
+# smoke: 3 seeds x 20,000 game turns, mixed classes
+# NAME            SEED  RACE CLASS TURNS
+smoke-warrior-1    101  0    0     20000
+smoke-mage-2       102  2    1     20000
+smoke-priest-3     103  5    3     20000

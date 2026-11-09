@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0001-c-seed102",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "an acolyte",
+  "terminal": {
+    "cause": "an acolyte",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 7195,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "c",
+    "seed": 102,
+    "flags": "-",
+    "git_rev": "321db9028fb3785bd5dbb2320a2e4bd06896fb5c",
+    "git_dirty": "no",
+    "source_sha256": "6a7e1ad631efe4afff61fa12cd9d5ebb09945b748fd7df24ee366684b5e52a30",
+    "binary_sha256": "c3d47032771c363f9844a2923de73744c8eb9aa3aea8ba56f39417a2bd3a87b7",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/smoke-c/smoke-mage-2",
+      "result_sha256": "fad6d85ea50e5ec775ecfa358d5c93807284b3fe11e8d8c5d3e1221e59ffe0e4",
+      "raw_sha256": {
+        "keys.log": "fad6d85ea50e5ec775ecfa358d5c93807284b3fe11e8d8c5d3e1221e59ffe0e4",
+        "messages.log": "64ece1c0442069cf30c8dd2f22ad839b645518a2d33325b12ce5b5cf92e7a699",
+        "state.log": "1b5a330bff77dd7e339a3dd33ca84a7b8ddd6bfcdf6c6d276b5171b45a1e6c46"
+      },
+      "source_commit": "321db9028fb3785bd5dbb2320a2e4bd06896fb5c",
+      "binary_sha256": "c3d47032771c363f9844a2923de73744c8eb9aa3aea8ba56f39417a2bd3a87b7"
+    }
+  ],
+  "encounter_family": "start-1b65fd9fa9299d763ad0f6c2d52032c59054cb586ad3e32f161cfb1c8199a583",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "summary.json": "3fcb2c1c6eb8b529c75b92bf45eb67f079207b5e0b0da7a245cdd28770ea4f31",
+    "config.txt": "9b12cebb09c024bbac847c009a76be2b75624ff726824557bb09fee1c5650e7f",
+    "build.json": "8a97c74c9ecb729175a81bad2f5b28911a8ad565ef8c74c2b5a98bcdbe61be28"
+  },
+  "investigation": null,
+  "issue": null,
+  "encounter_family_note": "Recomputed on 2026-11-09 with the v2 family (build-input hash instead of binary hash, PR #30 review); the case and its evidence are unchanged."
+}
