@@ -26,6 +26,9 @@
 #   OUTDIR/timing.txt  one line per run (FAILED/MISSING marked)
 #   OUTDIR/DONE        last, only if every run succeeded (harness/diff
 #                      refuses an output dir without it)
+#   OUTDIR/RUN/run_exit  run.sh's exit status for that run (borg-reborn-rs:
+#                      tools/endpoint.py scores a run of a FAILED suite only
+#                      if its run.sh succeeded)
 #   OUTDIR/FAILED      instead of DONE if any run failed, or if the binary
 #                      changed while the suite ran
 # A failed run does not stop the others. Exit status: 0 if all runs
@@ -173,7 +176,7 @@ START=$(date +%s.%N)
 set +e
 printf '%s\n' "${RUNS[@]}" | \
   xargs -P "$JOBS" -n 6 bash -c \
-    'if ANGBAND_BIN="$BIN" "$0" "$1/$2" "$3" "$4" "$5" "$6" "$7"; then echo "done $2"; else echo "FAILED $2" >&2; exit 1; fi' \
+    'ANGBAND_BIN="$BIN" "$0" "$1/$2" "$3" "$4" "$5" "$6" "$7"; rc=$?; [ ! -d "$1/$2" ] || echo "$rc" > "$1/$2/run_exit"; if [ $rc -eq 0 ]; then echo "done $2"; else echo "FAILED $2" >&2; exit 1; fi' \
     "$ROOT/harness/run.sh" "$WORK"
 XRC=$?
 set -e

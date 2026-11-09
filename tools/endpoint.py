@@ -10,7 +10,12 @@ Inputs, any mix, each as ARM=SOURCE (repeat an arm to pool sources):
 
   --local ARM=DIR      a harness/suite.sh output directory; the suite file it
                        ran (manifest) lists every attempted run, so a run with
-                       no summary.json counts as a harness failure
+                       no summary.json counts as a harness failure; so does
+                       a run whose run.sh failed (run_exit), every run of a
+                       suite whose binary changed while it ran
+                       (binary_changed), and a run whose depths.json
+                       contradicts its summary.json (evidence_conflict).
+                       An incomplete output (no DONE or FAILED) is refused
   --zoo ARM=FILE[:SPECIMEN[:PROFILE]]
                        borg-zoo result cells (JSON lines, the results branch);
                        optional filters on specimen and profile
@@ -102,12 +107,41 @@ def resolve_suite(d, manifest):
                      f'suite_file={manifest.get("suite_file")}); refusing to guess its attempted runs')
 
 
+def suite_status(d, manifest):
+    """'ok' or 'failed' for a complete harness/suite.sh output, 'binary_changed'
+    if the binary's sha256 at the end differs from the start (then no run of
+    it is evidence). Refuses an incomplete or contradictory output."""
+    done, failed = (d / 'DONE').exists(), (d / 'FAILED').exists()
+    if done == failed:
+        raise SystemExit(f'endpoint: {d} has {"both DONE and FAILED" if done else "neither DONE nor FAILED"}; '
+                         'not a complete suite.sh output')
+    start, end = manifest.get('binary_sha256'), manifest.get('binary_sha256_end')
+    result = manifest.get('finished_utc', '').rpartition('result=')[2]
+    if not start or not end or result not in ('OK', 'FAILED'):
+        raise SystemExit(f'endpoint: {d}: manifest lacks binary_sha256, binary_sha256_end or the result line; '
+                         'not a complete suite.sh output')
+    if (result == 'OK') != done:
+        raise SystemExit(f'endpoint: {d}: manifest result={result} contradicts its {"DONE" if done else "FAILED"} marker')
+    if start != end:
+        return 'binary_changed'
+    return 'ok' if done else 'failed'
+
+
+def depth_conflict(summ, depths):
+    """Why depths.json contradicts summary.json, or None."""
+    want = {'max_depth_at_stop': summ.get('max_depth') or 0, 'stop_turn': summ.get('game_turns'),
+            'alive': not summ.get('dead'), 'boundary': 'exact' if summ.get('exact_turns') else 'after-key'}
+    bad = [f'{k} {depths.get(k)!r} vs summary {v!r}' for k, v in want.items() if depths.get(k) != v]
+    return '; '.join(bad) or None
+
+
 def load_local(arm, d):
     d = Path(d)
     if not (d / 'manifest').exists():
         raise SystemExit(f'endpoint: {d} has no manifest (not a harness/suite.sh output)')
     manifest = dict(l.split('=', 1) for l in (d / 'manifest').read_text().splitlines() if '=' in l)
     listed = suite_runs(resolve_suite(d, manifest))
+    status = suite_status(d, manifest)
     raw = []
     for name, seed, cls_idx in listed:
         run_dir = d / name
@@ -117,22 +151,37 @@ def load_local(arm, d):
     # Class names by index from the runs that have a summary, so a run without
     # one still counts in its class (borgh without menu letters maps indices
     # of 7 and above to other classes: take the name the suite actually played).
-    names = {}
+    # Only an index that played one class names it; otherwise the run without
+    # a summary goes to its own row rather than to a guessed class.
+    played = defaultdict(set)
     for _, _, idx, _, summ, _ in raw:
         if summ and summ.get('class'):
-            names.setdefault(idx, summ['class'])
+            played[idx].add(summ['class'])
     out = []
     for name, seed, idx, run_dir, summ, proc in raw:
-        cls = (summ or {}).get('class') or names.get(idx) or f'class index {idx}'
-        failed = proc is None or proc.get('status') != 'success' or proc.get('exit_code') != 0 \
+        names = played.get(idx, set())
+        cls = (summ or {}).get('class') or (next(iter(names)) if len(names) == 1 else
+                                            f'class index {idx}' + (' (ambiguous)' if names else ''))
+        if status == 'binary_changed':
+            out.append(run(arm, seed, cls, 'binary_changed', False, 0, None, 'unknown', str(run_dir)))
+            continue
+        # run.sh's own exit status (suite.sh records it): a run whose depth
+        # stream or death export failed is not evidence, whatever its receipt.
+        rc_file = run_dir / 'run_exit'
+        rc = rc_file.read_text().strip() if rc_file.exists() else None
+        run_ok = rc == '0' or (rc is None and status == 'ok')
+        failed = not run_ok or proc is None or proc.get('status') != 'success' or proc.get('exit_code') != 0 \
             or proc.get('timed_out') or proc.get('stalled')
         if summ is None or failed:
             outcome = 'wall_timeout' if proc and proc.get('timed_out') else \
                 'stalled' if proc and proc.get('stalled') else 'harness_failure'
             out.append(run(arm, seed, cls, outcome, False, 0, None, 'unknown', str(run_dir)))
             continue
-        depths = json.loads((run_dir / 'depths.json').read_text()) if (run_dir / 'depths.json').exists() else {}
-        boundary = depths.get('boundary') or ('exact' if summ.get('exact_turns') else 'after-key')
+        depths = json.loads((run_dir / 'depths.json').read_text()) if (run_dir / 'depths.json').exists() else None
+        if depths is not None and depth_conflict(summ, depths):
+            out.append(run(arm, seed, cls, 'evidence_conflict', False, 0, None, 'unknown', str(run_dir)))
+            continue
+        boundary = (depths or {}).get('boundary') or ('exact' if summ.get('exact_turns') else 'after-key')
         outcome = 'death' if summ.get('dead') else STOP_TO_OUTCOME.get(summ.get('stop_reason'), 'harness_failure')
         out.append(run(arm, summ.get('seed', seed), cls, outcome, not summ.get('dead'),
                        summ.get('max_depth'), summ.get('game_turns'), boundary, str(run_dir),
