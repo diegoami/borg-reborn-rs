@@ -2,7 +2,7 @@
 
 Half-Elf Warrior, character level 1, depth 4 (max 4), seed 1001, implementation `rust`, flags `-`.
 
-Build `e91cf5239b480e2a30e58688933e88898b56e998` (dirty: yes), binary `ba362be70017`. Keys `04893bb17f50`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te3d-full/full-0-warrior-1` (not committed).
+Build `452ec40e2d7ed339ad148354a2375f7289d08a66` (dirty: yes), binary `6812c541dc4c`. Keys `04893bb17f50`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te3e-full/full-0-warrior-1` (not committed).
 
 Decision trace: the last 200 of 832 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 

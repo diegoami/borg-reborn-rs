@@ -2,7 +2,7 @@
 
 Human Warrior, character level 3, depth 2 (max 2), seed 1073, implementation `rust`, flags `-`.
 
-Build `e91cf5239b480e2a30e58688933e88898b56e998` (dirty: yes), binary `ba362be70017`. Keys `e76bf0438701`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te3d-full/full-7-ranger-3` (not committed).
+Build `452ec40e2d7ed339ad148354a2375f7289d08a66` (dirty: yes), binary `6812c541dc4c`. Keys `e76bf0438701`; raw logs stay in `/home/diego/projects/borg-reborn-rs/harness/out/te3e-full/full-7-ranger-3` (not committed).
 
 Decision trace: the last 200 of 2428 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 

@@ -23,5 +23,5 @@
   "borg_rng": 686255157,
   "game_rng": {"quick": false, "quick_rng": 2392737264, "rng_index": 28, "rng": "b2b6558b3386585117ecd13df30c4166f1f5693e678e8d0c27feb4165630e573051da9c5bef78fd78b6caf91882347d881bdf18f3e8a679bfa48837f8c6ca87768bd551972a12925103082453ec990b8f3c1dbfec7f107aea9e4b7cbc347412a0382d2ef68c90a87b08e21ffd8c74e5cc4ee3b543a10074581c2ddbe1cde177d"},
   "effective_settings": {},
-  "wall_seconds": 7.189
+  "wall_seconds": 6.955
 }

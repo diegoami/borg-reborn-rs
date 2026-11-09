@@ -18,10 +18,10 @@
     "impl": "rust",
     "seed": 1054,
     "flags": "-",
-    "git_rev": "e91cf5239b480e2a30e58688933e88898b56e998",
+    "git_rev": "452ec40e2d7ed339ad148354a2375f7289d08a66",
     "git_dirty": "yes",
-    "source_sha256": "d994ad83f47b8819a37550e99ab9a84ebe0d8ef6745a221ef49c30ca6cfa511f",
-    "binary_sha256": "ba362be70017c3cfc96a0c999b6b10c6ded8f88122c2a1415f9815e6e8d15555",
+    "source_sha256": "3bc224ed3c57c7470cf8dc7700097d2a1bebc0b011b006b609eec2d7132438a7",
+    "binary_sha256": "6812c541dc4cdefa0c55ced38cd5a9fd44db85ad1b0052b2988eb4925443f322",
     "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
   },
@@ -34,25 +34,25 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te3d-full/full-5-paladin-4",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te3e-full/full-5-paladin-4",
       "result_sha256": "f69bfccc9bbea031ba17a56d465bd4627a3759986d46e87b6cf6c245a905d225",
       "raw_sha256": {
         "keys.log": "f69bfccc9bbea031ba17a56d465bd4627a3759986d46e87b6cf6c245a905d225",
         "messages.log": "e9659266a5175b2c4f8adb22ae4c8b573507fdd6966c4614555515a54eb4329c",
         "state.log": "8edfde2d4064b8cbbbf92b22b67472769fa96182b6082eb89e6084a890b7ebba"
       },
-      "source_commit": "e91cf5239b480e2a30e58688933e88898b56e998",
-      "binary_sha256": "ba362be70017c3cfc96a0c999b6b10c6ded8f88122c2a1415f9815e6e8d15555"
+      "source_commit": "452ec40e2d7ed339ad148354a2375f7289d08a66",
+      "binary_sha256": "6812c541dc4cdefa0c55ced38cd5a9fd44db85ad1b0052b2988eb4925443f322"
     }
   ],
-  "encounter_family": "start-a2f6bb19c698ef73fee605ce0444b0f52333f25948f7dc541666a091cec096cf",
+  "encounter_family": "start-58e857d1794731bedddaddda8ddc61044b6c5d1783a32bddca38bd4af86f892d",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "ddb078a3ac095fa68e7c19101111f6ee13f0ae71e8c1f46c5d0e22687181c338",
+    "build.json": "4d3a49f39c29ccd6b350c6d0b9d48c4659d5a3e960d03d38c66ec830de6d2590",
     "config.txt": "ae4f96eeb2fbe4b6b27d062b446585d6fdc233e118ace774b18867c4a3db2fd1",
     "depths.json": "3eada8b59718acbdd72d581d9cc99c2d00e55806cc7c053ca1031ea25efeb350",
     "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
-    "summary.json": "7820699a0b0038823ffc50e0b3b30b3412ab7f9a617c2bf55b21b6d297356556",
+    "summary.json": "2c3fe94f12db01722bfa27dd83257b3cb9afa74646b7ec690675b393ccae2f0b",
     "trace-tail.jsonl": "059185c33ca47f476229fa38d971ed2174482145f8d94679f173a651a4f21975"
   },
   "investigation": null,

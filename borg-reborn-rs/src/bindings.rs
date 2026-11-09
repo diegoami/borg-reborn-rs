@@ -460,11 +460,10 @@ const _: () = {
 unsafe extern "C" {
     pub static mut e_info: *mut ego_item;
 }
-pub const OBJ_NOTICE_WORN: _bindgen_ty_26 = 1;
-pub const OBJ_NOTICE_ASSESSED: _bindgen_ty_26 = 2;
-pub const OBJ_NOTICE_IGNORE: _bindgen_ty_26 = 4;
-pub const OBJ_NOTICE_IMAGINED: _bindgen_ty_26 = 8;
-pub type _bindgen_ty_26 = core::ffi::c_uint;
+pub const OBJ_NOTICE_WORN: u32 = 1;
+pub const OBJ_NOTICE_ASSESSED: u32 = 2;
+pub const OBJ_NOTICE_IGNORE: u32 = 4;
+pub const OBJ_NOTICE_IMAGINED: u32 = 8;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct curse_data {
@@ -587,54 +586,53 @@ const _: () = {
     ["Offset of field: flavor::d_attr"][::core::mem::offset_of!(flavor, d_attr) - 22usize];
     ["Offset of field: flavor::d_char"][::core::mem::offset_of!(flavor, d_char) - 24usize];
 };
-pub const OPT_none: _bindgen_ty_28 = 0;
-pub const OPT_rogue_like_commands: _bindgen_ty_28 = 1;
-pub const OPT_autoexplore_commands: _bindgen_ty_28 = 2;
-pub const OPT_use_sound: _bindgen_ty_28 = 3;
-pub const OPT_show_damage: _bindgen_ty_28 = 4;
-pub const OPT_use_old_target: _bindgen_ty_28 = 5;
-pub const OPT_pickup_always: _bindgen_ty_28 = 6;
-pub const OPT_pickup_inven: _bindgen_ty_28 = 7;
-pub const OPT_show_flavors: _bindgen_ty_28 = 8;
-pub const OPT_show_target: _bindgen_ty_28 = 9;
-pub const OPT_highlight_player: _bindgen_ty_28 = 10;
-pub const OPT_disturb_near: _bindgen_ty_28 = 11;
-pub const OPT_solid_walls: _bindgen_ty_28 = 12;
-pub const OPT_hybrid_walls: _bindgen_ty_28 = 13;
-pub const OPT_view_yellow_light: _bindgen_ty_28 = 14;
-pub const OPT_animate_flicker: _bindgen_ty_28 = 15;
-pub const OPT_center_player: _bindgen_ty_28 = 16;
-pub const OPT_purple_uniques: _bindgen_ty_28 = 17;
-pub const OPT_auto_more: _bindgen_ty_28 = 18;
-pub const OPT_hp_changes_color: _bindgen_ty_28 = 19;
-pub const OPT_mouse_movement: _bindgen_ty_28 = 20;
-pub const OPT_notify_recharge: _bindgen_ty_28 = 21;
-pub const OPT_effective_speed: _bindgen_ty_28 = 22;
-pub const OPT_cheat_hear: _bindgen_ty_28 = 23;
-pub const OPT_score_hear: _bindgen_ty_28 = 24;
-pub const OPT_cheat_room: _bindgen_ty_28 = 25;
-pub const OPT_score_room: _bindgen_ty_28 = 26;
-pub const OPT_cheat_xtra: _bindgen_ty_28 = 27;
-pub const OPT_score_xtra: _bindgen_ty_28 = 28;
-pub const OPT_cheat_live: _bindgen_ty_28 = 29;
-pub const OPT_score_live: _bindgen_ty_28 = 30;
-pub const OPT_birth_randarts: _bindgen_ty_28 = 31;
-pub const OPT_birth_connect_stairs: _bindgen_ty_28 = 32;
-pub const OPT_birth_force_descend: _bindgen_ty_28 = 33;
-pub const OPT_birth_no_recall: _bindgen_ty_28 = 34;
-pub const OPT_birth_no_artifacts: _bindgen_ty_28 = 35;
-pub const OPT_birth_stacking: _bindgen_ty_28 = 36;
-pub const OPT_birth_lose_arts: _bindgen_ty_28 = 37;
-pub const OPT_birth_feelings: _bindgen_ty_28 = 38;
-pub const OPT_birth_no_selling: _bindgen_ty_28 = 39;
-pub const OPT_birth_start_kit: _bindgen_ty_28 = 40;
-pub const OPT_birth_ai_learn: _bindgen_ty_28 = 41;
-pub const OPT_birth_know_runes: _bindgen_ty_28 = 42;
-pub const OPT_birth_know_flavors: _bindgen_ty_28 = 43;
-pub const OPT_birth_levels_persist: _bindgen_ty_28 = 44;
-pub const OPT_birth_percent_damage: _bindgen_ty_28 = 45;
-pub const OPT_MAX: _bindgen_ty_28 = 46;
-pub type _bindgen_ty_28 = core::ffi::c_uint;
+pub const OPT_none: u32 = 0;
+pub const OPT_rogue_like_commands: u32 = 1;
+pub const OPT_autoexplore_commands: u32 = 2;
+pub const OPT_use_sound: u32 = 3;
+pub const OPT_show_damage: u32 = 4;
+pub const OPT_use_old_target: u32 = 5;
+pub const OPT_pickup_always: u32 = 6;
+pub const OPT_pickup_inven: u32 = 7;
+pub const OPT_show_flavors: u32 = 8;
+pub const OPT_show_target: u32 = 9;
+pub const OPT_highlight_player: u32 = 10;
+pub const OPT_disturb_near: u32 = 11;
+pub const OPT_solid_walls: u32 = 12;
+pub const OPT_hybrid_walls: u32 = 13;
+pub const OPT_view_yellow_light: u32 = 14;
+pub const OPT_animate_flicker: u32 = 15;
+pub const OPT_center_player: u32 = 16;
+pub const OPT_purple_uniques: u32 = 17;
+pub const OPT_auto_more: u32 = 18;
+pub const OPT_hp_changes_color: u32 = 19;
+pub const OPT_mouse_movement: u32 = 20;
+pub const OPT_notify_recharge: u32 = 21;
+pub const OPT_effective_speed: u32 = 22;
+pub const OPT_cheat_hear: u32 = 23;
+pub const OPT_score_hear: u32 = 24;
+pub const OPT_cheat_room: u32 = 25;
+pub const OPT_score_room: u32 = 26;
+pub const OPT_cheat_xtra: u32 = 27;
+pub const OPT_score_xtra: u32 = 28;
+pub const OPT_cheat_live: u32 = 29;
+pub const OPT_score_live: u32 = 30;
+pub const OPT_birth_randarts: u32 = 31;
+pub const OPT_birth_connect_stairs: u32 = 32;
+pub const OPT_birth_force_descend: u32 = 33;
+pub const OPT_birth_no_recall: u32 = 34;
+pub const OPT_birth_no_artifacts: u32 = 35;
+pub const OPT_birth_stacking: u32 = 36;
+pub const OPT_birth_lose_arts: u32 = 37;
+pub const OPT_birth_feelings: u32 = 38;
+pub const OPT_birth_no_selling: u32 = 39;
+pub const OPT_birth_start_kit: u32 = 40;
+pub const OPT_birth_ai_learn: u32 = 41;
+pub const OPT_birth_know_runes: u32 = 42;
+pub const OPT_birth_know_flavors: u32 = 43;
+pub const OPT_birth_levels_persist: u32 = 44;
+pub const OPT_birth_percent_damage: u32 = 45;
+pub const OPT_MAX: u32 = 46;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct player_options {
@@ -1418,7 +1416,7 @@ pub const LIGHTING_TORCH: grid_light_level = 1;
 pub const LIGHTING_LIT: grid_light_level = 2;
 pub const LIGHTING_DARK: grid_light_level = 3;
 pub const LIGHTING_MAX: grid_light_level = 4;
-pub type grid_light_level = core::ffi::c_uint;
+pub type grid_light_level = u32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct grid_data {
@@ -2149,7 +2147,7 @@ const _: () = {
 pub const MON_ALTMSG_SEEN: monster_altmsg_type = 0;
 pub const MON_ALTMSG_UNSEEN: monster_altmsg_type = 1;
 pub const MON_ALTMSG_MISS: monster_altmsg_type = 2;
-pub type monster_altmsg_type = core::ffi::c_uint;
+pub type monster_altmsg_type = u32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct monster_altmsg {
@@ -2221,7 +2219,7 @@ pub const MON_GROUP_SERVANT: monster_group_role = 1;
 pub const MON_GROUP_BODYGUARD: monster_group_role = 2;
 pub const MON_GROUP_MEMBER: monster_group_role = 3;
 pub const MON_GROUP_SUMMON: monster_group_role = 4;
-pub type monster_group_role = core::ffi::c_uint;
+pub type monster_group_role = u32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct monster_friends {
@@ -2502,20 +2500,19 @@ const _: () = {
 unsafe extern "C" {
     pub static mut r_info: *mut monster_race;
 }
-pub const ODESC_BASE: _bindgen_ty_41 = 0;
-pub const ODESC_COMBAT: _bindgen_ty_41 = 1;
-pub const ODESC_EXTRA: _bindgen_ty_41 = 2;
-pub const ODESC_FULL: _bindgen_ty_41 = 3;
-pub const ODESC_STORE: _bindgen_ty_41 = 4;
-pub const ODESC_PLURAL: _bindgen_ty_41 = 8;
-pub const ODESC_SINGULAR: _bindgen_ty_41 = 16;
-pub const ODESC_SPOIL: _bindgen_ty_41 = 32;
-pub const ODESC_PREFIX: _bindgen_ty_41 = 64;
-pub const ODESC_CAPITAL: _bindgen_ty_41 = 128;
-pub const ODESC_TERSE: _bindgen_ty_41 = 256;
-pub const ODESC_NOEGO: _bindgen_ty_41 = 512;
-pub const ODESC_ALTNUM: _bindgen_ty_41 = 1024;
-pub type _bindgen_ty_41 = core::ffi::c_uint;
+pub const ODESC_BASE: u32 = 0;
+pub const ODESC_COMBAT: u32 = 1;
+pub const ODESC_EXTRA: u32 = 2;
+pub const ODESC_FULL: u32 = 3;
+pub const ODESC_STORE: u32 = 4;
+pub const ODESC_PLURAL: u32 = 8;
+pub const ODESC_SINGULAR: u32 = 16;
+pub const ODESC_SPOIL: u32 = 32;
+pub const ODESC_PREFIX: u32 = 64;
+pub const ODESC_CAPITAL: u32 = 128;
+pub const ODESC_TERSE: u32 = 256;
+pub const ODESC_NOEGO: u32 = 512;
+pub const ODESC_ALTNUM: u32 = 1024;
 unsafe extern "C" {
     pub fn object_desc(
         buf: *mut core::ffi::c_char,
@@ -2552,69 +2549,66 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn spell_by_index(p: *const player, index: core::ffi::c_int) -> *const class_spell;
 }
-pub const TMD_FAST: _bindgen_ty_43 = 0;
-pub const TMD_SLOW: _bindgen_ty_43 = 1;
-pub const TMD_BLIND: _bindgen_ty_43 = 2;
-pub const TMD_PARALYZED: _bindgen_ty_43 = 3;
-pub const TMD_CONFUSED: _bindgen_ty_43 = 4;
-pub const TMD_AFRAID: _bindgen_ty_43 = 5;
-pub const TMD_IMAGE: _bindgen_ty_43 = 6;
-pub const TMD_POISONED: _bindgen_ty_43 = 7;
-pub const TMD_CUT: _bindgen_ty_43 = 8;
-pub const TMD_STUN: _bindgen_ty_43 = 9;
-pub const TMD_FOOD: _bindgen_ty_43 = 10;
-pub const TMD_PROTEVIL: _bindgen_ty_43 = 11;
-pub const TMD_INVULN: _bindgen_ty_43 = 12;
-pub const TMD_HERO: _bindgen_ty_43 = 13;
-pub const TMD_SHERO: _bindgen_ty_43 = 14;
-pub const TMD_SHIELD: _bindgen_ty_43 = 15;
-pub const TMD_BLESSED: _bindgen_ty_43 = 16;
-pub const TMD_SINVIS: _bindgen_ty_43 = 17;
-pub const TMD_SINFRA: _bindgen_ty_43 = 18;
-pub const TMD_OPP_ACID: _bindgen_ty_43 = 19;
-pub const TMD_OPP_ELEC: _bindgen_ty_43 = 20;
-pub const TMD_OPP_FIRE: _bindgen_ty_43 = 21;
-pub const TMD_OPP_COLD: _bindgen_ty_43 = 22;
-pub const TMD_OPP_POIS: _bindgen_ty_43 = 23;
-pub const TMD_OPP_CONF: _bindgen_ty_43 = 24;
-pub const TMD_AMNESIA: _bindgen_ty_43 = 25;
-pub const TMD_TELEPATHY: _bindgen_ty_43 = 26;
-pub const TMD_STONESKIN: _bindgen_ty_43 = 27;
-pub const TMD_TERROR: _bindgen_ty_43 = 28;
-pub const TMD_SPRINT: _bindgen_ty_43 = 29;
-pub const TMD_BOLD: _bindgen_ty_43 = 30;
-pub const TMD_SCRAMBLE: _bindgen_ty_43 = 31;
-pub const TMD_TRAPSAFE: _bindgen_ty_43 = 32;
-pub const TMD_FASTCAST: _bindgen_ty_43 = 33;
-pub const TMD_ATT_ACID: _bindgen_ty_43 = 34;
-pub const TMD_ATT_ELEC: _bindgen_ty_43 = 35;
-pub const TMD_ATT_FIRE: _bindgen_ty_43 = 36;
-pub const TMD_ATT_COLD: _bindgen_ty_43 = 37;
-pub const TMD_ATT_POIS: _bindgen_ty_43 = 38;
-pub const TMD_ATT_CONF: _bindgen_ty_43 = 39;
-pub const TMD_ATT_EVIL: _bindgen_ty_43 = 40;
-pub const TMD_ATT_DEMON: _bindgen_ty_43 = 41;
-pub const TMD_ATT_VAMP: _bindgen_ty_43 = 42;
-pub const TMD_HEAL: _bindgen_ty_43 = 43;
-pub const TMD_COMMAND: _bindgen_ty_43 = 44;
-pub const TMD_ATT_RUN: _bindgen_ty_43 = 45;
-pub const TMD_COVERTRACKS: _bindgen_ty_43 = 46;
-pub const TMD_POWERSHOT: _bindgen_ty_43 = 47;
-pub const TMD_TAUNT: _bindgen_ty_43 = 48;
-pub const TMD_BLOODLUST: _bindgen_ty_43 = 49;
-pub const TMD_BLACKBREATH: _bindgen_ty_43 = 50;
-pub const TMD_STEALTH: _bindgen_ty_43 = 51;
-pub const TMD_FREE_ACT: _bindgen_ty_43 = 52;
-pub const TMD_MAX: _bindgen_ty_43 = 53;
-pub type _bindgen_ty_43 = core::ffi::c_uint;
-pub const TMD_FAIL_FLAG_OBJECT: _bindgen_ty_44 = 1;
-pub const TMD_FAIL_FLAG_RESIST: _bindgen_ty_44 = 2;
-pub const TMD_FAIL_FLAG_VULN: _bindgen_ty_44 = 3;
-pub const TMD_FAIL_FLAG_PLAYER: _bindgen_ty_44 = 4;
-pub const TMD_FAIL_FLAG_TIMED_EFFECT: _bindgen_ty_44 = 5;
-pub type _bindgen_ty_44 = core::ffi::c_uint;
-pub const TMD_FLAG_NONSTACKING: _bindgen_ty_45 = 1;
-pub type _bindgen_ty_45 = core::ffi::c_uint;
+pub const TMD_FAST: u32 = 0;
+pub const TMD_SLOW: u32 = 1;
+pub const TMD_BLIND: u32 = 2;
+pub const TMD_PARALYZED: u32 = 3;
+pub const TMD_CONFUSED: u32 = 4;
+pub const TMD_AFRAID: u32 = 5;
+pub const TMD_IMAGE: u32 = 6;
+pub const TMD_POISONED: u32 = 7;
+pub const TMD_CUT: u32 = 8;
+pub const TMD_STUN: u32 = 9;
+pub const TMD_FOOD: u32 = 10;
+pub const TMD_PROTEVIL: u32 = 11;
+pub const TMD_INVULN: u32 = 12;
+pub const TMD_HERO: u32 = 13;
+pub const TMD_SHERO: u32 = 14;
+pub const TMD_SHIELD: u32 = 15;
+pub const TMD_BLESSED: u32 = 16;
+pub const TMD_SINVIS: u32 = 17;
+pub const TMD_SINFRA: u32 = 18;
+pub const TMD_OPP_ACID: u32 = 19;
+pub const TMD_OPP_ELEC: u32 = 20;
+pub const TMD_OPP_FIRE: u32 = 21;
+pub const TMD_OPP_COLD: u32 = 22;
+pub const TMD_OPP_POIS: u32 = 23;
+pub const TMD_OPP_CONF: u32 = 24;
+pub const TMD_AMNESIA: u32 = 25;
+pub const TMD_TELEPATHY: u32 = 26;
+pub const TMD_STONESKIN: u32 = 27;
+pub const TMD_TERROR: u32 = 28;
+pub const TMD_SPRINT: u32 = 29;
+pub const TMD_BOLD: u32 = 30;
+pub const TMD_SCRAMBLE: u32 = 31;
+pub const TMD_TRAPSAFE: u32 = 32;
+pub const TMD_FASTCAST: u32 = 33;
+pub const TMD_ATT_ACID: u32 = 34;
+pub const TMD_ATT_ELEC: u32 = 35;
+pub const TMD_ATT_FIRE: u32 = 36;
+pub const TMD_ATT_COLD: u32 = 37;
+pub const TMD_ATT_POIS: u32 = 38;
+pub const TMD_ATT_CONF: u32 = 39;
+pub const TMD_ATT_EVIL: u32 = 40;
+pub const TMD_ATT_DEMON: u32 = 41;
+pub const TMD_ATT_VAMP: u32 = 42;
+pub const TMD_HEAL: u32 = 43;
+pub const TMD_COMMAND: u32 = 44;
+pub const TMD_ATT_RUN: u32 = 45;
+pub const TMD_COVERTRACKS: u32 = 46;
+pub const TMD_POWERSHOT: u32 = 47;
+pub const TMD_TAUNT: u32 = 48;
+pub const TMD_BLOODLUST: u32 = 49;
+pub const TMD_BLACKBREATH: u32 = 50;
+pub const TMD_STEALTH: u32 = 51;
+pub const TMD_FREE_ACT: u32 = 52;
+pub const TMD_MAX: u32 = 53;
+pub const TMD_FAIL_FLAG_OBJECT: u32 = 1;
+pub const TMD_FAIL_FLAG_RESIST: u32 = 2;
+pub const TMD_FAIL_FLAG_VULN: u32 = 3;
+pub const TMD_FAIL_FLAG_PLAYER: u32 = 4;
+pub const TMD_FAIL_FLAG_TIMED_EFFECT: u32 = 5;
+pub const TMD_FLAG_NONSTACKING: u32 = 1;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct object_buy {
@@ -2718,7 +2712,7 @@ pub const EVT_MOVE: ui_event_type = 32;
 pub const EVT_SELECT: ui_event_type = 64;
 pub const EVT_SWITCH: ui_event_type = 128;
 pub const EVT_DISCONNECT: ui_event_type = 256;
-pub type ui_event_type = core::ffi::c_uint;
+pub type ui_event_type = u32;
 pub type keycode_t = u32;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

@@ -33,11 +33,23 @@ trap 'rm -f "$tmp"' EXIT
         --allowlist-item "^($ITEMS)\$" \
         --default-enum-style consts \
         --no-prepend-enum-name \
+        --translate-enum-integer-types \
         --no-doc-comments \
         --use-core \
         --ctypes-prefix core::ffi \
         --rust-target 1.82 \
-        -- -I"$ROOT/engine/angband/src" -DALLOW_BORG -std=gnu99 2>/dev/null
+        -- -I"$ROOT/engine/angband/src" -DALLOW_BORG -std=gnu99 2>/dev/null |
+    # Anonymous enums get numbered type names (_bindgen_ty_N) whose numbers
+    # change with the libclang version: use their integer type instead, so
+    # every libclang gives the same file.
+    python3 -c '
+import re, sys
+text = sys.stdin.read()
+types = dict(re.findall(r"^pub type (_bindgen_ty_\d+) = (\S+);\n", text, re.M))
+text = re.sub(r"^pub type _bindgen_ty_\d+ = \S+;\n", "", text, flags=re.M)
+text = re.sub(r"\b_bindgen_ty_\d+\b", lambda m: types.get(m.group(0), m.group(0)), text)
+sys.stdout.write(text)
+'
 } > "$tmp"
 if [ "${1:-}" = --check ]; then
     cmp -s "$tmp" "$OUT" || {
