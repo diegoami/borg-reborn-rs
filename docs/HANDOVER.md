@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: engine tree re-synced from borg-rs 286215c
+
+`angband/` is now borg-rs `286215c:angband` (tree `3fc0c9f`, split
+`6581b4f`), merged as a subtree (docs/ENGINE-TREE.md). Only
+`angband/src/borg/` changed: borg-rs carried better-borg-c milestones 7
+and 8. So the tree's own C Borg (`BORG_IMPL=c`, never a control) goes
+from impact v6 to v8. It includes `borg_munchkin_by_class`, TRUE by
+default: Warriors, Druids and Rangers take the munchkin start. The engine
+and borg-rs's generated headers are unchanged.
+- `harness/reference/smoke-c/` is replaced by a smoke run of borg-rs's own
+  C build at `286215c`. Ours reproduces it byte for byte (3/3), the same
+  import check as T1.2.
+- A re-sync starts a new measurement baseline (RULES 22). The source hash
+  of every arm includes `angband/`, so deaths from runs after this PR
+  are new encounter families.
+- `harness/borg.txt` is unchanged. Whether a control should run with
+  `borg_munchkin_by_class = FALSE` (GOALS D5) is asked on #56: better-borg-c
+  v8 has the option too.
+
 ## 2026-11-09: M2 source refresh
 
 The M2 `--update` (RULES 21) moved five pins:

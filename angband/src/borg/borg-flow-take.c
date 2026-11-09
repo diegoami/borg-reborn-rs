@@ -739,7 +739,7 @@ bool borg_flow_take_lunal(bool viewable, int nearness)
         bool item_bad;
 
         /* Skip dead objects */
-        if (!k_ptr)
+        if (!take->kidx)
             continue;
 
         /* Access the location */

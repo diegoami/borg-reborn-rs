@@ -548,8 +548,9 @@ bool borg_flow_spastic(bool bored)
         return false;
     }
 
-    /* Reverse flow */
-    borg_flow_reverse(250, true, false, false, -1, false);
+    /* Reverse flow, not optimized: it starts at the borg's own grid (cost 0)
+     * and an optimized spread stops before reaching any other grid. */
+    borg_flow_reverse(250, false, false, false, -1, false);
 
     /* Scan the entire map */
     for (y = 1; y < AUTO_MAX_Y - 1; y++) {
@@ -707,7 +708,8 @@ bool borg_flow_spastic(bool bored)
 
             /* Tweak -- Reward walls, punish visitation, distance, time on level
              */
-            v = (supp * 500) + (diag * 100) - (ag->xtra * 40) - (cost * 2)
+            v = (supp * 500) + (diag * 100) - (borg_grids[y][x].xtra * 40)
+                - (cost * 2)
                 - borg_timer(borg.time.level);
 
             /* Punish low level and searching too much */
@@ -1241,9 +1243,6 @@ bool borg_check_rest(int y, int x)
         && (borg.trait[BI_CURHP] >= borg.trait[BI_MAXHP] * 8 / 10)
         && (borg.trait[BI_CURSP] >= borg.trait[BI_MAXSP] * 7 / 10))
         return false;
-
-    /* Set this to Zero */
-    borg.time.last_kill_mult = 0;
 
     /* Most of the time, its ok to rest in a vault */
     if (borg.status.vault) {

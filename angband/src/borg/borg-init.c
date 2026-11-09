@@ -90,7 +90,40 @@ struct borg_setting borg_settings[] = {
     { "borg_allow_strange_opts", 'b', false},
     { "borg_autosave", 'b', false},
     { "borg_restore_ignore_settings", 'b', false},
+    { "borg_munchkin_by_class", 'b', true },
+    { "borg_munchkin_class_depth", 'i', 6 },
     { 0, 0, 0 }};
+
+/* The munchkin start settings as borg.txt gave them, before the class rule */
+static int borg_munchkin_start_setting;
+static int borg_munchkin_depth_setting;
+
+/*
+ * Warriors, Druids and Rangers survive their first levels more often with a
+ * munchkin start.  When borg.txt leaves the munchkin start off and
+ * borg_munchkin_by_class is on, these classes use it anyway, stair-scumming
+ * at borg_munchkin_class_depth.  Every other class plays as borg.txt says.
+ * This runs again after a reincarnation, since the class may change.
+ */
+void borg_munchkin_class_settings(void)
+{
+    unsigned int cidx;
+
+    if (!borg_cfg || !player || !player->class)
+        return;
+
+    borg_cfg[BORG_MUNCHKIN_START] = borg_munchkin_start_setting;
+    borg_cfg[BORG_MUNCHKIN_DEPTH] = borg_munchkin_depth_setting;
+
+    if (borg_munchkin_start_setting || !borg_cfg[BORG_MUNCHKIN_BY_CLASS])
+        return;
+
+    cidx = player->class->cidx;
+    if (cidx == CLASS_WARRIOR || cidx == CLASS_DRUID || cidx == CLASS_RANGER) {
+        borg_cfg[BORG_MUNCHKIN_START] = true;
+        borg_cfg[BORG_MUNCHKIN_DEPTH] = borg_cfg[BORG_MUNCHKIN_CLASS_DEPTH];
+    }
+}
 
 
 /*
@@ -319,6 +352,15 @@ bool borg_init_txt_file(void)
     if (borg_cfg[BORG_MUNCHKIN_DEPTH] >= 100)
         borg_cfg[BORG_MUNCHKIN_DEPTH] = 100;
 
+    if (borg_cfg[BORG_MUNCHKIN_CLASS_DEPTH] <= 1)
+        borg_cfg[BORG_MUNCHKIN_CLASS_DEPTH] = 8;
+    if (borg_cfg[BORG_MUNCHKIN_CLASS_DEPTH] >= 100)
+        borg_cfg[BORG_MUNCHKIN_CLASS_DEPTH] = 100;
+
+    borg_munchkin_start_setting = borg_cfg[BORG_MUNCHKIN_START];
+    borg_munchkin_depth_setting = borg_cfg[BORG_MUNCHKIN_DEPTH];
+    borg_munchkin_class_settings();
+
     if (borg_cfg[BORG_ENCHANT_LIMIT] <= 8)
         borg_cfg[BORG_ENCHANT_LIMIT] = 8;
     if (borg_cfg[BORG_ENCHANT_LIMIT] >= 15)
@@ -478,6 +520,9 @@ static void borg_leave_game(
  */
 void borg_prepare_race_class_info(void)
 {
+    /* The munchkin start may depend on the class */
+    borg_munchkin_class_settings();
+
     /* Initialize the various spell arrays by book */
     borg_prepare_book_info();
 

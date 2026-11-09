@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0235-c-pristine-seed1052",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5021,
+    "race_idx": 7,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "c-pristine",
+    "seed": 1052,
+    "flags": "-",
+    "git_rev": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+    "git_dirty": "yes",
+    "source_sha256": "09011590405e4ec4836caa15b6f2fb100ea12254d96d1c7ada33243ca6cf859f",
+    "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9",
+    "borg_txt_sha256": "f54d85e81835f2d7514dbe48211a5959dcb38a144289ef95cc1706e01d1d9cfa"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/rs-full-c-pristine/full-5-paladin-2",
+      "result_sha256": "c59c7f050c477c05335e543b734f73d6d5f71479aac1acc03e84abd7cecb2aa9",
+      "raw_sha256": {
+        "keys.log": "c59c7f050c477c05335e543b734f73d6d5f71479aac1acc03e84abd7cecb2aa9",
+        "messages.log": "689281f0cc6dc83031cc72839f1be2c1604759fb023c9c34f29b3975833cb5e0",
+        "state.log": "2679e9b7e34f8c649a72724cdc966598a88dfb9d28e99f3137e81fab8ee40b15"
+      },
+      "source_commit": "c7a3bc7f8e8275429ecc8ddcbc7a2dc270ef5e9a",
+      "binary_sha256": "172b2fd985b5cfa3ce911a501966267a6ba8dd52169aeb8474686b2cee02e3d9"
+    }
+  ],
+  "encounter_family": "start-e893f0158c1b8153c207e3c98ebf85ec92ed5fc9c0598723667f88142cd8670d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a3db4490fa6b6a1dfdba1ce0737fc28359526a7488a757e47f8f973724044e35",
+    "config.txt": "3a06afa4b85e6e70b0419880b47744072861353e0114b4ec219545328f992946",
+    "depths.json": "76987bd2db91fc3d572acc3bf427414e06a1769ebaea8b0d1a344cb363b97c8e",
+    "summary.json": "8df274d7037f38762ab526e6c05c5475d4a04bfa7097fba15f8e75fa7b565c97"
+  },
+  "investigation": null,
+  "issue": null
+}
