@@ -121,5 +121,52 @@ are not independent.*
 | borg-reborn-rs | [D0092-rust-seed1033](../../docs/deaths/D0092-rust-seed1033/report.md) | Half-Orc Priest | starvation | 89210 | 1 | 1 | — | unassessed | D0092-rust-seed1033: starvation at turn 89210 |
 | borg-reborn-rs | [D0093-rust-seed1072](../../docs/deaths/D0093-rust-seed1072/report.md) | Human Warrior | starvation | 89250 | 1 | 1 | — | unassessed | D0093-rust-seed1072: starvation at turn 89250 |
 | borg-reborn-rs | [D0094-rust-seed1061](../../docs/deaths/D0094-rust-seed1061/report.md) | Human Rogue | starvation | 89220 | 1 | 1 | — | unassessed | D0094-rust-seed1061: starvation at turn 89220 |
+| borg-reborn-rs | [D0095-rust-seed102](../../docs/deaths/D0095-rust-seed102/report.md) | Elf Mage | a rock lizard | 743 | 1 | 1 | — | unassessed | D0095-rust-seed102: a rock lizard at turn 743 |
+| borg-reborn-rs | [D0096-rust-seed29](../../docs/deaths/D0096-rust-seed29/report.md) | Human Warrior | Grip, Farmer Maggot's Dog | 666 | 1 | 1 | — | unassessed | D0096-rust-seed29: Grip, Farmer Maggot's Dog at turn 666 |
+| borg-reborn-rs | [D0097-rust-seed1024](../../docs/deaths/D0097-rust-seed1024/report.md) | Half-Orc Druid | a blue yeek | 278 | 2 | 1 | — | unassessed | D0097-rust-seed1024: a blue yeek at turn 278 |
+| borg-reborn-rs | [D0098-rust-seed1052](../../docs/deaths/D0098-rust-seed1052/report.md) | Human Paladin | Grip, Farmer Maggot's Dog | 135 | 1 | 1 | — | unassessed | D0098-rust-seed1052: Grip, Farmer Maggot's Dog at turn 135 |
+| borg-reborn-rs | [D0099-rust-seed1022](../../docs/deaths/D0099-rust-seed1022/report.md) | Gnome Druid | a cave spider | 539 | 1 | 1 | — | unassessed | D0099-rust-seed1022: a cave spider at turn 539 |
+| borg-reborn-rs | [D0100-rust-seed1023](../../docs/deaths/D0100-rust-seed1023/report.md) | Dwarf Druid | a white worm mass | 553 | 1 | 1 | — | unassessed | D0100-rust-seed1023: a white worm mass at turn 553 |
+| borg-reborn-rs | [D0101-rust-seed1000](../../docs/deaths/D0101-rust-seed1000/report.md) | Human Warrior | Grip, Farmer Maggot's Dog | 170 | 1 | 1 | — | unassessed | D0101-rust-seed1000: Grip, Farmer Maggot's Dog at turn 170 |
+| borg-reborn-rs | [D0102-rust-seed1021](../../docs/deaths/D0102-rust-seed1021/report.md) | Hobbit Druid | Grip, Farmer Maggot's Dog | 116 | 1 | 1 | — | unassessed | D0102-rust-seed1021: Grip, Farmer Maggot's Dog at turn 116 |
+| borg-reborn-rs | [D0103-rust-seed1010](../../docs/deaths/D0103-rust-seed1010/report.md) | Half-Elf Mage | Grip, Farmer Maggot's Dog | 320 | 3 | 1 | — | unassessed | D0103-rust-seed1010: Grip, Farmer Maggot's Dog at turn 320 |
+| borg-reborn-rs | [D0104-rust-seed1043](../../docs/deaths/D0104-rust-seed1043/report.md) | Human Necromancer | a grey mold | 507 | 1 | 1 | — | unassessed | D0104-rust-seed1043: a grey mold at turn 507 |
+| borg-reborn-rs | [D0105-rust-seed1011](../../docs/deaths/D0105-rust-seed1011/report.md) | Elf Mage | a soldier ant | 1038 | 1 | 1 | — | unassessed | D0105-rust-seed1011: a soldier ant at turn 1038 |
+| borg-reborn-rs | [D0106-rust-seed1044](../../docs/deaths/D0106-rust-seed1044/report.md) | Half-Troll Necromancer | a fruit bat | 1429 | 1 | 1 | — | unassessed | D0106-rust-seed1044: a fruit bat at turn 1429 |
+| borg-reborn-rs | [D0107-rust-seed1020](../../docs/deaths/D0107-rust-seed1020/report.md) | Elf Druid | a rock lizard | 1529 | 1 | 1 | — | unassessed | D0107-rust-seed1020: a rock lizard at turn 1529 |
+| borg-reborn-rs | [D0108-rust-seed1012](../../docs/deaths/D0108-rust-seed1012/report.md) | Hobbit Mage | a clear icky thing | 2756 | 1 | 1 | — | unassessed | D0108-rust-seed1012: a clear icky thing at turn 2756 |
+| borg-reborn-rs | [D0109-rust-seed1051](../../docs/deaths/D0109-rust-seed1051/report.md) | Half-Orc Paladin | a soldier ant | 1688 | 1 | 1 | — | unassessed | D0109-rust-seed1051: a soldier ant at turn 1688 |
+| borg-reborn-rs | [D0110-rust-seed1054](../../docs/deaths/D0110-rust-seed1054/report.md) | Human Paladin | a large white snake | 2075 | 1 | 1 | — | unassessed | D0110-rust-seed1054: a large white snake at turn 2075 |
+| borg-reborn-rs | [D0111-rust-seed1030](../../docs/deaths/D0111-rust-seed1030/report.md) | Hobbit Priest | a wild dog | 3477 | 1 | 1 | — | unassessed | D0111-rust-seed1030: a wild dog at turn 3477 |
+| borg-reborn-rs | [D0112-rust-seed1050](../../docs/deaths/D0112-rust-seed1050/report.md) | Dwarf Paladin | an apprentice | 1017 | 1 | 1 | — | unassessed | D0112-rust-seed1050: an apprentice at turn 1017 |
+| borg-reborn-rs | [D0113-rust-seed1041](../../docs/deaths/D0113-rust-seed1041/report.md) | Dwarf Necromancer | a soldier ant | 4659 | 1 | 1 | — | unassessed | D0113-rust-seed1041: a soldier ant at turn 4659 |
+| borg-reborn-rs | [D0114-rust-seed1001](../../docs/deaths/D0114-rust-seed1001/report.md) | Half-Elf Warrior | a kobold shaman | 8659 | 4 | 1 | — | unassessed | D0114-rust-seed1001: a kobold shaman at turn 8659 |
+| borg-reborn-rs | [D0115-rust-seed1080](../../docs/deaths/D0115-rust-seed1080/report.md) | Half-Troll Ranger | a giant white centipede | 643 | 1 | 1 | — | unassessed | D0115-rust-seed1080: a giant white centipede at turn 643 |
+| borg-reborn-rs | [D0116-rust-seed1081](../../docs/deaths/D0116-rust-seed1081/report.md) | Human Ranger | Grip, Farmer Maggot's Dog | 326 | 2 | 1 | — | unassessed | D0116-rust-seed1081: Grip, Farmer Maggot's Dog at turn 326 |
+| borg-reborn-rs | [D0117-rust-seed1082](../../docs/deaths/D0117-rust-seed1082/report.md) | Human Ranger | Fang, Farmer Maggot's Dog | 206 | 1 | 1 | — | unassessed | D0117-rust-seed1082: Fang, Farmer Maggot's Dog at turn 206 |
+| borg-reborn-rs | [D0118-rust-seed1060](../../docs/deaths/D0118-rust-seed1060/report.md) | Half-Orc Rogue | a salamander | 10172 | 2 | 1 | — | unassessed | D0118-rust-seed1060: a salamander at turn 10172 |
+| borg-reborn-rs | [D0119-rust-seed1064](../../docs/deaths/D0119-rust-seed1064/report.md) | Human Rogue | Grip, Farmer Maggot's Dog | 4044 | 2 | 1 | — | unassessed | D0119-rust-seed1064: Grip, Farmer Maggot's Dog at turn 4044 |
+| borg-reborn-rs | [D0120-rust-seed1063](../../docs/deaths/D0120-rust-seed1063/report.md) | Human Rogue | a wild dog | 5089 | 1 | 1 | — | unassessed | D0120-rust-seed1063: a wild dog at turn 5089 |
+| borg-reborn-rs | [D0121-rust-seed1084](../../docs/deaths/D0121-rust-seed1084/report.md) | Half-Elf Ranger | a wild dog | 2318 | 1 | 1 | — | unassessed | D0121-rust-seed1084: a wild dog at turn 2318 |
+| borg-reborn-rs | [D0122-rust-seed1002](../../docs/deaths/D0122-rust-seed1002/report.md) | Elf Warrior | a salamander | 11618 | 2 | 2 | — | unassessed | D0122-rust-seed1002: a salamander at turn 11618 |
+| borg-reborn-rs | [D0123-rust-seed1004](../../docs/deaths/D0123-rust-seed1004/report.md) | Gnome Warrior | a grey mold | 10112 | 1 | 1 | — | unassessed | D0123-rust-seed1004: a grey mold at turn 10112 |
+| borg-reborn-rs | [D0124-rust-seed1040](../../docs/deaths/D0124-rust-seed1040/report.md) | Gnome Necromancer | a clear icky thing | 11988 | 1 | 1 | — | unassessed | D0124-rust-seed1040: a clear icky thing at turn 11988 |
+| borg-reborn-rs | [D0125-rust-seed1031](../../docs/deaths/D0125-rust-seed1031/report.md) | Gnome Priest | a large white snake | 10239 | 1 | 1 | — | unassessed | D0125-rust-seed1031: a large white snake at turn 10239 |
+| borg-reborn-rs | [D0126-rust-seed1070](../../docs/deaths/D0126-rust-seed1070/report.md) | Human Warrior | a floating eye | 12310 | 1 | 2 | — | unassessed | D0126-rust-seed1070: a floating eye at turn 12310 |
+| borg-reborn-rs | [D0127-rust-seed1083](../../docs/deaths/D0127-rust-seed1083/report.md) | Human Ranger | a giant white mouse | 7655 | 1 | 1 | — | unassessed | D0127-rust-seed1083: a giant white mouse at turn 7655 |
+| borg-reborn-rs | [D0128-rust-seed1032](../../docs/deaths/D0128-rust-seed1032/report.md) | Dwarf Priest | a metallic red centipede | 19474 | 1 | 1 | — | unassessed | D0128-rust-seed1032: a metallic red centipede at turn 19474 |
+| borg-reborn-rs | [D0129-rust-seed1074](../../docs/deaths/D0129-rust-seed1074/report.md) | Human Warrior | a grey mushroom patch | 18658 | 1 | 1 | — | unassessed | D0129-rust-seed1074: a grey mushroom patch at turn 18658 |
+| borg-reborn-rs | [D0130-rust-seed1073](../../docs/deaths/D0130-rust-seed1073/report.md) | Human Warrior | a crow | 24844 | 2 | 3 | — | unassessed | D0130-rust-seed1073: a crow at turn 24844 |
+| borg-reborn-rs | [D0131-rust-seed1014](../../docs/deaths/D0131-rust-seed1014/report.md) | Dwarf Mage | a crow | 29255 | 2 | 1 | — | unassessed | D0131-rust-seed1014: a crow at turn 29255 |
+| borg-reborn-rs | [D0132-rust-seed1071](../../docs/deaths/D0132-rust-seed1071/report.md) | Half-Troll Warrior | a rock lizard | 41045 | 2 | 1 | — | unassessed | D0132-rust-seed1071: a rock lizard at turn 41045 |
+| borg-reborn-rs | [D0133-rust-seed1034](../../docs/deaths/D0133-rust-seed1034/report.md) | Human Priest | an apprentice | 51519 | 1 | 1 | — | unassessed | D0133-rust-seed1034: an apprentice at turn 51519 |
+| borg-reborn-rs | [D0134-rust-seed1053](../../docs/deaths/D0134-rust-seed1053/report.md) | Half-Troll Paladin | starvation | 44690 | 1 | 1 | — | unassessed | D0134-rust-seed1053: starvation at turn 44690 |
+| borg-reborn-rs | [D0135-rust-seed1042](../../docs/deaths/D0135-rust-seed1042/report.md) | Half-Orc Necromancer | a giant white centipede | 65087 | 1 | 1 | — | unassessed | D0135-rust-seed1042: a giant white centipede at turn 65087 |
+| borg-reborn-rs | [D0136-rust-seed1062](../../docs/deaths/D0136-rust-seed1062/report.md) | Half-Troll Rogue | starvation | 44680 | 1 | 1 | — | unassessed | D0136-rust-seed1062: starvation at turn 44680 |
+| borg-reborn-rs | [D0137-rust-seed1013](../../docs/deaths/D0137-rust-seed1013/report.md) | Gnome Mage | a soldier ant | 57935 | 1 | 1 | — | unassessed | D0137-rust-seed1013: a soldier ant at turn 57935 |
+| borg-reborn-rs | [D0138-rust-seed1003](../../docs/deaths/D0138-rust-seed1003/report.md) | Hobbit Warrior | starvation | 89230 | 1 | 1 | — | unassessed | D0138-rust-seed1003: starvation at turn 89230 |
+| borg-reborn-rs | [D0139-rust-seed1033](../../docs/deaths/D0139-rust-seed1033/report.md) | Half-Orc Priest | starvation | 89210 | 1 | 1 | — | unassessed | D0139-rust-seed1033: starvation at turn 89210 |
+| borg-reborn-rs | [D0140-rust-seed1061](../../docs/deaths/D0140-rust-seed1061/report.md) | Human Rogue | starvation | 89220 | 1 | 1 | — | unassessed | D0140-rust-seed1061: starvation at turn 89220 |
+| borg-reborn-rs | [D0141-rust-seed1072](../../docs/deaths/D0141-rust-seed1072/report.md) | Human Warrior | starvation | 89250 | 1 | 1 | — | unassessed | D0141-rust-seed1072: starvation at turn 89250 |
 
-114 cases.
+161 cases.

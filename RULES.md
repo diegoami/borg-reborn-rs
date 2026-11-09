@@ -54,7 +54,10 @@ whatever the model.
     (borg-rs format; the decision trace from M3), with the actual source,
     build, implementation, profile and seed. This applies from the first
     game played (T1.2, #5), whichever arm died. Repeats and replays never
-    inflate independent counts.
+    inflate independent counts. CI writes its dossiers to a temporary
+    registry, uploads it, and fails if a death is not in `docs/deaths/`
+    (`tools/reconcile-deaths.py`); deaths of test-feature builds are not
+    natural deaths of an arm and are kept apart.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.

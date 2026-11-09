@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0141-rust-seed1072",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89250,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "-",
+    "git_rev": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+    "git_dirty": "no",
+    "source_sha256": "2d1aed0fcfc0672f8ade128f46f1050a7eb19bf7cee7bcc7059c9dc98f190dc4",
+    "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03",
+    "borg_txt_sha256": "ea743d09d98ba69aefd5ca3560bb149f21cc5d77b611147855e4acb779eb56df"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/ci-like/full-rust/full-7-ranger-2",
+      "result_sha256": "44c2e9e133ce58deb9a730c373a843751a4d4e9c6eac48f174741358de875bd4",
+      "raw_sha256": {
+        "keys.log": "44c2e9e133ce58deb9a730c373a843751a4d4e9c6eac48f174741358de875bd4",
+        "messages.log": "447e227708eec119d1156733fc832fc56b243a344f62274cf88296fb93a5bdfa",
+        "state.log": "a6ac153af1e1b922c62ebb0ff126dbde7545f2202d0a13c3f7f9bd7fd4c2c537"
+      },
+      "source_commit": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+      "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03"
+    }
+  ],
+  "encounter_family": "start-dc34a83d0c81e2c21e6da585295b063da45b6e1f704675579d4d8a68434b44d6",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "94e38b92bb28e72389e8d40493e42d827afc79cb46583fac66390ed59149146f",
+    "config.txt": "3954f1111dbc0b1975c0b352913a3bc05aace85078ed22087b85400c9fc43e06",
+    "depths.json": "157b1501318670efcc429f6723b645bf17f403721cee72fd3cff1e9becf38fac",
+    "summary.json": "9182b7c2e2298b271cc9f2e6dcaf7f2fbd1c7eac4208a579878da13b9ac3d359"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -299,7 +299,10 @@ def aggregate(root):
             key = (action.get('issue'), action.get('key', action['summary']))
             item = actions.setdefault(key, {**action, 'cases': []})
             item['cases'].append(record['id'])
-    attempts = {attempt['result_sha256']: attempt for _, record, _ in records for attempt in record['attempts'] if attempt['outcome'] == 'death'}
+    # borg-reborn-rs (M1 review): one attempt per (encounter family, key
+    # stream); the same keys from different starts are different attempts.
+    attempts = {(canonical_identity(record)['encounter_family'] or record.get('encounter_family'), attempt['result_sha256']): attempt
+                for _, record, _ in records for attempt in record['attempts'] if attempt['outcome'] == 'death'}
     summary = {'schema': 'borg-rs/death-index@1', 'cases': len(records),
                'distinct_starting_conditions': len(set.union(set(), *causes.values())),
                'death_process_attempts': len(attempts), 'causes_by_distinct_start': {k: len(v) for k, v in sorted(causes.items())},

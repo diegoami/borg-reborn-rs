@@ -140,6 +140,26 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
     return files
 
 
+# Causes that are not deaths by play (engine: cmd-misc.c "Retiring"; the
+# player quitting).
+NOT_NATURAL_CAUSES = {'Retiring', 'Quitting', 'Ripe Old Age'}
+
+
+def not_natural(summary, flags='-'):
+    """None for a natural death, else why the run is not one. Only natural
+    deaths enter the registry (RULES 12; as borg-rs's full exporter)."""
+    flag_set = set(flags.split(','))
+    if not summary.get('dead'):
+        return 'not dead'
+    if summary.get('stop_reason') != 'death':
+        return f"not natural: stop reason {summary.get('stop_reason')!r}"
+    if summary.get('cheat_live') or 'cheatlive' in flag_set or 'cheat' in flag_set:
+        return 'not natural: cheat death or cheat_live'
+    if summary.get('death_cause') in NOT_NATURAL_CAUSES:
+        return f"not natural: cause {summary.get('death_cause')!r}"
+    return None
+
+
 def family_of(impl, seed, race_idx, class_idx, source_sha256, borg_txt_sha256, save_sha256=None):
     """The encounter family: what fixes the starting game. It uses the build-input
     hash (harness/identity.sh source-hash), not the binary's bytes: rebuilding the
@@ -159,15 +179,22 @@ def export(run_dir, impl, build_id_path, flags='-'):
     # when the suite ends: record where the logs will be.
     final_dir = re.sub(r'\.partial\.\d+(?=/|$)', '', str(run_dir))
     summary = json.loads((run_dir / 'summary.json').read_text())
-    if not summary.get('dead'):
-        return None, 'not dead'
+    why = not_natural(summary, flags)
+    if why:
+        return None, why
     keys = run_dir / 'keys.log'
     if not keys.exists():
         raise SystemExit(f'export-death: {keys} missing; cannot identify the run')
     build = read_kv(build_id_path)
     config = read_kv(run_dir / 'config.txt')
     keys_sha = sha256_file(keys)
-    family = family_of(impl, summary.get('seed'), summary.get('race_idx'), summary.get('class_idx'),
+    flag_set = set(flags.split(','))
+    # A loaded save that keeps its own RNG starts the same game whatever the
+    # seed; a random birth starts from the character actually played.
+    seed = None if 'keep-load-rng' in flag_set else summary.get('seed')
+    race = summary.get('played_race_idx', summary.get('race_idx'))
+    cls = summary.get('played_class_idx', summary.get('class_idx'))
+    family = family_of(impl, seed, race, cls,
                        build.get('source_sha256'), config.get('borg_txt_sha256'), config.get('save_sha256'))
     reg = registry_dir()
     reg.mkdir(parents=True, exist_ok=True)
@@ -220,11 +247,16 @@ def main(argv=None):
     case, what = export(a.run_dir, a.impl, a.build_id, a.flags)
     if what == 'exported':
         print(f'export-death: natural death recorded as {registry_dir() / case}', file=sys.stderr)
-        aggregate(registry_dir())
     elif what == 'repeat':
         print(f'export-death: repeat of {case}; not a new case', file=sys.stderr)
     elif what.startswith('repaired'):
         print(f'export-death: repeat of {case}; its dossier was incomplete, {what}', file=sys.stderr)
+    elif what.startswith('not natural'):
+        print(f'export-death: {what}; no dossier', file=sys.stderr)
+    if case:
+        # Also on repeats and repairs: an export interrupted after its rename
+        # but before aggregation leaves the index stale (M1 review).
+        aggregate(registry_dir())
     return 0
 
 

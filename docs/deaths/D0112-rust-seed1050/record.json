@@ -1,0 +1,52 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0112-rust-seed1050",
+  "run_kind": "harness",
+  "character": "Dwarf Paladin",
+  "raw_cause": "an apprentice",
+  "terminal": {
+    "cause": "an apprentice",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1017,
+    "race_idx": 5,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1050,
+    "flags": "-",
+    "git_rev": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+    "git_dirty": "no",
+    "source_sha256": "2d1aed0fcfc0672f8ade128f46f1050a7eb19bf7cee7bcc7059c9dc98f190dc4",
+    "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03",
+    "borg_txt_sha256": "69d9b928ff2f041b06776803d6ca41f08fe181561aa0bf1577551168905ce7c3"
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/ci-like/full-rust/full-5-paladin-0",
+      "result_sha256": "cb5ed9960358e28b25afd89b02fc63a3a958cf98d87d31c34ad66db313ffcb5a",
+      "raw_sha256": {
+        "keys.log": "cb5ed9960358e28b25afd89b02fc63a3a958cf98d87d31c34ad66db313ffcb5a",
+        "messages.log": "906c99bc06a938dbd153ce73ee22a5574f11bb13dd2d6d9ba24705adcdc87c54",
+        "state.log": "2a1f807bf374e6ae7c6e1dec9b7788ceae9da3f252077560ad8e18320e5a7e03"
+      },
+      "source_commit": "03a7b8e2f5cf569953774a512dc291099f74c2df",
+      "binary_sha256": "fab9f8a7aa4481ef4fb6ee653d4991c64b1ba8ecdd26efbe8f02d3ec93e94c03"
+    }
+  ],
+  "encounter_family": "start-bebbc6706e9b699d1d50872e333b6a4e95f59a0f1157e45cfdab82ddebbd1254",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "94e38b92bb28e72389e8d40493e42d827afc79cb46583fac66390ed59149146f",
+    "config.txt": "67ddbf6993b24c24fe76ac75f2a94233e987bcf6324685c6423e095929f93e02",
+    "depths.json": "736d3afc11ed1856d4db4d2328d0a121e9a8f2bc7b4e47dd2900c15e80e1309c",
+    "summary.json": "f84fe8302fc8daedef7e5eb989436a19eb08d312840f8ec35aa450ca4fcab569"
+  },
+  "investigation": null,
+  "issue": null
+}
