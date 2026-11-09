@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0534-rust-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "a cave spider",
+  "terminal": {
+    "cause": "a cave spider",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 539,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1022,
+    "flags": "-",
+    "git_rev": "e91cf5239b480e2a30e58688933e88898b56e998",
+    "git_dirty": "yes",
+    "source_sha256": "d994ad83f47b8819a37550e99ab9a84ebe0d8ef6745a221ef49c30ca6cfa511f",
+    "binary_sha256": "ba362be70017c3cfc96a0c999b6b10c6ded8f88122c2a1415f9815e6e8d15555",
+    "borg_txt_sha256": "ffb38dfa422f79eb8b9d030f317394fcb4dec4d7461fce78d88cd905230680f2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 55,
+    "of": 55
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te3d-full/full-2-druid-2",
+      "result_sha256": "b9b130e1512dbfbac222cdf8ef58cd4d7557bfc88ba4219fdafd1b3ee01cecbc",
+      "raw_sha256": {
+        "keys.log": "b9b130e1512dbfbac222cdf8ef58cd4d7557bfc88ba4219fdafd1b3ee01cecbc",
+        "messages.log": "3c873ca6995b885ad282511b054f9b8470d68108c5866f8661f93c34fc4e44d2",
+        "state.log": "4b43716930083f22d06de2922664d24ff43db0ce7b96b31baef2c422e68f02e0"
+      },
+      "source_commit": "e91cf5239b480e2a30e58688933e88898b56e998",
+      "binary_sha256": "ba362be70017c3cfc96a0c999b6b10c6ded8f88122c2a1415f9815e6e8d15555"
+    }
+  ],
+  "encounter_family": "start-6ef6d7855a57f44f286a7c3964273dfa2d19b86e126508a9fcb966bcceba3f0b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "ddb078a3ac095fa68e7c19101111f6ee13f0ae71e8c1f46c5d0e22687181c338",
+    "config.txt": "d43e82d40e6dedbe7b98a6e967f6a0c5f2b5d051ec6c11c2d65d54b443da69cd",
+    "depths.json": "bdbd836ea407ed9843aa80fef8b08455ae1162bf08ac9aed329fe119e77ccfc7",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "32f24d79dce60b890303980e4030bfa65fe1a72f6cdc1fa8eb7075793dbcd914",
+    "trace-tail.jsonl": "e16879aeeac14cdfc5afb050045a3c297f1848e90944e080d7a89a62405ed27a"
+  },
+  "investigation": null,
+  "issue": null
+}
