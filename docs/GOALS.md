@@ -93,8 +93,10 @@ of the same name:
   same run contract (D8, T1.3, #6). Results from the better-borg-c
   observer harness are context, not controls: same-seed equivalence
   between the two harnesses is unverified.
-- **Calculated by** `tools/endpoint.py` (T1.7, #10) from our outputs or
-  from borg-zoo result cells. borg-zoo's own `goal_rate` excludes
+- **Calculated by** borg-zoo, from its result cells (docs/SPEC.md §6, owner
+  2026-11-09; this repository's `tools/endpoint.py`, T1.7, was retired in
+  TE.7). The definition above is the one to ask the zoo for: its current
+  `goal_rate` excludes
   operational outcomes from its denominator and is reported per arm rather
   than per class, so it is **not** this endpoint.
 
