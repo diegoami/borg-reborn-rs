@@ -39,6 +39,8 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
+      - run: BORG_IMPL=rust harness/check-extra-load.sh
       # The controls (T1.3, T1.8): built from a fresh checkout (the pinned C Borg
       # sources are cloned on demand) and checked against their references.
       - run: BORG_IMPL=c-pristine harness/build.sh
