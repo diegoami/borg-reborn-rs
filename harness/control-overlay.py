@@ -12,7 +12,7 @@ The controls and their sources are the "controls" section of pins.json.
 --make copies angband/ to OUTDIR/angband (mtimes kept), links OUTDIR/harness
 to this repository's harness/ (the engine's CMake includes
 ../harness/measurement/c-adapter.h), replaces OUTDIR/angband/src/borg with the
-pinned files from vendor/<repo> (run scripts/setup.sh first), and checks the
+pinned files from vendor/<repo> (cloned on demand if missing), and checks the
 result blob for blob against the pinned tree. Any difference is an error.
 """
 
@@ -29,13 +29,28 @@ def controls():
     return json.loads((ROOT / 'pins.json').read_text()).get('controls', {})
 
 
+def ensure_repo(repo, repository, commit):
+    """A partial clone of the pinned repository with the commit, made on
+    demand, so a fresh checkout (a borg-zoo build, CI) needs no setup step."""
+    if not (repo / '.git').exists():
+        repo.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(['git', 'clone', '-q', '--filter=blob:none', '--no-checkout',
+                        f'https://github.com/{repository}.git', str(repo)], check=True)
+    has = subprocess.run(['git', '-C', str(repo), 'cat-file', '-e', commit + '^{commit}'],
+                         capture_output=True).returncode == 0
+    if not has:
+        subprocess.run(['git', '-C', str(repo), 'fetch', '-q', 'origin', commit], check=True)
+
+
 def spec(impl):
     c = controls()
     if impl not in c:
         raise SystemExit(f'control-overlay: unknown control {impl!r} (known: {", ".join(sorted(c))})')
     s = dict(c[impl])
     pins = json.loads((ROOT / 'pins.json').read_text())['pins']
-    s['repo'] = ROOT / 'vendor' / pins[s['pin']]['repository'].split('/')[1]
+    repository = pins[s['pin']]['repository']
+    s['repo'] = ROOT / 'vendor' / repository.split('/')[1]
+    ensure_repo(s['repo'], repository, s['commit'])
     return s
 
 
