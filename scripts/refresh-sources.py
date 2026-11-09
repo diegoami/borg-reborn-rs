@@ -13,7 +13,8 @@ above all, the death reports. This tool is how a session keeps up
                                               death index (do it in its own PR)
   scripts/refresh-sources.py --index          regenerate the death index only
 
-The report covers, per pin: commits since the pin on the default branch;
+The report covers, per pin: commits since the pin on the default branch (or
+on the pin's `branch`, when it names one);
 files of each copy rule added, changed or removed; new death cases; new tags
 (a new better-borg-c milestone tag means a new control arm, GOALS D8); C
 Borg functions cited in this repository whose code changed; issues updated
@@ -47,7 +48,10 @@ def git(repo, *args, check=False):
 class Source:
     def __init__(self, root, name, pin):
         self.root, self.name, self.pin = root, name, pin
-        self.repo = root / 'vendor' / pin['repository'].split('/')[1]
+        # A pin that follows a branch other than the default one has its own clone
+        # (`vendor`), so two pins of one repository never fight over a checkout.
+        self.repo = root / 'vendor' / pin.get('vendor', pin['repository'].split('/')[1])
+        self.ref = f"refs/remotes/origin/{pin['branch']}" if pin.get('branch') else 'refs/remotes/origin/HEAD'
         self.head = None
         self.problems = []
 
@@ -60,11 +64,12 @@ class Source:
             if r.returncode:
                 last = (r.stderr.strip().splitlines() or ['no message'])[-1]
                 self.problems.append(f'fetch failed, using what is already fetched (offline?): {last}')
-            if git(self.repo, 'rev-parse', '-q', '--verify', 'refs/remotes/origin/HEAD').returncode:
+            if not self.pin.get('branch') and \
+                    git(self.repo, 'rev-parse', '-q', '--verify', 'refs/remotes/origin/HEAD').returncode:
                 git(self.repo, 'remote', 'set-head', 'origin', '-a')
-        r = git(self.repo, 'rev-parse', '-q', '--verify', 'refs/remotes/origin/HEAD^{commit}')
+        r = git(self.repo, 'rev-parse', '-q', '--verify', self.ref + '^{commit}')
         if r.returncode:
-            self.problems.append('cannot resolve origin/HEAD')
+            self.problems.append(f"cannot resolve {self.ref.removeprefix('refs/remotes/')}")
             return
         self.head = r.stdout.strip()
 
@@ -132,7 +137,8 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
         pin = data['pins'][name]
         src = Source(root, name, pin)
         src.resolve_head(fetch)
-        w(f"## {name} ({pin['repository']})\n\n")
+        branch = f", branch {pin['branch']}" if pin.get('branch') else ''
+        w(f"## {name} ({pin['repository']}{branch})\n\n")
         for p in src.problems:
             w(f'- problem: {p}\n')
         if not src.head:

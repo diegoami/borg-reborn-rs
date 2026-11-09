@@ -55,7 +55,8 @@ def have(dest, commit):
 ok = True
 for name, pin in sorted(pins.items()):
     repo = pin['repository']
-    dest = Path('vendor') / repo.split('/')[1]
+    # A pin on a non-default branch names its own clone (see pins.json).
+    dest = Path('vendor') / pin.get('vendor', repo.split('/')[1])
     fresh = not dest.exists()
     if fresh:
         print(f'setup: cloning {repo}', flush=True)

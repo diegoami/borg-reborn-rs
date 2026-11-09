@@ -1,6 +1,6 @@
 {
   "schema": "borg-reborn-rs/pins@1",
-  "note": "Every related repository at the commit this repository read it. Sessions read others only at these pins (RULES 7). Update a pin in its own PR, saying why. read_on is the date a pin was last read; copies are the rules scripts/refresh-sources.py uses to refresh reference/; watch_tags and borg_dir drive its report.",
+  "note": "Every related repository at the commit this repository read it. Sessions read others only at these pins (RULES 7). Update a pin in its own PR, saying why. read_on is the date a pin was last read; copies are the rules scripts/refresh-sources.py uses to refresh reference/; watch_tags and borg_dir drive its report. A pin with a branch follows that branch instead of the default one, in its own clone vendor/<vendor>.",
   "pins": {
     "angband": {
       "repository": "angband/angband",
@@ -48,6 +48,14 @@
       "read_on": "2026-11-09",
       "issues": true
     },
+    "strategy-manual": {
+      "repository": "diegoami/neo-angband-tracker",
+      "branch": "c-borg-reference",
+      "vendor": "neo-angband-tracker-c-borg-reference",
+      "commit": "e67fd7dbce189a3e3a2f4d4910c8367fa93af605",
+      "role": "The Angband Strategy Manual (docs/strategy/ on the c-borg-reference branch, not the default branch): game mechanics, races and classes, resistances, equipment, monsters and uniques, the dungeon and a game plan by phase, grounded in Angband 4.2.6 source and lib/gamedata, with generated appendices. Game knowledge for strategy design (copied in reference/strategy/). A work in progress at the pin: chapter 3 is not yet written.",
+      "read_on": "2026-11-09"
+    },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
       "commit": "3f6b76e27dba3ddd238b2104fff4d344165cb28f",
@@ -74,6 +82,12 @@
         "TUNABLE-BORG-PLAN.md",
         "README.md"
       ]
+    },
+    {
+      "pin": "strategy-manual",
+      "from": "docs/strategy",
+      "to": "reference/strategy",
+      "select": "all"
     },
     {
       "pin": "better-borg-c",
