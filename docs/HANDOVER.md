@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.9 and milestone E complete; E's review
+
+- **TE.9:** `engine/tests/test_independence.py` (CI, rust job) checks that
+  no build, test, check or CI step uses borg-rs. That means no checkout,
+  crate, staticlib or former `angband/` tree, and no clone or download;
+  provenance comments are allowed. It also checks that the workspace holds
+  only our crate. CI now proves every point of SPEC §10's exit:
+  - the tree is upstream's, the patches apply, and the source list matches;
+  - the frontend contract, the zoo contract and the D3 list hold;
+  - the bindings regenerate unchanged;
+  - runs are deterministic, match the references, and keep the boundary
+    contract;
+  - the death reconciliation passes, and a CI death reruns with the same
+    keys;
+  - nothing reads borg-rs.
+- **Milestone E is complete** (#81–#91). The review PR `main` →
+  `reviewed` is open. The owner chooses the reviewer (RULES 6); the prompt
+  is in the review PR's description.
+- **After the owner merges it:**
+  - tag `e`;
+  - ask borg-zoo (an issue, RULES 7) to move `4.2.6-reborn-rust`'s `ref`
+    to `e^{}` and to decide on the two C specimens;
+  - continue with the rest of M2 (T2.5, #16), then M3.
+
 ## 2026-11-09: S12 retired (pin PR, #78)
 
 The owner retired S12, the draft strategy manual, in favour of S14, the
