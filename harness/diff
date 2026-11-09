@@ -22,7 +22,8 @@ Directory mode:
         or a Borg self-stop that fired inside a command, so the game finished
         that turn without a further key),
       - the two summary.json files are equal apart from wall_seconds and new
-        measurement fields absent from historical references,
+        measurement and record fields (game_options) absent from historical
+        references,
       - the message logs (messages.log[.xz]) and the engine-state logs
         (state.log[.xz]) are byte-identical, when compared (below); a
         state log has summary.keys lines, and line i is at the game turn
@@ -76,6 +77,9 @@ IGNORED_FIELDS = {"wall_seconds"}
 # sides provide it; old fields still require presence and equality.
 MEASUREMENT_FIELDS = {"calendar", "max_clevel", "hp", "max_hp", "borg_decisions",
                       "player_energy", "borg_rng", "game_rng", "effective_settings"}
+# Run-record fields added after the first references (TE.5: the game options
+# in force). Compared whenever both sides have them.
+RECORD_FIELDS = {"game_options"}
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -305,6 +309,8 @@ def compare_run(name, da, db, allow_legacy=False):
             if k in MEASUREMENT_FIELDS and (sa.get("calendar") != "fixed" or sb.get("calendar") != "fixed"):
                 continue
             if k in IGNORED_FIELDS:
+                continue
+            if k in RECORD_FIELDS and (k not in sa or k not in sb):
                 continue
             if sa.get(k, "<absent>") != sb.get(k, "<absent>"):
                 probs.append("summary %s: A=%r B=%r"

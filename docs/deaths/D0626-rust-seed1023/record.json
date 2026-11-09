@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0626-rust-seed1023",
+  "run_kind": "harness",
+  "character": "Dwarf Druid",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 553,
+    "race_idx": 5,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1023,
+    "flags": "-",
+    "git_rev": "9a4757481dac9a7e72959002d7ffd10f27959861",
+    "git_dirty": "yes",
+    "source_sha256": "cbffb4ed34ffb6390d98dbef55d9e2d321adf9c0558705976558d673e502306e",
+    "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed",
+    "borg_txt_sha256": "7a94cde1684c095b4cbe387aaef64f3b173ce31b0af2c703abaf8658ee27a4df",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 52,
+    "of": 52
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te5-full/full-2-druid-3",
+      "result_sha256": "defee68268da474c543a77ee94e6258f634f41615ad0db48a7de168b5b619f2c",
+      "raw_sha256": {
+        "keys.log": "defee68268da474c543a77ee94e6258f634f41615ad0db48a7de168b5b619f2c",
+        "messages.log": "521a0baeeb6890014fb3d462f4cb05deb62ac4f662beacada84cb343aefc8203",
+        "state.log": "6a1542afc67e6f489fa2324071684c70cb9d07651a79b48708d43c318b1fcbb3"
+      },
+      "source_commit": "9a4757481dac9a7e72959002d7ffd10f27959861",
+      "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed"
+    }
+  ],
+  "encounter_family": "start-c17f7dce8632bb8d216e624e6f8c812483ddf87bbf4236f54696accea8456fb9",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c7515beaa087d0bd752a840e6e471b62af722c7c6591cc02117d5dfff0e9deb0",
+    "config.txt": "84883abb8eab2ebf58d98b3cb25a17521f55d75952485e9e74c4c3f18f0cc0b1",
+    "depths.json": "ec703fcd145f42f3d31c2706af26df40804ee832c8e8474cd75001130833dceb",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "78cb30d429ce96ca6aea71e0c28b4561f95e369441e7421a97b199e1398651e4",
+    "trace-tail.jsonl": "14395167206ea78fed4efd9c6f7edb1ac5b8ac9025f66855f8c3b219d899b9ce"
+  },
+  "investigation": null,
+  "issue": null
+}

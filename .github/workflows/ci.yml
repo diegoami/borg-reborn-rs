@@ -19,26 +19,33 @@ jobs:
       - run: bash -n scripts/setup.sh
       - run: python3 -m unittest discover -s scripts/tests
       - run: python3 -m unittest discover -s tools/tests
+      # The generated bindings match upstream's headers (TE.3): bindgen and
+      # libclang, so the D3 audit's regeneration check runs too.
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
+      - run: cargo install bindgen-cli --version 0.73.2 --locked
+      - run: engine/bindings/generate.sh --check
+      - run: python3 -m unittest discover -s engine/tests
 
   engine:
-    # Builds the engine with the tree's own C Borg and with the reborn crate,
-    # and checks that the C smoke suite reproduces harness/reference/smoke-c
-    # (T1.2). Deaths in CI go to a temporary registry, never to docs/deaths.
+    # Builds the Rust Borg on our own integration (engine/, docs/SPEC.md §3,
+    # TE.4) and runs it. Deaths in CI go to a temporary registry, never to
+    # docs/deaths.
     runs-on: ubuntu-latest
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
-      - run: BORG_IMPL=c harness/build.sh
-      - run: BORG_IMPL=c harness/suite.sh smoke harness/out/smoke-c
-      - run: harness/diff --suite smoke --expect-impl c harness/out/smoke-c harness/reference/smoke-c
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # The build, the source list and the frontend's contract on the binary (TE.4).
+      - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/out/smoke-rust-2
+      # ... and the same keys, messages and states as the reference (TE.5).
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-rust-1 harness/reference/smoke-rust
       # The decision trace and the parameter table are in the run outputs (T2.4).
       - run: for r in harness/out/smoke-rust-1/*/; do test -s "$r/trace.jsonl" && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$r/params.json" && grep -q '^profile_sha256=' "$r/config.txt" || { echo "no trace or params in $r"; exit 1; }; done
       # A save loaded through run.sh's extra options resumes like save=NAME (re-review S1, S2).
@@ -49,14 +56,6 @@ jobs:
       # blows computed from it equal the engine's on every think (T2.3).
       - run: BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG=$RUNNER_TEMP/knowledge.json BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 3000
       - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG_CHECK=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG_CHECK=$RUNNER_TEMP/knowledge.json cargo test -q -p borg-reborn-rs recorded -- --nocapture
-      # The controls (T1.3, T1.8): built from a fresh checkout (the pinned C Borg
-      # sources are cloned on demand) and checked against their references.
-      - run: BORG_IMPL=c-pristine harness/build.sh
-      - run: BORG_IMPL=c-pristine harness/suite.sh smoke harness/out/smoke-c-pristine
-      - run: harness/diff --suite smoke --expect-impl c-pristine harness/out/smoke-c-pristine harness/reference/smoke-pristine
-      - run: BORG_IMPL=c-bbc-m7 harness/build.sh
-      - run: BORG_IMPL=c-bbc-m7 harness/suite.sh smoke harness/out/smoke-c-bbc-m7
-      - run: harness/diff --suite smoke --expect-impl c-bbc-m7 harness/out/smoke-c-bbc-m7 harness/reference/smoke-c-bbc-m7
       # RNG isolation (M1 review): perception while hallucinating must not move
       # the game's RNG; each think asserts it (feature test-hallucinate).
       - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate harness/build.sh
@@ -65,6 +64,7 @@ jobs:
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
+      - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
       # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
       # died a death that docs/deaths/ does not record.
       - uses: actions/upload-artifact@v4
@@ -76,5 +76,5 @@ jobs:
       - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths"
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       - run: for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
-      # borg-rs's tool tests (T1.6): recording, replay, death records.
-      - run: python3 -m unittest discover -s tools -p 'test_*.py'
+      # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
+      - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D*-rust-* | head -1)" "$RUNNER_TEMP/rerun"

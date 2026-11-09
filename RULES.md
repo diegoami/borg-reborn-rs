@@ -47,14 +47,13 @@ whatever the model.
 
 ## Play and evidence
 
-9. **The game is not changed.** The engine tree is upstream `e473720` with
-   the harness hooks, the declared fork corrections and the adopted C Borg
-   carries inherited from borg-rs. Nothing else, except **harness-only
-   hooks** under `#ifdef BORG_HARNESS` (such as the exact-boundary
-   observation, T1.4, #7), each shown not to change the key stream before
-   it acts. Control C Borgs are compiled from pinned sources overlaid in the
-   build directory; the tree is not edited. Birth options are the game's
-   defaults.
+9. **The game is not changed.** The engine tree, `engine/angband/`, is
+   upstream `e473720` byte for byte (a test checks it). Our only changes are
+   the declared patch series of `engine/patches/` (docs/ENGINE.md): harness
+   hooks under `#ifdef BORG_HARNESS` or `USE_BORGH`, applied to a copy at
+   build time, each shown not to change the game with the guards off. Birth
+   options are the game's defaults. No C Borg is built here (docs/SPEC.md
+   §6).
 10. **Determinism.** Seed, build and profile reproduce a game's key stream.
     The Borg thinks with its own RNG and never moves the game's. Wall time
     never affects play. Decisions never iterate over unordered containers.
@@ -79,8 +78,9 @@ whatever the model.
     scum, stair-scumming, or cheat death inside the Borg.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
-    `file:function:lines` at `e473720`. Code taken from borg-rs keeps its
-    attribution. The decision layer (strategy) is new code.
+    `file:function:lines` at `e473720`. Code copied from another project is
+    recorded once in docs/PROVENANCE.md and is ours from then on
+    (docs/SPEC.md §2). The decision layer (strategy) is new code.
 
 ## Files and machines
 
@@ -103,10 +103,11 @@ whatever the model.
     death index; a task may also do one when it needs a newer source. Pin
     moves are their own PRs, never mixed with other work.
 22. **Baselines are exact.** A comparison names exact zoo specimens and
-    builds, never "latest". A new better-borg-c milestone tag is a new
-    control arm (GOALS D8); an existing arm is never redefined. Re-syncing
-    the engine tree from borg-rs is a dedicated PR and starts a new
-    measurement baseline; results stay with the build they ran on.
+    builds, never "latest"; comparisons are borg-zoo's (docs/SPEC.md §6). A
+    change to the engine's patch series, the frontend or the build is a
+    dedicated PR, reproduces the references or explains every difference
+    (docs/SPEC.md §10), and starts a new measurement baseline; results stay
+    with the build they ran on.
 23. **Lifted knowledge is watched.** Formulas, tables and key sequences
     lifted from a C Borg cite `file:function:lines` in the form the
     refresh report recognises, so a later fix to that function in

@@ -16,7 +16,7 @@ above all, the death reports. This tool is how a session keeps up
 The report covers, per pin: commits since the pin on the default branch (or
 on the pin's `branch`, when it names one);
 files of each copy rule added, changed or removed; new death cases; new tags
-(a new better-borg-c milestone tag means a new control arm, GOALS D8); C
+(a new better-borg-c milestone tag: a new specimen for borg-zoo to consider); C
 Borg functions cited in this repository whose code changed; issues updated
 since the pin was read (when `gh` works). Network or `gh` failures are
 reported, never fatal. Standard library only.
@@ -174,26 +174,17 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                     changed_docs = [p for p in changed if '/' not in p]
                     if changed_docs:
                         w(f"  - changed registry documents: {', '.join(changed_docs)}\n")
-        engine = data.get('engine_tree') or {}
-        if engine.get('pin') == name:
-            r = git(src.repo, 'rev-parse', '-q', '--verify', f"{src.head}:{engine['path']}")
-            head_tree = r.stdout.strip()
-            if head_tree and head_tree != engine['tree']:
-                w(f"- **engine tree re-sync available:** `{engine['path']}/` at head is {head_tree[:12]}, "
-                  f"ours is {engine['tree'][:12]} (docs/ENGINE-TREE.md, RULES 22)\n")
-            elif head_tree:
-                w(f"- engine tree: `{engine['path']}/` unchanged at head\n")
         tag_pattern = pin.get('watch_tags')
         if tag_pattern:
             # Tags after the baseline in use, not after the pin: a milestone
-            # tagged before the pin moved past it is still a new control arm.
+            # tagged before the pin moved past it is still new.
             baseline = pin.get('baseline') or {}
             since = baseline.get('commit') or pin['commit']
             tags = git(src.repo, 'tag', '--list', tag_pattern, '--contains', since).stdout.split()
             known = set(baseline.get('tag', '').split())
             new_tags = [t for t in tags if t not in known]
             if new_tags:
-                w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone means a new control arm, GOALS D8)\n")
+                w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone: a new specimen for borg-zoo to consider)\n")
         borg_dir = pin.get('borg_dir')
         if borg_dir:
             if not cited:

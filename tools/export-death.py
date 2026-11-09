@@ -161,7 +161,7 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
 
 # Causes that are not deaths by play (engine: cmd-misc.c "Retiring";
 # ui-signals.c "Interrupting", a signal; the player quitting). borg-rs's full
-# exporter (tools/borg_deaths.py) rejects the same, and an empty cause.
+# exporter rejected the same, and an empty cause.
 NOT_NATURAL_CAUSES = {'Retiring', 'Quitting', 'Interrupting', 'Ripe Old Age'}
 
 
@@ -256,12 +256,12 @@ def export(run_dir, impl, build_id_path, flags='-'):
 
 
 def aggregate(reg):
-    """Regenerate the registry's index.json and README.md (borg-rs's
-    aggregate-deaths.py), as borg-rs's own registration does after an export."""
+    """Regenerate the registry's index.json and README.md
+    (tools/death_registry.py)."""
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import borg_deaths
-    with borg_deaths.registry_lock(reg):
-        borg_deaths.update_index(reg)
+    import death_registry
+    with death_registry.registry_lock(reg):
+        death_registry.update_index(reg)
 
 
 def main(argv=None):

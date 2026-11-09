@@ -11,7 +11,6 @@ PR that updates the pin and this table.
 | `c-borg/TUNABLE-BORG-PLAN.md` | same | same | Revision 3 plus *What a remake leaves out* (2026-11-08) |
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
 | `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
-| `strategy/` | diegoami/neo-angband-tracker `docs/strategy/` on branch **`workbench/c-borg`** (pin `strategy-manual`, its own clone `vendor/neo-angband-tracker-workbench-c-borg`; until 2026-11-09 on `c-borg-reference`, which is now pristine upstream) | `86349ca8419721d6595844569ab3ca999b960801` | The Angband Strategy Manual: every file of the directory, chapters 1–8, appendices A1–A6 and their generator. The draft of S14 (`c-manual/`), kept until the owner retires it |
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `eb9a78edde6c1909b1430f6c93c3944998b774af` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
 | `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `286215c5cbb0c37002447c530a66ad3b92014a36` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in the engine tree we import (docs/ENGINE-TREE.md) |
@@ -34,7 +33,7 @@ resolve here. Read them at the pinned commit, for example
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
 
 `c-manual/` links its own copy of the official manual (`user-manual/`); its
-source references (`src/...`, `lib/gamedata/...`) are, like S12's, relative to
+source references (`src/...`, `lib/gamedata/...`) are relative to
 an Angband tree: here `angband/src/` and `angband/lib/gamedata/`.
 
 The strategy manual's links to the official manual (`../birth.rst`,

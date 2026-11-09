@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0619-rust-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "a blue yeek",
+  "terminal": {
+    "cause": "a blue yeek",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 278,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1024,
+    "flags": "-",
+    "git_rev": "9a4757481dac9a7e72959002d7ffd10f27959861",
+    "git_dirty": "yes",
+    "source_sha256": "cbffb4ed34ffb6390d98dbef55d9e2d321adf9c0558705976558d673e502306e",
+    "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 30,
+    "of": 30
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te5-full/full-2-druid-4",
+      "result_sha256": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+      "raw_sha256": {
+        "keys.log": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+        "messages.log": "3823c72cebc34151b880ed48d2b9cfa7fadc4949be39e54c6e55e126cefe45b6",
+        "state.log": "724f03d4f368dd0db4c61bc7a8d6676d9c6206d865db09952b3f12bc53463474"
+      },
+      "source_commit": "9a4757481dac9a7e72959002d7ffd10f27959861",
+      "binary_sha256": "83d7b464a02dc7b50f9dc261d8aea643c484eb8fdeaa92af4b04d1c40f09b2ed"
+    }
+  ],
+  "encounter_family": "start-9b82b124aa420989561f9df8ddbb46c6fddb2b9309fd91a2efe3fa7c392717eb",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c7515beaa087d0bd752a840e6e471b62af722c7c6591cc02117d5dfff0e9deb0",
+    "config.txt": "32260c63279218b263c2becd4199d7a1583e45bae29036ed07ea5361d36fdcad",
+    "depths.json": "b07fc6a8b257cabfb7e0ed48afa6693a2aeeb5401a20f94b7c53e72b46b2dccd",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "434c595703823d39c0d8f6f8ee6859ab6caaca658f1f8929e27dfc8e73616242",
+    "trace-tail.jsonl": "5eded52c33b2e7cfd8f9528839bdc3f18497414f26a5a1f984699d8520a56ceb"
+  },
+  "investigation": null,
+  "issue": null
+}

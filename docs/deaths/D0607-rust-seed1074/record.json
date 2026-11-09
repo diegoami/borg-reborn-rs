@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0607-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 18658,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "-",
+    "git_rev": "fd894e05e344d4c2f12986bc6205a47f72a5d08e",
+    "git_dirty": "yes",
+    "source_sha256": "5a087aa29ad8ea5a44462246be287db1d488103da0598262d908e39fef5ad7f5",
+    "binary_sha256": "c2f882d11cbdf7717c956532b107658ff01c1e8545b487365721ff22bf03651f",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1867
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/te4d-full/full-7-ranger-4",
+      "result_sha256": "86e4fe517d09a82379c54b29be3cb5bd60498e49683c9b3af9e7b463bfa4f277",
+      "raw_sha256": {
+        "keys.log": "86e4fe517d09a82379c54b29be3cb5bd60498e49683c9b3af9e7b463bfa4f277",
+        "messages.log": "bbe2cc9165ce2f42b72383075f69572be42d7e0d6a6d763c79405edadb4e7b83",
+        "state.log": "d91df3b192badcb6e3564237eb5ca0566f4827d8a7be15fde852e848d2b04a9b"
+      },
+      "source_commit": "fd894e05e344d4c2f12986bc6205a47f72a5d08e",
+      "binary_sha256": "c2f882d11cbdf7717c956532b107658ff01c1e8545b487365721ff22bf03651f"
+    }
+  ],
+  "encounter_family": "start-0dc24e9c16bf3f56e4294cb86e172c21be83fbe286a61c519a9f15afa14e0261",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "76a586838705341bd2932c2164e24efbec56d4a9cbe2bb2c2ee49611ed370f75",
+    "config.txt": "c19a45cd392f1128dcdc09806938b0b3d67953d0cbb48c7fddd55de88f54bf22",
+    "depths.json": "6b3fd89e1d5cde533a6fd904ac04af9c69bef3fb89f3c4947ee636805fe496d7",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "2fa3c843fe263d5c347bd4658050bf83e68c77a9d6fa4ed56592c80b14ca9db7",
+    "trace-tail.jsonl": "740240bba7973101db93847704c9c78550fe11bbdb5ed58ba391c7d45318dc48"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -2,6 +2,254 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: TE.9 and milestone E complete; E's review
+
+- **TE.9:** `engine/tests/test_independence.py` (CI, rust job) checks that
+  no build, test, check or CI step uses borg-rs. That means no checkout,
+  crate, staticlib or former `angband/` tree, and no clone or download;
+  provenance comments are allowed. It also checks that the workspace holds
+  only our crate. CI now proves every point of SPEC §10's exit:
+  - the tree is upstream's, the patches apply, and the source list matches;
+  - the frontend contract, the zoo contract and the D3 list hold;
+  - the bindings regenerate unchanged;
+  - runs are deterministic, match the references, and keep the boundary
+    contract;
+  - the death reconciliation passes, and a CI death reruns with the same
+    keys;
+  - nothing reads borg-rs.
+- **Milestone E is complete** (#81–#91). The review PR `main` →
+  `reviewed` is open. The owner chooses the reviewer (RULES 6); the prompt
+  is in the review PR's description.
+- **After the owner merges it:**
+  - tag `e`;
+  - ask borg-zoo (an issue, RULES 7) to move `4.2.6-reborn-rust`'s `ref`
+    to `e^{}` and to decide on the two C specimens;
+  - continue with the rest of M2 (T2.5, #16), then M3.
+
+## 2026-11-09: S12 retired (pin PR, #78)
+
+The owner retired S12, the draft strategy manual, in favour of S14, the
+complete one. This pin PR (RULES 21) removes the `strategy-manual` pin, its
+copy rule and `reference/strategy/`, and updates SOURCES, reference/README
+and AGENTS.md. Its local clone, `vendor/neo-angband-tracker-workbench-c-borg`,
+is no longer used.
+
+## 2026-11-09: TE.8, removals, documents and rules (#78)
+
+- **Removed:**
+  - the C arms' references (`harness/reference/smoke-c`, `smoke-pristine`,
+    `full-pristine`, `smoke-c-bbc-m7`);
+  - `pins.json`'s `controls` and borg-rs's oracle role, `borg_dir` and
+    `tag_of_interest`;
+  - `docs/ENGINE-TREE.md` (replaced by `docs/ENGINE.md`);
+  - `suite.sh`'s dead control-arm branch.
+- **Rewritten for docs/SPEC.md:**
+  - RULES 9 (the tree is upstream's bytes plus our patch series), RULES 16
+    (copies are recorded in PROVENANCE and owned) and RULES 22 (comparisons
+    are the zoo's; a change to the integration reproduces the references
+    or explains every difference);
+  - GOALS principle 4, D2, D4 and D8, plus a superseded note on the "same
+    seam, same harness as borg-rs" principle;
+  - ARCHITECTURE L0, *What comes from where*, and the settled open
+    question;
+  - SOURCES S5 (borg-rs is a reference), with a historical note on its
+    section;
+  - README (intro, status, SPEC first in the table);
+  - AGENTS.md (intro, start commands, the `engine/` and `harness/` rows,
+    the `borg-rs/` row gone);
+  - `harness/README.md` (rewritten for our harness);
+  - the refresh report's wording (a new better-borg-c tag is a specimen for
+    the zoo to consider).
+- History stays history: PLAN's M1 row, the handover's earlier entries,
+  `docs/ZOO-CHANGE-REQUEST.md`, and the M1-era rows of SOURCES.
+- **S12's retirement** is its own pin PR (RULES 21), next.
+
+## 2026-11-09: TE.7, the zoo contract (#77)
+
+- **`docs/ZOO-INTERFACE.md`:** the contract the zoo's borg-rs adapter
+  (`zoo/borgrs.py` at our pin `e56d5fa`) calls. It covers the build
+  (`harness/build.sh`, `build/rust/game/`, `BUILD_ID`'s `binary_sha256` and
+  `rustc`, `harness/borg.txt`), the run (`-mborgh` and its flags,
+  `TZ`/locale), and what the zoo reads (`summary.json`'s 10 fields,
+  `keys.log`, `state.log`). One mismatch is on the zoo's side: its `STOP`
+  map knows `clev`, while our frontend writes `clevel`. It's harmless,
+  since the zoo never passes `-clev`.
+- **`engine/tests/test_zoo_contract.py`:** runs the binary with exactly the
+  zoo's command line and checks every field and log format, plus that
+  `BUILD_ID` matches the binary and another `BORG_IMPL` fails loudly. CI's
+  engine job runs it.
+- **`harness/zoo-check.py`:** checks only the Rust arm. End to end with the
+  zoo's adapter: 3/3 cells with no harness failure or config error, and
+  **play hashes identical to M1's**. The seed-29 death is recorded as D0711.
+- **Retired:** `tools/endpoint.py` and its test (borg-zoo computes every
+  statistic). GOALS D7 is amended.
+- **After E is merged:** ask borg-zoo (an issue, RULES 7) to move
+  `4.2.6-reborn-rust`'s `ref` to E's tag and to decide on the two C
+  specimens.
+
+## 2026-11-09: TE.6, our death tools; the copied tooling and borg-rs's tree gone (#76)
+
+- **Decision (owner):** the death tooling to keep imported borg-rs's whole
+  recording toolkit (GUI, replay viewer, runtime: about 2,000 lines), so
+  all copied tools are dropped and replaced by lean tools of ours.
+- **New:**
+  - `tools/rerun-death.py` reruns a dossier's game from its build and seed
+    with the observation, world and knowledge logs and checkpoint saves,
+    and checks that the keys are the recorded ones. D0664 reproduces, and
+    CI reruns one of its own deaths.
+  - `tools/death_registry.py` regenerates the registry index, taken from
+    `borg_deaths.py` with the same output (byte for byte).
+  - `watch-borg.sh` builds our integration with X11 and opens the game.
+- **Removed:**
+  - the copied tools and their tests (25 Python files, 2 C files, 2
+    headers) and 7 root launchers;
+  - borg-rs's `angband/` tree, the `borg-rs/` shim crate and
+    `harness/measurement/`;
+  - `pins.json`'s `engine_tree` and the re-sync report;
+  - the repository test `engine_tree_matches_its_record`;
+  - `run.sh`'s `frames` flag.
+
+  No file of borg-rs's engine tree is left, and no build reads one.
+- **Docs:** README's *Playing*, AGENTS.md, `tools/README.md`,
+  `docs/PROVENANCE.md` and SPEC §8 and §11 are updated.
+- **Deaths:** the Rust deaths are recorded again, as D0665–D0710
+  (`Cargo.toml` is a build input and lost the shim member). Play still
+  matches the references: full 45/45, smoke 3/3.
+
+## 2026-11-09: TE.5, the harness and run contract on our build (#75)
+
+- **`run.sh`:** the C Borgs' flags (`cheat`, `cheatlive`, `munchkin`,
+  `lunal`, `selflunal`, borg.txt rewrites) and the dropped frontend options
+  (`frames`, `rune-pattern`) are gone. `BORG_IMPL` defaults to `rust`, and
+  the run's `user/borg.txt` is written as before (the zoo copies the file;
+  its hash is in a death's family). The environment is fixed (`TZ=UTC`,
+  locale).
+- **Option set:** the frontend writes every game option in force into
+  `summary.json` (`game_options`), and `docs/ENGINE.md` declares the Rust
+  Borg's options against the C Borg's.
+  - **Found:** 4.2.6 has no `easy_alter`. The Rust Borg had been setting it,
+    and the engine ignored it silently. It's removed, and an unknown option
+    now stops the Borg (`GAME_OPTIONS` in `borg.rs`). Play can't change,
+    since the call never did anything.
+- **Reproduction:** the Rust Borg on our build reproduces the borg-rs-tree
+  outputs: full 45/45, smoke 3/3, smoke-exact 3/3, hallucination smoke 3/3.
+  `harness/diff` compares `game_options` only when both sides have it.
+- **References:** `harness/reference/smoke-rust`, `full-rust` and
+  `smoke-exact-rust`, made by `harness/make-reference.sh` with a
+  `REFERENCE` file (source, binary, profile, borg.txt hashes,
+  environment). CI compares smoke and smoke-exact with them. The C arms'
+  references go in TE.8.
+- **Deaths:** the Rust deaths are recorded again at the new source, as
+  D0619–D0664.
+
+## 2026-11-09: TE.4, our build (#74)
+
+- **The build:** `engine/CMakeLists.txt` builds the Rust Borg from the
+  pristine tree, our patches, our frontend and the crate's own staticlib.
+  `harness/build.sh` (`BORG_IMPL=rust`) uses it and is rewritten; the build
+  takes about 10 s.
+- **Reproduction:** the Rust Borg plays **byte-identical** keys, messages
+  and states to its build on borg-rs's tree (smoke 3/3, full 45/45,
+  smoke-exact 3/3, hallucination smoke 3/3). The boundary contract holds.
+  So the patch series and our frontend are a complete harness.
+- **Gone:** the C arms (`c`, `c-pristine`, `c-bbc-m7`) from the build and
+  CI, and `harness/control-overlay.py`. `harness/identity.sh` knows only
+  `rust`, and its inputs are `engine/`, the crate, `Cargo.toml` and
+  `Cargo.lock`.
+- **Kept until TE.6:** borg-rs's `angband/`, the `borg-rs/` shim crate and
+  `harness/measurement/`. The copied death tooling still builds its own
+  binary from them (#76 updated).
+- **Tests:** `engine/tests/test_build.py` checks the source list against
+  upstream's and the input list, and runs the binary through `run.sh` for
+  the frontend contract. CI's engine job runs it.
+- **Deaths:** the Rust deaths are recorded again at the new source, as
+  D0573–D0618 (the build inputs changed).
+
+## 2026-11-09: TE.3, generated bindings and the D3 list (#73)
+
+- **Generated bindings:** `borg-reborn-rs/src/bindings.rs` is generated by
+  bindgen 0.73.2 from the pristine headers (`engine/bindings/`), limited to
+  the symbols the Borg uses. It has 66 compile-time layout assertions
+  against the C structs. The c2rust `headers/` copied from borg-rs are
+  gone.
+- **`engine.rs`:** re-based on the bindings. Its hand-written declarations
+  of engine symbols are gone, except `inkey_hack`, which no upstream header
+  declares.
+- **The D3 list:** `docs/ENGINE-READS.md` lists every symbol with its
+  reason (screen, direct read, static data, declared extra, write, seam).
+  `engine/tests/test_reads.py` checks it both ways, and that only
+  `engine.rs` touches the bindings.
+- **CI:** installs libclang and bindgen and runs `generate.sh --check`.
+  Locally this needed `clang`, `libclang-dev` (owner, apt) and `cargo
+  install bindgen-cli`.
+- **Play:** unchanged (Rust smoke 3/3, full 45/45). The Rust deaths are
+  recorded again at the new source, as D0527–D0572.
+
+## 2026-11-09: TE.2, our headless frontend (#72)
+
+- **The frontend:** `engine/frontend/main-borgh.c` and `.h` are copied
+  from borg-rs's borgh and trimmed to the contract of SPEC §3.5 (1,247 →
+  931 lines). Dropped:
+  - `-states` (native observer);
+  - `-frames` and its diagnostics;
+  - fixture building (`-make-fixture`, `-near-morgoth`);
+  - `-stop-rune-pattern`;
+  - `-cheat-live` (D5).
+
+  Kept: every contract flag, the stall and key limits, `-clev`,
+  `-random-birth`, the save options and checkpoints (the death tooling may
+  use them).
+- **The test:** `engine/tests/test_frontend.py` checks the flags, the
+  `summary.json` fields, the mode registration, and a compile against the
+  patched tree.
+- **Not yet:** no binary until TE.4. `harness/run.sh` flags that used the
+  dropped options (`frames`, `cheatlive`, `rune-pattern`) are cleaned up
+  in TE.5.
+
+## 2026-11-09: TE.1, the upstream tree and our patch series (#71)
+
+- **The tree:** `engine/angband/` is upstream `e473720`, byte for byte
+  (tree `99a0549`, `engine/UPSTREAM`), extracted from upstream, not from
+  borg-rs.
+- **The patches:** `engine/patches/` holds 7 patches for our harness hooks,
+  every changed line guarded by `BORG_HARNESS` or `USE_BORGH`, plus one
+  declared split of a declaration in `mon-make.c`.
+- **Docs and tests:** `docs/ENGINE.md` and `docs/PROVENANCE.md` are new.
+  `engine/tests/test_engine.py` checks the tree, that the series applies,
+  and that with the guards off the code is upstream's. It runs in CI.
+- **What stays:** borg-rs's `angband/` stays until TE.4 switches the build;
+  nothing builds from `engine/` yet.
+
+## 2026-11-09: milestone E planned
+
+PLAN.md follows docs/SPEC.md §10. **E. Our own integration** is in
+progress: the GitHub milestone E, tasks #71 (TE.1) to #79 (TE.9), linked by
+their Needs. M2 is paused (T2.1–T2.4 done; T2.5, #16, needs E). Order:
+- TE.1 tree and patches, then TE.2 frontend and TE.3 bindings;
+- TE.4 build, then TE.5 harness and the reproduction check;
+- TE.6 death tooling, TE.7 zoo contract and TE.8 removals and documents;
+- TE.9 CI and E's review (the owner chooses the reviewer).
+
+## 2026-11-09: the spec is in effect; only our Borg
+
+The owner merged #66 (`main` → `reviewed`, `37bcb97`), so `docs/SPEC.md`
+is in effect. There is no tag: it is not the end of a milestone. The owner
+then decided:
+- **borg-zoo does every comparison.** This repository delivers only our
+  Borg, through the zoo contract. The C arms (`c`, `c-pristine`,
+  `c-bbc-m7`), their overlays and references, `tools/endpoint.py` and #56
+  (`c-bbc-m8`, now borg-zoo#36) are dropped in milestone E. GOALS D7 and D8
+  change accordingly.
+- **§11:** keep the death tooling and drop the GUI, replay and takeover
+  tools; keep the zoo's current interface, written down; the engine-change
+  question goes with the controls.
+
+The `borg_self_scum = TRUE` finding concerns the zoo's
+`4.2.6-reborn-c-*` specimens, which were built from this repository. It
+is reported on borg-zoo#30.
+
+Next: plan milestone E as issues (PLAN.md re-planned), then build it.
+
 ## 2026-11-09: the owner chooses the reviewer (RULES 6)
 
 The review of #66 was started by the session: MiniMax-M3, picked through
