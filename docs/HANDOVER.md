@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-09: T1.7 endpoint calculator (#10)
+
+- `tools/endpoint.py` computes the GOALS primary endpoint per arm and class:
+  alive at T with max depth ≥ D, or a victory before T, over **every
+  attempted run**. Operational outcomes are listed separately, with Wilson
+  95% CIs and paired exact McNemar tests on shared (seed, class).
+- Inputs are local suite outputs (runs listed in the suite but missing count
+  as harness failures) and borg-zoo cells (filtered by specimen and profile).
+  Survivors not observed at the exact boundary are refused unless
+  `--allow-after-key`; zoo borg-rs-adapter cells are after-key until T1.8's
+  request is done. Seven unit tests.
+- **Demonstrations (descriptive, not claims):**
+  - our full-exact suite at D=5, T=100k: `c` 2/45, `c-bbc-m7` 2/45,
+    `c-pristine` 1/45;
+  - zoo `classes-milestones` (observer, 1800 per specimen): pristine 3.0%
+    [2.3, 3.9], bbc-m4 4.7% [3.8, 5.7]; Warrior 15.5% against 20.0%,
+    Druid 0.5% against 0.0%. That is post hoc on existing data.
+
+**Next:** #11 (T1.8: every-arm check including `rust`, zoo compatibility,
+change request). Then the M1 review PR.
+
 ## 2026-11-09: T1.6 launchers, recording, replay, death tooling (#9)
 
 - borg-rs's launchers and `tools/` are copied from `e5cb263`, with the same
