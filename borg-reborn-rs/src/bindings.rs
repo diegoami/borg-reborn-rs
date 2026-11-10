@@ -1615,11 +1615,40 @@ const _: () = {
         [::core::mem::offset_of!(chunk, monster_groups) - 128usize];
     ["Offset of field: chunk::join"][::core::mem::offset_of!(chunk, join) - 136usize];
 };
+pub const FEAT_NONE: u32 = 0;
+pub const FEAT_FLOOR: u32 = 1;
+pub const FEAT_CLOSED: u32 = 2;
+pub const FEAT_OPEN: u32 = 3;
+pub const FEAT_BROKEN: u32 = 4;
+pub const FEAT_LESS: u32 = 5;
+pub const FEAT_MORE: u32 = 6;
+pub const FEAT_STORE_GENERAL: u32 = 7;
+pub const FEAT_STORE_ARMOR: u32 = 8;
+pub const FEAT_STORE_WEAPON: u32 = 9;
+pub const FEAT_STORE_BOOK: u32 = 10;
+pub const FEAT_STORE_ALCHEMY: u32 = 11;
+pub const FEAT_STORE_MAGIC: u32 = 12;
+pub const FEAT_STORE_BLACK: u32 = 13;
+pub const FEAT_HOME: u32 = 14;
+pub const FEAT_SECRET: u32 = 15;
+pub const FEAT_RUBBLE: u32 = 16;
+pub const FEAT_MAGMA: u32 = 17;
+pub const FEAT_QUARTZ: u32 = 18;
+pub const FEAT_MAGMA_K: u32 = 19;
+pub const FEAT_QUARTZ_K: u32 = 20;
+pub const FEAT_GRANITE: u32 = 21;
+pub const FEAT_PERM: u32 = 22;
+pub const FEAT_LAVA: u32 = 23;
+pub const FEAT_PASS_RUBBLE: u32 = 24;
+pub const FEAT_MAX: u32 = 25;
 unsafe extern "C" {
     pub static mut cave: *mut chunk;
 }
 unsafe extern "C" {
     pub fn map_info(grid: loc, g: *mut grid_data);
+}
+unsafe extern "C" {
+    pub fn feat_is_shop(feat: core::ffi::c_int) -> bool;
 }
 unsafe extern "C" {
     pub fn square_isvault(c: *mut chunk, grid: loc) -> bool;
@@ -1647,6 +1676,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn get_com(prompt: *const core::ffi::c_char, command: *mut core::ffi::c_char) -> bool;
+}
+unsafe extern "C" {
+    pub fn panel_contains(y: core::ffi::c_uint, x: core::ffi::c_uint) -> bool;
 }
 unsafe extern "C" {
     pub static mut turn: i32;

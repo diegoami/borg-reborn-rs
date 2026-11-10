@@ -12,6 +12,10 @@ think's position, depth, HP, SP, food, gold, experience, level and timed
 effects appear in a state.log line at the same game turn (the key that think
 returned is logged with the state it saw).
 
+Coverage is required (M2 review, finding 4): every run (a directory with
+summary.json) of a suite directory must have a truth.jsonl, with exactly one
+line per Borg decision (summary.json's borg_decisions) and at least one.
+
 It prints, per run and in total, what was compared and what the Borg does
 not see by design (the panel limit, which the C Borg has too).
 """
@@ -24,7 +28,8 @@ from pathlib import Path
 
 STATE = re.compile(r'^(\d+) (-?\d+),(-?\d+) d(-?\d+)/(-?\d+) hp(-?\d+)/(-?\d+) sp(-?\d+)/(-?\d+) f(-?\d+) '
                    r'au(-?\d+) xp(-?\d+) lv(-?\d+) t(\S+) ')
-COUNTS = ('map_compared', 'map_stale_off_panel', 'map_unknown_to_world', 'monsters_compared', 'monsters_off_panel')
+COUNTS = ('panel_grids', 'map_compared', 'map_stale_off_panel', 'map_unknown_to_world', 'monsters_compared',
+          'monsters_off_panel', 'gear_compared')
 
 
 def state_lines(path):
@@ -48,10 +53,10 @@ def think_state(r):
 
 def check_run(run):
     truth = run / 'truth.jsonl'
-    if not truth.exists():
-        return None
-    states = state_lines(run / 'state.log')
     totals = dict.fromkeys(COUNTS, 0)
+    if not truth.exists():
+        return 0, totals, ['no truth.jsonl (not a test-perception build, or the log was lost)']
+    states = state_lines(run / 'state.log') if (run / 'state.log').exists() else {}
     thinks, problems = 0, []
     for line in truth.read_text().splitlines():
         r = json.loads(line)
@@ -61,15 +66,23 @@ def check_run(run):
         problems += [f"turn {r['turn']}: {d}" for d in r['differences']]
         if think_state(r) not in states.get(r['turn'], ()):
             problems.append(f"turn {r['turn']}: status {think_state(r)} is in no state.log line of that turn")
+    decisions = json.loads((run / 'summary.json').read_text()).get('borg_decisions') if (run / 'summary.json').exists() else None
+    if thinks == 0:
+        problems.append('truth.jsonl has no think')
+    if decisions is None:
+        problems.append('no summary.json with borg_decisions: the coverage cannot be checked')
+    elif thinks != decisions:
+        problems.append(f'{thinks} truth lines for {decisions} Borg decisions')
     return thinks, totals, problems
 
 
 def main(argv):
     runs = []
     for d in map(Path, argv):
-        runs += [d] if (d / 'truth.jsonl').exists() else sorted(p for p in d.iterdir() if (p / 'truth.jsonl').exists())
+        # A run directory, or a suite directory: then every run in it.
+        runs += [d] if (d / 'summary.json').exists() else sorted(p for p in d.iterdir() if (p / 'summary.json').exists())
     if not runs:
-        print('check-perception: no truth.jsonl (a test-perception build writes it)', file=sys.stderr)
+        print('check-perception: no runs (directories with summary.json)', file=sys.stderr)
         return 2
     grand, bad, all_thinks = dict.fromkeys(COUNTS, 0), 0, 0
     for run in runs:

@@ -276,6 +276,27 @@ pub const BLOWS_TABLE: [[i32; 12]; 12] = [
     [33, 29, 26, 24, 22, 21, 20, 19, 18, 17, 16, 15],
 ];
 
+/// A stat value moved by `amount` points of bonus or penalty, as the engine
+/// moves it (`angband/src/player-util.c:modify_stat_value:339-369`): one
+/// point at a time up to 18, then ten (18/10, 18/20, ...); down, ten at a
+/// time from 18/10, never below 3.
+pub fn modify_stat_value(value: i32, amount: i32) -> i32 {
+    let mut v = value;
+    for _ in 0..amount.max(0) {
+        v += if v < 18 { 1 } else { 10 };
+    }
+    for _ in 0..(-amount).max(0) {
+        if v >= 18 + 10 {
+            v -= 10;
+        } else if v > 18 {
+            v = 18;
+        } else if v > 3 {
+            v -= 1;
+        }
+    }
+    v
+}
+
 /// The index of a stat value into the stat tables
 /// (`angband/src/player-calcs.c:calc_bonuses:2065-2073`): 3–18 give 0–15,
 /// 18/00–18/219 one step per 10 points, 18/220 and more give 37.
@@ -381,6 +402,18 @@ pub(crate) mod tests {
             att_multiply: 2,
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn modify_stat_value_follows_the_engine() {
+        assert_eq!(modify_stat_value(17, 1), 18);
+        assert_eq!(modify_stat_value(18, 1), 28, "18/10");
+        assert_eq!(modify_stat_value(17, 3), 38, "18/20");
+        assert_eq!(modify_stat_value(28, -1), 18);
+        assert_eq!(modify_stat_value(20, -1), 18, "18/02 falls to 18");
+        assert_eq!(modify_stat_value(18, -1), 17);
+        assert_eq!(modify_stat_value(4, -5), 3, "never below 3");
+        assert_eq!(modify_stat_value(15, 0), 15);
     }
 
     #[test]

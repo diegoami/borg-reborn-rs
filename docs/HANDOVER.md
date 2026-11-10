@@ -2,6 +2,43 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M2's review (#99): not done; findings fixed
+
+Kimi K3.1 Pro reviewed M2 at `70cb9b5`: **not done**, with two blocking and
+six should-fix findings. They are fixed in #100 (findings 7, 8, doc nits)
+and the PR after it (findings 1–6):
+- **Finding 1 (blocking):**
+  - **Fix:** the shop number and the web flag are read only where the
+    player knows a shop or a floor, as the C Borg guards them.
+  - **Check:** the truth check fails on any other shop or web.
+- **Finding 2 (blocking):**
+  - **Unknown grids:** a grid the player knows on the panel but the world
+    doesn't is a difference.
+  - **Panel:** the observed panel is checked against the engine's own
+    `panel_contains`.
+- **Finding 3:** monsters are compared field by field, and the gear item
+  by item against the engine's gear list.
+- **Finding 4:** every run needs one truth line per Borg decision, and a
+  lost truth log fails the test build.
+- **Finding 5:** `term_win` and `random` are in the types table, and a
+  field-level audit fails on fields of unlisted types.
+- **Finding 6:**
+  - **To-dam:** the weapon and the launcher are left out of the gear's
+    to-hit and to-dam; melee adds the weapon's own.
+  - **Stats:** `wearing` recomputes the stats in use (`modify_stat_value`).
+- **Findings 7–8 (#100):** `--runs` matches deaths by (family, keys);
+  `make-reference.sh` refuses before writing anything.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- Kimi's three faults, which passed before, now fail: 219,103, 223,230 and
+  96 differences.
+- The normal build still plays the references' games (3/3, 3/3, 45/45),
+  so the references stay. Its deaths are D0851–D0896.
+
+**Next:** a re-review of #99 is the owner's call (RULES 6). #99's prompt is
+updated to the new head.
+
 ## 2026-11-10: T2.5, perception against the engine; M2 complete
 
 The owner closed E's review without a re-review. borg-zoo#48 now asks to
