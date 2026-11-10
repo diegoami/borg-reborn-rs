@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1252-rust-seed1033",
+  "run_kind": "harness",
+  "character": "Half-Orc Priest",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3271,
+    "race_idx": 6,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1033,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "59486c12550ee81d34f53842d12dc8d1e78ef62961face36d5982b4ede28e7c9",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 245
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-3-priest-3",
+      "result_sha256": "e0ef332883280a7fb2a3d2c7d8495ca96942ae5606b771a571e03b22d5b00fd7",
+      "raw_sha256": {
+        "keys.log": "e0ef332883280a7fb2a3d2c7d8495ca96942ae5606b771a571e03b22d5b00fd7",
+        "messages.log": "cf24e69138438f77f0a09094f4b35a046716221be34e61a0694b3ec07c8476d8",
+        "state.log": "7e7dd360d8ab1402b0dc77554795de4a8af1cc0e0b135f8d2fb0b4768218df50"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-6dea24242b9885c52b6b59be354511c965269bddf1d24097bc77bac6d693a965",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "560a47b029a492bf89e7c390c5cf098a0962e8b66eb853a8a216992e0770bf1a",
+    "depths.json": "c69937d3b1e335c714c254f44c07e785f0b8fe16d0becd1550af0b07797408e9",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "78b7c1e17b3817b4b897e3decb79c04818cebadb39cc321e61f46064cbe87da6",
+    "trace-tail.jsonl": "3af6507546aa5412419d20d2c3ce19b0a59f37035c54065e0693bacf9d338801"
+  },
+  "investigation": null,
+  "issue": null
+}

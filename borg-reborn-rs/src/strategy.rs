@@ -39,6 +39,9 @@ pub const DIRS: [(u8, i32, i32); 8] = [
 pub enum Mode {
     /// Rest until healed (GOALS principle 7's recovery half).
     Recover,
+    /// Fight an adjacent monster whose exchange we win (task T3.4: the
+    /// fight the danger sum makes decidable).
+    Engage,
     /// Reach a down staircase and take it.
     Descend,
     /// Reveal the level: walk to the frontier of the unknown.
@@ -49,6 +52,7 @@ impl Mode {
     pub fn name(self) -> &'static str {
         match self {
             Mode::Recover => "recover",
+            Mode::Engage => "engage",
             Mode::Descend => "descend",
             Mode::Explore => "explore",
         }
@@ -198,9 +202,112 @@ impl FirstStrategy {
         best.map(|(_, _, d)| d)
     }
 
+    /// The adjacent visible monsters, in a deterministic order (by
+    /// track index, the world's own order).
+    fn adjacent(ctx: &DecisionCtx) -> Vec<usize> {
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        ctx.world
+            .level
+            .monsters
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.in_view && (t.x - x).abs().max((t.y - y).abs()) <= 1)
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    /// The exchange test (c15 FIGHT-01 through the danger sum, task
+    /// T3.4): engaging is worth it when the damage the monster deals
+    /// while we kill it costs less than every hit point we have. The
+    /// turns to kill are its hit points over our expected melee damage
+    /// per turn ([`crate::world::Character::melee_per_turn`], GOALS
+    /// principle 14); the damage while we do it is its danger at our
+    /// grid times those turns. No margin constant: M4's tactical layer
+    /// replaces this with the real comparison of alternatives.
+    fn exchange(ctx: &DecisionCtx, i: usize) -> Option<(f64, f64)> {
+        let t = &ctx.world.level.monsters[i];
+        let dpt = ctx.world.character.melee_per_turn(ctx.knowledge)?;
+        if dpt <= 0.0 || t.hp <= 0 {
+            return None;
+        }
+        let turns = t.hp as f64 / dpt;
+        let d = f64::from(crate::danger::one(
+            ctx.world,
+            ctx.knowledge,
+            t,
+            ctx.view.x,
+            ctx.view.y,
+            1,
+        ));
+        Some((d * turns, turns))
+    }
+
+    /// The best adjacent monster to fight: the one whose exchange costs
+    /// the least (bbc D0012's lesson: the 2-HP mold is a kill, not a
+    /// flight), with its direction.
+    fn best_fight(ctx: &DecisionCtx) -> Option<(u8, f64)> {
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        Self::adjacent(ctx)
+            .into_iter()
+            .filter_map(|i| {
+                let t = &ctx.world.level.monsters[i];
+                let (cost, _) = Self::exchange(ctx, i)?;
+                let (dx, dy) = (t.x - x, t.y - y);
+                let dir = DIRS
+                    .iter()
+                    .find(|(_, ddx, ddy)| (*ddx, *ddy) == (dx, dy))
+                    .map(|(d, _, _)| *d)?;
+                Some((dir, cost, i))
+            })
+            .min_by_key(|&(_, cost, i)| (cost as i64, i))
+            .map(|(dir, cost, _)| (dir, cost))
+    }
+
+    /// The direction of the adjacent monster with the least danger, for
+    /// the cornered case: fighting beats dying on a wall.
+    fn cornered_fight(ctx: &DecisionCtx) -> Option<u8> {
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        Self::adjacent(ctx)
+            .into_iter()
+            .filter_map(|i| {
+                let t = &ctx.world.level.monsters[i];
+                let d = crate::danger::one(ctx.world, ctx.knowledge, t, x, y, 1);
+                let dir = DIRS
+                    .iter()
+                    .find(|(_, dx, dy)| (*dx, *dy) == (t.x - x, t.y - y))
+                    .map(|(d, _, _)| *d)?;
+                Some((d, dir, i))
+            })
+            .min_by_key(|&(d, _, i)| (d, i))
+            .map(|(_, dir, _)| dir)
+    }
+
+    /// An object worth stopping for lies underfoot (task T3.4): with
+    /// `birth_no_selling` an object is worth carrying only to use or
+    /// wear, but gold is the one loot that is value (S15 §6b) — and a
+    /// dropped escape beside a fight is a rescue (bbc D0019). M3 takes
+    /// what is underfoot whenever the pack has room; triage is M5's.
+    fn underfoot(ctx: &DecisionCtx) -> bool {
+        ctx.world
+            .level
+            .at(ctx.view.x, ctx.view.y)
+            .is_some_and(|g| g.object_kind.is_some() || g.top_kind.is_some())
+    }
+
     /// The mode's step, when the mode has a place to go. `None` means
     /// the mode cannot act and its goal must fail.
     fn mode_step(&mut self, ctx: &mut DecisionCtx, mode: Mode) -> Option<Action> {
+        // Nothing is picked up in contact: clearing the threat comes
+        // first (bbc D0019 lost its Phase Door to attack-before-pickup;
+        // the reverse order, pickup-under-fire, is the same mistake).
+        let in_contact = !Self::adjacent(ctx).is_empty();
+        if !in_contact
+            && mode != Mode::Recover
+            && Self::underfoot(ctx)
+            && ctx.world.character.pack_free() > 0
+        {
+            return Some(Action::Get);
+        }
         match mode {
             Mode::Recover => {
                 if !Self::may_rest(ctx) {
@@ -212,9 +319,26 @@ impl FirstStrategy {
                 }
                 Some(Action::Rest(ctx.params.rest_turns))
             }
+            Mode::Engage => {
+                if let Some((dir, cost)) = Self::best_fight(ctx) {
+                    if cost < f64::from(ctx.view.hp) {
+                        return Some(Action::Attack(dir));
+                    }
+                }
+                // The exchange loses: leave. A faster pursuer makes
+                // walking away a death (bbc D0018), and no safe step
+                // means a corner: fight the least dangerous one rather
+                // than die on a wall.
+                Self::retreat_step(ctx)
+                    .map(Action::Walk)
+                    .or_else(|| Self::cornered_fight(ctx).map(Action::Attack))
+            }
             Mode::Descend => {
                 let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
-                if here == Some(crate::borg::feat::MORE) {
+                let threat = danger(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y, 1);
+                if here == Some(crate::borg::feat::MORE) && threat == 0 {
+                    // A staircase under fire is not taken: whatever is
+                    // pressing is dealt with first (engaged or escaped).
                     return Some(Action::Descend);
                 }
                 let step =
@@ -243,6 +367,13 @@ impl FirstStrategy {
     fn measure(mode: Mode, ctx: &DecisionCtx) -> i64 {
         match mode {
             Mode::Recover => ctx.view.hp as i64,
+            // The fight's progress is the threat going down: the least
+            // hit points any adjacent monster has.
+            Mode::Engage => Self::adjacent(ctx)
+                .into_iter()
+                .map(|i| ctx.world.level.monsters[i].hp)
+                .min()
+                .unwrap_or(0) as i64,
             Mode::Descend => ctx.world.level.depth as i64,
             Mode::Explore => Self::mapped(ctx.world),
         }
@@ -253,15 +384,23 @@ impl FirstStrategy {
     /// failed mode waits out its cooldown.
     fn choose_mode(&mut self, ctx: &mut DecisionCtx) -> Mode {
         let turn = ctx.view.turn;
-        // The recovery invariant first (GOALS principle 7).
+        // The recovery invariant first (GOALS principle 7): hurt and
+        // safe means rest now.
         let hurt = ctx.view.hp * 100 < ctx.view.max_hp * ctx.params.rest_below_hp_pct;
         if hurt
             && self
                 .cooldowns
                 .get(&Mode::Recover)
                 .is_none_or(|&t| turn >= t)
+            && Self::may_rest(ctx)
         {
             return Mode::Recover;
+        }
+        // Contact second (task T3.4): a monster in reach is answered
+        // this think — fought when the exchange wins it, left when it
+        // does not. M4's tactical layer replaces the whole comparison.
+        if !Self::adjacent(ctx).is_empty() {
+            return Mode::Engage;
         }
         // A live goal keeps its mode (hysteresis): still inside its
         // budget, or the mode can still act.
@@ -270,6 +409,9 @@ impl FirstStrategy {
                 // Resting until healed: give it the rest itself takes,
                 // twice over, before calling it stalled.
                 Mode::Recover => 2 * i64::from(ctx.params.rest_turns),
+                // A fight that has not progressed in a tenth of the
+                // explore budget is lost or illusory; cool it and leave.
+                Mode::Engage => i64::from(ctx.params.explore_budget_turns) / 10,
                 Mode::Descend => i64::from(ctx.params.explore_budget_turns),
                 Mode::Explore => i64::from(ctx.params.explore_budget_turns),
             };
@@ -284,8 +426,13 @@ impl FirstStrategy {
                 .insert(goal.mode, turn + i64::from(ctx.params.goal_cooldown_turns));
             self.goal = None;
         }
-        // Utilities, highest first; explore is the default occupation
-        // and descend takes over when explore is cooling or done.
+        // Utilities, highest first. Explore is the default occupation
+        // and descend takes over when explore is cooling or done — but
+        // not in town: the town has no experience and one staircase the
+        // character stands on at birth (c15 TOWN-01; S15 INSTRUCTIONS
+        // §2), and exploring it instead of leaving is how one run
+        // starved to death mapping it for 50,000 turns.
+        let descend_first = ctx.world.level.depth == 0;
         let frontier = ctx
             .paths
             .map(ctx.world, ctx.knowledge, &PathGoal::Frontier)
@@ -295,7 +442,9 @@ impl FirstStrategy {
             .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
             .remaining(ctx.world, ctx.view.x, ctx.view.y);
         let cooled = |m: Mode| self.cooldowns.get(&m).is_none_or(|&t| turn >= t);
-        if frontier != UNREACHED && cooled(Mode::Explore) {
+        if descend_first && stairs != UNREACHED && cooled(Mode::Descend) {
+            Mode::Descend
+        } else if frontier != UNREACHED && cooled(Mode::Explore) {
             Mode::Explore
         } else if stairs != UNREACHED && cooled(Mode::Descend) {
             Mode::Descend
@@ -389,6 +538,7 @@ impl Strategy for FirstStrategy {
         };
         let goal_name = match mode {
             Mode::Recover => "rest to full",
+            Mode::Engage => "win the exchange",
             Mode::Descend => "reach the down staircase",
             Mode::Explore => "reveal the frontier",
         };
@@ -413,6 +563,8 @@ mod tests {
     use crate::observation::Status;
 
     /// A decision context over a map world; see [`crate::path::tests`].
+    /// The character can fight: the Warrior class, a 1d4 dagger
+    /// (two blows), so the exchange test has real numbers.
     fn ctx_of(
         map: &[&str],
         hp: i32,
@@ -420,9 +572,38 @@ mod tests {
     ) -> (FirstStrategy, World, Knowledge, Paths, Memory, Rng, Params) {
         let (w, k) = crate::path::tests::world(map);
         let mut w = w;
+        let mut k = k;
+        k.classes = vec![crate::knowledge::tests::warrior()];
+        w.character.equipment = vec![crate::observation::Slot {
+            slot_type: 1,
+            item: Some(crate::observation::Item {
+                kind: 300,
+                tval: 23,
+                sval: 4,
+                number: 1,
+                weight: 120,
+                timeout: 0,
+                level: 5,
+                desc: "a Dagger (1d4)".into(),
+                aware: true,
+                fully_known: true,
+                runes_known: false,
+                flags: [0; 5],
+                ac: 0,
+                dd: 1,
+                ds: 4,
+                to_h: 0,
+                to_d: 0,
+                to_a: 0,
+                modifiers: vec![0; 16],
+                elements: vec![(0, 0); 25],
+            }),
+        }];
         if let Some(s) = w.character.status.as_mut() {
             s.hp = hp;
             s.max_hp = max_hp;
+            s.pack_size = 23;
+            s.pack_used = 1;
         }
         let paths = Paths::new(&w);
         (
@@ -510,8 +691,9 @@ mod tests {
         );
         assert_eq!(d.mode, "recover");
         assert_eq!(d.action, Action::Rest(75));
-        // Hurt with a monster adjacent and floor behind: the retreat
-        // step, not rest, and not a step onto the monster.
+        // Hurt with a monster adjacent and floor behind: contact makes
+        // it engage, the exchange (a 1d6 kobold against 5 hit points)
+        // loses, and the step away is the answer — never a rest.
         let (mut s, w, k, mut p, m, mut rng, params) =
             ctx_of(&["#######", "#M@..>#", "#######"], 5, 20);
         let d = decide_with(
@@ -525,7 +707,7 @@ mod tests {
             &view(&w),
             &[],
         );
-        assert_eq!(d.mode, "recover");
+        assert_eq!(d.mode, "engage");
         assert_eq!(d.action, Action::Walk(6), "step away, east");
         assert_ne!(d.action, Action::Rest(75), "never rest beside a monster");
     }
@@ -611,6 +793,175 @@ mod tests {
         );
         assert_eq!(d.mode, "descend");
         assert_eq!(d.action, Action::Walk(6));
+    }
+
+    #[test]
+    fn a_favourable_exchange_is_fought() {
+        // A 6-HP kobold beside a healthy character with a dagger: the
+        // exchange (its 6 a turn for the turn or two the kill takes)
+        // costs less than the hit points, so the monster is attacked,
+        // not fled from (bbc D0012: the 2-HP mold is a kill).
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "engage");
+        assert_eq!(d.action, Action::Attack(6), "east, into the monster");
+    }
+
+    #[test]
+    fn a_losing_exchange_retreats_unless_cornered() {
+        // A 60-HP monster with a heavy blow west of the Borg, the
+        // corridor open east: the exchange loses, so it steps away.
+        let (w_m, k) = crate::path::tests::world(&["#######", "#M@...#", "#######"]);
+        let mut k = k;
+        k.races[1] = crate::knowledge::MonsterRace {
+            blows: vec![crate::knowledge::Blow {
+                method: "CRUSH".into(),
+                effect: "HURT".into(),
+                power: 60,
+                dice: crate::knowledge::Dice {
+                    base: 0,
+                    dice: 6,
+                    sides: 6,
+                    m_bonus: 0,
+                },
+            }],
+            ..k.races[1].clone()
+        };
+        k.classes = vec![crate::knowledge::tests::warrior()];
+        let mut w = w_m;
+        w.character.equipment = vec![crate::observation::Slot {
+            slot_type: 1,
+            item: None,
+        }];
+        let mut t = w.level.monsters[0].clone();
+        t.hp = 60;
+        t.max_hp = 60;
+        w.level.monsters[0] = t;
+        let mut p = crate::path::Paths::new(&w);
+        let v = PlayerView {
+            hp: 20,
+            max_hp: 20,
+            x: 2,
+            y: 1,
+            depth: 1,
+            dead: false,
+            busy: false,
+            turn: w.turn,
+        };
+        let mut s = FirstStrategy::default();
+        let mut rng = Rng::new();
+        let params = Params::default();
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &Memory::default(),
+            &mut rng,
+            &params,
+            &v,
+            &[],
+        );
+        assert_eq!(d.mode, "engage");
+        assert_eq!(d.action, Action::Walk(6), "away, east of the monster");
+        // Cornered (walls all round but the monster): fight the only
+        // fight there is rather than die on a wall.
+        let (w_c, k) = crate::path::tests::world(&["######", "#@M###", "######"]);
+        let mut k = k;
+        k.classes = vec![crate::knowledge::tests::warrior()];
+        let mut w = w_c;
+        w.character.equipment = vec![crate::observation::Slot {
+            slot_type: 1,
+            item: None,
+        }];
+        let mut p = crate::path::Paths::new(&w);
+        let v = PlayerView {
+            hp: 20,
+            max_hp: 20,
+            x: 1,
+            y: 1,
+            depth: 1,
+            dead: false,
+            busy: false,
+            turn: w.turn,
+        };
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &Memory::default(),
+            &mut rng,
+            &params,
+            &v,
+            &[],
+        );
+        assert_eq!(d.action, Action::Attack(6), "cornered: fight anyway");
+    }
+
+    #[test]
+    fn the_object_underfoot_is_picked_up_when_not_in_contact() {
+        let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#$@.#", "#####"], 20, 20);
+        // Stand on the gold, then rebuild the pathfinder for that world.
+        if let Some(st) = w.character.status.as_mut() {
+            st.x = 1;
+            st.y = 1;
+        }
+        let mut p = crate::path::Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Get, "gold underfoot, nothing pressing");
+        // In contact the pickup waits (bbc D0019).
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["######", "#$@M.#", "######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_ne!(d.action, Action::Get, "never pick up under fire");
+    }
+
+    #[test]
+    fn a_staircase_under_fire_is_not_taken() {
+        // On the down stair with a monster adjacent: the fight or the
+        // escape, never the staircase.
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#>M@.#", "######"], 20, 20);
+        if let Some(s) = w.character.status.as_mut() {
+            s.x = 1;
+            s.y = 1;
+        }
+        let mut p = crate::path::Paths::new(&w);
+        let v = view(&w);
+        let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
+        assert_ne!(d.action, Action::Descend, "never descend in contact");
     }
 
     #[test]

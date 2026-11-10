@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1255-rust-seed1042",
+  "run_kind": "harness",
+  "character": "Half-Orc Necromancer",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3716,
+    "race_idx": 6,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1042,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "bd1fad7705c0d09d21f383b79f51a50445beaa00ed904f5227e14aa5e08b4cf7",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 371
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-4-necro-2",
+      "result_sha256": "9b55303dd3bc128d9d1ae61c8460e0eb2e4c457388ad9aaa57b133e6250fc41b",
+      "raw_sha256": {
+        "keys.log": "9b55303dd3bc128d9d1ae61c8460e0eb2e4c457388ad9aaa57b133e6250fc41b",
+        "messages.log": "451b81199e668c626fce8fcd7441a4e09a3e7ab539d373feeeeeca7d98f30f9a",
+        "state.log": "fe91c33fe4c4677c9f1498b344fb648b40a65e97471fee1d641cf080c8d41bf4"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-7ad6e1c45c4ef7ac09e0b252abc5a3cbe9718e63d664b067b16309a5d0a6c147",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "adf477bf8aa1d38b9c95aec8da773cabfdbe6def98c773f546942effcc8629fd",
+    "depths.json": "c4aa256b5dba3a43fff11bde419fdf78a432a373f68035ba655279a808e0c774",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "6721d479fd7a8deba6f7e22de28508c4f0875a2f6bb79a1e83fe74e8eb9e0ae0",
+    "trace-tail.jsonl": "183cd52064a89b216219f20ca9fb65bf12bf1c2afad4b2307f174d799e49f15a"
+  },
+  "investigation": null,
+  "issue": null
+}

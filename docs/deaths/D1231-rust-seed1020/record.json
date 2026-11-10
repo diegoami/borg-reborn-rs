@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1231-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 99,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 11,
+    "of": 11
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-2-druid-0",
+      "result_sha256": "f8e8fa0a43e411a5a91caf1b485d11a75186bd1d2f262b6bcc557492dfbd294b",
+      "raw_sha256": {
+        "keys.log": "f8e8fa0a43e411a5a91caf1b485d11a75186bd1d2f262b6bcc557492dfbd294b",
+        "messages.log": "6a7f795fbd8c14edd3156320d3ee08b5a56ffcee229b7742fbe70fb67a752143",
+        "state.log": "08d440c3d12742c6fb2e991c4a2156e41d03fa00b6416b9d3e802d661d906024"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-e0133512b11f3657dc0d7239ca2b311348e87a9248e7f646fede38e6e19e9eac",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "f66bfa5198ed7bd8db10703fe3fb886eb0ad66ac84326a8cc11e4ba59830d110",
+    "depths.json": "c35bf3e08420c891f68949d531110919e06390e0c0995b8a522b4d8cf971f816",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "a86633f821c2439c96d9cda809c73ca01b7ed86596a7c35adcf19d5adf61949c",
+    "trace-tail.jsonl": "ddc72e05330a185e2adb35d7bfe45aee38fa7f18534860a7563b314b4c555fc2"
+  },
+  "investigation": null,
+  "issue": null
+}

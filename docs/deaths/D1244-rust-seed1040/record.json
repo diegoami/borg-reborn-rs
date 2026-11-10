@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1244-rust-seed1040",
+  "run_kind": "harness",
+  "character": "Gnome Necromancer",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1010,
+    "race_idx": 4,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1040,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "a8bb901ac27e44b26240ccbbf98d78127e72e9f70b0d02a72376c03fbd1a92d8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 102,
+    "of": 102
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-4-necro-0",
+      "result_sha256": "928362f29d674deeb22ac85da15ef051e7c5f0f86a155c4d2c19165702e9d240",
+      "raw_sha256": {
+        "keys.log": "928362f29d674deeb22ac85da15ef051e7c5f0f86a155c4d2c19165702e9d240",
+        "messages.log": "4a3e256ee234b6ef1d24d35cbec9ef803fe60bf6f22c6304f13074eb20b1a7c6",
+        "state.log": "8202e00885bc3b8b8422e1bf89ef986ffc0d56ccc38ddcaaab08544fe23dbe20"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-b25a9b2c0de90fdc5eeb5e71ba2826a6cf8907d189c6732b07c32fb483533c92",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "5a143444e08a484b5e6a6fcc502bb66ed1821af4e1847eb6e90a181f33274907",
+    "depths.json": "86e58525385b1a965b885b70ed3fbd100731ee2b1472bacb33c811c23c198ab4",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "53bed6bbac98e099430cfc9da70e540d7e353fb9dca57861effea704450bec0e",
+    "trace-tail.jsonl": "dc01752cfbb982a4c18ae738fb72f40fa68be01f0fb9247b48b6e7adb5998244"
+  },
+  "investigation": null,
+  "issue": null
+}

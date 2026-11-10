@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1232-rust-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 191,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1024,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 21,
+    "of": 21
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-2-druid-4",
+      "result_sha256": "cdb5c202118c1e3b6e4e73811491f6314a01be49e45f1f6d48f78de206e727d2",
+      "raw_sha256": {
+        "keys.log": "cdb5c202118c1e3b6e4e73811491f6314a01be49e45f1f6d48f78de206e727d2",
+        "messages.log": "3e9f7f2f853891a3a28d0a620a0feb0d580456a81ff322aaeceea40b47eadbb2",
+        "state.log": "9219b05f13703c3a9f67339463f1f4ef861313a7230117f1cb0b73e1adcf5390"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-618061ad3734e1999b09fd07f022eae951b999c83fe637afb825b5ad9f4d0326",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "767f453589d5f3a589fba24605a702695be11e3f5ddee1aeab5477cd2b767f2d",
+    "depths.json": "510f4b4affa70472c913e7fe436cecae6217414b8069a3bbafc4ee0a37d4808c",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "ebb313eb288482eb041126a97fda53a075a6f403856b4caef19db68ead4f1e66",
+    "trace-tail.jsonl": "8cdffdfdd62620893dd0a3b17b5ea95cf251bcc61ca3ecbd15adb562750ff199"
+  },
+  "investigation": null,
+  "issue": null
+}

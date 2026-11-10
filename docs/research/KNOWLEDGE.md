@@ -207,6 +207,28 @@ S15's selection rule:
   the model's stated reason: scenario material for M3's situation tests
   and a "what a manual-reader did" trace to compare decisions against.
   Large; read at the pin (`git -C vendor/borg-runner show HEAD:records/<run>/decisions.jsonl`).
+- **`tools/screen/`** — the runs' shared screen-parsing library
+  (`screen.py` and look/aim/map/diff/explore over it). Read 2026-11-10;
+  assessment: its *purpose* (giving a text-screen reader eyes) is not
+  ours — our observation reads the engine, not the text — but three
+  things in it are ours to use:
+  - **`diff.py`'s principle** ("the screen is identical and the turn has
+    not moved is the tell of a key that did nothing") is the same
+    invariant as our executor's expected-effect check, at screen
+    granularity — independent validation of the design;
+  - **its `PROMPTS` inventory** is a second list of the game's prompt
+    texts, cross-checked against `ui-input.c` on 2026-11-10: the
+    engine's direction prompts all start "Direction"
+    (`ui-input.c:1512,1632-1634`), exactly what our catcher matches;
+  - **the status line it parses exposes a fair read we do not take**:
+    the level feeling `LF:n-m` (the printed danger digit is 10 − the
+    internal one, S15). The C Borg reads the feeling, so it is inside
+    D3; our observation does not have it. Candidate for T3.4/T3.5 as a
+    leave-level signal (c15 STAIR-01) — needs a `docs/ENGINE-READS.md`
+    row if taken.
+  The KEYPAD-transposition war story in its header ("the first tool had
+  the table transposed, so every route walked the wrong way") is the
+  argument for our DIRS unit tests.
 - **The replay site** (diegoami.github.io/borg-runner) — step-through
   views of every run; useful when a notebook line is unclear.
 - **`agents/<family>/`** — model families' notes to themselves about

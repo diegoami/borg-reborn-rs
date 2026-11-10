@@ -1,0 +1,9 @@
+# D1192-rust-seed1032: a wild dog at turn 2361
+
+Dwarf Priest, character level 1, depth 1 (max 1), seed 1032, implementation `rust`, flags `menu`.
+
+Build `6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f` (dirty: yes), binary `074484ccb93b`. Keys `d63000fec6ed`; raw logs stay in `/tmp/opencode/t34-full/full-3-priest-2` (not committed).
+
+Decision trace: the last 200 of 231 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
+
+**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run (RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.

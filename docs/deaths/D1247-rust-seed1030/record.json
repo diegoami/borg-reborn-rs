@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1247-rust-seed1030",
+  "run_kind": "harness",
+  "character": "Hobbit Priest",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2009,
+    "race_idx": 3,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1030,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "2471be3f0edeaa3a7ea314b4d49f691e70b3fd34825be6bbfdda01452233366f",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 202
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-3-priest-0",
+      "result_sha256": "30e802c4bbbf981ba372063e7a148e60deb633593bfd832078a128c1f93cd2c8",
+      "raw_sha256": {
+        "keys.log": "30e802c4bbbf981ba372063e7a148e60deb633593bfd832078a128c1f93cd2c8",
+        "messages.log": "b3f288525ca1619eac25bf6718cc7e2c24619eed901d18a67a48a47eda794c7b",
+        "state.log": "ec3455f8efce6776d3649565b82f9348c38c465a5aa4d41381f3dc88fea4cf65"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-c4d3190d62ff0a542b1cf4b3af2720841dab14c9c5b83de35a79af854d2108ef",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "5d97578dc77132e8394f6d15ce5c2905b8366aafbd7fc7de9f79b2432c96b8bd",
+    "depths.json": "39731dc5b80f2d6d79f1cf13fe693e3ec2e1736cdcad748782543e076bcfd192",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "39bb0f5ff963e28e4567ab00f287deba4f8a30d0377d51753e2198f7925a04ec",
+    "trace-tail.jsonl": "fdda004bf45706668575b0390fc3dc332e8488fa0b37bdaec17cf908bd5910c6"
+  },
+  "investigation": null,
+  "issue": null
+}

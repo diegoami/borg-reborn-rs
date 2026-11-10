@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1257-rust-seed1053",
+  "run_kind": "harness",
+  "character": "Dunadan Paladin",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4857,
+    "race_idx": 8,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1053,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "4e27c4fbdff643a90734e5fd66e1ec0531359fd88309330abadb7f6efc75c6d6",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 409
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-5-paladin-3",
+      "result_sha256": "5fd53217d37c4f1e79658d9cbbb6f1f777c89332f392b17b18bbe83956d29fe6",
+      "raw_sha256": {
+        "keys.log": "5fd53217d37c4f1e79658d9cbbb6f1f777c89332f392b17b18bbe83956d29fe6",
+        "messages.log": "0fa1d3cadd455f56d59fb2320f8337561d857bcdcd4cb7b86c1141454e180b02",
+        "state.log": "1e9995db2dd9c13b59adfa47e923d6ed86270081ee89cffd3f83b9c8add04eab"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-f96bac328df2765d5c3dcbeae25d02bc324cf3f9741fa4eac14f72efd3ee27d1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "041b8ab94a20d387bf08fb27d63dac688ab1fbaab39e00b1413a769bf1e77e4a",
+    "depths.json": "9b20515b458b9af8cad9a3c08555f22da5ffb2c8b85d1fcae3e27431e97a05db",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "1a2bd26bd10802c89331eeeb29e0c6328dd247445adeb7b850be3faaae97423a",
+    "trace-tail.jsonl": "23a203b616d876b2df35b72a5fdd32563c922d83fafe10e20a5625ada6747cc5"
+  },
+  "investigation": null,
+  "issue": null
+}

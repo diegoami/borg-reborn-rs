@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1264-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 400,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "ea743d09d98ba69aefd5ca3560bb149f21cc5d77b611147855e4acb779eb56df",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 41,
+    "of": 41
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-7-ranger-2",
+      "result_sha256": "e34ed3c97019552b397d0a0f05cecfa77a0939a5f13cf81b1407892873a4326e",
+      "raw_sha256": {
+        "keys.log": "e34ed3c97019552b397d0a0f05cecfa77a0939a5f13cf81b1407892873a4326e",
+        "messages.log": "6f00496c1e05ff4373a7b3197036ef2e4b110403c7874d155a9d0d6683c56086",
+        "state.log": "19500ee5c0e6d8f437f0e82b449b87bb27b649dcb8e7dacf67d0fc9773fe9f81"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-04e066c0c15192b8d81c4144ea0279af121a205e52186c9f716b2050f73d4f2d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "2231fd48a6266bffe80bf845c69bda90b9fba272fde5fa530154642eb65c6576",
+    "depths.json": "7a5b4e94884691e69fcc6e09d0735f3f1d94639d99bd5522caf862865bfafc5b",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "11a12f9a199d500bd163059276b6e845994a5133f8c61ed1fefcf28f96518a73",
+    "trace-tail.jsonl": "b481374caeb160aadad4540b4c54bfe94fda25e41816773d80fc13608b64d8d5"
+  },
+  "investigation": null,
+  "issue": null
+}

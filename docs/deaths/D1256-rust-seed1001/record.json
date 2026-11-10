@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1256-rust-seed1001",
+  "run_kind": "harness",
+  "character": "Half-Elf Warrior",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 3584,
+    "race_idx": 1,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1001,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "fb095ac33a6f655e1391c88b415a723f733d3ccbf06f8c99e8d0553eda308d8a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 356
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-0-warrior-1",
+      "result_sha256": "0a2b56a853ea1791f33b41b0d55fba9231c45a295df6d4ea3d9625c488c70f73",
+      "raw_sha256": {
+        "keys.log": "0a2b56a853ea1791f33b41b0d55fba9231c45a295df6d4ea3d9625c488c70f73",
+        "messages.log": "c3fa10cb41ea5e1016eb6f6720c38300f685f6728cbbc76ce9ec29bf24786f84",
+        "state.log": "cc71d3f0ae9a03f4f115ee79bdb5c82b1d4a967919b22689ce588ef91ea41752"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-c6894690eeb8ea3449fcd81f211334ab6e59e2700d3a98439950b5535ee0d6e7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "8424618f12d059ecd101f5be7324ff577b1a9e364e96e23ccba013e4ba1eeb40",
+    "depths.json": "7712d060d211b0b0b8982ce7d5cef83b0d463053a9a05e14317c06bb61eb4977",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "f81f6f62bd5cc5836e9a9df5b34383e5659c0927f8e4fb8aab05ec84bb25ca02",
+    "trace-tail.jsonl": "74a292100ac45e3774ad2e08ff88961dac39035683b3f5e1f843065efa9f2009"
+  },
+  "investigation": null,
+  "issue": null
+}
