@@ -10,8 +10,12 @@ rerunning the same suites locally from the same commit (RULES 12).
 
 --runs also checks the run outputs themselves (E review, finding 3): every
 run under DIR (a directory with summary.json) that died a natural death must
-have a dossier in TEMP_REGISTRY with its key stream. A death the exporter
-missed fails here, even when TEMP_REGISTRY is empty.
+have a dossier in TEMP_REGISTRY with its encounter family and key stream, as
+tools/export-death.py identifies it (M2 review, finding 7: the same keys
+under another family are another death). A death the exporter missed fails
+here, even when TEMP_REGISTRY is empty. The family needs the run's build:
+the suite manifest's build_id_source_sha256 when the run is in a suite
+output, else --build-id (default build/rust/BUILD_ID).
 """
 
 import argparse
@@ -34,29 +38,39 @@ def keys(reg):
     return out
 
 
-def not_natural():
+def exporter():
     spec = importlib.util.spec_from_file_location('export_death', ROOT / 'tools/export-death.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module.not_natural
+    return module
 
 
-def unexported(runs, temp):
+def source_of(run, build_id):
+    """The source hash of the build that played the run."""
+    for d in (run.parent, run.parent.parent):
+        manifest = exporter().read_kv(d / 'manifest')
+        if manifest.get('build_id_source_sha256'):
+            return manifest['build_id_source_sha256']
+    return exporter().read_kv(build_id).get('source_sha256')
+
+
+def unexported(runs, temp, build_id=ROOT / 'build/rust/BUILD_ID', impl='rust'):
     """The natural deaths under the run directories with no dossier in temp."""
-    why_not = not_natural()
-    exported = {sha for _, sha in keys(temp)}
+    ed = exporter()
+    exported = set(keys(temp))
     missing, deaths = [], 0
     for root in runs:
         for summary_path in sorted(Path(root).glob('**/summary.json')):
             run = summary_path.parent
             summary = json.loads(summary_path.read_text())
-            config = dict(l.split('=', 1) for l in (run / 'config.txt').read_text().splitlines()
-                          if '=' in l) if (run / 'config.txt').exists() else {}
-            if why_not(summary, config.get('flags', '-')) is not None:
+            config = ed.read_kv(run / 'config.txt')
+            flags = config.get('flags', '-')
+            if ed.not_natural(summary, flags) is not None:
                 continue
             deaths += 1
             sha = hashlib.sha256((run / 'keys.log').read_bytes()).hexdigest() if (run / 'keys.log').exists() else None
-            if sha not in exported:
+            family = ed.run_family(summary, config, impl, source_of(run, build_id), flags)
+            if (family, sha) not in exported:
                 missing.append((run, summary))
     return deaths, missing
 
@@ -66,10 +80,11 @@ def main(argv=None):
     ap.add_argument('temp')
     ap.add_argument('--registry', default=str(ROOT / 'docs/deaths'))
     ap.add_argument('--runs', nargs='+', default=[], metavar='DIR')
+    ap.add_argument('--build-id', type=Path, default=ROOT / 'build/rust/BUILD_ID')
     a = ap.parse_args(argv)
     failed = False
     if a.runs:
-        deaths, missing = unexported(a.runs, a.temp)
+        deaths, missing = unexported(a.runs, a.temp, a.build_id)
         for run, summary in missing:
             print(f"UNEXPORTED: {run}: {summary.get('death_cause')} at turn {summary.get('game_turns')}")
         print(f"{deaths} natural deaths in the runs; {len(missing)} without a dossier in {a.temp}")

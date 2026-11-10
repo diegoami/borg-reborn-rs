@@ -18,8 +18,9 @@ smoke play hashes as M1, and its death is D0804 (#97).
   `tools/check-perception.py` fails on any difference. It also checks the
   status against the frontend's `state.log`.
 - **Results:** smoke and full, 76,175 thinks, have 0 differences.
-  - Declared, not failed: 218,978 grid-thinks the player knows but the
-    world never saw, and 96 visible monsters off the panel. The C Borg
+  - Declared, not failed: 220,350 grid-thinks the player knows but the
+    world never saw (218,978 in full, 1,372 in smoke), and 96 visible
+    monsters off the panel. The C Borg
     reads only the panel too (`borg-update.c:264`).
   - An injected fault gives 8,205 differences, so the check can fail.
 - **One defect found:** while hallucinating, `map_info` puts `m_idx = 1`
