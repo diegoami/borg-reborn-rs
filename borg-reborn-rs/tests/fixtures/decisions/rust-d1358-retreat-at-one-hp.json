@@ -1,0 +1,90 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 7,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 23,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Walk",
+      "item": "retreating at 1 HP provokes the lethal free hit"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "item": "kill the 2-HP mouse before it acts"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@m....#",
+    "#.........#",
+    "#<........#",
+    "###########"
+  ],
+  "id": "rust-d1358-retreat-at-one-hp",
+  "title": "D1358: 1/51 HP, a 2-HP mouse adjacent, retreat chosen",
+  "dossier": "docs/deaths/D1358-rust-seed1001",
+  "citations": [
+    "summary.json",
+    "trace-tail.jsonl (last mode engage, choice Walk)",
+    "report.md"
+  ],
+  "construction": "Half-Elf Warrior CL3, 1/51 HP, D1. The record gives the killer and HP; the adjacent 2-HP giant white mouse and open room are constructed. The trace tail's last engage/Walk is the state the fixture tests.",
+  "limits": "A constructed state, not a recorded snapshot. The retreat's free hit is the engine's known behaviour; no owner branch measured the alternative attack.",
+  "blocked_by": 120,
+  "player": {
+    "race": 1,
+    "class": 0,
+    "level": 3,
+    "hp": 1,
+    "max_hp": 51,
+    "x": 4,
+    "y": 3
+  },
+  "current": {
+    "action": "Walk"
+  },
+  "pins_forbidden": true
+}

@@ -1,0 +1,95 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 8,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 1,
+      "race": 96,
+      "hp": 68,
+      "max_hp": 68,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Walk",
+      "dir": 8,
+      "item": "north into the unknown"
+    },
+    {
+      "action": "Walk",
+      "dir": 7,
+      "item": "north-west into the unknown"
+    },
+    {
+      "action": "Descend"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Walk",
+      "dir": 2,
+      "item": "south through the open door"
+    }
+  ],
+  "map": [
+    "#####?#####",
+    "#....#....#",
+    "#...b#....#",
+    "#....@....#",
+    "#....+....#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0006-deep-descent-readiness",
+  "title": "D0006: north into the dark with pursuers and no way home",
+  "dossier": "reference/deaths/better-borg-c/D0006-collected",
+  "citations": [
+    "overall-assessment.md:5-24,46-68",
+    "report.md:7-17",
+    "review-anchors.json"
+  ],
+  "construction": "Human Warrior CL8, 89/106 HP, D14. The dossier gives the open door south, the floor beyond it, pursuers north and the north-dark exploration choice at 72885. The room shape and the brown beetle's exact position are constructed; it is placed two diagonal steps north so it is remembered but not in contact.",
+  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The two Deep Descent reads and the missing Recall are not expressible in this action set.",
+  "blocked_by": 119,
+  "player": {
+    "race": 0,
+    "class": 0,
+    "level": 8,
+    "hp": 89,
+    "max_hp": 106,
+    "x": 5,
+    "y": 3
+  },
+  "depth": 14,
+  "max_depth": 14,
+  "current": {
+    "action": "Walk",
+    "dir": 7
+  },
+  "pins_forbidden": true
+}

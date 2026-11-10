@@ -1,0 +1,107 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 7,
+      "tval": 23,
+      "sval": 9,
+      "weight": 120,
+      "desc": "a Mace (2d4)",
+      "dd": 2,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 3,
+      "race": 17,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "race": 26,
+      "hp": 10,
+      "max_hp": 10,
+      "sleep": 100
+    },
+    {
+      "x": 3,
+      "y": 4,
+      "race": 26,
+      "hp": 10,
+      "max_hp": 10,
+      "sleep": 100
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Walk"
+    },
+    {
+      "action": "Descend"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "dir": 4,
+      "item": "the 2-HP grey mold at (3,3)"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#..w......#",
+    "#..m@>....#",
+    "#..w......#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0012-kill-the-mold",
+  "title": "D0012: the owner branch kills the 2-HP mold in one blow",
+  "dossier": "reference/deaths/better-borg-c/D0012-collected",
+  "citations": [
+    "overall-assessment.md:21-44,68-78,106-121",
+    "owner-manual-branch.json",
+    "manual-verification.json"
+  ],
+  "construction": "Gnome Paladin CL2, 17/21 HP, 3 SP, D1. The owner branch starts at turn 27526: the player stands between the 2-HP grey mold and the down staircase. The two worm masses west are visible but not adjacent.",
+  "verified": "owner-manual-branch.json: 27526 one blow destroys the grey mold at 17 HP; rest to 21/21 by 27751; two white worm masses killed; saved 28253 at CL2 HP17.",
+  "limits": "A diagnostic alternative, not an independent Borg life or population result.",
+  "player": {
+    "race": 4,
+    "class": 5,
+    "level": 2,
+    "hp": 17,
+    "max_hp": 21,
+    "sp": 3,
+    "max_sp": 3,
+    "x": 4,
+    "y": 3
+  }
+}

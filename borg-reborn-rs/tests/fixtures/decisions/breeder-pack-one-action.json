@@ -1,0 +1,159 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 6,
+      "tval": 27,
+      "sval": 1,
+      "number": 22,
+      "desc": "& Flask~ of oil",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 1,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 5,
+      "y": 1,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 7,
+      "y": 1,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 3,
+      "y": 2,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 5,
+      "y": 2,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 5,
+      "y": 3,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 3,
+      "y": 4,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 5,
+      "y": 4,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 7,
+      "y": 4,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    },
+    {
+      "x": 8,
+      "y": 3,
+      "race": 80,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Rest"
+    },
+    {
+      "action": "Hold"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "item": "one mouse, one action"
+    }
+  ],
+  "map": [
+    "###########",
+    "#..m.m.m..#",
+    "#..m.m.m..#",
+    "#...@m....#",
+    "#..m.m.m..#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "breeder-pack-one-action",
+  "title": "mmx-war-1: eleven visible silver mice, one action per think",
+  "dossier": "reference/borg-runner/records/mmx-war-1/REPORT.md",
+  "citations": [
+    "REPORT.md:5-30,118-123"
+  ],
+  "construction": "Human Warrior CL4, 35/35 HP, D2. The report gives eleven visible silver mice and the 60-key chain that killed thirty-five of them and then the character. Eleven mice are placed, three adjacent; the room is constructed.",
+  "limits": "Our executor queues one decision's keys per think, so a 60-key chain is structurally impossible. The fixture asserts that invariant and the refusal to rest in the pack, not a survival claim.",
+  "player": {
+    "race": 0,
+    "class": 0,
+    "level": 4,
+    "hp": 35,
+    "max_hp": 35,
+    "x": 4,
+    "y": 3
+  },
+  "depth": 2,
+  "max_depth": 2
+}

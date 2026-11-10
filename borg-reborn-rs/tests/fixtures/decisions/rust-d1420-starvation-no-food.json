@@ -1,0 +1,111 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 250,
+      "tval": 28,
+      "sval": 99,
+      "number": 4,
+      "desc": "a Mottled Mushroom",
+      "aware": false
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Descend",
+      "item": "going deeper while starving"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Eat",
+      "item": "food, or return to town"
+    },
+    {
+      "action": "Ascend"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#....>....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "rust-d1420-starvation-no-food",
+  "title": "D1420: starving at 0 food on a down staircase with a full pack",
+  "dossier": "docs/deaths/D1420-rust-seed1032",
+  "citations": [
+    "summary.json",
+    "trace-tail.jsonl (last 200 thinks, explore)",
+    "report.md:1-12"
+  ],
+  "construction": "Dwarf Priest CL1, 10/14 HP, D1, food 0, pack 23/23, on the down staircase. The record gives starvation, HP and the full pack; the closed known level is constructed.",
+  "limits": "A constructed state, not a recorded snapshot. Eating and returning home are not actions yet; the pack-full pickup guard already prevents the wand loop.",
+  "blocked_by": 122,
+  "player": {
+    "race": 5,
+    "class": 3,
+    "level": 1,
+    "hp": 10,
+    "max_hp": 14,
+    "x": 5,
+    "y": 3,
+    "pack_size": 23,
+    "pack_used": 23,
+    "food": 0
+  },
+  "current": {
+    "action": "Descend"
+  },
+  "pins_forbidden": true
+}

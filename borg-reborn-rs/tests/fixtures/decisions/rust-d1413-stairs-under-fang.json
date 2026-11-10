@@ -1,0 +1,93 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 7,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 48,
+      "hp": 25,
+      "max_hp": 25,
+      "speed": 120,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack"
+    },
+    {
+      "action": "Walk"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Ascend",
+      "item": "the staircase underfoot, before Fang acts"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...<F....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "rust-d1413-stairs-under-fang",
+  "title": "D1413: 1/17 HP, Fang adjacent, standing on the up staircase",
+  "dossier": "docs/deaths/D1413-rust-seed1082",
+  "citations": [
+    "summary.json",
+    "trace-tail.jsonl (last mode engage, choice Walk)",
+    "report.md"
+  ],
+  "construction": "Blackguard CL1, 1/17 HP, D1, on the up staircase. The record gives the killer and HP; Fang adjacent and the staircase underfoot are constructed.",
+  "limits": "A constructed state, not a recorded snapshot. Contact deliberately outranks the staircase in the current strategy, so the escape is only reachable from the tactical layer.",
+  "blocked_by": 120,
+  "player": {
+    "race": 1,
+    "class": 8,
+    "level": 1,
+    "hp": 1,
+    "max_hp": 17,
+    "x": 4,
+    "y": 3
+  },
+  "current": {
+    "action": "Walk"
+  },
+  "pins_forbidden": true
+}

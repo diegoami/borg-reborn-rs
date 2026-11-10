@@ -1,0 +1,77 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 8,
+      "tval": 23,
+      "sval": 5,
+      "weight": 30,
+      "desc": "a Whip (1d3)",
+      "dd": 1,
+      "ds": 3
+    }
+  ],
+  "inventory": [],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 25,
+      "hp": 8,
+      "max_hp": 8,
+      "sleep": 0
+    },
+    {
+      "x": 8,
+      "y": 5,
+      "race": 63,
+      "hp": 11,
+      "max_hp": 11,
+      "sleep": 100
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Ascend"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Walk",
+      "item": "away from the kobold, not up the staircase"
+    }
+  ],
+  "map": [
+    "###########",
+    "#<........#",
+    "#.........#",
+    "#...@k....#",
+    "#.........#",
+    "#.......A.#",
+    "###########"
+  ],
+  "id": "bbc-d0013-kobold-not-level-flight",
+  "title": "D0013: a small kobold is not a reason to leave the level",
+  "dossier": "reference/deaths/better-borg-c/D0013-collected",
+  "citations": [
+    "overall-assessment.md:21-33,50-66",
+    "owner-manual-branch.json"
+  ],
+  "construction": "Dunadan Druid CL1, 13/13 HP, D1. The dossier gives the kobold's 8 HP, the up staircase and the Whip. The room, the distant ant and the stat line are constructed.",
+  "verified": "owner-manual-branch.json: 3651 -> 4709, CL1 HP13 D0. The kobold fled after one hit; the ant was tested 12->6; town reached at 3 HP and rested to 13/13.",
+  "limits": "No Phase Door is available here; the verified branch's first step was to fight, which the current exchange model calls losing at 13 HP (expected cost 13.5). The fixture therefore asserts the next-best verified behaviour: leave, and do not take the stairs.",
+  "player": {
+    "race": 8,
+    "class": 2,
+    "level": 1,
+    "hp": 13,
+    "max_hp": 13,
+    "sp": 1,
+    "max_sp": 1,
+    "x": 4,
+    "y": 3
+  }
+}

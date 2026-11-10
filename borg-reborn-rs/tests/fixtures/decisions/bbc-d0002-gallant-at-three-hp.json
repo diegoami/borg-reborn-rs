@@ -1,0 +1,91 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 12,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 72,
+      "hp": 22,
+      "max_hp": 27,
+      "sleep": 0
+    },
+    {
+      "x": 6,
+      "y": 3,
+      "race": 71,
+      "hp": 27,
+      "max_hp": 27,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack",
+      "item": "the gallant, the fatal melee at 3 HP"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Quaff",
+      "item": "Cure Light Wounds (12 known)"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@gs...#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0002-gallant-at-three-hp",
+  "title": "D0002: 3/49 HP, a gallant adjacent, twelve known cures",
+  "dossier": "reference/deaths/better-borg-c/D0002-gallant",
+  "citations": [
+    "report.md:5-7,62-75",
+    "assessment.json"
+  ],
+  "construction": "Human Warrior CL3, 3/49 HP, D2. The dossier gives the 3 HP, the gallant at 22 HP, a scout adjacent and twelve known CLW. The room and stat line are constructed.",
+  "limits": "No verified alternative: the owner's fight/walk/retreat proposals were untested. The cure is the obvious fitting response, not a measured rescue.",
+  "blocked_by": 122,
+  "player": {
+    "race": 0,
+    "class": 0,
+    "level": 3,
+    "hp": 3,
+    "max_hp": 49,
+    "x": 4,
+    "y": 3
+  },
+  "depth": 2,
+  "max_depth": 3,
+  "current": {
+    "action": "Walk"
+  },
+  "pins_forbidden": false
+}
