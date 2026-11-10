@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1338-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "a yellow jelly",
+  "terminal": {
+    "cause": "a yellow jelly",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 864,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "menu",
+    "git_rev": "6318cd2b8271b888375a816b9932380c28cb7a92",
+    "git_dirty": "no",
+    "source_sha256": "da304fcea62ffe02da321bd214384a92e7e9ad9b362155367cd541ec9eda19a0",
+    "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 123,
+    "of": 123
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/g0-final-full/full-4-necro-3",
+      "result_sha256": "639ab788343b336a1a32a305d52920bb5fee8c154d7006ba8e58b1e409057677",
+      "raw_sha256": {
+        "keys.log": "639ab788343b336a1a32a305d52920bb5fee8c154d7006ba8e58b1e409057677",
+        "messages.log": "6700ee4b5874d9f701405194340a31dd351da020f84b2f1c958c28cd09cb70ce",
+        "state.log": "5b62e5859ef7003e68113e623c9a3e7d0e3ae1ef72e78c52c94f012ae0fd244f"
+      },
+      "source_commit": "6318cd2b8271b888375a816b9932380c28cb7a92",
+      "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1"
+    }
+  ],
+  "encounter_family": "start-940472e2298aef18cea2b84e8f0255fee715619f75cd49814ee0763306a952ef",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5914ce35ca511e79d970ba0afb3133118af78b2e3ff4a55782690f5a0ed46d77",
+    "config.txt": "e40a2743ffd87053c87c787f15d6164e0102895af18934ed0ad9dcc2e208dd92",
+    "depths.json": "40431eabf01bcda1b14adc66f68baf963cba42afe6a1d6cc916c83e4c8cea45f",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "cfe0e83a532d48859878c86a200a97c16dc1c31e11f2a837c23c4f21b6e42fb1",
+    "trace-tail.jsonl": "d172de4cdd5af8c8982e61a721e5f19b4f3972dda6844d3affdf8b438b91842a"
+  },
+  "investigation": null,
+  "issue": null
+}
