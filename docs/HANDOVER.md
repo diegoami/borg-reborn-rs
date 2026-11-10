@@ -2,6 +2,45 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.5, town reserves (#21)
+
+The first strategy now has a **Town** mode, checked after recovery and
+contact but before any live travel goal:
+
+- **Reserves are explicit parameters**: 3 rations, 2 spare torches, 3
+  Cure Light Wounds, 4 Phase Door and 1 Word of Recall (c15 §12.4 and
+  the owner's verified D0015 loadout). Only identified consumables
+  count. Food/light, cures, escapes and the way home are bought in that
+  order, one ware per observation so sold-out rows cannot leave stale
+  letters. A full pack still permits a purchase into an existing stack;
+  unavailable stock, unaffordable wares or no room for a new stack let
+  the Borg leave town instead of looping.
+- **Identification sales** follow the reserves: one unknown scroll or
+  potion at a time goes to the Alchemist, which learns its flavour and
+  runes before the hand-over (`store.c:1947-1956`). Selling earns 0 with
+  `birth_no_selling`; this is identification, not income. There are no
+  discretionary purchases yet.
+- **Store mechanics fixed along the way:** stacked buys/sales check
+  carried item counts, not only pack slots; free store actions no longer
+  consume the refused-action budget; and paths can leave a shop entrance
+  after shopping as well as arrive at it.
+
+**Validation:** 74 crate tests and 5 repository tests, clippy and fmt;
+smoke 3/3, smoke-exact 3/3, full 45/45 and extra-load from committed
+`155c25a`; **0 perception differences over 72,623 thinks**. Seed 101
+buys the intended kit, reaches **depth 2 / CL3** and dies to a soldier at
+3696 with zero violations; its keys are byte-identical on rerun. All 45
+full-suite runs shop. References regenerated; deaths D1278 onward.
+
+**Honest state:** every full-suite run still dies and deepest remains 2;
+seven starve (buying food is not eating it), and two unrelated refused
+attacks are left for T3.7's G0 report. No final-suite run returned to
+town carrying an unknown consumable, so the identification sale's live
+key sequence was not exercised; its strategy, keys and stacked effect
+are unit-tested.
+
+**Next:** T3.6 (#22) — put the decision trace in every death dossier.
+
 ## 2026-11-10: T3.4, the playing behaviours (#20)
 
 On top of T3.3's machinery, the first behaviours (references
