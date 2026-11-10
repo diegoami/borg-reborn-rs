@@ -90,8 +90,8 @@
     "report.md:8-19"
   ],
   "construction": "Half-Elf Priest CL2, 2/15 HP, D1. The dossier gives the grey mold at 2 HP, the doorway and the down staircase; the room is constructed.",
-  "limits": "No verified alternative: descent, hold and mace were untested. The current danger sum scores this mould 0 because it reads its NEVER_MOVE flag as NEVER_BLOW (an off-by-one in danger.rs); the fixture pins resting beside it until T4.2 fixes the flag numbering.",
-  "blocked_by": 142,
+  "limits": "No verified alternative: descent, hold and mace were untested. After #142's flag fix the danger sum sees the mould, so the Borg no longer rests beside it; at 2/15 HP the exchange loses and it retreats, which is the recorded oscillation. T4.3 (#120) must score attacking the 2-HP mould against the free hit from walking away.",
+  "blocked_by": 120,
   "player": {
     "race": 1,
     "class": 3,
@@ -102,7 +102,7 @@
     "y": 3
   },
   "current": {
-    "action": "Rest"
+    "action": "Walk"
   },
-  "pins_forbidden": false
+  "pins_forbidden": true
 }

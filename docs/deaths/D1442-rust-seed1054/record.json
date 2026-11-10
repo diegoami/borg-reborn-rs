@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1442-rust-seed1054",
+  "run_kind": "harness",
+  "character": "High-Elf Paladin",
+  "raw_cause": "a scruffy little dog",
+  "terminal": {
+    "cause": "a scruffy little dog",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 2681,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "menu",
+    "git_rev": "3bffe58470465a701546b86128388197b7684d9c",
+    "git_dirty": "no",
+    "source_sha256": "b3c7c92a42dec209b3214950d72bf8d5524d90fd665ea7935e16df42c737f8ac",
+    "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184",
+    "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 277
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-142d/full-5-paladin-4",
+      "result_sha256": "93efb98f77e8e9f7dfe5294204c2be9df3e61e5050c8a5c840cc0f707ee69a9b",
+      "raw_sha256": {
+        "keys.log": "93efb98f77e8e9f7dfe5294204c2be9df3e61e5050c8a5c840cc0f707ee69a9b",
+        "messages.log": "0a4a717af46bd6118b0a4d9eb5305e82f6ab83ee3a6d5d0dd987241d1a71feff",
+        "state.log": "ca3ee94ef9ab0d576d376d2b960d063a3e3d5a47bd8c91176ea448e26a8c1a63"
+      },
+      "source_commit": "3bffe58470465a701546b86128388197b7684d9c",
+      "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184"
+    }
+  ],
+  "encounter_family": "start-d8c41ead3ff0524ef716a8461bdde3124d46d6c82da9d7a8c85c778f5aae6a61",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c33cefea0296b587bc5d0b2e2b00d9094be85a2660a5c7096d9a14ad06d5adec",
+    "config.txt": "f162539ea2ec0eccfb9ef1e254a4653b8a768cf490a120bf2363514cb4a625ef",
+    "depths.json": "06750721f8580e9655dc7acce358f9287efa7bab85c1adc19cd9c4ea4b39e027",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "b8a8e6db61752f7dc7ab8783e398e7990f60086d7a7d2c33a67000c0facad331",
+    "trace-tail.jsonl": "452e8e46cb657f74cfebeb11c29bc60be4ef045e234523b00bb51d394995cd5f"
+  },
+  "investigation": null,
+  "issue": null
+}

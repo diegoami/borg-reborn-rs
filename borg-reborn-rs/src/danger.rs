@@ -33,13 +33,14 @@ mod mon_tmd {
     pub const CONF: usize = 2;
 }
 
-/// `RF_*` flag numbers (`list-mon-race-flags.h` order, `FLAG_START` 1:
-/// a flag's number is its line less six; packed as
-/// `flags[(n-1)/8] & 1 << ((n-1)%8)`, z-bitflag.h:FLAG_OFFSET).
+/// `RF_*` flag numbers. The enum starts at `RF_NONE = 0`, and `FLAG_START`
+/// is 1: count the `RF(...)` lines of `list-mon-race-flags.h`, not the
+/// header's line numbers. Packed as
+/// `flags[(n-1)/8] & 1 << ((n-1)%8)` (`z-bitflag.h:FLAG_OFFSET`).
 mod rf {
-    pub const MULTIPLY: usize = 18;
-    pub const NEVER_BLOW: usize = 21;
-    pub const NEVER_MOVE: usize = 22;
+    pub const MULTIPLY: usize = 17;
+    pub const NEVER_BLOW: usize = 20;
+    pub const NEVER_MOVE: usize = 21;
 }
 
 /// `OF_*` flag numbers (`list-object-flags.h`: a flag's number is its
@@ -524,6 +525,34 @@ mod tests {
         let mut c = t.clone();
         c.timed[mon_tmd::CONF] = 5;
         assert_eq!(one(&w, &k, &c, 1, 1, 1), 6 * 115 / 100 / 2);
+    }
+
+    /// The bytes are the engine's, not `pack`'s: the committed fixture
+    /// slice has a grey mold's `NEVER_MOVE` in byte 2, bit 4, and a silver
+    /// mouse's `MULTIPLY | RAND_50` there. This is the off-by-one that
+    /// made a mould score zero (T4.1's fixtures, #142).
+    #[test]
+    fn race_flag_numbers_match_the_engine_enum() {
+        assert_eq!((rf::MULTIPLY, rf::NEVER_BLOW, rf::NEVER_MOVE), (17, 20, 21));
+        let grey_mold = [0, 0, 16];
+        assert!(has(&grey_mold, rf::NEVER_MOVE), "grey mold cannot move");
+        assert!(!has(&grey_mold, rf::NEVER_BLOW), "but it can spore");
+        let silver_mouse = [0, 0, 65];
+        assert!(has(&silver_mouse, rf::MULTIPLY), "breeders multiply");
+        assert!(has(&silver_mouse, 23), "RAND_50");
+        let k = knowledge(race(
+            "grey mold",
+            110,
+            0,
+            &[(1, 4), (1, 4)],
+            &[rf::NEVER_MOVE],
+        ));
+        let w = world(Some((2, 1, 110, true)));
+        let t = &w.level.monsters[0];
+        assert!(
+            one(&w, &k, t, 1, 1, 1) > 0,
+            "an adjacent mould is a threat, not a safe rest"
+        );
     }
 
     #[test]

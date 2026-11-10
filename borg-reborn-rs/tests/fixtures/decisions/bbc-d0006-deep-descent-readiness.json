@@ -42,6 +42,11 @@
     },
     {
       "action": "Walk",
+      "dir": 9,
+      "item": "north-east into the unknown"
+    },
+    {
+      "action": "Walk",
       "dir": 7,
       "item": "north-west into the unknown"
     },
@@ -89,7 +94,7 @@
   "max_depth": 14,
   "current": {
     "action": "Walk",
-    "dir": 7
+    "dir": 9
   },
   "pins_forbidden": true
 }

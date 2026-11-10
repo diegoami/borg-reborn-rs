@@ -72,8 +72,8 @@
     "report.md"
   ],
   "construction": "Dwarf Paladin CL1, 1/17 HP, D1, on the up staircase. The death record gives the cause, HP and last action but no final observation; the cat at distance two and the stairs are constructed to reproduce the resting decision.",
-  "limits": "A constructed state from the record's summary and trace tail, not a recorded snapshot. The cat's exact position is not in the dossier.",
-  "blocked_by": 119,
+  "limits": "A constructed state, not a recorded snapshot. With #142's flag fix the adjacent danger now sees the cat and the Borg leaves instead of resting; the remaining gap is that the up staircase underfoot is not taken while the cat threatens the grid (T4.3, #120).",
+  "blocked_by": 120,
   "player": {
     "race": 5,
     "class": 5,
@@ -84,7 +84,7 @@
     "y": 3
   },
   "current": {
-    "action": "Rest"
+    "action": "Walk"
   },
-  "pins_forbidden": true
+  "pins_forbidden": false
 }
