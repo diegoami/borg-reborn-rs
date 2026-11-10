@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -72,8 +72,7 @@
     "report.md"
   ],
   "construction": "Half-Elf Warrior CL3, 1/51 HP, D1. The record gives the killer and HP; the adjacent 2-HP giant white mouse and open room are constructed. The trace tail's last engage/Walk is the state the fixture tests.",
-  "limits": "A constructed state, not a recorded snapshot. The retreat's free hit is the engine's known behaviour; no owner branch measured the alternative attack.",
-  "blocked_by": 120,
+  "limits": "A constructed state, not a recorded snapshot. The tactical layer attacks the 2-HP mouse because walking gives it the lethal free hit; the fixture is active.",
   "player": {
     "race": 1,
     "class": 0,
@@ -82,9 +81,5 @@
     "max_hp": 51,
     "x": 4,
     "y": 3
-  },
-  "current": {
-    "action": "Walk"
-  },
-  "pins_forbidden": true
+  }
 }

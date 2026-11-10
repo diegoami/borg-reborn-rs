@@ -126,6 +126,10 @@
     {
       "action": "Attack",
       "item": "one mouse, one action"
+    },
+    {
+      "action": "Walk",
+      "item": "one step away, one action"
     }
   ],
   "map": [

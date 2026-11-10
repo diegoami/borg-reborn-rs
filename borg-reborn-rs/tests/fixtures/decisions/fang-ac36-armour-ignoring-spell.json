@@ -84,7 +84,7 @@
   ],
   "construction": "Gnome Mage CL2, 4/16 HP, D2. The report gives Fang at 25 HP, AC 36, speed 120, Magic Missile at 1 SP (never resists) and a Phase Door scroll. Fang is placed adjacent; the room is constructed.",
   "limits": "An agent-player run, not a Borg death. Oil throwing and casting are not executor actions yet, so the fixture pins the walk that uses neither.",
-  "blocked_by": 120,
+  "blocked_by": 127,
   "player": {
     "race": 4,
     "class": 1,
@@ -97,7 +97,7 @@
     "y": 3
   },
   "current": {
-    "action": "Walk"
+    "action": "Attack"
   },
-  "pins_forbidden": false
+  "pins_forbidden": true
 }

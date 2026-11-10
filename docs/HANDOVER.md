@@ -2,6 +2,51 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: tactical alternatives and the re-review (#120)
+
+`tactics.rs` replaces the first-applicable fight-or-retreat rule. Every
+think in contact generates and scores, on one hit-point scale:
+
+- an attack on each adjacent monster (only when `can_attack`; fear and
+  paralysis are refused by the engine), gain = the share of its threat the
+  attack removes;
+- a step to each of the eight neighbours, with the free hit every adjacent
+  monster gets when the step leaves its reach;
+- the up staircase underfoot when a threat is present (landing risk is
+  #121; a down staircase under fire is still not taken);
+- holding.
+
+The score is `gain - risk_after`, using T4.2's assessment, the one
+`risk_aversion_pct` and `threat_horizon`. A disabling or summoning risk
+costs expected hit points in the score (a declared upper bound), so a
+paralysis gaze is not free. Every response, including the losing ones,
+goes to the trace; #138 narrows the remaining contract.
+
+**Fixtures.** Ten active, ten gaps. Promoted: rs D0006 (kills the 2-HP
+mould), rust D1358 (attacks the 2-HP mouse instead of taking its free
+hit), rust D1413 (ascends with Fang adjacent and the stair underfoot).
+D0013/breeder accept the scored fight/step. The re-review's four
+sealed-room starvation runs are attached to #123; `Mode::Stuck` now names
+the state (`stuck` / "no mode can act") and `rust-stuck-sealed-room` plus
+`a_sealed_room_names_the_stuck_state` pin it. Search/dig/recall is #123.
+D0010 and Fang AC36 are gaps for #127 (shoot/cast); the cures and the
+return home are #122/#123.
+
+**New baseline (play change).** References regenerated: smoke 3/3,
+smoke-exact 3/3, full 45/45; boundary 3/3. 49 natural deaths, 0
+unexported; 47 new dossiers D1519-D1565 from the clean checkout. Smoke has
+one 20,000-turn survivor and two deaths; full is 45/45 deaths, deepest
+depth 3, longest 89,380 game turns, **20 starvation and 8 floating-eye
+deaths**. No survival claim: food is #122, the floating-eye/paralysis
+escape ladder is #121/#122, and the stuck exits are #123. The re-review's
+finding 2, G0's missing smoke-warrior death and the four sealed-room runs
+are recorded; the owner's #135 scope choice remains the owner's.
+
+**Next:** #121 (T4.4), the escape ladder with landing risk; it should take
+the stair-under-contact response beyond "upward only" and give the
+floating-eye deaths an escape. #122 then adds the actions; #123 the stuck
+exits.
+
 ## 2026-11-10: one threat assessment (#119)
 
 `danger.rs` is now L4's assessment rather than the C Borg's full-damage sum.

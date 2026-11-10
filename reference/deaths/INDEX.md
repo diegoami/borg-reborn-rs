@@ -1530,5 +1530,52 @@ are not independent.*
 | borg-reborn-rs | [D1516-rust-seed1003](../../docs/deaths/D1516-rust-seed1003/report.md) | Hobbit Warrior | starvation | 89410 | 3 | 5 | — | unassessed | D1516-rust-seed1003: starvation at turn 89410 |
 | borg-reborn-rs | [D1517-rust-seed1063](../../docs/deaths/D1517-rust-seed1063/report.md) | High-Elf Rogue | starvation | 89250 | 1 | 2 | — | unassessed | D1517-rust-seed1063: starvation at turn 89250 |
 | borg-reborn-rs | [D1518-rust-seed1001](../../docs/deaths/D1518-rust-seed1001/report.md) | Half-Elf Warrior | a giant white mouse | 81753 | 1 | 9 | — | unassessed | D1518-rust-seed1001: a giant white mouse at turn 81753 |
+| borg-reborn-rs | [D1519-rust-seed102](../../docs/deaths/D1519-rust-seed102/report.md) | Elf Mage | an acolyte | 1433 | 1 | 1 | — | unassessed | D1519-rust-seed102: an acolyte at turn 1433 |
+| borg-reborn-rs | [D1520-rust-seed103](../../docs/deaths/D1520-rust-seed103/report.md) | Dwarf Priest | a floating eye | 2522 | 1 | 1 | — | unassessed | D1520-rust-seed103: a floating eye at turn 2522 |
+| borg-reborn-rs | [D1521-rust-seed1041](../../docs/deaths/D1521-rust-seed1041/report.md) | Dwarf Necromancer | a grey mushroom patch | 1282 | 1 | 1 | — | unassessed | D1521-rust-seed1041: a grey mushroom patch at turn 1282 |
+| borg-reborn-rs | [D1522-rust-seed1024](../../docs/deaths/D1522-rust-seed1024/report.md) | Half-Orc Druid | a floating eye | 1088 | 1 | 1 | — | unassessed | D1522-rust-seed1024: a floating eye at turn 1088 |
+| borg-reborn-rs | [D1523-rust-seed1022](../../docs/deaths/D1523-rust-seed1022/report.md) | Gnome Druid | Grip, Farmer Maggot's Dog | 2056 | 1 | 1 | — | unassessed | D1523-rust-seed1022: Grip, Farmer Maggot's Dog at turn 2056 |
+| borg-reborn-rs | [D1524-rust-seed1044](../../docs/deaths/D1524-rust-seed1044/report.md) | Dunadan Necromancer | a giant white centipede | 1578 | 1 | 1 | — | unassessed | D1524-rust-seed1044: a giant white centipede at turn 1578 |
+| borg-reborn-rs | [D1525-rust-seed1021](../../docs/deaths/D1525-rust-seed1021/report.md) | Hobbit Druid | a small kobold | 3363 | 1 | 1 | — | unassessed | D1525-rust-seed1021: a small kobold at turn 3363 |
+| borg-reborn-rs | [D1526-rust-seed1013](../../docs/deaths/D1526-rust-seed1013/report.md) | Gnome Mage | a small kobold | 2157 | 1 | 1 | — | unassessed | D1526-rust-seed1013: a small kobold at turn 2157 |
+| borg-reborn-rs | [D1527-rust-seed1043](../../docs/deaths/D1527-rust-seed1043/report.md) | Half-Troll Necromancer | a floating eye | 3611 | 1 | 2 | — | unassessed | D1527-rust-seed1043: a floating eye at turn 3611 |
+| borg-reborn-rs | [D1528-rust-seed1014](../../docs/deaths/D1528-rust-seed1014/report.md) | Dwarf Mage | a floating eye | 5397 | 1 | 1 | — | unassessed | D1528-rust-seed1014: a floating eye at turn 5397 |
+| borg-reborn-rs | [D1529-rust-seed1020](../../docs/deaths/D1529-rust-seed1020/report.md) | Elf Druid | a giant yellow centipede | 5682 | 1 | 1 | — | unassessed | D1529-rust-seed1020: a giant yellow centipede at turn 5682 |
+| borg-reborn-rs | [D1530-rust-seed1034](../../docs/deaths/D1530-rust-seed1034/report.md) | Half-Troll Priest | a grey mushroom patch | 7392 | 1 | 2 | — | unassessed | D1530-rust-seed1034: a grey mushroom patch at turn 7392 |
+| borg-reborn-rs | [D1531-rust-seed1002](../../docs/deaths/D1531-rust-seed1002/report.md) | Elf Warrior | a grey mushroom patch | 9210 | 1 | 2 | — | unassessed | D1531-rust-seed1002: a grey mushroom patch at turn 9210 |
+| borg-reborn-rs | [D1532-rust-seed1030](../../docs/deaths/D1532-rust-seed1030/report.md) | Hobbit Priest | a giant white ant | 6569 | 1 | 2 | — | unassessed | D1532-rust-seed1030: a giant white ant at turn 6569 |
+| borg-reborn-rs | [D1533-rust-seed1010](../../docs/deaths/D1533-rust-seed1010/report.md) | Half-Elf Mage | a grey mushroom patch | 4937 | 1 | 1 | — | unassessed | D1533-rust-seed1010: a grey mushroom patch at turn 4937 |
+| borg-reborn-rs | [D1534-rust-seed1033](../../docs/deaths/D1534-rust-seed1033/report.md) | Half-Orc Priest | a grey mushroom patch | 9898 | 1 | 2 | — | unassessed | D1534-rust-seed1033: a grey mushroom patch at turn 9898 |
+| borg-reborn-rs | [D1535-rust-seed1023](../../docs/deaths/D1535-rust-seed1023/report.md) | Dwarf Druid | a grey mushroom patch | 10806 | 1 | 1 | — | unassessed | D1535-rust-seed1023: a grey mushroom patch at turn 10806 |
+| borg-reborn-rs | [D1536-rust-seed1042](../../docs/deaths/D1536-rust-seed1042/report.md) | Half-Orc Necromancer | poison | 21280 | 1 | 1 | — | unassessed | D1536-rust-seed1042: poison at turn 21280 |
+| borg-reborn-rs | [D1537-rust-seed1063](../../docs/deaths/D1537-rust-seed1063/report.md) | High-Elf Rogue | a floating eye | 7510 | 1 | 1 | — | unassessed | D1537-rust-seed1063: a floating eye at turn 7510 |
+| borg-reborn-rs | [D1538-rust-seed1054](../../docs/deaths/D1538-rust-seed1054/report.md) | High-Elf Paladin | a floating eye | 12835 | 1 | 1 | — | unassessed | D1538-rust-seed1054: a floating eye at turn 12835 |
+| borg-reborn-rs | [D1539-rust-seed1064](../../docs/deaths/D1539-rust-seed1064/report.md) | Kobold Rogue | a grey mushroom patch | 4055 | 1 | 1 | — | unassessed | D1539-rust-seed1064: a grey mushroom patch at turn 4055 |
+| borg-reborn-rs | [D1540-rust-seed1074](../../docs/deaths/D1540-rust-seed1074/report.md) | Human Ranger | a floating eye | 2237 | 1 | 1 | — | unassessed | D1540-rust-seed1074: a floating eye at turn 2237 |
+| borg-reborn-rs | [D1541-rust-seed1050](../../docs/deaths/D1541-rust-seed1050/report.md) | Dwarf Paladin | starvation | 89180 | 1 | 1 | — | unassessed | D1541-rust-seed1050: starvation at turn 89180 |
+| borg-reborn-rs | [D1542-rust-seed1052](../../docs/deaths/D1542-rust-seed1052/report.md) | Half-Troll Paladin | starvation | 44690 | 0 | 1 | — | unassessed | D1542-rust-seed1052: starvation at turn 44690 |
+| borg-reborn-rs | [D1543-rust-seed1073](../../docs/deaths/D1543-rust-seed1073/report.md) | Kobold Ranger | a grey mushroom patch | 9745 | 1 | 1 | — | unassessed | D1543-rust-seed1073: a grey mushroom patch at turn 9745 |
+| borg-reborn-rs | [D1544-rust-seed1081](../../docs/deaths/D1544-rust-seed1081/report.md) | High-Elf Blackguard | starvation | 89210 | 1 | 1 | — | unassessed | D1544-rust-seed1081: starvation at turn 89210 |
+| borg-reborn-rs | [D1545-rust-seed1053](../../docs/deaths/D1545-rust-seed1053/report.md) | Dunadan Paladin | a floating eye | 11708 | 1 | 3 | — | unassessed | D1545-rust-seed1053: a floating eye at turn 11708 |
+| borg-reborn-rs | [D1546-rust-seed1000](../../docs/deaths/D1546-rust-seed1000/report.md) | Human Warrior | starvation | 89250 | 0 | 1 | — | unassessed | D1546-rust-seed1000: starvation at turn 89250 |
+| borg-reborn-rs | [D1547-rust-seed1003](../../docs/deaths/D1547-rust-seed1003/report.md) | Hobbit Warrior | a yellow mushroom patch | 24845 | 2 | 5 | — | unassessed | D1547-rust-seed1003: a yellow mushroom patch at turn 24845 |
+| borg-reborn-rs | [D1548-rust-seed1061](../../docs/deaths/D1548-rust-seed1061/report.md) | Half-Troll Rogue | starvation | 44700 | 1 | 2 | — | unassessed | D1548-rust-seed1061: starvation at turn 44700 |
+| borg-reborn-rs | [D1549-rust-seed1072](../../docs/deaths/D1549-rust-seed1072/report.md) | High-Elf Ranger | starvation | 89220 | 0 | 1 | — | unassessed | D1549-rust-seed1072: starvation at turn 89220 |
+| borg-reborn-rs | [D1550-rust-seed1083](../../docs/deaths/D1550-rust-seed1083/report.md) | Human Blackguard | starvation | 89240 | 0 | 1 | — | unassessed | D1550-rust-seed1083: starvation at turn 89240 |
+| borg-reborn-rs | [D1551-rust-seed1070](../../docs/deaths/D1551-rust-seed1070/report.md) | Half-Troll Ranger | a floating eye | 28781 | 1 | 3 | — | unassessed | D1551-rust-seed1070: a floating eye at turn 28781 |
+| borg-reborn-rs | [D1552-rust-seed1040](../../docs/deaths/D1552-rust-seed1040/report.md) | Gnome Necromancer | starvation | 89200 | 1 | 1 | — | unassessed | D1552-rust-seed1040: starvation at turn 89200 |
+| borg-reborn-rs | [D1553-rust-seed1012](../../docs/deaths/D1553-rust-seed1012/report.md) | Hobbit Mage | starvation | 89170 | 1 | 1 | — | unassessed | D1553-rust-seed1012: starvation at turn 89170 |
+| borg-reborn-rs | [D1554-rust-seed1080](../../docs/deaths/D1554-rust-seed1080/report.md) | Dunadan Blackguard | starvation | 89240 | 1 | 1 | — | unassessed | D1554-rust-seed1080: starvation at turn 89240 |
+| borg-reborn-rs | [D1555-rust-seed1031](../../docs/deaths/D1555-rust-seed1031/report.md) | Gnome Priest | starvation | 89200 | 1 | 1 | — | unassessed | D1555-rust-seed1031: starvation at turn 89200 |
+| borg-reborn-rs | [D1556-rust-seed1084](../../docs/deaths/D1556-rust-seed1084/report.md) | Half-Elf Blackguard | starvation | 89240 | 1 | 1 | — | unassessed | D1556-rust-seed1084: starvation at turn 89240 |
+| borg-reborn-rs | [D1557-rust-seed1071](../../docs/deaths/D1557-rust-seed1071/report.md) | Dunadan Ranger | starvation | 89280 | 3 | 3 | — | unassessed | D1557-rust-seed1071: starvation at turn 89280 |
+| borg-reborn-rs | [D1558-rust-seed1060](../../docs/deaths/D1558-rust-seed1060/report.md) | Half-Orc Rogue | starvation | 89310 | 3 | 4 | — | unassessed | D1558-rust-seed1060: starvation at turn 89310 |
+| borg-reborn-rs | [D1559-rust-seed1062](../../docs/deaths/D1559-rust-seed1062/report.md) | Dunadan Rogue | starvation | 89370 | 2 | 4 | — | unassessed | D1559-rust-seed1062: starvation at turn 89370 |
+| borg-reborn-rs | [D1560-rust-seed1032](../../docs/deaths/D1560-rust-seed1032/report.md) | Dwarf Priest | starvation | 89220 | 1 | 1 | — | unassessed | D1560-rust-seed1032: starvation at turn 89220 |
+| borg-reborn-rs | [D1561-rust-seed1011](../../docs/deaths/D1561-rust-seed1011/report.md) | Elf Mage | starvation | 89190 | 1 | 1 | — | unassessed | D1561-rust-seed1011: starvation at turn 89190 |
+| borg-reborn-rs | [D1562-rust-seed1082](../../docs/deaths/D1562-rust-seed1082/report.md) | Kobold Blackguard | starvation | 89340 | 1 | 4 | — | unassessed | D1562-rust-seed1082: starvation at turn 89340 |
+| borg-reborn-rs | [D1563-rust-seed1004](../../docs/deaths/D1563-rust-seed1004/report.md) | Gnome Warrior | starvation | 89380 | 2 | 5 | — | unassessed | D1563-rust-seed1004: starvation at turn 89380 |
+| borg-reborn-rs | [D1564-rust-seed1001](../../docs/deaths/D1564-rust-seed1001/report.md) | Half-Elf Warrior | starvation | 89320 | 1 | 2 | — | unassessed | D1564-rust-seed1001: starvation at turn 89320 |
+| borg-reborn-rs | [D1565-rust-seed1051](../../docs/deaths/D1565-rust-seed1051/report.md) | Half-Orc Paladin | a giant white mouse | 82384 | 1 | 6 | — | unassessed | D1565-rust-seed1051: a giant white mouse at turn 82384 |
 
-1523 cases.
+1570 cases.

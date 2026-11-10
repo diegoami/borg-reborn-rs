@@ -54,6 +54,7 @@ const EXPECTED_IDS: &[&str] = &[
     "rust-d1358-retreat-at-one-hp",
     "rust-d1413-stairs-under-fang",
     "rust-d1420-starvation-no-food",
+    "rust-stuck-sealed-room",
 ];
 
 /// The open M4 tasks a gap may name. Update this list when an issue closes:
@@ -63,6 +64,11 @@ const OWNERS: &[(u32, &str)] = &[
     (119, "T4.2 one threat assessment (status, groups, horizon)"),
     (120, "T4.3 tactical alternatives scored on one scale"),
     (122, "T4.5 consumables, status recovery and reserves"),
+    (
+        123,
+        "T4.6 recovery, return home and progress under oscillation",
+    ),
+    (127, "T5.3 class item use, spells and ranged combat"),
 ];
 
 /// Every action name a fixture may use. The first group is what the

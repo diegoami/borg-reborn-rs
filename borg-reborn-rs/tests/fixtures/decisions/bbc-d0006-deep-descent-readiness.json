@@ -79,8 +79,8 @@
     "review-anchors.json"
   ],
   "construction": "Human Warrior CL8, 89/106 HP, D14. The dossier gives the open door south, the floor beyond it, pursuers north and the north-dark exploration choice at 72885. The room shape and the brown beetle's exact position are constructed; it is placed two diagonal steps north so it is remembered but not in contact.",
-  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The two Deep Descent reads and the missing Recall are not expressible in this action set.",
-  "blocked_by": 119,
+  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The assessment sees the brown beetle at one turn as harmless; the gap is planning under a pursuer at a longer horizon (#123), not the tactical score.",
+  "blocked_by": 123,
   "player": {
     "race": 0,
     "class": 0,

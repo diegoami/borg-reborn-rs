@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1544-rust-seed1081",
+  "run_kind": "harness",
+  "character": "High-Elf Blackguard",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89210,
+    "race_idx": 9,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1081,
+    "flags": "menu",
+    "git_rev": "9124a2b0c52c76deee152aedde38829205428601",
+    "git_dirty": "no",
+    "source_sha256": "b550dc79fb1e86e585622162923316176e8fd1450855b623b512a9a08610d197",
+    "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c",
+    "borg_txt_sha256": "ff62d7902f87f337d2f5f79df56feb359292b9aa28d3cf5cf1ced61d9f469e9d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1635
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-120b/full-8-blackguard-1",
+      "result_sha256": "55098f6400e10f96c94a41c854d2f92f7b29959bbf7f47cf66b0c8e00e56af46",
+      "raw_sha256": {
+        "keys.log": "55098f6400e10f96c94a41c854d2f92f7b29959bbf7f47cf66b0c8e00e56af46",
+        "messages.log": "d933e16f3e7c9a67b979c781b28be3c0b167c045c292e8c281ec856c8fd0adfb",
+        "state.log": "4aa54be710b6890bdcb0085283a8f066c32bf59a089cd94feb8a82096658541e"
+      },
+      "source_commit": "9124a2b0c52c76deee152aedde38829205428601",
+      "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c"
+    }
+  ],
+  "encounter_family": "start-7f056d944d9178561168bbc3612b3a6bcdc4aa2f91cc4bde8e28338bfe40b297",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b65a6954a8c0091c24852549f8ff548581fefc6473aa77c53a9bbd785a02f02d",
+    "config.txt": "22c910c722c1469a02822976391a29f2713c05e0ffaaacb9c0e1dfe2579e8a73",
+    "depths.json": "d2954227f7be66ccb094c013e258b32ee957a68716148d77fc64468e5c0521c0",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "50b3bda7ddb7e56f26ef546d1bcdb17554f91a3bd189f73ab7d67d7741967ff2",
+    "trace-tail.jsonl": "343aa956ac578baf0d398925f095de31dea774d2c88464da73de84a48fe2dc44"
+  },
+  "investigation": null,
+  "issue": null
+}

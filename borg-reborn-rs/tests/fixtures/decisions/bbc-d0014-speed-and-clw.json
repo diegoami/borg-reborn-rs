@@ -106,7 +106,7 @@
   "depth": 20,
   "max_depth": 20,
   "current": {
-    "action": "Walk"
+    "action": "Attack"
   },
   "pins_forbidden": false
 }

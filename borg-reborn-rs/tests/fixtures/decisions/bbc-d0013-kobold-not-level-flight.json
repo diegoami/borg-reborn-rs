@@ -40,8 +40,12 @@
   ],
   "feasible": [
     {
+      "action": "Attack",
+      "item": "the small kobold, as the owner branch did"
+    },
+    {
       "action": "Walk",
-      "item": "away from the kobold, not up the staircase"
+      "item": "or step back"
     }
   ],
   "map": [
