@@ -17,6 +17,7 @@
 use crate::engine::{self, Key, PlayerView, ESCAPE};
 use crate::executor::{self, Action, Executor};
 use crate::params::Params;
+use crate::strategy::{Decision, DecisionCtx, FirstStrategy, Strategy};
 use crate::trace::{Budget, Candidate, TraceLine};
 use std::sync::Mutex;
 
@@ -163,92 +164,6 @@ impl Memory {
     }
 }
 
-/// A decision and what led to it: the decision trace's content
-/// (`trace::TraceLine`).
-#[derive(Clone, Debug, PartialEq)]
-pub struct Decision {
-    pub action: Action,
-    pub goal: &'static str,
-    /// Thinks left at this game turn before the Borg must take an action
-    /// that uses time (`max_tries_per_turn`).
-    pub budget_left: i64,
-    /// The actions considered, with their scores.
-    pub candidates: Vec<(Action, f64)>,
-    pub violations: Vec<String>,
-}
-
-/// Choose an action with the default parameters (tests and callers that
-/// need only the action).
-pub fn decide(
-    view: &PlayerView,
-    here: Option<u32>,
-    around: impl Fn(i32, i32) -> Option<u32>,
-    mem: &Memory,
-    rng: &mut Rng,
-) -> Action {
-    decide_with(view, here, around, mem, rng, &Params::default()).action
-}
-
-/// Choose an action. `here` is the known feature underfoot, `around(dx, dy)`
-/// the known feature of a neighbour. Pure: no engine access.
-pub fn decide_with(
-    view: &PlayerView,
-    here: Option<u32>,
-    around: impl Fn(i32, i32) -> Option<u32>,
-    mem: &Memory,
-    rng: &mut Rng,
-    p: &Params,
-) -> Decision {
-    let one = |action: Action, goal: &'static str, left: i64, violations: Vec<String>| Decision {
-        action,
-        goal,
-        budget_left: left,
-        candidates: vec![(action, 1.0)],
-        violations,
-    };
-    // No loop without game time (GOALS principle 6): an earlier action at
-    // this same turn took no time, so only time-taking actions remain, and
-    // after `max_tries_per_turn` tries the Borg stands still.
-    let tries = mem.tries_at(view.turn);
-    let left = i64::from(p.max_tries_per_turn) - i64::from(tries);
-    if tries >= p.max_tries_per_turn {
-        let why = format!(
-            "{tries} thinks at game turn {} took no time (GOALS principle 6)",
-            view.turn
-        );
-        return one(stand_still(here, around), "stand still", left, vec![why]);
-    }
-    if here == Some(feat::MORE) {
-        return one(Action::Descend, "descend", left, vec![]);
-    }
-    if view.hp * 100 < view.max_hp * p.rest_below_hp_pct && tries == 0 {
-        return one(Action::Rest(p.rest_turns), "rest", left, vec![]);
-    }
-    let options: Vec<u8> = DIRS
-        .iter()
-        .filter(|(_, dx, dy)| walkable(around(*dx, *dy)))
-        .map(|(d, _, _)| *d)
-        .collect();
-    if options.is_empty() {
-        // Boxed in by known walls: a walk would take no time.
-        return one(
-            stand_still(here, around),
-            "stand still (boxed in)",
-            left,
-            vec![],
-        );
-    }
-    let action = Action::Walk(options[rng.below(options.len())]);
-    let score = 1.0 / options.len() as f64;
-    Decision {
-        action,
-        goal: "explore (random walk)",
-        budget_left: left,
-        candidates: options.iter().map(|&d| (Action::Walk(d), score)).collect(),
-        violations: vec![],
-    }
-}
-
 struct Borg {
     /// The executor (T3.1): the key queue, the pending effect and the
     /// prompts answered since the last think.
@@ -273,6 +188,9 @@ struct Borg {
     /// L3: the game's static data, read at the first think (T2.3). Written
     /// once to `BORG_KNOWLEDGE_LOG=FILE` when that is set.
     knowledge: Option<crate::knowledge::Knowledge>,
+    /// L5: the first strategy (T3.3), which replaces the minimal Borg's
+    /// placeholder policy.
+    strategy: FirstStrategy,
     /// The parameters, from the profile read at start (T2.4).
     params: Params,
     /// The decision trace (`BORG_RUN_DIR/trace.jsonl`), one line per think.
@@ -362,6 +280,7 @@ pub fn command() {
                     .expect("truth.jsonl cannot be created")
             }),
             knowledge: None,
+            strategy: FirstStrategy::default(),
             params,
             trace,
             thinks: 0,
@@ -440,7 +359,7 @@ fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
     let line = TraceLine {
         turn: view.turn,
         think: b.thinks,
-        mode: "placeholder".into(),
+        mode: d.mode.into(),
         goal: d.goal.into(),
         budget: Some(Budget {
             unit: "thinks at this game turn".into(),
@@ -528,7 +447,7 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
         }
     }
     #[cfg(not(feature = "test-hallucinate"))]
-    let (here, around, observation) = perceive(b);
+    let (_here, _around, observation) = perceive(b);
     if let Some(o) = observation.as_ref() {
         use std::io::Write;
         if b.knowledge.is_none() {
@@ -574,20 +493,33 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
         before,
         "perception moved the game's RNG"
     );
-    let lookup = |dx: i32, dy: i32| {
-        DIRS.iter()
-            .position(|(_, x, y)| (*x, *y) == (dx, dy))
-            .and_then(|i| around[i])
-    };
     // The pending action's effect, checked against this think's
     // observation (ARCHITECTURE.md L6): each action is checked exactly
     // once, by the think after it. A mismatch is a violation for the
-    // trace, so a key sequence the game silently ignored is visible.
+    // trace, so a key sequence the game silently ignored is visible —
+    // and the strategy's signal that its goal is not progressing.
     let mut mismatches = match observation.as_ref() {
         Some(o) => b.executor.check_pending(o),
         None => b.executor.drop_pending().into_iter().collect(),
     };
-    let mut d = decide_with(view, here, lookup, &b.mem, &mut b.rng, &b.params);
+    // L5 decides (T3.3), on the world the observation built, the
+    // knowledge read at the first think, and a pathfinder that lives
+    // exactly this think (ARCHITECTURE.md L4: no map outlives its
+    // observation).
+    let empty_knowledge = crate::knowledge::Knowledge::default();
+    let knowledge = b.knowledge.as_ref().unwrap_or(&empty_knowledge);
+    let mut paths = crate::path::Paths::new(&b.world);
+    let mut ctx = DecisionCtx {
+        view,
+        world: &b.world,
+        knowledge,
+        paths: &mut paths,
+        mem: &b.mem,
+        rng: &mut b.rng,
+        params: &b.params,
+        failures: &mismatches,
+    };
+    let mut d = b.strategy.decide(&mut ctx);
     d.violations.append(&mut mismatches);
     // Queue the chosen action's keys. Without an observation the keys
     // still go out (only a sale's quantity reads the pack), and the
@@ -608,103 +540,10 @@ mod tests {
     use crate::engine::KC_ENTER;
     use crate::observation::Observation;
 
-    /// The table default of `max_tries_per_turn`.
-    const MAX_TRIES_PER_TURN: u32 = 2;
-
     /// An empty observation, for the key sequences of the actions the
-    /// placeholder chooses (none of them reads the pack).
+    /// strategy chooses (none of them reads the pack).
     fn obs() -> Observation {
         Observation::default()
-    }
-
-    fn view(hp: i32, turn: i64) -> PlayerView {
-        PlayerView {
-            hp,
-            max_hp: 20,
-            x: 5,
-            y: 5,
-            depth: 1,
-            dead: false,
-            busy: false,
-            turn,
-        }
-    }
-
-    #[test]
-    fn descends_when_on_a_down_staircase() {
-        let a = decide(
-            &view(20, 1),
-            Some(feat::MORE),
-            |_, _| Some(feat::FLOOR),
-            &Memory::default(),
-            &mut Rng::new(),
-        );
-        assert_eq!(a, Action::Descend);
-    }
-
-    #[test]
-    fn rests_when_hurt_but_not_again_without_time_passing() {
-        let mut rng = Rng::new();
-        let floor = |_, _| Some(feat::FLOOR);
-        let mut mem = Memory::default();
-        let a = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
-        assert_eq!(a, Action::Rest(75));
-        mem.record(7, a);
-        let b = decide(&view(10, 7), Some(feat::FLOOR), floor, &mem, &mut rng);
-        assert!(
-            matches!(b, Action::Walk(_)),
-            "a refused rest is not repeated: {b:?}"
-        );
-        mem.record(7, b);
-        let mut later = Memory::default();
-        later.record(6, Action::Rest(75));
-        assert_eq!(
-            decide(&view(10, 7), Some(feat::FLOOR), floor, &later, &mut rng),
-            Action::Rest(75)
-        );
-    }
-
-    /// Review finding on #39: Rest -> Walk -> Rest at one unchanged turn, and
-    /// walks into known walls, were possible. Simulate a game that refuses
-    /// every action: the Borg must reach Hold (which always takes time)
-    /// within MAX_TRIES_PER_TURN thinks and never rest twice at one turn.
-    #[test]
-    fn no_loop_without_game_time() {
-        let mut rng = Rng::new();
-        let mut mem = Memory::default();
-        let mut rests = 0;
-        let mut held = false;
-        for _ in 0..10 {
-            let a = decide(
-                &view(10, 42),
-                Some(feat::FLOOR),
-                |_, _| Some(feat::FLOOR),
-                &mem,
-                &mut rng,
-            );
-            rests += (a == Action::Rest(75)) as u32;
-            mem.record(42, a);
-            if a == Action::Hold {
-                held = true;
-                break;
-            }
-        }
-        assert!(held, "no Hold after repeated refusals");
-        assert!(mem.same_turn < MAX_TRIES_PER_TURN + 1);
-        assert!(rests <= 1, "rested {rests} times at one turn");
-    }
-
-    #[test]
-    fn boxed_in_by_known_walls_holds() {
-        let a = decide(
-            &view(20, 1),
-            Some(feat::FLOOR),
-            |_, _| Some(21),
-            &Memory::default(),
-            &mut Rng::new(),
-        );
-        assert_eq!(a, Action::Hold);
-        assert_eq!(a.keys(&obs()), vec![ESCAPE, b',' as u32]);
     }
 
     /// M1 re-review N2 and R2: on a shop entrance ',' enters the store and
@@ -714,24 +553,9 @@ mod tests {
     fn on_a_shop_it_alters_instead_of_holding() {
         // Shop walls (permanent, 22) all round, floor to the south (direction 2).
         let around = |dx: i32, dy: i32| Some(if (dx, dy) == (0, 1) { feat::FLOOR } else { 22 });
-        let mut mem = Memory::default();
-        let mut forced = Vec::new();
-        for _ in 0..6 {
-            let a = decide(
-                &view(20, 9),
-                Some(feat::STORE_GENERAL),
-                around,
-                &mem,
-                &mut Rng::new(),
-            );
-            assert_ne!(a, Action::Hold, "held on a shop");
-            if mem.tries_at(9) >= MAX_TRIES_PER_TURN {
-                forced.push(a);
-            }
-            mem.record(9, a);
-        }
-        assert!(!forced.is_empty());
-        assert!(forced.iter().all(|a| *a == Action::Alter(2)), "{forced:?}");
+        let a = stand_still(Some(feat::STORE_GENERAL), around);
+        assert_ne!(a, Action::Hold, "held on a shop");
+        assert_eq!(a, Action::Alter(2));
         assert_eq!(
             Action::Alter(2).keys(&obs()),
             vec![ESCAPE, b'+' as u32, b'2' as u32]
@@ -756,84 +580,12 @@ mod tests {
     }
 
     #[test]
-    fn walks_only_where_it_may() {
-        // Only the grid to the east (direction 6) is floor; the rest are granite (21).
-        let around = |dx: i32, dy: i32| Some(if (dx, dy) == (1, 0) { feat::FLOOR } else { 21 });
-        for _ in 0..20 {
-            assert_eq!(
-                decide(
-                    &view(20, 1),
-                    Some(feat::FLOOR),
-                    around,
-                    &Memory::default(),
-                    &mut Rng::new()
-                ),
-                Action::Walk(6)
-            );
-        }
-    }
-
-    #[test]
     fn shops_and_walls_are_not_walkable_but_unknown_grids_are() {
         assert!(walkable(Some(feat::NONE)));
         assert!(walkable(Some(feat::CLOSED)));
         assert!(!walkable(Some(7)), "a shop entrance");
         assert!(!walkable(Some(21)), "granite");
         assert!(!walkable(None), "outside the level");
-    }
-
-    #[test]
-    fn the_decision_explains_itself() {
-        let floor = |_: i32, _: i32| Some(feat::FLOOR);
-        let d = decide_with(
-            &view(20, 1),
-            Some(feat::FLOOR),
-            floor,
-            &Memory::default(),
-            &mut Rng::new(),
-            &Params::default(),
-        );
-        assert_eq!(d.goal, "explore (random walk)");
-        assert_eq!(d.candidates.len(), 8);
-        assert!(d.candidates.iter().any(|(a, _)| *a == d.action));
-        assert_eq!(d.budget_left, 2);
-        assert!(d.violations.is_empty());
-        // The guard of principle 6 is a violation the trace shows.
-        let mut mem = Memory::default();
-        mem.record(1, Action::Walk(2));
-        mem.record(1, Action::Walk(2));
-        let d = decide_with(
-            &view(20, 1),
-            Some(feat::FLOOR),
-            floor,
-            &mem,
-            &mut Rng::new(),
-            &Params::default(),
-        );
-        assert_eq!(d.goal, "stand still");
-        assert_eq!(d.violations.len(), 1, "{:?}", d.violations);
-        // A profile changes the decision: rest at 99% instead of 70%.
-        let p = Params::from_profile("t", b"rest_below_hp_pct = 99\nrest_turns = 12\n").unwrap();
-        let d = decide_with(
-            &view(19, 1),
-            Some(feat::FLOOR),
-            floor,
-            &Memory::default(),
-            &mut Rng::new(),
-            &p,
-        );
-        assert_eq!(d.action, Action::Rest(12));
-        let default = decide(
-            &view(19, 1),
-            Some(feat::FLOOR),
-            floor,
-            &Memory::default(),
-            &mut Rng::new(),
-        );
-        assert!(
-            matches!(default, Action::Walk(_)),
-            "the defaults do not rest at 95%"
-        );
     }
 
     #[test]

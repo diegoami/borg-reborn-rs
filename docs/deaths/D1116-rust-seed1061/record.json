@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1116-rust-seed1061",
+  "run_kind": "harness",
+  "character": "Half-Troll Rogue",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5520,
+    "race_idx": 7,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1061,
+    "flags": "menu",
+    "git_rev": "d38accaccf24097166758ef6a3e6aaadc891d699",
+    "git_dirty": "yes",
+    "source_sha256": "58a41b99a6aebd24802b023e030a3ad31ba068cf8291c7b71b0bde86aa003bb3",
+    "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52",
+    "borg_txt_sha256": "13afcf24ea65d4d78214fbfb6554d49671dde3945aef8757ee5e6d1c3aa7c066",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 554
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-6-rogue-1",
+      "result_sha256": "f80c4a63a824786f9bc67ae8478e973a5383cf6620dbcbbd03efb2359457ffd8",
+      "raw_sha256": {
+        "keys.log": "f80c4a63a824786f9bc67ae8478e973a5383cf6620dbcbbd03efb2359457ffd8",
+        "messages.log": "9618c8ca6e8a6c9d679ed0ebc094e97ab323e85b05414bb3e7ae1b38cb8b154e",
+        "state.log": "1418fcded64086812a27642259d8909c902f52985e082c1ed78529f02010724f"
+      },
+      "source_commit": "d38accaccf24097166758ef6a3e6aaadc891d699",
+      "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52"
+    }
+  ],
+  "encounter_family": "start-ca4e9ad121c9755efd7e167359c150028667554455c1b9458737a6919f12a89b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "663c4198b552731e362eff1d4a03070944d9dcfe68f067ac3bb8fc71f5581ee5",
+    "config.txt": "dbc2d9782a7949b0a50e8498bf2481aa34050aaaa7ba8e7e2dd635b590f6248e",
+    "depths.json": "6863aabadf41613a519cf0474369008f2b626488a998a2c4ac166e596a4d9637",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "65afb34ca0f27fa86579430711ca50d6824caa3baf461d1f1900c486b2cd3ee7",
+    "trace-tail.jsonl": "6cd269419a1dc7725182450c8b729b004c1d8b01bf13d0f949f18bf8b2642320"
+  },
+  "investigation": null,
+  "issue": null
+}

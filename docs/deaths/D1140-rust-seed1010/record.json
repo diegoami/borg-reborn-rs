@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1140-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "a scruffy little dog",
+  "terminal": {
+    "cause": "a scruffy little dog",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 659,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "menu",
+    "git_rev": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+    "git_dirty": "yes",
+    "source_sha256": "ca8e9b206fd719335d6c7bc4b7df5afcf5ff5e728416d7f1649c1d374d5fb29e",
+    "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a",
+    "borg_txt_sha256": "e6d6978ca7222fc2ddc12072c2b6bb9d677a1890e958498c72793f5430a25375",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 66,
+    "of": 66
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-1-mage-0",
+      "result_sha256": "d102dd2cb02dd801448e2f53772558f0598020568b5996cae07d5206063e60e5",
+      "raw_sha256": {
+        "keys.log": "d102dd2cb02dd801448e2f53772558f0598020568b5996cae07d5206063e60e5",
+        "messages.log": "205d2fa0a5ab7d48dccda7a1a3423b6071d00eec7196094ab58e6016f08cfd30",
+        "state.log": "cb94d65f876bf86ed5826fe1f7f3e79b0240ecd4b0d713bef78ff701792d405d"
+      },
+      "source_commit": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+      "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a"
+    }
+  ],
+  "encounter_family": "start-b8c6d1de3faff4d8ae89d4bfc091824c751deaf6be8bf7a6e66a601a71255d6d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4b15f96a271cad6811bf19f6de0ce3bcd460e7e0bf6e9f1e4edb422d6cd9fe04",
+    "config.txt": "8b01b780441785381c676b1525fc39db26b57b377add13298a290375bb5aeec9",
+    "depths.json": "6c13bbe01bea80922070de7ac1a5b8f9a76bbd9469ceb4c12e6f3506d1a0b52e",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "24946155cea7945d0715ecca7ec9f769d394579ecd4601816d87391069905ac7",
+    "trace-tail.jsonl": "75eadf86e343888997894374700383efd2010443b651e9ba91acc196717a7a35"
+  },
+  "investigation": null,
+  "issue": null
+}

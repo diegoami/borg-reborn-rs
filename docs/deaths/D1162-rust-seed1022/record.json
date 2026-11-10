@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1162-rust-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 6150,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1022,
+    "flags": "menu",
+    "git_rev": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+    "git_dirty": "yes",
+    "source_sha256": "ca8e9b206fd719335d6c7bc4b7df5afcf5ff5e728416d7f1649c1d374d5fb29e",
+    "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a",
+    "borg_txt_sha256": "ffb38dfa422f79eb8b9d030f317394fcb4dec4d7461fce78d88cd905230680f2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 615
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-2-druid-2",
+      "result_sha256": "a2e6bb8f794c20bd52d64393acf207f641945c51a6e9f5edc11c6fad4ff402d3",
+      "raw_sha256": {
+        "keys.log": "a2e6bb8f794c20bd52d64393acf207f641945c51a6e9f5edc11c6fad4ff402d3",
+        "messages.log": "ac55ebb3f94e048822f7375e24b60119cf9837ef341d8a15484e6f8e84cd7e27",
+        "state.log": "9298ac266d282b08c80ed4faf21bdd7ea4e2a25d27c6689eab16021e7b0eacbd"
+      },
+      "source_commit": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+      "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a"
+    }
+  ],
+  "encounter_family": "start-51e6ac18ff843462304446a88d24eb356d1a64438b3d1c182410e98b33a73fc8",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4b15f96a271cad6811bf19f6de0ce3bcd460e7e0bf6e9f1e4edb422d6cd9fe04",
+    "config.txt": "37912e687df89e6068bd15cdfcad84cd7b84025645d277848c991b1def3eed9e",
+    "depths.json": "4d2a2a55a4208bd5d15cdc09f9593360ff58721f0f748c8a9b4dc8528c587ad2",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "d3dc96debd933d22caa2fa5bc83e06367f63b04bf4d47423f7007fb5ac4b0eb8",
+    "trace-tail.jsonl": "dacb359516dde9ec991ea6391e4817b42bad1bbe812f3baea319addfee88db74"
+  },
+  "investigation": null,
+  "issue": null
+}

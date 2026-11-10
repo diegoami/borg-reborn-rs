@@ -2,6 +2,56 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.3, the first strategy (#19)
+
+`strategy.rs` (L5) replaces the minimal Borg's placeholder policy — the
+**first play change since M1**; the references are regenerated in this
+PR and every difference is the strategy's.
+
+- **Modes, goals, budgets, cooldowns** (GOALS principle 6):
+  `Recover`/`Descend`/`Explore`, each goal with a budget in game turns
+  and a progress measure (hit points for recover, depth for descend, the
+  level's remembered grids for explore); a goal that stalls past its
+  budget, or whose action the executor reports refused, fails and its
+  mode cools down (`goal_cooldown_turns`, 100). Hysteresis is by rule,
+  not by number: a live goal keeps its mode until it completes, becomes
+  unsafe or exhausts its budget; the recovery invariant outranks all.
+- **The M3 danger placeholder** (`danger.rs`): the C Borg's danger sum
+  lifted with citations — `borg_danger`'s capped sum
+  (`borg-danger.c:2824-2865`), `borg_danger_one_kill`'s energy model
+  (`:2361-2395`), proximity model (`:2516-2593`) and wakefulness and
+  condition scaling, and `borg_danger_physical`'s per-blow full-damage
+  terms for the common early blows. Declared out, for M4: the spell
+  term (a caster at range scores melee only), the friends multiplier,
+  the fear maps, PFE and buffs. It now feeds both the flow's threat
+  costs (replacing T3.2's hand-rolled shape) and the strategy's rest
+  gate.
+- **Rest safety** is the strict reading of c15 REST-01: rest only at
+  zero danger — the C Borg's `avoidance` form rests beside a small
+  monster and dies on the rest's own turns (bbc D0017), and ours did
+  too in the first try (a rest-loop against a fruit bat).
+- **Recovery under threat** steps to the least dangerous neighbour
+  (never onto a monster's grid) — one step of L4 until M4's tactical
+  layer.
+- Two new parameters with declared-placeholder defaults:
+  `explore_budget_turns` (2000) and `goal_cooldown_turns` (100).
+- The trace's mode is the strategy's own ("explore", "descend",
+  "recover"); the executor's effect failures reach the strategy as goal
+  failures.
+
+**The honest M3 state:** the Borg cannot fight (melee is T3.4), so it
+retreats from everything — and a faster pursuer kills a retreating
+character (bbc D0018's shape). The smoke runs die early: seed 101 to a
+fruit bat at turn 2815, the mage to a grey mold at 2221, and the town
+runs to dogs and cats (D1081–D1086 and the full suite's). No stall, no
+crash, no harness failure, no effect violation; modes switch correctly
+(explore 246 / descend 16 / recover 21 in the seed-101 trace); the same
+seed twice gives byte-identical keys.
+
+**Next:** T3.4 (#20) — melee (the exchange judged with the danger sum),
+pickup, stairs and rest as real behaviours on top of the machinery.
+Then T3.5 (town), T3.6 (traces in dossiers), T3.7 (G0).
+
 ## 2026-11-10: borg-runner's ACCUMULATED_KNOWLEDGE, copied (S15)
 
 A pass over borg-runner and better-borg-c, asked for by the owner, found

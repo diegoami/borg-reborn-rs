@@ -25,12 +25,14 @@
 pub(crate) mod bindings;
 
 pub mod borg;
+pub mod danger;
 pub mod engine;
 pub mod executor;
 pub mod knowledge;
 pub mod observation;
 pub mod params;
 pub mod path;
+pub mod strategy;
 pub mod trace;
 pub mod world;
 

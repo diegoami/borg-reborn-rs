@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1169-rust-seed1004",
+  "run_kind": "harness",
+  "character": "Gnome Warrior",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 11372,
+    "race_idx": 4,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1004,
+    "flags": "menu",
+    "git_rev": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+    "git_dirty": "yes",
+    "source_sha256": "ca8e9b206fd719335d6c7bc4b7df5afcf5ff5e728416d7f1649c1d374d5fb29e",
+    "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a",
+    "borg_txt_sha256": "da9434e9c2c823d9c0050bbcf1175bae01df1cc7b9b2c180dd28bbdf077cd334",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1136
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-0-warrior-4",
+      "result_sha256": "b99eaef95769f644bdf69a8fe2d7cb7bb7d8b80cd02f35f293e952af1001907b",
+      "raw_sha256": {
+        "keys.log": "b99eaef95769f644bdf69a8fe2d7cb7bb7d8b80cd02f35f293e952af1001907b",
+        "messages.log": "8c7d94e4a7dee30ec8ded04ae30703832840aab4fd170dfa9f1881c30022b705",
+        "state.log": "dadcf932ada558158e934c42c02a4837252bafef72abce6479fb5cff6ce63f33"
+      },
+      "source_commit": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+      "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a"
+    }
+  ],
+  "encounter_family": "start-180c8460dfd1a07f06835b2b829c09e240ad06e242bc8d461a58d9dcbee43a57",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4b15f96a271cad6811bf19f6de0ce3bcd460e7e0bf6e9f1e4edb422d6cd9fe04",
+    "config.txt": "757266a4bf4b4be7ab6a1b50b0212150b1056d3f19c1a072bed539e04c97dd1f",
+    "depths.json": "c9f7694d845ef20968773107eeb06e2ae472e2e08aa236eb050376bc7f52df6e",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "53d3c1609a0fb5729e05b4c49fe6d6eca118719e49e7358986d70a73d8b346cf",
+    "trace-tail.jsonl": "fc7a88d2b89b685d07fb506f178998b11cc0ef0872d31918a2c6ab1a3b1662c1"
+  },
+  "investigation": null,
+  "issue": null
+}
