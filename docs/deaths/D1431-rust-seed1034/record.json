@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1431-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Half-Troll Priest",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1596,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "menu",
+    "git_rev": "3bffe58470465a701546b86128388197b7684d9c",
+    "git_dirty": "no",
+    "source_sha256": "b3c7c92a42dec209b3214950d72bf8d5524d90fd665ea7935e16df42c737f8ac",
+    "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 167,
+    "of": 167
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-142d/full-3-priest-4",
+      "result_sha256": "d219dc430b02607e4cfe7dbf3876c7303a49c7544315531fce63fefe4d5aa286",
+      "raw_sha256": {
+        "keys.log": "d219dc430b02607e4cfe7dbf3876c7303a49c7544315531fce63fefe4d5aa286",
+        "messages.log": "cd49aaef6313865c7bd401b06c961d499b42210d6e6f6099ec700e36671ac399",
+        "state.log": "d1d14bfa830b1bd2d54dd9cef9b12d90fc13fae9c0e72dbe19923d92484dcbc9"
+      },
+      "source_commit": "3bffe58470465a701546b86128388197b7684d9c",
+      "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184"
+    }
+  ],
+  "encounter_family": "start-9a4de47ac6e37dc8a09fe99137a46faec6446f939c5bf461ac51101a94a68713",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c33cefea0296b587bc5d0b2e2b00d9094be85a2660a5c7096d9a14ad06d5adec",
+    "config.txt": "20107157744cfbd8e823e293418852e03aa9bb3557faee37bd91673ac8699225",
+    "depths.json": "d3b31603d8910c4489d459c5efaf2f6985c2211daa78021fef5d71a5a2367f88",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "ccf53128d88b1cbd31a37ec48364271ab04ef7336bf5ac12ea4b3a3f15b36d55",
+    "trace-tail.jsonl": "f2247350a4b0c409dbf8cbe625a7153460053205dcff493b46650287697f89e3"
+  },
+  "investigation": null,
+  "issue": null
+}

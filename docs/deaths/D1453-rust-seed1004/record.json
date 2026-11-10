@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1453-rust-seed1004",
+  "run_kind": "harness",
+  "character": "Gnome Warrior",
+  "raw_cause": "an apprentice",
+  "terminal": {
+    "cause": "an apprentice",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 5839,
+    "race_idx": 4,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1004,
+    "flags": "menu",
+    "git_rev": "3bffe58470465a701546b86128388197b7684d9c",
+    "git_dirty": "no",
+    "source_sha256": "b3c7c92a42dec209b3214950d72bf8d5524d90fd665ea7935e16df42c737f8ac",
+    "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184",
+    "borg_txt_sha256": "da9434e9c2c823d9c0050bbcf1175bae01df1cc7b9b2c180dd28bbdf077cd334",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 591
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-142d/full-0-warrior-4",
+      "result_sha256": "f45a87d824dd3f715f6d47849e1183933155c3865a3d97c006f4f40ecd085947",
+      "raw_sha256": {
+        "keys.log": "f45a87d824dd3f715f6d47849e1183933155c3865a3d97c006f4f40ecd085947",
+        "messages.log": "53ff6380c623e600f7391ffb07594afb63ada2f3407534048f9b13e6c1f6b056",
+        "state.log": "834f3179ae6ea4c6fd70ee070deeb00a02ffd49000aed6a724989924efddfd6e"
+      },
+      "source_commit": "3bffe58470465a701546b86128388197b7684d9c",
+      "binary_sha256": "c3ba53b1b8e9a6a2d4eb517124ae4294a69420d01a26ba42fc392e7328834184"
+    }
+  ],
+  "encounter_family": "start-a08fba806c21f5df9964edcc87f9a93b9f24af311fc9a881662e428eab277c76",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c33cefea0296b587bc5d0b2e2b00d9094be85a2660a5c7096d9a14ad06d5adec",
+    "config.txt": "757266a4bf4b4be7ab6a1b50b0212150b1056d3f19c1a072bed539e04c97dd1f",
+    "depths.json": "2a3bce0d6f4cc3ec347c27f0c6ec55c108e74c8b5d52af4174af9aca546228f1",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "6a94136a76d0acc0f473824b7fefc9724e75d36712bb8d0d74e2e0ae89f5ecd0",
+    "trace-tail.jsonl": "597f6721d529f019d7e9f2a13e5117dc7c083eb5fb30feec5db1ffa1b9be2cb5"
+  },
+  "investigation": null,
+  "issue": null
+}
