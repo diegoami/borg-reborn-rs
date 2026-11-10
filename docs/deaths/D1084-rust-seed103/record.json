@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1084-rust-seed103",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a scrawny cat",
+  "terminal": {
+    "cause": "a scrawny cat",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 1143,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "-",
+    "git_rev": "d38accaccf24097166758ef6a3e6aaadc891d699",
+    "git_dirty": "yes",
+    "source_sha256": "58a41b99a6aebd24802b023e030a3ad31ba068cf8291c7b71b0bde86aa003bb3",
+    "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52",
+    "borg_txt_sha256": "f20f7ed7065a31dec52467b932f8f9ea4b17f69922732c02c583e160b6ddb419",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 114,
+    "of": 114
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-try2-103",
+      "result_sha256": "331a001a062a031d443eaa32d2fbffefe5220d05023e2fe278933ec024e12c85",
+      "raw_sha256": {
+        "keys.log": "331a001a062a031d443eaa32d2fbffefe5220d05023e2fe278933ec024e12c85",
+        "messages.log": "7f8485843e4b3a1db27ea3fc1faf8de1fbed2330d80d56b36e6c989cf3805bfd",
+        "state.log": "e3448819fab5dfe1f63b5bfa2bafa84cf8a1a5af25e29ef14f9bd5e8824df75c"
+      },
+      "source_commit": "d38accaccf24097166758ef6a3e6aaadc891d699",
+      "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52"
+    }
+  ],
+  "encounter_family": "start-0282e567ffcb70d12a5247a3d6bb0ecb4b6994b8458236dec81b398f4a15a90d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "663c4198b552731e362eff1d4a03070944d9dcfe68f067ac3bb8fc71f5581ee5",
+    "config.txt": "45ef1f8e72d9b0bd66c1bcd54cb4985d0c68a6d33970e97405065428638d8f0b",
+    "depths.json": "42eae50453483e5913fa5931318c7cad6aa8ebc60d17bc99f476e3755bf2d28c",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "d47efb4dc3db4cb2acd242e6a472ac22a7b7d2c38ed89d9aa3349aae503b8346",
+    "trace-tail.jsonl": "8da41237e06c5f36b5f7baeebe8ea475a373144cb145fcad3457e77b70ea9675"
+  },
+  "investigation": null,
+  "issue": null
+}

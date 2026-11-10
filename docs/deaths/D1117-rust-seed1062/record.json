@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1117-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2684,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "d38accaccf24097166758ef6a3e6aaadc891d699",
+    "git_dirty": "yes",
+    "source_sha256": "58a41b99a6aebd24802b023e030a3ad31ba068cf8291c7b71b0bde86aa003bb3",
+    "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52",
+    "borg_txt_sha256": "7333bbd27a21a09e4a74fcee94fd434a712081e329e8f564c2e958854c17ceb3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 270
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-6-rogue-2",
+      "result_sha256": "bb5f155dddc3ddc2c0be2f86d8ca96da0153ef78c58024e0e38e4677d3aedb26",
+      "raw_sha256": {
+        "keys.log": "bb5f155dddc3ddc2c0be2f86d8ca96da0153ef78c58024e0e38e4677d3aedb26",
+        "messages.log": "20b2f28848f59b3bc403dacdd98137e7b1d304d2b7f062e0917307ec7820cde5",
+        "state.log": "4a2db3bf4a82ef63746dd930bec27513482fdaba496eed669fb294416166b6d2"
+      },
+      "source_commit": "d38accaccf24097166758ef6a3e6aaadc891d699",
+      "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52"
+    }
+  ],
+  "encounter_family": "start-612a96be5ab3e252e6d43f5987dd93b1f170326929475630c5589d6fb2c0e8e1",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "663c4198b552731e362eff1d4a03070944d9dcfe68f067ac3bb8fc71f5581ee5",
+    "config.txt": "486fa035129cccad4b532f828015b70ec5d08c239138906dd12715442cd77fbf",
+    "depths.json": "b3253e4b35776bc67eb6b16f13d6b4ceef15db45773313876bed9ae2e7ac6cfa",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "80ecdf471a0e67d956309007975df4d0571ae4b26406ab51df54d8e45bf147d4",
+    "trace-tail.jsonl": "d128335aa5f12364def165ede3bbe9ff94887314aae8938218dc31a7b6b69548"
+  },
+  "investigation": null,
+  "issue": null
+}

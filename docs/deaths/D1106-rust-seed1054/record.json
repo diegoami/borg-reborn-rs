@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1106-rust-seed1054",
+  "run_kind": "harness",
+  "character": "High-Elf Paladin",
+  "raw_cause": "a scruffy little dog",
+  "terminal": {
+    "cause": "a scruffy little dog",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 2861,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "menu",
+    "git_rev": "d38accaccf24097166758ef6a3e6aaadc891d699",
+    "git_dirty": "yes",
+    "source_sha256": "58a41b99a6aebd24802b023e030a3ad31ba068cf8291c7b71b0bde86aa003bb3",
+    "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52",
+    "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 285
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-5-paladin-4",
+      "result_sha256": "7bd8e7c9e55724d90a517cc1b298991eb1cd4795d579674f1fc8d022570eb6b5",
+      "raw_sha256": {
+        "keys.log": "7bd8e7c9e55724d90a517cc1b298991eb1cd4795d579674f1fc8d022570eb6b5",
+        "messages.log": "c0071cb0b4e78450824c9805ab7e98f6adefcfecda9509e679c863c3729baf65",
+        "state.log": "6ede36efed34230da86046dbc284dae46b3118ebea77c5eb72f819e81aeaffab"
+      },
+      "source_commit": "d38accaccf24097166758ef6a3e6aaadc891d699",
+      "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52"
+    }
+  ],
+  "encounter_family": "start-27ac3d34b7b7d5f258edb460f933f7a8a49259e9a9a0d9d250c0aaf8364925c0",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "663c4198b552731e362eff1d4a03070944d9dcfe68f067ac3bb8fc71f5581ee5",
+    "config.txt": "f162539ea2ec0eccfb9ef1e254a4653b8a768cf490a120bf2363514cb4a625ef",
+    "depths.json": "78cb0645b4391289e40a03040cefb94ff3f55e5824a8cfb1d4f4f31caedf23ee",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "3d361dea695f97f4c6985c6736691c9480d3a7ee560febb5934a24c9146bd623",
+    "trace-tail.jsonl": "403be0762273a18adcc4e682cd3681b1739ec70eb338d65dd86c15bf5eee7757"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1087-rust-seed1002",
+  "run_kind": "harness",
+  "character": "Elf Warrior",
+  "raw_cause": "a scruffy little dog",
+  "terminal": {
+    "cause": "a scruffy little dog",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 355,
+    "race_idx": 2,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1002,
+    "flags": "menu",
+    "git_rev": "d38accaccf24097166758ef6a3e6aaadc891d699",
+    "git_dirty": "yes",
+    "source_sha256": "58a41b99a6aebd24802b023e030a3ad31ba068cf8291c7b71b0bde86aa003bb3",
+    "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52",
+    "borg_txt_sha256": "7c6b535de377cb223ac64fd314076fb456f4ee9eac294d9a26b6ce8b36ade81b",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 36,
+    "of": 36
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-0-warrior-2",
+      "result_sha256": "eba54852198f6a1898093628d886ef76021d9006c1546b2cb5e0814f27373be9",
+      "raw_sha256": {
+        "keys.log": "eba54852198f6a1898093628d886ef76021d9006c1546b2cb5e0814f27373be9",
+        "messages.log": "a78f22b2b77a272cdd33a5520e23dfc46468e849610422f77c1bb3a8b5fbf412",
+        "state.log": "84a35eb79228927295f0b72e49d695f99a693c5bc576f9ea00bf2fb45c5db9c8"
+      },
+      "source_commit": "d38accaccf24097166758ef6a3e6aaadc891d699",
+      "binary_sha256": "1350b29eac4dc9c3835d02c674b95251978df8e59d78768e6ee5678534f13a52"
+    }
+  ],
+  "encounter_family": "start-2efa903958b229bc4925d301e9129a0cf43d698f020ddf7207ddf4fbba95e700",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "663c4198b552731e362eff1d4a03070944d9dcfe68f067ac3bb8fc71f5581ee5",
+    "config.txt": "db8bfba1a9d3e7cc05c4b619582245ca2025610102fd2ae6ee7a93086f3b16c0",
+    "depths.json": "8bc8d6ef743e393bd8b7647f1c303f806aa406ac05a042348ceb93b906c4b3b1",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "ffc6fb1e0852245b7c4030a6edd4031a721884518f1839c77a676efb53d7aa98",
+    "trace-tail.jsonl": "ff67eb44b44aad7cf3391dd021f6a74e25467bf9f356f97a211b32328ca1cb06"
+  },
+  "investigation": null,
+  "issue": null
+}

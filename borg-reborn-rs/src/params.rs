@@ -23,8 +23,8 @@ pub struct Param {
     pub evidence: &'static str,
 }
 
-/// The minimal Borg's parameters (T1.5, a placeholder until M3).
-pub const TABLE: [Param; 3] = [
+/// The first strategy's parameters (M3: T3.3's modes and budgets).
+pub const TABLE: [Param; 5] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -41,8 +41,9 @@ pub const TABLE: [Param; 3] = [
         min: 0,
         max: 100,
         default: 70,
-        evidence: "T1.5 placeholder: rest when below 70% of maximum hit points; chosen without \
-                   measurement, replaced by M3's strategy",
+        evidence: "T1.5 placeholder, kept by the first strategy: rest when below 70% of maximum \
+                   hit points; the strategy-manual's REST rules are the candidate replacement \
+                   (c15 REST-01, to be measured, RULES 14)",
     },
     Param {
         name: "rest_turns",
@@ -52,6 +53,27 @@ pub const TABLE: [Param; 3] = [
         default: 75,
         evidence: "the C Borg's rest command, 'R' '7' '5' Enter (spec §2.6)",
     },
+    Param {
+        name: "explore_budget_turns",
+        unit: "game turns without progress",
+        min: 100,
+        max: 50000,
+        default: 2000,
+        evidence: "GOALS principle 6 (a budget in game turns): a level that has revealed nothing \
+                   new for this long fails its explore goal. The scale is a manual-reading \
+                   player's ~100 decisions on one level (borg-runner ACCUMULATED_KNOWLEDGE §1, \
+                   five runs); a placeholder until the zoo measures it (RULES 14)",
+    },
+    Param {
+        name: "goal_cooldown_turns",
+        unit: "game turns",
+        min: 0,
+        max: 10000,
+        default: 100,
+        evidence: "GOALS principle 6 (a failed goal is blocked for a while): short enough that \
+                   the mode is retried within a level's explore budget, long enough to break \
+                   one-goal oscillation; a placeholder until the zoo measures it (RULES 14)",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -60,6 +82,8 @@ pub struct Params {
     pub max_tries_per_turn: u32,
     pub rest_below_hp_pct: i32,
     pub rest_turns: u32,
+    pub explore_budget_turns: u32,
+    pub goal_cooldown_turns: u32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -80,6 +104,8 @@ impl Default for Params {
             max_tries_per_turn: default_of("max_tries_per_turn") as u32,
             rest_below_hp_pct: default_of("rest_below_hp_pct") as i32,
             rest_turns: default_of("rest_turns") as u32,
+            explore_budget_turns: default_of("explore_budget_turns") as u32,
+            goal_cooldown_turns: default_of("goal_cooldown_turns") as u32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -132,6 +158,8 @@ impl Params {
                 "max_tries_per_turn" => p.max_tries_per_turn = v as u32,
                 "rest_below_hp_pct" => p.rest_below_hp_pct = v as i32,
                 "rest_turns" => p.rest_turns = v as u32,
+                "explore_budget_turns" => p.explore_budget_turns = v as u32,
+                "goal_cooldown_turns" => p.goal_cooldown_turns = v as u32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -145,6 +173,8 @@ impl Params {
                 "max_tries_per_turn" => i64::from(self.max_tries_per_turn),
                 "rest_below_hp_pct" => i64::from(self.rest_below_hp_pct),
                 "rest_turns" => i64::from(self.rest_turns),
+                "explore_budget_turns" => i64::from(self.explore_budget_turns),
+                "goal_cooldown_turns" => i64::from(self.goal_cooldown_turns),
                 _ => 0,
             }
         };
@@ -170,6 +200,7 @@ mod tests {
             (p.max_tries_per_turn, p.rest_below_hp_pct, p.rest_turns),
             (2, 70, 75)
         );
+        assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(
             p.profile_sha256,
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

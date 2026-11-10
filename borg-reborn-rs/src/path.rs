@@ -163,39 +163,13 @@ fn walkable(f: u32) -> bool {
     )
 }
 
-/// The threat a grid carries, as extra steps to enter it. M3's
-/// placeholder until T3.3 lifts the C Borg's danger sum: a tracked
-/// monster makes its own grid and its eight neighbours more expensive,
-/// weighted by how many of the player's actions it gets in the same time
-/// (the energy table, `Knowledge::turns_per_action`), by how sure the
-/// Borg still is of its position ([`crate::world::Track::confidence`]),
-/// and by a quarter when it sleeps. The C Borg instead *refuses* grids
-/// whose danger passes a fear threshold (borg-flow.c:442-474); paying
-/// threat as a cost keeps the route available at a price.
+/// The threat a grid carries, as extra steps to enter it: the M3 danger
+/// placeholder ([`crate::danger`]), the C Borg's danger sum at one turn
+/// (`borg-danger.c`). The C Borg instead *refuses* grids whose danger
+/// passes a fear threshold (borg-flow.c:442-474); paying threat as a
+/// cost keeps the route available at a price.
 pub fn threat(w: &World, k: &Knowledge, x: i32, y: i32) -> u32 {
-    /// The monster's own grid, at weight 1 (a full-cost pursuer).
-    const ON: f64 = 12.0;
-    /// The eight grids around it.
-    const ADJACENT: f64 = 4.0;
-    let player_speed = w.character.status.as_ref().map_or(110, |s| s.speed);
-    let player_turns = k.turns_per_action(player_speed);
-    let mut worst: f64 = 0.0;
-    for t in &w.level.monsters {
-        let dist = (t.x - x).abs().max((t.y - y).abs());
-        let base = match dist {
-            0 => ON,
-            1 => ADJACENT,
-            _ => continue,
-        };
-        let ratio = player_turns / k.turns_per_action(i32::from(t.speed));
-        let asleep = if t.awake() { 1.0 } else { 0.25 };
-        let weight = t.confidence(w.turn, k) * ratio * asleep;
-        let cost = base * weight;
-        if cost > worst {
-            worst = cost;
-        }
-    }
-    worst as u32
+    crate::danger::danger(w, k, x, y, 1)
 }
 
 /// One goal's distance map over the level. Distances are the cost of the
@@ -372,12 +346,12 @@ fn player(w: &World) -> (i32, i32) {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::observation::{Grid, MonsterSeen, Observation, Panel, Status};
 
     /// Knowledge with the game's energy table around normal speed.
-    fn energy() -> Knowledge {
+    pub(crate) fn energy() -> Knowledge {
         let mut e = vec![1u8; 200];
         for (s, v) in [(110, 10), (120, 20), (130, 30)] {
             e[s] = v;
@@ -389,12 +363,37 @@ mod tests {
         }
     }
 
+    /// The energy table plus the test monster race (one 1d6 hurt blow),
+    /// so the danger-based threat has a race to read.
+    pub(crate) fn energy_with_race() -> Knowledge {
+        let mut k = energy();
+        let kobold = crate::knowledge::MonsterRace {
+            index: 1,
+            name: "test kobold".into(),
+            sleep: 20,
+            blows: vec![crate::knowledge::Blow {
+                method: "CLAW".into(),
+                effect: "HURT".into(),
+                power: 60,
+                dice: crate::knowledge::Dice {
+                    base: 0,
+                    dice: 1,
+                    sides: 6,
+                    m_bonus: 0,
+                },
+            }],
+            ..Default::default()
+        };
+        k.races = vec![crate::knowledge::MonsterRace::default(), kobold];
+        k
+    }
+
     /// A world from an ASCII map: `#` wall, `.` floor, `<`/`>` stairs,
     /// `+` closed door, `,` rubble, `w` webbed floor, `^` known trap,
     /// `?` unknown (never seen), `s` a shop entrance, `@` the player,
     /// `M` an awake normal-speed monster, `F` a fast (+10) one.
     /// Everything but `?` is in view at one turn.
-    fn world(map: &[&str]) -> (World, Knowledge) {
+    pub(crate) fn world(map: &[&str]) -> (World, Knowledge) {
         let height = map.len() as i32;
         let width = map
             .iter()
@@ -480,7 +479,22 @@ mod tests {
         };
         let mut w = World::new();
         w.update(&o);
-        (w, energy())
+        // A character with hit points: the danger's low-HP speed boost
+        // (borg-danger.c:2357) must not move test speeds onto empty
+        // table entries.
+        if let Some(s) = w.character.status.as_mut() {
+            s.max_hp = 20;
+            s.hp = 20;
+        }
+        let has_monsters = o.monsters.iter().any(|m| m.race == 1);
+        (
+            w,
+            if has_monsters {
+                energy_with_race()
+            } else {
+                energy()
+            },
+        )
     }
 
     fn distance(map: &[&str], goal: &Goal) -> (World, Knowledge, u32) {
@@ -591,20 +605,31 @@ mod tests {
         let (_, _, with_m) = distance(&["#######", "#@.M.>#", "#######"], &goal);
         assert_eq!(plain, 4);
         assert!(with_m > plain, "the monster's grid is paid for: {with_m}");
-        // With a side corridor, going around is cheaper.
-        let (_, _, around) = distance(&["#######", "#@.M.>#", "#.....#", "#######"], &goal);
+        // With a detour two rows below the monster, going around is
+        // cheaper: a normal-speed monster must be adjacent to strike.
+        let (_, _, around) = distance(
+            &["#######", "#@.M.>#", "#.....#", "#.....#", "#######"],
+            &goal,
+        );
         assert!(around < with_m, "around beats through: {around} < {with_m}");
         // A faster monster costs more than a normal one.
         let (_, _, with_f) = distance(&["#######", "#@.F.>#", "#######"], &goal);
         assert!(with_f > with_m, "speed weighs: {with_f} > {with_m}");
-        // A sleeping monster a quarter as much.
+        // A sleeping light sleeper scores a little *more*, not less: the
+        // C Borg adds the wake-up chance to the full melee term rather
+        // than reducing it (borg-danger.c:2439-2450); only a character
+        // of level 25 or more halves a sleeper first.
         let (w, k) = world(&["#######", "#@.M.>#", "#######"]);
         let mut asleep = w.clone();
         for t in &mut asleep.level.monsters {
             t.timed[0] = 100; // MON_TMD_SLEEP
         }
         let d = Paths::new(&asleep).distance(&asleep, &k, &goal);
-        assert!(d < with_m, "sleeping weighs less: {d} < {with_m}");
+        assert_eq!(
+            d,
+            with_m + 3,
+            "each threatened grid pays sleep 20 + 5%: {d}"
+        );
     }
 
     #[test]
