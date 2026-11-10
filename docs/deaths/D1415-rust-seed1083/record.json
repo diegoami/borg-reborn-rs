@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1415-rust-seed1083",
+  "run_kind": "harness",
+  "character": "Human Blackguard",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 6118,
+    "race_idx": 0,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1083,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "5042da45245dbf69c8f85635d2f2cbf253facc12a97b2c85860490094c7b639e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 548
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-8-blackguard-3",
+      "result_sha256": "c5da6981e3c0b2d9cbcb81b7a1bab36e68d5d2dc352da23667bca319b68890ca",
+      "raw_sha256": {
+        "keys.log": "c5da6981e3c0b2d9cbcb81b7a1bab36e68d5d2dc352da23667bca319b68890ca",
+        "messages.log": "3d70281b6099ec21793120ea2ba8772df0f7bbb8a0528f3851a7601a205358ea",
+        "state.log": "c8e45f59b15a4cda875a2ea8014a6713070bda997a475cedb0093b3a9fcd14cd"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-a5d05de201255dd7cb0a3d64044fb9c7664d07db5e1ec7dd728cf5a6a3a564c2",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "d6bde5d747d42f3d05fe421bb1fe771e616c8c3b941368fd78bb7e8442bfe075",
+    "depths.json": "8ad78092cd390abc0d9142dc836419af2548db4820064a0a60136e5747b90bd0",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "fb6345f4d9d7f363620bd6080753825ab24cfd2406c0b0fd717d7dc21c1d4c90",
+    "trace-tail.jsonl": "a519d4780476861590692cc64f7e252fc1c4ad7745df1e14d7f877dad892d046"
+  },
+  "investigation": null,
+  "issue": null
+}

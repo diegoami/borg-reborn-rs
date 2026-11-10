@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1411-rust-seed1073",
+  "run_kind": "harness",
+  "character": "Kobold Ranger",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 6339,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1073,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "9879ff34e80d65b349e0a74cd5ff0f43adb270f355a23efda5cde9e1c6f9de59",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 492
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-7-ranger-3",
+      "result_sha256": "98896d27b100e78eb841af8b59a2b342e2154ec72a191ebf581646688f153596",
+      "raw_sha256": {
+        "keys.log": "98896d27b100e78eb841af8b59a2b342e2154ec72a191ebf581646688f153596",
+        "messages.log": "3f9f3d7722620f4cf911425270c95d3b9fad811970f8e403794b603c8049dd61",
+        "state.log": "a19655d8c0b5d0a8f5bd18c7f4ee5d2f23396b1551933344b6ccf51d5d6295ff"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-e907791ef4ac2fc77ce094ccd893b0e7e1332b9324f59a58e16d4b642e424f57",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "8985f8ad9af4ec30f16f19d2038744e506bc2aa2ecd70053dac0837b2ffda142",
+    "depths.json": "a27ba7c53c35773477a201d59fc861b326ded227bff819ca46338740315484f0",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "e3326ebbae3174d0c32780792b82d942e614dcc6c655ef02b4beaaa41fb6ecff",
+    "trace-tail.jsonl": "9b90d230e96a2264d863e89e892d6be62e7cc2d0dbe79df6752e4252d6431799"
+  },
+  "investigation": null,
+  "issue": null
+}

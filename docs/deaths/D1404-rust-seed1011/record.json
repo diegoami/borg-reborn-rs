@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1404-rust-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 10185,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1011,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1030
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-1-mage-1",
+      "result_sha256": "b069b42471d5ab4db8b31752b8ae93ee8adfab4f5520861b66a2e44b1b3c9c47",
+      "raw_sha256": {
+        "keys.log": "b069b42471d5ab4db8b31752b8ae93ee8adfab4f5520861b66a2e44b1b3c9c47",
+        "messages.log": "81fa16e93e4d6255c26b747e57268b348115fabe1cd2d82a45a5fa3f8f89017f",
+        "state.log": "3694d39c7abc4c45eda1da2fe60d79045d2e5cd09cfef44817e0c865d479e788"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-0f5386facb7c33537f21bed459983d5ef97f5f256c6fd8e31823d658e533609c",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "b955cc56a45283d99679f5fadbe4a1fddb78d362c7b13c073ea59ce96005d89e",
+    "depths.json": "1eb05f2dfa0a4147f297387ae2cb2f04d58e697f0d572f3a04c8fdcedeef104b",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "6b2f07870018326b41b50a3ff8f73ebec24ee1a4ad222244ba221a41dcbaca05",
+    "trace-tail.jsonl": "d3ccfe4a37f284568ef7d4f8f60256f8887e00b2fdf0205a1a2f6b5d4c5d88e9"
+  },
+  "investigation": null,
+  "issue": null
+}

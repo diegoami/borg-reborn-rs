@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1408-rust-seed1063",
+  "run_kind": "harness",
+  "character": "High-Elf Rogue",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 8705,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1063,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "a54553c2f41345f2c21d37e02e5fcec1d1ee6bc99e9515a201c509cf6b7ae558",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 808
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-6-rogue-3",
+      "result_sha256": "a425791e33a9ee1b66aa099c2293988befa42fec0d411f21fb92dc628f5c03c3",
+      "raw_sha256": {
+        "keys.log": "a425791e33a9ee1b66aa099c2293988befa42fec0d411f21fb92dc628f5c03c3",
+        "messages.log": "6e684611f765d3f066e4e0e8a4dec5c98226d765b14f32d395a356582c5974c3",
+        "state.log": "2a2bfd488c8f6dbd88042029133d5caf5f89b2fa765cd8e5fcf495318c4d232c"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-754d7215cf6a398776a24c3a617f3e597d242e11c699c97d353e269ab86b4f68",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "cbb632c25084efd9f17d4a3c10cec8627e3743d54b8dd214f9bec5ad834ece71",
+    "depths.json": "9bbb660e371e520411d8192a859b02445bc8f9adf71e5dadc15225a61a1fcc07",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "f6d8e38e2ac32eadd48d6b2eceeeff560e5e42e2a3bc8c08899ae23de5e6d58e",
+    "trace-tail.jsonl": "0859da35e00b4e5b1475a33c6bb46d2485ec43ab0855ed0e9f738e9242f380f1"
+  },
+  "investigation": null,
+  "issue": null
+}
