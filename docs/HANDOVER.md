@@ -25,6 +25,34 @@ SOURCES.md. The reading itself is consolidated in
 `docs/research/KNOWLEDGE.md` (next PR), which also sets up the
 read-marker process the owner asked for.
 
+## 2026-11-10: the knowledge ledger (read markers for the moving sources)
+
+`docs/research/KNOWLEDGE.md` (this PR) consolidates the pass:
+
+- **The loop**: the refresh report's lines (new deaths, changed copies,
+  issues updated since `read_on`, new tags, changed cited functions) are
+  mapped to what to read; the ledger records the state. FACT lines are
+  checked and cited before use (RULES 16); nothing is a claim until the
+  zoo measures it (RULES 14).
+- **Reading state**: borg-runner read whole at pin `883c474` (all
+  manuals, every notebook and report, ACCUMULATED_KNOWLEDGE edition 3 and
+  its diff); better-borg-c dossiers D0001–D0019 and the analysis issues
+  (#400–#412, #420 on this pass); the zoo's catalogue.
+- **Distillations by task**: T3.3 (depth is not the objective, 3–4 down
+  staircases, explore-or-reroll, constitution as pace), T3.4 (the
+  hit-chance formula, thrown oil, rest policy), T3.5 (the owner's
+  reference loadout from D0015, the store identifying for free,
+  restocking), M4 (the five analysis issues as the failure catalogue,
+  breath/summon/speed facts, unknown pools by depth, escapes-bought-
+  never-used), M5 (kit gates, power pricing, the mana penalty, class
+  findings).
+- **What borg-runner can additionally provide**: `decisions.jsonl` at the
+  pin (scenario material), the replay site, and what *not* to take
+  (`agents/` is model self-notes, not game knowledge).
+
+AGENTS.md's entry reading order gains the ledger as step 7, so every
+session knows the reading state before choosing work.
+
 ## 2026-11-10: T3.2, paths and exploration (#18)
 
 `borg-reborn-rs/src/path.rs` is L4's paths, substrate for T3.3's strategy
