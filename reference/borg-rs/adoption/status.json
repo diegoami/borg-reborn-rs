@@ -1,6 +1,6 @@
 {
   "schema": "borg-rs/c-consumer-adoption@1",
-  "phase": "impact_v8_accepted",
+  "phase": "impact_v9_accepted",
   "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
   "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
   "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
@@ -284,11 +284,53 @@
         "tag": "4.2.6-impact-v8",
         "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it"
       }
+    },
+    {
+      "id": "c-m9",
+      "target_commit": "33207fbeeb582e67d6b18e9f40613617667905ae",
+      "consumer_tag": "4.2.6-impact-v9",
+      "state": "reviewed_pass_owner_accepted",
+      "consumer_patches": 10,
+      "carried_c_and_rust": 10,
+      "superseded_local_corrections": {
+        "295": "0098"
+      },
+      "local_corrections_added": [
+        "0098 guard (NULL cave trap; staleglyph fixture; better-borg-c#375)",
+        "0099 guard (stale position after a level change; Necromancer crash in the 131-case plan; better-borg-c#377)"
+      ],
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/21",
+      "receipt": "docs/validation/2026-11-09-c-m9/README.md",
+      "native_modes_before_after": "23/41 -> 39/41 (runeglyph floor/trap red both, as the consumer asserts); ASan 6/12 -> 12/12",
+      "implementation_commit": "d7e5985 (+ b89c106, the 0099 guard)",
+      "starting_rust_main": "286215c",
+      "rust_milestone_accepted": true,
+      "game_cases": 131,
+      "c_rust_parity": "130 complete with full parity; cfg-munchkin-dunadan-bg timed out in both roles (pre-existing munchkin blind livelock; prefix-identical up to the kill; owner: record and report, better-borg-c#204)",
+      "harness_diff_exit": "2 (refuses incomplete suites); --allow-incomplete: 130/131 identical",
+      "rust_fault_controls_detected": "2/10 units (0092, 0094)",
+      "behaviour_change_vs_m8": "57/130 completed cases; deaths 18 -> 13",
+      "rust_rerun": "72bec24 Rust build: 130/130 completing cases identical to the 9e34120 C and Rust runs; the livelock case times out again, identical up to the kill (rust-rerun.json)",
+      "independent_review": {
+        "verdict": "qualified pass, then pass on re-review",
+        "reviewed_source": "20277b7, re-review 72bec24",
+        "comments": [
+          "https://github.com/diegoami/borg-rs/issues/21#issuecomment-6752173475",
+          "https://github.com/diegoami/borg-rs/issues/21#issuecomment-6752988793"
+        ],
+        "findings_addressed_in": "55cd233, 72bec24"
+      },
+      "owner_acceptance": {
+        "instruction": "accept, merge and tag",
+        "date": "2026-11-09",
+        "tag": "4.2.6-impact-v9",
+        "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it"
+      }
     }
   ],
   "unchanged_engine_base": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
   "policy": "docs/C-CONSUMER-ADOPTION.md",
-  "next_action": "Impact v8 (C milestone8) accepted; tag 4.2.6-impact-v8 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
+  "next_action": "Impact v9 (C milestone9) accepted; tag 4.2.6-impact-v9 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
   "independent_review": {
     "verdict": "pass",
     "acceptance_blockers": false,
@@ -312,12 +354,12 @@
     "tagging_delegated": true
   },
   "active_batch": {
-    "id": "c-m8",
-    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/19",
-    "starting_rust_main": "ce27f5e",
-    "state": "accepted_impact_v8",
-    "ledger": "docs/adoption/c-m8/ledger.json",
-    "receipt": "docs/validation/2026-11-09-c-m8/README.md",
+    "id": "c-m9",
+    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/21",
+    "starting_rust_main": "286215c",
+    "state": "accepted_impact_v9",
+    "ledger": "docs/adoption/c-m9/ledger.json",
+    "receipt": "docs/validation/2026-11-09-c-m9/README.md",
     "branch": "claude/wonderful-bell-3a7j6m"
   },
   "m2_active_batch_record": {

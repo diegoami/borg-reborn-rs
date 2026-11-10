@@ -1,0 +1,93 @@
+{
+  "classification": "escaped Mirkwood spiders by Teleportation staff at 7 HP, then rested for Recall while poisoned with 9 CCW and Herbal Curing unused; fleeing-gated healing, retreat-before-escape order, CCW tier window and Speed gate; no reusable original-C defect established",
+  "confidence": "High for native trajectory, inventory, HP/poison and fleeing flag per frame; healing, retreat/escape order, rest and Speed gates source-derived; Speed p2 not logged; no rescue claimed",
+  "cause_category": "poison",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "7ea0fc796a5ee995e226204ed39dba7999812f9488b93c8a94f2f09d5602f9a6",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused403; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/403",
+      "summary": "Chat 2026-11-10: a ranger dies of poison to spiders; swarmed by spiders but having so many potions there is no way he should have died to them.",
+      "status": "processed; recorded verbatim on 403; findings replied (escaped at 7 HP by staff, then rested for Recall while poisoned with 9 CCW); manual retry invited",
+      "actions": [
+        "heal-eligibility",
+        "retreat-preempts-escape",
+        "pursued-walking-retreat",
+        "clw-tier",
+        "speed-emergency"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Dwarf Ranger CL25/DL21 (max 22), seed2993630922, source5cd2258dd78d (67 carries); poison death1094860, HP-1/279; 1.09M turns, 90701 decisions, 2734 kills, 5740 gold; raw trace/frames/manifest hashes match record."
+    },
+    {
+      "status": "observed",
+      "summary": "Carried 9 Cure Critical Wounds (heal 60, cure poison), 20 Speed, 13 Phase Door, 7 Recall, Staff of Teleportation (3), 7 Wands of Magic Missile, Long Bow x3 with 88 arrows; Herbal Curing (6 SP, cures poison) and Resist Poison learned; SP 18-20/42 in the fight. All but one staff charge and one Recall remained at death."
+    },
+    {
+      "status": "observed",
+      "summary": "Arrived DL21 1091224; resting at (77,56) from 1094198. 1094618 Mirkwood spiders (speed+10, 41HP, groups 2d7, bite 1d8 + two poison bites 1d6, innate WEAVE = SPELL_027) arrive along the corridor from the west at 279/279; archery kills one 1094646. Player speed normal (10 energy/tick)."
+    },
+    {
+      "status": "observed",
+      "summary": "1094662/1094672 two Herbal Curing casts (12 SP) with 1-2 spiders adjacent; re-poisoned at once. 1094682 shoots with three adjacent."
+    },
+    {
+      "status": "source-checked",
+      "summary": "1094688-1094778 ten-turn strategic retreat toward (83,53) with 3-4 speed+10 spiders adjacent most turns: HP 201->171->149->143->124->75->47->32->26->9, danger 76-116. borg_escape (borg-caution.c:1654) runs only after the strategic-retreat block (:1420-1650) finds no step, so Phase/Teleportation were not evaluated until 1094788 (HP 7, no step left): Staff of Teleportation, 'Danger Level 1'."
+    },
+    {
+      "status": "source-checked",
+      "summary": "fleeing=0 until 1094758, so borg_heal ran during the walk; poison waives its random skip, but CCW is offered only at 50-55% down (Level 3) or HP<50 with danger<ccw_heal (Level 5). 1094728 HP124/55% danger116: Level 3 'no rope-a-doping' ccw_heal 38 > danger/3 38 fails on the tie; 1094738 HP75/73% past window; 1094748 HP47 Level 5 needs 85<58. No CLW/CSW for lower tiers. tracker364 chance inversion not applicable (poison bypass)."
+    },
+    {
+      "status": "source-checked",
+      "summary": "1094758 'Fleeing (excessive danger)' sets goal.fleeing. After the teleport borg_caution skips borg_heal inside if(!borg.goal.fleeing) (borg-caution.c:1001) and takes 'waiting for recall & safe, stay put' (:1033); borg_check_rest (borg-flow-misc.c:1219) has no poison/cut test; recall buy-time cures need danger > 2x avoidance (:1984)."
+    },
+    {
+      "status": "observed",
+      "summary": "1094798 reads Recall (15-34 player turns, effect-handler-general.c:1145), poison ~485 turns left; seven 'Resting for Recall' decisions 1094808-1094858, HP 7->-1 at 1 per player turn, no monster visible; dies of poison 1094860 holding 9 CCW and 20 SP."
+    },
+    {
+      "status": "source-checked",
+      "summary": "Speed potions only when hasted danger p2 <= avoidance/3 (borg_defend_aux_speed); borg_defend ran each turn of the walk and declined; p2 not logged, so the decline is untested."
+    }
+  ],
+  "actions": [
+    {
+      "key": "heal-eligibility",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/34",
+      "summary": "Observe fleeing-gated borg_heal after a successful escape: recall-wait rest while poisoned with known CCW and Herbal Curing",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "retreat-preempts-escape",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Observe strategic retreat steps pre-empting borg_escape (Phase/Teleportation) under multiple faster adjacent monsters",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "pursued-walking-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Observe strategic retreat on foot from a faster adjacent monster versus continuing melee",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "clw-tier",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/319",
+      "summary": "Assess the CCW 50-55% window and integer rope-a-doping tie that left 9 CCW unused at 55-83% down",
+      "status": "investigating; source-checked; no gameplay change"
+    },
+    {
+      "key": "speed-emergency",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/340",
+      "summary": "Observe borg_defend_aux_speed p1/p2/avoidance against speed+10 spiders; 20 Speed unused",
+      "status": "needs evidence; source-checked; no gameplay change"
+    }
+  ]
+}

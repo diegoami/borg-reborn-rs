@@ -1,0 +1,26 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T002452.580039Z",
+  "session": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T002452.580039Z/sessions/20261110T003004.780287Z",
+  "recording_sha256": "db42f57e184431860c1d0c5b34fa308316eef99ce637d61afc8fa4601e89e09c",
+  "origin_sha256": "b246fb04075c3f4929f19e2c75b1456a074a8f05bf1ab427ee2535e6376a5b28",
+  "final_save_sha256": "36e4159d60b0559f27983fa056637f80b2487ddcd7304f9935cd109e9db71c5c",
+  "source_commit": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+  "requested_turn": 33363,
+  "start_turn": 33363,
+  "end_turn": 33505,
+  "end_level": 2,
+  "end_hp": -1,
+  "end_depth": 1,
+  "min_hp": 1,
+  "outcome": "died",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "f14d402d6182ffcca68b224fd583797647a6b6db1a1ec7271f6ab8889eb7d217",
+  "events": "step back to (102,37); Fox Form fails once then succeeds, SP 4 -> 0 by 33394, HP 16 -> 6; fox-form attacks fail to harm the cat; +1 move lets the owner walk (101,37) -> (84,38) with the cat 1-2 squares behind at HP 3-4; cat catches up and kills at 33505; cat never damaged; unknown potions (actually CLW) and scrolls not tried",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T002452.580039Z",
+    "original": "/home/diego/projects/angband-workspace/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923",
+    "original_manifest_sha256": "28f242653632437727d5e21259382f095bf26559fd38776e5ea63c06c3c593ca",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}
