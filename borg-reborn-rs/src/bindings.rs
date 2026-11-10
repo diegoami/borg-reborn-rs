@@ -3053,6 +3053,9 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn Term_inkey(ch: *mut ui_event, wait: bool, take: bool) -> errr;
 }
+unsafe extern "C" {
+    pub static mut inkey_flag: bool;
+}
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct history_info {

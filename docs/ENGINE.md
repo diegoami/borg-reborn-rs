@@ -128,8 +128,8 @@ writes every option in force at the stop into `summary.json`
 
 | Option | Rust Borg | C Borg (`borg_reinit_options`, `borg-init.c:403-444`) | Why we differ |
 | --- | --- | --- | --- |
-| `auto_more` | **on** | off | The C Borg reads `-more-` off the message line and answers it. The Rust Borg has no prompt catcher yet (M3, the executor), so the game must not stop on `-more-`. Revisit in M3. |
-| `rogue_like_commands`, `pickup_always`, `pickup_inven`, `pickup_detail`, `use_old_target`, `show_piles`, `show_labels`, `show_flavors`, `hitpoint_warn` | not set (the game's defaults) | set | The Rust Borg's keys do not depend on them yet. M3's executor decides each one and records it here. |
+| `auto_more` | **on** | off | The C Borg turns `-more-` off to read each batch of messages behind it. The Rust Borg's executor (T3.1) keeps `auto_more` on: the prompt catcher answers a `-more-` should one appear, and the game never stalls on one, while the observation still reads the message line at each think. The cost, declared: a batch that scrolls by between thinks is not parsed from the screen (the harness's `messages.log` keeps every message for the dossier). T3.3 revisits this if the strategy needs the C Borg's full message stream. |
+| `rogue_like_commands`, `pickup_always`, `pickup_inven`, `pickup_detail`, `use_old_target`, `show_piles`, `show_labels`, `show_flavors`, `hitpoint_warn` | not set (the game's defaults) | set | The Rust Borg's keys do not depend on them yet. The executor (T3.1) leaves each as the game's default; the pickup options belong to T3.4, when the Borg first picks things up, and the rest to the tasks that first use them. |
 
 **Not options in 4.2.6:** `easy_alter` and `easy_open`. The Rust Borg set
 `easy_alter` until TE.5, and the engine ignored it without a word
