@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1600-rust-seed1054",
+  "run_kind": "harness",
+  "character": "High-Elf Paladin",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 5,
+    "turn": 33943,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "menu",
+    "git_rev": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+    "git_dirty": "no",
+    "source_sha256": "514ddf17f6b07be6ca06ee55aa65d7a4fb7e14459698ed55e3e8c75dee3507b1",
+    "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574",
+    "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 3366
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-122/full-5-paladin-4",
+      "result_sha256": "144e02f1fb292266257e24cb3db700ef851b4f008884a5cacc679dfca1eb457a",
+      "raw_sha256": {
+        "keys.log": "144e02f1fb292266257e24cb3db700ef851b4f008884a5cacc679dfca1eb457a",
+        "messages.log": "d30a228effa55dca35d7ca63c1f2675523059d3abf96e002c5f104657784944e",
+        "state.log": "91b41c5dc66dd263e4143ce133d903a8aed3b557a47038cf03ca65028751fe53"
+      },
+      "source_commit": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+      "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574"
+    }
+  ],
+  "encounter_family": "start-20d5d25682ca24a959228664cfe813864d97e66d12306174fefd07c52bcf68ed",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5c37c5bfc088250d9aa1ea7beca8880e7644f0a616e74e5f0b2bafb5aec787fc",
+    "config.txt": "f162539ea2ec0eccfb9ef1e254a4653b8a768cf490a120bf2363514cb4a625ef",
+    "depths.json": "1888fc65be106042ea613089ab6b46187d0f4a210d9ac09b643cdfe40db4d2ce",
+    "params.json": "72096c68ef5b7f53d7b8b786ed0e125df6b4072d01e41ae2b62ed1760d0c3072",
+    "summary.json": "9477b14c33ce0836027aac58ebc5e67316986a89f1a2ca7c24c29bb884b8e284",
+    "trace-tail.jsonl": "ef3cac9db15d4d78200dd705b57ddb3ddb198b18e0ee578e1cf7914aabbd3445"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -2,6 +2,47 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: item actions and the escape items (#122)
+
+The executor now has **Quaff**, **Read**, **Eat** and **Wield**: the
+pack letter, the command, and an effect checked next think (the kind's
+count fell, or the kind is in an equipment slot). The tactical layer uses
+them:
+
+- a known Cure Light Wounds is scored by hit points restored (2d8 mean,
+  declared) and chosen when it beats the alternatives; bbc D0002 and
+  rs D0005 now quaff it;
+- a known Phase Door is scored by the risk it removes, with landing risk
+  half for now; Fang AC36 reads it, and fear accepts it;
+- a better pack weapon is scored by the rounds it saves on the most
+  threatening adjacent monster;
+- a hungry character with a known ration enters `Mode::Eat` before the
+  timer reaches starvation (`eat_below_food`, new parameter, declared).
+
+**Fixtures:** 14 active, 7 gaps. New active: D0002/rs D0005 (known cure),
+Fang AC36 (known Phase), `rust-hungry-eats` (food). Fear accepts the
+Phase escape. D0014 now pins the **last Phase at full HP** for #121
+(landing risk and last-item protection); D0011's Wield is still not
+chosen over the attack; D0010/shoot and casting stay #127; the
+unknown-food/starvation and return-home gaps stay #122/#123.
+
+**New baseline (play change).** References: smoke 3/3, smoke-exact 3/3,
+full 45/45; boundary 3/3. 38 natural deaths, 0 unexported; 36 new
+dossiers D1566-D1601. Smoke has one 20,000-turn survivor and two deaths;
+**the full suite is 34/45 deaths and 11 survivors at the 100,000-turn cap**,
+deepest depth 3, with 3 starvation and 10 floating-eye deaths. That is a
+real behavioural change, not a survival claim: #124's calibration and the
+M4 gate judge it, and the zoo has not measured it. The floating-eye
+deaths are the escape-ladder case (#121), not a cure failure.
+
+**Sequencing.** #121 was started first and parked: every escape-ladder
+fixture but walking needs Phase/teleport actions, so #122 went first by
+owner decision. #121 resumes with real actions next.
+
+**Next:** #121 (T4.4), escape ladder and landing risk: last-item
+protection (D0014), the floating-eye case, and a real landing-risk
+estimate for Phase/teleport and level changes. Then #123.
+
 ## 2026-11-10: tactical alternatives and the re-review (#120)
 
 `tactics.rs` replaces the first-applicable fight-or-retreat rule. Every
