@@ -1,4 +1,4 @@
-# Notes from sonnet-2-again
+# Notes from sonnet-2.2
 
 Written by the player during one game, in its own words, and promoted
 here unedited. Every line carries the ask that taught it; the run

@@ -2,6 +2,33 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M4 source refresh
+
+The owner directed M4 to start while #135 remains open for re-review.
+Pins moved for all five active sources; copied references and the death
+index are refreshed, with the new reading in
+[docs/research/KNOWLEDGE.md](research/KNOWLEDGE.md).
+
+- better-borg-c `a4cc2d4`: no new death dossiers. M11 #471 has 18 carry
+  units but no cohort/per-mode evidence and no v11 tag yet. Read the five
+  `borg-danger.c` corrections (partial-hit armour/chance, CON drain,
+  Crush's ranged value, rubble) and Shoot'N'Scoot's index fix.
+- borg-runner `1440f70`: edition 4, including the fear/shrieker death,
+  Fang AC36 versus Magic Missile, sparse sleeping monster placement,
+  the whole-level M map and `mmx-war-1`'s batched-key breeder death.
+  These become M4 fixture inputs.
+- borg-zoo `415183c`: use explicit `normal` for controls; `default`
+  changed meaning at the mode cutoff. reserve410's small pilot is mixed,
+  not support for a buying claim.
+- borg-rs `399c907`: the family now has an explicit buying-strategy seam;
+  buy-to-identify remains open. Angband's 12 new commits are noted for
+  M4's rest/executor work; our engine remains at `e473720` as specified.
+
+**Next:** #118 (T4.1), death-derived decision fixtures. Build the
+observation/scenario fixtures before changing the threat model, including
+the PLAN seed cases, the new fear/shrieker and Fang cases, and reproducible
+M3 deaths. No survival or tuning claim comes from the M11 package.
+
 ## 2026-11-10: M3 review blocker, bounded rerolls (#136)
 
 PR #135's review rejected the first G0 baseline: T3.7's up/down reroll
