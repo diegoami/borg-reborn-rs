@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 896; distinct starting conditions: 896; retained process attempts: 896 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 942; distinct starting conditions: 942; retained process attempts: 942 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -902,6 +902,52 @@ Dossiers: 896; distinct starting conditions: 896; retained process attempts: 896
 | [D0894-rust-seed1003](D0894-rust-seed1003/report.md) | unassigned | `1137bfee88c7` | 1003 | starvation | 89230 | unassessed |
 | [D0895-rust-seed1053](D0895-rust-seed1053/report.md) | unassigned | `1137bfee88c7` | 1053 | a small kobold | 79515 | unassessed |
 | [D0896-rust-seed1033](D0896-rust-seed1033/report.md) | unassigned | `1137bfee88c7` | 1033 | starvation | 89210 | unassessed |
+| [D0897-rust-seed102](D0897-rust-seed102/report.md) | unassigned | `9d3a6583a74d` | 102 | a rock lizard | 743 | unassessed |
+| [D0898-rust-seed1024](D0898-rust-seed1024/report.md) | unassigned | `9d3a6583a74d` | 1024 | a blue yeek | 278 | unassessed |
+| [D0899-rust-seed1000](D0899-rust-seed1000/report.md) | unassigned | `9d3a6583a74d` | 1000 | Grip, Farmer Maggot's Dog | 170 | unassessed |
+| [D0900-rust-seed1021](D0900-rust-seed1021/report.md) | unassigned | `9d3a6583a74d` | 1021 | Grip, Farmer Maggot's Dog | 116 | unassessed |
+| [D0901-rust-seed1023](D0901-rust-seed1023/report.md) | unassigned | `9d3a6583a74d` | 1023 | a white worm mass | 553 | unassessed |
+| [D0902-rust-seed1022](D0902-rust-seed1022/report.md) | unassigned | `9d3a6583a74d` | 1022 | a cave spider | 539 | unassessed |
+| [D0903-rust-seed1010](D0903-rust-seed1010/report.md) | unassigned | `9d3a6583a74d` | 1010 | Grip, Farmer Maggot's Dog | 320 | unassessed |
+| [D0904-rust-seed1052](D0904-rust-seed1052/report.md) | unassigned | `9d3a6583a74d` | 1052 | Grip, Farmer Maggot's Dog | 135 | unassessed |
+| [D0905-rust-seed1034](D0905-rust-seed1034/report.md) | unassigned | `9d3a6583a74d` | 1034 | a small kobold | 938 | unassessed |
+| [D0906-rust-seed1043](D0906-rust-seed1043/report.md) | unassigned | `9d3a6583a74d` | 1043 | a grey mold | 627 | unassessed |
+| [D0907-rust-seed1011](D0907-rust-seed1011/report.md) | unassigned | `9d3a6583a74d` | 1011 | a soldier ant | 1038 | unassessed |
+| [D0908-rust-seed1020](D0908-rust-seed1020/report.md) | unassigned | `9d3a6583a74d` | 1020 | a rock lizard | 1529 | unassessed |
+| [D0909-rust-seed1050](D0909-rust-seed1050/report.md) | unassigned | `9d3a6583a74d` | 1050 | an apprentice | 1017 | unassessed |
+| [D0910-rust-seed1054](D0910-rust-seed1054/report.md) | unassigned | `9d3a6583a74d` | 1054 | a small kobold | 986 | unassessed |
+| [D0911-rust-seed1030](D0911-rust-seed1030/report.md) | unassigned | `9d3a6583a74d` | 1030 | a wild dog | 3477 | unassessed |
+| [D0912-rust-seed1051](D0912-rust-seed1051/report.md) | unassigned | `9d3a6583a74d` | 1051 | a soldier ant | 1688 | unassessed |
+| [D0913-rust-seed1012](D0913-rust-seed1012/report.md) | unassigned | `9d3a6583a74d` | 1012 | a clear icky thing | 2756 | unassessed |
+| [D0914-rust-seed1041](D0914-rust-seed1041/report.md) | unassigned | `9d3a6583a74d` | 1041 | a soldier ant | 4659 | unassessed |
+| [D0915-rust-seed1044](D0915-rust-seed1044/report.md) | unassigned | `9d3a6583a74d` | 1044 | a yellow jelly | 6105 | unassessed |
+| [D0916-rust-seed1031](D0916-rust-seed1031/report.md) | unassigned | `9d3a6583a74d` | 1031 | a large white snake | 10239 | unassessed |
+| [D0917-rust-seed1001](D0917-rust-seed1001/report.md) | unassigned | `9d3a6583a74d` | 1001 | a kobold shaman | 8659 | unassessed |
+| [D0918-rust-seed1004](D0918-rust-seed1004/report.md) | unassigned | `9d3a6583a74d` | 1004 | a grey mold | 10112 | unassessed |
+| [D0919-rust-seed1002](D0919-rust-seed1002/report.md) | unassigned | `9d3a6583a74d` | 1002 | a salamander | 11618 | unassessed |
+| [D0920-rust-seed1060](D0920-rust-seed1060/report.md) | unassigned | `9d3a6583a74d` | 1060 | a salamander | 10172 | unassessed |
+| [D0921-rust-seed1062](D0921-rust-seed1062/report.md) | unassigned | `9d3a6583a74d` | 1062 | a small kobold | 5781 | unassessed |
+| [D0922-rust-seed1064](D0922-rust-seed1064/report.md) | unassigned | `9d3a6583a74d` | 1064 | a kobold | 3750 | unassessed |
+| [D0923-rust-seed1040](D0923-rust-seed1040/report.md) | unassigned | `9d3a6583a74d` | 1040 | a clear icky thing | 11988 | unassessed |
+| [D0924-rust-seed1072](D0924-rust-seed1072/report.md) | unassigned | `9d3a6583a74d` | 1072 | poison | 1350 | unassessed |
+| [D0925-rust-seed1074](D0925-rust-seed1074/report.md) | unassigned | `9d3a6583a74d` | 1074 | a giant green frog | 135 | unassessed |
+| [D0926-rust-seed1080](D0926-rust-seed1080/report.md) | unassigned | `9d3a6583a74d` | 1080 | a wild cat | 81 | unassessed |
+| [D0927-rust-seed1083](D0927-rust-seed1083/report.md) | unassigned | `9d3a6583a74d` | 1083 | a giant yellow centipede | 364 | unassessed |
+| [D0928-rust-seed1063](D0928-rust-seed1063/report.md) | unassigned | `9d3a6583a74d` | 1063 | a small kobold | 13007 | unassessed |
+| [D0929-rust-seed1082](D0929-rust-seed1082/report.md) | unassigned | `9d3a6583a74d` | 1082 | a grey mold | 3811 | unassessed |
+| [D0930-rust-seed1070](D0930-rust-seed1070/report.md) | unassigned | `9d3a6583a74d` | 1070 | poison | 9260 | unassessed |
+| [D0931-rust-seed1073](D0931-rust-seed1073/report.md) | unassigned | `9d3a6583a74d` | 1073 | an apprentice | 12532 | unassessed |
+| [D0932-rust-seed1032](D0932-rust-seed1032/report.md) | unassigned | `9d3a6583a74d` | 1032 | a metallic red centipede | 19474 | unassessed |
+| [D0933-rust-seed1014](D0933-rust-seed1014/report.md) | unassigned | `9d3a6583a74d` | 1014 | a crow | 29255 | unassessed |
+| [D0934-rust-seed1084](D0934-rust-seed1084/report.md) | unassigned | `9d3a6583a74d` | 1084 | a small kobold | 24017 | unassessed |
+| [D0935-rust-seed1061](D0935-rust-seed1061/report.md) | unassigned | `9d3a6583a74d` | 1061 | starvation | 44680 | unassessed |
+| [D0936-rust-seed1081](D0936-rust-seed1081/report.md) | unassigned | `9d3a6583a74d` | 1081 | an acolyte | 33300 | unassessed |
+| [D0937-rust-seed1042](D0937-rust-seed1042/report.md) | unassigned | `9d3a6583a74d` | 1042 | a giant white centipede | 65087 | unassessed |
+| [D0938-rust-seed1071](D0938-rust-seed1071/report.md) | unassigned | `9d3a6583a74d` | 1071 | a grey mold | 53918 | unassessed |
+| [D0939-rust-seed1013](D0939-rust-seed1013/report.md) | unassigned | `9d3a6583a74d` | 1013 | a soldier ant | 57935 | unassessed |
+| [D0940-rust-seed1003](D0940-rust-seed1003/report.md) | unassigned | `9d3a6583a74d` | 1003 | starvation | 89230 | unassessed |
+| [D0941-rust-seed1053](D0941-rust-seed1053/report.md) | unassigned | `9d3a6583a74d` | 1053 | a small kobold | 79515 | unassessed |
+| [D0942-rust-seed1033](D0942-rust-seed1033/report.md) | unassigned | `9d3a6583a74d` | 1033 | starvation | 89210 | unassessed |
 
 ## Aggregated actions
 
