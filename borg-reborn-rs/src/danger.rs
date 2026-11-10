@@ -547,7 +547,7 @@ mod tests {
             &[(1, 4), (1, 4)],
             &[rf::NEVER_MOVE],
         ));
-        let mut w = world(Some((2, 1, 110, true)));
+        let w = world(Some((2, 1, 110, true)));
         let t = &w.level.monsters[0];
         assert!(
             one(&w, &k, t, 1, 1, 1) > 0,
