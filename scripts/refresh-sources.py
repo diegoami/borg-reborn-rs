@@ -76,11 +76,14 @@ class Source:
 
     def tree(self, commit, path):
         """{relative path: blob id} under path at commit."""
-        r = git(self.repo, 'ls-tree', '-r', commit, '--', path)
+        # '' and '.' are the repository root: git wants no empty pathspec,
+        # and '.' must not be cut off the front of every path.
+        root = path in ('', '.')
+        r = git(self.repo, 'ls-tree', '-r', commit, '--', '.' if root else path)
         out = {}
         for line in r.stdout.splitlines():
             meta, p = line.split('\t', 1)
-            out[p[len(path):].lstrip('/') if path else p] = meta.split()[2]
+            out[p if root else p[len(path):].lstrip('/')] = meta.split()[2]
         return out
 
 

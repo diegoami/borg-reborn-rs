@@ -236,6 +236,24 @@ class RefreshTest(unittest.TestCase):
 
 
 
+    def test_a_root_file_copy_rule_selects_from_the_repository_root(self):
+        # borg-runner's ACCUMULATED_KNOWLEDGE.md lives at the root: the
+        # rule's `from` is '' and must name the root, not an empty pathspec
+        # (git refuses one) and not strip a leading '.' off every path.
+        self.c = commit(self.origin, {'ACCUMULATED_KNOWLEDGE.md': 'edition 2\n',
+                                      'README.md': 'runner readme\n'}, 'C: root files')
+        pins = json.loads((self.root / 'pins.json').read_text())
+        pins['copies'].append({'pin': 'src', 'from': '', 'select': 'files',
+                               'files': ['ACCUMULATED_KNOWLEDGE.md'], 'to': 'reference/root'})
+        (self.root / 'pins.json').write_text(json.dumps(pins))
+        # Before the update, the report already counts the new copy.
+        self.assertIn('reference/root`: 1 added', self.report())
+        moved = rs.update(self.root, ['src'], today='2026-11-09')
+        self.assertEqual(moved, [('src', self.a, self.c)])
+        self.assertEqual((self.root / 'reference/root/ACCUMULATED_KNOWLEDGE.md').read_text(),
+                         'edition 2\n')
+        self.assertFalse((self.root / 'reference/root/README.md').exists())
+
 
 class SelectTest(unittest.TestCase):
     def test_suffix_selects_at_any_depth(self):
@@ -244,7 +262,6 @@ class SelectTest(unittest.TestCase):
                 'sonnet-3/decisions.jsonl': 'd', 'sonnet-3/report.html': 'e'}
         got = rs.selected({'select': 'suffix', 'suffixes': ['.md']}, tree)
         self.assertEqual(sorted(got), ['OVERVIEW.md', 'sonnet-3/REPORT.md', 'sonnet-3/notebook.md'])
-
 
 if __name__ == '__main__':
     unittest.main()

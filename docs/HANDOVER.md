@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: borg-runner's ACCUMULATED_KNOWLEDGE, copied (S15)
+
+A pass over borg-runner and better-borg-c, asked for by the owner, found
+one document we did not have: **`ACCUMULATED_KNOWLEDGE.md`** at
+borg-runner's root — the export *written for this repository* (its header
+names borg-reborn-rs as the consumer), only what no manual or data file
+says: measurements, corrections of the manuals and of itself, numbers,
+and the open questions. It is rewritten from time to time (edition 3
+landed during this pass and **corrected edition 2's most load-bearing
+claim: a level has three or four down staircases, not one** — the "one"
+was the labyrinth generator; the classic/modified generators ask for
+`rand_range(3, 4)`, `gen-cave.c:1291`).
+
+This PR adds the copy rule (and a two-line amendment to
+`refresh-sources.py` so a root-file rule works, with a test), moves the
+borg-runner pin to `883c474` (four new commits today: a twelfth run
+`minimaxflash-3`, a Warrior that died standing still for a Word of
+Recall; a new INSTRUCTIONS section on constitution as the pace of
+descent; edition 3; playbook folds), and records S15's new material in
+SOURCES.md. The reading itself is consolidated in
+`docs/research/KNOWLEDGE.md` (next PR), which also sets up the
+read-marker process the owner asked for.
+
 ## 2026-11-10: T3.2, paths and exploration (#18)
 
 `borg-reborn-rs/src/path.rs` is L4's paths, substrate for T3.3's strategy
