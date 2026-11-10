@@ -396,6 +396,7 @@ fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
             })
             .collect(),
         choice: format!("{:?}", d.action),
+        threat: d.threat,
         violations: d.violations.clone(),
         prompts: b.executor.take_answered(),
         profile_sha256: b.params.profile_sha256.clone(),
@@ -530,7 +531,7 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     // observation).
     let empty_knowledge = crate::knowledge::Knowledge::default();
     let knowledge = b.knowledge.as_ref().unwrap_or(&empty_knowledge);
-    let mut paths = crate::path::Paths::new(&b.world);
+    let mut paths = crate::path::Paths::new_with_risk(&b.world, b.params.risk_aversion_pct);
     let mut ctx = DecisionCtx {
         view,
         world: &b.world,

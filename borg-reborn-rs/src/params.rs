@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 11] = [
+pub const TABLE: [Param; 13] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -129,6 +129,26 @@ pub const TABLE: [Param; 11] = [
         evidence: "GOALS principle 7 (a way home): keep the starting Recall, unlike bbc D0006, \
                    D0009, D0015, D0016, D0018 and D0019; c15 §12.4 says one if affordable",
     },
+    Param {
+        name: "risk_aversion_pct",
+        unit: "percent of the expected-to-worst gap",
+        min: 0,
+        max: 100,
+        default: 50,
+        evidence: "ARCHITECTURE L4: one risk tolerance for every consumer (paths, rest, retreat, \
+                   combat). 50 is the declared midpoint between expected and worst damage, not a \
+                   measured optimum; the calibration report (#124) replaces it",
+    },
+    Param {
+        name: "threat_horizon",
+        unit: "player turns",
+        min: 1,
+        max: 5,
+        default: 1,
+        evidence: "ARCHITECTURE L4: the assessment's horizon in player turns. 1 is the shortest \
+                   horizon in which a normal-speed adjacent monster acts; longer horizons are \
+                   the calibration report's (#124), not a tuned value",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -145,6 +165,8 @@ pub struct Params {
     pub reserve_cure: u32,
     pub reserve_escape: u32,
     pub reserve_recall: u32,
+    pub risk_aversion_pct: i32,
+    pub threat_horizon: i32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -173,6 +195,8 @@ impl Default for Params {
             reserve_cure: default_of("reserve_cure") as u32,
             reserve_escape: default_of("reserve_escape") as u32,
             reserve_recall: default_of("reserve_recall") as u32,
+            risk_aversion_pct: default_of("risk_aversion_pct") as i32,
+            threat_horizon: default_of("threat_horizon") as i32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -254,6 +278,8 @@ impl Params {
                 "reserve_cure" => i64::from(self.reserve_cure),
                 "reserve_escape" => i64::from(self.reserve_escape),
                 "reserve_recall" => i64::from(self.reserve_recall),
+                "risk_aversion_pct" => i64::from(self.risk_aversion_pct),
+                "threat_horizon" => i64::from(self.threat_horizon),
                 _ => 0,
             }
         };
@@ -281,6 +307,7 @@ mod tests {
         );
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(p.max_level_changes_per_turn, 2);
+        assert_eq!((p.risk_aversion_pct, p.threat_horizon), (50, 1));
         assert_eq!(
             (
                 p.reserve_food,

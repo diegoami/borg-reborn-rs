@@ -12,7 +12,7 @@
 //! placeholder's one-step retreat.
 
 use crate::borg::{stand_still, Memory, Rng};
-use crate::danger::danger;
+use crate::danger::{assess, can_act, can_attack, danger_with, one_threat, ThreatSummary};
 use crate::engine::PlayerView;
 use crate::executor::Action;
 use crate::knowledge::Knowledge;
@@ -182,6 +182,10 @@ pub struct Decision {
     pub budget_left: i64,
     /// The actions considered, with their scores.
     pub candidates: Vec<(Action, f64)>,
+    /// The assessment at the character's grid this think, for calibration
+    /// (`expected`, `worst`, `p_death`, ...). `None` only for decisions
+    /// made before a world exists.
+    pub threat: Option<ThreatSummary>,
     pub violations: Vec<String>,
 }
 
@@ -246,7 +250,19 @@ impl FirstStrategy {
     /// (bbc D0017); M3 takes the strict form.
     fn may_rest(ctx: &DecisionCtx) -> bool {
         let (x, y) = (ctx.view.x, ctx.view.y);
-        danger(ctx.world, ctx.knowledge, x, y, 1) == 0
+        // Rest is a long action: ask the assessment over the whole rest,
+        // not one turn, or a pursuer two steps away looks harmless.
+        let horizon = i32::try_from(ctx.params.rest_turns).unwrap_or(i32::MAX);
+        assess(
+            ctx.world,
+            ctx.knowledge,
+            x,
+            y,
+            horizon,
+            ctx.params.risk_aversion_pct,
+        )
+        .risk(ctx.params.risk_aversion_pct)
+            <= 0.0
     }
 
     /// The one step that most reduces danger (a taste of L4 until M4's
@@ -270,7 +286,14 @@ impl FirstStrategy {
             {
                 continue;
             }
-            let danger = danger(ctx.world, ctx.knowledge, nx, ny, 1);
+            let danger = danger_with(
+                ctx.world,
+                ctx.knowledge,
+                nx,
+                ny,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            );
             let better = match best {
                 None => true,
                 Some((b, _, _)) => danger < b,
@@ -305,21 +328,19 @@ impl FirstStrategy {
     /// grid times those turns. No margin constant: M4's tactical layer
     /// replaces this with the real comparison of alternatives.
     fn exchange(ctx: &DecisionCtx, i: usize) -> Option<(f64, f64)> {
+        if !can_attack(ctx.world) {
+            // The engine refuses an attack while afraid or paralysed.
+            return None;
+        }
         let t = &ctx.world.level.monsters[i];
         let dpt = ctx.world.character.melee_per_turn(ctx.knowledge)?;
         if dpt <= 0.0 || t.hp <= 0 {
             return None;
         }
         let turns = t.hp as f64 / dpt;
-        let d = f64::from(crate::danger::one(
-            ctx.world,
-            ctx.knowledge,
-            t,
-            ctx.view.x,
-            ctx.view.y,
-            1,
-        ));
-        Some((d * turns, turns))
+        let risk = one_threat(ctx.world, ctx.knowledge, t, ctx.view.x, ctx.view.y, 1)
+            .risk(ctx.params.risk_aversion_pct);
+        Some((risk * turns, turns))
     }
 
     /// The best adjacent monster to fight: the one whose exchange costs
@@ -346,12 +367,17 @@ impl FirstStrategy {
     /// The direction of the adjacent monster with the least danger, for
     /// the cornered case: fighting beats dying on a wall.
     fn cornered_fight(ctx: &DecisionCtx) -> Option<u8> {
+        if !can_attack(ctx.world) {
+            return None;
+        }
         let (x, y) = (ctx.view.x, ctx.view.y);
         Self::adjacent(ctx)
             .into_iter()
             .filter_map(|i| {
                 let t = &ctx.world.level.monsters[i];
-                let d = crate::danger::one(ctx.world, ctx.knowledge, t, x, y, 1);
+                let d = one_threat(ctx.world, ctx.knowledge, t, x, y, 1)
+                    .risk(ctx.params.risk_aversion_pct)
+                    .round() as u32;
                 let dir = DIRS
                     .iter()
                     .find(|(_, dx, dy)| (*dx, *dy) == (t.x - x, t.y - y))
@@ -457,6 +483,34 @@ impl FirstStrategy {
     /// wear, but gold is the one loot that is value (S15 §6b) — and a
     /// dropped escape beside a fight is a rescue (bbc D0019). M3 takes
     /// what is underfoot whenever the pack has room; triage is M5's.
+    /// The assessment at the character's grid, with the strategy's horizon
+    /// and tolerance.
+    fn here_threat(ctx: &DecisionCtx) -> Option<ThreatSummary> {
+        Some(
+            assess(
+                ctx.world,
+                ctx.knowledge,
+                ctx.view.x,
+                ctx.view.y,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            )
+            .summary(),
+        )
+    }
+
+    /// Stand still without the shop-entrance trap: `,` on a shop opens the
+    /// store, so use the neighbouring direction when it would.
+    fn still(ctx: &DecisionCtx) -> Action {
+        let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
+        stand_still(here, |dx, dy| {
+            ctx.world
+                .level
+                .at(ctx.view.x + dx, ctx.view.y + dy)
+                .map(|g| g.feat)
+        })
+    }
+
     fn underfoot(ctx: &DecisionCtx) -> bool {
         ctx.world
             .level
@@ -526,7 +580,14 @@ impl FirstStrategy {
             }
             Mode::Descend => {
                 let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
-                let threat = danger(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y, 1);
+                let threat = danger_with(
+                    ctx.world,
+                    ctx.knowledge,
+                    ctx.view.x,
+                    ctx.view.y,
+                    ctx.params.threat_horizon,
+                    ctx.params.risk_aversion_pct,
+                );
                 if threat > 0
                     && matches!(
                         here,
@@ -742,6 +803,18 @@ impl Strategy for FirstStrategy {
     }
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
+        if !can_act(ctx.world) {
+            let action = Self::still(ctx);
+            return Decision {
+                action,
+                mode: "disabled",
+                goal: "paralysed",
+                budget_left: 0,
+                candidates: vec![(action, 1.0)],
+                threat: Self::here_threat(ctx),
+                violations: Vec::new(),
+            };
+        }
         self.note_failures(ctx);
         let mode = self.choose_mode(ctx);
         self.mode = mode;
@@ -789,6 +862,7 @@ impl Strategy for FirstStrategy {
                 goal: "stand still",
                 budget_left: 0,
                 candidates: vec![],
+                threat: Self::here_threat(ctx),
                 violations: vec![why],
             };
         }
@@ -812,6 +886,7 @@ impl Strategy for FirstStrategy {
                 goal: "stand still",
                 budget_left,
                 candidates: vec![],
+                threat: Self::here_threat(ctx),
                 violations,
             };
         }
@@ -846,6 +921,7 @@ impl Strategy for FirstStrategy {
             goal: goal_name,
             budget_left,
             candidates: vec![(action_clone(&action), 1.0)],
+            threat: Self::here_threat(ctx),
             violations,
         }
     }
@@ -1050,6 +1126,26 @@ mod tests {
             busy: false,
             turn: w.turn,
         }
+    }
+
+    #[test]
+    fn the_decision_exposes_the_threat_numbers() {
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M..>#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        let t = d.threat.expect("an assessment on every decision");
+        assert!(t.expected > 0.0 && t.worst >= t.expected, "{t:?}");
+        assert_eq!(t.horizon, params.threat_horizon);
     }
 
     #[test]

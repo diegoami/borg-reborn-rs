@@ -94,7 +94,7 @@
   "max_depth": 14,
   "current": {
     "action": "Walk",
-    "dir": 9
+    "dir": 7
   },
   "pins_forbidden": true
 }

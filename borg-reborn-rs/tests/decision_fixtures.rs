@@ -42,6 +42,7 @@ const EXPECTED_IDS: &[&str] = &[
     "bbc-d0010-shoot-instead-of-stairs",
     "bbc-d0011-dagger-for-maul",
     "bbc-d0012-kill-the-mold",
+    "bbc-d0019-one-apprentice-not-flight",
     "bbc-d0013-kobold-not-level-flight",
     "bbc-d0014-speed-and-clw",
     "breeder-pack-one-action",
