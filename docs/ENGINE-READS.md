@@ -81,6 +81,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `adj_str_blow` | K | the blows table's strength term, read to check the lifted copy |
 | `adj_str_hold` | K | the wield-weight table, read to check the lifted copy |
 | `f_info` | T | terrain features, to show a remembered feature as `map_info` does (mimics) |
+| `bodies` | T | the races' static bodies, which birth copies into `player->body` (`player-birth.c:376-381`), against the observed slot count and types |
 | `Rand_quick` | W | the RNG swap: the Borg's reads use its own RNG (spec §1.2) |
 | `Rand_value` | W | the RNG swap |
 | `state_i` | W | the RNG swap: saved and restored |

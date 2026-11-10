@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M2 reviewed and tagged
+
+Kimi K3.1 Pro's fourth pass on #99, at `7cec235`: **M2 done**, with no
+findings left. The owner had #99 merged (`reviewed` at `4ea0bb0`); `m2`
+is tagged there, and the GitHub milestone is closed. The four passes'
+findings were all fixed in #100–#104, so none carry over to M3.
+
+**Next:** M3, per PLAN.md, with S14 and S15 (borg-runner, #103, below)
+as its game knowledge.
+
 ## 2026-11-10: a new source, borg-runner (S15)
 
 The owner added [borg-runner](https://github.com/diegoami/borg-runner) as a
@@ -27,6 +37,54 @@ screen and record every key; what they learn goes into one page,
   measured it (RULES 14).
 - **First use:** the strategies and profiles of M3 onward, alongside S14.
 
+## 2026-11-10, end of day: M2's review continues tomorrow
+
+**The review of M2 (#99) is tomorrow, 2026-11-11.** The owner runs it with
+the reviewer they choose (RULES 6). #99's description has the prompt,
+pinned to the head of `main`. Until it is in:
+- nothing else merges into `main`, so that #99's diff stays what the
+  review reads;
+- #103 (borg-runner as source S15) waits, CI green. After #99 merges,
+  merge `main` into it (no force-push) and merge it;
+- M3 doesn't start.
+
+When the review is in: if it is clean, the owner merges #99, `m2` is
+tagged on the merge, the findings become M3 issues, then #103, then M3.
+If it isn't, fix the findings in PRs into `main`, repin #99's prompt and
+map the findings in a comment, as for the three passes so far (#100–#104).
+
+## 2026-11-10: M2's third review: not done; findings fixed
+
+Kimi K3.1 Pro's third review of #99, at `fb069d8`: **not done**. R2 and R4
+are resolved. One blocking finding and three should-fix ones were new, all
+fixed in the PR after #102:
+1. **Blocking:** perception read `pack_size` inventory entries, but the
+   pack has `pack_size + 1` and may be overfull by one. It now reads them
+   all.
+2. **Slots and levels:** the equipment's slot count and types are checked
+   against the race's static body, and the occupied slots against the
+   engine's; `Item.level` is compared.
+3. **Pairing:** each engine object is paired with the observed item at its
+   place and position. Each pair is compared field by field from the object
+   directly, and whole against `analyze()` of that very object: exact
+   weight, flags, modifiers, elements, description, awareness, runes. The
+   description, awareness and runes come from the same engine functions as
+   perception, so that half checks pairing and completeness, not those
+   functions.
+4. **The stat floor:** `wearing` takes the bonus nearest the known one
+   (race, class, the gear's known modifiers). That is exact unless
+   something unseen changes the stat at the floor. The reviewer's
+   counterexamples are tests.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- The reviewer's faults now fail: slot types off by one, 48,948
+  differences; zeroed item levels, 20,395.
+- The normal build plays the references' games (3/3, 3/3, 45/45). Its
+  deaths are D0943–D0988.
+- **Not exercised:** no suite run has an overfull pack or mixed cursed and
+  uncursed stacks.
+
 ## 2026-11-10: M2's re-review: done with changes; R1–R4 fixed
 
 Kimi K3.1 Pro re-reviewed #99 at `eef7a8c`: **done with changes**. Both
@@ -34,8 +92,8 @@ blocking findings and the first round are resolved. Four remained, fixed
 in the PR after #101:
 - **R1:** the gear check is now place-aware. The engine says where each
   object is (`equipped_item_slot`, `object_is_in_quiver`), and each item
-  is compared on every observed field but the description; known flags
-  are checked against their bounds.
+  is compared on its identity and known combat values, and known flags
+  against bounds (superseded by the third review's pairing, below).
 - **R2:** the pack count is compared with a fresh `pack_slots_used` call.
 - **R3:** at the stat floor of 3, `wearing` takes the lowest result of all
   the bonuses that fit, so no stat is invented.

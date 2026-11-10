@@ -364,6 +364,11 @@ impl Knowledge {
         self.classes.iter().find(|c| c.index == index)
     }
 
+    /// The player race of that index (`ridx`).
+    pub fn player_race(&self, index: u32) -> Option<&PlayerRace> {
+        self.player_races.iter().find(|r| r.index == index)
+    }
+
     /// One line of a knowledge log (JSON, no newline).
     pub fn to_line(&self) -> String {
         serde_json::to_string(self).expect("knowledge is plain data")
