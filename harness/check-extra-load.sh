@@ -6,7 +6,7 @@
 # twice: as save=final.save,keep-load-rng (SAVE_ROOT) and, from another
 # directory and by a relative path, as `-- -load FILE -keep-load-rng`. Both
 # must resume the saved game at its turn, play Borg keys, record the save's
-# hash, and play the same keys. Uses BORG_IMPL (default c) like run.sh.
+# hash, and play the same keys. Uses BORG_IMPL (default and only: rust) like run.sh.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$(realpath -m "${1:-$ROOT/harness/out/check-extra-load}")"

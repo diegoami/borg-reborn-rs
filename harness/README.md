@@ -21,7 +21,7 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 | `diff` | Compares two suite outputs, or an output and a reference: keys, messages and state logs byte for byte, and `summary.json` (fields added later, such as `game_options`, only when both sides have them) |
 | `check-boundary.py` | The exact-boundary contract, a suite run with and without `exact` (below) |
 | `check-extra-load.sh` | A save loaded through `-- -load` resumes like `save=NAME` |
-| `make-reference.sh` | Makes a reference directory from a suite output. Its `REFERENCE` file takes the build identity and each run's configuration from the suite's manifest; it refuses a suite run with overrides or built from uncommitted inputs (E review, finding 8) |
+| `make-reference.sh` | Makes a reference directory from a suite output. Its `REFERENCE` file takes the build identity and each run's configuration from the suite's manifest; it refuses a suite run with overrides, built from uncommitted inputs, or whose runs lack one identical profile identity, before writing anything, and builds the reference in a temporary directory (E review and M2 review, finding 8) |
 | `zoo-check.py` | Runs borg-zoo's own adapter (at our pin) against this checkout (docs/ZOO-INTERFACE.md) |
 | `supervise.py` | Runs the game as a supervised child (wall and stall timeouts); `process.json` records its outcome |
 | `borg.txt` | The C Borg's configuration file. The Rust Borg does not read it; it stays because the zoo copies it |

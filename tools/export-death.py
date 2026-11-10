@@ -2,8 +2,9 @@
 """Write a basic death dossier for a harness run that ended in a natural death.
 
 Called by harness/run.sh after every run (task T1.2, issue #5; RULES 12), so
-every game played in this repository, on any arm, leaves a dossier when it
-dies. Runs that did not die are ignored. A repeat of an exported run (same
+every measured run (one played through harness/run.sh: a suite, a single
+run, CI, the zoo check) leaves a dossier when it dies. Games watched with
+watch-borg.sh are not measured runs (RULES 12). Runs that did not die are ignored. A repeat of an exported run (same
 seed, build, configuration and key stream) is reported, never counted as a
 new death.
 
@@ -192,6 +193,23 @@ def family_of(impl, seed, race_idx, class_idx, source_sha256, borg_txt_sha256, s
     return 'start-' + hashlib.sha256(start.encode()).hexdigest()
 
 
+def run_family(summary, config, impl, source_sha256, flags='-'):
+    """A run's encounter family, from its summary.json, its config.txt and
+    its build's source hash (also tools/reconcile-deaths.py --runs)."""
+    flag_set = set(flags.split(','))
+    # A loaded save that keeps its own RNG starts the same game whatever the
+    # seed; keep-load-rng without a save has no effect, so the seed stays. A
+    # random birth starts from the character actually played. Whether a save
+    # was loaded is borgh's own evidence (summary "loaded"), which also covers
+    # `run.sh ... -- -load FILE`; run.sh writes keep_load_rng=1 to config.txt
+    # when -keep-load-rng came that way too (re-review R3).
+    keeps_rng = 'keep-load-rng' in flag_set or config.get('keep_load_rng') == '1'
+    seed = None if summary.get('loaded') and keeps_rng else summary.get('seed')
+    race = summary.get('played_race_idx', summary.get('race_idx'))
+    cls = summary.get('played_class_idx', summary.get('class_idx'))
+    return family_of(impl, seed, race, cls, source_sha256, config.get('borg_txt_sha256'), config.get('save_sha256'))
+
+
 def export(run_dir, impl, build_id_path, flags='-'):
     """Returns (case, what): what is 'not dead', 'exported', 'repeat', or
     'repaired: NAMES' when a repeat found its dossier incomplete and wrote
@@ -210,19 +228,7 @@ def export(run_dir, impl, build_id_path, flags='-'):
     build = read_kv(build_id_path)
     config = read_kv(run_dir / 'config.txt')
     keys_sha = sha256_file(keys)
-    flag_set = set(flags.split(','))
-    # A loaded save that keeps its own RNG starts the same game whatever the
-    # seed; keep-load-rng without a save has no effect, so the seed stays. A
-    # random birth starts from the character actually played. Whether a save
-    # was loaded is borgh's own evidence (summary "loaded"), which also covers
-    # `run.sh ... -- -load FILE`; run.sh writes keep_load_rng=1 to config.txt
-    # when -keep-load-rng came that way too (re-review R3).
-    keeps_rng = 'keep-load-rng' in flag_set or config.get('keep_load_rng') == '1'
-    seed = None if summary.get('loaded') and keeps_rng else summary.get('seed')
-    race = summary.get('played_race_idx', summary.get('race_idx'))
-    cls = summary.get('played_class_idx', summary.get('class_idx'))
-    family = family_of(impl, seed, race, cls,
-                       build.get('source_sha256'), config.get('borg_txt_sha256'), config.get('save_sha256'))
+    family = run_family(summary, config, impl, build.get('source_sha256'), flags)
     reg = registry_dir()
     reg.mkdir(parents=True, exist_ok=True)
     with open(reg / '.registry.lock', 'w') as lock:
