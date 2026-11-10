@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: a new source, borg-runner (S15)
+
+The owner added [borg-runner](https://github.com/diegoami/borg-runner) as a
+source of game knowledge: the accumulated knowledge of agent players.
+Language-model agents play upstream 4.2.6 (`e473720`, our engine) from the
+screen and record every key; what they learn goes into one page,
+`manuals/INSTRUCTIONS.md`.
+- **Pin:** `borg-runner` at `e829a01`. At that commit LEARNED.md and
+  MANUAL-GAPS.md had just been folded into the page.
+- **Copies** (`reference/borg-runner/`):
+  - `manuals/`: the page, volume 2 (depth 5–20, untested) and the jev
+    manual;
+  - `knowledge/`: each run's notebook;
+  - the `.md` write-ups of `records/`.
+
+  `refresh-sources.py` has a new `suffix` selection for the last one.
+- **Recorded in:** SOURCES (S15, with what we take and what we leave),
+  GOALS D11 (borg-agent and borg-runner, same terms), README, AGENTS,
+  reference/README.
+- **How to use it:** each FACT line is checked against `engine/angband/src/`
+  and cited (RULES 16). An OBSERVED line rests on a few runs, some of which
+  inherited each other's notebooks. Nothing is a claim until the zoo has
+  measured it (RULES 14).
+- **First use:** the strategies and profiles of M3 onward, alongside S14.
+
 ## 2026-11-10: M2's re-review: done with changes; R1–R4 fixed
 
 Kimi K3.1 Pro re-reviewed #99 at `eef7a8c`: **done with changes**. Both

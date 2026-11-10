@@ -57,6 +57,13 @@
       "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch).",
       "read_on": "2026-11-09",
       "issues": true
+    },
+    "borg-runner": {
+      "repository": "diegoami/borg-runner",
+      "commit": "e829a0119617f6d0461d4458189db76adf130c4e",
+      "role": "Language-model agents play upstream 4.2.6 (e473720, our engine) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
+      "read_on": "2026-11-10",
+      "issues": true
     }
   },
   "copies": [
@@ -113,6 +120,27 @@
       "from": "docs/c-manual",
       "to": "reference/c-manual",
       "select": "all"
+    },
+    {
+      "pin": "borg-runner",
+      "from": "manuals",
+      "to": "reference/borg-runner/manuals",
+      "select": "all"
+    },
+    {
+      "pin": "borg-runner",
+      "from": "knowledge",
+      "to": "reference/borg-runner/knowledge",
+      "select": "all"
+    },
+    {
+      "pin": "borg-runner",
+      "from": "records",
+      "to": "reference/borg-runner/records",
+      "select": "suffix",
+      "suffixes": [
+        ".md"
+      ]
     }
   ]
 }

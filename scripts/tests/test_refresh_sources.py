@@ -235,5 +235,16 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('nothing new', text)
 
 
+
+
+class SelectTest(unittest.TestCase):
+    def test_suffix_selects_at_any_depth(self):
+        # borg-runner's records: the write-ups, not the screens and keys.
+        tree = {'OVERVIEW.md': 'a', 'sonnet-3/REPORT.md': 'b', 'sonnet-3/notebook.md': 'c',
+                'sonnet-3/decisions.jsonl': 'd', 'sonnet-3/report.html': 'e'}
+        got = rs.selected({'select': 'suffix', 'suffixes': ['.md']}, tree)
+        self.assertEqual(sorted(got), ['OVERVIEW.md', 'sonnet-3/REPORT.md', 'sonnet-3/notebook.md'])
+
+
 if __name__ == '__main__':
     unittest.main()

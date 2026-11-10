@@ -91,6 +91,10 @@ def selected(rule, tree):
         return {p: b for p, b in tree.items() if p in rule['files']}
     if kind == 'all':
         return dict(tree)
+    if kind == 'suffix':
+        # Every file with one of the suffixes, at any depth (e.g. the .md
+        # write-ups of borg-runner's records, not their screens and keys).
+        return {p: b for p, b in tree.items() if p.endswith(tuple(rule['suffixes']))}
     if kind == 'death-registry':
         out = {}
         for p, b in tree.items():
