@@ -44,6 +44,7 @@ follows the same files.
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. A reference to copy from, never a dependency (docs/SPEC.md §2); what was copied is ours and listed in docs/PROVENANCE.md. |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
 | [borg-agent](https://github.com/diegoami/borg-agent) | A language-model player that writes down game knowledge with evidence, meant as an input to this Borg. |
+| [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents play the game from the screen and record every key; what they learn accumulates in one page (`manuals/INSTRUCTIONS.md`). A source of game knowledge (S15). |
 
 Licence: GPLv2 (see `LICENSE`), as borg-rs. Angband itself is dual-licensed
 GPLv2 / Angband licence; files copied from other projects keep their

@@ -9,9 +9,33 @@ findings left. The owner had #99 merged (`reviewed` at `4ea0bb0`); `m2`
 is tagged there, and the GitHub milestone is closed. The four passes'
 findings were all fixed in #100–#104, so none carry over to M3.
 
-**Next:**
-- #103 (borg-runner as source S15): merge `main` into it and merge it;
-- M3, per PLAN.md, with S14 and S15 as its game knowledge.
+**Next:** M3, per PLAN.md, with S14 and S15 (borg-runner, #103, below)
+as its game knowledge.
+
+## 2026-11-10: a new source, borg-runner (S15)
+
+The owner added [borg-runner](https://github.com/diegoami/borg-runner) as a
+source of game knowledge: the accumulated knowledge of agent players.
+Language-model agents play upstream 4.2.6 (`e473720`, our engine) from the
+screen and record every key; what they learn goes into one page,
+`manuals/INSTRUCTIONS.md`.
+- **Pin:** `borg-runner` at `e829a01`. At that commit LEARNED.md and
+  MANUAL-GAPS.md had just been folded into the page.
+- **Copies** (`reference/borg-runner/`):
+  - `manuals/`: the page, volume 2 (depth 5–20, untested) and the jev
+    manual;
+  - `knowledge/`: each run's notebook;
+  - the `.md` write-ups of `records/`.
+
+  `refresh-sources.py` has a new `suffix` selection for the last one.
+- **Recorded in:** SOURCES (S15, with what we take and what we leave),
+  GOALS D11 (borg-agent and borg-runner, same terms), README, AGENTS,
+  reference/README.
+- **How to use it:** each FACT line is checked against `engine/angband/src/`
+  and cited (RULES 16). An OBSERVED line rests on a few runs, some of which
+  inherited each other's notebooks. Nothing is a claim until the zoo has
+  measured it (RULES 14).
+- **First use:** the strategies and profiles of M3 onward, alongside S14.
 
 ## 2026-11-10, end of day: M2's review continues tomorrow
 

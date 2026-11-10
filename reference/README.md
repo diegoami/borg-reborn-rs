@@ -14,6 +14,8 @@ PR that updates the pin and this table.
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `eb9a78edde6c1909b1430f6c93c3944998b774af` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
 | `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `286215c5cbb0c37002447c530a66ad3b92014a36` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
+| `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e829a0119617f6d0461d4458189db76adf130c4e` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
+| `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
 | `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `e56d5faa8face1cecf03b3cc49f850e1b48f0d75` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository

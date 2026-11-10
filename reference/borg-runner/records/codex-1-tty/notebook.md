@@ -1,0 +1,1 @@
+- Read files before starting: PLAYGAME.txt, docs/BRIEF.md, manuals/INSTRUCTIONS.md, knowledge/NOTES.md, records/OVERVIEW.md. Seed 103 chosen for runtime retry. (ask 1)
