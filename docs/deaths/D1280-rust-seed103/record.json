@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1280-rust-seed103",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3513,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "menu",
+    "git_rev": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+    "git_dirty": "no",
+    "source_sha256": "7f2a0ccd76e03d8222e2912efed7f627d42ddec94bc5e94ea12205f6d80fb113",
+    "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 282
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t35-smoke/smoke-priest-3",
+      "result_sha256": "6ce9f360f7110afe11f13c1b5a0566c72919e19b65a8598cee5b1b51a4b5f18f",
+      "raw_sha256": {
+        "keys.log": "6ce9f360f7110afe11f13c1b5a0566c72919e19b65a8598cee5b1b51a4b5f18f",
+        "messages.log": "f7c73e169c333de35e7e42334480d08065784e314066402cba62a4999d99f51f",
+        "state.log": "b794d22b28d98ce3fa235b727e51f889580355435d9c5700986314ae70702604"
+      },
+      "source_commit": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+      "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6"
+    }
+  ],
+  "encounter_family": "start-65eafe0e863225b7101b100ca5bbd95fbe61001672cbf2e3f972d6a0205ed769",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2f45d5850a8fc12f76cadb80c94c0f57fc4f4cce7c3aa2bb62b10157f8f68893",
+    "config.txt": "4ad1e76cf47ed2d929bd719af5393976f5241ec7e0c8e9ad055a4f4f9b5af6ce",
+    "depths.json": "c10c88826cf56bdd5ee793e1498e68e34d6b1eaf4ab0a5d90dc4d205c36f84f9",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "dc34b3eb46de3f515a2a13ee17bd065d24d1c0f71ef0d1dd6c266246569f8914",
+    "trace-tail.jsonl": "7907e50467c0729351626373f1f3abb6363350e96bd5a882cfcaf9a5c97b4067"
+  },
+  "investigation": null,
+  "issue": null
+}
