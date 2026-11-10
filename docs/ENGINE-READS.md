@@ -52,6 +52,8 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `pack_slots_used` | X | the engine's own pack count, quiver included (REDESIGN-LESSONS L8) |
 | `square` | T | the player's map memory (`player->cave`), against the world's map |
 | `panel_contains` | T | the engine's own panel test (`textui_panel_contains`), against the observed panel |
+| `equipped_item_slot` | T | where an object of the gear list is worn, without the body slots perception reads |
+| `object_is_in_quiver` | T | whether an object of the gear list is in the quiver |
 | `monster_is_visible` | B | `map_info`'s own visibility test (`cave-map.c`): tells a monster the player sees from the `m_idx = 1` a hallucination puts on a grid where monster 1 stands unseen (T2.5); the truth check also uses it on the whole level |
 
 ## Globals

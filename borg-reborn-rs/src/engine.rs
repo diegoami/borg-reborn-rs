@@ -961,33 +961,96 @@ pub mod truth {
         }
     }
 
-    /// What an item is, as the observation and the engine's gear list can
-    /// both say it: the real kind and number, and the known combat values
-    /// (`obj->known`, what `analyze` reads for an object not fully known).
-    type ItemKey = (u32, u8, i16, i16, i16, i16, i16, u8, u8);
+    /// Where an item is: an equipment slot (by its index in the body), the
+    /// quiver or the pack.
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+    enum Place {
+        Equipment(usize),
+        Quiver,
+        Pack,
+    }
 
-    fn observed_key(i: &Item) -> ItemKey {
+    /// What an item is, as the observation and the engine's gear list can
+    /// both say it (M2 re-review, R1): where it is, the real kind and
+    /// number, the weight, and the known values (`obj->known`, what
+    /// `analyze` reads for an object not fully known). The weight is -1 for
+    /// a cursed object, whose curses can change it (`object_weight_one`).
+    type ItemKey = (
+        Place,
+        (u32, u8, u8, u8, i16, i16),
+        (i16, i16, i16, i16, u8, u8),
+        Vec<i16>,
+        Vec<(i16, u8)>,
+    );
+
+    fn observed_key(place: Place, i: &Item, cursed: bool) -> ItemKey {
         (
-            i.kind, i.number, i.timeout, i.ac, i.to_h, i.to_d, i.to_a, i.dd, i.ds,
+            place,
+            (
+                i.kind,
+                i.tval,
+                i.sval,
+                i.number,
+                i.timeout,
+                if cursed { -1 } else { i.weight },
+            ),
+            (i.ac, i.to_h, i.to_d, i.to_a, i.dd, i.ds),
+            i.modifiers.clone(),
+            i.elements.clone(),
         )
     }
 
-    unsafe fn engine_key(o: &b::object) -> Option<ItemKey> {
+    unsafe fn engine_key(place: Place, o: &b::object) -> Option<ItemKey> {
         if o.kind.is_null() || o.known.is_null() {
             return None;
         }
         let k = &*o.known;
         Some((
-            (*o.kind).kidx,
-            o.number,
-            o.timeout,
-            k.ac,
-            k.to_h,
-            k.to_d,
-            k.to_a,
-            k.dd,
-            k.ds,
+            place,
+            (
+                (*o.kind).kidx,
+                o.tval,
+                o.sval,
+                o.number,
+                o.timeout,
+                if o.curses.is_null() {
+                    o.weight.max(0)
+                } else {
+                    -1
+                },
+            ),
+            (k.ac, k.to_h, k.to_d, k.to_a, k.dd, k.ds),
+            k.modifiers.to_vec(),
+            k.el_info.iter().map(|e| (e.res_level, e.flags)).collect(),
         ))
+    }
+
+    /// The bounds of an object's known flags (`object_flags_known`): at
+    /// least what the object has and the player knows of it, at most what
+    /// it has.
+    unsafe fn flag_bounds(o: &b::object) -> ([u8; 5], [u8; 5]) {
+        let k = &*o.known;
+        let mut lower = [0u8; 5];
+        for (n, l) in lower.iter_mut().enumerate() {
+            *l = o.flags[n] & k.flags[n];
+        }
+        (lower, o.flags)
+    }
+
+    /// The items of `a` not matched in `b`, counting repeats (M2
+    /// re-review, R4: a duplicate is a difference).
+    fn missing<T: PartialEq + Clone>(a: &[T], b: &[T]) -> Vec<T> {
+        let mut left = b.to_vec();
+        a.iter()
+            .filter(|x| match left.iter().position(|y| y == *x) {
+                Some(n) => {
+                    left.remove(n);
+                    false
+                }
+                None => true,
+            })
+            .cloned()
+            .collect()
     }
 
     /// Every think gives a report, so tools/check-perception.py can require
@@ -1192,40 +1255,82 @@ pub mod truth {
                 .collect();
             visible.sort_unstable();
             seen.sort_unstable();
-            for v in visible.iter().filter(|v| !seen.contains(v)) {
+            for v in missing(&visible, &seen) {
                 diffs.push(format!("monsters: visible, not seen as such: {v:?}"));
             }
-            for m in seen.iter().filter(|m| !visible.contains(m)) {
+            for m in missing(&seen, &visible) {
                 diffs.push(format!("monsters: seen, not visible as such: {m:?}"));
             }
 
             // Gear: the engine's gear list against the observed equipment,
-            // quiver and pack, item by item (finding 3), and the pack count
-            // from the observed items against the engine's.
+            // quiver and pack, item by item and place by place (findings 3,
+            // R1): the engine says where each object is through its own
+            // functions, not the arrays perception reads. Known flags are
+            // checked against their bounds, and the pack count from the
+            // observed items against a fresh pack_slots_used (R2).
             let mut engine_items = Vec::new();
+            let mut cursed = Vec::new();
             let mut obj = pl.gear;
             while !obj.is_null() {
-                match engine_key(&*obj) {
-                    Some(k) => engine_items.push(k),
+                let slot = b::equipped_item_slot(pl.body, obj);
+                let place = if slot >= 0 && (slot as u16) < pl.body.count {
+                    Place::Equipment(slot as usize)
+                } else if b::object_is_in_quiver(p, obj) {
+                    Place::Quiver
+                } else {
+                    Place::Pack
+                };
+                match engine_key(place, &*obj) {
+                    Some(k) => {
+                        let (lower, upper) = flag_bounds(&*obj);
+                        cursed.push((k.0, k.1 .0, !(*obj).curses.is_null()));
+                        engine_items.push((k, lower, upper));
+                    }
                     None => diffs.push("gear: an object without kind or known part".to_string()),
                 }
                 obj = (*obj).next;
             }
-            let mut observed: Vec<ItemKey> = o
-                .equipment
-                .iter()
-                .filter_map(|s| s.item.as_ref())
-                .chain(&o.quiver)
-                .chain(&o.inventory)
-                .map(observed_key)
-                .collect();
+            let is_cursed = |place: Place, kind: u32| {
+                cursed.iter().any(|&(p, k, c)| p == place && k == kind && c)
+            };
+            let mut observed: Vec<(ItemKey, [u8; 5])> = Vec::new();
+            for (n, s) in o.equipment.iter().enumerate() {
+                if let Some(i) = s.item.as_ref() {
+                    let place = Place::Equipment(n);
+                    observed.push((observed_key(place, i, is_cursed(place, i.kind)), i.flags));
+                }
+            }
+            for (place, items) in [(Place::Quiver, &o.quiver), (Place::Pack, &o.inventory)] {
+                for i in items {
+                    observed.push((observed_key(place, i, is_cursed(place, i.kind)), i.flags));
+                }
+            }
             r.gear_compared = engine_items.len() as u32;
-            engine_items.sort_unstable();
-            observed.sort_unstable();
-            if engine_items != observed {
+            engine_items.sort();
+            observed.sort();
+            let engine_keys: Vec<_> = engine_items.iter().map(|e| e.0.clone()).collect();
+            let observed_keys: Vec<_> = observed.iter().map(|o| o.0.clone()).collect();
+            for k in missing(&engine_keys, &observed_keys) {
                 diffs.push(format!(
-                    "gear: the engine's list {engine_items:?}, the observation {observed:?}"
+                    "gear: in the engine's list, not observed as such: {k:?}"
                 ));
+            }
+            for k in missing(&observed_keys, &engine_keys) {
+                diffs.push(format!(
+                    "gear: observed, not in the engine's list as such: {k:?}"
+                ));
+            }
+            if engine_keys == observed_keys {
+                for ((k, lower, upper), (_, flags)) in engine_items.iter().zip(&observed) {
+                    let within = (0..5)
+                        .all(|n| flags[n] & lower[n] == lower[n] && flags[n] & !upper[n] == 0);
+                    if !within {
+                        diffs.push(format!(
+                            "gear: known flags {flags:?} of {:?} outside the object's {lower:?}..{upper:?}",
+                            k.0
+                        ));
+                    }
+                }
             }
             let slot = i32::from((*z).quiver_slot_size).max(1);
             let ammo: i32 = o
@@ -1241,9 +1346,15 @@ pub mod truth {
                 })
                 .sum();
             let pack = o.inventory.len() as i32 + (ammo + slot - 1) / slot;
-            if pack != s.pack_used {
+            let engine_pack = b::pack_slots_used(p);
+            if pack != engine_pack {
                 diffs.push(format!(
-                    "pack: {pack} slots from the observed items, the engine counts {}",
+                    "pack: {pack} slots from the observed items, the engine counts {engine_pack}"
+                ));
+            }
+            if s.pack_used != engine_pack {
+                diffs.push(format!(
+                    "pack: the observation says {} slots, the engine counts {engine_pack}",
                     s.pack_used
                 ));
             }

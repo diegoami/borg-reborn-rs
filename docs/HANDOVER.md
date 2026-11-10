@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M2's re-review: done with changes; R1–R4 fixed
+
+Kimi K3.1 Pro re-reviewed #99 at `eef7a8c`: **done with changes**. Both
+blocking findings and the first round are resolved. Four remained, fixed
+in the PR after #101:
+- **R1:** the gear check is now place-aware. The engine says where each
+  object is (`equipped_item_slot`, `object_is_in_quiver`), and each item
+  is compared on every observed field but the description; known flags
+  are checked against their bounds.
+- **R2:** the pack count is compared with a fresh `pack_slots_used` call.
+- **R3:** at the stat floor of 3, `wearing` takes the lowest result of all
+  the bonuses that fit, so no stat is invented.
+- **R4:** monsters are compared as multisets, so duplicates count.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- The reviewer's faults now fail: weapon and launcher swapped, 8,158
+  differences; every monster duplicated, 48.
+- The normal build plays the references' games (3/3, 3/3, 45/45). Its
+  deaths are D0897–D0942.
+
+**Next:** the owner merges #99 (or asks for another pass). Then tag `m2`,
+the remaining findings (none open) become M3 issues, and M3 starts.
+
 ## 2026-11-10: M2's review (#99): not done; findings fixed
 
 Kimi K3.1 Pro reviewed M2 at `70cb9b5`: **not done**, with two blocking and
