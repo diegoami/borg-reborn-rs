@@ -227,6 +227,21 @@ impl DistanceMap {
                 }
             }
         }
+        // A shop is a goal but not a road. When the Borg stands on its
+        // entrance after a purchase, the flood cannot enter its grid, yet
+        // every destination is not thereby unreachable: the way out is the
+        // cheapest reached neighbour plus the step out (T3.5).
+        let (px, py) = player(w);
+        if is_shop(w, px, py) && map.at(px, py) == UNREACHED {
+            let best = DIRS
+                .iter()
+                .map(|(_, dx, dy)| map.at(px + dx, py + dy))
+                .filter(|&d| d != UNREACHED)
+                .min();
+            if let Some(best) = best {
+                map.dist[(py * width + px) as usize] = best.saturating_add(1);
+            }
+        }
         map
     }
 
@@ -243,7 +258,12 @@ impl DistanceMap {
     /// map's value there, minus the entry cost of the grid the walker
     /// already stands on. `UNREACHED` passes through.
     pub fn remaining(&self, w: &World, x: i32, y: i32) -> u32 {
-        let own = enter_cost(w, x, y).unwrap_or(0);
+        // A shop costs one to stand on just as a floor does, even though
+        // transit may not enter it. Subtract that standing cost both when
+        // it is the goal and when a purchase left the Borg there.
+        let own = enter_cost(w, x, y)
+            .or_else(|| is_shop(w, x, y).then_some(1))
+            .unwrap_or(0);
         if self.at(x, y) == UNREACHED {
             return UNREACHED;
         }
@@ -390,8 +410,8 @@ pub(crate) mod tests {
 
     /// A world from an ASCII map: `#` wall, `.` floor, `<`/`>` stairs,
     /// `+` closed door, `,` rubble, `w` webbed floor, `^` known trap,
-    /// `?` unknown (never seen), `s` a shop entrance, `@` the player,
-    /// `M` an awake normal-speed monster, `F` a fast (+10) one.
+    /// `?` unknown (never seen), `s` the General Store, `a` the Alchemist,
+    /// `@` the player, `M` an awake normal-speed monster, `F` a fast one.
     /// Everything but `?` is in view at one turn.
     pub(crate) fn world(map: &[&str]) -> (World, Knowledge) {
         let height = map.len() as i32;
@@ -420,6 +440,7 @@ pub(crate) mod tests {
                     'w' => (feat::FLOOR, true, false, -1),
                     '^' => (feat::FLOOR, false, true, -1),
                     's' => (feat::STORE_GENERAL, false, false, 0),
+                    'a' => (feat::STORE_ALCHEMY, false, false, 4),
                     _ => (feat::FLOOR, false, false, -1),
                 };
                 // '$' is a gold pile underfoot; 'x' a floor with nothing.
@@ -598,6 +619,16 @@ pub(crate) mod tests {
             &Goal::Stairs { up: false },
         );
         assert_eq!(behind, UNREACHED, "no route through the shop");
+    }
+
+    #[test]
+    fn a_shop_entrance_can_be_left_after_shopping() {
+        let (mut w, k) = world(&["#######", "#@.s.>#", "#######"]);
+        w.character.status.as_mut().unwrap().x = 3;
+        let goal = Goal::Stairs { up: false };
+        let mut p = Paths::new(&w);
+        assert_eq!(p.distance(&w, &k, &goal), 2, "two steps out and east");
+        assert_eq!(p.step(&w, &k, &goal), Some(6));
     }
 
     #[test]

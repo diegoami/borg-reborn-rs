@@ -23,8 +23,8 @@ pub struct Param {
     pub evidence: &'static str,
 }
 
-/// The first strategy's parameters (M3: T3.3's modes and budgets).
-pub const TABLE: [Param; 5] = [
+/// The first strategy's parameters (M3: modes, budgets and town reserves).
+pub const TABLE: [Param; 10] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -74,6 +74,51 @@ pub const TABLE: [Param; 5] = [
                    the mode is retried within a level's explore budget, long enough to break \
                    one-goal oscillation; a placeholder until the zoo measures it (RULES 14)",
     },
+    Param {
+        name: "reserve_food",
+        unit: "rations in the pack",
+        min: 0,
+        max: 20,
+        default: 3,
+        evidence: "GOALS principle 7 and the strategy manual's CL1 shopping list (c15 §12.4: \
+                   3-5 rations); the lower bound is the M3 default, to be measured (RULES 14)",
+    },
+    Param {
+        name: "reserve_light",
+        unit: "spare torches in the pack",
+        min: 0,
+        max: 10,
+        default: 2,
+        evidence: "GOALS principle 7 and c15 §12.4 (2-3 spare torches); the equipped light is \
+                   not a reserve. The lower bound is the M3 default, to be measured (RULES 14)",
+    },
+    Param {
+        name: "reserve_cure",
+        unit: "Cure Light Wounds items in the pack",
+        min: 0,
+        max: 20,
+        default: 3,
+        evidence: "GOALS principle 7 and the owner's verified D0015 re-shop (3 CLW); c15 §12.4 \
+                   independently recommends 3-5 (RULES 14)",
+    },
+    Param {
+        name: "reserve_escape",
+        unit: "Phase Door scrolls in the pack",
+        min: 0,
+        max: 20,
+        default: 4,
+        evidence: "GOALS principle 7 and the owner's verified D0015 re-shop (4 Phase Door); \
+                   survival stock outranks equipment (bbc D0013, D0015, D0018, D0019)",
+    },
+    Param {
+        name: "reserve_recall",
+        unit: "Word of Recall scrolls in the pack",
+        min: 0,
+        max: 5,
+        default: 1,
+        evidence: "GOALS principle 7 (a way home): keep the starting Recall, unlike bbc D0006, \
+                   D0009, D0015, D0016, D0018 and D0019; c15 §12.4 says one if affordable",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -84,6 +129,11 @@ pub struct Params {
     pub rest_turns: u32,
     pub explore_budget_turns: u32,
     pub goal_cooldown_turns: u32,
+    pub reserve_food: u32,
+    pub reserve_light: u32,
+    pub reserve_cure: u32,
+    pub reserve_escape: u32,
+    pub reserve_recall: u32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -106,6 +156,11 @@ impl Default for Params {
             rest_turns: default_of("rest_turns") as u32,
             explore_budget_turns: default_of("explore_budget_turns") as u32,
             goal_cooldown_turns: default_of("goal_cooldown_turns") as u32,
+            reserve_food: default_of("reserve_food") as u32,
+            reserve_light: default_of("reserve_light") as u32,
+            reserve_cure: default_of("reserve_cure") as u32,
+            reserve_escape: default_of("reserve_escape") as u32,
+            reserve_recall: default_of("reserve_recall") as u32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -160,6 +215,11 @@ impl Params {
                 "rest_turns" => p.rest_turns = v as u32,
                 "explore_budget_turns" => p.explore_budget_turns = v as u32,
                 "goal_cooldown_turns" => p.goal_cooldown_turns = v as u32,
+                "reserve_food" => p.reserve_food = v as u32,
+                "reserve_light" => p.reserve_light = v as u32,
+                "reserve_cure" => p.reserve_cure = v as u32,
+                "reserve_escape" => p.reserve_escape = v as u32,
+                "reserve_recall" => p.reserve_recall = v as u32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -175,6 +235,11 @@ impl Params {
                 "rest_turns" => i64::from(self.rest_turns),
                 "explore_budget_turns" => i64::from(self.explore_budget_turns),
                 "goal_cooldown_turns" => i64::from(self.goal_cooldown_turns),
+                "reserve_food" => i64::from(self.reserve_food),
+                "reserve_light" => i64::from(self.reserve_light),
+                "reserve_cure" => i64::from(self.reserve_cure),
+                "reserve_escape" => i64::from(self.reserve_escape),
+                "reserve_recall" => i64::from(self.reserve_recall),
                 _ => 0,
             }
         };
@@ -202,6 +267,16 @@ mod tests {
         );
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(
+            (
+                p.reserve_food,
+                p.reserve_light,
+                p.reserve_cure,
+                p.reserve_escape,
+                p.reserve_recall
+            ),
+            (3, 2, 3, 4, 1)
+        );
+        assert_eq!(
             p.profile_sha256,
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
@@ -213,12 +288,13 @@ mod tests {
 
     #[test]
     fn a_profile_sets_what_it_names() {
-        let text = b"# a test profile\nrest_turns = 50   # shorter rests\n\nrest_below_hp_pct=60\n";
+        let text = b"# a test profile\nrest_turns = 50   # shorter rests\n\nrest_below_hp_pct=60\nreserve_escape=6\n";
         let p = Params::from_profile("t.txt", text).unwrap();
         assert_eq!(
             (p.max_tries_per_turn, p.rest_below_hp_pct, p.rest_turns),
             (2, 60, 50)
         );
+        assert_eq!(p.reserve_escape, 6);
         assert_eq!(p.profile_sha256, sha256_hex(text));
         let t = p.table();
         assert_eq!(t["parameters"][2]["value"], 50);

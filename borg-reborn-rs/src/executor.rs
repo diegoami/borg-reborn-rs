@@ -160,12 +160,16 @@ impl Action {
             Action::Rest(_) | Action::Hold | Action::Alter(_) => Effect::Time { from_turn: o.turn },
             // A store visit costs no game time (do_cmd_hold: "turn will be
             // taken exiting the shop" sets energy 0, cmd-cave.c), so what
-            // the next think can check is the pack.
+            // the next think can check is the pack. Item count as well as
+            // slot count matters: buying or selling one of a stack changes
+            // no slot (`pack_slots_used`), but it still happened.
             Action::Get | Action::Buy { .. } => Effect::PackGrows {
                 used: o.status.pack_used,
+                items: carried_items(o),
             },
             Action::Sell { .. } => Effect::PackShrinks {
                 used: o.status.pack_used,
+                items: carried_items(o),
             },
         }
     }
@@ -201,6 +205,21 @@ impl CheckedIndex for usize {
     }
 }
 
+/// Items carried, in units rather than pack slots: a second scroll bought
+/// into an existing stack and one sold from it are both observable here.
+fn carried_items(o: &Observation) -> i32 {
+    o.inventory
+        .iter()
+        .chain(&o.quiver)
+        .map(|i| i32::from(i.number))
+        .sum::<i32>()
+        + o.equipment
+            .iter()
+            .filter_map(|s| s.item.as_ref())
+            .map(|i| i32::from(i.number))
+            .sum::<i32>()
+}
+
 /// What the next think checks after an action's keys were consumed
 /// (ARCHITECTURE.md L6: "did the potion get drunk?"). Each effect is
 /// checked against the observation of the think after the action.
@@ -217,10 +236,10 @@ pub enum Effect {
     Time { from_turn: i64 },
     /// The depth became `to`.
     Depth { to: i32, from_turn: i64 },
-    /// The pack grew (`pack_used` rose: a pickup, a purchase).
-    PackGrows { used: i32 },
-    /// The pack shrank (`pack_used` fell: a sale).
-    PackShrinks { used: i32 },
+    /// The pack grew: another slot, or more items in an existing stack.
+    PackGrows { used: i32, items: i32 },
+    /// The pack shrank: a slot freed, or fewer items in an existing stack.
+    PackShrinks { used: i32, items: i32 },
 }
 
 impl Effect {
@@ -266,21 +285,21 @@ impl Effect {
                     ))
                 }
             }
-            Effect::PackGrows { used } => {
-                if s.pack_used > used {
+            Effect::PackGrows { used, items } => {
+                if s.pack_used > used || carried_items(o) > items {
                     Ok(())
                 } else {
                     Err(format!(
-                        "the pack is still {used} slots in use; nothing was picked up or bought"
+                        "the pack is still {used} slots and {items} items; nothing was picked up or bought"
                     ))
                 }
             }
-            Effect::PackShrinks { used } => {
-                if s.pack_used < used {
+            Effect::PackShrinks { used, items } => {
+                if s.pack_used < used || carried_items(o) < items {
                     Ok(())
                 } else {
                     Err(format!(
-                        "the pack is still {used} slots in use; nothing was handed over"
+                        "the pack is still {used} slots and {items} items; nothing was handed over"
                     ))
                 }
             }
@@ -821,6 +840,31 @@ mod tests {
         let sell = Action::Sell { item: 0, qty: 1 }.effect(&after(100, 10, 10, 0, 3));
         assert!(sell.check(&after(100, 10, 10, 0, 2)).is_ok());
         assert!(sell.check(&after(100, 10, 10, 0, 3)).is_err());
+    }
+
+    #[test]
+    fn stacked_purchases_and_sales_change_the_item_count_not_the_slots() {
+        let mut before = obs(&[(185, 1)]);
+        before.status.pack_used = 1;
+        let buy = Action::Buy { ware: 0 }.effect(&before);
+        let mut after_buy = obs(&[(185, 2)]);
+        after_buy.status.pack_used = 1;
+        assert!(
+            buy.check(&after_buy).is_ok(),
+            "a second scroll joined the stack"
+        );
+        assert!(buy.check(&before).is_err());
+
+        let mut before = obs(&[(190, 2)]);
+        before.status.pack_used = 1;
+        let sell = Action::Sell { item: 0, qty: 1 }.effect(&before);
+        let mut after_sale = obs(&[(190, 1)]);
+        after_sale.status.pack_used = 1;
+        assert!(
+            sell.check(&after_sale).is_ok(),
+            "one of two was handed over"
+        );
+        assert!(sell.check(&before).is_err());
     }
 
     #[test]
