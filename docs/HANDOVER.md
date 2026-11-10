@@ -20,11 +20,20 @@ lost the multiplier and `RAND_25` was misread as `NEVER_MOVE`.
   staircase under a seen threat (#120). `bbc-d0006`'s exploration path
   changed from Walk(7) to Walk(9); the fixture pins the new direction.
 - This is a play change: smoke, smoke-exact and full references are
-  regenerated, and the deaths at the new build identity are re-recorded.
+  regenerated from build `3a74b98`, and the deaths at the new build
+  identity are re-recorded. The runs produced 51 natural deaths, 0
+  unexported, and 48 new dossiers D1424-D1471 (three repeats).
+- **The full suite is 45/45 deaths, deepest depth 2, longest 89,240 game
+  turns** (the longest run is 8,925 player turns). The previous baseline
+  reached depth 3. This is not evidence that the fix is worse: the old
+  model was resting beside moulds it could not see, and the strategy still
+  has no cure/escape action. It is a play change to be measured, not a
+  survival claim, and T4.2/T4.3 must judge it.
 
-**Checks.** crate and fixture tests, CI smoke/smoke-exact, reference
-diffs, the boundary check, and the full suite. The references are a new
-baseline, not an oracle; no survival or population claim.
+**Checks.** `cargo test -p borg-reborn-rs` (including the fixtures),
+smoke and smoke-exact runs, `harness/diff` 3/3 and 3/3, the exact-boundary
+check 3/3, the full suite, and 45/45 reference diffs. The references are a
+new baseline, not an oracle; no survival or population claim.
 
 **Next:** #119 (T4.2), one threat assessment. The fixtures it must satisfy
 are `fear-blocks-the-attack` (#119), `bbc-d0006-deep-descent-readiness`
