@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0943-rust-seed102",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 743,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 102,
+    "flags": "menu",
+    "git_rev": "630a2f48ef9e658a8dec35d2a611630442411ff8",
+    "git_dirty": "no",
+    "source_sha256": "316feb8e9db3fd0b6c798dba3e420335aa6d3a7e088535ddeddb79ac2db10a6a",
+    "binary_sha256": "24831922625cfce868fa7baf570dfdc804946a27f7d0e0a4a354790d79aeda4a",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 75,
+    "of": 75
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-1000/-home-diego-projects-borg-reborn-rs/5e26c85b-10c7-4fa3-ae88-6116caaefc5d/scratchpad/m4-smoke/smoke-mage-2",
+      "result_sha256": "4666bb12b3e1d3a87aff5fc82848686fe49007fcc39baf1386f566a59c630934",
+      "raw_sha256": {
+        "keys.log": "4666bb12b3e1d3a87aff5fc82848686fe49007fcc39baf1386f566a59c630934",
+        "messages.log": "a8f6eb40f318e25d7ba04d8a29031011a5490432cddbc0ffdb4eae9c4e42758a",
+        "state.log": "de4c8653a7c463f803c9db12c9fde9781f1a07153c5f27f75ca53cf17469d488"
+      },
+      "source_commit": "630a2f48ef9e658a8dec35d2a611630442411ff8",
+      "binary_sha256": "24831922625cfce868fa7baf570dfdc804946a27f7d0e0a4a354790d79aeda4a"
+    }
+  ],
+  "encounter_family": "start-e64a51a3b7dbc56ded65b4103eab8ad278bf841aa892c45ab2258aacfc07acbf",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "03c7969a09fdefec5404bc7ea4a82808c70fbe7d3b3b1ca9a5f7631661d10bc5",
+    "config.txt": "b955cc56a45283d99679f5fadbe4a1fddb78d362c7b13c073ea59ce96005d89e",
+    "depths.json": "a781e129fae4adbce92192345c5aa41665608c86691c8f25ffc77944ec797ab6",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "abdb3524d489787d44b88e6835da1c6166e40086ccafe75fa51dae41f26610bc",
+    "trace-tail.jsonl": "32a827d48a100d3e51d11a6883922ca05d8c4c62c0c9c0eaa7e26b7cc8421cb5"
+  },
+  "investigation": null,
+  "issue": null
+}
