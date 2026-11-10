@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1041-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 627,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "menu",
+    "git_rev": "381b0212ee9e06aa9a9bc544fd46c449a9abc954",
+    "git_dirty": "yes",
+    "source_sha256": "31a17122df7b69ba9f5656ae502e26ebfef1edcaa70f4688fa55a0044576c7cf",
+    "binary_sha256": "e8cd2e946f7ecf99b181d0c076ad124378f04ed7039b2cacc52277c78872e4ca",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 64,
+    "of": 64
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t32-full/full-4-necro-3",
+      "result_sha256": "912673173dac5df812ea89c77721f580561e40cfa09b811fe109c0ea955ecffe",
+      "raw_sha256": {
+        "keys.log": "912673173dac5df812ea89c77721f580561e40cfa09b811fe109c0ea955ecffe",
+        "messages.log": "cbd10a63f23c211eab86eab4b6200894d1c82372569c84324c51c16bb02a4926",
+        "state.log": "f944948bb44a8ecb9d4d2041663c949712dc5a9b224fc23210ec1adf4b120d02"
+      },
+      "source_commit": "381b0212ee9e06aa9a9bc544fd46c449a9abc954",
+      "binary_sha256": "e8cd2e946f7ecf99b181d0c076ad124378f04ed7039b2cacc52277c78872e4ca"
+    }
+  ],
+  "encounter_family": "start-d476398d20defc43093941632792d8db02d783b2310191d42c862426825dc90e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "f983b94db71c2c038c6b17928a7b354dd14feab2ab365f23eb42584598516b2b",
+    "config.txt": "e40a2743ffd87053c87c787f15d6164e0102895af18934ed0ad9dcc2e208dd92",
+    "depths.json": "2b983e4e6e62fa294c54d1ae9211ffb305a387f96f94c643adc1db7c86048969",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "5654db62852180cc349191b0591769787dfdd9a41cc7642896caa77af9b5546c",
+    "trace-tail.jsonl": "204aa963123d691a8c45f26d63f26f2dc3767f29f9c8ca47f66fe39caaf3661a"
+  },
+  "investigation": null,
+  "issue": null
+}

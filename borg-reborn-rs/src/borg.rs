@@ -21,7 +21,7 @@ use crate::trace::{Budget, Candidate, TraceLine};
 use std::sync::Mutex;
 
 /// Feature indices of `list-terrain.h` (FEAT_NONE = 0, ...).
-mod feat {
+pub mod feat {
     pub const NONE: u32 = 0;
     pub const FLOOR: u32 = 1;
     pub const CLOSED: u32 = 2;
