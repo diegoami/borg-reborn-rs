@@ -79,9 +79,14 @@ impl Goal {
                     for x in 0..level.width {
                         let known = level.at(x, y).is_some_and(|g| g.feat != feat::NONE);
                         // Only grids the Borg could stand on lead
-                        // anywhere; walls and shops are not frontier.
+                        // anywhere; walls and shops are not frontier. The
+                        // frontier already underfoot is not a destination:
+                        // holding there cannot reveal its unknown neighbour,
+                        // and treating it as unfinished held seven full-suite
+                        // runs in explore/cooldown loops until starvation
+                        // (T3.7's G0 check).
                         let standable = enter_cost(w, x, y).is_some();
-                        if !known || !standable {
+                        if !known || !standable || (x, y) == player(w) {
                             continue;
                         }
                         let unknown = DIRS.iter().any(|(_, dx, dy)| {
@@ -603,6 +608,22 @@ pub(crate) mod tests {
         let map = p.map(&w, &k, &Goal::Frontier);
         assert_eq!(map.at(2, 1), 1, "the floor by the unknown");
         assert_eq!(map.at(5, 1), 2, "the door by the unknown");
+    }
+
+    #[test]
+    fn the_frontier_underfoot_is_finished_not_a_place_to_hold() {
+        let (w, k) = world(&["#####", "#@?.#", "#...#", "#####"]);
+        let mut p = Paths::new(&w);
+        assert_eq!(
+            p.distance(&w, &k, &Goal::Frontier),
+            1,
+            "the next frontier, south"
+        );
+        assert_eq!(p.step(&w, &k, &Goal::Frontier), Some(2));
+        let (w, k) = world(&["#####", "#@?##", "#####"]);
+        let mut p = Paths::new(&w);
+        assert_eq!(p.distance(&w, &k, &Goal::Frontier), UNREACHED);
+        assert_eq!(p.step(&w, &k, &Goal::Frontier), None);
     }
 
     #[test]

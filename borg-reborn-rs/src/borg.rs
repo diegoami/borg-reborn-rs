@@ -142,9 +142,10 @@ pub struct Memory {
     pub last: Option<(i64, Action)>,
     /// How many earlier thinks saw the current game turn: actions that the
     /// game refused, or that took no time (a walk into a known wall, a rest
-    /// it would not start). Store actions reset this count: they take no
-    /// time by design, their effects are checked, and the town's finite
-    /// reserve/identification jobs are their own progress bound (T3.5).
+    /// it would not start). Store actions and level changes reset this
+    /// count: their effects are checked, the town's finite jobs are progress
+    /// (T3.5), and an up/down reroll changes the level even when the game
+    /// turn does not move (T3.7).
     pub same_turn: u32,
 }
 
@@ -153,7 +154,11 @@ impl Memory {
     pub fn record(&mut self, turn: i64, action: Action) {
         self.same_turn = match self.last {
             Some((t, _))
-                if t == turn && matches!(action, Action::Buy { .. } | Action::Sell { .. }) =>
+                if t == turn
+                    && matches!(
+                        action,
+                        Action::Buy { .. } | Action::Sell { .. } | Action::Descend | Action::Ascend
+                    ) =>
             {
                 0
             }
@@ -588,13 +593,17 @@ mod tests {
     }
 
     #[test]
-    fn store_actions_do_not_spend_the_refusal_budget() {
+    fn checked_free_actions_do_not_spend_the_refusal_budget() {
         let mut mem = Memory::default();
         mem.record(5, Action::Walk(2));
         assert_eq!(mem.tries_at(5), 1);
         mem.record(5, Action::Buy { ware: 0 });
         assert_eq!(mem.tries_at(5), 1);
         mem.record(5, Action::Sell { item: 0, qty: 1 });
+        assert_eq!(mem.tries_at(5), 1);
+        mem.record(5, Action::Descend);
+        assert_eq!(mem.tries_at(5), 1);
+        mem.record(5, Action::Ascend);
         assert_eq!(mem.tries_at(5), 1);
         mem.record(5, Action::Walk(2));
         assert_eq!(mem.tries_at(5), 2, "ordinary no-time actions still count");
