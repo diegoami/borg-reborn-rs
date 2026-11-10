@@ -561,8 +561,16 @@ pub fn perceive() -> Option<Observation> {
                     unseen_object: g.unseen_object,
                     unseen_money: g.unseen_money,
                     trap: !g.trap.is_null(),
-                    shop: b::square_shopnum(c, grid),
-                    webbed: b::square_iswebbed(c, grid),
+                    // Both read the real cave: only where the player knows
+                    // the feature, as the C Borg guards them (borg-update.c:
+                    // 317, a known shop; :542, a known floor). An unknown
+                    // grid says nothing (M2 review, finding 1).
+                    shop: if g.f_idx != 0 && b::feat_is_shop(g.f_idx as c_int) {
+                        b::square_shopnum(c, grid)
+                    } else {
+                        -1
+                    },
+                    webbed: g.f_idx == b::FEAT_FLOOR && b::square_iswebbed(c, grid),
                 });
             }
         }
@@ -871,44 +879,51 @@ pub fn knowledge() -> Option<Knowledge> {
 // ENGINE TRUTH (feature test-perception; task T2.5, #16). Test builds only.
 //
 // Perception checked against the engine through routes other than the
-// observation's own reads (docs/ENGINE-READS.md, reason T): the player's map
-// memory (`player->cave`), the engine's own monster visibility, the gear
-// list, and the engine's pack count. Nothing here is compiled into the Borg
-// that plays, and nothing here changes the game: it only reads, and it draws
-// from no RNG. `engine/tests/test_reads.py` checks that the reason-T symbols
-// appear only below this line.
+// observation's own reads (docs/ENGINE-READS.md, reason T): the engine's own
+// panel test (`panel_contains`), the player's map memory (`player->cave`),
+// the whole monster list with the engine's visibility, and the gear list.
+// Nothing here is compiled into the Borg that plays, and nothing here changes
+// the game: it only reads, and it draws from no RNG. `engine/tests/
+// test_reads.py` checks that the reason-T symbols appear only below this line.
 
 #[cfg(feature = "test-perception")]
 pub mod truth {
     use super::b;
-    use crate::observation::Observation;
+    use crate::observation::{Item, Observation};
     use crate::world::World;
+    use core::ffi::c_int;
     use serde::Serialize;
 
     /// `TV_SHOT`, `TV_ARROW`, `TV_BOLT` (list-tvals.h): ammunition.
     const AMMO: [u8; 3] = [2, 3, 4];
 
     /// One think's comparison. `differences` are disagreements with the
-    /// engine; the counts are what the Borg does not see by design (the
-    /// panel limit, which the C Borg has too: `borg-update.c:264`).
+    /// engine; the counts are what was compared, and what the Borg does not
+    /// see by design: the world beyond the map panel (the C Borg reads only
+    /// the panel too, `borg-update.c:264`).
     #[derive(Debug, Default, Serialize)]
     pub struct Report {
         pub turn: i64,
         /// The status the frontend's state.log also writes, for
         /// tools/check-perception.py.
         pub state: State,
+        /// Panel grids, by the engine's own panel test.
+        pub panel_grids: u32,
         /// Grids the world remembers, compared with the player's memory.
         pub map_compared: u32,
         /// Grids the world remembers off the panel whose memory changed
         /// since the Borg saw them (declared: the panel limit).
         pub map_stale_off_panel: u32,
-        /// Grids the player knows that the world never saw (declared: the
-        /// panel limit; detection and mapping outside the panel).
+        /// Grids the player knows off the panel that the world never saw
+        /// (declared: the panel limit; detection and mapping beyond it).
+        /// On the panel, such a grid is a difference.
         pub map_unknown_to_world: u32,
-        /// Visible monsters on the panel, compared with the monsters seen.
+        /// Visible monsters on the panel, compared field by field.
         pub monsters_compared: u32,
         /// Visible monsters off the panel (declared: the panel limit).
         pub monsters_off_panel: u32,
+        /// Objects of the gear list, compared with the observed items.
+        pub gear_compared: u32,
         pub differences: Vec<String>,
     }
 
@@ -946,7 +961,38 @@ pub mod truth {
         }
     }
 
-    pub fn check(o: &Observation, w: &World) -> Option<Report> {
+    /// What an item is, as the observation and the engine's gear list can
+    /// both say it: the real kind and number, and the known combat values
+    /// (`obj->known`, what `analyze` reads for an object not fully known).
+    type ItemKey = (u32, u8, i16, i16, i16, i16, i16, u8, u8);
+
+    fn observed_key(i: &Item) -> ItemKey {
+        (
+            i.kind, i.number, i.timeout, i.ac, i.to_h, i.to_d, i.to_a, i.dd, i.ds,
+        )
+    }
+
+    unsafe fn engine_key(o: &b::object) -> Option<ItemKey> {
+        if o.kind.is_null() || o.known.is_null() {
+            return None;
+        }
+        let k = &*o.known;
+        Some((
+            (*o.kind).kidx,
+            o.number,
+            o.timeout,
+            k.ac,
+            k.to_h,
+            k.to_d,
+            k.to_a,
+            k.dd,
+            k.ds,
+        ))
+    }
+
+    /// Every think gives a report, so tools/check-perception.py can require
+    /// one line per decision (M2 review, finding 4).
+    pub fn check(o: &Observation, w: &World) -> Report {
         // SAFETY: as perceive(): engine globals on the engine thread between
         // game steps; every grid is bounds-checked against the level, every
         // monster index is below `mon_max`, and the gear list is the
@@ -959,7 +1005,11 @@ pub mod truth {
                 || (*p).cave.is_null()
                 || b::f_info.is_null()
             {
-                return None;
+                return Report {
+                    turn: o.turn,
+                    differences: vec!["truth: the engine has no player, level or data".to_string()],
+                    ..Report::default()
+                };
             }
             let pl = &*p;
             let s = &o.status;
@@ -994,16 +1044,52 @@ pub mod truth {
                 },
                 ..Report::default()
             };
+            let mut diffs = Vec::new();
+
+            // The panel: the observation's geometry against the engine's own
+            // panel test (M2 review, finding 2: the observation cannot
+            // certify its own exceptions). The player is always on it.
+            let (lw, lh) = ((*c).width, (*c).height);
             let pn = &o.panel;
-            let on_panel = |x: i32, y: i32| {
+            let observed_panel = |x: i32, y: i32| {
                 x >= pn.x0 && y >= pn.y0 && x < pn.x0 + pn.width && y < pn.y0 + pn.height
             };
+            let engine_panel = |x: i32, y: i32| b::panel_contains(y as u32, x as u32);
+            let mut panel_mismatch = 0;
+            for y in 0..lh {
+                for x in 0..lw {
+                    let e = engine_panel(x, y);
+                    if e {
+                        r.panel_grids += 1;
+                    }
+                    if e != observed_panel(x, y) {
+                        panel_mismatch += 1;
+                    }
+                }
+            }
+            if panel_mismatch > 0 {
+                diffs.push(format!(
+                    "panel: {panel_mismatch} grids differ from the engine's panel (observed {}x{} at {},{})",
+                    pn.width, pn.height, pn.x0, pn.y0
+                ));
+            }
+            if !engine_panel(pl.grid.x, pl.grid.y) {
+                diffs.push(format!(
+                    "panel: the player at ({},{}) is off the engine's panel",
+                    pl.grid.x, pl.grid.y
+                ));
+            }
+            if (pn.level_width, pn.level_height) != (lw, lh) {
+                diffs.push(format!(
+                    "panel: the observed level is {}x{}, the engine's {lw}x{lh}",
+                    pn.level_width, pn.level_height
+                ));
+            }
 
             // The map: every grid the world remembers against the player's
-            // memory, and what the player knows that the world never saw.
-            let (lw, lh) = ((*c).width, (*c).height);
+            // memory; on the panel, also every grid the player knows.
             if (w.level.width, w.level.height) != (lw, lh) {
-                r.differences.push(format!(
+                diffs.push(format!(
                     "map: the world's level is {}x{}, the engine's {lw}x{lh}",
                     w.level.width, w.level.height
                 ));
@@ -1016,16 +1102,21 @@ pub mod truth {
                         }
                         let truth = remembered(pl, grid);
                         let world = w.level.at(x, y).map_or(0, |g| g.feat);
+                        let on = engine_panel(x, y);
                         if world == 0 {
                             if truth != 0 {
-                                r.map_unknown_to_world += 1;
+                                if on {
+                                    diffs.push(format!("map: ({x},{y}) on the panel, the player knows {truth}, the world nothing"));
+                                } else {
+                                    r.map_unknown_to_world += 1;
+                                }
                             }
                             continue;
                         }
                         r.map_compared += 1;
                         if world != truth {
-                            if on_panel(x, y) {
-                                r.differences.push(format!("map: ({x},{y}) the world remembers {world}, the player {truth}"));
+                            if on {
+                                diffs.push(format!("map: ({x},{y}) the world remembers {world}, the player {truth}"));
                             } else {
                                 r.map_stale_off_panel += 1;
                             }
@@ -1033,9 +1124,29 @@ pub mod truth {
                     }
                 }
             }
+            // An unknown grid says nothing about shops and webs (finding 1),
+            // and both follow the C Borg's guards.
+            for (n, g) in pn.grids.iter().enumerate() {
+                let (x, y) = (
+                    pn.x0 + n as i32 % pn.width.max(1),
+                    pn.y0 + n as i32 / pn.width.max(1),
+                );
+                if g.shop >= 0 && (g.feat == 0 || !b::feat_is_shop(g.feat as c_int)) {
+                    diffs.push(format!(
+                        "map: ({x},{y}) a shop on a feature {} that is no known shop",
+                        g.feat
+                    ));
+                }
+                if g.webbed && g.feat != b::FEAT_FLOOR {
+                    diffs.push(format!(
+                        "map: ({x},{y}) a web on a feature {} that is no known floor",
+                        g.feat
+                    ));
+                }
+            }
 
             // Monsters: the engine's visible monsters on the panel are
-            // exactly the monsters seen, at the same grid, of the same race.
+            // exactly the monsters seen, field by field (finding 3).
             let mut visible = Vec::new();
             for i in 1..i32::from((*c).mon_max) {
                 let m = b::cave_monster(c, i);
@@ -1043,8 +1154,19 @@ pub mod truth {
                     continue;
                 }
                 let m = &*m;
-                if on_panel(m.grid.x, m.grid.y) {
-                    visible.push((m.midx, (*m.race).ridx, m.grid.x, m.grid.y));
+                if engine_panel(m.grid.x, m.grid.y) {
+                    visible.push((
+                        m.midx,
+                        (*m.race).ridx,
+                        m.grid.x,
+                        m.grid.y,
+                        m.hp as i32,
+                        m.maxhp as i32,
+                        m.m_timed,
+                        m.mspeed,
+                        m.attr,
+                        !m.mimicked_obj.is_null(),
+                    ));
                 } else {
                     r.monsters_off_panel += 1;
                 }
@@ -1053,38 +1175,56 @@ pub mod truth {
             let mut seen: Vec<_> = o
                 .monsters
                 .iter()
-                .map(|m| (m.index, m.race, m.x, m.y))
+                .map(|m| {
+                    (
+                        m.index,
+                        m.race,
+                        m.x,
+                        m.y,
+                        m.hp,
+                        m.max_hp,
+                        m.timed,
+                        m.speed,
+                        m.attr,
+                        m.mimicking,
+                    )
+                })
                 .collect();
             visible.sort_unstable();
             seen.sort_unstable();
             for v in visible.iter().filter(|v| !seen.contains(v)) {
-                r.differences.push(format!(
-                    "monsters: visible but not seen: index {} race {} at ({},{})",
-                    v.0, v.1, v.2, v.3
-                ));
+                diffs.push(format!("monsters: visible, not seen as such: {v:?}"));
             }
             for m in seen.iter().filter(|m| !visible.contains(m)) {
-                r.differences.push(format!(
-                    "monsters: seen but not visible: index {} race {} at ({},{})",
-                    m.0, m.1, m.2, m.3
-                ));
+                diffs.push(format!("monsters: seen, not visible as such: {m:?}"));
             }
 
-            // Gear: the engine's gear list holds what the observation lists,
-            // and the pack count from the observation's own items equals the
-            // engine's (pack_slots_used, quiver included).
-            let mut in_gear = 0;
+            // Gear: the engine's gear list against the observed equipment,
+            // quiver and pack, item by item (finding 3), and the pack count
+            // from the observed items against the engine's.
+            let mut engine_items = Vec::new();
             let mut obj = pl.gear;
             while !obj.is_null() {
-                in_gear += 1;
+                match engine_key(&*obj) {
+                    Some(k) => engine_items.push(k),
+                    None => diffs.push("gear: an object without kind or known part".to_string()),
+                }
                 obj = (*obj).next;
             }
-            let listed = o.equipment.iter().filter(|s| s.item.is_some()).count()
-                + o.quiver.len()
-                + o.inventory.len();
-            if listed != in_gear {
-                r.differences.push(format!(
-                    "gear: the engine's list has {in_gear} objects, the observation {listed}"
+            let mut observed: Vec<ItemKey> = o
+                .equipment
+                .iter()
+                .filter_map(|s| s.item.as_ref())
+                .chain(&o.quiver)
+                .chain(&o.inventory)
+                .map(observed_key)
+                .collect();
+            r.gear_compared = engine_items.len() as u32;
+            engine_items.sort_unstable();
+            observed.sort_unstable();
+            if engine_items != observed {
+                diffs.push(format!(
+                    "gear: the engine's list {engine_items:?}, the observation {observed:?}"
                 ));
             }
             let slot = i32::from((*z).quiver_slot_size).max(1);
@@ -1102,12 +1242,13 @@ pub mod truth {
                 .sum();
             let pack = o.inventory.len() as i32 + (ammo + slot - 1) / slot;
             if pack != s.pack_used {
-                r.differences.push(format!(
+                diffs.push(format!(
                     "pack: {pack} slots from the observed items, the engine counts {}",
                     s.pack_used
                 ));
             }
-            Some(r)
+            r.differences = diffs;
+            r
         }
     }
 }

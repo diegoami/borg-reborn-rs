@@ -391,10 +391,10 @@ pub fn command() {
             world: crate::world::World::new(),
             worlds: open_log("BORG_WORLD_LOG"),
             #[cfg(feature = "test-perception")]
-            truth: std::env::var_os("BORG_RUN_DIR").and_then(|d| {
+            truth: std::env::var_os("BORG_RUN_DIR").map(|d| {
                 std::fs::File::create(std::path::Path::new(&d).join("truth.jsonl"))
-                    .ok()
                     .map(std::io::BufWriter::new)
+                    .expect("truth.jsonl cannot be created")
             }),
             knowledge: None,
             params,
@@ -575,12 +575,13 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
         // T2.5: the observation and the world against the engine.
         #[cfg(feature = "test-perception")]
         if let Some(log) = b.truth.as_mut() {
-            if let Some(report) = engine::truth::check(o, &b.world) {
-                let line = serde_json::to_string(&report).unwrap_or_default();
-                if writeln!(log, "{line}").and_then(|_| log.flush()).is_err() {
-                    b.truth = None;
-                }
-            }
+            // A test build: a lost report fails loudly, never silently
+            // (M2 review, finding 4).
+            let line = serde_json::to_string(&engine::truth::check(o, &b.world))
+                .expect("truth report serialises");
+            writeln!(log, "{line}")
+                .and_then(|_| log.flush())
+                .expect("truth.jsonl write failed");
         }
     }
     #[cfg(feature = "test-hallucinate")]

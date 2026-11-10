@@ -32,8 +32,9 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `square_in_bounds_fully` | B | bounds check before every grid read |
 | `square_object` | B | the real top object on a seen grid (`borg_get_top_object`) |
 | `square_isvault` | B | vault at the player's grid (danger, retreat) |
-| `square_iswebbed` | B | webbed panel grid (`borg_update_map`) |
-| `square_shopnum` | B | shop entrance number (`borg_update_map`) |
+| `square_iswebbed` | B | webbed panel grid (`borg_update_map`), only on a grid the player knows as floor, as the C Borg guards it (`borg-update.c:542`; M2 review, finding 1) |
+| `square_shopnum` | B | shop entrance number (`borg_update_map`), only on a grid the player knows as a shop |
+| `feat_is_shop` | B | the C Borg's guard before the shop number: the known feature is a shop (`borg-update.c:317`) |
 | `cave_monster` | B | the real monster on a seen grid: race, HP, timers (`borg_update_kill_old`) |
 | `cmd_get_nrepeats` | B | the game is repeating a command (spec §2.7) |
 | `get_com` | S | reads the `^Z` command key |
@@ -50,6 +51,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `object_weight_one` | B | item weight (`borg_item_analyze`) |
 | `pack_slots_used` | X | the engine's own pack count, quiver included (REDESIGN-LESSONS L8) |
 | `square` | T | the player's map memory (`player->cave`), against the world's map |
+| `panel_contains` | T | the engine's own panel test (`textui_panel_contains`), against the observed panel |
 | `monster_is_visible` | B | `map_info`'s own visibility test (`cave-map.c`): tells a monster the player sees from the `m_idx = 1` a hallucination puts on a grid where monster 1 stands unseen (T2.5); the truth check also uses it on the whole level |
 
 ## Globals
@@ -107,7 +109,9 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `class_magic` | K | a class's books and spells |
 | `class_book` | K | a book's spells |
 | `class_spell` | B | a spell's book, level, mana and failure (`borg_cheat_spells`) |
-| `term` | A | screen size, sidebar mode and the map panel offset |
+| `term` | A | screen size, sidebar mode, the map panel offset and the screen window (`scr`) |
+| `term_win` | A | the screen buffer (`c`): the message line and the store header |
+| `random` | K | dice of the static data (`random_value` is its alias): base, dice, sides, bonus |
 | `monster` | B | a seen monster: index, race, grid, HP, timers, speed, colour, mimicry |
 | `monster_race` | K | monster races |
 | `monster_base` | K | a race's base (its name) |
@@ -127,6 +131,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | --- | --- | --- |
 | `TMD_MAX` | B | the number of timed effects |
 | `TMD_FOOD` | B | the food timer |
+| `FEAT_FLOOR` | B | the web guard: a known floor (`borg-update.c:542`) |
 | `TMD_IMAGE` | B | hallucination (the RNG-isolation test build only) |
 | `OPT_birth_percent_damage` | X | a birth option the blows formula needs |
 | `OBJ_NOTICE_IGNORE` | B | an ignored object is not the top object (`borg_get_top_object`) |

@@ -63,6 +63,27 @@ class EngineReadsTest(unittest.TestCase):
         bound = set(re.findall(r'^pub (?:struct|union|type) ([A-Za-z_][A-Za-z0-9_]*)\b', (ROOT / 'borg-reborn-rs/src/bindings.rs').read_text(), re.M))
         self.assertEqual(set(types_listed()) - bound, set(), 'types listed that the bindings do not define')
 
+    def test_every_field_read_belongs_to_a_listed_type(self):
+        # M2 review, finding 5: a field engine.rs reads (`x.field`, not a
+        # method call or a range) that only bound structs declare must belong
+        # to at least one listed type, unless our own crate's types have a
+        # field of that name too (a heuristic: field types are not inferred).
+        engine = ENGINE.read_text()
+        fields = set(re.findall(r'(?<=[\w)\]])\.([a-z_][a-z0-9_]*)\b(?!\s*[(!])', engine))
+        owners = {}
+        bindings = (ROOT / 'borg-reborn-rs/src/bindings.rs').read_text()
+        for m in re.finditer(r'^pub (?:struct|union) ([A-Za-z_0-9]+) \{(.*?)^\}', bindings, re.M | re.S):
+            for f in re.findall(r'^\s*pub ([a-z_][a-z0-9_]*):', m.group(2), re.M):
+                owners.setdefault(f, set()).add(m.group(1))
+        ours = set()
+        for f in (ROOT / 'borg-reborn-rs/src').glob('*.rs'):
+            if f.name != 'bindings.rs':
+                ours.update(re.findall(r'^\s+(?:pub )?([a-z_][a-z0-9_]*): ', f.read_text(), re.M))
+        listed = set(types_listed())
+        unlisted = {f: sorted(owners[f]) for f in fields
+                    if f in owners and not owners[f] & listed and f not in ours}
+        self.assertEqual(unlisted, {}, 'fields read from types docs/ENGINE-READS.md does not list')
+
     def test_the_truth_reads_are_test_only(self):
         # Reason T: reads of the test-perception check (T2.5), never compiled
         # into the Borg that plays. They appear only below the marker, which

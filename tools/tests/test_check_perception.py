@@ -16,16 +16,19 @@ STATE = '11 123,37 d1/1 hp9/9 sp2/2 f8999 au325 xp0 lv1 t6:100 o- p0 e0 r0\n'
 
 def think(turn=11, hp=9, differences=()):
     return {'turn': turn, 'differences': list(differences), 'map_compared': 5, 'map_stale_off_panel': 0,
-            'map_unknown_to_world': 1, 'monsters_compared': 2, 'monsters_off_panel': 0,
+            'map_unknown_to_world': 1, 'monsters_compared': 2, 'monsters_off_panel': 0, 'panel_grids': 9,
+            'gear_compared': 3,
             'state': {'x': 123, 'y': 37, 'depth': 1, 'max_depth': 1, 'hp': hp, 'max_hp': 9, 'sp': 2, 'max_sp': 2,
                       'food': 8999, 'gold': 325, 'exp': 0, 'level': 1, 'timed': [[6, 100]]}}
 
 
-def run(base, *thinks, state=STATE):
-    r = Path(base) / 'run'
+def run(base, *thinks, state=STATE, name='run', decisions=None, truth=True):
+    r = Path(base) / name
     r.mkdir()
-    (r / 'truth.jsonl').write_text(''.join(json.dumps(t) + '\n' for t in thinks))
+    if truth:
+        (r / 'truth.jsonl').write_text(''.join(json.dumps(t) + '\n' for t in thinks))
     (r / 'state.log').write_text(state)
+    (r / 'summary.json').write_text(json.dumps({'borg_decisions': len(thinks) if decisions is None else decisions}))
     return r
 
 
@@ -52,9 +55,26 @@ class CheckTest(unittest.TestCase):
             run(t, think(differences=['monsters: visible but not seen: index 3']))
             self.assertEqual(cp.main([t]), 1)
 
-    def test_no_truth_log_is_an_error(self):
+    def test_no_runs_is_an_error(self):
         with tempfile.TemporaryDirectory() as t:
             self.assertEqual(cp.main([t]), 2)
+
+    # M2 review, finding 4: coverage is required.
+    def test_an_empty_truth_log_fails(self):
+        with tempfile.TemporaryDirectory() as t:
+            run(t, state='')
+            self.assertEqual(cp.main([t]), 1)
+
+    def test_a_run_of_the_suite_without_a_truth_log_fails(self):
+        with tempfile.TemporaryDirectory() as t:
+            run(t, think(), name='a')
+            run(t, name='b', truth=False, decisions=4)
+            self.assertEqual(cp.main([t]), 1)
+
+    def test_fewer_truth_lines_than_decisions_fail(self):
+        with tempfile.TemporaryDirectory() as t:
+            _, _, problems = cp.check_run(run(t, think(), decisions=2))
+            self.assertEqual(problems, ['1 truth lines for 2 Borg decisions'])
 
 
 if __name__ == '__main__':
