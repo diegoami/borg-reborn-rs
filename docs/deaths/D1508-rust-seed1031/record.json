@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1508-rust-seed1031",
+  "run_kind": "harness",
+  "character": "Gnome Priest",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89200,
+    "race_idx": 4,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1031,
+    "flags": "menu",
+    "git_rev": "4402f1241990f9686f59a33270ef19246e9417be",
+    "git_dirty": "no",
+    "source_sha256": "97df480544bed59a472ab0deca81fe68bcb8ca160847574cee80cfeda0824a86",
+    "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79",
+    "borg_txt_sha256": "5fb413cb0514c57ce6a01ef5aaebc6ff1b870eda6438f479dddc1a770e85c9e1",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8842
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-119/full-3-priest-1",
+      "result_sha256": "26cd805962f33c0295f89658358de7e19d6aa7a311c933c83e317a49f902ed92",
+      "raw_sha256": {
+        "keys.log": "26cd805962f33c0295f89658358de7e19d6aa7a311c933c83e317a49f902ed92",
+        "messages.log": "c89baf2e39cd3a2d95d1de3eb918396b86263fa84be8254036c721373be40827",
+        "state.log": "4f7e44aaad114ad60e0f12bac29d6bb43a9c2dff5991a68ee3c03d78baa6a686"
+      },
+      "source_commit": "4402f1241990f9686f59a33270ef19246e9417be",
+      "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79"
+    }
+  ],
+  "encounter_family": "start-3d1f6ba73031de9f2f4dbbca3eba7e6ebafda649d2ee448d272a61ddd4fd818d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a08d33d944aaa6c1f0f9e8e1785bf50be2d5fd86e3773a8a0d2abbeb82cc37a0",
+    "config.txt": "a989ce9f4850e2ab1b9a6789abae0bfc4b7f081cf3da4406b56bb9be134e6ab7",
+    "depths.json": "95dbe1b6837a690d3f96a8769917c343e05cfc1b4e0abd7657371b9d562eb55c",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "6cde2bc806060c3b62f47dc78f0c00d9b30deab74829aa4da760afec138e42a4",
+    "trace-tail.jsonl": "85b92a3b03a75a33cb3303a36388bb8214fe4cdc707e40229a9486f4c74d551b"
+  },
+  "investigation": null,
+  "issue": null
+}

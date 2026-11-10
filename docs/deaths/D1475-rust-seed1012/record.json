@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1475-rust-seed1012",
+  "run_kind": "harness",
+  "character": "Hobbit Mage",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 709,
+    "race_idx": 3,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1012,
+    "flags": "menu",
+    "git_rev": "4402f1241990f9686f59a33270ef19246e9417be",
+    "git_dirty": "no",
+    "source_sha256": "97df480544bed59a472ab0deca81fe68bcb8ca160847574cee80cfeda0824a86",
+    "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79",
+    "borg_txt_sha256": "32e88143092ebdb099b0f6341a5abe15f21cf964838d17bf9cab2d704a93635a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 81,
+    "of": 81
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-119/full-1-mage-2",
+      "result_sha256": "dd44b0ac93c0f2da2ffa8fe446575d68d09e819e31941e66ccfa2530b99cb178",
+      "raw_sha256": {
+        "keys.log": "dd44b0ac93c0f2da2ffa8fe446575d68d09e819e31941e66ccfa2530b99cb178",
+        "messages.log": "bc31db0852865504a292ba879c4764324e883f4e3a84851b7a3a50f5865d8328",
+        "state.log": "7bce9f47b06e12205e70a89a7b5685e58063e1978bef88b19219513a73f48ef2"
+      },
+      "source_commit": "4402f1241990f9686f59a33270ef19246e9417be",
+      "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79"
+    }
+  ],
+  "encounter_family": "start-8bb5ca1bafa1be87151c85e79a8f4db7c3b62cfc209ab6dd383210325f194163",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a08d33d944aaa6c1f0f9e8e1785bf50be2d5fd86e3773a8a0d2abbeb82cc37a0",
+    "config.txt": "dc262045379d78c1c2a1fc2fbd7f6df1f37667552fbde3b35e116a467969947b",
+    "depths.json": "642fab337428826b2c91035831fe7b086c31d21b1380b1508931b9f3f14d4443",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "523f87314c5d5fbacc7f26613dde8a9f1e26e78599bfdfb912ca24f94d295840",
+    "trace-tail.jsonl": "a4e3f6772a47d11a530f5c4aa74a0e8eb03e19d47e1d77327651be1ebb28c0ab"
+  },
+  "investigation": null,
+  "issue": null
+}

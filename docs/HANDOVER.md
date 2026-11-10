@@ -2,6 +2,57 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: one threat assessment (#119)
+
+`danger.rs` is now L4's assessment rather than the C Borg's full-damage sum.
+For each grid and horizon it returns:
+
+- `expected` damage: the engine's hit chance (`chance_of_monster_hit_base`,
+  `player-attack.c:hit_chance`) and armour (`adjust_dam_armor`) over the
+  attack rounds from the energy model;
+- `worst`: every blow hits at its largest roll;
+- `p_death`: exact convolution for small fights, a declared normal
+  approximation for large ones;
+- `disabling`: fear/blind/confuse/paralyse from blows and spells;
+- `summoning`: shrieks and `S_*` spells;
+- `economic`: theft, destruction and drains, never added to lethal risk.
+
+Ranged attacks use the C Borg's breath/shot estimates as a floor
+(`borg-danger.c:619-760`); uncommon effects use a conservative generic and
+are marked as estimates, because `Knowledge` does not carry the spell
+effect dice or breath divisors. LOS is a conservative Bresenham over the
+remembered level. Summoners/breeders use the C Borg's 1.5/1.8 growth
+factors. Remembered-unseen monsters scale by `Track::confidence`.
+
+One risk number is `expected + risk_aversion_pct * (worst - expected)`.
+Paths, rest, retreat, contact and combat pass the same tolerance;
+`threat_horizon` sets the window. Both are new parameter-table entries
+(50%, 1 turn) with evidence, not tuned values. Every trace line now has the
+six numbers (`threat`), which #124 reads. Fear and paralysis set
+`can_attack`/`can_act`; the engine refuses the attack, so the strategy
+cannot choose it.
+
+**Fixtures.** Seven active now: bbc D0008, D0012, D0013, D0019 (one
+apprentice does not cause whole-level flight), the breeder pack, fear
+(refused attack), and rust D1330 (the cat is seen and the stair is taken).
+Twelve gaps remain, all #120/#122: stairs under contact, retreat at 1 HP,
+the 2-HP mould, quaff/eat/read/wield. `bbc-d0006` pins Walk(7). The
+fixture catalogue records the promotions.
+
+**New baseline (play change).** Smoke/smoke-exact/full references are
+regenerated and match 3/3, 3/3 and 45/45; the exact-boundary check is 3/3.
+The smoke suite has one 20,000-turn survivor and two deaths; the full suite
+is 45/45 deaths, deepest depth 3, longest 89,440 game turns, with nine
+starvation deaths. 49 natural deaths in the runs, 0 unexported; 47 new
+dossiers D1472-D1518. **No survival claim**: starvation is #122, and the
+tactical layer that could use the new numbers is #120. The calibration
+report (#124) is where the estimates are checked against damage taken.
+
+**Next:** #120 (T4.3), tactical alternatives on one scale. It must promote
+the twelve gaps: cure/attack/stairs under contact, retreat versus the free
+hit. #122 then supplies the actions. The trace has the numbers; no
+threshold was tuned silently.
+
 ## 2026-11-10: danger race flags, the #142 fix
 
 The T4.1 fixtures' first finding is fixed. `danger.rs` named `MULTIPLY`,

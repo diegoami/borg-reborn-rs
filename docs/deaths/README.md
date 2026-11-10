@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1451; distinct starting conditions: 1450; retained process attempts: 1451 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1498; distinct starting conditions: 1497; retained process attempts: 1498 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1457,6 +1457,53 @@ Dossiers: 1451; distinct starting conditions: 1450; retained process attempts: 1
 | [D1469-rust-seed1031](D1469-rust-seed1031/report.md) | unassigned | `3bffe5847046` | 1031 | starvation | 89200 | unassessed |
 | [D1470-rust-seed1084](D1470-rust-seed1084/report.md) | unassigned | `3bffe5847046` | 1084 | starvation | 89240 | unassessed |
 | [D1471-rust-seed1032](D1471-rust-seed1032/report.md) | unassigned | `3bffe5847046` | 1032 | starvation | 89220 | unassessed |
+| [D1472-rust-seed102](D1472-rust-seed102/report.md) | unassigned | `4402f1241990` | 102 | a grey mold | 451 | unassessed |
+| [D1473-rust-seed103](D1473-rust-seed103/report.md) | unassigned | `4402f1241990` | 103 | a floating eye | 2522 | unassessed |
+| [D1474-rust-seed1024](D1474-rust-seed1024/report.md) | unassigned | `4402f1241990` | 1024 | a floating eye | 1088 | unassessed |
+| [D1475-rust-seed1012](D1475-rust-seed1012/report.md) | unassigned | `4402f1241990` | 1012 | a soldier ant | 709 | unassessed |
+| [D1476-rust-seed1022](D1476-rust-seed1022/report.md) | unassigned | `4402f1241990` | 1022 | Grip, Farmer Maggot's Dog | 2086 | unassessed |
+| [D1477-rust-seed1020](D1477-rust-seed1020/report.md) | unassigned | `4402f1241990` | 1020 | a white harpy | 2114 | unassessed |
+| [D1478-rust-seed1002](D1478-rust-seed1002/report.md) | unassigned | `4402f1241990` | 1002 | an apprentice | 1339 | unassessed |
+| [D1479-rust-seed1030](D1479-rust-seed1030/report.md) | unassigned | `4402f1241990` | 1030 | a giant white centipede | 3487 | unassessed |
+| [D1480-rust-seed1041](D1480-rust-seed1041/report.md) | unassigned | `4402f1241990` | 1041 | poison | 3870 | unassessed |
+| [D1481-rust-seed1044](D1481-rust-seed1044/report.md) | unassigned | `4402f1241990` | 1044 | a giant white centipede | 3378 | unassessed |
+| [D1482-rust-seed1061](D1482-rust-seed1061/report.md) | unassigned | `4402f1241990` | 1061 | a soldier | 3591 | unassessed |
+| [D1483-rust-seed1043](D1483-rust-seed1043/report.md) | unassigned | `4402f1241990` | 1043 | Grip, Farmer Maggot's Dog | 4891 | unassessed |
+| [D1484-rust-seed1013](D1484-rust-seed1013/report.md) | unassigned | `4402f1241990` | 1013 | a wild dog | 2969 | unassessed |
+| [D1485-rust-seed1010](D1485-rust-seed1010/report.md) | unassigned | `4402f1241990` | 1010 | a giant white mouse | 3725 | unassessed |
+| [D1486-rust-seed1014](D1486-rust-seed1014/report.md) | unassigned | `4402f1241990` | 1014 | a salamander | 5580 | unassessed |
+| [D1487-rust-seed1011](D1487-rust-seed1011/report.md) | unassigned | `4402f1241990` | 1011 | a wild dog | 5440 | unassessed |
+| [D1488-rust-seed1054](D1488-rust-seed1054/report.md) | unassigned | `4402f1241990` | 1054 | a soldier ant | 3320 | unassessed |
+| [D1489-rust-seed1023](D1489-rust-seed1023/report.md) | unassigned | `4402f1241990` | 1023 | a soldier | 5335 | unassessed |
+| [D1490-rust-seed1051](D1490-rust-seed1051/report.md) | unassigned | `4402f1241990` | 1051 | a scout | 5649 | unassessed |
+| [D1491-rust-seed1021](D1491-rust-seed1021/report.md) | unassigned | `4402f1241990` | 1021 | a giant yellow centipede | 4839 | unassessed |
+| [D1492-rust-seed1060](D1492-rust-seed1060/report.md) | unassigned | `4402f1241990` | 1060 | a giant white mouse | 7803 | unassessed |
+| [D1493-rust-seed1073](D1493-rust-seed1073/report.md) | unassigned | `4402f1241990` | 1073 | Grip, Farmer Maggot's Dog | 3205 | unassessed |
+| [D1494-rust-seed1074](D1494-rust-seed1074/report.md) | unassigned | `4402f1241990` | 1074 | a floating eye | 959 | unassessed |
+| [D1495-rust-seed1082](D1495-rust-seed1082/report.md) | unassigned | `4402f1241990` | 1082 | Fang, Farmer Maggot's Dog | 1279 | unassessed |
+| [D1496-rust-seed1062](D1496-rust-seed1062/report.md) | unassigned | `4402f1241990` | 1062 | a kobold | 12017 | unassessed |
+| [D1497-rust-seed1070](D1497-rust-seed1070/report.md) | unassigned | `4402f1241990` | 1070 | poison | 10600 | unassessed |
+| [D1498-rust-seed1053](D1498-rust-seed1053/report.md) | unassigned | `4402f1241990` | 1053 | a kobold shaman | 19122 | unassessed |
+| [D1499-rust-seed1083](D1499-rust-seed1083/report.md) | unassigned | `4402f1241990` | 1083 | poison | 6650 | unassessed |
+| [D1500-rust-seed1050](D1500-rust-seed1050/report.md) | unassigned | `4402f1241990` | 1050 | an apprentice | 20545 | unassessed |
+| [D1501-rust-seed1081](D1501-rust-seed1081/report.md) | unassigned | `4402f1241990` | 1081 | a giant yellow centipede | 12448 | unassessed |
+| [D1502-rust-seed1033](D1502-rust-seed1033/report.md) | unassigned | `4402f1241990` | 1033 | a yellow worm mass | 23487 | unassessed |
+| [D1503-rust-seed1071](D1503-rust-seed1071/report.md) | unassigned | `4402f1241990` | 1071 | a cutpurse | 16401 | unassessed |
+| [D1504-rust-seed1034](D1504-rust-seed1034/report.md) | unassigned | `4402f1241990` | 1034 | starvation | 44670 | unassessed |
+| [D1505-rust-seed1072](D1505-rust-seed1072/report.md) | unassigned | `4402f1241990` | 1072 | Fang, Farmer Maggot's Dog | 23148 | unassessed |
+| [D1506-rust-seed1040](D1506-rust-seed1040/report.md) | unassigned | `4402f1241990` | 1040 | starvation | 89200 | unassessed |
+| [D1507-rust-seed1000](D1507-rust-seed1000/report.md) | unassigned | `4402f1241990` | 1000 | a giant white mouse | 17115 | unassessed |
+| [D1508-rust-seed1031](D1508-rust-seed1031/report.md) | unassigned | `4402f1241990` | 1031 | starvation | 89200 | unassessed |
+| [D1509-rust-seed1084](D1509-rust-seed1084/report.md) | unassigned | `4402f1241990` | 1084 | starvation | 89240 | unassessed |
+| [D1510-rust-seed1042](D1510-rust-seed1042/report.md) | unassigned | `4402f1241990` | 1042 | starvation | 89210 | unassessed |
+| [D1511-rust-seed1080](D1511-rust-seed1080/report.md) | unassigned | `4402f1241990` | 1080 | a soldier | 31966 | unassessed |
+| [D1512-rust-seed1032](D1512-rust-seed1032/report.md) | unassigned | `4402f1241990` | 1032 | starvation | 89220 | unassessed |
+| [D1513-rust-seed1064](D1513-rust-seed1064/report.md) | unassigned | `4402f1241990` | 1064 | starvation | 89440 | unassessed |
+| [D1514-rust-seed1052](D1514-rust-seed1052/report.md) | unassigned | `4402f1241990` | 1052 | a metallic green centipede | 41250 | unassessed |
+| [D1515-rust-seed1004](D1515-rust-seed1004/report.md) | unassigned | `4402f1241990` | 1004 | a soldier | 50458 | unassessed |
+| [D1516-rust-seed1003](D1516-rust-seed1003/report.md) | unassigned | `4402f1241990` | 1003 | starvation | 89410 | unassessed |
+| [D1517-rust-seed1063](D1517-rust-seed1063/report.md) | unassigned | `4402f1241990` | 1063 | starvation | 89250 | unassessed |
+| [D1518-rust-seed1001](D1518-rust-seed1001/report.md) | unassigned | `4402f1241990` | 1001 | a giant white mouse | 81753 | unassessed |
 
 ## Aggregated actions
 
