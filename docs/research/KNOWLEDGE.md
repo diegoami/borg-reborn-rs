@@ -33,11 +33,13 @@ or a design, the handover. Two rules that keep it honest:
 
 | Source | Last read | What was covered | Re-read when |
 | --- | --- | --- | --- |
-| borg-runner (S15) | 2026-11-10, pin `883c474` | everything we copy: `INSTRUCTIONS.md` (all 469 lines), volume 2, the jev manual, every notebook and report including `minimaxflash-3`, `OVERVIEW.md`, `ACCUMULATED_KNOWLEDGE.md` **edition 3** in full (edition 2 before it, and the diff between them) | the report's copy lines: a changed `ACCUMULATED_KNOWLEDGE.md` means a new edition (read its own changelog paragraph, then the diff); new runs arrive as `knowledge/` + `records/` additions |
-| better-borg-c deaths (S4, S9, S11) | 2026-11-10, pin `06f5789` | every copied dossier D0001–D0019 (`report.md`; `overall-assessment.md` for D0017–D0019), `REDESIGN-LESSONS.md` covering D0001–D0019 | new death cases; a changed `REDESIGN-LESSONS.md` |
-| better-borg-c issues (S8) | 2026-11-10 | the analysis set: #34, #41, #154, #158, #159, #180, #183, #319–#341 (death analyses and analyses), and on this pass #400–#412, #420 (D0017–D0019 analyses, the five `Analyse`/`Evaluate` issues, the milestone-10 review); `docs/research/DEATHS-AND-ISSUES.md` indexes the rest by subsystem | the report's `issues updated since` list |
+| borg-runner (S15) | 2026-11-10, pin `1440f70` | everything we copy through `ACCUMULATED_KNOWLEDGE.md` **edition 4**, including the new `minimaxflash-1.5`, `minimaxflash-2.2`, `mmf-mage.2` and `mmx-war-1` reports and the renamed run copies | the report's copy lines: a changed `ACCUMULATED_KNOWLEDGE.md` means a new edition (read its own changelog paragraph, then the diff); new runs arrive as `knowledge/` + `records/` additions |
+| better-borg-c deaths (S4, S9, S11) | 2026-11-10, pin `a4cc2d4` | every copied dossier D0001–D0019 (`report.md`; `overall-assessment.md` for D0017–D0019), `REDESIGN-LESSONS.md`; no new dossiers on the M4 refresh | new death cases; a changed `REDESIGN-LESSONS.md` |
+| better-borg-c issues (S8) | 2026-11-10 | the earlier analysis set, then M11 #471 and the M4-relevant carries #459 (EATHURT), #454 (SCOOTIDX), #452 (GRANITESIM); the five `borg-danger.c` commits read at this pin | the report's `issues updated since` list |
 | neo-angband-tracker (S2, S14) | 2026-11-10 | the C Borg spec and the Tunable Plan at their pins; the strategy manual's chapters as tasks need them (ch. 15 for M3) | nothing scheduled: the pins do not move (the manual's chapters are read per task, below) |
-| borg-zoo (S6) | 2026-11-10, pin `a092d1e` | the DESIGN and the catalogue diff of this refresh (bbc-m8/m9 specimens, `classes-1800-200k`) | changed catalogue/DESIGN copies; our specimens' issues |
+| borg-zoo (S6) | 2026-11-10, pin `415183c` | the DESIGN and catalogue diff through the mode cutoff and explicit `normal` profile; #61's 24-cell buying-family request and its mixed result | changed catalogue/DESIGN copies; our specimens' issues |
+| borg-rs | 2026-11-10, pin `399c907` | #25's explicit buying-strategy seam and the reserve410 evidence boundary (rejected upstream margins and mixed 24-cell pilot); #27 buy-to-identify is open, not a result | family changes that affect control interpretation; buying-strategy measurements |
+| angband | 2026-11-10, pin `42cd156` | the 12-commit log since our engine pin: rest interruption/completion, command flushing and Borg reaction changes noted for M4's executor work; our engine remains `e473720` byte for byte | only when a lifted executor or combat rule needs its citation re-checked |
 
 ## Distilled for the tasks ahead
 
@@ -136,6 +138,37 @@ Pointers, not copies: the line lives in the source, named beside it.
   weapon valuation). Our design answers each by construction (one scale,
   modes re-evaluated, no name lists) — the issues are the *evidence* to
   cite in M4's review.
+- **M4 source refresh, 2026-11-10 (better-borg-c `a4cc2d4`, M11 #471):**
+  the five `borg-danger.c` corrections read directly. Partial melee divides
+  armour by the monster's to-hit (source #63) and caps the luck-adjusted
+  chance at 100%; constitution drain tests CON, not STR (#61); Crush clears
+  the *ranged* value (#66); passable rubble is not granite in the ranged
+  step (#68). Shoot'N'Scoot also passed the wrong monster index (#100).
+  These are inputs to our expected-damage tests, not a licence to copy the
+  old full-damage approximation. M11 has **no cohort/per-mode measurement**
+  and its tag waits for review; none of its 18 units proves a survival gain.
+- **M4 source refresh, borg-zoo `415183c`:** the mode cutoff is real:
+  `default` is not comparable across it. Use the explicit `normal`
+  profile (all munchkin/Lunal flags off) for our control comparisons.
+  v8–v10 specimens are present; v11 is unmeasured and untagged. The
+  reserve410 buying pilot is mixed (10/12 vs 11/12 alive, with one paired
+  loss and two gains), not evidence for our reserve defaults.
+- **M4 source refresh, borg-runner `1440f70`, edition 4:** new fixtures:
+  fear is −20 to-hit, +8 AC and **no attacks**, cured only by the timer
+  (two crows in `minimaxflash-1.5`); the shrieker wakes everything in line
+  of sight (it does not summon new monsters). The M map covers the whole
+  level scaled, and stair priority 25 means a remembered staircase cannot
+  be hidden by scaling. Monsters are sparse, asleep and deliberately
+  distant, so detection's door map and the experience cost of searching
+  matter as much as combat. `minimaxflash-2.2` adds Fang AC36: oil is a
+  12% lottery where Magic Missile ignores armour, and Phase came too late.
+  Its mana-penalty paragraph repeats the factor-of-ten error; our ledger's
+  engine-checked rule remains one SP per **pound**, worn armour only.
+  `mmx-war-1` adds the batching/breeder death: a 60-key chain kills 35
+  silver mice and the multiplied pack kills the character; a visible pack
+  means one action per think, exactly our executor's discipline. Magic
+  Mapping's window found no staircase and is a purchase to measure, not
+  an automatic answer.
 - **better-borg-c milestone 10** (#420, post-pin): I-001 (one-blow kill
   on a lone adjacent monster — the D0012 mold lesson) and I-002 (heal
   while fleeing at survivable danger — the D0017 lesson) went in;

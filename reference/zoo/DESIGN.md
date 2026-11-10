@@ -39,7 +39,9 @@ engine and content packages they run on: `neo-b3-mandos` is full Mandos,
 a Mandos measurement snapshot of one Borg source under the api2 adapter.
 
 **Harness.** better-borg-c's `tools/measure-native.py` and observer at a
-pinned commit (`fc9d97cb` since 2026-11-08; before that `8c23ec0d`, whose
+pinned commit (`9ca98661` since 2026-11-10, the mode-cutoff restart of
+borg-zoo#54, which is also specimen `4.2.6-bbc-9ca98661`'s ref; before that
+`fc9d97cb` since 2026-11-08, and before that `8c23ec0d`, whose
 watchdog could abort a run on a split UTF-8 character, better-borg-c#220). For each specimen it exports the source with `git archive`,
 applies the observer instrumentation and builds a Debug binary with the test
 frontend. For each cell it runs the binary on the seed with the turn cap and
@@ -203,6 +205,35 @@ overridden. The runner always adds
 the zoo compares the observer's `BORG_OPTIONS` line with the profile; any
 difference turns the run into a `config_error`.
 
+**Mode profiles and the cutoff (borg-zoo#54).** A profile that names no
+mode setting leaves every mode on the build's own default, and
+`borg_munchkin_by_class` defaults to TRUE only from better-borg-c
+`fd683ced` (PR 302, 2026-11-10) — so the same profile name plays a
+different game on either side of that commit, and the observer cannot
+catch it, because it only verifies named settings. Four profiles name the
+modes explicitly: `normal` (all four mode flags off), `munchkin-class`
+(the product default for Warrior/Druid/Ranger), `munchkin-on`, and
+`lunal`. Every better-borg-c-kind specimen (and `angband-e473-original`)
+declares which side of the cutoff it is on (`mode_side` in
+`catalogue/specimens.json`; pre-catalogue run snapshots are resolved from
+the commit set in `zoo/catalogue.py`). Three rules follow:
+
+- `python -m zoo plan` rejects `default` (any profile that leaves the
+  modes unnamed) in an experiment that touches a post-cutoff
+  better-borg-c specimen, and rejects a profile naming
+  `borg_munchkin_by_class` for a specimen that predates the setting
+  (older builds ignore the unknown line; every cell would be a
+  `config_error`). An experiment recorded before the cutoff keeps its
+  arms under an explicit `"pre_cutoff": "<date and reason>"` note.
+- Version pairings (`vs_version`) between specimens on opposite sides of
+  the cutoff are not computed (`zoo/stats.py`).
+- Run pages label pre-cutoff results (recorded before 2026-11-10, or
+  marked `pre_cutoff`) and state the cutoff; the Detailed and Versions
+  tabs carry a standing note. Existing results stay on the `results`
+  branch untouched (append-only); the restarted experiments are
+  `bbc-explicit-smoke` and `classes-explicit`, on
+  `4.2.6-bbc-9ca98661`.
+
 **Suite.** Seeds, cap, wall and stall limits, birth rule, and whether
 checkpoint saves are kept. The birth rules:
 - `fixed`: Human Warrior with default point buy, as in better-borg-c's
@@ -277,19 +308,45 @@ The record holds:
    failure, never dropped. The job writes `results/<experiment>/<run>/` to
    the `results` branch and dispatches the site build.
 5. **pages** (`.github/workflows/pages.yml`): generates the static site
-   from the results branch and deploys it.
+   from the results branch and deploys it. Deploys queue rather than cancel
+   (`cancel-in-progress: false`): every collect dispatches one, so a
+   cancel-on-progress rule races merges against dispatches and can end with
+   the site older than `main` and no successful deploy to fall back on.
 
 The build and run jobs place the build at the same absolute path, because the
 runner compiles its private user path into the binary. Mandos jobs also set
 up Node 22 and check out and install the Mandos commit (`source/`) in both
 jobs.
 
+**Look at the dashboard before shipping chart changes.** A chart can pass
+every test and still be unreadable — the shape-coded exemplars chart shipped
+that way (labels were the fix, and rendering it caught three labels that
+silently failed to place). After any `zoo/landing.py` or `zoo/site.py`
+change, build the site from the results branch, render the charts to images,
+and actually read them:
+
+```sh
+git worktree add --detach /tmp/results origin/results
+python3 -m zoo site --results /tmp/results/results --out /tmp/site
+# extract a chart <svg> from /tmp/site/index.html (or classes/<Class>.html),
+# inline the svg.scatter CSS rules with concrete colors, then:
+uv run --with cairosvg python -c \
+  "import cairosvg; cairosvg.svg2png(url='/tmp/chart.svg', write_to='/tmp/chart.png')"
+```
+
+The automated half of that look is
+`test_the_exemplars_chart_never_overlaps_its_own_labels` (every plotted dot
+gets a label, and no two labels overlap) plus
+`test_a_smoke_scale_setup_never_becomes_a_dashboard_point`; they catch the
+regressions, the render catches everything else.
+
 ## Statistics (`zoo/stats.py`)
 
 **Per arm:**
 - runs, finished runs and outcome counts;
 - deaths and death rate, with a Wilson 95% interval;
-- "goal" rate (alive at the cap having reached DL5, a placeholder);
+- "goal" rate (alive at the cap having reached DL5, a placeholder) - still used
+  by the Detailed tab's milestone cards, left unchanged;
 - median maximum depth and level;
 - median death turn;
 - share alive at 25/50/75/100% of the cap;
@@ -299,6 +356,16 @@ jobs.
   point (a death before it is excluded, not substituted with a worse
   value). Shown on the site as "Level, max depth and gold by engine turn"
   whenever at least one cell in the suite carries it.
+- `progress_score`: median of max_depth + max_level per cell (including
+  deaths - a death's reach still counts, unlike the DL5 goal rate), one
+  number instead of two. Used on the Overview tab's exemplars card and its
+  by-class/turn-snapshot grids in place of the DL5 goal rate, after the
+  owner's call that "alive at cap, reached DL5" was a bad metric and should
+  be a combined depth+level (and eventually net worth) figure (2026-11-09).
+  `milestone_progress_score` is its sibling at each turn fraction, reusing
+  `milestone_table`'s death-exclusion rule. Neither touches `arm_summary`'s
+  own `goal_rate`/`DEPTH_GOAL`, which the Detailed tab still shows - a
+  deliberately narrow change, not a redefinition of the site-wide metric.
 
 **Paired against the control arm, on seeds where both finished:**
 - rescued, newly killed, both died, both lived;
@@ -331,12 +398,36 @@ on what else holds the queue.
 
 Public repositories have no Actions minute charge on standard runners. The
 limits that matter are 20 concurrent jobs, 256 matrix jobs and 6 hours per
-job.
+job - but `compare.yml`'s own `run` job sets `timeout-minutes: 300` (5
+hours), tighter than that ceiling. At a 200,000-turn cap (`classes-1800-200k`),
+8 shards was not enough: 2 of 8 shards for one specimen ran out the clock and
+came back as `harness_failure` for every cell they hadn't finished (run
+42647082970, 2026-11-09). 16 shards on a same-sized rerun finished clean. **A
+cap much above the usual 100,000 needs more shards than `shards=8`,
+proportioned down from 300 minutes** - the vanilla specimen's own 8 shards
+finished fine in the same window, so it's specific to how slowly a given
+specimen's games end, not a fixed rule.
+
+**A specimen whose own default already is the munchkin start by class makes
+the `munchkin-wdr` profile a no-op on it.** First found on `4.2.6-bbc-m8`
+(and its Rust twin `4.2.6-rs-m8`) during the #39 review - identical
+play/trace hashes on 3/3 seeds - then independently rediscovered on
+`4.2.6-bbc-munchkin-by-class` inside the `classes-200k-best` run (1,800
+cells wasted at the 200k cap before the fix) and confirmed again, cheaply
+this time via a 3-seed smoke check first, on M9 and M10. Every milestone
+from M8 onward inherits that default unchanged, so **before adding a
+`munchkin-wdr` arm for any of them, check with a cheap smoke run first** (as
+`m9-m10-munchkin-smoke.json` does) rather than finding out at full scale.
 
 ## Open questions for the owner
 
 1. **Primary endpoint:** turn T, depth D and level L for "early-game
-   survival". The site's DL5 goal is a placeholder.
+   survival". The site's DL5 goal (`arm_summary`'s `goal_rate`) is still a
+   placeholder on the Detailed tab. Resolved for the Overview tab's
+   exemplars card: the owner called it a bad metric (2026-11-09) and it now
+   uses `progress_score` (median depth + level, see Statistics above)
+   there instead - money and equipment value are still open, tracked under
+   question 9.
 2. **Birth rule:** fixed Human Warrior (comparable with better-borg-c's
    cohorts) or seed-chosen race and class (broader).
 3. **Calendar:** today each run uses the runner's clock. Freezing the date
@@ -357,8 +448,9 @@ job.
    randarts) are a second configuration axis. The runner uses the game's
    defaults, which the observer records: for example `birth_connect_stairs=1`
    and `birth_no_selling=1`. Varying them needs runner support too.
-8. **Milestone tags:** if better-borg-c tags its milestones, specimens can
-   name them instead of SHAs.
+8. **Milestone tags: resolved, in use since M7.** better-borg-c tags every
+   milestone now (`4.2.6-impact-vN`); M7 through M10 all carry a `tag`
+   field in the catalogue alongside their pinned SHA.
 9. **Net worth (inventory and equipment value), not just gold.** Level and
    max depth at turn milestones (`milestones`, `zoo/stats.py`'s
    `milestone_table`) are in, over every finished run, needing no upstream
@@ -371,3 +463,14 @@ job.
    wants it from; that is a change request to route to that harness's own
    repository, the same way borg-reborn-rs's was routed here (#30), not
    something the zoo can add on its own.
+10. **A deep start for the Lunal arm.** The `lunal` profile is in the
+    catalogue, but `borg_self_lunal` only enters the mode when the Borg is
+    prepared for 15 levels deeper and has reached `maxdepth >= depth + 15`
+    (`borg-think-dungeon.c`), which the zoo's suites (20k-400k turns) only
+    rarely offer. Measuring it now would repeat the exact failure this
+    issue fixes: an arm that never enters the mode, reading as neutral.
+    Deferred until better-borg-c exposes a deep start the harness can
+    drive (the runner has a `load` hook for a save file; the zoo's suites
+    have no field for one yet), or a 400k+ run is shown to enter the mode
+    reliably (check the trace for Lunal notes first, cheaply, before
+    scheduling any classes-scale Lunal run).
