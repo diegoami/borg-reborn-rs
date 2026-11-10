@@ -2,6 +2,33 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.7, G0 (#23)
+
+**G0 passes; the report is [docs/G0.md](G0.md).** The first attempt did
+not pass honestly: seven long runs held in Explore/cooldown loops until
+starvation, 53,497 Holds in the full suite. T3.7 fixes the causes:
+frontier-underfoot is finished, empty Explore falls to Descend, the
+up/down reroll actually Ascends on reaching the up staircase, and checked
+level changes do not spend the refused-action budget. Regression tests
+cover the exhausted level and its only exit.
+
+Final committed-tree evidence (`6318cd2`, references in `84a30fd`):
+
+- 54/54 smoke, smoke-exact and full processes succeed with no stall,
+  timeout, signal or harness failure; two smoke suites are byte-identical
+  and exact boundaries pass. Extra-load passes at turn 1408.
+- 51 natural deaths in run outputs, 0 unexported; the 47 new dossiers
+  D1326–D1372 all have valid trace tails and hashes.
+- Full suite: **6 Holds and 0 violations** (was 53,497 and 2), deepest
+  **3** (was 2), **0 starvation deaths** (was 7). All 45 still die, so
+  this is a machinery pass, not a survival claim.
+- Perception: 0 differences over 24,079 thinks. Tests: 76 crate + 5
+  repository + 54 tools; fmt and clippy clean. Smoke's warrior survives
+  to CL7 at the turn cap.
+
+**Next:** T3.8 (#24) — break M4–M7 into task issues, then stop for the
+M3 review PR. Do not start M4.
+
 ## 2026-11-10: T3.6, traces in death dossiers (#22)
 
 **Already implemented by T2.4 (`651c822`), now verified as a task; no
