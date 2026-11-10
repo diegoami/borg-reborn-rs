@@ -7,6 +7,8 @@
 # .angband-reborn/ (kept between builds). Create or load a character, then
 # press Ctrl-Z and z to start the Borg; any key stops it. Needs the X11
 # development libraries (libx11-dev) and a display.
+# A watched game is not a measured run: its death is not recorded (RULES 12;
+# to record one, reproduce it with harness/run.sh).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD="$ROOT/build/watch"

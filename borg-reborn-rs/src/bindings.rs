@@ -1398,6 +1398,9 @@ const _: () = {
     ["Offset of field: player::upkeep"][::core::mem::offset_of!(player, upkeep) - 1144usize];
 };
 unsafe extern "C" {
+    pub static mut bodies: *mut player_body;
+}
+unsafe extern "C" {
     pub static mut races: *mut player_race;
 }
 unsafe extern "C" {
@@ -1410,6 +1413,58 @@ unsafe extern "C" {
 #[derive(Debug)]
 pub struct monster_group {
     _unused: [u8; 0],
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct feature {
+    pub name: *mut core::ffi::c_char,
+    pub desc: *mut core::ffi::c_char,
+    pub fidx: core::ffi::c_int,
+    pub mimic: *mut feature,
+    pub priority: u8,
+    pub shopnum: u8,
+    pub dig: u8,
+    pub flags: [bitflag; 4usize],
+    pub d_attr: u8,
+    pub d_char: wchar_t,
+    pub walk_msg: *mut core::ffi::c_char,
+    pub run_msg: *mut core::ffi::c_char,
+    pub hurt_msg: *mut core::ffi::c_char,
+    pub die_msg: *mut core::ffi::c_char,
+    pub confused_msg: *mut core::ffi::c_char,
+    pub look_prefix: *mut core::ffi::c_char,
+    pub look_in_preposition: *mut core::ffi::c_char,
+    pub resist_flag: core::ffi::c_int,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of feature"][::core::mem::size_of::<feature>() - 112usize];
+    ["Alignment of feature"][::core::mem::align_of::<feature>() - 8usize];
+    ["Offset of field: feature::name"][::core::mem::offset_of!(feature, name) - 0usize];
+    ["Offset of field: feature::desc"][::core::mem::offset_of!(feature, desc) - 8usize];
+    ["Offset of field: feature::fidx"][::core::mem::offset_of!(feature, fidx) - 16usize];
+    ["Offset of field: feature::mimic"][::core::mem::offset_of!(feature, mimic) - 24usize];
+    ["Offset of field: feature::priority"][::core::mem::offset_of!(feature, priority) - 32usize];
+    ["Offset of field: feature::shopnum"][::core::mem::offset_of!(feature, shopnum) - 33usize];
+    ["Offset of field: feature::dig"][::core::mem::offset_of!(feature, dig) - 34usize];
+    ["Offset of field: feature::flags"][::core::mem::offset_of!(feature, flags) - 35usize];
+    ["Offset of field: feature::d_attr"][::core::mem::offset_of!(feature, d_attr) - 39usize];
+    ["Offset of field: feature::d_char"][::core::mem::offset_of!(feature, d_char) - 40usize];
+    ["Offset of field: feature::walk_msg"][::core::mem::offset_of!(feature, walk_msg) - 48usize];
+    ["Offset of field: feature::run_msg"][::core::mem::offset_of!(feature, run_msg) - 56usize];
+    ["Offset of field: feature::hurt_msg"][::core::mem::offset_of!(feature, hurt_msg) - 64usize];
+    ["Offset of field: feature::die_msg"][::core::mem::offset_of!(feature, die_msg) - 72usize];
+    ["Offset of field: feature::confused_msg"]
+        [::core::mem::offset_of!(feature, confused_msg) - 80usize];
+    ["Offset of field: feature::look_prefix"]
+        [::core::mem::offset_of!(feature, look_prefix) - 88usize];
+    ["Offset of field: feature::look_in_preposition"]
+        [::core::mem::offset_of!(feature, look_in_preposition) - 96usize];
+    ["Offset of field: feature::resist_flag"]
+        [::core::mem::offset_of!(feature, resist_flag) - 104usize];
+};
+unsafe extern "C" {
+    pub static mut f_info: *mut feature;
 }
 pub const LIGHTING_LOS: grid_light_level = 0;
 pub const LIGHTING_TORCH: grid_light_level = 1;
@@ -1563,11 +1618,40 @@ const _: () = {
         [::core::mem::offset_of!(chunk, monster_groups) - 128usize];
     ["Offset of field: chunk::join"][::core::mem::offset_of!(chunk, join) - 136usize];
 };
+pub const FEAT_NONE: u32 = 0;
+pub const FEAT_FLOOR: u32 = 1;
+pub const FEAT_CLOSED: u32 = 2;
+pub const FEAT_OPEN: u32 = 3;
+pub const FEAT_BROKEN: u32 = 4;
+pub const FEAT_LESS: u32 = 5;
+pub const FEAT_MORE: u32 = 6;
+pub const FEAT_STORE_GENERAL: u32 = 7;
+pub const FEAT_STORE_ARMOR: u32 = 8;
+pub const FEAT_STORE_WEAPON: u32 = 9;
+pub const FEAT_STORE_BOOK: u32 = 10;
+pub const FEAT_STORE_ALCHEMY: u32 = 11;
+pub const FEAT_STORE_MAGIC: u32 = 12;
+pub const FEAT_STORE_BLACK: u32 = 13;
+pub const FEAT_HOME: u32 = 14;
+pub const FEAT_SECRET: u32 = 15;
+pub const FEAT_RUBBLE: u32 = 16;
+pub const FEAT_MAGMA: u32 = 17;
+pub const FEAT_QUARTZ: u32 = 18;
+pub const FEAT_MAGMA_K: u32 = 19;
+pub const FEAT_QUARTZ_K: u32 = 20;
+pub const FEAT_GRANITE: u32 = 21;
+pub const FEAT_PERM: u32 = 22;
+pub const FEAT_LAVA: u32 = 23;
+pub const FEAT_PASS_RUBBLE: u32 = 24;
+pub const FEAT_MAX: u32 = 25;
 unsafe extern "C" {
     pub static mut cave: *mut chunk;
 }
 unsafe extern "C" {
     pub fn map_info(grid: loc, g: *mut grid_data);
+}
+unsafe extern "C" {
+    pub fn feat_is_shop(feat: core::ffi::c_int) -> bool;
 }
 unsafe extern "C" {
     pub fn square_isvault(c: *mut chunk, grid: loc) -> bool;
@@ -1577,6 +1661,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn square_in_bounds_fully(c: *mut chunk, grid: loc) -> bool;
+}
+unsafe extern "C" {
+    pub fn square(c: *mut chunk, grid: loc) -> *const square;
 }
 unsafe extern "C" {
     pub fn square_object(c: *mut chunk, grid: loc) -> *mut object;
@@ -1592,6 +1679,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn get_com(prompt: *const core::ffi::c_char, command: *mut core::ffi::c_char) -> bool;
+}
+unsafe extern "C" {
+    pub fn panel_contains(y: core::ffi::c_uint, x: core::ffi::c_uint) -> bool;
 }
 unsafe extern "C" {
     pub static mut turn: i32;
@@ -2009,6 +2099,9 @@ const _: () = {
 };
 unsafe extern "C" {
     pub static mut z_info: *mut angband_constants;
+}
+unsafe extern "C" {
+    pub fn monster_is_visible(mon: *const monster) -> bool;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
@@ -2523,6 +2616,9 @@ unsafe extern "C" {
     ) -> usize;
 }
 unsafe extern "C" {
+    pub fn object_is_in_quiver(p: *mut player, obj: *const object) -> bool;
+}
+unsafe extern "C" {
     pub fn pack_slots_used(p: *const player) -> core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -2545,6 +2641,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub static adj_str_hold: [core::ffi::c_int; 38usize];
+}
+unsafe extern "C" {
+    pub fn equipped_item_slot(body: player_body, obj: *mut object) -> core::ffi::c_int;
 }
 unsafe extern "C" {
     pub fn spell_by_index(p: *const player, index: core::ffi::c_int) -> *const class_spell;

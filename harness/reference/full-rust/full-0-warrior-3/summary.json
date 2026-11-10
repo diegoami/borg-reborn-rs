@@ -1,9 +1,11 @@
 {
   "seed": 1003,
+  "loaded": false,
   "race": "Hobbit",
   "race_idx": 3,
   "class": "Warrior",
   "class_idx": 0,
+  "menu_letters": true,
   "stop_reason": "death",
   "game_turns": 89230,
   "player_turns": 8924,
@@ -24,5 +26,6 @@
   "game_rng": {"quick": false, "quick_rng": 4188881595, "rng_index": 27, "rng": "8ee578008deab584bac36c051b0498ab189b836ad115da15cf14d8606b8a9ac268d98d56a29fe2a2d2efe0e0fedc25d6541336613036244646ad0be1633ac3c85419be6e9cfbe6676fcca7ffbce8a36140584a7f29c8a7ea98d48193dfe42787207277088b57f2e7b18791ad305964690c51cb547265c6c32add95a3c66f3c88"},
   "effective_settings": {},
   "game_options": {"rogue_like_commands": false,"autoexplore_commands": false,"use_sound": false,"show_damage": false,"use_old_target": false,"pickup_always": false,"pickup_inven": true,"show_flavors": false,"show_target": true,"highlight_player": false,"disturb_near": true,"solid_walls": false,"hybrid_walls": false,"view_yellow_light": false,"animate_flicker": false,"center_player": false,"purple_uniques": false,"auto_more": true,"hp_changes_color": true,"mouse_movement": true,"notify_recharge": false,"effective_speed": false,"cheat_hear": false,"score_hear": false,"cheat_room": false,"score_room": false,"cheat_xtra": false,"score_xtra": false,"cheat_live": false,"score_live": false,"birth_randarts": false,"birth_connect_stairs": true,"birth_force_descend": false,"birth_no_recall": false,"birth_no_artifacts": false,"birth_stacking": true,"birth_lose_arts": false,"birth_feelings": true,"birth_no_selling": true,"birth_start_kit": true,"birth_ai_learn": true,"birth_know_runes": false,"birth_know_flavors": false,"birth_levels_persist": false,"birth_percent_damage": false},
-  "wall_seconds": 14.316
+  "exact_turns": false,
+  "wall_seconds": 10.547
 }

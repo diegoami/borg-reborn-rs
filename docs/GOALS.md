@@ -86,11 +86,10 @@ of the same name:
 - **Denominator: every attempted run** of the arm, per class. Stalls,
   timeouts, crashes, harness failures and configuration errors are
   non-successes, reported per arm and never relabelled as deaths.
-- **Arms:** the reborn Borg and the control C Borgs, all built from this
-  repository on the same engine tree, run through the same `borgh` and the
-  same run contract (D8, T1.3, #6). Results from the better-borg-c
-  observer harness are context, not controls: same-seed equivalence
-  between the two harnesses is unverified.
+- **Arms:** the reborn Borg, built here, and the Borgs borg-zoo compares it
+  with (D8). The zoo chooses, builds and runs the controls; this repository
+  builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md).
+  *Until milestone E, same-frontend C controls were built here (T1.3, #6).*
 - **Calculated by** borg-zoo, from its result cells (docs/SPEC.md §6, owner
   2026-11-09; this repository's `tools/endpoint.py`, T1.7, was retired in
   TE.7). The definition above is the one to ask the zoo for: its current
@@ -98,17 +97,17 @@ of the same name:
   operational outcomes from its denominator and is reported per arm rather
   than per class, so it is **not** this endpoint.
 
-**Prerequisites of G1:** T1.3 (controls), T1.4 (run contract), T1.7
-(calculator), and the control and reborn specimens in borg-zoo's
-catalogue (T1.8, routed by the owner). Until then, numbers are descriptive.
+**Prerequisites of G1:** the run contract (T1.4), our specimen in borg-zoo's
+catalogue (T1.8, routed by the owner), and the zoo's controls and its
+calculation of the endpoint above (D8). Until then, numbers are descriptive.
 
 ### Staged targets
 
 | Stage | Target | Suite (borg-zoo) | Milestone |
 | --- | --- | --- | --- |
 | G0 | **Plays.** Starts, explores, fights, uses stairs and town. No stalls, no crashes, no harness failures on the smoke suites; same seed twice gives the same keys | `smoke`, borg-rs `smoke` | M3 |
-| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the `c-pristine` control (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
-| G2 | **Better early.** Per class, better than the latest better-borg-c control (`c-bbc-m7` today) at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
+| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the pristine C Borg control (the zoo's) (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
+| G2 | **Better early.** Per class, better than the zoo's better-borg-c control at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
 | G3 | **Better deep.** T = 400,000, D = 20 or more, per class | `deep-1000` and new per-class deep suites | M7+ |
 | G4 | **Wins.** Kills Morgoth without the excluded modes | long runs | long term |
 
@@ -237,7 +236,7 @@ them.
 | D4 | Code reuse | **Copy, then own** (docs/SPEC.md §2): code from borg-rs or another allowed project may be copied once, recorded in docs/PROVENANCE.md, and is ours from then on; no dependency on any version of another Borg project. Decision code is new. C Borg knowledge is lifted with citations. *Amended 2026-11-09; it was "the substrate may reuse borg-rs code".* |
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
-| D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by `tools/endpoint.py`); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
+| D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by borg-zoo; *`tools/endpoint.py` until TE.7*); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
 | D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |

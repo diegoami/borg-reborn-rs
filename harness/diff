@@ -2,7 +2,7 @@
 """Compare Borg keypress logs and print the first divergence.
 
 Usage:
-  harness/diff [--suite NAME] [--save-root DIR] [--expect-impl c|rust|c-pristine|c-bbc-m7] [--allow-incomplete]
+  harness/diff [--suite NAME] [--save-root DIR] [--expect-impl rust] [--allow-incomplete]
               [--allow-unverified] [--allow-legacy-logs] A B
 
   A and B are either two key logs (keys.log or keys.log.xz) or two
@@ -42,10 +42,11 @@ Directory mode:
     (ALLOW_UNKNOWN_IMPL, ALLOW_STALE_BUILD), a failed check or a binary
     changed during the suite. A dir with plain key logs and no manifest,
     or with a manifest without build identity, is refused (exit 2). A dir
-    without such a manifest and without plain logs is a reference (the C
-    oracle); a manifest it keeps must record a C build.
-  * --expect-impl c|rust: a verified suite output of that implementation
-    must be one of the operands (exit 2 otherwise).
+    without such a manifest and without plain logs is a reference
+    (harness/reference/*-rust, made by make-reference.sh, which leaves no
+    directory when it refuses a suite).
+  * --expect-impl rust: a verified suite output of the Rust Borg must be one
+    of the operands (exit 2 otherwise).
   * --suite NAME|PATH: the runs must be the suite's scenarios, not just
     its names: a suite output's manifest must record this suite file
     (suite_sha256), and on both sides every run's summary must show the
@@ -78,8 +79,10 @@ IGNORED_FIELDS = {"wall_seconds"}
 MEASUREMENT_FIELDS = {"calendar", "max_clevel", "hp", "max_hp", "borg_decisions",
                       "player_energy", "borg_rng", "game_rng", "effective_settings"}
 # Run-record fields added after the first references (TE.5: the game options
-# in force). Compared whenever both sides have them.
-RECORD_FIELDS = {"game_options"}
+# in force; the E review: `exact_turns` and `loaded` in every summary, where
+# earlier references have them only when true). Compared whenever both sides
+# have them.
+RECORD_FIELDS = {"game_options", "exact_turns", "loaded"}
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -487,29 +490,18 @@ def check_manifest(label, d, expect_impl, allow):
     the implementation of a verified suite output, else None. A dir with a
     build-identity manifest is a suite output even if its logs are
     compressed. A dir without one and without plain key logs is a
-    reference (C oracle): (0, None), unless a manifest it keeps records a
-    non-C build (2).
+    reference (harness/reference/*-rust): (0, None). A reference keeps its
+    provenance in REFERENCE, never a manifest (2 if it has one).
     """
     mpath = os.path.join(d, "manifest")
     plain = any(os.path.isfile(os.path.join(d, r, "keys.log"))
                 for r in run_dirs(d))
     if not plain and not has_build_identity(d):
-        # A reference (C oracle): compressed logs only. harness/reference/
-        # classes also keeps the manifest of the C suite run that made it;
-        # if present it must record a C build. References carry no build
-        # identity (they predate it); they are checked by content.
-        if not os.path.isfile(mpath):
-            print("%s: %s: reference (no manifest)" % (label, d))
-            return 0, None
-        m = read_manifest(mpath)
-        impls = {m.get(k) for k in ("borg_impl_env", "binary_cmake_borg_impl",
-                                    "binary_impl") if m.get(k)}
-        if impls - {"c"}:
-            print("REFUSED: %s: reference manifest records a non-C build (%s)"
-                  % (d, ", ".join(sorted(impls))))
+        # A reference: compressed logs only, checked by content.
+        if os.path.isfile(mpath):
+            print("REFUSED: %s: a reference has a manifest without build identity" % d)
             return 2, None
-        print("%s: %s: reference (manifest of its C run: impl=c, rev %s)"
-              % (label, d, m.get("git_rev", "?")[:12]))
+        print("%s: %s: reference (no manifest)" % (label, d))
         return 0, None
     if not os.path.isfile(mpath):
         msg = "%s has no manifest (not written by harness/suite.sh)" % d
@@ -577,7 +569,7 @@ def main(argv):
             allow_unverified = True
         elif opt == "--allow-legacy-logs":
             allow_legacy = True
-        elif opt == "--expect-impl" and args and args[0] in ("c", "rust", "c-pristine", "c-bbc-m7"):
+        elif opt == "--expect-impl" and args and args[0] == "rust":
             expect_impl = args.pop(0)
         else:
             print(__doc__)

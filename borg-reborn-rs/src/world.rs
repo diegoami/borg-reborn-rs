@@ -23,6 +23,12 @@ const MON_TMD_SLEEP: usize = 0;
 pub const ELEM_MAX: usize = 25;
 /// `EQUIP_WEAPON` (list-equip-slots.h).
 pub const EQUIP_WEAPON: u16 = 1;
+/// `EQUIP_BOW` (list-equip-slots.h).
+pub const EQUIP_BOW: u16 = 2;
+/// `OBJ_MOD_STR` .. `OBJ_MOD_CON` (list-object-modifiers.h, from
+/// list-stats.h): the first five modifiers are the stats, in `stat_use`'s
+/// order.
+pub const STAT_MAX: usize = 5;
 /// `OBJ_MOD_BLOWS` (list-object-modifiers.h).
 pub const OBJ_MOD_BLOWS: usize = 10;
 /// `TMD_BLOODLUST` (list-player-timed.h).
@@ -141,6 +147,10 @@ pub struct Character {
 /// What the equipment adds up to, from what the player knows of it.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GearBonuses {
+    /// To-hit and to-dam of the equipment but the weapon and the launcher,
+    /// as `calc_bonuses` adds them to `state.to_h` and `state.to_d`
+    /// (`player-calcs.c:1999-2006`): the weapon's own bonuses go to its
+    /// blows, the launcher's to its shots.
     pub to_h: i32,
     pub to_d: i32,
     /// Base armour plus its bonuses.
@@ -164,9 +174,14 @@ impl GearBonuses {
             ..Default::default()
         };
         let mut vulnerable = [false; ELEM_MAX];
-        for item in equipment.iter().filter_map(|s| s.item.as_ref()) {
-            g.to_h += i32::from(item.to_h);
-            g.to_d += i32::from(item.to_d);
+        for (slot, item) in equipment
+            .iter()
+            .filter_map(|s| s.item.as_ref().map(|i| (s.slot_type, i)))
+        {
+            if slot != EQUIP_WEAPON && slot != EQUIP_BOW {
+                g.to_h += i32::from(item.to_h);
+                g.to_d += i32::from(item.to_d);
+            }
             g.ac += i32::from(item.ac) + i32::from(item.to_a);
             for (f, b) in g.flags.iter_mut().zip(item.flags) {
                 *f |= b;
@@ -206,12 +221,46 @@ impl Character {
     /// The same character with `item` in equipment slot `slot` (an index
     /// into `equipment`) instead of what is there: a model to compare
     /// equipment by effect. The world is not touched.
-    pub fn wearing(&self, slot: usize, item: Option<Item>) -> Character {
+    ///
+    /// The stats in use follow the known stat modifiers of the swap, as
+    /// `calc_bonuses` recomputes them (`player-calcs.c:2058-2061`:
+    /// `stat_use = modify_stat_value(stat_cur, add)`). `add` sums the race's
+    /// and class's adjustments, the gear's modifiers and what the Borg
+    /// cannot see (a shape, unknown runes). It is found from the observed
+    /// `stat_use`: exactly, except at the floor of 3, where a whole range of
+    /// penalties gives 3. There the bonus nearest the known one (race,
+    /// class and the gear's known modifiers) is taken, which is the
+    /// engine's whenever nothing unseen changes the stat (M2 reviews, R3
+    /// and the third review's 4).
+    pub fn wearing(&self, k: &Knowledge, slot: usize, item: Option<Item>) -> Character {
         let mut c = self.clone();
         if let Some(s) = c.equipment.get_mut(slot) {
             s.item = item;
         }
         c.gear = GearBonuses::of(&c.equipment);
+        if let Some(s) = c.status.as_mut() {
+            let modifier = |g: &GearBonuses, i: usize| g.modifiers.get(i).copied().unwrap_or(0);
+            let race = k.player_race(s.race);
+            let class = k.class(s.class);
+            for i in 0..STAT_MAX {
+                let delta = modifier(&c.gear, i) - modifier(&self.gear, i);
+                if delta == 0 {
+                    continue;
+                }
+                let known = race.map_or(0, |r| r.stat_adj[i])
+                    + class.map_or(0, |c| c.stat_adj[i])
+                    + modifier(&self.gear, i);
+                let (cur, used) = (i32::from(s.stat_cur[i]), s.stat_use[i]);
+                let Some(add) = (-60..=60)
+                    .filter(|&a| knowledge::modify_stat_value(cur, a) == used)
+                    .min_by_key(|&a| ((a - known).abs(), a))
+                else {
+                    continue;
+                };
+                s.stat_use[i] = knowledge::modify_stat_value(cur, add + delta);
+                s.stat_ind[i] = knowledge::stat_index(s.stat_use[i]) as i32;
+            }
+        }
         c
     }
 
@@ -250,17 +299,20 @@ impl Character {
     }
 
     /// Expected melee damage per player turn against a monster with no
-    /// resistances, if every blow hits: blows times the weapon's mean dice
-    /// plus the known to-dam of the gear (`calc_bonuses` adds every item's
-    /// to-dam to each blow). Hit chance, criticals, slays and brands come
-    /// with the threat model (M4). Compare weapons by trying them on a
-    /// copy: `character.wearing(slot, Some(item)).melee_per_turn(k)`.
+    /// resistances, if every blow hits: blows times the weapon's mean dice,
+    /// plus its own known to-dam (`melee_damage`, `player-attack.c:480-492`)
+    /// and the known to-dam of the other gear but the launcher
+    /// (`state.to_d`, `player_damage_bonus`, `:825-828`). Without a weapon,
+    /// a blow does 1. Hit chance, criticals, slays, brands and the
+    /// percent-damage birth option come with the threat model (M4). Compare
+    /// weapons by trying them on a copy:
+    /// `character.wearing(k, slot, Some(item)).melee_per_turn(k)`.
     pub fn melee_per_turn(&self, k: &Knowledge) -> Option<f64> {
         let blows = f64::from(self.blows(k)?) / 100.0;
-        let dice = self
-            .weapon()
-            .map_or(0.0, |w| f64::from(w.dd) * (f64::from(w.ds) + 1.0) / 2.0);
-        Some(blows * (dice + f64::from(self.gear.to_d)).max(0.0))
+        let per_blow = self.weapon().map_or(1.0, |w| {
+            f64::from(w.dd) * (f64::from(w.ds) + 1.0) / 2.0 + f64::from(w.to_d)
+        });
+        Some(blows * (per_blow + f64::from(self.gear.to_d)).max(0.0))
     }
 
     /// Free pack slots, by the engine's own count (quiver included).
@@ -488,7 +540,7 @@ mod tests {
         better.dd = 2;
         better.ds = 5;
         better.to_d = 3;
-        let tried = w.character.wearing(0, Some(better));
+        let tried = w.character.wearing(&k, 0, Some(better));
         assert_eq!(
             tried.melee_per_turn(&k),
             Some(9.0),
@@ -502,7 +554,119 @@ mod tests {
         // A 30 lb weapon at STR 17 (hold 28 lb) is too heavy: one blow.
         let mut heavy = w.character.equipment[0].item.clone().unwrap();
         heavy.weight = 300;
-        assert_eq!(w.character.wearing(0, Some(heavy)).blows(&k), Some(100));
+        assert_eq!(w.character.wearing(&k, 0, Some(heavy)).blows(&k), Some(100));
+    }
+
+    /// M2 review, finding 6: a launcher's to-dam is for its shots, the
+    /// weapon's for its blows, and the rest of the gear's for every blow;
+    /// a stat ring changes the stats in use and so the blows.
+    #[test]
+    fn to_dam_and_stats_follow_the_engine() {
+        let o = sample();
+        let w = world_of(&o);
+        let k = energy();
+        let mut c = w.character.clone();
+        c.equipment.push(Slot {
+            slot_type: 3, // EQUIP_RING
+            item: None,
+        });
+        let mut bow = c.equipment[0].item.clone().unwrap();
+        bow.dd = 0;
+        bow.ds = 0;
+        bow.to_d = 10;
+        assert_eq!(
+            c.wearing(&k, 1, Some(bow)).melee_per_turn(&k),
+            Some(2.5),
+            "a (+0,+10) bow adds nothing to melee"
+        );
+        let mut ring = c.equipment[0].item.clone().unwrap();
+        ring.to_d = 2;
+        ring.modifiers = vec![0; 13];
+        assert_eq!(
+            c.wearing(&k, 2, Some(ring.clone())).melee_per_turn(&k),
+            Some(4.5),
+            "a ring of damage adds to every blow"
+        );
+        let mut weapon = c.equipment[0].item.clone().unwrap();
+        weapon.to_d = 4;
+        assert_eq!(c.wearing(&k, 0, Some(weapon)).melee_per_turn(&k), Some(6.5));
+        ring.to_d = 0;
+        ring.modifiers[0] = 3; // STR +3
+        let strong = c.wearing(&k, 2, Some(ring));
+        let s = strong.status.as_ref().unwrap();
+        assert_eq!(s.stat_use[0], 18 + 20, "17 +3 is 18/20");
+        assert_eq!(s.stat_ind[0], 17);
+        assert_eq!(c.status.as_ref().unwrap().stat_use[0], 17, "the copy only");
+        let off = strong.wearing(&k, 2, None);
+        assert_eq!(
+            off.status.as_ref().unwrap().stat_use[0],
+            17,
+            "taking it off undoes it"
+        );
+
+        // The reviewer's case (R3): STR 3 at the floor, held there by a
+        // -5 item. Taking it off leaves 3 in the engine (the bonus in force
+        // was the floor's, not zero); the model must not invent STR 8.
+        let mut weak = c.clone();
+        let mut cursed = c.equipment[0].item.clone().unwrap();
+        cursed.modifiers = vec![0; 13];
+        cursed.modifiers[0] = -5;
+        weak.equipment[2].item = Some(cursed);
+        weak.gear = GearBonuses::of(&weak.equipment);
+        if let Some(s) = weak.status.as_mut() {
+            s.stat_cur[0] = 3;
+            s.stat_use[0] = 3;
+        }
+        let removed = weak.wearing(&k, 2, None);
+        assert_eq!(
+            removed.status.as_ref().unwrap().stat_use[0],
+            3,
+            "no stat is invented at the floor"
+        );
+    }
+
+    /// M2 third review, 4: at the floor of 3, the bonus in force is the
+    /// one nearest the known bonus (race, class, the gear's known
+    /// modifiers), which is the engine's when nothing unseen changes it.
+    #[test]
+    fn the_stat_floor_follows_the_known_bonus() {
+        let o = sample();
+        let w = world_of(&o);
+        let mut k = energy();
+        k.classes[0].stat_adj = [0; 5];
+        let mut c = w.character.clone();
+        c.equipment.push(Slot {
+            slot_type: 3,
+            item: None,
+        });
+        let ring = |str_mod: i16| {
+            let mut r = c.equipment[0].item.clone().unwrap();
+            r.modifiers = vec![0; 13];
+            r.modifiers[0] = str_mod;
+            r
+        };
+        let at = |c: &Character, cur: i16, used: i32, worn: Option<Item>| {
+            let mut c = c.clone();
+            c.equipment[2].item = worn;
+            c.gear = GearBonuses::of(&c.equipment);
+            let s = c.status.as_mut().unwrap();
+            s.stat_cur[0] = cur;
+            s.stat_use[0] = used;
+            c
+        };
+        let str_of = |c: &Character| c.status.as_ref().unwrap().stat_use[0];
+        // STR 3, no bonus at all: a +5 ring gives 8, as in the engine.
+        assert_eq!(str_of(&at(&c, 3, 3, None).wearing(&k, 2, Some(ring(5)))), 8);
+        // STR 4 held at 3 by a -5 ring: taking it off gives 4 back.
+        assert_eq!(
+            str_of(&at(&c, 4, 3, Some(ring(-5))).wearing(&k, 2, None)),
+            4
+        );
+        // STR 3 held at 3 by a -5 ring: taking it off leaves 3.
+        assert_eq!(
+            str_of(&at(&c, 3, 3, Some(ring(-5))).wearing(&k, 2, None)),
+            3
+        );
     }
 
     fn world_of(o: &Observation) -> World {
@@ -649,7 +813,8 @@ mod tests {
         cursed.elements = vec![(0, 0); ELEM_MAX];
         cursed.elements[3] = (-1, 0);
         cursed.elements[4] = (-1, 0);
-        let tried = c.wearing(1, Some(cloak)).wearing(0, Some(cursed));
+        let k = energy();
+        let tried = c.wearing(&k, 1, Some(cloak)).wearing(&k, 0, Some(cursed));
         assert_eq!(tried.gear.ac, 1 + 3 + 1 + 3);
         assert_eq!(tried.gear.resist[3], 0, "resist and vulnerability cancel");
         assert_eq!(tried.gear.resist[4], -1, "vulnerable");

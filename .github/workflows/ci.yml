@@ -24,7 +24,13 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
       - run: cargo install bindgen-cli --version 0.73.2 --locked
       - run: engine/bindings/generate.sh --check
-      - run: python3 -m unittest discover -s engine/tests
+      # Upstream's own commit, so that test_engine checks that engine/UPSTREAM's
+      # tree really is e473720's (E review, finding 7); without it, it fails.
+      - run: |
+          commit=$(sed -n 's/^commit=//p' engine/UPSTREAM)
+          git init -q vendor/angband
+          git -C vendor/angband fetch -q --depth 1 --filter=tree:0 https://github.com/angband/angband "$commit"
+      - run: ENGINE_UPSTREAM_REQUIRED=1 python3 -m unittest discover -s engine/tests
 
   engine:
     # Builds the Rust Borg on our own integration (engine/, docs/SPEC.md §3,
@@ -57,10 +63,19 @@ jobs:
       - run: BORG_OBSERVATION_LOG=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG=$RUNNER_TEMP/knowledge.json BORG_IMPL=rust harness/run.sh harness/out/observations 101 0 0 3000
       - run: BORG_OBSERVATION_LOG_CHECK=$RUNNER_TEMP/observations.jsonl BORG_WORLD_LOG_CHECK=$RUNNER_TEMP/worlds.txt BORG_KNOWLEDGE_LOG_CHECK=$RUNNER_TEMP/knowledge.json cargo test -q -p borg-reborn-rs recorded -- --nocapture
       # RNG isolation (M1 review): perception while hallucinating must not move
-      # the game's RNG; each think asserts it (feature test-hallucinate).
-      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate harness/build.sh
+      # the game's RNG, nor change what is observed; each think asserts it
+      # (feature test-hallucinate). Perception against the engine (T2.5): each
+      # think writes its comparison to truth.jsonl (feature test-perception).
+      - run: BORG_IMPL=rust BORG_TEST_FEATURES=test-hallucinate,test-perception harness/build.sh
       # A test build's deaths are not natural deaths of an arm: own registry.
       - run: BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-hallucinate
+      # Full too: smoke has too few monsters to meet every case (T2.5 found
+      # one only in full). The test build plays the reference's games, and
+      # perception agrees with the engine on every think.
+      - run: BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh full harness/out/full-test
+      - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
+      - run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
+      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate harness/out/full-test
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
@@ -73,7 +88,8 @@ jobs:
           name: ci-death-registry
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths"
+      # Every natural death in the run outputs has a dossier (E review, finding 3).
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       - run: for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).

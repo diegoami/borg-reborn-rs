@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0879-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a giant green frog",
+  "terminal": {
+    "cause": "a giant green frog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 135,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "menu",
+    "git_rev": "1137bfee88c77a66f1eafcfd36015243d0d44b76",
+    "git_dirty": "no",
+    "source_sha256": "ce6a50aa116de39ac09f4df78e888f734a1685eec85f6e9f0e0031a5c3c8467d",
+    "binary_sha256": "a50d374c7d035d7d6a3b5a2682db66ecd3f48fc70cd879d933dc792cad73312b",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 15,
+    "of": 15
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-1000/-home-diego-projects-borg-reborn-rs/5e26c85b-10c7-4fa3-ae88-6116caaefc5d/scratchpad/m2-full/full-7-ranger-4",
+      "result_sha256": "f91907982f3ecfdcf9eb1c8bbd09ccf8f75d28687ea3d2aec796acb36732faea",
+      "raw_sha256": {
+        "keys.log": "f91907982f3ecfdcf9eb1c8bbd09ccf8f75d28687ea3d2aec796acb36732faea",
+        "messages.log": "7bec921a50aea73f55a1209e6ab0b85f11df17a86bb3fb5813ce5b9b34bfc626",
+        "state.log": "057520c15985db5717ff037f0f8233ac0abd8c346be550d0781ba4cbc50193f1"
+      },
+      "source_commit": "1137bfee88c77a66f1eafcfd36015243d0d44b76",
+      "binary_sha256": "a50d374c7d035d7d6a3b5a2682db66ecd3f48fc70cd879d933dc792cad73312b"
+    }
+  ],
+  "encounter_family": "start-0b22efb7abe792839afb04a977e6ddd3dd112a418a09119a9c85c9f4a1e054f4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "eabfd66646d13e7571f934e40582642340aa59a62127c55953e8370d1ac367ac",
+    "config.txt": "711cce4ac835e30395b09c63821423ff198e1157537b29349ee9d2328f46f359",
+    "depths.json": "3b3b7de0fc44632d1fc46bb40612597ece2fecc5af225a614bb36c822086af95",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "098921dddcb028c45c828c8eb9cd6dfd1dd48fe52c0982deb7d0ab4f5e52989f",
+    "trace-tail.jsonl": "ac5990298d90ffeb14b90e9cddaae530340bd76191684e31c5d746e34cd10469"
+  },
+  "investigation": null,
+  "issue": null
+}

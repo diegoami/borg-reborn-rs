@@ -16,8 +16,8 @@ build time (`engine/apply-patches.sh DEST`).
 One file, `lib/user/save/Makefile`, is ignored by upstream's own
 `.gitignore` but tracked upstream, so it is force-added here too.
 
-Today's `angband/` (borg-rs's tree) stays until TE.4 switches the build to
-`engine/`. Then it goes.
+borg-rs's tree (`angband/` at the root) was used until TE.4 switched the
+build to `engine/`, and removed in TE.6.
 
 ## The patch series: `engine/patches/`
 
@@ -152,3 +152,10 @@ changes.
 TE.5 made them from the build on our own integration, after TE.4's
 reproduction check: that build plays the same keys as the build on
 borg-rs's tree, smoke and full.
+
+**Regenerated after E's review** (finding 1): the full suite's lines had no
+`menu` flag, so 20 of its 45 runs played another race or class than they
+asked for. With the flag, those 20 runs play their requested characters,
+and their keys, messages and states change; the other 25, smoke and
+smoke-exact are unchanged. Each `REFERENCE` now takes its provenance from
+the suite's manifest (finding 8).

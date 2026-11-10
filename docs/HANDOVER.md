@@ -2,6 +2,200 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10, end of day: M2's review continues tomorrow
+
+**The review of M2 (#99) is tomorrow, 2026-11-11.** The owner runs it with
+the reviewer they choose (RULES 6). #99's description has the prompt,
+pinned to the head of `main`. Until it is in:
+- nothing else merges into `main`, so that #99's diff stays what the
+  review reads;
+- #103 (borg-runner as source S15) waits, CI green. After #99 merges,
+  merge `main` into it (no force-push) and merge it;
+- M3 doesn't start.
+
+When the review is in: if it is clean, the owner merges #99, `m2` is
+tagged on the merge, the findings become M3 issues, then #103, then M3.
+If it isn't, fix the findings in PRs into `main`, repin #99's prompt and
+map the findings in a comment, as for the three passes so far (#100–#104).
+
+## 2026-11-10: M2's third review: not done; findings fixed
+
+Kimi K3.1 Pro's third review of #99, at `fb069d8`: **not done**. R2 and R4
+are resolved. One blocking finding and three should-fix ones were new, all
+fixed in the PR after #102:
+1. **Blocking:** perception read `pack_size` inventory entries, but the
+   pack has `pack_size + 1` and may be overfull by one. It now reads them
+   all.
+2. **Slots and levels:** the equipment's slot count and types are checked
+   against the race's static body, and the occupied slots against the
+   engine's; `Item.level` is compared.
+3. **Pairing:** each engine object is paired with the observed item at its
+   place and position. Each pair is compared field by field from the object
+   directly, and whole against `analyze()` of that very object: exact
+   weight, flags, modifiers, elements, description, awareness, runes. The
+   description, awareness and runes come from the same engine functions as
+   perception, so that half checks pairing and completeness, not those
+   functions.
+4. **The stat floor:** `wearing` takes the bonus nearest the known one
+   (race, class, the gear's known modifiers). That is exact unless
+   something unseen changes the stat at the floor. The reviewer's
+   counterexamples are tests.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- The reviewer's faults now fail: slot types off by one, 48,948
+  differences; zeroed item levels, 20,395.
+- The normal build plays the references' games (3/3, 3/3, 45/45). Its
+  deaths are D0943–D0988.
+- **Not exercised:** no suite run has an overfull pack or mixed cursed and
+  uncursed stacks.
+
+## 2026-11-10: M2's re-review: done with changes; R1–R4 fixed
+
+Kimi K3.1 Pro re-reviewed #99 at `eef7a8c`: **done with changes**. Both
+blocking findings and the first round are resolved. Four remained, fixed
+in the PR after #101:
+- **R1:** the gear check is now place-aware. The engine says where each
+  object is (`equipped_item_slot`, `object_is_in_quiver`), and each item
+  is compared on its identity and known combat values, and known flags
+  against bounds (superseded by the third review's pairing, below).
+- **R2:** the pack count is compared with a fresh `pack_slots_used` call.
+- **R3:** at the stat floor of 3, `wearing` takes the lowest result of all
+  the bonuses that fit, so no stat is invented.
+- **R4:** monsters are compared as multisets, so duplicates count.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- The reviewer's faults now fail: weapon and launcher swapped, 8,158
+  differences; every monster duplicated, 48.
+- The normal build plays the references' games (3/3, 3/3, 45/45). Its
+  deaths are D0897–D0942.
+
+**Next:** the owner merges #99 (or asks for another pass). Then tag `m2`,
+the remaining findings (none open) become M3 issues, and M3 starts.
+
+## 2026-11-10: M2's review (#99): not done; findings fixed
+
+Kimi K3.1 Pro reviewed M2 at `70cb9b5`: **not done**, with two blocking and
+six should-fix findings. They are fixed in #100 (findings 7, 8, doc nits)
+and the PR after it (findings 1–6):
+- **Finding 1 (blocking):**
+  - **Fix:** the shop number and the web flag are read only where the
+    player knows a shop or a floor, as the C Borg guards them.
+  - **Check:** the truth check fails on any other shop or web.
+- **Finding 2 (blocking):**
+  - **Unknown grids:** a grid the player knows on the panel but the world
+    doesn't is a difference.
+  - **Panel:** the observed panel is checked against the engine's own
+    `panel_contains`.
+- **Finding 3:** monsters are compared field by field, and the gear item
+  by item against the engine's gear list.
+- **Finding 4:** every run needs one truth line per Borg decision, and a
+  lost truth log fails the test build.
+- **Finding 5:** `term_win` and `random` are in the types table, and a
+  field-level audit fails on fields of unlisted types.
+- **Finding 6:**
+  - **To-dam:** the weapon and the launcher are left out of the gear's
+    to-hit and to-dam; melee adds the weapon's own.
+  - **Stats:** `wearing` recomputes the stats in use (`modify_stat_value`).
+- **Findings 7–8 (#100):** `--runs` matches deaths by (family, keys);
+  `make-reference.sh` refuses before writing anything.
+
+**Evidence:**
+- Smoke and full on the test build: 76,175 thinks, 0 differences.
+- Kimi's three faults, which passed before, now fail: 219,103, 223,230 and
+  96 differences.
+- The normal build still plays the references' games (3/3, 3/3, 45/45),
+  so the references stay. Its deaths are D0851–D0896.
+
+**Next:** a re-review of #99 is the owner's call (RULES 6). #99's prompt is
+updated to the new head.
+
+## 2026-11-10: T2.5, perception against the engine; M2 complete
+
+The owner closed E's review without a re-review. borg-zoo#48 now asks to
+move `4.2.6-reborn-rust` to `f0eeee2`; the zoo check there gives the same
+smoke play hashes as M1, and its death is D0804 (#97).
+
+**T2.5 (#16):**
+- **The check:** a test feature, `test-perception`, compares every think
+  with the engine through other routes (`engine.rs`, below `ENGINE TRUTH`):
+  - the world's remembered map against `player->cave`;
+  - the engine's visible monsters on the panel against the monsters seen;
+  - the gear list against the observed equipment, quiver and pack;
+  - our pack count against `pack_slots_used`.
+  `tools/check-perception.py` fails on any difference. It also checks the
+  status against the frontend's `state.log`.
+- **Results:** smoke and full, 76,175 thinks, have 0 differences.
+  - Declared, not failed: 220,350 grid-thinks the player knows but the
+    world never saw (218,978 in full, 1,372 in smoke), and 96 visible
+    monsters off the panel. The C Borg
+    reads only the panel too (`borg-update.c:264`).
+  - An injected fault gives 8,205 differences, so the check can fail.
+- **One defect found:** while hallucinating, `map_info` puts `m_idx = 1`
+  on an empty grid. When monster 1 stood there unseen, the Borg took it as
+  seen; 11 of 45 full runs failed the hallucination assertion, and CI had
+  run only smoke. Perception now also needs `monster_is_visible`
+  (`map_info`'s own test, a B read). Our suites play the same games
+  (references unchanged: 3/3, 3/3, 45/45), since none of their runs met
+  that case.
+- **D3:** reason T for the check's reads, used only below the marker
+  (`test_reads.py`). The types read field by field are listed (E review,
+  finding 10).
+- **CI:** one test build with both features runs smoke and full; its play
+  equals the references, and `check-perception.py` passes.
+- **Deaths:** D0805–D0850.
+
+**M2 is complete:** T2.1–T2.5. Next is the review PR (`main` → `reviewed`)
+with its prompt; the owner chooses the reviewer (RULES 6). M3 doesn't start
+before that.
+
+## 2026-11-10: E's review is in; fixes in three PRs
+
+Kimi's review of E (on #92) has ten findings. They are fixed in three PRs
+into `main`:
+1. **The frontend (#95, RULES 22):** `loaded` and `exact_turns` are in
+   every summary (finding 5).
+   - Play doesn't change: keys, messages and states equal the references
+     (smoke 3/3, smoke-exact 3/3, full 45/45).
+   - `harness/diff` compares the two fields when both sides have them, as
+     it does `game_options`.
+   - Its deaths are recorded at its source (D0712–D0757).
+2. **The code (#96):** suites, perception while hallucinating, the death and
+   reference tools.
+   - References are regenerated: the full suite's `menu` fix changes
+     exactly the 20 runs whose character changes.
+   - Smoke, smoke-exact and the other 25 full runs are unchanged.
+   - Its deaths are D0758–D0803.
+3. **Documents, rules and CI (#94):**
+   - findings 6, 7, 9 and 10's document nits;
+   - RULES 12 narrowed by the owner: measured runs only, not watched games;
+   - CI fetches upstream `e473720`, so the tree check no longer skips.
+
+**Left:**
+- ENGINE-READS' types table (`term`, `monster`, `player_class`, `store`):
+  T2.5's D3 recheck (#16).
+- borg-zoo#48: `4.2.6-reborn-rust`'s `ref` moves to the commit that merges
+  #94, not to `e`, since #96 changes the full suite's play (the zoo's own
+  cells pass `-race`/`-class` with `-menu-letters`; whether its play
+  changed is for the zoo's check).
+- Whether the fixes get a re-review is the owner's call (RULES 6).
+- Then T2.5 (#16) and M3.
+
+## 2026-11-09: E merged before its review; a review after the fact
+
+The owner had the session merge #92 (`main` → `reviewed`). Tag `e`
+(`0a92da0`) was pushed, milestone E closed and borg-zoo#48 filed (move
+`4.2.6-reborn-rust` to `e`), all **before any review**. The owner then
+asked for the review after the fact:
+- the reviewer, the owner's choice, reviews `55d7476` (the tree of `e`) and
+  posts on #92;
+- findings are fixed in PRs into `main`;
+- tags are not moved (RULES 5);
+- borg-zoo#48's first request is on hold until the review is clean.
+
+Other work (T2.5, #16) may go on meanwhile.
+
 ## 2026-11-09: TE.9 and milestone E complete; E's review
 
 - **TE.9:** `engine/tests/test_independence.py` (CI, rust job) checks that
