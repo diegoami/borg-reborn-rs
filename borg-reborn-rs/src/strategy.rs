@@ -426,8 +426,13 @@ impl FirstStrategy {
                 .insert(goal.mode, turn + i64::from(ctx.params.goal_cooldown_turns));
             self.goal = None;
         }
-        // Utilities, highest first; explore is the default occupation
-        // and descend takes over when explore is cooling or done.
+        // Utilities, highest first. Explore is the default occupation
+        // and descend takes over when explore is cooling or done — but
+        // not in town: the town has no experience and one staircase the
+        // character stands on at birth (c15 TOWN-01; S15 INSTRUCTIONS
+        // §2), and exploring it instead of leaving is how one run
+        // starved to death mapping it for 50,000 turns.
+        let descend_first = ctx.world.level.depth == 0;
         let frontier = ctx
             .paths
             .map(ctx.world, ctx.knowledge, &PathGoal::Frontier)
@@ -437,7 +442,9 @@ impl FirstStrategy {
             .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
             .remaining(ctx.world, ctx.view.x, ctx.view.y);
         let cooled = |m: Mode| self.cooldowns.get(&m).is_none_or(|&t| turn >= t);
-        if frontier != UNREACHED && cooled(Mode::Explore) {
+        if descend_first && stairs != UNREACHED && cooled(Mode::Descend) {
+            Mode::Descend
+        } else if frontier != UNREACHED && cooled(Mode::Explore) {
             Mode::Explore
         } else if stairs != UNREACHED && cooled(Mode::Descend) {
             Mode::Descend

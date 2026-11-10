@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1263-rust-seed1064",
+  "run_kind": "harness",
+  "character": "Kobold Rogue",
+  "raw_cause": "a giant white centipede",
+  "terminal": {
+    "cause": "a giant white centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1190,
+    "race_idx": 10,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1064,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "9f2d2a66b14eddc64864c5b4b1c065eccf5a9a8b75166a0b1847fbb1bffb1b2b",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 120,
+    "of": 120
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-6-rogue-4",
+      "result_sha256": "c3779c649d6b7539a61f9c55b09d1a44ce4bbd9d015c35c49e01763e984f345c",
+      "raw_sha256": {
+        "keys.log": "c3779c649d6b7539a61f9c55b09d1a44ce4bbd9d015c35c49e01763e984f345c",
+        "messages.log": "919ab09b755be55e1568e8b6c30de5d170d27efed41fea5637cccda45723ff0b",
+        "state.log": "b0e58140e0257eaad11eb83a1405864f1cbc45cabcc39451888f1f23ea3a4eba"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-91b553600d52a5167c2d778b99a464bf69a9f6306c6c36403ec682a1df98b6a8",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "3bd337549d4028a2d8ea7f89aa52ea8dc2db8b4e003e5c06892b0dd4aa3da630",
+    "depths.json": "a87e853e443ad2af08767b9914d03c973afb81816e4b508e598b718e363cce38",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "6c82d1c39481812072590d369f9800c04247fd691d21ce3a01a24d632eea0307",
+    "trace-tail.jsonl": "334d1fce6adf89a131eea54e606d8b14ed207cdb30acbab06571eb3eb5764b6e"
+  },
+  "investigation": null,
+  "issue": null
+}

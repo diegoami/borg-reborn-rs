@@ -366,11 +366,17 @@ impl Level {
         let Some(r) = self.at_mut(x, y) else {
             return;
         };
-        // map_info() reports the player's memory: an unknown grid (feature
-        // 0) says nothing new, so what the Borg knew stays.
-        if grid.feat != 0 {
-            r.feat = grid.feat;
-        }
+        // map_info() reports the player's own memory (`g->f_idx =
+        // square(player->cave, grid)->feat`, cave-map.c:100-101), and
+        // that memory is mutable: at nightfall in town every boring
+        // floor is forgotten (`square_set_known_feat(FEAT_NONE)` via
+        // `cave_illuminate`, cave-map.c:581-585, game-world.c:478-492),
+        // and a wall bump forgets what it disproves (`square_forget`,
+        // cmd-cave.c). A feature 0 therefore always means the player's
+        // memory of the grid is empty, and the world follows it —
+        // holding a private map the player no longer has is how T3.4's
+        // CI run diverged 2.5 million grids over one town night.
+        r.feat = grid.feat;
         if grid.in_view {
             r.seen = Some(turn);
         }
@@ -687,7 +693,12 @@ mod tests {
     }
 
     #[test]
-    fn an_unknown_grid_does_not_erase_memory() {
+    fn a_forgotten_grid_erases_to_follow_the_player() {
+        // The player's memory is what map_info reports, and it is
+        // mutable: a forgotten grid (nightfall in town forgets every
+        // boring floor, cave-map.c:581-585; a wall bump forgets what it
+        // disproves) reports feature 0, and the world follows. The
+        // world never holds a map the player no longer has.
         let mut o = sample();
         let mut w = world_of(&o);
         o.turn += 10;
@@ -695,7 +706,7 @@ mod tests {
         o.panel.grids[0].in_view = false;
         w.update(&o);
         let g = w.level.at(10, 20).unwrap();
-        assert_eq!((g.feat, g.seen), (1, Some(12345)));
+        assert_eq!((g.feat, g.seen), (0, Some(12345)), "forgotten, once seen");
     }
 
     #[test]

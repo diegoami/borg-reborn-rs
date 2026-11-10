@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1260-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2875,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+    "git_dirty": "yes",
+    "source_sha256": "0e7070b0f59546ef1d06a980efa20e2c6d2f7dcaa998b5b773b2990949f8443c",
+    "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9",
+    "borg_txt_sha256": "7333bbd27a21a09e4a74fcee94fd434a712081e329e8f564c2e958854c17ceb3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 208
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-fulltest/full-6-rogue-2",
+      "result_sha256": "99aa134567c5971271e92c02492a3d6255971656e076b3ad1f095395f791a59a",
+      "raw_sha256": {
+        "keys.log": "99aa134567c5971271e92c02492a3d6255971656e076b3ad1f095395f791a59a",
+        "messages.log": "68a7959d4554c83c6c5b3f103acff000bd6c416f91f8c454cfc2a7e95ecad978",
+        "state.log": "3c04f71496a0c17d70177a709f42d88d91c380498fd96515cae380657e396ea3"
+      },
+      "source_commit": "795a3bfb1c5c9d09ee579fb4ef528a8e747333de",
+      "binary_sha256": "0e8bb06f6f683a91ffe15a00da536cf05e0da7aac66208831b5b0fa66ee373d9"
+    }
+  ],
+  "encounter_family": "start-1de9c331d0bfac1b05f1e366f30be3e05af7c22172313f961cd562d55e43f573",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98da3b203e2d9996ae732f2a8f229c1494ba3bd743760b9eb184f16f40594d51",
+    "config.txt": "486fa035129cccad4b532f828015b70ec5d08c239138906dd12715442cd77fbf",
+    "depths.json": "cebe06efaf50a3a8fa103aec7a603ed2ba47e8713099c5092d6a8ad095f5c56a",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "23212c2c4c2a873345b3073605868acb6a7e1793c183fdb9d567fdd0754a039f",
+    "trace-tail.jsonl": "1ceac5dd13aac5072fc63c9e81f8297b529d6ad7969aa6a56bd5064fb2e26443"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,51 @@
+{
+  "parameters": [
+    {
+      "default": 2,
+      "evidence": "GOALS principle 6 (no loop without game time): after a refused rest one walk may also be refused (a wall or a monster), then the Borg takes an action that always uses time (M1 review, #42)",
+      "max": 8,
+      "min": 1,
+      "name": "max_tries_per_turn",
+      "unit": "thinks at one game turn",
+      "value": 2
+    },
+    {
+      "default": 70,
+      "evidence": "T1.5 placeholder, kept by the first strategy: rest when below 70% of maximum hit points; the strategy-manual's REST rules are the candidate replacement (c15 REST-01, to be measured, RULES 14)",
+      "max": 100,
+      "min": 0,
+      "name": "rest_below_hp_pct",
+      "unit": "percent of maximum hit points",
+      "value": 70
+    },
+    {
+      "default": 75,
+      "evidence": "the C Borg's rest command, 'R' '7' '5' Enter (spec §2.6)",
+      "max": 9999,
+      "min": 1,
+      "name": "rest_turns",
+      "unit": "player turns",
+      "value": 75
+    },
+    {
+      "default": 2000,
+      "evidence": "GOALS principle 6 (a budget in game turns): a level that has revealed nothing new for this long fails its explore goal. The scale is a manual-reading player's ~100 decisions on one level (borg-runner ACCUMULATED_KNOWLEDGE §1, five runs); a placeholder until the zoo measures it (RULES 14)",
+      "max": 50000,
+      "min": 100,
+      "name": "explore_budget_turns",
+      "unit": "game turns without progress",
+      "value": 2000
+    },
+    {
+      "default": 100,
+      "evidence": "GOALS principle 6 (a failed goal is blocked for a while): short enough that the mode is retried within a level's explore budget, long enough to break one-goal oscillation; a placeholder until the zoo measures it (RULES 14)",
+      "max": 10000,
+      "min": 0,
+      "name": "goal_cooldown_turns",
+      "unit": "game turns",
+      "value": 100
+    }
+  ],
+  "profile": "harness/profiles/reborn-default.txt",
+  "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+}
