@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1498; distinct starting conditions: 1497; retained process attempts: 1498 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1545; distinct starting conditions: 1544; retained process attempts: 1545 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1504,6 +1504,53 @@ Dossiers: 1498; distinct starting conditions: 1497; retained process attempts: 1
 | [D1516-rust-seed1003](D1516-rust-seed1003/report.md) | unassigned | `4402f1241990` | 1003 | starvation | 89410 | unassessed |
 | [D1517-rust-seed1063](D1517-rust-seed1063/report.md) | unassigned | `4402f1241990` | 1063 | starvation | 89250 | unassessed |
 | [D1518-rust-seed1001](D1518-rust-seed1001/report.md) | unassigned | `4402f1241990` | 1001 | a giant white mouse | 81753 | unassessed |
+| [D1519-rust-seed102](D1519-rust-seed102/report.md) | unassigned | `9124a2b0c52c` | 102 | an acolyte | 1433 | unassessed |
+| [D1520-rust-seed103](D1520-rust-seed103/report.md) | unassigned | `9124a2b0c52c` | 103 | a floating eye | 2522 | unassessed |
+| [D1521-rust-seed1041](D1521-rust-seed1041/report.md) | unassigned | `9124a2b0c52c` | 1041 | a grey mushroom patch | 1282 | unassessed |
+| [D1522-rust-seed1024](D1522-rust-seed1024/report.md) | unassigned | `9124a2b0c52c` | 1024 | a floating eye | 1088 | unassessed |
+| [D1523-rust-seed1022](D1523-rust-seed1022/report.md) | unassigned | `9124a2b0c52c` | 1022 | Grip, Farmer Maggot's Dog | 2056 | unassessed |
+| [D1524-rust-seed1044](D1524-rust-seed1044/report.md) | unassigned | `9124a2b0c52c` | 1044 | a giant white centipede | 1578 | unassessed |
+| [D1525-rust-seed1021](D1525-rust-seed1021/report.md) | unassigned | `9124a2b0c52c` | 1021 | a small kobold | 3363 | unassessed |
+| [D1526-rust-seed1013](D1526-rust-seed1013/report.md) | unassigned | `9124a2b0c52c` | 1013 | a small kobold | 2157 | unassessed |
+| [D1527-rust-seed1043](D1527-rust-seed1043/report.md) | unassigned | `9124a2b0c52c` | 1043 | a floating eye | 3611 | unassessed |
+| [D1528-rust-seed1014](D1528-rust-seed1014/report.md) | unassigned | `9124a2b0c52c` | 1014 | a floating eye | 5397 | unassessed |
+| [D1529-rust-seed1020](D1529-rust-seed1020/report.md) | unassigned | `9124a2b0c52c` | 1020 | a giant yellow centipede | 5682 | unassessed |
+| [D1530-rust-seed1034](D1530-rust-seed1034/report.md) | unassigned | `9124a2b0c52c` | 1034 | a grey mushroom patch | 7392 | unassessed |
+| [D1531-rust-seed1002](D1531-rust-seed1002/report.md) | unassigned | `9124a2b0c52c` | 1002 | a grey mushroom patch | 9210 | unassessed |
+| [D1532-rust-seed1030](D1532-rust-seed1030/report.md) | unassigned | `9124a2b0c52c` | 1030 | a giant white ant | 6569 | unassessed |
+| [D1533-rust-seed1010](D1533-rust-seed1010/report.md) | unassigned | `9124a2b0c52c` | 1010 | a grey mushroom patch | 4937 | unassessed |
+| [D1534-rust-seed1033](D1534-rust-seed1033/report.md) | unassigned | `9124a2b0c52c` | 1033 | a grey mushroom patch | 9898 | unassessed |
+| [D1535-rust-seed1023](D1535-rust-seed1023/report.md) | unassigned | `9124a2b0c52c` | 1023 | a grey mushroom patch | 10806 | unassessed |
+| [D1536-rust-seed1042](D1536-rust-seed1042/report.md) | unassigned | `9124a2b0c52c` | 1042 | poison | 21280 | unassessed |
+| [D1537-rust-seed1063](D1537-rust-seed1063/report.md) | unassigned | `9124a2b0c52c` | 1063 | a floating eye | 7510 | unassessed |
+| [D1538-rust-seed1054](D1538-rust-seed1054/report.md) | unassigned | `9124a2b0c52c` | 1054 | a floating eye | 12835 | unassessed |
+| [D1539-rust-seed1064](D1539-rust-seed1064/report.md) | unassigned | `9124a2b0c52c` | 1064 | a grey mushroom patch | 4055 | unassessed |
+| [D1540-rust-seed1074](D1540-rust-seed1074/report.md) | unassigned | `9124a2b0c52c` | 1074 | a floating eye | 2237 | unassessed |
+| [D1541-rust-seed1050](D1541-rust-seed1050/report.md) | unassigned | `9124a2b0c52c` | 1050 | starvation | 89180 | unassessed |
+| [D1542-rust-seed1052](D1542-rust-seed1052/report.md) | unassigned | `9124a2b0c52c` | 1052 | starvation | 44690 | unassessed |
+| [D1543-rust-seed1073](D1543-rust-seed1073/report.md) | unassigned | `9124a2b0c52c` | 1073 | a grey mushroom patch | 9745 | unassessed |
+| [D1544-rust-seed1081](D1544-rust-seed1081/report.md) | unassigned | `9124a2b0c52c` | 1081 | starvation | 89210 | unassessed |
+| [D1545-rust-seed1053](D1545-rust-seed1053/report.md) | unassigned | `9124a2b0c52c` | 1053 | a floating eye | 11708 | unassessed |
+| [D1546-rust-seed1000](D1546-rust-seed1000/report.md) | unassigned | `9124a2b0c52c` | 1000 | starvation | 89250 | unassessed |
+| [D1547-rust-seed1003](D1547-rust-seed1003/report.md) | unassigned | `9124a2b0c52c` | 1003 | a yellow mushroom patch | 24845 | unassessed |
+| [D1548-rust-seed1061](D1548-rust-seed1061/report.md) | unassigned | `9124a2b0c52c` | 1061 | starvation | 44700 | unassessed |
+| [D1549-rust-seed1072](D1549-rust-seed1072/report.md) | unassigned | `9124a2b0c52c` | 1072 | starvation | 89220 | unassessed |
+| [D1550-rust-seed1083](D1550-rust-seed1083/report.md) | unassigned | `9124a2b0c52c` | 1083 | starvation | 89240 | unassessed |
+| [D1551-rust-seed1070](D1551-rust-seed1070/report.md) | unassigned | `9124a2b0c52c` | 1070 | a floating eye | 28781 | unassessed |
+| [D1552-rust-seed1040](D1552-rust-seed1040/report.md) | unassigned | `9124a2b0c52c` | 1040 | starvation | 89200 | unassessed |
+| [D1553-rust-seed1012](D1553-rust-seed1012/report.md) | unassigned | `9124a2b0c52c` | 1012 | starvation | 89170 | unassessed |
+| [D1554-rust-seed1080](D1554-rust-seed1080/report.md) | unassigned | `9124a2b0c52c` | 1080 | starvation | 89240 | unassessed |
+| [D1555-rust-seed1031](D1555-rust-seed1031/report.md) | unassigned | `9124a2b0c52c` | 1031 | starvation | 89200 | unassessed |
+| [D1556-rust-seed1084](D1556-rust-seed1084/report.md) | unassigned | `9124a2b0c52c` | 1084 | starvation | 89240 | unassessed |
+| [D1557-rust-seed1071](D1557-rust-seed1071/report.md) | unassigned | `9124a2b0c52c` | 1071 | starvation | 89280 | unassessed |
+| [D1558-rust-seed1060](D1558-rust-seed1060/report.md) | unassigned | `9124a2b0c52c` | 1060 | starvation | 89310 | unassessed |
+| [D1559-rust-seed1062](D1559-rust-seed1062/report.md) | unassigned | `9124a2b0c52c` | 1062 | starvation | 89370 | unassessed |
+| [D1560-rust-seed1032](D1560-rust-seed1032/report.md) | unassigned | `9124a2b0c52c` | 1032 | starvation | 89220 | unassessed |
+| [D1561-rust-seed1011](D1561-rust-seed1011/report.md) | unassigned | `9124a2b0c52c` | 1011 | starvation | 89190 | unassessed |
+| [D1562-rust-seed1082](D1562-rust-seed1082/report.md) | unassigned | `9124a2b0c52c` | 1082 | starvation | 89340 | unassessed |
+| [D1563-rust-seed1004](D1563-rust-seed1004/report.md) | unassigned | `9124a2b0c52c` | 1004 | starvation | 89380 | unassessed |
+| [D1564-rust-seed1001](D1564-rust-seed1001/report.md) | unassigned | `9124a2b0c52c` | 1001 | starvation | 89320 | unassessed |
+| [D1565-rust-seed1051](D1565-rust-seed1051/report.md) | unassigned | `9124a2b0c52c` | 1051 | a giant white mouse | 82384 | unassessed |
 
 ## Aggregated actions
 
