@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -83,8 +83,7 @@
     "REPORT.md:196-220,228-240,306-311"
   ],
   "construction": "Gnome Mage CL2, 4/16 HP, D2. The report gives Fang at 25 HP, AC 36, speed 120, Magic Missile at 1 SP (never resists) and a Phase Door scroll. Fang is placed adjacent; the room is constructed.",
-  "limits": "An agent-player run, not a Borg death. Oil throwing and casting are not executor actions yet, so the fixture pins the walk that uses neither.",
-  "blocked_by": 127,
+  "limits": "An agent-player run, not a Borg death. The known Phase Door is now read at 4/16 HP; casting Magic Missile is still #127. The fixture checks the escape, not a measured rescue.",
   "player": {
     "race": 4,
     "class": 1,
@@ -95,9 +94,5 @@
     "max_sp": 4,
     "x": 4,
     "y": 3
-  },
-  "current": {
-    "action": "Attack"
-  },
-  "pins_forbidden": true
+  }
 }

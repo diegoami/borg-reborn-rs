@@ -92,8 +92,8 @@
   ],
   "construction": "High-Elf Rogue CL11, 91/91 HP, D20. The dossier gives the blood falcon at 6 HP and speed +30, twenty-one known CLW and five Speed; the falcon is placed adjacent and the room is constructed.",
   "verified": "owner-manual-branch.json: 306703 no Phase read; Speed on sight; both falcons one-hit; CLW cured blindness/confusion/bleeding; Detect Monsters; saved 306980 HP88/91.",
-  "limits": "A diagnostic alternative, not an independent Borg life. The current Borg cannot quaff, so only the refusal to spend the escape at full HP is structurally testable.",
-  "blocked_by": 122,
+  "limits": "A diagnostic alternative, not an independent Borg life. The Phase action now exists and the tactical layer reads the last Phase at full HP, the recorded fatal decision; last-item protection and landing risk are #121. Speed/CLW are #122.",
+  "blocked_by": 121,
   "player": {
     "race": 9,
     "class": 6,
@@ -106,7 +106,7 @@
   "depth": 20,
   "max_depth": 20,
   "current": {
-    "action": "Attack"
+    "action": "Read"
   },
-  "pins_forbidden": false
+  "pins_forbidden": true
 }

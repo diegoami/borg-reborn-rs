@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1582-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 9050,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "menu",
+    "git_rev": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+    "git_dirty": "no",
+    "source_sha256": "514ddf17f6b07be6ca06ee55aa65d7a4fb7e14459698ed55e3e8c75dee3507b1",
+    "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574",
+    "borg_txt_sha256": "e6d6978ca7222fc2ddc12072c2b6bb9d677a1890e958498c72793f5430a25375",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 903
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-122/full-1-mage-0",
+      "result_sha256": "3a7d8fbe69a4219a3846df671174ad4933997cdf8f9ab56be460146fc7015322",
+      "raw_sha256": {
+        "keys.log": "3a7d8fbe69a4219a3846df671174ad4933997cdf8f9ab56be460146fc7015322",
+        "messages.log": "914c57e7d4dc91c6f5db5cb427816235e3f06badbb47a16ecc2b249897c87d34",
+        "state.log": "dbfa858aeb4df0b377c5c4cfedfe1a78bf1552f79336cbb30eb930458b9ec802"
+      },
+      "source_commit": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+      "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574"
+    }
+  ],
+  "encounter_family": "start-bfd440b2817ccc1fe2d849c0b78a5a83d90a8f6a2c9d4b1f84b5697a7b38c9c4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5c37c5bfc088250d9aa1ea7beca8880e7644f0a616e74e5f0b2bafb5aec787fc",
+    "config.txt": "8b01b780441785381c676b1525fc39db26b57b377add13298a290375bb5aeec9",
+    "depths.json": "1404979a0d349bf041a2f192709c61e2b28d75dc97d7e054027127282c6840c7",
+    "params.json": "72096c68ef5b7f53d7b8b786ed0e125df6b4072d01e41ae2b62ed1760d0c3072",
+    "summary.json": "be4d4c40dd8d09ecc7057c9847d5de02dae2b9cd3bc57c1e33655911897d660c",
+    "trace-tail.jsonl": "e4d538da43d37ca8a7b45b415950cf1b9a593580891b933a54ae297c584035a4"
+  },
+  "investigation": null,
+  "issue": null
+}

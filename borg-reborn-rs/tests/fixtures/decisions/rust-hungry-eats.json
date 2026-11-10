@@ -1,0 +1,69 @@
+{
+  "id": "rust-hungry-eats",
+  "title": "Hungry with a known ration: eat before the timer reaches starvation",
+  "dossier": "docs/deaths/D1420-rust-seed1032",
+  "citations": [
+    "summary.json (starvation at 89,220 turns)",
+    "the M3 triage's four starvation deaths"
+  ],
+  "construction": "Dwarf Priest CL1, 14/14 HP, D1, food 100, one known ration, no monsters. The dossier gives the starvation shape; the ration and the open room are constructed.",
+  "limits": "A constructed state. It checks the food action and the threshold, not a rescue of the recorded starvation (that run had no known food).",
+  "status": "active",
+  "turn": 100,
+  "depth": 1,
+  "max_depth": 1,
+  "player": {
+    "race": 5,
+    "class": 3,
+    "level": 1,
+    "hp": 14,
+    "max_hp": 14,
+    "x": 3,
+    "y": 3,
+    "food": 100
+  },
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 1,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@.....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "monsters": [],
+  "forbidden": [
+    {
+      "action": "Rest",
+      "item": "resting while the food timer runs down"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Eat",
+      "item": "the known ration"
+    }
+  ]
+}

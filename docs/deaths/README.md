@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1545; distinct starting conditions: 1544; retained process attempts: 1545 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1581; distinct starting conditions: 1580; retained process attempts: 1581 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1551,6 +1551,42 @@ Dossiers: 1545; distinct starting conditions: 1544; retained process attempts: 1
 | [D1563-rust-seed1004](D1563-rust-seed1004/report.md) | unassigned | `9124a2b0c52c` | 1004 | starvation | 89380 | unassessed |
 | [D1564-rust-seed1001](D1564-rust-seed1001/report.md) | unassigned | `9124a2b0c52c` | 1001 | starvation | 89320 | unassessed |
 | [D1565-rust-seed1051](D1565-rust-seed1051/report.md) | unassigned | `9124a2b0c52c` | 1051 | a giant white mouse | 82384 | unassessed |
+| [D1566-rust-seed102](D1566-rust-seed102/report.md) | unassigned | `97bbe79f8151` | 102 | an acolyte | 1583 | unassessed |
+| [D1567-rust-seed103](D1567-rust-seed103/report.md) | unassigned | `97bbe79f8151` | 103 | a floating eye | 6887 | unassessed |
+| [D1568-rust-seed1024](D1568-rust-seed1024/report.md) | unassigned | `97bbe79f8151` | 1024 | a floating eye | 1088 | unassessed |
+| [D1569-rust-seed1050](D1569-rust-seed1050/report.md) | unassigned | `97bbe79f8151` | 1050 | a floating eye | 1199 | unassessed |
+| [D1570-rust-seed1041](D1570-rust-seed1041/report.md) | unassigned | `97bbe79f8151` | 1041 | a floating eye | 1504 | unassessed |
+| [D1571-rust-seed1022](D1571-rust-seed1022/report.md) | unassigned | `97bbe79f8151` | 1022 | a crow | 2131 | unassessed |
+| [D1572-rust-seed1034](D1572-rust-seed1034/report.md) | unassigned | `97bbe79f8151` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1573-rust-seed1044](D1573-rust-seed1044/report.md) | unassigned | `97bbe79f8151` | 1044 | poison | 2960 | unassessed |
+| [D1574-rust-seed1030](D1574-rust-seed1030/report.md) | unassigned | `97bbe79f8151` | 1030 | an acolyte | 6167 | unassessed |
+| [D1575-rust-seed1021](D1575-rust-seed1021/report.md) | unassigned | `97bbe79f8151` | 1021 | a small kobold | 5374 | unassessed |
+| [D1576-rust-seed1020](D1576-rust-seed1020/report.md) | unassigned | `97bbe79f8151` | 1020 | a giant yellow centipede | 5819 | unassessed |
+| [D1577-rust-seed1053](D1577-rust-seed1053/report.md) | unassigned | `97bbe79f8151` | 1053 | a grey mushroom patch | 2921 | unassessed |
+| [D1578-rust-seed1023](D1578-rust-seed1023/report.md) | unassigned | `97bbe79f8151` | 1023 | a grey mushroom patch | 8734 | unassessed |
+| [D1579-rust-seed1013](D1579-rust-seed1013/report.md) | unassigned | `97bbe79f8151` | 1013 | an acolyte | 10214 | unassessed |
+| [D1580-rust-seed1033](D1580-rust-seed1033/report.md) | unassigned | `97bbe79f8151` | 1033 | a floating eye | 10252 | unassessed |
+| [D1581-rust-seed1063](D1581-rust-seed1063/report.md) | unassigned | `97bbe79f8151` | 1063 | a grey mushroom patch | 9959 | unassessed |
+| [D1582-rust-seed1010](D1582-rust-seed1010/report.md) | unassigned | `97bbe79f8151` | 1010 | poison | 9050 | unassessed |
+| [D1583-rust-seed1061](D1583-rust-seed1061/report.md) | unassigned | `97bbe79f8151` | 1061 | a floating eye | 15074 | unassessed |
+| [D1584-rust-seed1043](D1584-rust-seed1043/report.md) | unassigned | `97bbe79f8151` | 1043 | an acolyte | 12351 | unassessed |
+| [D1585-rust-seed1074](D1585-rust-seed1074/report.md) | unassigned | `97bbe79f8151` | 1074 | a floating eye | 1248 | unassessed |
+| [D1586-rust-seed1060](D1586-rust-seed1060/report.md) | unassigned | `97bbe79f8151` | 1060 | a floating eye | 12455 | unassessed |
+| [D1587-rust-seed1073](D1587-rust-seed1073/report.md) | unassigned | `97bbe79f8151` | 1073 | a yellow mushroom patch | 4121 | unassessed |
+| [D1588-rust-seed1071](D1588-rust-seed1071/report.md) | unassigned | `97bbe79f8151` | 1071 | a wild cat | 12236 | unassessed |
+| [D1589-rust-seed1003](D1589-rust-seed1003/report.md) | unassigned | `97bbe79f8151` | 1003 | a floating eye | 20483 | unassessed |
+| [D1590-rust-seed1062](D1590-rust-seed1062/report.md) | unassigned | `97bbe79f8151` | 1062 | a soldier | 17404 | unassessed |
+| [D1591-rust-seed1070](D1591-rust-seed1070/report.md) | unassigned | `97bbe79f8151` | 1070 | a grey mushroom patch | 13988 | unassessed |
+| [D1592-rust-seed1052](D1592-rust-seed1052/report.md) | unassigned | `97bbe79f8151` | 1052 | starvation | 91190 | unassessed |
+| [D1593-rust-seed1072](D1593-rust-seed1072/report.md) | unassigned | `97bbe79f8151` | 1072 | starvation | 89220 | unassessed |
+| [D1594-rust-seed1042](D1594-rust-seed1042/report.md) | unassigned | `97bbe79f8151` | 1042 | Fang, Farmer Maggot's Dog | 34206 | unassessed |
+| [D1595-rust-seed1002](D1595-rust-seed1002/report.md) | unassigned | `97bbe79f8151` | 1002 | a floating eye | 29342 | unassessed |
+| [D1596-rust-seed1081](D1596-rust-seed1081/report.md) | unassigned | `97bbe79f8151` | 1081 | a yellow mushroom patch | 38553 | unassessed |
+| [D1597-rust-seed1064](D1597-rust-seed1064/report.md) | unassigned | `97bbe79f8151` | 1064 | a cutpurse | 35089 | unassessed |
+| [D1598-rust-seed1082](D1598-rust-seed1082/report.md) | unassigned | `97bbe79f8151` | 1082 | starvation | 90440 | unassessed |
+| [D1599-rust-seed1080](D1599-rust-seed1080/report.md) | unassigned | `97bbe79f8151` | 1080 | a floating eye | 80939 | unassessed |
+| [D1600-rust-seed1054](D1600-rust-seed1054/report.md) | unassigned | `97bbe79f8151` | 1054 | a white worm mass | 33943 | unassessed |
+| [D1601-rust-seed1051](D1601-rust-seed1051/report.md) | unassigned | `97bbe79f8151` | 1051 | a giant white mouse | 85443 | unassessed |
 
 ## Aggregated actions
 

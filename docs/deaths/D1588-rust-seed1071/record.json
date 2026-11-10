@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1588-rust-seed1071",
+  "run_kind": "harness",
+  "character": "Dunadan Ranger",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 12236,
+    "race_idx": 8,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1071,
+    "flags": "menu",
+    "git_rev": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+    "git_dirty": "no",
+    "source_sha256": "514ddf17f6b07be6ca06ee55aa65d7a4fb7e14459698ed55e3e8c75dee3507b1",
+    "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574",
+    "borg_txt_sha256": "2fc19df7b5112ffffb073a980bc93b8c7170000f9707d1545a2272274db029d8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1170
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-122/full-7-ranger-1",
+      "result_sha256": "fd74a2d88cbf693a1d0b1ad0441a16a688e6df69cbed9306da330b8d2983ed96",
+      "raw_sha256": {
+        "keys.log": "fd74a2d88cbf693a1d0b1ad0441a16a688e6df69cbed9306da330b8d2983ed96",
+        "messages.log": "b50dcd62207e2931592f2814fe0d0908d59a5aa3bbe7fe0b6b119d8a87c2e2db",
+        "state.log": "28d084bb6d0c8fa60d5bc8467e0167ffd21cb2310dcbf4870d4f0bf8985bb2ba"
+      },
+      "source_commit": "97bbe79f8151034e677c8b32bed4d7b061b0b821",
+      "binary_sha256": "07de7ffab2d926bacfc2ae9fc8272b0bcbb5f5c40edc8ca2458a2c8da5741574"
+    }
+  ],
+  "encounter_family": "start-95272b87cba46c43ec1e70d68d6437f8d5d687126c48a8b771d833e898f6a1fe",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5c37c5bfc088250d9aa1ea7beca8880e7644f0a616e74e5f0b2bafb5aec787fc",
+    "config.txt": "8f8b02585181de9c13ee548903d9dffac173e1728db7c7d7bb518da19696af2b",
+    "depths.json": "5216ac0348ed11cda1c05e77e16feaaf224f49d212d5037900bdc9806f8e352c",
+    "params.json": "72096c68ef5b7f53d7b8b786ed0e125df6b4072d01e41ae2b62ed1760d0c3072",
+    "summary.json": "cff571c98283504f5f69b72833d205c1447651e1b3ab95e735ecd90f678f1adf",
+    "trace-tail.jsonl": "f91fdbc679278dfb6977d039630334ca55e219c6e4a08ceb232339d4c8857a34"
+  },
+  "investigation": null,
+  "issue": null
+}

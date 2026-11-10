@@ -60,7 +60,11 @@
   "feasible": [
     {
       "action": "Walk",
-      "item": "away from the shrieker, or hold while the fear runs out"
+      "item": "away from the shrieker"
+    },
+    {
+      "action": "Read",
+      "item": "a known Phase Door, an escape while afraid"
     }
   ],
   "map": [

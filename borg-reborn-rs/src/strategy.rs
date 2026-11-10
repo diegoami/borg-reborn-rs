@@ -51,6 +51,8 @@ pub enum Mode {
     Descend,
     /// Reveal the level: walk to the frontier of the unknown.
     Explore,
+    /// Eat a known food item before the food timer reaches starvation.
+    Eat,
     /// No mode can act here: the frontier is empty and no staircase is
     /// reachable. The state is named so the trace and the death dossier
     /// say why the Borg is standing still (T4.6, #123).
@@ -65,6 +67,7 @@ impl Mode {
             Mode::Town => "town",
             Mode::Descend => "descend",
             Mode::Explore => "explore",
+            Mode::Eat => "eat",
             Mode::Stuck => "stuck",
         }
     }
@@ -249,6 +252,20 @@ impl FirstStrategy {
     /// question is the budget's to answer).
     fn mapped(world: &World) -> i64 {
         world.level.grids.iter().filter(|g| g.feat != 0).count() as i64
+    }
+
+    /// Whether a known food item is in the pack.
+    fn has_food(ctx: &DecisionCtx) -> bool {
+        ctx.world.character.inventory.iter().any(|it| {
+            ctx.knowledge.kind(it.kind).is_some_and(|k| {
+                k.name
+                    .chars()
+                    .filter(|c| !matches!(c, '&' | '~'))
+                    .collect::<String>()
+                    .trim()
+                    == "Ration of Food"
+            })
+        })
     }
 
     /// Whether resting is safe where the Borg stands: the strategy
@@ -578,6 +595,25 @@ impl FirstStrategy {
                 }
             }
             Mode::Stuck => None,
+            Mode::Eat => {
+                let item =
+                    ctx.world
+                        .character
+                        .inventory
+                        .iter()
+                        .enumerate()
+                        .find_map(|(i, it)| {
+                            let name = ctx
+                                .knowledge
+                                .kind(it.kind)?
+                                .name
+                                .chars()
+                                .filter(|c| !matches!(c, '&' | '~'))
+                                .collect::<String>();
+                            (name.trim() == "Ration of Food").then_some(i)
+                        })?;
+                Some(Action::Eat { item })
+            }
             Mode::Explore => {
                 let step = ctx
                     .paths
@@ -617,6 +653,12 @@ impl FirstStrategy {
             }
             Mode::Descend => ctx.world.level.depth as i64,
             Mode::Explore => Self::mapped(ctx.world),
+            Mode::Eat => ctx
+                .world
+                .character
+                .status
+                .as_ref()
+                .map_or(0, |s| i64::from(s.food)),
             Mode::Stuck => 0,
         }
     }
@@ -643,6 +685,19 @@ impl FirstStrategy {
         // does not. M4's tactical layer replaces the whole comparison.
         if !Self::adjacent(ctx).is_empty() {
             return Mode::Engage;
+        }
+        // Food before the timer reaches starvation, but after contact and
+        // recovery.
+        if ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.food < ctx.params.eat_below_food)
+            && Self::has_food(ctx)
+            && self.cooldowns.get(&Mode::Eat).is_none_or(|&t| turn >= t)
+        {
+            return Mode::Eat;
         }
         // Survival reserves outrank an already-live travel goal: arriving
         // in town with shopping to do must not immediately descend again
@@ -677,6 +732,7 @@ impl FirstStrategy {
                 Mode::Town => i64::from(ctx.params.explore_budget_turns),
                 Mode::Descend => i64::from(ctx.params.explore_budget_turns),
                 Mode::Explore => i64::from(ctx.params.explore_budget_turns),
+                Mode::Eat => i64::from(ctx.params.explore_budget_turns),
                 Mode::Stuck => 0,
             };
             if !goal.stalled(turn, budget)
@@ -860,6 +916,7 @@ impl Strategy for FirstStrategy {
             Mode::Town => "restock and identify",
             Mode::Descend => "reach the down staircase",
             Mode::Explore => "reveal the frontier",
+            Mode::Eat => "eat before starvation",
             Mode::Stuck => "no mode can act",
         };
         Decision {
@@ -945,6 +1002,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.hp = hp;
             s.max_hp = max_hp;
+            s.food = 1000;
             s.pack_size = 23;
             s.pack_used = 1;
         }
@@ -1035,6 +1093,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.depth = 0;
             s.gold = gold;
+            s.food = 1000;
             s.pack_used = inventory.len() as i32;
             s.pack_size = 23;
         }
