@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1255; distinct starting conditions: 1254; retained process attempts: 1255 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1257; distinct starting conditions: 1256; retained process attempts: 1257 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1261,6 +1261,8 @@ Dossiers: 1255; distinct starting conditions: 1254; retained process attempts: 1
 | [D1273-rust-seed1003](D1273-rust-seed1003/report.md) | unassigned | `795a3bfb1c5c` | 1003 | starvation | 89230 | unassessed |
 | [D1274-rust-seed1073](D1274-rust-seed1073/report.md) | unassigned | `795a3bfb1c5c` | 1073 | starvation | 89210 | unassessed |
 | [D1275-rust-seed1071](D1275-rust-seed1071/report.md) | unassigned | `795a3bfb1c5c` | 1071 | starvation | 89220 | unassessed |
+| [D1276-rust-seed102](D1276-rust-seed102/report.md) | unassigned | `bb1a37f87290` | 102 | a fruit bat | 377 | unassessed |
+| [D1277-rust-seed101](D1277-rust-seed101/report.md) | unassigned | `bb1a37f87290` | 101 | poison | 2490 | unassessed |
 
 ## Aggregated actions
 
