@@ -10,7 +10,10 @@ session, a local one, any model, or a person. It is the only entry point;
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the design direction;
-6. [docs/SOURCES.md](docs/SOURCES.md): what every related project is for here.
+6. [docs/SOURCES.md](docs/SOURCES.md): what every related project is for here;
+7. [docs/research/KNOWLEDGE.md](docs/research/KNOWLEDGE.md): what has been
+   read from the moving sources (borg-runner, better-borg-c), what it means
+   for the tasks ahead, and what the refresh report says to re-read.
 
 ## What this repository is
 
