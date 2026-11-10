@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1361-rust-seed1070",
+  "run_kind": "harness",
+  "character": "Half-Troll Ranger",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 2879,
+    "race_idx": 7,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1070,
+    "flags": "menu",
+    "git_rev": "6318cd2b8271b888375a816b9932380c28cb7a92",
+    "git_dirty": "no",
+    "source_sha256": "da304fcea62ffe02da321bd214384a92e7e9ad9b362155367cd541ec9eda19a0",
+    "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1",
+    "borg_txt_sha256": "e4164d3484a44de22fb275de68d0d691d30bdbd4ab3e670ac06601d1a48961a8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 254
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/g0-final-full/full-7-ranger-0",
+      "result_sha256": "9c89729d8af011798f278e590079ff4bdd50e793ca82e64f278b024071eecdf6",
+      "raw_sha256": {
+        "keys.log": "9c89729d8af011798f278e590079ff4bdd50e793ca82e64f278b024071eecdf6",
+        "messages.log": "c5eb4b7b616362d8d9e21dcd4afa2af97914c8b214e0d3585152a4e5550a616f",
+        "state.log": "018f1b3f274efe41552779482fb57ae0061bcb731d9cba7b1c21a66c42324e5a"
+      },
+      "source_commit": "6318cd2b8271b888375a816b9932380c28cb7a92",
+      "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1"
+    }
+  ],
+  "encounter_family": "start-f319eb5c52228cefacbbcd8d7615c9fb74d126644439d8391ab84d848537aa61",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5914ce35ca511e79d970ba0afb3133118af78b2e3ff4a55782690f5a0ed46d77",
+    "config.txt": "1a8c6175a31a123623c7cf5147307294c7ef0d008a3af05b331b5dfb9f828207",
+    "depths.json": "3b4bbbfe146c17764d895ef6949f120eb5f1c43a160065555d31d96e61b0f2c9",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "47ecf6fddf77548d69fb1d72babf56c48c40986301294e50e09b610eafd9a473",
+    "trace-tail.jsonl": "afdcf49d231eb7d3527647fdbaa496a1ad8b9691aae300736401810ea9ab28d1"
+  },
+  "investigation": null,
+  "issue": null
+}

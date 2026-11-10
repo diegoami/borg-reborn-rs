@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1368-rust-seed1073",
+  "run_kind": "harness",
+  "character": "Kobold Ranger",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5040,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1073,
+    "flags": "menu",
+    "git_rev": "6318cd2b8271b888375a816b9932380c28cb7a92",
+    "git_dirty": "no",
+    "source_sha256": "da304fcea62ffe02da321bd214384a92e7e9ad9b362155367cd541ec9eda19a0",
+    "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1",
+    "borg_txt_sha256": "9879ff34e80d65b349e0a74cd5ff0f43adb270f355a23efda5cde9e1c6f9de59",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 521
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/g0-final-full/full-7-ranger-3",
+      "result_sha256": "1f9c203a54be52583ea7bfc610e1fb4d944af289751280bd6870d0968ca45f00",
+      "raw_sha256": {
+        "keys.log": "1f9c203a54be52583ea7bfc610e1fb4d944af289751280bd6870d0968ca45f00",
+        "messages.log": "92a4e7a9037338e057fede57fc16654aefe9d605da8dca8b4632817123a03bc2",
+        "state.log": "4e79868205a2e2c97c2a979fef005fa651e82ee0d4649fc0f846cc6120080ed7"
+      },
+      "source_commit": "6318cd2b8271b888375a816b9932380c28cb7a92",
+      "binary_sha256": "22f2a2fc0113b9c704be23815afb9727c6278d8191c5377b8b93d003501a3fa1"
+    }
+  ],
+  "encounter_family": "start-b5a9d62c3f7f882e3b0b42571cca45ffe57a55c667209efe53899e64a5e9c748",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5914ce35ca511e79d970ba0afb3133118af78b2e3ff4a55782690f5a0ed46d77",
+    "config.txt": "8985f8ad9af4ec30f16f19d2038744e506bc2aa2ecd70053dac0837b2ffda142",
+    "depths.json": "188e1b8860b5acb2752008c08ac262c4e2b4f603a7a1b516b0ee7df6254786c3",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "63f7d68a1a931428405223a317c7a3b4bc047e1125610feacfabb72c2563f42d",
+    "trace-tail.jsonl": "d485f7c57d2c33dfaab60265bd5f2f609c926339520215ae984ca53b2822ebb3"
+  },
+  "investigation": null,
+  "issue": null
+}

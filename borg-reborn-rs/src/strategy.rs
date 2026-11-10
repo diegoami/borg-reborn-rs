@@ -534,11 +534,20 @@ impl FirstStrategy {
                 step.map(Action::Walk).or_else(|| {
                     // No down staircase known: going up then down rerolls
                     // the level (S15, ACCUMULATED_KNOWLEDGE §2: two or
-                    // three decisions for a fresh one).
-                    let up =
-                        ctx.paths
-                            .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: true });
-                    up.map(Action::Walk)
+                    // three decisions for a fresh one). Reaching the up
+                    // staircase is only half that fallback: take it. The
+                    // old missing Ascend left an enclosed arrival room
+                    // holding on its only exit until starvation (T3.7).
+                    if here == Some(crate::borg::feat::LESS) && threat == 0 {
+                        Some(Action::Ascend)
+                    } else {
+                        let up = ctx.paths.step(
+                            ctx.world,
+                            ctx.knowledge,
+                            &PathGoal::Stairs { up: true },
+                        );
+                        up.map(Action::Walk)
+                    }
                 })
             }
             Mode::Explore => {
@@ -663,9 +672,10 @@ impl FirstStrategy {
             Mode::Explore
         } else if stairs != UNREACHED && cooled(Mode::Descend) {
             Mode::Descend
-        } else if cooled(Mode::Explore) {
-            Mode::Explore
         } else {
+            // No frontier remains (or Explore is cooling): Descend's
+            // up-and-down reroll is the productive fallback. Choosing
+            // Explore with an empty frontier only holds (T3.7).
             Mode::Descend
         }
     }
@@ -1107,6 +1117,43 @@ mod tests {
         );
         assert_eq!(d.mode, "descend");
         assert_eq!(d.action, Action::Walk(6));
+    }
+
+    #[test]
+    fn an_exhausted_level_rerolls_from_its_up_staircase() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        w.character.status.as_mut().unwrap().x = 2;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend");
+        assert_eq!(d.action, Action::Ascend, "take the exit, do not hold on it");
+
+        let (mut s, w, k, _, m, mut rng, params) = ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend");
+        assert_eq!(d.action, Action::Walk(6), "walk to the up staircase first");
     }
 
     #[test]
