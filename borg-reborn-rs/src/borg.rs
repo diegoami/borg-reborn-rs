@@ -540,9 +540,6 @@ mod tests {
     use crate::engine::KC_ENTER;
     use crate::observation::Observation;
 
-    /// The table default of `max_tries_per_turn`.
-    const MAX_TRIES_PER_TURN: u32 = 2;
-
     /// An empty observation, for the key sequences of the actions the
     /// strategy chooses (none of them reads the pack).
     fn obs() -> Observation {

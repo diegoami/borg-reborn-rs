@@ -436,6 +436,7 @@ mod tests {
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn decide_with(
         s: &mut FirstStrategy,
         w: &World,
