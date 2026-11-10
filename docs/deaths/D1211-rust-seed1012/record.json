@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1211-rust-seed1012",
+  "run_kind": "harness",
+  "character": "Hobbit Mage",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 6014,
+    "race_idx": 3,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1012,
+    "flags": "menu",
+    "git_rev": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+    "git_dirty": "yes",
+    "source_sha256": "21b4398e7b12aa00851239c5bcbd7bdd986f1bbb78943fdaa209e13d01a1d89e",
+    "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b",
+    "borg_txt_sha256": "32e88143092ebdb099b0f6341a5abe15f21cf964838d17bf9cab2d704a93635a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 589
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-full/full-1-mage-2",
+      "result_sha256": "50915a3b4a8f9abd58b1180170f7986d277a4b23d2db13e755ad9a6508395203",
+      "raw_sha256": {
+        "keys.log": "50915a3b4a8f9abd58b1180170f7986d277a4b23d2db13e755ad9a6508395203",
+        "messages.log": "a0bea4169ef80d2145da09293328db4a4d01c6f86a61f503a10f9f81871373db",
+        "state.log": "413d80acd842c3752c7a6f5258f2550fff14d56511e54b1b4d0d7532645c3bd9"
+      },
+      "source_commit": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+      "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b"
+    }
+  ],
+  "encounter_family": "start-22cc7d5f1c6bb62e8a4f1cf83baae393ba1d9eb5702efa6768a00b505294c2a2",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "d9bd12587a1b374ec52c646eea55e1943cb558575fd5dae1367485f2cbba28d7",
+    "config.txt": "dc262045379d78c1c2a1fc2fbd7f6df1f37667552fbde3b35e116a467969947b",
+    "depths.json": "fe795980f594094d744776c8d3dec22a0cfbfff45d1441249fe1a20743d39a04",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "06e2a41ab51555b2e432d368e75b2684a67bec2501ba7320656c89bfeee6df62",
+    "trace-tail.jsonl": "cec3a524854a18050136c8d9fe8c533963132d992315675c6a7536ef78035b57"
+  },
+  "investigation": null,
+  "issue": null
+}

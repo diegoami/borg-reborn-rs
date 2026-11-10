@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1182-rust-seed103",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a battle-scarred veteran",
+  "terminal": {
+    "cause": "a battle-scarred veteran",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 4034,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "-",
+    "git_rev": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+    "git_dirty": "yes",
+    "source_sha256": "21b4398e7b12aa00851239c5bcbd7bdd986f1bbb78943fdaa209e13d01a1d89e",
+    "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b",
+    "borg_txt_sha256": "f20f7ed7065a31dec52467b932f8f9ea4b17f69922732c02c583e160b6ddb419",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 404
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-try-103",
+      "result_sha256": "9ae9de029cf11223c6b115cb2a54fee43be8ae3ca2e68306dddb9634ad728fd6",
+      "raw_sha256": {
+        "keys.log": "9ae9de029cf11223c6b115cb2a54fee43be8ae3ca2e68306dddb9634ad728fd6",
+        "messages.log": "8317add029342acaccaff37d60907d82110407d91a96f04bb7a751f859ba7679",
+        "state.log": "4b5e65a5f12a5937446872e52bf317fdfa4b3eeb89332c6d5a75f2abc66e7fc3"
+      },
+      "source_commit": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+      "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b"
+    }
+  ],
+  "encounter_family": "start-1cb59b2e340d16aebf54cd57d0e2166044a56f1dcb56ba5e8124a71caa585061",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "d9bd12587a1b374ec52c646eea55e1943cb558575fd5dae1367485f2cbba28d7",
+    "config.txt": "45ef1f8e72d9b0bd66c1bcd54cb4985d0c68a6d33970e97405065428638d8f0b",
+    "depths.json": "5f72203c2cd86cb1d1f5c8150b0bfd65cefd191fb2ea726e0d398cb155d658c3",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "9337adc7139003b195cbc3a37abe62a9ef990b46062671afba7a91aef4377daa",
+    "trace-tail.jsonl": "c5f1ac52aa088a90905c701b25c79a8acb58071c483dea435e70d21d4d639b1b"
+  },
+  "investigation": null,
+  "issue": null
+}

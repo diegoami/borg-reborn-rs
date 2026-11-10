@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1223-rust-seed1083",
+  "run_kind": "harness",
+  "character": "Human Blackguard",
+  "raw_cause": "a scruffy little dog",
+  "terminal": {
+    "cause": "a scruffy little dog",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 1279,
+    "race_idx": 0,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1083,
+    "flags": "menu",
+    "git_rev": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+    "git_dirty": "yes",
+    "source_sha256": "21b4398e7b12aa00851239c5bcbd7bdd986f1bbb78943fdaa209e13d01a1d89e",
+    "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b",
+    "borg_txt_sha256": "5042da45245dbf69c8f85635d2f2cbf253facc12a97b2c85860490094c7b639e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 130,
+    "of": 130
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-full/full-8-blackguard-3",
+      "result_sha256": "692f68ff7b056094d5a3a7ae8b0723d51d89e25f676d7418734d73bf946f694b",
+      "raw_sha256": {
+        "keys.log": "692f68ff7b056094d5a3a7ae8b0723d51d89e25f676d7418734d73bf946f694b",
+        "messages.log": "d4cf15118824a117c20967f781993b5f3a7e3a027f97c134804c3a734976562f",
+        "state.log": "ef8fc3deca1643979745c4727c9062827d7c25d5cf20185fee83cc95a90cc143"
+      },
+      "source_commit": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+      "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b"
+    }
+  ],
+  "encounter_family": "start-6068e2fbf8127fec9f97ddfcdaa78c1ccfdded0646214b91d8e773dfa9c68b75",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "d9bd12587a1b374ec52c646eea55e1943cb558575fd5dae1367485f2cbba28d7",
+    "config.txt": "d6bde5d747d42f3d05fe421bb1fe771e616c8c3b941368fd78bb7e8442bfe075",
+    "depths.json": "7a136d588e8eb7810d43514a9f8a974195b3bba874fc65ca2bcb69f6f94683f3",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "ef5ca6fcb0c254d3e2e149e1142370588cb92859693bcf9d4a16f19d76382588",
+    "trace-tail.jsonl": "eee25e30eb3d94a49ba44c404afbe3b44680bc1b92e265f09ad7ee1dfcbc059d"
+  },
+  "investigation": null,
+  "issue": null
+}

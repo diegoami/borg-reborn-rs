@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1184-rust-seed103",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a giant yellow centipede",
+  "terminal": {
+    "cause": "a giant yellow centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4877,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "menu",
+    "git_rev": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+    "git_dirty": "yes",
+    "source_sha256": "21b4398e7b12aa00851239c5bcbd7bdd986f1bbb78943fdaa209e13d01a1d89e",
+    "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 489
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t34-smoke/smoke-priest-3",
+      "result_sha256": "47788bef802c97ca2af4d15dae99a2a350ffafdddf3c8e18e50a323672002031",
+      "raw_sha256": {
+        "keys.log": "47788bef802c97ca2af4d15dae99a2a350ffafdddf3c8e18e50a323672002031",
+        "messages.log": "1970b37e16acbc4ec3c79df77deac656ab21e0030c90db5b85e2778c93b78d7f",
+        "state.log": "ef5caca19258498ff452b73e53effc041ba6e743e2ee9d60b8e3e88d5c84fda5"
+      },
+      "source_commit": "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f",
+      "binary_sha256": "074484ccb93b5f2578896a712118bc646387c033673e38fafc2cae0518edae8b"
+    }
+  ],
+  "encounter_family": "start-f4eea3a2b0247244d86968c8f74a06f7735ddc81c2476338f1b477c1c120f97c",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "d9bd12587a1b374ec52c646eea55e1943cb558575fd5dae1367485f2cbba28d7",
+    "config.txt": "4ad1e76cf47ed2d929bd719af5393976f5241ec7e0c8e9ad055a4f4f9b5af6ce",
+    "depths.json": "e0740d0805f64523db5619ce77219d231963282d940c3f9065e6da98c0602839",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "9b01731fcc98f1df5bbaa26c839f33404ecb395a15909d020aaf5c56b3f5c7e4",
+    "trace-tail.jsonl": "a261a50b9181c1107a8bc12b889df89afb201f36c86a0368e76b565c7db17c86"
+  },
+  "investigation": null,
+  "issue": null
+}

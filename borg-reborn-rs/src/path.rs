@@ -422,6 +422,8 @@ pub(crate) mod tests {
                     's' => (feat::STORE_GENERAL, false, false, 0),
                     _ => (feat::FLOOR, false, false, -1),
                 };
+                // '$' is a gold pile underfoot; 'x' a floor with nothing.
+                let object = if ch == '$' { Some(500) } else { None };
                 match ch {
                     '@' => {
                         px = x as i32;
@@ -446,7 +448,7 @@ pub(crate) mod tests {
                     in_view: ch != '?',
                     lighting: 1,
                     monster: ch == 'M' || ch == 'F',
-                    object_kind: None,
+                    object_kind: object,
                     multiple_objects: false,
                     unseen_object: false,
                     unseen_money: false,
