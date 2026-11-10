@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 10] = [
+pub const TABLE: [Param; 11] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -73,6 +73,16 @@ pub const TABLE: [Param; 10] = [
         evidence: "GOALS principle 6 (a failed goal is blocked for a while): short enough that \
                    the mode is retried within a level's explore budget, long enough to break \
                    one-goal oscillation; a placeholder until the zoo measures it (RULES 14)",
+    },
+    Param {
+        name: "max_level_changes_per_turn",
+        unit: "Ascend/Descend actions at one game turn",
+        min: 1,
+        max: 8,
+        default: 2,
+        evidence: "M3 review PR #135, blocking finding 1: one up/down reroll per game turn at \
+                   most, so level generation cannot loop for free. A separate per-level reroll \
+                   limit prevents repeated exits from the same generation",
     },
     Param {
         name: "reserve_food",
@@ -129,6 +139,7 @@ pub struct Params {
     pub rest_turns: u32,
     pub explore_budget_turns: u32,
     pub goal_cooldown_turns: u32,
+    pub max_level_changes_per_turn: u32,
     pub reserve_food: u32,
     pub reserve_light: u32,
     pub reserve_cure: u32,
@@ -156,6 +167,7 @@ impl Default for Params {
             rest_turns: default_of("rest_turns") as u32,
             explore_budget_turns: default_of("explore_budget_turns") as u32,
             goal_cooldown_turns: default_of("goal_cooldown_turns") as u32,
+            max_level_changes_per_turn: default_of("max_level_changes_per_turn") as u32,
             reserve_food: default_of("reserve_food") as u32,
             reserve_light: default_of("reserve_light") as u32,
             reserve_cure: default_of("reserve_cure") as u32,
@@ -215,6 +227,7 @@ impl Params {
                 "rest_turns" => p.rest_turns = v as u32,
                 "explore_budget_turns" => p.explore_budget_turns = v as u32,
                 "goal_cooldown_turns" => p.goal_cooldown_turns = v as u32,
+                "max_level_changes_per_turn" => p.max_level_changes_per_turn = v as u32,
                 "reserve_food" => p.reserve_food = v as u32,
                 "reserve_light" => p.reserve_light = v as u32,
                 "reserve_cure" => p.reserve_cure = v as u32,
@@ -235,6 +248,7 @@ impl Params {
                 "rest_turns" => i64::from(self.rest_turns),
                 "explore_budget_turns" => i64::from(self.explore_budget_turns),
                 "goal_cooldown_turns" => i64::from(self.goal_cooldown_turns),
+                "max_level_changes_per_turn" => i64::from(self.max_level_changes_per_turn),
                 "reserve_food" => i64::from(self.reserve_food),
                 "reserve_light" => i64::from(self.reserve_light),
                 "reserve_cure" => i64::from(self.reserve_cure),
@@ -266,6 +280,7 @@ mod tests {
             (2, 70, 75)
         );
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
+        assert_eq!(p.max_level_changes_per_turn, 2);
         assert_eq!(
             (
                 p.reserve_food,

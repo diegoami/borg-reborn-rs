@@ -142,29 +142,30 @@ pub struct Memory {
     pub last: Option<(i64, Action)>,
     /// How many earlier thinks saw the current game turn: actions that the
     /// game refused, or that took no time (a walk into a known wall, a rest
-    /// it would not start). Store actions and level changes reset this
-    /// count: their effects are checked, the town's finite jobs are progress
-    /// (T3.5), and an up/down reroll changes the level even when the game
-    /// turn does not move (T3.7).
+    /// it would not start). Store actions reset this count because their
+    /// effects are checked and the town's finite jobs are progress (T3.5).
     pub same_turn: u32,
+    /// Ascend/Descend actions already chosen at this game turn. These have
+    /// their own cap: level generation can make depth oscillate forever
+    /// without advancing time, so stairs must not reset `same_turn` (M3
+    /// review, PR #135 finding 1).
+    pub level_changes: u32,
 }
 
 impl Memory {
     /// Record a think at `turn` that chose `action`.
     pub fn record(&mut self, turn: i64, action: Action) {
-        self.same_turn = match self.last {
-            Some((t, _))
-                if t == turn
-                    && matches!(
-                        action,
-                        Action::Buy { .. } | Action::Sell { .. } | Action::Descend | Action::Ascend
-                    ) =>
-            {
-                0
-            }
-            Some((t, _)) if t == turn => self.same_turn + 1,
-            _ => 0,
-        };
+        if self.last.is_none_or(|(t, _)| t != turn) {
+            self.same_turn = 0;
+            self.level_changes = 0;
+        } else if matches!(action, Action::Buy { .. } | Action::Sell { .. }) {
+            self.same_turn = 0;
+        } else {
+            self.same_turn += 1;
+        }
+        if matches!(action, Action::Descend | Action::Ascend) {
+            self.level_changes += 1;
+        }
         self.last = Some((turn, action));
     }
 
@@ -172,6 +173,14 @@ impl Memory {
     pub fn tries_at(&self, turn: i64) -> u32 {
         match self.last {
             Some((t, _)) if t == turn => self.same_turn + 1,
+            _ => 0,
+        }
+    }
+
+    /// Level changes already chosen at `turn` (0 if game time has passed).
+    pub fn level_changes_at(&self, turn: i64) -> u32 {
+        match self.last {
+            Some((t, _)) if t == turn => self.level_changes,
             _ => 0,
         }
     }
@@ -593,7 +602,7 @@ mod tests {
     }
 
     #[test]
-    fn checked_free_actions_do_not_spend_the_refusal_budget() {
+    fn free_and_level_actions_have_separate_budgets() {
         let mut mem = Memory::default();
         mem.record(5, Action::Walk(2));
         assert_eq!(mem.tries_at(5), 1);
@@ -602,13 +611,12 @@ mod tests {
         mem.record(5, Action::Sell { item: 0, qty: 1 });
         assert_eq!(mem.tries_at(5), 1);
         mem.record(5, Action::Descend);
-        assert_eq!(mem.tries_at(5), 1);
+        assert_eq!(mem.tries_at(5), 2, "stairs count as no-time actions");
+        assert_eq!(mem.level_changes_at(5), 1);
         mem.record(5, Action::Ascend);
-        assert_eq!(mem.tries_at(5), 1);
-        mem.record(5, Action::Walk(2));
-        assert_eq!(mem.tries_at(5), 2, "ordinary no-time actions still count");
-        mem.record(5, Action::Walk(2));
         assert_eq!(mem.tries_at(5), 3);
+        assert_eq!(mem.level_changes_at(5), 2);
+        assert_eq!(mem.level_changes_at(6), 0, "a new turn resets the cap");
     }
 
     #[test]

@@ -56,6 +56,10 @@ pub struct Level {
     pub depth: i32,
     pub width: i32,
     pub height: i32,
+    /// Which generation this is, increasing on every level change. Unlike
+    /// `arrived`, it is unique even when stairs change level without moving
+    /// the game turn (the M3 review's reroll finding).
+    pub generation: u64,
     /// The game turn the Borg arrived.
     pub arrived: i64,
     /// Row by row, `width * height` grids.
@@ -324,12 +328,13 @@ impl Character {
 }
 
 impl Level {
-    fn new(o: &Observation) -> Self {
+    fn new(o: &Observation, generation: u64) -> Self {
         let (w, h) = (o.panel.level_width.max(0), o.panel.level_height.max(0));
         Level {
             depth: o.status.depth,
             width: w,
             height: h,
+            generation,
             arrived: o.turn,
             grids: vec![Remembered::default(); (w * h) as usize],
             monsters: Vec::new(),
@@ -432,7 +437,7 @@ impl World {
             || o.panel.level_width != self.level.width
             || o.panel.level_height != self.level.height
         {
-            self.level = Level::new(o);
+            self.level = Level::new(o, self.level.generation.saturating_add(1));
         }
         self.turn = o.turn;
         self.thinks += 1;
@@ -752,6 +757,7 @@ mod tests {
     fn a_new_level_is_a_fresh_map() {
         let mut o = sample();
         let mut w = world_of(&o);
+        let generation = w.level.generation;
         o.status.depth = 2;
         o.turn += 10;
         o.monsters.clear();
@@ -759,6 +765,7 @@ mod tests {
         o.panel.grids[5].object_kind = None;
         w.update(&o);
         assert_eq!(w.level.depth, 2);
+        assert_eq!(w.level.generation, generation + 1);
         assert_eq!(w.level.arrived, o.turn);
         assert!(w.level.monsters.is_empty());
         assert_eq!(w.level.objects().count(), 0);

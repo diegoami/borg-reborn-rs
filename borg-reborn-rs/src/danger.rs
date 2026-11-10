@@ -169,8 +169,11 @@ pub fn one(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
         v1
     };
 
-    // The spell term is M4's (declared in the module docs).
-    v1
+    // The spell term is M4's (declared in the module docs). Out of view,
+    // the track's existing confidence decays with the moves the monster
+    // may have made (REDESIGN-LESSONS L11): a remembered threat must not
+    // block a staircase forever after the monster has had time to leave.
+    (f64::from(v1) * t.confidence(w.turn, k)).round() as u32
 }
 
 /// The eight neighbouring deltas (`ddy_ddd`/`ddx_ddd` order does not
@@ -465,6 +468,24 @@ mod tests {
         // 20 + 200 (stun) + 400 (kick) = 620.
         let k = knowledge(race("kicker", 110, 0, &[(10, 2)], &[]));
         assert_eq!(one(&w, &k, t, 1, 1, 1), 620);
+    }
+
+    #[test]
+    fn an_unseen_monster_fades_with_its_track_confidence() {
+        let k = knowledge(race("kobold", 110, 0, &[(1, 6)], &[]));
+        let mut w = world(Some((2, 1, 110, true)));
+        w.turn = 110;
+        let t = w.level.monsters[0].clone();
+        assert_eq!(one(&w, &k, &t, 1, 1, 1), 6, "visible danger is exact");
+        let mut stale = t;
+        stale.in_view = false;
+        assert_eq!(
+            one(&w, &k, &stale, 1, 1, 1),
+            3,
+            "one possible move of uncertainty"
+        );
+        w.turn = 1000;
+        assert_eq!(one(&w, &k, &stale, 1, 1, 1), 0, "not a permanent wall");
     }
 
     #[test]

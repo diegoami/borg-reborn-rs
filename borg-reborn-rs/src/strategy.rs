@@ -143,6 +143,9 @@ impl TownJob {
 pub struct Goal {
     pub mode: Mode,
     pub started: i64,
+    /// The level generation this goal belongs to. A travel goal never
+    /// survives a level change, even when depth changes back at one turn.
+    pub level: u64,
     /// The last game turn the progress measure moved.
     pub progressed: i64,
     /// The progress measure itself (each mode defines its own).
@@ -150,10 +153,11 @@ pub struct Goal {
 }
 
 impl Goal {
-    fn new(mode: Mode, turn: i64, measure: i64) -> Goal {
+    fn new(mode: Mode, turn: i64, measure: i64, level: u64) -> Goal {
         Goal {
             mode,
             started: turn,
+            level,
             progressed: turn,
             measure,
         }
@@ -209,10 +213,10 @@ pub struct FirstStrategy {
     /// A mode whose goal failed here is not retried until this game
     /// turn (the cooldown of GOALS principle 6).
     cooldowns: BTreeMap<Mode, i64>,
-    /// Levels visited by the current explore goal (its progress measure
-    /// is the remembered grids of the level, which a level change
-    /// resets; this keeps the goal honest across one).
-    explored: u64,
+    /// The level generation whose one up/down reroll was already used.
+    /// A fresh generation may Explore first; it may not be rerolled on
+    /// arrival (M3 review, PR #135 finding 1).
+    rerolled_from: Option<u64>,
 }
 
 impl Default for FirstStrategy {
@@ -221,7 +225,7 @@ impl Default for FirstStrategy {
             mode: Mode::Explore,
             goal: None,
             cooldowns: BTreeMap::new(),
-            explored: 0,
+            rerolled_from: None,
         }
     }
 }
@@ -523,32 +527,59 @@ impl FirstStrategy {
             Mode::Descend => {
                 let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
                 let threat = danger(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y, 1);
+                if threat > 0
+                    && matches!(
+                        here,
+                        Some(crate::borg::feat::LESS) | Some(crate::borg::feat::MORE)
+                    )
+                {
+                    // A staircase under threat is not taken, but it is not
+                    // a place to die either: leave it and cool the travel
+                    // goal (M3 review's blocked-reroll window).
+                    self.cooldowns.insert(
+                        Mode::Descend,
+                        ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
+                    );
+                    self.goal = None;
+                    return Self::retreat_step(ctx).map(Action::Walk);
+                }
                 if here == Some(crate::borg::feat::MORE) && threat == 0 {
                     // A staircase under fire is not taken: whatever is
                     // pressing is dealt with first (engaged or escaped).
                     return Some(Action::Descend);
                 }
-                let step =
+                if let Some(step) =
                     ctx.paths
-                        .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false });
-                step.map(Action::Walk).or_else(|| {
-                    // No down staircase known: going up then down rerolls
-                    // the level (S15, ACCUMULATED_KNOWLEDGE §2: two or
-                    // three decisions for a fresh one). Reaching the up
-                    // staircase is only half that fallback: take it. The
-                    // old missing Ascend left an enclosed arrival room
-                    // holding on its only exit until starvation (T3.7).
-                    if here == Some(crate::borg::feat::LESS) && threat == 0 {
-                        Some(Action::Ascend)
-                    } else {
-                        let up = ctx.paths.step(
-                            ctx.world,
-                            ctx.knowledge,
-                            &PathGoal::Stairs { up: true },
-                        );
-                        up.map(Action::Walk)
-                    }
-                })
+                        .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
+                {
+                    return Some(Action::Walk(step));
+                }
+                // Only an exhausted level may reroll (S15 §2). A fresh
+                // level with a frontier belongs to Explore; selecting a
+                // better-generated level is stair-scumming (GOALS 9).
+                let frontier = ctx
+                    .paths
+                    .map(ctx.world, ctx.knowledge, &PathGoal::Frontier)
+                    .remaining(ctx.world, ctx.view.x, ctx.view.y);
+                let explore_cooling = self
+                    .cooldowns
+                    .get(&Mode::Explore)
+                    .is_some_and(|&until| ctx.view.turn < until);
+                if (frontier != UNREACHED && !explore_cooling)
+                    || self.rerolled_from == Some(ctx.world.level.generation)
+                    || ctx.mem.level_changes_at(ctx.view.turn)
+                        >= ctx.params.max_level_changes_per_turn
+                {
+                    return None;
+                }
+                if here == Some(crate::borg::feat::LESS) && threat == 0 {
+                    self.rerolled_from = Some(ctx.world.level.generation);
+                    Some(Action::Ascend)
+                } else {
+                    ctx.paths
+                        .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: true })
+                        .map(Action::Walk)
+                }
             }
             Mode::Explore => {
                 let step = ctx
@@ -623,6 +654,16 @@ impl FirstStrategy {
             return Mode::Town;
         }
         if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Town) {
+            self.goal = None;
+        }
+        // No travel goal survives a level generation. In particular,
+        // depth 1 → town → depth 1 at one game turn is not goal progress:
+        // the new level must be evaluated for Explore first (M3 review).
+        if self
+            .goal
+            .as_ref()
+            .is_some_and(|g| g.level != ctx.world.level.generation)
+        {
             self.goal = None;
         }
         // A live goal keeps its mode (hysteresis): still inside its
@@ -709,10 +750,12 @@ impl Strategy for FirstStrategy {
         // measure is taken now, and progress is its movement.
         let now_measure = Self::measure(mode, ctx);
         if self.goal.as_ref().is_none_or(|g| g.mode != mode) {
-            self.goal = Some(Goal::new(mode, ctx.view.turn, now_measure));
-            if mode == Mode::Explore {
-                self.explored += 1;
-            }
+            self.goal = Some(Goal::new(
+                mode,
+                ctx.view.turn,
+                now_measure,
+                ctx.world.level.generation,
+            ));
         }
         // Progress: the measure moved, or the mode's act succeeded.
         if let Some(goal) = &mut self.goal {
@@ -722,8 +765,37 @@ impl Strategy for FirstStrategy {
             }
         }
 
+        let level_changes = ctx.mem.level_changes_at(ctx.view.turn);
+        if level_changes >= ctx.params.max_level_changes_per_turn {
+            // A separate backstop for generation loops: depth oscillation
+            // is not progress, and the level cap is never reset by stairs.
+            self.cooldowns.insert(
+                Mode::Descend,
+                ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
+            );
+            if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Descend) {
+                self.goal = None;
+            }
+            let why = format!(
+                "{level_changes} level changes at game turn {} took no time (reroll cap)",
+                ctx.view.turn
+            );
+            let (x, y) = (ctx.view.x, ctx.view.y);
+            let here = ctx.world.level.at(x, y).map(|g| g.feat);
+            let around = |dx: i32, dy: i32| ctx.world.level.at(x + dx, y + dy).map(|g| g.feat);
+            return Decision {
+                action: stand_still(here, around),
+                mode: mode.name(),
+                goal: "stand still",
+                budget_left: 0,
+                candidates: vec![],
+                violations: vec![why],
+            };
+        }
+
         let tries = ctx.mem.tries_at(ctx.view.turn);
-        let budget_left = i64::from(ctx.params.max_tries_per_turn) - i64::from(tries);
+        let budget_left = (i64::from(ctx.params.max_tries_per_turn) - i64::from(tries))
+            .min(i64::from(ctx.params.max_level_changes_per_turn) - i64::from(level_changes));
         let mut violations = Vec::new();
         if tries >= ctx.params.max_tries_per_turn {
             let why = format!(
@@ -1154,6 +1226,176 @@ mod tests {
         );
         assert_eq!(d.mode, "descend");
         assert_eq!(d.action, Action::Walk(6), "walk to the up staircase first");
+    }
+
+    #[test]
+    fn an_unsafe_up_staircase_retreats_instead_of_holding() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@<M.#", "######"], 20, 20);
+        w.character.status.as_mut().unwrap().x = 2;
+        // A remembered threat is not visible contact, so Engage does not
+        // answer it. The stair remains unsafe and must not trap Descend.
+        w.level.monsters[0].in_view = false;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend");
+        assert_eq!(
+            d.action,
+            Action::Walk(4),
+            "west, away from the remembered monster"
+        );
+        assert!(s.cooldowns.contains_key(&Mode::Descend));
+    }
+
+    #[test]
+    fn a_fresh_level_explores_instead_of_rerolling() {
+        let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend");
+        assert_eq!(d.action, Action::Walk(6));
+
+        // The next generation has a frontier. Even though depth and game
+        // turn could be identical after two stair actions, its generation
+        // differs and the old Descend goal cannot win by hysteresis.
+        w.level.generation += 1;
+        let width = w.level.width as usize;
+        w.level.grids[width + 3].feat = crate::borg::feat::NONE;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.mode, "explore",
+            "a fresh level is explored, never rerolled on arrival"
+        );
+        assert_eq!(d.action, Action::Walk(6));
+    }
+
+    #[test]
+    fn an_exhausted_frontier_can_reroll_but_a_fresh_one_cannot() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@<.?#", "######"], 20, 20);
+        w.character.status.as_mut().unwrap().x = 2;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.mode, "explore",
+            "a reachable fresh frontier owns the level"
+        );
+        s.cooldowns.insert(Mode::Explore, w.turn + 100);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend");
+        assert_eq!(d.action, Action::Ascend, "a failed frontier may reroll");
+    }
+
+    #[test]
+    fn rerolls_are_capped_per_level_and_per_game_turn() {
+        let (mut s, mut w, k, _, mem, mut rng, params) =
+            ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        w.character.status.as_mut().unwrap().x = 2;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &mem,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Ascend);
+
+        // Still the same generation (for example, if Ascend were refused):
+        // its one reroll has been used and cannot be chosen again.
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &mem,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_ne!(d.action, Action::Ascend, "one reroll per level generation");
+
+        let (mut s, mut w, k, _, mut mem, mut rng, params) =
+            ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        w.character.status.as_mut().unwrap().x = 2;
+        mem.record(w.turn, Action::Descend);
+        mem.record(w.turn, Action::Ascend);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &mem,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.action,
+            Action::Hold,
+            "the third generation must take game time"
+        );
+        assert!(d.violations.iter().any(|v| v.contains("reroll cap")));
     }
 
     #[test]
