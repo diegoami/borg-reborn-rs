@@ -7,10 +7,35 @@
 Kimi K3.1 Pro's fourth pass on #99, at `7cec235`: **M2 done**, with no
 findings left. The owner had #99 merged (`reviewed` at `4ea0bb0`); `m2`
 is tagged there, and the GitHub milestone is closed. The four passes'
-findings were all fixed in #100–#104, so none carry over to M3.
+findings were all fixed in #100–#104, so none carry over to M3. #103
+(borg-runner as source S15, below) was held while the review ran and was
+merged after it.
 
-**Next:** M3, per PLAN.md, with S14 and S15 (borg-runner, #103, below)
-as its game knowledge.
+**Next session: start M3** (GitHub milestone 3, tasks #17–#24; SPEC §10
+keeps M3 as PLAN.md describes it).
+1. **Refresh the sources first**, in its own PR (RULES 21):
+   `python3 scripts/refresh-sources.py`, then `--update`. On 2026-11-10,
+   borg-runner was already 13 commits past its pin (`e829a01`), and its
+   knowledge page is what M3's strategy reads.
+2. **Then T3.1, the executor and prompts (#17):** the lowest-numbered open
+   task, its Needs (#13, #15) closed. The M3 row of PLAN.md goes to
+   "in progress" when it starts.
+3. **Game knowledge for M3:** S14 (`reference/c-manual/`, chapter 15 for
+   an automatic player) and S15 (`reference/borg-runner/manuals/
+   INSTRUCTIONS.md`). Lines from either are checked against
+   `engine/angband/src/` and cited (RULES 16), and none is a claim until
+   the zoo measures it (RULES 14).
+4. **The perception check stays on:** CI runs smoke and full on the
+   `test-hallucinate,test-perception` build, and `tools/check-perception.py`
+   must report 0 differences. A new engine read needs a row in
+   `docs/ENGINE-READS.md` (`test_reads.py` fails otherwise).
+
+**Known limits, declared and not fixed:** no recorded game has an
+overfull pack, mixed cursed and uncursed stacks of one kind, the
+unseen-monster-1 hallucination case, or a shop or web on an unknown grid,
+so those fixes are covered only by the per-think checks. Floor objects and
+store stock have no second route to compare against. Few monsters are met
+(3,533 monster-thinks in smoke and full) until M3's Borg fights.
 
 ## 2026-11-10: a new source, borg-runner (S15)
 
@@ -36,22 +61,6 @@ screen and record every key; what they learn goes into one page,
   inherited each other's notebooks. Nothing is a claim until the zoo has
   measured it (RULES 14).
 - **First use:** the strategies and profiles of M3 onward, alongside S14.
-
-## 2026-11-10, end of day: M2's review continues tomorrow
-
-**The review of M2 (#99) is tomorrow, 2026-11-11.** The owner runs it with
-the reviewer they choose (RULES 6). #99's description has the prompt,
-pinned to the head of `main`. Until it is in:
-- nothing else merges into `main`, so that #99's diff stays what the
-  review reads;
-- #103 (borg-runner as source S15) waits, CI green. After #99 merges,
-  merge `main` into it (no force-push) and merge it;
-- M3 doesn't start.
-
-When the review is in: if it is clean, the owner merges #99, `m2` is
-tagged on the merge, the findings become M3 issues, then #103, then M3.
-If it isn't, fix the findings in PRs into `main`, repin #99's prompt and
-map the findings in a comment, as for the three passes so far (#100–#104).
 
 ## 2026-11-10: M2's third review: not done; findings fixed
 
