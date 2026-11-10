@@ -18,6 +18,10 @@ borgh = []
 # Test builds only (CI): perception runs while the player hallucinates, and
 # each think asserts the game's RNG is unchanged (RULES 10 regression).
 test-hallucinate = []
+# Test builds only (CI, T2.5): each think's observation and world are checked
+# against the engine through other routes (engine.rs, ENGINE TRUTH), and the
+# report goes to BORG_RUN_DIR/truth.jsonl.
+test-perception = []
 
 [dependencies]
 libc = "0.2"

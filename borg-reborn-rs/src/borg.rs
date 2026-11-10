@@ -300,6 +300,11 @@ struct Borg {
     /// The world log (`BORG_WORLD_LOG=FILE`): the world's digest after each
     /// think, to check that replaying the observation log rebuilds it.
     worlds: Option<std::io::BufWriter<std::fs::File>>,
+    /// The engine-truth log (`BORG_RUN_DIR/truth.jsonl`, test-perception
+    /// builds only, T2.5): each think's comparison with the engine, one JSON
+    /// line.
+    #[cfg(feature = "test-perception")]
+    truth: Option<std::io::BufWriter<std::fs::File>>,
     /// L3: the game's static data, read at the first think (T2.3). Written
     /// once to `BORG_KNOWLEDGE_LOG=FILE` when that is set.
     knowledge: Option<crate::knowledge::Knowledge>,
@@ -385,6 +390,12 @@ pub fn command() {
             observations: open_log("BORG_OBSERVATION_LOG"),
             world: crate::world::World::new(),
             worlds: open_log("BORG_WORLD_LOG"),
+            #[cfg(feature = "test-perception")]
+            truth: std::env::var_os("BORG_RUN_DIR").and_then(|d| {
+                std::fs::File::create(std::path::Path::new(&d).join("truth.jsonl"))
+                    .ok()
+                    .map(std::io::BufWriter::new)
+            }),
             knowledge: None,
             params,
             trace,
@@ -511,10 +522,26 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
                 (o.monsters.clone(), o.objects.clone(), grids)
             })
         };
-        assert!(
-            entities(&observation) == entities(&plain),
-            "hallucination changed what is observed"
-        );
+        let (with, without) = (entities(&observation), entities(&plain));
+        if with != without {
+            let detail = match (with, without) {
+                (Some((m1, o1, g1)), Some((m2, o2, g2))) => format!(
+                    "monsters {:?} vs {:?}; objects {:?} vs {:?}; grids {:?}",
+                    m1.iter().filter(|m| !m2.contains(m)).collect::<Vec<_>>(),
+                    m2.iter().filter(|m| !m1.contains(m)).collect::<Vec<_>>(),
+                    o1.iter().filter(|o| !o2.contains(o)).collect::<Vec<_>>(),
+                    o2.iter().filter(|o| !o1.contains(o)).collect::<Vec<_>>(),
+                    g1.iter()
+                        .zip(&g2)
+                        .enumerate()
+                        .filter(|(_, (a, b))| a != b)
+                        .take(5)
+                        .collect::<Vec<_>>()
+                ),
+                (a, b) => format!("{} vs {}", a.is_some(), b.is_some()),
+            };
+            panic!("hallucination changed what is observed: {detail}");
+        }
     }
     #[cfg(not(feature = "test-hallucinate"))]
     let (here, around, observation) = perceive(b);
@@ -543,6 +570,16 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
                 .is_err()
             {
                 b.worlds = None;
+            }
+        }
+        // T2.5: the observation and the world against the engine.
+        #[cfg(feature = "test-perception")]
+        if let Some(log) = b.truth.as_mut() {
+            if let Some(report) = engine::truth::check(o, &b.world) {
+                let line = serde_json::to_string(&report).unwrap_or_default();
+                if writeln!(log, "{line}").and_then(|_| log.flush()).is_err() {
+                    b.truth = None;
+                }
             }
         }
     }

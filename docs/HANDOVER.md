@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T2.5, perception against the engine; M2 complete
+
+The owner closed E's review without a re-review. borg-zoo#48 now asks to
+move `4.2.6-reborn-rust` to `f0eeee2`; the zoo check there gives the same
+smoke play hashes as M1, and its death is D0804 (#97).
+
+**T2.5 (#16):**
+- **The check:** a test feature, `test-perception`, compares every think
+  with the engine through other routes (`engine.rs`, below `ENGINE TRUTH`):
+  - the world's remembered map against `player->cave`;
+  - the engine's visible monsters on the panel against the monsters seen;
+  - the gear list against the observed equipment, quiver and pack;
+  - our pack count against `pack_slots_used`.
+  `tools/check-perception.py` fails on any difference. It also checks the
+  status against the frontend's `state.log`.
+- **Results:** smoke and full, 76,175 thinks, have 0 differences.
+  - Declared, not failed: 218,978 grid-thinks the player knows but the
+    world never saw, and 96 visible monsters off the panel. The C Borg
+    reads only the panel too (`borg-update.c:264`).
+  - An injected fault gives 8,205 differences, so the check can fail.
+- **One defect found:** while hallucinating, `map_info` puts `m_idx = 1`
+  on an empty grid. When monster 1 stood there unseen, the Borg took it as
+  seen; 11 of 45 full runs failed the hallucination assertion, and CI had
+  run only smoke. Perception now also needs `monster_is_visible`
+  (`map_info`'s own test, a B read). Our suites play the same games
+  (references unchanged: 3/3, 3/3, 45/45), since none of their runs met
+  that case.
+- **D3:** reason T for the check's reads, used only below the marker
+  (`test_reads.py`). The types read field by field are listed (E review,
+  finding 10).
+- **CI:** one test build with both features runs smoke and full; its play
+  equals the references, and `check-perception.py` passes.
+- **Deaths:** D0805–D0850.
+
+**M2 is complete:** T2.1–T2.5. Next is the review PR (`main` → `reviewed`)
+with its prompt; the owner chooses the reviewer (RULES 6). M3 doesn't start
+before that.
+
 ## 2026-11-10: E's review is in; fixes in three PRs
 
 Kimi's review of E (on #92) has ten findings. They are fixed in three PRs
