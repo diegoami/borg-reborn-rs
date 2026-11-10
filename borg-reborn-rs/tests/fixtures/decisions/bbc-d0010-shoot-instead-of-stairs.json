@@ -1,0 +1,106 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 9,
+      "tval": 23,
+      "sval": 16,
+      "weight": 30,
+      "desc": "a Short Bow",
+      "dd": 0,
+      "ds": 0
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 81,
+      "tval": 3,
+      "sval": 1,
+      "number": 11,
+      "desc": "& Arrow~",
+      "aware": true
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 25,
+      "hp": 8,
+      "max_hp": 8,
+      "sleep": 0
+    },
+    {
+      "x": 7,
+      "y": 2,
+      "race": 46,
+      "hp": 7,
+      "max_hp": 7,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Ascend"
+    },
+    {
+      "action": "Read",
+      "item": "the unknown scroll at 1 HP"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Shoot",
+      "item": "the kobold with the short bow (11 arrows)"
+    },
+    {
+      "action": "Attack",
+      "item": "the kobold"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#..<......#",
+    "#...@k....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0010-shoot-instead-of-stairs",
+  "title": "D0010: 1/15 HP, a kobold adjacent, a bow and eleven arrows",
+  "dossier": "reference/deaths/better-borg-c/D0010-collected",
+  "citations": [
+    "overall-assessment.md:14-30,54-67",
+    "owner-manual-branch.json",
+    "manual-verification.json"
+  ],
+  "construction": "High-Elf Ranger CL1, 1/15 HP, D1. The dossier gives the kobold adjacent, the upstairs two squares away, the short bow and eleven arrows. The room is constructed.",
+  "verified": "owner-manual-branch.json: 6255 -> 7303, CL2 HP12 D1; six arrow hits and one miss; the kobold was shot dead at 7293; both enemies killed.",
+  "limits": "A diagnostic alternative, not an independent Borg life.",
+  "blocked_by": 120,
+  "player": {
+    "race": 9,
+    "class": 7,
+    "level": 1,
+    "hp": 1,
+    "max_hp": 15,
+    "x": 4,
+    "y": 3
+  },
+  "current": {
+    "action": "Walk"
+  },
+  "pins_forbidden": false
+}

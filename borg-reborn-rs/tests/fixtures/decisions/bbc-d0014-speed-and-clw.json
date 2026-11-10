@@ -1,0 +1,112 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 21,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    },
+    {
+      "kind": 247,
+      "tval": 26,
+      "sval": 24,
+      "number": 1,
+      "desc": "Speed",
+      "aware": true
+    },
+    {
+      "kind": 247,
+      "tval": 26,
+      "sval": 24,
+      "number": 1,
+      "desc": "Speed",
+      "aware": true
+    },
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 237,
+      "hp": 6,
+      "max_hp": 6,
+      "speed": 140,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Descend"
+    },
+    {
+      "action": "Read",
+      "item": "the last Phase Door at full HP"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Quaff",
+      "item": "Speed, then Cure Light Wounds"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@f....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0014-speed-and-clw",
+  "title": "D0014: the last Phase at full HP, Speed and CLW unused",
+  "dossier": "reference/deaths/better-borg-c/D0014-collected",
+  "citations": [
+    "overall-assessment.md:35-52,56-87",
+    "owner-manual-branch.json"
+  ],
+  "construction": "High-Elf Rogue CL11, 91/91 HP, D20. The dossier gives the blood falcon at 6 HP and speed +30, twenty-one known CLW and five Speed; the falcon is placed adjacent and the room is constructed.",
+  "verified": "owner-manual-branch.json: 306703 no Phase read; Speed on sight; both falcons one-hit; CLW cured blindness/confusion/bleeding; Detect Monsters; saved 306980 HP88/91.",
+  "limits": "A diagnostic alternative, not an independent Borg life. The current Borg cannot quaff, so only the refusal to spend the escape at full HP is structurally testable.",
+  "blocked_by": 122,
+  "player": {
+    "race": 9,
+    "class": 6,
+    "level": 11,
+    "hp": 91,
+    "max_hp": 91,
+    "x": 4,
+    "y": 3
+  },
+  "depth": 20,
+  "max_depth": 20,
+  "current": {
+    "action": "Walk"
+  },
+  "pins_forbidden": false
+}

@@ -1,0 +1,90 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 7,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 3,
+      "race": 2,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Rest",
+      "item": "while a pursuer can close within the rest"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Ascend",
+      "item": "the up staircase underfoot"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#..c.<....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "rust-d1330-rest-with-pursuer",
+  "title": "D1330: rest at 1/17 HP with a scrawny cat two steps away",
+  "dossier": "docs/deaths/D1330-rust-seed1053",
+  "citations": [
+    "summary.json",
+    "trace-tail.jsonl (last mode recover, choice Rest(75))",
+    "report.md"
+  ],
+  "construction": "Dwarf Paladin CL1, 1/17 HP, D1, on the up staircase. The death record gives the cause, HP and last action but no final observation; the cat at distance two and the stairs are constructed to reproduce the resting decision.",
+  "limits": "A constructed state from the record's summary and trace tail, not a recorded snapshot. The cat's exact position is not in the dossier.",
+  "blocked_by": 119,
+  "player": {
+    "race": 5,
+    "class": 5,
+    "level": 1,
+    "hp": 1,
+    "max_hp": 17,
+    "x": 5,
+    "y": 3
+  },
+  "current": {
+    "action": "Rest"
+  },
+  "pins_forbidden": true
+}

@@ -2,6 +2,53 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T4.1 death-derived decision fixtures (#118)
+
+Eighteen constructed `Observation` fixtures now replay deterministically in
+`borg-reborn-rs/tests/decision_fixtures.rs`; the catalogue and the M3
+triage are in [docs/FIXTURES.md](FIXTURES.md), the schema in
+`tests/fixtures/README.md`, and the engine data they read is the trimmed
+`tests/fixtures/knowledge.json` (a `BORG_KNOWLEDGE_LOG` dump at
+`e473720`).
+
+- **Four are active**: bbc D0008 (attack the adjacent 2-HP mould), bbc
+  D0012 (the owner branch's one-blow kill), bbc D0013 (no level flight
+  over one kobold), and `mmx-war-1` (one action per think in a breeder
+  pack). They must avoid the forbidden action and meet the alternative.
+- **Fourteen are gaps**, not skips: each pins the action the Borg takes
+  today and names the open M4 owner. When the action or decision changes,
+  the test fails and the fixture must be promoted. Owners: #119 (threat
+  horizon, fear), #120 (scored alternatives, stairs under contact), #122
+  (quaff/eat/read/wield), #142 (flag numbering).
+- **New finding, filed as #142**: `danger.rs` numbers `MULTIPLY`,
+  `NEVER_BLOW` and `NEVER_MOVE` one higher than the engine enum. A grey
+  mould's `NEVER_MOVE` is read as `NEVER_BLOW`, so it scores zero danger
+  and the Borg rests beside it; breeders lose the multiplier. The evidence
+  is in the issue; the fix needs a new reference baseline and belongs with
+  #119, not this PR.
+- **M3 triage** (D1326-D1420, 95 dossiers): 59 last actions were retreat
+  walks, 21 rests, 12 attacks, 2 explore walks, 1 recover walk; 4
+  starvation, 4 poison, 5 grey mould, 2 Fang. Four representative fixtures
+  cover the families; the rest repeat them (28 causes, one independent
+  death per encounter family).
+- The fixtures are constructed, not recorded: the committed dossiers lack
+  the original snapshots. Each file's `construction` says what was
+  invented and `limits` says what it cannot claim. The owner-manual
+  branches are diagnostics, not lives; their `verified` text quotes the
+  turn range and end state.
+- Doc state from the M3 review is corrected: PLAN says M4 is in progress
+  (T4.1), and #136 no longer carries `in progress`.
+
+**Checks.** `cargo fmt --all --check`, `cargo clippy --workspace
+--all-targets -- -D warnings`, `cargo test --workspace` and the script
+tests. No play code changed, so no engine build, smoke run or reference
+regeneration was needed; the fixtures are pure crate tests.
+
+**Next:** #119 (T4.2), one threat assessment. It must account for #142
+first (the fixture `rs-d0006-mold-at-two-hp` pins the wrong decision), then
+add status (fear), the group/breeder multiplier and the multi-step horizon
+that `rust-d1330-rest-with-pursuer` pins. #118's fixtures are the check.
+
 ## 2026-11-10: M4 source refresh
 
 The owner directed M4 to start while #135 remains open for re-review.
