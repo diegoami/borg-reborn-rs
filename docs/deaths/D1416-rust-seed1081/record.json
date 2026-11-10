@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1416-rust-seed1081",
+  "run_kind": "harness",
+  "character": "High-Elf Blackguard",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 7938,
+    "race_idx": 9,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1081,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "ff62d7902f87f337d2f5f79df56feb359292b9aa28d3cf5cf1ced61d9f469e9d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 813
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-8-blackguard-1",
+      "result_sha256": "9f5bb154e49185c0338fd7dd827d6b2099961ee710868c7b0dc507da6435d47b",
+      "raw_sha256": {
+        "keys.log": "9f5bb154e49185c0338fd7dd827d6b2099961ee710868c7b0dc507da6435d47b",
+        "messages.log": "49979bebb82f1a3893325adb9d92e23c658525fc682c8dfc37a2d46fd878b1cd",
+        "state.log": "fef4f81366fba5db9fa44fba7f279e11a6eaae3be983626b56e24cfacd78f532"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-f21601a56f81bf40acae83e6a7935169d84ac4ead276d3c573cc5d6df3808dd5",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "22c910c722c1469a02822976391a29f2713c05e0ffaaacb9c0e1dfe2579e8a73",
+    "depths.json": "bbfb0d58d424986fd917684498f8ccd2e4c2bcc7b40b3f2fa7997d6497079ed8",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "db92f3ea797fc9d6c05cec79419140d2545969dd4be47892b137c175b131b451",
+    "trace-tail.jsonl": "59f49ec79d7a9fbb641bbe324306c5f02a15dc6fe2f11c74aba7b62314dc0036"
+  },
+  "investigation": null,
+  "issue": null
+}

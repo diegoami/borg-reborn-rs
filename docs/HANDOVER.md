@@ -2,6 +2,43 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M3 review blocker, bounded rerolls (#136)
+
+PR #135's review rejected the first G0 baseline: T3.7's up/down reroll
+could generate levels forever at one game turn, reset both no-time and
+goal budgets, and select fresh levels (stair-scumming in substance).
+The dedicated fix replaces those references and rewrites
+[docs/G0.md](G0.md).
+
+- Level generations are unique; travel goals die on generation change,
+  so fresh levels Explore. Only an exhausted frontier or cooling Explore
+  may reroll, once per generation and at most two level changes at one
+  game turn. Stairs no longer reset the ordinary no-time budget.
+- Unsafe staircases retreat instead of holding; remembered danger uses
+  `Track::confidence` and decays out of view.
+- `tools/check-no-time.py` checks same-turn actions and level caps in CI;
+  final G0 runs use a real 10-second supervisor stall timeout.
+- Review findings deferred to M4: #137 Engage cooldown, #138 real
+  decision candidates, #139 small strategy/executor cleanups. Closed
+  M3 task labels are cleaned; PLAN points at the review blocker.
+
+**Corrected evidence:** 54/54 processes succeed with the 10-second
+supervisor; smoke is deterministic and exact passes; 54 natural deaths,
+0 unexported, with 48 valid new dossiers D1373–D1420; 51 traces have no
+same-turn budget violation; perception is 0 differences over 50,047
+thinks; tests are 81 crate + 5 repository + 56 tools. Full-suite stair
+actions fall from the rejected baseline's 2,040 to **83**, with no turn
+above two.
+
+**Not hidden:** the new full suite has 546 Holds and four starvation
+deaths, all 45 runs die, deepest is 2. One unreachable-exit case owns
+400 Holds and belongs to M4/#123. The old “6 Holds / 0 starvation”
+claim is withdrawn. G0 passes on smoke only; there is no full-suite
+no-stall or survival claim.
+
+**Next:** return PR #135 to the owner/reviewer for re-review. Do not
+start #118 until the owner merges the milestone review.
+
 ## 2026-11-10: T3.8, M4–M7 are task issues (#24)
 
 Created the dependency-ordered future work, with PLAN.md's death fixtures

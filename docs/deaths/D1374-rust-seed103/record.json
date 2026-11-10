@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1374-rust-seed103",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1187,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 121,
+    "of": 121
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-smoke-a/smoke-priest-3",
+      "result_sha256": "1e2d89ad453dc9d60b8b63f1a44382fdb963e1a09844c79e229fff2fa3e3895c",
+      "raw_sha256": {
+        "keys.log": "1e2d89ad453dc9d60b8b63f1a44382fdb963e1a09844c79e229fff2fa3e3895c",
+        "messages.log": "42b20c718b20e9c1ab5c042f0da79e88811a96ae34674afc49dd5b77d80fa9cc",
+        "state.log": "b1dfaa27494ab7f0698a6fe4b49e6257e7eb24986b12c368f14a3b3033e203a8"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-081758b3de5653d55816a351b8c9533861dddeca7c021f162a82a8c04f89d728",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "4ad1e76cf47ed2d929bd719af5393976f5241ec7e0c8e9ad055a4f4f9b5af6ce",
+    "depths.json": "40441cb9b69706cddcd826843517a615b564f04a6187fc1e27d9785315fe652e",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "5c8816c3b6d7c99ef146949057c221dfd703d9d58061a82caffc4557db7c0347",
+    "trace-tail.jsonl": "df722c2740f2caf2d72dc9d68221c9b3b9e90d77b9b38240cca6f1ffdac9c728"
+  },
+  "investigation": null,
+  "issue": null
+}

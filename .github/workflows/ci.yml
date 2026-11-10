@@ -76,6 +76,9 @@ jobs:
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
       - run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
       - run: python3 tools/check-perception.py harness/out/smoke-hallucinate harness/out/full-test
+      # No-time loops are visible too: level generation may not exceed its
+      # declared cap at one game turn (M3 review, PR #135 finding 1).
+      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1 harness/out/full-test
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1

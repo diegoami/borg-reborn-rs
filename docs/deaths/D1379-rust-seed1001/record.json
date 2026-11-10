@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1379-rust-seed1001",
+  "run_kind": "harness",
+  "character": "Half-Elf Warrior",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1749,
+    "race_idx": 1,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1001,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "fb095ac33a6f655e1391c88b415a723f733d3ccbf06f8c99e8d0553eda308d8a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 179,
+    "of": 179
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-0-warrior-1",
+      "result_sha256": "4bb97c0ccf2e4ba3bd6a72c4dc41bbf742fc8c12284fc5fd4cf9b7c2e71d693d",
+      "raw_sha256": {
+        "keys.log": "4bb97c0ccf2e4ba3bd6a72c4dc41bbf742fc8c12284fc5fd4cf9b7c2e71d693d",
+        "messages.log": "2af96d5d033621a1c8f469e8a6f073af14e39dcc514cd20b4f8d90c5d21418bb",
+        "state.log": "3ebfc1f087fa73c3ebeafed8bcfd859fe65503b81ae3616cfb0823b6b72b3cb2"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-becc31a6509e327484d55544379012cb0447b7136c15eedc78f29829d0c059bf",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "8424618f12d059ecd101f5be7324ff577b1a9e364e96e23ccba013e4ba1eeb40",
+    "depths.json": "ef8b0aa1bd65521fb7a3e186f94a74975b736ef744405529cd44c10b2e39ce76",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "056f7e2ba7d92a3aed3714086a7a2b0a6b6b583c5f93305c9eb6b17a0601e4f1",
+    "trace-tail.jsonl": "73404cd5aaa0ceb6aa77f7dd835cbb669492b72ba829c9ff6e710090af63facf"
+  },
+  "investigation": null,
+  "issue": null
+}

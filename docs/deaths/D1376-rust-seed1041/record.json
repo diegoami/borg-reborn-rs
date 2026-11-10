@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1376-rust-seed1041",
+  "run_kind": "harness",
+  "character": "Dwarf Necromancer",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1016,
+    "race_idx": 5,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1041,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "40ef20ebcf1f307acd31a85914a29aeed6dd3c4b12c53a5598505e22df9b2b42",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 106,
+    "of": 106
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-4-necro-1",
+      "result_sha256": "5362974461d0bc703d3a8ec1bf1ae65aae3e89a071f364ff23d58776977e84ea",
+      "raw_sha256": {
+        "keys.log": "5362974461d0bc703d3a8ec1bf1ae65aae3e89a071f364ff23d58776977e84ea",
+        "messages.log": "b73cb130b8580fb0109ec507754b478452b60377980e6c7a4b593a7794078307",
+        "state.log": "3f1991bbb8fb36fca6a894dff3d4f4f115c5b7849d2c7fcc63429f51b5483b87"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-08144949499874a0855f1e053ae4ea720881d1a0912f7564edd4a5470e81bc4e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "fb07b9dbcbd8eee8e58bf19628a716a527af3607146bd9747b803830b43508d6",
+    "depths.json": "2fb79298c710c7258f1abcb38af5577e3b7c4c0b11e6f8621d5c5541102bccd4",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "e2ec7f533cf7f637e204bea529a8f3509774296a1bcf7db104f54485ab2a0bc3",
+    "trace-tail.jsonl": "329454cbff55956c5b3c56e61ad63dc435d235e6de524fbaf5c025a4087c048f"
+  },
+  "investigation": null,
+  "issue": null
+}

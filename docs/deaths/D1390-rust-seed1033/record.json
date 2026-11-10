@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1390-rust-seed1033",
+  "run_kind": "harness",
+  "character": "Half-Orc Priest",
+  "raw_cause": "a scrawny cat",
+  "terminal": {
+    "cause": "a scrawny cat",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 0,
+    "level": 1,
+    "turn": 1787,
+    "race_idx": 6,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1033,
+    "flags": "menu",
+    "git_rev": "9644204b66b655bd165dafb36123a02487637896",
+    "git_dirty": "no",
+    "source_sha256": "9fa252e98fae831685424ba268a71b939ad0c37bfe1cb54a89d525ff39ea037f",
+    "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397",
+    "borg_txt_sha256": "59486c12550ee81d34f53842d12dc8d1e78ef62961face36d5982b4ede28e7c9",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 184,
+    "of": 184
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/m3fix-final-full/full-3-priest-3",
+      "result_sha256": "e255c7a715d4841e4ca1c5a183cb80d435086bbaef677cdb143dfe6f9b1b80ae",
+      "raw_sha256": {
+        "keys.log": "e255c7a715d4841e4ca1c5a183cb80d435086bbaef677cdb143dfe6f9b1b80ae",
+        "messages.log": "7310e59639d15aa6438eafdbe2bcb13d6c8193b3a64e173f2551f19ec6ec97c1",
+        "state.log": "64315c5988cc9441fec6b27e610bab97cf388934786a2e4578a1a32d3bac757f"
+      },
+      "source_commit": "9644204b66b655bd165dafb36123a02487637896",
+      "binary_sha256": "7735fbdd5caf1cfb225ea48a4b96e2328da2a734709f3bacab8b8864a9658397"
+    }
+  ],
+  "encounter_family": "start-c8cdb15ce215bec14e2f976437987309ec09c32d82770259d6ca60bc04697657",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "32354beac8f47dcaa9b68e2d442213769a71243e32ce26f5460c5ecd06ef6175",
+    "config.txt": "560a47b029a492bf89e7c390c5cf098a0962e8b66eb853a8a216992e0770bf1a",
+    "depths.json": "450339cdc4c02acd4828eb96251556cc195a9ecd3e3d80e1c1bd0e6597836b50",
+    "params.json": "c66b629cf0e3058d8d515f40fb147e3dabd9e5782bf03eefbc626410f0547822",
+    "summary.json": "4373299b05ba7e11067ef092335302902c1bb6220f5232e60e4f33f387941963",
+    "trace-tail.jsonl": "908f99fba82231e09562c0a59f31838de9d1fabe52d79fbb1ad8cf050c1113ad"
+  },
+  "investigation": null,
+  "issue": null
+}
