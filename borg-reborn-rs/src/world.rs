@@ -242,15 +242,19 @@ impl Character {
                     continue;
                 }
                 let (cur, used) = (i32::from(s.stat_cur[i]), s.stat_use[i]);
-                // The bonus in force: the one nearest zero that gives the
-                // observed value (several do only at the floor of 3).
-                let Some(add) = (0..=60)
-                    .flat_map(|a| [a, -a])
-                    .find(|&a| knowledge::modify_stat_value(cur, a) == used)
+                // Every bonus that gives the observed value: one, except at
+                // the floor of 3, where a whole range of penalties does.
+                // Then the lowest result of the swap is taken, so the model
+                // never credits it with a stat it may not give (M2
+                // re-review, R3).
+                let Some(new) = (-60..=60)
+                    .filter(|&a| knowledge::modify_stat_value(cur, a) == used)
+                    .map(|a| knowledge::modify_stat_value(cur, a + delta))
+                    .min()
                 else {
                     continue;
                 };
-                s.stat_use[i] = knowledge::modify_stat_value(cur, add + delta);
+                s.stat_use[i] = new;
                 s.stat_ind[i] = knowledge::stat_index(s.stat_use[i]) as i32;
             }
         }
@@ -595,6 +599,26 @@ mod tests {
             off.status.as_ref().unwrap().stat_use[0],
             17,
             "taking it off undoes it"
+        );
+
+        // The reviewer's case (R3): STR 3 at the floor, held there by a
+        // -5 item. Taking it off leaves 3 in the engine (the bonus in force
+        // was the floor's, not zero); the model must not invent STR 8.
+        let mut weak = c.clone();
+        let mut cursed = c.equipment[0].item.clone().unwrap();
+        cursed.modifiers = vec![0; 13];
+        cursed.modifiers[0] = -5;
+        weak.equipment[2].item = Some(cursed);
+        weak.gear = GearBonuses::of(&weak.equipment);
+        if let Some(s) = weak.status.as_mut() {
+            s.stat_cur[0] = 3;
+            s.stat_use[0] = 3;
+        }
+        let removed = weak.wearing(2, None);
+        assert_eq!(
+            removed.status.as_ref().unwrap().stat_use[0],
+            3,
+            "no stat is invented at the floor"
         );
     }
 

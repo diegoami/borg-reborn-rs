@@ -2613,6 +2613,9 @@ unsafe extern "C" {
     ) -> usize;
 }
 unsafe extern "C" {
+    pub fn object_is_in_quiver(p: *mut player, obj: *const object) -> bool;
+}
+unsafe extern "C" {
     pub fn pack_slots_used(p: *const player) -> core::ffi::c_int;
 }
 unsafe extern "C" {
@@ -2635,6 +2638,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub static adj_str_hold: [core::ffi::c_int; 38usize];
+}
+unsafe extern "C" {
+    pub fn equipped_item_slot(body: player_body, obj: *mut object) -> core::ffi::c_int;
 }
 unsafe extern "C" {
     pub fn spell_by_index(p: *const player, index: core::ffi::c_int) -> *const class_spell;
