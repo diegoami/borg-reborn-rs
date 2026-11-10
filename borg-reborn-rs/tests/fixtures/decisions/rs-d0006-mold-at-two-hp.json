@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -90,8 +90,7 @@
     "report.md:8-19"
   ],
   "construction": "Half-Elf Priest CL2, 2/15 HP, D1. The dossier gives the grey mold at 2 HP, the doorway and the down staircase; the room is constructed.",
-  "limits": "No verified alternative: descent, hold and mace were untested. After #142's flag fix the danger sum sees the mould, so the Borg no longer rests beside it; at 2/15 HP the exchange loses and it retreats, which is the recorded oscillation. T4.3 (#120) must score attacking the 2-HP mould against the free hit from walking away.",
-  "blocked_by": 120,
+  "limits": "No verified alternative: descent, hold and mace were untested. The tactical layer now attacks the 2-HP stationary mould because the free hit from walking is worse; the fixture is active.",
   "player": {
     "race": 1,
     "class": 3,
@@ -100,9 +99,5 @@
     "max_hp": 15,
     "x": 4,
     "y": 3
-  },
-  "current": {
-    "action": "Walk"
-  },
-  "pins_forbidden": true
+  }
 }

@@ -33,6 +33,7 @@ pub mod observation;
 pub mod params;
 pub mod path;
 pub mod strategy;
+pub mod tactics;
 pub mod trace;
 pub mod world;
 

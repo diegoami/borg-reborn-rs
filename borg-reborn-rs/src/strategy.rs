@@ -12,7 +12,7 @@
 //! placeholder's one-step retreat.
 
 use crate::borg::{stand_still, Memory, Rng};
-use crate::danger::{assess, can_act, can_attack, danger_with, one_threat, ThreatSummary};
+use crate::danger::{assess, can_act, danger_with, ThreatSummary};
 use crate::engine::PlayerView;
 use crate::executor::Action;
 use crate::knowledge::Knowledge;
@@ -221,6 +221,9 @@ pub struct FirstStrategy {
     /// A fresh generation may Explore first; it may not be rerolled on
     /// arrival (M3 review, PR #135 finding 1).
     rerolled_from: Option<u64>,
+    /// The tactical responses of the last think, best first, for the trace
+    /// (T4.3). Empty when no tactical choice was made.
+    last_candidates: Vec<(Action, f64)>,
 }
 
 impl Default for FirstStrategy {
@@ -230,6 +233,7 @@ impl Default for FirstStrategy {
             goal: None,
             cooldowns: BTreeMap::new(),
             rerolled_from: None,
+            last_candidates: Vec::new(),
         }
     }
 }
@@ -250,15 +254,15 @@ impl FirstStrategy {
     /// (bbc D0017); M3 takes the strict form.
     fn may_rest(ctx: &DecisionCtx) -> bool {
         let (x, y) = (ctx.view.x, ctx.view.y);
-        // Rest is a long action: ask the assessment over the whole rest,
-        // not one turn, or a pursuer two steps away looks harmless.
-        let horizon = i32::try_from(ctx.params.rest_turns).unwrap_or(i32::MAX);
+        // One turn: a rest is interrupted when a monster arrives, and
+        // what matters now is whether one can reach and strike. A distant
+        // monster does not make the next turn unsafe.
         assess(
             ctx.world,
             ctx.knowledge,
             x,
             y,
-            horizon,
+            ctx.params.threat_horizon,
             ctx.params.risk_aversion_pct,
         )
         .risk(ctx.params.risk_aversion_pct)
@@ -317,75 +321,6 @@ impl FirstStrategy {
             .filter(|(_, t)| t.in_view && (t.x - x).abs().max((t.y - y).abs()) <= 1)
             .map(|(i, _)| i)
             .collect()
-    }
-
-    /// The exchange test (c15 FIGHT-01 through the danger sum, task
-    /// T3.4): engaging is worth it when the damage the monster deals
-    /// while we kill it costs less than every hit point we have. The
-    /// turns to kill are its hit points over our expected melee damage
-    /// per turn ([`crate::world::Character::melee_per_turn`], GOALS
-    /// principle 14); the damage while we do it is its danger at our
-    /// grid times those turns. No margin constant: M4's tactical layer
-    /// replaces this with the real comparison of alternatives.
-    fn exchange(ctx: &DecisionCtx, i: usize) -> Option<(f64, f64)> {
-        if !can_attack(ctx.world) {
-            // The engine refuses an attack while afraid or paralysed.
-            return None;
-        }
-        let t = &ctx.world.level.monsters[i];
-        let dpt = ctx.world.character.melee_per_turn(ctx.knowledge)?;
-        if dpt <= 0.0 || t.hp <= 0 {
-            return None;
-        }
-        let turns = t.hp as f64 / dpt;
-        let risk = one_threat(ctx.world, ctx.knowledge, t, ctx.view.x, ctx.view.y, 1)
-            .risk(ctx.params.risk_aversion_pct);
-        Some((risk * turns, turns))
-    }
-
-    /// The best adjacent monster to fight: the one whose exchange costs
-    /// the least (bbc D0012's lesson: the 2-HP mold is a kill, not a
-    /// flight), with its direction.
-    fn best_fight(ctx: &DecisionCtx) -> Option<(u8, f64)> {
-        let (x, y) = (ctx.view.x, ctx.view.y);
-        Self::adjacent(ctx)
-            .into_iter()
-            .filter_map(|i| {
-                let t = &ctx.world.level.monsters[i];
-                let (cost, _) = Self::exchange(ctx, i)?;
-                let (dx, dy) = (t.x - x, t.y - y);
-                let dir = DIRS
-                    .iter()
-                    .find(|(_, ddx, ddy)| (*ddx, *ddy) == (dx, dy))
-                    .map(|(d, _, _)| *d)?;
-                Some((dir, cost, i))
-            })
-            .min_by_key(|&(_, cost, i)| (cost as i64, i))
-            .map(|(dir, cost, _)| (dir, cost))
-    }
-
-    /// The direction of the adjacent monster with the least danger, for
-    /// the cornered case: fighting beats dying on a wall.
-    fn cornered_fight(ctx: &DecisionCtx) -> Option<u8> {
-        if !can_attack(ctx.world) {
-            return None;
-        }
-        let (x, y) = (ctx.view.x, ctx.view.y);
-        Self::adjacent(ctx)
-            .into_iter()
-            .filter_map(|i| {
-                let t = &ctx.world.level.monsters[i];
-                let d = one_threat(ctx.world, ctx.knowledge, t, x, y, 1)
-                    .risk(ctx.params.risk_aversion_pct)
-                    .round() as u32;
-                let dir = DIRS
-                    .iter()
-                    .find(|(_, dx, dy)| (*dx, *dy) == (t.x - x, t.y - y))
-                    .map(|(d, _, _)| *d)?;
-                Some((d, dir, i))
-            })
-            .min_by_key(|&(d, _, i)| (d, i))
-            .map(|(_, dir, _)| dir)
     }
 
     /// How many *identified* items of one reserve are in the pack. An
@@ -544,18 +479,13 @@ impl FirstStrategy {
                 Some(Action::Rest(ctx.params.rest_turns))
             }
             Mode::Engage => {
-                if let Some((dir, cost)) = Self::best_fight(ctx) {
-                    if cost < f64::from(ctx.view.hp) {
-                        return Some(Action::Attack(dir));
-                    }
-                }
-                // The exchange loses: leave. A faster pursuer makes
-                // walking away a death (bbc D0018), and no safe step
-                // means a corner: fight the least dangerous one rather
-                // than die on a wall.
-                Self::retreat_step(ctx)
-                    .map(Action::Walk)
-                    .or_else(|| Self::cornered_fight(ctx).map(Action::Attack))
+                // The tactical layer (T4.3): every response, scored on the
+                // same risk scale. It replaces the first-applicable
+                // fight-or-retreat rule.
+                let responses =
+                    crate::tactics::responses(ctx.world, ctx.knowledge, ctx.params, ctx.view);
+                self.last_candidates = responses.iter().map(|r| (r.action, r.score)).collect();
+                responses.first().map(|r| r.action)
             }
             Mode::Town => {
                 let job = Self::town_job(ctx)?;
@@ -891,6 +821,7 @@ impl Strategy for FirstStrategy {
             };
         }
 
+        self.last_candidates.clear();
         let action = match self.mode_step(ctx, mode) {
             Some(a) => a,
             None => {
@@ -920,7 +851,11 @@ impl Strategy for FirstStrategy {
             mode: mode.name(),
             goal: goal_name,
             budget_left,
-            candidates: vec![(action_clone(&action), 1.0)],
+            candidates: if self.last_candidates.is_empty() {
+                vec![(action_clone(&action), 1.0)]
+            } else {
+                std::mem::take(&mut self.last_candidates)
+            },
             threat: Self::here_threat(ctx),
             violations,
         }
@@ -1149,6 +1084,30 @@ mod tests {
     }
 
     #[test]
+    fn a_contact_decision_records_every_response() {
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "engage");
+        assert!(
+            d.candidates.len() > 1,
+            "the trace has the real alternatives: {:?}",
+            d.candidates
+        );
+        assert_eq!(d.candidates[0].0, d.action);
+    }
+
+    #[test]
     fn explores_the_frontier_toward_the_unknown() {
         let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.?#", "#####"], 20, 20);
         let d = decide_with(
@@ -1200,8 +1159,12 @@ mod tests {
             &[],
         );
         assert_eq!(d.mode, "engage");
-        assert_eq!(d.action, Action::Walk(6), "step away, east");
         assert_ne!(d.action, Action::Rest(75), "never rest beside a monster");
+        assert!(
+            matches!(d.action, Action::Attack(4) | Action::Walk(6)),
+            "fight or step, not rest: {:?}",
+            d.action
+        );
     }
 
     #[test]
@@ -1573,7 +1536,12 @@ mod tests {
             &[],
         );
         assert_eq!(d.mode, "engage");
-        assert_eq!(d.action, Action::Walk(6), "away, east of the monster");
+        assert_ne!(
+            d.action,
+            Action::Walk(6),
+            "walking into a heavy blow's free hit is not an escape"
+        );
+        assert_ne!(d.action, Action::Rest(75), "never rest beside a monster");
         // Cornered (walls all round but the monster): fight the only
         // fight there is rather than die on a wall.
         let (w_c, k) = crate::path::tests::world(&["######", "#@M###", "######"]);

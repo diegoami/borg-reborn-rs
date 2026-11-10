@@ -89,7 +89,7 @@
   "construction": "High-Elf Ranger CL1, 1/15 HP, D1. The dossier gives the kobold adjacent, the upstairs two squares away, the short bow and eleven arrows. The room is constructed.",
   "verified": "owner-manual-branch.json: 6255 -> 7303, CL2 HP12 D1; six arrow hits and one miss; the kobold was shot dead at 7293; both enemies killed.",
   "limits": "A diagnostic alternative, not an independent Borg life.",
-  "blocked_by": 120,
+  "blocked_by": 127,
   "player": {
     "race": 9,
     "class": 7,

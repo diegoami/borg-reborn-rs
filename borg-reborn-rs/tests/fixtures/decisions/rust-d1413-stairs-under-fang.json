@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -75,8 +75,7 @@
     "report.md"
   ],
   "construction": "Blackguard CL1, 1/17 HP, D1, on the up staircase. The record gives the killer and HP; Fang adjacent and the staircase underfoot are constructed.",
-  "limits": "A constructed state, not a recorded snapshot. Contact deliberately outranks the staircase in the current strategy, so the escape is only reachable from the tactical layer.",
-  "blocked_by": 120,
+  "limits": "A constructed state, not a recorded snapshot. With the staircase underfoot the tactical layer ascends rather than fighting or walking; the fixture is active.",
   "player": {
     "race": 1,
     "class": 8,
@@ -85,9 +84,5 @@
     "max_hp": 17,
     "x": 4,
     "y": 3
-  },
-  "current": {
-    "action": "Walk"
-  },
-  "pins_forbidden": true
+  }
 }

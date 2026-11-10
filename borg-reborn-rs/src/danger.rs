@@ -826,6 +826,40 @@ pub fn breeder_factor(w: &World, race: &MonsterRace) -> f64 {
     }
 }
 
+/// One melee round from a monster, regardless of distance: the free hit a
+/// character takes for leaving its reach (the engine's attack of
+/// opportunity). Confidence and breeder growth apply; ranged spells do not.
+pub fn one_round(w: &World, k: &Knowledge, t: &Track) -> MonsterThreat {
+    if !t.awake() {
+        // A sleeping monster does not get the attack of opportunity;
+        // leaving may wake it for the next round, not this one.
+        return MonsterThreat {
+            index: t.index,
+            confidence: t.confidence(w.turn, k),
+            ..Default::default()
+        };
+    }
+    let Some(race) = k.race(t.race) else {
+        return MonsterThreat {
+            index: t.index,
+            expected: 100.0,
+            worst: 100.0,
+            ..Default::default()
+        };
+    };
+    let conf = t.confidence(w.turn, k);
+    let mut m = melee_threat(w, k, race, t, 1.0, t.awake());
+    let growth = breeder_factor(w, race);
+    m.expected *= growth * conf;
+    m.worst *= growth * conf;
+    m.disabling *= conf;
+    m.summoning *= conf;
+    m.economic *= conf;
+    m.confidence = conf;
+    m.rounds = 1.0;
+    m
+}
+
 /// The old full-damage value, kept for one release of comparisons:
 /// the worst case, rounded. New code uses [`assess`].
 pub fn worst(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
