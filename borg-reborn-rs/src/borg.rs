@@ -31,6 +31,7 @@ pub mod feat {
     pub const LESS: u32 = 5;
     pub const MORE: u32 = 6;
     pub const STORE_GENERAL: u32 = 7;
+    pub const STORE_ALCHEMY: u32 = 11;
     pub const HOME: u32 = 14;
     pub const PASS_RUBBLE: u32 = 24;
 }
@@ -141,7 +142,9 @@ pub struct Memory {
     pub last: Option<(i64, Action)>,
     /// How many earlier thinks saw the current game turn: actions that the
     /// game refused, or that took no time (a walk into a known wall, a rest
-    /// it would not start).
+    /// it would not start). Store actions reset this count: they take no
+    /// time by design, their effects are checked, and the town's finite
+    /// reserve/identification jobs are their own progress bound (T3.5).
     pub same_turn: u32,
 }
 
@@ -149,6 +152,11 @@ impl Memory {
     /// Record a think at `turn` that chose `action`.
     pub fn record(&mut self, turn: i64, action: Action) {
         self.same_turn = match self.last {
+            Some((t, _))
+                if t == turn && matches!(action, Action::Buy { .. } | Action::Sell { .. }) =>
+            {
+                0
+            }
             Some((t, _)) if t == turn => self.same_turn + 1,
             _ => 0,
         };
@@ -577,6 +585,21 @@ mod tests {
         assert_eq!(mem.tries_at(6), 0);
         mem.record(6, Action::Walk(2));
         assert_eq!(mem.same_turn, 0);
+    }
+
+    #[test]
+    fn store_actions_do_not_spend_the_refusal_budget() {
+        let mut mem = Memory::default();
+        mem.record(5, Action::Walk(2));
+        assert_eq!(mem.tries_at(5), 1);
+        mem.record(5, Action::Buy { ware: 0 });
+        assert_eq!(mem.tries_at(5), 1);
+        mem.record(5, Action::Sell { item: 0, qty: 1 });
+        assert_eq!(mem.tries_at(5), 1);
+        mem.record(5, Action::Walk(2));
+        assert_eq!(mem.tries_at(5), 2, "ordinary no-time actions still count");
+        mem.record(5, Action::Walk(2));
+        assert_eq!(mem.tries_at(5), 3);
     }
 
     #[test]

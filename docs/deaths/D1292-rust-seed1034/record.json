@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1292-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Half-Troll Priest",
+  "raw_cause": "a fruit bat",
+  "terminal": {
+    "cause": "a fruit bat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1477,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "menu",
+    "git_rev": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+    "git_dirty": "no",
+    "source_sha256": "7f2a0ccd76e03d8222e2912efed7f627d42ddec94bc5e94ea12205f6d80fb113",
+    "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 155,
+    "of": 155
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t35-full/full-3-priest-4",
+      "result_sha256": "90c460b4b5072ecda3d2ee1f6268b3d8a2c97eb488d108741957a1713deb9149",
+      "raw_sha256": {
+        "keys.log": "90c460b4b5072ecda3d2ee1f6268b3d8a2c97eb488d108741957a1713deb9149",
+        "messages.log": "f534424d314cdc7d59e2804a1c9db7a41ee86f81b665211d570a48f22c1ed18b",
+        "state.log": "c2e177a0b5f6146a149eab5afe620419e4a83d727a0ea0b80061b93ee5cdd8ca"
+      },
+      "source_commit": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+      "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6"
+    }
+  ],
+  "encounter_family": "start-ab64df84fb86752996fa7d7c79ac57b45669616d9d4932d53e9f18dc57044c97",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2f45d5850a8fc12f76cadb80c94c0f57fc4f4cce7c3aa2bb62b10157f8f68893",
+    "config.txt": "20107157744cfbd8e823e293418852e03aa9bb3557faee37bd91673ac8699225",
+    "depths.json": "5874cadae184f73696099cae8dca76496db0c77bbfabeceb33f15eccc430f9df",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "f76087773400c0437fd2cef93dd8568fabc44b85e3e4bcce81725b5a757bcf92",
+    "trace-tail.jsonl": "1ada8a2ff829a0a1b5d0e3d2bf277f7f01aec008f8adbb14be90916f964546c8"
+  },
+  "investigation": null,
+  "issue": null
+}

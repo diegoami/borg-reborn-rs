@@ -6,15 +6,17 @@
 //! the full tactical layer is M4's.
 //!
 //! M3's mode set is deliberately small (PLAN.md: *the first strategy
-//! without the full tactical layer*): recover, descend, explore. T3.4
-//! puts the playing behaviours on top of it and T3.5 the town; M4's
-//! tactical layer replaces the placeholder's one-step retreat.
+//! without the full tactical layer*): recover, engage, town, descend and
+//! explore. T3.4 puts the playing behaviours on top of it and T3.5 the
+//! town's survival reserves; M4's tactical layer replaces the
+//! placeholder's one-step retreat.
 
 use crate::borg::{stand_still, Memory, Rng};
 use crate::danger::danger;
 use crate::engine::PlayerView;
 use crate::executor::Action;
 use crate::knowledge::Knowledge;
+use crate::observation::Item;
 use crate::params::Params;
 use crate::path::{Goal as PathGoal, Paths, UNREACHED};
 use crate::world::World;
@@ -42,6 +44,9 @@ pub enum Mode {
     /// Fight an adjacent monster whose exchange we win (task T3.4: the
     /// fight the danger sum makes decidable).
     Engage,
+    /// Restock survival reserves and identify consumables in safety
+    /// (task T3.5; GOALS principle 7).
+    Town,
     /// Reach a down staircase and take it.
     Descend,
     /// Reveal the level: walk to the frontier of the unknown.
@@ -53,8 +58,79 @@ impl Mode {
         match self {
             Mode::Recover => "recover",
             Mode::Engage => "engage",
+            Mode::Town => "town",
             Mode::Descend => "descend",
             Mode::Explore => "explore",
+        }
+    }
+}
+
+/// The survival reserves checked every think in town (GOALS principle 7).
+/// These are M3's early-game kinds and minima, not M5's depth/class kit
+/// policy. The equipped light does not count as a spare.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Reserve {
+    Food,
+    Light,
+    Cure,
+    Escape,
+    Recall,
+}
+
+impl Reserve {
+    /// Food and light first, then the D0015 cure/escape loadout, then the
+    /// way home (which c15 §12.4 makes optional on DL1-4 when gold is short).
+    const ALL: [Reserve; 5] = [
+        Reserve::Food,
+        Reserve::Light,
+        Reserve::Cure,
+        Reserve::Escape,
+        Reserve::Recall,
+    ];
+
+    fn minimum(self, p: &Params) -> u32 {
+        match self {
+            Reserve::Food => p.reserve_food,
+            Reserve::Light => p.reserve_light,
+            Reserve::Cure => p.reserve_cure,
+            Reserve::Escape => p.reserve_escape,
+            Reserve::Recall => p.reserve_recall,
+        }
+    }
+
+    fn matches(self, k: &Knowledge, item: &Item) -> bool {
+        let name = match self {
+            Reserve::Food => "Ration of Food",
+            Reserve::Light => "Wooden Torch",
+            Reserve::Cure => "Cure Light Wounds",
+            Reserve::Escape => "Phase Door",
+            Reserve::Recall => "Word of Recall",
+        };
+        k.kinds.get(item.kind as usize).is_some_and(|kind| {
+            kind.name
+                .chars()
+                .filter(|c| !matches!(c, '&' | '~'))
+                .collect::<String>()
+                .trim()
+                == name
+        })
+    }
+}
+
+/// One store action, recomputed from every observation so a sold-out row
+/// can never leave a stale ware letter behind (S15, minimaxflash-2#24).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TownJob {
+    Buy { shop: i32, ware: usize },
+    Sell { item: usize },
+}
+
+impl TownJob {
+    fn shop(self) -> i32 {
+        match self {
+            TownJob::Buy { shop, .. } => shop,
+            // The Alchemist buys every scroll and potion (store.txt:152-180).
+            TownJob::Sell { .. } => 4,
         }
     }
 }
@@ -282,6 +358,96 @@ impl FirstStrategy {
             .map(|(_, dir, _)| dir)
     }
 
+    /// How many *identified* items of one reserve are in the pack. An
+    /// unknown potion is not yet a usable cure (bbc D0011/D0012), even
+    /// though the C Borg's item analysis exposes its real kind.
+    fn reserve_count(reserve: Reserve, ctx: &DecisionCtx) -> u32 {
+        ctx.world
+            .character
+            .inventory
+            .iter()
+            .filter(|item| item.aware && reserve.matches(ctx.knowledge, item))
+            .map(|item| u32::from(item.number))
+            .sum()
+    }
+
+    fn reserves_met(ctx: &DecisionCtx) -> bool {
+        Reserve::ALL
+            .into_iter()
+            .all(|reserve| Self::reserve_count(reserve, ctx) >= reserve.minimum(ctx.params))
+    }
+
+    /// The first unmet reserve with an affordable ware. One item is bought
+    /// per visit; the next observation chooses anew. A full pack permits a
+    /// purchase only into an existing stack, matching the engine's combine
+    /// rule without guessing a free slot (GOALS principle 7).
+    fn next_purchase(ctx: &DecisionCtx) -> Option<TownJob> {
+        for reserve in Reserve::ALL {
+            if Self::reserve_count(reserve, ctx) >= reserve.minimum(ctx.params) {
+                continue;
+            }
+            let purchase = ctx
+                .world
+                .stock
+                .iter()
+                .flat_map(|stock| {
+                    stock
+                        .wares
+                        .iter()
+                        .enumerate()
+                        .map(move |(ware, w)| (stock.number, ware, w))
+                })
+                .filter(|(_, _, w)| {
+                    w.item.number > 0
+                        && w.item.aware
+                        && reserve.matches(ctx.knowledge, &w.item)
+                        && w.price >= 0
+                        && w.price <= ctx.world.character.status.as_ref().map_or(0, |s| s.gold)
+                        && (ctx.world.character.pack_free() > 0
+                            || ctx
+                                .world
+                                .character
+                                .inventory
+                                .iter()
+                                .any(|item| item.kind == w.item.kind))
+                })
+                .min_by_key(|(shop, ware, w)| (w.price, *shop, *ware))
+                .map(|(shop, ware, _)| TownJob::Buy { shop, ware });
+            if purchase.is_some() {
+                return purchase;
+            }
+        }
+        None
+    }
+
+    /// An unidentified scroll or potion to give to the Alchemist. Sale is
+    /// identification, not income: `do_cmd_sell` learns the flavour and
+    /// runes before handing it over (store.c:1947-1956), and
+    /// `birth_no_selling` pays nothing. One of a stack is enough.
+    fn next_sale(ctx: &DecisionCtx) -> Option<TownJob> {
+        // TV_SCROLL and TV_POTION, object_base.txt's order at the pin.
+        const CONSUMABLES: [u8; 2] = [25, 26];
+        ctx.world
+            .character
+            .inventory
+            .iter()
+            .enumerate()
+            .find(|(_, item)| !item.aware && CONSUMABLES.contains(&item.tval))
+            .map(|(item, _)| TownJob::Sell { item })
+    }
+
+    /// Reserves are invariants, so identification waits until they are
+    /// satisfied. There are deliberately no discretionary purchases in M3.
+    fn town_job(ctx: &DecisionCtx) -> Option<TownJob> {
+        Self::next_purchase(ctx).or_else(|| {
+            if Self::reserves_met(ctx) {
+                Self::next_sale(ctx)
+            } else {
+                None
+            }
+        })
+    }
+
     /// An object worth stopping for lies underfoot (task T3.4): with
     /// `birth_no_selling` an object is worth carrying only to use or
     /// wear, but gold is the one loot that is value (S15 §6b) — and a
@@ -333,6 +499,27 @@ impl FirstStrategy {
                     .map(Action::Walk)
                     .or_else(|| Self::cornered_fight(ctx).map(Action::Attack))
             }
+            Mode::Town => {
+                let job = Self::town_job(ctx)?;
+                let shop = ctx
+                    .world
+                    .shops
+                    .iter()
+                    .find(|shop| shop.number == job.shop())?;
+                if (ctx.view.x, ctx.view.y) == (shop.x, shop.y) {
+                    return Some(match job {
+                        TownJob::Buy { ware, .. } => Action::Buy { ware },
+                        TownJob::Sell { item } => Action::Sell { item, qty: 1 },
+                    });
+                }
+                ctx.paths
+                    .step(
+                        ctx.world,
+                        ctx.knowledge,
+                        &PathGoal::Grids(vec![(shop.x, shop.y)]),
+                    )
+                    .map(Action::Walk)
+            }
             Mode::Descend => {
                 let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
                 let threat = danger(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y, 1);
@@ -374,6 +561,23 @@ impl FirstStrategy {
                 .map(|i| ctx.world.level.monsters[i].hp)
                 .min()
                 .unwrap_or(0) as i64,
+            // Purchases move the reserve counts; identification sales move
+            // the aware item count (down as well as up is still progress).
+            Mode::Town => {
+                let reserves = Reserve::ALL
+                    .into_iter()
+                    .map(|r| Self::reserve_count(r, ctx))
+                    .sum::<u32>();
+                let aware = ctx
+                    .world
+                    .character
+                    .inventory
+                    .iter()
+                    .filter(|item| item.aware)
+                    .map(|item| u32::from(item.number))
+                    .sum::<u32>();
+                i64::from(reserves + aware)
+            }
             Mode::Descend => ctx.world.level.depth as i64,
             Mode::Explore => Self::mapped(ctx.world),
         }
@@ -402,6 +606,16 @@ impl FirstStrategy {
         if !Self::adjacent(ctx).is_empty() {
             return Mode::Engage;
         }
+        // Survival reserves outrank an already-live travel goal: arriving
+        // in town with shopping to do must not immediately descend again
+        // (GOALS principle 7). A completed or cooled town goal ends here.
+        let town_cooled = self.cooldowns.get(&Mode::Town).is_none_or(|&t| turn >= t);
+        if ctx.world.level.depth == 0 && town_cooled && Self::town_job(ctx).is_some() {
+            return Mode::Town;
+        }
+        if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Town) {
+            self.goal = None;
+        }
         // A live goal keeps its mode (hysteresis): still inside its
         // budget, or the mode can still act.
         if let Some(goal) = &self.goal {
@@ -412,6 +626,7 @@ impl FirstStrategy {
                 // A fight that has not progressed in a tenth of the
                 // explore budget is lost or illusory; cool it and leave.
                 Mode::Engage => i64::from(ctx.params.explore_budget_turns) / 10,
+                Mode::Town => i64::from(ctx.params.explore_budget_turns),
                 Mode::Descend => i64::from(ctx.params.explore_budget_turns),
                 Mode::Explore => i64::from(ctx.params.explore_budget_turns),
             };
@@ -539,6 +754,7 @@ impl Strategy for FirstStrategy {
         let goal_name = match mode {
             Mode::Recover => "rest to full",
             Mode::Engage => "win the exchange",
+            Mode::Town => "restock and identify",
             Mode::Descend => "reach the down staircase",
             Mode::Explore => "reveal the frontier",
         };
@@ -574,6 +790,24 @@ mod tests {
         let mut w = w;
         let mut k = k;
         k.classes = vec![crate::knowledge::tests::warrior()];
+        k.kinds = (0..=6)
+            .map(|index| crate::knowledge::ObjectKind {
+                index,
+                ..Default::default()
+            })
+            .collect();
+        for (index, name, tval, sval) in [
+            (1, "& Ration~ of Food", 28, 5),
+            (2, "& Wooden Torch~", 19, 1),
+            (3, "Cure Light Wounds", 26, 8),
+            (4, "Phase Door", 25, 1),
+            (5, "Word of Recall", 25, 24),
+            (6, "Mystery", 26, 99),
+        ] {
+            k.kinds[index].name = name.into();
+            k.kinds[index].tval = tval;
+            k.kinds[index].sval = sval;
+        }
         w.character.equipment = vec![crate::observation::Slot {
             slot_type: 1,
             item: Some(crate::observation::Item {
@@ -615,6 +849,86 @@ mod tests {
             Rng::new(),
             Params::default(),
         )
+    }
+
+    /// A test consumable. Kinds 1–6 are food, light, cure, escape, Recall
+    /// and an unknown potion, installed by `ctx_of`.
+    fn item(kind: u32, number: u8, aware: bool) -> Item {
+        let (tval, sval) = match kind {
+            1 => (28, 5),
+            2 => (19, 1),
+            3 => (26, 8),
+            4 => (25, 1),
+            5 => (25, 24),
+            6 => (26, 99),
+            _ => unreachable!(),
+        };
+        Item {
+            kind,
+            tval,
+            sval,
+            number,
+            weight: 1,
+            timeout: 0,
+            level: 1,
+            desc: format!("test kind {kind}"),
+            aware,
+            fully_known: aware,
+            runes_known: aware,
+            flags: [0; 5],
+            ac: 0,
+            dd: 0,
+            ds: 0,
+            to_h: 0,
+            to_d: 0,
+            to_a: 0,
+            modifiers: vec![0; 16],
+            elements: vec![(0, 0); 25],
+        }
+    }
+
+    fn stock(number: i32, kinds: &[(u32, i32)]) -> crate::observation::StoreStock {
+        crate::observation::StoreStock {
+            number,
+            wares: kinds
+                .iter()
+                .map(|&(kind, price)| crate::observation::Ware {
+                    item: item(kind, 40, true),
+                    price,
+                })
+                .collect(),
+        }
+    }
+
+    fn make_town(w: &mut World, gold: i32, inventory: &[(u32, u8)]) {
+        w.level.depth = 0;
+        // The map helper observed at depth 1, when shops are deliberately
+        // not noted; expose its two shop entrances to the town tests.
+        for y in 0..w.level.height {
+            for x in 0..w.level.width {
+                let number = match w.level.at(x, y).map(|g| g.feat) {
+                    Some(crate::borg::feat::STORE_GENERAL) => 0,
+                    Some(crate::borg::feat::STORE_ALCHEMY) => 4,
+                    _ => continue,
+                };
+                w.shops.push(crate::world::Shop {
+                    number,
+                    x,
+                    y,
+                    last_visit: None,
+                });
+            }
+        }
+        w.character.inventory = inventory
+            .iter()
+            .map(|&(kind, number)| item(kind, number, true))
+            .collect();
+        if let Some(s) = w.character.status.as_mut() {
+            s.depth = 0;
+            s.gold = gold;
+            s.pack_used = inventory.len() as i32;
+            s.pack_size = 23;
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -962,6 +1276,198 @@ mod tests {
         let v = view(&w);
         let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
         assert_ne!(d.action, Action::Descend, "never descend in contact");
+    }
+
+    #[test]
+    fn reserves_are_bought_one_at_a_time_before_town_is_left() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["########", "#@a..>.#", "#...s..#", "########"], 20, 20);
+        make_town(&mut w, 137, &[(1, 3), (2, 2), (5, 1)]);
+        w.character.status.as_mut().unwrap().x = 2;
+        w.stock = vec![stock(4, &[(3, 20), (4, 15), (5, 125)])];
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "town");
+        assert_eq!(d.action, Action::Buy { ware: 0 }, "three CLW before Phase");
+
+        w.character.inventory.push(item(3, 3, true));
+        w.character.status.as_mut().unwrap().pack_used += 1;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "town");
+        assert_eq!(d.action, Action::Buy { ware: 1 }, "then four Phase Door");
+
+        w.character.inventory.push(item(4, 4, true));
+        w.character.status.as_mut().unwrap().pack_used += 1;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.mode, "descend",
+            "the reserves are invariants, not a shopping loop"
+        );
+        assert!(
+            matches!(d.action, Action::Walk(_)),
+            "back toward the staircase"
+        );
+    }
+
+    #[test]
+    fn unknown_consumables_are_sold_for_identification_after_reserves() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["########", "#@a..>.#", "########"], 20, 20);
+        make_town(&mut w, 137, &[(1, 3), (2, 2), (3, 3), (4, 4), (5, 1)]);
+        w.character.status.as_mut().unwrap().x = 2;
+        w.character.inventory.push(item(6, 2, false));
+        w.character.status.as_mut().unwrap().pack_used += 1;
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "town");
+        assert_eq!(d.action, Action::Sell { item: 5, qty: 1 });
+
+        // An unmet reserve outranks identification: the Phase purchase
+        // happens before the unknown potion is handed over.
+        w.character.inventory[3].number = 3;
+        w.stock = vec![stock(4, &[(4, 15)])];
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Buy { ware: 0 });
+    }
+
+    #[test]
+    fn an_unaware_cure_does_not_count_as_a_reserve() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@a..#", "######"], 20, 20);
+        make_town(&mut w, 137, &[(1, 3), (2, 2), (4, 4), (5, 1)]);
+        w.character.status.as_mut().unwrap().x = 2;
+        w.character.inventory.push(item(3, 3, false));
+        w.stock = vec![stock(4, &[(3, 20)])];
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.action,
+            Action::Buy { ware: 0 },
+            "unknown cures still need identifying"
+        );
+    }
+
+    #[test]
+    fn unavailable_stock_and_a_full_pack_do_not_trap_the_borg_in_town() {
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@.>.#", "######"], 20, 20);
+        make_town(&mut w, 137, &[(5, 1)]);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend", "nothing affordable or stocked: go play");
+
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@a>.#", "######"], 20, 20);
+        make_town(&mut w, 137, &[(1, 3), (2, 2), (3, 3), (4, 3), (5, 1)]);
+        w.character.status.as_mut().unwrap().x = 2;
+        w.character.status.as_mut().unwrap().pack_used = 23;
+        w.stock = vec![stock(4, &[(4, 15), (5, 125)])];
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.action,
+            Action::Buy { ware: 0 },
+            "the existing Phase stack has room"
+        );
+
+        w.character.inventory[3].number = 4;
+        w.character.inventory.retain(|item| item.kind != 5);
+        let mut p = Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "descend", "a new stack cannot fit, so Recall waits");
     }
 
     #[test]

@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1257; distinct starting conditions: 1256; retained process attempts: 1257 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1305; distinct starting conditions: 1304; retained process attempts: 1305 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1263,6 +1263,54 @@ Dossiers: 1257; distinct starting conditions: 1256; retained process attempts: 1
 | [D1275-rust-seed1071](D1275-rust-seed1071/report.md) | unassigned | `795a3bfb1c5c` | 1071 | starvation | 89220 | unassessed |
 | [D1276-rust-seed102](D1276-rust-seed102/report.md) | unassigned | `bb1a37f87290` | 102 | a fruit bat | 377 | unassessed |
 | [D1277-rust-seed101](D1277-rust-seed101/report.md) | unassigned | `bb1a37f87290` | 101 | poison | 2490 | unassessed |
+| [D1278-rust-seed102](D1278-rust-seed102/report.md) | unassigned | `155c25aae6ba` | 102 | a grey mold | 415 | unassessed |
+| [D1279-rust-seed101](D1279-rust-seed101/report.md) | unassigned | `155c25aae6ba` | 101 | a soldier | 3696 | unassessed |
+| [D1280-rust-seed103](D1280-rust-seed103/report.md) | unassigned | `155c25aae6ba` | 103 | a grey mushroom patch | 3513 | unassessed |
+| [D1281-rust-seed1010](D1281-rust-seed1010/report.md) | unassigned | `155c25aae6ba` | 1010 | a scruffy little dog | 1199 | unassessed |
+| [D1282-rust-seed1051](D1282-rust-seed1051/report.md) | unassigned | `155c25aae6ba` | 1051 | a giant white mouse | 426 | unassessed |
+| [D1283-rust-seed1053](D1283-rust-seed1053/report.md) | unassigned | `155c25aae6ba` | 1053 | a scrawny cat | 1108 | unassessed |
+| [D1284-rust-seed1014](D1284-rust-seed1014/report.md) | unassigned | `155c25aae6ba` | 1014 | a rock lizard | 1456 | unassessed |
+| [D1285-rust-seed1030](D1285-rust-seed1030/report.md) | unassigned | `155c25aae6ba` | 1030 | a grey mold | 1075 | unassessed |
+| [D1286-rust-seed1024](D1286-rust-seed1024/report.md) | unassigned | `155c25aae6ba` | 1024 | a floating eye | 1160 | unassessed |
+| [D1287-rust-seed1020](D1287-rust-seed1020/report.md) | unassigned | `155c25aae6ba` | 1020 | a floating eye | 1699 | unassessed |
+| [D1288-rust-seed1013](D1288-rust-seed1013/report.md) | unassigned | `155c25aae6ba` | 1013 | a wild dog | 1551 | unassessed |
+| [D1289-rust-seed1060](D1289-rust-seed1060/report.md) | unassigned | `155c25aae6ba` | 1060 | a fruit bat | 1581 | unassessed |
+| [D1290-rust-seed1041](D1290-rust-seed1041/report.md) | unassigned | `155c25aae6ba` | 1041 | a grey mushroom patch | 1016 | unassessed |
+| [D1291-rust-seed1001](D1291-rust-seed1001/report.md) | unassigned | `155c25aae6ba` | 1001 | a rock lizard | 1585 | unassessed |
+| [D1292-rust-seed1034](D1292-rust-seed1034/report.md) | unassigned | `155c25aae6ba` | 1034 | a fruit bat | 1477 | unassessed |
+| [D1293-rust-seed1042](D1293-rust-seed1042/report.md) | unassigned | `155c25aae6ba` | 1042 | a giant yellow centipede | 2620 | unassessed |
+| [D1294-rust-seed1054](D1294-rust-seed1054/report.md) | unassigned | `155c25aae6ba` | 1054 | a scruffy little dog | 2681 | unassessed |
+| [D1295-rust-seed1022](D1295-rust-seed1022/report.md) | unassigned | `155c25aae6ba` | 1022 | a crow | 2108 | unassessed |
+| [D1296-rust-seed1012](D1296-rust-seed1012/report.md) | unassigned | `155c25aae6ba` | 1012 | a soldier ant | 2719 | unassessed |
+| [D1297-rust-seed1002](D1297-rust-seed1002/report.md) | unassigned | `155c25aae6ba` | 1002 | a scruffy little dog | 3712 | unassessed |
+| [D1298-rust-seed1043](D1298-rust-seed1043/report.md) | unassigned | `155c25aae6ba` | 1043 | a grey mold | 2585 | unassessed |
+| [D1299-rust-seed1050](D1299-rust-seed1050/report.md) | unassigned | `155c25aae6ba` | 1050 | a giant white centipede | 2155 | unassessed |
+| [D1300-rust-seed1000](D1300-rust-seed1000/report.md) | unassigned | `155c25aae6ba` | 1000 | a giant white mouse | 2805 | unassessed |
+| [D1301-rust-seed1033](D1301-rust-seed1033/report.md) | unassigned | `155c25aae6ba` | 1033 | a rock lizard | 4430 | unassessed |
+| [D1302-rust-seed1021](D1302-rust-seed1021/report.md) | unassigned | `155c25aae6ba` | 1021 | a fruit bat | 4038 | unassessed |
+| [D1303-rust-seed1003](D1303-rust-seed1003/report.md) | unassigned | `155c25aae6ba` | 1003 | a giant white mouse | 4842 | unassessed |
+| [D1304-rust-seed1044](D1304-rust-seed1044/report.md) | unassigned | `155c25aae6ba` | 1044 | a wild dog | 4813 | unassessed |
+| [D1305-rust-seed1040](D1305-rust-seed1040/report.md) | unassigned | `155c25aae6ba` | 1040 | a giant white mouse | 12637 | unassessed |
+| [D1306-rust-seed1064](D1306-rust-seed1064/report.md) | unassigned | `155c25aae6ba` | 1064 | a scruffy little dog | 1132 | unassessed |
+| [D1307-rust-seed1062](D1307-rust-seed1062/report.md) | unassigned | `155c25aae6ba` | 1062 | a small kobold | 9914 | unassessed |
+| [D1308-rust-seed1052](D1308-rust-seed1052/report.md) | unassigned | `155c25aae6ba` | 1052 | a soldier ant | 14517 | unassessed |
+| [D1309-rust-seed1061](D1309-rust-seed1061/report.md) | unassigned | `155c25aae6ba` | 1061 | starvation | 44680 | unassessed |
+| [D1310-rust-seed1070](D1310-rust-seed1070/report.md) | unassigned | `155c25aae6ba` | 1070 | a fruit bat | 4120 | unassessed |
+| [D1311-rust-seed1072](D1311-rust-seed1072/report.md) | unassigned | `155c25aae6ba` | 1072 | a fruit bat | 1561 | unassessed |
+| [D1312-rust-seed1063](D1312-rust-seed1063/report.md) | unassigned | `155c25aae6ba` | 1063 | a giant white mouse | 8865 | unassessed |
+| [D1313-rust-seed1071](D1313-rust-seed1071/report.md) | unassigned | `155c25aae6ba` | 1071 | a giant white mouse | 2990 | unassessed |
+| [D1314-rust-seed1074](D1314-rust-seed1074/report.md) | unassigned | `155c25aae6ba` | 1074 | a scruffy little dog | 1609 | unassessed |
+| [D1315-rust-seed1073](D1315-rust-seed1073/report.md) | unassigned | `155c25aae6ba` | 1073 | a fatal wound | 6530 | unassessed |
+| [D1316-rust-seed1082](D1316-rust-seed1082/report.md) | unassigned | `155c25aae6ba` | 1082 | a giant white centipede | 1806 | unassessed |
+| [D1317-rust-seed1083](D1317-rust-seed1083/report.md) | unassigned | `155c25aae6ba` | 1083 | a blubbering icky thing | 3894 | unassessed |
+| [D1318-rust-seed1080](D1318-rust-seed1080/report.md) | unassigned | `155c25aae6ba` | 1080 | a scrawny cat | 10641 | unassessed |
+| [D1319-rust-seed1084](D1319-rust-seed1084/report.md) | unassigned | `155c25aae6ba` | 1084 | a small kobold | 13211 | unassessed |
+| [D1320-rust-seed1023](D1320-rust-seed1023/report.md) | unassigned | `155c25aae6ba` | 1023 | starvation | 89220 | unassessed |
+| [D1321-rust-seed1004](D1321-rust-seed1004/report.md) | unassigned | `155c25aae6ba` | 1004 | starvation | 89240 | unassessed |
+| [D1322-rust-seed1011](D1322-rust-seed1011/report.md) | unassigned | `155c25aae6ba` | 1011 | starvation | 89190 | unassessed |
+| [D1323-rust-seed1032](D1323-rust-seed1032/report.md) | unassigned | `155c25aae6ba` | 1032 | starvation | 89220 | unassessed |
+| [D1324-rust-seed1031](D1324-rust-seed1031/report.md) | unassigned | `155c25aae6ba` | 1031 | starvation | 89200 | unassessed |
+| [D1325-rust-seed1081](D1325-rust-seed1081/report.md) | unassigned | `155c25aae6ba` | 1081 | starvation | 89240 | unassessed |
 
 ## Aggregated actions
 

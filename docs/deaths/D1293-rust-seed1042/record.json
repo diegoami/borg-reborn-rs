@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1293-rust-seed1042",
+  "run_kind": "harness",
+  "character": "Half-Orc Necromancer",
+  "raw_cause": "a giant yellow centipede",
+  "terminal": {
+    "cause": "a giant yellow centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2620,
+    "race_idx": 6,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1042,
+    "flags": "menu",
+    "git_rev": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+    "git_dirty": "no",
+    "source_sha256": "7f2a0ccd76e03d8222e2912efed7f627d42ddec94bc5e94ea12205f6d80fb113",
+    "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6",
+    "borg_txt_sha256": "bd1fad7705c0d09d21f383b79f51a50445beaa00ed904f5227e14aa5e08b4cf7",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 260
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t35-full/full-4-necro-2",
+      "result_sha256": "b31705fe4a2527c7fc7bfb05ced657019d195d8c3bbc1fa8db789790c598a806",
+      "raw_sha256": {
+        "keys.log": "b31705fe4a2527c7fc7bfb05ced657019d195d8c3bbc1fa8db789790c598a806",
+        "messages.log": "02de5e567b2cd12d97814993763b3da88e06618dd149257cfbd3a11879e05cbf",
+        "state.log": "a2788f74d9c9356278ee8f22ca510c257fefef45e5f8a1eead70a2fe07c4f685"
+      },
+      "source_commit": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+      "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6"
+    }
+  ],
+  "encounter_family": "start-2f5b2c03191bd7ce8efff0425c2854416ba105833cb267b79f32c4d47f2f455c",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2f45d5850a8fc12f76cadb80c94c0f57fc4f4cce7c3aa2bb62b10157f8f68893",
+    "config.txt": "adf477bf8aa1d38b9c95aec8da773cabfdbe6def98c773f546942effcc8629fd",
+    "depths.json": "6eea59ff5ef29db4823b1b3d6d5180dfd77f882ed82f589110f3e330ea6ddc9f",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "4b4bf98cc194cda43eb47cdc3482382aec4f591f87075d31ddd80b59610f7236",
+    "trace-tail.jsonl": "37d094a8a0f618c35f64b39f9cfee53b129768cdcaf0a759931a62c4032d43ea"
+  },
+  "investigation": null,
+  "issue": null
+}

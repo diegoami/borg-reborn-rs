@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1316-rust-seed1082",
+  "run_kind": "harness",
+  "character": "Kobold Blackguard",
+  "raw_cause": "a giant white centipede",
+  "terminal": {
+    "cause": "a giant white centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1806,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1082,
+    "flags": "menu",
+    "git_rev": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+    "git_dirty": "no",
+    "source_sha256": "7f2a0ccd76e03d8222e2912efed7f627d42ddec94bc5e94ea12205f6d80fb113",
+    "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6",
+    "borg_txt_sha256": "2766360d6049eb06a55c6d80676a700914570e6ba0ca14ea33dd001ea282c83d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 185,
+    "of": 185
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t35-full/full-8-blackguard-2",
+      "result_sha256": "59fa40fa7b6d6d787ebe965cef9a7e545988baa0b7eaefc707f9be7be31e9867",
+      "raw_sha256": {
+        "keys.log": "59fa40fa7b6d6d787ebe965cef9a7e545988baa0b7eaefc707f9be7be31e9867",
+        "messages.log": "612bc41bf393f82118c685cf47e9ead4d23cd738b7620f18a4b4d3721ea47a52",
+        "state.log": "5322b647c49783525ec25a258ff447ef66cab8a3dd6a8c86dacea6a362e9580f"
+      },
+      "source_commit": "155c25aae6ba6d38b8535d1a575b1e271c3f6e41",
+      "binary_sha256": "af3f1455c5bcb1cf9ad79ca1f52f7af10d5c3468ec1f4b389c5570eef9ea45d6"
+    }
+  ],
+  "encounter_family": "start-90f95da6f7f8e0a287447878b6c855cb2900b9585c7ab4d7ab5966e3be29c6fd",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2f45d5850a8fc12f76cadb80c94c0f57fc4f4cce7c3aa2bb62b10157f8f68893",
+    "config.txt": "88d0298078eca5334a7ec962b5b6dd9d1435fefbe3e7e02cdf0366f12cc0abc5",
+    "depths.json": "a07af30830669917ab6e4b285df878c56f014861a1305265b1d09ac0f7417b4d",
+    "params.json": "13324a9ed07f1ecca73ecbf70a09970b1f7b6d5889b638bb26d88e49d675da52",
+    "summary.json": "bb50b4ed7f5298688fa7747d44266a249a45d06c22649b465affd1f91ea187df",
+    "trace-tail.jsonl": "c6bcfe25aab4c6b2fbf728344448197f61080c28ba566c51f64e9f78dcf17cf5"
+  },
+  "investigation": null,
+  "issue": null
+}
