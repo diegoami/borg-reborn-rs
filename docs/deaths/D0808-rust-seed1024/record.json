@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0808-rust-seed1024",
+  "run_kind": "harness",
+  "character": "Half-Orc Druid",
+  "raw_cause": "a blue yeek",
+  "terminal": {
+    "cause": "a blue yeek",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 278,
+    "race_idx": 6,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1024,
+    "flags": "menu",
+    "git_rev": "a4b58da637710fe150d4f7f2d5240fe59abc6c0a",
+    "git_dirty": "no",
+    "source_sha256": "6aa929829c146c95fc44fddcc2c5e37ae505f4fb15878bc8e0f8bcb44fdc2dfd",
+    "binary_sha256": "bf01454725f5b4e5364f27e345bc2ee2c5fde81cb8db0c3a182d2208814984dd",
+    "borg_txt_sha256": "e4576966ce8ed3f7705fab82689ecd701871e5cb090588c164df3307135c0b9e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 30,
+    "of": 30
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/cr-full/full-2-druid-4",
+      "result_sha256": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+      "raw_sha256": {
+        "keys.log": "679bf2877ebcc4350dcaabbbc15f6197a2210908549813333040fdd1c0c22992",
+        "messages.log": "3823c72cebc34151b880ed48d2b9cfa7fadc4949be39e54c6e55e126cefe45b6",
+        "state.log": "724f03d4f368dd0db4c61bc7a8d6676d9c6206d865db09952b3f12bc53463474"
+      },
+      "source_commit": "a4b58da637710fe150d4f7f2d5240fe59abc6c0a",
+      "binary_sha256": "bf01454725f5b4e5364f27e345bc2ee2c5fde81cb8db0c3a182d2208814984dd"
+    }
+  ],
+  "encounter_family": "start-5118b114b2370b5be64c7f39a3d8eebfedf1f19400051e8ce38c95d8473eaaff",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "98317c2a4e0978a3737f28c7b8c744d241a55ca63f9f2f8c739e69edff407390",
+    "config.txt": "767f453589d5f3a589fba24605a702695be11e3f5ddee1aeab5477cd2b767f2d",
+    "depths.json": "b07fc6a8b257cabfb7e0ed48afa6693a2aeeb5401a20f94b7c53e72b46b2dccd",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "b7e3468d9939c9231592c62c6dff4a9dd160b37df0870fb9fd46449c369044bf",
+    "trace-tail.jsonl": "5eded52c33b2e7cfd8f9528839bdc3f18497414f26a5a1f984699d8520a56ceb"
+  },
+  "investigation": null,
+  "issue": null
+}
