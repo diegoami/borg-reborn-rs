@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 803; distinct starting conditions: 803; retained process attempts: 803 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 804; distinct starting conditions: 804; retained process attempts: 804 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -809,6 +809,7 @@ Dossiers: 803; distinct starting conditions: 803; retained process attempts: 803
 | [D0801-rust-seed1003](D0801-rust-seed1003/report.md) | unassigned | `e1218a07a6a9` | 1003 | starvation | 89230 | unassessed |
 | [D0802-rust-seed1053](D0802-rust-seed1053/report.md) | unassigned | `e1218a07a6a9` | 1053 | a small kobold | 79515 | unassessed |
 | [D0803-rust-seed1033](D0803-rust-seed1033/report.md) | unassigned | `e1218a07a6a9` | 1033 | starvation | 89210 | unassessed |
+| [D0804-rust-seed29](D0804-rust-seed29/report.md) | unassigned | `f0eeee25d1ff` | 29 | Grip, Farmer Maggot's Dog | 666 | unassessed |
 
 ## Aggregated actions
 
