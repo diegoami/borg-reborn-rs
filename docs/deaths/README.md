@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1400; distinct starting conditions: 1399; retained process attempts: 1400 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1403; distinct starting conditions: 1402; retained process attempts: 1403 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1406,6 +1406,9 @@ Dossiers: 1400; distinct starting conditions: 1399; retained process attempts: 1
 | [D1418-rust-seed1031](D1418-rust-seed1031/report.md) | unassigned | `9644204b66b6` | 1031 | starvation | 89200 | unassessed |
 | [D1419-rust-seed1084](D1419-rust-seed1084/report.md) | unassigned | `9644204b66b6` | 1084 | starvation | 89240 | unassessed |
 | [D1420-rust-seed1032](D1420-rust-seed1032/report.md) | unassigned | `9644204b66b6` | 1032 | starvation | 89220 | unassessed |
+| [D1421-rust-seed102](D1421-rust-seed102/report.md) | unassigned | `437d7e66da9b` | 102 | a grey mold | 406 | unassessed |
+| [D1422-rust-seed103](D1422-rust-seed103/report.md) | unassigned | `437d7e66da9b` | 103 | a fruit bat | 1187 | unassessed |
+| [D1423-rust-seed101](D1423-rust-seed101/report.md) | unassigned | `437d7e66da9b` | 101 | a giant white mouse | 9323 | unassessed |
 
 ## Aggregated actions
 

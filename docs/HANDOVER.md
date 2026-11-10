@@ -44,6 +44,15 @@ triage are in [docs/FIXTURES.md](FIXTURES.md), the schema in
 tests. No play code changed, so no engine build, smoke run or reference
 regeneration was needed; the fixtures are pure crate tests.
 
+**Re-recording.** `harness/identity.sh` hashes the whole `borg-reborn-rs/`
+tree, tests included, so adding the fixture test changed the build identity
+even though play is byte-identical. CI's smoke deaths therefore arrived as
+a new encounter family; they are re-recorded as D1421-D1423 from the CI
+registry (seed 102/103/101, the same deaths as D1373-D1375). This is the
+existing process cost of a test-only change. Whether test files belong in
+the build-input hash is a repo-level question for the owner; it does not
+block M4.
+
 **Next:** #119 (T4.2), one threat assessment. It must account for #142
 first (the fixture `rs-d0006-mold-at-two-hp` pins the wrong decision), then
 add status (fear), the group/breeder multiplier and the multi-step horizon
