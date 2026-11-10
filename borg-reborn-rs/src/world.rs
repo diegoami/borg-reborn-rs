@@ -224,11 +224,15 @@ impl Character {
     ///
     /// The stats in use follow the known stat modifiers of the swap, as
     /// `calc_bonuses` recomputes them (`player-calcs.c:2058-2061`:
-    /// `stat_use = modify_stat_value(stat_cur, add)`). `add` also holds
-    /// what the Borg cannot see (race, class, shape, unknown runes), so it
-    /// is found from the observed `stat_use`, and the swap's change of
-    /// known modifiers is added to it (M2 review, finding 6).
-    pub fn wearing(&self, slot: usize, item: Option<Item>) -> Character {
+    /// `stat_use = modify_stat_value(stat_cur, add)`). `add` sums the race's
+    /// and class's adjustments, the gear's modifiers and what the Borg
+    /// cannot see (a shape, unknown runes). It is found from the observed
+    /// `stat_use`: exactly, except at the floor of 3, where a whole range of
+    /// penalties gives 3. There the bonus nearest the known one (race,
+    /// class and the gear's known modifiers) is taken, which is the
+    /// engine's whenever nothing unseen changes the stat (M2 reviews, R3
+    /// and the third review's 4).
+    pub fn wearing(&self, k: &Knowledge, slot: usize, item: Option<Item>) -> Character {
         let mut c = self.clone();
         if let Some(s) = c.equipment.get_mut(slot) {
             s.item = item;
@@ -236,25 +240,24 @@ impl Character {
         c.gear = GearBonuses::of(&c.equipment);
         if let Some(s) = c.status.as_mut() {
             let modifier = |g: &GearBonuses, i: usize| g.modifiers.get(i).copied().unwrap_or(0);
+            let race = k.player_race(s.race);
+            let class = k.class(s.class);
             for i in 0..STAT_MAX {
                 let delta = modifier(&c.gear, i) - modifier(&self.gear, i);
                 if delta == 0 {
                     continue;
                 }
+                let known = race.map_or(0, |r| r.stat_adj[i])
+                    + class.map_or(0, |c| c.stat_adj[i])
+                    + modifier(&self.gear, i);
                 let (cur, used) = (i32::from(s.stat_cur[i]), s.stat_use[i]);
-                // Every bonus that gives the observed value: one, except at
-                // the floor of 3, where a whole range of penalties does.
-                // Then the lowest result of the swap is taken, so the model
-                // never credits it with a stat it may not give (M2
-                // re-review, R3).
-                let Some(new) = (-60..=60)
+                let Some(add) = (-60..=60)
                     .filter(|&a| knowledge::modify_stat_value(cur, a) == used)
-                    .map(|a| knowledge::modify_stat_value(cur, a + delta))
-                    .min()
+                    .min_by_key(|&a| ((a - known).abs(), a))
                 else {
                     continue;
                 };
-                s.stat_use[i] = new;
+                s.stat_use[i] = knowledge::modify_stat_value(cur, add + delta);
                 s.stat_ind[i] = knowledge::stat_index(s.stat_use[i]) as i32;
             }
         }
@@ -303,7 +306,7 @@ impl Character {
     /// a blow does 1. Hit chance, criticals, slays, brands and the
     /// percent-damage birth option come with the threat model (M4). Compare
     /// weapons by trying them on a copy:
-    /// `character.wearing(slot, Some(item)).melee_per_turn(k)`.
+    /// `character.wearing(k, slot, Some(item)).melee_per_turn(k)`.
     pub fn melee_per_turn(&self, k: &Knowledge) -> Option<f64> {
         let blows = f64::from(self.blows(k)?) / 100.0;
         let per_blow = self.weapon().map_or(1.0, |w| {
@@ -537,7 +540,7 @@ mod tests {
         better.dd = 2;
         better.ds = 5;
         better.to_d = 3;
-        let tried = w.character.wearing(0, Some(better));
+        let tried = w.character.wearing(&k, 0, Some(better));
         assert_eq!(
             tried.melee_per_turn(&k),
             Some(9.0),
@@ -551,7 +554,7 @@ mod tests {
         // A 30 lb weapon at STR 17 (hold 28 lb) is too heavy: one blow.
         let mut heavy = w.character.equipment[0].item.clone().unwrap();
         heavy.weight = 300;
-        assert_eq!(w.character.wearing(0, Some(heavy)).blows(&k), Some(100));
+        assert_eq!(w.character.wearing(&k, 0, Some(heavy)).blows(&k), Some(100));
     }
 
     /// M2 review, finding 6: a launcher's to-dam is for its shots, the
@@ -572,7 +575,7 @@ mod tests {
         bow.ds = 0;
         bow.to_d = 10;
         assert_eq!(
-            c.wearing(1, Some(bow)).melee_per_turn(&k),
+            c.wearing(&k, 1, Some(bow)).melee_per_turn(&k),
             Some(2.5),
             "a (+0,+10) bow adds nothing to melee"
         );
@@ -580,21 +583,21 @@ mod tests {
         ring.to_d = 2;
         ring.modifiers = vec![0; 13];
         assert_eq!(
-            c.wearing(2, Some(ring.clone())).melee_per_turn(&k),
+            c.wearing(&k, 2, Some(ring.clone())).melee_per_turn(&k),
             Some(4.5),
             "a ring of damage adds to every blow"
         );
         let mut weapon = c.equipment[0].item.clone().unwrap();
         weapon.to_d = 4;
-        assert_eq!(c.wearing(0, Some(weapon)).melee_per_turn(&k), Some(6.5));
+        assert_eq!(c.wearing(&k, 0, Some(weapon)).melee_per_turn(&k), Some(6.5));
         ring.to_d = 0;
         ring.modifiers[0] = 3; // STR +3
-        let strong = c.wearing(2, Some(ring));
+        let strong = c.wearing(&k, 2, Some(ring));
         let s = strong.status.as_ref().unwrap();
         assert_eq!(s.stat_use[0], 18 + 20, "17 +3 is 18/20");
         assert_eq!(s.stat_ind[0], 17);
         assert_eq!(c.status.as_ref().unwrap().stat_use[0], 17, "the copy only");
-        let off = strong.wearing(2, None);
+        let off = strong.wearing(&k, 2, None);
         assert_eq!(
             off.status.as_ref().unwrap().stat_use[0],
             17,
@@ -614,11 +617,55 @@ mod tests {
             s.stat_cur[0] = 3;
             s.stat_use[0] = 3;
         }
-        let removed = weak.wearing(2, None);
+        let removed = weak.wearing(&k, 2, None);
         assert_eq!(
             removed.status.as_ref().unwrap().stat_use[0],
             3,
             "no stat is invented at the floor"
+        );
+    }
+
+    /// M2 third review, 4: at the floor of 3, the bonus in force is the
+    /// one nearest the known bonus (race, class, the gear's known
+    /// modifiers), which is the engine's when nothing unseen changes it.
+    #[test]
+    fn the_stat_floor_follows_the_known_bonus() {
+        let o = sample();
+        let w = world_of(&o);
+        let mut k = energy();
+        k.classes[0].stat_adj = [0; 5];
+        let mut c = w.character.clone();
+        c.equipment.push(Slot {
+            slot_type: 3,
+            item: None,
+        });
+        let ring = |str_mod: i16| {
+            let mut r = c.equipment[0].item.clone().unwrap();
+            r.modifiers = vec![0; 13];
+            r.modifiers[0] = str_mod;
+            r
+        };
+        let at = |c: &Character, cur: i16, used: i32, worn: Option<Item>| {
+            let mut c = c.clone();
+            c.equipment[2].item = worn;
+            c.gear = GearBonuses::of(&c.equipment);
+            let s = c.status.as_mut().unwrap();
+            s.stat_cur[0] = cur;
+            s.stat_use[0] = used;
+            c
+        };
+        let str_of = |c: &Character| c.status.as_ref().unwrap().stat_use[0];
+        // STR 3, no bonus at all: a +5 ring gives 8, as in the engine.
+        assert_eq!(str_of(&at(&c, 3, 3, None).wearing(&k, 2, Some(ring(5)))), 8);
+        // STR 4 held at 3 by a -5 ring: taking it off gives 4 back.
+        assert_eq!(
+            str_of(&at(&c, 4, 3, Some(ring(-5))).wearing(&k, 2, None)),
+            4
+        );
+        // STR 3 held at 3 by a -5 ring: taking it off leaves 3.
+        assert_eq!(
+            str_of(&at(&c, 3, 3, Some(ring(-5))).wearing(&k, 2, None)),
+            3
         );
     }
 
@@ -766,7 +813,8 @@ mod tests {
         cursed.elements = vec![(0, 0); ELEM_MAX];
         cursed.elements[3] = (-1, 0);
         cursed.elements[4] = (-1, 0);
-        let tried = c.wearing(1, Some(cloak)).wearing(0, Some(cursed));
+        let k = energy();
+        let tried = c.wearing(&k, 1, Some(cloak)).wearing(&k, 0, Some(cursed));
         assert_eq!(tried.gear.ac, 1 + 3 + 1 + 3);
         assert_eq!(tried.gear.resist[3], 0, "resist and vulnerability cancel");
         assert_eq!(tried.gear.resist[4], -1, "vulnerable");

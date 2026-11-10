@@ -16,7 +16,7 @@ have="$(bindgen --version 2>/dev/null | awk '{print $2}')"
     echo "generate.sh: bindgen $BINDGEN_VERSION needed (have '${have:-none}'): cargo install bindgen-cli --version $BINDGEN_VERSION --locked" >&2; exit 2; }
 
 FUNCTIONS='map_info|square_in_bounds_fully|square_object|square_isvault|square_iswebbed|square_shopnum|cave_monster|cmd_get_nrepeats|get_com|option_set|spell_by_index|store_stock_list|price_item|Term_inkey|object_desc|object_flags_known|object_flavor_is_aware|object_fully_known|object_runes_known|object_weight_one|pack_slots_used|square|monster_is_visible|feat_is_shop|panel_contains|equipped_item_slot|object_is_in_quiver'
-VARS='cave|player|turn|z_info|Rand_quick|Rand_value|state_i|STATE|Term|row_top_map|row_bottom_map|col_map|tile_width|tile_height|r_info|k_info|e_info|a_info|classes|races|stores|extract_energy|adj_str_blow|adj_str_hold|f_info'
+VARS='cave|player|turn|z_info|Rand_quick|Rand_value|state_i|STATE|Term|row_top_map|row_bottom_map|col_map|tile_width|tile_height|r_info|k_info|e_info|a_info|classes|races|stores|extract_energy|adj_str_blow|adj_str_hold|f_info|bodies'
 ITEMS='TMD_.*|FEAT_FLOOR|OPT_birth_percent_damage|OBJ_NOTICE_IGNORE|ODESC_FULL|ODESC_STORE|EVT_KBRD|EVT_NONE|EVT_DISCONNECT|ui_event|keypress'
 
 tmp="$(mktemp)"

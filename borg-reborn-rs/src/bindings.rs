@@ -1398,6 +1398,9 @@ const _: () = {
     ["Offset of field: player::upkeep"][::core::mem::offset_of!(player, upkeep) - 1144usize];
 };
 unsafe extern "C" {
+    pub static mut bodies: *mut player_body;
+}
+unsafe extern "C" {
     pub static mut races: *mut player_race;
 }
 unsafe extern "C" {
