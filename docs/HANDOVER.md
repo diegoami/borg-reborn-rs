@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.8, M4–M7 are task issues (#24)
+
+Created the dependency-ordered future work, with PLAN.md's death fixtures
+and owner-manual alternatives attached to the tasks that must satisfy
+them. No play code or reference change.
+
+- **M4, danger and survival:** #118 death-derived fixtures; #119 one
+  threat assessment; #120 tactical alternatives on one scale; #121 escape
+  ladder and landing risk; #122 consumables/status/reserves; #123
+  recovery and oscillation; #124 calibration report and M4 gate.
+- **M5, readiness and progression:** #125 depth readiness; #126 equipment
+  and pack valuation; #127 class item use/spells/ranged; #128 G1 on
+  `classes-1800` (owner-run zoo, D and margin fixed in advance).
+- **M6, the family:** #129 evidence-led class profiles; #130 screening
+  and racing; #131 G2 against better-borg-c on fresh seeds.
+- **M7+:** #132 deep suites and G3; #133 long games and G4.
+
+Every issue has the `task` label, its milestone and a **Needs** chain;
+T4.7 opens the M4 review rather than allowing an automatic M5 start.
+
+**M3 is complete.** Next and last in this session: open the M3 review PR
+(`reviewed` ← `main`) with the G0 evidence and review prompt, then stop.
+The reviewer is the owner's choice; do not start #118.
+
 ## 2026-11-10: T3.7, G0 (#23)
 
 **G0 passes; the report is [docs/G0.md](G0.md).** The first attempt did
