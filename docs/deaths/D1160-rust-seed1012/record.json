@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1160-rust-seed1012",
+  "run_kind": "harness",
+  "character": "Hobbit Mage",
+  "raw_cause": "a rock lizard",
+  "terminal": {
+    "cause": "a rock lizard",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4563,
+    "race_idx": 3,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1012,
+    "flags": "menu",
+    "git_rev": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+    "git_dirty": "yes",
+    "source_sha256": "ca8e9b206fd719335d6c7bc4b7df5afcf5ff5e728416d7f1649c1d374d5fb29e",
+    "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a",
+    "borg_txt_sha256": "32e88143092ebdb099b0f6341a5abe15f21cf964838d17bf9cab2d704a93635a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 458
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t33-full/full-1-mage-2",
+      "result_sha256": "6ed9685893387324968b868ab86eac03e3d48dee2df7227641d5e1110d9bf46b",
+      "raw_sha256": {
+        "keys.log": "6ed9685893387324968b868ab86eac03e3d48dee2df7227641d5e1110d9bf46b",
+        "messages.log": "401252f33e794193c7c0dd5334dd34075bd7da912425e9830e6f850c09f0ee26",
+        "state.log": "9307e778a4329ebe7ddcc2defc04cbab24bc80bda44366cc3f801e792ca39836"
+      },
+      "source_commit": "f2b2e1616a4f42626d262f7f67b061a6e1ff5e6a",
+      "binary_sha256": "f9766ab9d47439ae227938db1b66ff5a1a1e1dda15a18f05ce08e0651200591a"
+    }
+  ],
+  "encounter_family": "start-20788e6493ceaa54e249ef17d3c73555abb7d873f1eadc01df54bad498cfeea4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4b15f96a271cad6811bf19f6de0ce3bcd460e7e0bf6e9f1e4edb422d6cd9fe04",
+    "config.txt": "dc262045379d78c1c2a1fc2fbd7f6df1f37667552fbde3b35e116a467969947b",
+    "depths.json": "1e013e1af106d795fc858d279a5c2f4fa398256b9eb60bbc98932e0f98acdcee",
+    "params.json": "f885b34a78fcbb1cae4d59440a9c3e25f0be5528efe2bb7a051401ea8aff655e",
+    "summary.json": "e970e91886993b5e2df5b5c4692801e397719b0305c138bd86ec9b2e0086f1b3",
+    "trace-tail.jsonl": "961fa694035f4f31144cef0c8494db176a29c1da40a77b2e0a0bd77d3c033a51"
+  },
+  "investigation": null,
+  "issue": null
+}
