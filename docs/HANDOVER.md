@@ -24,14 +24,26 @@ regenerated; every game differs from T3.3's):
   the grid; what presses is fought or escaped first.
 - Rest unchanged (the strict zero-danger gate); the recovery invariant
   now also requires safety, so contact outranks resting.
+- **The world follows the player's mutable memory.** `map_info` reports
+  `player->cave`, and feature 0 means the player has forgotten the grid:
+  nightfall in town wipes boring floors (`cave_illuminate`,
+  cave-map.c:581-585; day length 10000, hence turn 50000). `World::see`
+  now erases those grids instead of keeping a private map. CI caught the
+  old behaviour diverging by 2.5 million grids in one town night; the
+  full test suite now has **0 perception differences over 39,002
+  thinks**.
+- **Town is left, not mapped.** At depth 0 Descend outranks Explore
+  (c15 TOWN-01): one earlier run starved after exploring town for
+  50,000 turns. The final full suite's deepest run reaches depth 2.
 
-**The honest M3 state:** the Borg fights and often wins — seed 101 now
-reaches CL2 and turn 9250 (was CL1, 2815) — but town packs (scrawny
-cats, wild dogs, scruffy little dogs: 18 of the full suite's 45 deaths)
-and poison (no cures yet) still kill it at CL1–2, and no run has passed
-depth 1. Modes across seed 101's 850 thinks: explore 471, engage 354,
-descend 24, recover 1; zero effect violations; deterministic. The
-Hold-heavy explore (231 holds) is worth a look in T3.7's G0 report.
+**The honest M3 state:** the Borg fights, but remains fragile. All 45
+full-suite runs still die at CL1–2; the deepest reaches depth 2, four
+starve after long dungeon stays, and fruit bats, poison and ordinary
+early monsters remain deadly. Final seed 101 dies of poison at turn
+2490; its 252 thinks split explore 134 / engage 116 / descend 2, with
+zero effect violations and byte-identical keys on rerun. The smoke
+priest survives to the 20,000-turn cap at depth 1. T3.7's G0 report
+should examine both the long starvation runs and any remaining Holds.
 
 **Next:** T3.5 (#21) — town: sell, buy reserves (the owner's verified
 D0015 loadout in the ledger is the target shape; the store actions and
