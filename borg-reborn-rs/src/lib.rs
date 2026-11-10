@@ -26,6 +26,7 @@ pub(crate) mod bindings;
 
 pub mod borg;
 pub mod engine;
+pub mod executor;
 pub mod knowledge;
 pub mod observation;
 pub mod params;

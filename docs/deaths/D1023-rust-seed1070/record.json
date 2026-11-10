@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1023-rust-seed1070",
+  "run_kind": "harness",
+  "character": "Half-Troll Ranger",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 9260,
+    "race_idx": 7,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1070,
+    "flags": "menu",
+    "git_rev": "851a1e23990a41a167598cfc6d6cdd49245e4506",
+    "git_dirty": "yes",
+    "source_sha256": "c76c70efebe4934cf3db65631b562a6f428189adb1920dcacf954538a0e1378c",
+    "binary_sha256": "4afeddb3d72cb43944d3f733c5881fcf97a46baf8223a04c70b87cb3018b9aac",
+    "borg_txt_sha256": "e4164d3484a44de22fb275de68d0d691d30bdbd4ab3e670ac06601d1a48961a8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 928
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t31-full/full-7-ranger-0",
+      "result_sha256": "eb9df6108a2369f2eea65dd800b7ed2535d345a11d234422423c1fb094005f0c",
+      "raw_sha256": {
+        "keys.log": "eb9df6108a2369f2eea65dd800b7ed2535d345a11d234422423c1fb094005f0c",
+        "messages.log": "a8fd2c26e79d28a77e62710a9f7b1af59ae4bd367ffb424ec99190fc76e32548",
+        "state.log": "a08eb5452a07e59d7e0ac2ed110f1c3689070734c2ee02886473dce5f087bc65"
+      },
+      "source_commit": "851a1e23990a41a167598cfc6d6cdd49245e4506",
+      "binary_sha256": "4afeddb3d72cb43944d3f733c5881fcf97a46baf8223a04c70b87cb3018b9aac"
+    }
+  ],
+  "encounter_family": "start-ad32f4f086a621129b3d7d767509f5a1e030fd7d5149aa970d71106650715d9c",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "883984b8547653f5e4aaeba5599b587b030effed794017ec6285711fd65c3b57",
+    "config.txt": "1a8c6175a31a123623c7cf5147307294c7ef0d008a3af05b331b5dfb9f828207",
+    "depths.json": "b56d4bfe6addc223a2df5ce1a4b8c92e1ee1f8d38c15c91fac8accc90668f948",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "acf4e6758c8f4469abc0eb4ebfdcc95cb0f7dc0a54e3a400643cab5246421343",
+    "trace-tail.jsonl": "40bbd0400999ec73451673e4a57a7e39d4c680640984725e44627a128ace912a"
+  },
+  "investigation": null,
+  "issue": null
+}

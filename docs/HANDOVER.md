@@ -2,6 +2,83 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.1, the executor and prompts (#17)
+
+M3 started (PLAN's row moved to *in progress*; the source refresh PR #108
+landed first, see below). `borg-reborn-rs/src/executor.rs` is L6:
+
+- **Actions to keys.** The `Action` vocabulary M3's strategy needs
+  (T3.4/T3.5): `Rest(n)`, `Descend`, `Ascend`, `Walk(d)`, `Attack(d)`
+  (the same key as a walk, named for its intent), `Get`, `Hold`,
+  `Alter(d)`, `Buy{ware}`, `Sell{item, qty}`. Every action is one
+  complete key sequence. Item letters come from the engine's own lists,
+  checked at the pin: the pack's `all_letters_nohjkl`
+  (`ui-menu.c:44`, labels at `ui-object.c:292`), the store's selections
+  with the original keyset (`ui-store.c:805`). The store sequences are
+  the C Borg's, lifted with citations
+  (`borg-store-buy.c:borg_think_shop_buy:1206-1244`,
+  `borg-store-sell.c:borg_think_shop_sell:1101-1146`): the whole store
+  visit runs inside one `,` (`do_cmd_hold`, cmd-cave.c), costs no game
+  time, and ends with the C Borg's `ESCAPE`s — one purchase per visit,
+  which also sidesteps the store list's renumbering on a sale-out
+  (borg-runner's minimaxflash-2#91).
+- **The prompt catcher** runs in `next_key` before the key queue, as the
+  C Borg's does (`borg.c:304-308`): `borg_react_prompted`'s table and
+  the `-more-` test (`borg-messages-react.c:95-324`,
+  `borg-messages.c:183-294`), answers unchanged, `"Die?"` excluded
+  (GOALS D5). Two declared departures, both in the module docs and
+  `docs/ENGINE.md`: we do not press a space to clear a normal message
+  (the C Borg does, `borg-messages.c:288-290`; it would change every
+  recorded key stream), and `auto_more` stays on (the catcher answers a
+  `-more-` if one ever appears; the cost — a message batch that scrolls
+  between thinks is not parsed from the screen — is declared, and T3.3
+  revisits it if the strategy needs the full message stream). A third,
+  cosmetic: the C Borg compares sub-screen lines with a trailing space;
+  our screen read trims, so the trimmed form is used.
+- **Expected effects.** Each action carries one (`Step`, `Time`,
+  `Depth`, `PackGrows`, `PackShrinks`), checked by the next think
+  against the new observation; a mismatch is a trace violation naming
+  the action, and prompts answered between thinks are a new `prompts`
+  field of each trace line (additive; old lines parse). The engine reads
+  the catcher needs joined the D3 list: `inkey_flag`, the message line's
+  first-cell attribute and the terminal cursor (`docs/ENGINE-READS.md`;
+  the bindings were regenerated).
+
+**Evidence:**
+- Play is byte-identical to the references: smoke 3/3, smoke-exact 3/3,
+  **full 45/45** (keys, messages, states). The catcher answered **0**
+  prompts in the full suite's 72,096 thinks (the placeholder meets no
+  prompts, as expected), and the effect check recorded exactly 5
+  violations — refused steps the same-turn guard already caught, now
+  named in the trace.
+- Unit tests cover every key sequence, the whole prompt table (and its
+  negatives: messages, blanks, `"Type"`, `"Die?"`, queue-not-empty
+  guards) and each effect's hold and fail. `cargo fmt`, `clippy
+  -D warnings` and the tools' 54 tests pass.
+- The suites' deaths are recorded at this source as D0989–D1034 (46
+  cases: the full suite's 45 and the smoke mage; the smoke-exact mage
+  dedupes into the smoke case). The plays equal the references', but the
+  Rust source hash is new, so they are new encounter families (RULES 12).
+
+**Found on the way:**
+- `birth_no_selling` defaults **true** in 4.2.6 (`list-options.h`):
+  stores pay nothing, the sale prompt says "Give", and one `Enter` still
+  confirms the hand-over. Sell's effect is therefore pack-based, not
+  gold-based.
+- A store visit charges no energy (`do_cmd_hold`: "turn will be taken
+  exiting the shop" sets `energy_use = 0`), so no store action can
+  expect game time to pass.
+
+**Not exercised:** no suite run enters a store, picks anything up or
+meets a y/n prompt — the placeholder never does — so `Buy`, `Sell`,
+`Get` and the catcher's answers are unit-tested only until T3.4/T3.5
+play them for real. The perception checks (CI's test build) were not
+run locally; CI runs them on this PR.
+
+**Next:** T3.2 (#18), paths and exploration. T3.3 (#19) replaces the
+placeholder and will be the first play change since M1; new references
+come with it.
+
 ## 2026-11-10: M3 source refresh
 
 The M3 `--update` (RULES 21) moved five pins:

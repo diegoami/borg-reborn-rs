@@ -25,6 +25,10 @@ pub struct TraceLine {
     pub choice: String,
     /// Invariants that did not hold at this think (GOALS principles).
     pub violations: Vec<String>,
+    /// Prompts the catcher answered between the last think and this one
+    /// (T3.1); empty until then, and in older traces.
+    #[serde(default)]
+    pub prompts: Vec<String>,
     pub profile_sha256: String,
 }
 

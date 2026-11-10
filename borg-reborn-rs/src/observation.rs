@@ -24,7 +24,7 @@
 use serde::{Deserialize, Serialize};
 
 /// One think's snapshot of everything the Borg may know.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Observation {
     /// The engine's game turn.
     pub turn: i64,
@@ -71,7 +71,7 @@ pub struct Ware {
 }
 
 /// The character's own state (`player->`, `player->state`).
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Status {
     pub race: u32,
     pub class: u32,
@@ -185,7 +185,7 @@ pub struct Spell {
 /// The visible part of the level, through `map_info()`: `width` x `height`
 /// grids from (`x0`, `y0`), row by row. It is the terminal's map panel
 /// clipped to the level.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Panel {
     pub x0: i32,
     pub y0: i32,

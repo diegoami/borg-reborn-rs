@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0998-rust-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a soldier ant",
+  "terminal": {
+    "cause": "a soldier ant",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1038,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1011,
+    "flags": "menu",
+    "git_rev": "851a1e23990a41a167598cfc6d6cdd49245e4506",
+    "git_dirty": "yes",
+    "source_sha256": "c76c70efebe4934cf3db65631b562a6f428189adb1920dcacf954538a0e1378c",
+    "binary_sha256": "4afeddb3d72cb43944d3f733c5881fcf97a46baf8223a04c70b87cb3018b9aac",
+    "borg_txt_sha256": "85e655aa9ee2ec1b916dd662525b1c3acf6633d20cdcfc180410b48ab696a771",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 105,
+    "of": 105
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t31-full/full-1-mage-1",
+      "result_sha256": "93861cbe67be90c61ae6c793b64aa1dbd55f2b102730b3567dfd8240299b1cce",
+      "raw_sha256": {
+        "keys.log": "93861cbe67be90c61ae6c793b64aa1dbd55f2b102730b3567dfd8240299b1cce",
+        "messages.log": "aa15180d8bd54fdafd93825a67b4627066784a232bbcaf3019083113137e6367",
+        "state.log": "c6e36257090584ad1f11049f3a0e609b2d6745b0e4b76cd3dd94e9755b74cacc"
+      },
+      "source_commit": "851a1e23990a41a167598cfc6d6cdd49245e4506",
+      "binary_sha256": "4afeddb3d72cb43944d3f733c5881fcf97a46baf8223a04c70b87cb3018b9aac"
+    }
+  ],
+  "encounter_family": "start-e6460eb081d7dffc69af827fcef2694556ef002e15b7345932245e6ebedba995",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "883984b8547653f5e4aaeba5599b587b030effed794017ec6285711fd65c3b57",
+    "config.txt": "b955cc56a45283d99679f5fadbe4a1fddb78d362c7b13c073ea59ce96005d89e",
+    "depths.json": "d602e8588ebbe4b0cc299dafb889a52bb117b76f223fdd08a180f6842a603f40",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "24ded6c63a0eee5b17fce958d808cee74461700c57b5d280eaf733e8e553a94e",
+    "trace-tail.jsonl": "8c3cbca6a4430367d64907f7f144989846364f1358fcf3acfc802e633b8a90a4"
+  },
+  "investigation": null,
+  "issue": null
+}

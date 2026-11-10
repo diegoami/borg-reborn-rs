@@ -282,6 +282,62 @@ fn screen_text(row: i32, col: i32, len: Option<i32>) -> String {
     }
 }
 
+/// The message line as the prompt catcher reads it (channel A): row 0's
+/// text, whether its first text cell carries the dark attribute
+/// (`COLOUR_DARK`, z-color.h:23 — a blank or undrawn line), and the
+/// terminal cursor (`Term_locate`, ui-term.c:2477-2488, read as the C
+/// Borg does at borg.c:278-279).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MessageLine {
+    pub text: String,
+    pub dark: bool,
+    pub cursor: (i32, i32),
+}
+
+/// Read the message line for the prompt catcher (executor).
+pub fn message_line() -> MessageLine {
+    // SAFETY: as `screen_text`; the cursor fields are plain ints of the
+    // screen window, and the attribute row is indexed within the width.
+    unsafe {
+        let t = b::Term;
+        if t.is_null() || (*t).scr.is_null() {
+            return MessageLine::default();
+        }
+        let scr = &*(*t).scr;
+        let text = screen_text(0, 0, None);
+        // The attribute of the first non-space cell, as borg_what_text
+        // reports the span's attribute (borg-io.c:87-123): dark when the
+        // row holds nothing but spaces or its first text cell is dark.
+        let mut dark = true;
+        if !scr.a.is_null() && !scr.c.is_null() && (*t).wid > 0 {
+            let attrs = *scr.a.add(0);
+            let cells = *scr.c.add(0);
+            if !attrs.is_null() && !cells.is_null() {
+                for x in 0..(*t).wid as usize {
+                    let ch = char::from_u32(*cells.add(x) as u32).unwrap_or(' ');
+                    if ch != ' ' {
+                        dark = *attrs.add(x) == 0;
+                        break;
+                    }
+                }
+            }
+        }
+        MessageLine {
+            text,
+            dark,
+            cursor: (scr.cx, scr.cy),
+        }
+    }
+}
+
+/// Whether the game is waiting for a command in the main interface
+/// (`inkey_flag`, ui-input.c:54): the C Borg's test for a line that needs
+/// an answer now rather than a message to parse (borg-messages.c:218).
+pub fn wants_command() -> bool {
+    // SAFETY: a plain engine global, read on the engine thread.
+    unsafe { b::inkey_flag }
+}
+
 /// The C Borg's item analysis of one object (`borg_item_analyze`). In a
 /// shop (`in_store`) the player is always aware of the flavour, and the
 /// description is the store's (`ODESC_STORE`).

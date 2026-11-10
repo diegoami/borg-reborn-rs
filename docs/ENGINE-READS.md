@@ -64,13 +64,14 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `cave` | B | the current level, for the grid reads above |
 | `turn` | B | the game turn |
 | `z_info` | B | the engine's sizes (pack, quiver, stores, data counts, move energy) |
-| `Term` | A | the screen: message line, store header, map panel offset |
+| `Term` | A | the screen: message line (text, first-cell attribute, cursor), store header, map panel offset |
 | `row_top_map` | A | map panel geometry |
 | `row_bottom_map` | A | map panel geometry |
 | `col_map` | A | map panel geometry |
 | `tile_width` | A | map panel geometry |
 | `tile_height` | A | map panel geometry |
 | `stores` | B | the stores, for their stock |
+| `inkey_flag` | B | whether the game is waiting for a command (`ui-input.c:54`): the C Borg's test for a prompt that needs an answer now rather than a message to parse (`borg-messages.c:218`) |
 | `r_info` | K | monster races |
 | `k_info` | K | object kinds |
 | `e_info` | K | ego items |
@@ -113,7 +114,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `class_book` | K | a book's spells |
 | `class_spell` | B | a spell's book, level, mana and failure (`borg_cheat_spells`) |
 | `term` | A | screen size, sidebar mode, the map panel offset and the screen window (`scr`) |
-| `term_win` | A | the screen buffer (`c`): the message line and the store header |
+| `term_win` | A | the screen buffer: the cells (`c`) of the message line and the store header, the attribute row (`a`) and the cursor (`cx`, `cy`) for the prompt catcher (`borg-io.c:borg_what_text:54-133`, `borg.c:278-279`) |
 | `random` | K | dice of the static data (`random_value` is its alias): base, dice, sides, bonus |
 | `monster` | B | a seen monster: index, race, grid, HP, timers, speed, colour, mimicry |
 | `monster_race` | K | monster races |

@@ -14,10 +14,10 @@
 //! `max_tries_per_turn` such thinks (a parameter, [`crate::params`]) it takes an action that always uses
 //! game time (see [`stand_still`]), so it cannot loop without time passing.
 
-use crate::engine::{self, Key, PlayerView, ESCAPE, KC_ENTER};
+use crate::engine::{self, Key, PlayerView, ESCAPE};
+use crate::executor::{self, Action, Executor};
 use crate::params::Params;
 use crate::trace::{Budget, Candidate, TraceLine};
-use std::collections::VecDeque;
 use std::sync::Mutex;
 
 /// Feature indices of `list-terrain.h` (FEAT_NONE = 0, ...).
@@ -45,43 +45,6 @@ const DIRS: [(u8, i32, i32); 8] = [
     (8, 0, -1),
     (9, 1, -1),
 ];
-
-/// A decision of the minimal Borg.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Action {
-    /// Rest this many player turns ('R', the count, Enter; the C Borg's
-    /// 'R' '7' '5' Enter at the default `rest_turns`).
-    Rest(u32),
-    /// Take the down staircase underfoot ('>').
-    Descend,
-    /// Walk one step in a direction 1–9.
-    Walk(u8),
-    /// Stand still one turn (','): uses game time, except on a shop
-    /// entrance, where it enters the store (see [`stand_still`]).
-    Hold,
-    /// Alter the grid in a direction 1–9 ('+' and the direction): always
-    /// uses game time (see [`stand_still`]).
-    Alter(u8),
-}
-
-impl Action {
-    /// The complete key sequence, opened with `ESCAPE` (spec §2.6).
-    pub fn keys(self) -> Vec<u32> {
-        let mut k = vec![ESCAPE];
-        match self {
-            Action::Rest(n) => {
-                k.push(b'R' as u32);
-                k.extend(n.to_string().bytes().map(u32::from));
-                k.push(KC_ENTER);
-            }
-            Action::Descend => k.push(b'>' as u32),
-            Action::Walk(d) => k.push((b'0' + d) as u32),
-            Action::Hold => k.push(b',' as u32),
-            Action::Alter(d) => k.extend([b'+' as u32, (b'0' + d) as u32]),
-        }
-        k
-    }
-}
 
 /// Whether the minimal Borg may step onto a grid with this known feature.
 /// Unknown grids are tried; known walls, rubble, lava and shops are not.
@@ -287,7 +250,9 @@ pub fn decide_with(
 }
 
 struct Borg {
-    queue: VecDeque<u32>,
+    /// The executor (T3.1): the key queue, the pending effect and the
+    /// prompts answered since the last think.
+    executor: Executor,
     rng: Rng,
     /// The quick-generator value engine reads draw from (`with_borg_rng`).
     engine_rng: u32,
@@ -383,7 +348,7 @@ pub fn command() {
         let params = load_params();
         let trace = open_run_outputs(&params);
         Borg {
-            queue: VecDeque::new(),
+            executor: Executor::default(),
             rng: Rng::new(),
             engine_rng: Rng::SEED as u32,
             mem: Memory::default(),
@@ -402,22 +367,49 @@ pub fn command() {
             thinks: 0,
         }
     })
-    .queue
+    .executor
     .clear();
     drop(b);
     engine::set_hook(true);
 }
 
-/// The engine wants a key (`inkey_hack`).
+/// The engine wants a key (`inkey_hack`). The steps follow the C Borg's
+/// `generate_keypress` (borg.c:268-321): deactivation and death first,
+/// then the flush, then the prompt catcher, then the key queue, the user
+/// key, the rest/repeat pass-through, and only then a think.
 pub fn next_key(flush: bool) -> Key {
     let mut guard = BORG.lock().unwrap_or_else(|e| e.into_inner());
     let Some(b) = guard.as_mut() else {
         return Key::Code(ESCAPE);
     };
     if flush {
-        b.queue.clear();
+        b.executor.clear();
     }
-    if let Some(k) = b.queue.pop_front() {
+    // A dead player stops the Borg (check_for_deactivate_or_death,
+    // borg.c:289) before any key is chosen.
+    let Some(view) = engine::player_view() else {
+        return Key::Code(ESCAPE);
+    };
+    if view.dead {
+        engine::set_hook(false);
+        return Key::Code(ESCAPE);
+    }
+    // The prompt catcher (T3.1): before the queue, as in the C Borg
+    // (borg.c:304-308), so a prompt is answered even when keys remain
+    // queued. No rule may match a prompt an action's own keys pre-answer;
+    // `None` falls through to the queue.
+    let line = engine::message_line();
+    if let Some(p) = executor::answer(
+        &line.text,
+        line.dark,
+        line.cursor,
+        engine::wants_command(),
+        b.executor.is_empty(),
+    ) {
+        b.executor.answered(p.why);
+        return Key::Code(p.key);
+    }
+    if let Some(k) = b.executor.pop() {
         return Key::Code(k);
     }
     // Any real key stops the Borg (spec §2.2 step 8; the GUI's "any key
@@ -426,24 +418,15 @@ pub fn next_key(flush: bool) -> Key {
         engine::set_hook(false);
         return Key::Code(ESCAPE);
     }
-    let Some(view) = engine::player_view() else {
-        return Key::Code(ESCAPE);
-    };
-    if view.dead {
-        engine::set_hook(false);
-        return Key::Code(ESCAPE);
-    }
     if view.busy {
         return Key::None;
     }
     engine::report_decision(b.rng.state());
     let d = think(b, &view);
-    let action = d.action;
     b.thinks += 1;
     write_trace(b, &view, &d);
-    b.mem.record(view.turn, action);
-    b.queue.extend(action.keys());
-    Key::Code(b.queue.pop_front().unwrap_or(ESCAPE))
+    b.mem.record(view.turn, d.action);
+    Key::Code(b.executor.pop().unwrap_or(ESCAPE))
 }
 
 /// One line of the decision trace, after the decision: it reads only what
@@ -473,6 +456,7 @@ fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
             .collect(),
         choice: format!("{:?}", d.action),
         violations: d.violations.clone(),
+        prompts: b.executor.take_answered(),
         profile_sha256: b.params.profile_sha256.clone(),
     };
     if writeln!(log, "{}", line.to_line())
@@ -595,7 +579,22 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
             .position(|(_, x, y)| (*x, *y) == (dx, dy))
             .and_then(|i| around[i])
     };
+    // The pending action's effect, checked against this think's
+    // observation (ARCHITECTURE.md L6): each action is checked exactly
+    // once, by the think after it. A mismatch is a violation for the
+    // trace, so a key sequence the game silently ignored is visible.
+    let mut mismatches = match observation.as_ref() {
+        Some(o) => b.executor.check_pending(o),
+        None => b.executor.drop_pending().into_iter().collect(),
+    };
     let mut d = decide_with(view, here, lookup, &b.mem, &mut b.rng, &b.params);
+    d.violations.append(&mut mismatches);
+    // Queue the chosen action's keys. Without an observation the keys
+    // still go out (only a sale's quantity reads the pack), and the
+    // violation above already says why.
+    let empty = crate::observation::Observation::default();
+    let o = observation.as_ref().unwrap_or(&empty);
+    b.executor.queue(d.action, o);
     if observation.is_none() {
         d.violations
             .push("no observation: perception found no character or level".into());
@@ -606,9 +605,17 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::KC_ENTER;
+    use crate::observation::Observation;
 
     /// The table default of `max_tries_per_turn`.
     const MAX_TRIES_PER_TURN: u32 = 2;
+
+    /// An empty observation, for the key sequences of the actions the
+    /// placeholder chooses (none of them reads the pack).
+    fn obs() -> Observation {
+        Observation::default()
+    }
 
     fn view(hp: i32, turn: i64) -> PlayerView {
         PlayerView {
@@ -697,7 +704,7 @@ mod tests {
             &mut Rng::new(),
         );
         assert_eq!(a, Action::Hold);
-        assert_eq!(a.keys(), vec![ESCAPE, b',' as u32]);
+        assert_eq!(a.keys(&obs()), vec![ESCAPE, b',' as u32]);
     }
 
     /// M1 re-review N2 and R2: on a shop entrance ',' enters the store and
@@ -726,7 +733,7 @@ mod tests {
         assert!(!forced.is_empty());
         assert!(forced.iter().all(|a| *a == Action::Alter(2)), "{forced:?}");
         assert_eq!(
-            Action::Alter(2).keys(),
+            Action::Alter(2).keys(&obs()),
             vec![ESCAPE, b'+' as u32, b'2' as u32]
         );
         // Boxed in on the home by unknown grids and walls: still an Alter.
@@ -831,10 +838,10 @@ mod tests {
 
     #[test]
     fn keys_open_with_escape() {
-        assert_eq!(Action::Descend.keys(), vec![ESCAPE, b'>' as u32]);
-        assert_eq!(Action::Walk(3).keys(), vec![ESCAPE, b'3' as u32]);
+        assert_eq!(Action::Descend.keys(&obs()), vec![ESCAPE, b'>' as u32]);
+        assert_eq!(Action::Walk(3).keys(&obs()), vec![ESCAPE, b'3' as u32]);
         assert_eq!(
-            Action::Rest(Params::default().rest_turns).keys(),
+            Action::Rest(Params::default().rest_turns).keys(&obs()),
             vec![ESCAPE, b'R' as u32, b'7' as u32, b'5' as u32, KC_ENTER],
             "the default rest is the C Borg's R75"
         );
