@@ -134,6 +134,75 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         });
     }
 
+    // Consumables: a known cure, a known Phase Door, and a better weapon.
+    // The effect values are the game's own item effects where Knowledge
+    // carries them; a Cure Light Wounds is 2d8 (mean 9, class.txt effect
+    // data is not in Knowledge yet, so the mean is declared here).
+    if view.hp < view.max_hp {
+        if let Some((i, _)) = pack_item(w, k, "Cure Light Wounds") {
+            let heal = 9.0_f64.min(f64::from(view.max_hp - view.hp));
+            out.push(Response {
+                action: Action::Quaff { item: i },
+                score: heal - current_risk,
+                risk_after: current_risk,
+                gain: heal,
+                why: "known cure",
+            });
+        }
+    }
+    if current_risk > 0.0 {
+        if let Some((i, _)) = pack_item(w, k, "Phase Door") {
+            let landing = current_risk * 0.5; // #121 refines the landing
+            out.push(Response {
+                action: Action::Read { item: i },
+                score: current_risk - landing,
+                risk_after: landing,
+                gain: current_risk - landing,
+                why: "known Phase Door (landing risk half, #121)",
+            });
+        }
+        if let Some((i, item)) = better_weapon(w, k) {
+            let old = w.character.melee_per_turn(k).unwrap_or(0.0);
+            let slot = w
+                .character
+                .equipment
+                .iter()
+                .position(|s| s.slot_type == crate::world::EQUIP_WEAPON)
+                .unwrap_or(0);
+            let new = w
+                .character
+                .wearing(k, slot, Some(item.clone()))
+                .melee_per_turn(k)
+                .unwrap_or(old);
+            if new > old {
+                // The gain is the danger the faster kill avoids: the
+                // rounds saved on the most threatening adjacent monster.
+                let threat = w
+                    .level
+                    .monsters
+                    .iter()
+                    .filter(|t| t.in_view && (t.x - x).abs().max((t.y - y).abs()) <= 1)
+                    .map(|t| one_threat(w, k, t, x, y, horizon).risk(aversion))
+                    .fold(0.0_f64, f64::max);
+                let saved = w
+                    .level
+                    .monsters
+                    .iter()
+                    .filter(|t| t.in_view && (t.x - x).abs().max((t.y - y).abs()) <= 1)
+                    .map(|t| (f64::from(t.hp.max(1)) / old - f64::from(t.hp.max(1)) / new).max(0.0))
+                    .fold(0.0_f64, f64::max);
+                let gain = (saved * threat).max(0.0);
+                out.push(Response {
+                    action: Action::Wield { item: i },
+                    score: gain - current_risk,
+                    risk_after: current_risk,
+                    gain,
+                    why: "better weapon in the pack",
+                });
+            }
+        }
+    }
+
     // The staircase underfoot is an escape from a threat. Landing risk is
     // #121's; using 0 here is declared, not measured.
     if current_risk > 0.0 {
@@ -171,6 +240,51 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             .then_with(|| a.action.cmp(&b.action))
     });
     out
+}
+
+/// The first aware pack item whose knowledge name is `name`.
+fn pack_item<'a>(
+    w: &'a World,
+    k: &Knowledge,
+    name: &str,
+) -> Option<(usize, &'a crate::observation::Item)> {
+    w.character.inventory.iter().enumerate().find(|(_, i)| {
+        i.aware
+            && k.kind(i.kind).is_some_and(|kind| {
+                kind.name
+                    .chars()
+                    .filter(|c| !matches!(c, '&' | '~'))
+                    .collect::<String>()
+                    .trim()
+                    == name
+            })
+    })
+}
+
+/// The best pack weapon by expected melee damage, when it beats the wielded
+/// one. `wearing` models the swap without touching the world.
+fn better_weapon<'a>(w: &'a World, k: &Knowledge) -> Option<(usize, &'a crate::observation::Item)> {
+    let current = w.character.melee_per_turn(k)?;
+    w.character
+        .inventory
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| i.tval == 23)
+        .filter_map(|(i, item)| {
+            let slot = w
+                .character
+                .equipment
+                .iter()
+                .position(|s| s.slot_type == crate::world::EQUIP_WEAPON)
+                .unwrap_or(0);
+            let dpt = w
+                .character
+                .wearing(k, slot, Some(item.clone()))
+                .melee_per_turn(k)?;
+            (dpt > current + 0.1).then_some((i, item, dpt))
+        })
+        .max_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(std::cmp::Ordering::Equal))
+        .map(|(i, item, _)| (i, item))
 }
 
 fn direction(dx: i32, dy: i32) -> Option<u8> {

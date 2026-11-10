@@ -53,6 +53,14 @@
       "number": 3,
       "desc": "a Neutralize Poison potion",
       "aware": true
+    },
+    {
+      "kind": 7,
+      "tval": 23,
+      "sval": 9,
+      "number": 1,
+      "desc": "a Maul (2d4)",
+      "aware": true
     }
   ],
   "monsters": [

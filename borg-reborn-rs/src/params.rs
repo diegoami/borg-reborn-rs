@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 13] = [
+pub const TABLE: [Param; 14] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -130,6 +130,15 @@ pub const TABLE: [Param; 13] = [
                    D0009, D0015, D0016, D0018 and D0019; c15 §12.4 says one if affordable",
     },
     Param {
+        name: "eat_below_food",
+        unit: "food units",
+        min: 0,
+        max: 5000,
+        default: 300,
+        evidence: "c15 §12.4 and GOALS principle 7: eat before the food timer                    reaches starvation; 300 is a declared early threshold, not measured \
+                   (RULES 14)",
+    },
+    Param {
         name: "risk_aversion_pct",
         unit: "percent of the expected-to-worst gap",
         min: 0,
@@ -165,6 +174,7 @@ pub struct Params {
     pub reserve_cure: u32,
     pub reserve_escape: u32,
     pub reserve_recall: u32,
+    pub eat_below_food: i32,
     pub risk_aversion_pct: i32,
     pub threat_horizon: i32,
     /// The profile file, or "default" when none was given.
@@ -195,6 +205,7 @@ impl Default for Params {
             reserve_cure: default_of("reserve_cure") as u32,
             reserve_escape: default_of("reserve_escape") as u32,
             reserve_recall: default_of("reserve_recall") as u32,
+            eat_below_food: default_of("eat_below_food") as i32,
             risk_aversion_pct: default_of("risk_aversion_pct") as i32,
             threat_horizon: default_of("threat_horizon") as i32,
             profile: "default".into(),
@@ -278,6 +289,7 @@ impl Params {
                 "reserve_cure" => i64::from(self.reserve_cure),
                 "reserve_escape" => i64::from(self.reserve_escape),
                 "reserve_recall" => i64::from(self.reserve_recall),
+                "eat_below_food" => i64::from(self.eat_below_food),
                 "risk_aversion_pct" => i64::from(self.risk_aversion_pct),
                 "threat_horizon" => i64::from(self.threat_horizon),
                 _ => 0,
@@ -308,6 +320,7 @@ mod tests {
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(p.max_level_changes_per_turn, 2);
         assert_eq!((p.risk_aversion_pct, p.threat_horizon), (50, 1));
+        assert_eq!(p.eat_below_food, 300);
         assert_eq!(
             (
                 p.reserve_food,

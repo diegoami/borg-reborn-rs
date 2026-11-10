@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -77,8 +77,7 @@
     "report.md:15-20"
   ],
   "construction": "Elf Necromancer CL2, 2/15 HP, D1. The dossier gives Fang at 22/25 HP and speed 120, the one known CLW and the legal NW step that was actually traversed; the room is constructed.",
-  "limits": "No verified rescue: the NW first step is legal and was traversed, the full route home is not proved. The cure is the fitting response, not a measured rescue.",
-  "blocked_by": 122,
+  "limits": "No verified rescue: the known CLW is now used; the legal NW step was traversed, the full route home not proved.",
   "player": {
     "race": 2,
     "class": 4,
@@ -87,9 +86,5 @@
     "max_hp": 15,
     "x": 4,
     "y": 3
-  },
-  "current": {
-    "action": "Attack"
-  },
-  "pins_forbidden": true
+  }
 }

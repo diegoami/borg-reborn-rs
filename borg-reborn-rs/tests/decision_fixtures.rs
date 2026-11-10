@@ -55,6 +55,7 @@ const EXPECTED_IDS: &[&str] = &[
     "rust-d1413-stairs-under-fang",
     "rust-d1420-starvation-no-food",
     "rust-stuck-sealed-room",
+    "rust-hungry-eats",
 ];
 
 /// The open M4 tasks a gap may name. Update this list when an issue closes:
@@ -67,6 +68,10 @@ const OWNERS: &[(u32, &str)] = &[
     (
         123,
         "T4.6 recovery, return home and progress under oscillation",
+    ),
+    (
+        121,
+        "T4.4 escape ladder with landing risk and last-item protection",
     ),
     (127, "T5.3 class item use, spells and ranged combat"),
 ];
@@ -258,6 +263,10 @@ impl Expect {
                 self.dir.is_none_or(|want| want == *d)
             }
             ("Rest", Action::Rest(_))
+            | ("Quaff", Action::Quaff { .. })
+            | ("Read", Action::Read { .. })
+            | ("Eat", Action::Eat { .. })
+            | ("Wield", Action::Wield { .. })
             | ("Hold", Action::Hold)
             | ("Get", Action::Get)
             | ("Descend", Action::Descend)

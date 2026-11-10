@@ -74,6 +74,14 @@ pub enum Action {
     /// more than one could be taken, `Enter` accepts the hand-over, then
     /// `ESCAPE`s leave (`borg-store-sell.c:borg_think_shop_sell:1101-1146`).
     Sell { item: usize, qty: u32 },
+    /// Quaff the pack item at this index (`q`, `do_cmd_quaff_potion`).
+    Quaff { item: usize },
+    /// Read the pack item at this index (`r`, `do_cmd_read_scroll`).
+    Read { item: usize },
+    /// Eat the pack item at this index (`E`, `do_cmd_eat_food`).
+    Eat { item: usize },
+    /// Wield the pack item at this index (`w`, `do_cmd_wield`).
+    Wield { item: usize },
 }
 
 impl Action {
@@ -104,6 +112,30 @@ impl Action {
                 k.extend([b'p' as u32, KC_ENTER, KC_ENTER]);
                 // Leave the store (borg-store-buy.c:1242-1244).
                 k.extend([ESCAPE, ESCAPE, ESCAPE]);
+            }
+            Action::Quaff { item } => {
+                k.push(b'q' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+            }
+            Action::Read { item } => {
+                k.push(b'r' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+            }
+            Action::Eat { item } => {
+                k.push(b'E' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+            }
+            Action::Wield { item } => {
+                k.push(b'w' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
             }
             Action::Sell { item, qty } => {
                 k.push(b',' as u32);
@@ -170,6 +202,16 @@ impl Action {
             Action::Sell { .. } => Effect::PackShrinks {
                 used: o.status.pack_used,
                 items: carried_items(o),
+            },
+            Action::Quaff { item } | Action::Read { item } | Action::Eat { item } => {
+                Effect::Consumed {
+                    kind: o.inventory.get(item).map_or(0, |i| i.kind),
+                    number: o.inventory.get(item).map_or(0, |i| i.number),
+                }
+            }
+            Action::Wield { item } => Effect::Wielded {
+                kind: o.inventory.get(item).map_or(0, |i| i.kind),
+                from_turn: o.turn,
             },
         }
     }
@@ -240,6 +282,10 @@ pub enum Effect {
     PackGrows { used: i32, items: i32 },
     /// The pack shrank: a slot freed, or fewer items in an existing stack.
     PackShrinks { used: i32, items: i32 },
+    /// A consumable was used: its kind's count fell, or it is gone.
+    Consumed { kind: u32, number: u8 },
+    /// The item of this kind is now in an equipment slot.
+    Wielded { kind: u32, from_turn: i64 },
 }
 
 impl Effect {
@@ -292,6 +338,35 @@ impl Effect {
                     Err(format!(
                         "the pack is still {used} slots and {items} items; nothing was picked up or bought"
                     ))
+                }
+            }
+            Effect::Consumed { kind, number } => {
+                let left = o
+                    .inventory
+                    .iter()
+                    .find(|i| i.kind == kind)
+                    .map_or(0, |i| i.number);
+                if left < number {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "the consumable kind {kind} is still {left} (was {number}): nothing was used"
+                    ))
+                }
+            }
+            Effect::Wielded { kind, from_turn } => {
+                if o.equipment
+                    .iter()
+                    .filter_map(|s| s.item.as_ref())
+                    .any(|i| i.kind == kind)
+                {
+                    Ok(())
+                } else if o.turn == from_turn {
+                    Err(format!(
+                        "the item kind {kind} was not wielded: no game time passed"
+                    ))
+                } else {
+                    Err(format!("the item kind {kind} is not in an equipment slot"))
                 }
             }
             Effect::PackShrinks { used, items } => {
@@ -656,6 +731,54 @@ mod tests {
             48,
             "26 lower minus h j k l, plus 26 upper"
         );
+    }
+
+    #[test]
+    fn item_actions_use_the_pack_letter_and_check_consumption() {
+        let o = obs(&[(231, 2), (11, 1)]);
+        assert_eq!(
+            Action::Quaff { item: 0 }.keys(&o),
+            vec![ESCAPE, b'q' as u32, u32::from(PACK_LETTERS[0])]
+        );
+        assert_eq!(
+            Action::Read { item: 1 }.keys(&o),
+            vec![ESCAPE, b'r' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        assert_eq!(
+            Action::Eat { item: 1 }.keys(&o),
+            vec![ESCAPE, b'E' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        assert_eq!(
+            Action::Wield { item: 1 }.keys(&o),
+            vec![ESCAPE, b'w' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        let mut next = after(101, 0, 0, 1, 2);
+        next.inventory = obs(&[(231, 1)]).inventory;
+        assert!(Effect::Consumed {
+            kind: 231,
+            number: 2
+        }
+        .check(&next)
+        .is_ok());
+        let mut same = after(101, 0, 0, 1, 2);
+        same.inventory = obs(&[(231, 2)]).inventory;
+        assert!(Effect::Consumed {
+            kind: 231,
+            number: 2
+        }
+        .check(&same)
+        .is_err());
+        let mut held = after(101, 0, 0, 1, 2);
+        held.equipment = vec![crate::observation::Slot {
+            slot_type: 1,
+            item: Some(obs(&[(7, 1)]).inventory.remove(0)),
+        }];
+        assert!(Effect::Wielded {
+            kind: 7,
+            from_turn: 100
+        }
+        .check(&held)
+        .is_ok());
     }
 
     #[test]
