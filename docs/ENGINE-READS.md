@@ -17,7 +17,12 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
   computes for itself, read because the engine's figure is the right one or
   to check our own;
 - **W**: a write: the key hook, the options the Borg sets, the RNG swap;
-- **S**: the seam itself.
+- **S**: the seam itself;
+- **T**: a read of the engine-truth check (task T2.5, feature
+  `test-perception`): test builds only, never compiled into the Borg that
+  plays. It reads the engine through other routes than the observation's,
+  to check it (`engine.rs`, below the `ENGINE TRUTH` line; `test_reads.py`
+  checks they are used nowhere else).
 
 ## Functions
 
@@ -44,6 +49,8 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `object_runes_known` | B | runes known (`borg_item_analyze`) |
 | `object_weight_one` | B | item weight (`borg_item_analyze`) |
 | `pack_slots_used` | X | the engine's own pack count, quiver included (REDESIGN-LESSONS L8) |
+| `square` | T | the player's map memory (`player->cave`), against the world's map |
+| `monster_is_visible` | B | `map_info`'s own visibility test (`cave-map.c`): tells a monster the player sees from the `m_idx = 1` a hallucination puts on a grid where monster 1 stands unseen (T2.5); the truth check also uses it on the whole level |
 
 ## Globals
 
@@ -69,6 +76,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `extract_energy` | K | energy per game turn by speed |
 | `adj_str_blow` | K | the blows table's strength term, read to check the lifted copy |
 | `adj_str_hold` | K | the wield-weight table, read to check the lifted copy |
+| `f_info` | T | terrain features, to show a remembered feature as `map_info` does (mimics) |
 | `Rand_quick` | W | the RNG swap: the Borg's reads use its own RNG (spec §1.2) |
 | `Rand_value` | W | the RNG swap |
 | `state_i` | W | the RNG swap: saved and restored |
@@ -88,6 +96,30 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `random_value` | K | dice of the static data |
 | `keypress` | S | the key the hook returns |
 | `ui_event` | S | `Term_inkey`'s result |
+| `player` | B | the character (the global's type): grid, depth, levels, HP, SP, stats, timed effects, gear lists, spells, options |
+| `player_race` | B | the race played (`ridx`); K for the static race table |
+| `player_class` | B | the class played (`cidx`, its magic); K for the static class table |
+| `player_state` | B | computed stats, speed, blows, AC |
+| `player_options` | X | `birth_percent_damage` |
+| `player_upkeep` | B | resting, running, the pack and quiver arrays |
+| `player_body` | B | the equipment slots |
+| `equip_slot` | B | a slot's type and object |
+| `class_magic` | K | a class's books and spells |
+| `class_book` | K | a book's spells |
+| `class_spell` | B | a spell's book, level, mana and failure (`borg_cheat_spells`) |
+| `term` | A | screen size, sidebar mode and the map panel offset |
+| `monster` | B | a seen monster: index, race, grid, HP, timers, speed, colour, mimicry |
+| `monster_race` | K | monster races |
+| `monster_base` | K | a race's base (its name) |
+| `monster_blow` | K | a race's blows |
+| `blow_method` | K | a blow's method |
+| `blow_effect` | K | a blow's effect |
+| `ego_item` | K | ego items |
+| `artifact` | K | artifacts |
+| `store` | B | a store, for its stock and prices; K for its always and normal tables |
+| `angband_constants` | B | `z_info`: the engine's sizes |
+| `square` | T | a remembered grid's feature (`player->cave`) |
+| `feature` | T | a feature's mimic |
 
 ## Constants
 

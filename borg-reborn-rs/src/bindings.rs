@@ -1411,6 +1411,58 @@ unsafe extern "C" {
 pub struct monster_group {
     _unused: [u8; 0],
 }
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct feature {
+    pub name: *mut core::ffi::c_char,
+    pub desc: *mut core::ffi::c_char,
+    pub fidx: core::ffi::c_int,
+    pub mimic: *mut feature,
+    pub priority: u8,
+    pub shopnum: u8,
+    pub dig: u8,
+    pub flags: [bitflag; 4usize],
+    pub d_attr: u8,
+    pub d_char: wchar_t,
+    pub walk_msg: *mut core::ffi::c_char,
+    pub run_msg: *mut core::ffi::c_char,
+    pub hurt_msg: *mut core::ffi::c_char,
+    pub die_msg: *mut core::ffi::c_char,
+    pub confused_msg: *mut core::ffi::c_char,
+    pub look_prefix: *mut core::ffi::c_char,
+    pub look_in_preposition: *mut core::ffi::c_char,
+    pub resist_flag: core::ffi::c_int,
+}
+#[allow(clippy::unnecessary_operation, clippy::identity_op)]
+const _: () = {
+    ["Size of feature"][::core::mem::size_of::<feature>() - 112usize];
+    ["Alignment of feature"][::core::mem::align_of::<feature>() - 8usize];
+    ["Offset of field: feature::name"][::core::mem::offset_of!(feature, name) - 0usize];
+    ["Offset of field: feature::desc"][::core::mem::offset_of!(feature, desc) - 8usize];
+    ["Offset of field: feature::fidx"][::core::mem::offset_of!(feature, fidx) - 16usize];
+    ["Offset of field: feature::mimic"][::core::mem::offset_of!(feature, mimic) - 24usize];
+    ["Offset of field: feature::priority"][::core::mem::offset_of!(feature, priority) - 32usize];
+    ["Offset of field: feature::shopnum"][::core::mem::offset_of!(feature, shopnum) - 33usize];
+    ["Offset of field: feature::dig"][::core::mem::offset_of!(feature, dig) - 34usize];
+    ["Offset of field: feature::flags"][::core::mem::offset_of!(feature, flags) - 35usize];
+    ["Offset of field: feature::d_attr"][::core::mem::offset_of!(feature, d_attr) - 39usize];
+    ["Offset of field: feature::d_char"][::core::mem::offset_of!(feature, d_char) - 40usize];
+    ["Offset of field: feature::walk_msg"][::core::mem::offset_of!(feature, walk_msg) - 48usize];
+    ["Offset of field: feature::run_msg"][::core::mem::offset_of!(feature, run_msg) - 56usize];
+    ["Offset of field: feature::hurt_msg"][::core::mem::offset_of!(feature, hurt_msg) - 64usize];
+    ["Offset of field: feature::die_msg"][::core::mem::offset_of!(feature, die_msg) - 72usize];
+    ["Offset of field: feature::confused_msg"]
+        [::core::mem::offset_of!(feature, confused_msg) - 80usize];
+    ["Offset of field: feature::look_prefix"]
+        [::core::mem::offset_of!(feature, look_prefix) - 88usize];
+    ["Offset of field: feature::look_in_preposition"]
+        [::core::mem::offset_of!(feature, look_in_preposition) - 96usize];
+    ["Offset of field: feature::resist_flag"]
+        [::core::mem::offset_of!(feature, resist_flag) - 104usize];
+};
+unsafe extern "C" {
+    pub static mut f_info: *mut feature;
+}
 pub const LIGHTING_LOS: grid_light_level = 0;
 pub const LIGHTING_TORCH: grid_light_level = 1;
 pub const LIGHTING_LIT: grid_light_level = 2;
@@ -1577,6 +1629,9 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn square_in_bounds_fully(c: *mut chunk, grid: loc) -> bool;
+}
+unsafe extern "C" {
+    pub fn square(c: *mut chunk, grid: loc) -> *const square;
 }
 unsafe extern "C" {
     pub fn square_object(c: *mut chunk, grid: loc) -> *mut object;
@@ -2009,6 +2064,9 @@ const _: () = {
 };
 unsafe extern "C" {
     pub static mut z_info: *mut angband_constants;
+}
+unsafe extern "C" {
+    pub fn monster_is_visible(mon: *const monster) -> bool;
 }
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
