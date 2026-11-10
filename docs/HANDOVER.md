@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M2 reviewed and tagged
+
+Kimi K3.1 Pro's fourth pass on #99, at `7cec235`: **M2 done**, with no
+findings left. The owner had #99 merged (`reviewed` at `4ea0bb0`); `m2`
+is tagged there, and the GitHub milestone is closed. The four passes'
+findings were all fixed in #100–#104, so none carry over to M3.
+
+**Next:**
+- #103 (borg-runner as source S15): merge `main` into it and merge it;
+- M3, per PLAN.md, with S14 and S15 as its game knowledge.
+
 ## 2026-11-10, end of day: M2's review continues tomorrow
 
 **The review of M2 (#99) is tomorrow, 2026-11-11.** The owner runs it with
