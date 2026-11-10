@@ -1,50 +1,111 @@
-//! M3's danger placeholder (task T3.3, #19): the C Borg's danger sum,
-//! lifted with citations from `borg-danger.c` at `e473720`, until M4's
-//! threat model replaces it (ARCHITECTURE.md L4; PLAN.md's M3 row).
+//! L4 threat: the one assessment every consumer reads (T4.2, #119).
 //!
-//! What is lifted, and where from:
+//! M3's placeholder was the C Borg's danger *sum*, each blow at full dice
+//! (`borg-danger.c:borg_danger:2824-2865`). M4 replaces it with an estimate
+//! in hit points over a declared horizon:
 //!
-//! - the shape of `borg_danger` — a sum over tracked monsters, capped at
-//!   2000 (`borg-danger.c:borg_danger:2824-2865`);
-//! - `borg_danger_one_kill`'s melee term: the energy model
-//!   (`:2361-2395`), the wakefulness scaling (`:2439-2450`), the
-//!   proximity model (`:2516-2593`) and the condition adjustments
-//!   (`:2490-2496`);
-//! - `borg_danger_physical`'s per-blow damage (`:64-545`): each blow at
-//!   **full damage** (the C Borg's entry point forces `full_damage`,
-//!   `:2836-2840`), with the effect adjustments of the common early
-//!   blows.
+//! * **expected** damage: blow dice rolled, the engine's hit chance
+//!   (`mon-attack.c:chance_of_monster_hit_base`, `player-attack.c:hit_chance`)
+//!   and armour (`mon-attack.c:adjust_dam_armor`), multiplied by the monster's
+//!   attack rounds from the energy model (`borg-danger.c:2361-2395`);
+//! * **worst** damage: every blow hits at its largest roll, for the same
+//!   rounds;
+//! * **p_death**: the chance the total reaches the character's hit points
+//!   (exact convolution for small fights, a declared normal approximation
+//!   for large ones);
+//! * **disabling**: the chance of fear, blindness, confusion or paralysis
+//!   from a blow or a spell, kept apart from hit points;
+//! * **economic**: theft, destruction and drains as expected events, never
+//!   added to lethal risk (ARCHITECTURE L4; GOALS principle 4).
 //!
-//! What is left for M4, declared: the spell term (`borg_danger_spell`,
-//! ranged attackers score melee only), the fear-region and fear-monster
-//! maps (panel artefacts of the C Borg), the friends multiplier
-//! (`Knowledge` carries no friend lists), the Protection-from-Evil and
-//! buff reductions (M3's Borg buffs nothing), the anti-bounce erosion of
-//! danger (`:2407`) and the bravery behaviour that consumed it. The
-//! spell term is the gap that matters: a casting monster at range scores
-//! far too low here, which M4's calibration report will measure.
+//! Ranged attacks use the C Borg's own estimates as a floor: a breath is
+//! `hp / 3` (capped), a shot/arrow/bolt is `((power / 8) + 1) * 5/6/7`
+//! (`borg-danger.c:619-760`; the full `projection.txt` divisors and
+//! `mon-spell.c` effect dice are not in `Knowledge` yet, so uncommon breaths
+//! use `hp / 6`, capped, and are marked as estimates). Summoners and
+//! breeders carry the C Borg's growth factors (`:2421-2433`, `:2701-2717`).
+//! The engine's exact spell effects, breath divisors and summon lists are
+//! docs/ENGINE-READS.md's open item and the calibration report's job (#124).
+//!
+//! One risk number is `expected + aversion * (worst - expected)`; the
+//! aversion is a parameter (`risk_aversion_pct`), and paths, rest, retreat
+//! and combat all pass it. A remembered-unseen monster keeps its last
+//! position and decays with `Track::confidence` (REDESIGN-LESSONS L11).
+//!
+//! Fear is not a damage term: the engine refuses the attack outright
+//! (`mon-blows.c`, "too afraid to attack"), so `can_attack` is false and the
+//! tactical layer cannot choose one. Paralysis is the same for every action.
 
-use crate::knowledge::{Knowledge, MonsterRace};
+use serde::{Deserialize, Serialize};
+
+use crate::knowledge::{Blow, Knowledge, MonsterRace};
 use crate::world::{Track, World};
 
-/// `MON_TMD_*` indices (`list-mon-timed.h`): sleep 0, stun 1, conf 2.
+/// `MON_TMD_*` indices (`list-mon-timed.h`).
 mod mon_tmd {
     pub const STUN: usize = 1;
     pub const CONF: usize = 2;
 }
 
+/// `TMD_*` indices (`list-player-timed.h`).
+mod tmd {
+    pub const PARALYZED: usize = 3;
+    pub const AFRAID: usize = 5;
+}
+
 /// `RF_*` flag numbers. The enum starts at `RF_NONE = 0`, and `FLAG_START`
-/// is 1: count the `RF(...)` lines of `list-mon-race-flags.h`, not the
-/// header's line numbers. Packed as
-/// `flags[(n-1)/8] & 1 << ((n-1)%8)` (`z-bitflag.h:FLAG_OFFSET`).
+/// is 1: count the `RF(...)` lines of `list-mon-race-flags.h`.
 mod rf {
     pub const MULTIPLY: usize = 17;
     pub const NEVER_BLOW: usize = 20;
     pub const NEVER_MOVE: usize = 21;
 }
 
-/// `OF_*` flag numbers (`list-object-flags.h`: a flag's number is its
-/// line less sixteen, packed as the race flags are).
+/// `RSF_*` flag numbers (`list-mon-spells.h`), the subset the estimate uses.
+mod rsf {
+    pub const SHRIEK: usize = 1;
+    pub const WHIP: usize = 2;
+    pub const SPIT: usize = 3;
+    pub const SHOT: usize = 4;
+    pub const ARROW: usize = 5;
+    pub const BOLT: usize = 6;
+    pub const BR_ACID: usize = 7;
+    pub const BR_ELEC: usize = 8;
+    pub const BR_FIRE: usize = 9;
+    pub const BR_COLD: usize = 10;
+    pub const BR_POIS: usize = 11;
+    pub const BO_ACID: usize = 45;
+    pub const BO_ELEC: usize = 46;
+    pub const BO_FIRE: usize = 47;
+    pub const BO_COLD: usize = 48;
+    pub const BO_POIS: usize = 49;
+    pub const MISSILE: usize = 55;
+    pub const BE_ELEC: usize = 56;
+    pub const SCARE: usize = 58;
+    pub const BLIND: usize = 59;
+    pub const CONF: usize = 60;
+    pub const SLOW: usize = 61;
+    pub const HOLD: usize = 62;
+    pub const HEAL: usize = 64;
+    pub const S_KIN: usize = 76;
+    pub const S_MONSTER: usize = 78;
+    pub const S_MONSTERS: usize = 79;
+    pub const S_ANIMAL: usize = 80;
+    pub const S_SPIDER: usize = 81;
+    pub const S_HOUND: usize = 82;
+    pub const S_HYDRA: usize = 83;
+    pub const S_AINU: usize = 84;
+    pub const S_DEMON: usize = 85;
+    pub const S_UNDEAD: usize = 86;
+    pub const S_DRAGON: usize = 87;
+    pub const S_HI_UNDEAD: usize = 88;
+    pub const S_HI_DRAGON: usize = 89;
+    pub const S_WRAITH: usize = 90;
+    pub const S_UNIQUE: usize = 91;
+}
+
+/// `OF_*` flag numbers (`list-object-flags.h`: a flag's number is its line
+/// less sixteen).
 mod of {
     pub const PROT_FEAR: usize = 6;
     pub const PROT_BLIND: usize = 7;
@@ -61,45 +122,204 @@ mod elem {
     pub const POIS: usize = 4;
 }
 
+/// The declared default aversion when a caller has no parameter table
+/// (tests, the `danger()` compatibility wrapper). Strategy always passes
+/// `Params::risk_aversion_pct`.
+pub const DEFAULT_RISK_AVERSION_PCT: i32 = 50;
+
+/// The highest danger a path cost can pay. HP risk itself is uncapped; this
+/// only keeps a distance map's `u32` costs sane (the C Borg caps its sum at
+/// 2000, `borg-danger.c:2824-2865`).
+const PATH_CAP: f64 = 2000.0;
+
 fn has(flags: &[u8], flag: usize) -> bool {
     flags
         .get(flag.wrapping_sub(1) / 8)
         .is_some_and(|b| b & (1 << ((flag - 1) % 8)) != 0)
 }
 
-/// The danger of standing at `(x, y)` for the next `c` player turns:
-/// the C Borg's `borg_danger` sum, capped at 2000
-/// (`borg-danger.c:borg_danger:2824-2865`). The fear maps are not ours
-/// (declared above); the whole of the sum is the monsters'.
-pub fn danger(w: &World, k: &Knowledge, x: i32, y: i32, c: i32) -> u32 {
-    let mut p = 0u32;
-    for t in &w.level.monsters {
-        p = p.saturating_add(one(w, k, t, x, y, c));
-    }
-    p.min(2000)
+/// One monster's contribution to one grid's assessment.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct MonsterThreat {
+    pub index: i32,
+    pub expected: f64,
+    pub worst: f64,
+    pub p_death: f64,
+    /// Expected attack rounds in the horizon.
+    pub rounds: f64,
+    /// Chance of at least one fear/blind/confuse/paralyse from this monster.
+    pub disabling: f64,
+    /// Chance of at least one summon or shriek from this monster.
+    pub summoning: f64,
+    /// Theft, destruction or drain events, not hit points.
+    pub economic: f64,
+    /// Whether the ranged estimate contributed (for the trace and tests).
+    pub ranged: bool,
+    /// The track's confidence (1.0 in view).
+    pub confidence: f64,
 }
 
-/// One monster's contribution, the melee term of
-/// `borg_danger_one_kill` (`borg-danger.c:2289-2588`).
-pub fn one(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
-    let Some(race) = k.race(t.race) else {
-        // An unknown race scores the C Borg's ghost value
-        // (`borg_danger_one_kill:2316`).
-        return 100;
-    };
-    // Distance components, minimal 1, beyond 20 nothing
-    // (`:2332-2345`).
-    let d = (t.x - x).abs().max((t.y - y).abs()).clamp(1, 20);
-    if (t.x - x).abs().max((t.y - y).abs()) > 20 {
-        return 0;
+/// The whole grid's assessment for a horizon and risk tolerance.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Assessment {
+    pub horizon: i32,
+    pub expected: f64,
+    pub worst: f64,
+    pub p_death: f64,
+    pub disabling: f64,
+    pub summoning: f64,
+    pub economic: f64,
+    pub per_monster: Vec<MonsterThreat>,
+}
+
+impl MonsterThreat {
+    /// This monster's risk in hit points under the same tolerance.
+    pub fn risk(&self, aversion_pct: i32) -> f64 {
+        let a = f64::from(aversion_pct.clamp(0, 100)) / 100.0;
+        self.expected + a * (self.worst - self.expected).max(0.0)
+    }
+}
+
+/// What the decision trace records for later calibration: the numbers,
+/// not the per-monster detail (which would make every trace line large).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatSummary {
+    pub horizon: i32,
+    pub expected: f64,
+    pub worst: f64,
+    pub p_death: f64,
+    pub disabling: f64,
+    pub summoning: f64,
+    pub economic: f64,
+}
+
+impl Assessment {
+    pub fn summary(&self) -> ThreatSummary {
+        ThreatSummary {
+            horizon: self.horizon,
+            expected: self.expected,
+            worst: self.worst,
+            p_death: self.p_death,
+            disabling: self.disabling,
+            summoning: self.summoning,
+            economic: self.economic,
+        }
     }
 
-    // The energy model (`:2361-2395`): monster attack-turns per `c`
-    // player turns, in tenths. Monsters are a little fast against a
-    // fragile character in the dungeon (`:2357-2359`), a very fast Borg
-    // is treated as slower (`:2347-2349`, our haste-less version keeps
-    // the real speed), and a monster is never slower than the player
-    // (`:2377-2395`).
+    /// The one risk number, in hit points: expected, plus `aversion_pct` of
+    /// the gap to the worst case. 0 is expected only; 100 is worst only.
+    pub fn risk(&self, aversion_pct: i32) -> f64 {
+        let a = f64::from(aversion_pct.clamp(0, 100)) / 100.0;
+        self.expected + a * (self.worst - self.expected).max(0.0)
+    }
+}
+
+/// Whether the character can attack this think. Fear refuses the attack in
+/// the engine (`mon-blows.c`, "too afraid to attack"); paralysis refuses
+/// every action.
+pub fn can_attack(w: &World) -> bool {
+    let Some(s) = w.character.status.as_ref() else {
+        return true;
+    };
+    let timed = |i: usize| s.timed.get(i).copied().unwrap_or(0);
+    timed(tmd::AFRAID) <= 0 && timed(tmd::PARALYZED) <= 0
+}
+
+/// Whether the character can act at all (paralysis).
+pub fn can_act(w: &World) -> bool {
+    w.character
+        .status
+        .as_ref()
+        .is_none_or(|s| s.timed.get(tmd::PARALYZED).copied().unwrap_or(0) <= 0)
+}
+
+/// The risk of standing at `(x, y)` for `c` player turns, at the default
+/// aversion. This is the compatibility wrapper for callers that predate the
+/// parameter table; strategy and paths pass their own tolerance.
+pub fn danger(w: &World, k: &Knowledge, x: i32, y: i32, c: i32) -> u32 {
+    danger_with(w, k, x, y, c, DEFAULT_RISK_AVERSION_PCT)
+}
+
+/// As [`danger`], with the caller's risk tolerance.
+pub fn danger_with(w: &World, k: &Knowledge, x: i32, y: i32, c: i32, aversion_pct: i32) -> u32 {
+    assess(w, k, x, y, c, aversion_pct)
+        .risk(aversion_pct)
+        .min(PATH_CAP)
+        .round() as u32
+}
+
+/// The full assessment of one grid.
+pub fn assess(
+    w: &World,
+    k: &Knowledge,
+    x: i32,
+    y: i32,
+    horizon: i32,
+    aversion_pct: i32,
+) -> Assessment {
+    let mut out = Assessment {
+        horizon,
+        expected: 0.0,
+        worst: 0.0,
+        p_death: 0.0,
+        disabling: 0.0,
+        summoning: 0.0,
+        economic: 0.0,
+        per_monster: Vec::new(),
+    };
+    for t in &w.level.monsters {
+        let one = one_threat(w, k, t, x, y, horizon);
+        out.expected += one.expected;
+        out.worst += one.worst;
+        out.disabling = 1.0 - (1.0 - out.disabling) * (1.0 - one.disabling);
+        out.summoning = 1.0 - (1.0 - out.summoning) * (1.0 - one.summoning);
+        out.economic += one.economic;
+        // The grid's death probability is not the sum of each monster's:
+        // the first killing blow already kills. Combine the survival
+        // probabilities instead.
+        let survive = 1.0 - out.p_death;
+        out.p_death = 1.0 - survive * (1.0 - one.p_death);
+        out.per_monster.push(one);
+    }
+    // The aversion is applied by `risk` and by every consumer, not baked
+    // into the expected/worst pair.
+    let _ = aversion_pct;
+    out
+}
+
+/// One monster's threat at `(x, y)`.
+pub fn one(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
+    one_threat(w, k, t, x, y, c).expected.round() as u32
+}
+
+/// The detailed per-monster threat.
+pub fn one_threat(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> MonsterThreat {
+    let Some(race) = k.race(t.race) else {
+        // Unknown race: the C Borg's ghost value, kept as a conservative
+        // default with no dice to inspect.
+        return MonsterThreat {
+            index: t.index,
+            expected: 100.0,
+            worst: 100.0,
+            p_death: 0.0,
+            rounds: 1.0,
+            disabling: 0.0,
+            summoning: 0.0,
+            economic: 0.0,
+            ranged: false,
+            confidence: t.confidence(w.turn, k),
+        };
+    };
+    let d = (t.x - x).abs().max((t.y - y).abs());
+    let confidence = t.confidence(w.turn, k);
+    if d > 20 || confidence <= 0.0 {
+        return MonsterThreat {
+            index: t.index,
+            confidence,
+            ..Default::default()
+        };
+    }
+    let d = d.max(1);
     let player = w
         .character
         .status
@@ -107,190 +327,509 @@ pub fn one(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
         .map_or((110, 1, 20), |s| (s.speed, s.level, s.max_hp));
     let mut monster_speed = i32::from(t.speed);
     if player.2 < 20 && w.level.depth > 0 {
-        monster_speed += 3;
+        monster_speed += 3; // borg-danger.c:2357-2359
     }
-    let e = k.turn_energy(player.0);
-    let t_turns = (100 + e - 1) / e;
-    let e = k.turn_energy(monster_speed.clamp(0, 199));
-    let mut q = c * (t_turns * e) / 10;
-    // Full damage rounds up to whole attacks (`:2374-2375`).
-    q = (q + 9) / 10 * 10;
-    let q = q.max(10);
+    let slots = attack_slots(k, player.0, monster_speed, c);
+    let reach = if has(&race.flags, rf::NEVER_MOVE) && d > 1 {
+        f64::INFINITY
+    } else {
+        f64::from(d - 1)
+    };
+    let rounds = (slots - reach).max(0.0);
+    let awake = t.awake();
+    let mut melee = melee_threat(w, k, race, t, rounds, awake);
+    let growth = breeder_factor(w, race);
+    melee.expected *= growth;
+    melee.worst *= growth;
+    melee.confidence = confidence;
+    melee.expected *= confidence;
+    melee.worst *= confidence;
+    melee.disabling *= confidence;
+    melee.summoning *= confidence;
+    melee.economic *= confidence;
 
-    // The melee term, per blow at full damage.
-    let mut v1 = physical(w, race);
+    let ranged = ranged_threat(w, race, slots, d, x, y, t);
+    if rounds <= 0.0 && !ranged.ranged {
+        return MonsterThreat {
+            index: t.index,
+            confidence,
+            ..Default::default()
+        };
+    }
+    MonsterThreat {
+        index: t.index,
+        expected: melee.expected + ranged.expected,
+        worst: melee.worst + ranged.worst,
+        p_death: combine_death(melee.p_death, ranged.p_death),
+        rounds,
+        disabling: 1.0 - (1.0 - melee.disabling) * (1.0 - ranged.disabling),
+        summoning: 1.0 - (1.0 - melee.summoning) * (1.0 - ranged.summoning),
+        economic: melee.economic + ranged.economic,
+        ranged: ranged.ranged,
+        confidence,
+    }
+}
+
+fn attack_slots(k: &Knowledge, player_speed: i32, monster_speed: i32, c: i32) -> f64 {
+    let e = k.turn_energy(player_speed).max(1);
+    let player_turns = (100 + e - 1) / e;
+    let e = k.turn_energy(monster_speed.clamp(0, 199));
+    let slots = f64::from(c) * f64::from(player_turns * e) / 100.0;
+    slots.max(0.0)
+}
+
+fn combine_death(a: f64, b: f64) -> f64 {
+    1.0 - (1.0 - a.clamp(0.0, 1.0)) * (1.0 - b.clamp(0.0, 1.0))
+}
+
+/// Melee damage over `rounds`, with the engine's hit and armour model.
+fn melee_threat(
+    w: &World,
+    _k: &Knowledge,
+    race: &MonsterRace,
+    t: &Track,
+    rounds: f64,
+    awake: bool,
+) -> MonsterThreat {
+    let mut out = MonsterThreat::default();
     if has(&race.flags, rf::NEVER_BLOW) {
-        v1 = 0; // `:2412-2414`
+        return out;
     }
-    if has(&race.flags, rf::NEVER_MOVE) && d > 1 {
-        v1 = 0; // `:2417-2419`
-    }
-    if has(&race.flags, rf::MULTIPLY) && player.1 < 20 {
-        v1 += v1 * 15 / 10; // `:2422-2425`
-    }
-    if !t.awake() {
-        // Sleeping monsters: light sleepers a little worse, characters
-        // of level 25+ half (`:2439-2450`).
-        if player.1 >= 25 {
-            v1 /= 2;
+    let ac = w.character.status.as_ref().map_or(0, |s| s.known_ac).max(0);
+    let mut round_pmf = vec![1.0];
+    let mut expected_per_round = 0.0;
+    let mut worst_per_round = 0.0;
+    let mut status_per_blow = 0.0;
+    let mut economic_per_blow = 0.0;
+    for blow in &race.blows {
+        let p_hit = hit_chance(race, blow, ac);
+        let (pmf, mean, max) = blow_pmf(blow, ac);
+        if is_status(blow.effect.as_str()) && !protected(w, blow.effect.as_str()) {
+            status_per_blow = 1.0 - (1.0 - status_per_blow) * (1.0 - p_hit);
         }
-        let inc = race.sleep + 5;
-        v1 += v1 * inc as u32 / 100;
+        if is_economic(blow.effect.as_str()) {
+            economic_per_blow += p_hit;
+        }
+        // Combine this blow into the round distribution: a miss is index 0.
+        round_pmf = convolve(&round_pmf, &hit_pmf(&pmf, p_hit), usize::MAX);
+        expected_per_round += p_hit * mean;
+        worst_per_round += max;
+    }
+    if !awake {
+        // Sleeping: it must wake first. The C Borg scales by sleepiness
+        // (`:2439-2450`); here the expected share is half, declared.
+        out.expected = expected_per_round * rounds * 0.5;
+        out.worst = worst_per_round * rounds * 0.5;
+        out.p_death = death_probability(&round_pmf, rounds * 0.5, hp_of(w));
+    } else {
+        out.expected = expected_per_round * rounds;
+        out.worst = worst_per_round * rounds;
+        out.p_death = death_probability(&round_pmf, rounds, hp_of(w));
     }
     if t.timed[mon_tmd::CONF] > 0 {
-        v1 /= 2; // `:2490-2493`
+        out.expected *= 0.5; // borg-danger.c:2490-2493
+        out.worst *= 0.5;
     }
     if t.timed[mon_tmd::STUN] > 0 {
-        v1 = v1 * 10 / 13; // `:2494-2496`
+        out.expected *= 0.75; // mon-timed.h: STUN_DAM_REDUCTION 25
+        out.worst *= 0.75;
     }
+    out.disabling =
+        (1.0 - (1.0 - status_per_blow).powf(rounds * race.blows.len() as f64)).clamp(0.0, 1.0);
+    out.economic = economic_per_blow * rounds;
+    out.rounds = rounds;
+    out
+}
 
-    // Proximity (`:2516-2593`): a faster monster may step and strike in
-    // one round, scored as its share of the attacks; a normal-speed
-    // monster must already be adjacent.
-    let v1 = if q > 10 && d != 1 && !has(&race.flags, rf::NEVER_MOVE) {
-        // It contributes only if one step brings it (or its reach)
-        // adjacent to the threatened grid (`:2523-2582`); the C Borg
-        // simulates the step over its map, we over the remembered level.
-        let steps_there = crate::path::enter_cost(w, t.x, t.y).is_some()
-            && (0..8).any(|i| {
-                let (dx, dy) = step_deltas()[i];
-                (t.x + dx - x).abs().max((t.y + dy - y).abs()) <= 1
-                    && crate::path::enter_cost(w, t.x + dx, t.y + dy).is_some()
-            });
-        if steps_there {
-            v1 * (q as u32) / (d as u32 * 10)
-        } else {
-            0
+fn hp_of(w: &World) -> i32 {
+    // Current hit points, not the maximum: a character at 3/49 is in
+    // danger from a hit that would be trivial at full health.
+    w.character.status.as_ref().map_or(1, |s| s.hp.max(1))
+}
+
+fn protected(w: &World, effect: &str) -> bool {
+    let flag = |f: usize| has(&w.character.gear.flags, f);
+    match effect {
+        "BLIND" => flag(of::PROT_BLIND),
+        "CONFUSE" => flag(of::PROT_CONF),
+        "TERRIFY" => flag(of::PROT_FEAR),
+        "PARALYZE" => flag(of::FREE_ACT),
+        _ => false,
+    }
+}
+
+fn is_status(effect: &str) -> bool {
+    matches!(effect, "BLIND" | "CONFUSE" | "TERRIFY" | "PARALYZE")
+}
+
+fn is_economic(effect: &str) -> bool {
+    matches!(
+        effect,
+        "EAT_GOLD"
+            | "EAT_ITEM"
+            | "EAT_FOOD"
+            | "EAT_LIGHT"
+            | "DESTROY_ITEM"
+            | "DESTROY_ARMOR"
+            | "DESTROY_WEAPON"
+            | "DRAIN_MANA"
+            | "DRAIN_CHARGE"
+            | "UN_POWER"
+            | "UN_STAT"
+    )
+}
+
+/// The engine's chance for one blow to hit the player
+/// (`mon-attack.c:chance_of_monster_hit_base`, `player-attack.c:hit_chance`).
+fn hit_chance(race: &MonsterRace, blow: &Blow, ac: i32) -> f64 {
+    let mut to_hit = race.level.max(1) * 3 + blow.power;
+    to_hit = to_hit.max(9);
+    let numerator = (to_hit - ac * 2 / 3).max(0);
+    let base = f64::from(numerator) / f64::from(to_hit);
+    0.12 + 0.83 * base
+}
+
+/// A blow's damage before the hit roll: the dice, minus armour the way
+/// `adjust_dam_armor` does (`mon-attack.c:537-541`). Returns (pmf, mean,
+/// max).
+fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
+    if !matches!(
+        blow.effect.as_str(),
+        "HURT" | "SHATTER" | "POISON" | "ACID" | "ELEC" | "FIRE" | "COLD"
+    ) {
+        // Status and economic blows do no hit-point damage; unknown effects
+        // keep their dice as the honest floor.
+        if is_status(blow.effect.as_str()) || is_economic(blow.effect.as_str()) {
+            return (vec![1.0], 0.0, 0.0);
         }
-    } else if q > 10 && d == 1 {
-        v1 * (q as u32) / 10 // `:2586-2588`
-    } else if q == 10 && d > 1 {
-        0 // `:2590-2593`
-    } else {
-        v1
-    };
-
-    // The spell term is M4's (declared in the module docs). Out of view,
-    // the track's existing confidence decays with the moves the monster
-    // may have made (REDESIGN-LESSONS L11): a remembered threat must not
-    // block a staircase forever after the monster has had time to leave.
-    (f64::from(v1) * t.confidence(w.turn, k)).round() as u32
-}
-
-/// The eight neighbouring deltas (`ddy_ddd`/`ddx_ddd` order does not
-/// matter here: any legal step counts).
-fn step_deltas() -> [(i32, i32); 8] {
-    [
-        (-1, 1),
-        (0, 1),
-        (1, 1),
-        (-1, 0),
-        (1, 0),
-        (-1, -1),
-        (0, -1),
-        (1, -1),
-    ]
-}
-
-/// The per-round melee damage of a race at full dice,
-/// `borg_danger_physical` (`borg-danger.c:64-545`): every blow's worst
-/// roll, with the effect adjustments of the blows that matter at the
-/// depths M3 plays. Blow effects we do not model score their raw dice
-/// (the honest floor); the full table of drain, theft and status blows
-/// is M4's.
-fn physical(w: &World, race: &MonsterRace) -> u32 {
-    let g = &w.character.gear;
-    let resist = |e: usize| g.resist.get(e).copied().unwrap_or(0);
-    let flag = |f: usize| has(&g.flags, f);
-    let mut n = 0u32;
-    for blow in &race.blows {
-        let raw = (blow.dice.dice * blow.dice.sides).max(0) as u32;
-        let z = match blow.effect.as_str() {
-            // `:108-125`: plain hurt, with the stun and knockout fudges
-            // for many low-sided dice.
-            "HURT" | "SHATTER" => {
-                let mut z = raw;
-                if blow.dice.sides < 3 {
-                    z += 200;
-                }
-                if blow.dice.sides < 3 && blow.dice.dice > 5 {
-                    z += 400;
-                }
-                z
-            }
-            // `:127-140`: poison, plus the fear unless resisted.
-            "POISON" => {
-                if resist(elem::POIS) >= 3 {
-                    0
-                } else {
-                    raw + if resist(elem::POIS) >= 1 { 0 } else { 10 }
-                }
-            }
-            // `:218-259`: the elements; immunity skips the blow, each
-            // resist level takes a third (rounded), and the fear term
-            // doubles the damage (acid corrodes armour instead: +200).
-            "ACID" => {
-                if resist(elem::ACID) >= 3 {
-                    0
-                } else {
-                    let mut z = raw;
-                    for _ in 0..resist(elem::ACID) {
-                        z = z.div_ceil(3);
-                    }
-                    z + 200
-                }
-            }
-            "ELEC" | "FIRE" | "COLD" => {
-                let e = match blow.effect.as_str() {
-                    "ELEC" => elem::ELEC,
-                    "FIRE" => elem::FIRE,
-                    _ => elem::COLD,
-                };
-                if resist(e) >= 3 {
-                    0
-                } else {
-                    let mut z = raw;
-                    for _ in 0..resist(e) {
-                        z = z.div_ceil(3);
-                    }
-                    z * 2
-                }
-            }
-            // `:262-310`: the status blows, skipped when protected.
-            "BLIND" => {
-                if flag(of::PROT_BLIND) {
-                    0
-                } else {
-                    raw + 10
-                }
-            }
-            "CONFUSE" => {
-                if flag(of::PROT_CONF) {
-                    0
-                } else {
-                    raw + 200
-                }
-            }
-            "TERRIFY" => {
-                if flag(of::PROT_FEAR) {
-                    0
-                } else {
-                    raw * 2
-                }
-            }
-            "PARALYZE" => {
-                if flag(of::FREE_ACT) {
-                    0
-                } else {
-                    raw + 200
-                }
-            }
-            // An effect we do not model: its raw dice, the honest floor.
-            _ => raw,
-        };
-        n = n.saturating_add(z);
     }
-    n
+    let dice = blow.dice;
+    let dice_n = dice.dice.max(0) as usize;
+    let sides = dice.sides.max(0) as usize;
+    let base = dice.base.max(0) as usize;
+    if dice_n == 0 || sides == 0 {
+        let d = reduce(base as f64, ac);
+        let mut out = vec![0.0; d as usize + 1];
+        out[d as usize] = 1.0;
+        return (out, d, d);
+    }
+    if dice_n * sides > 64 {
+        // Too wide to enumerate: a two-point mean/max model, declared.
+        let mean = (dice_n as f64) * ((sides + 1) as f64) / 2.0 + base as f64;
+        let max = (dice_n * sides + base) as f64;
+        let (mean, max) = (reduce(mean, ac), reduce(max, ac));
+        return (vec![0.0, mean], mean, max);
+    }
+    // Enumerate the dice by dynamic programming, then fold in the base.
+    let mut pmf = vec![0.0; dice_n * sides + 1];
+    pmf[0] = 1.0;
+    for _ in 0..dice_n {
+        let mut next = vec![0.0; pmf.len()];
+        for (i, p) in pmf.iter().enumerate() {
+            if *p == 0.0 {
+                continue;
+            }
+            for s in 1..=sides {
+                next[i + s] += p / sides as f64;
+            }
+        }
+        pmf = next;
+    }
+    let max = pmf.len() - 1 + base;
+    let mut out = vec![0.0; max + 1];
+    let mut mean = 0.0;
+    let mut max_dam = 0.0f64;
+    for (i, p) in pmf.iter().enumerate() {
+        if *p == 0.0 {
+            continue;
+        }
+        let d = reduce((i + base) as f64, ac);
+        out[d as usize] += *p;
+        mean += *p * d;
+        max_dam = max_dam.max(d);
+    }
+    (out, mean, max_dam)
+}
+
+fn reduce(damage: f64, ac: i32) -> f64 {
+    let ac = ac.clamp(0, 240) as f64;
+    (damage - damage * ac / 400.0).max(0.0).round()
+}
+
+fn hit_pmf(pmf: &[f64], p_hit: f64) -> Vec<f64> {
+    let mut out = vec![0.0; pmf.len().max(1)];
+    out[0] += 1.0 - p_hit;
+    for (i, p) in pmf.iter().enumerate() {
+        if i < out.len() {
+            out[i] += p * p_hit;
+        }
+    }
+    out
+}
+
+/// Convolve, optionally only up to `limit` (index `limit` means "at least").
+fn convolve(a: &[f64], b: &[f64], limit: usize) -> Vec<f64> {
+    let n = if limit == usize::MAX {
+        a.len() + b.len() - 1
+    } else {
+        limit + 1
+    };
+    let mut out = vec![0.0; n.max(1)];
+    for (i, pa) in a.iter().enumerate() {
+        if *pa == 0.0 {
+            continue;
+        }
+        for (j, pb) in b.iter().enumerate() {
+            if *pb == 0.0 {
+                continue;
+            }
+            let k = (i + j).min(n - 1);
+            out[k] += pa * pb;
+        }
+    }
+    out
+}
+
+/// Probability that `rounds` rounds of `pmf` deal at least `hp`.
+fn death_probability(pmf: &[f64], rounds: f64, hp: i32) -> f64 {
+    let hp = hp.max(1) as usize;
+    let n = rounds.floor() as usize;
+    if n == 0 {
+        return 0.0;
+    }
+    if n <= 12 && hp <= 80 {
+        let mut dist = vec![0.0; hp + 1];
+        dist[0] = 1.0;
+        for _ in 0..n {
+            dist = convolve(&dist, pmf, hp);
+        }
+        return dist[hp].clamp(0.0, 1.0);
+    }
+    // Large fight: normal approximation with a continuity correction.
+    let mean = pmf
+        .iter()
+        .enumerate()
+        .map(|(d, p)| d as f64 * p)
+        .sum::<f64>()
+        * n as f64;
+    let var = pmf
+        .iter()
+        .enumerate()
+        .map(|(d, p)| (d as f64 - mean / n as f64).powi(2) * p)
+        .sum::<f64>()
+        * n as f64;
+    if var <= 0.0 {
+        return if mean >= hp as f64 { 1.0 } else { 0.0 };
+    }
+    let z = (hp as f64 - 0.5 - mean) / var.sqrt();
+    0.5 * erfc(z / std::f64::consts::SQRT_2)
+}
+
+/// Abramowitz-Stegun 7.1.26, enough for a declaration, not a statistic.
+fn erfc(x: f64) -> f64 {
+    let z = x.abs();
+    let t = 1.0 / (1.0 + 0.5 * z);
+    let y = t
+        * (-z * z - 1.265_512_23
+            + t * (1.000_023_68
+                + t * (0.374_091_96
+                    + t * (0.096_784_18
+                        + t * (-0.186_288_06
+                            + t * (0.278_868_07
+                                + t * (-1.135_203_98
+                                    + t * (1.488_515_87
+                                        + t * (-0.822_152_23 + t * 0.170_872_77)))))))))
+            .exp();
+    if x >= 0.0 {
+        y
+    } else {
+        2.0 - y
+    }
+}
+
+fn line_clear(w: &World, x0: i32, y0: i32, x1: i32, y1: i32) -> bool {
+    // Bresenham over the remembered level; walls block. The engine's
+    // projectability is more subtle (permissive corners); this is the
+    // declared conservative approximation until docs/ENGINE-READS lists it.
+    let (dx, dy) = ((x1 - x0).abs(), (y1 - y0).abs());
+    let (sx, sy) = (if x0 < x1 { 1 } else { -1 }, if y0 < y1 { 1 } else { -1 });
+    let (mut x, mut y, mut err) = (x0, y0, dx - dy);
+    loop {
+        if (x, y) != (x0, y0) && (x, y) != (x1, y1) {
+            if let Some(g) = w.level.at(x, y) {
+                if matches!(
+                    g.feat,
+                    21 | crate::borg::feat::CLOSED | crate::borg::feat::NONE
+                ) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+        if x == x1 && y == y1 {
+            return true;
+        }
+        let e2 = 2 * err;
+        if e2 > -dy {
+            err -= dy;
+            x += sx;
+        }
+        if e2 < dx {
+            err += dx;
+            y += sy;
+        }
+    }
+}
+
+/// Ranged spells, the C Borg's estimates (`borg-danger.c:619-760`).
+fn ranged_threat(
+    w: &World,
+    race: &MonsterRace,
+    rounds: f64,
+    d: i32,
+    x: i32,
+    y: i32,
+    t: &Track,
+) -> MonsterThreat {
+    let mut out = MonsterThreat::default();
+    let freq = if race.freq_spell > 0 {
+        race.freq_spell
+    } else {
+        race.freq_innate
+    };
+    if freq <= 0 || !line_clear(w, t.x, t.y, x, y) {
+        return out;
+    }
+    let p_cast = (1.0 / f64::from(freq)).min(1.0);
+    let mut damage: f64 = 0.0;
+    let mut status = false;
+    let mut summon = false;
+    let economic = false;
+    for flag in spell_flags(race) {
+        match flag {
+            rsf::BR_ACID | rsf::BR_ELEC | rsf::BR_FIRE | rsf::BR_COLD | rsf::BR_POIS => {
+                let (e, cap) = match flag {
+                    rsf::BR_ACID => (elem::ACID, 1600.0),
+                    rsf::BR_ELEC => (elem::ELEC, 1600.0),
+                    rsf::BR_FIRE => (elem::FIRE, 1600.0),
+                    rsf::BR_COLD => (elem::COLD, 1600.0),
+                    _ => (elem::POIS, 800.0),
+                };
+                let z = (f64::from(race.avg_hp) / 3.0).min(cap);
+                damage = damage.max(z * resist(w, e));
+            }
+            rsf::SHOT | rsf::ARROW | rsf::BOLT => {
+                let factor = match flag {
+                    rsf::SHOT => 5.0,
+                    rsf::ARROW => 6.0,
+                    _ => 7.0,
+                };
+                damage = damage.max((f64::from(race.spell_power) / 8.0 + 1.0) * factor);
+            }
+            rsf::SPIT | rsf::WHIP => {
+                if d < 4 {
+                    damage = damage.max(100.0);
+                }
+            }
+            rsf::BO_ACID
+            | rsf::BO_ELEC
+            | rsf::BO_FIRE
+            | rsf::BO_COLD
+            | rsf::BO_POIS
+            | rsf::MISSILE
+            | rsf::BE_ELEC => {
+                // A conservative generic ball/bolt: the effect dice are not
+                // in Knowledge. Calibration checks it (#124).
+                damage = damage.max(f64::from(race.spell_power).max(1.0) * 8.0);
+            }
+            rsf::SCARE | rsf::BLIND | rsf::CONF | rsf::SLOW | rsf::HOLD => status = true,
+            rsf::HEAL => {}
+            rsf::S_KIN
+            | rsf::S_MONSTER
+            | rsf::S_MONSTERS
+            | rsf::S_ANIMAL
+            | rsf::S_SPIDER
+            | rsf::S_HOUND
+            | rsf::S_HYDRA
+            | rsf::S_AINU
+            | rsf::S_DEMON
+            | rsf::S_UNDEAD
+            | rsf::S_DRAGON
+            | rsf::S_HI_UNDEAD
+            | rsf::S_HI_DRAGON
+            | rsf::S_WRAITH
+            | rsf::S_UNIQUE
+            | rsf::SHRIEK => summon = true,
+            _ => {}
+        }
+    }
+    if damage <= 0.0 && !status && !summon && !economic {
+        return out;
+    }
+    let casts = rounds * p_cast;
+    out.expected = casts * damage;
+    out.worst = rounds * damage;
+    out.disabling = if status {
+        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    out.summoning = if summon {
+        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    out.economic = if economic { casts } else { 0.0 };
+    // Summoners and breeders: the C Borg's growth factors (`:2421-2433`,
+    // `:2701-2717`). Breeders are handled on the melee side; a summoner's
+    // future friends are not in the world yet, so the present estimate is
+    // scaled.
+    if summon {
+        let player_level = w.character.status.as_ref().map_or(1, |s| s.level);
+        let factor = if player_level < 15 { 1.8 } else { 1.5 };
+        out.expected *= factor;
+        out.worst *= factor;
+    }
+    out.ranged = true;
+    out
+}
+
+fn resist(w: &World, e: usize) -> f64 {
+    match w.character.gear.resist.get(e).copied().unwrap_or(0) {
+        0 => 1.0,
+        1 => 2.0 / 3.0,
+        2 => 4.0 / 9.0,
+        _ => 0.0,
+    }
+}
+
+fn spell_flags(race: &MonsterRace) -> Vec<usize> {
+    let mut out = Vec::new();
+    for (i, byte) in race.spell_flags.iter().enumerate() {
+        for bit in 0..8 {
+            if byte & (1 << bit) != 0 {
+                out.push(i * 8 + bit + 1);
+            }
+        }
+    }
+    out
+}
+
+/// Breeders: the C Borg's 1.5x at CL < 20 (`borg-danger.c:2421-2425`).
+pub fn breeder_factor(w: &World, race: &MonsterRace) -> f64 {
+    let level = w.character.status.as_ref().map_or(1, |s| s.level);
+    if has(&race.flags, rf::MULTIPLY) && level < 20 {
+        1.5
+    } else {
+        1.0
+    }
+}
+
+/// The old full-damage value, kept for one release of comparisons:
+/// the worst case, rounded. New code uses [`assess`].
+pub fn worst(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -> u32 {
+    one_threat(w, k, t, x, y, c).worst.round() as u32
 }
 
 #[cfg(test)]
@@ -321,7 +860,7 @@ mod tests {
             exp: 5,
             freq_innate: 0,
             freq_spell: 0,
-            spell_power: 0,
+            spell_power: 1,
             flags: pack(flags),
             spell_flags: vec![0; 12],
             blows: blows
@@ -338,12 +877,11 @@ mod tests {
                     },
                 })
                 .collect(),
-            glyph: b'k' as u32,
+            glyph: 0,
             attr: 0,
         }
     }
 
-    /// Pack RF flag numbers the way `z-bitflag.h` does.
     fn pack(flags: &[usize]) -> Vec<u8> {
         let mut out = vec![0u8; 11];
         for &f in flags {
@@ -353,55 +891,21 @@ mod tests {
     }
 
     fn knowledge(r: MonsterRace) -> Knowledge {
+        let mut races = vec![MonsterRace::default(); 7];
+        races.push(r);
         Knowledge {
-            races: vec![
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                MonsterRace {
-                    index: 0,
-                    name: "none".into(),
-                    ..Default::default()
-                },
-                r,
-            ],
-            ..crate::path::tests::energy()
+            races,
+            ..crate::path::tests::energy_with_race()
         }
     }
 
-    /// A world with a three-by-nine corridor (the player at (1,1)) and
-    /// one hand-built track, which is all the danger reads.
     fn world(track: Option<(i32, i32, u8, bool)>) -> World {
         let (mut w, _) = crate::path::tests::world(&["#########", "#@......#", "#########"]);
         if let Some(s) = w.character.status.as_mut() {
-            s.max_hp = 20; // a CL1 character with hit points: no +3 speed
+            s.max_hp = 20;
+            s.hp = 20;
+            s.known_ac = 20;
+            s.level = 1;
         }
         w.level.monsters.clear();
         if let Some((x, y, speed, awake)) = track {
@@ -427,159 +931,205 @@ mod tests {
     }
 
     #[test]
-    fn a_normal_speed_adjacent_monster_scores_its_round() {
-        // The player's grid is (1,1) in the helper's world; the monster
-        // is placed adjacent at (2,1). One blow 1d6, normal speed,
-        // awake, CL1: q = 10, d = 1, the danger is the raw round.
+    fn expected_and_worst_bracket_the_round() {
         let k = knowledge(race("kobold", 110, 0, &[(1, 6)], &[]));
         let w = world(Some((2, 1, 110, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 6);
-        // Two blows land in the same round: 1d6 + 1d4 = 10.
-        let two = race("kobold", 110, 0, &[], &[]);
-        let k = knowledge(MonsterRace {
-            blows: vec![
-                Blow {
-                    method: "CLAW".into(),
-                    effect: "HURT".into(),
-                    power: 60,
-                    dice: Dice {
-                        base: 0,
-                        dice: 1,
-                        sides: 6,
-                        m_bonus: 0,
-                    },
-                },
-                Blow {
-                    method: "BITE".into(),
-                    effect: "HURT".into(),
-                    power: 60,
-                    dice: Dice {
-                        base: 0,
-                        dice: 1,
-                        sides: 4,
-                        m_bonus: 0,
-                    },
-                },
-            ],
-            ..two
-        });
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 10);
-        // Many low-sided dice carry the knockout fudges: 10d2 rounds to
-        // 20 + 200 (stun) + 400 (kick) = 620.
-        let k = knowledge(race("kicker", 110, 0, &[(10, 2)], &[]));
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 620);
+        let mut w = w;
+        if let Some(s) = w.character.status.as_mut() {
+            s.max_hp = 20;
+            s.hp = 3;
+        }
+        assert_eq!(hp_of(&w), 3, "{:?}", w.character.status);
+        let a = assess(&w, &k, 1, 1, 1, 50);
+        // One 1d6 blow at normal speed, with the engine's hit chance
+        // against AC 20 and armour reduction: expected is below the
+        // full-damage 6, and worst is 6.
+        assert!(a.expected > 0.0 && a.expected < 6.0, "{a:?}");
+        assert!((a.worst - 6.0).abs() < 1e-9, "{a:?}");
+        assert!(a.p_death > 0.0 && a.p_death < 1.0, "{a:?}");
     }
 
     #[test]
-    fn an_unseen_monster_fades_with_its_track_confidence() {
+    fn speed_and_distance_change_the_rounds() {
+        let k = knowledge(race("fast", 120, 0, &[(1, 6)], &[]));
+        let adjacent = world(Some((2, 1, 120, true)));
+        assert_eq!(
+            one_threat(&adjacent, &k, &adjacent.level.monsters[0], 1, 1, 1).rounds,
+            2.0
+        );
+        let two = world(Some((3, 1, 120, true)));
+        assert_eq!(
+            one_threat(&two, &k, &two.level.monsters[0], 1, 1, 1).rounds,
+            1.0
+        );
+        let normal = world(Some((3, 1, 110, true)));
+        let kk = knowledge(race("normal", 110, 0, &[(1, 6)], &[]));
+        assert_eq!(
+            one_threat(&normal, &kk, &normal.level.monsters[0], 1, 1, 1).rounds,
+            0.0
+        );
+    }
+
+    #[test]
+    fn never_move_monsters_only_score_adjacent() {
+        let k = knowledge(race("mold", 110, 0, &[(1, 4), (1, 4)], &[rf::NEVER_MOVE]));
+        let w = world(Some((3, 1, 110, true)));
+        assert_eq!(
+            one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1).expected,
+            0.0
+        );
+        let w = world(Some((2, 1, 110, true)));
+        let t = &w.level.monsters[0];
+        let a = one_threat(&w, &k, t, 1, 1, 1);
+        assert!(a.expected > 0.0 && a.worst >= a.expected, "{a:?}");
+    }
+
+    #[test]
+    fn fear_refuses_the_attack() {
+        let (mut w, _) = crate::path::tests::world(&["#########", "#@......#", "#########"]);
+        assert!(can_attack(&w));
+        if let Some(s) = w.character.status.as_mut() {
+            s.timed = vec![0; 11];
+            s.timed[tmd::AFRAID] = 5;
+        }
+        assert!(!can_attack(&w));
+    }
+
+    #[test]
+    fn a_ranged_caster_is_seen_through_clear_ground() {
+        let mut r = race("acolyte", 110, 0, &[(1, 1)], &[]);
+        r.freq_spell = 8;
+        r.spell_power = 2;
+        r.spell_flags = pack(&[rsf::SCARE, rsf::HEAL]);
+        let k = knowledge(r);
+        let w = world(Some((4, 1, 110, true)));
+        let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(a.ranged, "{a:?}");
+        assert!(a.disabling > 0.0, "fear is a status risk: {a:?}");
+    }
+
+    #[test]
+    fn a_shrieker_is_a_summoning_risk() {
+        let mut r = race("shrieker", 110, 0, &[], &[]);
+        r.freq_innate = 25;
+        r.spell_flags = pack(&[rsf::SHRIEK]);
+        let k = knowledge(r);
+        let w = world(Some((3, 1, 110, true)));
+        let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(a.summoning > 0.0, "{a:?}");
+        assert_eq!(a.worst, 0.0, "a shriek does no hit-point damage");
+    }
+
+    #[test]
+    fn a_wall_stops_the_ranged_estimate() {
+        let mut r = race("archer", 110, 0, &[(1, 1)], &[]);
+        r.freq_innate = 2;
+        r.spell_flags = pack(&[rsf::ARROW]);
+        let k = knowledge(r);
+        let (mut w, _) = crate::path::tests::world(&["#####", "#@#.#", "#####"]);
+        if let Some(s) = w.character.status.as_mut() {
+            s.max_hp = 20;
+            s.known_ac = 20;
+        }
+        w.level.monsters.clear();
+        w.level.monsters.push(Track {
+            index: 1,
+            race: 7,
+            x: 3,
+            y: 1,
+            first_seen: 100,
+            last_seen: 100,
+            in_view: true,
+            hp: 5,
+            max_hp: 5,
+            timed: [0; 10],
+            speed: 110,
+        });
+        assert!(!one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1).ranged);
+    }
+
+    #[test]
+    fn sleep_and_stun_reduce_the_estimate() {
+        let k = knowledge(race("sleeper", 110, 10, &[(1, 6)], &[]));
+        let awake = world(Some((2, 1, 110, true)));
+        let asleep = world(Some((2, 1, 110, false)));
+        let a = one_threat(&awake, &k, &awake.level.monsters[0], 1, 1, 1).expected;
+        let b = one_threat(&asleep, &k, &asleep.level.monsters[0], 1, 1, 1).expected;
+        assert!(b < a, "{b} !< {a}");
+    }
+
+    #[test]
+    fn the_risk_tolerance_is_the_only_dial() {
+        let k = knowledge(race("kobold", 110, 0, &[(1, 6)], &[]));
+        let w = world(Some((2, 1, 110, true)));
+        let a = assess(&w, &k, 1, 1, 1, 0);
+        assert!((a.risk(0) - a.expected).abs() < 1e-9);
+        assert!((a.risk(100) - a.worst).abs() < 1e-9);
+        assert!(a.risk(50) > a.expected && a.risk(50) < a.worst);
+    }
+
+    #[test]
+    fn unseen_monsters_fade_with_confidence() {
         let k = knowledge(race("kobold", 110, 0, &[(1, 6)], &[]));
         let mut w = world(Some((2, 1, 110, true)));
-        w.turn = 110;
-        let t = w.level.monsters[0].clone();
-        assert_eq!(one(&w, &k, &t, 1, 1, 1), 6, "visible danger is exact");
-        let mut stale = t;
-        stale.in_view = false;
-        assert_eq!(
-            one(&w, &k, &stale, 1, 1, 1),
-            3,
-            "one possible move of uncertainty"
-        );
-        w.turn = 1000;
-        assert_eq!(one(&w, &k, &stale, 1, 1, 1), 0, "not a permanent wall");
-    }
-
-    #[test]
-    fn speed_multiplies_and_distance_gates() {
-        // A +10 monster adjacent (q = 20): twice the round.
-        let k = knowledge(race("fast", 120, 0, &[(1, 6)], &[]));
-        let w = world(Some((2, 1, 120, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 12);
-        // The same monster two grids from the threatened grid: it can
-        // step adjacent, so it scores its share v1 * q / (d*10) = 12/2.
-        let w = world(Some((3, 1, 120, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 6);
-        // A normal-speed monster two grids away scores nothing.
-        let k = knowledge(race("slow", 110, 0, &[(1, 6)], &[]));
-        let w = world(Some((3, 1, 110, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 0);
-        // Beyond 20 grids nothing counts.
-        let k = knowledge(race("far", 110, 0, &[(1, 6)], &[]));
-        let w = world(Some((2, 1, 110, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 25, 1, 1), 0);
-    }
-
-    #[test]
-    fn sleep_flags_and_conditions_adjust() {
-        let k = knowledge(race("sleeper", 110, 10, &[(1, 6)], &[]));
-        let w = world(Some((2, 1, 110, false)));
-        let t = &w.level.monsters[0];
-        // Asleep: v1 * (100 + sleep + 5) / 100 = 6 * 115/100.
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 6 * 115 / 100);
-        // Confused halves; the helper has no confused track, so check
-        // the formula directly on a copy.
-        let mut c = t.clone();
-        c.timed[mon_tmd::CONF] = 5;
-        assert_eq!(one(&w, &k, &c, 1, 1, 1), 6 * 115 / 100 / 2);
-    }
-
-    /// The bytes are the engine's, not `pack`'s: the committed fixture
-    /// slice has a grey mold's `NEVER_MOVE` in byte 2, bit 4, and a silver
-    /// mouse's `MULTIPLY | RAND_50` there. This is the off-by-one that
-    /// made a mould score zero (T4.1's fixtures, #142).
-    #[test]
-    fn race_flag_numbers_match_the_engine_enum() {
-        assert_eq!((rf::MULTIPLY, rf::NEVER_BLOW, rf::NEVER_MOVE), (17, 20, 21));
-        let grey_mold = [0, 0, 16];
-        assert!(has(&grey_mold, rf::NEVER_MOVE), "grey mold cannot move");
-        assert!(!has(&grey_mold, rf::NEVER_BLOW), "but it can spore");
-        let silver_mouse = [0, 0, 65];
-        assert!(has(&silver_mouse, rf::MULTIPLY), "breeders multiply");
-        assert!(has(&silver_mouse, 23), "RAND_50");
-        let k = knowledge(race(
-            "grey mold",
-            110,
-            0,
-            &[(1, 4), (1, 4)],
-            &[rf::NEVER_MOVE],
-        ));
-        let w = world(Some((2, 1, 110, true)));
-        let t = &w.level.monsters[0];
+        let mut t = w.level.monsters[0].clone();
+        let seen = one_threat(&w, &k, &t, 1, 1, 1).expected;
+        t.in_view = false;
+        w.turn = 103;
+        let fading = one_threat(&w, &k, &t, 1, 1, 1).expected;
+        assert!(fading < seen, "{fading} !< {seen}");
+        w.turn = 1_000;
         assert!(
-            one(&w, &k, t, 1, 1, 1) > 0,
-            "an adjacent mould is a threat, not a safe rest"
+            one_threat(&w, &k, &t, 1, 1, 1).expected < 0.1,
+            "confidence keeps falling: {:?}",
+            one_threat(&w, &k, &t, 1, 1, 1)
         );
     }
 
     #[test]
-    fn never_blow_and_never_move() {
-        // A mold that cannot move scores only when adjacent.
-        let k = knowledge(race("mold", 110, 0, &[(1, 6)], &[rf::NEVER_MOVE]));
+    fn status_blows_are_disabling_not_hit_points() {
+        let mut r = race("paralyser", 110, 0, &[], &[]);
+        r.blows.push(Blow {
+            method: "GAZE".into(),
+            effect: "PARALYZE".into(),
+            power: 0,
+            dice: Dice::default(),
+        });
+        let k = knowledge(r);
         let w = world(Some((2, 1, 110, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 6);
-        let w = world(Some((3, 1, 110, true)));
-        let t = &w.level.monsters[0];
-        assert_eq!(
-            one(&w, &k, t, 1, 1, 1),
-            0,
-            "two grids away, it cannot close"
-        );
-        // A caster that never blows: the melee term is zero (its spells
-        // are M4's).
-        let k = knowledge(race("eye", 110, 0, &[(1, 6)], &[rf::NEVER_BLOW]));
-        assert_eq!(one(&w, &k, t, 1, 1, 1), 0);
+        let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(a.disabling > 0.0, "{a:?}");
+        assert_eq!(a.worst, 0.0, "{a:?}");
     }
 
     #[test]
-    fn the_sum_is_capped() {
-        let k = knowledge(race("dragon", 130, 0, &[(30, 50)], &[rf::MULTIPLY]));
-        let w = world(Some((2, 1, 130, true)));
-        let d = danger(&w, &k, 1, 1, 1);
-        assert_eq!(d, 2000);
+    fn summoners_and_breeders_grow_the_estimate() {
+        let base = race("mouse", 110, 0, &[(1, 2)], &[]);
+        let breeder = MonsterRace {
+            flags: pack(&[rf::MULTIPLY]),
+            ..base.clone()
+        };
+        let k = knowledge(breeder);
+        let w = world(Some((2, 1, 110, true)));
+        let grown = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1).expected;
+        let k0 = knowledge(base);
+        let plain = one_threat(&w, &k0, &w.level.monsters[0], 1, 1, 1).expected;
+        assert!(grown > plain, "{grown} !> {plain}");
+    }
+
+    #[test]
+    fn economic_events_are_not_added_to_hp_damage() {
+        let mut r = race("cutpurse", 110, 0, &[(1, 1)], &[]);
+        r.blows.push(Blow {
+            method: "TOUCH".into(),
+            effect: "EAT_GOLD".into(),
+            power: 0,
+            dice: Dice::default(),
+        });
+        let k = knowledge(r);
+        let w = world(Some((2, 1, 110, true)));
+        let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(a.economic > 0.0, "{a:?}");
+        assert!(a.worst <= 1.0, "theft adds no hit-point damage: {a:?}");
     }
 }

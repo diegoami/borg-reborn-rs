@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1477-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a white harpy",
+  "terminal": {
+    "cause": "a white harpy",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2114,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "menu",
+    "git_rev": "4402f1241990f9686f59a33270ef19246e9417be",
+    "git_dirty": "no",
+    "source_sha256": "97df480544bed59a472ab0deca81fe68bcb8ca160847574cee80cfeda0824a86",
+    "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79",
+    "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 224
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-119/full-2-druid-0",
+      "result_sha256": "387e03bfef29ba40a89dd5677e1bb02e59a50661949be889dce2b86e6c043040",
+      "raw_sha256": {
+        "keys.log": "387e03bfef29ba40a89dd5677e1bb02e59a50661949be889dce2b86e6c043040",
+        "messages.log": "b1dcc679ccc72ca527885254cbfd04cee6e1791b850ddc72de9365fd9b6750f1",
+        "state.log": "dd5e3e0aeb65889041ecd1c1197f130eae83d78df22d120fab4afa4c077d33e6"
+      },
+      "source_commit": "4402f1241990f9686f59a33270ef19246e9417be",
+      "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79"
+    }
+  ],
+  "encounter_family": "start-2080d041cdc58ae07e9fd589d57e1285e29e38f54b75791ff1765075c5bf7126",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a08d33d944aaa6c1f0f9e8e1785bf50be2d5fd86e3773a8a0d2abbeb82cc37a0",
+    "config.txt": "f66bfa5198ed7bd8db10703fe3fb886eb0ad66ac84326a8cc11e4ba59830d110",
+    "depths.json": "2fcac03386b7419568ef942a88eaa953dd262cb7bb5acb6995ee90aacb1e0dd6",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "dbd61cd2078dec6a663b258df963f6afc7102e0c1b06320a5169045a23a38f9b",
+    "trace-tail.jsonl": "9e82e7f7a68212b6d7e4188babd3d28da48a780ae0c5d47dc7cd0bf01111d878"
+  },
+  "investigation": null,
+  "issue": null
+}

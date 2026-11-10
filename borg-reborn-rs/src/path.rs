@@ -137,10 +137,10 @@ fn extras(g: &crate::world::Remembered) -> u32 {
 /// as the C Borg's spread skips a shop that is not its target
 /// (borg-flow.c:371-374). A goal under a wall (a strategy bug) anchors
 /// the flood at cost 0 so its neighbours are still reached.
-fn standing_cost(w: &World, k: &Knowledge, x: i32, y: i32) -> u32 {
+fn standing_cost(w: &World, k: &Knowledge, x: i32, y: i32, risk_aversion_pct: i32) -> u32 {
     match enter_cost(w, x, y) {
-        Some(c) => c + threat(w, k, x, y),
-        None if is_shop(w, x, y) => 1 + threat(w, k, x, y),
+        Some(c) => c + threat(w, k, x, y, risk_aversion_pct),
+        None if is_shop(w, x, y) => 1 + threat(w, k, x, y, risk_aversion_pct),
         None => 0,
     }
 }
@@ -173,8 +173,8 @@ fn walkable(f: u32) -> bool {
 /// (`borg-danger.c`). The C Borg instead *refuses* grids whose danger
 /// passes a fear threshold (borg-flow.c:442-474); paying threat as a
 /// cost keeps the route available at a price.
-pub fn threat(w: &World, k: &Knowledge, x: i32, y: i32) -> u32 {
-    crate::danger::danger(w, k, x, y, 1)
+pub fn threat(w: &World, k: &Knowledge, x: i32, y: i32, risk_aversion_pct: i32) -> u32 {
+    crate::danger::danger_with(w, k, x, y, 1, risk_aversion_pct)
 }
 
 /// One goal's distance map over the level. Distances are the cost of the
@@ -194,7 +194,13 @@ pub const UNREACHED: u32 = u32::MAX;
 impl DistanceMap {
     /// Flood from the goal grids. Dijkstra over the eight neighbours,
     /// paying each entered grid's `enter_cost` plus its `threat`.
-    fn build(w: &World, k: &Knowledge, targets: &[(i32, i32)], threat_on: bool) -> DistanceMap {
+    fn build(
+        w: &World,
+        k: &Knowledge,
+        targets: &[(i32, i32)],
+        threat_on: bool,
+        risk_aversion_pct: i32,
+    ) -> DistanceMap {
         let (width, height) = (w.level.width.max(0), w.level.height.max(0));
         let mut map = DistanceMap {
             width,
@@ -206,7 +212,7 @@ impl DistanceMap {
             if x < 0 || y < 0 || x >= width || y >= height {
                 continue;
             }
-            let base = standing_cost(w, k, x, y);
+            let base = standing_cost(w, k, x, y, risk_aversion_pct);
             let i = (y * width + x) as usize;
             if base < map.dist[i] {
                 map.dist[i] = base;
@@ -223,7 +229,12 @@ impl DistanceMap {
                 let Some(cost) = enter_cost(w, nx, ny) else {
                     continue;
                 };
-                let step = cost + if threat_on { threat(w, k, nx, ny) } else { 0 };
+                let step = cost
+                    + if threat_on {
+                        threat(w, k, nx, ny, risk_aversion_pct)
+                    } else {
+                        0
+                    };
                 let next = d.saturating_add(step);
                 let ni = (ny * width + nx) as usize;
                 if next < map.dist[ni] {
@@ -308,6 +319,7 @@ impl DistanceMap {
 pub struct Paths {
     turn: i64,
     thinks: u64,
+    risk_aversion_pct: i32,
     maps: Vec<(Goal, DistanceMap)>,
 }
 
@@ -315,9 +327,16 @@ impl Paths {
     /// For this world snapshot. Panics if used with any other: that would
     /// be a stale map (a defect, reported loudly, RULES 13).
     pub fn new(w: &World) -> Paths {
+        Self::new_with_risk(w, crate::danger::DEFAULT_RISK_AVERSION_PCT)
+    }
+
+    /// As [`Paths::new`], with the strategy's one risk tolerance. Every
+    /// grid cost uses the same assessment the tactical layer reads.
+    pub fn new_with_risk(w: &World, risk_aversion_pct: i32) -> Paths {
         Paths {
             turn: w.turn,
             thinks: w.thinks,
+            risk_aversion_pct,
             maps: Vec::new(),
         }
     }
@@ -342,7 +361,7 @@ impl Paths {
         let i = match index {
             Some(i) => i,
             None => {
-                let map = DistanceMap::build(w, k, &goal.targets(w), true);
+                let map = DistanceMap::build(w, k, &goal.targets(w), true, self.risk_aversion_pct);
                 self.maps.push((goal.clone(), map));
                 self.maps.len() - 1
             }
@@ -669,20 +688,27 @@ pub(crate) mod tests {
         // A faster monster costs more than a normal one.
         let (_, _, with_f) = distance(&["#######", "#@.F.>#", "#######"], &goal);
         assert!(with_f > with_m, "speed weighs: {with_f} > {with_m}");
-        // A sleeping light sleeper scores a little *more*, not less: the
-        // C Borg adds the wake-up chance to the full melee term rather
-        // than reducing it (borg-danger.c:2439-2450); only a character
-        // of level 25 or more halves a sleeper first.
+        // A sleeping monster must wake first: the expected share is half
+        // the awake one (T4.2's declared sleep model, replacing the C
+        // Borg's wake-up surcharge).
         let (w, k) = world(&["#######", "#@.M.>#", "#######"]);
         let mut asleep = w.clone();
         for t in &mut asleep.level.monsters {
             t.timed[0] = 100; // MON_TMD_SLEEP
         }
         let d = Paths::new(&asleep).distance(&asleep, &k, &goal);
-        assert_eq!(
-            d,
-            with_m + 3,
-            "each threatened grid pays sleep 20 + 5%: {d}"
+        assert!(d < with_m, "sleeping costs less, not more: {d} !< {with_m}");
+    }
+
+    #[test]
+    fn the_risk_tolerance_changes_the_cost() {
+        let (w, k) = world(&["#######", "#@.M.>#", "#######"]);
+        let goal = Goal::Stairs { up: false };
+        let expected = Paths::new_with_risk(&w, 0).distance(&w, &k, &goal);
+        let worst = Paths::new_with_risk(&w, 100).distance(&w, &k, &goal);
+        assert!(
+            worst > expected,
+            "worst-case tolerance costs more: {worst} !> {expected}"
         );
     }
 

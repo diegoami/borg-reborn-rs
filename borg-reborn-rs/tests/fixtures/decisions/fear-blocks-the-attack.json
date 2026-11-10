@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -80,8 +80,7 @@
     "ACCUMULATED_KNOWLEDGE.md edition 4, fear section"
   ],
   "construction": "Gnome Druid CL4, 3/33 HP, D2, TMD_AFRAID=5. The report measures fear as -20 to-hit, +8 AC and no attacks; the crow is placed at 2 HP so the exchange says attack, and the shrieker two tiles north. The room is constructed.",
-  "limits": "The report is an agent-player run, not a Borg death; its fear measurement is the evidence, not a verified Borg rescue.",
-  "blocked_by": 119,
+  "limits": "The report is an agent-player run, not a Borg death; its fear measurement is the evidence. The assessment now refuses the attack while TMD_AFRAID is set, so the fixture requires a walk; the specific escape route is not measured.",
   "player": {
     "race": 4,
     "class": 2,
@@ -100,9 +99,5 @@
     ]
   },
   "depth": 2,
-  "max_depth": 2,
-  "current": {
-    "action": "Attack"
-  },
-  "pins_forbidden": true
+  "max_depth": 2
 }

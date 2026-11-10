@@ -23,6 +23,10 @@ pub struct TraceLine {
     /// The actions considered, best first, with their scores.
     pub candidates: Vec<Candidate>,
     pub choice: String,
+    /// The threat assessment at the character's grid (T4.2); absent in
+    /// traces written before it existed.
+    #[serde(default)]
+    pub threat: Option<crate::danger::ThreatSummary>,
     /// Invariants that did not hold at this think (GOALS principles).
     pub violations: Vec<String>,
     /// Prompts the catcher answered between the last think and this one
