@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: danger race flags, the #142 fix
+
+The T4.1 fixtures' first finding is fixed. `danger.rs` named `MULTIPLY`,
+`NEVER_BLOW` and `NEVER_MOVE` one higher than the engine enum (`RF_NONE` is 0
+and the first valid flag is 1), so a grey mould's `NEVER_MOVE` was read as
+`NEVER_BLOW`: it scored zero danger and the Borg rested beside it. Breeders
+lost the multiplier and `RAND_25` was misread as `NEVER_MOVE`.
+
+- Constants are now 17, 20 and 21, with the counting rule in the comment.
+- `race_flag_numbers_match_the_engine_enum` checks the real bytes: a grey
+  mould's byte 2 bit 4 is `NEVER_MOVE` and not `NEVER_BLOW`; a silver mouse
+  is `MULTIPLY | RAND_50`; an adjacent mould scores above zero.
+- Fixture promotion: `rs-d0006-mold-at-two-hp` no longer rests (Walk is the
+  recorded retreat) and moved from the #142 gap to #120; `rust-d1330-rest-
+  with-pursuer` no longer rests either, and its remaining gap is the
+  staircase under a seen threat (#120). `bbc-d0006`'s exploration path
+  changed from Walk(7) to Walk(9); the fixture pins the new direction.
+- This is a play change: smoke, smoke-exact and full references are
+  regenerated, and the deaths at the new build identity are re-recorded.
+
+**Checks.** crate and fixture tests, CI smoke/smoke-exact, reference
+diffs, the boundary check, and the full suite. The references are a new
+baseline, not an oracle; no survival or population claim.
+
+**Next:** #119 (T4.2), one threat assessment. The fixtures it must satisfy
+are `fear-blocks-the-attack` (#119), `bbc-d0006-deep-descent-readiness`
+(#119), and the #120 group (stairs under contact, retreat at 1 HP, the
+2-HP mould). #142 is closed by this task.
+
 ## 2026-11-10: T4.1 death-derived decision fixtures (#118)
 
 Eighteen constructed `Observation` fixtures now replay deterministically in
