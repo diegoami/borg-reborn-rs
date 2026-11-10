@@ -2,6 +2,41 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.4, the playing behaviours (#20)
+
+On top of T3.3's machinery, the first behaviours (references
+regenerated; every game differs from T3.3's):
+
+- **Engage answers contact**: a visible monster in reach makes the mode
+  Engage. The exchange test (c15 FIGHT-01 through the danger sum): the
+  monster's danger at our grid × the turns our melee per turn
+  (`Character::melee_per_turn`) needs to kill it — fought when that
+  costs less than every hit point (no margin constant; M4's tactical
+  layer replaces the whole comparison), the *cheapest* adjacent fight
+  chosen (bbc D0012's 2-HP mold). A losing exchange steps away
+  (never onto a monster); a corner fights the least dangerous one
+  anyway (bbc D0018: walking from a faster pursuer is death).
+- **Pickup**: the object underfoot is taken (`Get`) whenever the pack
+  has room and nothing is in contact — never under fire, and never
+  before the threat is cleared (bbc D0019's dropped Phase Door, both
+  orders of the same mistake).
+- **Stairs under fire are not taken**: `Descend` requires zero danger at
+  the grid; what presses is fought or escaped first.
+- Rest unchanged (the strict zero-danger gate); the recovery invariant
+  now also requires safety, so contact outranks resting.
+
+**The honest M3 state:** the Borg fights and often wins — seed 101 now
+reaches CL2 and turn 9250 (was CL1, 2815) — but town packs (scrawny
+cats, wild dogs, scruffy little dogs: 18 of the full suite's 45 deaths)
+and poison (no cures yet) still kill it at CL1–2, and no run has passed
+depth 1. Modes across seed 101's 850 thinks: explore 471, engage 354,
+descend 24, recover 1; zero effect violations; deterministic. The
+Hold-heavy explore (231 holds) is worth a look in T3.7's G0 report.
+
+**Next:** T3.5 (#21) — town: sell, buy reserves (the owner's verified
+D0015 loadout in the ledger is the target shape; the store actions and
+the free identification-by-giveaway are already in the executor).
+
 ## 2026-11-10: T3.3, the first strategy (#19)
 
 `strategy.rs` (L5) replaces the minimal Borg's placeholder policy — the
