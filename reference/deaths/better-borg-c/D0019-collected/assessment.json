@@ -1,0 +1,91 @@
+{
+  "classification": "scary-list flight, last Phase spent in a clear stair corridor, attack-before-pickup ignoring an adjacent dropped Phase Door, and starting inventory; owner's verified manual branch from 7703 survives by a lucky Phase to the stair corridor; no reusable original-C defect established",
+  "confidence": "High for native trajectory, shop ledger, stair geometry and inventory; think order source-checked; stair-walk and floor-Phase alternatives untested; no rescue claimed",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "c3c46742a60500a3d268865ae996324721aa553138f14c30b4c7f63f1c6bcbb4",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused406; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/406",
+      "summary": "Chat 2026-11-10: got lucky; got swarmed but phased to the up stairs and escaped; still, inventory issues.",
+      "status": "processed; recorded verbatim on 406; manual branch VERIFIED and recorded (saved 9033); findings replied",
+      "actions": [
+        "survival-stock-priority",
+        "early-escape-cure-restock",
+        "recall-retention",
+        "attempted-room-retreat",
+        "adjacent-escape-pickup"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Half-Troll Necromancer CL3/DL2, seed2993630924, source5cd2258dd78d (67 carries); cutpurse death8056, HP-4/32, 483 decisions; raw trace/frames hashes match record."
+    },
+    {
+      "status": "observed",
+      "summary": "Starting gold 360: 5 rations 15, one Phase Door 15, Soft Leather Armour [8,+5] 300, Metal Cap 24; 6 gold, no CLW; starting Word of Recall deposited at Home 1161; only other consumable an unidentified Blue Potion (Neutralize Poison, diagnostic)."
+    },
+    {
+      "status": "observed",
+      "summary": "7703 at (81,45), full HP: an apprentice sighting sets 'Scary guy on level' (apprentice/cutpurse on the CL<=8 name list); 7713-7753 'Desperate for Stairs (three)' west to the stair-corridor head (78,45), HP 30->21; up staircase at (78,53)."
+    },
+    {
+      "status": "observed",
+      "summary": "7754-7763 at (78,46), seven squares from the stairs with the corridor south empty and a cutpurse/apprentice behind at (78,45)/(77,45): danger 341 vs HP 21, 'Critical Phase' reads the only Phase Door, landing at (70,48) on the far side of the group."
+    },
+    {
+      "status": "observed",
+      "summary": "7793-7863 retreat/back-away west to the junction (68,45); 7873-8056 melee in place, danger 42-390 vs HP 24->-4; kills cutpurse 51 (7933), apprentices 53 and 7 and mice, reaches CL3; cutpurse 52 kills it; gold stays 6 (no theft)."
+    },
+    {
+      "status": "source-checked",
+      "summary": "Cutpurse 51 dropped a Phase Door at adjacent (68,46); the square was empty at 7930-7938, 8004-8020, 8024-8031 and 8034 (no adjacent monster at 8011) and the Borg's notes list it, but borg_think_dungeon runs borg_caution (:1533), borg_attack(false) (:1589) and only then borg_flow_take(true,5) (:1606); at 8013 a failed Nether Bolt at a 2-HP mouse."
+    },
+    {
+      "status": "verified saved manual diagnostic alternative",
+      "summary": "Owner branch 20261110T004554Z from 7703: one Nether Bolt failure; melee routs apprentice 7; confused, hits cutpurse 52; 7778 cutpurse steals all 6 gold and teleports (no theft in the Borg's run); 7844 Phase from (87,45) lands on the stair-corridor head (78,46); up stairs 7923; saved 9033 CL2 HP30, min HP17. Owner: got lucky."
+    }
+  ],
+  "actions": [
+    {
+      "key": "survival-stock-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment",
+      "status": "recorded owner priority; proposal, not implemented"
+    },
+    {
+      "key": "early-escape-cure-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/154",
+      "summary": "Evaluate early Phase Door/cure restock requirement linked to source370",
+      "status": "proposed enhancement; no implementation or survival benefit established"
+    },
+    {
+      "key": "recall-retention",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Recall storage/retention/reacquisition and available walking return before hunger becomes critical",
+      "status": "needs evidence; no rescue claimed"
+    },
+    {
+      "key": "worm-scary-rule",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/327",
+      "summary": "Measure low-level worm-mass scary triggers and compare with the breeder caution threshold",
+      "status": "needs evidence; owner manual branch verified; no gameplay change"
+    },
+    {
+      "key": "attempted-room-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Evaluate attempted door/upstairs retreat before repeated phases and after scroll exhaustion",
+      "status": "proposed analysis; sleep timing, route knowledge and outcomes unproved"
+    },
+    {
+      "key": "adjacent-escape-pickup",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Observe attack-before-pickup order ignoring an adjacent dropped escape item while out of escapes",
+      "status": "investigate before changing policy"
+    }
+  ]
+}

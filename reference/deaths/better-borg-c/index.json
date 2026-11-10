@@ -32,7 +32,9 @@
         "D0001",
         "D0013",
         "D0015",
-        "D0016"
+        "D0016",
+        "D0018",
+        "D0019"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/41",
       "key": "survival-stock-priority",
@@ -58,7 +60,8 @@
         "D0007",
         "D0012",
         "D0014",
-        "D0016"
+        "D0016",
+        "D0017"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/34",
       "key": "heal-eligibility",
@@ -112,7 +115,9 @@
         "D0002",
         "D0003",
         "D0004",
-        "D0005"
+        "D0005",
+        "D0018",
+        "D0019"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/154",
       "key": "early-escape-cure-restock",
@@ -142,7 +147,8 @@
         "D0007",
         "D0013",
         "D0014",
-        "D0015"
+        "D0015",
+        "D0019"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/159",
       "key": "attempted-room-retreat",
@@ -154,7 +160,8 @@
         "D0006",
         "D0011",
         "D0012",
-        "D0015"
+        "D0015",
+        "D0018"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/180",
       "key": "identification-priority",
@@ -256,7 +263,9 @@
     },
     {
       "cases": [
-        "D0009"
+        "D0009",
+        "D0018",
+        "D0019"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/183",
       "key": "recall-retention",
@@ -321,7 +330,8 @@
     },
     {
       "cases": [
-        "D0011"
+        "D0011",
+        "D0017"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/319",
       "key": "clw-tier",
@@ -360,7 +370,8 @@
       "cases": [
         "D0012",
         "D0013",
-        "D0015"
+        "D0015",
+        "D0019"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/327",
       "key": "worm-scary-rule",
@@ -369,19 +380,68 @@
     },
     {
       "cases": [
-        "D0014"
+        "D0014",
+        "D0017",
+        "D0018"
       ],
       "issue": "https://github.com/diegoami/better-borg-c/issues/340",
       "key": "speed-emergency",
       "status": "needs evidence; source-checked; no gameplay change",
       "summary": "Observe borg_defend_aux_speed p1/p2/avoidance at lethal danger; count unused Speed at death"
+    },
+    {
+      "cases": [
+        "D0017"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "key": "retreat-preempts-escape",
+      "status": "investigate before changing policy",
+      "summary": "Observe strategic retreat steps pre-empting borg_escape (Phase/Teleportation) under multiple faster adjacent monsters"
+    },
+    {
+      "cases": [
+        "D0017",
+        "D0018"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "key": "pursued-walking-retreat",
+      "status": "investigate before changing policy",
+      "summary": "Observe strategic retreat on foot from a faster adjacent monster versus continuing melee"
+    },
+    {
+      "cases": [
+        "D0018"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "key": "last-escape-retention",
+      "status": "investigate before changing policy",
+      "summary": "Observe the bored/twitchy fallback spending the last Phase Door at low danger"
+    },
+    {
+      "cases": [
+        "D0018"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "key": "unknown-emergency-use",
+      "status": "investigate before changing policy",
+      "summary": "Observe unknown-potion emergency eligibility for casters with mana but no escape spell"
+    },
+    {
+      "cases": [
+        "D0019"
+      ],
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "key": "adjacent-escape-pickup",
+      "status": "investigate before changing policy",
+      "summary": "Observe attack-before-pickup order ignoring an adjacent dropped escape item while out of escapes"
     }
   ],
-  "cases": 16,
+  "cases": 19,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 1,
     "a blood falcon": 1,
     "a crow": 1,
+    "a cutpurse": 1,
     "a gallant": 1,
     "a grey mold": 1,
     "a griffon": 1,
@@ -390,11 +450,12 @@
     "a small kobold": 1,
     "a soldier": 1,
     "a stegocentipede": 1,
-    "poison": 1,
+    "a wild cat": 1,
+    "poison": 2,
     "starvation": 1
   },
-  "death_process_attempts": 24,
-  "distinct_starting_conditions": 13,
+  "death_process_attempts": 27,
+  "distinct_starting_conditions": 16,
   "limit": "Selected death cases, not a mortality-rate cohort. Repeats/reference variants/windows are not new independent starting conditions.",
   "schema": "better-borg-c/death-index@1",
   "versions": {
@@ -407,7 +468,7 @@
     "3638b690525cd8a381cb106b4c5ee40652babde2": 2,
     "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc": 2,
     "5c23742ced30ad76ab9778cfa8bf23f04fc0eb1f": 1,
-    "5cd2258dd78d9fed83c11f5df6a3afe88889337a": 1,
+    "5cd2258dd78d9fed83c11f5df6a3afe88889337a": 4,
     "867c777845fd7453f175da4692a8468c734f6380": 5,
     "e473720ed88a0f0c7ca66815cef3000eb4a38bc3": 2
   }

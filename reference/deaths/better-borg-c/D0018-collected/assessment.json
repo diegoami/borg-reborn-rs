@@ -1,0 +1,127 @@
+{
+  "classification": "twitchy-fallback Phase spend, scary-level walking retreat from a faster monster, unidentified cures and starting/restock inventory; owner's verified manual branch from 33363 also dies; no reusable original-C defect established",
+  "confidence": "High for native trajectory, shop ledger and inventory; retreat, twitch and unknown-potion gates source-derived; scary trigger unresolved; no rescue claimed",
+  "cause_category": "monster melee",
+  "overall_assessment": "overall-assessment.md",
+  "original_autoexport_record_sha256": "b94268ba5c0b8be6b7a03c080ea398fd8dd7bdbb5b2dfee94035f47cc56e5d29",
+  "metadata_curation": "Discussion moved from default collection issue163 to focused401; native identity/source/attempts and original evidence unchanged.",
+  "feedback": [
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/401",
+      "summary": "Chat 2026-11-10: druid killed by a wild cat; as usual inventory is a problem; meets a cat at 33347/33356; no health potion, no phase door; a stupid melee death; wants to play from the same turn.",
+      "status": "processed; recorded verbatim on 401; findings replied (cat adjacent at 33363, walking retreat, 2 unidentified CLW, twitchy Phase at 31751)",
+      "actions": [
+        "survival-stock-priority",
+        "pursued-walking-retreat",
+        "last-escape-retention",
+        "unknown-emergency-use"
+      ]
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/401",
+      "summary": "Chat 2026-11-10: we need to produce a death report.",
+      "status": "processed; dossier assessment, registry and redesign lessons updated",
+      "actions": []
+    },
+    {
+      "origin": "owner",
+      "comment": "https://github.com/diegoami/better-borg-c/issues/401",
+      "summary": "Chat 2026-11-10: tried playing from that position (33363); it could not be saved, the cat killed me too.",
+      "status": "processed; manual branch VERIFIED and recorded (died 33505)",
+      "actions": [
+        "last-escape-retention",
+        "unknown-emergency-use"
+      ]
+    }
+  ],
+  "findings": [
+    {
+      "status": "observed",
+      "summary": "Normal-mode Dunadan Druid CL2/DL1, seed2993630923, source5cd2258dd78d (67 carries); wild cat death33471, HP-1/19; raw trace/frames/manifest hashes match record."
+    },
+    {
+      "status": "observed",
+      "summary": "Starting gold 373: Recall deposited at Home 352; food/torches 36, one Phase Door 15, Studded Leather Armour (-1)[12,+2] 266, Small Metal Shield 36, torches 12; 8 gold, no CLW."
+    },
+    {
+      "status": "observed",
+      "summary": "Second visit 25229-25659 with 373 gold: Sandals [1,+5] 126, Potion of Speed 75, two unknown jewellery 116 (Feather Falling, Slow Digestion), cap/gloves/torches 32, one Phase Door 15; 9 gold, no CLW. Speed drunk 25839 at HP19/19 against a 2-HP giant white mouse (danger 12)."
+    },
+    {
+      "status": "observed",
+      "summary": "26219 picks up 2 Ultramarine Potions; diagnostic state (not Borg knowledge): Cure Light Wounds, flavour unknown; never tried. Two unknown scrolls were Blessing and Treasure Detection. CL2 Druid has no attack spell (Stinking Cloud CL3)."
+    },
+    {
+      "status": "source-checked",
+      "summary": "31751 HP14/19 danger5 against a 0-HP yeek: bored fallback 'Considering Phase (twitchy)' (borg-think-dungeon.c:2149, up to 3 per level) reads the only Phase Door."
+    },
+    {
+      "status": "observed",
+      "summary": "33164 'Scary guy on level' sets whole-level flight; trigger unresolved (actual level holds an apprentice and cutpurse, no Borg sighting note). 33363 cat adjacent, one whip hit 8->5."
+    },
+    {
+      "status": "source-checked",
+      "summary": "33372-33452 eight-step strategic retreat (borg-caution.c:1430, danger 6 > avoidance/3) from the speed+8 cat, which claws every step HP16->1; destination danger uses the cat's current square, no pursuer model. 33462 attacks at HP1, cat 6->2 flees but claws; death 33471."
+    },
+    {
+      "status": "source-checked",
+      "summary": "No unknown-potion path applies: two require poison/cut; last-ditch block borg-caution.c:2023-2027 requires !BI_MAXSP, excluding this 4-SP Druid with no escape spell. Reachability at 33462 untested."
+    },
+    {
+      "status": "verified manual diagnostic alternative (died)",
+      "summary": "Owner branch 20261110T002452Z from 33363: step back, Fox Form fails then succeeds (SP 4->0, HP 16->6), fox attacks fail to harm, +1 move walk (101,37)->(84,38) at HP3-4, cat kills at 33505; cat never damaged; unknown CLW/scrolls not tried."
+    }
+  ],
+  "actions": [
+    {
+      "key": "survival-stock-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Evaluate survival-resource reserves/restocking priority over spare equipment",
+      "status": "recorded owner priority; proposal, not implemented"
+    },
+    {
+      "key": "last-escape-retention",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/41",
+      "summary": "Observe the bored/twitchy fallback spending the last Phase Door at low danger",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "early-escape-cure-restock",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/154",
+      "summary": "Evaluate early Phase Door/cure restock requirement linked to source370",
+      "status": "proposed enhancement; no implementation or survival benefit established"
+    },
+    {
+      "key": "identification-priority",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Evaluate identification-driven inventory and town trading, auditing existing selling/use",
+      "status": "proposed enhancement; priority/knowledge value and costs need evidence"
+    },
+    {
+      "key": "unknown-emergency-use",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/180",
+      "summary": "Observe unknown-potion emergency eligibility for casters with mana but no escape spell",
+      "status": "investigate before changing policy"
+    },
+    {
+      "key": "recall-retention",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/183",
+      "summary": "Recall storage/retention/reacquisition and available walking return before hunger",
+      "status": "needs evidence; no rescue claimed"
+    },
+    {
+      "key": "speed-emergency",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/340",
+      "summary": "Observe borg_defend_aux_speed p1/p2/avoidance at lethal danger; count unused Speed",
+      "status": "needs evidence; source-checked; no gameplay change"
+    },
+    {
+      "key": "pursued-walking-retreat",
+      "issue": "https://github.com/diegoami/better-borg-c/issues/159",
+      "summary": "Observe strategic retreat on foot from a faster adjacent monster versus continuing melee",
+      "status": "investigate before changing policy"
+    }
+  ]
+}

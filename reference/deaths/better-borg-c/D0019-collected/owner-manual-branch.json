@@ -1,0 +1,26 @@
+{
+  "scope": "owner-played save-load diagnostic alternative, not an independent Borg life or population evaluation",
+  "branch": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T004554.875748Z",
+  "session": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T004554.875748Z/sessions/20261110T004849.299111Z",
+  "recording_sha256": "5db911bf3a78fb34922e94280e00b2201ad315ca8a87d1145d71fd8a013513fc",
+  "origin_sha256": "fcda4ffa149ed6c9152930a1026785f551e75c613f5c5ea6d97278b92ba8ee78",
+  "final_save_sha256": "978e68ce067180dc49721b93ed0a44854cc54e1c38d4bdff46e8e92fcc6eec3d",
+  "source_commit": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+  "requested_turn": 7703,
+  "start_turn": 7703,
+  "end_turn": 9033,
+  "end_level": 2,
+  "end_hp": 30,
+  "end_depth": 1,
+  "min_hp": 17,
+  "outcome": "saved",
+  "verification": "replay-borg.py --verify-only: VERIFIED (complete, no first difference)",
+  "verification_sha256": "2f457343f8216fadf3f14afd4fa987fabed23853e03878c465c458d24b4eb893",
+  "events": "one Nether Bolt failure (SP 2->1); melee takes apprentice 7 from 15 to 0 HP and it flees; apprentice confuses the owner; confused melee on cutpurse 52 (24->18); 7778 cutpurse steals all 6 gold and teleports away (no theft in the Borg's run); 7844 at HP 19 Phase Door from (87,45) lands on the stair-corridor head (78,46); unpursued walk to (78,53), up stairs 7923; DL1 kills a fruit bat and a rock lizard; saved 9033 CL2 HP30; owner: 'I got lucky'",
+  "counterfactual_of": {
+    "branch": "/home/diego/projects/angband-workspace/.git/modules/artifacts/death-workflow/takeover/branches/20261110T004554.875748Z",
+    "original": "/home/diego/projects/angband-workspace/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-005-seed-2993630924",
+    "original_manifest_sha256": "d559eb905e29fdf07c13bb3d9560c049dfc5ffc918a4d6d7dc800d3435a1a73f",
+    "qualification": "manual counterfactual; excluded from independent Borg survival counts"
+  }
+}

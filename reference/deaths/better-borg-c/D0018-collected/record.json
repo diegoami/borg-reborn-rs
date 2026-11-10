@@ -1,0 +1,2912 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "fcf9c08014835500edd332c17bf928635f5ba3bdba30ed2d7338ee12a0287de6",
+      "build_record": "build.json",
+      "calendar_context": {
+        "clock_policy": "Native system clock unchanged",
+        "end": {
+          "TZ_environment": null,
+          "local": "2026-11-08T14:14:11.889297+01:00",
+          "timezone_name": "CET",
+          "utc": "2026-11-08T13:14:11.889297+00:00"
+        },
+        "start": {
+          "TZ_environment": null,
+          "local": "2026-11-08T14:13:52.470870+01:00",
+          "timezone_name": "CET",
+          "utc": "2026-11-08T13:13:52.470870+00:00"
+        },
+        "status": "recorded"
+      },
+      "carried_patches": [
+        {
+          "applied_commits": [
+            "9c10b9b6a475b452c854bd480d87d06ad8226d1b",
+            "5aeae57a3484d6c5bb593fcccbf1cabd480728d7",
+            "39986cc52f3f70727ada24b6def5de98d0bd36c8"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/4",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "1b67370d0dc56d9b7ef34e5356e63d21a7095545",
+          "id": "CBUG-0066",
+          "merge_commit": "e4932f358beffcf9956b4e4b8d9e719c5086f664",
+          "patch": "patches/0001-safer-emergency-swap.patch",
+          "patch_active": true,
+          "source_commits": [
+            "66e1012113fd7db634b19ffe86a470b58a7f7967",
+            "017ba47ebc8731fa0a61361a6f6777759a748d2a",
+            "ebcd255ba9064fc44a35d693f42f9df3dc00bd88"
+          ],
+          "source_head": "ebcd255ba9064fc44a35d693f42f9df3dc00bd88",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/82",
+          "verification": "docs/measurement/SAFER-SWAP.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "8f320210924ffae36a4b592a988982fa7947ad79",
+            "0009ecddcd02b95ac02d63ff43c4c4f95db67b87"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/7",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "3de1e3123915587483395dd40c4d2e75704e65f4",
+          "id": "CBUG-0002",
+          "merge_commit": "d4bfdce9d4782cf83994ad52de707a52d1f31018",
+          "patch": "patches/0002-knockout-reaction-reset.patch",
+          "patch_active": true,
+          "source_commits": [
+            "32ab6823c6a993d94ce382b72f8a855a20f7911c",
+            "6f463d01d753089ab695537495ab27f3bc928dfa"
+          ],
+          "source_head": "6f463d01d753089ab695537495ab27f3bc928dfa",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/14",
+          "verification": "docs/measurement/KNOCKOUT.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "0e76ee35138b309ceb3ed43a6427f2baa42e6d1f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/15",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "a19c8733c0dfa8139b04eecd8117429ec5f55cd6",
+          "id": "CBUG-0094",
+          "merge_commit": "8208d7886208414c3e6ca2df4885175855f34011",
+          "patch": "patches/0003-regen-simulation.patch",
+          "patch_active": true,
+          "source_commits": [
+            "31a042d00581ed914d30f17cca1ed0e70e99d21f"
+          ],
+          "source_head": "31a042d00581ed914d30f17cca1ed0e70e99d21f",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/110",
+          "verification": "docs/measurement/PREPARATION.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "2827b28fc378cbba32aaab30163756b64dea36b0"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/17",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "b0b0fa2471a11e91838bcbc3d980f4b04f8c6b01",
+          "id": "CBUG-0004",
+          "merge_commit": "337e50eb6c732bf6c908ab0d7c22b12b3a82b7d3",
+          "patch": "patches/0004-cold-melee-protection.patch",
+          "patch_active": true,
+          "source_commits": [
+            "d504eb3d272ce96c0de2c00eba757a251b551334"
+          ],
+          "source_head": "d504eb3d272ce96c0de2c00eba757a251b551334",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/26",
+          "verification": "docs/measurement/COLD-PROTECTION.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c3f631068ee9016c53e2a3598a298b64d2296f6a"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/20",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "bfe3fc402e8ae6cdec74d8b35fa8f50e612f2a8e",
+          "id": "CBUG-0062",
+          "merge_commit": "3638b690525cd8a381cb106b4c5ee40652babde2",
+          "patch": "patches/0005-both-ring-slots.patch",
+          "patch_active": true,
+          "source_commits": [
+            "46c14b2828ed751ff8be7ac67df93b28cdc15f87"
+          ],
+          "source_head": "46c14b2828ed751ff8be7ac67df93b28cdc15f87",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/78",
+          "verification": "docs/measurement/BOTH-RINGS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "5e9417be42cb1401708a7a37ec1b13641bc04b83"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/31",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "cce1d5d92079e78e939126d3cf35e24121442734",
+          "id": "CBUG-0061",
+          "merge_commit": "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc",
+          "patch": "patches/0006-healing-potion-timing.patch",
+          "patch_active": true,
+          "source_commits": [
+            "cedf25eb790f2ff7c7c161cd1612b18ed99fb35e"
+          ],
+          "source_head": "cedf25eb790f2ff7c7c161cd1612b18ed99fb35e",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/77",
+          "verification": "docs/measurement/POTION-TIMING.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "3d12dc5306be7d032332f3a9a6e6732261b432c0"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/36",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "b61f6b611600fdbc4c6370fff3ac2835ee77017f",
+          "id": "CBUG-0086",
+          "merge_commit": "2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
+          "patch": "patches/0007-exact-unseen-name.patch",
+          "patch_active": true,
+          "source_commits": [
+            "cad765806eed6431642ab02b53240d7938470c21"
+          ],
+          "source_head": "cad765806eed6431642ab02b53240d7938470c21",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/102",
+          "verification": "docs/measurement/ITANGAST.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "2a99a34d174edfe257c25a383c8f952eed71a3b6"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/40",
+          "credit": "Diego Amicabile (independent native C discovery/proposal/evidence)",
+          "evidence_ref": "cef0b118e02976a3384d4c348ba4cd0210c1f492",
+          "id": "native-shot-path-279",
+          "merge_commit": "4e2af89f34cad98d10131727b3fa4c0e5ddef5fb",
+          "patch": "patches/0008-caster-shot-origin.patch",
+          "patch_active": true,
+          "source_commits": [
+            "1bce07d8080b520589c292c793cc0b95ef9df182"
+          ],
+          "source_head": "1bce07d8080b520589c292c793cc0b95ef9df182",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/279",
+          "verification": "docs/measurement/SHOT-PATH.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "f383220f299d22993bc8b2e0ffa907d966a47823"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/44",
+          "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+          "evidence_ref": "0507c24cccd2131710e4e6cd566f901bad94e081",
+          "id": "CBUG-0048",
+          "merge_commit": "cf53f9b195d297f9f8b1fb61df3b6c1aff7311c6",
+          "patch": "patches/0009-per-spell-projectile.patch",
+          "patch_active": true,
+          "source_commits": [
+            "b223c4f18622883549682f9f997b76fe1f06fc73"
+          ],
+          "source_head": "b223c4f18622883549682f9f997b76fe1f06fc73",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/64",
+          "verification": "docs/measurement/PER-SPELL.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "40b002da088ac48e7c1322aca2159e22c593fd73"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/48",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "f1f53106526412cfe44fa01c73d00e7dbf4dbeed",
+          "id": "CBUG-0102",
+          "merge_commit": "b72ad8eae676ba7c2b9d90026eb0e2d4a2468540",
+          "patch": "patches/0010-glyph-tracker-guard.patch",
+          "patch_active": true,
+          "source_commits": [
+            "ec172531ec38fdd3ac2783d21e3faf6dc1e2b3f3"
+          ],
+          "source_head": "ec172531ec38fdd3ac2783d21e3faf6dc1e2b3f3",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/118",
+          "verification": "docs/measurement/GLYPH-TRACKER.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "09dd4435bd0f36d702246ad6936c856cf08a7e51"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/51",
+          "credit": "borg-rs (fuzzing lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "8b30eb5845ae542b41f2601d4370c044f13c21ac",
+          "id": "CBUG-0254",
+          "merge_commit": "ce6435679ade1072614a7c1f525a39e9b4b6c8ec",
+          "patch": "patches/0011-missile-no-target.patch",
+          "patch_active": true,
+          "source_commits": [
+            "405e4fd4880e7bef27d6a6328765a904638c8257"
+          ],
+          "source_head": "405e4fd4880e7bef27d6a6328765a904638c8257",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/254",
+          "verification": "docs/measurement/MISSILE-NO-TARGET.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "also_adopts": [
+            {
+              "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/200",
+              "note": "identical one-token reader correction already in this patch; no separate unit",
+              "source_commit": "e890819a6b5ac6e7f7135dcc2b234fcc520b9752",
+              "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/250",
+              "verification": "docs/measurement/TP-OTHER-READER.md"
+            }
+          ],
+          "applied_commits": [
+            "706fb49b0731ebaf54408c0699b4cd1da1a15929"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/54",
+          "credit": "borg-rs (discovery); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "83cedb3fe33f494d58d2ceb0016c0feab95be6d8",
+          "id": "CBUG-0051",
+          "merge_commit": "cfaff7be719971e81d91b6c05533aadd29045078",
+          "patch": "patches/0012-tp-other-skip.patch",
+          "patch_active": true,
+          "source_commits": [
+            "25f8a43828204dd1226d5bf5c3b36547b4a07a40"
+          ],
+          "source_head": "25f8a43828204dd1226d5bf5c3b36547b4a07a40",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/67",
+          "verification": "docs/measurement/TP-OTHER-SKIP.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "23d8ed579317db9e9d2037d21d529af3c29fd433"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/57",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "6df50d2e5ad605ec8d3898ca1b653985a373480c",
+          "id": "CBUG-0248",
+          "merge_commit": "c0174d583949ed513c4184a1fe77335122c30a60",
+          "patch": "patches/0013-dispel-life-filter.patch",
+          "patch_active": true,
+          "source_commits": [
+            "6912b85cb7b902616ad786dfc20afe3b4cf28b10"
+          ],
+          "source_head": "6912b85cb7b902616ad786dfc20afe3b4cf28b10",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/248",
+          "verification": "docs/measurement/DISPEL-FILTER.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "92003d66c2ad5e1f5ab95fe1851d77824b8369e8"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/60",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "6f1f66446e1bc2232e7eb71d03246b6d4e2b4fb3",
+          "id": "CBUG-0253",
+          "merge_commit": "a89e96a159bf59e234bae229aad889bee547d870",
+          "patch": "patches/0014-arc-grid-angle.patch",
+          "patch_active": true,
+          "source_commits": [
+            "7f33e9fbf83059a0a1ed5e530f463124ce1e4be0"
+          ],
+          "source_head": "7f33e9fbf83059a0a1ed5e530f463124ce1e4be0",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/253",
+          "verification": "docs/measurement/ARC-ANGLE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "2cf521b8bc8457eb0e585cb008077c484f7f0d3c"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/63",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "f5b3c50e26e4803fb2c5af07a047ba37d92ebeb1",
+          "id": "CBUG-0244",
+          "merge_commit": "d28dbb165706099dd44467383c9e8fe84f71d83a",
+          "patch": "patches/0015-munchkin-stair-own-grid.patch",
+          "patch_active": true,
+          "source_commits": [
+            "5b31e13d1023a64bf4f8613352e738757b5f56ec"
+          ],
+          "source_head": "5b31e13d1023a64bf4f8613352e738757b5f56ec",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/244",
+          "verification": "docs/measurement/MUNCHKIN-STAIR.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "81b15066286c8f3818a309ac00d86bdf0b628367"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/66",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "e41e44d9652c38266dcee5e9e5b4b363f3813212",
+          "id": "CBUG-0257",
+          "merge_commit": "dfddcfff9429e16f1141d53a5d7c619bed65fbb7",
+          "patch": "patches/0016-vampire-strike-distance.patch",
+          "patch_active": true,
+          "source_commits": [
+            "0119d5daee9b8a07a8096331eea78dbbb6c26050"
+          ],
+          "source_head": "0119d5daee9b8a07a8096331eea78dbbb6c26050",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/257",
+          "verification": "docs/measurement/VAMPIRE-STRIKE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "6bcdd28ace1248e223ac381d61051964bb50a592"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/69",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "25b0118631f108edc926856c8f4b3c35d3611bf9",
+          "id": "CBUG-0239",
+          "merge_commit": "a88da7a063221bd56a6e40e5fec472b38286d5c0",
+          "patch": "patches/0017-slay-trait-accumulation.patch",
+          "patch_active": true,
+          "source_commits": [
+            "9ab78ae605ca4463268a669121d69b216285c2f1"
+          ],
+          "source_head": "9ab78ae605ca4463268a669121d69b216285c2f1",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/239",
+          "verification": "docs/measurement/SLAY-TRAITS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c3e8f60a3ea164b74ce76bbac7a3097263a13a9f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/72",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "d9d4c7186293b4c08925c78e8e72d2728a84732b",
+          "id": "CBUG-0290",
+          "merge_commit": "3cd2c3237a0c45f6f38a8cad108ecaa88cb151f2",
+          "patch": "patches/0018-detect-panel-bounds.patch",
+          "patch_active": true,
+          "source_commits": [
+            "02fb00af6abdb165fc1b445c42dc85d2263a3cdd"
+          ],
+          "source_head": "02fb00af6abdb165fc1b445c42dc85d2263a3cdd",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/290",
+          "verification": "docs/measurement/DETECT-PANEL.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "7323c8df1506f5572c4cfbbc7348cd4f3fbe88da"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/75",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "f0e856241b1fe3d62005edda0722c991278afdf9",
+          "id": "CBUG-0260",
+          "merge_commit": "5ea7baed65d1040e9330ce8fe3a5317dcd995b0c",
+          "patch": "patches/0019-activ-lookup-ids.patch",
+          "patch_active": true,
+          "source_commits": [
+            "891d0cb9cc9057a2004dfeba7b21b19913f5a2b6"
+          ],
+          "source_head": "891d0cb9cc9057a2004dfeba7b21b19913f5a2b6",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/260",
+          "verification": "docs/measurement/ACTIV-LOOKUP.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "21c672a856079167820d22dbf299f39c98faa24d"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/78",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "359882c25f81baa3824f20f7db8ae290ae2d4ed2",
+          "id": "CBUG-0258",
+          "merge_commit": "c7f5b5758c8599a55fd81c0decfba67ffce3d713",
+          "patch": "patches/0020-reserve-bolt-veto-scope.patch",
+          "patch_active": true,
+          "source_commits": [
+            "7b4ecd6b888a1d87b526f273c769449eb013ad9b"
+          ],
+          "source_head": "7b4ecd6b888a1d87b526f273c769449eb013ad9b",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/258",
+          "verification": "docs/measurement/RESERVE-BOLT.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c9f24544fe6fa309ad9ea926952e45db679f060d"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/81",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "f0ed9115c696b70422e1d8639a92511278c4de2a",
+          "id": "CBUG-0259",
+          "merge_commit": "0c52dee46ec3e4bcc076188a1c9f985971118e7f",
+          "patch": "patches/0021-dispel-reserve-single-penalty.patch",
+          "patch_active": true,
+          "source_commits": [
+            "e5da34177368960c9707df6c7b8d55e6c4ab081a"
+          ],
+          "source_head": "e5da34177368960c9707df6c7b8d55e6c4ab081a",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/259",
+          "verification": "docs/measurement/DISPEL-RESERVE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "0489305bca448763152c6ec3814f6015fe8a8322"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/84",
+          "credit": "borg-rs (lead); Diego Amicabile (native finding/validation/proposal/evidence)",
+          "evidence_ref": "9ae8856aa9f3f7e1e28d5eb8d7ef3070e0f3b58e",
+          "id": "CBUG-0326",
+          "merge_commit": "2e55c43f86e40e13ba26db8dffcd719ecb8419db",
+          "patch": "patches/0022-losdispel-arrival-break.patch",
+          "patch_active": true,
+          "source_commits": [
+            "53ef84c743768fdde9abaebc27bd8526b4423de9"
+          ],
+          "source_head": "53ef84c743768fdde9abaebc27bd8526b4423de9",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/326",
+          "verification": "docs/measurement/LOSDISPEL.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "13fe885cb11a61c1a2ff9c2e53dd338b86bbddb0"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/87",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "ba63014b3caf3926bd86a7c8edc8a26e5e947860",
+          "id": "CBUG-0262",
+          "merge_commit": "aa87ca74d0344567594bbb221109fe0df96d9753",
+          "patch": "patches/0023-staff-holy-radius.patch",
+          "patch_active": true,
+          "source_commits": [
+            "fe34f38d0c998cf34ace02d09bf97774f38e65df"
+          ],
+          "source_head": "fe34f38d0c998cf34ace02d09bf97774f38e65df",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/262",
+          "verification": "docs/measurement/STAFF-HOLY.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "713d9ad4603d7bc46eaf32de3469fa7344e6f892"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/90",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "cb8554e079e404993c060d0c1d4a05df67581099",
+          "id": "CBUG-0261",
+          "merge_commit": "f997c8cee3c72565a906716d6ac5f6da7b871505",
+          "patch": "patches/0024-blind-frighten-fear.patch",
+          "patch_active": true,
+          "source_commits": [
+            "a49b7a6c15f6353cd427af28903355fe258af4d5"
+          ],
+          "source_head": "a49b7a6c15f6353cd427af28903355fe258af4d5",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/261",
+          "verification": "docs/measurement/BLIND-FRIGHTEN.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c6c51d4d09e591da9d5df313666fe95b31f05e03"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/93",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "8d844e37938c09f3445860f9559da1b5009fa3a7",
+          "id": "CBUG-0287",
+          "merge_commit": "b68eb22233c11725499480c27a095d525949c2de",
+          "patch": "patches/0025-text-multibyte-termination.patch",
+          "patch_active": true,
+          "source_commits": [
+            "3e7fe8a8399352c4fe67f5de2d8d48b5e0bd04c1"
+          ],
+          "source_head": "3e7fe8a8399352c4fe67f5de2d8d48b5e0bd04c1",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/287",
+          "verification": "docs/measurement/TEXT-MULTIBYTE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c528eb81e0651bad91f28c896594cf56ad6fd3de"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/96",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "8764d94b8a2007214e4bc35a923f0a92f0f17613",
+          "id": "CBUG-0325",
+          "merge_commit": "0900c5cf4f2c3d3fa7b4c2524d38aa94da5aed07",
+          "patch": "patches/0026-calculation-reload-array.patch",
+          "patch_active": true,
+          "source_commits": [
+            "253ab11468bd91f47f2a458ecc3f333a00eaa677"
+          ],
+          "source_head": "253ab11468bd91f47f2a458ecc3f333a00eaa677",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/325",
+          "verification": "docs/measurement/CALC-RELOAD.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "0d843a414c8deaa8ce7aa3178dea39418dc22d62"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/99",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "929764f4d12cece8181a22106c1d808bdd3c2881",
+          "id": "CBUG-0322",
+          "merge_commit": "29190814b7e7de6ed272d3c5e1ca0cd528758515",
+          "patch": "patches/0027-stale-same-square-target.patch",
+          "patch_active": true,
+          "source_commits": [
+            "1ab30ef0bc9a12caa5b1cf48e60c204ef564e9de"
+          ],
+          "source_head": "1ab30ef0bc9a12caa5b1cf48e60c204ef564e9de",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/322",
+          "verification": "docs/measurement/STALE-TARGET.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "3cb61705d1adcf813c8318285d7c29abf8c61d5a"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/102",
+          "credit": "Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "1a9946c6111c541a4041edc7a200e7440434d85e",
+          "id": "CBUG-0311",
+          "merge_commit": "9aee811384e201f6ead4e0a842f8b718640375b0",
+          "patch": "patches/0028-glow-array-bound.patch",
+          "patch_active": true,
+          "source_commits": [
+            "d4dcb983c9623757b523a7fae861b624d858e23d"
+          ],
+          "source_head": "d4dcb983c9623757b523a7fae861b624d858e23d",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/311",
+          "verification": "docs/measurement/GLOW-OVERFLOW.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "497d92665d6d688c89faf1b58b0103442d651fb9"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/105",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "f1e899b66b383b19ab2d69b4d7ffbb2148ba5444",
+          "id": "CBUG-0238",
+          "merge_commit": "958f9744b86a094dd7491ddaf0cfa9c9247a1fda",
+          "patch": "patches/0029-light-modifier-once.patch",
+          "patch_active": true,
+          "source_commits": [
+            "66b183340a567811051a5745c8d3a53792963860"
+          ],
+          "source_head": "66b183340a567811051a5745c8d3a53792963860",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/238",
+          "verification": "docs/measurement/LIGHT-MODIFIER.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "dbdb5f7fa49963653abebfbce05537c502254c6f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/109",
+          "credit": "Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "44334c6fc0ccad023b5c632eef39d955e36c19eb",
+          "id": "CBUG-0312",
+          "merge_commit": "75e92924f1c276469905a02382119eaf671489df",
+          "patch": "patches/0030-surrounded-trap-chain.patch",
+          "patch_active": true,
+          "source_commits": [
+            "d366ef4e75e40f17fb293135c05fa74524f2e184"
+          ],
+          "source_head": "d366ef4e75e40f17fb293135c05fa74524f2e184",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/312",
+          "verification": "docs/measurement/SURROUNDED-TRAPS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "668ac32c4be91b773410e652d3913cbb12dfe199"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/113",
+          "credit": "Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "d73c67ab573e5406e4993315d846836b3e7b052a",
+          "id": "CBUG-0313",
+          "merge_commit": "8a7eba1ad1b7e83319e09e3fc429d91d75410393",
+          "patch": "patches/0031-home-blows-single-weapon.patch",
+          "patch_active": true,
+          "source_commits": [
+            "d7b42db02cc74473bc175d2c37dd6feba1a77811"
+          ],
+          "source_head": "d7b42db02cc74473bc175d2c37dd6feba1a77811",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/313",
+          "verification": "docs/measurement/HOME-BLOWS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "2e0593f6effcd211b565be3c589d8716de85c1ec"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/117",
+          "credit": "Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "d50baba77bd2101732e7db3413e7dab25ba72cb4",
+          "id": "CBUG-0314",
+          "merge_commit": "4bfb44d735e7bdc07fbf6d33d366be1208528b26",
+          "patch": "patches/0032-lunal-flag-pair.patch",
+          "patch_active": true,
+          "source_commits": [
+            "a26da54d61be83236c2c5859141b801521d6c6d5"
+          ],
+          "source_head": "a26da54d61be83236c2c5859141b801521d6c6d5",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/314",
+          "verification": "docs/measurement/LUNAL-STATE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "ced816c3c53ae1ad2346e0ab3064a32fb489ad1f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/121",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "6cbb034794f10b6e8832a55103233f52cee67dfa",
+          "id": "CBUG-0324",
+          "merge_commit": "6a00d4408717e95fd29f1aa95542c5f8fe581d16",
+          "patch": "patches/0033-operator-block-arrays.patch",
+          "patch_active": true,
+          "source_commits": [
+            "02be7739db306897f2441562ee8d27dddc15d36c"
+          ],
+          "source_head": "02be7739db306897f2441562ee8d27dddc15d36c",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/324",
+          "verification": "docs/measurement/OPBLOCK-LEAK.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "dc1ea0c3a3554b69b9a70920cd8981351b685389"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/124",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "0799d4639ed837b06a301d412ad0aca977b59756",
+          "id": "CBUG-0323",
+          "merge_commit": "5fb5d1f74abe87f1e4d52096c0eb13b799da9251",
+          "patch": "patches/0034-calculation-token-arrays.patch",
+          "patch_active": true,
+          "source_commits": [
+            "2b98c831ba7b3f53b05ddcf620b8b2c54f5ed6a3"
+          ],
+          "source_head": "2b98c831ba7b3f53b05ddcf620b8b2c54f5ed6a3",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/323",
+          "verification": "docs/measurement/CALFREE-TOKENS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "224c0d81f4aa37b4a54c868b1a248e092d280bf6"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/133",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "d9a848a8e89e0a0e7843c44e699631fb0ee392fc",
+          "id": "CBUG-0240",
+          "merge_commit": "638513e9193d2d69daf7c10108a9328fc526a139",
+          "patch": "patches/0035-brand-need-single.patch",
+          "patch_active": true,
+          "source_commits": [
+            "b30afa1a67436d59b070e3509a7e92b932d01f75"
+          ],
+          "source_head": "b30afa1a67436d59b070e3509a7e92b932d01f75",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/240",
+          "verification": "docs/measurement/BRAND-NEED.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "faa86f83b12f7f43cdde21f48faf045f9e385c60"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/137",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "07a71c16084398643ac09da9cc56e3b2b5b6ea6b",
+          "id": "CBUG-0232",
+          "merge_commit": "4fc3c481f2449f699f8e23d3d50cb5092dacb490",
+          "patch": "patches/0036-stair-track-break.patch",
+          "patch_active": true,
+          "source_commits": [
+            "8310e9cc9fe90a82f93609f542d5f057b835fbcf"
+          ],
+          "source_head": "8310e9cc9fe90a82f93609f542d5f057b835fbcf",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/232",
+          "verification": "docs/measurement/STAIRTRACK.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "894965c78bce5c53a3bbdc498ace40a825fb0679"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/141",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "e40c642a0a7906d8d9caadb803ed6a5adb70bbc5",
+          "id": "CBUG-0252",
+          "merge_commit": "d619eec5fc54e6680571c9316a74ceff270f327d",
+          "patch": "patches/0037-acid-arc-bounds.patch",
+          "patch_active": true,
+          "source_commits": [
+            "2a4125e44f8bcb30e7170416c68f8713cc271994"
+          ],
+          "source_head": "2a4125e44f8bcb30e7170416c68f8713cc271994",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/252",
+          "verification": "docs/measurement/ACID-ARC-BOUNDS.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "21fbfba5c4d3a2cc77707fea885590479cec18c3"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/144",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "e1638569ea292812dd6633e3968b99f78c18c2f4",
+          "id": "CBUG-0229",
+          "merge_commit": "04ab89381820df5856ec742b501b97b29c50bc19",
+          "patch": "patches/0038-dying-light-gate.patch",
+          "patch_active": true,
+          "source_commits": [
+            "54a26b3b3fe4e12ed4d8fc3380219727b48eda2b"
+          ],
+          "source_head": "54a26b3b3fe4e12ed4d8fc3380219727b48eda2b",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/229",
+          "verification": "docs/measurement/OUT-OF-LIGHT-GATE.md",
+          "verification_status": "merged; verified and measured; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "641234dbd3e5d661e911e810e55df991a3a3a9b3"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/148",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "9fe10e42709c480e7b09c8472f9205b9281d6a1c",
+          "id": "CBUG-0212",
+          "merge_commit": "f0288cca5471cf5cbaa3a041f93fe64fb913eb6f",
+          "patch": "patches/0039-map-wall-change-capture.patch",
+          "patch_active": true,
+          "source_commits": [
+            "5bd789ee0ff0a471162d7e3ebefb1ac4d501803c"
+          ],
+          "source_head": "5bd789ee0ff0a471162d7e3ebefb1ac4d501803c",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/212",
+          "verification": "docs/measurement/MAP-WALL-CAPTURE.md",
+          "verification_status": "merged; verified and measured (behavior-active: v1 traces legitimately diverge, outcomes unchanged); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "2c3d8172c38bd83090f6869f775893b31216bf13"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/157",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "8eb4b9951cdd8a3cc3a702ce0109643dba1f98f1",
+          "id": "CBUG-0065",
+          "merge_commit": "503e7a07b9345c2a96aba5b0ec70420f413bc218",
+          "patch": "patches/0040-use-enlightenment.patch",
+          "patch_active": true,
+          "source_commits": [
+            "526906c0f367cd690bdd92b99ac1e114fd84b1a2"
+          ],
+          "source_head": "526906c0f367cd690bdd92b99ac1e114fd84b1a2",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/81",
+          "verification": "docs/measurement/ENLIGHTENMENT-USE.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "fb16560054b44899c50b8aec5ce1a2b0e35c0533"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/167",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "484c534d59c47a4a84273b7651b0c483cf8b5b67",
+          "id": "CBUG-0230",
+          "merge_commit": "bc8cf805f2ec07b1224ba636a2aea4a058ad38be",
+          "patch": "patches/0041-stair-return-report.patch",
+          "patch_active": true,
+          "source_commits": [
+            "db0d342ecf9fae2e129740d50d3bb42498f7ac0e"
+          ],
+          "source_head": "db0d342ecf9fae2e129740d50d3bb42498f7ac0e",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/230",
+          "verification": "docs/measurement/STAIR-RETURN-REPORT.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "64046743679e0925ae6698b458a7bbf9dfa6cb19"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/176",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "eea8f6e1cc24ef72fb0dc07ff6df888e100bf3f9",
+          "id": "CBUG-0247",
+          "merge_commit": "70993393a1c946ce8cd38ee558bf1ce6464350e7",
+          "patch": "patches/0042-blow-name-sentinel.patch",
+          "patch_active": true,
+          "source_commits": [
+            "541e03b1e6e0bed42e0b71ec520cb6ced8f29d65"
+          ],
+          "source_head": "541e03b1e6e0bed42e0b71ec520cb6ced8f29d65",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/247",
+          "verification": "docs/measurement/BLOW-NAME-SENTINEL.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "bdd3c2ea2c120c5200f182b1676b860942abc71e"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/188",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "793f723ebb684f1f2abcdb267dc759861bc7874d",
+          "id": "CBUG-0236",
+          "merge_commit": "5053915f5c9899b380ab6cc4d62b7001fbc1d62e",
+          "patch": "patches/0043-excavate-dark-flag.patch",
+          "patch_active": true,
+          "source_commits": [
+            "8e0f8448e9ebc6d164e4e621840acb0005094f81"
+          ],
+          "source_head": "8e0f8448e9ebc6d164e4e621840acb0005094f81",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/236",
+          "verification": "docs/measurement/EXCAVATE-DARK-FLAG.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "6b43497330399bfc8711289a3e873868a8af910f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/196",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "85de924fa8c008a86a2ab3ff6340bfd157a69b7a",
+          "id": "CBUG-0231",
+          "merge_commit": "85b6ba8e3748e061db1ff1206163c27272d2de31",
+          "patch": "patches/0044-call-light-own-grid.patch",
+          "patch_active": true,
+          "source_commits": [
+            "cda4fb662cabee8a49fbdbcaf4383dc7be1fff1c"
+          ],
+          "source_head": "cda4fb662cabee8a49fbdbcaf4383dc7be1fff1c",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/231",
+          "verification": "docs/measurement/CALL-LIGHT-OWN-GRID.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "175ef6feb555bbf67bcdfff7f628d686decf63a8"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/201",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "7ff787acc6250893e4391e0998c46eeecfb67665",
+          "id": "CBUG-0205",
+          "merge_commit": "813feaec7ec9a5f3dc7e9e6609d0b1b24b0ba376",
+          "patch": "patches/0045-gloves-armour-swap.patch",
+          "patch_active": true,
+          "source_commits": [
+            "c52527eed3cf272cb62a16a773f25ed09f6cac36"
+          ],
+          "source_head": "c52527eed3cf272cb62a16a773f25ed09f6cac36",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/205",
+          "verification": "docs/measurement/GLOVES-ARMOUR-SWAP.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "7be6518287d8bb20b08c3e59f58c8f3707e36ae2"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/205",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "55e00023674b9e7634713f2117b5c8c47802ca5f",
+          "id": "CBUG-0219",
+          "merge_commit": "7a02072cda8bc79cccabe3ad32d578e233a1edd1",
+          "patch": "patches/0046-detection-carryover.patch",
+          "patch_active": true,
+          "source_commits": [
+            "3d104a8b82aafeb421869c62736c8046b6272d82"
+          ],
+          "source_head": "3d104a8b82aafeb421869c62736c8046b6272d82",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/219",
+          "verification": "docs/measurement/DETECTION-CARRYOVER.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "c61e90c9cdfb466336d3f564a1a3709f3daecc65"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/214",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "ea1443bd6a98d4dcbb40c7d7224d2ce224f3bbca",
+          "id": "CBUG-0256",
+          "merge_commit": "8a30a39d9c22d10ca30e2190f06d00df400c2c46",
+          "patch": "patches/0047-maimfoe-real-pass-score.patch",
+          "patch_active": true,
+          "source_commits": [
+            "91822d82ab394afc70d2640d1c2cc735af328056"
+          ],
+          "source_head": "91822d82ab394afc70d2640d1c2cc735af328056",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/256",
+          "verification": "docs/measurement/MAIMFOE-RETURN.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "b00f2a1901091b8a3222dc5576638684b36d95ea"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/216",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "9ccd191c2601d30285d2e9983f5eabdfd1cbf165",
+          "id": "CBUG-0310",
+          "merge_commit": "b9e64aa855139001cf63a95b11ce8934c5777b1e",
+          "patch": "patches/0048-recalldepth-endgame-answer.patch",
+          "patch_active": true,
+          "source_commits": [
+            "9609e2c8682c7f55fe1ae4bf9701ae74e2718ce0"
+          ],
+          "source_head": "9609e2c8682c7f55fe1ae4bf9701ae74e2718ce0",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/310",
+          "verification": "docs/measurement/RECALLDEPTH-ANSWER.md",
+          "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "257e7b473e56d6e9cf69c8dcdbc13e9039a42b5b"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/212",
+          "credit": "Diego Amicabile (owner death feedback; native C proposal/evidence); related independent borg-rs grey-mold diagnosis",
+          "evidence_receipt": "f15794d2f2128714988596bfa036748d63a8f407",
+          "evidence_ref": "89326f5216148ab47a18585236678c391bb4e559",
+          "id": "FLOWCACHE-404",
+          "merge_commit": "1c8fcdccfafa08fd34aaa12b8e6409e8607030bb",
+          "patch": "patches/0049-flow-danger-cache.patch",
+          "patch_active": true,
+          "source_commits": [
+            "b71b32c152e272886cb46bb8f253e8c4f5130711"
+          ],
+          "source_head": "b71b32c152e272886cb46bb8f253e8c4f5130711",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/404",
+          "verification": "docs/measurement/FLOW-DANGER-CACHE.md",
+          "verification_status": "merged; product before/after/negative controls and154prior expectations verified; frozen v1trace-neutral; D0008 diagnostic alive200000, no population-benefit claim; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "6c00db351c3edaabd708294bd9b702b07f66cb4c"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/224",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "5edc188e4e37c4ccf351dd5657b83bc5f1167244",
+          "id": "CBUG-0213",
+          "merge_commit": "5384f12ed51e8fef6f31353fd2daaf0e7fb43856",
+          "patch": "patches/0050-glowtrace-floors-branch.patch",
+          "patch_active": true,
+          "source_commits": [
+            "da9934216eb15d421220050b374c72b65b9cd680"
+          ],
+          "source_head": "da9934216eb15d421220050b374c72b65b9cd680",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/213",
+          "verification": "docs/measurement/GLOWTRACE-FLOORS.md",
+          "verification_status": "merged; verified and measured (behavior-active on the v1 cohort: divergence recorded, flowcache ruled out as cause); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "30bc61d37a72933a30f0c5425ce3993208a2e24f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/242",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "3c9a75e2023386863db8a21be16db5b8c12a840a",
+          "id": "CBUG-0245",
+          "merge_commit": "ae64c39cb8cf90ebf5f55b7627414847c155b4d2",
+          "patch": "patches/0051-munchkin-stair-range-gate.patch",
+          "patch_active": true,
+          "source_commits": [
+            "c16b3e9d14470dd19ef884f37f9eca2f7cc7d37f"
+          ],
+          "source_head": "c16b3e9d14470dd19ef884f37f9eca2f7cc7d37f",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/245",
+          "verification": "docs/measurement/STAIR-RANGE.md",
+          "verification_status": "merged; verified and measured (v1 cohort traces identical); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "49f9c19df2b7157594498eb81091c8f4c6dbdbf6"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/245",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "85ff225404d99acfdf22568b4bc5ec64afd4218b",
+          "id": "CBUG-0246",
+          "merge_commit": "120ca9916d0b0813171112f9345375fd7745d76b",
+          "patch": "patches/0052-clock-overflow-graceful-reset.patch",
+          "patch_active": true,
+          "source_commits": [
+            "7cc0ebbd2016afeaaf57c5e976251b67f7c0e147"
+          ],
+          "source_head": "7cc0ebbd2016afeaaf57c5e976251b67f7c0e147",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/246",
+          "verification": "docs/measurement/CLOCK-RESET.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; not run on the v1 cohort (cap cannot reach the threshold); carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "26811540dd23b382f0a80ab2f3011806f1f81b50"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/247",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "809e556b39e47c2dd13c6dd53aa42b7ac8329010",
+          "id": "CBUG-0140",
+          "merge_commit": "9cb711cd2fc7bb5ee45530c61bd25a063253492b",
+          "patch": "patches/0053-flee-excessive-danger.patch",
+          "patch_active": true,
+          "source_commits": [
+            "007d45483832b2792ddde1b2c368b67975365496"
+          ],
+          "source_head": "007d45483832b2792ddde1b2c368b67975365496",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/156",
+          "verification": "docs/measurement/DANGER-FLEE.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 cohort diverges (seed 29 later dies, issue 249), recorded as observed; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "8a604133a62c97ce00a9c0c5faf0d575357cf5d3"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/250",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "b6bd252e1c9b60845cd3824f42d7dbc5100d2b63",
+          "id": "CBUG-0141",
+          "merge_commit": "b2c9db4798768703134bffe78014ca94a3432261",
+          "patch": "patches/0054-recall-wait-mana-threshold.patch",
+          "patch_active": true,
+          "source_commits": [
+            "57d0df0633d12064602993f39fe6a5ee5f62524c"
+          ],
+          "source_head": "57d0df0633d12064602993f39fe6a5ee5f62524c",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/157",
+          "verification": "docs/measurement/RECALL-MANA.md",
+          "verification_status": "merged; verified on the adapted fixture (unchanged source fixture red by interaction with 0053, asserted) and native gate; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "4a88e67f96e55ab354e94d65d8dd5b98d5171252"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/252",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "366fd1b08c4d0c3815bbb90be2457c372e757ff4",
+          "id": "CBUG-0137",
+          "merge_commit": "f0e10ee1236a800f9b538e609b24afca4b864ff5",
+          "patch": "patches/0055-desperate-nearest-stairs.patch",
+          "patch_active": true,
+          "source_commits": [
+            "62768100602b693ed5845f0e5749830563d7e3b3"
+          ],
+          "source_head": "62768100602b693ed5845f0e5749830563d7e3b3",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/153",
+          "verification": "docs/measurement/DESPERATE-STAIRS.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 outcomes unchanged; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "86d01e947126e81b2debae4a3d7fe14517e29d9f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/254",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "fa0293e587d8ab7e8e2e90e5fade853a2cfcd0ef",
+          "id": "CBUG-0139",
+          "merge_commit": "20d7d4e6203d976a6fd294818d6e74c73eb94ad7",
+          "patch": "patches/0056-back-away-per-grid.patch",
+          "patch_active": true,
+          "source_commits": [
+            "df5361ad5cc3977c75a86061ad0d944568885d77"
+          ],
+          "source_head": "df5361ad5cc3977c75a86061ad0d944568885d77",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/155",
+          "verification": "docs/measurement/BACK-AWAY.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 cohort mixed (seed 29 saved, seed 47 lost, issue 255), recorded as observed; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "052129ae5b7e072513b80ac2626d82792e6a8463"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/257",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "a3164a61b830bf1c67e10017f9a2be7dec9a1763",
+          "id": "CBUG-0125",
+          "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+          "patch": "patches/0057-config-value-stops-at-unexpected-character.patch",
+          "patch_active": true,
+          "source_commits": [
+            "45dfc9b1f4930b28841d0c38b73cc4cd3171aab0"
+          ],
+          "source_head": "45dfc9b1f4930b28841d0c38b73cc4cd3171aab0",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/141",
+          "verification": "docs/measurement/CONFIG-PARSER.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "0ceeaadbb62a0fd2d4d09e38816023de21a4e630"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/258",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "18f79a3cc631b76b55524e9253a79f383fd6d9a3",
+          "id": "CBUG-0126",
+          "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+          "patch": "patches/0058-config-minus-needs-a-number.patch",
+          "patch_active": true,
+          "source_commits": [
+            "6bc43e71a4b36189ba7246abe53f114d6259469c"
+          ],
+          "source_head": "6bc43e71a4b36189ba7246abe53f114d6259469c",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/142",
+          "verification": "docs/measurement/CONFIG-PARSER.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "e8a50ea9f5976afd075bcbb4d54dcf9d564b5df3"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/259",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "1ff9ca1e59d639b6693b9bcb40190c6d836c6fa9",
+          "id": "CBUG-0128",
+          "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+          "patch": "patches/0059-config-defaults-when-borg-txt-unreadable.patch",
+          "patch_active": true,
+          "source_commits": [
+            "8cbee69447cda2526b4810fd6ea74677921ff1d1"
+          ],
+          "source_head": "8cbee69447cda2526b4810fd6ea74677921ff1d1",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/144",
+          "verification": "docs/measurement/CONFIG-PARSER.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "93cbfbda08f91693a7c9bbb1ef9eb8df14860333"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/261",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "68b23b2a1b2eeb94d70a86e98375aaddaadf0951",
+          "id": "CBUG-0118",
+          "merge_commit": "828d5eec26626f0c588b83497b189fbb606e62bb",
+          "patch": "patches/0060-count-sell-skips-unidentified-single.patch",
+          "patch_active": true,
+          "source_commits": [
+            "026a42d3fcdfcbedaaef12c6f39200e38ecbd2ed"
+          ],
+          "source_head": "026a42d3fcdfcbedaaef12c6f39200e38ecbd2ed",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/134",
+          "verification": "docs/measurement/COUNT-SELL.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 traces identical; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "eb89278d7c312d236703e39b90d865b44397ec10"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/263",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "557c85260f8b836ab2c8725fe8baa0910be38261",
+          "id": "CBUG-0235",
+          "merge_commit": "31e71f0873c3166b195499bf86b5457ec962b2b5",
+          "patch": "patches/0061-drained-no-dive.patch",
+          "patch_active": true,
+          "source_commits": [
+            "6d909bf5216c1e6c5ed199595d9ed3e5baf4b0d8"
+          ],
+          "source_head": "6d909bf5216c1e6c5ed199595d9ed3e5baf4b0d8",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/235",
+          "verification": "docs/measurement/DRAINED-DIVE.md",
+          "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 traces identical; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "089acfae4735f1b76d2fa2723cdbc44786647c4f"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/266",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "af01d73ccfcbe6ad55e7fddb7f863a4e54999e0e",
+          "id": "RESPOIS-184",
+          "merge_commit": "b3c825c97c8aef18b252a7fb7d9b7dceef83d586",
+          "patch": "patches/0062-resist-poison-reward-from-zero.patch",
+          "patch_active": true,
+          "source_commits": [
+            "5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db"
+          ],
+          "source_head": "5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/184",
+          "verification": "docs/measurement/RESIST-POISON.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "b81495995bad7e1c17cbf7ce7b51d7f22a9808ea"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/267",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "6f130a4eea68e0c2855bcbb257cf9158752d369b",
+          "id": "RESPOISWAR-185",
+          "merge_commit": "b3c825c97c8aef18b252a7fb7d9b7dceef83d586",
+          "patch": "patches/0063-warrior-resist-poison-from-zero.patch",
+          "patch_active": true,
+          "source_commits": [
+            "c056daabf55e6a1713e68381ef4a72ec6fd349b9"
+          ],
+          "source_head": "c056daabf55e6a1713e68381ef4a72ec6fd349b9",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/185",
+          "verification": "docs/measurement/RESIST-POISON.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "dafc4bd45c5cc45fa0a435ced1a956512fbdcafc"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/268",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "da9a39f4da3005dc24feeba4ae6b8e0bfe67475e",
+          "id": "CBUG-0130",
+          "merge_commit": "8d0d0cd8b7a48c328c0c33e53d3dd1d35c060e34",
+          "patch": "patches/0064-spastic-reverse-flow-unoptimized.patch",
+          "patch_active": true,
+          "source_commits": [
+            "f97311e5d52de4dda8d75058114c52acbdac2674"
+          ],
+          "source_head": "f97311e5d52de4dda8d75058114c52acbdac2674",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/146",
+          "verification": "docs/measurement/REVERSE-FLOW.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 cohort measured on the pair; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "e66b1dca298523c84a8a7a0d9ae009ddf6562b10"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/269",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "fbe06401c54c4e701ea20a9e3c7aec48f849c30b",
+          "id": "GLYPHFLOW-345",
+          "merge_commit": "8d0d0cd8b7a48c328c0c33e53d3dd1d35c060e34",
+          "patch": "patches/0065-glyph-reverse-flow-unoptimized.patch",
+          "patch_active": true,
+          "source_commits": [
+            "f618381294dcf5bff1f0bc95f0fbe259412a53b9"
+          ],
+          "source_head": "f618381294dcf5bff1f0bc95f0fbe259412a53b9",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/345",
+          "verification": "docs/measurement/REVERSE-FLOW.md",
+          "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 cohort measured on the pair; carried/open+patch-active"
+        },
+        {
+          "applied_commits": [
+            "91f075bdcc329ec754e10e24da3cce36c5279784"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/270",
+          "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+          "evidence_ref": "9eca003a5896403b9810806b4fc656446a34cf9a",
+          "id": "SWAPACID-199",
+          "patch": "patches/0066-swap-weapon-acid-element.patch",
+          "patch_active": true,
+          "source_commits": [
+            "eddbf5b82293ea70a76fae960bc9f8debf1579c6"
+          ],
+          "source_head": "eddbf5b82293ea70a76fae960bc9f8debf1579c6",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/199",
+          "verification": "docs/measurement/SWAP-ACID.md",
+          "verification_status": "verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 traces identical; carried/open+patch-active after merge"
+        },
+        {
+          "applied_commits": [
+            "bd9a36def55cde1c478136b31bf3c7c3a717d520"
+          ],
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/280",
+          "credit": "Diego Amicabile (zoo-reported, native validation/proposal/evidence)",
+          "evidence_ref": "43dee40ed05284848f3df25aa5abf19a7f776c7f",
+          "id": "STAIRCYCLE-403",
+          "patch": "patches/0067-munchkin-leaves-while-poisoned-or-hallucinating.patch",
+          "patch_active": true,
+          "source_commits": [
+            "d92e06c3f964e4bba19642288ded1b331a327109"
+          ],
+          "source_head": "d92e06c3f964e4bba19642288ded1b331a327109",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/403",
+          "verification": "docs/measurement/STAIR-CYCLE-POISON.md",
+          "verification_status": "verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 traces identical; carried/open+patch-active after merge"
+        }
+      ],
+      "cause": "a wild cat",
+      "harness_commit": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923",
+      "recent_save_sha256": "d466fa8412ce4eebf0d2fb0b961e910212b7c4bdc66102007e4ea14aaf00c4a2",
+      "result_sha256": "3711f486e5c3101b5e584b4f5d111eea88c0bda16799c093087d49339c849f3e",
+      "role": "original",
+      "runner_sha256": "e9cd4aa132f234d1f13d3e644ee928aedb022eb1b69418c50b4fca7637a91499",
+      "same_complete_trace": true,
+      "source_commit": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+      "terminal": {
+        "borg_rng": 89554878,
+        "dead": 1,
+        "decisions": 3008,
+        "depth": 1,
+        "energy": 344565,
+        "hp": -1,
+        "kind": "death",
+        "level": 2,
+        "max_depth": 2,
+        "max_level": 2,
+        "quick": 0,
+        "quick_rng": 1147626456,
+        "rng": "553cba4f6063c431d0f5568bd89e49809ba28368bab1aff49bd647d41744a19a4ded76d775b879ada3e1a3dde4982df54499ffbb52e6cbeb2ce4c92992f8e66b1a85c5d1a87826a09ede3c82396aa68cabdce2780ed87c7da3d544a73229905ba410f633f5080016c0b6d9e46e6a2a13f0c905c80683e72f923b70b21576b2cf",
+        "rng_index": 26,
+        "turn": 33471,
+        "winner": 0
+      },
+      "trace_sha256": "8c98251e398d85de0fa0ece938c0f512ac6434e163d31c21f8c72ea59adb31c4",
+      "upstream_baseline": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "wall_seconds": 19.41830587200002
+    }
+  ],
+  "calendar_context": {
+    "clock_policy": "Native system clock unchanged",
+    "end": {
+      "TZ_environment": null,
+      "local": "2026-11-08T14:14:11.889297+01:00",
+      "timezone_name": "CET",
+      "utc": "2026-11-08T13:14:11.889297+00:00"
+    },
+    "start": {
+      "TZ_environment": null,
+      "local": "2026-11-08T14:13:52.470870+01:00",
+      "timezone_name": "CET",
+      "utc": "2026-11-08T13:13:52.470870+00:00"
+    },
+    "status": "recorded"
+  },
+  "carried_patches": [
+    {
+      "applied_commits": [
+        "9c10b9b6a475b452c854bd480d87d06ad8226d1b",
+        "5aeae57a3484d6c5bb593fcccbf1cabd480728d7",
+        "39986cc52f3f70727ada24b6def5de98d0bd36c8"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/4",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "1b67370d0dc56d9b7ef34e5356e63d21a7095545",
+      "id": "CBUG-0066",
+      "merge_commit": "e4932f358beffcf9956b4e4b8d9e719c5086f664",
+      "patch": "patches/0001-safer-emergency-swap.patch",
+      "patch_active": true,
+      "source_commits": [
+        "66e1012113fd7db634b19ffe86a470b58a7f7967",
+        "017ba47ebc8731fa0a61361a6f6777759a748d2a",
+        "ebcd255ba9064fc44a35d693f42f9df3dc00bd88"
+      ],
+      "source_head": "ebcd255ba9064fc44a35d693f42f9df3dc00bd88",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/82",
+      "verification": "docs/measurement/SAFER-SWAP.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "8f320210924ffae36a4b592a988982fa7947ad79",
+        "0009ecddcd02b95ac02d63ff43c4c4f95db67b87"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/7",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "3de1e3123915587483395dd40c4d2e75704e65f4",
+      "id": "CBUG-0002",
+      "merge_commit": "d4bfdce9d4782cf83994ad52de707a52d1f31018",
+      "patch": "patches/0002-knockout-reaction-reset.patch",
+      "patch_active": true,
+      "source_commits": [
+        "32ab6823c6a993d94ce382b72f8a855a20f7911c",
+        "6f463d01d753089ab695537495ab27f3bc928dfa"
+      ],
+      "source_head": "6f463d01d753089ab695537495ab27f3bc928dfa",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/14",
+      "verification": "docs/measurement/KNOCKOUT.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "0e76ee35138b309ceb3ed43a6427f2baa42e6d1f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/15",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "a19c8733c0dfa8139b04eecd8117429ec5f55cd6",
+      "id": "CBUG-0094",
+      "merge_commit": "8208d7886208414c3e6ca2df4885175855f34011",
+      "patch": "patches/0003-regen-simulation.patch",
+      "patch_active": true,
+      "source_commits": [
+        "31a042d00581ed914d30f17cca1ed0e70e99d21f"
+      ],
+      "source_head": "31a042d00581ed914d30f17cca1ed0e70e99d21f",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/110",
+      "verification": "docs/measurement/PREPARATION.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "2827b28fc378cbba32aaab30163756b64dea36b0"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/17",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "b0b0fa2471a11e91838bcbc3d980f4b04f8c6b01",
+      "id": "CBUG-0004",
+      "merge_commit": "337e50eb6c732bf6c908ab0d7c22b12b3a82b7d3",
+      "patch": "patches/0004-cold-melee-protection.patch",
+      "patch_active": true,
+      "source_commits": [
+        "d504eb3d272ce96c0de2c00eba757a251b551334"
+      ],
+      "source_head": "d504eb3d272ce96c0de2c00eba757a251b551334",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/26",
+      "verification": "docs/measurement/COLD-PROTECTION.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c3f631068ee9016c53e2a3598a298b64d2296f6a"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/20",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "bfe3fc402e8ae6cdec74d8b35fa8f50e612f2a8e",
+      "id": "CBUG-0062",
+      "merge_commit": "3638b690525cd8a381cb106b4c5ee40652babde2",
+      "patch": "patches/0005-both-ring-slots.patch",
+      "patch_active": true,
+      "source_commits": [
+        "46c14b2828ed751ff8be7ac67df93b28cdc15f87"
+      ],
+      "source_head": "46c14b2828ed751ff8be7ac67df93b28cdc15f87",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/78",
+      "verification": "docs/measurement/BOTH-RINGS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "5e9417be42cb1401708a7a37ec1b13641bc04b83"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/31",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "cce1d5d92079e78e939126d3cf35e24121442734",
+      "id": "CBUG-0061",
+      "merge_commit": "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc",
+      "patch": "patches/0006-healing-potion-timing.patch",
+      "patch_active": true,
+      "source_commits": [
+        "cedf25eb790f2ff7c7c161cd1612b18ed99fb35e"
+      ],
+      "source_head": "cedf25eb790f2ff7c7c161cd1612b18ed99fb35e",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/77",
+      "verification": "docs/measurement/POTION-TIMING.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "3d12dc5306be7d032332f3a9a6e6732261b432c0"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/36",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "b61f6b611600fdbc4c6370fff3ac2835ee77017f",
+      "id": "CBUG-0086",
+      "merge_commit": "2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
+      "patch": "patches/0007-exact-unseen-name.patch",
+      "patch_active": true,
+      "source_commits": [
+        "cad765806eed6431642ab02b53240d7938470c21"
+      ],
+      "source_head": "cad765806eed6431642ab02b53240d7938470c21",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/102",
+      "verification": "docs/measurement/ITANGAST.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "2a99a34d174edfe257c25a383c8f952eed71a3b6"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/40",
+      "credit": "Diego Amicabile (independent native C discovery/proposal/evidence)",
+      "evidence_ref": "cef0b118e02976a3384d4c348ba4cd0210c1f492",
+      "id": "native-shot-path-279",
+      "merge_commit": "4e2af89f34cad98d10131727b3fa4c0e5ddef5fb",
+      "patch": "patches/0008-caster-shot-origin.patch",
+      "patch_active": true,
+      "source_commits": [
+        "1bce07d8080b520589c292c793cc0b95ef9df182"
+      ],
+      "source_head": "1bce07d8080b520589c292c793cc0b95ef9df182",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/279",
+      "verification": "docs/measurement/SHOT-PATH.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "f383220f299d22993bc8b2e0ffa907d966a47823"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/44",
+      "credit": "borg-rs (discovery); Diego Amicabile (native proposal/evidence)",
+      "evidence_ref": "0507c24cccd2131710e4e6cd566f901bad94e081",
+      "id": "CBUG-0048",
+      "merge_commit": "cf53f9b195d297f9f8b1fb61df3b6c1aff7311c6",
+      "patch": "patches/0009-per-spell-projectile.patch",
+      "patch_active": true,
+      "source_commits": [
+        "b223c4f18622883549682f9f997b76fe1f06fc73"
+      ],
+      "source_head": "b223c4f18622883549682f9f997b76fe1f06fc73",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/64",
+      "verification": "docs/measurement/PER-SPELL.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "40b002da088ac48e7c1322aca2159e22c593fd73"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/48",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "f1f53106526412cfe44fa01c73d00e7dbf4dbeed",
+      "id": "CBUG-0102",
+      "merge_commit": "b72ad8eae676ba7c2b9d90026eb0e2d4a2468540",
+      "patch": "patches/0010-glyph-tracker-guard.patch",
+      "patch_active": true,
+      "source_commits": [
+        "ec172531ec38fdd3ac2783d21e3faf6dc1e2b3f3"
+      ],
+      "source_head": "ec172531ec38fdd3ac2783d21e3faf6dc1e2b3f3",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/118",
+      "verification": "docs/measurement/GLYPH-TRACKER.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "09dd4435bd0f36d702246ad6936c856cf08a7e51"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/51",
+      "credit": "borg-rs (fuzzing lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "8b30eb5845ae542b41f2601d4370c044f13c21ac",
+      "id": "CBUG-0254",
+      "merge_commit": "ce6435679ade1072614a7c1f525a39e9b4b6c8ec",
+      "patch": "patches/0011-missile-no-target.patch",
+      "patch_active": true,
+      "source_commits": [
+        "405e4fd4880e7bef27d6a6328765a904638c8257"
+      ],
+      "source_head": "405e4fd4880e7bef27d6a6328765a904638c8257",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/254",
+      "verification": "docs/measurement/MISSILE-NO-TARGET.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "also_adopts": [
+        {
+          "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/200",
+          "note": "identical one-token reader correction already in this patch; no separate unit",
+          "source_commit": "e890819a6b5ac6e7f7135dcc2b234fcc520b9752",
+          "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/250",
+          "verification": "docs/measurement/TP-OTHER-READER.md"
+        }
+      ],
+      "applied_commits": [
+        "706fb49b0731ebaf54408c0699b4cd1da1a15929"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/54",
+      "credit": "borg-rs (discovery); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "83cedb3fe33f494d58d2ceb0016c0feab95be6d8",
+      "id": "CBUG-0051",
+      "merge_commit": "cfaff7be719971e81d91b6c05533aadd29045078",
+      "patch": "patches/0012-tp-other-skip.patch",
+      "patch_active": true,
+      "source_commits": [
+        "25f8a43828204dd1226d5bf5c3b36547b4a07a40"
+      ],
+      "source_head": "25f8a43828204dd1226d5bf5c3b36547b4a07a40",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/67",
+      "verification": "docs/measurement/TP-OTHER-SKIP.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "23d8ed579317db9e9d2037d21d529af3c29fd433"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/57",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "6df50d2e5ad605ec8d3898ca1b653985a373480c",
+      "id": "CBUG-0248",
+      "merge_commit": "c0174d583949ed513c4184a1fe77335122c30a60",
+      "patch": "patches/0013-dispel-life-filter.patch",
+      "patch_active": true,
+      "source_commits": [
+        "6912b85cb7b902616ad786dfc20afe3b4cf28b10"
+      ],
+      "source_head": "6912b85cb7b902616ad786dfc20afe3b4cf28b10",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/248",
+      "verification": "docs/measurement/DISPEL-FILTER.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "92003d66c2ad5e1f5ab95fe1851d77824b8369e8"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/60",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "6f1f66446e1bc2232e7eb71d03246b6d4e2b4fb3",
+      "id": "CBUG-0253",
+      "merge_commit": "a89e96a159bf59e234bae229aad889bee547d870",
+      "patch": "patches/0014-arc-grid-angle.patch",
+      "patch_active": true,
+      "source_commits": [
+        "7f33e9fbf83059a0a1ed5e530f463124ce1e4be0"
+      ],
+      "source_head": "7f33e9fbf83059a0a1ed5e530f463124ce1e4be0",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/253",
+      "verification": "docs/measurement/ARC-ANGLE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "2cf521b8bc8457eb0e585cb008077c484f7f0d3c"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/63",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "f5b3c50e26e4803fb2c5af07a047ba37d92ebeb1",
+      "id": "CBUG-0244",
+      "merge_commit": "d28dbb165706099dd44467383c9e8fe84f71d83a",
+      "patch": "patches/0015-munchkin-stair-own-grid.patch",
+      "patch_active": true,
+      "source_commits": [
+        "5b31e13d1023a64bf4f8613352e738757b5f56ec"
+      ],
+      "source_head": "5b31e13d1023a64bf4f8613352e738757b5f56ec",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/244",
+      "verification": "docs/measurement/MUNCHKIN-STAIR.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "81b15066286c8f3818a309ac00d86bdf0b628367"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/66",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "e41e44d9652c38266dcee5e9e5b4b363f3813212",
+      "id": "CBUG-0257",
+      "merge_commit": "dfddcfff9429e16f1141d53a5d7c619bed65fbb7",
+      "patch": "patches/0016-vampire-strike-distance.patch",
+      "patch_active": true,
+      "source_commits": [
+        "0119d5daee9b8a07a8096331eea78dbbb6c26050"
+      ],
+      "source_head": "0119d5daee9b8a07a8096331eea78dbbb6c26050",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/257",
+      "verification": "docs/measurement/VAMPIRE-STRIKE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "6bcdd28ace1248e223ac381d61051964bb50a592"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/69",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "25b0118631f108edc926856c8f4b3c35d3611bf9",
+      "id": "CBUG-0239",
+      "merge_commit": "a88da7a063221bd56a6e40e5fec472b38286d5c0",
+      "patch": "patches/0017-slay-trait-accumulation.patch",
+      "patch_active": true,
+      "source_commits": [
+        "9ab78ae605ca4463268a669121d69b216285c2f1"
+      ],
+      "source_head": "9ab78ae605ca4463268a669121d69b216285c2f1",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/239",
+      "verification": "docs/measurement/SLAY-TRAITS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c3e8f60a3ea164b74ce76bbac7a3097263a13a9f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/72",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "d9d4c7186293b4c08925c78e8e72d2728a84732b",
+      "id": "CBUG-0290",
+      "merge_commit": "3cd2c3237a0c45f6f38a8cad108ecaa88cb151f2",
+      "patch": "patches/0018-detect-panel-bounds.patch",
+      "patch_active": true,
+      "source_commits": [
+        "02fb00af6abdb165fc1b445c42dc85d2263a3cdd"
+      ],
+      "source_head": "02fb00af6abdb165fc1b445c42dc85d2263a3cdd",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/290",
+      "verification": "docs/measurement/DETECT-PANEL.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "7323c8df1506f5572c4cfbbc7348cd4f3fbe88da"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/75",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "f0e856241b1fe3d62005edda0722c991278afdf9",
+      "id": "CBUG-0260",
+      "merge_commit": "5ea7baed65d1040e9330ce8fe3a5317dcd995b0c",
+      "patch": "patches/0019-activ-lookup-ids.patch",
+      "patch_active": true,
+      "source_commits": [
+        "891d0cb9cc9057a2004dfeba7b21b19913f5a2b6"
+      ],
+      "source_head": "891d0cb9cc9057a2004dfeba7b21b19913f5a2b6",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/260",
+      "verification": "docs/measurement/ACTIV-LOOKUP.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "21c672a856079167820d22dbf299f39c98faa24d"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/78",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "359882c25f81baa3824f20f7db8ae290ae2d4ed2",
+      "id": "CBUG-0258",
+      "merge_commit": "c7f5b5758c8599a55fd81c0decfba67ffce3d713",
+      "patch": "patches/0020-reserve-bolt-veto-scope.patch",
+      "patch_active": true,
+      "source_commits": [
+        "7b4ecd6b888a1d87b526f273c769449eb013ad9b"
+      ],
+      "source_head": "7b4ecd6b888a1d87b526f273c769449eb013ad9b",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/258",
+      "verification": "docs/measurement/RESERVE-BOLT.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c9f24544fe6fa309ad9ea926952e45db679f060d"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/81",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "f0ed9115c696b70422e1d8639a92511278c4de2a",
+      "id": "CBUG-0259",
+      "merge_commit": "0c52dee46ec3e4bcc076188a1c9f985971118e7f",
+      "patch": "patches/0021-dispel-reserve-single-penalty.patch",
+      "patch_active": true,
+      "source_commits": [
+        "e5da34177368960c9707df6c7b8d55e6c4ab081a"
+      ],
+      "source_head": "e5da34177368960c9707df6c7b8d55e6c4ab081a",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/259",
+      "verification": "docs/measurement/DISPEL-RESERVE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "0489305bca448763152c6ec3814f6015fe8a8322"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/84",
+      "credit": "borg-rs (lead); Diego Amicabile (native finding/validation/proposal/evidence)",
+      "evidence_ref": "9ae8856aa9f3f7e1e28d5eb8d7ef3070e0f3b58e",
+      "id": "CBUG-0326",
+      "merge_commit": "2e55c43f86e40e13ba26db8dffcd719ecb8419db",
+      "patch": "patches/0022-losdispel-arrival-break.patch",
+      "patch_active": true,
+      "source_commits": [
+        "53ef84c743768fdde9abaebc27bd8526b4423de9"
+      ],
+      "source_head": "53ef84c743768fdde9abaebc27bd8526b4423de9",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/326",
+      "verification": "docs/measurement/LOSDISPEL.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "13fe885cb11a61c1a2ff9c2e53dd338b86bbddb0"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/87",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "ba63014b3caf3926bd86a7c8edc8a26e5e947860",
+      "id": "CBUG-0262",
+      "merge_commit": "aa87ca74d0344567594bbb221109fe0df96d9753",
+      "patch": "patches/0023-staff-holy-radius.patch",
+      "patch_active": true,
+      "source_commits": [
+        "fe34f38d0c998cf34ace02d09bf97774f38e65df"
+      ],
+      "source_head": "fe34f38d0c998cf34ace02d09bf97774f38e65df",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/262",
+      "verification": "docs/measurement/STAFF-HOLY.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "713d9ad4603d7bc46eaf32de3469fa7344e6f892"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/90",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "cb8554e079e404993c060d0c1d4a05df67581099",
+      "id": "CBUG-0261",
+      "merge_commit": "f997c8cee3c72565a906716d6ac5f6da7b871505",
+      "patch": "patches/0024-blind-frighten-fear.patch",
+      "patch_active": true,
+      "source_commits": [
+        "a49b7a6c15f6353cd427af28903355fe258af4d5"
+      ],
+      "source_head": "a49b7a6c15f6353cd427af28903355fe258af4d5",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/261",
+      "verification": "docs/measurement/BLIND-FRIGHTEN.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c6c51d4d09e591da9d5df313666fe95b31f05e03"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/93",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "8d844e37938c09f3445860f9559da1b5009fa3a7",
+      "id": "CBUG-0287",
+      "merge_commit": "b68eb22233c11725499480c27a095d525949c2de",
+      "patch": "patches/0025-text-multibyte-termination.patch",
+      "patch_active": true,
+      "source_commits": [
+        "3e7fe8a8399352c4fe67f5de2d8d48b5e0bd04c1"
+      ],
+      "source_head": "3e7fe8a8399352c4fe67f5de2d8d48b5e0bd04c1",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/287",
+      "verification": "docs/measurement/TEXT-MULTIBYTE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c528eb81e0651bad91f28c896594cf56ad6fd3de"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/96",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "8764d94b8a2007214e4bc35a923f0a92f0f17613",
+      "id": "CBUG-0325",
+      "merge_commit": "0900c5cf4f2c3d3fa7b4c2524d38aa94da5aed07",
+      "patch": "patches/0026-calculation-reload-array.patch",
+      "patch_active": true,
+      "source_commits": [
+        "253ab11468bd91f47f2a458ecc3f333a00eaa677"
+      ],
+      "source_head": "253ab11468bd91f47f2a458ecc3f333a00eaa677",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/325",
+      "verification": "docs/measurement/CALC-RELOAD.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "0d843a414c8deaa8ce7aa3178dea39418dc22d62"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/99",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "929764f4d12cece8181a22106c1d808bdd3c2881",
+      "id": "CBUG-0322",
+      "merge_commit": "29190814b7e7de6ed272d3c5e1ca0cd528758515",
+      "patch": "patches/0027-stale-same-square-target.patch",
+      "patch_active": true,
+      "source_commits": [
+        "1ab30ef0bc9a12caa5b1cf48e60c204ef564e9de"
+      ],
+      "source_head": "1ab30ef0bc9a12caa5b1cf48e60c204ef564e9de",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/322",
+      "verification": "docs/measurement/STALE-TARGET.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "3cb61705d1adcf813c8318285d7c29abf8c61d5a"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/102",
+      "credit": "Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "1a9946c6111c541a4041edc7a200e7440434d85e",
+      "id": "CBUG-0311",
+      "merge_commit": "9aee811384e201f6ead4e0a842f8b718640375b0",
+      "patch": "patches/0028-glow-array-bound.patch",
+      "patch_active": true,
+      "source_commits": [
+        "d4dcb983c9623757b523a7fae861b624d858e23d"
+      ],
+      "source_head": "d4dcb983c9623757b523a7fae861b624d858e23d",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/311",
+      "verification": "docs/measurement/GLOW-OVERFLOW.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "497d92665d6d688c89faf1b58b0103442d651fb9"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/105",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "f1e899b66b383b19ab2d69b4d7ffbb2148ba5444",
+      "id": "CBUG-0238",
+      "merge_commit": "958f9744b86a094dd7491ddaf0cfa9c9247a1fda",
+      "patch": "patches/0029-light-modifier-once.patch",
+      "patch_active": true,
+      "source_commits": [
+        "66b183340a567811051a5745c8d3a53792963860"
+      ],
+      "source_head": "66b183340a567811051a5745c8d3a53792963860",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/238",
+      "verification": "docs/measurement/LIGHT-MODIFIER.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "dbdb5f7fa49963653abebfbce05537c502254c6f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/109",
+      "credit": "Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "44334c6fc0ccad023b5c632eef39d955e36c19eb",
+      "id": "CBUG-0312",
+      "merge_commit": "75e92924f1c276469905a02382119eaf671489df",
+      "patch": "patches/0030-surrounded-trap-chain.patch",
+      "patch_active": true,
+      "source_commits": [
+        "d366ef4e75e40f17fb293135c05fa74524f2e184"
+      ],
+      "source_head": "d366ef4e75e40f17fb293135c05fa74524f2e184",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/312",
+      "verification": "docs/measurement/SURROUNDED-TRAPS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "668ac32c4be91b773410e652d3913cbb12dfe199"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/113",
+      "credit": "Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "d73c67ab573e5406e4993315d846836b3e7b052a",
+      "id": "CBUG-0313",
+      "merge_commit": "8a7eba1ad1b7e83319e09e3fc429d91d75410393",
+      "patch": "patches/0031-home-blows-single-weapon.patch",
+      "patch_active": true,
+      "source_commits": [
+        "d7b42db02cc74473bc175d2c37dd6feba1a77811"
+      ],
+      "source_head": "d7b42db02cc74473bc175d2c37dd6feba1a77811",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/313",
+      "verification": "docs/measurement/HOME-BLOWS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "2e0593f6effcd211b565be3c589d8716de85c1ec"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/117",
+      "credit": "Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "d50baba77bd2101732e7db3413e7dab25ba72cb4",
+      "id": "CBUG-0314",
+      "merge_commit": "4bfb44d735e7bdc07fbf6d33d366be1208528b26",
+      "patch": "patches/0032-lunal-flag-pair.patch",
+      "patch_active": true,
+      "source_commits": [
+        "a26da54d61be83236c2c5859141b801521d6c6d5"
+      ],
+      "source_head": "a26da54d61be83236c2c5859141b801521d6c6d5",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/314",
+      "verification": "docs/measurement/LUNAL-STATE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "ced816c3c53ae1ad2346e0ab3064a32fb489ad1f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/121",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "6cbb034794f10b6e8832a55103233f52cee67dfa",
+      "id": "CBUG-0324",
+      "merge_commit": "6a00d4408717e95fd29f1aa95542c5f8fe581d16",
+      "patch": "patches/0033-operator-block-arrays.patch",
+      "patch_active": true,
+      "source_commits": [
+        "02be7739db306897f2441562ee8d27dddc15d36c"
+      ],
+      "source_head": "02be7739db306897f2441562ee8d27dddc15d36c",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/324",
+      "verification": "docs/measurement/OPBLOCK-LEAK.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "dc1ea0c3a3554b69b9a70920cd8981351b685389"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/124",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "0799d4639ed837b06a301d412ad0aca977b59756",
+      "id": "CBUG-0323",
+      "merge_commit": "5fb5d1f74abe87f1e4d52096c0eb13b799da9251",
+      "patch": "patches/0034-calculation-token-arrays.patch",
+      "patch_active": true,
+      "source_commits": [
+        "2b98c831ba7b3f53b05ddcf620b8b2c54f5ed6a3"
+      ],
+      "source_head": "2b98c831ba7b3f53b05ddcf620b8b2c54f5ed6a3",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/323",
+      "verification": "docs/measurement/CALFREE-TOKENS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "224c0d81f4aa37b4a54c868b1a248e092d280bf6"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/133",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "d9a848a8e89e0a0e7843c44e699631fb0ee392fc",
+      "id": "CBUG-0240",
+      "merge_commit": "638513e9193d2d69daf7c10108a9328fc526a139",
+      "patch": "patches/0035-brand-need-single.patch",
+      "patch_active": true,
+      "source_commits": [
+        "b30afa1a67436d59b070e3509a7e92b932d01f75"
+      ],
+      "source_head": "b30afa1a67436d59b070e3509a7e92b932d01f75",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/240",
+      "verification": "docs/measurement/BRAND-NEED.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "faa86f83b12f7f43cdde21f48faf045f9e385c60"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/137",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "07a71c16084398643ac09da9cc56e3b2b5b6ea6b",
+      "id": "CBUG-0232",
+      "merge_commit": "4fc3c481f2449f699f8e23d3d50cb5092dacb490",
+      "patch": "patches/0036-stair-track-break.patch",
+      "patch_active": true,
+      "source_commits": [
+        "8310e9cc9fe90a82f93609f542d5f057b835fbcf"
+      ],
+      "source_head": "8310e9cc9fe90a82f93609f542d5f057b835fbcf",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/232",
+      "verification": "docs/measurement/STAIRTRACK.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "894965c78bce5c53a3bbdc498ace40a825fb0679"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/141",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "e40c642a0a7906d8d9caadb803ed6a5adb70bbc5",
+      "id": "CBUG-0252",
+      "merge_commit": "d619eec5fc54e6680571c9316a74ceff270f327d",
+      "patch": "patches/0037-acid-arc-bounds.patch",
+      "patch_active": true,
+      "source_commits": [
+        "2a4125e44f8bcb30e7170416c68f8713cc271994"
+      ],
+      "source_head": "2a4125e44f8bcb30e7170416c68f8713cc271994",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/252",
+      "verification": "docs/measurement/ACID-ARC-BOUNDS.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "21fbfba5c4d3a2cc77707fea885590479cec18c3"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/144",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "e1638569ea292812dd6633e3968b99f78c18c2f4",
+      "id": "CBUG-0229",
+      "merge_commit": "04ab89381820df5856ec742b501b97b29c50bc19",
+      "patch": "patches/0038-dying-light-gate.patch",
+      "patch_active": true,
+      "source_commits": [
+        "54a26b3b3fe4e12ed4d8fc3380219727b48eda2b"
+      ],
+      "source_head": "54a26b3b3fe4e12ed4d8fc3380219727b48eda2b",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/229",
+      "verification": "docs/measurement/OUT-OF-LIGHT-GATE.md",
+      "verification_status": "merged; verified and measured; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "641234dbd3e5d661e911e810e55df991a3a3a9b3"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/148",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "9fe10e42709c480e7b09c8472f9205b9281d6a1c",
+      "id": "CBUG-0212",
+      "merge_commit": "f0288cca5471cf5cbaa3a041f93fe64fb913eb6f",
+      "patch": "patches/0039-map-wall-change-capture.patch",
+      "patch_active": true,
+      "source_commits": [
+        "5bd789ee0ff0a471162d7e3ebefb1ac4d501803c"
+      ],
+      "source_head": "5bd789ee0ff0a471162d7e3ebefb1ac4d501803c",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/212",
+      "verification": "docs/measurement/MAP-WALL-CAPTURE.md",
+      "verification_status": "merged; verified and measured (behavior-active: v1 traces legitimately diverge, outcomes unchanged); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "2c3d8172c38bd83090f6869f775893b31216bf13"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/157",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "8eb4b9951cdd8a3cc3a702ce0109643dba1f98f1",
+      "id": "CBUG-0065",
+      "merge_commit": "503e7a07b9345c2a96aba5b0ec70420f413bc218",
+      "patch": "patches/0040-use-enlightenment.patch",
+      "patch_active": true,
+      "source_commits": [
+        "526906c0f367cd690bdd92b99ac1e114fd84b1a2"
+      ],
+      "source_head": "526906c0f367cd690bdd92b99ac1e114fd84b1a2",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/81",
+      "verification": "docs/measurement/ENLIGHTENMENT-USE.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "fb16560054b44899c50b8aec5ce1a2b0e35c0533"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/167",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "484c534d59c47a4a84273b7651b0c483cf8b5b67",
+      "id": "CBUG-0230",
+      "merge_commit": "bc8cf805f2ec07b1224ba636a2aea4a058ad38be",
+      "patch": "patches/0041-stair-return-report.patch",
+      "patch_active": true,
+      "source_commits": [
+        "db0d342ecf9fae2e129740d50d3bb42498f7ac0e"
+      ],
+      "source_head": "db0d342ecf9fae2e129740d50d3bb42498f7ac0e",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/230",
+      "verification": "docs/measurement/STAIR-RETURN-REPORT.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "64046743679e0925ae6698b458a7bbf9dfa6cb19"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/176",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "eea8f6e1cc24ef72fb0dc07ff6df888e100bf3f9",
+      "id": "CBUG-0247",
+      "merge_commit": "70993393a1c946ce8cd38ee558bf1ce6464350e7",
+      "patch": "patches/0042-blow-name-sentinel.patch",
+      "patch_active": true,
+      "source_commits": [
+        "541e03b1e6e0bed42e0b71ec520cb6ced8f29d65"
+      ],
+      "source_head": "541e03b1e6e0bed42e0b71ec520cb6ced8f29d65",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/247",
+      "verification": "docs/measurement/BLOW-NAME-SENTINEL.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "bdd3c2ea2c120c5200f182b1676b860942abc71e"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/188",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "793f723ebb684f1f2abcdb267dc759861bc7874d",
+      "id": "CBUG-0236",
+      "merge_commit": "5053915f5c9899b380ab6cc4d62b7001fbc1d62e",
+      "patch": "patches/0043-excavate-dark-flag.patch",
+      "patch_active": true,
+      "source_commits": [
+        "8e0f8448e9ebc6d164e4e621840acb0005094f81"
+      ],
+      "source_head": "8e0f8448e9ebc6d164e4e621840acb0005094f81",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/236",
+      "verification": "docs/measurement/EXCAVATE-DARK-FLAG.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "6b43497330399bfc8711289a3e873868a8af910f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/196",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "85de924fa8c008a86a2ab3ff6340bfd157a69b7a",
+      "id": "CBUG-0231",
+      "merge_commit": "85b6ba8e3748e061db1ff1206163c27272d2de31",
+      "patch": "patches/0044-call-light-own-grid.patch",
+      "patch_active": true,
+      "source_commits": [
+        "cda4fb662cabee8a49fbdbcaf4383dc7be1fff1c"
+      ],
+      "source_head": "cda4fb662cabee8a49fbdbcaf4383dc7be1fff1c",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/231",
+      "verification": "docs/measurement/CALL-LIGHT-OWN-GRID.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "175ef6feb555bbf67bcdfff7f628d686decf63a8"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/201",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "7ff787acc6250893e4391e0998c46eeecfb67665",
+      "id": "CBUG-0205",
+      "merge_commit": "813feaec7ec9a5f3dc7e9e6609d0b1b24b0ba376",
+      "patch": "patches/0045-gloves-armour-swap.patch",
+      "patch_active": true,
+      "source_commits": [
+        "c52527eed3cf272cb62a16a773f25ed09f6cac36"
+      ],
+      "source_head": "c52527eed3cf272cb62a16a773f25ed09f6cac36",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/205",
+      "verification": "docs/measurement/GLOVES-ARMOUR-SWAP.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "7be6518287d8bb20b08c3e59f58c8f3707e36ae2"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/205",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "55e00023674b9e7634713f2117b5c8c47802ca5f",
+      "id": "CBUG-0219",
+      "merge_commit": "7a02072cda8bc79cccabe3ad32d578e233a1edd1",
+      "patch": "patches/0046-detection-carryover.patch",
+      "patch_active": true,
+      "source_commits": [
+        "3d104a8b82aafeb421869c62736c8046b6272d82"
+      ],
+      "source_head": "3d104a8b82aafeb421869c62736c8046b6272d82",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/219",
+      "verification": "docs/measurement/DETECTION-CARRYOVER.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "c61e90c9cdfb466336d3f564a1a3709f3daecc65"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/214",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "ea1443bd6a98d4dcbb40c7d7224d2ce224f3bbca",
+      "id": "CBUG-0256",
+      "merge_commit": "8a30a39d9c22d10ca30e2190f06d00df400c2c46",
+      "patch": "patches/0047-maimfoe-real-pass-score.patch",
+      "patch_active": true,
+      "source_commits": [
+        "91822d82ab394afc70d2640d1c2cc735af328056"
+      ],
+      "source_head": "91822d82ab394afc70d2640d1c2cc735af328056",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/256",
+      "verification": "docs/measurement/MAIMFOE-RETURN.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "b00f2a1901091b8a3222dc5576638684b36d95ea"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/216",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "9ccd191c2601d30285d2e9983f5eabdfd1cbf165",
+      "id": "CBUG-0310",
+      "merge_commit": "b9e64aa855139001cf63a95b11ce8934c5777b1e",
+      "patch": "patches/0048-recalldepth-endgame-answer.patch",
+      "patch_active": true,
+      "source_commits": [
+        "9609e2c8682c7f55fe1ae4bf9701ae74e2718ce0"
+      ],
+      "source_head": "9609e2c8682c7f55fe1ae4bf9701ae74e2718ce0",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/310",
+      "verification": "docs/measurement/RECALLDEPTH-ANSWER.md",
+      "verification_status": "merged; verified and measured (behavior-neutral on the v1 cohort); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "257e7b473e56d6e9cf69c8dcdbc13e9039a42b5b"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/212",
+      "credit": "Diego Amicabile (owner death feedback; native C proposal/evidence); related independent borg-rs grey-mold diagnosis",
+      "evidence_receipt": "f15794d2f2128714988596bfa036748d63a8f407",
+      "evidence_ref": "89326f5216148ab47a18585236678c391bb4e559",
+      "id": "FLOWCACHE-404",
+      "merge_commit": "1c8fcdccfafa08fd34aaa12b8e6409e8607030bb",
+      "patch": "patches/0049-flow-danger-cache.patch",
+      "patch_active": true,
+      "source_commits": [
+        "b71b32c152e272886cb46bb8f253e8c4f5130711"
+      ],
+      "source_head": "b71b32c152e272886cb46bb8f253e8c4f5130711",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/404",
+      "verification": "docs/measurement/FLOW-DANGER-CACHE.md",
+      "verification_status": "merged; product before/after/negative controls and154prior expectations verified; frozen v1trace-neutral; D0008 diagnostic alive200000, no population-benefit claim; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "6c00db351c3edaabd708294bd9b702b07f66cb4c"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/224",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "5edc188e4e37c4ccf351dd5657b83bc5f1167244",
+      "id": "CBUG-0213",
+      "merge_commit": "5384f12ed51e8fef6f31353fd2daaf0e7fb43856",
+      "patch": "patches/0050-glowtrace-floors-branch.patch",
+      "patch_active": true,
+      "source_commits": [
+        "da9934216eb15d421220050b374c72b65b9cd680"
+      ],
+      "source_head": "da9934216eb15d421220050b374c72b65b9cd680",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/213",
+      "verification": "docs/measurement/GLOWTRACE-FLOORS.md",
+      "verification_status": "merged; verified and measured (behavior-active on the v1 cohort: divergence recorded, flowcache ruled out as cause); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "30bc61d37a72933a30f0c5425ce3993208a2e24f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/242",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "3c9a75e2023386863db8a21be16db5b8c12a840a",
+      "id": "CBUG-0245",
+      "merge_commit": "ae64c39cb8cf90ebf5f55b7627414847c155b4d2",
+      "patch": "patches/0051-munchkin-stair-range-gate.patch",
+      "patch_active": true,
+      "source_commits": [
+        "c16b3e9d14470dd19ef884f37f9eca2f7cc7d37f"
+      ],
+      "source_head": "c16b3e9d14470dd19ef884f37f9eca2f7cc7d37f",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/245",
+      "verification": "docs/measurement/STAIR-RANGE.md",
+      "verification_status": "merged; verified and measured (v1 cohort traces identical); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "49f9c19df2b7157594498eb81091c8f4c6dbdbf6"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/245",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "85ff225404d99acfdf22568b4bc5ec64afd4218b",
+      "id": "CBUG-0246",
+      "merge_commit": "120ca9916d0b0813171112f9345375fd7745d76b",
+      "patch": "patches/0052-clock-overflow-graceful-reset.patch",
+      "patch_active": true,
+      "source_commits": [
+        "7cc0ebbd2016afeaaf57c5e976251b67f7c0e147"
+      ],
+      "source_head": "7cc0ebbd2016afeaaf57c5e976251b67f7c0e147",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/246",
+      "verification": "docs/measurement/CLOCK-RESET.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; not run on the v1 cohort (cap cannot reach the threshold); carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "26811540dd23b382f0a80ab2f3011806f1f81b50"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/247",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "809e556b39e47c2dd13c6dd53aa42b7ac8329010",
+      "id": "CBUG-0140",
+      "merge_commit": "9cb711cd2fc7bb5ee45530c61bd25a063253492b",
+      "patch": "patches/0053-flee-excessive-danger.patch",
+      "patch_active": true,
+      "source_commits": [
+        "007d45483832b2792ddde1b2c368b67975365496"
+      ],
+      "source_head": "007d45483832b2792ddde1b2c368b67975365496",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/156",
+      "verification": "docs/measurement/DANGER-FLEE.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 cohort diverges (seed 29 later dies, issue 249), recorded as observed; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "8a604133a62c97ce00a9c0c5faf0d575357cf5d3"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/250",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "b6bd252e1c9b60845cd3824f42d7dbc5100d2b63",
+      "id": "CBUG-0141",
+      "merge_commit": "b2c9db4798768703134bffe78014ca94a3432261",
+      "patch": "patches/0054-recall-wait-mana-threshold.patch",
+      "patch_active": true,
+      "source_commits": [
+        "57d0df0633d12064602993f39fe6a5ee5f62524c"
+      ],
+      "source_head": "57d0df0633d12064602993f39fe6a5ee5f62524c",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/157",
+      "verification": "docs/measurement/RECALL-MANA.md",
+      "verification_status": "merged; verified on the adapted fixture (unchanged source fixture red by interaction with 0053, asserted) and native gate; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "4a88e67f96e55ab354e94d65d8dd5b98d5171252"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/252",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "366fd1b08c4d0c3815bbb90be2457c372e757ff4",
+      "id": "CBUG-0137",
+      "merge_commit": "f0e10ee1236a800f9b538e609b24afca4b864ff5",
+      "patch": "patches/0055-desperate-nearest-stairs.patch",
+      "patch_active": true,
+      "source_commits": [
+        "62768100602b693ed5845f0e5749830563d7e3b3"
+      ],
+      "source_head": "62768100602b693ed5845f0e5749830563d7e3b3",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/153",
+      "verification": "docs/measurement/DESPERATE-STAIRS.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 outcomes unchanged; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "86d01e947126e81b2debae4a3d7fe14517e29d9f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/254",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "fa0293e587d8ab7e8e2e90e5fade853a2cfcd0ef",
+      "id": "CBUG-0139",
+      "merge_commit": "20d7d4e6203d976a6fd294818d6e74c73eb94ad7",
+      "patch": "patches/0056-back-away-per-grid.patch",
+      "patch_active": true,
+      "source_commits": [
+        "df5361ad5cc3977c75a86061ad0d944568885d77"
+      ],
+      "source_head": "df5361ad5cc3977c75a86061ad0d944568885d77",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/155",
+      "verification": "docs/measurement/BACK-AWAY.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 cohort mixed (seed 29 saved, seed 47 lost, issue 255), recorded as observed; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "052129ae5b7e072513b80ac2626d82792e6a8463"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/257",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "a3164a61b830bf1c67e10017f9a2be7dec9a1763",
+      "id": "CBUG-0125",
+      "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+      "patch": "patches/0057-config-value-stops-at-unexpected-character.patch",
+      "patch_active": true,
+      "source_commits": [
+        "45dfc9b1f4930b28841d0c38b73cc4cd3171aab0"
+      ],
+      "source_head": "45dfc9b1f4930b28841d0c38b73cc4cd3171aab0",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/141",
+      "verification": "docs/measurement/CONFIG-PARSER.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "0ceeaadbb62a0fd2d4d09e38816023de21a4e630"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/258",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "18f79a3cc631b76b55524e9253a79f383fd6d9a3",
+      "id": "CBUG-0126",
+      "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+      "patch": "patches/0058-config-minus-needs-a-number.patch",
+      "patch_active": true,
+      "source_commits": [
+        "6bc43e71a4b36189ba7246abe53f114d6259469c"
+      ],
+      "source_head": "6bc43e71a4b36189ba7246abe53f114d6259469c",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/142",
+      "verification": "docs/measurement/CONFIG-PARSER.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "e8a50ea9f5976afd075bcbb4d54dcf9d564b5df3"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/259",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "1ff9ca1e59d639b6693b9bcb40190c6d836c6fa9",
+      "id": "CBUG-0128",
+      "merge_commit": "d4f9bb5c92179fcc4107d357af3882738d482aff",
+      "patch": "patches/0059-config-defaults-when-borg-txt-unreadable.patch",
+      "patch_active": true,
+      "source_commits": [
+        "8cbee69447cda2526b4810fd6ea74677921ff1d1"
+      ],
+      "source_head": "8cbee69447cda2526b4810fd6ea74677921ff1d1",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/144",
+      "verification": "docs/measurement/CONFIG-PARSER.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "93cbfbda08f91693a7c9bbb1ef9eb8df14860333"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/261",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "68b23b2a1b2eeb94d70a86e98375aaddaadf0951",
+      "id": "CBUG-0118",
+      "merge_commit": "828d5eec26626f0c588b83497b189fbb606e62bb",
+      "patch": "patches/0060-count-sell-skips-unidentified-single.patch",
+      "patch_active": true,
+      "source_commits": [
+        "026a42d3fcdfcbedaaef12c6f39200e38ecbd2ed"
+      ],
+      "source_head": "026a42d3fcdfcbedaaef12c6f39200e38ecbd2ed",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/134",
+      "verification": "docs/measurement/COUNT-SELL.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 traces identical; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "eb89278d7c312d236703e39b90d865b44397ec10"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/263",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "557c85260f8b836ab2c8725fe8baa0910be38261",
+      "id": "CBUG-0235",
+      "merge_commit": "31e71f0873c3166b195499bf86b5457ec962b2b5",
+      "patch": "patches/0061-drained-no-dive.patch",
+      "patch_active": true,
+      "source_commits": [
+        "6d909bf5216c1e6c5ed199595d9ed3e5baf4b0d8"
+      ],
+      "source_head": "6d909bf5216c1e6c5ed199595d9ed3e5baf4b0d8",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/235",
+      "verification": "docs/measurement/DRAINED-DIVE.md",
+      "verification_status": "merged; verified on the unchanged source fixture and native gate; v1 traces identical; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "089acfae4735f1b76d2fa2723cdbc44786647c4f"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/266",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "af01d73ccfcbe6ad55e7fddb7f863a4e54999e0e",
+      "id": "RESPOIS-184",
+      "merge_commit": "b3c825c97c8aef18b252a7fb7d9b7dceef83d586",
+      "patch": "patches/0062-resist-poison-reward-from-zero.patch",
+      "patch_active": true,
+      "source_commits": [
+        "5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db"
+      ],
+      "source_head": "5e8d4c5e6c1006ce4c90e21a973b0f95bb9fa0db",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/184",
+      "verification": "docs/measurement/RESIST-POISON.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "b81495995bad7e1c17cbf7ce7b51d7f22a9808ea"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/267",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "6f130a4eea68e0c2855bcbb257cf9158752d369b",
+      "id": "RESPOISWAR-185",
+      "merge_commit": "b3c825c97c8aef18b252a7fb7d9b7dceef83d586",
+      "patch": "patches/0063-warrior-resist-poison-from-zero.patch",
+      "patch_active": true,
+      "source_commits": [
+        "c056daabf55e6a1713e68381ef4a72ec6fd349b9"
+      ],
+      "source_head": "c056daabf55e6a1713e68381ef4a72ec6fd349b9",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/185",
+      "verification": "docs/measurement/RESIST-POISON.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "dafc4bd45c5cc45fa0a435ced1a956512fbdcafc"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/268",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "da9a39f4da3005dc24feeba4ae6b8e0bfe67475e",
+      "id": "CBUG-0130",
+      "merge_commit": "8d0d0cd8b7a48c328c0c33e53d3dd1d35c060e34",
+      "patch": "patches/0064-spastic-reverse-flow-unoptimized.patch",
+      "patch_active": true,
+      "source_commits": [
+        "f97311e5d52de4dda8d75058114c52acbdac2674"
+      ],
+      "source_head": "f97311e5d52de4dda8d75058114c52acbdac2674",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/146",
+      "verification": "docs/measurement/REVERSE-FLOW.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 cohort measured on the pair; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "e66b1dca298523c84a8a7a0d9ae009ddf6562b10"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/269",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "fbe06401c54c4e701ea20a9e3c7aec48f849c30b",
+      "id": "GLYPHFLOW-345",
+      "merge_commit": "8d0d0cd8b7a48c328c0c33e53d3dd1d35c060e34",
+      "patch": "patches/0065-glyph-reverse-flow-unoptimized.patch",
+      "patch_active": true,
+      "source_commits": [
+        "f618381294dcf5bff1f0bc95f0fbe259412a53b9"
+      ],
+      "source_head": "f618381294dcf5bff1f0bc95f0fbe259412a53b9",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/345",
+      "verification": "docs/measurement/REVERSE-FLOW.md",
+      "verification_status": "merged; verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 cohort measured on the pair; carried/open+patch-active"
+    },
+    {
+      "applied_commits": [
+        "91f075bdcc329ec754e10e24da3cce36c5279784"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/270",
+      "credit": "borg-rs (lead); Diego Amicabile (native validation/proposal/evidence)",
+      "evidence_ref": "9eca003a5896403b9810806b4fc656446a34cf9a",
+      "id": "SWAPACID-199",
+      "patch": "patches/0066-swap-weapon-acid-element.patch",
+      "patch_active": true,
+      "source_commits": [
+        "eddbf5b82293ea70a76fae960bc9f8debf1579c6"
+      ],
+      "source_head": "eddbf5b82293ea70a76fae960bc9f8debf1579c6",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/199",
+      "verification": "docs/measurement/SWAP-ACID.md",
+      "verification_status": "verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 traces identical; carried/open+patch-active after merge"
+    },
+    {
+      "applied_commits": [
+        "bd9a36def55cde1c478136b31bf3c7c3a717d520"
+      ],
+      "consumer_issue": "https://github.com/diegoami/better-borg-c/issues/280",
+      "credit": "Diego Amicabile (zoo-reported, native validation/proposal/evidence)",
+      "evidence_ref": "43dee40ed05284848f3df25aa5abf19a7f776c7f",
+      "id": "STAIRCYCLE-403",
+      "patch": "patches/0067-munchkin-leaves-while-poisoned-or-hallucinating.patch",
+      "patch_active": true,
+      "source_commits": [
+        "d92e06c3f964e4bba19642288ded1b331a327109"
+      ],
+      "source_head": "d92e06c3f964e4bba19642288ded1b331a327109",
+      "source_issue": "https://github.com/diegoami/neo-angband-tracker/issues/403",
+      "verification": "docs/measurement/STAIR-CYCLE-POISON.md",
+      "verification_status": "verified stepwise on the unchanged source fixture; native gate on the stacked tip; v1 traces identical; carried/open+patch-active after merge"
+    }
+  ],
+  "character": "Measure Dunadan Druid",
+  "command": [
+    "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/engine",
+    "-mtest",
+    "-uMeasure",
+    "-duser=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/user",
+    "-darchive=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/archive",
+    "-dsave=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/save",
+    "-dscores=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/scores",
+    "-dpanic=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/panic",
+    "-dgamedata=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/data/gamedata",
+    "-dpref=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/data/customize",
+    "-dscreens=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/data/screens",
+    "-dhelp=/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923/data/help"
+  ],
+  "curation": "Native maps include diagnostic/internal state and legacy death labels even at live window caps; outcomes come from result.json. Full runs, saves and builds stay outside Git.",
+  "cwd": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/builds/5cd2258dd78d-cbd52f08d46d/source",
+  "encounter_family": "start-db258aeca7217b9213a26a0a1fd8c03e503424dacc254b158c26c956ee17db40",
+  "environment": {
+    "BORG_MEASURE_CAP": "2000000",
+    "BORG_MEASURE_DIR": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923",
+    "BORG_MEASURE_SEED": "2993630923",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8"
+  },
+  "id": "D0018",
+  "identity": {
+    "binary": "fcf9c08014835500edd332c17bf928635f5ba3bdba30ed2d7338ee12a0287de6",
+    "cause": "a wild cat",
+    "seed": 2993630923,
+    "source": "5cd2258dd78d9fed83c11f5df6a3afe88889337a",
+    "start_save": "db258aeca7217b9213a26a0a1fd8c03e503424dacc254b158c26c956ee17db40",
+    "turn": 33471
+  },
+  "investigation": "https://github.com/diegoami/better-borg-c/issues/401",
+  "issue": "https://github.com/diegoami/better-borg-c/issues/163",
+  "limits": {
+    "stall_limit_seconds": 30,
+    "turn_cap": 2000000,
+    "wall_limit_seconds": 1000
+  },
+  "native_character": "CHARACTER Measure Dunadan Druid",
+  "options": {
+    "ACTIVE_OPTIONS": {
+      "animate_flicker": 0,
+      "auto_more": 0,
+      "autoexplore_commands": 0,
+      "birth_ai_learn": 1,
+      "birth_connect_stairs": 1,
+      "birth_feelings": 1,
+      "birth_force_descend": 0,
+      "birth_know_flavors": 0,
+      "birth_know_runes": 0,
+      "birth_levels_persist": 0,
+      "birth_lose_arts": 0,
+      "birth_no_artifacts": 0,
+      "birth_no_recall": 0,
+      "birth_no_selling": 1,
+      "birth_percent_damage": 0,
+      "birth_randarts": 0,
+      "birth_stacking": 1,
+      "birth_start_kit": 1,
+      "center_player": 0,
+      "cheat_hear": 0,
+      "cheat_live": 0,
+      "cheat_room": 0,
+      "cheat_xtra": 0,
+      "disturb_near": 1,
+      "effective_speed": 0,
+      "highlight_player": 0,
+      "hp_changes_color": 1,
+      "hybrid_walls": 0,
+      "mouse_movement": 1,
+      "none": 0,
+      "notify_recharge": 0,
+      "pickup_always": 1,
+      "pickup_inven": 1,
+      "purple_uniques": 0,
+      "rogue_like_commands": 0,
+      "score_hear": 0,
+      "score_live": 0,
+      "score_room": 0,
+      "score_xtra": 0,
+      "show_damage": 0,
+      "show_flavors": 0,
+      "show_target": 1,
+      "solid_walls": 0,
+      "use_old_target": 0,
+      "use_sound": 0,
+      "view_yellow_light": 0
+    },
+    "BORG_OPTIONS": {
+      "borg_allow_strange_opts": 0,
+      "borg_autosave": 0,
+      "borg_cheat_death": 0,
+      "borg_chest_fail_tolerance": 7,
+      "borg_delay_factor": 0,
+      "borg_dump_level": 1,
+      "borg_enchant_limit": 12,
+      "borg_kills_uniques": 0,
+      "borg_lunal_mode": 0,
+      "borg_money_scum_amount": 0,
+      "borg_munchkin_depth": 16,
+      "borg_munchkin_level": 12,
+      "borg_munchkin_start": 0,
+      "borg_no_deeper": 127,
+      "borg_plays_risky": 0,
+      "borg_respawn_class": -1,
+      "borg_respawn_race": -1,
+      "borg_respawn_winners": 0,
+      "borg_restore_ignore_settings": 0,
+      "borg_save_death": 1,
+      "borg_self_lunal": 0,
+      "borg_self_scum": 1,
+      "borg_stop_clevel": 51,
+      "borg_stop_dlevel": 128,
+      "borg_stop_king": 1,
+      "borg_stop_on_bell": 0,
+      "borg_uses_dynamic_calcs": 0,
+      "borg_uses_swaps": 1,
+      "borg_verbose": 0,
+      "borg_worships_ac": 0,
+      "borg_worships_damage": 0,
+      "borg_worships_gold": 0,
+      "borg_worships_hp": 0,
+      "borg_worships_mana": 0,
+      "borg_worships_speed": 0
+    },
+    "OPTIONS": {
+      "animate_flicker": 0,
+      "auto_more": 0,
+      "autoexplore_commands": 0,
+      "birth_ai_learn": 1,
+      "birth_connect_stairs": 1,
+      "birth_feelings": 1,
+      "birth_force_descend": 0,
+      "birth_know_flavors": 0,
+      "birth_know_runes": 0,
+      "birth_levels_persist": 0,
+      "birth_lose_arts": 0,
+      "birth_no_artifacts": 0,
+      "birth_no_recall": 0,
+      "birth_no_selling": 1,
+      "birth_percent_damage": 0,
+      "birth_randarts": 0,
+      "birth_stacking": 1,
+      "birth_start_kit": 1,
+      "center_player": 0,
+      "cheat_hear": 0,
+      "cheat_live": 0,
+      "cheat_room": 0,
+      "cheat_xtra": 0,
+      "disturb_near": 1,
+      "effective_speed": 0,
+      "highlight_player": 0,
+      "hp_changes_color": 1,
+      "hybrid_walls": 0,
+      "mouse_movement": 1,
+      "none": 0,
+      "notify_recharge": 0,
+      "pickup_always": 0,
+      "pickup_inven": 1,
+      "purple_uniques": 0,
+      "rogue_like_commands": 0,
+      "score_hear": 0,
+      "score_live": 0,
+      "score_room": 0,
+      "score_xtra": 0,
+      "show_damage": 0,
+      "show_flavors": 0,
+      "show_target": 1,
+      "solid_walls": 0,
+      "use_old_target": 0,
+      "use_sound": 0,
+      "view_yellow_light": 0
+    }
+  },
+  "raw_cause": "a wild cat",
+  "recording": {
+    "frames_sha256": "1d98c8c5e3af6b87ad392ce4dd3be194af2d85e78505ff8da71c6dda6e11bb31",
+    "manifest_sha256": "28f242653632437727d5e21259382f095bf26559fd38776e5ea63c06c3c593ca",
+    "qualification": "Losslessly decoded original observations; rerun verification is separate, never assumed from a seed",
+    "raw_directory": "/home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923",
+    "replay_command": "./replay-borg.py /home/diego/projects/angband/better-borg-c/artifacts/death-workflow/collections/20261108T124228.848431Z/game-004-seed-2993630923 --from-turn 33366",
+    "schema": "borg-recording@1",
+    "selected_original_frames": [
+      {
+        "frame_index": 40206,
+        "json": "snapshots/recorded-T-minus-5.json",
+        "json_sha256": "052ce2e20bd4d867b23ff7a0e52a82ecf994c5d07c3ef2465b7af2d4f9962fe1",
+        "offset_engine_turns": 5,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-5.txt",
+        "text_sha256": "6792d6649b5b016bc8357f08f94cfc9614227851a85386bdef421817018d6a71",
+        "turn": 33466
+      },
+      {
+        "frame_index": 40195,
+        "json": "snapshots/recorded-T-minus-12.json",
+        "json_sha256": "ae6b3ef0e603cc7c9ccb319849eadf26972adbb7e7263f20d5d6a334a27a84d0",
+        "offset_engine_turns": 12,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-12.txt",
+        "text_sha256": "2392e0d5e3b23fb860432100fa7aae6847b883f48e2e4f06ffe305863b821cd7",
+        "turn": 33459
+      },
+      {
+        "frame_index": 40178,
+        "json": "snapshots/recorded-T-minus-25.json",
+        "json_sha256": "597f95e4e6f7c5318de8eb756e255be6e56622963fa1b38b473f66c954ca4fcc",
+        "offset_engine_turns": 25,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-25.txt",
+        "text_sha256": "d275f764320c880a2946d2810bf7ce82864ce4adbef04c2f513376d45e1b186d",
+        "turn": 33446
+      },
+      {
+        "frame_index": 40155,
+        "json": "snapshots/recorded-T-minus-40.json",
+        "json_sha256": "6cc28ab6a6b891ddc19ae14a12f80ff37c455dd2d0d38c1c4a29241f9649efc6",
+        "offset_engine_turns": 40,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-40.txt",
+        "text_sha256": "e34714dfe0da3e55141c693febbdba104a710cd8066de47e135cef3dafb3cae8",
+        "turn": 33431
+      },
+      {
+        "frame_index": 40127,
+        "json": "snapshots/recorded-T-minus-60.json",
+        "json_sha256": "941c7a18aaf9b4c74eadb026f814a2becc5027408fc3e772b582bb854bafa845",
+        "offset_engine_turns": 60,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-60.txt",
+        "text_sha256": "5ffe6b2bc6e63f397e9c86099e53d96ddea5a47e68f1149930bb081db9c15b6c",
+        "turn": 33411
+      },
+      {
+        "frame_index": 40099,
+        "json": "snapshots/recorded-T-minus-82.json",
+        "json_sha256": "414fb9ed9cb8d0a9601c65366eade5a9859ddc19f11079cd0e0f563ac9b35929",
+        "offset_engine_turns": 82,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-82.txt",
+        "text_sha256": "a89bac4caabf4b61372cf3a7e46af70959951abf0f8c31648003141c56c5bb33",
+        "turn": 33389
+      },
+      {
+        "frame_index": 40068,
+        "json": "snapshots/recorded-T-minus-105.json",
+        "json_sha256": "df7b6e2004bfc3b791226148f9e64cdbf54cbe2e843577c8e8450ea6945ff89a",
+        "offset_engine_turns": 105,
+        "phase": "tick",
+        "text": "snapshots/recorded-T-minus-105.txt",
+        "text_sha256": "4f1e4a11b9af702cd97f8bc5988318fd2f0071ea20d17a875deab430ba392ad2",
+        "turn": 33366
+      }
+    ],
+    "unavailable_offsets_before_recording": []
+  },
+  "recording_scope": "Original logical terminal cells and diagnostic/RNG state per engine tick/command/input phase, plus native logs/snapshots; not pixel video or a mid-run Borg-memory restore",
+  "schema": "better-borg-c/death-record@1",
+  "upstream_baseline": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+  "windows": []
+}

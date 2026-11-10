@@ -2,6 +2,68 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: M3 source refresh
+
+The M3 `--update` (RULES 21) moved five pins:
+- borg-rs `286215c` → `8a7579d`: docs only (the milestone 9 adoption,
+  its 0098 NULL guard);
+- better-borg-c `eb9a78e` → `06f5789`: new deaths D0017–D0019,
+  REDESIGN-LESSONS updated to cover them;
+- borg-zoo `e56d5fa` → `a092d1e`;
+- borg-agent `77e48c9` → `57a480c`;
+- borg-runner `e829a01` → `956171b`: the knowledge page grew by 155
+  lines, and three minimaxflash runs were added (notebooks and write-ups).
+
+angband and neo-angband-tracker are at their pins.
+
+**New deaths** (better-borg-c, read first; all original-C mechanisms,
+input for M3's strategy and M4's threat model):
+- **D0017**: a CL25 Ranger on DL21 escaped Mirkwood spiders (speed +10,
+  poison) by staff at 7 HP, then rested for Recall while poisoned, with
+  9 CCW and the SP for Herbal Curing carried. While `goal.fleeing` is
+  set, caution never calls healing. A mode chosen for the fight blocked
+  recovery from an ongoing status (REDESIGN-LESSONS L2's new
+  requirement: re-evaluate a mode when the situation changes).
+- **D0018**: a CL2 Druid, gold spent on armour and jewellery, one Phase
+  Door bought and used at low danger, no CLW, Recall at home, walked
+  away from a speed +8 wild cat for eight steps while it clawed the
+  character down. The walking retreat judges each step by the pursuer's
+  current square; a faster pursuer that keeps attacking is not modelled.
+  The owner's verified retry died too.
+- **D0019**: a CL3 Necromancer, no cure bought, Recall at home, fled a
+  whole level over one apprentice (the CL ≤ 8 name list), spent its last
+  Phase Door seven squares from the stairs, then meleed cutpurses for
+  ~190 turns next to a dropped Phase Door it never picked up: attack
+  runs before pickup. The owner's verified takeover survived.
+
+D0018 and D0019 carry `owner-manual-branch.json`; D0019's branch
+survived, so it joins the scenario-test list (PLAN.md) with D0010,
+D0012–D0014.
+
+**borg-runner's page** (`reference/borg-runner/manuals/INSTRUCTIONS.md`),
+the M3 reading, gained: key-handling facts for the executor (never a
+real newline — the frontend drops a trailing one; leave look/targeting
+mode with ESC; never two commands in one ask after a movement command;
+the store list renumbers when an item sells out, so buy the last row
+first; the rest prompt is pre-filled and one backspace clears it); a
+"depth is not the objective" section (town-and-depth-1 shuttle, town
+restock daily, Word of Recall heals on arrival); where you stand (the
+game begins on the town's down staircase; the stair under you is never
+drawn, only the status line names it; one down staircase per level,
+uniformly placed); and the experience arithmetic (a kill pays
+`mexp × mlev / clev`; the early ladder; first casts and first uses
+pay). FACT lines are checked against `engine/angband/src/` and cited
+before use (RULES 16).
+
+**New better-borg-c tags** `4.2.6-impact-v9` and `v9.1` (v8 was already
+known): the zoo's catalogue at the new pin already lists the specimens
+`4.2.6-bbc-m8` and `4.2.6-bbc-m9`, and a development suite
+`classes-1800-200k` (200k turns). Nothing for this repository to do:
+comparisons are the zoo's (SPEC §6).
+
+**Next:** T3.1 (#17), the executor and prompts. PLAN's M3 row goes to
+"in progress" in that PR.
+
 ## 2026-11-10: M2 reviewed and tagged
 
 Kimi K3.1 Pro's fourth pass on #99, at `7cec235`: **M2 done**, with no

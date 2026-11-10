@@ -83,15 +83,154 @@ its decisions under `records/`.
   the last rung of the escape ladder. Which kinds can hurt you is section 6b's
   `cost:0` rule; the complete list of potions and scrolls is appendix A6 of
   the strategy manual, to be looked up when you meet one, not read through.
+- **Never send a real newline as a key.** Send the two-character escape
+  `\n`; the frontend drops a *trailing* newline byte on purpose, because that
+  is the one a text editor adds. From a shell that means `"\n"` in double
+  quotes, not `$'\n'`. With the Enter lost, the prompt stays open and
+  everything after it is eaten (minimaxflash-2#72, five asks; the tool now
+  translates it for you and says so).
+- **Look or targeting mode can be left standing**, and then it eats the first
+  keys of the next ask. The tell is `Press '?' for help.` on the bottom line,
+  or a look description in the message line with a turn counter that has not
+  moved. Press `\e` first (minimaxflash-2#72, minimaxflash-1-again#221).
+- **A key after a movement command is swallowed by whatever it opened.** A
+  walk, a run or an aimed `g` leaves the game ready for the next command, and
+  the first key of the next string is read as one: a stray `a` became "Aim a
+  wand" and ate the rest five times in one run (minimaxflash-2#91). The rule
+  that covers every case of this: **never send two commands in one ask after a
+  movement command.**
+- **The store list renumbers when an item sells out**, so every letter below
+  it changes - read the letter off the screen after each purchase, not before
+  the first (minimaxflash-2#91). Only the letters *after* the removed row
+  move, so **buy out the last row first** and every earlier letter stays
+  valid (minimaxflash-2#24). The pack skips `h j k l`, so ten items are
+  `a b c d e f g i m n`.
+- **The rest prompt is pre-filled.** `R*` types `*` into a field that already
+  holds `& `, so the game rests "as needed" rather than until spell points are
+  full; one backspace clears the whole field (`src/ui-input.c`: the first
+  backspace deletes all), which makes the one-ask full rest
+  `R`+backspace+`*`+Enter (minimaxflash-2#91).
 - **A reroll of the level costs three asks** (sonnet-1#67, sonnet-2#25):
   `< ` then `> ` on connected stairs gives a freshly generated level of the
   same depth. It was no quicker to finish than the level it replaced
   (sonnet-1#69).
 
+## Depth is not the objective
+
+Every run so far has treated the down staircase as the only thing worth
+finding, and two of them died at character level 1 doing it - one on depth 1,
+one in the town. The one that reached depth 7 arrived there at **character
+level 8**, after an earlier life of the same character had spent its asks
+levelling and shopping. Nothing here scores depth: the record keeps the depth,
+the character level and the game's own valuation of everything you carry, and
+a shallow level played well is worth more than a deep one survived by luck.
+
+So **exploring the level you are on and going back to town is a plan, not a
+failure.** It is cheap and it pays:
+
+- you arrive on an **up** staircase, so `< ` is one key home-ward and `l<g`
+  walks to one you have seen; Word of Recall brings you back from deeper and
+  heals you on arrival;
+- the town's shops **restock daily** and the shopkeepers rotate, so the Magic
+  Mapping scroll that was not there on day one may be there on day two
+  (`store.c store_maint()`, OBSERVED minimaxflash-1-again#399);
+- experience and gold both come from the level you are on, and armour bought
+  with that gold is what decides whether the next fight can touch you at all
+  (see section 5 on hit chance);
+- a level whose feeling says it is empty is worth leaving, and leaving means
+  **either** staircase.
+
+**The town-and-depth-1 shuttle**, which is the cheapest form of that plan and
+which no run has tried: in the town you stand on the down staircase, and on
+depth 1 you arrive on an up staircase, so `> ` and `< ` are one key each and a
+whole cycle is two or three asks (FACT, connected stairs; sonnet-1#67,
+sonnet-2#25). Every `>` builds a *new* depth 1, so the monsters beside the
+staircase are new as well, and the town between cycles is where resting is
+safe, where the shops restock and where nothing can reach you. What the
+shuttle does not do is pay for itself: **stairs give no experience**, so a
+cycle is worth exactly the kills you made before taking it, and section 1's
+arithmetic says CL5 is about forty depth-1 kills for a Human. UNTESTED as a
+route to a character level - what would settle it is one run that shuttles,
+counts its asks per level, and says where the kills stopped paying.
+
+Descend when you can pay for the depth, and say in your report what you were
+buying with the asks you spent. "I cleared depth 1, reached level 5, bought
+armour and went down at ask 120" is a result. So is "I spent 150 asks looking
+for a staircase and never found one" - but only one of those two was a choice.
+
+## Where you are, and what you are standing on
+
+Four reports in a row lost asks to the same three facts, none of which is in
+either manual.
+
+- **You begin the game standing on the town's down staircase.** FACT,
+  `src/gen-cave.c town_gen_layout()` ends by setting `FEAT_MORE` on the
+  player's own square and then placing the player on it. So the first useful
+  key of a run is `>`, and no staircase has to be found to reach depth 1
+  (OBSERVED, minimaxflash-2#7, which read the source after the status line had
+  already said `Down staircase`).
+- **The staircase under you is never drawn.** The map draws `@`, not the
+  terrain beneath it; only the status line's last field names it (OBSERVED,
+  minimaxflash-1-again#163). After going down you arrive on an **up**
+  staircase, so `< ` then `> ` is a two-key reroll of the level you have just
+  landed in, and in the town the `<` puts you back on its `>` (2 runs:
+  sonnet-1#67, minimaxflash-1-again#163). A player scanning the map for a
+  glyph will never see the one it is on.
+- **The level is 198x66 and you see 66x22 of it.** FACT,
+  `constants.txt` (`world:dungeon-wid:198`, `world:dungeon-hgt:66`) against the map panel,
+  which is the screen's 80 columns less the 13-column sidebar and one; there
+  is one down staircase per level, placed uniformly at random on a square with
+  three adjacent walls, at least 16 tiles from the up staircase
+  (`gen-cave.c:1583`, `gen-util.c` alloc_stairs, and the minimum separation
+  MIN(width, height) / 4 in gen-cave.c). **Three screens wide, three tall, one
+  staircase, no rule to exploit**: that is the arithmetic behind every "I
+  explored for ever" report here (OBSERVED, minimaxflash-1#104,
+  minimaxflash-2#7).
+
+**Aim the cursor at something you have seen.** In targeting mode the digit
+keys move the cursor one tile each and `g` walks the shortest path to it, and
+which path you get depends on whether the destination is *known*: aimed at a
+square you have seen, the game's find_path gives a known-only path and a long walk -
+17 to 44 tiles in one ask, measured (OBSERVED, minimaxflash-1.3#437). Aimed
+into unexplored ground it assumes the unknown squares are passable, and the
+path it reconstructs can be nonsense: one run measured a 20-tile aim that
+walked **0 steps** and a 3-tile aim that walked 3 (OBSERVED,
+minimaxflash-2#90). So aim at a landmark - a staircase, a door, the far
+corner of a room you have lit - and use `lxg` for the frontier. The two runs
+do not disagree about the game: they disagree about what was known when they
+aimed, and that is the thing to check before you spend an ask on it.
+
+**You cannot read your absolute position - and you do not need to.** No
+screen names your coordinates, the panel scrolls in jumps and `M` draws only
+what you have remembered. Two runs reported that as the thing that beat them
+(minimaxflash-2#91 spent 158 asks not knowing whether it stood at x=20 or
+x=120). It is not. **Nothing in this game asks you to go back to a place.**
+
+- **A level you leave is gone.** Leave and return and the game generates a
+  new one: different corridors, the up staircase elsewhere, and the down
+  staircase you had found no longer remembered (OBSERVED,
+  minimaxflash-1.3#437). So a map of the level has no second use, and the
+  work of building one buys nothing.
+- **Stairs are connected, and both directions are exits.** You arrive on an
+  up staircase; `< ` and then `> ` is a fresh level of the same depth for two
+  or three asks (2 runs: sonnet-1#67, sonnet-2-again#231). Going **up** is as
+  good a way out of a bad level as going down.
+- **This is not that other game.** Levels do not persist, there is nothing to
+  come back for, and a coordinate is worth only what the next few steps need:
+  what is adjacent, and which direction still has dark in it.
+
+So the answer to "this level will not give me a staircase" is not a better
+map. It is: take the staircase you arrived on and get another level. One
+staircase per level, placed uniformly, means a fresh level is as likely to put
+one near you as this one was - at two asks instead of a hundred.
+
 ## 1. Be born (`birth` ; the birth screens)
 - Race menu `*` (random item, Enter selects the highlight), class menu `*`. Stat screen: `a` (point-based), Enter to accept the allocation; Enter for the name, `y` for the history, any key to continue.
 - Level-1 hit points = race hit die + class hit die (+CON) (`src/player-birth.c`: `hitdie = r_mhp + c_mhp`). FACT, `race` hitdie: Hobbit 7; Gnome, Kobold 8; Elf 9; Human, Half-Elf, Half-Orc, Dunadan, High-Elf 10; Dwarf 11; Half-Troll 12. Class die: Warrior 9, Blackguard 8, Paladin 6, Ranger 5, Rogue 4, Priest/Druid/Necromancer 2, Mage 0 (`class` hitdie).
 - Level 2 needs `10 x XP-mod%` experience (`src/player.c`; mod = race exp, Human 100, Half-Troll 120, High-Elf 145). The sidebar `NXT` is experience still needed. A kill pays `monster exp x monster level / your level` (c15 15.3).
+- The whole early ladder, cumulative and before that modifier (FACT, player_exp in `src/player.c`, applied in `src/player.c adjust_level()` as experience >= `player_exp[lev-1] x expfact / 100`): CL2 10, CL3 25, CL4 45, CL5 70, CL6 100, CL7 140, CL8 200, CL9 280. CL5 is therefore 70 experience for a Human, 84 for a Gnome or a Half-Troll, 101 for a High-Elf.
+- **A kill pays less the higher your level, and that is what makes the middle levels slow.** The award is `mexp x monster level / your level` and the remainder is carried over, so nothing is lost to rounding (FACT, `src/mon-util.c monster_death()`). A small kobold (`monster` experience 5, depth 1) pays 5 at CL1 but 1.25 at CL4, so climbing CL1 to CL5 on depth-1 kobolds is about 2 kills, then 6, then 12, then 20: **forty kills, half of them for the last level alone**. The monster's own level multiplies, which is why a soldier (`monster` experience 6, depth 2) pays 12 at CL1, and why depth pays better than patience.
+- **Nothing else pays at all**: stairs, walking, resting, shopping, detection and reading the map are worth zero experience. What pays besides kills is the first use of an unknown potion, scroll or wand (section 6b) and the **first cast of each spell** - the last field of its `class` `spell:` line. A mage's five CL1 and CL2 spells pay 4, 4, 2, 4 and 4, so studying them and casting each once is 18 experience: CL2 and most of the way to CL3 for a Human, for the price of the mana.
 - Birth options in force (`birth` , `src/list-options.h`): start kit **on** (a few items, less gold), selling **off** (stores pay 0 gold), connected stairs **on**. Gold = 600 + unspent point-buy - kit value (`src/player-birth.c`), so it differs by class. Read `AU` on the left.
 - Your class's block is in section 9; read it **after** the draw.
 
@@ -117,11 +256,14 @@ its decisions under `records/`.
 ## 4. See (`command`, `playing`)
 - `l` look. The list is sorted nearest first and includes your own square (`playing`; `src/target.c cmp_distance`), so it can open on it: Space or `+` for the next thing, `-` back, `r` toggles detail, Esc leaves (`playing`: "the list includes ... the player's location"). `[` lists visible monsters with asleep/awake and relative position. `]` lists items. `/` + symbol says what a glyph is. `M` whole-level map; `L` scroll the map by sectors (Esc leaves).
 - Monster memory: look at a monster for its name and health; kills and hits teach you its attacks (`attack`). `~` knowledge menus.
+- **A letter is a monster; an item is punctuation.** Items are drawn `! ? ( = " _ | \ , $ -` and the like, monsters with letters of either case (`monster_base.txt`: `i` is the icky thing, not an item). On the floor of these depths almost everything is a monster (OBSERVED, minimaxflash-2#91).
 - Health bar of the tracked monster is in the sidebar; `[----------]` or nothing means **not in view**, not dead.
 
 ## 5. Fight (`command`, `attack`, c4 4.11)
 - Melee: walk into it. Blows per turn depend on STR, DEX and weapon weight (`I`nspect shows them). A hit that does no damage counts as a miss; armour class lowers both (`attack`).
 - **Throw** `v`, the item, then a target. At the `Direction?` prompt: `'` = closest monster, `5` or `t` = the current target, `*` = choose (Space next, `t` select, Esc/`q` quit), a digit = that direction (`playing`, Targeting). `'` alone, as a command, targets the closest monster. Fire: `f`, ammo, target; **`h`** (or Tab) fires the first quiver ammo at the nearest visible monster.
+- **Armour class decides whether you can hit at all.** FACT,
+`src/player-attack.c:196 hit_chance()`: the chance is `12% + 83% x (to_hit - 2 x AC / 3) / to_hit`, so against AC `A` a to-hit below `2A/3` leaves you on the flat **12%** floor and nothing else. At depth 1 a giant black ant and a small kobold are AC 24, so they need to-hit 16: a character with to-hit 9-11 (a Mage's rapier, or its thrown oil) cannot fight them at all and must pick low-armour targets - worm mass, mould, mushroom patch, icky thing, mouse are AC 1-8 (OBSERVED, minimaxflash-1-again on Grip at AC 36, minimaxflash-2#91 with to-hit 11). The same formula is what your own AC does for you: 200 gold of armour took one Mage from AC 1 to **AC 21**, which puts most of depth 1 on its 12% floor against eight hit points.
 - **Flask of oil** FACT (`object`, c4 4.11 from `src/player-attack.c`): 1d4 x3 (throwing weight multiplier) x3 (EXPLODE) = **9 to 36 per hit, about 22**, damage that fire-resistant monsters take too. Range up to 10 squares. OBSERVED, one run each: one flask killed each of the depth-6 `p` humans it met - apprentice, gallant, tamer (sonnet-2#124, sonnet-2#131, sonnet-2#145); and Fang died at character level 2 to two flasks in a corridor and then melee, which cost 20 of 31 hit points (sonnet-1#84, sonnet-1#90). Daggers and Spears are `THROWING` too (x3 and x6 on dice).
 - Spells: `b` browse, `G` study (new spells show "Study" on the status line; **Priests and Paladins** are given a random one, others choose), `m` + book + spell casts. First cast of each spell pays experience (the last field of a `class` `spell:` line). Casting with too little mana is allowed and can paralyse you and drain CON (c14 0.2): do not.
 - Early dangers, `monster`, hit points / worst melee per **your** turn (a +10 speed monster acts twice):
@@ -202,12 +344,23 @@ and when to risk it, is under "Keys as the game receives them" above.
   one anyway, find a staircase before you pick a fight.
 
 ## 8. Descend
+**When you can pay for it** - see "Depth is not the objective" above; the
+choice of whether to go down now is yours to make and to report, and this
+section is only how.
 - Every level has down staircases (`command`) but you must find one. Ways down, all FACT unless marked:
-  0. **`l>g` then `>`** — the one to use; see the top of this page;
+- **How many there are, and where they can be.** A depth-1 level is built by `src/gen-cave.c classic_gen()` or `src/gen-cave.c modified_gen()` - the only two profiles with an `alloc` at that depth (`dungeon_profile.txt`: modified 97, classic 90, cavern and the rest deeper or special) - and both ask for **3 or 4 down staircases and 1 or 2 up** (`src/gen-cave.c handle_level_stairs()`). Each one is placed on an empty square with **three adjacent walls** - three of its four orthogonal neighbours, diagonals not counted - and the requirement drops by one wall at a time only when no such square is left: a corridor end or a dead end, never the middle of a floor. They are kept **at least `min(width, height) / 4` = 16 squares apart** (`src/gen-util.c alloc_stairs()`). So a level with no staircase in it does not exist, and a level you cannot find one on is a level you have not covered.
+- **A sweep is not how you find them** (OBSERVED, minimaxflash-1.4#753). One life spent about 140 of its decisions sweeping a depth-1 level: fifteen locked doors opened, four chests found empty, two up staircases found besides the one it arrived on, the level mapped - by its own estimate - to two thirds of its squares, and **no down staircase in any of it**. With three or four of them on that level the sweep plainly covered less than it looked, which is the trap: `M` draws the squares you *remember*, and a band of columns you have crossed is not the squares inside it. The same run wrote at its ask 734 that "the down staircase is at the end of one of them" - one, singular, which is what everybody assumes. `< ` then `> ` is two or three asks and a level with three or four fresh ones.
+  0. **The town's own staircase, which you start on** — `>` and you are on depth 1 (see "Where you are" above);
+  0b. **`l>g` then `>`** — the one to use once a `>` is known; see the top of this page;
   1. a `>` you walk onto and press `>` on;
   2. Scroll of **Deep Descent** (`object`: found from DL1, **not sold**): after 3+1d4 turns you drop to **5 levels below your deepest level reached**, not below where you stand (`src/effect-handler-general.c`), landing on no staircase;
   3. Scroll of Magic Mapping (65 g, Alchemist when stocked; found from DL5) maps everything within 22 rows and 40 columns of you, a radius each side (`object` `effect-yx`; `src/effect-handler-general.c` MAP_AREA);
   5. Word of Recall (in your kit unless that option is on): read in the dungeon it takes you to town, read in town it returns you to your deepest depth after 15-34 turns (c15 TOWN-05).
+- **Detection is the only thing that finds a staircase you have not seen**, and only a Mage or a Rogue has it: `Find Traps, Doors & Stairs` is `DETECT_STAIRS` with `effect-yx:22:40`, which is `+-22` rows and `+-40` columns - an **81x45 window, about 28% of a level** - and it reads the *real* grid and memorises what it finds (`src/effect-handler-general.c:1467`), so it reveals a staircase never seen. Three things measured with it (OBSERVED, minimaxflash-2#91, eleven casts): it **only reports ground it has not already scanned**, so two casts from the same place give "You sense no traps. You sense no doors." and nothing else; when there is no staircase in the window it says **nothing at all** about stairs, which is what a negative looks like; and covering a level takes **three positions across and two down, six casts**. Do
+not try to compute those positions - you cannot read your coordinates (see
+"Where you are" above). Cast, walk a long way with one aimed `g`, cast again,
+and if two casts find nothing, **reroll the level**: a fresh one is as likely
+to have its staircase in your first window as this one was. At CL1 one spell point is about 71 player actions of regeneration (`player_regen_mana()`, `msp x 197 + 524` in 65536ths, doubled while resting), so those six casts plus the travel between them are **the whole of a 150-decision budget**.
 - **POLICY** c15 DEPTH-02, minimum kit before going below: DL5 needs Word of Recall, 3+ cure potions and a ranged attack; DL15 needs 100 max HP and about 10 Phase Door. DEPTH-01 says gate depth on the worst single hit of the depth band, not on character level. Treat these as numbers to test.
 
 ## 9. Your class (`class`, `race`, c14; section numbers are c14's)
@@ -215,7 +368,7 @@ Level-1 facts are from `class.txt`; "buy" is POLICY from c4/c14/c15 with real pr
 
 **Warrior** (c14 s1): hit die 9, up to 6 blows, no spells, fear-proof only from CL30 (before that fear stops melee: Boldness 8 g, Berserk Strength). Kit: Dagger, Soft Leather Armour, Berserk Strength, food, torches. Buy: oil 15-20, Cure Light Wounds, Phase Door; a Sling or Short Bow if gold is left. Kills it: paralysis (floating eye), fear, open-room packs, running out of escapes.
 
-**Mage** (s2): hit die 0 (HP = race die: **10** for a Human), INT, 30 lb armour. Learns **one** spell at CL1 (`G`, book, spell). CL1 spells: Magic Missile 1 sp (3d4, never resisted), Light Room 2 sp, Find Traps/Doors/Stairs 1 sp (detects within 22 rows and 40 columns). Phase Door spell at CL2, Detect Monsters CL3, Fire Ball CL6. Kit: Rapier, [First Spells], food, torch. Buy: oil (your real attack), Cure Light Wounds, Phase Door scrolls. Kills it: one round of melee, casting at 0 mana, anything adjacent at 10 HP.
+**Mage** (s2): hit die 0 (HP = race die: **10** for a Human, 8 for a Gnome), INT, 30 lb armour. Learns **one** spell at CL1 (`G`, book, spell); studying costs one action and nothing else - no mana, no experience, no gold (`src/cmd-obj.c do_cmd_study_spell()`) - and the status line says `Study` while a slot is free, so take every slot the level gives you as soon as it appears. CL1 spells: Magic Missile 1 sp (dice `$Dd4` with the count `(CL-1)/5+3`, so **3d4, 3 to 12 damage**, all the way from CL1 to CL5 and 4d4 at CL6; never resisted. The 3 is the dice count, not a bonus: there is no `+3`, and a page that reads it as 6-15 is reading the expression wrong), Light Room 2 sp, Find Traps/Doors/Stairs 1 sp (detects within 22 rows and 40 columns). That last one is the staircase detector, and what its window costs in asks is in section 8. **Its melee is not a fallback**: to-hit 9 with the kit rapier is below `2 x AC / 3` for most of depth 1, so melee lands on the 12% floor only (OBSERVED, minimaxflash-2#91). Spell points at CL1 regenerate at about 0.014 a player action, one point per 71 actions. Phase Door spell at CL2, Detect Monsters CL3, Fire Ball CL6. Kit: Rapier, [First Spells], food, torch. Buy: oil (your real attack), Cure Light Wounds, Phase Door scrolls. Kills it: one round of melee, casting at 0 mana, anything adjacent at 10 HP.
 
 **Druid** (s3): hit die 2, WIS, no teleport spell ever. CL1: Detect Life 1 sp, Fox Form 2 sp (double move, but a shape cannot read, quaff or cast: change back first); Remove Hunger CL2 (no food needed), Stinking Cloud CL3 (2 sp, poison ball, your gun). Kit: Whip, [Lesser Charms]. Buy: oil (nothing else hits hard until CL3), Cure Light Wounds, Phase Door. Kills it: no escape when surrounded, poison-immune targets.
 

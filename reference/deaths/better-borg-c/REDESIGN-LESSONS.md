@@ -5,10 +5,9 @@ designing a new Angband automaton. This document distils the reviewed deaths in 
 repository into design requirements. It does not ask for C patches. Every lesson links back
 to its evidence. Read the linked dossier before relying on a detail.
 
-Snapshot: 2026-11-09. It covers the reviewed cases **D0001–D0016**, which are 13 distinct
-starting conditions; D0003–D0005 are reference replays of D0002. It includes four verified
-owner manual takeovers. Later dossiers (D0017+) are not yet reviewed. Update this file when
-they are.
+Snapshot: 2026-11-10. It covers the reviewed cases **D0001–D0019**, which are 16 distinct
+starting conditions; D0003–D0005 are reference replays of D0002. It includes the verified
+owner manual takeovers listed in the case index. D0020+ are not yet reviewed. Update this file when they are.
 
 ## How to read the evidence
 
@@ -40,6 +39,9 @@ learned lore. A redesign must decide explicitly whether it may use that spoiler 
 | [D0014](D0014-collected/report.md) | High-Elf Rogue CL11 | DL20 | blood falcon | survived (Speed, CLW, detection) | [#341](https://github.com/diegoami/better-borg-c/issues/341) |
 | [D0015](D0015-collected/report.md) | Dunadan Necromancer CL1 | DL1 | Fang | died (from 4118); re-shop from turn 1 survived | [#348](https://github.com/diegoami/better-borg-c/issues/348) |
 | [D0016](D0016-collected/report.md) | Human Necromancer CL1 | DL1 | crow (after a teleport trap) | survived (bolted the crow first) | [#353](https://github.com/diegoami/better-borg-c/issues/353) |
+| [D0017](D0017-collected/report.md) | Dwarf Ranger CL25 | DL21 (max 22) | poison, after escaping Mirkwood spiders | — | [#403](https://github.com/diegoami/better-borg-c/issues/403) |
+| [D0018](D0018-collected/report.md) | Dunadan Druid CL2 | DL1 | wild cat | died (from 33363, cat adjacent) | [#401](https://github.com/diegoami/better-borg-c/issues/401) |
+| [D0019](D0019-collected/report.md) | Half-Troll Necromancer CL3 | DL2 | cutpurse | survived (lucky Phase to stairs; theft removed a cutpurse) | [#406](https://github.com/diegoami/better-borg-c/issues/406) |
 
 What the owner keeps saying, across reviews: the Borg had the tools and the knowledge, but
 its decision layers did not use them, or worked against each other.
@@ -59,6 +61,8 @@ which contradict the Borg's own danger estimate.
   Grip and Fang, and caution refuses to run from them. Three layers, two opposite answers.
 - **D0002–D0005:** a gallant/cutpurse threat rose to danger 188–451, inflated by the theft
   weighting (#158).
+- **D0019:** one apprentice seen at full HP (CL2, 30/30) set whole-level flight. Apprentices
+  and cutpurses are on the CL ≤ 8 name list.
 
 **Evidence.**
 - Observed: the trace notes and logged danger values in D0012 and D0013.
@@ -104,6 +108,11 @@ The result is back-and-forth movement that bleeds HP.
   "known" without evaluating its danger, and normal exploration reused it. This was fixed as
   source404 / FLOWCACHE-404. D0012 then showed the loop can still happen through the flee flow.
 - **D0010** (verified). Repeated desperate stair flow pre-empted a usable bow attack.
+- **D0017** (observed and source-checked). A Ranger escaped a spider pack by staff at 7 HP and
+  read Recall. The "fleeing" flag set during the fight stayed on, and while it is set caution
+  never calls `borg_heal`, which also holds the poison cures. So the safe, poisoned character
+  "rested for Recall" and died at 1 HP per turn with 9 Cure Critical Wounds and 20 SP for
+  Herbal Curing. A mode chosen for the fight overrode the first need of the next situation.
 
 **Requirement.**
 - Use one shared danger evaluation and one consistent risk tolerance per decision, across
@@ -112,6 +121,8 @@ The result is back-and-forth movement that bleeds HP.
   (hysteresis). Don't re-plan from scratch after every retreat step.
 - Make cached map or danger knowledge carry its validity, and invalidate it on new
   observations. Source404 is the cautionary example.
+- Re-evaluate modes such as "fleeing" when the situation changes (an escape succeeded, no
+  monster in view). Never let a mode block recovery from an ongoing status like poison.
 
 Issues: [#324](https://github.com/diegoami/better-borg-c/issues/324),
 [#212](https://github.com/diegoami/better-borg-c/issues/212),
@@ -125,6 +136,19 @@ considered.
   being attacked once. In the D0012 manual counterfactual, one blow destroyed it.
 - **D0010**: an available archery kill lost out to stair flow. In the manual counterfactual,
   six arrow hits and the character survived.
+- **D0018** (observed and source-checked). On a "scary" level a Druid hit a speed +8 wild cat
+  once (8 → 5 HP), then walked away for eight steps while the cat clawed it from 16 HP to 1.
+  The strategic retreat fires once danger exceeds HP/3 and judges each step by the cat's
+  current square; nothing models a faster pursuer that keeps attacking. The owner's verified
+  takeover from the same turn also died, after Fox Form did no damage.
+- **D0017** (observed and source-checked). A CL25 Ranger walked away from four speed +10
+  Mirkwood spiders for ten turns, with 3–4 adjacent most turns, from 201 to 9 HP. Each step
+  was a strategic retreat; no attack, potion or escape was weighed against it.
+- **D0019** (observed and source-checked). Out of escapes and cornered, a Necromancer killed a
+  cutpurse, which dropped a Phase Door on the adjacent square. That square was empty several
+  times (at 8011 no monster was adjacent at all), but `borg_think_dungeon` runs `borg_attack`
+  before `borg_flow_take`, so it kept swinging, and once cast a failed Nether Bolt at a 2-HP
+  mouse, instead of picking up the escape.
 
 **Requirement.** Every turn in contact, score all of these options together, with the same
 threat model and expected outcomes:
@@ -150,9 +174,23 @@ an option, and so is killing them when they are fragile.
   and repeated "critical" phases followed.
 - **D0007** (verified). Five Phase Door scrolls were consumed, with the Phase spell still ready
   at the end.
+- **D0018** (observed, source-checked). The bored/twitchy fallback
+  (`borg-think-dungeon.c:2149`, up to 3 Phases per level to get unstuck) read the **only**
+  Phase Door at danger 5 against a dying yeek. The fatal cat fight 1,600 turns later had no
+  escape.
+- **D0017** (observed and source-checked). It held 13 Phase Door scrolls and a Staff of
+  Teleportation, yet used nothing while spiders took it from 201 to 7 HP. Only when no retreat
+  step was left did escape run, and the staff then got it out at once.
+- **D0019** (observed). Fleeing to the up stairs, it was one step into a clear corridor, seven
+  squares from the stairs, with the attackers behind it. A "Critical Phase" read its **only**
+  Phase Door and landed it on the far side of the group, which then cornered it. In the
+  verified manual counterfactual the owner's Phase landed on that same corridor head; the owner
+  walked down unpursued and escaped, and called it luck.
 
-**Source-checked.** `borg_caution` evaluates escape (`borg_escape`) before retreat and
-back-away. Phase landing safety is sampled, but a critical fallback spends the phase anyway.
+**Source-checked.** `borg_caution` tries the stair dash and the strategic retreat first, then
+escape (`borg_escape`, `borg-caution.c:1654`), then back-away. Whenever a retreat step exists,
+escape is not evaluated at all (D0017). Phase landing safety is sampled, but a critical
+fallback spends the phase anyway.
 
 **Requirement.**
 - Order escape options by cost and sufficiency: step, walk, Phase, teleport, level exit.
@@ -183,16 +221,22 @@ using them are tuned for low danger.
 | D0011 | 8 known CLW, 2 Speed | HP 42 → 11 against a griffon |
 | D0014 | **21 known CLW, 5 Speed** | danger 399–1325 |
 | D0016 | 2 known CLW | HP 5/12 against a speed +20 crow, while fleeing |
+| D0017 | **9 known CCW, 20 Speed**, Herbal Curing | escaped at HP 7, then died of poison resting for Recall |
+| D0018 | 2 **unidentified** CLW | HP 1/19 against a speed +8 wild cat |
 
 **Source-checked mechanisms.**
 - **Speed** (`borg_defend_aux_speed`): a potion is drunk only if the hasted danger falls to
   about HP/3, so never in a real emergency (#340).
 - **CLW tiers** (`borg_heal`): CLW is allowed only at 30–40% down once CL ≥ 10 (D0011, #319).
   All rungs need `danger < HP + heal`, so CLW never fires at high danger (D0002, D0014).
+- **CCW tiers** (`borg_heal`): CCW is offered only at 50–55% down, or below 50 HP with danger
+  under the heal amount. In D0017 the one eligible turn (55% down) failed the "no
+  rope-a-doping" test `ccw_heal > danger/3` on an integer tie, 38 against 38 (#319).
 - **Fleeing guard:** `borg_caution` calls `borg_heal` only when not fleeing, and the
-  poison-emergency "quaff unknown" fallback lives inside it (D0012, D0007, #34).
+  poison-emergency "quaff unknown" fallback lives inside it (D0012, D0007, #34). In D0017 it
+  also blocked curing poison after a successful escape; `borg_check_rest` has no poison test.
 - **Last-resort unknown use** requires `MAXSP == 0`, which excludes every caster (D0012
-  Paladin, D0014 Rogue).
+  Paladin, D0014 Rogue, D0018 Druid with 4 SP and no escape spell).
 - The healing-chance adjustments run against their own comments ([neo-angband-tracker#364](https://github.com/diegoami/neo-angband-tracker/issues/364)).
 
 **Manual counterfactual.** In D0014 the owner drank Speed on first sight of a speed +30 blood
@@ -245,8 +289,8 @@ turns.
   and **563** "no up stairs found, going down" fallbacks.
 - **D0014:** about 21k turns on DL20.
 - **D0009:** D5/D6 cycling while starving.
-- The starting Word of Recall was deposited at Home and never carried in D0006, D0009, D0015 and
-  D0016.
+- The starting Word of Recall was deposited at Home and never carried in D0006, D0009, D0015,
+  D0016, D0018 and D0019.
 
 **Source-checked.** With no known up staircase, the climb goal takes a down staircase ("go
 down then back up"). With connected stairs this can cycle without progress
@@ -280,6 +324,13 @@ Issues: [#321](https://github.com/diegoami/better-borg-c/issues/321),
 - **D0016:** about 290 of 360 starting gold went on armour and two unidentified rings (they
   were Searching and Feather Falling), with one Phase Door and two CLW. Owner: "inventory is
   definitely an area a borg reborn should work on."
+- **D0018:** of 373 starting gold, 266 went on Studded Leather Armour, with one Phase Door and
+  no CLW. A second visit spent another 373 on sandals [1,+5] 126, a Speed potion 75 (drunk at
+  full HP against a 2-HP mouse) and two unknown jewellery items 116, again with one Phase Door
+  and no CLW. It died carrying 10 spare torches, a spare shield and sandals.
+- **D0019:** of 360 starting gold, **300** went on one Soft Leather Armour [8,+5], with one
+  Phase Door and no CLW. Owner, after surviving the takeover by luck: "Still, inventory
+  issues."
 - **D0011:** died carrying 4 Rings of Searching, 9 spare torches and sandals, with no Phase
   Door, Recall or teleport.
 - **D0006, D0014:** slings carried with **no ammunition**.
@@ -306,6 +357,8 @@ Issues: [#41](https://github.com/diegoami/better-borg-c/issues/41),
 - **D0012:** 8 Teal Potions were really **Cure Light Wounds**.
 - **D0006:** unknown potions were tried only at 17 and 10 HP (Infravision, Slowness).
 - **D0001:** 4 unknown Smoky Potions.
+- **D0018:** 2 Ultramarine Potions were really **Cure Light Wounds**, carried for about 7,000
+  turns, beside two unknown scrolls (Blessing, Treasure Detection).
 
 In the C Borg, unknown potions are tried essentially only in emergencies, and selling (which
 identifies) needs town visits.
@@ -378,7 +431,7 @@ See `patches/series.json` and the per-carry measurement notes in `docs/measureme
 ## L13. How to evaluate a redesign against this evidence
 
 - **Fixtures.** Each dossier records the source, build, seed and options. Owner manual branches
-  (`owner-manual-branch.json` in D0010, D0012, D0013, D0014, D0015, D0016) give a verified prefix and a
+  (`owner-manual-branch.json` in D0010, D0012, D0013, D0014, D0015, D0016, D0018, D0019) give a verified prefix and a
   known-feasible alternative. Use them as scenario tests: start from the same state, check
   that the decision is at least as good.
 - **Do not count replays.** Repeated runs of the same start, reference variants and manual
