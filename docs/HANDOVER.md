@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10, end of day: M2's review continues tomorrow
+
+**The review of M2 (#99) is tomorrow, 2026-11-11.** The owner runs it with
+the reviewer they choose (RULES 6). #99's description has the prompt,
+pinned to the head of `main`. Until it is in:
+- nothing else merges into `main`, so that #99's diff stays what the
+  review reads;
+- #103 (borg-runner as source S15) waits, CI green. After #99 merges,
+  merge `main` into it (no force-push) and merge it;
+- M3 doesn't start.
+
+When the review is in: if it is clean, the owner merges #99, `m2` is
+tagged on the merge, the findings become M3 issues, then #103, then M3.
+If it isn't, fix the findings in PRs into `main`, repin #99's prompt and
+map the findings in a comment, as for the three passes so far (#100–#104).
+
 ## 2026-11-10: M2's third review: not done; findings fixed
 
 Kimi K3.1 Pro's third review of #99, at `fb069d8`: **not done**. R2 and R4
