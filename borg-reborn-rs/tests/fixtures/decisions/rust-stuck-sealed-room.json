@@ -1,0 +1,63 @@
+{
+  "id": "rust-stuck-sealed-room",
+  "title": "A sealed room: Descend fails, then the stuck state",
+  "dossier": "docs/deaths/D1420-rust-seed1032",
+  "citations": [
+    "summary.json (starvation at depth 1, 8,925 player turns)",
+    "trace-tail.jsonl (Holds)"
+  ],
+  "construction": "Dwarf Priest CL1, 14/14 HP, D1, in a 3x5 sealed room with no unknown grid and no staircase. The room is constructed from the M3 re-review's four starvation runs (full-3-priest-2, full-3-priest-1, full-4-necro-0, full-8-blackguard-4), where the Borg held until it starved.",
+  "limits": "A unit-level reproduction of the stuck mechanism, not a recorded snapshot. The escape is search or digging (#123); the fixture pins the named stuck state and the Hold.",
+  "status": "gap",
+  "blocked_by": 123,
+  "pins_forbidden": true,
+  "turn": 100,
+  "depth": 1,
+  "max_depth": 1,
+  "player": {
+    "race": 5,
+    "class": 3,
+    "level": 1,
+    "hp": 14,
+    "max_hp": 14,
+    "x": 2,
+    "y": 2
+  },
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [],
+  "map": [
+    "#####",
+    "#...#",
+    "#.@.#",
+    "#...#",
+    "#####"
+  ],
+  "monsters": [],
+  "forbidden": [
+    {
+      "action": "Hold",
+      "item": "holding in a sealed room until starvation"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Alter",
+      "item": "dig or search a route out (#123)"
+    }
+  ],
+  "current": {
+    "action": "Hold",
+    "mode": "descend"
+  }
+}

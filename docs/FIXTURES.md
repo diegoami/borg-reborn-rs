@@ -23,6 +23,7 @@
 | `rust-d1358-retreat-at-one-hp` — D1358: 1/51 HP, a 2-HP mouse adjacent, retreat chosen | `docs/deaths/D1358-rust-seed1001` | Walk — retreating at 1 HP provokes the lethal free hit | Attack — kill the 2-HP mouse before it acts | active | — |
 | `rust-d1413-stairs-under-fang` — D1413: 1/17 HP, Fang adjacent, standing on the up staircase | `docs/deaths/D1413-rust-seed1082` | Attack; Walk | Ascend — the staircase underfoot, before Fang acts | active | — |
 | `rust-d1420-starvation-no-food` — D1420: starving at 0 food on a down staircase with a full pack | `docs/deaths/D1420-rust-seed1032` | Descend — going deeper while starving | Eat — food, or return to town; Ascend | gap (#122) | Descend **(still the fatal decision)** |
+| `rust-stuck-sealed-room` — A sealed room: Descend fails, then the stuck state | `docs/deaths/D1420-rust-seed1032` | Hold — holding in a sealed room until starvation | Alter — dig or search a route out (#123) | gap (#123) | Hold **(still the fatal decision)** |
 
 ## M3 triage (D1326-D1420)
 
@@ -36,22 +37,24 @@ Ninety-five M3 dossiers were read (`docs/deaths/D1326` to `D1420`). Five reprodu
 | Starvation: no eat action, food 0, full pack | 4 | `rust-d1420-starvation-no-food`; bbc D0009 | gap #122 |
 | Grey mold: the danger sum scored the mold 0 (fixed #142) | 5 | `rs-d0006-mold-at-two-hp` | active after #120 |
 
-The cause view adds poison (4) and 28 monster kinds; grey mould (5) and Fang (2) get their own fixtures, and the rest repeat the families. Poison and the low-HP attack deaths need a cure or an escape the action set does not have, so they pin the #122 gap. The floating-eye deaths are covered by bbc D0013.
+The cause view adds poison (4) and 28 monster kinds; the rest repeat the families. The M3 re-review added four sealed-room starvation runs (`full-3-priest-2`, `full-3-priest-1`, `full-4-necro-0`, `full-8-blackguard-4`); `rust-stuck-sealed-room` pins the first think and the unit test `a_sealed_room_names_the_stuck_state` the named second think, both #123.
 
 
 ## What the fixtures found
 
-1. **Race flag numbers were one too high (#142, fixed).** A grey mould was read as `NEVER_BLOW`, scored zero and was a safe rest. The fix and its raw-byte test landed in that task.
+1. **Race flag numbers were one too high (#142, fixed).** A grey mould was read as `NEVER_BLOW`, scored zero and was a safe rest.
 
 2. **Fear refused the attack but the strategy chose it (#119, fixed).** `TMD_AFRAID` makes `can_attack` false; the decision is a walk. `fear-blocks-the-attack` is active.
 
-3. **A one-turn danger read let the Borg rest by a pursuer (#119, fixed).** The assessment now sees the cat and the Borg leaves, taking the up staircase. `rust-d1330-rest-with-pursuer` is active.
+3. **A one-turn danger read let the Borg rest by a pursuer (#119, fixed).** The assessment sees the cat and the Borg leaves, taking the up staircase. `rust-d1330-rest-with-pursuer` is active.
 
-4. **Walking away from an adjacent monster is not an escape (#120).** The engine gives every adjacent monster a free hit. The tactical layer scores that hit, so at 1 HP it attacks a 2-HP mouse (`rust-d1358`), kills a 2-HP mould (`rs-d0006`) and ascends when the staircase is underfoot (`rust-d1413`). All three are active. The fixtures also explain bbc D0018, whose eight-step retreat from a faster wild cat was the death.
+4. **Walking away from an adjacent monster is not an escape (#120).** The engine gives every adjacent monster a free hit; the tactical layer scores it. At 1 HP it attacks a 2-HP mouse (`rust-d1358`), kills a 2-HP mould (`rs-d0006`) and ascends when the staircase is underfoot (`rust-d1413`). All active. This is also bbc D0018: eight steps of retreat from a faster wild cat.
 
-5. **Every response is scored and recorded (#120).** The trace carries all candidate actions with scores, not a synthetic `1.0`; a refused attack (fear) is absent by construction, and the losing alternatives stay visible. #138 can narrow the remaining trace contract.
+5. **Every response is scored and recorded (#120).** The trace carries all candidate actions with scores, not a synthetic `1.0`; fear removes the attacks by construction and the losing alternatives stay visible. #138 narrows the remaining trace contract.
 
-6. **The remaining gaps are capabilities, not decisions.** Quaff/read/eat/wield and the strategic return home are #122/#123; shooting and casting are #127 (M5.3). The fixtures stay as explicit, owned gaps rather than passing by accident.
+6. **The stuck state is named (#123).** A sealed room with no frontier and no staircase first tries Descend, then reports `stuck` / "no mode can act" instead of silently re-choosing a cooling mode. That is the four starvation runs from the M3 re-review; search and digging remain #123. `rust-stuck-sealed-room` pins it.
+
+7. **The remaining gaps are capabilities, not decisions.** Quaff/read/eat/wield and the strategic return home are #122/#123; shooting and casting are #127 (M5.3). The fixtures stay explicit, owned gaps.
 
 
 ## What is not claimed

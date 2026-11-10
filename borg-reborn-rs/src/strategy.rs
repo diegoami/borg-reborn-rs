@@ -51,6 +51,10 @@ pub enum Mode {
     Descend,
     /// Reveal the level: walk to the frontier of the unknown.
     Explore,
+    /// No mode can act here: the frontier is empty and no staircase is
+    /// reachable. The state is named so the trace and the death dossier
+    /// say why the Borg is standing still (T4.6, #123).
+    Stuck,
 }
 
 impl Mode {
@@ -61,6 +65,7 @@ impl Mode {
             Mode::Town => "town",
             Mode::Descend => "descend",
             Mode::Explore => "explore",
+            Mode::Stuck => "stuck",
         }
     }
 }
@@ -572,6 +577,7 @@ impl FirstStrategy {
                         .map(Action::Walk)
                 }
             }
+            Mode::Stuck => None,
             Mode::Explore => {
                 let step = ctx
                     .paths
@@ -611,6 +617,7 @@ impl FirstStrategy {
             }
             Mode::Descend => ctx.world.level.depth as i64,
             Mode::Explore => Self::mapped(ctx.world),
+            Mode::Stuck => 0,
         }
     }
 
@@ -670,6 +677,7 @@ impl FirstStrategy {
                 Mode::Town => i64::from(ctx.params.explore_budget_turns),
                 Mode::Descend => i64::from(ctx.params.explore_budget_turns),
                 Mode::Explore => i64::from(ctx.params.explore_budget_turns),
+                Mode::Stuck => 0,
             };
             if !goal.stalled(turn, budget)
                 && self.cooldowns.get(&goal.mode).is_none_or(|&t| turn >= t)
@@ -698,17 +706,24 @@ impl FirstStrategy {
             .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
             .remaining(ctx.world, ctx.view.x, ctx.view.y);
         let cooled = |m: Mode| self.cooldowns.get(&m).is_none_or(|&t| turn >= t);
+        let on_stair =
+            ctx.world.level.at(ctx.view.x, ctx.view.y).is_some_and(|g| {
+                matches!(g.feat, crate::borg::feat::LESS | crate::borg::feat::MORE)
+            });
         if descend_first && stairs != UNREACHED && cooled(Mode::Descend) {
             Mode::Descend
         } else if frontier != UNREACHED && cooled(Mode::Explore) {
             Mode::Explore
         } else if stairs != UNREACHED && cooled(Mode::Descend) {
             Mode::Descend
-        } else {
-            // No frontier remains (or Explore is cooling): Descend's
-            // up-and-down reroll is the productive fallback. Choosing
-            // Explore with an empty frontier only holds (T3.7).
+        } else if on_stair || cooled(Mode::Descend) {
+            // On a staircase, Descend's step takes it (including the up
+            // stair under threat). With none and a cooling Descend, name
+            // the stuck state instead of re-choosing the cooled mode every
+            // think (M3 re-review, 2026-11-10).
             Mode::Descend
+        } else {
+            Mode::Stuck
         }
     }
 
@@ -845,6 +860,7 @@ impl Strategy for FirstStrategy {
             Mode::Town => "restock and identify",
             Mode::Descend => "reach the down staircase",
             Mode::Explore => "reveal the frontier",
+            Mode::Stuck => "no mode can act",
         };
         Decision {
             action,
@@ -1105,6 +1121,40 @@ mod tests {
             d.candidates
         );
         assert_eq!(d.candidates[0].0, d.action);
+    }
+
+    #[test]
+    fn a_sealed_room_names_the_stuck_state() {
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@..#", "#####"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Hold, "the first think tries Descend");
+        assert_eq!(d.mode, "descend");
+        // The same strategy, one think later: Descend is cooling, so the
+        // state is named.
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "stuck", "{d:?}");
+        assert_eq!(d.goal, "no mode can act");
+        assert_eq!(d.action, Action::Hold);
     }
 
     #[test]

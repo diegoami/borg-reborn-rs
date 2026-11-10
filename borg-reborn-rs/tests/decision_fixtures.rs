@@ -54,6 +54,7 @@ const EXPECTED_IDS: &[&str] = &[
     "rust-d1358-retreat-at-one-hp",
     "rust-d1413-stairs-under-fang",
     "rust-d1420-starvation-no-food",
+    "rust-stuck-sealed-room",
 ];
 
 /// The open M4 tasks a gap may name. Update this list when an issue closes:

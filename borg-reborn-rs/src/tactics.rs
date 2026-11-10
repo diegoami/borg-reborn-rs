@@ -55,12 +55,17 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
     let aversion = p.risk_aversion_pct;
     let horizon = p.threat_horizon;
     let current = assess(w, k, x, y, horizon, aversion);
-    let current_risk = current.risk(aversion);
+    let hp = f64::from(view.hp.max(1));
+    // A disable next to a threat can cost the rest of the character's hit
+    // points; this is a declared expected-loss mapping, not a measured
+    // coefficient. It keeps a paralysis gaze in the same scale as damage.
+    let disable_cost = |a: &crate::danger::Assessment| (a.disabling + 0.5 * a.summoning) * hp;
+    let current_risk = current.risk(aversion) + disable_cost(&current);
     let mut out = Vec::new();
 
     // Attacks: gain is the share of the monster's threat this turn removes.
     if can_attack(w) {
-        for t in &w.level.monsters {
+        for (i, t) in w.level.monsters.iter().enumerate() {
             if !t.in_view || (t.x - x).abs().max((t.y - y).abs()) > 1 {
                 continue;
             }
@@ -73,13 +78,20 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             if dpt <= 0.0 || t.hp <= 0 {
                 continue;
             }
-            let removed = one_threat(w, k, t, x, y, horizon).risk(aversion);
+            let one = one_threat(w, k, t, x, y, horizon);
+            let removed = one.risk(aversion);
             let share = (dpt / f64::from(t.hp.max(1))).min(1.0);
             let gain = removed * share;
+            let status_after = current
+                .per_monster
+                .get(i)
+                .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
+                * (1.0 - share);
+            let risk_after = (current_risk - gain).max(0.0) + status_after;
             out.push(Response {
                 action: Action::Attack(dir),
-                score: gain - (current_risk - gain).max(0.0),
-                risk_after: (current_risk - gain).max(0.0),
+                score: gain - risk_after,
+                risk_after,
                 gain,
                 why: "attack",
             });
@@ -100,7 +112,8 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         {
             continue; // walking into a monster is the attack response
         }
-        let mut risk = assess(w, k, nx, ny, horizon, aversion).risk(aversion);
+        let dest = assess(w, k, nx, ny, horizon, aversion);
+        let mut risk = dest.risk(aversion) + disable_cost(&dest);
         for t in &w.level.monsters {
             if !t.in_view {
                 continue;
@@ -108,7 +121,8 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             let now = (t.x - x).abs().max((t.y - y).abs());
             let after = (t.x - nx).abs().max((t.y - ny).abs());
             if now <= 1 && after > 1 {
-                risk += one_round(w, k, t).risk(aversion);
+                let free = one_round(w, k, t);
+                risk += free.risk(aversion) + (free.disabling + 0.5 * free.summoning) * hp;
             }
         }
         out.push(Response {
