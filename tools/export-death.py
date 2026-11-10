@@ -17,9 +17,10 @@ DNNNN-IMPL-seedSEED/ with:
   assessment.json  "unassessed"; filled in by a person or a later task
   report.md        one-screen summary
   summary.json, config.txt, build.json   the run's own small files
+  trace-tail.jsonl  the last 200 decision thinks (Rust runs)
 Raw logs (keys.log, messages.log, state.log) stay in RUN_DIR, outside Git;
-the record names their SHA-256 (RULES 18). T1.6 upgrades these dossiers to
-borg-rs's full format and T3.6 adds the decision trace.
+the record names their SHA-256 (RULES 18). T1.6 upgraded these dossiers to
+borg-rs's full format; T3.6 verifies the decision trace added in T2.4.
 """
 
 import argparse

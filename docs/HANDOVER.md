@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.6, traces in death dossiers (#22)
+
+**Already implemented by T2.4 (`651c822`), now verified as a task; no
+play-code or reference change.** Every Rust death export keeps
+`trace-tail.jsonl` (the last 200 thinks), a `decision_trace` record with
+`lines` and `of`, its SHA-256 in `files_sha256`, and a report link.
+Untraced C runs record `decision_trace: null`. The exporter's module
+documentation now states this contract in the present tense.
+
+Validation: all **54 tool tests** pass, including the 250-line synthetic
+trace that retains exactly thinks 51–250. An audit of the **48 T3.5
+dossiers D1278–D1325** parsed every retained think and checked every
+line count and trace SHA-256; examples range from all 51 thinks of
+D1278 to the last 200 of D1325's 8,876.
+
+**Next:** T3.7 (#23) — the G0 smoke/stall/determinism/death-trace report
+for the M3 review.
+
 ## 2026-11-10: T3.5, town reserves (#21)
 
 The first strategy now has a **Town** mode, checked after recovery and
