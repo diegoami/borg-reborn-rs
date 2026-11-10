@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1047-rust-seed1054",
+  "run_kind": "harness",
+  "character": "High-Elf Paladin",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 986,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "menu",
+    "git_rev": "381b0212ee9e06aa9a9bc544fd46c449a9abc954",
+    "git_dirty": "yes",
+    "source_sha256": "31a17122df7b69ba9f5656ae502e26ebfef1edcaa70f4688fa55a0044576c7cf",
+    "binary_sha256": "e8cd2e946f7ecf99b181d0c076ad124378f04ed7039b2cacc52277c78872e4ca",
+    "borg_txt_sha256": "06128af013093ec3cb6556e39e8a48e27b06ab062fa76818a4e97c0c1b99b9d2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 100,
+    "of": 100
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/opencode/t32-full/full-5-paladin-4",
+      "result_sha256": "574819092f25f9f7a0ee4584a6d661976f464f4901bbf364b4e0c37f4a11dc52",
+      "raw_sha256": {
+        "keys.log": "574819092f25f9f7a0ee4584a6d661976f464f4901bbf364b4e0c37f4a11dc52",
+        "messages.log": "326452a694e48aa557d6c0cdaf07fad37f3677eed9e673c68bb60e9be102e2db",
+        "state.log": "4ef2441e499ff33950b7209540e90244c06ea5a3a79faa1c921a3fd02f092a8e"
+      },
+      "source_commit": "381b0212ee9e06aa9a9bc544fd46c449a9abc954",
+      "binary_sha256": "e8cd2e946f7ecf99b181d0c076ad124378f04ed7039b2cacc52277c78872e4ca"
+    }
+  ],
+  "encounter_family": "start-44d7ebfdfb646d687882b8209b19b11d9ca0b26f379a019a71f1e85bc2bf2288",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "f983b94db71c2c038c6b17928a7b354dd14feab2ab365f23eb42584598516b2b",
+    "config.txt": "f162539ea2ec0eccfb9ef1e254a4653b8a768cf490a120bf2363514cb4a625ef",
+    "depths.json": "ce91da9c448f2a6e939f7e308e7f9e16bd76ec42232accf2b83125a26e3eb848",
+    "params.json": "c415fa3cb024caad7b597f8e36d1dfc0527e110ff4bd94bd942c15905b0d03c9",
+    "summary.json": "ff83388bb7f5f1aec6313b4ac89d5fef5e4fc52818784568c001fd613a960f01",
+    "trace-tail.jsonl": "7d2ed05c1c5a96c41f4344df1258a5cce6f6d44482b618c1612b487cb6df564a"
+  },
+  "investigation": null,
+  "issue": null
+}

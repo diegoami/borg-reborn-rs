@@ -30,6 +30,7 @@ pub mod executor;
 pub mod knowledge;
 pub mod observation;
 pub mod params;
+pub mod path;
 pub mod trace;
 pub mod world;
 

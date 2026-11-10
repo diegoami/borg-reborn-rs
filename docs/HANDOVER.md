@@ -2,6 +2,55 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-10: T3.2, paths and exploration (#18)
+
+`borg-reborn-rs/src/path.rs` is L4's paths, substrate for T3.3's strategy
+(nothing calls it in play yet; T3.3 wires it into decisions):
+
+- **Distance maps, not gate-kept floods.** One Dijkstra flood per goal
+  over the remembered level, from the goal grids outward (the C Borg's
+  shape, `borg-flow.c:borg_flow_spread`), but threat is a **cost** rather
+  than the C Borg's fear refusal (borg-flow.c:442-474): a dangerous grid
+  is paid for, and a route through it stays available when it is the only
+  one. Goals: `Stairs{up}` (the known `<`/`>` grids), `Frontier` (known,
+  enterable grids with an unknown neighbour — the C Borg enqueues the
+  unknown itself, borg-flow-dark.c:46-58; a closed door by the unknown is
+  frontier too, borg-flow-dark.c:61), and `Grids` (explicit targets).
+- **Costs.** Floor 1; a closed door 2 (walked open, then entered);
+  a web or a known trap +2; unknown grids are never transit (the C Borg's
+  `avoid`); shops are goals but not roads (PASSABLE terrain — `,` opens
+  the store — yet the C Borg's spread skips a shop that is not its
+  target, borg-flow.c:371-374). Threat placeholder until T3.3 lifts the
+  C Borg's danger sum: an awake tracked monster costs its grid 12 and its
+  neighbours 4, weighted by its actions per player action
+  (`Knowledge::turns_per_action`), by `Track::confidence` and by a
+  quarter when asleep.
+- **Stale by construction.** `Paths` records the world snapshot
+  (`turn`, `thinks`) and refuses any other; it is built per think and
+  dies with it, so the stale-flow reuse of the mold deaths (bbc D0008,
+  rs D0006) cannot happen. Within a think each goal's map is computed
+  once.
+- **Determinism:** DIRS order breaks step ties; no unordered containers.
+
+**Evidence:** 9 unit tests (maps built from ASCII worlds: corridors,
+doors, webs, walls, the unknown, shops, threat paid as a cost, faster and
+sleeping monsters, the stale-world refusal); and, on a real game, the
+recorded run's **302 thinks replays with every reachable goal stepping
+strictly downhill onto a passable grid** (`recorded_walks_are_strictly_
+downhill`, the same `BORG_*_LOG_CHECK` wiring CI already records). Play
+is unchanged — no live-loop change at all: smoke 3/3, smoke-exact 3/3
+and full 45/45 identical to the references. The new source hash
+re-records the suites' deaths: D1035–D1080 (46 cases).
+
+**Not checked:** the maps' *quality* (do these costs make the Borg choose
+well?) is T3.3's, on play; the threat shape is a placeholder with no
+claim (RULES 14). `remaining()` at the player subtracts the stood-on
+grid's own cost; if a future caller finds that surprising, rename then.
+
+**Next:** T3.3 (#19), the first strategy: modes, goals, budgets, with the
+C Borg's danger sum lifted as the M3 placeholder and the executor (#17)
+and paths (#18) beneath it.
+
 ## 2026-11-10: T3.1, the executor and prompts (#17)
 
 M3 started (PLAN's row moved to *in progress*; the source refresh PR #108
