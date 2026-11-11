@@ -1725,9 +1725,11 @@ mod tests {
     }
 
     #[test]
-    fn a_staircase_under_fire_is_not_taken() {
-        // On the down stair with a monster adjacent: the fight or the
-        // escape, never the staircase.
+    fn a_staircase_under_fire_is_a_scored_escape() {
+        // On the down stair with a monster adjacent, the staircase is one
+        // escape on the ladder (T4.4, #121): scored by its declared arrival
+        // risk against the exchange, not refused by rule. Here the stair
+        // beats the exchange.
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#>M@.#", "######"], 20, 20);
         if let Some(s) = w.character.status.as_mut() {
@@ -1737,7 +1739,53 @@ mod tests {
         let mut p = crate::path::Paths::new(&w);
         let v = view(&w);
         let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
-        assert_ne!(d.action, Action::Descend, "never descend in contact");
+        assert_eq!(d.action, Action::Descend, "the stair beats the exchange");
+    }
+
+    #[test]
+    fn an_escape_descent_still_counts_against_the_reroll_cap() {
+        // The ladder's escape descent is a level change like any other:
+        // two of them at one game turn trip the generation-loop backstop
+        // (M3 review, blocking finding 1) even though the escape is scored.
+        let (mut s, mut w, k, _, mut m, mut rng, params) =
+            ctx_of(&["########", "#@>F...#", "#......#", "########"], 4, 20);
+        if let Some(s) = w.character.status.as_mut() {
+            s.x = 2;
+            s.y = 1;
+        }
+        let mut p = crate::path::Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Descend, "the escape descent is taken");
+        m.record(w.turn, Action::Descend);
+        m.record(w.turn, Action::Ascend);
+        let mut p = crate::path::Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Hold, "the reroll cap stands");
+        assert!(
+            d.violations.iter().any(|v| v.contains("reroll cap")),
+            "{:?}",
+            d.violations
+        );
     }
 
     #[test]

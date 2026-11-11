@@ -108,7 +108,7 @@
   ],
   "construction": "Half-Elf Warrior CL11, 111/111 HP, D18. The dossier gives the Dagger in hand, the carried Maul, eight known CLW, two Speed and three Neutralize Poison. The griffon is constructed at 40/152 HP so the exchange says fight: the defect is the weapon, not the choice to fight.",
   "limits": "No verified alternative: the Maul + CLW branch was not shown survivable. Wielding is not an executor action yet, so only the cure half of the alternative is judged.",
-  "blocked_by": 122,
+  "blocked_by": 126,
   "player": {
     "race": 1,
     "class": 0,

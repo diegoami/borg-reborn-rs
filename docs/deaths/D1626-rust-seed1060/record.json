@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1626-rust-seed1060",
+  "run_kind": "harness",
+  "character": "Half-Orc Rogue",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5682,
+    "race_idx": 6,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1060,
+    "flags": "menu",
+    "git_rev": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+    "git_dirty": "no",
+    "source_sha256": "1880ac0e7aaf9c344c4e1769a6c4d17a69dc5932c9b7d6328601eeb700388403",
+    "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68",
+    "borg_txt_sha256": "44e47af0b4bf9782f206479d0189e8feb3ba11576c2454b697fdfcead6261e71",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 455
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/borg-reborn-rs/harness/out/full-t44/full-6-rogue-0",
+      "result_sha256": "d694198d503e5f894152ebaab55c5602f74b06920e6ad3b7804a31522bd6321a",
+      "raw_sha256": {
+        "keys.log": "d694198d503e5f894152ebaab55c5602f74b06920e6ad3b7804a31522bd6321a",
+        "messages.log": "c8be045d0a7b8f8519b38322075dbbb7f34716c91e31806fcc7edaa541d5eb9a",
+        "state.log": "a62357b814a89757975b9cb0c31f3b7ff632fdbe946699b1b1713051bfd1dbe9"
+      },
+      "source_commit": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+      "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68"
+    }
+  ],
+  "encounter_family": "start-7b39e13fed1bf1e1ecf6b395ba378c2f90c64fef447e06b4ddec71f32e300e2f",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "08fff6f6e3b3295df46f5577f17c67597b59d6898ed72f9e4b04a19de1827dd6",
+    "config.txt": "8517be2c2b395495d1e4f4416cf9f9f6306611d5cdc50e1ce0aa012fbf337948",
+    "depths.json": "615378c570f195ec2c1b176446a692b94d9667cde70c246b541e7d95b287867e",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "501f530b92ebc021a17ed7467f3eaa0270a51c152e27a1c6a1ffe25e92ca78a3",
+    "trace-tail.jsonl": "b3e769ef13dbea4be8fd85f9f99750a801518e98fbaaf257763918a969dc2b12"
+  },
+  "investigation": null,
+  "issue": null
+}

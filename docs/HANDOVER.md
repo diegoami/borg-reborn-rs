@@ -2,6 +2,59 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: the escape ladder (#121)
+
+**Play change; new baseline.** T4.4 replaces the staircase rule and the
+Phase placeholder with the escape ladder: step, Phase Door, Teleportation,
+Word of Recall and the stairs are all scored on the one hit-point scale by
+cost and sufficiency, not by a fixed monster list. Smoke, smoke-exact and
+full references are regenerated in this PR; the diff against the old
+baseline is the declared change.
+
+- **The ladder** (`tactics.rs`): a relocation's gain is the threat it
+  removes — a step's exactly as an escape's. A blink's `risk_after` is the
+  mean assessment over the remembered enterable grids of its landing band
+  (engine distance 8-12 for Phase Door's 10±25%; 45-75% of the longest
+  cardinal edge distance for Teleportation's 60%±25% —
+  `effect-handler-general.c:effect_handler_TELEPORT`); grids a visible
+  monster stands on are skipped, and an unestimated landing (an empty
+  band) is not an offered escape. A stair's landing is the declared
+  `arrival_risk_hp` — 0 for up-to-town — and Word of Recall's is the
+  25-turn mean wait beside what stands there; an active word is not
+  re-read (reading cancels it). Walking stays available after the last
+  consumable.
+- **Last-item protection:** a consumable escape pays `escape_item_hp` (1);
+  the last known escape scroll pays `last_escape_hp` (5) more. The last
+  Phase Door is kept beside a dying yeek and a never-moving eye, and still
+  spent at 4/16 HP against Fang.
+- **Never-movers give no parting blow** (`danger.rs:never_move`): a step
+  out of `RF_NEVER_MOVE` reach ends the threat for good (bbc D0013).
+- **Ties end threats:** score ties break by smaller `risk_after`, then
+  larger gain, then Attack over Walk (GOALS principle 6: killing the mold
+  beats stepping off it, bbc D0012).
+- **New parameters** (`params.rs`): `escape_item_hp` 1, `last_escape_hp`
+  5, `arrival_risk_hp` 3 — declared, to be measured (#124). Also fixed a
+  latent panic: `from_profile`'s match lacked six table names
+  (`eat_below_food`, `risk_aversion_pct`, `threat_horizon` among them), so
+  a profile setting one hit `unreachable!()`.
+- **Fixtures:** three new active ones — `bbc-d0013-eye-step-not-phase`,
+  `bbc-d0017-faster-pursuer-walk`, `bbc-d0018-dying-yeek-phase`.
+  `bbc-d0014` is re-pinned (Attack now; the fatal Read ended; Speed/CLW
+  stay #127). `bbc-d0012`'s worm masses moved to distance 2, where its own
+  construction note always said they were; `fang-ac36` and
+  `fear-blocks-the-attack` were widened to 15 columns so the blink band
+  has remembered floor (both construction notes amended). #122 is closed,
+  so the gap OWNERS are the open tasks only: #123, #124, #126, #127.
+- **Refresh report:** angband moved +12 commits past the pin, borg-rs +18
+  (one copied doc changed), better-borg-c +10 with new milestone tags
+  `4.2.6-impact-v8`…`v11` (v9.1 among them — new zoo specimens to
+  consider). Pin moves are their own PRs (RULES 21) and are not in this
+  one.
+- **Next:** #123 (T4.6 recovery/oscillation, owns four gap fixtures), #124
+  (T4.7 calibration and the survival gate — the smoke mage's death to a
+  grey mold's spores at 9/9 HP is calibration's first exhibit), #127
+  (T5.3, owns d0010/d0014's class answers).
+
 ## 2026-11-11: no control runs requested from the zoo (owner)
 
 The owner: borg-zoo already runs the original C Borg and better-borg-c in
