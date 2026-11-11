@@ -11,8 +11,11 @@ whatever the model.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
-   for the owner. A session that finds a goal or a task wrong says so in its
-   PR or in [docs/HANDOVER.md](docs/HANDOVER.md), and goes on with the rest.
+   for the owner. The secondary track Q (GOALS D12) has its own
+   milestones; a session works on one only when the owner opens it, and
+   never in the same PR as primary work. A session that finds a goal or
+   a task wrong says so in its PR or in [docs/HANDOVER.md](docs/HANDOVER.md),
+   and goes on with the rest.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
@@ -118,3 +121,16 @@ whatever the model.
     lifted from a C Borg cite `file:function:lines` in the form the
     refresh report recognises, so a later fix to that function in
     better-borg-c or borg-rs is reported and reviewed.
+
+## The query surface (secondary goal Q, owner 2026-11-11)
+
+24. **The Borg plays without a model.** `borg-mcp` (docs/QUERY-SURFACE.md)
+    reads the Borg's judgement; it never sends keys or changes the state a
+    played game reads. The core never depends on `borg-mcp`, and nothing of
+    it is linked into the game or reaches the zoo contract. A live query
+    never changes `keys.log`.
+25. **The server has no judgement of its own.** Every answer comes from a
+    function the Borg plays with, through the versioned `query` facade.
+    A new computation goes into the core first, with its own task and
+    tests. A change to a report type or a tool schema bumps
+    `query::VERSION`.

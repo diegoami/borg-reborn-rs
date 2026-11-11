@@ -280,6 +280,10 @@ measures no control:
   zoo's concern: for example, it can build a C Borg on our engine and
   frontend, since both are open and documented (`docs/ENGINE.md`,
   `docs/ZOO-INTERFACE.md`).
+- This repository never requests control runs (owner, 2026-11-11). The
+  zoo runs the original C Borg and better-borg-c in its own experiments;
+  a run we ask for is of our Borg only, on suites and seeds the controls'
+  results already cover.
 - What this repository owes the zoo is the zoo contract (§4): a Borg that
   builds and runs under it, deterministic, with its run record and its
   death evidence.

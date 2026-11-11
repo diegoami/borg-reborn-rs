@@ -215,6 +215,14 @@ loops become visible.
   wall limits allow. The baseline is about 110 s for 400,000 engine turns
   for the C Borg. The tactical look-ahead is bounded by design.
 
+### Outside the loop: the query surface (secondary goal Q)
+
+A read-only facade, `query`, over L2–L5 lets a separate workspace crate,
+`borg-mcp`, answer a language model's questions with the Borg's own
+functions, on replayed state. It is not a layer of play: the control loop
+above never calls it, and nothing of it is linked into the game. Draft:
+[QUERY-SURFACE.md](QUERY-SURFACE.md).
+
 ## What comes from where
 
 | Part | Source | How |
