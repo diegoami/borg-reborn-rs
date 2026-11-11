@@ -34,12 +34,28 @@ Working on this repository: start at [AGENTS.md](AGENTS.md), then
 [RULES.md](RULES.md). It is model agnostic: any coding agent, or a person,
 follows the same files.
 
+## Game knowledge
+
+What the Borg knows about the game comes, in this order, from the engine,
+from two manuals, and from recorded play. The engine
+([`engine/angband/`](engine/angband/), upstream `e473720`) is the only
+authority: every formula, table and prompt is checked in `src/` or
+`lib/gamedata/` and cited there (RULES 16). The manuals are copied in
+[`reference/c-manual/`](reference/c-manual/README.md) (S14): the **Angband
+Strategy Manual**, a source-grounded guide to how the game works underneath
+and how to survive it (chapters 0–16, appendices A1–A10, and *notes for the
+borg* for automatic players), and the **official user manual** for this exact
+version (`user-manual/`) for commands, screens and options. The third input
+is evidence from play: the death dossiers, borg-runner's accumulated
+knowledge and our own decision traces. Nothing is a claim until
+[borg-zoo](https://diegoami.github.io/borg-zoo/) measures it.
+
 ## Related repositories
 
 | Repository | Role here |
 | --- | --- |
 | [angband/angband](https://github.com/angband/angband) | The game and the original C Borg (`src/borg/`), at the pin above. Read only. |
-| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | The C Borg specification and the Tunable Borg Plan (`docs/c-borg/`); the issue board for C Borg defects. |
+| [neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) | The C Borg specification and the Tunable Borg Plan (`docs/c-borg/`); the Angband Strategy Manual and the official user manual of our game version (`docs/c-manual/`, copied in `reference/c-manual/`); the issue board for C Borg defects. |
 | [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes; native measurement runner; death dossiers. |
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. A reference to copy from, never a dependency (docs/SPEC.md §2); what was copied is ours and listed in docs/PROVENANCE.md. |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |

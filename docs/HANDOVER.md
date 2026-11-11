@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: the manuals named as analysis sources
+
+The owner asked that the repository make its manual sources visible to every
+session: the **Angband Strategy Manual** and the **official user manual** in
+`reference/c-manual/` (S14). They are now named where a session starts and
+where the rules live:
+
+- `AGENTS.md` reading list, as an entry of its own, and a new *Game
+  knowledge, and where analysis starts* section: engine first, manuals
+  second, recorded play third;
+- `RULES.md` 16: read the relevant chapter before designing a rule, then
+  check every number in `engine/angband/` and cite the engine;
+- `README.md`: a *Game knowledge* section, and the manuals in the
+  neo-angband-tracker row;
+- `docs/SOURCES.md` S14 title and `docs/research/KNOWLEDGE.md`'s reading
+  state: the user manual is read with the strategy manual, per task.
+
+No pin, copy or code changed. `cargo test --workspace` checks the documents'
+links (`borg-reborn-rs/tests/repository.rs`).
+
 ## 2026-11-12: the escape ladder (#121)
 
 **Play change; new baseline.** T4.4 replaces the staircase rule and the

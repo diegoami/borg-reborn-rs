@@ -87,9 +87,14 @@ whatever the model.
     scum, stair-scumming, or cheat death inside the Borg.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
-    `file:function:lines` at `e473720`. Code copied from another project is
-    recorded once in docs/PROVENANCE.md and is ours from then on
-    (docs/SPEC.md §2). The decision layer (strategy) is new code.
+    `file:function:lines` at `e473720`. The **Angband Strategy Manual**
+    (S14) and the **official user manual** under `reference/c-manual/` are
+    the first reference for how the game behaves: read the relevant chapter
+    before designing a rule, then check every number it gives in
+    `engine/angband/` (`src/` or `lib/gamedata/`) and cite the engine there.
+    Code copied from another project is recorded once in
+    docs/PROVENANCE.md and is ours from then on (docs/SPEC.md §2). The
+    decision layer (strategy) is new code.
 
 ## Files and machines
 
