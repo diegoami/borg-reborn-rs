@@ -2,6 +2,39 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-11: secondary goal Q, the query surface (owner decision D12)
+
+The owner asked for the Borg's judgement to be exposed to language models
+over MCP, as a secondary goal with a roadmap, and for the rules to change
+to allow it. Documents only, no code:
+
+- **GOALS.md:** new section *Secondary goal Q* with its five constraints
+  and the Q1–Q4 roadmap; the non-goal "a model in the play loop" stays and
+  is clarified; D11 amended; **D12** added.
+- **RULES.md:** RULES 2 lets a session work on a Q milestone once the owner
+  opens it, never mixed with primary work; new RULES 24 (the Borg plays
+  without a model; the core never depends on `borg-mcp`) and 25 (no
+  judgement in the server; the versioned `query` facade).
+- **PLAN.md:** *Secondary track Q* with milestones Q1–Q4 and their exits.
+- **docs/QUERY-SURFACE.md:** the architecture draft. Decision: same
+  repository, separate crate (`borg-mcp` depends on the core's new
+  `query` facade, never the reverse); replay mode first (the
+  `BORG_OBSERVATION_LOG`, `BORG_WORLD_LOG`, `BORG_KNOWLEDGE_LOG` logs and
+  `trace.jsonl` already hold what is needed); live mode optional, one game
+  per process.
+- **ARCHITECTURE.md:** a pointer to the draft.
+
+**Found:** a replay rebuilds `World` from observations, but not the
+strategy's own state (mode, goal, `Memory`, RNG). The draft replays the
+strategy too, with the run's seed and profile, and checks each choice
+against the trace, which makes every replay a determinism check.
+
+**For the owner:** open GitHub milestones Q1–Q4 and their task issues when
+Q is to start (the plan says after M4 is merged); decide after Q3 whether
+Q4 (live) is wanted. The draft's open questions (transport library,
+snapshot interval, `what_if` look-ahead, live pause point) are settled in
+the stage named there. M4 continues unchanged.
+
 ## 2026-11-10: item actions and the escape items (#122)
 
 The executor now has **Quaff**, **Read**, **Eat** and **Wield**: the

@@ -211,12 +211,53 @@ These follow from the sources. Each cites the evidence behind it.
     Maul (about 7.6 against 21 damage per turn) because of an
     unidentified-weapon bonus and a per-blow weight (REDESIGN-LESSONS L10).
 
+## Secondary goal Q: a query surface for language models
+
+*Owner, 2026-11-11 (D12).* The Borg's judgement (danger, threats, the
+tactical alternatives, the strategy's decision and its reasons, reserves,
+equipment value) is exposed to language models through an MCP server,
+`borg-mcp`, so a model can ask the Borg's questions about a game state and
+get the Borg's answers. The users are borg-agent and other agent players
+(claims with evidence), people reading a death dossier, and models
+reviewing a strategy change. The design draft is
+[QUERY-SURFACE.md](QUERY-SURFACE.md).
+
+**What holds:**
+
+1. **Secondary.** The primary goals (G0–G4) come first. Q never blocks a
+   primary milestone, and no primary exit criterion depends on it.
+2. **Read only, never a player.** No tool sends keys or changes the state
+   a played game reads. The Borg plays without a model, with or without the
+   server attached (principle 2, determinism).
+3. **Same repository, separate crate.** `borg-mcp` is a workspace member
+   that depends on the core; the core never depends on it, and nothing of
+   it reaches the game build or the zoo contract.
+4. **No new judgement in the server.** It calls the functions the Borg
+   plays with, through one stable, versioned facade (`query`). A question
+   that needs a new computation gets it in the core first.
+5. **Replay first.** Recorded runs, dossiers and fixtures, without the
+   engine. A live mode that hosts a game comes last and is optional.
+
+**Roadmap** (milestones of the secondary track; tasks in PLAN.md):
+
+| Stage | Delivers | Done when |
+| --- | --- | --- |
+| Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
+| Q2 | `borg-mcp` over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
+| Q3 | The strategy tools: `responses`, `decide`, `reserves`, `what_if`; snapshots for fast seeking | `decide` equals the trace at every think of the smoke references; `what_if` covers the death fixtures' alternatives |
+| Q4 | Live mode (optional): one hosted game per process, paused at a think | `keys.log` identical with and without queries at every think |
+
+Q1 may start once M4 is merged, since the facade sits over M4's threat
+model. Each stage is a milestone with a review PR, like the primary ones.
+
 ## Non-goals
 
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
   decisions. Controls and comparisons are borg-zoo's (D8); borg-rs is a
   reference to copy from (docs/SPEC.md §2).
-- A model in the play loop, or machine learning at the core.
+- A model in the play loop, or machine learning at the core. *A model may
+  query the Borg's judgement from outside the loop (secondary goal Q,
+  D12); it never chooses an action.*
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
   routing to neo-angband-tracker.
@@ -240,4 +281,5 @@ them.
 | D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
-| D11 | borg-agent, borg-runner | Their reviewed claims are inputs to strategy and parameter design. No dependency on either in code or in the plan's critical path. *borg-runner (S15), the accumulated knowledge of agent players, was added by the owner on 2026-11-10 on the same terms* |
+| D11 | borg-agent, borg-runner | Their reviewed claims are inputs to strategy and parameter design. No dependency on either in code or in the plan's critical path. *borg-runner (S15), the accumulated knowledge of agent players, was added by the owner on 2026-11-10 on the same terms. Amended by D12 (2026-11-11): borg-agent may be a client of `borg-mcp`; this repository still has no code dependency on it* |
+| D12 | A query surface for models | **Secondary goal Q** (above, 2026-11-11): an MCP server, `borg-mcp`, a separate crate in this workspace, exposes the Borg's judgement read-only to language models; replay first, live optional; never a player, never on a primary milestone's critical path |

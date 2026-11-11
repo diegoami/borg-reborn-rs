@@ -44,6 +44,21 @@ as history; M1's engine tree and harness came from borg-rs and are replaced in E
 | **M6. The family** | Class profiles, the first class-specific strategy where M5's data shows the need, a tuning loop (screening and racing) | **G2**, confirmed on fresh seeds | not started |
 | **M7+** | Deeper suites, mid game, death-driven iterations | **G3**, then G4 | not started |
 
+## Secondary track Q: the query surface
+
+The secondary goal Q of [GOALS.md](docs/GOALS.md#secondary-goal-q-a-query-surface-for-language-models)
+(D12), designed in [docs/QUERY-SURFACE.md](docs/QUERY-SURFACE.md). Its
+milestones run beside the primary ones, only when the owner opens them
+(RULES 2), with the same method: task issues, a review PR at the end, the
+owner merges it. A Q milestone never blocks a primary one.
+
+| Milestone | What it delivers | Exit (all must hold) | State |
+| --- | --- | --- | --- |
+| **Q1. The facade** | `borg_reborn_rs::query`: `State` rebuilt from a run's logs (observations, knowledge, params, trace), the strategy replayed with the run's seed and profile; read-only reports with units; `query::VERSION`; `harness/run.sh --record-state` | Facade tests on every decision fixture and on a recorded smoke run; replay reproduces every trace choice of the smoke references; the harness build's identity is unchanged | not started (may start once M4 is merged) |
+| **Q2. The server** | `borg-mcp` workspace crate over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge`; trace and params as resources; schemas generated and checked in | An MCP client loads a death dossier and gets cited answers (`query_version`, run identity, think, turn); CI runs the crate's tests; sealed seeds refused | not started |
+| **Q3. The strategy tools** | `responses`, `decide`, `reserves`, `what_if` (closed `Hypothesis` set); state snapshots for fast seeking | `decide` equals the trace at every think of the smoke references; `what_if` reproduces each death fixture's alternative; facade purity test (world digest unchanged after every tool at every think) | not started |
+| **Q4. Live (optional)** | `borg-mcp --live`: one hosted game per process, paused at a think, read-only queries | `keys.log` identical with and without queries at every think on the smoke suite | not started; the owner decides whether it is wanted after Q3 |
+
 ## How every milestone starts
 
 With a source refresh (RULES 21): `scripts/refresh-sources.py --update` in
