@@ -247,22 +247,25 @@ reviewing a strategy change, and model players. The design draft is
 4. **No new judgement in the server.** It calls the functions the Borg
    plays with, through one stable, versioned facade (`query`). A question
    that needs a new computation gets it in the core first.
-5. **Replay first, then live, then play.** Recorded runs, dossiers and
-   fixtures without the engine come first; a hosted live game next; play
-   mode builds on it.
+5. **Diagnosis first.** The purpose is to improve the model-free Borg
+   by explaining its deaths after the fact. Recorded runs, dossiers and
+   fixtures come first; counterfactuals next; play mode last, optional.
 
-**Roadmap** (milestones of the secondary track; tasks in PLAN.md):
+**Roadmap** (owner, 2026-11-11: diagnosis first; tasks in PLAN.md):
 
 | Stage | Delivers | Done when |
 | --- | --- | --- |
+| Q0 | Pilot, no code: a session diagnoses deaths from what dossiers already hold (`trace-tail.jsonl`, `params.json`, `record.json`) | A hit rate on deaths with known explanations (same deciding think and alternative); a triage table of our own deaths; draft fixtures for the clearest; a list of the tools the pilot missed |
 | Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
-| Q2 | `borg-mcp` over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
-| Q3 | The strategy tools: `responses`, `decide`, `reserves`, `what_if`; snapshots for fast seeking | `what_if` covers the death fixtures' alternatives |
-| Q4 | Live mode: one hosted game per process, paused at a think | `keys.log` identical with and without queries at every think |
-| Q5 | Play mode: `observe`, `options`, `act`, `autopilot` (the Borg plays until a hand-off condition), a run record per model game | A model plays the smoke seeds end to end, fully and in the hybrid (Borg with hand-offs); every game replays key for key from its record; no fairness or exclusion breach |
+| Q2 | `borg-mcp` over stdio with the diagnosis tools: `load_run`, `seek`, `view`, `why`, `threats`, `danger_at`, `reserves`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
+| Q3 | Counterfactuals: `responses`, `decide`, `what_if`, and `branch` (rerun the seed, take an alternative at a think, let the Borg continue, report what followed); claims and draft fixtures as outputs | `what_if` reproduces the death fixtures' alternatives; `branch` reproduces the original run when no alternative is given, and runs only in a build the zoo never gets |
+| Q4 | The diagnosis workflow: evaluation on known deaths, triage of a zoo batch, review of strategy changes | The evaluation passes the hit-rate threshold the owner fixes; a batch's triage and its draft fixtures and issues are reviewed and filed |
+| Q5 | Play mode (optional; the owner decides after Q4): live hosting, `observe`, `options`, `act`, `autopilot` with hand-offs | A model plays the smoke seeds end to end, fully and in the hybrid; every game replays key for key from its record; no fairness or exclusion breach |
 
-Q1 may start once M4 is merged, since the facade sits over M4's threat
-model. Each stage is a milestone with a review PR, like the primary ones.
+Q0 touches no code and may run beside the primary milestone once the owner
+opens it. Q1 may start once M4 is merged, since the facade sits over M4's
+threat model. Each stage from Q1 is a milestone with a review PR, like the
+primary ones.
 
 ## Non-goals
 
@@ -297,4 +300,4 @@ them.
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent, borg-runner | *Amended 2026-11-11:* **borg-agent is retired** as an input (owner: a failed experiment that would need a rebuild); its roles, model-played games and claims with evidence, move to secondary goal Q (D12). **borg-runner** (S15, added 2026-11-10), the accumulated knowledge of agent players: its reviewed claims are inputs to strategy and parameter design, with no dependency in code or on the plan's critical path |
-| D12 | Query and play surface for models | **Secondary goal Q** (above, 2026-11-11, amended the same day): an MCP server, `borg-mcp`, a separate crate in this workspace. Query mode exposes the Borg's judgement read-only; play mode (Q5) lets a model play a hosted game through the executor as a separate arm. The measured Borg never calls a model; never on a primary milestone's critical path |
+| D12 | Query and play surface for models | **Secondary goal Q** (above, 2026-11-11, amended the same day): an MCP server, `borg-mcp`, a separate crate in this workspace. Its purpose is diagnosing the model-free Borg's deaths after the fact (Q0–Q4, owner 2026-11-11); query mode exposes the Borg's judgement read-only, and an optional play mode (Q5) lets a model play a hosted game through the executor as a separate arm. The measured Borg never calls a model; never on a primary milestone's critical path |

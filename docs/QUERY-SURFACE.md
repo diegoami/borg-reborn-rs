@@ -15,15 +15,21 @@ character quaffs this potion. Each answer is computed by the same functions
 the Borg plays with, so the model sees what the Borg sees, not a second
 opinion written for the occasion.
 
-It has two sides. **Query mode** answers questions and never sends keys.
-**Play mode** (Q5) lets a model play a hosted game, choosing among the
-Borg's own actions while the executor turns them into keys. A model-played
-game is a separate arm, never the measured Borg, which stays model-free
-(RULES 24).
+**Its purpose is diagnosis** (owner, 2026-11-11): explaining the
+model-free Borg's deaths after the fact, finding the think where each was
+decided and the alternative that would have saved it, and turning that
+into fixtures and issues for the strategy. That is how it improves the
+Borg. Q0–Q4 serve it.
+
+**Query mode** answers questions and never sends keys. **Play mode** (Q5,
+optional, decided after Q4) would let a model play a hosted game,
+choosing among the Borg's own actions while the executor turns them into
+keys; a model-played game is a separate arm, never the measured Borg,
+which stays model-free (RULES 24).
 
 Users: models explaining deaths and making claims with evidence, people
-reading a death dossier, models reviewing a strategy change, and model
-players (see *Workflows*).
+reading a death dossier, models reviewing a strategy change; model
+players only if Q5 is built (see *Workflows*).
 
 ## The decision
 
@@ -67,7 +73,7 @@ Why this shape:
 
 ## The modes
 
-### Replay (Q1–Q3): no engine
+### Replay (Q1–Q4): no engine
 
 A run already records what is needed, through the logs the core writes
 when asked:
@@ -97,7 +103,27 @@ never silenced. That turns every replay into a free determinism check
 `harness/run.sh` gets an option to turn the logs on (`--record-state`).
 Off by default, so measured runs and the zoo contract are unchanged.
 
-### Live (Q4): a game hosted by the server
+### Branch (Q3): what an alternative would have done
+
+`what_if` says what the Borg *would decide* under a changed state; it
+cannot say whether the character would have lived. `branch` can. It
+reruns the run's seed, build and profile through `harness/run.sh`, which
+reproduces the recorded game key for key (RULES 10), and at the chosen
+think replaces the strategy's action with the alternative (an executor
+`Action`), then lets the Borg continue for N game turns or until death,
+and reports what followed: survival, HP, depth, and the trace from the
+fork. With no alternative it must reproduce the original `keys.log`; that
+is its own test.
+
+The server stays engine-free: `branch` runs the harness as a subprocess.
+The forced action at a think is a cargo feature (`branch`) of the core,
+like `test-hallucinate`; the harness builds it only for `branch` runs, and
+the zoo-contract check refuses such a build. A branch is **one sample**:
+the game is deterministic, so a different action leads to one outcome,
+not a probability. A claim says so, and a fix is still judged on the
+zoo's populations (RULES 14).
+
+### Live hosting (Q5, optional): a game hosted by the server
 
 `borg-mcp --live` links the engine like the harness build does and hosts
 **one game per process** (the engine's globals allow no more). The Borg
@@ -109,7 +135,7 @@ decision the strategy made before the pause, so play is identical with
 and without queries. A test checks that `keys.log` is the same with the
 server attached and querying at every think as without it.
 
-### Play (Q5): a model plays the hosted game
+### Play (Q5, optional): a model plays the hosted game
 
 Play mode is live mode in which the model, not the strategy, chooses at
 the moments it is asked. It never works key by key: keys, prompts and
@@ -211,6 +237,7 @@ MCP tools map one to one onto the facade, with a session handle:
 | `why` | `session` | the trace line at this think: candidates, choice, violations |
 | `decide` | `session` | what the strategy decides now, re-run on a clone; equals `why` in replay |
 | `what_if` | `session`, hypothesis | the decision under the hypothesis, beside the actual one |
+| `branch` | `session`, alternative action (or none), game turns | the rerun from this think with the alternative: survived or not, HP, depth, the trace from the fork; with no alternative, the original run reproduced |
 | `reserves` | `session` | light, food, cure, escape, way home: held against the declared minimum |
 | `params` | `session` | the parameter table: name, unit, range, value, evidence |
 | `knowledge` | race, kind or class name | the static entry (spoiler data, as D3 allows) |
@@ -245,7 +272,8 @@ directly.
    `danger_at` and `reserves` to the think where the outcome was decided
    (often well before the death), try alternatives there with `what_if`,
    and write a claim with evidence (run, think, turn, `query_version`, tool
-   outputs). If an alternative holds, draft a decision fixture
+   outputs, and the `branch` result for the alternative). If an
+   alternative holds, draft a decision fixture
    (docs/FIXTURES.md) and an issue. A person or session reviews it; the
    fixture becomes a test; a strategy task fixes the decision; the zoo
    measures.
@@ -257,7 +285,7 @@ directly.
    new Borg; at each think where `decide` differs, a model judges whether
    the change is better, worse or a side effect. Supports the milestone
    review; the reviewer is still the owner's choice (RULES 6).
-4. **Hybrid play** (play mode). The Borg plays with hand-offs; at each
+4. **Hybrid play** (play mode, only if Q5 is built). The Borg plays with hand-offs; at each
    hand-off the model chooses. Hand-offs where the model's choice is
    better, judged by what followed and replayed with `what_if`, become
    claims for the model-free Borg, as in workflow 1.
@@ -281,12 +309,15 @@ alternative.
 - **No effect on play:** the smoke, smoke-exact and full references
   reproduce key for key and trace for trace after each Q PR, and
   `cargo tree -p borg-reborn-rs` (the staticlib's dependencies) is the same
-  with and without `borg-mcp` in the workspace; in Q4, `keys.log` is the
+  with and without `borg-mcp` in the workspace; in Q5, `keys.log` is the
   same with and without live queries. The build's source hash
   (`harness/identity.sh`) is not the check: it covers all of
   `borg-reborn-rs/` and `Cargo.lock`, so adding `query` or the workspace
   member changes it. With play unchanged, that change does not start a new
   measurement baseline (RULES 22).
+- **Branch:** `branch` with no alternative reproduces the original
+  `keys.log` on the smoke references; a `branch` build is refused by the
+  zoo-contract check.
 - **Play replay:** every model game in the Q5 tests replays key for key
   from its `keys.log` without the model, and its `calls.jsonl` accounts
   for every action the executor took.
@@ -309,4 +340,4 @@ alternative.
 - Whether `what_if` should also report a short look-ahead (the tactical
   layer's one step) or only the decision. Follows M4's look-ahead decision.
 - Live mode's pause point: inside `think` (simplest) or between keys
-  (finer, but the executor's queue complicates it). Q4.
+  (finer, but the executor's queue complicates it). Q5.

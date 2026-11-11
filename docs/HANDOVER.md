@@ -31,6 +31,22 @@ rebuild. Documents only:
 **For the owner:** nothing new to decide before Q starts. The hand-off
 conditions' defaults are an open question for Q5.
 
+**Same day, Q reordered around diagnosis (owner).** The MCP's purpose is
+diagnosing the model-free Borg's deaths after the fact; play mode is
+optional and last. New roadmap: **Q0** pilot (no code, #153: diagnose
+deaths from the dossiers as they are, measure a hit rate on known deaths,
+list the missing tools), **Q1** facade (#149–#151, unchanged), **Q2**
+diagnosis tools, **Q3** counterfactuals with **`branch`** (rerun the
+seed, force an alternative action at a think through a `branch` cargo
+feature the zoo never gets, let the Borg continue, report what followed;
+one sample, not a probability), **Q4** the diagnosis workflow and its
+evaluation, **Q5** play mode, optional, decided after Q4. The primary plan
+(M4–M7) is unchanged.
+
+**For the owner:** open Q0 when you want the pilot to run (it can run
+beside M4: it changes no code); fix the hit-rate threshold for Q4's
+evaluation, ideally after seeing Q0's numbers.
+
 ## 2026-11-11: no control runs requested from the zoo (owner)
 
 The owner: borg-zoo already runs the original C Borg and better-borg-c in
