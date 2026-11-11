@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-11: play mode for models; borg-agent retired (owner, D11/D12 amended)
+
+The owner wants models to be able to **play** through `borg-mcp`, not only
+query it, and says borg-agent was a failed experiment that would need a
+rebuild. Documents only:
+
+- **GOALS:** D12 now covers a query *and play* surface; constraint 2 is
+  "the measured Borg plays without a model" (play mode is a separate arm,
+  logged and replayable, bound by D3 and D5); new roadmap stage **Q5,
+  play mode**, and Q4 (live) is no longer optional, since Q5 needs it.
+  D11: borg-agent retired as an input, its roles move to Q; borg-runner
+  stays. Option E and the non-goal reworded to match.
+- **RULES 24–25:** the zoo specimen is always the model-free Borg and the
+  Borg's code never calls a model; a model game is a separate arm with its
+  model, effort and tool calls recorded; in play mode the model chooses
+  only executor actions, and rules 11, 12 and 15 bind it.
+- **PLAN:** Q5's row and exit; Q4 no longer optional; the Neo Angband
+  line no longer mentions borg-agent.
+- **docs/QUERY-SURFACE.md:** *Play (Q5)*: tools `observe`, `options`,
+  `act`, `autopilot` (hand-off conditions), three arms (model, hybrid,
+  advised), the run record (`model.json`, `calls.jsonl`); *Workflows*:
+  explaining a death, triage, reviewing a change, hybrid play, and which
+  model for each; two new checks (play replay, arm separation).
+- **SOURCES S7, ARCHITECTURE L3, AGENTS:** borg-agent retired; its pin is
+  dropped in the next `--update` PR (RULES 21: pin moves are their own PRs).
+
+**For the owner:** nothing new to decide before Q starts. The hand-off
+conditions' defaults are an open question for Q5.
+
 ## 2026-11-11: no control runs requested from the zoo (owner)
 
 The owner: borg-zoo already runs the original C Borg and better-borg-c in

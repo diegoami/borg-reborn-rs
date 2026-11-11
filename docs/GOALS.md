@@ -14,7 +14,7 @@ The owner asked which of these the Borg reborn should be:
 | **B. A family of competing Borgs** | Several Borgs, different designs, the zoo picks | Matches the per-class evidence; competition finds what works | Each Borg rebuilds perception, map memory, flow and items, the expensive part that differences in play do not come from |
 | **C. A Borg with optimisable parameters** | One design whose decision constants are named, ranged and tuned by experiment | Measurable; reversible; the TUNABLE plan's whole method | Tuning moves thresholds, not structure; several C Borg deaths come from structure (rules that never compare alternatives) |
 | **D. A learned policy** | Reinforcement or imitation learning at the core | Unbounded in principle | Long horizons, sparse death signal; symbolic bots still beat neural ones on NetHack; loses determinism and explainability; the TUNABLE plan advises against starting here |
-| **E. A model in the loop** | A language model chooses actions | Uses general knowledge | That is borg-agent's job, for *knowledge*, not play; slow, costly, non-deterministic |
+| **E. A model in the loop** | A language model chooses actions | Uses general knowledge | Slow, costly, non-deterministic. *Since 2026-11-11 it exists as secondary goal Q's play mode, a separate arm, never the measured Borg (D12)* |
 
 ## Recommendation: one substrate, a family of strategies, all of them tunable
 
@@ -222,26 +222,34 @@ These follow from the sources. Each cites the evidence behind it.
 tactical alternatives, the strategy's decision and its reasons, reserves,
 equipment value) is exposed to language models through an MCP server,
 `borg-mcp`, so a model can ask the Borg's questions about a game state and
-get the Borg's answers. The users are borg-agent and other agent players
-(claims with evidence), people reading a death dossier, and models
-reviewing a strategy change. The design draft is
+get the Borg's answers, and so a model can **play** a hosted game through
+the Borg's executor (play mode). The users are models explaining deaths
+and making claims with evidence, people reading a death dossier, models
+reviewing a strategy change, and model players. The design draft is
 [QUERY-SURFACE.md](QUERY-SURFACE.md).
 
 **What holds:**
 
 1. **Secondary.** The primary goals (G0–G4) come first. Q never blocks a
    primary milestone, and no primary exit criterion depends on it.
-2. **Read only, never a player.** No tool sends keys or changes the state
-   a played game reads. The Borg plays without a model, with or without the
-   server attached (principle 2, determinism).
+2. **The measured Borg plays without a model.** The Borg's code never
+   calls a model, and the zoo specimen is always the model-free Borg
+   (principle 2, determinism). Query mode never sends keys. Play mode lets
+   a model play a hosted game as a **separate arm**: its own name, the
+   model and effort in the run record, every tool call logged, and every
+   game replayable key for key from its record. The model chooses among
+   executor actions; keys and prompts stay the executor's, and fair
+   information (D3) and the exclusions (D5) bind the model as they bind
+   the Borg.
 3. **Same repository, separate crate.** `borg-mcp` is a workspace member
    that depends on the core; the core never depends on it, and nothing of
    it reaches the game build or the zoo contract.
 4. **No new judgement in the server.** It calls the functions the Borg
    plays with, through one stable, versioned facade (`query`). A question
    that needs a new computation gets it in the core first.
-5. **Replay first.** Recorded runs, dossiers and fixtures, without the
-   engine. A live mode that hosts a game comes last and is optional.
+5. **Replay first, then live, then play.** Recorded runs, dossiers and
+   fixtures without the engine come first; a hosted live game next; play
+   mode builds on it.
 
 **Roadmap** (milestones of the secondary track; tasks in PLAN.md):
 
@@ -250,7 +258,8 @@ reviewing a strategy change. The design draft is
 | Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
 | Q2 | `borg-mcp` over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
 | Q3 | The strategy tools: `responses`, `decide`, `reserves`, `what_if`; snapshots for fast seeking | `what_if` covers the death fixtures' alternatives |
-| Q4 | Live mode (optional): one hosted game per process, paused at a think | `keys.log` identical with and without queries at every think |
+| Q4 | Live mode: one hosted game per process, paused at a think | `keys.log` identical with and without queries at every think |
+| Q5 | Play mode: `observe`, `options`, `act`, `autopilot` (the Borg plays until a hand-off condition), a run record per model game | A model plays the smoke seeds end to end, fully and in the hybrid (Borg with hand-offs); every game replays key for key from its record; no fairness or exclusion breach |
 
 Q1 may start once M4 is merged, since the facade sits over M4's threat
 model. Each stage is a milestone with a review PR, like the primary ones.
@@ -260,9 +269,10 @@ model. Each stage is a milestone with a review PR, like the primary ones.
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
   decisions. Controls and comparisons are borg-zoo's (D8); borg-rs is a
   reference to copy from (docs/SPEC.md §2).
-- A model in the play loop, or machine learning at the core. *A model may
-  query the Borg's judgement from outside the loop (secondary goal Q,
-  D12); it never chooses an action.*
+- A model in the measured Borg's loop, or machine learning at the core.
+  *A model may query the Borg's judgement, or play as a separate arm
+  through play mode (secondary goal Q, D12); the Borg itself never calls
+  a model.*
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
   routing to neo-angband-tracker.
@@ -286,5 +296,5 @@ them.
 | D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. *Owner, 2026-11-11: the controls run in the zoo's own experiments; this repository requests runs of its own Borg only.* This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
-| D11 | borg-agent, borg-runner | Their reviewed claims are inputs to strategy and parameter design. No dependency on either in code or in the plan's critical path. *borg-runner (S15), the accumulated knowledge of agent players, was added by the owner on 2026-11-10 on the same terms. Amended by D12 (2026-11-11): borg-agent may be a client of `borg-mcp`; this repository still has no code dependency on it* |
-| D12 | A query surface for models | **Secondary goal Q** (above, 2026-11-11): an MCP server, `borg-mcp`, a separate crate in this workspace, exposes the Borg's judgement read-only to language models; replay first, live optional; never a player, never on a primary milestone's critical path |
+| D11 | borg-agent, borg-runner | *Amended 2026-11-11:* **borg-agent is retired** as an input (owner: a failed experiment that would need a rebuild); its roles, model-played games and claims with evidence, move to secondary goal Q (D12). **borg-runner** (S15, added 2026-11-10), the accumulated knowledge of agent players: its reviewed claims are inputs to strategy and parameter design, with no dependency in code or on the plan's critical path |
+| D12 | Query and play surface for models | **Secondary goal Q** (above, 2026-11-11, amended the same day): an MCP server, `borg-mcp`, a separate crate in this workspace. Query mode exposes the Borg's judgement read-only; play mode (Q5) lets a model play a hosted game through the executor as a separate arm. The measured Borg never calls a model; never on a primary milestone's critical path |

@@ -57,7 +57,8 @@ owner merges it. A Q milestone never blocks a primary one.
 | **Q1. The facade** | `borg_reborn_rs::query`: `State` rebuilt from a run's logs (observations, knowledge, params, trace), the strategy replayed with the run's seed and profile; read-only reports with units; `query::VERSION`; `harness/run.sh --record-state` | Facade tests on every decision fixture and on a recorded smoke run; replay reproduces every trace choice of the smoke references, as a CI step; play unchanged: the smoke, smoke-exact and full references reproduce key for key and trace for trace. The build's source hash (`harness/identity.sh`) does change, since it covers `borg-reborn-rs/` and `Cargo.lock`; with play unchanged that is not a new measurement baseline (RULES 22) | not started (may start once M4 is merged); tasks #149 (TQ1.1), #150 (TQ1.2), #151 (TQ1.3) |
 | **Q2. The server** | `borg-mcp` workspace crate over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge`; trace and params as resources; schemas generated and checked in | An MCP client loads a death dossier and gets cited answers (`query_version`, run identity, think, turn); CI runs the crate's tests; sealed seeds refused | not started |
 | **Q3. The strategy tools** | `responses`, `decide`, `reserves`, `what_if` (closed `Hypothesis` set); state snapshots for fast seeking | `what_if` reproduces each death fixture's alternative; facade purity test (world digest unchanged after every tool at every think) | not started |
-| **Q4. Live (optional)** | `borg-mcp --live`: one hosted game per process, paused at a think, read-only queries | `keys.log` identical with and without queries at every think on the smoke suite | not started; the owner decides whether it is wanted after Q3 |
+| **Q4. Live** | `borg-mcp --live`: one hosted game per process, paused at a think, read-only queries | `keys.log` identical with and without queries at every think on the smoke suite | not started |
+| **Q5. Play mode** | `observe`, `options`, `act`, `autopilot` with hand-off conditions; a run record per model game (model, effort, tool calls, keys); the arm's name and its death dossiers; the workflows of docs/QUERY-SURFACE.md | A model plays the smoke seeds end to end, fully and in the hybrid; every game replays key for key from its record; its deaths have dossiers under its own arm; fair-information and exclusion checks pass | not started |
 
 ## How every milestone starts
 
@@ -122,4 +123,4 @@ PRs #1 and #2; tag `m0`.
 
 - A "fair-play" information profile (screen only), measured separately (D3).
 - Learned components for narrow decisions, from the decision trace.
-- Neo Angband, through borg-agent's or Mandos's adapters.
+- Neo Angband, through Mandos's adapters.

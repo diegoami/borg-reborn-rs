@@ -124,13 +124,20 @@ whatever the model.
 
 ## The query surface (secondary goal Q, owner 2026-11-11)
 
-24. **The Borg plays without a model.** `borg-mcp` (docs/QUERY-SURFACE.md)
-    reads the Borg's judgement; it never sends keys or changes the state a
-    played game reads. The core never depends on `borg-mcp`, and nothing of
-    it is linked into the game or reaches the zoo contract. A live query
-    never changes `keys.log`.
+24. **The measured Borg plays without a model.** The Borg's code never
+    calls a model, and the zoo specimen is always the model-free Borg. The
+    core never depends on `borg-mcp` (docs/QUERY-SURFACE.md), and nothing of
+    it is linked into the zoo's build or reaches the zoo contract. Query
+    mode never sends keys, and a live query never changes `keys.log`. A
+    game played by a model through play mode is a **separate arm**: never
+    named or reported as the Borg, with the model, its effort and every
+    tool call in the run record, and replayable key for key.
 25. **The server has no judgement of its own.** Every answer comes from a
     function the Borg plays with, through the versioned `query` facade.
     A new computation goes into the core first, with its own task and
     tests. A change to a report type or a tool schema bumps
-    `query::VERSION`.
+    `query::VERSION`. In play mode the model chooses only among executor
+    actions; keys and prompts are the executor's, and rules 11 (fair
+    information) and 15 (no exploits) bind the model as they bind the
+    Borg. A model-played death is recorded like any other (rule 12),
+    under its own arm.

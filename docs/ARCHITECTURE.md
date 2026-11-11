@@ -101,8 +101,8 @@ egos, artifacts, spells by class, stores. Read from the engine's parsed
 data (`r_info`, `k_info`, …) at start, plus derived tables. Formulas lifted
 from the C Borg (for example per-blow damage adjustments in
 `borg_danger_physical()`) carry a `file:function:lines` citation at the pin
-and a unit test with the C values. Later, reviewed borg-agent claims feed
-in here.
+and a unit test with the C values. Later, reviewed claims (borg-runner's,
+and those made through the query and play surface, D12) feed in here.
 
 ### L4 Assessment
 

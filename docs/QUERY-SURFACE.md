@@ -15,9 +15,15 @@ character quaffs this potion. Each answer is computed by the same functions
 the Borg plays with, so the model sees what the Borg sees, not a second
 opinion written for the occasion.
 
-Users: borg-agent and other agent players (knowledge, claims with
-evidence), people reading a death dossier, and a model reviewing a strategy
-change. **It is not a player.** No tool sends keys to the game.
+It has two sides. **Query mode** answers questions and never sends keys.
+**Play mode** (Q5) lets a model play a hosted game, choosing among the
+Borg's own actions while the executor turns them into keys. A model-played
+game is a separate arm, never the measured Borg, which stays model-free
+(RULES 24).
+
+Users: models explaining deaths and making claims with evidence, people
+reading a death dossier, models reviewing a strategy change, and model
+players (see *Workflows*).
 
 ## The decision
 
@@ -53,10 +59,13 @@ Why this shape:
   transport, JSON schemas and possibly an async runtime. None of that
   belongs in the game binary, and none of it may reach the zoo's build
   (docs/ZOO-INTERFACE.md).
-- **Not in borg-agent:** borg-agent is a client, not the owner of the
-  Borg's judgement. It connects to `borg-mcp` like any other model.
+- **Not in borg-agent:** borg-agent was a failed experiment (owner,
+  2026-11-11) and is retired as a source. Its roles, model-played games
+  and claims with evidence, are done here, where the executor, the engine
+  host and the predicates already are. Any MCP client (Claude Code, an
+  API harness, another vendor's client) connects to `borg-mcp`.
 
-## The two modes
+## The modes
 
 ### Replay (Q1–Q3): no engine
 
@@ -88,7 +97,7 @@ never silenced. That turns every replay into a free determinism check
 `harness/run.sh` gets an option to turn the logs on (`--record-state`).
 Off by default, so measured runs and the zoo contract are unchanged.
 
-### Live (Q4, optional): a game hosted by the server
+### Live (Q4): a game hosted by the server
 
 `borg-mcp --live` links the engine like the harness build does and hosts
 **one game per process** (the engine's globals allow no more). The Borg
@@ -99,6 +108,45 @@ lets the model choose an action, and a paused think resumes with the
 decision the strategy made before the pause, so play is identical with
 and without queries. A test checks that `keys.log` is the same with the
 server attached and querying at every think as without it.
+
+### Play (Q5): a model plays the hosted game
+
+Play mode is live mode in which the model, not the strategy, chooses at
+the moments it is asked. It never works key by key: keys, prompts and
+menus are the executor's (L6), and the model chooses at the level the
+Borg chooses.
+
+| Tool | What it does |
+| --- | --- |
+| `observe` | The character's view: remembered map around it, HP and status, threats, reserves; the same `State` reports as query mode |
+| `options` | The Borg's own scored alternatives now (`responses`, and the strategy's `decide`), so the model sees what the Borg would do and why |
+| `act` | Carries out one executor `Action` (Attack, StepTo, Quaff, Read, Eat, Wield, stairs, …); returns the expected effect and whether the next think saw it |
+| `autopilot` | Lets the Borg play until a hand-off condition: risk above a threshold, HP below a fraction, a new unique or out-of-depth monster, a level change, a failed effect, or N game turns |
+| `why`, `what_if` | As in query mode, on the live state |
+
+Three ways to run it, each its own arm:
+
+- **model**: the model chooses at every think (slow and costly; a ceiling
+  study, not a default);
+- **hybrid**: `autopilot` with hand-offs, the model choosing only at the
+  moments that matter. It is the useful one: it is cheap, and every
+  hand-off where the model's choice beats the Borg's is a candidate claim
+  for the model-free Borg;
+- **advised** (later, optional): the Borg plays, the model is only asked
+  for a second opinion that is logged and not acted on, which measures
+  disagreement without changing play.
+
+**Run record.** Each model game writes the usual run directory plus
+`model.json` (client, model, effort, hand-off conditions) and
+`calls.jsonl` (every tool call and result, with think and turn). The
+game's `keys.log` replays it key for key without the model, so query mode
+and the death tools read it like any run. Deaths get dossiers under the
+arm's own name (RULES 12). The arm is never `4.2.6-reborn-rust`; if the
+zoo measures it, it is a separate specimen, and the zoo decides that.
+
+**Fairness.** The tools read only through the facade, so the model sees
+what the Borg sees (D3). Excluded modes (D5, RULES 15) are not offered as
+actions.
 
 ## The facade: `borg_reborn_rs::query`
 
@@ -172,17 +220,56 @@ as MCP resources, so a client can read them whole.
 
 Every tool result carries `query_version`, `run` (build identity and
 profile hash), `think` and `turn`, so a claim made from it can be cited and
-checked later. That is the form borg-agent's claims need.
+checked later: a claim with evidence.
 
 ## What the server does not do
 
-- No tool sends keys, and no tool changes the state a played game reads.
+- In query mode, no tool sends keys or changes the state a played game
+  reads. In play mode, only `act` and `autopilot` move the game, through
+  the executor; no tool sends raw keys.
 - No free-form code or expression evaluation.
 - No network access by default: stdio transport. An HTTP transport, if
   added, binds to localhost.
 - No sealed seeds: `load_run` refuses runs whose seed is in a sealed set
   (RULES 14).
 - No statistics across runs. Comparisons are borg-zoo's (SPEC §6).
+
+## Workflows
+
+What models do with the server, once it exists. Every output is a claim
+that tests and the zoo check; nothing a model writes goes into the code
+directly.
+
+1. **Explaining a death** (query mode). `load_run` on a dossier, `seek` to
+   the last few hundred thinks, walk back with `why`, `threats`,
+   `danger_at` and `reserves` to the think where the outcome was decided
+   (often well before the death), try alternatives there with `what_if`,
+   and write a claim with evidence (run, think, turn, `query_version`, tool
+   outputs). If an alternative holds, draft a decision fixture
+   (docs/FIXTURES.md) and an issue. A person or session reviews it; the
+   fixture becomes a test; a strategy task fixes the decision; the zoo
+   measures.
+2. **Triage** (query mode). After a zoo batch, a cheap pass sorts deaths
+   into cause buckets (unused cure, wrong escape, readiness, oscillation,
+   starvation) and flags the unusual ones for workflow 1. Feeds the
+   calibration report and the death index.
+3. **Reviewing a strategy change** (query mode). Same seeds on the old and
+   new Borg; at each think where `decide` differs, a model judges whether
+   the change is better, worse or a side effect. Supports the milestone
+   review; the reviewer is still the owner's choice (RULES 6).
+4. **Hybrid play** (play mode). The Borg plays with hand-offs; at each
+   hand-off the model chooses. Hand-offs where the model's choice is
+   better, judged by what followed and replayed with `what_if`, become
+   claims for the model-free Borg, as in workflow 1.
+
+**Which model.** The repository stays model agnostic and any MCP client
+works. As a starting point: a strong agentic model at high effort for
+workflows 1 and 4 (long tool use, reading traces, Angband reasoning), a
+small cheap model for workflow 2 (batched), and for workflow 3 a model of
+a different family from the one that wrote the change. A model's use is
+validated before it is trusted: on deaths with known explanations
+(`reference/deaths/`), it must find the same deciding think and the same
+alternative.
 
 ## Checks
 
@@ -200,6 +287,11 @@ checked later. That is the form borg-agent's claims need.
   `borg-reborn-rs/` and `Cargo.lock`, so adding `query` or the workspace
   member changes it. With play unchanged, that change does not start a new
   measurement baseline (RULES 22).
+- **Play replay:** every model game in the Q5 tests replays key for key
+  from its `keys.log` without the model, and its `calls.jsonl` accounts
+  for every action the executor took.
+- **Arm separation:** a model game's run record names its arm and model;
+  the zoo-contract check refuses it as the reborn specimen.
 - **Schema:** the tool schemas are generated from the report types and
   checked in (`borg-mcp/schema/`); a change to them is a visible diff.
 
@@ -211,6 +303,9 @@ checked later. That is the form borg-agent's claims need.
 - How much of `Memory` the trace should carry so that seeking to a think
   does not need a replay from the start. Snapshot every N thinks is the
   likely answer (Q3).
+- Play mode's hand-off conditions and their defaults, and whether the
+  hybrid's thresholds are parameters of the arm (a profile) or of the
+  client. Q5.
 - Whether `what_if` should also report a short look-ahead (the tactical
   layer's one step) or only the decision. Follows M4's look-ahead decision.
 - Live mode's pause point: inside `think` (simplest) or between keys
