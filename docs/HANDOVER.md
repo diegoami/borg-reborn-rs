@@ -29,8 +29,12 @@ strategy's own state (mode, goal, `Memory`, RNG). The draft replays the
 strategy too, with the run's seed and profile, and checks each choice
 against the trace, which makes every replay a determinism check.
 
-**For the owner:** open GitHub milestones Q1–Q4 and their task issues when
-Q is to start (the plan says after M4 is merged); decide after Q3 whether
+**Q1's tasks are filed** (#149 `run.sh --record-state`, #150 `query::State`,
+#151 strategy replay), labelled `task` but in no GitHub milestone: this
+session cannot create one.
+
+**For the owner:** create the GitHub milestones Q1–Q4 (move #149–#151 into
+Q1) when Q is to start (the plan says after M4 is merged); decide after Q3 whether
 Q4 (live) is wanted. The draft's open questions (transport library,
 snapshot interval, `what_if` look-ahead, live pause point) are settled in
 the stage named there. M4 continues unchanged.
