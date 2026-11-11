@@ -1,0 +1,77 @@
+{
+  "turn": 31751,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 2,
+      "y": 2,
+      "race": 46,
+      "hp": 1,
+      "max_hp": 7,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Read",
+      "item": "the only Phase Door against a dying yeek"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "dir": 6,
+      "item": "the 1-HP blue yeek"
+    }
+  ],
+  "map": [
+    "###############",
+    "#.............#",
+    "#@y...........#",
+    "#.............#",
+    "#.............#",
+    "###############"
+  ],
+  "id": "bbc-d0018-dying-yeek-phase",
+  "title": "D0018: the only Phase Door goes on a dying yeek",
+  "dossier": "reference/deaths/better-borg-c/D0018-collected",
+  "citations": [
+    "overall-assessment.md:16,27,35,49-50,68-70"
+  ],
+  "construction": "Dunadan Druid CL2, 14/19 HP, D1, turn 31751. The dossier's blue yeek is at its last hit point beside the player (danger p=5), one Phase Door in the pack; the wild cat that arrived with it is not placed (its grid is not recorded). The room is constructed.",
+  "limits": "The dossier's analysis (#154: a twitch, not a threat response) is the evidence; the owner branch (33363-33505) covers the later cat chase, not this turn. The fixture checks the ladder's last-item bar, not a measured survival.",
+  "player": {
+    "race": 8,
+    "class": 2,
+    "level": 2,
+    "hp": 14,
+    "max_hp": 19,
+    "x": 1,
+    "y": 2
+  },
+  "depth": 1,
+  "max_depth": 1
+}

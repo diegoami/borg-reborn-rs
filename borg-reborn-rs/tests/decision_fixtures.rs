@@ -44,7 +44,10 @@ const EXPECTED_IDS: &[&str] = &[
     "bbc-d0012-kill-the-mold",
     "bbc-d0019-one-apprentice-not-flight",
     "bbc-d0013-kobold-not-level-flight",
+    "bbc-d0013-eye-step-not-phase",
     "bbc-d0014-speed-and-clw",
+    "bbc-d0017-faster-pursuer-walk",
+    "bbc-d0018-dying-yeek-phase",
     "breeder-pack-one-action",
     "fear-blocks-the-attack",
     "fang-ac36-armour-ignoring-spell",
@@ -62,17 +65,15 @@ const EXPECTED_IDS: &[&str] = &[
 /// the compiler cannot see GitHub, and a stale owner is exactly the silent
 /// skip this check exists to prevent.
 const OWNERS: &[(u32, &str)] = &[
-    (119, "T4.2 one threat assessment (status, groups, horizon)"),
-    (120, "T4.3 tactical alternatives scored on one scale"),
-    (122, "T4.5 consumables, status recovery and reserves"),
     (
         123,
         "T4.6 recovery, return home and progress under oscillation",
     ),
     (
-        121,
-        "T4.4 escape ladder with landing risk and last-item protection",
+        124,
+        "T4.7 threat calibration report and the M4 survival gate",
     ),
+    (126, "T5.2 equipment and pack valuation by effect"),
     (127, "T5.3 class item use, spells and ranged combat"),
 ];
 
@@ -709,7 +710,9 @@ fn every_fixture_exists_and_is_owned() {
 }
 
 /// Not a check: `BORG_FIXTURE_PRINT=1 cargo test --test decision_fixtures
-/// print_current -- --nocapture` lists what every scenario decides today.
+/// print_current -- --nocapture` lists what every scenario decides today;
+/// adding `BORG_FIXTURE_CANDIDATES=1` lists every scored candidate under
+/// it (`score`, then the action).
 #[test]
 fn print_current() {
     if std::env::var_os("BORG_FIXTURE_PRINT").is_none() {
@@ -721,6 +724,11 @@ fn print_current() {
             "{:40} {:6} {:8} {:?}",
             loaded.fixture.id, loaded.fixture.status, d.mode, d.action
         );
+        if std::env::var_os("BORG_FIXTURE_CANDIDATES").is_some() {
+            for (a, s) in &d.candidates {
+                eprintln!("{s:8.2} {a:?}");
+            }
+        }
     }
 }
 

@@ -1,0 +1,96 @@
+{
+  "turn": 1094688,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 7,
+      "tval": 23,
+      "sval": 9,
+      "weight": 120,
+      "desc": "a Mace (2d4)",
+      "dd": 2,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 13,
+      "desc": "Phase Door",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 2,
+      "race": 50,
+      "hp": 41,
+      "max_hp": 41,
+      "speed": 120,
+      "sleep": 0
+    },
+    {
+      "x": 4,
+      "y": 2,
+      "race": 50,
+      "hp": 41,
+      "max_hp": 41,
+      "speed": 120,
+      "sleep": 0
+    },
+    {
+      "x": 2,
+      "y": 3,
+      "race": 50,
+      "hp": 41,
+      "max_hp": 41,
+      "speed": 120,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Walk",
+      "item": "a walking retreat against a faster pursuer"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Read",
+      "item": "a Phase Door, one of thirteen"
+    }
+  ],
+  "map": [
+    "###################",
+    "#.................#",
+    "#..ss.............#",
+    "#.s@..............#",
+    "#.................#",
+    "#.................#",
+    "###################"
+  ],
+  "id": "bbc-d0017-faster-pursuer-walk",
+  "title": "D0017: a faster pack runs down the walking retreat",
+  "dossier": "reference/deaths/better-borg-c/D0017-collected",
+  "citations": [
+    "overall-assessment.md:15-22,31,40-43"
+  ],
+  "construction": "Dwarf Ranger CL25, 100/279 HP, D21 (max 22), turn 1094688. The dossier's Mirkwood spiders are not in the knowledge slice; cave spiders stand in, at the dossier's measured speed +10 and 41 HP, three of them adjacent as at the turn. The pack's thirteen Phase Doors are the dossier's. The room is constructed.",
+  "limits": "A chat-reported death, recorded verbatim on #403; the spiders stand in for a race the slice does not carry. The fixture checks the retreat's ordering (a faster pursuer outwalks walking), not the poison or the cures.",
+  "player": {
+    "race": 5,
+    "class": 7,
+    "level": 25,
+    "hp": 100,
+    "max_hp": 279,
+    "x": 3,
+    "y": 3
+  },
+  "depth": 21,
+  "max_depth": 22
+}
