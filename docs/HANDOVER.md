@@ -33,6 +33,15 @@ to allow it. Documents only, no code:
   per process.
 - **ARCHITECTURE.md:** a pointer to the draft.
 
+**Review (#148, owner's comment):** three findings, all fixed. (1) Q1's
+exit said "the harness build's identity is unchanged", but
+`harness/identity.sh` hashes all of `borg-reborn-rs/` and `Cargo.lock`, so
+adding `query` changes it; the exit and the draft's checks now ask for
+the references to reproduce play, and say a changed source hash with
+unchanged play is not a new baseline (RULES 22). (2) RULES 2's wrap. (3)
+The replay-determinism check was in both TQ1.3 and Q3's exit, and the
+draft said CI from Q2; it is now Q1's alone.
+
 **Found:** a replay rebuilds `World` from observations, but not the
 strategy's own state (mode, goal, `Memory`, RNG). The draft replays the
 strategy too, with the run's seed and profile, and checks each choice

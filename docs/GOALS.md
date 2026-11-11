@@ -249,7 +249,7 @@ reviewing a strategy change. The design draft is
 | --- | --- | --- |
 | Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
 | Q2 | `borg-mcp` over stdio: `load_run`, `seek`, `view`, `danger_at`, `threats`, `why`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
-| Q3 | The strategy tools: `responses`, `decide`, `reserves`, `what_if`; snapshots for fast seeking | `decide` equals the trace at every think of the smoke references; `what_if` covers the death fixtures' alternatives |
+| Q3 | The strategy tools: `responses`, `decide`, `reserves`, `what_if`; snapshots for fast seeking | `what_if` covers the death fixtures' alternatives |
 | Q4 | Live mode (optional): one hosted game per process, paused at a think | `keys.log` identical with and without queries at every think |
 
 Q1 may start once M4 is merged, since the facade sits over M4's threat

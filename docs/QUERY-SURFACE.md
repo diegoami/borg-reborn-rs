@@ -188,12 +188,18 @@ checked later. That is the form borg-agent's claims need.
 
 - `cargo test --workspace` covers `query` and `borg-mcp`.
 - **Replay determinism:** on the smoke references, `decide` at every think
-  equals the trace's choice (part of CI from Q2).
+  equals the trace's choice (a CI step from Q1, TQ1.3).
 - **Facade purity:** a test runs every tool at every think of a recorded
   run and checks the rebuilt world digest is unchanged afterwards.
-- **No effect on play:** the core with and without `borg-mcp` in the
-  workspace builds the same staticlib (CI compares the harness build's
-  identity); in Q4, `keys.log` is the same with and without live queries.
+- **No effect on play:** the smoke, smoke-exact and full references
+  reproduce key for key and trace for trace after each Q PR, and
+  `cargo tree -p borg-reborn-rs` (the staticlib's dependencies) is the same
+  with and without `borg-mcp` in the workspace; in Q4, `keys.log` is the
+  same with and without live queries. The build's source hash
+  (`harness/identity.sh`) is not the check: it covers all of
+  `borg-reborn-rs/` and `Cargo.lock`, so adding `query` or the workspace
+  member changes it. With play unchanged, that change does not start a new
+  measurement baseline (RULES 22).
 - **Schema:** the tool schemas are generated from the report types and
   checked in (`borg-mcp/schema/`); a change to them is a visible diff.
 

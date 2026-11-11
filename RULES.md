@@ -13,8 +13,9 @@ whatever the model.
    **Work only inside the current milestone.** Work outside them waits
    for the owner. The secondary track Q (GOALS D12) has its own
    milestones; a session works on one only when the owner opens it, and
-   never in the same PR as primary work. A session that finds a goal or a task wrong says so in its
-   PR or in [docs/HANDOVER.md](docs/HANDOVER.md), and goes on with the rest.
+   never in the same PR as primary work. A session that finds a goal or
+   a task wrong says so in its PR or in [docs/HANDOVER.md](docs/HANDOVER.md),
+   and goes on with the rest.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
