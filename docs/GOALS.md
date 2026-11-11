@@ -89,6 +89,10 @@ of the same name:
 - **Arms:** the reborn Borg, built here, and the Borgs borg-zoo compares it
   with (D8). The zoo chooses, builds and runs the controls; this repository
   builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md).
+  **We request no control runs** (owner, 2026-11-11): the zoo runs the
+  original C Borg and better-borg-c in its own experiments, and a
+  comparison uses those results on the same suite and seeds. A zoo run
+  this repository asks for runs only our Borg.
   *Until milestone E, same-frontend C controls were built here (T1.3, #6).*
 - **Calculated by** borg-zoo, from its result cells (docs/SPEC.md §6, owner
   2026-11-09; this repository's `tools/endpoint.py`, T1.7, was retired in
@@ -98,7 +102,8 @@ of the same name:
   than per class, so it is **not** this endpoint.
 
 **Prerequisites of G1:** the run contract (T1.4), our specimen in borg-zoo's
-catalogue (T1.8, routed by the owner), and the zoo's controls and its
+catalogue (T1.8, routed by the owner), the zoo's existing control results
+on the suite (from its own experiments, not requested by us) and its
 calculation of the endpoint above (D8). Until then, numbers are descriptive.
 
 ### Staged targets
@@ -106,8 +111,8 @@ calculation of the endpoint above (D8). Until then, numbers are descriptive.
 | Stage | Target | Suite (borg-zoo) | Milestone |
 | --- | --- | --- | --- |
 | G0 | **Plays.** Starts, explores, fights, uses stairs and town. No stalls, no crashes, no harness failures on the smoke suites; same seed twice gives the same keys | `smoke`, borg-rs `smoke` | M3 |
-| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the pristine C Borg control (the zoo's) (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
-| G2 | **Better early.** Per class, better than the zoo's better-borg-c control at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
+| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the pristine C Borg control (the zoo's existing results) (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
+| G2 | **Better early.** Per class, better than the zoo's better-borg-c control (its existing results) at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
 | G3 | **Better deep.** T = 400,000, D = 20 or more, per class | `deep-1000` and new per-class deep suites | M7+ |
 | G4 | **Wins.** Kills Morgoth without the excluded modes | long runs | long term |
 
@@ -278,7 +283,7 @@ them.
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by borg-zoo; *`tools/endpoint.py` until TE.7*); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
+| D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. *Owner, 2026-11-11: the controls run in the zoo's own experiments; this repository requests runs of its own Borg only.* This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
 | D11 | borg-agent, borg-runner | Their reviewed claims are inputs to strategy and parameter design. No dependency on either in code or in the plan's critical path. *borg-runner (S15), the accumulated knowledge of agent players, was added by the owner on 2026-11-10 on the same terms. Amended by D12 (2026-11-11): borg-agent may be a client of `borg-mcp`; this repository still has no code dependency on it* |

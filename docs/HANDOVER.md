@@ -2,6 +2,15 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-11: no control runs requested from the zoo (owner)
+
+The owner: borg-zoo already runs the original C Borg and better-borg-c in
+its other experiments, so this repository does not request runs of them.
+GOALS (observation rule, G1 prerequisites, G1/G2, D8), SPEC §6 and the M4
+and M5 exits now say that a zoo run we ask for is of our Borg only, and
+comparisons use the zoo's existing control results. Issues #124 (T4.7),
+#128 (T5.4) and #131 (T6.3) are updated to match.
+
 ## 2026-11-11: secondary goal Q, the query surface (owner decision D12)
 
 The owner asked for the Borg's judgement to be exposed to language models
