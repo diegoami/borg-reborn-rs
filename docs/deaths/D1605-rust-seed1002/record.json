@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1605-rust-seed1002",
+  "run_kind": "harness",
+  "character": "Elf Warrior",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 6075,
+    "race_idx": 2,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1002,
+    "flags": "menu",
+    "git_rev": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+    "git_dirty": "no",
+    "source_sha256": "1880ac0e7aaf9c344c4e1769a6c4d17a69dc5932c9b7d6328601eeb700388403",
+    "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68",
+    "borg_txt_sha256": "7c6b535de377cb223ac64fd314076fb456f4ee9eac294d9a26b6ce8b36ade81b",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 540
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/borg-reborn-rs/harness/out/full-t44/full-0-warrior-2",
+      "result_sha256": "2310c82c5a6a8d25727776ea019760f9c636f03d065fed9c820722a02a672d93",
+      "raw_sha256": {
+        "keys.log": "2310c82c5a6a8d25727776ea019760f9c636f03d065fed9c820722a02a672d93",
+        "messages.log": "c212582d8099631bf69cb2ecb6bf422ffa6fea227fc0ed89f3fc34a86f60cacd",
+        "state.log": "e33bb174150b921f5407585d10ace446524b33a79271743200f5d32232d59bad"
+      },
+      "source_commit": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+      "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68"
+    }
+  ],
+  "encounter_family": "start-68c706e7d3dadc5b4782c3dc9ae4b67483add2ffb218b856a13931c26a7fca05",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "08fff6f6e3b3295df46f5577f17c67597b59d6898ed72f9e4b04a19de1827dd6",
+    "config.txt": "db8bfba1a9d3e7cc05c4b619582245ca2025610102fd2ae6ee7a93086f3b16c0",
+    "depths.json": "a9aa3589296db048a3ecc31a9c8d8c84f34d9c73906a5449cc5c685412e0706a",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "a6cfe5ef69ff2318fb5bd9afc9fc1ffa6d982fd6d6a07f012ce9e764c11f9618",
+    "trace-tail.jsonl": "a6c7c7e13aa52ac8badf0f038c0f42f6e200f69afd09bde2b03f343c7dd1fe61"
+  },
+  "investigation": null,
+  "issue": null
+}

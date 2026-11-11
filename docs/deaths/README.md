@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1581; distinct starting conditions: 1580; retained process attempts: 1581 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1617; distinct starting conditions: 1616; retained process attempts: 1617 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1587,6 +1587,42 @@ Dossiers: 1581; distinct starting conditions: 1580; retained process attempts: 1
 | [D1599-rust-seed1080](D1599-rust-seed1080/report.md) | unassigned | `97bbe79f8151` | 1080 | a floating eye | 80939 | unassessed |
 | [D1600-rust-seed1054](D1600-rust-seed1054/report.md) | unassigned | `97bbe79f8151` | 1054 | a white worm mass | 33943 | unassessed |
 | [D1601-rust-seed1051](D1601-rust-seed1051/report.md) | unassigned | `97bbe79f8151` | 1051 | a giant white mouse | 85443 | unassessed |
+| [D1602-rust-seed102](D1602-rust-seed102/report.md) | unassigned | `bd249a207ccd` | 102 | a grey mold | 451 | unassessed |
+| [D1603-rust-seed103](D1603-rust-seed103/report.md) | unassigned | `bd249a207ccd` | 103 | a grey mushroom patch | 3586 | unassessed |
+| [D1604-rust-seed1000](D1604-rust-seed1000/report.md) | unassigned | `bd249a207ccd` | 1000 | a grey mushroom patch | 17776 | unassessed |
+| [D1605-rust-seed1002](D1605-rust-seed1002/report.md) | unassigned | `bd249a207ccd` | 1002 | a white worm mass | 6075 | unassessed |
+| [D1606-rust-seed1003](D1606-rust-seed1003/report.md) | unassigned | `bd249a207ccd` | 1003 | a soldier | 22203 | unassessed |
+| [D1607-rust-seed1004](D1607-rust-seed1004/report.md) | unassigned | `bd249a207ccd` | 1004 | a grey mushroom patch | 42157 | unassessed |
+| [D1608-rust-seed1010](D1608-rust-seed1010/report.md) | unassigned | `bd249a207ccd` | 1010 | a grey mushroom patch | 2281 | unassessed |
+| [D1609-rust-seed1011](D1609-rust-seed1011/report.md) | unassigned | `bd249a207ccd` | 1011 | a small kobold | 9039 | unassessed |
+| [D1610-rust-seed1013](D1610-rust-seed1013/report.md) | unassigned | `bd249a207ccd` | 1013 | a small kobold | 2397 | unassessed |
+| [D1611-rust-seed1020](D1611-rust-seed1020/report.md) | unassigned | `bd249a207ccd` | 1020 | poison | 2270 | unassessed |
+| [D1612-rust-seed1021](D1612-rust-seed1021/report.md) | unassigned | `bd249a207ccd` | 1021 | a giant yellow centipede | 5405 | unassessed |
+| [D1613-rust-seed1022](D1613-rust-seed1022/report.md) | unassigned | `bd249a207ccd` | 1022 | Grip, Farmer Maggot's Dog | 2361 | unassessed |
+| [D1614-rust-seed1023](D1614-rust-seed1023/report.md) | unassigned | `bd249a207ccd` | 1023 | a grey mushroom patch | 14011 | unassessed |
+| [D1615-rust-seed1024](D1615-rust-seed1024/report.md) | unassigned | `bd249a207ccd` | 1024 | a floating eye | 1088 | unassessed |
+| [D1616-rust-seed1030](D1616-rust-seed1030/report.md) | unassigned | `bd249a207ccd` | 1030 | a floating eye | 5047 | unassessed |
+| [D1617-rust-seed1001](D1617-rust-seed1001/report.md) | unassigned | `bd249a207ccd` | 1001 | a yellow mushroom patch | 41930 | unassessed |
+| [D1618-rust-seed1033](D1618-rust-seed1033/report.md) | unassigned | `bd249a207ccd` | 1033 | a grey mushroom patch | 1838 | unassessed |
+| [D1619-rust-seed1034](D1619-rust-seed1034/report.md) | unassigned | `bd249a207ccd` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1620-rust-seed1041](D1620-rust-seed1041/report.md) | unassigned | `bd249a207ccd` | 1041 | a grey mushroom patch | 1282 | unassessed |
+| [D1621-rust-seed1043](D1621-rust-seed1043/report.md) | unassigned | `bd249a207ccd` | 1043 | an acolyte | 3951 | unassessed |
+| [D1622-rust-seed1044](D1622-rust-seed1044/report.md) | unassigned | `bd249a207ccd` | 1044 | a small kobold | 3659 | unassessed |
+| [D1623-rust-seed1050](D1623-rust-seed1050/report.md) | unassigned | `bd249a207ccd` | 1050 | a floating eye | 55569 | unassessed |
+| [D1624-rust-seed1052](D1624-rust-seed1052/report.md) | unassigned | `bd249a207ccd` | 1052 | a grey mushroom patch | 11193 | unassessed |
+| [D1625-rust-seed1054](D1625-rust-seed1054/report.md) | unassigned | `bd249a207ccd` | 1054 | a small kobold | 2292 | unassessed |
+| [D1626-rust-seed1060](D1626-rust-seed1060/report.md) | unassigned | `bd249a207ccd` | 1060 | a floating eye | 5682 | unassessed |
+| [D1627-rust-seed1062](D1627-rust-seed1062/report.md) | unassigned | `bd249a207ccd` | 1062 | a floating eye | 8082 | unassessed |
+| [D1628-rust-seed1063](D1628-rust-seed1063/report.md) | unassigned | `bd249a207ccd` | 1063 | an acolyte | 20688 | unassessed |
+| [D1629-rust-seed1061](D1629-rust-seed1061/report.md) | unassigned | `bd249a207ccd` | 1061 | a floating eye | 51683 | unassessed |
+| [D1630-rust-seed1070](D1630-rust-seed1070/report.md) | unassigned | `bd249a207ccd` | 1070 | a grey mushroom patch | 17506 | unassessed |
+| [D1631-rust-seed1071](D1631-rust-seed1071/report.md) | unassigned | `bd249a207ccd` | 1071 | poison | 9170 | unassessed |
+| [D1632-rust-seed1072](D1632-rust-seed1072/report.md) | unassigned | `bd249a207ccd` | 1072 | a floating eye | 7564 | unassessed |
+| [D1633-rust-seed1073](D1633-rust-seed1073/report.md) | unassigned | `bd249a207ccd` | 1073 | Grip, Farmer Maggot's Dog | 3850 | unassessed |
+| [D1634-rust-seed1074](D1634-rust-seed1074/report.md) | unassigned | `bd249a207ccd` | 1074 | a floating eye | 3880 | unassessed |
+| [D1635-rust-seed1080](D1635-rust-seed1080/report.md) | unassigned | `bd249a207ccd` | 1080 | a grey mushroom patch | 1696 | unassessed |
+| [D1636-rust-seed1081](D1636-rust-seed1081/report.md) | unassigned | `bd249a207ccd` | 1081 | a soldier | 4779 | unassessed |
+| [D1637-rust-seed1083](D1637-rust-seed1083/report.md) | unassigned | `bd249a207ccd` | 1083 | a floating eye | 8546 | unassessed |
 
 ## Aggregated actions
 
