@@ -39,6 +39,17 @@ f7f8a689; main is now 1915f091 after the docs commit.)
   `rust-stuck-sealed-room` are **active** (the sealed-room fixture is now
   the 3x3 its construction note always described). #123 leaves the gap
   OWNERS: #124, #126, #127.
+- **Measured (the declared change):** smoke — the mage lives forty times
+  longer (451 → 18376 turns, reaches depth 2, dies to Fang; dossier
+  D1638) and the priest now survives the cap (was a grey mushroom patch
+  at 3586); smoke-exact diverges at the identical turns, so determinism
+  holds across both profiles. Full — 30 of 45 runs survive the 10001
+  player-turn cap (was 11 of 45); the 15 natural deaths are dossiered
+  (D1639–D1653) and `reconcile-deaths.py` is clean. Two late
+  **starvation** deaths (full-5-paladin-2 at 91190, full-7-ranger-0 at
+  89750 game turns) are the honest residue: runs the old baseline lost
+  to early monsters now live long enough to starve; the M4 survival
+  gate (#124) reads this baseline.
 - **Refresh report:** angband +12 (head 42cd156a), borg-rs +21 (2 copied
   docs changed), better-borg-c +10, borg-zoo +33 (catalogue changed),
   borg-runner +26 (new records and knowledge files); borg-agent and
