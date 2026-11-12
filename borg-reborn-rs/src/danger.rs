@@ -47,10 +47,14 @@ mod mon_tmd {
     pub const CONF: usize = 2;
 }
 
-/// `TMD_*` indices (`list-player-timed.h`).
+/// `TMD_*` indices (`list-player-timed.h`: the enum counts its `TMD(...)`
+/// lines from 0).
 mod tmd {
+    pub const BLIND: usize = 2;
     pub const PARALYZED: usize = 3;
+    pub const CONFUSED: usize = 4;
     pub const AFRAID: usize = 5;
+    pub const AMNESIA: usize = 25;
 }
 
 /// `RF_*` flag numbers. The enum starts at `RF_NONE = 0`, and `FLAG_START`
@@ -294,6 +298,22 @@ impl Assessment {
         let a = f64::from(aversion_pct.clamp(0, 100)) / 100.0;
         self.expected + a * (self.worst - self.expected).max(0.0)
     }
+}
+
+/// Whether the character can read a scroll this think: the engine's
+/// `player_can_read` (`player-util.c:1166-1197`) refuses it when blind,
+/// with no light (`no_light`: the character's grid is not seen,
+/// `cave-view.c:932-935`, which the observation carries as `in_view`,
+/// `cave-map.c:119-122`), confused or amnesiac. An action the engine
+/// refuses is never offered (#137: a confused rogue re-chose a refused
+/// Phase Door for forty turns, D1667).
+pub fn can_read(w: &World) -> bool {
+    let Some(s) = w.character.status.as_ref() else {
+        return true;
+    };
+    let timed = |i: usize| s.timed.get(i).copied().unwrap_or(0);
+    let lit = w.level.at(s.x, s.y).is_some_and(|g| g.seen == Some(w.turn));
+    lit && timed(tmd::BLIND) <= 0 && timed(tmd::CONFUSED) <= 0 && timed(tmd::AMNESIA) <= 0
 }
 
 /// Whether the character can attack this think. Fear refuses the attack in

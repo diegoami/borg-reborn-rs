@@ -265,7 +265,9 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                 });
             }
         }
-        if let Some((i, _)) = pack_item(w, k, "Phase Door") {
+        // Scrolls only when the engine lets the character read (#137).
+        let readable = crate::danger::can_read(w);
+        if let Some((i, _)) = pack_item(w, k, "Phase Door").filter(|_| readable) {
             // The engine's Phase Door lands 10 grids off, ±25%
             // (effect-handler-general.c, effect_handler_TELEPORT).
             if let Some(landing) = blink_landing(&observer, x, y, 8, 12) {
@@ -279,7 +281,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                 });
             }
         }
-        if let Some((i, _)) = pack_item(w, k, "Teleportation") {
+        if let Some((i, _)) = pack_item(w, k, "Teleportation").filter(|_| readable) {
             // Teleportation's range is 60% of the longest cardinal distance
             // to the level's edge, ±25% (same handler, M60 percent).
             let m = y.max(w.level.height - y).max(x.max(w.level.width - x));
@@ -300,7 +302,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                 .as_ref()
                 .is_some_and(|s| s.word_recall <= 0)
         {
-            if let Some((i, _)) = pack_item(w, k, "Word of Recall") {
+            if let Some((i, _)) = pack_item(w, k, "Word of Recall").filter(|_| readable) {
                 // Recall lands in town, safely — but the word takes 15-34
                 // turns (mean 25) to take effect, and staying that long is
                 // the landing risk (player-effects.c, word_recall).
@@ -784,6 +786,46 @@ mod tests {
             "a second scroll lifts the surcharge"
         );
         assert!(matches!(r[0].action, Action::Read { .. }), "{r:?}");
+    }
+
+    #[test]
+    fn no_scroll_is_offered_when_the_engine_refuses_reading() {
+        // `player-util.c:player_can_read`: blind, no light, confused or
+        // amnesiac refuses a Read; offering one anyway re-chose a refused
+        // Phase Door for forty turns (#137, D1667).
+        let map = &[
+            "###############",
+            "#@M...........#",
+            "#.............#",
+            "#.............#",
+            "###############",
+        ];
+        let reads = |w: &World, k: &Knowledge, v: &PlayerView, p: &Params| {
+            responses(w, k, p, v)
+                .iter()
+                .filter(|x| matches!(x.action, Action::Read { .. }))
+                .count()
+        };
+        let (mut w, mut k, v, p) = setup(map, 4, 20, 60, 110, None);
+        give(&mut w, &mut k, 185, "Phase Door");
+        give(&mut w, &mut k, 185, "Phase Door");
+        assert_eq!(reads(&w, &k, &v, &p), 1, "readable: offered");
+        for (index, what) in [(2, "blind"), (4, "confused"), (25, "amnesiac")] {
+            let mut w = w.clone();
+            if let Some(s) = w.character.status.as_mut() {
+                if s.timed.len() <= index {
+                    s.timed.resize(index + 1, 0);
+                }
+                s.timed[index] = 10;
+            }
+            assert!(!crate::danger::can_read(&w), "{what}");
+            assert_eq!(reads(&w, &k, &v, &p), 0, "{what}: not offered");
+        }
+        // No light: the character's grid is not seen this think.
+        let mut dark = w.clone();
+        dark.turn += 1;
+        assert!(!crate::danger::can_read(&dark));
+        assert_eq!(reads(&dark, &k, &v, &p), 0, "no light: not offered");
     }
 
     #[test]
