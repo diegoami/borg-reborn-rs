@@ -132,7 +132,9 @@ whatever the model.
 24. **The measured Borg plays without a model.** The Borg's code never
     calls a model, and the zoo specimen is always the model-free Borg. The
     core never depends on `borg-mcp` (docs/QUERY-SURFACE.md), and nothing of
-    it is linked into the zoo's build or reaches the zoo contract. Query
+    it is linked into a game build the harness or the zoo measures (ours or
+    the zoo's) or reaches the zoo contract; Q5's live host, if built, is its
+    own binary and never a measured build. Query
     mode never sends keys, and a live query never changes `keys.log`. A
     game played by a model through play mode is a **separate arm**: never
     named or reported as the Borg, with the model, its effort and every

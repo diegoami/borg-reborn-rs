@@ -73,7 +73,7 @@ Why this shape:
 
 ## The modes
 
-### Replay (Q1–Q4): no engine
+### Query mode: replay (Q1–Q4), no engine
 
 A run already records what is needed, through the logs the core writes
 when asked:
@@ -103,7 +103,7 @@ never silenced. That turns every replay into a free determinism check
 `harness/run.sh` gets an option to turn the logs on (`--record-state`).
 Off by default, so measured runs and the zoo contract are unchanged.
 
-### Branch (Q3): what an alternative would have done
+### Query mode: branch (Q3), what an alternative would have done
 
 `what_if` says what the Borg *would decide* under a changed state; it
 cannot say whether the character would have lived. `branch` can. It
@@ -115,15 +115,21 @@ and reports what followed: survival, HP, depth, and the trace from the
 fork. With no alternative it must reproduce the original `keys.log`; that
 is its own test.
 
-The server stays engine-free: `branch` runs the harness as a subprocess.
-The forced action at a think is a cargo feature (`branch`) of the core,
-like `test-hallucinate`; the harness builds it only for `branch` runs, and
-the zoo-contract check refuses such a build. A branch is **one sample**:
+The server does not link the engine: `branch` spawns a harness process,
+built with the core's `branch` cargo feature (the forced action at a
+think, like `test-hallucinate`), which is never a zoo build. The harness
+builds that feature only for `branch` runs and marks it in `BUILD_ID`
+(`features=branch`, as `test_features` is marked today), because the
+source hash of `harness/identity.sh` cannot tell a feature build from the
+measured one, and results stay with the build they ran on (RULES 22). A
+new zoo-contract assertion, added in Q3, refuses a build whose `BUILD_ID`
+carries features; today's `harness/zoo-check.py` builds the specimen
+itself and has no such guard. A branch is **one sample**:
 the game is deterministic, so a different action leads to one outcome,
 not a probability. A claim says so, and a fix is still judged on the
 zoo's populations (RULES 14).
 
-### Live hosting (Q5, optional): a game hosted by the server
+### Play mode: live hosting (Q5, optional)
 
 `borg-mcp --live` links the engine like the harness build does and hosts
 **one game per process** (the engine's globals allow no more). The Borg
@@ -135,7 +141,7 @@ decision the strategy made before the pause, so play is identical with
 and without queries. A test checks that `keys.log` is the same with the
 server attached and querying at every think as without it.
 
-### Play (Q5, optional): a model plays the hosted game
+### Play mode: a model plays the hosted game (Q5, optional)
 
 Play mode is live mode in which the model, not the strategy, chooses at
 the moments it is asked. It never works key by key: keys, prompts and
@@ -296,8 +302,12 @@ workflows 1 and 4 (long tool use, reading traces, Angband reasoning), a
 small cheap model for workflow 2 (batched), and for workflow 3 a model of
 a different family from the one that wrote the change. A model's use is
 validated before it is trusted: on deaths with known explanations
-(`reference/deaths/`), it must find the same deciding think and the same
-alternative.
+(`reference/deaths/` bbc and rs, and the cases in `docs/FIXTURES.md` and
+REDESIGN-LESSONS), it must find the same deciding turn and the same cause
+and alternative. Those dossiers hold no think-level trace, so the turn is
+the finest ground truth they give; our own dossiers keep the last 200
+thinks, which often stops short of the deciding think (Q0 measures how
+often).
 
 ## Checks
 
@@ -316,13 +326,14 @@ alternative.
   member changes it. With play unchanged, that change does not start a new
   measurement baseline (RULES 22).
 - **Branch:** `branch` with no alternative reproduces the original
-  `keys.log` on the smoke references; a `branch` build is refused by the
-  zoo-contract check.
+  `keys.log` on the smoke references; a `branch` build carries
+  `features=branch` in `BUILD_ID`, and the new zoo-contract assertion
+  (Q3) refuses it.
 - **Play replay:** every model game in the Q5 tests replays key for key
   from its `keys.log` without the model, and its `calls.jsonl` accounts
   for every action the executor took.
 - **Arm separation:** a model game's run record names its arm and model;
-  the zoo-contract check refuses it as the reborn specimen.
+  the zoo-contract assertion refuses it as the reborn specimen.
 - **Schema:** the tool schemas are generated from the report types and
   checked in (`borg-mcp/schema/`); a change to them is a visible diff.
 

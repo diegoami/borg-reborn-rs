@@ -243,7 +243,9 @@ reviewing a strategy change, and model players. The design draft is
    the Borg.
 3. **Same repository, separate crate.** `borg-mcp` is a workspace member
    that depends on the core; the core never depends on it, and nothing of
-   it reaches the game build or the zoo contract.
+   it is linked into a game build the harness or the zoo measures (ours or
+   the zoo's) or reaches the zoo contract. Q5's live host, if built, is its
+   own binary and never a measured build.
 4. **No new judgement in the server.** It calls the functions the Borg
    plays with, through one stable, versioned facade (`query`). A question
    that needs a new computation gets it in the core first.
@@ -255,11 +257,11 @@ reviewing a strategy change, and model players. The design draft is
 
 | Stage | Delivers | Done when |
 | --- | --- | --- |
-| Q0 | Pilot, no code: a session diagnoses deaths from what dossiers already hold (`trace-tail.jsonl`, `params.json`, `record.json`) | A hit rate on deaths with known explanations (same deciding think and alternative); a triage table of our own deaths; draft fixtures for the clearest; a list of the tools the pilot missed |
+| Q0 | Pilot, no code: a session diagnoses deaths from what dossiers already hold (`trace-tail.jsonl`, `params.json`, `record.json`) | A hit rate on the reference deaths with known explanations (`reference/deaths/` bbc and rs, and the cases written up in `docs/FIXTURES.md` and REDESIGN-LESSONS): the same deciding **turn** (those dossiers hold no think-level trace) and the same cause and alternative; a triage table of our own deaths, with the deciding think where the dossier's trace reaches it and the turn otherwise; draft fixtures for the clearest, not committed as tests; the tools the pilot missed, a longer trace among them |
 | Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
 | Q2 | `borg-mcp` over stdio with the diagnosis tools: `load_run`, `seek`, `view`, `why`, `threats`, `danger_at`, `reserves`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
 | Q3 | Counterfactuals: `responses`, `decide`, `what_if`, and `branch` (rerun the seed, take an alternative at a think, let the Borg continue, report what followed); claims and draft fixtures as outputs | `what_if` reproduces the death fixtures' alternatives; `branch` reproduces the original run when no alternative is given, and runs only in a build the zoo never gets |
-| Q4 | The diagnosis workflow: evaluation on known deaths, triage of a zoo batch, review of strategy changes | The evaluation passes the hit-rate threshold the owner fixes; a batch's triage and its draft fixtures and issues are reviewed and filed |
+| Q4 | The diagnosis workflow: evaluation on known deaths, triage of a zoo batch, review of strategy changes | The evaluation meets the hit-rate threshold (**open: the owner fixes the threshold and the cases counted before Q4 starts**, after Q0's numbers); a batch's triage and its draft fixtures and issues are reviewed and filed |
 | Q5 | Play mode (optional; the owner decides after Q4): live hosting, `observe`, `options`, `act`, `autopilot` with hand-offs | A model plays the smoke seeds end to end, fully and in the hybrid; every game replays key for key from its record; no fairness or exclusion breach |
 
 Q0 touches no code and may run beside the primary milestone once the owner

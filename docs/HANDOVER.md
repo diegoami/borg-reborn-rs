@@ -85,6 +85,8 @@ rebuild. Documents only:
   "the measured Borg plays without a model" (play mode is a separate arm,
   logged and replayable, bound by D3 and D5); new roadmap stage **Q5,
   play mode**, and Q4 (live) is no longer optional, since Q5 needs it.
+  *(Superseded the same day by the reorder below: Q4 became the diagnosis
+  workflow, live hosting moved into Q5, and play mode is optional.)*
   D11: borg-agent retired as an input, its roles move to Q; borg-runner
   stays. Option E and the non-goal reworded to match.
 - **RULES 24–25:** the zoo specimen is always the model-free Borg and the
@@ -116,9 +118,33 @@ one sample, not a probability), **Q4** the diagnosis workflow and its
 evaluation, **Q5** play mode, optional, decided after Q4. The primary plan
 (M4–M7) is unchanged.
 
-**For the owner:** open Q0 when you want the pilot to run (it can run
-beside M4: it changes no code); fix the hit-rate threshold for Q4's
-evaluation, ideally after seeing Q0's numbers.
+**For the owner:** create the GitHub milestones Q0–Q5 (this replaces the
+earlier ask for Q1–Q4): #153 goes into Q0, #149–#151 into Q1; open Q0 when
+you want the pilot to run (it can run beside M4: it changes no code); fix
+the hit-rate threshold for Q4's evaluation, and which cases it counts,
+ideally after seeing Q0's numbers.
+
+**#152's review (owner and a second reviewer), fixed in the same PR:**
+- Q0's ground truth: the reference dossiers hold no trace or parameter
+  table, so calibration is by deciding *turn*, cause and alternative, on
+  the set #153 names;
+- our dossiers keep the last 200 thinks (`tools/export-death.py`), so the
+  triage gives the deciding think where the trace reaches it and the turn
+  otherwise, and a longer trace is a named Q0 output;
+- `branch` builds are marked `features=branch` in `BUILD_ID`, since the
+  source hash cannot tell feature builds apart; the zoo-contract refusal
+  is a new assertion to add in Q3, not an existing check;
+- RULES 24's scope restored to every measured game build (ours or the
+  zoo's), matching GOALS constraint 3;
+- "the server does not link the engine" replaces "engine-free";
+- the Q4 threshold is marked open in GOALS and PLAN;
+- QUERY-SURFACE's mode headings say *query mode* and *play mode*, as the
+  rules do;
+- draft fixtures are not committed as tests;
+- README no longer lists borg-agent as an input.
+
+Left for the pin PR (RULES 21): `pins.json`, RULES 7 and 21, and
+`scripts/refresh-sources.py`'s docstring, which still list borg-agent.
 
 ## 2026-11-11: no control runs requested from the zoo (owner)
 
