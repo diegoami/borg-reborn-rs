@@ -68,13 +68,13 @@
     }
   ],
   "map": [
-    "###########",
-    "#.........#",
-    "#.........#",
-    "#...@F....#",
-    "#.........#",
-    "#.........#",
-    "###########"
+    "###############",
+    "#.............#",
+    "#.............#",
+    "#...@F........#",
+    "#.............#",
+    "#.............#",
+    "###############"
   ],
   "id": "fang-ac36-armour-ignoring-spell",
   "title": "minimaxflash-2.2: Fang AC 36, oil is a 12% lottery",
@@ -82,7 +82,7 @@
   "citations": [
     "REPORT.md:196-220,228-240,306-311"
   ],
-  "construction": "Gnome Mage CL2, 4/16 HP, D2. The report gives Fang at 25 HP, AC 36, speed 120, Magic Missile at 1 SP (never resists) and a Phase Door scroll. Fang is placed adjacent; the room is constructed.",
+  "construction": "Gnome Mage CL2, 4/16 HP, D2. The report gives Fang at 25 HP, AC 36, speed 120, Magic Missile at 1 SP (never resists) and a Phase Door scroll. Fang is placed adjacent; the room is constructed. The room is wide enough that the blink's 8-12 band has remembered floor (the original room's size is not recorded).",
   "limits": "An agent-player run, not a Borg death. The known Phase Door is now read at 4/16 HP; casting Magic Missile is still #127. The fixture checks the escape, not a measured rescue.",
   "player": {
     "race": 4,

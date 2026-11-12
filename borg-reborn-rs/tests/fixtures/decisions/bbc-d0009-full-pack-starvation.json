@@ -98,7 +98,7 @@
   ],
   "construction": "Half-Troll Necromancer CL10, 4/73 HP, D5, food 0, pack 23/23. The dossier gives the full pack, the 764 Bronze Wand refusals and no known food; the room and the stairs are constructed.",
   "limits": "The 20+ unknown potions/scrolls/mushrooms cannot be eaten or read by this action set. The pickup loop itself is already prevented by the pack-full guard; the gap is the missing food/return action.",
-  "blocked_by": 122,
+  "blocked_by": 123,
   "player": {
     "race": 7,
     "class": 4,

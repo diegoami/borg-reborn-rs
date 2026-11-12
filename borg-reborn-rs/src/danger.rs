@@ -826,6 +826,16 @@ pub fn breeder_factor(w: &World, race: &MonsterRace) -> f64 {
     }
 }
 
+/// Whether the race never moves (`RF_NEVER_MOVE`). A step out of such a
+/// monster's reach ends its threat for good: it cannot follow, so the
+/// relocation removes the whole assessment, and no parting blow is due —
+/// a monster that never moves is not giving chase (bbc D0013's floating
+/// eye: the free step beats spending the only Phase Door).
+pub fn never_move(k: &Knowledge, t: &Track) -> bool {
+    k.race(t.race)
+        .is_some_and(|r| has(&r.flags, rf::NEVER_MOVE))
+}
+
 /// One melee round from a monster, regardless of distance: the free hit a
 /// character takes for leaving its reach (the engine's attack of
 /// opportunity). Confidence and breeder growth apply; ranged spells do not.

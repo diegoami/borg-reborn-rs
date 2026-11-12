@@ -91,7 +91,7 @@
   ],
   "construction": "Dwarf Priest CL1, 10/14 HP, D1, food 0, pack 23/23, on the down staircase. The record gives starvation, HP and the full pack; the closed known level is constructed.",
   "limits": "A constructed state, not a recorded snapshot. Eating and returning home are not actions yet; the pack-full pickup guard already prevents the wand loop.",
-  "blocked_by": 122,
+  "blocked_by": 123,
   "player": {
     "race": 5,
     "class": 3,

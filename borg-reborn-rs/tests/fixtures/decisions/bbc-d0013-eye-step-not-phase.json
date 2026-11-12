@@ -1,0 +1,77 @@
+{
+  "turn": 3571,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 2,
+      "race": 27,
+      "hp": 6,
+      "max_hp": 6,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Read",
+      "item": "the only Phase Door beside a monster that never moves"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Walk",
+      "item": "out of the gaze; the eye never follows"
+    }
+  ],
+  "map": [
+    "###############",
+    "#.............#",
+    "#..e..........#",
+    "#...@.........#",
+    "#.............#",
+    "#.............#",
+    "###############"
+  ],
+  "id": "bbc-d0013-eye-step-not-phase",
+  "title": "D0013: the only Phase Door beside a floating eye that never moves",
+  "dossier": "reference/deaths/better-borg-c/D0013-collected",
+  "citations": [
+    "overall-assessment.md:14,26-29,37-44"
+  ],
+  "construction": "Dunadan Druid CL1, 12/13 HP, D1, turn 3571. The dossier places the player diagonally adjacent to a floating eye (danger 400, 'Fleeing (excessive danger)') with one Phase Door in the pack. The eye is the knowledge slice's race 27 (NEVER_MOVE, the paralysing gaze); the room is constructed around them.",
+  "limits": "The step is the dossier's own analysis (#159: a floating eye never moves, so stepping back leaves its reach), not a replayed branch; the owner branch (3651-4709) starts after the Phase was spent. The fixture checks the ladder's ordering, not a measured survival.",
+  "player": {
+    "race": 8,
+    "class": 2,
+    "level": 1,
+    "hp": 12,
+    "max_hp": 13,
+    "x": 4,
+    "y": 3
+  },
+  "depth": 1,
+  "max_depth": 1
+}
