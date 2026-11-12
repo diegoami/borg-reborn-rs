@@ -2,6 +2,39 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: a refused action changes the next decision (#137)
+
+**Play change; new full baseline.** The M3 review's finding 2: contact
+returns Engage before any cooldown, so an action the executor reported
+refused was chosen again. In the M4 baseline the refused action was a Read
+the engine forbids.
+
+- **`danger::can_read`** mirrors `player_can_read`
+  (`player-util.c:1166-1197`): blind (`TMD_BLIND` 2), confused (4), amnesiac
+  (25), or no light. No light is `no_light`, `!square_isseen` at the
+  character's grid (`cave-view.c:932-935`); the observation carries it as
+  `in_view` (`cave-map.c:119`) and the world as `seen == Some(turn)`. It
+  gates the tactical Phase Door, Teleportation and Recall, and the
+  Return/Stuck recall read.
+- **Refusals bar the action:** the strategy remembers its last action, and
+  a refusal bars that action until the mode's cooldown ends. Engage then
+  takes the next-best response. Contact still overrides Engage's cooldown,
+  which is the justification the issue asked for.
+- **Measured:** two full runs change, and smoke and smoke-exact are
+  identical. `full-6-rogue-3` survives the cap (was D1667: confused, it
+  re-read a refused Phase Door for forty turns before a cutpurse killed
+  it). `full-7-ranger-0` no longer reads Recall in the dark 13 times, and
+  still starves at the same turn. Refused-read violations: 23 → 0. Full
+  survival is 31/45. The full reference was regenerated at `798239a`, and a
+  fresh run reproduces it 45/45 (smoke 3/3 against the kept references).
+  Dossiers D1670–D1684; `reconcile-deaths.py` is clean.
+- **Found: #157.** The rogue's survival is a 75,000-turn walk loop around
+  three remembered apprentices. `one_threat` scales melee by track
+  confidence but not the ranged estimate, so a forgotten caster keeps
+  `expected 1.8`, `worst 14.4` at confidence 0.00015. It is opened as T4.8
+  in M4. The calibration report has an addendum for this baseline.
+- **Next:** #138, #139, #157 (M4), then the M4 review.
+
 ## 2026-11-12: threat calibration and the M4 survival gate (#124)
 
 **No play change; same baseline.** T4.7 measures the threat model on the

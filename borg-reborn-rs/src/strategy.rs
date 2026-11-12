@@ -240,6 +240,13 @@ pub struct FirstStrategy {
     /// The tactical responses of the last think, best first, for the trace
     /// (T4.3). Empty when no tactical choice was made.
     last_candidates: Vec<(Action, f64)>,
+    /// The action the last think chose: the one the executor's next
+    /// report is about.
+    last_action: Option<Action>,
+    /// Actions the executor reported refused, barred until this game turn
+    /// (#137). Contact keeps Engage live past its cooldown, so the
+    /// refusal must bar the action itself, not only the mode.
+    refused: BTreeMap<Action, i64>,
 }
 
 impl Default for FirstStrategy {
@@ -250,6 +257,8 @@ impl Default for FirstStrategy {
             cooldowns: BTreeMap::new(),
             rerolled_from: None,
             last_candidates: Vec::new(),
+            last_action: None,
+            refused: BTreeMap::new(),
         }
     }
 }
@@ -380,6 +389,12 @@ impl FirstStrategy {
     /// A known Word of Recall scroll in the pack (the reserve's aware
     /// item; an unidentified scroll is not a way home, bbc D0011).
     fn recall_scroll(ctx: &DecisionCtx) -> Option<usize> {
+        // A scroll the engine will not let the character read is not on
+        // hand this think (`player-util.c:player_can_read`; #137: Return
+        // read Recall with no light thirteen times, D1668).
+        if !crate::danger::can_read(ctx.world) {
+            return None;
+        }
         ctx.world
             .character
             .inventory
@@ -631,10 +646,18 @@ impl FirstStrategy {
                 // The tactical layer (T4.3): every response, scored on the
                 // same risk scale. It replaces the first-applicable
                 // fight-or-retreat rule.
+                //
+                // Contact overrides Engage's cooldown (a monster in reach
+                // is answered this think), so a refused response is barred
+                // by itself until the cooldown ends (#137): the next-best
+                // response is taken instead of repeating the refusal.
                 let responses =
                     crate::tactics::responses(ctx.world, ctx.knowledge, ctx.params, ctx.view);
                 self.last_candidates = responses.iter().map(|r| (r.action, r.score)).collect();
-                responses.first().map(|r| r.action)
+                responses
+                    .iter()
+                    .find(|r| !self.refused.contains_key(&r.action))
+                    .map(|r| r.action)
             }
             Mode::Town => {
                 let job = Self::town_job(ctx)?;
@@ -999,13 +1022,16 @@ impl FirstStrategy {
     /// action refused: no progress is being made even though game time
     /// may be passing.
     fn note_failures(&mut self, ctx: &DecisionCtx) {
+        let turn = ctx.view.turn;
+        self.refused.retain(|_, until| turn < *until);
         if ctx.failures.is_empty() {
             return;
         }
-        self.cooldowns.insert(
-            self.mode,
-            ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
-        );
+        let until = turn + i64::from(ctx.params.goal_cooldown_turns);
+        self.cooldowns.insert(self.mode, until);
+        if let Some(action) = self.last_action {
+            self.refused.insert(action, until);
+        }
         self.goal = None;
     }
 }
@@ -1016,6 +1042,14 @@ impl Strategy for FirstStrategy {
     }
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
+        let d = self.decide_now(ctx);
+        self.last_action = Some(d.action);
+        d
+    }
+}
+
+impl FirstStrategy {
+    fn decide_now(&mut self, ctx: &mut DecisionCtx) -> Decision {
         if !can_act(ctx.world) {
             let action = Self::still(ctx);
             return Decision {
@@ -1369,6 +1403,61 @@ mod tests {
         let t = d.threat.clone().expect("an assessment on every decision");
         assert!(t.expected > 0.0 && t.worst >= t.expected, "{t:?}");
         assert_eq!(t.horizon, params.threat_horizon);
+    }
+
+    #[test]
+    fn a_refused_engage_action_is_not_chosen_again() {
+        // #137: contact returns Engage before any cooldown, so a response
+        // the executor refused must be barred by itself, or the next think
+        // repeats it (a confused rogue's Phase Door, D1667; refused
+        // attacks in the M3 baseline).
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let first = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(first.mode, "engage");
+        let refused = ["after it: neither moved the character nor took game time".to_string()];
+        let second = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &refused,
+        );
+        assert_eq!(second.mode, "engage", "contact still answers");
+        assert_ne!(
+            second.action, first.action,
+            "the refusal changed the decision"
+        );
+        // Once the cooldown is over the action may be tried again.
+        let mut later = w.clone();
+        later.turn += i64::from(params.goal_cooldown_turns);
+        let mut p2 = Paths::new_with_risk(&later, params.risk_aversion_pct);
+        let third = decide_with(
+            &mut s,
+            &later,
+            &k,
+            &mut p2,
+            &m,
+            &mut rng,
+            &params,
+            &view(&later),
+            &[],
+        );
+        assert_eq!(third.action, first.action, "the bar ends with the cooldown");
     }
 
     #[test]

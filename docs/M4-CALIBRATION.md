@@ -418,3 +418,26 @@ These are candidates for tasks, not changes made here:
 
 Items 1–4 change play and need their own baselines. They are listed in the
 handover for the owner to place (M4 review or M5).
+
+## Addendum: the baseline after #137 (2026-11-12)
+
+#137 changes play in two full runs; smoke and smoke-exact are unchanged.
+The full reference was regenerated at `798239a`, and a fresh full run
+reproduces it 45/45.
+
+- `full-6-rogue-3` no longer re-reads a Phase Door the engine refuses while
+  confused. It survives to the cap (was D1667, a cutpurse at 24,362).
+  Its survival is not progress: it walks in a loop for about 75,000 turns
+  around three apprentices remembered out of view. Their ranged estimate
+  ignores the tracks' confidence (0.00015 at the end, still `expected
+  1.8`, `worst 14.4` each). That is **#157**. Until it is fixed, the pooled
+  "all threatened" ratio falls to 0.017, because this one run adds 20,663
+  predicted HP. The standing-still pool (0.118) and the blow decomposition
+  (per blow 1.71 predicted against 1.73 observed; 0.57 of predicted blows
+  among monsters that survive) are essentially unchanged.
+- `full-7-ranger-0` no longer tries to read Recall with no light. It still
+  starves at turn 89,750 (D1683).
+- **Gate numbers on this baseline:** 31/45 survive the cap (69%); 15
+  natural deaths in full and smoke, all with dossiers (D1670–D1684);
+  `check-no-time.py` finds 0 violations; the refused-read violations
+  are gone (23 in the T4.7 run, 0 now).
