@@ -180,9 +180,12 @@ impl MonsterThreat {
     }
 }
 
-/// What the decision trace records for later calibration: the numbers,
-/// not the per-monster detail (which would make every trace line large).
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+/// What the decision trace records for later calibration: the grid's
+/// numbers, and one compact line per monster that contributes to them
+/// (T4.7, #124: calibration by monster, range, speed, group and status).
+/// Monsters that add nothing (out of reach, forgotten) are left out, so a
+/// quiet think's line stays small.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatSummary {
     pub horizon: i32,
     pub expected: f64,
@@ -191,6 +194,34 @@ pub struct ThreatSummary {
     pub disabling: f64,
     pub summoning: f64,
     pub economic: f64,
+    /// The contributing monsters; absent in traces written before T4.7.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sources: Vec<SourceSummary>,
+}
+
+/// One monster's share of a think's assessment, as the trace records it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceSummary {
+    /// The game's monster index.
+    pub index: i32,
+    /// `monster.txt` race index and name.
+    pub race: u32,
+    pub name: String,
+    /// Chebyshev distance from the assessed grid.
+    pub dist: i32,
+    /// The monster's own speed (110 normal), as last seen.
+    pub speed: u8,
+    pub awake: bool,
+    pub in_view: bool,
+    pub confused: bool,
+    pub stunned: bool,
+    /// Tracked monsters of the same race that also contribute.
+    pub group: u32,
+    pub confidence: f64,
+    pub rounds: f64,
+    pub expected: f64,
+    pub worst: f64,
+    pub ranged: bool,
 }
 
 impl Assessment {
@@ -203,6 +234,46 @@ impl Assessment {
             disabling: self.disabling,
             summoning: self.summoning,
             economic: self.economic,
+            sources: Vec::new(),
+        }
+    }
+
+    /// [`Self::summary`] with the contributing monsters named, for the
+    /// trace. `x, y` is the grid the assessment was made for.
+    pub fn summary_detailed(&self, w: &World, k: &Knowledge, x: i32, y: i32) -> ThreatSummary {
+        let contributes = |m: &MonsterThreat| m.expected > 0.0 || m.worst > 0.0;
+        let track = |index: i32| w.level.monsters.iter().find(|t| t.index == index);
+        let mut sources = Vec::new();
+        for m in self.per_monster.iter().filter(|m| contributes(m)) {
+            let Some(t) = track(m.index) else { continue };
+            let group = self
+                .per_monster
+                .iter()
+                .filter(|o| contributes(o))
+                .filter_map(|o| track(o.index))
+                .filter(|o| o.race == t.race)
+                .count() as u32;
+            sources.push(SourceSummary {
+                index: m.index,
+                race: t.race,
+                name: k.race(t.race).map_or_else(String::new, |r| r.name.clone()),
+                dist: (t.x - x).abs().max((t.y - y).abs()),
+                speed: t.speed,
+                awake: t.awake(),
+                in_view: t.in_view,
+                confused: t.timed[mon_tmd::CONF] > 0,
+                stunned: t.timed[mon_tmd::STUN] > 0,
+                group,
+                confidence: m.confidence,
+                rounds: m.rounds,
+                expected: m.expected,
+                worst: m.worst,
+                ranged: m.ranged,
+            });
+        }
+        ThreatSummary {
+            sources,
+            ..self.summary()
         }
     }
 
@@ -1100,6 +1171,50 @@ mod tests {
         let a = one_threat(&awake, &k, &awake.level.monsters[0], 1, 1, 1).expected;
         let b = one_threat(&asleep, &k, &asleep.level.monsters[0], 1, 1, 1).expected;
         assert!(b < a, "{b} !< {a}");
+    }
+
+    #[test]
+    fn the_trace_names_each_contributing_monster() {
+        let k = knowledge(race("kobold", 110, 0, &[(1, 6)], &[]));
+        let mut w = world(Some((2, 1, 120, true)));
+        let mut far = w.level.monsters[0].clone();
+        far.index = 2;
+        far.x = 7;
+        far.timed[0] = 1000; // asleep
+        w.level.monsters.push(far);
+        let mut gone = w.level.monsters[0].clone();
+        gone.index = 3;
+        gone.in_view = false;
+        gone.last_seen = -1_000_000; // forgotten: confidence near zero
+        w.level.monsters.push(gone);
+        let a = assess(&w, &k, 1, 1, 1, 50);
+        let s = a.summary_detailed(&w, &k, 1, 1);
+        // The plain summary's numbers are unchanged; only `sources` is new.
+        assert_eq!(
+            ThreatSummary {
+                sources: Vec::new(),
+                ..s.clone()
+            },
+            a.summary()
+        );
+        let adjacent = s.sources.iter().find(|m| m.index == 1).expect("adjacent");
+        assert_eq!(adjacent.name, "kobold");
+        assert_eq!((adjacent.dist, adjacent.speed), (1, 120));
+        assert!(adjacent.awake && adjacent.in_view && !adjacent.ranged);
+        assert!(adjacent.expected > 0.0 && adjacent.worst >= adjacent.expected);
+        for m in &s.sources {
+            assert!(m.expected > 0.0 || m.worst > 0.0, "{m:?}");
+            assert_eq!(
+                m.group,
+                s.sources.len() as u32,
+                "every source is a kobold: {m:?}"
+            );
+        }
+        assert!(
+            s.sources.iter().all(|m| m.dist <= 20),
+            "a monster that adds nothing is left out: {:?}",
+            s.sources
+        );
     }
 
     #[test]

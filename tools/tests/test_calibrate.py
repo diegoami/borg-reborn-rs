@@ -1,0 +1,114 @@
+"""Tests for tools/calibrate.py."""
+
+import importlib.util
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+spec = importlib.util.spec_from_file_location('calibrate', HERE.parent / 'calibrate.py')
+cal = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(cal)
+
+
+def state_line(turn, hp, mhp=20):
+    return f'{turn} 1,1 d1/1 hp{hp}/{mhp} sp0/0 f5000 au0 xp0 lv1 t- o- p0 e0 r0\n'
+
+
+def source(name, dist=1, speed=110, awake=True, group=1, ranged=False):
+    return {'index': 1, 'race': 1, 'name': name, 'dist': dist, 'speed': speed,
+            'awake': awake, 'in_view': True, 'confused': False, 'stunned': False,
+            'group': group, 'confidence': 1.0, 'rounds': 1.0, 'expected': 2.0,
+            'worst': 4.0, 'ranged': ranged}
+
+
+class CalibrateTest(unittest.TestCase):
+    def make_run(self, thinks, states, summary, messages=''):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        run = Path(tmp.name) / 'run-a'
+        run.mkdir()
+        (run / 'trace.jsonl').write_text(''.join(json.dumps(t) + '\n' for t in thinks))
+        (run / 'state.log').write_text(''.join(state_line(t, hp) for t, hp in states))
+        (run / 'summary.json').write_text(json.dumps(summary))
+        (run / 'messages.log').write_text(messages)
+        return run
+
+    def think(self, turn, expected=0.0, worst=0.0, p_death=0.0, sources=(), choice='Hold'):
+        return {'turn': turn, 'choice': choice, 'threat': {
+            'horizon': 1, 'expected': expected, 'worst': worst, 'p_death': p_death,
+            'disabling': 0.0, 'summoning': 0.0, 'economic': 0.0,
+            'sources': list(sources)}}
+
+    def test_damage_is_the_sum_of_drops_in_the_window(self):
+        run = self.make_run(
+            [self.think(10, 2.0, 4.0, sources=[source('a jackal')]), self.think(20)],
+            [(10, 20), (15, 17), (18, 19), (20, 18)],
+            {'game_turns': 30, 'dead': False, 'hp': 18},
+            messages='1 15 39 The jackal bites you.\n')
+        ws = cal.windows(run)
+        self.assertEqual(ws[0]['actual'], 3 + 1)  # 20->17 and 19->18; healing not netted
+        self.assertEqual(ws[0]['hp'], 20)
+        self.assertEqual(ws[0]['messages'], ['The jackal bites you.'])
+        self.assertEqual(ws[1]['actual'], 0)
+
+    def test_the_last_think_at_a_turn_is_the_window(self):
+        run = self.make_run(
+            [self.think(10, 9.0, 9.0), self.think(10, 1.0, 2.0, choice='Attack(1)'),
+             self.think(20)],
+            [(10, 20), (20, 20)], {'game_turns': 20, 'dead': False, 'hp': 20})
+        ws = cal.windows(run)
+        self.assertEqual(len(ws), 2)
+        self.assertEqual(ws[0]['expected'], 1.0)
+        self.assertEqual(ws[0]['kind'], 'Attack')
+
+    def test_a_death_adds_the_final_drop(self):
+        run = self.make_run(
+            [self.think(10, 5.0, 8.0, 0.6, [source('Fang')])],
+            [(10, 6)], {'game_turns': 12, 'dead': True, 'hp': -2})
+        ws = cal.windows(run)
+        self.assertTrue(ws[0]['died'])
+        self.assertEqual(ws[0]['actual'], 8)
+        rep = cal.analyse(ws)
+        self.assertEqual(rep['deaths'], 1)
+        self.assertEqual(rep['threatened']['over_worst'], 0)
+        self.assertEqual(rep['by_monster']['Fang']['windows'], 1)
+
+    def test_breakdowns_and_unattributed_damage(self):
+        run = self.make_run(
+            [self.think(10, 2.0, 4.0, sources=[source('a cave spider', dist=2, speed=120,
+                                                         group=3)]),
+             self.think(20, 2.0, 4.0, sources=[source('a grey mold', awake=False)]),
+             self.think(30), self.think(40)],
+            [(10, 20), (20, 14), (30, 14), (35, 13), (40, 13)],
+            {'game_turns': 50, 'dead': False, 'hp': 13})
+        rep = cal.analyse(cal.windows(run))
+        self.assertEqual(rep['threatened']['windows'], 2)
+        self.assertEqual(rep['threatened']['over_worst'], 1)  # 6 > 4
+        self.assertIn('2-3', rep['by_distance'])
+        self.assertIn('fast (>110)', rep['by_speed'])
+        self.assertIn('asleep', rep['by_status'])
+        self.assertEqual(rep['by_group']['same-race group']['windows'], 1)
+        self.assertEqual(rep['quiet']['with_damage'], 1)
+        self.assertEqual(rep['outliers_over_worst'][0]['run'], 'run-a')
+        self.assertIn('Brier', cal.markdown(rep))
+
+    def test_old_traces_without_sources_still_count(self):
+        run = self.make_run(
+            [{'turn': 10, 'choice': 'Hold', 'threat': {'expected': 1.0, 'worst': 2.0,
+                                                        'p_death': 0.0}}],
+            [(10, 20)], {'game_turns': 20, 'dead': False, 'hp': 20})
+        rep = cal.analyse(cal.windows(run))
+        self.assertEqual(rep['by_sources']['0 (no detail)']['windows'], 1)
+        self.assertIsNone(rep['single_source'])
+
+    def test_the_bootstrap_is_deterministic(self):
+        ws = [{'expected': 1.0, 'actual': a, 'worst': 2.0} for a in (0, 1, 2, 0, 3)]
+        import random
+        self.assertEqual(cal.bootstrap(ws, random.Random(0)),
+                         cal.bootstrap(ws, random.Random(0)))
+
+
+if __name__ == '__main__':
+    unittest.main()
