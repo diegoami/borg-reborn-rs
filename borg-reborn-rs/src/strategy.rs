@@ -561,7 +561,7 @@ impl FirstStrategy {
                 ctx.params.threat_horizon,
                 ctx.params.risk_aversion_pct,
             )
-            .summary(),
+            .summary_detailed(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y),
         )
     }
 
@@ -1366,7 +1366,7 @@ mod tests {
             &view(&w),
             &[],
         );
-        let t = d.threat.expect("an assessment on every decision");
+        let t = d.threat.clone().expect("an assessment on every decision");
         assert!(t.expected > 0.0 && t.worst >= t.expected, "{t:?}");
         assert_eq!(t.horizon, params.threat_horizon);
     }

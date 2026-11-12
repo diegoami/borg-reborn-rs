@@ -61,14 +61,10 @@ const EXPECTED_IDS: &[&str] = &[
     "rust-hungry-eats",
 ];
 
-/// The open M4 tasks a gap may name. Update this list when an issue closes:
+/// The open tasks a gap may name (M4 is closed by #124; these are M5's). Update this list when an issue closes:
 /// the compiler cannot see GitHub, and a stale owner is exactly the silent
 /// skip this check exists to prevent.
 const OWNERS: &[(u32, &str)] = &[
-    (
-        124,
-        "T4.7 threat calibration report and the M4 survival gate",
-    ),
     (126, "T5.2 equipment and pack valuation by effect"),
     (127, "T5.3 class item use, spells and ranged combat"),
 ];
@@ -690,7 +686,7 @@ fn every_fixture_exists_and_is_owned() {
                     .unwrap_or_else(|| panic!("{}: a gap needs an owner", x.id));
                 assert!(
                     OWNERS.iter().any(|(n, _)| *n == owner),
-                    "{}: owner #{owner} is not an open M4 task in OWNERS",
+                    "{}: owner #{owner} is not an open task in OWNERS",
                     x.id
                 );
                 assert!(x.current.is_some(), "{}: a gap pins what happens now", x.id);
