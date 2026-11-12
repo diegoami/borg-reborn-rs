@@ -331,20 +331,15 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         why: "hold",
     });
 
+    // A total order (#139): `total_cmp` never calls two different numbers
+    // equal, and `ord` folds -0.0 into 0.0 so that a hold at no risk
+    // (score -0.0) still ties with a zero-score response, as it did under
+    // `partial_cmp`.
     out.sort_by(|a, b| {
-        b.score
-            .partial_cmp(&a.score)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| {
-                a.risk_after
-                    .partial_cmp(&b.risk_after)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
-            .then_with(|| {
-                b.gain
-                    .partial_cmp(&a.gain)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            })
+        ord(b.score)
+            .total_cmp(&ord(a.score))
+            .then_with(|| ord(a.risk_after).total_cmp(&ord(b.risk_after)))
+            .then_with(|| ord(b.gain).total_cmp(&ord(a.gain)))
             .then_with(|| rank(b.action).cmp(&rank(a.action)))
             .then_with(|| a.action.cmp(&b.action))
     });
@@ -483,8 +478,17 @@ fn better_weapon<'a>(w: &'a World, k: &Knowledge) -> Option<(usize, &'a crate::o
                 .melee_per_turn(k)?;
             (dpt > current + 0.1).then_some((i, item, dpt))
         })
-        .max_by(|a, b| a.2.partial_cmp(&b.2).unwrap_or(std::cmp::Ordering::Equal))
+        .max_by(|a, b| ord(a.2).total_cmp(&ord(b.2)))
         .map(|(i, item, _)| (i, item))
+}
+
+/// A score for `total_cmp`: -0.0 is 0.0, as `partial_cmp` treats it.
+fn ord(x: f64) -> f64 {
+    if x == 0.0 {
+        0.0
+    } else {
+        x
+    }
 }
 
 fn direction(dx: i32, dy: i32) -> Option<u8> {
@@ -786,6 +790,18 @@ mod tests {
             "a second scroll lifts the surcharge"
         );
         assert!(matches!(r[0].action, Action::Read { .. }), "{r:?}");
+    }
+
+    #[test]
+    fn scores_are_totally_ordered_and_zero_has_one_sign() {
+        // #139: `total_cmp` orders every score, NaN included, and `ord`
+        // keeps -0.0 tied with 0.0 as `partial_cmp` did, so the later
+        // keys (risk after, gain, action rank) still break the tie.
+        use std::cmp::Ordering;
+        assert_eq!(ord(-0.0).total_cmp(&ord(0.0)), Ordering::Equal);
+        assert_eq!((-0.0f64).total_cmp(&0.0), Ordering::Less, "why ord exists");
+        assert_eq!(ord(f64::NAN).total_cmp(&ord(1.0)), Ordering::Greater);
+        assert_eq!(ord(-2.5), -2.5);
     }
 
     #[test]

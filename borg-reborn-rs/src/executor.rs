@@ -146,8 +146,10 @@ impl Action {
                 // give more than one; the digits then replace its default
                 // of 1 (get_quantity, ui-input.c:1206-1245; the C Borg at
                 // borg-store-sell.c:1107-1116).
+                // A single item has no prompt, so digits would be read as
+                // commands; it sells its one (#139).
                 let stacked = o.inventory.get(i).is_some_and(|it| it.number > 1);
-                if stacked || qty >= 2 {
+                if stacked {
                     if qty >= 2 {
                         k.extend(qty.to_string().bytes().map(u32::from));
                     }
@@ -705,6 +707,13 @@ mod tests {
                 ESCAPE,
                 ESCAPE,
             ]
+        );
+        // A single item asked for twice over: no quantity prompt appears,
+        // so no digits and no extra Enter (#139: digits there would be
+        // read as commands).
+        assert_eq!(
+            Action::Sell { item: 0, qty: 2 }.keys(&obs(&[(1, 1)])),
+            Action::Sell { item: 0, qty: 1 }.keys(&obs(&[(1, 1)])),
         );
         // A stack of 4, three given: the digits replace the default.
         assert_eq!(
