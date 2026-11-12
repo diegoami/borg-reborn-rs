@@ -103,6 +103,37 @@ class CalibrateTest(unittest.TestCase):
         self.assertEqual(rep['by_sources']['0 (no detail)']['windows'], 1)
         self.assertIsNone(rep['single_source'])
 
+    def test_blows_are_counted_from_the_engine_messages(self):
+        run = self.make_run(
+            [self.think(10, 2.0, 4.0, sources=[source('jackal')], choice='Attack(1)'),
+             self.think(20, 2.0, 4.0, sources=[source('jackal')], choice='Walk(1)'),
+             self.think(30)],
+            [(10, 20), (15, 17), (20, 17), (25, 15), (30, 15)],
+            {'game_turns': 40, 'dead': False, 'hp': 15},
+            messages='1 15 39 The jackal bites you.\n1 15 39 The jackal misses you.\n'
+                     '2 15 39 The cave spider bites you.\n3 25 39 The jackal bites you.\n')
+        rep = cal.analyse(cal.windows(run), blows={'jackal': [('BITE', 'HURT', 2.0),
+                                                              ('BITE', 'HURT', 2.0)]})
+        d = rep['blows']['jackal']
+        # Only the standing window counts: the Walk may end elsewhere.
+        self.assertEqual((d['windows'], d['hits'], d['misses']), (1, 1, 1))
+        self.assertEqual(d['predicted_blows'], 2.0)  # 1 round x 2 blows
+        self.assertEqual((d['blows_ratio'], d['hit_rate'], d['damage_per_hit']), (1.0, 0.5, 3.0))
+        self.assertEqual(rep['standing']['windows'], 1)
+        self.assertIn('Blows:', cal.markdown(rep))
+
+    def test_disabling_is_set_against_onset_messages(self):
+        eye = dict(source('floating eye'), expected=0.0, worst=0.0, disabling=0.6)
+        t = self.think(10, sources=[eye], choice='Rest(75)')
+        t['threat']['disabling'] = 0.6
+        run = self.make_run([t, self.think(50)], [(10, 20), (50, 18)],
+                            {'game_turns': 60, 'dead': False, 'hp': 18},
+                            messages='1 12 39 The floating eye gazes at you.\n'
+                                     '1 12 0 You are paralysed!\n')
+        rep = cal.analyse(cal.windows(run), blows={})
+        top = [b for b in rep['disabling'] if b['range'][0] == 0.5][0]
+        self.assertEqual((top['windows'], top['disabled']), (1, 1))
+
     def test_the_bootstrap_is_deterministic(self):
         ws = [{'expected': 1.0, 'actual': a, 'worst': 2.0} for a in (0, 1, 2, 0, 3)]
         import random

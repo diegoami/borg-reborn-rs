@@ -181,10 +181,10 @@ impl MonsterThreat {
 }
 
 /// What the decision trace records for later calibration: the grid's
-/// numbers, and one compact line per monster that contributes to them
-/// (T4.7, #124: calibration by monster, range, speed, group and status).
-/// Monsters that add nothing (out of reach, forgotten) are left out, so a
-/// quiet think's line stays small.
+/// numbers, and one compact line per monster that contributes to any of
+/// them (T4.7, #124: calibration by monster, range, speed, group and
+/// status). Monsters that add nothing (out of reach, forgotten) are left
+/// out, so a quiet think's line stays small.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatSummary {
     pub horizon: i32,
@@ -221,6 +221,8 @@ pub struct SourceSummary {
     pub rounds: f64,
     pub expected: f64,
     pub worst: f64,
+    /// Chance of at least one fear, blindness, confusion or paralysis.
+    pub disabling: f64,
     pub ranged: bool,
 }
 
@@ -241,7 +243,15 @@ impl Assessment {
     /// [`Self::summary`] with the contributing monsters named, for the
     /// trace. `x, y` is the grid the assessment was made for.
     pub fn summary_detailed(&self, w: &World, k: &Knowledge, x: i32, y: i32) -> ThreatSummary {
-        let contributes = |m: &MonsterThreat| m.expected > 0.0 || m.worst > 0.0;
+        // Any term counts: a floating eye's gaze has no damage dice and
+        // only a disabling chance (`monster.txt`: `blow:GAZE:PARALYZE`).
+        let contributes = |m: &MonsterThreat| {
+            m.expected > 0.0
+                || m.worst > 0.0
+                || m.disabling > 0.0
+                || m.summoning > 0.0
+                || m.economic > 0.0
+        };
         let track = |index: i32| w.level.monsters.iter().find(|t| t.index == index);
         let mut sources = Vec::new();
         for m in self.per_monster.iter().filter(|m| contributes(m)) {
@@ -268,6 +278,7 @@ impl Assessment {
                 rounds: m.rounds,
                 expected: m.expected,
                 worst: m.worst,
+                disabling: m.disabling,
                 ranged: m.ranged,
             });
         }
@@ -1203,7 +1214,10 @@ mod tests {
         assert!(adjacent.awake && adjacent.in_view && !adjacent.ranged);
         assert!(adjacent.expected > 0.0 && adjacent.worst >= adjacent.expected);
         for m in &s.sources {
-            assert!(m.expected > 0.0 || m.worst > 0.0, "{m:?}");
+            assert!(
+                m.expected > 0.0 || m.worst > 0.0 || m.disabling > 0.0,
+                "{m:?}"
+            );
             assert_eq!(
                 m.group,
                 s.sources.len() as u32,
@@ -1259,6 +1273,10 @@ mod tests {
         let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
         assert!(a.disabling > 0.0, "{a:?}");
         assert_eq!(a.worst, 0.0, "{a:?}");
+        // The trace still names it: a gaze with no dice is not "nothing".
+        let s = assess(&w, &k, 1, 1, 1, 50).summary_detailed(&w, &k, 1, 1);
+        assert_eq!(s.sources.len(), 1, "{s:?}");
+        assert!(s.sources[0].disabling > 0.0 && s.sources[0].worst == 0.0);
     }
 
     #[test]

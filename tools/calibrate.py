@@ -38,6 +38,52 @@ from pathlib import Path
 
 STATE_HP = re.compile(r'^(-?\d+) .*? hp(-?\d+)/(-?\d+) ')
 BINS = [0.0, 0.5, 1.0, 2.0, 4.0, 8.0, float('inf')]
+DISABLE_BINS = [0.0, 0.01, 0.05, 0.2, 0.5, 1.0000001]
+# Onset texts of the four disabling effects (lib/gamedata/player_timed.txt:
+# BLIND, PARALYZED, CONFUSED, AFRAID, on "grade" and "on-increase").
+DISABLED = ('You are blind.', 'You are paralysed!', 'You are confused!',
+            'You are more confused!', 'You are terrified!', 'You are more scared!')
+# Choices after which the character is still on the assessed grid; a Walk,
+# a staircase or Alter can end the window elsewhere.
+STANDING = {'Attack', 'Hold', 'Rest', 'Quaff', 'Read', 'Eat', 'Cast', 'Shoot',
+            'Throw', 'Use', 'Wield', 'Get', 'Buy', 'Sell'}
+ROOT = Path(__file__).resolve().parent.parent
+MONSTER_TXT = ROOT / 'engine/angband/lib/gamedata/monster.txt'
+
+
+def read_blows(path=MONSTER_TXT):
+    """Race name -> [(method, effect, mean damage)] from monster.txt."""
+    out = {}
+    name = None
+    if not Path(path).is_file():
+        return out
+    for line in open(path):
+        if line.startswith('name:'):
+            name = line[5:].strip()
+            out[name] = []
+        elif line.startswith('blow:') and name:
+            parts = line.strip().split(':')
+            mean = 0.0
+            if len(parts) > 3:
+                m = re.match(r'(\d+)d(\d+)', parts[3])
+                if m:
+                    mean = int(m.group(1)) * (int(m.group(2)) + 1) / 2
+            out[name].append((parts[1], parts[2] if len(parts) > 2 else '', mean))
+    return out
+
+
+def blow_messages(name, msgs):
+    """(hits, misses) the engine printed for this monster's blows."""
+    heads = (f'The {name} ', f'{name} ', f'{name}, ')
+    hits = misses = 0
+    for m in msgs:
+        if not m.startswith(heads) or ' you' not in m:
+            continue
+        if m.endswith('misses you.'):
+            misses += 1
+        else:
+            hits += 1
+    return hits, misses
 PDEATH_BINS = [0.0, 0.001, 0.01, 0.05, 0.2, 1.0000001]
 
 
@@ -137,8 +183,10 @@ def windows(run):
             'expected': float(threat.get('expected', 0.0)),
             'worst': float(threat.get('worst', 0.0)),
             'p_death': float(threat.get('p_death', 0.0)),
+            'disabling': float(threat.get('disabling', 0.0)),
             'sources': threat.get('sources', []),
             'actual': damage,
+            'disabled': any(m in DISABLED for m in msgs),
             'died': died,
             'messages': msgs,
         })
@@ -202,8 +250,9 @@ def status_of(s):
     return 'awake, in view'
 
 
-def analyse(ws, seed=0):
+def analyse(ws, seed=0, blows=None):
     rng = random.Random(seed)
+    blows = read_blows() if blows is None else blows
     threatened = [w for w in ws if w['expected'] > 0 or w['worst'] > 0]
     quiet = [w for w in ws if not (w['expected'] > 0 or w['worst'] > 0)]
     single = [w for w in threatened if len(w['sources']) == 1]
@@ -248,6 +297,54 @@ def analyse(ws, seed=0):
         return {k: group_stats(v, rng) for k, v in sorted(groups.items())}
 
     rep['single_source'] = group_stats(single, rng) if single else None
+    standing = [w for w in threatened if w['kind'] in STANDING]
+    rep['standing'] = group_stats(standing, rng) if standing else None
+
+    dis = []
+    for lo, hi in zip(DISABLE_BINS, DISABLE_BINS[1:]):
+        b = [w for w in ws if lo <= w['disabling'] < hi]
+        if b:
+            dis.append({'range': [lo, min(hi, 1.0)], 'windows': len(b),
+                        'mean_disabling': round(sum(w['disabling'] for w in b) / len(b), 4),
+                        'disabled': sum(1 for w in b if w['disabled'])})
+    rep['disabling'] = dis
+
+    # The blow decomposition: one awake, in-view, adjacent source and the
+    # character stays put, so every blow message in the window is its.
+    dec = {}
+    for w in single:
+        src = w['sources'][0]
+        if src['dist'] > 1 or not src.get('awake', True) or not src.get('in_view', True) \
+                or w['kind'] not in STANDING or src['name'] not in blows:
+            continue
+        b = blows[src['name']]
+        hits, misses = blow_messages(src['name'], w['messages'])
+        d = dec.setdefault(src['name'], {'windows': 0, 'predicted_blows': 0.0, 'hits': 0,
+                                         'misses': 0, 'actual': 0, 'predicted': 0.0,
+                                         'blows_per_round': len(b),
+                                         'mean_per_hit': round(sum(x[2] for x in b) / len(b), 2)
+                                         if b else 0.0})
+        d['windows'] += 1
+        d['predicted_blows'] += src['rounds'] * len(b)
+        d['hits'] += hits
+        d['misses'] += misses
+        d['actual'] += w['actual']
+        d['predicted'] += w['expected']
+    for d in dec.values():
+        d['predicted_blows'] = round(d['predicted_blows'], 1)
+        d['predicted'] = round(d['predicted'], 1)
+        n = d['hits'] + d['misses']
+        d['blows_ratio'] = round(n / d['predicted_blows'], 3) if d['predicted_blows'] else None
+        d['hit_rate'] = round(d['hits'] / n, 3) if n else None
+        d['damage_per_hit'] = round(d['actual'] / d['hits'], 2) if d['hits'] else None
+    rep['blows'] = dict(sorted(dec.items(), key=lambda kv: (-kv[1]['windows'], kv[0])))
+    tot = {k: sum(d[k] for d in dec.values())
+           for k in ('windows', 'predicted_blows', 'hits', 'misses', 'actual', 'predicted')}
+    n = tot['hits'] + tot['misses']
+    tot['blows_ratio'] = round(n / tot['predicted_blows'], 3) if tot['predicted_blows'] else None
+    tot['hit_rate'] = round(tot['hits'] / n, 3) if n else None
+    tot['damage_per_hit'] = round(tot['actual'] / tot['hits'], 2) if tot['hits'] else None
+    rep['blows_total'] = tot
     rep['by_monster'] = by(lambda w: w['sources'][0]['name'], single)
     rep['by_distance'] = by(lambda w: dist_band(w['sources'][0]['dist']), single)
     rep['by_speed'] = by(lambda w: speed_band(w['sources'][0]['speed']), single)
@@ -308,7 +405,9 @@ def markdown(rep):
     if rep['threatened']:
         out += [table({'all threatened': rep['threatened'],
                        **({'one source': rep['single_source']}
-                          if rep['single_source'] else {})}, 'pool'), '']
+                          if rep['single_source'] else {}),
+                       **({'standing still (no Walk, stairs, Alter)': rep['standing']}
+                          if rep['standing'] else {})}, 'pool'), '']
     q = rep['quiet']
     out += [f"Quiet windows (no prediction): {q['windows']}, {q['with_damage']} with damage, "
             f"{q['damage']} HP in all, {q['deaths']} deaths (unattributed).", '']
@@ -328,6 +427,28 @@ def markdown(rep):
     for b in rep['p_death']:
         out.append(f"| [{b['range'][0]:g}, {b['range'][1]:g}) | {b['windows']} "
                    f"| {b['mean_p_death']:.4f} | {b['deaths']} |")
+    out += ['', '**Disabling (fear, blindness, confusion, paralysis) against onset messages**',
+            '', '| disabling bin | windows | mean predicted | windows with an onset |',
+            '| --- | ---: | ---: | ---: |']
+    for b in rep['disabling']:
+        out.append(f"| [{b['range'][0]:g}, {b['range'][1]:g}) | {b['windows']} "
+                   f"| {b['mean_disabling']:.4f} | {b['disabled']} |")
+    if rep['blows']:
+        out += ['', '**Blows: one awake adjacent source in view, the character standing still** '
+                '(blows from `monster.txt`; hits and misses from the engine\'s messages)', '',
+                '| monster | windows | blows/round | predicted blows | observed blows '
+                '| observed/predicted | hit rate | damage per hit (dice mean) '
+                '| predicted HP | actual HP |',
+                '| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: |']
+        rows = [(k, d) for k, d in rep['blows'].items() if d['windows'] >= 3]
+        for k, d in rows + [('**all**', {**rep['blows_total'], 'blows_per_round': '',
+                                          'mean_per_hit': None})]:
+            mean = '' if d.get('mean_per_hit') is None else f" ({d['mean_per_hit']:g})"
+            out.append(f"| {k} | {d['windows']} | {d['blows_per_round']} "
+                       f"| {d['predicted_blows']:.1f} | {d['hits'] + d['misses']} "
+                       f"| {fmt(d['blows_ratio'])} | {fmt(d['hit_rate'])} "
+                       f"| {fmt(d['damage_per_hit'])}{mean} | {d['predicted']:.1f} "
+                       f"| {d['actual']} |")
     for key, title in [('by_distance', 'distance (one source)'),
                        ('by_speed', 'monster speed (one source)'),
                        ('by_status', 'monster status (one source)'),
