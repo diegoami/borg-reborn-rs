@@ -2,6 +2,42 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: the M3 review's small findings (#139)
+
+**Play change in three full runs; new full baseline.** Five cleanups:
+
+- `tactics`: responses and the weapon swap sort with `total_cmp`, through
+  `ord()`, which folds -0.0 into 0.0. Ties then fall through to risk, gain
+  and action rank exactly as under `partial_cmp`.
+- `strategy`: Engage's progress measure has its own sentinel
+  (`ENGAGE_NO_CONTACT`) when no monster is adjacent. Before, the empty case
+  was 0, which reads as a monster at 0 HP; a track's `hp` is 0 when its
+  health is unknown, so "no contact" and "contact with an unmeasured
+  monster" looked like no progress.
+- `strategy`: Explore's fallback stands still through `still()`, which
+  never opens a shop by holding on its entrance.
+- `executor`: Sell sends quantity digits and the prompt's Enter only for a
+  stacked item. A single item has no quantity prompt, and digits there
+  would be read as commands.
+- `strategy`: `retreat_step`'s documentation states its tie-break: the
+  first direction in `DIRS`, keypad order.
+
+**Measured:**
+- Smoke 3/3 and smoke-exact 3/3 are unchanged. Full: 42/45 unchanged.
+- Bisected on seed 1002, the Engage sentinel alone accounts for all three
+  differences: `full-0-warrior-2`, `full-0-warrior-3` (both still survive)
+  and `full-2-druid-0` (dies to the same giant white mouse swarm at 7,912
+  instead of 6,943). An Engage goal now keeps running while monsters come
+  and go, instead of stalling.
+- Full survival stays 31/45. The full reference is regenerated; dossiers
+  are D1700–D1714. `check-no-time.py` finds 0 violations and
+  `reconcile-deaths.py` is clean.
+- Regression tests: `scores_are_totally_ordered_and_zero_has_one_sign`,
+  `engage_progress_without_contact_is_not_a_dead_monster`, and the
+  single-item Sell keys.
+
+**Next:** #157 (remembered casters never fade), then the M4 review.
+
 ## 2026-11-12: the trace says why, and only scored candidates (#138)
 
 **No play change; same baseline.** The M3 review's finding 3. The first

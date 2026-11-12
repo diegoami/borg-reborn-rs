@@ -23,6 +23,9 @@ use crate::world::World;
 use std::collections::BTreeMap;
 
 /// Directions 1–9 (keypad layout) as (dir, dx, dy).
+/// Engage's progress measure when no monster is adjacent (#139).
+const ENGAGE_NO_CONTACT: i64 = i64::MIN;
+
 pub const DIRS: [(u8, i32, i32); 8] = [
     (1, -1, 1),
     (2, 0, 1),
@@ -319,7 +322,9 @@ impl FirstStrategy {
     /// neighbours on the tactical layer's composite scale (T4.6, #123 —
     /// `danger_with` rounds a small risk to 0 and ignores the disabling
     /// half, so a NEVER_MOVE mold read as free), only through grids the
-    /// Borg may enter.
+    /// Borg may enter. Ties keep the first direction in [`DIRS`] order
+    /// (keypad 1, 2, 3, 4, 6, 7, 8, 9): only a strictly lower risk replaces
+    /// the best so far.
     fn retreat_step(ctx: &mut DecisionCtx) -> Option<u8> {
         let (x, y) = (ctx.view.x, ctx.view.y);
         let hp = f64::from(ctx.view.hp.max(1));
@@ -825,7 +830,11 @@ impl FirstStrategy {
                 Some(Action::Eat { item })
             }
             Mode::Explore => {
-                Some(Self::travel_step(ctx, &PathGoal::Frontier).unwrap_or(Action::Hold))
+                // Standing still goes through `still`, which never opens
+                // a shop by holding on its entrance (#139).
+                Some(
+                    Self::travel_step(ctx, &PathGoal::Frontier).unwrap_or_else(|| Self::still(ctx)),
+                )
             }
         }
     }
@@ -836,11 +845,13 @@ impl FirstStrategy {
             Mode::Recover => ctx.view.hp as i64,
             // The fight's progress is the threat going down: the least
             // hit points any adjacent monster has.
+            // With no adjacent monster the measure is its own value, not
+            // 0, which would read as a monster at 0 HP (#139).
             Mode::Engage => Self::adjacent(ctx)
                 .into_iter()
-                .map(|i| ctx.world.level.monsters[i].hp)
+                .map(|i| i64::from(ctx.world.level.monsters[i].hp))
                 .min()
-                .unwrap_or(0) as i64,
+                .unwrap_or(ENGAGE_NO_CONTACT),
             // Purchases move the reserve counts; identification sales move
             // the aware item count (down as well as up is still progress).
             Mode::Town => {
@@ -1490,6 +1501,44 @@ mod tests {
             &[],
         );
         assert_eq!(third.action, first.action, "the bar ends with the cooldown");
+    }
+
+    #[test]
+    fn engage_progress_without_contact_is_not_a_dead_monster() {
+        // #139: with no adjacent monster the Engage measure is its own
+        // sentinel; 0 would read as a monster at 0 HP.
+        let (_, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@....#", "#######"], 20, 20);
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        assert_eq!(
+            FirstStrategy::measure(Mode::Engage, &ctx),
+            ENGAGE_NO_CONTACT
+        );
+        let (_, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#######"], 20, 20);
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        let hp = i64::from(w.level.monsters[0].hp);
+        assert_eq!(FirstStrategy::measure(Mode::Engage, &ctx), hp);
     }
 
     #[test]
