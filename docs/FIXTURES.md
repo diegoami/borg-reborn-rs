@@ -1,13 +1,13 @@
-# Decision fixtures (T4.1, #118; T4.2, #119; T4.3, #120; T4.4, #121; T4.5, #122)
+# Decision fixtures (T4.1, #118; T4.2, #119; T4.3, #120; T4.4, #121; T4.5, #122; T4.6, #123)
 
 *Death-derived `Observation` fixtures. Each one records a decision the Borg must not make, and the verified feasible alternative where a branch exists. The scenario files, with their citations and construction notes, are in [`borg-reborn-rs/tests/fixtures/decisions/`](../borg-reborn-rs/tests/fixtures/decisions/); the engine data they read is [`knowledge.json`](../borg-reborn-rs/tests/fixtures/knowledge.json); the format is in [`tests/fixtures/README.md`](../borg-reborn-rs/tests/fixtures/README.md). A **gap** is not a skip: `tests/decision_fixtures.rs` pins what the Borg does today and fails when the behaviour changes, and the fixture names the open issue that owns the missing capability.*
 
 | Fixture | Dossier | Forbidden | Feasible / verified alternative | Status | Now (pinned) |
 | --- | --- | --- | --- | --- | --- |
 | `bbc-d0002-gallant-at-three-hp` — D0002: 3/49 HP, a gallant adjacent, twelve known cures | `reference/deaths/better-borg-c/D0002-gallant` | Attack — the gallant, the fatal melee at 3 HP | Quaff — Cure Light Wounds (12 known) | active | — |
-| `bbc-d0006-deep-descent-readiness` — D0006: north into the dark with pursuers and no way home | `reference/deaths/better-borg-c/D0006-collected` | Walk(8) — north into the unknown; Walk(9) — north-east into the unknown; Walk(7) — north-west into the unknown; Descend | Walk(2) — south through the open door | gap (#123) | Walk(7) **(still the fatal decision)** |
+| `bbc-d0006-deep-descent-readiness` — D0006: north into the dark with pursuers and no way home | `reference/deaths/better-borg-c/D0006-collected` | Walk(8) — north into the unknown; Walk(9) — north-east into the unknown; Walk(7) — north-west into the unknown; Descend | Walk(2) — south through the open door; Walk(1) — south-west into the known room; Walk(3) — south-east into the known room | active (#123) | — |
 | `bbc-d0008-mold-stair-loop` — D0008: the grey mold beside the up staircase | `reference/deaths/better-borg-c/D0008-collected` | Ascend | Attack(6) — the 2-HP grey mold east of the player | active | — |
-| `bbc-d0009-full-pack-starvation` — D0009: starving with a full pack and an unknown wand underfoot | `reference/deaths/better-borg-c/D0009-collected` | Get — the Bronze Wand underfoot at 23/23 slots | Eat — food, or leave for town; Ascend — to town | gap (#123) | Rest |
+| `bbc-d0009-full-pack-starvation` — D0009: starving with a full pack and an unknown wand underfoot | `reference/deaths/better-borg-c/D0009-collected` | Get — the Bronze Wand underfoot at 23/23 slots | Eat — food, or leave for town; Ascend — to town; Walk(1) — south-west toward the up staircase, the return-home goal's first step | active (#123) | — |
 | `bbc-d0010-shoot-instead-of-stairs` — D0010: 1/15 HP, a kobold adjacent, a bow and eleven arrows | `reference/deaths/better-borg-c/D0010-collected` | Ascend; Read — the unknown scroll at 1 HP | Shoot — the kobold with the short bow (11 arrows); Attack — the kobold **Verified:** owner-manual-branch.json: 6255 -> 7303, CL2 HP12 D1; six arrow hits and one miss; the kobold was shot dead at 7293; both enemies killed. | gap (#127) | Walk |
 | `bbc-d0011-dagger-for-maul` — D0011: the Dagger instead of the carried Maul, with known cures | `reference/deaths/better-borg-c/D0011-collected` | Attack — the griffon with the Dagger instead of the Maul | Wield — the carried Maul; Quaff — Cure Light Wounds | gap (#126) | Attack **(still the fatal decision)** |
 | `bbc-d0012-kill-the-mold` — D0012: the owner branch kills the 2-HP mold in one blow | `reference/deaths/better-borg-c/D0012-collected` | Walk; Descend | Attack(4) — the 2-HP grey mold at (3,3) **Verified:** owner-manual-branch.json: 27526 one blow destroys the grey mold at 17 HP; rest to 21/21 by 27751; two white worm masses killed; saved 28253 at CL2 HP17. | active | — |
@@ -25,9 +25,9 @@
 | `rust-d1330-rest-with-pursuer` — D1330: rest at 1/17 HP with a scrawny cat two steps away | `docs/deaths/D1330-rust-seed1053` | Rest — while a pursuer can close within the rest | Ascend — the up staircase underfoot | active | — |
 | `rust-d1358-retreat-at-one-hp` — D1358: 1/51 HP, a 2-HP mouse adjacent, retreat chosen | `docs/deaths/D1358-rust-seed1001` | Walk — retreating at 1 HP provokes the lethal free hit | Attack — kill the 2-HP mouse before it acts | active | — |
 | `rust-d1413-stairs-under-fang` — D1413: 1/17 HP, Fang adjacent, standing on the up staircase | `docs/deaths/D1413-rust-seed1082` | Attack; Walk | Ascend — the staircase underfoot, before Fang acts | active | — |
-| `rust-d1420-starvation-no-food` — D1420: starving at 0 food on a down staircase with a full pack | `docs/deaths/D1420-rust-seed1032` | Descend — going deeper while starving | Eat — food, or return to town; Ascend | gap (#123) | Descend **(still the fatal decision)** |
+| `rust-d1420-starvation-no-food` — D1420: starving at 0 food on a down staircase with a full pack | `docs/deaths/D1420-rust-seed1032` | Descend — going deeper while starving | Eat — food, or return to town; Ascend; Walk(1) — toward the nearest diggable wall; Alter — digging for the way up | active (#123) | — |
 | `rust-hungry-eats` — Hungry with a known ration: eat before the timer reaches starvation | `docs/deaths/D1420-rust-seed1032` | Rest — resting while the food timer runs down | Eat — the known ration | active | — |
-| `rust-stuck-sealed-room` — A sealed room: Descend fails, then the stuck state | `docs/deaths/D1420-rust-seed1032` | Hold — holding in a sealed room until starvation | Alter — dig or search a route out (#123) | gap (#123) | Hold **(still the fatal decision)** |
+| `rust-stuck-sealed-room` — A sealed room: Descend fails, then the stuck state | `docs/deaths/D1420-rust-seed1032` | Hold — holding in a sealed room until starvation | Alter — digging the way out of the sealed room | active (#123) | — |
 
 ## M3 triage (D1326-D1420)
 
@@ -36,10 +36,10 @@
 | `engage/Walk`: retreat from an adjacent monster at low HP | 59 | `rust-d1358-retreat-at-one-hp` | active after #120 |
 | `recover/Rest`: rest while a pursuer can close | 21 | `rust-d1330-rest-with-pursuer` | active after #119 |
 | `engage/Attack`: losing melee or stairs under contact | 12 | `rust-d1413-stairs-under-fang` | active after #120 |
-| Starvation: no eat action, food 0, full pack | 4 | `rust-d1420-starvation-no-food`; bbc D0009 | gap #123 (no known food) |
+| Starvation: no eat action, food 0, full pack | 4 | `rust-d1420-starvation-no-food`; bbc D0009 | active after #123 (return home, dig) |
 | Grey mold: the danger sum scored the mold 0 (fixed #142) | 5 | `rs-d0006-mold-at-two-hp` | active after #120 |
 
-The M3 re-review added four sealed-room starvation runs (`full-3-priest-2`, `full-3-priest-1`, `full-4-necro-0`, `full-8-blackguard-4`); `rust-stuck-sealed-room` pins the first think and the unit test `a_sealed_room_names_the_stuck_state` the named second think, both #123.
+The M3 re-review added four sealed-room starvation runs (`full-3-priest-2`, `full-3-priest-1`, `full-4-necro-0`, `full-8-blackguard-4`); `rust-stuck-sealed-room` and the unit test `a_sealed_room_escalates_the_stuck_state_to_digging` pin the digging first think (#123).
 
 
 ## What the fixtures found
@@ -58,7 +58,7 @@ The M3 re-review added four sealed-room starvation runs (`full-3-priest-2`, `ful
 
 7. **The escape ladder orders every escape by cost and sufficiency (#121).** Step, Phase Door, Teleportation, Word of Recall and the stairs are scored on the one scale: a relocation's gain is the threat it removes, a blink's `risk_after` is the mean assessment over its remembered landing band (8-12 for Phase Door, 45-75% of the longest edge distance for Teleportation), a stair's is the declared `arrival_risk_hp` (3), and a consumable escape pays `escape_item_hp` (1) — the last known escape scroll pays `last_escape_hp` (5) more, and walking remains after it. `bbc-d0018-dying-yeek-phase` kills the yeek instead of reading; `bbc-d0017-faster-pursuer-walk` reads one of thirteen Phases because the faster spiders outwalk walking; `bbc-d0014-speed-and-clw` keeps the last Phase at 91/91 HP and answers the falcon with the dagger (Speed/CLW stay #127). The wand/bow fixtures (`bbc D0010`) remain #127 for targeting.
 
-8. **The stuck state is named (#123).** A sealed room tries Descend, then reports `stuck` / "no mode can act"; search/dig/recall is #123.
+8. **Stuck escalates to digging, and starvation goes home (#123).** A sealed room reports `stuck` / "dig or search a way out" on the first think and alters a wall; starving with no known food chooses the `return` mode — recall early and in a safe spot, the up staircase, the frontier, then digging (c15 §12.12) — and never descends deeper. Travel never steps onto a more dangerous grid, measured on the tactical layer's composite scale so a NEVER_MOVE mold's confusion counts where its zero hit-point risk did not; recovery rests while no next blow can kill and lets the engine's disturbance interrupt it.
 
 
 ## What is not claimed

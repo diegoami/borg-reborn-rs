@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -59,6 +59,16 @@
       "action": "Walk",
       "dir": 2,
       "item": "south through the open door"
+    },
+    {
+      "action": "Walk",
+      "dir": 1,
+      "item": "south-west into the known room: the deterministic pick when the step north is refused"
+    },
+    {
+      "action": "Walk",
+      "dir": 3,
+      "item": "south-east into the known room"
     }
   ],
   "map": [
@@ -79,8 +89,7 @@
     "review-anchors.json"
   ],
   "construction": "Human Warrior CL8, 89/106 HP, D14. The dossier gives the open door south, the floor beyond it, pursuers north and the north-dark exploration choice at 72885. The room shape and the brown beetle's exact position are constructed; it is placed two diagonal steps north so it is remembered but not in contact.",
-  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The assessment sees the brown beetle at one turn as harmless; the gap is planning under a pursuer at a longer horizon (#123), not the tactical score.",
-  "blocked_by": 123,
+  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The assessment sees the brown beetle at one turn as harmless; planning under a pursuer at a longer horizon remains open. Promoted by T4.6 (#123): threatened travel never steps onto a more dangerous grid, on the tactical layer's composite scale — the mold's confusion counts even though its hit-point risk rounds to zero — so the frontier walk north is refused and the retreat steps south into the known room.",
   "player": {
     "race": 0,
     "class": 0,
@@ -91,10 +100,5 @@
     "y": 3
   },
   "depth": 14,
-  "max_depth": 14,
-  "current": {
-    "action": "Walk",
-    "dir": 7
-  },
-  "pins_forbidden": true
+  "max_depth": 14
 }

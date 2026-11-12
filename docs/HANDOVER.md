@@ -2,6 +2,62 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: recovery, return home and progress under oscillation (#123)
+
+**Play change; new baseline.** T4.6 closes M4's behaviour half: the Borg
+recovers under pressure, goes home when the level cannot feed it, and digs
+out of sealed rooms. Smoke, smoke-exact and full references are regenerated
+in this PR; the diff against the old baseline is the declared change.
+(T4.4's merge line, carried along as announced: PR #154, merge commit
+f7f8a689; main is now 1915f091 after the docs commit.)
+
+- **The `return` mode** (`strategy.rs`): starving with no known food at
+  depth outranks recovery itself and bans descending (bbc D0009's full-pack
+  starvation, rust D1420's descend-on-the-staircase). The goal follows the
+  manual's recall-and-home routine (c15 §12.12): the up staircase underfoot
+  is always taken; a known Word of Recall is read early and only in safety;
+  otherwise travel to the up staircase, explore for one before any
+  down-stair fallback, then dig.
+- **Threatened travel** (`travel_step`): a path step that lands on a grid
+  more dangerous than where the Borg stands is refused, on the tactical
+  layer's composite scale (`tactics.rs:composite`, now shared) — the u32
+  `danger_with` rounds a small risk to zero and has no disabling half, so
+  bbc-d0006's NEVER_MOVE mold (confusion, no hit-point risk) read as a free
+  walk north. The retreat step reads the same scale.
+- **Heal-while-fleeing**: a live Recover goal with a monster about rests
+  anyway when no next blow can kill (`worst < hp`), letting the engine's
+  disturbance interrupt the rest (c15 REST-01, `src/player-util.c`; bbc
+  #408/#409) — a retreat loop (rust D1330) makes no progress under
+  oscillation; a rest does.
+- **Stuck escalates** (`dig_step`): with no staircase and no frontier
+  reachable anywhere, the stuck goal digs (`borg::diggable` — rubble,
+  magma, quartz, granite carry HURT_ROCK, engine `list-terrain.h:29-34`),
+  walks to a diggable wall, or reads a known recall scroll; it no longer
+  waits to starve (the M3 re-review's four sealed-room runs).
+- **Fixtures:** `bbc-d0006-deep-descent-readiness`,
+  `bbc-d0009-full-pack-starvation`, `rust-d1420-starvation-no-food` and
+  `rust-stuck-sealed-room` are **active** (the sealed-room fixture is now
+  the 3x3 its construction note always described). #123 leaves the gap
+  OWNERS: #124, #126, #127.
+- **Measured (the declared change):** smoke — the mage lives forty times
+  longer (451 → 18376 turns, reaches depth 2, dies to Fang; dossier
+  D1638) and the priest now survives the cap (was a grey mushroom patch
+  at 3586); smoke-exact diverges at the identical turns, so determinism
+  holds across both profiles. Full — 30 of 45 runs survive the 10001
+  player-turn cap (was 11 of 45); the 15 natural deaths are dossiered
+  (D1639–D1653) and `reconcile-deaths.py` is clean. Two late
+  **starvation** deaths (full-5-paladin-2 at 91190, full-7-ranger-0 at
+  89750 game turns) are the honest residue: runs the old baseline lost
+  to early monsters now live long enough to starve; the M4 survival
+  gate (#124) reads this baseline.
+- **Refresh report:** angband +12 (head 42cd156a), borg-rs +21 (2 copied
+  docs changed), better-borg-c +10, borg-zoo +33 (catalogue changed),
+  borg-runner +26 (new records and knowledge files); borg-agent and
+  neo-angband-tracker unmoved. Pin moves are their own PRs (RULES 21) and
+  are not in this one.
+- **Next:** #124 (T4.7 threat calibration report and the M4 survival gate,
+  closing M4). #126/#127 are M5 and stay untouched.
+
 ## 2026-11-12: the manuals named as analysis sources
 
 The owner asked that the repository make its manual sources visible to every
