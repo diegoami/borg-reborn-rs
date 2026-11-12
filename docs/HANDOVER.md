@@ -2,6 +2,68 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: threat calibration and the M4 survival gate (#124)
+
+**No play change; same baseline.** T4.7 measures the threat model on the
+M4 baseline's games and checks the M4 exit. The report is
+[docs/M4-CALIBRATION.md](M4-CALIBRATION.md).
+
+- **The trace names its monsters** (`danger.rs:summary_detailed`):
+  `threat.sources` holds one line per monster with any non-zero term
+  (race, distance, speed, sleep, confusion/stun, in view, same-race group,
+  rounds, expected, worst, disabling, ranged). A floating eye's gaze has
+  no dice, only paralysis, so it counts. The trace is written after the
+  decision: the build reproduces smoke 3/3, smoke-exact 3/3 and full 45/45
+  byte for byte. The source hash changes, so the 16 deaths have new
+  dossiers, D1654–D1669 (same games as D1638–D1653).
+- **`tools/calibrate.py`** (with tests): windows cut on the key stream, not
+  on turns (`game-world.c:run_game_loop` lets faster monsters act before
+  the next key). It reports predicted against taken damage by
+  expected-damage bin, range, speed, status, attack form, group and choice;
+  p_death against deaths; disabling against onset messages (hunger faints
+  apart); a blow decomposition from `monster.txt` and the engine's hit and
+  miss messages; bootstrap intervals; named outliers.
+- **Found:** expected damage is about 10× what is taken (0.087, 90% CI
+  0.07–0.10). Per blow the model is right (1.70 HP predicted per blow
+  against 1.77 observed, hit rate 0.92). The gap is blows that never come:
+  the Borg's own blow kills or frightens the monster first in 48% of
+  standing windows, and survivors land 0.58 of the predicted blows (the
+  low-HP `+3` speed and erratic movers are candidates). Worst case is
+  exceeded in 0.14% of windows, only by unmodelled damage. 11 of 16 deaths
+  came with p_death ≥ 0.2 and the Borg fought. The other 5 were
+  starvation ×2, poison, an unseen biter while resting, and a floating eye.
+  For the eye, the engine deals ≥ 1 HP per paralysing blow to a character
+  already paralysed (`mon-blows.c:1019-1021`), and the Borg rested beside
+  it at 1/15 HP.
+- **Gate:** fixtures pass (21 active; the 3 gaps belong to M5), replay is
+  deterministic, G0 holds with a 10-second stall timeout, and every death
+  has a dossier. Survival 30/45 (67%) beside the zoo's C Borgs at 66%
+  (4.2.6) and 69% (bbc-m7) of `classes-1800`, descriptively. Our Borg gets
+  there at median depth 1 and character level 1; theirs reach depth 1–4
+  and level 1.5–7.
+- `decision_fixtures.rs` OWNERS drops #124.
+- **Refresh report:** angband +12, borg-rs +21 (2 copied docs changed),
+  better-borg-c +10 (new tags `4.2.6-impact-v8`…`v11`, `v9.1`),
+  **neo-angband-tracker +52** (the T4.6 entry said unmoved), borg-zoo +33
+  (catalogue changed), borg-runner +26 (new records and knowledge files);
+  borg-agent unmoved. The report's issue sections fail from cloud sessions
+  (GitHub GraphQL is refused there; the script would need the REST API).
+  Pin moves are their own PRs (RULES 21).
+
+**For the owner:**
+- **M4 is not finished.** The milestone still has the deferred M3 review
+  findings **#137** (Engage cooldown after refused actions), **#138** (real
+  decision candidates and goal timing) and **#139** (small cleanups). The
+  last handover said #124 was M4's last task. These come next. #137 may
+  change play, and then the gate's survival table needs a rerun (one
+  command, in the report). The M4 review PR waits for them.
+- The report's *What follows from it* lists four play changes the
+  calibration supports: blow frequency, the paralysis floor, unseen
+  attackers, and status damage. Each needs its own baseline. Decide
+  whether they belong to the M4 review or to M5.
+- This session pushed from `ccr-e0e99f46-go3y0w`, not `task/T4.7-…`: the
+  cloud session can push only to its own branch.
+
 ## 2026-11-12: recovery, return home and progress under oscillation (#123)
 
 **Play change; new baseline.** T4.6 closes M4's behaviour half: the Borg

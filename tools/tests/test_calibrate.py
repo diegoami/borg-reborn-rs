@@ -53,6 +53,23 @@ class CalibrateTest(unittest.TestCase):
         self.assertEqual(ws[0]['messages'], ['The jackal bites you.'])
         self.assertEqual(ws[1]['actual'], 0)
 
+    def test_windows_split_by_key_not_by_turn(self):
+        # Fang acts at turn 20 before the second think's key (it had more
+        # energy, game-world.c:run_game_loop): its message carries key 2,
+        # the first window's last key, and its damage shows at key 3.
+        run = self.make_run(
+            [self.think(10, 2.0, 4.0, sources=[source('Fang')], choice='Attack(1)'),
+             self.think(20, choice='Attack(1)')],
+            [(10, 20), (12, 20), (20, 17), (20, 17)],
+            {'game_turns': 30, 'dead': False, 'hp': 17},
+            messages='1 10 3 You miss Fang.\n2 20 39 Fang bites you.\n'
+                     '3 20 3 You hit Fang.\n')
+        ws = cal.windows(run)
+        self.assertEqual(ws[0]['messages'], ['You miss Fang.', 'Fang bites you.'])
+        self.assertEqual(ws[0]['actual'], 3)
+        self.assertEqual(ws[1]['messages'], ['You hit Fang.'])
+        self.assertEqual(ws[1]['actual'], 0)
+
     def test_the_last_think_at_a_turn_is_the_window(self):
         run = self.make_run(
             [self.think(10, 9.0, 9.0), self.think(10, 1.0, 2.0, choice='Attack(1)'),

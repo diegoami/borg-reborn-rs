@@ -44,9 +44,11 @@ DISABLE_BINS = [0.0, 0.01, 0.05, 0.2, 0.5, 1.0000001]
 DISABLED = ('You are blind.', 'You are paralysed!', 'You are confused!',
             'You are more confused!', 'You are terrified!', 'You are more scared!')
 # Choices after which the character is still on the assessed grid; a Walk,
-# a staircase or Alter can end the window elsewhere.
-STANDING = {'Attack', 'Hold', 'Rest', 'Quaff', 'Read', 'Eat', 'Cast', 'Shoot',
+# a staircase or Alter can end the window elsewhere, and a Read may be a
+# Phase Door or a Teleportation (the escape ladder's own relocations).
+STANDING = {'Attack', 'Hold', 'Rest', 'Quaff', 'Eat', 'Cast', 'Shoot',
             'Throw', 'Use', 'Wield', 'Get', 'Buy', 'Sell'}
+FAINT = 'You faint from the lack of food.'
 ROOT = Path(__file__).resolve().parent.parent
 MONSTER_TXT = ROOT / 'engine/angband/lib/gamedata/monster.txt'
 
@@ -57,7 +59,9 @@ def read_blows(path=MONSTER_TXT):
     name = None
     if not Path(path).is_file():
         return out
-    for line in open(path):
+    with open(path) as f:
+        lines = f.read().splitlines()
+    for line in lines:
         if line.startswith('name:'):
             name = line[5:].strip()
             out[name] = []
@@ -70,6 +74,14 @@ def read_blows(path=MONSTER_TXT):
                     mean = int(m.group(1)) * (int(m.group(2)) + 1) / 2
             out[name].append((parts[1], parts[2] if len(parts) > 2 else '', mean))
     return out
+
+
+def ended(name, msgs):
+    """Whether the monster died or fled in the window (it may not act)."""
+    return any(f'slain the {name}' in m or f'destroyed the {name}' in m
+               or (m.startswith((f'The {name} ', f'{name} ', f'{name}, '))
+                   and ('flees in terror' in m or 'dies' in m))
+               for m in msgs)
 
 
 def blow_messages(name, msgs):
@@ -111,17 +123,20 @@ def read_state(path):
 
 
 def read_messages(path):
-    """(turn, text) per message line; the log is 'key turn type text'."""
+    """(key, text) per message line. The log is 'key turn type text', where
+    key is the state-log line (1-based) whose key's processing printed it:
+    an action's own messages and the monster turns that follow it, up to
+    the next key, carry that key's number."""
     out = []
     if not path.is_file():
         return out
     with open(path, errors='replace') as f:
         for line in f:
             parts = line.rstrip('\n').split(' ', 3)
-            if len(parts) == 4 and parts[1].lstrip('-').isdigit():
+            if len(parts) == 4 and parts[0].isdigit():
                 text = parts[3].strip()
                 if text:
-                    out.append((int(parts[1]), text))
+                    out.append((int(parts[0]), text))
     return out
 
 
@@ -130,7 +145,15 @@ def choice_kind(choice):
 
 
 def windows(run):
-    """The run's windows, as dicts."""
+    """The run's windows, as dicts.
+
+    A think at game turn T is answered by the keys logged at T; its window
+    runs from its first key to the first key of the next think at a later
+    turn. Monsters with more energy than the character act at that later
+    turn *before* its first key (game-world.c:run_game_loop, "Process
+    monster with even more energy first"), so the window ends there, not at
+    a turn boundary: hit points are read at both ends, and messages are
+    assigned by key."""
     summary = json.loads((run / 'summary.json').read_text())
     state = read_state(run / 'state.log')
     messages = read_messages(run / 'messages.log')
@@ -144,31 +167,36 @@ def windows(run):
                 thinks.append(t)
     end_turn = summary['game_turns']
     dead = bool(summary.get('dead'))
+
+    def first_key(turn, lo):
+        """Index (0-based) of the first state line at or after `turn`."""
+        while lo < len(state) and state[lo][0] < turn:
+            lo += 1
+        return lo
+
     out = []
-    si = 0
     mi = 0
-    last_hp = state[0][1] if state else 0
+    k0 = first_key(thinks[0]['turn'], 0) if thinks else 0
     for i, t in enumerate(thinks):
         start = t['turn']
-        stop = thinks[i + 1]['turn'] if i + 1 < len(thinks) else end_turn
-        while si < len(state) and state[si][0] <= start:
-            last_hp = state[si][1]
-            si += 1
-        hp_start = last_hp
-        damage = 0
-        while si < len(state) and state[si][0] <= stop:
-            damage += max(0, last_hp - state[si][1])
-            last_hp = state[si][1]
-            si += 1
         last = i + 1 == len(thinks)
+        stop = end_turn if last else thinks[i + 1]['turn']
+        k1 = len(state) if last else first_key(stop, k0)
+        hp_start = state[k0][1] if k0 < len(state) else (state[-1][1] if state else 0)
+        damage = 0
+        prev = hp_start
+        for k in range(k0 + 1, min(k1 + 1, len(state))):
+            damage += max(0, prev - state[k][1])
+            prev = state[k][1]
         died = dead and last
         if died:
-            damage += max(0, last_hp - summary['hp'])
-        while mi < len(messages) and messages[mi][0] <= start:
+            damage += max(0, prev - summary['hp'])
+        # Messages of keys k0+1 .. k1 (1-based key numbers).
+        while mi < len(messages) and messages[mi][0] <= k0:
             mi += 1
         msgs = []
         j = mi
-        while j < len(messages) and messages[j][0] <= stop:
+        while j < len(messages) and messages[j][0] <= k1:
             msgs.append(messages[j][1])
             j += 1
         threat = t.get('threat') or {}
@@ -186,10 +214,15 @@ def windows(run):
             'disabling': float(threat.get('disabling', 0.0)),
             'sources': threat.get('sources', []),
             'actual': damage,
-            'disabled': any(m in DISABLED for m in msgs),
+            # Hunger's faint paralyses too (player-util.c, "You faint from
+            # the lack of food."); it is no monster's and is counted apart.
+            'disabled': any(m in DISABLED and (k == 0 or msgs[k - 1] != FAINT)
+                            for k, m in enumerate(msgs)),
+            'fainted': FAINT in msgs,
             'died': died,
             'messages': msgs,
         })
+        k0 = k1
     return out
 
 
@@ -306,7 +339,8 @@ def analyse(ws, seed=0, blows=None):
         if b:
             dis.append({'range': [lo, min(hi, 1.0)], 'windows': len(b),
                         'mean_disabling': round(sum(w['disabling'] for w in b) / len(b), 4),
-                        'disabled': sum(1 for w in b if w['disabled'])})
+                        'disabled': sum(1 for w in b if w['disabled']),
+                        'fainted': sum(1 for w in b if w.get('fainted'))})
     rep['disabling'] = dis
 
     # The blow decomposition: one awake, in-view, adjacent source and the
@@ -321,6 +355,8 @@ def analyse(ws, seed=0, blows=None):
         hits, misses = blow_messages(src['name'], w['messages'])
         d = dec.setdefault(src['name'], {'windows': 0, 'predicted_blows': 0.0, 'hits': 0,
                                          'misses': 0, 'actual': 0, 'predicted': 0.0,
+                                         'ended': 0, 'survived_predicted_blows': 0.0,
+                                         'survived_blows': 0,
                                          'blows_per_round': len(b),
                                          'mean_per_hit': round(sum(x[2] for x in b) / len(b), 2)
                                          if b else 0.0})
@@ -328,9 +364,16 @@ def analyse(ws, seed=0, blows=None):
         d['predicted_blows'] += src['rounds'] * len(b)
         d['hits'] += hits
         d['misses'] += misses
+        if ended(src['name'], w['messages']):
+            d['ended'] = d.get('ended', 0) + 1
+        else:
+            d['survived_predicted_blows'] = d.get('survived_predicted_blows', 0.0) \
+                + src['rounds'] * len(b)
+            d['survived_blows'] = d.get('survived_blows', 0) + hits + misses
         d['actual'] += w['actual']
         d['predicted'] += w['expected']
     for d in dec.values():
+        d['survived_predicted_blows'] = round(d['survived_predicted_blows'], 1)
         d['predicted_blows'] = round(d['predicted_blows'], 1)
         d['predicted'] = round(d['predicted'], 1)
         n = d['hits'] + d['misses']
@@ -339,7 +382,10 @@ def analyse(ws, seed=0, blows=None):
         d['damage_per_hit'] = round(d['actual'] / d['hits'], 2) if d['hits'] else None
     rep['blows'] = dict(sorted(dec.items(), key=lambda kv: (-kv[1]['windows'], kv[0])))
     tot = {k: sum(d[k] for d in dec.values())
-           for k in ('windows', 'predicted_blows', 'hits', 'misses', 'actual', 'predicted')}
+           for k in ('windows', 'predicted_blows', 'hits', 'misses', 'actual', 'predicted',
+                     'ended', 'survived_predicted_blows', 'survived_blows')}
+    tot['survived_ratio'] = round(tot['survived_blows'] / tot['survived_predicted_blows'], 3) \
+        if tot['survived_predicted_blows'] else None
     n = tot['hits'] + tot['misses']
     tot['blows_ratio'] = round(n / tot['predicted_blows'], 3) if tot['predicted_blows'] else None
     tot['hit_rate'] = round(tot['hits'] / n, 3) if n else None
@@ -428,11 +474,11 @@ def markdown(rep):
         out.append(f"| [{b['range'][0]:g}, {b['range'][1]:g}) | {b['windows']} "
                    f"| {b['mean_p_death']:.4f} | {b['deaths']} |")
     out += ['', '**Disabling (fear, blindness, confusion, paralysis) against onset messages**',
-            '', '| disabling bin | windows | mean predicted | windows with an onset |',
-            '| --- | ---: | ---: | ---: |']
+            '', '| disabling bin | windows | mean predicted | windows with an onset '
+            '| windows with a hunger faint (apart) |', '| --- | ---: | ---: | ---: | ---: |']
     for b in rep['disabling']:
         out.append(f"| [{b['range'][0]:g}, {b['range'][1]:g}) | {b['windows']} "
-                   f"| {b['mean_disabling']:.4f} | {b['disabled']} |")
+                   f"| {b['mean_disabling']:.4f} | {b['disabled']} | {b['fainted']} |")
     if rep['blows']:
         out += ['', '**Blows: one awake adjacent source in view, the character standing still** '
                 '(blows from `monster.txt`; hits and misses from the engine\'s messages)', '',
@@ -449,6 +495,11 @@ def markdown(rep):
                        f"| {fmt(d['blows_ratio'])} | {fmt(d['hit_rate'])} "
                        f"| {fmt(d['damage_per_hit'])}{mean} | {d['predicted']:.1f} "
                        f"| {d['actual']} |")
+        t = rep['blows_total']
+        out += ['', f"In {t['ended']} of these {t['windows']} windows the monster was slain "
+                f"or fled in the window. In the other windows the engine printed "
+                f"{t['survived_blows']} blows against {t['survived_predicted_blows']:.1f} "
+                f"predicted (ratio {fmt(t['survived_ratio'])})."]
     for key, title in [('by_distance', 'distance (one source)'),
                        ('by_speed', 'monster speed (one source)'),
                        ('by_status', 'monster status (one source)'),
