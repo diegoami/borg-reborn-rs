@@ -59,7 +59,7 @@ knowledge and our own decision traces. Nothing is a claim until
 | [better-borg-c](https://github.com/diegoami/better-borg-c) | The C Borg with verified bug fixes; native measurement runner; death dossiers. |
 | [borg-rs](https://github.com/diegoami/borg-rs) | The faithful Rust port. A reference to copy from, never a dependency (docs/SPEC.md §2); what was copied is ours and listed in docs/PROVENANCE.md. |
 | [borg-zoo](https://github.com/diegoami/borg-zoo) | Measures Borg versions on frozen seed suites. Our yardstick. |
-| [borg-agent](https://github.com/diegoami/borg-agent) | A language-model player that writes down game knowledge with evidence, meant as an input to this Borg. |
+| [borg-agent](https://github.com/diegoami/borg-agent) | *Retired 2026-11-11* (a failed experiment): no longer an input. Its roles, model-played games and claims with evidence, moved to secondary goal Q (docs/GOALS.md D12). Its pin goes in the next source-refresh PR. |
 | [borg-runner](https://github.com/diegoami/borg-runner) | Language-model agents play the game from the screen and record every key; what they learn accumulates in one page (`manuals/INSTRUCTIONS.md`). A source of game knowledge (S15). |
 
 Licence: GPLv2 (see `LICENSE`), as borg-rs. Angband itself is dual-licensed

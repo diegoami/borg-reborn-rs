@@ -75,6 +75,77 @@ baseline is the declared change.
   grey mold's spores at 9/9 HP is calibration's first exhibit), #127
   (T5.3, owns d0010/d0014's class answers).
 
+## 2026-11-11: play mode for models; borg-agent retired (owner, D11/D12 amended)
+
+The owner wants models to be able to **play** through `borg-mcp`, not only
+query it, and says borg-agent was a failed experiment that would need a
+rebuild. Documents only:
+
+- **GOALS:** D12 now covers a query *and play* surface; constraint 2 is
+  "the measured Borg plays without a model" (play mode is a separate arm,
+  logged and replayable, bound by D3 and D5); new roadmap stage **Q5,
+  play mode**, and Q4 (live) is no longer optional, since Q5 needs it.
+  *(Superseded the same day by the reorder below: Q4 became the diagnosis
+  workflow, live hosting moved into Q5, and play mode is optional.)*
+  D11: borg-agent retired as an input, its roles move to Q; borg-runner
+  stays. Option E and the non-goal reworded to match.
+- **RULES 24–25:** the zoo specimen is always the model-free Borg and the
+  Borg's code never calls a model; a model game is a separate arm with its
+  model, effort and tool calls recorded; in play mode the model chooses
+  only executor actions, and rules 11, 12 and 15 bind it.
+- **PLAN:** Q5's row and exit; Q4 no longer optional; the Neo Angband
+  line no longer mentions borg-agent.
+- **docs/QUERY-SURFACE.md:** *Play (Q5)*: tools `observe`, `options`,
+  `act`, `autopilot` (hand-off conditions), three arms (model, hybrid,
+  advised), the run record (`model.json`, `calls.jsonl`); *Workflows*:
+  explaining a death, triage, reviewing a change, hybrid play, and which
+  model for each; two new checks (play replay, arm separation).
+- **SOURCES S7, ARCHITECTURE L3, AGENTS:** borg-agent retired; its pin is
+  dropped in the next `--update` PR (RULES 21: pin moves are their own PRs).
+
+**For the owner:** nothing new to decide before Q starts. The hand-off
+conditions' defaults are an open question for Q5.
+
+**Same day, Q reordered around diagnosis (owner).** The MCP's purpose is
+diagnosing the model-free Borg's deaths after the fact; play mode is
+optional and last. New roadmap: **Q0** pilot (no code, #153: diagnose
+deaths from the dossiers as they are, measure a hit rate on known deaths,
+list the missing tools), **Q1** facade (#149–#151, unchanged), **Q2**
+diagnosis tools, **Q3** counterfactuals with **`branch`** (rerun the
+seed, force an alternative action at a think through a `branch` cargo
+feature the zoo never gets, let the Borg continue, report what followed;
+one sample, not a probability), **Q4** the diagnosis workflow and its
+evaluation, **Q5** play mode, optional, decided after Q4. The primary plan
+(M4–M7) is unchanged.
+
+**For the owner:** create the GitHub milestones Q0–Q5 (this replaces the
+earlier ask for Q1–Q4): #153 goes into Q0, #149–#151 into Q1; open Q0 when
+you want the pilot to run (it can run beside M4: it changes no code); fix
+the hit-rate threshold for Q4's evaluation, and which cases it counts,
+ideally after seeing Q0's numbers.
+
+**#152's review (owner and a second reviewer), fixed in the same PR:**
+- Q0's ground truth: the reference dossiers hold no trace or parameter
+  table, so calibration is by deciding *turn*, cause and alternative, on
+  the set #153 names;
+- our dossiers keep the last 200 thinks (`tools/export-death.py`), so the
+  triage gives the deciding think where the trace reaches it and the turn
+  otherwise, and a longer trace is a named Q0 output;
+- `branch` builds are marked `features=branch` in `BUILD_ID`, since the
+  source hash cannot tell feature builds apart; the zoo-contract refusal
+  is a new assertion to add in Q3, not an existing check;
+- RULES 24's scope restored to every measured game build (ours or the
+  zoo's), matching GOALS constraint 3;
+- "the server does not link the engine" replaces "engine-free";
+- the Q4 threshold is marked open in GOALS and PLAN;
+- QUERY-SURFACE's mode headings say *query mode* and *play mode*, as the
+  rules do;
+- draft fixtures are not committed as tests;
+- README no longer lists borg-agent as an input.
+
+Left for the pin PR (RULES 21): `pins.json`, RULES 7 and 21, and
+`scripts/refresh-sources.py`'s docstring, which still list borg-agent.
+
 ## 2026-11-11: no control runs requested from the zoo (owner)
 
 The owner: borg-zoo already runs the original C Borg and better-borg-c in
