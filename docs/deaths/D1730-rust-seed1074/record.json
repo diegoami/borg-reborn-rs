@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1730-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3880,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "menu",
+    "git_rev": "faee99a31cbbd48c3b383ba01571d6560982c234",
+    "git_dirty": "no",
+    "source_sha256": "fd17b6eccd4558bc939691c3ad63c3bface0ae684af5ea2cb0a5793d8829ec63",
+    "binary_sha256": "65e528c75d15e9c6b8d717a02841ea71bb6819a0df96f752424a12a79d2fbdb9",
+    "borg_txt_sha256": "b68e5773184f2bd83a95c5339e7915a855e2b77712ccfb6c4b08b24225747409",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 349
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-7-ranger-4",
+      "result_sha256": "d852382bb2bdb166f264bcf1dacf9bb1dbbb733857f6a14f275cec5d4f345b1b",
+      "raw_sha256": {
+        "keys.log": "d852382bb2bdb166f264bcf1dacf9bb1dbbb733857f6a14f275cec5d4f345b1b",
+        "messages.log": "c3723111377c779a9b3a3492c8a1279b8eaa6de9a9aa273a0e62ea5108e6e72d",
+        "state.log": "5b60ba0aab920887c9ccd5f7d859e36cb1268964d53cd0442f5135e198ead228"
+      },
+      "source_commit": "faee99a31cbbd48c3b383ba01571d6560982c234",
+      "binary_sha256": "65e528c75d15e9c6b8d717a02841ea71bb6819a0df96f752424a12a79d2fbdb9"
+    }
+  ],
+  "encounter_family": "start-381cad2bc09bdb21069634842ae3d2e4102908a36d426fcb9a9eaf47a63e827d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "0d39d141b9c1edbc175b66409d2728557df4c1ba9b096c274407061447600f09",
+    "config.txt": "711cce4ac835e30395b09c63821423ff198e1157537b29349ee9d2328f46f359",
+    "depths.json": "2fa855d6f5bf1d6f5a0d5d2cc92e4e9b17f9dd56f18004124c9b8172e454350a",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "216464f45e4c6a67f608a7e90b801c702aba5a926db42f1b1c1c02f2757ca320",
+    "trace-tail.jsonl": "8c08cd58ca5070ccf0c485e3d34897ffab9c1aaedb428f5a0035b810d9230a76"
+  },
+  "investigation": null,
+  "issue": null
+}

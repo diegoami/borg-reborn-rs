@@ -441,3 +441,35 @@ reproduces it 45/45.
   natural deaths in full and smoke, all with dossiers (D1670–D1684);
   `check-no-time.py` finds 0 violations; the refused-read violations
   are gone (23 in the T4.7 run, 0 now).
+
+## Addendum: after #139 and #157 (2026-11-12)
+
+#139 changed three full runs through the Engage progress sentinel; full
+survival stayed 31/45. #157 scales a remembered monster's ranged estimate,
+and its chance of death, by the track's confidence, as the melee half
+already was. It changes one run: `full-6-rogue-3` no longer walks in a loop
+around three forgotten apprentices. It moves on, reaches character level 3,
+and dies to Fang at turn 25,237. Its last four windows show p_death 0.00,
+0.47, 1.00 and 0.93 at 4, 4, 1 and 1 HP: it killed a wild cat, then
+walked, and Fang bit. The model warned and the Borg fought, the most
+common shape in this report.
+
+On this baseline (`tools/calibrate.py harness/out/full harness/out/smoke`):
+
+| pool | windows | predicted | actual | actual/predicted (90% CI) |
+| --- | ---: | ---: | ---: | --- |
+| all threatened | 11,742 | 5,421.6 | 448 | 0.083 (0.07–0.10) |
+| one source | 2,022 | 1,544.2 | 217 | 0.141 (0.11–0.17) |
+| standing still | 1,253 | 3,545.7 | 400 | 0.113 (0.10–0.13) |
+| remembered, out of view (one source) | 893 | 204.6 | 3 | 0.015 (0.004–0.03) |
+
+The remembered-out-of-view row is back to its T4.7 shape (905 windows,
+196 predicted). After #137 it had held 4,682 windows and 7,008 predicted
+HP from the phantom apprentices. Out-of-view sources are still
+over-predicted about 65 times, which says confidence decays too slowly for
+a one-turn horizon. That is a calibration lead for the M4 review, not a
+change made here.
+
+**Gate numbers on this baseline:** 30/45 full runs survive the cap (67%,
+the T4.7 rate: the extra survivor of #137 was the loop); 16 natural deaths
+in full and smoke, all with dossiers (D1715–D1730); 0 no-time violations.
