@@ -66,10 +66,6 @@ const EXPECTED_IDS: &[&str] = &[
 /// skip this check exists to prevent.
 const OWNERS: &[(u32, &str)] = &[
     (
-        123,
-        "T4.6 recovery, return home and progress under oscillation",
-    ),
-    (
         124,
         "T4.7 threat calibration report and the M4 survival gate",
     ),

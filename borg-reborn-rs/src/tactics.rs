@@ -364,7 +364,8 @@ fn pack_item<'a>(
 
 /// An assessment on the ladder's one scale: the risk plus the declared
 /// expected loss to disabling and summoning at the current hit points.
-fn composite(a: &Assessment, aversion: i32, hp: f64) -> f64 {
+/// Strategy travel and recovery read the same scale (T4.6, #123).
+pub(crate) fn composite(a: &Assessment, aversion: i32, hp: f64) -> f64 {
     a.risk(aversion) + (a.disabling + 0.5 * a.summoning) * hp
 }
 

@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -77,6 +77,11 @@
     {
       "action": "Ascend",
       "item": "to town"
+    },
+    {
+      "action": "Walk",
+      "dir": 1,
+      "item": "south-west toward the up staircase: the return-home goal's first step"
     }
   ],
   "map": [
@@ -97,8 +102,7 @@
     "review-anchors.json"
   ],
   "construction": "Half-Troll Necromancer CL10, 4/73 HP, D5, food 0, pack 23/23. The dossier gives the full pack, the 764 Bronze Wand refusals and no known food; the room and the stairs are constructed.",
-  "limits": "The 20+ unknown potions/scrolls/mushrooms cannot be eaten or read by this action set. The pickup loop itself is already prevented by the pack-full guard; the gap is the missing food/return action.",
-  "blocked_by": 123,
+  "limits": "The 20+ unknown potions/scrolls/mushrooms cannot be eaten or read by this action set. The pickup loop itself is already prevented by the pack-full guard; Promoted by T4.6 (#123): starving with no known food chooses the return-home goal — recall in safety, the up staircase, then digging — over rest or descent.",
   "player": {
     "race": 7,
     "class": 4,
@@ -114,9 +118,5 @@
     "food": 0
   },
   "depth": 5,
-  "max_depth": 9,
-  "current": {
-    "action": "Rest"
-  },
-  "pins_forbidden": false
+  "max_depth": 9
 }

@@ -1,6 +1,6 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
@@ -70,6 +70,15 @@
     },
     {
       "action": "Ascend"
+    },
+    {
+      "action": "Walk",
+      "dir": 1,
+      "item": "toward the nearest diggable wall"
+    },
+    {
+      "action": "Alter",
+      "item": "digging for the way up"
     }
   ],
   "map": [
@@ -90,8 +99,7 @@
     "report.md:1-12"
   ],
   "construction": "Dwarf Priest CL1, 10/14 HP, D1, food 0, pack 23/23, on the down staircase. The record gives starvation, HP and the full pack; the closed known level is constructed.",
-  "limits": "A constructed state, not a recorded snapshot. Eating and returning home are not actions yet; the pack-full pickup guard already prevents the wand loop.",
-  "blocked_by": 123,
+  "limits": "A constructed state, not a recorded snapshot. The pack-full pickup guard already prevents the wand loop. Promoted by T4.6 (#123): starving with no food bans the descent and walks toward the nearest diggable wall — the way up has to be dug or recalled, never bought with a stair deeper.",
   "player": {
     "race": 5,
     "class": 3,
@@ -103,9 +111,5 @@
     "pack_size": 23,
     "pack_used": 23,
     "food": 0
-  },
-  "current": {
-    "action": "Descend"
-  },
-  "pins_forbidden": true
+  }
 }
