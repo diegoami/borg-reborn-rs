@@ -449,8 +449,20 @@ pub fn one_threat(w: &World, k: &Knowledge, t: &Track, x: i32, y: i32, c: i32) -
     melee.disabling *= confidence;
     melee.summoning *= confidence;
     melee.economic *= confidence;
+    // The chance of death is the chance it is still there times the
+    // chance it kills if it is (#157).
+    melee.p_death *= confidence;
 
-    let ranged = ranged_threat(w, race, slots, d, x, y, t);
+    // The ranged half is scaled the same way (#157): a caster remembered
+    // out of view at confidence 0.00015 kept its full estimate before, and
+    // a rogue walked in a loop for 75,000 turns around three of them.
+    let mut ranged = ranged_threat(w, race, slots, d, x, y, t);
+    ranged.expected *= confidence;
+    ranged.worst *= confidence;
+    ranged.p_death *= confidence;
+    ranged.disabling *= confidence;
+    ranged.summoning *= confidence;
+    ranged.economic *= confidence;
     if rounds <= 0.0 && !ranged.ranged {
         return MonsterThreat {
             index: t.index,
@@ -1277,6 +1289,27 @@ mod tests {
             "confidence keeps falling: {:?}",
             one_threat(&w, &k, &t, 1, 1, 1)
         );
+    }
+
+    #[test]
+    fn a_forgotten_caster_adds_almost_nothing() {
+        // #157: the ranged half fades with the track's confidence, as the
+        // melee half does; so does the chance of death.
+        let mut r = race("caster", 110, 0, &[(1, 8)], &[]);
+        r.freq_spell = 2;
+        r.spell_power = 5;
+        r.spell_flags = pack(&[rsf::BOLT]);
+        let k = knowledge(r);
+        let mut w = world(Some((4, 1, 110, true)));
+        let seen = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(seen.ranged && seen.expected > 0.0, "{seen:?}");
+        let mut t = w.level.monsters[0].clone();
+        t.in_view = false;
+        w.turn = 1_000_000;
+        let gone = one_threat(&w, &k, &t, 1, 1, 1);
+        assert!(gone.confidence < 0.001, "{gone:?}");
+        assert!(gone.expected < 0.01 && gone.worst < 0.1, "{gone:?}");
+        assert!(gone.p_death < 0.001, "{gone:?}");
     }
 
     #[test]
