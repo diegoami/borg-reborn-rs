@@ -412,6 +412,7 @@ fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
             .collect(),
         choice: format!("{:?}", d.action),
         threat: d.threat.clone(),
+        why: d.why.clone(),
         violations: d.violations.clone(),
         prompts: b.executor.take_answered(),
         profile_sha256: b.params.profile_sha256.clone(),

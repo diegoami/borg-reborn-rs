@@ -20,13 +20,19 @@ pub struct TraceLine {
     pub goal: String,
     /// What is left of the goal's budget, in its own unit.
     pub budget: Option<Budget>,
-    /// The actions considered, best first, with their scores.
+    /// The scored alternatives, best first: the tactical responses of a
+    /// contact think (T4.3). Empty when the mode's rule leaves nothing to
+    /// score (#138: a single synthetic entry at 1.0 used to stand there).
     pub candidates: Vec<Candidate>,
     pub choice: String,
     /// The threat assessment at the character's grid (T4.2); absent in
     /// traces written before it existed.
     #[serde(default)]
     pub threat: Option<crate::danger::ThreatSummary>,
+    /// Why the mode was chosen, and the goal's timing (#138); absent in
+    /// traces written before it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub why: Option<Why>,
     /// Invariants that did not hold at this think (GOALS principles).
     pub violations: Vec<String>,
     /// Prompts the catcher answered between the last think and this one
@@ -34,6 +40,22 @@ pub struct TraceLine {
     #[serde(default)]
     pub prompts: Vec<String>,
     pub profile_sha256: String,
+}
+
+/// The mode choice behind a think. The first strategy chooses its mode by
+/// a priority rule (recovery, contact, food, town, a live goal, then the
+/// travel modes), not by a score, so the trace names the rule.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct Why {
+    /// The rule of `choose_mode` that fired.
+    pub rule: String,
+    /// Modes cooling down at this think (GOALS principle 6), by name.
+    pub cooling: Vec<String>,
+    /// The game turn the live goal started, and the last turn its
+    /// progress measure moved: its age is `turn - goal_started`, its
+    /// stall `turn - goal_progressed`.
+    pub goal_started: Option<i64>,
+    pub goal_progressed: Option<i64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

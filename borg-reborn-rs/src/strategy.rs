@@ -202,6 +202,9 @@ pub struct Decision {
     /// (`expected`, `worst`, `p_death`, ...). `None` only for decisions
     /// made before a world exists.
     pub threat: Option<ThreatSummary>,
+    /// Why the mode was chosen and the goal's timing (#138); `None` from a
+    /// strategy that does not say.
+    pub why: Option<crate::trace::Why>,
     pub violations: Vec<String>,
 }
 
@@ -243,6 +246,9 @@ pub struct FirstStrategy {
     /// The action the last think chose: the one the executor's next
     /// report is about.
     last_action: Option<Action>,
+    /// Which rule of `choose_mode` chose this think's mode, for the trace
+    /// (#138: the mode choice is a priority rule, not a score).
+    rule: &'static str,
     /// Actions the executor reported refused, barred until this game turn
     /// (#137). Contact keeps Engage live past its cooldown, so the
     /// refusal must bar the action itself, not only the mode.
@@ -258,6 +264,7 @@ impl Default for FirstStrategy {
             rerolled_from: None,
             last_candidates: Vec::new(),
             last_action: None,
+            rule: "",
             refused: BTreeMap::new(),
         }
     }
@@ -889,6 +896,7 @@ impl FirstStrategy {
             && Self::adjacent(ctx).is_empty()
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
         {
+            self.rule = "starving with no food: return home";
             return Mode::Return;
         }
         // The recovery invariant first (GOALS principle 7): hurt and
@@ -901,12 +909,14 @@ impl FirstStrategy {
                 .is_none_or(|&t| turn >= t)
             && Self::may_rest(ctx)
         {
+            self.rule = "hurt and safe: recover";
             return Mode::Recover;
         }
         // Contact second (task T3.4): a monster in reach is answered
         // this think — fought when the exchange wins it, left when it
         // does not. M4's tactical layer replaces the whole comparison.
         if !Self::adjacent(ctx).is_empty() {
+            self.rule = "contact: a monster in reach";
             return Mode::Engage;
         }
         // Food before the timer reaches starvation, but after contact and
@@ -920,6 +930,7 @@ impl FirstStrategy {
             && Self::has_food(ctx)
             && self.cooldowns.get(&Mode::Eat).is_none_or(|&t| turn >= t)
         {
+            self.rule = "food below the threshold";
             return Mode::Eat;
         }
         // Survival reserves outrank an already-live travel goal: arriving
@@ -927,6 +938,7 @@ impl FirstStrategy {
         // (GOALS principle 7). A completed or cooled town goal ends here.
         let town_cooled = self.cooldowns.get(&Mode::Town).is_none_or(|&t| turn >= t);
         if ctx.world.level.depth == 0 && town_cooled && Self::town_job(ctx).is_some() {
+            self.rule = "in town with a job to do";
             return Mode::Town;
         }
         if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Town) {
@@ -962,6 +974,7 @@ impl FirstStrategy {
             if !goal.stalled(turn, budget)
                 && self.cooldowns.get(&goal.mode).is_none_or(|&t| turn >= t)
             {
+                self.rule = "a live goal keeps its mode";
                 return goal.mode;
             }
             // The goal failed: cool the mode down (GOALS principle 6)
@@ -994,28 +1007,34 @@ impl FirstStrategy {
             ctx.world.level.at(ctx.view.x, ctx.view.y).is_some_and(|g| {
                 matches!(g.feat, crate::borg::feat::LESS | crate::borg::feat::MORE)
             });
-        if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
-            Mode::Descend
-        } else if frontier != UNREACHED && cooled(Mode::Explore) {
-            Mode::Explore
-        } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
-            Mode::Descend
-        } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
-            // Nothing is reachable anywhere — a sealed room. Rerolling a
-            // fresh level from here is stair-scumming out of a trap
-            // (GOALS 9): dig the way out instead (T4.6, #123). The up
-            // staircase counts too: Descend's reroll travels up, so a
-            // reachable up stair must not read as stuck.
-            Mode::Stuck
-        } else if !block_descend && (on_stair || cooled(Mode::Descend)) {
-            // On a staircase, Descend's step takes it (including the up
-            // stair under threat). With none and a cooling Descend, name
-            // the stuck state instead of re-choosing the cooled mode every
-            // think (M3 re-review, 2026-11-10).
-            Mode::Descend
-        } else {
-            Mode::Stuck
-        }
+        let (mode, rule) =
+            if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+                (Mode::Descend, "in town: take the stairs down")
+            } else if frontier != UNREACHED && cooled(Mode::Explore) {
+                (Mode::Explore, "a frontier is reachable")
+            } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+                (Mode::Descend, "no frontier: a down staircase is reachable")
+            } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
+                // Nothing is reachable anywhere — a sealed room. Rerolling a
+                // fresh level from here is stair-scumming out of a trap
+                // (GOALS 9): dig the way out instead (T4.6, #123). The up
+                // staircase counts too: Descend's reroll travels up, so a
+                // reachable up stair must not read as stuck.
+                (Mode::Stuck, "nothing reachable: a sealed room")
+            } else if !block_descend && (on_stair || cooled(Mode::Descend)) {
+                // On a staircase, Descend's step takes it (including the up
+                // stair under threat). With none and a cooling Descend, name
+                // the stuck state instead of re-choosing the cooled mode every
+                // think (M3 re-review, 2026-11-10).
+                (
+                    Mode::Descend,
+                    "on a staircase, or descend cooled with nothing else",
+                )
+            } else {
+                (Mode::Stuck, "every way on is cooling or banned")
+            };
+        self.rule = rule;
+        mode
     }
 
     /// Fail the current goal when the executor reported the previous
@@ -1042,8 +1061,25 @@ impl Strategy for FirstStrategy {
     }
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
-        let d = self.decide_now(ctx);
+        self.rule = "";
+        let mut d = self.decide_now(ctx);
         self.last_action = Some(d.action);
+        let turn = ctx.view.turn;
+        d.why = Some(crate::trace::Why {
+            rule: if self.rule.is_empty() && !can_act(ctx.world) {
+                "paralysed: no action".into()
+            } else {
+                self.rule.into()
+            },
+            cooling: self
+                .cooldowns
+                .iter()
+                .filter(|(_, &until)| turn < until)
+                .map(|(m, _)| m.name().to_string())
+                .collect(),
+            goal_started: self.goal.as_ref().map(|g| g.started),
+            goal_progressed: self.goal.as_ref().map(|g| g.progressed),
+        });
         d
     }
 }
@@ -1057,8 +1093,9 @@ impl FirstStrategy {
                 mode: "disabled",
                 goal: "paralysed",
                 budget_left: 0,
-                candidates: vec![(action, 1.0)],
+                candidates: Vec::new(),
                 threat: Self::here_threat(ctx),
+                why: None,
                 violations: Vec::new(),
             };
         }
@@ -1110,6 +1147,7 @@ impl FirstStrategy {
                 budget_left: 0,
                 candidates: vec![],
                 threat: Self::here_threat(ctx),
+                why: None,
                 violations: vec![why],
             };
         }
@@ -1134,6 +1172,7 @@ impl FirstStrategy {
                 budget_left,
                 candidates: vec![],
                 threat: Self::here_threat(ctx),
+                why: None,
                 violations,
             };
         }
@@ -1171,19 +1210,12 @@ impl FirstStrategy {
             mode: mode.name(),
             goal: goal_name,
             budget_left,
-            candidates: if self.last_candidates.is_empty() {
-                vec![(action_clone(&action), 1.0)]
-            } else {
-                std::mem::take(&mut self.last_candidates)
-            },
+            candidates: std::mem::take(&mut self.last_candidates),
             threat: Self::here_threat(ctx),
+            why: None,
             violations,
         }
     }
-}
-
-fn action_clone(a: &Action) -> Action {
-    *a
 }
 
 #[cfg(test)]
@@ -1458,6 +1490,72 @@ mod tests {
             &[],
         );
         assert_eq!(third.action, first.action, "the bar ends with the cooldown");
+    }
+
+    #[test]
+    fn the_trace_names_the_rule_and_the_goal_timing() {
+        // #138: the mode is chosen by a priority rule, so the trace names
+        // the rule; only scored alternatives are candidates; Goal.started
+        // and Goal.progressed give the goal's age and stall.
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@......#", "#.......#", "#########"],
+            20,
+            20,
+        );
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        let why = d.why.expect("the first strategy says why");
+        assert!(!why.rule.is_empty(), "{why:?}");
+        assert!(
+            d.candidates.is_empty(),
+            "no synthetic candidate: {:?}",
+            d.candidates
+        );
+        assert_eq!(why.goal_started, Some(w.turn));
+        assert_eq!(why.goal_progressed, Some(w.turn));
+
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.why.as_ref().map(|y| y.rule.as_str()),
+            Some("contact: a monster in reach")
+        );
+        assert!(d.candidates.len() > 1, "contact scores its responses");
+
+        // A refusal cools the mode, and the trace says so.
+        let refused = ["refused".to_string()];
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &refused,
+        );
+        assert_eq!(d.why.expect("why").cooling, vec!["engage".to_string()]);
     }
 
     #[test]

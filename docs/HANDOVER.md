@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: the trace says why, and only scored candidates (#138)
+
+**No play change; same baseline.** The M3 review's finding 3. The first
+strategy chooses its mode by a priority rule, so the trace's single
+candidate at score 1.0 claimed an alternative that was never weighed.
+
+- `candidates` now holds only scored alternatives, which are the tactical
+  responses of a contact think (T4.3). A rule-based think records none
+  (in `full-0-warrior-0`, 9,385 of 9,522 thinks).
+- New trace field `why` (`trace::Why`): the `choose_mode` rule that fired
+  (for example "contact: a monster in reach", "a live goal keeps its
+  mode"), the modes cooling down, and the goal's `goal_started` and
+  `goal_progressed`. `Goal.started` is now read: age is
+  `turn - goal_started`, stall is `turn - goal_progressed`. Old traces
+  parse (serde defaults).
+- Checked: smoke 3/3, smoke-exact 3/3, full 45/45 identical to the
+  references; `check-no-time.py` 0 violations. The new source hash gives
+  the 15 deaths new dossiers, D1685–D1699 (same games as D1670–D1684).
+- **Next:** #139 (small cleanups), #157 (remembered casters), then the M4
+  review.
+
 ## 2026-11-12: a refused action changes the next decision (#137)
 
 **Play change; new full baseline.** The M3 review's finding 2: contact
