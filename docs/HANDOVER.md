@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: remembered casters fade with confidence (#157, T4.8)
+
+**Play change in one full run; new full baseline.**
+
+- `danger.rs:one_threat` scales the ranged half of a monster's threat by
+  `Track::confidence`, as it already scaled the melee half. It also scales
+  `p_death` in both halves: the chance the monster is there times the
+  chance it kills if it is. The melee `p_death` was unscaled too, a
+  sibling of the same defect, fixed together here. Test:
+  `a_forgotten_caster_adds_almost_nothing`.
+- **Measured:** smoke 3/3, smoke-exact 3/3; full 44/45 identical.
+  `full-6-rogue-3` leaves its 75,000-turn loop around three forgotten
+  apprentices, reaches character level 3 and dies to Fang at 25,237
+  (p_death 0.93 at the fatal think; it fought on at 1 HP). Full survival
+  is 30/45, the T4.7 rate. The full reference is regenerated; dossiers are
+  D1715–D1730.
+- **Calibration:** pooled ratio back to 0.083 (it was 0.017 with the loop);
+  remembered out-of-view sources 893 windows at 0.015. Addendum in
+  [docs/M4-CALIBRATION.md](M4-CALIBRATION.md).
+
+**M4's tasks are all closed with this PR.** Next is the M4 review PR
+(`main` → `reviewed`), opened by the session with a review prompt. The
+owner chooses the reviewer (RULES 6).
+
 ## 2026-11-12: the M3 review's small findings (#139)
 
 **Play change in three full runs; new full baseline.** Five cleanups:
