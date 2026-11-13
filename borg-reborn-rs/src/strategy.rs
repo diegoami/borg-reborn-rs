@@ -406,6 +406,12 @@ impl FirstStrategy {
         Some(Action::Walk(d))
     }
 
+    /// Whether the readiness policy allows `depth` (T5.1, #125; see
+    /// `readiness.rs`). Depth 1 always passes.
+    fn ready_for(ctx: &DecisionCtx, depth: i32) -> bool {
+        crate::readiness::ready(ctx.world, ctx.knowledge, ctx.params, depth).ok()
+    }
+
     /// A known Word of Recall scroll in the pack (the reserve's aware
     /// item; an unidentified scroll is not a way home, bbc D0011).
     fn recall_scroll(ctx: &DecisionCtx) -> Option<usize> {
@@ -726,13 +732,19 @@ impl FirstStrategy {
                     self.goal = None;
                     return Self::retreat_step(ctx).map(Action::Walk);
                 }
-                if here == Some(crate::borg::feat::MORE) && threat == 0 {
+                // Down only when ready for the next depth (T5.1, #125); an
+                // unready Borg on an explored level rerolls it upward below,
+                // under the same exhausted-level rule as before.
+                let ready_next = Self::ready_for(ctx, ctx.world.level.depth + 1);
+                if ready_next && here == Some(crate::borg::feat::MORE) && threat == 0 {
                     // A staircase under fire is not taken: whatever is
                     // pressing is dealt with first (engaged or escaped).
                     return Some(Action::Descend);
                 }
-                if let Some(action) = Self::travel_step(ctx, &PathGoal::Stairs { up: false }) {
-                    return Some(action);
+                if ready_next {
+                    if let Some(action) = Self::travel_step(ctx, &PathGoal::Stairs { up: false }) {
+                        return Some(action);
+                    }
                 }
                 // Only an exhausted level may reroll (S15 §2). A fresh
                 // level with a frontier belongs to Explore; selecting a
@@ -966,6 +978,20 @@ impl FirstStrategy {
         if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Town) {
             self.goal = None;
         }
+        // Readiness (T5.1, #125; c15 DEPTH-04): a character no longer ready
+        // for the depth it stands on goes up, as starvation does: Return
+        // takes the up staircase, reads a known recall in safety, or
+        // explores for a way up. It arrives here after a trapdoor, a
+        // spent kit gate (cures, recall) or a level that outgrew it.
+        let depth = ctx.world.level.depth;
+        if depth > 1
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+            && !Self::ready_for(ctx, depth)
+        {
+            self.rule = "not ready for this depth: go up";
+            return Mode::Return;
+        }
         // No travel goal survives a level generation. In particular,
         // depth 1 → town → depth 1 at one game turn is not goal progress:
         // the new level must be evaluated for Explore first (M3 review).
@@ -1029,12 +1055,21 @@ impl FirstStrategy {
             ctx.world.level.at(ctx.view.x, ctx.view.y).is_some_and(|g| {
                 matches!(g.feat, crate::borg::feat::LESS | crate::borg::feat::MORE)
             });
+        // The dive rule (c15 DEPTH-04): ready for five levels deeper, the
+        // stairs come before the frontier; ready only for the next level,
+        // explore first, then descend; not ready for the next, the
+        // explored level rerolls (Descend's step) instead of descending.
+        let depth = ctx.world.level.depth;
+        let ready_next = depth == 0 || Self::ready_for(ctx, depth + 1);
+        let dive = depth > 0 && Self::ready_for(ctx, depth + 5);
         let (mode, rule) =
             if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
                 (Mode::Descend, "in town: take the stairs down")
+            } else if dive && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+                (Mode::Descend, "ready for five levels deeper: dive")
             } else if frontier != UNREACHED && cooled(Mode::Explore) {
                 (Mode::Explore, "a frontier is reachable")
-            } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+            } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend && ready_next {
                 (Mode::Descend, "no frontier: a down staircase is reachable")
             } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
                 // Nothing is reachable anywhere — a sealed room. Rerolling a
@@ -1512,6 +1547,71 @@ mod tests {
             &[],
         );
         assert_eq!(third.action, first.action, "the bar ends with the cooldown");
+    }
+
+    #[test]
+    fn an_unready_character_goes_up() {
+        // T5.1 (#125), c15 DEPTH-04: at DL6 without the DL5 kit (Word of
+        // Recall, three cures, a ranged attack) the Borg is not ready for
+        // the depth it stands on, and goes up.
+        let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@.....<#", "#.......#", "#########"],
+            20,
+            20,
+        );
+        w.level.depth = 6;
+        if let Some(st) = w.character.status.as_mut() {
+            st.depth = 6;
+            st.max_depth = 6;
+        }
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "return", "{d:?}");
+        assert_eq!(
+            d.why.as_ref().map(|y| y.rule.as_str()),
+            Some("not ready for this depth: go up")
+        );
+        // With the kit (and the band's monsters well inside its HP) it
+        // stays to explore instead.
+        let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@.....<#", "#.......#", "#########"],
+            200,
+            200,
+        );
+        w.level.depth = 6;
+        if let Some(st) = w.character.status.as_mut() {
+            st.depth = 6;
+            st.max_depth = 6;
+        }
+        w.character.inventory = vec![item(5, 1, true), item(3, 3, true)];
+        w.character.quiver = vec![item(1, 10, true)];
+        w.character.equipment.push(crate::observation::Slot {
+            slot_type: crate::world::EQUIP_BOW,
+            item: Some(item(2, 1, true)),
+        });
+        let r = crate::readiness::ready(&w, &k, &params, 6);
+        assert!(r.ok(), "{r:?}");
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_ne!(d.mode, "return", "{d:?}");
     }
 
     #[test]

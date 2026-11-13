@@ -83,6 +83,11 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
       - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
+      # A death for the rerun check below (TE.6). Smoke no longer has one
+      # (#125: the smoke mage survives), so CI plays the full suite's
+      # earliest death on its own: full-1-mage-4 (seed 1014, poison at game
+      # turn 1,390), whose dossier the full reference's PR records.
+      - run: BORG_IMPL=rust harness/run.sh harness/out/rerun-source 1014 5 1 100000 menu
       # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
       # died a death that docs/deaths/ does not record.
       - uses: actions/upload-artifact@v4
@@ -92,8 +97,12 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
-      - run: for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
+      # nullglob: runs with no natural death leave no dossier, and an
+      # unmatched pattern must not be checked as if it were one (#125: the
+      # smoke mage now survives). reconcile-deaths above still fails a death
+      # without a dossier.
+      - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
       - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D*-rust-* | head -1)" "$RUNNER_TEMP/rerun"
