@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: a frontier grid stood on is not walked back to (#176, part)
+
+**Play change in fifteen full runs; new references (smoke runs identical,
+only their identity fields change).**
+
+- **The walk in place, explore half.** A frontier grid (known floor next to
+  an unknown one) was excluded only while underfoot. In the dark, in the
+  unlit town at night or for an `UNLIGHT` necromancer, standing on it does
+  not reveal the unknown neighbour. So two such grids took turns as the
+  nearest target, and the Borg walked between them: #172's ranger-0 (Walk
+  9/1), #176's priest-4 (Walk 3/7 in the night town), #177's necromancer.
+  The world now marks every grid the Borg stands on (`Remembered::stood`,
+  per level), and the frontier skips them. A path test pins it; it fails
+  without the exclusion.
+- **Measured (full, 45 runs):** alive 40 → **41**, max depth sum 43 →
+  **45**, max level sum 63 → **67**. No run is worse. necro-3 survives;
+  mage-0, paladin-0/4, druid-4 and blackguard-3 gain a level or a depth.
+  Smoke unchanged.
+- **Not fixed: priest-4 still starves in town.** Its last 20,000 turns are
+  now Descend, "reach the down staircase", flipping Walk(1)/Walk(9) between
+  (22,18) and (23,17) with no monster in the observation and no threat.
+  The town there has lava (feature 23) and passable rubble (24). The down
+  staircase is not in the panel. A fixed distance map cannot flip with no
+  threat, so either the map changes between the two grids (the night-town
+  memory) or `travel_step`'s retreat guard fires. It needs a replay of the
+  town's observations from arrival (75,531). #176 stays open for that and
+  for the no-gold half.
+- Dossiers D1870–D1873.
+
 ## 2026-11-13: a monster at 0 hit points is alive (#179)
 
 **Play change in twelve full runs; new references for all three suites.**

@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 1849,
+  "cases": 1853,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 53,
     "Grip, Farmer Maggot's Dog": 136,
@@ -11,7 +11,7 @@
     "a clear icky thing": 44,
     "a crow": 75,
     "a cutpurse": 5,
-    "a fatal wound": 21,
+    "a fatal wound": 22,
     "a floating eye": 69,
     "a fruit bat": 66,
     "a giant green frog": 8,
@@ -34,7 +34,7 @@
     "a scout": 3,
     "a scrawny cat": 37,
     "a scruffy little dog": 49,
-    "a small kobold": 86,
+    "a small kobold": 87,
     "a soldier": 16,
     "a soldier ant": 102,
     "a warrior": 2,
@@ -50,11 +50,11 @@
     "an acolyte": 17,
     "an aimless-looking merchant": 1,
     "an apprentice": 53,
-    "poison": 57,
-    "starvation": 198
+    "poison": 58,
+    "starvation": 199
   },
-  "death_process_attempts": 1849,
-  "distinct_starting_conditions": 1848,
+  "death_process_attempts": 1853,
+  "distinct_starting_conditions": 1852,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -84,6 +84,7 @@
     "6491ea0fa28ba82aa1d37d7f3aaf0c8afb9e975f": 50,
     "690ae98a53c99402e6d5d03eaeb560122b19785a": 16,
     "7570d10aad14db4c5ff40b77f381693bc2338f38": 16,
+    "7913bc84e160e4cb71f746768b6197f11354454d": 4,
     "795a3bfb1c5c9d09ee579fb4ef528a8e747333de": 45,
     "798239ad4644c15efb4309550cd0d8e793002f87": 15,
     "83f6799f794383f31e57a9f7d7617187020554ef": 46,

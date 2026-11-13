@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1849; distinct starting conditions: 1848; retained process attempts: 1849 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1853; distinct starting conditions: 1852; retained process attempts: 1853 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1855,6 +1855,10 @@ Dossiers: 1849; distinct starting conditions: 1848; retained process attempts: 1
 | [D1867-rust-seed1042](D1867-rust-seed1042/report.md) | unassigned | `eebbf1904ae1` | 1042 | poison | 3860 | unassessed |
 | [D1868-rust-seed1034](D1868-rust-seed1034/report.md) | unassigned | `eebbf1904ae1` | 1034 | starvation | 99880 | unassessed |
 | [D1869-rust-seed1043](D1869-rust-seed1043/report.md) | unassigned | `eebbf1904ae1` | 1043 | Fang, Farmer Maggot's Dog | 80541 | unassessed |
+| [D1870-rust-seed1014](D1870-rust-seed1014/report.md) | unassigned | `7913bc84e160` | 1014 | a fatal wound | 3070 | unassessed |
+| [D1871-rust-seed1040](D1871-rust-seed1040/report.md) | unassigned | `7913bc84e160` | 1040 | a small kobold | 5078 | unassessed |
+| [D1872-rust-seed1034](D1872-rust-seed1034/report.md) | unassigned | `7913bc84e160` | 1034 | starvation | 99880 | unassessed |
+| [D1873-rust-seed1042](D1873-rust-seed1042/report.md) | unassigned | `7913bc84e160` | 1042 | poison | 3860 | unassessed |
 
 ## Aggregated actions
 
