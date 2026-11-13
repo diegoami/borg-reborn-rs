@@ -1,6 +1,6 @@
 {
   "schema": "borg-rs/c-consumer-adoption@1",
-  "phase": "impact_v10_accepted",
+  "phase": "impact_v11r_accepted",
   "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
   "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
   "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
@@ -21,9 +21,43 @@
   },
   "adopted_batches": [
     {
+      "id": "c-v11r",
+      "target_commit": "39268ca8a470d1cbd44de27bf1fd1b3ee403bada",
+      "target_tag": "4.2.6-impact-v11",
+      "previous_commit": "6944d88e87d02e9d24e85438d25f0c6ef864c170",
+      "state": "reviewed_approve_owner_accepted",
+      "units": 18,
+      "patches": 19,
+      "independent_review": {
+        "verdict": "approve",
+        "review": "https://github.com/diegoami/borg-rs/pull/30#issuecomment-6778346536",
+        "finding": "F1 minor stale Lunal doc comment; fixed in e8f939a",
+        "validation_reproduced": "104 tests, 3/3 smoke, 45/45 full, 9/9 deep, 16/16 classes, 7/7 config, 25/25 options"
+      },
+      "tracking_record": "docs/adoption/c-v11r/README.md",
+      "series": "docs/adoption/c-v11r/series.json",
+      "receipt": "docs/validation/2026-11-10-c-v11r/README.md",
+      "rust_base_commit": "399c907950b1fd474ddfc1c5a5d4f86063778aac",
+      "owner_direction": "carry BBC v11 changes as milestone v11R",
+      "review_issue": "https://github.com/diegoami/better-borg-c/issues/471",
+      "note": "C blobs updated to the consumer's v11 target; Rust carries the same 18 units. No cohort or benefit claim.",
+      "rust_milestone_accepted": true,
+      "merge_pr": "https://github.com/diegoami/borg-rs/pull/30",
+      "merge_commit": "f4149b4cc84af7e4c680f90d4db9f61ba8b660f3",
+      "merged_branch": "claude/v11r-carry",
+      "owner_acceptance": {
+        "instruction": "accept, merge and tag",
+        "date": "2026-11-11",
+        "merged_as": "PR #30",
+        "merge_commit": "f4149b4cc84af7e4c680f90d4db9f61ba8b660f3",
+        "tracking_issue": "https://github.com/diegoami/borg-rs/issues/29",
+        "tag_pending_owner": "The v11R tag is not placed by this record; the GitHub App exposes no tag-creation tool, so the owner pushes it."
+      }
+    },
+    {
       "id": "c-m2",
       "target_commit": "2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
-      "state": "reviewed_qualified_pass_owner_acceptance_pending",
+      "state": "reviewed_qualified_pass_owner_accepted",
       "fixes": 7,
       "source_issues": [
         82,
@@ -40,7 +74,7 @@
       "full_native_saves": 131,
       "native_correctness_cases": 49,
       "shared_environment_kernel_cases": 1785,
-      "rust_milestone_accepted": false,
+      "rust_milestone_accepted": true,
       "implementation_commit": "9cfbbffdeea946f9fad96fbf4522295633945b7b",
       "independent_review": {
         "verdict": "qualified pass",
@@ -61,7 +95,20 @@
         },
         "owner_accepted": false
       },
-      "game_cases_basis": "Author qualified case join on recorded hardware/load under300s; independent complete three-role join125/131 under the same wall."
+      "game_cases_basis": "Author qualified case join on recorded hardware/load under300s; independent complete three-role join125/131 under the same wall.",
+      "owner_acceptance": {
+        "instruction": "owner-requested checkpoint; accepted and tagged",
+        "date": "2026-11-08",
+        "evidence": {
+          "annotated_tag": "4.2.6-impact-v2",
+          "tag_target_commit": "383215189a20a3c47158c8e641d1b99723f84891",
+          "tag_pushed_by": "Diego Amicabile",
+          "tag_pushed_at": "2026-11-08T04:20:01Z",
+          "status_md_statement": "docs/STATUS.md records impact v2 as accepted and tagged",
+          "tag_object_sha": "d734594f4ee3952757f7f56e1fcefc8a5a4c3aac"
+        },
+        "reconciliation": "The tracking issue's last comment (2026-11-08T03:12) says acceptance was still pending; it predates the owner-pushed annotated tag 4.2.6-impact-v2 (2026-11-08T04:20:01Z) by about an hour. The tag and the docs/STATUS.md statement are the acceptance record; this entry was corrected on 2026-11-11 to match them, and the tracking issue was closed."
+      }
     },
     {
       "id": "c-m3",
@@ -397,7 +444,7 @@
   ],
   "unchanged_engine_base": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
   "policy": "docs/C-CONSUMER-ADOPTION.md",
-  "next_action": "Impact v10 (C milestone10) accepted; tag 4.2.6-impact-v10 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
+  "next_action": "v11R is owner-accepted and merged as PR #30 at f4149b4cc84af7e4c680f90d4db9f61ba8b660f3. The v11R tag decision remains with the owner. The post-M10 family lane (PR #26 and PR #28) is merged separately, is opt-in and carries no derived tag and no benefit claim. No later C milestone is selected automatically.",
   "independent_review": {
     "verdict": "pass",
     "acceptance_blockers": false,
@@ -421,19 +468,21 @@
     "tagging_delegated": true
   },
   "active_batch": {
-    "id": "c-m10",
-    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/23",
-    "starting_rust_main": "8a7579d",
-    "state": "accepted_impact_v10",
-    "ledger": "docs/adoption/c-m10/ledger.json",
-    "receipt": "docs/validation/2026-11-10-c-m10/README.md",
-    "branch": "claude/m10-carry"
+    "id": "c-v11r",
+    "starting_rust_main": "399c907950b1fd474ddfc1c5a5d4f86063778aac",
+    "state": "accepted_impact_v11r",
+    "record": "docs/adoption/c-v11r/README.md",
+    "receipt": "docs/validation/2026-11-10-c-v11r/README.md",
+    "branch": "claude/v11r-carry",
+    "merge_pr": "https://github.com/diegoami/borg-rs/pull/30",
+    "merge_commit": "f4149b4cc84af7e4c680f90d4db9f61ba8b660f3",
+    "owner_acceptance_date": "2026-11-11"
   },
   "m2_active_batch_record": {
     "id": "c-m2",
     "tracking_issue": "https://github.com/diegoami/borg-rs/issues/6",
     "starting_rust_main": "379728289dbce6c2ba2d017073d5d639bcbbd65c",
-    "state": "reviewed_qualified_pass_owner_acceptance_pending",
+    "state": "reviewed_qualified_pass_owner_accepted",
     "ledger": "docs/adoption/c-m2/ledger.json",
     "receipt": "docs/validation/2026-11-08-c-m2/README.md",
     "reference": "harness/reference/better-borg-c/m2-2675d198e4c3fcb1c69ee63ef25a2b6ac27ab96f",
@@ -456,6 +505,14 @@
         "F3": "audit hint added for asymmetric unit-test object lists; matching criteria unchanged"
       },
       "owner_accepted": false
+    },
+    "rust_milestone_accepted": true,
+    "owner_acceptance": {
+      "instruction": "owner-requested checkpoint; accepted and tagged",
+      "date": "2026-11-08",
+      "annotated_tag": "4.2.6-impact-v2",
+      "reconciliation": "Corrected on 2026-11-11: the owner-pushed annotated tag 4.2.6-impact-v2 (2026-11-08T04:20:01Z) and the docs/STATUS.md statement are the acceptance record; this mirror had not been updated.",
+      "tag_target_commit": "383215189a20a3c47158c8e641d1b99723f84891"
     }
   }
 }

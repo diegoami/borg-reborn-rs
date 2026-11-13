@@ -16,7 +16,7 @@
 //!   `map_info()` with the cave predicates the C Borg asks about a panel grid
 //!   (`borg-update.c:borg_update_map:279-353`), the real race and condition
 //!   of each monster seen (`borg-flow-kill.c:borg_update_kill_old:243-330`,
-//!   `borg_guess_race:892-907`), and the real kind of the top object on each
+//!   `borg_guess_race:874-889`), and the real kind of the top object on each
 //!   grid where the player sees one (`borg-flow-take.c:borg_guess_kind:72-84`).
 //!
 //! The engine fills it (`engine::perceive`); nothing here touches the engine.

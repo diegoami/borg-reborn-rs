@@ -25,7 +25,7 @@
       "ref": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
       "mode_side": "pre",
       "carries": 0,
-      "label": "Original C Borg (angband/angband e473720)",
+      "label": "Angband 4.2.6 — the original C Borg as the release ships it (angband/angband e473720)",
       "source": "https://github.com/angband/angband/commit/e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
       "formerly": [
         "pristine"
@@ -219,6 +219,15 @@
       "carries": 98,
       "label": "better-borg-c milestone 10 (tag 4.2.6-impact-v10): carries stays 98, unchanged from milestone 9 - this cycle adds no new tracker carry. Its units are two owner-directed local improvements never proposed upstream (I-001: attack a lone adjacent monster one blow would kill; I-002: borg_caution() heals while fleeing at survivable danger) and a crash correction to the already-carried 0090-0099 patch 0099 (a stale borg.c position read out of bounds after a level change into a smaller level, matching borg-rs's reported SIGSEGV on first town return, borg-rs#21). Full matrix 234/234 cases, no failed group.",
       "source": "https://github.com/diegoami/better-borg-c/blob/main/docs/measurement/IMPACT-MILESTONE10.md"
+    },
+    "4.2.6-bbc-m11": {
+      "repository": "diegoami/better-borg-c",
+      "ref": "39268ca8a470d1cbd44de27bf1fd1b3ee403bada",
+      "mode_side": "post",
+      "tag": "4.2.6-impact-v11",
+      "carries": 116,
+      "label": "better-borg-c milestone 11 (tag 4.2.6-impact-v11): carries 116, up from 98. The v11 cycle adopts 17 new units (0100-0117, each a reviewed C-only source fix) plus the 0101a correction that gates the Lunal take skip on the runtime munchkin mode: stair escape ordering, per-monster flow-kill state, melee danger (armour divided by to-hit), pickup measured from the nearest up staircase, the no-rest-after-prep timer width, the preparedness reason copy, constitution-drain fear, Crush clearing ranged danger, the granite ranged test, Shoot'N'Scoot's adjacent monster, and the home/shop flows (empty pack slot, cure potions only when hurt, left ring search, swap and home-grab flags, staff charges, sold-item ego). Full matrix 95 groups / 290 cases, no failed group; 237/250 compared cases byte-identical, the 13 differences in six pre-existing fixture groups plus preparation (0105's timer width, identical decisions). No per-mode arm was measured in this cycle: each unit's per-mode effect is recorded as not measured, not neutral - the explicit-arms batch is the zoo's job (borg-zoo#54).",
+      "source": "https://github.com/diegoami/better-borg-c/blob/main/docs/measurement/IMPACT-MILESTONE11.md"
     },
     "4.2.6-bbc-9ca98661": {
       "repository": "diegoami/better-borg-c",
@@ -569,7 +578,7 @@
       "ref": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
       "mode_side": "pre",
       "carries": 0,
-      "label": "Original Angband master e473720, C Borg; retained evidence benchmark",
+      "label": "Angband 4.2.6 master e473720, C Borg; retained evidence benchmark",
       "source": "https://github.com/angband/angband/commit/e473720ed88a0f0c7ca66815cef3000eb4a38bc3"
     },
     "neo-5a9-original": {
@@ -586,6 +595,76 @@
       "toolkit_ref": "2668adc5ab3e2b6e194c2f1561e248b88850ea98",
       "toolkit_path": "tools/original-borg",
       "toolkit_proposal": "https://github.com/diegoami/neo-angband-tracker/pull/542"
+    },
+    "4.2.6-rs-family-buying": {
+      "kind": "borg-rs",
+      "impl": "rust",
+      "repository": "diegoami/borg-rs",
+      "ref": "5aeb6e58e03ce98e24884cf28fa9f27e28367faa",
+      "exact_turns": true,
+      "depth_stream": true,
+      "role": "candidate",
+      "label": "borg-rs post-M10 buying family (borg-rs#25/#27, PR 26 and 28): the reviewed family head with configuration-selected current/reserve410 buying strategies and the independent borg_buy_identify policy. Rust-only; C accepts the settings for parser compatibility and ignores them, so no C parity cell. No derived family tag yet - the ref is a reviewed head (borg-zoo#61, #67).",
+      "source": "https://github.com/diegoami/borg-rs/pull/28"
+    },
+    "4.2.6-reborn-rust-e": {
+      "kind": "borg-rs",
+      "impl": "rust",
+      "repository": "diegoami/borg-reborn-rs",
+      "ref": "0a92da0d06c2c18412d649221497a8998ad15692",
+      "tag": "e",
+      "carries": 0,
+      "exact_turns": true,
+      "depth_stream": true,
+      "source": "https://github.com/diegoami/borg-reborn-rs/blob/main/docs/ZOO-INTERFACE.md",
+      "label": "borg-reborn-rs milestone E (tag e): the reborn Borg building on its own integration - upstream Angband e473720 byte for byte, a small hook series and its own frontend, bindings and build, nothing taken from borg-rs's tree. Smoke play hashes identical to the m1 specimen (borg-zoo#48)."
+    },
+    "4.2.6-rs-m11": {
+      "kind": "borg-rs",
+      "impl": "rust",
+      "repository": "diegoami/borg-rs",
+      "ref": "0f98f85b008f904e055967747c935b482addf2f2",
+      "tag": "4.2.6-impact-v11",
+      "carries": 116,
+      "exact_turns": true,
+      "depth_stream": true,
+      "source": "https://github.com/diegoami/borg-rs/tree/4.2.6-impact-v11",
+      "label": "borg-rs M11 (tag 4.2.6-impact-v11): the Rust Borg carrying better-borg-c milestone 11's units - all 18 runtime units (19 patches, 0101a included) and the consumer's 11 C Borg files, so the C oracle and the Rust Borg carry the same fixes (borg-rs#29, PR 30; independent review approve, the one minor doc finding F1 fixed in e8f939a, owner accepted 2026-11-11). 105 Rust tests (one existing ignored), clippy clean, C/Rust smoke 3/3 and full 45/45 identical on keys, messages and state; the Rust binary links no C Borg. The tag points at the reviewed head 0f98f85b, the same commit as the v11R merge on main, so the pin is unchanged from the candidate entry and no recorded run is re-read. Like M8, M9 and M10, its default includes the munchkin-by-class start."
+    },
+    "4.2.6-rs-town": {
+      "kind": "borg-rs",
+      "impl": "rust",
+      "repository": "diegoami/borg-rs",
+      "ref": "0e0439aa3f1cef85d2d18725ce61fe8fa85be629",
+      "exact_turns": true,
+      "depth_stream": true,
+      "role": "candidate",
+      "label": "borg-rs, the town-inventory redesign branch (feature/town-inventory-strategy) at the negative-baseline commit: the Rust Borg as it stands on the branch, with the new setting borg_town_no_stores exposed (default FALSE, today's behaviour). Rust-only; the C parser accepts the setting and ignores it, so no C parity cell. No derived tag yet - the ref is a branch head (borg-rs#36, PR 42; borg-zoo#81).",
+      "source": "https://github.com/diegoami/borg-rs/pull/42"
+    },
+    "angband-42cd156-original": {
+      "repository": "angband/angband",
+      "ref": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+      "mode_side": "pre",
+      "carries": 0,
+      "label": "Angband master 42cd156a, C Borg: upstream's head on 2026-11-12, 12 commits past e473720 (the last two change the Borg: the reaction gate and the knockout gate use dont_react). The vanilla C Borg to set beside angband-e473-original; its results are not paired with e473720's, because the game and the Borg both changed.",
+      "source": "https://github.com/angband/angband/commit/42cd156ac9f95ddf4311e88dd7ad462292d6d1d6"
+    },
+    "neo-765-original": {
+      "kind": "neo-original",
+      "repository": "neostryder/neo-angband-mod-borg",
+      "ref": "7501a78c2502854c94cb79c90aca8387ecc8d724",
+      "engine_repository": "neostryder/neo-angband",
+      "engine_ref": "765f39976462c2d6e414ba88d44feb15ca28ceb8",
+      "carries": 0,
+      "wall_factor": 3,
+      "label": "Original Neo engine 765f3997 and Borg 7501a78c (upstream heads on 2026-11-12), official API2 host life adapter. The measurement toolkit stays at tracker 2668adc5: tools/original-borg no longer exists at the tracker head c2ddf2ca (the upstream merge of 765f3997 dropped it), so the pin is immutable and the head cannot replace it.",
+      "source": "https://github.com/neostryder/neo-angband-mod-borg/commit/7501a78c2502854c94cb79c90aca8387ecc8d724",
+      "toolkit_repository": "diegoami/neo-angband-tracker",
+      "toolkit_ref": "2668adc5ab3e2b6e194c2f1561e248b88850ea98",
+      "toolkit_path": "tools/original-borg",
+      "toolkit_proposal": "https://github.com/diegoami/neo-angband-tracker/pull/542",
+      "pending": "the build fails: the toolkit pinned at tracker 2668adc5 (tools/original-borg/build.mjs) refuses engine 765f3997 with 'Unexpected upstream source pin', and the tracker head c2ddf2ca no longer has tools/original-borg. Needs a toolkit that knows the new engine pin (smoke run 43284812692)"
     }
   }
 }

@@ -46,6 +46,11 @@ munchkin-by-class change (better-borg-c PR302). That change is a behaviour
 default, not a crash correction: Warriors, Druids and Rangers take the
 munchkin start unless `borg_munchkin_by_class` is set FALSE in borg.txt.
 
+**Amendment (2026-11-12).** After the defaults audit, the built-in default of
+`borg_munchkin_by_class` was restored to FALSE, so the rule now applies only
+where a borg.txt names it TRUE - the delivered borg.txt does. The paragraph
+above is kept as the record of what M8 carried.
+
 The C milestone9 adoption (better-borg-c `33207fbee`,
 [Rust#21](https://github.com/diegoami/borg-rs/issues/21),
 [adoption/c-m9](adoption/c-m9/README.md)) replaces local #295 with the

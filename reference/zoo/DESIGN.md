@@ -318,27 +318,55 @@ runner compiles its private user path into the binary. Mandos jobs also set
 up Node 22 and check out and install the Mandos commit (`source/`) in both
 jobs.
 
+**Two comparison tabs, one mode policy each.** With the munchkin start and
+without it are separate pages ("No munchkin" / "Munchkin start"), each with its
+own chart, legend, class pages and answer. They cannot share a chart: the start
+changes three of the nine classes, and the shipped `default` changed sides at
+better-borg-c `fd683ced` (PR 302), so a post-cutoff default *is* the class rule
+while the pre-cutoff baseline has no start at all. Pairing the two measured the
+policy, not the Borg (owner's challenge, 2026-11-10: "are we cheating with the
+munchkin mix?").
+
+- The **plain** tab reads `normal` (every mode pinned off) on post-cutoff
+  builds and the build's own `default` before the cutoff, where no rule exists
+  to force the start. A default arm after the cutoff is never used here.
+- The **munchkin** tab reads `munchkin-class`, then `munchkin-wdr`, then
+  `default` on post-cutoff builds (all three are the same policy there), and
+  `munchkin-wdr` before the cutoff.
+- Both tabs read one turn cap (`DASHBOARD_CAP`) and require one **full class
+  run** per point (`DASHBOARD_MIN_CELLS = 1500`): a 3-seed smoke, an 18-seed
+  pilot or a 200-cell milestone subset is not evidence — a subset once won this
+  chart at 83% by noise.
+- Each tab shows **one point per line**, the best measured under its policy,
+  chosen from the runs (not by hand); every other milestone keeps its catalogue
+  entry and run page.
+- The per-class pages show both policies with the same setups as their tabs,
+  narrowing the chosen arm to that class's seeds rather than choosing again.
+
 **Look at the dashboard before shipping chart changes.** A chart can pass
 every test and still be unreadable — the shape-coded exemplars chart shipped
 that way (labels were the fix, and rendering it caught three labels that
-silently failed to place). After any `zoo/landing.py` or `zoo/site.py`
-change, build the site from the results branch, render the charts to images,
-and actually read them:
+silently failed to place). The charts are ECharts (vendored at
+`zoo/assets/echarts.min.js`, no CDN); each page embeds its chart options as
+pure JSON in `<script type="application/json" data-chart="…">` blocks, so
+the real charts can be rendered server-side and actually read:
 
 ```sh
 git worktree add --detach /tmp/results origin/results
 python3 -m zoo site --results /tmp/results/results --out /tmp/site
-# extract a chart <svg> from /tmp/site/index.html (or classes/<Class>.html),
-# inline the svg.scatter CSS rules with concrete colors, then:
-uv run --with cairosvg python -c \
-  "import cairosvg; cairosvg.svg2png(url='/tmp/chart.svg', write_to='/tmp/chart.png')"
+cd /tmp && npm i echarts   # once
+# extract each data-chart JSON block into cfg.json as
+# {"option": <the block>, "width": 680, "height": 430}, then:
+node <repo>/tools/render-chart.js < cfg.json > chart.svg
+# svg2png with cairosvg (or any svg renderer), open the PNG, read it
 ```
 
 The automated half of that look is
-`test_the_exemplars_chart_never_overlaps_its_own_labels` (every plotted dot
-gets a label, and no two labels overlap) plus
-`test_a_smoke_scale_setup_never_becomes_a_dashboard_point`; they catch the
-regressions, the render catches everything else.
+`test_the_exemplars_chart_never_overlaps_its_own_labels` (every plotted
+setup appears in the chart's option, and the label layout that stops
+labels covering each other is ECharts' own `moveOverlap`, asserted on)
+plus `test_a_smoke_scale_setup_never_becomes_a_dashboard_point`; they
+catch the regressions, the render catches everything else.
 
 ## Statistics (`zoo/stats.py`)
 
