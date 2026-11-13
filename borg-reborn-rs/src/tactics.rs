@@ -91,13 +91,17 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             let one = one_threat(w, k, t, x, y, horizon);
             let removed = one.risk(aversion);
             let share = (dpt / f64::from(t.hp.max(1))).min(1.0);
-            let gain = removed * share;
-            let status_after = current
+            // The share of this monster's threat the blow removes: its hit
+            // points and its status part alike. `current_risk` already holds
+            // both (`composite`), so the status left after the blow is not
+            // added again (#175: it was counted twice, and a breeder in
+            // reach scored worse attacked than ignored).
+            let status = current
                 .per_monster
                 .get(i)
-                .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
-                * (1.0 - share);
-            let risk_after = (current_risk - gain).max(0.0) + status_after;
+                .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp);
+            let gain = (removed + status) * share;
+            let risk_after = (current_risk - gain).max(0.0);
             out.push(Response {
                 action: Action::Attack(dir),
                 score: gain - risk_after,
@@ -166,13 +170,14 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                     one_round(w, k, t).risk(aversion)
                 };
                 let share = (shot / f64::from(t.hp.max(1))).min(1.0);
-                let gain = removed * share;
-                let status_after = current
+                // As for a blow: the share removes hit points and status
+                // alike, and neither is counted twice (#175).
+                let status = current
                     .per_monster
                     .get(i)
-                    .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
-                    * (1.0 - share);
-                let risk_after = (current_risk - gain).max(0.0) + status_after;
+                    .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp);
+                let gain = (removed + status) * share;
+                let risk_after = (current_risk - gain).max(0.0);
                 out.push(Response {
                     action: Action::Shoot,
                     score: gain - risk_after,
@@ -219,13 +224,13 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                         one_round(w, k, t).risk(aversion)
                     };
                     let share = (dam / f64::from(t.hp.max(1))).min(1.0);
-                    let gain = removed * share;
-                    let status_after = current
+                    // As for a blow (#175).
+                    let status = current
                         .per_monster
                         .get(i)
-                        .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
-                        * (1.0 - share);
-                    let risk_after = (current_risk - gain).max(0.0) + status_after;
+                        .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp);
+                    let gain = (removed + status) * share;
+                    let risk_after = (current_risk - gain).max(0.0);
                     out.push(Response {
                         action: a.action,
                         score: gain - risk_after,
@@ -850,6 +855,28 @@ mod tests {
         assert!(r.iter().all(|x| x.score.is_finite()));
         // The best is first; the rest are still there for the trace.
         assert!(r.windows(2).all(|w| w[0].score >= w[1].score));
+    }
+
+    #[test]
+    fn a_breeder_in_reach_is_attacked_not_ignored() {
+        // #175, full-6-rogue-2: worm masses in reach, every response
+        // negative, and Hold beat the attack because the attack counted the
+        // breeder's status threat twice. Killing it removes that threat.
+        let (w, mut k, v, p) = setup(
+            &["#######", "#.@M..#", "#.....#", "#######"],
+            20,
+            20,
+            2,
+            110,
+            None,
+        );
+        // MULTIPLY is RF 17: byte 2, bit 0.
+        k.races[1].flags = vec![0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+        let r = responses(&w, &k, &p, &v);
+        let score = |a: Action| r.iter().find(|x| x.action == a).map(|x| x.score);
+        let attack = score(Action::Attack(6)).expect("attack offered");
+        let hold = score(Action::Hold).expect("hold offered");
+        assert!(attack > hold, "attack {attack} vs hold {hold}: {r:?}");
     }
 
     #[test]
