@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1875; distinct starting conditions: 1874; retained process attempts: 1875 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1879; distinct starting conditions: 1878; retained process attempts: 1879 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1881,6 +1881,10 @@ Dossiers: 1875; distinct starting conditions: 1874; retained process attempts: 1
 | [D1893-rust-seed1071](D1893-rust-seed1071/report.md) | unassigned | `e2575fc07a15` | 1071 | a floating eye | 8237 | unassessed |
 | [D1894-rust-seed1072](D1894-rust-seed1072/report.md) | unassigned | `e2575fc07a15` | 1072 | a floating eye | 21084 | unassessed |
 | [D1895-rust-seed1073](D1895-rust-seed1073/report.md) | unassigned | `e2575fc07a15` | 1073 | Grip, Farmer Maggot's Dog | 6505 | unassessed |
+| [D1896-rust-seed1014](D1896-rust-seed1014/report.md) | unassigned | `6d36fe87de12` | 1014 | a fatal wound | 3070 | unassessed |
+| [D1897-rust-seed1040](D1897-rust-seed1040/report.md) | unassigned | `6d36fe87de12` | 1040 | a small kobold | 5078 | unassessed |
+| [D1898-rust-seed1034](D1898-rust-seed1034/report.md) | unassigned | `6d36fe87de12` | 1034 | starvation | 99880 | unassessed |
+| [D1899-rust-seed1042](D1899-rust-seed1042/report.md) | unassigned | `6d36fe87de12` | 1042 | poison | 3860 | unassessed |
 
 ## Aggregated actions
 
