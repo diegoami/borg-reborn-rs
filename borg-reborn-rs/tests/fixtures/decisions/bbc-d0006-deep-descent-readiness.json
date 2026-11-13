@@ -27,7 +27,7 @@
     {
       "x": 3,
       "y": 1,
-      "race": 96,
+      "race": 178,
       "hp": 68,
       "max_hp": 68,
       "sleep": 0
@@ -89,7 +89,7 @@
     "review-anchors.json"
   ],
   "construction": "Human Warrior CL8, 89/106 HP, D14. The dossier gives the open door south, the floor beyond it, pursuers north and the north-dark exploration choice at 72885. The room shape and the brown beetle's exact position are constructed; it is placed two diagonal steps north so it is remembered but not in contact.",
-  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The assessment sees the brown beetle at one turn as harmless; planning under a pursuer at a longer horizon remains open. Promoted by T4.6 (#123): threatened travel never steps onto a more dangerous grid, on the tactical layer's composite scale — the mold's confusion counts even though its hit-point risk rounds to zero — so the frontier walk north is refused and the retreat steps south into the known room.",
+  "limits": "No verified alternative: the south branch was described as an ordinary walking alternative to test, not a measured escape. The assessment sees the brown beetle at one turn as harmless; planning under a pursuer at a longer horizon remains open. Promoted by T4.6 (#123): threatened travel never steps onto a more dangerous grid, on the tactical layer's composite scale — the mold's confusion counts even though its hit-point risk rounds to zero — so the frontier walk north is refused and the retreat steps south into the known room. #184: the monster was race 96, the brown mold (a never-mover); the construction and the dossier's killer (overall-assessment.md:5-7, 'killer brown beetle at 73100') are race 178, the killer brown beetle, a pursuer. Corrected.",
   "player": {
     "race": 0,
     "class": 0,

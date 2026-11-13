@@ -725,19 +725,12 @@ fn blow_pmf(blow: &Blow, ac: i32, stunned: bool) -> (Vec<f64>, f64, f64) {
     // A stunned monster's rolled damage falls by STUN_DAM_REDUCTION, 25%,
     // before armour (`mon-attack.c:621-624`, integer arithmetic; #165).
     let roll = |d: usize| if stunned { d * (100 - 25) / 100 } else { d };
-    if !matches!(
-        blow.effect.as_str(),
-        "HURT" | "SHATTER" | "POISON" | "ACID" | "ELEC" | "FIRE" | "COLD"
-    ) {
-        // Status and economic blows are scored as no hit-point damage. The
-        // engine deals their dice first (`mon-blows.c:melee_effect_timed:507`,
-        // `melee_effect_handler_EAT_GOLD:781`); counting them moves paths
-        // and a fixture, and is filed apart (#184). The paralysis floor is
-        // applied in `melee_threat`.
-        if is_status(blow.effect.as_str()) || is_economic(blow.effect.as_str()) {
-            return (vec![1.0], 0.0, 0.0);
-        }
-    }
+    // Every blow deals its dice first: status and economic handlers call
+    // `monster_damage_target` before their effect
+    // (`mon-blows.c:melee_effect_timed:507`,
+    // `melee_effect_handler_EAT_GOLD:781`, …; #184: a grey mushroom patch's
+    // `SPORE:CONFUSE:1d4` killed level-1 characters at p_death 0). The
+    // paralysis floor is applied in `melee_threat`.
     let dice = blow.dice;
     let dice_n = dice.dice.max(0) as usize;
     let sides = dice.sides.max(0) as usize;
@@ -1619,6 +1612,23 @@ mod tests {
         fa.character.gear.flags[(of::FREE_ACT - 1) / 8] |= 1 << ((of::FREE_ACT - 1) % 8);
         let a = one_threat(&fa, &k, &fa.level.monsters[0], 1, 1, 1);
         assert_eq!((a.disabling, a.worst), (0.0, 0.0), "{a:?}");
+        // #184: a status blow with dice deals them (a grey mushroom patch's
+        // SPORE:CONFUSE:1d4).
+        let mut spore = race("mushroom", 110, 0, &[], &[]);
+        spore.blows.push(Blow {
+            method: "SPORE".into(),
+            effect: "CONFUSE".into(),
+            power: 0,
+            dice: Dice {
+                base: 0,
+                dice: 1,
+                sides: 4,
+                m_bonus: 0,
+            },
+        });
+        let k = knowledge(spore);
+        let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
+        assert!(a.worst >= 1.0 && a.expected > 0.0, "{a:?}");
     }
 
     #[test]

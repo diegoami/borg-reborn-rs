@@ -387,7 +387,41 @@ impl FirstStrategy {
     /// than walking deeper into reach. There is no `here > 0.0` gate —
     /// d0006's NEVER_MOVE mold deals no hit-point risk anywhere, and
     /// only the disabling half of the composite separates the grids.
+    /// Whether an awake monster that moves and can hurt could reach the
+    /// Borg within two player turns (c15 DANGER-08's horizon for pack
+    /// members): the Borg is pursued (#184).
+    fn pursued(ctx: &DecisionCtx) -> bool {
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        let me = ctx
+            .knowledge
+            .turns_per_action(ctx.world.character.status.as_ref().map_or(110, |s| s.speed));
+        ctx.world.level.monsters.iter().any(|t| {
+            let Some(race) = ctx.knowledge.race(t.race) else {
+                return false;
+            };
+            let hurts = race
+                .blows
+                .iter()
+                .any(|b| b.dice.dice > 0 || b.dice.base > 0);
+            let dist = (t.x - x).abs().max((t.y - y).abs());
+            // Its moves in two of the Borg's turns.
+            let moves = 2.0 * me / ctx.knowledge.turns_per_action(i32::from(t.speed));
+            t.in_view
+                && t.awake()
+                && hurts
+                && !crate::danger::never_move(ctx.knowledge, t)
+                && f64::from(dist - 1) <= moves
+        })
+    }
+
     fn travel_step(ctx: &mut DecisionCtx, goal: &PathGoal) -> Option<Action> {
+        // Never explore under pursuit (#184; bbc D0006: at 72885, pursued
+        // from the north with a known room behind an open door to the south,
+        // the Borg walked north into the unknown and died). A frontier step
+        // becomes the retreat step into known ground.
+        if *goal == PathGoal::Frontier && Self::pursued(ctx) {
+            return Self::retreat_step(ctx).map(Action::Walk);
+        }
         let step = ctx.paths.step(ctx.world, ctx.knowledge, goal)?;
         let &(d, dx, dy) = DIRS.iter().find(|&&(d, _, _)| d == step)?;
         let (x, y) = (ctx.view.x, ctx.view.y);
