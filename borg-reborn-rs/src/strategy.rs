@@ -1249,8 +1249,11 @@ impl FirstStrategy {
                 ctx.params.threat_horizon,
                 ctx.params.risk_aversion_pct,
             ) == 0;
+        // A refused wield is barred like any refused action (#137), so a
+        // swap the engine will not make cannot loop.
         let swap = if quiet {
             crate::equipment::best_swap(ctx.world, ctx.knowledge)
+                .filter(|s| !self.refused.contains_key(&Action::Wield { item: s.item }))
         } else {
             None
         };

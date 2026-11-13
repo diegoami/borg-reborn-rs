@@ -473,9 +473,13 @@ pub fn answer(
         // so the trimmed form is the faithful one, and "Wear o" is a
         // prefix rather than the C Borg's exact string, covering the wear
         // prompt it was written for.
+        // The wear prompt is a stumble only when nothing is queued: our own
+        // Wield opens it with the item letter waiting behind (#126: every
+        // Wield was escaped here and its letter fell on the map as a
+        // pickup, so no wield ever happened in a game).
         if line == "(Equipment)"
             || line == "(Inventory)"
-            || line.starts_with("Wear o")
+            || (queue_empty && line.starts_with("Wear o"))
             || line == "Lv Mana Fail"
         {
             return p(ESCAPE, "sub-screen: ESCAPE");
@@ -864,13 +868,16 @@ mod tests {
                 why: "sub-screen: ESCAPE"
             })
         );
+        // The wear prompt is escaped only as a stumble (nothing queued);
+        // our own Wield's letter waits behind it (#126).
         assert_eq!(
-            prompt("Wear or wield which item?"),
+            answer("Wear or wield which item?", false, (10, 0), false, true),
             Some(Prompt {
                 key: ESCAPE,
                 why: "sub-screen: ESCAPE"
             })
         );
+        assert_eq!(prompt("Wear or wield which item? (Inven: f-g, ESC)"), None);
         assert_eq!(
             prompt("Throw which item? (Throw a dagger)"),
             Some(Prompt {
