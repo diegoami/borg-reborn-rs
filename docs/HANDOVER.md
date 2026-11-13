@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: M4 reviewed and merged; growth factors are declared (#163)
+
+**M4 review.** GLM-5.3 reviewed #162 at `612fa97`. It reproduced every
+reference, the G0 checks, all 16 dossiers and every calibration number,
+and gave the verdict: contract met, nothing blocking. The owner merged it
+(`reviewed` advances by merge commit `ae5aa11`). **The `m4` tag could not
+be pushed from the cloud session** (the proxy refuses tag refs and the tag
+API); the owner creates it at `ae5aa11`. The findings are M5 issues #163,
+#164 and #165.
+
+**#163 (no play change):** the growth factors' citations are corrected.
+The C Borg's code at `borg-danger.c:borg_danger_one_kill:2420-2436,
+2700-2710` computes ×2.5 (breeders), ×2.8 / ×2.3 (monsters with friends)
+and ×2.2 (its second pass). Its comments say +50%, +80% and +30%. Our 1.5
+and 1.8 follow the comments; the 1.5 for summoners from CL15 is ours; the
+C Borg has no summoner factor. `danger.rs` and the calibration report's
+threshold table now call them declared. References reproduce 3/3, 3/3,
+45/45; dossiers D1731–D1746 (the new source hash).
+
 ## 2026-11-12: remembered casters fade with confidence (#157, T4.8)
 
 **Play change in one full run; new full baseline.**
