@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1909; distinct starting conditions: 1908; retained process attempts: 1909 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1910; distinct starting conditions: 1909; retained process attempts: 1910 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1915,6 +1915,7 @@ Dossiers: 1909; distinct starting conditions: 1908; retained process attempts: 1
 | [D1927-rust-seed1040](D1927-rust-seed1040/report.md) | unassigned | `a692a8b43bc5` | 1040 | a small kobold | 5078 | unassessed |
 | [D1928-rust-seed1042](D1928-rust-seed1042/report.md) | unassigned | `a692a8b43bc5` | 1042 | Grip, Farmer Maggot's Dog | 12805 | unassessed |
 | [D1929-rust-seed1034](D1929-rust-seed1034/report.md) | unassigned | `a692a8b43bc5` | 1034 | a scrawny cat | 96931 | unassessed |
+| [D1930-rust-seed1070](D1930-rust-seed1070/report.md) | unassigned | `a692a8b43bc5` | 1070 | a white worm mass | 88102 | unassessed |
 
 ## Aggregated actions
 
