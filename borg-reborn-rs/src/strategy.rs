@@ -945,8 +945,41 @@ impl FirstStrategy {
     /// Choose the mode by utility, with hysteresis: the invariant
     /// (recovery) outranks everything; a live goal keeps its mode; a
     /// failed mode waits out its cooldown.
+    /// A goal's budget in game turns without progress (GOALS principle 6).
+    fn budget_of(mode: Mode, ctx: &DecisionCtx) -> i64 {
+        match mode {
+            // Resting until healed: give it the rest itself takes,
+            // twice over, before calling it stalled.
+            Mode::Recover => 2 * i64::from(ctx.params.rest_turns),
+            // A fight that has not progressed in a tenth of the
+            // explore budget is lost or illusory; cool it and leave.
+            Mode::Engage => i64::from(ctx.params.explore_budget_turns) / 10,
+            Mode::Town => i64::from(ctx.params.explore_budget_turns),
+            Mode::Descend => i64::from(ctx.params.explore_budget_turns),
+            Mode::Explore => i64::from(ctx.params.explore_budget_turns),
+            Mode::Eat => i64::from(ctx.params.explore_budget_turns),
+            Mode::Return => i64::from(ctx.params.explore_budget_turns),
+            Mode::Stuck => 0,
+        }
+    }
+
     fn choose_mode(&mut self, ctx: &mut DecisionCtx) -> Mode {
         let turn = ctx.view.turn;
+        // A stalled goal is cooled before any rule can pick its mode again
+        // (#183): the urgent rules below (starving, a breeder colony, not
+        // ready) return Return before the hysteresis check, so a Return that
+        // made no progress was never cooled. full-6-rogue-1 walked between
+        // two grids in "starving with no food" for 7,000 turns with its goal
+        // unchanged since 78,804, and starved.
+        if let Some(goal) = &self.goal {
+            if goal.level == ctx.world.level.generation
+                && goal.stalled(turn, Self::budget_of(goal.mode, ctx))
+            {
+                self.cooldowns
+                    .insert(goal.mode, turn + i64::from(ctx.params.goal_cooldown_turns));
+                self.goal = None;
+            }
+        }
         // Starving with no food left outranks recovery itself: resting
         // spends the food timer, and the level has nothing more to gain
         // (the manual's recall-and-home routine, c15 §12.12; bbc D0009,
@@ -1073,20 +1106,7 @@ impl FirstStrategy {
         // A live goal keeps its mode (hysteresis): still inside its
         // budget, or the mode can still act.
         if let Some(goal) = &self.goal {
-            let budget = match goal.mode {
-                // Resting until healed: give it the rest itself takes,
-                // twice over, before calling it stalled.
-                Mode::Recover => 2 * i64::from(ctx.params.rest_turns),
-                // A fight that has not progressed in a tenth of the
-                // explore budget is lost or illusory; cool it and leave.
-                Mode::Engage => i64::from(ctx.params.explore_budget_turns) / 10,
-                Mode::Town => i64::from(ctx.params.explore_budget_turns),
-                Mode::Descend => i64::from(ctx.params.explore_budget_turns),
-                Mode::Explore => i64::from(ctx.params.explore_budget_turns),
-                Mode::Eat => i64::from(ctx.params.explore_budget_turns),
-                Mode::Return => i64::from(ctx.params.explore_budget_turns),
-                Mode::Stuck => 0,
-            };
+            let budget = Self::budget_of(goal.mode, ctx);
             if !goal.stalled(turn, budget)
                 && self.cooldowns.get(&goal.mode).is_none_or(|&t| turn >= t)
             {
