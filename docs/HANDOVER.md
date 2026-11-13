@@ -2,6 +2,58 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: depth readiness (#125, T5.1)
+
+**Play change; new baseline.** One readiness policy for every way down
+(`readiness.rs`, from the strategy manual):
+
+- **DEPTH-01:** depth *d* is allowed when the worst single turn
+  (`danger::worst_turn`, c15 DANGER-01's `T_max`: moves times the larger
+  of the full melee round and the largest spell) of every race native to
+  *d*−2 … *d*+5 stays below `depth_hp_frac_pct` (50) of maximum hit points.
+- **DEPTH-02:** the DL5, DL15 and DL20 kit gates (Recall, three cure
+  potions, a ranged attack; 100 max HP and ten Phase Doors; Free Action).
+  Kinds are matched by name *and* tval: Cure Light Wounds is also a staff,
+  and a flask is tval 27. The DL25+ rows are not checked yet and fail.
+  DL1 is always allowed.
+- **Strategy (DEPTH-04):** not ready for the current depth → Return (go
+  up); ready for depth+5 → dive before exploring; a down staircase only
+  when ready for the next depth, otherwise an explored level rerolls
+  upward under the existing rule.
+- **Not covered:** trapdoors (the observation has no trap kind; a fall to
+  an unready depth is answered by "go up"); Deep Descent (target
+  `max_depth` + 5, but the Borg reads none today); a recall down (never
+  read).
+- **Declared parameters:** `depth_hp_frac_pct` 50 (the manual's
+  `K_DEPTH_HP_FRAC`; its 0.3/0.5/0.7 sweep is not run),
+  `readiness_band_below` 2, `readiness_band_above` 5.
+
+**Measured (the declared change), full suite:**
+
+| | before | after |
+| --- | ---: | ---: |
+| alive at the cap | 30/45 | **34/45** |
+| mean max depth | 1.20 | **0.98** |
+| mean max character level | 1.49 | **1.20** |
+| deepest level | 3 | 2 |
+
+The gate trades progress for survival. With the band reaching *d*+5,
+Fang (DL5, +20, a 1d8 bite: 16 in one turn) keeps DL2 closed until about
+33 maximum HP. On DL1 the Borg gains little experience, so most
+characters never get there. "Not ready: go up" fired once in the suite
+and "dive" never; the whole effect is the down staircase not taken.
+`full-6-rogue-1` now starves on DL1 (the T4.6 residue: a Return goal that
+never finds the way up, 1,100 turns, with 69 gold). The smoke mage
+survives (it was Fang at 18,376). References regenerated (smoke 1,
+smoke-exact 1, full 13 runs changed); dossiers D1795–D1805.
+
+**For the owner:** progress below DL1 now needs experience the Borg does
+not yet seek. #126 (equipment) and #127 (item use, spells, ranged)
+should raise it; `depth_hp_frac_pct` and the band are the dials if the
+gate is too strict, to be measured, not tuned by hand (RULES 14).
+
+**Next:** #126 (T5.2 equipment and pack valuation).
+
 ## 2026-11-13: M5 source refresh (RULES 21)
 
 **No play change.** M5 starts with its `--update` PR.
