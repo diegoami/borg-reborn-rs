@@ -531,6 +531,7 @@ pub fn perceive() -> Option<Observation> {
                     fail: i32::from(b::spell_chance(i)),
                     aim: b::spell_needs_aim(i),
                     damage: spell_damage((*sp).effect),
+                    nourish: spell_nourishes((*sp).effect),
                 });
             }
         }
@@ -1468,6 +1469,20 @@ pub mod truth {
             r
         }
     }
+}
+
+/// Whether a spell's effect list feeds the character (`EF_NOURISH`).
+///
+/// # Safety
+/// `effect` is null or the head of a spell's effect list.
+unsafe fn spell_nourishes(mut effect: *mut b::effect) -> bool {
+    while !effect.is_null() {
+        if u32::from((*effect).index) == b::EF_NOURISH {
+            return true;
+        }
+        effect = (*effect).next;
+    }
+    false
 }
 
 /// A spell's first damaging effect, its dice evaluated without a roll

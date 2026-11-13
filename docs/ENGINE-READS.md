@@ -149,6 +149,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `EVT_KBRD` | S | a keyboard event |
 | `EVT_NONE` | S | no key: let the game's rest or repeat run |
 | `EVT_DISCONNECT` | S | the terminal went away |
+| `EF_NOURISH` | B | a spell that feeds the character (Remove Hunger, #176) |
 | `EF_BOLT` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
 | `EF_BOLT_OR_BEAM` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
 | `EF_BALL` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |

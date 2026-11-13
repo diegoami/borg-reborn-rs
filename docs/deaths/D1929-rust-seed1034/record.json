@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1929-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Half-Troll Priest",
+  "raw_cause": "a scrawny cat",
+  "terminal": {
+    "cause": "a scrawny cat",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 96931,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "menu",
+    "git_rev": "a692a8b43bc5218f1c95692e838718b88c12f30d",
+    "git_dirty": "no",
+    "source_sha256": "4dd94bf72d349106b876b69b6530c557dec2b4c83ea47840148d7a40511bb5a6",
+    "binary_sha256": "97e207910d1ec05c9637ba554232b6f8149838977cde093e9ad7c6011639aea4",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 9676
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-3-priest-4",
+      "result_sha256": "8bfc700d628ab614eb80b26813249dacd167a9cfa2315dbd8102dd7a66f0bd34",
+      "raw_sha256": {
+        "keys.log": "8bfc700d628ab614eb80b26813249dacd167a9cfa2315dbd8102dd7a66f0bd34",
+        "messages.log": "32282c0a884f2ac6907c57947afa25e5858184ea6a3081f75a71e4ce93d74b7e",
+        "state.log": "53380d3ffd0d7900e22e2646f0bf9b11a7f6aaaa8b49c8923c0cc3f35d56ecf3"
+      },
+      "source_commit": "a692a8b43bc5218f1c95692e838718b88c12f30d",
+      "binary_sha256": "97e207910d1ec05c9637ba554232b6f8149838977cde093e9ad7c6011639aea4"
+    }
+  ],
+  "encounter_family": "start-55bdbf9e3b5b5da3dcfcf229f67b321807760f8e8ddd06b72609d6d747cd05a0",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "e0fdb07f2481653b2bc5d13981bfec2d641fda9aca9207bc68b4bca170eaa907",
+    "config.txt": "20107157744cfbd8e823e293418852e03aa9bb3557faee37bd91673ac8699225",
+    "depths.json": "44254f2b826c6755cd453d01286e52ee5a025e30f77657595fba6689b0b157dc",
+    "params.json": "450913421079f5053f5202f1afc4bc781e98c8c2a9438aac00f5af463946da9e",
+    "summary.json": "072fe47416b5f51edd19e58cfbc61d6816cc7efb0227b05cd5d0fc1498f9b243",
+    "trace-tail.jsonl": "e033bdc211598a4b7a9cf64724bc199a3bf72a60698fae2512aa877c58d171b2"
+  },
+  "investigation": null,
+  "issue": null
+}

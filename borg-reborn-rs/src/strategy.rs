@@ -287,6 +287,11 @@ impl FirstStrategy {
 
     /// Whether a known food item is in the pack.
     fn has_food(ctx: &DecisionCtx) -> bool {
+        // A learned Remove Hunger with its book is food too (#176: a
+        // ranger with Lesser Charms starved with 1 gold in the town).
+        if crate::spells::nourish(ctx.world, ctx.knowledge).is_some() {
+            return true;
+        }
         // Only a known kind counts, as in every other item path (#165);
         // rations carry EASY_KNOW (`object_base.txt:166-169`), so this
         // changes nothing for them, but an unknown mushroom is not food.
@@ -899,6 +904,29 @@ impl FirstStrategy {
                 Self::dig_step(ctx)
             }
             Mode::Eat => {
+                // No ration: cast Remove Hunger, resting for its mana first
+                // when resting is safe (#176).
+                let ration = ctx.world.character.inventory.iter().any(|it| {
+                    it.aware
+                        && ctx.knowledge.kind(it.kind).is_some_and(|k| {
+                            k.name
+                                .chars()
+                                .filter(|c| !matches!(c, '&' | '~'))
+                                .collect::<String>()
+                                .trim()
+                                == "Ration of Food"
+                        })
+                });
+                if !ration {
+                    let (cast, mana) = crate::spells::nourish(ctx.world, ctx.knowledge)?;
+                    if !crate::spells::can_cast(ctx.world) {
+                        return None;
+                    }
+                    if mana {
+                        return Some(cast);
+                    }
+                    return Self::may_rest(ctx).then_some(Action::Rest(ctx.params.rest_turns));
+                }
                 let item =
                     ctx.world
                         .character

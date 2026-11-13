@@ -198,6 +198,10 @@ pub struct Spell {
     /// read).
     #[serde(default)]
     pub damage: Option<SpellDamage>,
+    /// The spell feeds the character (an `EF_NOURISH` effect, the nature
+    /// realm's Remove Hunger; #176).
+    #[serde(default)]
+    pub nourish: bool,
 }
 
 /// A spell's damaging effect (`effect` in `class.txt`).
@@ -448,6 +452,7 @@ pub(crate) mod tests {
                     dice: 3,
                     sides: 4,
                 }),
+                nourish: false,
             }],
             panel: Panel {
                 x0: 10,
