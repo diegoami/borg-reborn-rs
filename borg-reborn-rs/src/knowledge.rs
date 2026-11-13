@@ -183,6 +183,21 @@ pub struct Class {
     pub spell_first: i32,
     pub spell_weight: i32,
     pub books: Vec<Book>,
+    /// `PF_*` bits (`list-player-flags.h`, numbered from `PF_NONE`).
+    #[serde(default)]
+    pub pflags: Vec<u8>,
+}
+
+/// `PF_UNLIGHT` (`list-player-flags.h:25`, the twelfth after `PF_NONE`).
+pub const PF_UNLIGHT: usize = 12;
+
+impl Class {
+    /// Whether the class has this `PF_*` flag (`pf_has`, bit `flag - 1`).
+    pub fn has_pflag(&self, flag: usize) -> bool {
+        self.pflags
+            .get(flag.wrapping_sub(1) / 8)
+            .is_some_and(|b| b & (1 << ((flag - 1) % 8)) != 0)
+    }
 }
 
 /// A class's spell book.

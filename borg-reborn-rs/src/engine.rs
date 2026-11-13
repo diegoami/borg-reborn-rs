@@ -889,6 +889,7 @@ pub fn knowledge() -> Option<Knowledge> {
                 spell_first: m.spell_first,
                 spell_weight: m.spell_weight,
                 books,
+                pflags: cl.pflags.to_vec(),
             });
             c = cl.next;
         }

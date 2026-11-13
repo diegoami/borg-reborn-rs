@@ -182,8 +182,20 @@ pub fn best_swap(w: &World, k: &Knowledge) -> Option<Swap> {
 /// the dark with two spare torches and a Word of Recall in the pack. A
 /// light is not judged by the Pareto rule above: no light is worse than
 /// any light. A light with no fuel left (`timeout` 0) does not count.
-pub fn light_to_wield(w: &World) -> Option<usize> {
+///
+/// A class with `UNLIGHT` (the necromancer, `class.txt:975`) is left
+/// unlit: it sees nearby grids without light (`cave-view.c:777-779`), and a
+/// lit grid adds 25 to its spell failure (`player-spell.c:416-419`).
+pub fn light_to_wield(w: &World, k: &Knowledge) -> Option<usize> {
     let c = &w.character;
+    let unlight = c
+        .status
+        .as_ref()
+        .and_then(|s| k.class(s.class))
+        .is_some_and(|cl| cl.has_pflag(crate::knowledge::PF_UNLIGHT));
+    if unlight {
+        return None;
+    }
     let empty = c
         .equipment
         .iter()
@@ -260,7 +272,7 @@ mod tests {
 
     #[test]
     fn an_empty_light_slot_takes_the_pack_light_with_most_fuel() {
-        let (mut w, _) = setup(crate::knowledge::tests::warrior());
+        let (mut w, k) = setup(crate::knowledge::tests::warrior());
         w.character.equipment.push(Slot {
             slot_type: slot::LIGHT,
             item: None,
@@ -272,17 +284,26 @@ mod tests {
             ..base.clone()
         };
         w.character.inventory = vec![base.clone(), torch(0), torch(900), torch(2500)];
-        assert_eq!(light_to_wield(&w), Some(3));
+        assert_eq!(light_to_wield(&w, &k), Some(3));
         // An unknown kind is not wielded, nor a spent one.
         w.character.inventory[3].aware = false;
-        assert_eq!(light_to_wield(&w), Some(2));
+        assert_eq!(light_to_wield(&w, &k), Some(2));
         w.character.inventory.truncate(2);
-        assert_eq!(light_to_wield(&w), None);
+        assert_eq!(light_to_wield(&w, &k), None);
         // A light already wielded: nothing to do.
         w.character.inventory = vec![torch(2500)];
         let at = w.character.equipment.len() - 1;
         w.character.equipment[at].item = Some(torch(10));
-        assert_eq!(light_to_wield(&w), None);
+        assert_eq!(light_to_wield(&w, &k), None);
+        // A necromancer (UNLIGHT, bit 11) stays unlit.
+        w.character.equipment[at].item = None;
+        assert_eq!(light_to_wield(&w, &k), Some(0));
+        let necro = crate::knowledge::Class {
+            pflags: vec![0, 1 << 3, 0],
+            ..crate::knowledge::tests::warrior()
+        };
+        let (_, k) = setup(necro);
+        assert_eq!(light_to_wield(&w, &k), None);
     }
 
     #[test]

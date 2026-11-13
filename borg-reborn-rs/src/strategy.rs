@@ -1264,7 +1264,7 @@ impl FirstStrategy {
         // unlit, the Borg cannot read its escapes or see the frontier it
         // walks to (#172). Only a monster in reach comes first (Engage).
         let light = (mode != Mode::Engage && Self::adjacent(ctx).is_empty())
-            .then(|| crate::equipment::light_to_wield(ctx.world))
+            .then(|| crate::equipment::light_to_wield(ctx.world, ctx.knowledge))
             .flatten()
             .filter(|&item| !self.refused.contains_key(&Action::Wield { item }));
         if light.is_some() {
