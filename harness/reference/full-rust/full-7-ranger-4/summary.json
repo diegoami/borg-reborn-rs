@@ -7,7 +7,7 @@
   "class_idx": 7,
   "menu_letters": true,
   "stop_reason": "turns",
-  "game_turns": 100001,
+  "game_turns": 100000,
   "player_turns": 9994,
   "resting_turns": 0,
   "clevel": 1,
@@ -21,11 +21,11 @@
   "hp": 15,
   "max_hp": 15,
   "borg_decisions": 10006,
-  "player_energy": 999425,
+  "player_energy": 999410,
   "borg_rng": 2135587861,
-  "game_rng": {"quick": false, "quick_rng": 2054092508, "rng_index": 4, "rng": "8975e3605b9851ec32aa3fdb279f51d9ba6e9ef2a1ef86f4eae0f97aa35c98c441457c1e2bec2b98b5b34a6780f528978e8911d54bdb0163a451e60475f76b5b3c103beddbca6174410a1bf2e2072bee0a0e2bb8e90c96b307ce51f512366ecbb91bc89bbc31d7522db57e54d5afbb6a2da02ad4553bb6b7ba9d7165eea88ff1"},
+  "game_rng": {"quick": false, "quick_rng": 2054092508, "rng_index": 18, "rng": "8975e3605b9851ec32aa3fdb279f51d9f7d12406d691a200196e040512936572854a27ab8b36a9393f6d9a71c104aaca8736a5751cbe9d7ac79e37541957627f639fc423c5b8f6c6631f3172e2072bee0a0e2bb8e90c96b307ce51f512366ecbb91bc89bbc31d7522db57e54d5afbb6a2da02ad4553bb6b7ba9d7165eea88ff1"},
   "effective_settings": {},
   "game_options": {"rogue_like_commands": false,"autoexplore_commands": false,"use_sound": false,"show_damage": false,"use_old_target": false,"pickup_always": false,"pickup_inven": true,"show_flavors": false,"show_target": true,"highlight_player": false,"disturb_near": true,"solid_walls": false,"hybrid_walls": false,"view_yellow_light": false,"animate_flicker": false,"center_player": false,"purple_uniques": false,"auto_more": true,"hp_changes_color": true,"mouse_movement": true,"notify_recharge": false,"effective_speed": false,"cheat_hear": false,"score_hear": false,"cheat_room": false,"score_room": false,"cheat_xtra": false,"score_xtra": false,"cheat_live": false,"score_live": false,"birth_randarts": false,"birth_connect_stairs": true,"birth_force_descend": false,"birth_no_recall": false,"birth_no_artifacts": false,"birth_stacking": true,"birth_lose_arts": false,"birth_feelings": true,"birth_no_selling": true,"birth_start_kit": true,"birth_ai_learn": true,"birth_know_runes": false,"birth_know_flavors": false,"birth_levels_persist": false,"birth_percent_damage": false},
   "exact_turns": false,
-  "wall_seconds": 22.562
+  "wall_seconds": 17.168
 }

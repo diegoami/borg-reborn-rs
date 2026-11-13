@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: status blows deal their dice; no exploring under pursuit (#184)
+
+- **Status and economic blows deal their dice** before their effect
+  (`mon-blows.c:melee_effect_timed:507`, `EAT_GOLD:781`). The model gave
+  them 0, so a grey mushroom patch's `SPORE:CONFUSE:1d4` killed level-1
+  characters at p_death 0.
+- **bbc-d0006 had the wrong monster.** It placed race 96, the brown mold
+  (a never-mover), where its construction and the dossier's killer are a
+  killer brown beetle (race 178, `overall-assessment.md:5-7`). It passed
+  only through the retreat guard's reaction to the mold. With the pursuer
+  corrected, the Borg walked north into the unknown, D0006's fatal move.
+- **No exploring under pursuit:** a frontier step while an awake mover that
+  can hurt could reach the Borg within two player turns (c15 DANGER-08's
+  horizon) becomes the retreat step into known ground. D0006 passes on it.
+- **Measured:** guard arm 32 → **34** alive (depth 47, level 99 → 110);
+  baseline 40 → 39 (depth 46 → 47, level 64 → 62); smoke 3/3 (level
+  3 → 5). Guard-arm killers: a small kobold ×3, starvation ×2, then single
+  causes.
+- Dossiers D1919–D1924.
+
+**The zoo arms for #128 and #183** are fixed commits in main's history:
+A (guard off) `49c48bbf`, B (guard on) `2f72e80e` (#187). The prompt is in
+the session's scratchpad and in #183's comments.
+
 ## 2026-11-13: two starvations of the freed Borg (#183, part)
 
 - **A stalled urgent goal is cooled.** The urgent rules (starving with no
