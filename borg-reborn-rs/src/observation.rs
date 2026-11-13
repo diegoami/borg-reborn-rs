@@ -109,6 +109,10 @@ pub struct Status {
     pub timed: Vec<i16>,
     pub word_recall: i32,
     pub deep_descent: i32,
+    /// Spells the character may learn now (`player->upkeep->new_spells`,
+    /// the status bar's "Study", `player-calcs.c:calc_spells`; #127).
+    #[serde(default)]
+    pub new_spells: i32,
     pub food: i32,
     /// Pack slots in use, the quiver's share included: the engine's own
     /// count (`pack_slots_used`, obj-gear.c; REDESIGN-LESSONS L8).
@@ -180,6 +184,34 @@ pub struct Spell {
     /// `player->spell_flags[]`: `PY_SPELL_LEARNED` 1, `_WORKED` 2,
     /// `_FORGOTTEN` 4.
     pub flags: u8,
+    /// The failure chance in percent the spell menu shows
+    /// (`player-spell.c:spell_chance:382`, the menu's "Fail" column), with
+    /// this think's level, stats, mana, light and timed effects (#127).
+    #[serde(default)]
+    pub fail: i32,
+    /// Whether casting asks for a direction (`spell_needs_aim`).
+    #[serde(default)]
+    pub aim: bool,
+    /// The spell's first damaging effect, with its dice evaluated for this
+    /// think (`dice_random_value`, which reads the level expressions and
+    /// draws nothing; the menu's "Info" column rolls them, so it is not
+    /// read).
+    #[serde(default)]
+    pub damage: Option<SpellDamage>,
+}
+
+/// A spell's damaging effect (`effect` in `class.txt`).
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SpellDamage {
+    /// The effect handler's name (`list-effects.h`): `BOLT`,
+    /// `BOLT_OR_BEAM`, `BALL`, `ARC`, `SHORT_BEAM`, `STRIKE`, `LINE`, `SPOT`.
+    pub effect: String,
+    /// The projection (`ELEM_*`, then the other `PROJ_*`).
+    pub element: i32,
+    pub radius: i32,
+    pub base: i32,
+    pub dice: i32,
+    pub sides: i32,
 }
 
 /// The visible part of the level, through `map_info()`: `width` x `height`
@@ -378,6 +410,7 @@ pub(crate) mod tests {
                 timed: vec![0; 53],
                 word_recall: 0,
                 deep_descent: 0,
+                new_spells: 0,
                 food: 8000,
                 pack_used: 1,
                 pack_size: 23,
@@ -404,6 +437,17 @@ pub(crate) mod tests {
                 mana: 1,
                 base_fail: 22,
                 flags: 1,
+                // Magic Missile at level 1: a 3d4 missile bolt.
+                fail: 22,
+                aim: true,
+                damage: Some(SpellDamage {
+                    effect: "BOLT_OR_BEAM".into(),
+                    element: 21,
+                    radius: 0,
+                    base: 0,
+                    dice: 3,
+                    sides: 4,
+                }),
             }],
             panel: Panel {
                 x0: 10,

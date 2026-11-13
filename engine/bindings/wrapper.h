@@ -7,6 +7,7 @@
 #include "cave.h"
 #include "cmd-core.h"
 #include "game-input.h"
+#include "effects.h"
 #include "game-world.h"
 #include "init.h"
 #include "monster.h"
@@ -24,4 +25,5 @@
 #include "ui-event.h"
 #include "ui-input.h"
 #include "ui-term.h"
+#include "z-dice.h"
 #include "z-rand.h"

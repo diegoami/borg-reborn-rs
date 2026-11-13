@@ -71,6 +71,35 @@ pub struct dice_s {
     _unused: [u8; 0],
 }
 pub type dice_t = dice_s;
+unsafe extern "C" {
+    pub fn dice_random_value(dice: *const dice_t, v: *mut random_value);
+}
+pub const ELEM_ACID: u32 = 0;
+pub const ELEM_ELEC: u32 = 1;
+pub const ELEM_FIRE: u32 = 2;
+pub const ELEM_COLD: u32 = 3;
+pub const ELEM_POIS: u32 = 4;
+pub const ELEM_LIGHT: u32 = 5;
+pub const ELEM_DARK: u32 = 6;
+pub const ELEM_SOUND: u32 = 7;
+pub const ELEM_SHARD: u32 = 8;
+pub const ELEM_NEXUS: u32 = 9;
+pub const ELEM_NETHER: u32 = 10;
+pub const ELEM_CHAOS: u32 = 11;
+pub const ELEM_DISEN: u32 = 12;
+pub const ELEM_WATER: u32 = 13;
+pub const ELEM_ICE: u32 = 14;
+pub const ELEM_GRAVITY: u32 = 15;
+pub const ELEM_INERTIA: u32 = 16;
+pub const ELEM_FORCE: u32 = 17;
+pub const ELEM_TIME: u32 = 18;
+pub const ELEM_PLASMA: u32 = 19;
+pub const ELEM_METEOR: u32 = 20;
+pub const ELEM_MISSILE: u32 = 21;
+pub const ELEM_MANA: u32 = 22;
+pub const ELEM_HOLY_ORB: u32 = 23;
+pub const ELEM_ARROW: u32 = 24;
+pub const ELEM_MAX: u32 = 25;
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct effect {
@@ -1683,6 +1712,121 @@ unsafe extern "C" {
 unsafe extern "C" {
     pub fn panel_contains(y: core::ffi::c_uint, x: core::ffi::c_uint) -> bool;
 }
+pub const EF_NONE: effect_index = 0;
+pub const EF_RANDOM: effect_index = 1;
+pub const EF_DAMAGE: effect_index = 2;
+pub const EF_HEAL_HP: effect_index = 3;
+pub const EF_MON_HEAL_HP: effect_index = 4;
+pub const EF_MON_HEAL_KIN: effect_index = 5;
+pub const EF_NOURISH: effect_index = 6;
+pub const EF_CRUNCH: effect_index = 7;
+pub const EF_CURE: effect_index = 8;
+pub const EF_TIMED_SET: effect_index = 9;
+pub const EF_TIMED_INC: effect_index = 10;
+pub const EF_TIMED_INC_NO_RES: effect_index = 11;
+pub const EF_MON_TIMED_INC: effect_index = 12;
+pub const EF_TIMED_DEC: effect_index = 13;
+pub const EF_GLYPH: effect_index = 14;
+pub const EF_WEB: effect_index = 15;
+pub const EF_RESTORE_STAT: effect_index = 16;
+pub const EF_DRAIN_STAT: effect_index = 17;
+pub const EF_LOSE_RANDOM_STAT: effect_index = 18;
+pub const EF_GAIN_STAT: effect_index = 19;
+pub const EF_RESTORE_EXP: effect_index = 20;
+pub const EF_GAIN_EXP: effect_index = 21;
+pub const EF_DRAIN_LIGHT: effect_index = 22;
+pub const EF_DRAIN_MANA: effect_index = 23;
+pub const EF_RESTORE_MANA: effect_index = 24;
+pub const EF_REMOVE_CURSE: effect_index = 25;
+pub const EF_RECALL: effect_index = 26;
+pub const EF_DEEP_DESCENT: effect_index = 27;
+pub const EF_ALTER_REALITY: effect_index = 28;
+pub const EF_MAP_AREA: effect_index = 29;
+pub const EF_READ_MINDS: effect_index = 30;
+pub const EF_DETECT_TRAPS: effect_index = 31;
+pub const EF_DETECT_DOORS: effect_index = 32;
+pub const EF_DETECT_STAIRS: effect_index = 33;
+pub const EF_DETECT_ORE: effect_index = 34;
+pub const EF_SENSE_GOLD: effect_index = 35;
+pub const EF_DETECT_GOLD: effect_index = 36;
+pub const EF_SENSE_OBJECTS: effect_index = 37;
+pub const EF_DETECT_OBJECTS: effect_index = 38;
+pub const EF_DETECT_LIVING_MONSTERS: effect_index = 39;
+pub const EF_DETECT_VISIBLE_MONSTERS: effect_index = 40;
+pub const EF_DETECT_INVISIBLE_MONSTERS: effect_index = 41;
+pub const EF_DETECT_FEARFUL_MONSTERS: effect_index = 42;
+pub const EF_IDENTIFY: effect_index = 43;
+pub const EF_DETECT_EVIL: effect_index = 44;
+pub const EF_DETECT_SOUL: effect_index = 45;
+pub const EF_CREATE_STAIRS: effect_index = 46;
+pub const EF_DISENCHANT: effect_index = 47;
+pub const EF_ENCHANT: effect_index = 48;
+pub const EF_RECHARGE: effect_index = 49;
+pub const EF_PROJECT_LOS: effect_index = 50;
+pub const EF_PROJECT_LOS_AWARE: effect_index = 51;
+pub const EF_ACQUIRE: effect_index = 52;
+pub const EF_WAKE: effect_index = 53;
+pub const EF_SUMMON: effect_index = 54;
+pub const EF_BANISH: effect_index = 55;
+pub const EF_MASS_BANISH: effect_index = 56;
+pub const EF_PROBE: effect_index = 57;
+pub const EF_TELEPORT: effect_index = 58;
+pub const EF_TELEPORT_TO: effect_index = 59;
+pub const EF_TELEPORT_LEVEL: effect_index = 60;
+pub const EF_RUBBLE: effect_index = 61;
+pub const EF_GRANITE: effect_index = 62;
+pub const EF_DESTRUCTION: effect_index = 63;
+pub const EF_EARTHQUAKE: effect_index = 64;
+pub const EF_LIGHT_LEVEL: effect_index = 65;
+pub const EF_DARKEN_LEVEL: effect_index = 66;
+pub const EF_LIGHT_AREA: effect_index = 67;
+pub const EF_DARKEN_AREA: effect_index = 68;
+pub const EF_SPOT: effect_index = 69;
+pub const EF_SPHERE: effect_index = 70;
+pub const EF_BALL: effect_index = 71;
+pub const EF_BREATH: effect_index = 72;
+pub const EF_ARC: effect_index = 73;
+pub const EF_SHORT_BEAM: effect_index = 74;
+pub const EF_LASH: effect_index = 75;
+pub const EF_SWARM: effect_index = 76;
+pub const EF_STRIKE: effect_index = 77;
+pub const EF_STAR: effect_index = 78;
+pub const EF_STAR_BALL: effect_index = 79;
+pub const EF_BOLT: effect_index = 80;
+pub const EF_BEAM: effect_index = 81;
+pub const EF_BOLT_OR_BEAM: effect_index = 82;
+pub const EF_LINE: effect_index = 83;
+pub const EF_ALTER: effect_index = 84;
+pub const EF_BOLT_STATUS: effect_index = 85;
+pub const EF_BOLT_STATUS_DAM: effect_index = 86;
+pub const EF_BOLT_AWARE: effect_index = 87;
+pub const EF_TOUCH: effect_index = 88;
+pub const EF_TOUCH_AWARE: effect_index = 89;
+pub const EF_CURSE_ARMOR: effect_index = 90;
+pub const EF_CURSE_WEAPON: effect_index = 91;
+pub const EF_BRAND_WEAPON: effect_index = 92;
+pub const EF_BRAND_AMMO: effect_index = 93;
+pub const EF_BRAND_BOLTS: effect_index = 94;
+pub const EF_CREATE_ARROWS: effect_index = 95;
+pub const EF_TAP_DEVICE: effect_index = 96;
+pub const EF_TAP_UNLIFE: effect_index = 97;
+pub const EF_SHAPECHANGE: effect_index = 98;
+pub const EF_CURSE: effect_index = 99;
+pub const EF_COMMAND: effect_index = 100;
+pub const EF_JUMP_AND_BITE: effect_index = 101;
+pub const EF_MOVE_ATTACK: effect_index = 102;
+pub const EF_SINGLE_COMBAT: effect_index = 103;
+pub const EF_MELEE_BLOWS: effect_index = 104;
+pub const EF_SWEEP: effect_index = 105;
+pub const EF_BIZARRE: effect_index = 106;
+pub const EF_WONDER: effect_index = 107;
+pub const EF_SELECT: effect_index = 108;
+pub const EF_SET_VALUE: effect_index = 109;
+pub const EF_CLEAR_VALUE: effect_index = 110;
+pub const EF_SCRAMBLE_STATS: effect_index = 111;
+pub const EF_UNSCRAMBLE_STATS: effect_index = 112;
+pub const EF_MAX: effect_index = 113;
+pub type effect_index = u32;
 unsafe extern "C" {
     pub static mut turn: i32;
 }
@@ -2647,6 +2791,12 @@ unsafe extern "C" {
 }
 unsafe extern "C" {
     pub fn spell_by_index(p: *const player, index: core::ffi::c_int) -> *const class_spell;
+}
+unsafe extern "C" {
+    pub fn spell_chance(spell_index: core::ffi::c_int) -> i16;
+}
+unsafe extern "C" {
+    pub fn spell_needs_aim(spell_index: core::ffi::c_int) -> bool;
 }
 pub const TMD_FAST: u32 = 0;
 pub const TMD_SLOW: u32 = 1;

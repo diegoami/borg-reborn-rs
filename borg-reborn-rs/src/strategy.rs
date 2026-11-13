@@ -1271,7 +1271,19 @@ impl FirstStrategy {
             self.rule = "no light: wield one from the pack";
         }
         let wield = light.or(swap.map(|s| s.item));
-        let action = match wield.map(|item| Action::Wield { item }) {
+        // A spell to learn is studied when the grid is quiet, after the
+        // light and before an equipment swap (T5.3, #127; `spells.rs`).
+        let study = if quiet && light.is_none() {
+            crate::spells::study(ctx.world, ctx.knowledge).filter(|a| !self.refused.contains_key(a))
+        } else {
+            None
+        };
+        if study.is_some() {
+            self.rule = "a spell to learn: study it";
+        }
+        let wield = if study.is_some() { None } else { wield };
+        let chosen = study.or(wield.map(|item| Action::Wield { item }));
+        let action = match chosen {
             Some(a) => a,
             None => match self.mode_step(ctx, mode) {
                 Some(a) => a,
