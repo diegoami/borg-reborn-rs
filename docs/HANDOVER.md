@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: throw and wield a launcher (#127); the town plan (#191-#198)
+
+- **Throw** (`v`, the item, `'`; `player-attack.c:do_cmd_throw:1363`): a
+  known flask of oil is offered at the shot's target, scored like the shot,
+  its damage the engine's for a THROWING item thrown by hand, dice x
+  (2 + weight / 12) (`ranged_damage:568-579`): 7.5 on average. **An empty
+  bow slot takes a pack launcher.** World gains `ammo_tval`,
+  `has_launcher`. Measured: 7 throws chosen in the full suite, no launcher
+  wielded (none found), totals unchanged (baseline 39/45, 43 of 45 runs
+  identical; guard arm 35/45). The mechanics hardly fire because nothing
+  buys the items: that is the town plan's job.
+- **A hand-written ranged kit (buy 5 oil, a sling, 20 ammo) was written and
+  dropped** (owner, 2026-11-13): a game visits the town hundreds of times,
+  and fixed counts cannot serve every visit.
+- **The town plan** (docs/TOWN-PLAN.md, issues #191-#198, for the owner's
+  acceptance before any code): borg-rs's town inventory strategy (floors,
+  a usefulness function, an exact solver, weight vectors as zoo arms; the
+  control's and a human's choices as evidence), with **no lists**: every
+  target is recomputed at every visit from the state through our threat
+  model (the trip model, #195, validated against what runs consume before
+  any solver uses it). The record schema is shared with borg-rs. Item-use
+  mechanics for every usable kind (#194) run alongside.
+- Dossiers D1931-D1936.
+
 ## 2026-11-13: Remove Hunger is food (#176, part); arm A's zoo run
 
 - **Every remaining starvation ends with 1 gold** (a Ration costs 3): the
