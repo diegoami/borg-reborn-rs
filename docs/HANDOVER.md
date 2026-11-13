@@ -31,6 +31,18 @@ only their identity fields change).**
   for the no-gold half.
 - Dossiers D1870–D1873.
 
+**The town flip, found and held back for the owner (#183).** A replay of the
+night town with the engine's full knowledge shows the down-stair path
+stable (Walk 9 at both grids). `travel_step`'s guard retreats whenever the
+next grid's composite risk is higher at any size, and a squint-eyed rogue
+last seen 8,000 turns earlier put 0.0004 on the next grid. A guard at the
+path's own resolution (half a hit point) was tried (e2575fc0) and
+reverted. It frees every character the flip held: full alive 41 → **24**,
+max depth sum 45 → 48, max level sum 67 → **121** (a warrior reaches
+clevel 10); smoke 3 → 2. Much of the suite's survival was this freeze.
+Survival against progress at that scale is the owner's call. Dossiers
+D1874–D1899 are that run's deaths.
+
 ## 2026-11-13: a monster at 0 hit points is alive (#179)
 
 **Play change in twelve full runs; new references for all three suites.**
