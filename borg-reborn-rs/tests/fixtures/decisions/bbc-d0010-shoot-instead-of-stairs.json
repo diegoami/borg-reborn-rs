@@ -1,27 +1,29 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
-      "kind": 9,
-      "tval": 5,
-      "sval": 16,
+      "kind": 34,
+      "tval": 9,
+      "sval": 2,
       "weight": 30,
-      "desc": "a Short Bow",
+      "desc": "a Main Gauche (1d5)",
+      "dd": 1,
+      "ds": 5
+    },
+    {
+      "slot": 2,
+      "kind": 77,
+      "tval": 5,
+      "sval": 2,
+      "weight": 30,
+      "desc": "a Short Bow (x2) (+0,+0)",
       "dd": 0,
       "ds": 0
     }
   ],
   "inventory": [
-    {
-      "kind": 81,
-      "tval": 3,
-      "sval": 1,
-      "number": 11,
-      "desc": "& Arrow~",
-      "aware": true
-    },
     {
       "kind": 240,
       "tval": 26,
@@ -84,12 +86,12 @@
   "citations": [
     "overall-assessment.md:14-30,54-67",
     "owner-manual-branch.json",
-    "manual-verification.json"
+    "manual-verification.json",
+    "overall-assessment.md:16"
   ],
-  "construction": "High-Elf Ranger CL1, 1/15 HP, D1. The dossier gives the kobold adjacent, the upstairs two squares away, the short bow and eleven arrows. The room is constructed.",
+  "construction": "High-Elf Ranger CL1, 1/15 HP, D1. The dossier gives the kobold adjacent, the upstairs two squares away, the short bow and eleven arrows. The room is constructed. The kit is the dossier's (overall-assessment.md:16): Main Gauche (1d5) wielded, Short Bow (x2) in the bow slot, eleven Arrows (1d4) in the quiver; the fixture's earlier bow-as-weapon, pack arrows and wrong kind indices were construction errors, corrected in #127 with the engine's kinds 34/77/81.",
   "verified": "owner-manual-branch.json: 6255 -> 7303, CL2 HP12 D1; six arrow hits and one miss; the kobold was shot dead at 7293; both enemies killed.",
   "limits": "A diagnostic alternative, not an independent Borg life.",
-  "blocked_by": 127,
   "player": {
     "race": 9,
     "class": 7,
@@ -99,8 +101,16 @@
     "x": 4,
     "y": 3
   },
-  "current": {
-    "action": "Walk"
-  },
-  "pins_forbidden": false
+  "quiver": [
+    {
+      "kind": 81,
+      "tval": 3,
+      "sval": 1,
+      "number": 11,
+      "desc": "11 Arrows (1d4) (+0,+0)",
+      "aware": true,
+      "dd": 1,
+      "ds": 4
+    }
+  ]
 }

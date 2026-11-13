@@ -37,6 +37,7 @@ use crate::knowledge::Knowledge;
 use crate::params::Params;
 use crate::path::enter_cost;
 use crate::strategy::DIRS;
+use crate::world::tv;
 use crate::world::World;
 
 /// One response the Borg could take this think, with its numbers.
@@ -105,6 +106,82 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                 cost: 0.0,
                 why: "attack",
             });
+        }
+    }
+
+    // A Potion of Speed (T5.3, #127; bbc D0014): `TIMED_INC:FAST` for
+    // 20+2d10 turns (`object.txt`), +10 speed while it lasts
+    // (`player-calcs.c:2176-2177`). Its gain is the threat the faster
+    // character no longer takes: the same grid assessed at speed + 10,
+    // where every monster gets half the rounds per player turn. It costs a
+    // consumable (`escape_item_hp`) and is not drunk when already fast.
+    let fast = w
+        .character
+        .status
+        .as_ref()
+        .is_some_and(|s| s.timed.get(tmd_fast()).copied().unwrap_or(0) > 0);
+    if current_risk > 0.0 && !fast {
+        if let Some((i, _)) = pack_item(w, k, "Speed").filter(|(_, it)| it.tval == tv::POTION) {
+            let mut quick = w.clone();
+            if let Some(s) = quick.character.status.as_mut() {
+                s.speed += 10;
+            }
+            let after = composite(&assess(&quick, k, x, y, horizon, aversion), aversion, hp);
+            if after < current_risk {
+                let cost = f64::from(p.escape_item_hp);
+                out.push(Response {
+                    action: Action::Quaff { item: i },
+                    score: (current_risk - after) - after - cost,
+                    risk_after: after,
+                    gain: current_risk - after,
+                    cost,
+                    why: "known Speed potion",
+                });
+            }
+        }
+    }
+
+    // A shot (T5.3, #127): `h` fires at the closest visible monster in
+    // line of fire (`target_set_closest`, nearest first). Its gain is the
+    // share of that monster's threat one shot removes, on the attack's
+    // scale; at range the threat that counts is the round it deals once it
+    // reaches the character (`one_round`), since that is what killing it
+    // first saves. A monster that never moves is no threat at range and is
+    // not shot. The hit chance is not modelled, as for melee (declared).
+    if let Some((_, shot)) = w.character.shot(k).filter(|_| shot_possible(w)) {
+        let target = w
+            .level
+            .monsters
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.in_view && t.hp > 0)
+            .filter(|(_, t)| crate::danger::line_clear(w, x, y, t.x, t.y))
+            .min_by_key(|(_, t)| ((t.x - x).abs().max((t.y - y).abs()), t.index));
+        if let Some((i, t)) = target {
+            let d = (t.x - x).abs().max((t.y - y).abs());
+            if shot > 0.0 && (d <= 1 || !crate::danger::never_move(k, t)) {
+                let removed = if d <= 1 {
+                    one_threat(w, k, t, x, y, horizon).risk(aversion)
+                } else {
+                    one_round(w, k, t).risk(aversion)
+                };
+                let share = (shot / f64::from(t.hp.max(1))).min(1.0);
+                let gain = removed * share;
+                let status_after = current
+                    .per_monster
+                    .get(i)
+                    .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
+                    * (1.0 - share);
+                let risk_after = (current_risk - gain).max(0.0) + status_after;
+                out.push(Response {
+                    action: Action::Shoot,
+                    score: gain - risk_after,
+                    risk_after,
+                    gain,
+                    cost: 0.0,
+                    why: "shot at the closest monster",
+                });
+            }
         }
     }
 
@@ -485,6 +562,24 @@ fn better_weapon<'a>(w: &'a World, k: &Knowledge) -> Option<(usize, &'a crate::o
         .map(|(i, item, _)| (i, item))
 }
 
+/// `TMD_FAST` (list-player-timed.h: the first entry, numbered from 0).
+fn tmd_fast() -> usize {
+    0
+}
+
+/// Whether a shot can go where it is aimed this think: not blind (no
+/// monster is visible to target), not paralysed (no action), not confused
+/// (the shot goes astray, `player_confuse_dir` in `ranged_helper`). Light
+/// is not needed to shoot.
+fn shot_possible(w: &World) -> bool {
+    let Some(s) = w.character.status.as_ref() else {
+        return true;
+    };
+    let timed = |i: usize| s.timed.get(i).copied().unwrap_or(0);
+    // TMD_BLIND 2, TMD_PARALYZED 3, TMD_CONFUSED 4 (list-player-timed.h).
+    timed(2) <= 0 && timed(3) <= 0 && timed(4) <= 0
+}
+
 /// A score for `total_cmp`: -0.0 is 0.0, as `partial_cmp` treats it.
 fn ord(x: f64) -> f64 {
     if x == 0.0 {
@@ -793,6 +888,105 @@ mod tests {
             "a second scroll lifts the surcharge"
         );
         assert!(matches!(r[0].action, Action::Read { .. }), "{r:?}");
+    }
+
+    /// A short bow (x2, the engine's kind 77: SHOOTS_ARROWS) in the bow
+    /// slot and `arrows` 1d4 arrows in the quiver.
+    fn arm_with_bow(w: &mut World, k: &mut Knowledge, arrows: u8) {
+        let mut bow_kind = crate::knowledge::ObjectKind {
+            index: 77,
+            tval: 5,
+            sval: 2,
+            kind_flags: vec![0, 5],
+            ..Default::default()
+        };
+        bow_kind.pval.base = 2;
+        if k.kinds.len() <= 77 {
+            k.kinds.resize(78, crate::knowledge::ObjectKind::default());
+        }
+        k.kinds[77] = bow_kind;
+        let mut bow = w.character.equipment[0].item.clone().unwrap();
+        bow.kind = 77;
+        bow.tval = 5;
+        bow.dd = 0;
+        bow.ds = 0;
+        w.character.equipment.push(crate::observation::Slot {
+            slot_type: crate::world::EQUIP_BOW,
+            item: Some(bow),
+        });
+        let mut arrow = w.character.equipment[0].item.clone().unwrap();
+        arrow.kind = 81;
+        arrow.tval = 3;
+        arrow.dd = 1;
+        arrow.ds = 4;
+        arrow.number = arrows;
+        w.character.quiver = vec![arrow];
+    }
+
+    #[test]
+    fn a_shot_follows_the_engines_launcher_and_ammunition() {
+        // ranged_damage: (1d4 mean 2.5 + 0 + 0) x 2 = 5 (T5.3, #127).
+        let (mut w, mut k, _, _) = setup(&["#######", "#@...M#", "#######"], 20, 20, 10, 110, None);
+        assert_eq!(w.character.shot(&k), None, "no launcher");
+        arm_with_bow(&mut w, &mut k, 11);
+        assert_eq!(w.character.shot(&k), Some((0, 5.0)));
+        w.character.quiver[0].tval = 2; // shots: not what a bow fires
+        assert_eq!(w.character.shot(&k), None);
+    }
+
+    #[test]
+    fn speed_halves_the_threat_it_is_drunk_against() {
+        // A Potion of Speed: +10 speed, half the monster rounds per player
+        // turn (T5.3, #127; bbc D0014). Not drunk when already fast.
+        let (mut w, mut k, v, p) = setup(&["#######", "#@M...#", "#######"], 20, 20, 60, 110, None);
+        give(&mut w, &mut k, 247, "Speed");
+        w.character.inventory.last_mut().unwrap().tval = tv::POTION;
+        let speed = |w: &World| {
+            responses(w, &k, &p, &v)
+                .into_iter()
+                .find(|x| x.why == "known Speed potion")
+        };
+        let r = speed(&w).expect("offered against an adjacent monster");
+        assert!(
+            r.gain > 0.0 && r.cost == f64::from(p.escape_item_hp),
+            "{r:?}"
+        );
+        if let Some(s) = w.character.status.as_mut() {
+            if s.timed.is_empty() {
+                s.timed.resize(1, 0);
+            }
+            s.timed[0] = 10;
+        }
+        assert_eq!(speed(&w), None, "already fast");
+    }
+
+    #[test]
+    fn the_closest_monster_coming_is_shot() {
+        let (mut w, mut k, v, p) = setup(
+            &["#########", "#@.....M#", "#########"],
+            20,
+            20,
+            10,
+            110,
+            None,
+        );
+        arm_with_bow(&mut w, &mut k, 11);
+        let r = responses(&w, &k, &p, &v);
+        let shot = r
+            .iter()
+            .find(|x| x.action == Action::Shoot)
+            .expect("a coming monster in line of fire is shot");
+        assert!(shot.gain > 0.0, "{shot:?}");
+        // Confused, the shot goes astray: not offered.
+        if let Some(s) = w.character.status.as_mut() {
+            if s.timed.len() <= 4 {
+                s.timed.resize(5, 0);
+            }
+            s.timed[4] = 5;
+        }
+        assert!(!responses(&w, &k, &p, &v)
+            .iter()
+            .any(|x| x.action == Action::Shoot));
     }
 
     #[test]

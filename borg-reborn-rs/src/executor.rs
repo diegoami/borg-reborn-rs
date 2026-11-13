@@ -76,6 +76,11 @@ pub enum Action {
     Sell { item: usize, qty: u32 },
     /// Quaff the pack item at this index (`q`, `do_cmd_quaff_potion`).
     Quaff { item: usize },
+    /// Fire the first quiver ammunition the launcher takes at the closest
+    /// visible monster (`h`, `do_cmd_fire_at_nearest`,
+    /// `player-attack.c:1412-1443`: no prompt; nothing happens without a
+    /// launcher, ammunition or a target) (T5.3, #127).
+    Shoot,
     /// Read the pack item at this index (`r`, `do_cmd_read_scroll`).
     Read { item: usize },
     /// Eat the pack item at this index (`E`, `do_cmd_eat_food`).
@@ -119,6 +124,7 @@ impl Action {
                     PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
                 ));
             }
+            Action::Shoot => k.push(b'h' as u32),
             Action::Read { item } => {
                 k.push(b'r' as u32);
                 k.push(u32::from(
@@ -190,8 +196,12 @@ impl Action {
                 to: o.status.depth - 1,
                 from_turn: o.turn,
             },
-            // Rest, hold and alter charge energy on every path.
-            Action::Rest(_) | Action::Hold | Action::Alter(_) => Effect::Time { from_turn: o.turn },
+            // Rest, hold and alter charge energy on every path; a shot does
+            // when it fires (without a launcher, ammunition or a target the
+            // command prints why and takes none, which this catches).
+            Action::Rest(_) | Action::Hold | Action::Alter(_) | Action::Shoot => {
+                Effect::Time { from_turn: o.turn }
+            }
             // A store visit costs no game time (do_cmd_hold: "turn will be
             // taken exiting the shop" sets energy 0, cmd-cave.c), so what
             // the next think can check is the pack. Item count as well as

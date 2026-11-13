@@ -366,6 +366,49 @@ impl Character {
         Some(blows * (per_blow + f64::from(self.gear.to_d)).max(0.0))
     }
 
+    /// A shot the character can fire now (T5.3, #127): the launcher's
+    /// ammunition type from its kind's `KF_SHOOTS_*` flag and its
+    /// multiplier from the kind's `pval` (`player-calcs.c:2265-2275`), the
+    /// first quiver ammunition of that type (`do_cmd_fire_at_nearest`,
+    /// `player-attack.c:1423-1430`), and the damage of one shot if it hits:
+    /// (ammo dice mean + ammo to-dam + launcher to-dam) x multiplier
+    /// (`player-attack.c:ranged_damage:554-582`, before criticals and slays).
+    /// Returns (quiver index, damage per shot). Extra shots and might are
+    /// not modelled: one shot per turn, declared.
+    pub fn shot(&self, k: &Knowledge) -> Option<(usize, f64)> {
+        let launcher = self
+            .equipment
+            .iter()
+            .find(|s| s.slot_type == EQUIP_BOW)
+            .and_then(|s| s.item.as_ref())?;
+        let kind = k.kind(launcher.kind)?;
+        // KF_SHOOTS_SHOTS/ARROWS/BOLTS are 10/11/12 (list-kind-flags.h,
+        // numbered from KF_NONE = 0; bit flag - 1, FLAG_START 1).
+        let kf = |flag: usize| {
+            kind.kind_flags
+                .get((flag - 1) / 8)
+                .is_some_and(|b| b & (1 << ((flag - 1) % 8)) != 0)
+        };
+        let ammo_tval = if kf(10) {
+            tv::SHOT
+        } else if kf(11) {
+            tv::ARROW
+        } else if kf(12) {
+            tv::BOLT
+        } else {
+            return None;
+        };
+        let mult = f64::from(kind.pval.base.max(1));
+        let (i, ammo) = self
+            .quiver
+            .iter()
+            .enumerate()
+            .find(|(_, a)| a.tval == ammo_tval && a.number > 0)?;
+        let dice = f64::from(ammo.dd) * (f64::from(ammo.ds) + 1.0) / 2.0;
+        let damage = (dice + f64::from(ammo.to_d) + f64::from(launcher.to_d)) * mult;
+        Some((i, damage.max(0.0)))
+    }
+
     /// Free pack slots, by the engine's own count (quiver included).
     pub fn pack_free(&self) -> i32 {
         self.status

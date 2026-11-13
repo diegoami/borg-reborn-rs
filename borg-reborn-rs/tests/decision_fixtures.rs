@@ -98,6 +98,9 @@ struct Fixture {
     equipment: Vec<Gear>,
     #[serde(default)]
     inventory: Vec<Pack>,
+    /// Ammunition in the quiver (#127): where 4.2 puts it.
+    #[serde(default)]
+    quiver: Vec<Pack>,
     map: Vec<String>,
     #[serde(default)]
     monsters: Vec<Monster>,
@@ -277,6 +280,7 @@ impl Expect {
             | ("Read", Action::Read { .. })
             | ("Eat", Action::Eat { .. })
             | ("Wield", Action::Wield { .. })
+            | ("Shoot", Action::Shoot)
             | ("Hold", Action::Hold)
             | ("Get", Action::Get)
             | ("Descend", Action::Descend)
@@ -464,6 +468,33 @@ fn build(f: &Fixture) -> Observation {
         })
         .collect();
 
+    let quiver: Vec<Item> = f
+        .quiver
+        .iter()
+        .map(|p| Item {
+            kind: p.kind,
+            tval: p.tval,
+            sval: p.sval,
+            number: p.number,
+            weight: p.weight,
+            timeout: 0,
+            level: 1,
+            desc: p.desc.clone(),
+            aware: p.aware,
+            fully_known: p.aware,
+            runes_known: p.aware,
+            flags: [0; 5],
+            ac: p.ac,
+            dd: p.dd,
+            ds: p.ds,
+            to_h: p.to_h,
+            to_d: p.to_d,
+            to_a: p.to_a,
+            modifiers: vec![0; 16],
+            elements: vec![(0, 0); 25],
+        })
+        .collect();
+
     // Stats are part of the construction: the dossiers do not record them.
     // 17 in every stat is an ordinary starting line and keeps the blows and
     // the exchange arithmetic inspectable.
@@ -512,7 +543,7 @@ fn build(f: &Fixture) -> Observation {
             in_vault: false,
         },
         equipment,
-        quiver: Vec::new(),
+        quiver,
         inventory,
         spells: Vec::new(),
         panel: Panel {
