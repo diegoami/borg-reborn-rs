@@ -87,7 +87,23 @@ pub enum Action {
     Eat { item: usize },
     /// Wield the pack item at this index (`w`, `do_cmd_wield`).
     Wield { item: usize },
+    /// Learn a spell from the book at this pack index (`G`,
+    /// `cmd-obj.c:do_cmd_study:1245`). A `CHOOSE_SPELLS` class then picks
+    /// the spell at `letter` (its position in the book's menu,
+    /// `ui-spell.c:spell_menu_new:251`); the others learn a random one
+    /// (`do_cmd_study_book:1200`) and `letter` is `None` (#127).
+    Study { book: usize, letter: Option<u8> },
+    /// Cast the spell at `letter` of the book at this pack index (`m`,
+    /// `cmd-obj.c:do_cmd_cast:1113`). A spell that aims answers the
+    /// direction prompt with `'`, the closest target
+    /// (`ui-input.c:textui_get_aim_dir:1652-1658`, `target_set_closest`)
+    /// (#127).
+    Cast { book: usize, letter: u8, aim: bool },
 }
+
+/// The spell menu's selection letters (`ui-menu.c:41`,
+/// `all_letters_nohjkl`), by the spell's position in its book.
+pub const SPELL_LETTERS: &[u8] = b"abcdefgimnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 impl Action {
     /// The complete key sequence, from what the strategy decided and the
@@ -142,6 +158,25 @@ impl Action {
                 k.push(u32::from(
                     PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
                 ));
+            }
+            Action::Study { book, letter } => {
+                k.push(b'G' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[book.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+                if let Some(l) = letter {
+                    k.push(u32::from(l));
+                }
+            }
+            Action::Cast { book, letter, aim } => {
+                k.push(b'm' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[book.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+                k.push(u32::from(letter));
+                if aim {
+                    k.push(b'\'' as u32);
+                }
             }
             Action::Sell { item, qty } => {
                 k.push(b',' as u32);
@@ -199,9 +234,15 @@ impl Action {
             // Rest, hold and alter charge energy on every path; a shot does
             // when it fires (without a launcher, ammunition or a target the
             // command prints why and takes none, which this catches).
-            Action::Rest(_) | Action::Hold | Action::Alter(_) | Action::Shoot => {
-                Effect::Time { from_turn: o.turn }
-            }
+            // A cast uses the turn whether it works or fails
+            // (`player-spell.c:spell_cast:508-511`, `do_cmd_cast:1166-1170`),
+            // and so does a study (`do_cmd_study_spell:1196`).
+            Action::Rest(_)
+            | Action::Hold
+            | Action::Alter(_)
+            | Action::Shoot
+            | Action::Study { .. }
+            | Action::Cast { .. } => Effect::Time { from_turn: o.turn },
             // A store visit costs no game time (do_cmd_hold: "turn will be
             // taken exiting the shop" sets energy 0, cmd-cave.c), so what
             // the next think can check is the pack. Item count as well as
@@ -774,6 +815,39 @@ mod tests {
         assert_eq!(
             Action::Wield { item: 1 }.keys(&o),
             vec![ESCAPE, b'w' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        // Study: `G`, the book, the spell's menu letter for a chooser.
+        assert_eq!(
+            Action::Study {
+                book: 1,
+                letter: Some(b'b')
+            }
+            .keys(&o),
+            vec![ESCAPE, b'G' as u32, u32::from(PACK_LETTERS[1]), b'b' as u32]
+        );
+        assert_eq!(
+            Action::Study {
+                book: 1,
+                letter: None
+            }
+            .keys(&o),
+            vec![ESCAPE, b'G' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        // Cast: `m`, the book, the spell, `'` for the closest target.
+        assert_eq!(
+            Action::Cast {
+                book: 0,
+                letter: b'a',
+                aim: true
+            }
+            .keys(&o),
+            vec![
+                ESCAPE,
+                b'm' as u32,
+                u32::from(PACK_LETTERS[0]),
+                b'a' as u32,
+                b'\'' as u32
+            ]
         );
         let mut next = after(101, 0, 0, 1, 2);
         next.inventory = obs(&[(231, 1)]).inventory;

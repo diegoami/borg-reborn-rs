@@ -40,6 +40,9 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `get_com` | S | reads the `^Z` command key |
 | `option_set` | W | the game options the Borg sets |
 | `spell_by_index` | B | the class's spells (`borg_cheat_spells`) |
+| `spell_chance` | X | a spell's failure chance as the spell menu shows it (the "Fail" column); the C Borg computes its own (`borg_spell_fail_rate`) (#127) |
+| `spell_needs_aim` | X | whether casting a spell asks for a direction (`effect_aim`) (#127) |
+| `dice_random_value` | X | a spell effect's dice with the level expressions evaluated, without the roll `dice_roll` adds (the menu's "Info" column rolls them: it would draw from the game's generator) (#127) |
 | `store_stock_list` | B | every store's stock (`borg_notice_store`) |
 | `price_item` | X | a ware's price as the shop shows it; the C Borg computes its own (`borg_price_item`) |
 | `Term_inkey` | S | a real key the user pressed stops the Borg (spec §2.2) |
@@ -104,15 +107,17 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `ui_event` | S | `Term_inkey`'s result |
 | `player` | B | the character (the global's type): grid, depth, levels, HP, SP, stats, timed effects, gear lists, spells, options |
 | `player_race` | B | the race played (`ridx`); K for the static race table |
-| `player_class` | B | the class played (`cidx`, its magic); K for the static class table |
+| `player_class` | B | the class played (`cidx`, its magic, its player flags `pflags`: `UNLIGHT`, `CHOOSE_SPELLS`, #172/#127); K for the static class table |
 | `player_state` | B | computed stats, speed, blows, AC |
 | `player_options` | X | `birth_percent_damage` |
-| `player_upkeep` | B | resting, running, the pack and quiver arrays |
+| `player_upkeep` | B | resting, running, the pack and quiver arrays, `new_spells` (the status bar's "Study", #127) |
 | `player_body` | B | the equipment slots |
 | `equip_slot` | B | a slot's type and object |
 | `class_magic` | K | a class's books and spells |
 | `class_book` | K | a book's spells |
-| `class_spell` | B | a spell's book, level, mana and failure (`borg_cheat_spells`) |
+| `class_spell` | B | a spell's book, level, mana and failure (`borg_cheat_spells`), and its effect list (#127) |
+| `effect` | B | a spell's effect: handler index (`effect_index`), projection, radius and dice (#127) |
+| `dice_t` | B | an effect's dice, read only through `dice_random_value` (#127) |
 | `term` | A | screen size, sidebar mode, the map panel offset and the screen window (`scr`) |
 | `term_win` | A | the screen buffer: the cells (`c`) of the message line and the store header, the attribute row (`a`) and the cursor (`cx`, `cy`) for the prompt catcher (`borg-io.c:borg_what_text:54-133`, `borg.c:278-279`) |
 | `random` | K | dice of the static data (`random_value` is its alias): base, dice, sides, bonus |
@@ -144,6 +149,14 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `EVT_KBRD` | S | a keyboard event |
 | `EVT_NONE` | S | no key: let the game's rest or repeat run |
 | `EVT_DISCONNECT` | S | the terminal went away |
+| `EF_BOLT` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_BOLT_OR_BEAM` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_BALL` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_STRIKE` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_ARC` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_SHORT_BEAM` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_LINE` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
+| `EF_SPOT` | B | a spell's damaging effect handler (`effect_index`, `list-effects.h`) (#127) |
 
 ## Not engine reads
 

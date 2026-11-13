@@ -191,6 +191,9 @@ pub struct Character {
     pub equipment: Vec<Slot>,
     pub quiver: Vec<Item>,
     pub inventory: Vec<Item>,
+    /// The class's spells as the player knows them (#127).
+    #[serde(default)]
+    pub spells: Vec<crate::observation::Spell>,
     /// Derived from the known part of the equipment.
     pub gear: GearBonuses,
 }
@@ -266,6 +269,7 @@ impl Character {
         self.equipment = o.equipment.clone();
         self.quiver = o.quiver.clone();
         self.inventory = o.inventory.clone();
+        self.spells = o.spells.clone();
         self.gear = GearBonuses::of(&self.equipment);
     }
 

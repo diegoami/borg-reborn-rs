@@ -533,6 +533,7 @@ fn build(f: &Fixture) -> Observation {
             timed,
             word_recall: 0,
             deep_descent: 0,
+            new_spells: 0,
             food: f.player.food,
             pack_used: if f.player.pack_used > 0 {
                 f.player.pack_used

@@ -2,6 +2,56 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: study and cast attack spells (#127, T5.3, second slice)
+
+**Play change in 30 full runs and one smoke run; new references for all
+three suites.**
+
+- **Observation:** each spell's failure chance as the spell menu shows it
+  (`spell_chance`, the "Fail" column), whether it aims (`spell_needs_aim`),
+  and its first damaging effect with the dice evaluated for the level
+  (`dice_random_value`). The menu's "Info" column is **not** read:
+  `get_spell_info` calls `dice_roll`, which draws from the game's generator
+  (`z-dice.c:579-592`). The status gains `new_spells` (the "Study"
+  indicator). The bindings add `spell_chance`, `spell_needs_aim`,
+  `dice_random_value` and `effect_index` (bindgen 0.73.2 installed with
+  `cargo install bindgen-cli --version 0.73.2 --locked`); docs/ENGINE-READS.md
+  lists them.
+- **Actions:** `Study { book, letter }` is `G`, the book, then the spell's
+  menu letter for a `CHOOSE_SPELLS` class (`ui-spell.c:251`,
+  `all_letters_nohjkl` by position in the book). A priest or paladin learns
+  the engine's random pick (`do_cmd_study_book`). `Cast { book, letter, aim }`
+  is `m`, the book, the letter, and `'` (the closest target) when it aims.
+  Both use the turn.
+- **`spells.rs`:** a chooser studies an attack spell first, then the lowest
+  level. The castable attacks are the target-centred effects (BOLT,
+  BOLT_OR_BEAM, BALL, STRIKE: full damage at the target; arcs, short beams
+  and lines are not used yet). Expected damage is the dice mean × (1 −
+  fail) × the target's resistance (`project-mon.c`: nether 0 on undead,
+  0.33 on IM_NETHER, 0.5 on evil; poison 1/9 on IM_POIS). A cast is never
+  made without the mana. `can_cast` is `player_can_cast`: grid seen, not
+  blind or confused.
+- **Tactics** offers the best spell at the shot's target, scored like the
+  shot. **Strategy** studies on a quiet grid, after the light and before an
+  equipment swap. **Readiness:** a learned attack spell whose book is in
+  the pack is a ranged attack (the DL5 gate).
+- **Measured (full, 45 runs):** alive 39 → **41**; max depth sum 44 → 44;
+  max level sum 54 → **60**. 40 spells learned, 1,134 casts chosen, 11
+  failed concentrations. Gains: mage-4 (was poison at 1,390), druid-0/1/2,
+  priest-0 now survive, and several runs gain a level. Losses: necro-0 (a
+  small kobold at 5,078), necro-2 (a cave spider at 3,347), necro-3 (Fang
+  at 80,541), all fights the model scored at p_death 0 until the last turn.
+  Priest-4 starves in town (#176). **Smoke:** smoke-mage-2 now dies of
+  poison at 15,220 (rests poisoned at p_death 0, #175). Smoke 3 → 2 alive.
+- Dossiers: D1848 (smoke mage), D1849–D1852.
+
+**Filed:** #175 (poison over time missing from p_death), #176 (starving in
+town at night with no gold, walking in place), #177 (an unlit
+necromancer explores in place).
+
+**Left in #127:** devices with failure chances, thrown oil, priest
+detection timing, arcs and beams, D0014's Speed→CLW.
+
 ## 2026-11-13: eat when Hungry, light the way (#172)
 
 **Play change in 39 full runs; new full baseline. Smoke and smoke-exact

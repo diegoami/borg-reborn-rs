@@ -156,10 +156,13 @@ fn count(w: &World, k: &Knowledge, tval: u8, names: &[&str]) -> u32 {
 }
 
 /// A ranged attack carried: a launcher with ammunition it fires
-/// (`Character::shot`, the engine's ammunition type, #127), or flasks of oil
-/// to throw (five, a declared handful). The gate asks for the kit.
+/// (`Character::shot`, the engine's ammunition type, #127), flasks of oil
+/// to throw (five, a declared handful), or a learned attack spell whose
+/// book is in the pack (`spells::knows_attack`). The gate asks for the kit.
 fn has_ranged(w: &World, k: &Knowledge) -> bool {
-    w.character.shot(k).is_some() || count(w, k, tv::FLASK, &["Flask of oil"]) >= 5
+    w.character.shot(k).is_some()
+        || count(w, k, tv::FLASK, &["Flask of oil"]) >= 5
+        || crate::spells::knows_attack(w, k)
 }
 
 /// A kind's name without the article and plural marks (`& Flask~ of oil`).

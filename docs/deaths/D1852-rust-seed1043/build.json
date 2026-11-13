@@ -1,0 +1,13 @@
+{
+  "binary": "/home/user/borg-reborn-rs/build/rust/game/angband",
+  "binary_sha256": "34aafc3c970b067f863c4ab738bcf9780f728e0537f6809586c6d33e2581f245",
+  "built_utc": "2026-11-13T04:46:43Z",
+  "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "engine_upstream": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+  "git_dirty": "no",
+  "git_rev": "4fa37de9730edb4bae709d0b98dcf5b5673fccbc",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+  "source_sha256": "cff97baa80a870bcbfd77e4631660f77d61c472362ce0ba860afa4ef54484ba1"
+}

@@ -472,6 +472,7 @@ pub fn perceive() -> Option<Observation> {
             timed: (0..b::TMD_MAX as usize).map(|i| *pl.timed.add(i)).collect(),
             word_recall: pl.word_recall as i32,
             deep_descent: pl.deep_descent as i32,
+            new_spells: up.new_spells,
             food: pl.timed.add(b::TMD_FOOD as usize).read() as i32,
             pack_used: b::pack_slots_used(p),
             pack_size: i32::from((*z).pack_size),
@@ -527,6 +528,9 @@ pub fn perceive() -> Option<Observation> {
                     mana: (*sp).smana,
                     base_fail: (*sp).sfail,
                     flags: *pl.spell_flags.add(i as usize),
+                    fail: i32::from(b::spell_chance(i)),
+                    aim: b::spell_needs_aim(i),
+                    damage: spell_damage((*sp).effect),
                 });
             }
         }
@@ -1464,4 +1468,46 @@ pub mod truth {
             r
         }
     }
+}
+
+/// A spell's first damaging effect, its dice evaluated without a roll
+/// (`z-dice.c:dice_random_value:506`, expressions only; `dice_roll` would
+/// draw from the game's generator, RULES 10).
+///
+/// # Safety
+/// `effect` is null or the head of a spell's effect list.
+unsafe fn spell_damage(mut effect: *mut b::effect) -> Option<crate::observation::SpellDamage> {
+    while !effect.is_null() {
+        let e = &*effect;
+        let name = match u32::from(e.index) {
+            b::EF_BOLT => "BOLT",
+            b::EF_BOLT_OR_BEAM => "BOLT_OR_BEAM",
+            b::EF_BALL => "BALL",
+            b::EF_ARC => "ARC",
+            b::EF_SHORT_BEAM => "SHORT_BEAM",
+            b::EF_STRIKE => "STRIKE",
+            b::EF_LINE => "LINE",
+            b::EF_SPOT => "SPOT",
+            _ => "",
+        };
+        if !name.is_empty() && !e.dice.is_null() {
+            let mut v = b::random_value {
+                base: 0,
+                dice: 0,
+                sides: 0,
+                m_bonus: 0,
+            };
+            b::dice_random_value(e.dice, &mut v);
+            return Some(crate::observation::SpellDamage {
+                effect: name.to_string(),
+                element: e.subtype,
+                radius: e.radius,
+                base: v.base,
+                dice: v.dice,
+                sides: v.sides,
+            });
+        }
+        effect = e.next;
+    }
+    None
 }

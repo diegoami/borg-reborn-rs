@@ -185,6 +185,60 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         }
     }
 
+    // An attack spell (T5.3, #127): `'` at the aim prompt targets the
+    // closest visible monster in line of fire (`target_set_closest`), the
+    // shot's target. Its gain is scored as the shot's: the share of that
+    // monster's threat the expected damage removes (`spells.rs`: the dice's
+    // mean, the engine's failure chance, the element's resistance). The
+    // best spell is offered; its mana is not priced (declared: it returns
+    // with rest, and a cast is never made without it).
+    {
+        let target = w
+            .level
+            .monsters
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.in_view && t.hp > 0)
+            .filter(|(_, t)| crate::danger::line_clear(w, x, y, t.x, t.y))
+            .min_by_key(|(_, t)| ((t.x - x).abs().max((t.y - y).abs()), t.index));
+        if let Some((i, t)) = target {
+            let d = (t.x - x).abs().max((t.y - y).abs());
+            let best = crate::spells::attacks(w, k)
+                .into_iter()
+                .map(|a| {
+                    let dam = a.damage * crate::spells::resisted(w, k, a.index, t);
+                    (a, dam)
+                })
+                .filter(|(_, dam)| *dam > 0.0)
+                .max_by(|(a, x), (b, y)| x.total_cmp(y).then(b.index.cmp(&a.index)));
+            if let Some((a, dam)) = best {
+                if d <= 1 || !crate::danger::never_move(k, t) {
+                    let removed = if d <= 1 {
+                        one_threat(w, k, t, x, y, horizon).risk(aversion)
+                    } else {
+                        one_round(w, k, t).risk(aversion)
+                    };
+                    let share = (dam / f64::from(t.hp.max(1))).min(1.0);
+                    let gain = removed * share;
+                    let status_after = current
+                        .per_monster
+                        .get(i)
+                        .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp)
+                        * (1.0 - share);
+                    let risk_after = (current_risk - gain).max(0.0) + status_after;
+                    out.push(Response {
+                        action: a.action,
+                        score: gain - risk_after,
+                        risk_after,
+                        gain,
+                        cost: 0.0,
+                        why: "attack spell at the closest monster",
+                    });
+                }
+            }
+        }
+    }
+
     // Steps: the destination's risk plus the free hit from every adjacent
     // monster that can follow when the step leaves its reach (the engine's
     // attack of opportunity; a monster that never moves gives none).

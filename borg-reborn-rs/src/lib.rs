@@ -34,6 +34,7 @@ pub mod observation;
 pub mod params;
 pub mod path;
 pub mod readiness;
+pub mod spells;
 pub mod strategy;
 pub mod tactics;
 pub mod trace;
