@@ -2,6 +2,45 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: equipment valued by effect (#126, T5.2)
+
+**Play change in two full runs; new full baseline.**
+
+- **The engine's tvals** (`world::tv`, `list-tvals.h`). The observation
+  carries the engine's own tval, but `tactics::better_weapon` filtered on
+  23, the pre-4.2 sword, which in 4.2 is hard armour: no real weapon was
+  ever offered. The test data and all 24 decision fixtures used the old
+  numbers and are corrected (dagger 9; mace, maul, whip 7; bow 5;
+  mushroom 29).
+- **No wield ever worked in a game.** The prompt catcher escaped "Wear or
+  wield which item?" unconditionally, the C Borg's rule for stumbling
+  into it. Our Wield opens that prompt itself with the item letter
+  queued, so the letter fell on the map as a pickup. The prompt is now
+  escaped only when nothing is queued, and a refused wield is barred like
+  any refused action (#137). Before this fix the scratch suite had two
+  runs with about 17,600 refused wields each, both starving.
+- **`equipment.rs`:** a pack item is worn when, on a copy wearing it,
+  melee per turn, known AC and (for a caster) the armour-weight mana
+  penalty (`calc_mana:1505-1531`) are all no worse and one is strictly
+  better. A launcher is not a weapon; jewellery is worn only when fully
+  known and only into an empty slot. The strategy wears it when the grid
+  is quiet and nothing is adjacent (rule "a better item in the pack:
+  wear it").
+- **D0011 is active:** the fixture's Maul is the dossier's 4d4 (+7,+6)
+  (`overall-assessment.md:26`), not 2d4. The loader carries a pack
+  weapon's numbers, and the Borg wields the Maul. OWNERS drops #126.
+- **Measured:** smoke 3/3 and smoke-exact 3/3 unchanged; full 43/45.
+  Two wields in the whole suite, both worn. `full-0-warrior-3` wears a
+  Cloak [1,+0] and survives as before; `full-2-druid-0` diverges after
+  its swap and dies to a small kobold at 3,098 (was the mouse swarm at
+  7,912). Survival 34/45. Full reference regenerated; dossiers
+  D1806–D1816.
+- **Not valued:** resistances, slays, brands. Pickups and pack weight are
+  unchanged (a swap does not change total weight). The town buys no
+  equipment, so reserves come first by construction.
+
+**Next:** #127 (T5.3 item use, spells, ranged).
+
 ## 2026-11-13: depth readiness (#125, T5.1)
 
 **Play change; new baseline.** One readiness policy for every way down
