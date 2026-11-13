@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1853; distinct starting conditions: 1852; retained process attempts: 1853 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1856; distinct starting conditions: 1855; retained process attempts: 1856 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1859,6 +1859,9 @@ Dossiers: 1853; distinct starting conditions: 1852; retained process attempts: 1
 | [D1871-rust-seed1040](D1871-rust-seed1040/report.md) | unassigned | `7913bc84e160` | 1040 | a small kobold | 5078 | unassessed |
 | [D1872-rust-seed1034](D1872-rust-seed1034/report.md) | unassigned | `7913bc84e160` | 1034 | starvation | 99880 | unassessed |
 | [D1873-rust-seed1042](D1873-rust-seed1042/report.md) | unassigned | `7913bc84e160` | 1042 | poison | 3860 | unassessed |
+| [D1874-rust-seed102](D1874-rust-seed102/report.md) | unassigned | `e2575fc07a15` | 102 | a small kobold | 6029 | unassessed |
+| [D1875-rust-seed1000](D1875-rust-seed1000/report.md) | unassigned | `e2575fc07a15` | 1000 | a giant white mouse | 17038 | unassessed |
+| [D1876-rust-seed1010](D1876-rust-seed1010/report.md) | unassigned | `e2575fc07a15` | 1010 | a giant white mouse | 11066 | unassessed |
 
 ## Aggregated actions
 
