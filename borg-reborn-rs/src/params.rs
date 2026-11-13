@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 17] = [
+pub const TABLE: [Param; 20] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -188,6 +188,36 @@ pub const TABLE: [Param; 17] = [
                    arrival level nothing remembers (stairs, Deep Descent); 3 hit points is a \
                    placeholder until the calibration report (#124) measures arrivals (RULES 14)",
     },
+    Param {
+        name: "depth_hp_frac_pct",
+        unit: "percent of maximum hit points",
+        min: 10,
+        max: 100,
+        default: 50,
+        evidence: "T5.1 (#125): c15 DEPTH-01, a depth is allowed when the worst single turn of \
+                   the races native to its band stays below this share of maximum hit points; \
+                   50 is the manual's K_DEPTH_HP_FRAC candidate (c15 §15.15), whose sweep \
+                   (0.3/0.5/0.7, c15 *Things to try* item 5) is not run: declared (RULES 14)",
+    },
+    Param {
+        name: "readiness_band_below",
+        unit: "dungeon levels",
+        min: 0,
+        max: 10,
+        default: 2,
+        evidence: "T5.1 (#125): c15 DEPTH-01's band starts this many levels above the target \
+                   depth (d-2); declared",
+    },
+    Param {
+        name: "readiness_band_above",
+        unit: "dungeon levels",
+        min: 0,
+        max: 10,
+        default: 5,
+        evidence: "T5.1 (#125): c15 DEPTH-01's band ends this many levels below the target \
+                   depth (d+5): out-of-depth monsters are generated deeper than the level \
+                   (Fang, DL5, kills on DL1-2: D1638, D1654); declared",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -210,6 +240,9 @@ pub struct Params {
     pub escape_item_hp: u32,
     pub last_escape_hp: u32,
     pub arrival_risk_hp: u32,
+    pub depth_hp_frac_pct: i32,
+    pub readiness_band_below: i32,
+    pub readiness_band_above: i32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -244,6 +277,9 @@ impl Default for Params {
             escape_item_hp: default_of("escape_item_hp") as u32,
             last_escape_hp: default_of("last_escape_hp") as u32,
             arrival_risk_hp: default_of("arrival_risk_hp") as u32,
+            depth_hp_frac_pct: default_of("depth_hp_frac_pct") as i32,
+            readiness_band_below: default_of("readiness_band_below") as i32,
+            readiness_band_above: default_of("readiness_band_above") as i32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -310,6 +346,9 @@ impl Params {
                 "escape_item_hp" => p.escape_item_hp = v as u32,
                 "last_escape_hp" => p.last_escape_hp = v as u32,
                 "arrival_risk_hp" => p.arrival_risk_hp = v as u32,
+                "depth_hp_frac_pct" => p.depth_hp_frac_pct = v as i32,
+                "readiness_band_below" => p.readiness_band_below = v as i32,
+                "readiness_band_above" => p.readiness_band_above = v as i32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -337,6 +376,9 @@ impl Params {
                 "escape_item_hp" => i64::from(self.escape_item_hp),
                 "last_escape_hp" => i64::from(self.last_escape_hp),
                 "arrival_risk_hp" => i64::from(self.arrival_risk_hp),
+                "depth_hp_frac_pct" => i64::from(self.depth_hp_frac_pct),
+                "readiness_band_below" => i64::from(self.readiness_band_below),
+                "readiness_band_above" => i64::from(self.readiness_band_above),
                 _ => 0,
             }
         };

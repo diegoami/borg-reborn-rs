@@ -303,6 +303,36 @@ impl Assessment {
     }
 }
 
+/// The most hit points one awake, adjacent monster of this race can take
+/// from the character in one player turn: c15 DANGER-01's `T_max`, which
+/// DEPTH-01 compares with maximum hit points (T5.1, #125). A monster
+/// either swings or casts in each of its moves, so the turn's worst is its
+/// moves (the energy model, rounded up: a slower monster can still act
+/// once) times the larger of its full melee round (every blow at its
+/// largest roll, after armour) and its largest spell. No sleep, distance
+/// or confidence discount: the gate asks what the depth can do, not what
+/// stands here now.
+pub fn worst_turn(w: &World, k: &Knowledge, race: &MonsterRace) -> f64 {
+    let player_speed = w.character.status.as_ref().map_or(110, |s| s.speed);
+    let moves = attack_slots(k, player_speed, race.speed.clamp(0, 199), 1)
+        .ceil()
+        .max(1.0);
+    let ac = w.character.status.as_ref().map_or(0, |s| s.known_ac).max(0);
+    let melee: f64 = if has(&race.flags, rf::NEVER_BLOW) {
+        0.0
+    } else {
+        race.blows.iter().map(|b| blow_pmf(b, ac, false).2).sum()
+    };
+    let (spell, _, _, _) = spell_damage(w, race, 1);
+    moves * melee.max(spell)
+}
+
+/// Whether the character's known gear gives Free Action (`OF_FREE_ACT`):
+/// the DL20 kit gate (c15 DEPTH-02).
+pub fn has_free_action(w: &World) -> bool {
+    has(&w.character.gear.flags, of::FREE_ACT)
+}
+
 /// Whether the character can read a scroll this think: the engine's
 /// `player_can_read` (`player-util.c:1166-1197`) refuses it when blind,
 /// with no light (`no_light`: the character's grid is not seen,
@@ -844,6 +874,49 @@ fn ranged_threat(
         return out;
     }
     let p_cast = (1.0 / f64::from(freq)).min(1.0);
+    let (damage, status, summon, economic) = spell_damage(w, race, d);
+    if damage <= 0.0 && !status && !summon && !economic {
+        return out;
+    }
+    let casts = rounds * p_cast;
+    out.expected = casts * damage;
+    out.worst = rounds * damage;
+    out.disabling = if status {
+        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    out.summoning = if summon {
+        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    out.economic = if economic { casts } else { 0.0 };
+    // Summoners: a growth factor of our own, declared (#163). A summoner's
+    // future friends are not in the world yet, so the present estimate is
+    // scaled: 1.8 below character level 15, 1.5 from there. The C Borg has
+    // no summoner factor; its nearest is the one for monsters with friends
+    // (`borg-danger.c:borg_danger_one_kill:2426-2436`), whose code computes
+    // `v1 + v1*18/10` (×2.8) below CL15 and `v1 + v1*13/10` (×2.3) from
+    // CL15, below CL20 only, while its comments say "extra 80%" and "extra
+    // 30%". Our 1.8 follows the first comment; our 1.5 matches neither
+    // (comment ×1.3, code ×2.3) and is ours. The calibration measures the
+    // composite (docs/M4-CALIBRATION.md); none of these is tuned.
+    if summon {
+        let player_level = w.character.status.as_ref().map_or(1, |s| s.level);
+        let factor = if player_level < 15 { 1.8 } else { 1.5 };
+        out.expected *= factor;
+        out.worst *= factor;
+    }
+    out.ranged = true;
+    out
+}
+
+/// The largest hit-point damage one cast of this race's spells and innate
+/// attacks can do to the character at distance `d`, and whether it has
+/// status, summoning or economic spells: the shared core of the ranged
+/// estimate and the depth gate's worst turn (T5.1).
+fn spell_damage(w: &World, race: &MonsterRace, d: i32) -> (f64, bool, bool, bool) {
     let mut damage: f64 = 0.0;
     let mut status = false;
     let mut summon = false;
@@ -906,41 +979,7 @@ fn ranged_threat(
             _ => {}
         }
     }
-    if damage <= 0.0 && !status && !summon && !economic {
-        return out;
-    }
-    let casts = rounds * p_cast;
-    out.expected = casts * damage;
-    out.worst = rounds * damage;
-    out.disabling = if status {
-        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
-    } else {
-        0.0
-    };
-    out.summoning = if summon {
-        (1.0 - (1.0 - p_cast).powf(rounds)).clamp(0.0, 1.0)
-    } else {
-        0.0
-    };
-    out.economic = if economic { casts } else { 0.0 };
-    // Summoners: a growth factor of our own, declared (#163). A summoner's
-    // future friends are not in the world yet, so the present estimate is
-    // scaled: 1.8 below character level 15, 1.5 from there. The C Borg has
-    // no summoner factor; its nearest is the one for monsters with friends
-    // (`borg-danger.c:borg_danger_one_kill:2426-2436`), whose code computes
-    // `v1 + v1*18/10` (×2.8) below CL15 and `v1 + v1*13/10` (×2.3) from
-    // CL15, below CL20 only, while its comments say "extra 80%" and "extra
-    // 30%". Our 1.8 follows the first comment; our 1.5 matches neither
-    // (comment ×1.3, code ×2.3) and is ours. The calibration measures the
-    // composite (docs/M4-CALIBRATION.md); none of these is tuned.
-    if summon {
-        let player_level = w.character.status.as_ref().map_or(1, |s| s.level);
-        let factor = if player_level < 15 { 1.8 } else { 1.5 };
-        out.expected *= factor;
-        out.worst *= factor;
-    }
-    out.ranged = true;
-    out
+    (damage, status, summon, economic)
 }
 
 fn resist(w: &World, e: usize) -> f64 {
