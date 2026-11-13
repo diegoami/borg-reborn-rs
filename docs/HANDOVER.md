@@ -24,6 +24,7 @@
   above did not last that long), and `feedback.sh`'s questions on a
   terminal (only its no-terminal path ran). The owner's first session is the
   check (#191).
+- Dossier D1937 (CI's seed-1020 death, recorded for this build).
 - **Next:** #192 (the curation and the state-purchase pairing) needs a
   session's files; #193 (the control baseline) and #194 (item use) do not.
 

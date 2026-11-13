@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 1916,
+  "cases": 1917,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 53,
     "Grip, Farmer Maggot's Dog": 146,
@@ -13,7 +13,7 @@
     "a cutpurse": 5,
     "a fatal wound": 24,
     "a floating eye": 73,
-    "a fruit bat": 71,
+    "a fruit bat": 72,
     "a giant green frog": 8,
     "a giant red scorpion": 1,
     "a giant white ant": 1,
@@ -54,12 +54,13 @@
     "poison": 63,
     "starvation": 205
   },
-  "death_process_attempts": 1916,
-  "distinct_starting_conditions": 1915,
+  "death_process_attempts": 1917,
+  "distinct_starting_conditions": 1916,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
     "03a7b8e2f5cf569953774a512dc291099f74c2df": 46,
+    "09bf83dece65d52cf55950089c3f4787ea35c83a": 1,
     "1137bfee88c77a66f1eafcfd36015243d0d44b76": 46,
     "155c25aae6ba6d38b8535d1a575b1e271c3f6e41": 48,
     "1915f0910d12a0e62882c10646b303c831ee630e": 1,
