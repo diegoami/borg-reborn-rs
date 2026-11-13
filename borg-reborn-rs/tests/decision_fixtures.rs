@@ -152,8 +152,11 @@ struct Player {
     timed: Vec<(usize, i16)>,
 }
 
+/// A fed character: the engine's Fed grade runs from Hungry (1500) to
+/// 9000 (`player_timed.txt` percent x `food-value` 100, #172). The old 500
+/// was the Weak grade.
 fn fed() -> i32 {
-    500
+    5000
 }
 
 fn normal_speed() -> i32 {

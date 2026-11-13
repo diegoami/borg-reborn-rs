@@ -1367,7 +1367,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.hp = hp;
             s.max_hp = max_hp;
-            s.food = 1000;
+            s.food = 5000; // Fed (above Hungry, 1500)
             s.pack_size = 23;
             s.pack_used = 1;
         }
@@ -1458,7 +1458,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.depth = 0;
             s.gold = gold;
-            s.food = 1000;
+            s.food = 5000; // Fed (above Hungry, 1500)
             s.pack_used = inventory.len() as i32;
             s.pack_size = 23;
         }
