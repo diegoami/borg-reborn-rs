@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 20] = [
+pub const TABLE: [Param; 21] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -222,6 +222,19 @@ pub const TABLE: [Param; 20] = [
                    depth (d+5): out-of-depth monsters are generated deeper than the level \
                    (Fang, DL5, kills on DL1-2: D1638, D1654); declared",
     },
+    Param {
+        name: "breeder_colony",
+        unit: "live breeder tracks on the level (0: never leave for them)",
+        min: 0,
+        max: 50,
+        default: 4,
+        evidence: "#183: the manual's ADVICE (c08 §8.10: kill the first breeder at once or \
+                   leave the level; never rest while a colony grows; c15 DANGER-08: the level \
+                   deteriorates with time). The trial's giant white mouse deaths (D1875, D1876, \
+                   D1880, D1889) fought swarms of 8-19 at p_death 0.7-0.99. A breeder stops \
+                   breeding at 4 in its 3x3 (mon-move.c, monster_turn_multiply); 4 is the \
+                   declared colony",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -247,6 +260,7 @@ pub struct Params {
     pub depth_hp_frac_pct: i32,
     pub readiness_band_below: i32,
     pub readiness_band_above: i32,
+    pub breeder_colony: i32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -284,6 +298,7 @@ impl Default for Params {
             depth_hp_frac_pct: default_of("depth_hp_frac_pct") as i32,
             readiness_band_below: default_of("readiness_band_below") as i32,
             readiness_band_above: default_of("readiness_band_above") as i32,
+            breeder_colony: default_of("breeder_colony") as i32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -353,6 +368,7 @@ impl Params {
                 "depth_hp_frac_pct" => p.depth_hp_frac_pct = v as i32,
                 "readiness_band_below" => p.readiness_band_below = v as i32,
                 "readiness_band_above" => p.readiness_band_above = v as i32,
+                "breeder_colony" => p.breeder_colony = v as i32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -383,6 +399,7 @@ impl Params {
                 "depth_hp_frac_pct" => i64::from(self.depth_hp_frac_pct),
                 "readiness_band_below" => i64::from(self.readiness_band_below),
                 "readiness_band_above" => i64::from(self.readiness_band_above),
+                "breeder_colony" => i64::from(self.breeder_colony),
                 _ => 0,
             }
         };

@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1875; distinct starting conditions: 1874; retained process attempts: 1875 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1893; distinct starting conditions: 1892; retained process attempts: 1893 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1881,6 +1881,24 @@ Dossiers: 1875; distinct starting conditions: 1874; retained process attempts: 1
 | [D1893-rust-seed1071](D1893-rust-seed1071/report.md) | unassigned | `e2575fc07a15` | 1071 | a floating eye | 8237 | unassessed |
 | [D1894-rust-seed1072](D1894-rust-seed1072/report.md) | unassigned | `e2575fc07a15` | 1072 | a floating eye | 21084 | unassessed |
 | [D1895-rust-seed1073](D1895-rust-seed1073/report.md) | unassigned | `e2575fc07a15` | 1073 | Grip, Farmer Maggot's Dog | 6505 | unassessed |
+| [D1896-rust-seed1014](D1896-rust-seed1014/report.md) | unassigned | `6d36fe87de12` | 1014 | a fatal wound | 3070 | unassessed |
+| [D1897-rust-seed1040](D1897-rust-seed1040/report.md) | unassigned | `6d36fe87de12` | 1040 | a small kobold | 5078 | unassessed |
+| [D1898-rust-seed1034](D1898-rust-seed1034/report.md) | unassigned | `6d36fe87de12` | 1034 | starvation | 99880 | unassessed |
+| [D1899-rust-seed1042](D1899-rust-seed1042/report.md) | unassigned | `6d36fe87de12` | 1042 | poison | 3860 | unassessed |
+| [D1900-rust-seed1012](D1900-rust-seed1012/report.md) | unassigned | `60f953c7b5d0` | 1012 | Grip, Farmer Maggot's Dog | 4841 | unassessed |
+| [D1901-rust-seed1014](D1901-rust-seed1014/report.md) | unassigned | `60f953c7b5d0` | 1014 | burning to a cinder in lava | 1731 | unassessed |
+| [D1902-rust-seed1040](D1902-rust-seed1040/report.md) | unassigned | `60f953c7b5d0` | 1040 | a small kobold | 5078 | unassessed |
+| [D1903-rust-seed1042](D1903-rust-seed1042/report.md) | unassigned | `60f953c7b5d0` | 1042 | poison | 3860 | unassessed |
+| [D1904-rust-seed1034](D1904-rust-seed1034/report.md) | unassigned | `60f953c7b5d0` | 1034 | starvation | 99880 | unassessed |
+| [D1905-rust-seed1012](D1905-rust-seed1012/report.md) | unassigned | `7598d50f1e62` | 1012 | Grip, Farmer Maggot's Dog | 4841 | unassessed |
+| [D1906-rust-seed1040](D1906-rust-seed1040/report.md) | unassigned | `7598d50f1e62` | 1040 | a small kobold | 5078 | unassessed |
+| [D1907-rust-seed1042](D1907-rust-seed1042/report.md) | unassigned | `7598d50f1e62` | 1042 | poison | 3860 | unassessed |
+| [D1908-rust-seed1034](D1908-rust-seed1034/report.md) | unassigned | `7598d50f1e62` | 1034 | starvation | 99880 | unassessed |
+| [D1909-rust-seed1012](D1909-rust-seed1012/report.md) | unassigned | `d7ec6e6c3a26` | 1012 | Grip, Farmer Maggot's Dog | 4841 | unassessed |
+| [D1910-rust-seed1020](D1910-rust-seed1020/report.md) | unassigned | `d7ec6e6c3a26` | 1020 | a fruit bat | 3329 | unassessed |
+| [D1911-rust-seed1013](D1911-rust-seed1013/report.md) | unassigned | `d7ec6e6c3a26` | 1013 | an acolyte | 18546 | unassessed |
+| [D1912-rust-seed1040](D1912-rust-seed1040/report.md) | unassigned | `d7ec6e6c3a26` | 1040 | a small kobold | 5078 | unassessed |
+| [D1913-rust-seed1082](D1913-rust-seed1082/report.md) | unassigned | `d7ec6e6c3a26` | 1082 | Grip, Farmer Maggot's Dog | 14680 | unassessed |
 
 ## Aggregated actions
 

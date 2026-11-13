@@ -40,6 +40,7 @@ pub mod feat {
     pub const QUARTZ_K: u32 = 20;
     pub const GRANITE: u32 = 21;
     pub const PERM: u32 = 22;
+    pub const LAVA: u32 = 23;
     pub const PASS_RUBBLE: u32 = 24;
 }
 

@@ -83,11 +83,18 @@ jobs:
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
       - run: harness/diff --suite smoke-exact --expect-impl rust harness/out/smoke-exact-rust harness/reference/smoke-exact-rust
-      # A death for the rerun check below (TE.6). Smoke no longer has one
-      # (#125: the smoke mage survives), so CI plays the full suite's
-      # earliest death on its own: full-1-mage-4 (seed 1014, poison at game
-      # turn 1,390), whose dossier the full reference's PR records.
-      - run: BORG_IMPL=rust harness/run.sh harness/out/rerun-source 1014 5 1 100000 menu
+      # A death for the rerun check below (TE.6). Smoke has none, so CI
+      # plays full-suite deaths on their own, in turn, until one dies: a
+      # play change that saves one (#183 saved seed 1014's mage) leaves the
+      # next. The list is the full reference's deaths, earliest first
+      # (druid-0 seed 1020 at game turn 3,329; necro-0 1040 at 5,078;
+      # mage-2 1012 at 4,841); each dossier is in docs/deaths.
+      - run: |
+          for c in "1020 2 2" "1040 4 4" "1012 3 1"; do
+            rm -rf harness/out/rerun-source
+            BORG_IMPL=rust harness/run.sh harness/out/rerun-source $c 100000 menu
+            ls "$RUNNER_TEMP"/deaths/D*-rust-* >/dev/null 2>&1 && break
+          done
       # Deaths (RULES 12, M1 review): keep CI's registry, and fail if a run
       # died a death that docs/deaths/ does not record.
       - uses: actions/upload-artifact@v4

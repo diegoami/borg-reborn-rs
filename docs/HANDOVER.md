@@ -2,6 +2,45 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: what kills the freed Borg, first four fixes (#183, part)
+
+**The owner's decision on #183: option 1.** Keep the travel guard's
+freeze, fix what kills the freed Borg first, then release the guard. Each
+fix is measured twice: on the baseline (the committed code, for the
+references) and with the guard (e2575fc0) applied as a scratch arm
+(`git show e2575fc0 -- borg-reborn-rs/src/strategy.rs | git apply`, run
+into `/tmp`, deaths recorded outside `docs/deaths`).
+
+| fix | freed Borg (guard arm) alive / depth / level | baseline |
+| --- | --- | --- |
+| trial (guard only) | 24 / 48 / 121 | 41 / 45 / 67 |
+| floating eye: rest on the composite, the gaze's floor | 29 / 48 / 119 | 41 / 45 / 67 |
+| breeder colony: leave the level | 33 / 46 / 89 | 40 / 45 / 66 |
+| confused beside lava: wait it out | 33 / 46 / 91 | 41 / 45 / 67 |
+| a harmless monster in reach is not a fight | **34 / 47 / 104** | **40 / 46 / 62** |
+
+- **Floating eye** (D1885, D1891, D1893): `may_rest` read only the HP
+  risk, and the diceless gaze counted 0. Resting reads the composite
+  (disabling included), and an unprotected PARALYZE gaze costs at least 1
+  a hit (`mon-blows.c:1019-1021`). Counting every status blow's dice is
+  engine-correct but breaks `bbc-d0006`, which passes only through the
+  retreat guard: filed as #184.
+- **Breeder colony** (the giant white mouse deaths): `breeder_colony`
+  (default 4, declared) live `MULTIPLY` tracks on the level and nothing in
+  reach send the Borg home before it rests (c08 §8.10, c15 DANGER-08).
+  It costs levels in the guard arm (leaving levels).
+- **Lava:** confused, a step is random 75% of the time
+  (`player_confuse_dir:1358`). Beside `FEAT_LAVA` (23) a walk outside a
+  fight becomes standing still. full-1-mage-4 burnt 11 HP to −150.
+- **Harmless contact:** the contact rule needs the monsters in reach to
+  carry composite threat. full-4-necro-3 attacked Farmer Maggot 493 times
+  and starved with 195 gold.
+- **Remaining killers in the guard arm:** starvation ×3, grey mushroom
+  patch ×2, giant yellow centipede ×2, a fatal wound, a soldier ant, a
+  small kobold, a floating eye. One starvation is a Return that never
+  reaches the stairs (rogue-1).
+- Dossiers D1896–D1913 (the baseline runs of each commit).
+
 ## 2026-11-13: a frontier grid stood on is not walked back to (#176, part)
 
 **Play change in fifteen full runs; new references (smoke runs identical,

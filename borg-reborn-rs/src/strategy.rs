@@ -314,16 +314,22 @@ impl FirstStrategy {
         // One turn: a rest is interrupted when a monster arrives, and
         // what matters now is whether one can reach and strike. A distant
         // monster does not make the next turn unsafe.
-        assess(
+        // On the composite scale, disabling included (#183): a floating eye
+        // in reach deals no hit points worth a risk, but its gaze paralyses
+        // again and again while the Borg rests beside it.
+        let a = assess(
             ctx.world,
             ctx.knowledge,
             x,
             y,
             ctx.params.threat_horizon,
             ctx.params.risk_aversion_pct,
-        )
-        .risk(ctx.params.risk_aversion_pct)
-            <= 0.0
+        );
+        crate::tactics::composite(
+            &a,
+            ctx.params.risk_aversion_pct,
+            f64::from(ctx.view.hp.max(1)),
+        ) <= 0.0
     }
 
     /// The one step that most reduces danger: the cheapest of the eight
@@ -961,6 +967,21 @@ impl FirstStrategy {
             self.rule = "starving with no food: return home";
             return Mode::Return;
         }
+        // A breeder colony on the level (#183; c08 §8.10: kill the first
+        // breeder or leave the level, never rest while a colony grows):
+        // leave by the way home, before resting. Contact still answers
+        // first (Engage, below).
+        let colony = ctx.params.breeder_colony > 0
+            && crate::danger::breeders(ctx.world, ctx.knowledge)
+                >= ctx.params.breeder_colony as usize;
+        if colony
+            && ctx.world.level.depth > 0
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "a breeder colony on the level: leave it";
+            return Mode::Return;
+        }
         // The recovery invariant first (GOALS principle 7): hurt and
         // safe means rest now.
         let hurt = ctx.view.hp * 100 < ctx.view.max_hp * ctx.params.rest_below_hp_pct;
@@ -977,7 +998,26 @@ impl FirstStrategy {
         // Contact second (task T3.4): a monster in reach is answered
         // this think — fought when the exchange wins it, left when it
         // does not. M4's tactical layer replaces the whole comparison.
-        if !Self::adjacent(ctx).is_empty() {
+        // A monster in reach that threatens nothing (Farmer Maggot, no
+        // blows) is not a fight: c15 FIGHT-06, don't fight for nothing.
+        // #183: full-4-necro-3 attacked Maggot 493 times in the town, every
+        // response scoring 0, and starved with 195 gold.
+        let in_reach_threat = !Self::adjacent(ctx).is_empty() && {
+            let a = assess(
+                ctx.world,
+                ctx.knowledge,
+                ctx.view.x,
+                ctx.view.y,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            );
+            crate::tactics::composite(
+                &a,
+                ctx.params.risk_aversion_pct,
+                f64::from(ctx.view.hp.max(1)),
+            ) > 0.0
+        };
+        if in_reach_threat {
             self.rule = "contact: a monster in reach";
             return Mode::Engage;
         }
@@ -1346,6 +1386,32 @@ impl FirstStrategy {
                 }
             },
         };
+        // Confused, a step goes in a random direction three times in four
+        // (`player-util.c:player_confuse_dir:1358-1361`). Beside lava
+        // (`FEAT_LAVA`, which burnt full-1-mage-4 from 11 HP to -150 in the
+        // town, #183), a walk outside a fight waits the confusion out.
+        let confused = ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.timed.get(4).copied().unwrap_or(0) > 0);
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        let lava_near = DIRS.iter().any(|&(_, dx, dy)| {
+            ctx.world
+                .level
+                .at(x + dx, y + dy)
+                .is_some_and(|g| g.feat == crate::borg::feat::LAVA)
+        });
+        let action =
+            if confused && lava_near && mode != Mode::Engage && matches!(action, Action::Walk(_)) {
+                self.rule = "confused beside lava: wait it out";
+                let here = ctx.world.level.at(x, y).map(|g| g.feat);
+                let around = |dx: i32, dy: i32| ctx.world.level.at(x + dx, y + dy).map(|g| g.feat);
+                stand_still(here, around)
+            } else {
+                action
+            };
         let goal_name = match mode {
             Mode::Recover => "rest to full",
             Mode::Engage => "win the exchange",
@@ -1747,6 +1813,122 @@ mod tests {
             failures: &[],
         };
         assert!(FirstStrategy::has_food(&ctx), "a known ration is");
+    }
+
+    #[test]
+    fn a_harmless_monster_in_reach_is_not_a_fight() {
+        // #183, full-4-necro-3: Farmer Maggot (no blows) next to the Borg
+        // held it in Engage until it starved. A monster with blows still
+        // engages.
+        let mode = |harmless: bool| {
+            let (mut s, w, mut k, mut p, m, mut rng, params) =
+                ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+            if harmless {
+                k.races[1].blows.clear();
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            s.decide(&mut ctx).mode
+        };
+        assert_eq!(mode(false), "engage");
+        assert_ne!(mode(true), "engage");
+    }
+
+    #[test]
+    fn a_confused_character_beside_lava_does_not_walk() {
+        // #183, full-1-mage-4: confused in the town, a random step into
+        // lava. The map's `~` is not a feature the test world knows, so
+        // the lava is set by hand east of the character.
+        let run = |confused: bool| {
+            let (mut s, mut w, k, mut p, m, mut rng, params) =
+                ctx_of(&["#######", "#@...?#", "#.....#", "#######"], 20, 20);
+            if let Some(g) = w.level.at_mut(1, 2) {
+                g.feat = crate::borg::feat::LAVA;
+            }
+            if let Some(st) = w.character.status.as_mut() {
+                if st.timed.len() <= 4 {
+                    st.timed.resize(5, 0);
+                }
+                st.timed[4] = if confused { 5 } else { 0 };
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            let a = s.decide(&mut ctx).action;
+            (a, s.rule)
+        };
+        let (a, _) = run(false);
+        assert!(matches!(a, Action::Walk(_)), "{a:?}");
+        let (a, rule) = run(true);
+        assert!(!matches!(a, Action::Walk(_)), "{a:?}");
+        assert_eq!(rule, "confused beside lava: wait it out");
+    }
+
+    #[test]
+    fn a_breeder_colony_sends_the_borg_home() {
+        // #183: four breeders seen on DL1, none in reach, a hurt character:
+        // it leaves (Return) instead of resting beside a growing colony.
+        // Three, below the colony, and it rests.
+        let decide = |map: &[&str]| {
+            let (mut s, mut w, mut k, mut p, m, mut rng, params) = ctx_of(map, 5, 20);
+            if k.races.len() < 2 {
+                k.races.resize(2, Default::default());
+                k.races[1].index = 1;
+            }
+            // MULTIPLY is RF 17: byte 2, bit 0.
+            k.races[1].flags = vec![0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+            w.level.depth = 1;
+            if let Some(st) = w.character.status.as_mut() {
+                st.depth = 1;
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            s.decide(&mut ctx).mode
+        };
+        assert_eq!(
+            decide(&[
+                "############",
+                "#@.....MM..#",
+                "#......MM..#",
+                "############"
+            ]),
+            "return"
+        );
+        assert_eq!(
+            decide(&[
+                "############",
+                "#@.....MM..#",
+                "#......M...#",
+                "############"
+            ]),
+            "recover"
+        );
     }
 
     #[test]

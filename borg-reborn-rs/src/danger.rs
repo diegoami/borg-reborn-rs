@@ -329,6 +329,20 @@ pub fn worst_turn(w: &World, k: &Knowledge, race: &MonsterRace) -> f64 {
     moves * melee.max(spell)
 }
 
+/// The breeders (`MULTIPLY`) the Borg still believes are on the level:
+/// tracks whose confidence is at least 0.1, a breeder seen within about
+/// nine of its own moves (declared; #183).
+pub fn breeders(w: &World, k: &Knowledge) -> usize {
+    w.level
+        .monsters
+        .iter()
+        .filter(|t| {
+            k.race(t.race).is_some_and(|r| has(&r.flags, rf::MULTIPLY))
+                && t.confidence(w.turn, k) >= 0.1
+        })
+        .count()
+}
+
 /// Whether the character's known gear gives Free Action (`OF_FREE_ACT`):
 /// the DL20 kit gate (c15 DEPTH-02).
 pub fn has_free_action(w: &World) -> bool {
@@ -553,7 +567,14 @@ fn melee_threat(
     let mut economic_per_blow = 0.0;
     for blow in &race.blows {
         let p_hit = hit_chance(race, blow, ac, stunned);
-        let (pmf, mean, max) = blow_pmf(blow, ac, stunned);
+        let (mut pmf, mut mean, mut max) = blow_pmf(blow, ac, stunned);
+        // A paralysing blow on a paralysed character deals at least 1
+        // (`mon-blows.c:melee_effect_handler_PARALYZE:1019-1021`, "prevent
+        // perma-paralysis via damage"). Unprotected, the gaze chains, so a
+        // diceless gaze (the floating eye's) costs 1 a hit (#183).
+        if blow.effect == "PARALYZE" && !protected(w, "PARALYZE") && max < 1.0 {
+            (pmf, mean, max) = (vec![0.0, 1.0], 1.0, 1.0);
+        }
         if is_status(blow.effect.as_str()) && !protected(w, blow.effect.as_str()) {
             status_per_blow = 1.0 - (1.0 - status_per_blow) * (1.0 - p_hit);
         }
@@ -708,8 +729,11 @@ fn blow_pmf(blow: &Blow, ac: i32, stunned: bool) -> (Vec<f64>, f64, f64) {
         blow.effect.as_str(),
         "HURT" | "SHATTER" | "POISON" | "ACID" | "ELEC" | "FIRE" | "COLD"
     ) {
-        // Status and economic blows do no hit-point damage; unknown effects
-        // keep their dice as the honest floor.
+        // Status and economic blows are scored as no hit-point damage. The
+        // engine deals their dice first (`mon-blows.c:melee_effect_timed:507`,
+        // `melee_effect_handler_EAT_GOLD:781`); counting them moves paths
+        // and a fixture, and is filed apart (#184). The paralysis floor is
+        // applied in `melee_threat`.
         if is_status(blow.effect.as_str()) || is_economic(blow.effect.as_str()) {
             return (vec![1.0], 0.0, 0.0);
         }
@@ -1571,7 +1595,9 @@ mod tests {
     }
 
     #[test]
-    fn status_blows_are_disabling_not_hit_points() {
+    fn a_paralysing_gaze_chains_for_one_a_hit() {
+        // #183: a paralysing gaze on a paralysed character deals at least 1
+        // (mon-blows.c:1019-1021), so a diceless gaze chains for 1 a hit.
         let mut r = race("paralyser", 110, 0, &[], &[]);
         r.blows.push(Blow {
             method: "GAZE".into(),
@@ -1583,11 +1609,16 @@ mod tests {
         let w = world(Some((2, 1, 110, true)));
         let a = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 1);
         assert!(a.disabling > 0.0, "{a:?}");
-        assert_eq!(a.worst, 0.0, "{a:?}");
-        // The trace still names it: a gaze with no dice is not "nothing".
+        assert_eq!(a.worst, 1.0, "{a:?}");
+        // The trace names it.
         let s = assess(&w, &k, 1, 1, 1, 50).summary_detailed(&w, &k, 1, 1);
         assert_eq!(s.sources.len(), 1, "{s:?}");
-        assert!(s.sources[0].disabling > 0.0 && s.sources[0].worst == 0.0);
+        assert!(s.sources[0].disabling > 0.0 && s.sources[0].worst == 1.0);
+        // Free Action: no paralysis, so no chain and no floor.
+        let mut fa = w.clone();
+        fa.character.gear.flags[(of::FREE_ACT - 1) / 8] |= 1 << ((of::FREE_ACT - 1) % 8);
+        let a = one_threat(&fa, &k, &fa.level.monsters[0], 1, 1, 1);
+        assert_eq!((a.disabling, a.worst), (0.0, 0.0), "{a:?}");
     }
 
     #[test]
