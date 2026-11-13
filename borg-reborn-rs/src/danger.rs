@@ -23,7 +23,10 @@
 //! (`borg-danger.c:619-760`; the full `projection.txt` divisors and
 //! `mon-spell.c` effect dice are not in `Knowledge` yet, so uncommon breaths
 //! use `hp / 6`, capped, and are marked as estimates). Summoners and
-//! breeders carry the C Borg's growth factors (`:2421-2433`, `:2701-2717`).
+//! breeders carry growth factors of our own, *declared* (1.5, 1.8, 1.5):
+//! the C Borg's code at the cited lines computes larger ones (×2.5, ×2.8,
+//! ×2.3, ×2.2), and its comments say +50%, +80%, +30% (#163; see
+//! [`breeder_factor`] and the summoner scale in `ranged_threat`).
 //! The engine's exact spell effects, breath divisors and summon lists are
 //! docs/ENGINE-READS.md's open item and the calibration report's job (#124).
 //!
@@ -895,10 +898,16 @@ fn ranged_threat(
         0.0
     };
     out.economic = if economic { casts } else { 0.0 };
-    // Summoners and breeders: the C Borg's growth factors (`:2421-2433`,
-    // `:2701-2717`). Breeders are handled on the melee side; a summoner's
+    // Summoners: a growth factor of our own, declared (#163). A summoner's
     // future friends are not in the world yet, so the present estimate is
-    // scaled.
+    // scaled: 1.8 below character level 15, 1.5 from there. The C Borg has
+    // no summoner factor; its nearest is the one for monsters with friends
+    // (`borg-danger.c:borg_danger_one_kill:2426-2436`), whose code computes
+    // `v1 + v1*18/10` (×2.8) below CL15 and `v1 + v1*13/10` (×2.3) from
+    // CL15, below CL20 only, while its comments say "extra 80%" and "extra
+    // 30%". Our 1.8 follows the first comment; our 1.5 matches neither
+    // (comment ×1.3, code ×2.3) and is ours. The calibration measures the
+    // composite (docs/M4-CALIBRATION.md); none of these is tuned.
     if summon {
         let player_level = w.character.status.as_ref().map_or(1, |s| s.level);
         let factor = if player_level < 15 { 1.8 } else { 1.5 };
@@ -930,7 +939,11 @@ fn spell_flags(race: &MonsterRace) -> Vec<usize> {
     out
 }
 
-/// Breeders: the C Borg's 1.5x at CL < 20 (`borg-danger.c:2421-2425`).
+/// Breeders below character level 20: 1.5×, declared (#163). The C Borg's
+/// multiplier at `borg-danger.c:borg_danger_one_kill:2420-2424` says "extra
+/// 50%" in its comment but computes `v1 + v1*15/10`, i.e. ×2.5; its second
+/// pass (`:2700-2703`) computes `v2 + v2*12/10`, ×2.2. We follow the
+/// comment's 1.5, as a declaration, not a lifted number.
 pub fn breeder_factor(w: &World, race: &MonsterRace) -> f64 {
     let level = w.character.status.as_ref().map_or(1, |s| s.level);
     if has(&race.flags, rf::MULTIPLY) && level < 20 {

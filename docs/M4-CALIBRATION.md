@@ -368,7 +368,7 @@ value below is still a declaration.
 | `+3` monster speed below 20 max HP (`borg-danger.c:2357-2359`) | +3 | Inflates every early prediction; candidate first fix for the 0.58 blow rate |
 | confusion ×0.5, stun ×0.75 | lifted | not separable in this sample (no confused/stunned single-source windows) |
 | `Track::confidence` decay | 1/(1+moves) | 0.015 of predicted for remembered out-of-view monsters |
-| breeder and summoner growth (`borg-danger.c:2421-2433, 2701-2717`) | lifted | same-race groups at 0.05 |
+| breeder and summoner growth (1.5; 1.8 / 1.5) | declared (#163: the C Borg's code at `borg-danger.c:borg_danger_one_kill:2420-2436, 2700-2710` computes ×2.5, ×2.8/×2.3 and ×2.2; its comments say +50%, +80%/+30%; ours follow the comments, and the ≥CL15 summoner 1.5 is ours) | same-race groups at 0.05 |
 | ranged floors (`borg-danger.c:619-760`), uncommon breaths `hp/6` | lifted / declared | 21 single-source ranged windows, ratio 0.20 (0.00–0.46); too few to separate |
 | `escape_item_hp` 1, `last_escape_hp` 5, `arrival_risk_hp` 3 | declared (T4.4) | not measured: no window isolates them |
 | `rest_below_hp_pct` 70, `eat_below_food` 300, reserves | declared | not threat parameters; two starvation deaths stand against `eat_below_food` with no food left |
