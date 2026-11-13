@@ -2,6 +2,33 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: two starvations of the freed Borg (#183, part)
+
+- **A stalled urgent goal is cooled.** The urgent rules (starving with no
+  food, a breeder colony, not ready) returned Return before the
+  hysteresis check, and only that check sets a cooldown: full-6-rogue-1
+  walked between two grids in "starving with no food" for 7,000 turns,
+  its goal unchanged since 78,804. `choose_mode` now cools a stalled goal
+  (its budget, `budget_of`) before any rule picks its mode again.
+- **A monster in the way is walked round.** A grid a visible monster
+  stands on costs ten steps to path through (declared). full-4-necro-3
+  bumped Farmer Maggot 400 times on its way to a shop and starved with 195
+  gold.
+- **Measured:** guard arm 34 → 32 alive (depth 47, level 104 → 99; starvation
+  3 → 2, the rest reshuffled); baseline 40/45 (depth 46, level 62 → 64);
+  smoke 3/3.
+- **The tail is now below the suite's resolution.** The guard arm's deaths
+  are ten causes of one or two each: a fatal wound ×2, starvation ×2, a
+  small kobold ×2, then one each of poison, a giant yellow centipede, a
+  soldier ant, Fang, a grey mushroom patch, a giant white mouse, a
+  floating eye. ±2 on 45 runs is noise; the zoo's classes-1800 is the
+  measurement (the prompt is in #128 and #183).
+- **The grey mushroom patch is #184.** Its `SPORE:CONFUSE:1d4` deals 1d4 a
+  hit in the engine and 0 in the model, so a confused level-1 character
+  walks away at random beside it at p_death 0.0.
+- Dossiers D1914–D1918. The zoo's guard-on arm commit (main + e2575fc0) is
+  pushed and reverted on this branch for every arm the owner wants.
+
 ## 2026-11-13: what kills the freed Borg, first four fixes (#183, part)
 
 **The owner's decision on #183: option 1.** Keep the travel guard's

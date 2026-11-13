@@ -23,9 +23,9 @@
   "borg_decisions": 10001,
   "player_energy": 999400,
   "borg_rng": 2135587861,
-  "game_rng": {"quick": false, "quick_rng": 1288172710, "rng_index": 2, "rng": "ae0c0e89bcc66db78b5598dc3ca9b1a91f8db5aa4e4e2bf712a2bde5dcfdfaab848599a1ca252ab8386e20e84bc13ea78d323f94aa49d48e16c020c249b2b3bad6714555ae056823ea14ea97ae7bb53032fe3cb86cc75a9739a7afaea3c904cf6a8a13aee863bdbab0d9b750572df2531a7c45cc72b55bf5464b47ff980b481a"},
+  "game_rng": {"quick": false, "quick_rng": 1288172710, "rng_index": 23, "rng": "5f940e4522fc79972dabe37a106d84efaf04cab2d10e7b38b12fde30f77f120783dd74f4b92092f1f9c96bbe8b1317bbd78d53d607a758c1583bfbbe93b74f30f59af088b5789c7b04180e8312a83d0d84405eb7514662e48bfc154240e73f22ac6841c3a5a15f0d972d3b2edf61a239ac5774cd006bea1791513db1d0ca6473"},
   "effective_settings": {},
   "game_options": {"rogue_like_commands": false,"autoexplore_commands": false,"use_sound": false,"show_damage": false,"use_old_target": false,"pickup_always": false,"pickup_inven": true,"show_flavors": false,"show_target": true,"highlight_player": false,"disturb_near": true,"solid_walls": false,"hybrid_walls": false,"view_yellow_light": false,"animate_flicker": false,"center_player": false,"purple_uniques": false,"auto_more": true,"hp_changes_color": true,"mouse_movement": true,"notify_recharge": false,"effective_speed": false,"cheat_hear": false,"score_hear": false,"cheat_room": false,"score_room": false,"cheat_xtra": false,"score_xtra": false,"cheat_live": false,"score_live": false,"birth_randarts": false,"birth_connect_stairs": true,"birth_force_descend": false,"birth_no_recall": false,"birth_no_artifacts": false,"birth_stacking": true,"birth_lose_arts": false,"birth_feelings": true,"birth_no_selling": true,"birth_start_kit": true,"birth_ai_learn": true,"birth_know_runes": false,"birth_know_flavors": false,"birth_levels_persist": false,"birth_percent_damage": false},
   "exact_turns": false,
-  "wall_seconds": 35.896
+  "wall_seconds": 36.221
 }
