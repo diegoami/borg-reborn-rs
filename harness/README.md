@@ -24,6 +24,8 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 | `make-reference.sh` | Makes a reference directory from a suite output. Its `REFERENCE` file takes the build identity and each run's configuration from the suite's manifest; it refuses a suite run with overrides, built from uncommitted inputs, or whose runs lack one identical profile identity, before writing anything, and builds the reference in a temporary directory (E review and M2 review, finding 8) |
 | `zoo-check.py` | Runs borg-zoo's own adapter (at our pin) against this checkout (docs/ZOO-INTERFACE.md) |
 | `supervise.py` | Runs the game as a supervised child (wall and stall timeouts); `process.json` records its outcome |
+| `play.sh` | A town session (#191): `play.sh OUTDIR [CHARACTERS]`. The X11 build (`watch-borg.sh --build-only`), `BORG_TOWN_PLAYER=1` (the player has the controls in town, the Borg in the dungeon), the state records (`state.jsonl`), the object log (`objects.log`), the trace, then `feedback.sh`. Not a measured run. Needs a display, X11 bitmap fonts (`xfonts-base`) and a UTF-8 locale |
+| `feedback.sh` | The end-of-session feedback: `feedback.md` and `corrections.jsonl` (`{"line": N, "text": ...}`, N an object log line). Copied from borg-rs |
 | `borg.txt` | The C Borg's configuration file. The Rust Borg does not read it; it stays because the zoo copies it |
 | `profiles/` | The Rust Borg's profiles (`reborn-default.txt`), docs/ARCHITECTURE.md *Parameters* |
 | `suites/` | `smoke`, `full` (9 classes × 5 seeds × 100,000 turns, race = (class + k) % 11), and their `-exact` variants |

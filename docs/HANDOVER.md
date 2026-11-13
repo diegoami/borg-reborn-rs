@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: town sessions, the first step of the town plan (#191)
+
+- **`borg-reborn-rs/src/town.rs`**, three switches, all off by default:
+  - `BORG_TOWN_PLAYER=1`: in town the input hook yields (`Key::None`, the
+    engine reads the keyboard) and the Borg decides nothing; outside the
+    town it plays. Checked under Xvfb with xdotool: a new warrior, the
+    player read Recall in town (`r`, Enter) and rested; the Borg's first
+    think was on DL1 at turn 321, none in town, and it played 7,783 thinks.
+  - `BORG_TOWN_STATE=FILE`: borg-rs's schema-3 state records, one per
+    distinct town state. `traits` is `[]` and a pack item's value is -1
+    (we have neither); the quiver is our addition under `x`.
+  - `BORG_OBJECT_LOG=FILE`: numbered lines, borg-rs's format: buy, take,
+    acquire, quaff, read, eat, throw, fire, wield, sell, store.
+- **`harness/play.sh OUTDIR [N]`** (the X11 build, the three switches, the
+  trace) and **`harness/feedback.sh`** (copied verbatim).
+- **Play unchanged:** smoke and smoke-exact 3/3 identical with the switches
+  unset, and smoke 3/3 identical with the state records and the object log
+  on (the logs read, never decide).
+- **Not checked:** the Borg arriving back in town and yielding (the session
+  above did not last that long), and `feedback.sh`'s questions on a
+  terminal (only its no-terminal path ran). The owner's first session is the
+  check (#191).
+- **Next:** #192 (the curation and the state-purchase pairing) needs a
+  session's files; #193 (the control baseline) and #194 (item use) do not.
+
 ## 2026-11-13: throw and wield a launcher (#127); the town plan (#191-#198)
 
 - **Throw** (`v`, the item, `'`; `player-attack.c:do_cmd_throw:1363`): a
