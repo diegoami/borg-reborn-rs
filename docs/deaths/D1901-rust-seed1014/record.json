@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1901-rust-seed1014",
+  "run_kind": "harness",
+  "character": "Dwarf Mage",
+  "raw_cause": "burning to a cinder in lava",
+  "terminal": {
+    "cause": "burning to a cinder in lava",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 1731,
+    "race_idx": 5,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1014,
+    "flags": "menu",
+    "git_rev": "60f953c7b5d0f193f5d0b30e127add9c7ec5ca03",
+    "git_dirty": "no",
+    "source_sha256": "6657696c4088fe9c02b76e061e28fa174b937f1eccf98a7b7bc84009ff89ad17",
+    "binary_sha256": "c38d69d09bff7b6cd5ddfbcdc94b9d862380f0e225af52402a48404df1561962",
+    "borg_txt_sha256": "b80b179079aa0dfd8f0abc147016a187c1a6b39cc35e03adaa268227bc71f054",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 182,
+    "of": 182
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-1-mage-4",
+      "result_sha256": "4affad7a3ccf5ee54ff94e69ea38b18d05d7ebcce1d4a96934fa13ee4e3f8a12",
+      "raw_sha256": {
+        "keys.log": "4affad7a3ccf5ee54ff94e69ea38b18d05d7ebcce1d4a96934fa13ee4e3f8a12",
+        "messages.log": "9012fbe4aa604d7ebd8b3a578feb76635fb102d82bfc421d1723cf119f11c600",
+        "state.log": "fa50da9dd44e9a2588fad58728360bd049628ec19d2709ac381ef3eb49aae58a"
+      },
+      "source_commit": "60f953c7b5d0f193f5d0b30e127add9c7ec5ca03",
+      "binary_sha256": "c38d69d09bff7b6cd5ddfbcdc94b9d862380f0e225af52402a48404df1561962"
+    }
+  ],
+  "encounter_family": "start-850dcf4b2e4787ca8e86debb31890cafad31cf7846cb97b385ec3ea22ec7d5c7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "9d9c4b5dcd7a0aab8d9c3b978921d8c22f9523da3a550d9eed6a021a4e48b47c",
+    "config.txt": "7efb72ee341561a6600555239004fad3379fb286acc087c4e824394b8c205593",
+    "depths.json": "3fad7a80dcbde767d1a13d62023bd7248555451245d283e49b5ae022be789a9c",
+    "params.json": "450913421079f5053f5202f1afc4bc781e98c8c2a9438aac00f5af463946da9e",
+    "summary.json": "3f5ddf77a568b5b73c4313fbf6d0647cadc3dda363121261b8ad59461d9466bb",
+    "trace-tail.jsonl": "74337a6467b01334ee6897ffc3d4ec2f2a387f2934664de2e91650852465eae8"
+  },
+  "investigation": null,
+  "issue": null
+}
