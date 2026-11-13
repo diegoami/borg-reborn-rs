@@ -139,6 +139,16 @@ class CalibrateTest(unittest.TestCase):
         self.assertEqual(rep['standing']['windows'], 1)
         self.assertIn('Blows:', cal.markdown(rep))
 
+    def test_only_engine_blow_phrases_are_blows(self):
+        # #165: a spell line names the character but is not a melee blow.
+        acts = ('hits you', 'bites you')
+        msgs = ['The apprentice points at you and curses.',
+                'The apprentice hits you.', 'The apprentice misses you.',
+                'The apprentice blinks.']
+        self.assertEqual(cal.blow_messages('apprentice', msgs, acts), (1, 1))
+        self.assertIn('bites you', cal.BLOW_ACTS)
+        self.assertNotIn('points at you', ' '.join(cal.BLOW_ACTS))
+
     def test_disabling_is_set_against_onset_messages(self):
         eye = dict(source('floating eye'), expected=0.0, worst=0.0, disabling=0.6)
         t = self.think(10, sources=[eye], choice='Rest(75)')

@@ -254,7 +254,11 @@ pub struct FirstStrategy {
     rule: &'static str,
     /// Actions the executor reported refused, barred until this game turn
     /// (#137). Contact keeps Engage live past its cooldown, so the
-    /// refusal must bar the action itself, not only the mode.
+    /// refusal must bar the action itself, not only the mode. The bar is
+    /// the exact `Action`, pack index included: if the pack reorders, the
+    /// same scroll at a new index is not barred. The causes seen so far are
+    /// state refusals that `can_read`/`can_attack` now prevent; if
+    /// item-specific refusals recur, bar by item kind (#165).
     refused: BTreeMap<Action, i64>,
 }
 
@@ -283,15 +287,19 @@ impl FirstStrategy {
 
     /// Whether a known food item is in the pack.
     fn has_food(ctx: &DecisionCtx) -> bool {
+        // Only a known kind counts, as in every other item path (#165);
+        // rations carry EASY_KNOW (`object_base.txt:166-169`), so this
+        // changes nothing for them, but an unknown mushroom is not food.
         ctx.world.character.inventory.iter().any(|it| {
-            ctx.knowledge.kind(it.kind).is_some_and(|k| {
-                k.name
-                    .chars()
-                    .filter(|c| !matches!(c, '&' | '~'))
-                    .collect::<String>()
-                    .trim()
-                    == "Ration of Food"
-            })
+            it.aware
+                && ctx.knowledge.kind(it.kind).is_some_and(|k| {
+                    k.name
+                        .chars()
+                        .filter(|c| !matches!(c, '&' | '~'))
+                        .collect::<String>()
+                        .trim()
+                        == "Ration of Food"
+                })
         })
     }
 
@@ -818,6 +826,9 @@ impl FirstStrategy {
                         .iter()
                         .enumerate()
                         .find_map(|(i, it)| {
+                            if !it.aware {
+                                return None;
+                            }
                             let name = ctx
                                 .knowledge
                                 .kind(it.kind)?
@@ -1501,6 +1512,42 @@ mod tests {
             &[],
         );
         assert_eq!(third.action, first.action, "the bar ends with the cooldown");
+    }
+
+    #[test]
+    fn only_known_food_is_food() {
+        // #165: has_food and the Eat step skip an item the character is
+        // not aware of, like every other item path.
+        let (_, mut w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@....#", "#######"], 20, 20);
+        w.character.inventory = vec![item(1, 2, false)];
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        assert!(!FirstStrategy::has_food(&ctx), "unknown is not food");
+        let (_, mut w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@....#", "#######"], 20, 20);
+        w.character.inventory = vec![item(1, 2, true)];
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        assert!(FirstStrategy::has_food(&ctx), "a known ration is");
     }
 
     #[test]

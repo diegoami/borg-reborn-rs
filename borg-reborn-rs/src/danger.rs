@@ -513,14 +513,15 @@ fn melee_threat(
         return out;
     }
     let ac = w.character.status.as_ref().map_or(0, |s| s.known_ac).max(0);
+    let stunned = t.timed[mon_tmd::STUN] > 0;
     let mut round_pmf = vec![1.0];
     let mut expected_per_round = 0.0;
     let mut worst_per_round = 0.0;
     let mut status_per_blow = 0.0;
     let mut economic_per_blow = 0.0;
     for blow in &race.blows {
-        let p_hit = hit_chance(race, blow, ac);
-        let (pmf, mean, max) = blow_pmf(blow, ac);
+        let p_hit = hit_chance(race, blow, ac, stunned);
+        let (pmf, mean, max) = blow_pmf(blow, ac, stunned);
         if is_status(blow.effect.as_str()) && !protected(w, blow.effect.as_str()) {
             status_per_blow = 1.0 - (1.0 - status_per_blow) * (1.0 - p_hit);
         }
@@ -532,28 +533,26 @@ fn melee_threat(
         expected_per_round += p_hit * mean;
         worst_per_round += max;
     }
+    // The rounds it actually spends attacking. Sleeping: it must wake
+    // first; the C Borg scales by sleepiness (`:2439-2450`), here half,
+    // declared. Confused: half, the C Borg's (`borg-danger.c:2490-2493`).
+    // Every term reads the same effective rounds (#165: before, confusion
+    // scaled only expected and worst, and sleep left `disabling` whole).
+    // Stun is in the hit chance and the dice above, as the engine applies it.
+    let mut share = 1.0;
     if !awake {
-        // Sleeping: it must wake first. The C Borg scales by sleepiness
-        // (`:2439-2450`); here the expected share is half, declared.
-        out.expected = expected_per_round * rounds * 0.5;
-        out.worst = worst_per_round * rounds * 0.5;
-        out.p_death = death_probability(&round_pmf, rounds * 0.5, hp_of(w));
-    } else {
-        out.expected = expected_per_round * rounds;
-        out.worst = worst_per_round * rounds;
-        out.p_death = death_probability(&round_pmf, rounds, hp_of(w));
+        share *= 0.5;
     }
     if t.timed[mon_tmd::CONF] > 0 {
-        out.expected *= 0.5; // borg-danger.c:2490-2493
-        out.worst *= 0.5;
+        share *= 0.5;
     }
-    if t.timed[mon_tmd::STUN] > 0 {
-        out.expected *= 0.75; // mon-timed.h: STUN_DAM_REDUCTION 25
-        out.worst *= 0.75;
-    }
+    let attacking = rounds * share;
+    out.expected = expected_per_round * attacking;
+    out.worst = worst_per_round * attacking;
+    out.p_death = death_probability(&round_pmf, attacking, hp_of(w));
     out.disabling =
-        (1.0 - (1.0 - status_per_blow).powf(rounds * race.blows.len() as f64)).clamp(0.0, 1.0);
-    out.economic = economic_per_blow * rounds;
+        (1.0 - (1.0 - status_per_blow).powf(attacking * race.blows.len() as f64)).clamp(0.0, 1.0);
+    out.economic = economic_per_blow * attacking;
     out.rounds = rounds;
     out
 }
@@ -598,8 +597,13 @@ fn is_economic(effect: &str) -> bool {
 
 /// The engine's chance for one blow to hit the player
 /// (`mon-attack.c:chance_of_monster_hit_base`, `player-attack.c:hit_chance`).
-fn hit_chance(race: &MonsterRace, blow: &Blow, ac: i32) -> f64 {
+fn hit_chance(race: &MonsterRace, blow: &Blow, ac: i32, stunned: bool) -> f64 {
     let mut to_hit = race.level.max(1) * 3 + blow.power;
+    // A stunned monster's accuracy falls by STUN_HIT_REDUCTION, 25%
+    // (`mon-attack.c:chance_of_monster_hit:353-356`, `mon-timed.h:26`; #165).
+    if stunned {
+        to_hit = to_hit * (100 - 25) / 100;
+    }
     to_hit = to_hit.max(9);
     let numerator = (to_hit - ac * 2 / 3).max(0);
     let base = f64::from(numerator) / f64::from(to_hit);
@@ -609,7 +613,10 @@ fn hit_chance(race: &MonsterRace, blow: &Blow, ac: i32) -> f64 {
 /// A blow's damage before the hit roll: the dice, minus armour the way
 /// `adjust_dam_armor` does (`mon-attack.c:537-541`). Returns (pmf, mean,
 /// max).
-fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
+fn blow_pmf(blow: &Blow, ac: i32, stunned: bool) -> (Vec<f64>, f64, f64) {
+    // A stunned monster's rolled damage falls by STUN_DAM_REDUCTION, 25%,
+    // before armour (`mon-attack.c:621-624`, integer arithmetic; #165).
+    let roll = |d: usize| if stunned { d * (100 - 25) / 100 } else { d };
     if !matches!(
         blow.effect.as_str(),
         "HURT" | "SHATTER" | "POISON" | "ACID" | "ELEC" | "FIRE" | "COLD"
@@ -625,7 +632,7 @@ fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
     let sides = dice.sides.max(0) as usize;
     let base = dice.base.max(0) as usize;
     if dice_n == 0 || sides == 0 {
-        let d = reduce(base as f64, ac);
+        let d = reduce(roll(base) as f64, ac);
         let mut out = vec![0.0; d as usize + 1];
         out[d as usize] = 1.0;
         return (out, d, d);
@@ -638,8 +645,11 @@ fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
         // conservative for `p_death` (#164: it used to return `[0, mean]`,
         // mass `mean` at damage 1, which is not a distribution). The widest
         // blow in `monster.txt` is 20d10, so the vector stays short.
-        let mean = (dice_n as f64) * ((sides + 1) as f64) / 2.0 + base as f64;
-        let max = (dice_n * sides + base) as f64;
+        let mut mean = (dice_n as f64) * ((sides + 1) as f64) / 2.0 + base as f64;
+        if stunned {
+            mean *= 0.75;
+        }
+        let max = roll(dice_n * sides + base) as f64;
         let (mean, max) = (reduce(mean, ac), reduce(max, ac));
         let top = max.round().max(1.0) as usize;
         let p_top = if max > 0.0 {
@@ -675,7 +685,7 @@ fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
         if *p == 0.0 {
             continue;
         }
-        let d = reduce((i + base) as f64, ac);
+        let d = reduce(roll(i + base) as f64, ac);
         out[d as usize] += *p;
         mean += *p * d;
         max_dam = max_dam.max(d);
@@ -1307,7 +1317,7 @@ mod tests {
                 m_bonus: 0,
             },
         };
-        let (pmf, mean, max) = blow_pmf(&blow, 0);
+        let (pmf, mean, max) = blow_pmf(&blow, 0, false);
         let total: f64 = pmf.iter().sum();
         assert!((total - 1.0).abs() < 1e-9, "sums to {total}");
         let kept: f64 = pmf.iter().enumerate().map(|(d, p)| d as f64 * p).sum();
@@ -1322,6 +1332,46 @@ mod tests {
         }
         let a = assess(&w, &k, 1, 1, 1, 50);
         assert!(a.p_death > 0.0 && a.p_death < 1.0, "{a:?}");
+    }
+
+    #[test]
+    fn confusion_and_stun_scale_every_term() {
+        // #165: confusion halves the rounds a monster spends attacking, so
+        // p_death and disabling fall with expected and worst; stun lowers
+        // the hit chance and the dice as the engine does
+        // (`mon-attack.c:353-356`, `:621-624`).
+        let mut r = race("biter", 110, 0, &[(2, 6)], &[]);
+        r.blows.push(Blow {
+            method: "GAZE".into(),
+            effect: "PARALYZE".into(),
+            power: 0,
+            dice: Dice::default(),
+        });
+        let k = knowledge(r);
+        let mut w = world(Some((2, 1, 120, true)));
+        if let Some(s) = w.character.status.as_mut() {
+            s.hp = 3;
+        }
+        let plain = one_threat(&w, &k, &w.level.monsters[0], 1, 1, 2);
+        let mut confused = w.level.monsters[0].clone();
+        confused.timed[mon_tmd::CONF] = 5;
+        let c = one_threat(&w, &k, &confused, 1, 1, 2);
+        assert!(c.expected < plain.expected, "{c:?} vs {plain:?}");
+        assert!(c.p_death < plain.p_death, "{c:?} vs {plain:?}");
+        assert!(c.disabling < plain.disabling, "{c:?} vs {plain:?}");
+        let mut stunned = w.level.monsters[0].clone();
+        stunned.timed[mon_tmd::STUN] = 5;
+        let s = one_threat(&w, &k, &stunned, 1, 1, 2);
+        assert!(
+            s.expected < plain.expected && s.worst < plain.worst,
+            "{s:?}"
+        );
+        assert!(s.p_death < plain.p_death, "{s:?} vs {plain:?}");
+        let race = k.race(7).expect("the test race");
+        assert!(
+            hit_chance(race, &race.blows[0], 20, true)
+                < hit_chance(race, &race.blows[0], 20, false)
+        );
     }
 
     #[test]

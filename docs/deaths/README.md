@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1742; distinct starting conditions: 1741; retained process attempts: 1742 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1758; distinct starting conditions: 1757; retained process attempts: 1758 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1748,6 +1748,22 @@ Dossiers: 1742; distinct starting conditions: 1741; retained process attempts: 1
 | [D1760-rust-seed1063](D1760-rust-seed1063/report.md) | unassigned | `dcd4f65c34f5` | 1063 | Fang, Farmer Maggot's Dog | 25237 | unassessed |
 | [D1761-rust-seed1070](D1761-rust-seed1070/report.md) | unassigned | `dcd4f65c34f5` | 1070 | starvation | 89750 | unassessed |
 | [D1762-rust-seed1074](D1762-rust-seed1074/report.md) | unassigned | `dcd4f65c34f5` | 1074 | a floating eye | 3880 | unassessed |
+| [D1763-rust-seed102](D1763-rust-seed102/report.md) | unassigned | `690ae98a53c9` | 102 | Fang, Farmer Maggot's Dog | 18376 | unassessed |
+| [D1764-rust-seed1000](D1764-rust-seed1000/report.md) | unassigned | `690ae98a53c9` | 1000 | a crow | 95559 | unassessed |
+| [D1765-rust-seed1010](D1765-rust-seed1010/report.md) | unassigned | `690ae98a53c9` | 1010 | a kobold | 9288 | unassessed |
+| [D1766-rust-seed1014](D1766-rust-seed1014/report.md) | unassigned | `690ae98a53c9` | 1014 | poison | 1390 | unassessed |
+| [D1767-rust-seed1020](D1767-rust-seed1020/report.md) | unassigned | `690ae98a53c9` | 1020 | a giant white mouse | 7912 | unassessed |
+| [D1768-rust-seed1021](D1768-rust-seed1021/report.md) | unassigned | `690ae98a53c9` | 1021 | a small kobold | 6367 | unassessed |
+| [D1769-rust-seed1022](D1769-rust-seed1022/report.md) | unassigned | `690ae98a53c9` | 1022 | a crow | 2531 | unassessed |
+| [D1770-rust-seed1030](D1770-rust-seed1030/report.md) | unassigned | `690ae98a53c9` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1771-rust-seed1034](D1771-rust-seed1034/report.md) | unassigned | `690ae98a53c9` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1772-rust-seed1044](D1772-rust-seed1044/report.md) | unassigned | `690ae98a53c9` | 1044 | a fatal wound | 4580 | unassessed |
+| [D1773-rust-seed1052](D1773-rust-seed1052/report.md) | unassigned | `690ae98a53c9` | 1052 | starvation | 91190 | unassessed |
+| [D1774-rust-seed1043](D1774-rust-seed1043/report.md) | unassigned | `690ae98a53c9` | 1043 | a scruffy little dog | 89158 | unassessed |
+| [D1775-rust-seed1053](D1775-rust-seed1053/report.md) | unassigned | `690ae98a53c9` | 1053 | a scrawny cat | 85335 | unassessed |
+| [D1776-rust-seed1063](D1776-rust-seed1063/report.md) | unassigned | `690ae98a53c9` | 1063 | Fang, Farmer Maggot's Dog | 25237 | unassessed |
+| [D1777-rust-seed1070](D1777-rust-seed1070/report.md) | unassigned | `690ae98a53c9` | 1070 | starvation | 89750 | unassessed |
+| [D1778-rust-seed1074](D1778-rust-seed1074/report.md) | unassigned | `690ae98a53c9` | 1074 | a floating eye | 3880 | unassessed |
 
 ## Aggregated actions
 
