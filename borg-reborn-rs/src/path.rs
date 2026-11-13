@@ -228,6 +228,18 @@ impl DistanceMap {
                 queue.push(Reverse((base, x, y)));
             }
         }
+        // A grid a visible monster stands on is paid for, not barred: the
+        // step into it is an attack, not a move (#183: full-4-necro-3 bumped
+        // Farmer Maggot 400 times on its way to a shop and starved). Ten
+        // steps, declared: a way round in the open, the only way still taken
+        // in a corridor.
+        let occupied: Vec<(i32, i32)> = w
+            .level
+            .monsters
+            .iter()
+            .filter(|t| t.in_view)
+            .map(|t| (t.x, t.y))
+            .collect();
         while let Some(Reverse((d, x, y))) = queue.pop() {
             let i = (y * width + x) as usize;
             if map.dist[i] < d {
@@ -239,6 +251,7 @@ impl DistanceMap {
                     continue;
                 };
                 let step = cost
+                    + if occupied.contains(&(nx, ny)) { 10 } else { 0 }
                     + if threat_on {
                         threat(w, k, nx, ny, risk_aversion_pct)
                     } else {
@@ -652,6 +665,16 @@ pub(crate) mod tests {
         let mut p = Paths::new(&w);
         assert_eq!(p.distance(&w, &k, &Goal::Frontier), UNREACHED);
         assert_eq!(p.step(&w, &k, &Goal::Frontier), None);
+    }
+
+    #[test]
+    fn a_monster_in_the_way_is_walked_round() {
+        // #183, full-4-necro-3: Farmer Maggot on the straight line to the
+        // goal; the path goes round him in the open instead of bumping him.
+        let (w, k) = world(&["#######", "#.....#", "#@M..>#", "#.....#", "#######"]);
+        let mut p = Paths::new(&w);
+        let step = p.step(&w, &k, &Goal::Stairs { up: false });
+        assert!(matches!(step, Some(3) | Some(9)), "{step:?}");
     }
 
     #[test]
