@@ -64,10 +64,7 @@ const EXPECTED_IDS: &[&str] = &[
 /// The open tasks a gap may name (M4 is closed by #124; these are M5's). Update this list when an issue closes:
 /// the compiler cannot see GitHub, and a stale owner is exactly the silent
 /// skip this check exists to prevent.
-const OWNERS: &[(u32, &str)] = &[
-    (126, "T5.2 equipment and pack valuation by effect"),
-    (127, "T5.3 class item use, spells and ranged combat"),
-];
+const OWNERS: &[(u32, &str)] = &[(127, "T5.3 class item use, spells and ranged combat")];
 
 /// Every action name a fixture may use. The first group is what the
 /// executor can express; the second is the capabilities M4 adds, named here
@@ -207,6 +204,26 @@ struct Pack {
     desc: String,
     #[serde(default)]
     aware: bool,
+    /// A carried weapon or armour's known numbers (#126); a pack item
+    /// without them is a consumable, 1 lb, no dice.
+    #[serde(default = "pound")]
+    weight: i16,
+    #[serde(default)]
+    dd: u8,
+    #[serde(default)]
+    ds: u8,
+    #[serde(default)]
+    to_h: i16,
+    #[serde(default)]
+    to_d: i16,
+    #[serde(default)]
+    ac: i16,
+    #[serde(default)]
+    to_a: i16,
+}
+
+fn pound() -> i16 {
+    10
 }
 
 #[derive(Deserialize)]
@@ -428,7 +445,7 @@ fn build(f: &Fixture) -> Observation {
             tval: p.tval,
             sval: p.sval,
             number: p.number,
-            weight: 10,
+            weight: p.weight,
             timeout: 0,
             level: 1,
             desc: p.desc.clone(),
@@ -436,12 +453,12 @@ fn build(f: &Fixture) -> Observation {
             fully_known: p.aware,
             runes_known: p.aware,
             flags: [0; 5],
-            ac: 0,
-            dd: 0,
-            ds: 0,
-            to_h: 0,
-            to_d: 0,
-            to_a: 0,
+            ac: p.ac,
+            dd: p.dd,
+            ds: p.ds,
+            to_h: p.to_h,
+            to_d: p.to_d,
+            to_a: p.to_a,
             modifiers: vec![0; 16],
             elements: vec![(0, 0); 25],
         })

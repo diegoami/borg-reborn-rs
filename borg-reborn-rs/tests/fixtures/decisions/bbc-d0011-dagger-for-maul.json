@@ -1,11 +1,11 @@
 {
   "turn": 100,
-  "status": "gap",
+  "status": "active",
   "equipment": [
     {
       "slot": 1,
       "kind": 6,
-      "tval": 23,
+      "tval": 9,
       "sval": 4,
       "weight": 12,
       "desc": "a Dagger (1d4)",
@@ -56,11 +56,16 @@
     },
     {
       "kind": 7,
-      "tval": 23,
+      "tval": 7,
       "sval": 9,
       "number": 1,
-      "desc": "a Maul (2d4)",
-      "aware": true
+      "desc": "a Maul (4d4) (+7,+6)",
+      "aware": true,
+      "weight": 200,
+      "dd": 4,
+      "ds": 4,
+      "to_h": 7,
+      "to_d": 6
     }
   ],
   "monsters": [
@@ -104,11 +109,11 @@
   "dossier": "reference/deaths/better-borg-c/D0011-collected",
   "citations": [
     "overall-assessment.md:5-17,24-43,47-61",
-    "report.md:9-13"
+    "report.md:9-13",
+    "overall-assessment.md:26"
   ],
-  "construction": "Half-Elf Warrior CL11, 111/111 HP, D18. The dossier gives the Dagger in hand, the carried Maul, eight known CLW, two Speed and three Neutralize Poison. The griffon is constructed at 40/152 HP so the exchange says fight: the defect is the weapon, not the choice to fight.",
+  "construction": "Half-Elf Warrior CL11, 111/111 HP, D18. The dossier gives the Dagger in hand, the carried Maul, eight known CLW, two Speed and three Neutralize Poison. The griffon is constructed at 40/152 HP so the exchange says fight: the defect is the weapon, not the choice to fight. The Maul is the dossier's Maul (4d4) (+7,+6) (overall-assessment.md:26) with object.txt's 20 lb; the fixture's earlier \"Maul (2d4)\" and pre-4.2 tvals were construction errors, corrected in #126.",
   "limits": "No verified alternative: the Maul + CLW branch was not shown survivable. Wielding is not an executor action yet, so only the cure half of the alternative is judged.",
-  "blocked_by": 126,
   "player": {
     "race": 1,
     "class": 0,
@@ -119,9 +124,5 @@
     "y": 3
   },
   "depth": 18,
-  "max_depth": 18,
-  "current": {
-    "action": "Attack"
-  },
-  "pins_forbidden": true
+  "max_depth": 18
 }

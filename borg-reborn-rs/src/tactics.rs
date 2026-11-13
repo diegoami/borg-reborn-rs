@@ -464,7 +464,10 @@ fn better_weapon<'a>(w: &'a World, k: &Knowledge) -> Option<(usize, &'a crate::o
         .inventory
         .iter()
         .enumerate()
-        .filter(|(_, i)| i.tval == 23)
+        // The engine's melee tvals (#126: `tval == 23` was the pre-4.2
+        // sword and is hard armour in 4.2, so no real weapon was ever
+        // offered; a Maul is hafted, bbc D0011).
+        .filter(|(_, i)| i.aware && crate::world::tv::is_melee(i.tval))
         .filter_map(|(i, item)| {
             let slot = w
                 .character
@@ -619,7 +622,7 @@ mod tests {
             slot_type: 1,
             item: Some(crate::observation::Item {
                 kind: 6,
-                tval: 23,
+                tval: 9, // TV_SWORD (a dagger)
                 sval: 4,
                 number: 1,
                 weight: 12,

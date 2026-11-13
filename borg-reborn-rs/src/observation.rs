@@ -312,7 +312,7 @@ pub(crate) mod tests {
     pub(crate) fn sample() -> Observation {
         let item = Item {
             kind: 300,
-            tval: 23,
+            tval: 9, // TV_SWORD (a dagger)
             sval: 4,
             number: 1,
             weight: 120,

@@ -27,6 +27,7 @@ pub(crate) mod bindings;
 pub mod borg;
 pub mod danger;
 pub mod engine;
+pub mod equipment;
 pub mod executor;
 pub mod knowledge;
 pub mod observation;
