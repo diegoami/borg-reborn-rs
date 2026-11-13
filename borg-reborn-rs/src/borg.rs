@@ -234,6 +234,9 @@ struct Borg {
     /// The decision trace (`BORG_RUN_DIR/trace.jsonl`), one line per think.
     trace: Option<std::io::BufWriter<std::fs::File>>,
     thinks: u64,
+    /// Town sessions (#191): the handover, the state records and the
+    /// object log, all off unless their variables are set.
+    town: crate::town::Town,
 }
 
 /// The parameters of this run: the profile named by `BORG_PROFILE`, or the
@@ -322,6 +325,7 @@ pub fn command() {
             params,
             trace,
             thinks: 0,
+            town: crate::town::Town::from_env(),
         }
     })
     .executor
@@ -350,6 +354,21 @@ pub fn next_key(flush: bool) -> Key {
     if view.dead {
         engine::set_hook(false);
         return Key::Code(ESCAPE);
+    }
+    // The town handover (`BORG_TOWN_PLAYER=1`, #191; borg-rs
+    // `borg.rs:407-462`): in town the engine reads the real keyboard and the
+    // Borg decides nothing, so no prompt is answered and no key of the
+    // player's stops it. The state and the pack are recorded as the player
+    // changes them.
+    if b.town.hands_over(view.depth) {
+        b.executor.clear();
+        if b.town.records() {
+            if let Some(o) = engine::with_borg_rng(&mut b.engine_rng, engine::perceive) {
+                b.town.note_state(&o);
+                b.town.note_pack(&o);
+            }
+        }
+        return Key::None;
     }
     // The prompt catcher (T3.1): before the queue, as in the C Borg
     // (borg.c:304-308), so a prompt is answered even when keys remain
@@ -538,6 +557,11 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     // once, by the think after it. A mismatch is a violation for the
     // trace, so a key sequence the game silently ignored is visible —
     // and the strategy's signal that its goal is not progressing.
+    // The town records and the object log (#191): read only.
+    if let Some(o) = observation.as_ref() {
+        b.town.note_state(o);
+        b.town.note_pack(o);
+    }
     let mut mismatches = match observation.as_ref() {
         Some(o) => b.executor.check_pending(o),
         None => b.executor.drop_pending().into_iter().collect(),
@@ -566,6 +590,13 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     // violation above already says why.
     let empty = crate::observation::Observation::default();
     let o = observation.as_ref().unwrap_or(&empty);
+    if b.town.records() {
+        let ammo = b
+            .knowledge
+            .as_ref()
+            .and_then(|k| b.world.character.ammo_tval(k));
+        b.town.note_action(d.action, o, ammo);
+    }
     b.executor.queue(d.action, o);
     if observation.is_none() {
         d.violations

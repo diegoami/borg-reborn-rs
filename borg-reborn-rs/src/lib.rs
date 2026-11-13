@@ -37,6 +37,7 @@ pub mod readiness;
 pub mod spells;
 pub mod strategy;
 pub mod tactics;
+pub mod town;
 pub mod trace;
 pub mod world;
 
