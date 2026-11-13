@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 1915,
+  "cases": 1916,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 53,
     "Grip, Farmer Maggot's Dog": 146,
@@ -41,7 +41,7 @@
     "a white harpy": 2,
     "a white icky thing": 2,
     "a white jelly": 2,
-    "a white worm mass": 29,
+    "a white worm mass": 30,
     "a wild cat": 16,
     "a wild dog": 79,
     "a yellow jelly": 9,
@@ -54,8 +54,8 @@
     "poison": 63,
     "starvation": 205
   },
-  "death_process_attempts": 1915,
-  "distinct_starting_conditions": 1914,
+  "death_process_attempts": 1916,
+  "distinct_starting_conditions": 1915,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -94,7 +94,7 @@
     "83f6799f794383f31e57a9f7d7617187020554ef": 46,
     "851a1e23990a41a167598cfc6d6cdd49245e4506": 46,
     "8bdd9c97c87e3f9cecee52a371812e28ae974c91": 11,
-    "8dd52e1ed52ed90cba8457f39d8ed95cff76244c": 5,
+    "8dd52e1ed52ed90cba8457f39d8ed95cff76244c": 6,
     "8f5e6313f9a4facf993863f44e29e35350613334": 46,
     "9124a2b0c52c76deee152aedde38829205428601": 47,
     "9644204b66b655bd165dafb36123a02487637896": 48,
