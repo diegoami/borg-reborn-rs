@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1755-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Half-Troll Priest",
+  "raw_cause": "a battle-scarred veteran",
+  "terminal": {
+    "cause": "a battle-scarred veteran",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2147,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "menu",
+    "git_rev": "dcd4f65c34f5222f6645b2722412e47f62a707f8",
+    "git_dirty": "no",
+    "source_sha256": "e7a92bbe22b24c8872c05f93828f00682f355610784b488346d9bc63f8620dc4",
+    "binary_sha256": "245025f24590011fba5c3ee50f0251fa7f492e72ee2cb888f54e5d618a1477b6",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 223
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-3-priest-4",
+      "result_sha256": "f9c425d55619316c2c8509ec3e1554b4bc4f36d49326dcad9d9f4c323f6c7396",
+      "raw_sha256": {
+        "keys.log": "f9c425d55619316c2c8509ec3e1554b4bc4f36d49326dcad9d9f4c323f6c7396",
+        "messages.log": "f44644e59127c28de1187c361f5b70b3fa64f8938de19393d1c8bae663d8cdd5",
+        "state.log": "556ad690f50b5cf6bb15ad5a57ad0486455c0493d9bf4d1edfb8f76f69f35837"
+      },
+      "source_commit": "dcd4f65c34f5222f6645b2722412e47f62a707f8",
+      "binary_sha256": "245025f24590011fba5c3ee50f0251fa7f492e72ee2cb888f54e5d618a1477b6"
+    }
+  ],
+  "encounter_family": "start-b0ffddd91d6aea38d2097bb1608a2a5891c5702c006b74247e0121295e889c9a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "f6fe89ad1a0cfffea59a46e1071e32424993ce8e3d1da843608e7c4a29862282",
+    "config.txt": "20107157744cfbd8e823e293418852e03aa9bb3557faee37bd91673ac8699225",
+    "depths.json": "cdcb3f9596555c82a6c3fd2409b809771e2bde094d65cf59f67f7843ffd0af71",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "38328be28140089039b84f31602fb3ca0c0cc9b2e532f1700a3ea391fe7500e3",
+    "trace-tail.jsonl": "2d593b82a6283316fdb09ee00a9a518f67cb5483a2d155db28b6f921f2e10b2c"
+  },
+  "investigation": null,
+  "issue": null
+}
