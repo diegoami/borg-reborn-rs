@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1917; distinct starting conditions: 1916; retained process attempts: 1917 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1932; distinct starting conditions: 1931; retained process attempts: 1932 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1923,6 +1923,21 @@ Dossiers: 1917; distinct starting conditions: 1916; retained process attempts: 1
 | [D1935-rust-seed1034](D1935-rust-seed1034/report.md) | unassigned | `8dd52e1ed52e` | 1034 | a scrawny cat | 96931 | unassessed |
 | [D1936-rust-seed1070](D1936-rust-seed1070/report.md) | unassigned | `8dd52e1ed52e` | 1070 | a white worm mass | 88102 | unassessed |
 | [D1937-rust-seed1020](D1937-rust-seed1020/report.md) | unassigned | `09bf83dece65` | 1020 | a fruit bat | 3329 | unassessed |
+| [D1938-rust-seed1012](D1938-rust-seed1012/report.md) | unassigned | `eb43cfe8c644` | 1012 | a grey mushroom patch | 3975 | unassessed |
+| [D1939-rust-seed1011](D1939-rust-seed1011/report.md) | unassigned | `eb43cfe8c644` | 1011 | poison | 37330 | unassessed |
+| [D1940-rust-seed1020](D1940-rust-seed1020/report.md) | unassigned | `eb43cfe8c644` | 1020 | a fruit bat | 3329 | unassessed |
+| [D1941-rust-seed1021](D1941-rust-seed1021/report.md) | unassigned | `eb43cfe8c644` | 1021 | Fang, Farmer Maggot's Dog | 10874 | unassessed |
+| [D1942-rust-seed1022](D1942-rust-seed1022/report.md) | unassigned | `eb43cfe8c644` | 1022 | a giant yellow centipede | 8679 | unassessed |
+| [D1943-rust-seed1023](D1943-rust-seed1023/report.md) | unassigned | `eb43cfe8c644` | 1023 | Fang, Farmer Maggot's Dog | 14905 | unassessed |
+| [D1944-rust-seed1024](D1944-rust-seed1024/report.md) | unassigned | `eb43cfe8c644` | 1024 | a battle-scarred veteran | 34731 | unassessed |
+| [D1945-rust-seed1040](D1945-rust-seed1040/report.md) | unassigned | `eb43cfe8c644` | 1040 | a small kobold | 5078 | unassessed |
+| [D1946-rust-seed1034](D1946-rust-seed1034/report.md) | unassigned | `eb43cfe8c644` | 1034 | starvation | 92180 | unassessed |
+| [D1947-rust-seed1043](D1947-rust-seed1043/report.md) | unassigned | `eb43cfe8c644` | 1043 | a small kobold | 12110 | unassessed |
+| [D1948-rust-seed1042](D1948-rust-seed1042/report.md) | unassigned | `eb43cfe8c644` | 1042 | Grip, Farmer Maggot's Dog | 12805 | unassessed |
+| [D1949-rust-seed1052](D1949-rust-seed1052/report.md) | unassigned | `eb43cfe8c644` | 1052 | starvation | 82400 | unassessed |
+| [D1950-rust-seed1061](D1950-rust-seed1061/report.md) | unassigned | `eb43cfe8c644` | 1061 | starvation | 90180 | unassessed |
+| [D1951-rust-seed1070](D1951-rust-seed1070/report.md) | unassigned | `eb43cfe8c644` | 1070 | starvation | 89720 | unassessed |
+| [D1952-rust-seed1073](D1952-rust-seed1073/report.md) | unassigned | `eb43cfe8c644` | 1073 | a fatal wound | 7180 | unassessed |
 
 ## Aggregated actions
 
