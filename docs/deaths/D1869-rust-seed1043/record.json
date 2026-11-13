@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1869-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 80541,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "menu",
+    "git_rev": "eebbf1904ae1f18881a27a02e4d4e6b0cca01063",
+    "git_dirty": "no",
+    "source_sha256": "aa741ba2ba49d9ba9580ccdcd1a57478ce4c8507c04e6cca44b02cde053bcb7a",
+    "binary_sha256": "8b91ee56a0c846f8259a9c3724a2b8d3218c9be1d131e6a651d32e6cde53bc2a",
+    "borg_txt_sha256": "7806df1f1589159d600de0d55e86fcfe44fd5a9c87e6c9c1381adf48a4e70e39",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8058
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-4-necro-3",
+      "result_sha256": "b9f7e1e5568d662a1628703978aded39f70454951dddaad1ec051f424969edcd",
+      "raw_sha256": {
+        "keys.log": "b9f7e1e5568d662a1628703978aded39f70454951dddaad1ec051f424969edcd",
+        "messages.log": "a4c49756801077ff351ee2b5b6d86b2f6692c0df5c9ad57a93225bac7f0eab40",
+        "state.log": "17baa1189ebeadbf9710454bf22518cc98b80ea6734692395596aaa457311883"
+      },
+      "source_commit": "eebbf1904ae1f18881a27a02e4d4e6b0cca01063",
+      "binary_sha256": "8b91ee56a0c846f8259a9c3724a2b8d3218c9be1d131e6a651d32e6cde53bc2a"
+    }
+  ],
+  "encounter_family": "start-af6b99dd2c9c4c1996f72d4aa7e7db2e58bcecc0f9fdefe087886a9b0492531f",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "93f7a9de3b5c107218cc74a7ee1d747389f340b21ed88fc2aabceed128e20171",
+    "config.txt": "e40a2743ffd87053c87c787f15d6164e0102895af18934ed0ad9dcc2e208dd92",
+    "depths.json": "22f46ce167e35c9dad7734c8e41b1a3e11b40856cfad97952650c974eb5340d0",
+    "params.json": "39205c1731523a870996baac0f37f826427223fee857748f543be30638b27b84",
+    "summary.json": "c2252370dfc73581bdd7674cdb40da650230b4c86d61f715885417c042ed7cce",
+    "trace-tail.jsonl": "3dcffbdcf35d933b25ec71994182723c231b785739bd72173a3a6937783c85c3"
+  },
+  "investigation": null,
+  "issue": null
+}

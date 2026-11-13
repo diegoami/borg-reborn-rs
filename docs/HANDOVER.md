@@ -2,6 +2,33 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: a monster at 0 hit points is alive (#179)
+
+**Play change in twelve full runs; new references for all three suites.**
+
+- **The cause of #179** was not darkness or stale tracks. The observation
+  of `full-6-rogue-2` at 4,154 shows two white worm masses adjacent, in view
+  and lit, each at **0 HP**. The engine kills a monster only below 0
+  (`mon-util.c:mon_take_hit:1299-1300`). Attack, shot and cast skipped
+  `hp <= 0` as dead, so no attack was offered and the rogue held while the
+  worms poisoned it. All three filters now read `hp < 0` as dead. A test
+  pins it; it fails on the old filter.
+- **Measured.**
+  - **Full (45 runs):** alive 39 → **40**, max depth sum 44 → 43, max
+    level sum 63 → 63. Gained: rogue-2. Changed: mage-4 now dies of a cut at
+    3,070 (it melees a giant white mouse swarm to 0 HP; the bleeding-out
+    rule waits for no monster in reach) and necro-2 of poison at 3,860.
+    Paladin-2 reaches DL1 instead of DL2.
+  - **Smoke:** unchanged, 3/3.
+- Dossiers D1865–D1869.
+
+**What #179's other questions found:** the stale low-confidence tracks
+were not why no attack was offered; the hp filter was. Whether stale
+breeder tracks should cost a step its full free hit stays open as a
+question for the danger model. Melee against a breeder swarm at low HP
+(mage-4) is the same family as #176/#177's oscillations: a decision made
+one think at a time with no exit plan.
+
 ## 2026-11-13: poison and cuts bleed the hit points left (#175)
 
 **Play change in four full runs and one smoke run; new references for all

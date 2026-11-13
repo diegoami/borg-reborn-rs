@@ -85,7 +85,10 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             let Some(dpt) = w.character.melee_per_turn(k) else {
                 continue;
             };
-            if dpt <= 0.0 || t.hp <= 0 {
+            // A monster lives at 0 hit points: it dies only below 0
+            // (`mon-util.c:mon_take_hit:1299-1300`; #179: worm masses at 0
+            // HP crawled on the rogue while no attack was offered).
+            if dpt <= 0.0 || t.hp < 0 {
                 continue;
             }
             let one = one_threat(w, k, t, x, y, horizon);
@@ -158,7 +161,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             .monsters
             .iter()
             .enumerate()
-            .filter(|(_, t)| t.in_view && t.hp > 0)
+            .filter(|(_, t)| t.in_view && t.hp >= 0)
             .filter(|(_, t)| crate::danger::line_clear(w, x, y, t.x, t.y))
             .min_by_key(|(_, t)| ((t.x - x).abs().max((t.y - y).abs()), t.index));
         if let Some((i, t)) = target {
@@ -203,7 +206,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             .monsters
             .iter()
             .enumerate()
-            .filter(|(_, t)| t.in_view && t.hp > 0)
+            .filter(|(_, t)| t.in_view && t.hp >= 0)
             .filter(|(_, t)| crate::danger::line_clear(w, x, y, t.x, t.y))
             .min_by_key(|(_, t)| ((t.x - x).abs().max((t.y - y).abs()), t.index));
         if let Some((i, t)) = target {
@@ -855,6 +858,23 @@ mod tests {
         assert!(r.iter().all(|x| x.score.is_finite()));
         // The best is first; the rest are still there for the trace.
         assert!(r.windows(2).all(|w| w[0].score >= w[1].score));
+    }
+
+    #[test]
+    fn a_monster_at_zero_hit_points_is_alive_and_attacked() {
+        // #179: the engine kills below 0 only; full-6-rogue-2's worm masses
+        // sat at 0 HP next to it and no attack was offered.
+        let (mut w, k, v, p) = setup(
+            &["#######", "#.@M..#", "#.....#", "#######"],
+            20,
+            20,
+            2,
+            110,
+            None,
+        );
+        w.level.monsters[0].hp = 0;
+        let r = responses(&w, &k, &p, &v);
+        assert!(r.iter().any(|x| x.action == Action::Attack(6)), "{r:?}");
     }
 
     #[test]
