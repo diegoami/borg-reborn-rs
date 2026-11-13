@@ -2,6 +2,46 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: poison and cuts bleed the hit points left (#175)
+
+**Play change in four full runs and one smoke run; new references for all
+three suites.**
+
+- **`danger::pending_bleed`:** the HP the poison and cut timers already
+  on the character will take. Each player turn costs 1 for poison and 1–3
+  for a cut by grade (`game-world.c:513-541`); the timers fall by
+  `adj_con_fix[CON] + 1` (`decrease_timeouts`, the table lifted from
+  `player-calcs.c:686-725`); nothing regenerates meanwhile
+  (`player-util.c:468-470`); a Mortal Wound never closes. `p_death` reads
+  the HP left after it (`hp_of`).
+- **A POISON blow costs its timer:** `5 + 1d(rlev)` turns
+  (`mon-blows.c:683-684`) go into the expected and worst loss, not into
+  this round's death chance, unless poison is resisted.
+- **Bleeding out:** when the timers would take every HP left, the Borg
+  drinks Neutralize Poison (when poisoned) or the strongest known Cure
+  Wounds potion before any step but a monster in reach.
+- **Cure Light Wounds heals 20** (`object.txt` `HEAL_HP` `dice:20`;
+  `effect_handler_HEAL_HP:212-217`), not the 2d8 the tactics declared.
+  The fear fixture now also accepts drinking it at 8/33 HP, with the reason
+  in its `limits`. Its rule, no attack while afraid, is unchanged.
+- **The status share is counted once:** attack, shot and cast added the
+  struck monster's status part to `current_risk`, which already holds it
+  (`composite`). Fixed, with a test that an adjacent breeder is attacked
+  rather than ignored. It changed no suite run.
+- **Measured.**
+  - **Smoke:** 2 → **3** alive. smoke-mage-2 no longer melees itself into
+    poison.
+  - **Full (45 runs):** alive 41 → **39**, max depth sum 44 → 44, max
+    level sum 60 → **63**. Lost: mage-4 (a giant white mouse at 7,893, now
+    clevel 5) and rogue-2 (poison at 4,220, Hold among unseen worm masses,
+    #179).
+  - **The experiment:** with the poison-blow term switched off, the smoke
+    mage dies as before and both full runs survive. The term is the part
+    that matters, both ways. It follows the engine, so it stays. The Hold
+    it exposes is filed as #179.
+- Dossiers: D1853–D1858 (the first commit's run), D1859–D1864 (the
+  baseline).
+
 ## 2026-11-13: study and cast attack spells (#127, T5.3, second slice)
 
 **Play change in 30 full runs and one smoke run; new references for all
