@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1821; distinct starting conditions: 1820; retained process attempts: 1821 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1827; distinct starting conditions: 1826; retained process attempts: 1827 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1827,6 +1827,12 @@ Dossiers: 1821; distinct starting conditions: 1820; retained process attempts: 1
 | [D1839-rust-seed1021](D1839-rust-seed1021/report.md) | unassigned | `a9210a39e09e` | 1021 | a small kobold | 6367 | unassessed |
 | [D1840-rust-seed1030](D1840-rust-seed1030/report.md) | unassigned | `a9210a39e09e` | 1030 | a giant white mouse | 8008 | unassessed |
 | [D1841-rust-seed1034](D1841-rust-seed1034/report.md) | unassigned | `a9210a39e09e` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1842-rust-seed1014](D1842-rust-seed1014/report.md) | unassigned | `c048db9e689d` | 1014 | poison | 1390 | unassessed |
+| [D1843-rust-seed1020](D1843-rust-seed1020/report.md) | unassigned | `c048db9e689d` | 1020 | a small kobold | 3098 | unassessed |
+| [D1844-rust-seed1022](D1844-rust-seed1022/report.md) | unassigned | `c048db9e689d` | 1022 | a crow | 2531 | unassessed |
+| [D1845-rust-seed1021](D1845-rust-seed1021/report.md) | unassigned | `c048db9e689d` | 1021 | a small kobold | 6367 | unassessed |
+| [D1846-rust-seed1030](D1846-rust-seed1030/report.md) | unassigned | `c048db9e689d` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1847-rust-seed1034](D1847-rust-seed1034/report.md) | unassigned | `c048db9e689d` | 1034 | a battle-scarred veteran | 2147 | unassessed |
 
 ## Aggregated actions
 

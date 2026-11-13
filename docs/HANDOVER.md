@@ -2,6 +2,52 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: eat when Hungry, light the way (#172)
+
+**Play change in 39 full runs; new full baseline. Smoke and smoke-exact
+unchanged.**
+
+- **`eat_below_food` 300 → 1500.** The engine's grades (`player_timed.txt`
+  × `food-value` 100): Faint 400, Weak 800, Hungry 1500, Fed 9000. 300 was
+  below Faint, so the Borg could faint before it ate. The manual (c01
+  §1.16) eats when Hungry appears. The return-home rule for "starving with
+  no food" reads the same threshold, so it now starts with 1,500 turns of
+  food rather than 300. The fixture default `fed()` was 500 (Weak); it is
+  5000 now.
+- **The starvations' root cause was darkness, not the food rule.** A
+  burnt-out torch is deleted from the light slot
+  (`player-util.c:player_update_light:713-726`, `OF_BURNS_OUT`) and nothing
+  wielded the spares: **all 45 full runs lost their first torch**. The
+  runs that starved (ranger-0, rogue-1) spent their last ~25,000 turns
+  unlit, with two Wooden Torches and a Word of Recall in the pack. Unlit,
+  `player_can_read` refuses the Recall, and the unknown grid next to the
+  Borg is never seen, so Explore and Return flipped between two grids
+  (Walk 9 / Walk 1) until the food ran out. Found from a rerun to turn
+  75,340 with `BORG_OBSERVATION_LOG`: the light slot empty, the panel
+  grid (26,39) unknown beside a floor.
+- **`equipment::light_to_wield`:** an empty light slot takes the aware pack
+  light with the most fuel, before every step but a monster in reach (not
+  gated on a quiet grid: unlit is itself the danger). 44 such wields in
+  the suite, none refused.
+- **UNLIGHT is left unlit.** The necromancer (`class.txt:975`) sees nearby
+  grids without light (`cave-view.c:777-779`) and pays +25 spell failure on
+  a lit grid (`player-spell.c:416-419`). Lighting it cost all four
+  necromancer runs depth or a level in a scratch run. `Class` gains the
+  engine's `pflags` (`Class::has_pflag`, `PF_UNLIGHT` = 12).
+- **Measured (full, 45 runs):** alive 34 → **39**; max depth sum 44 → 44;
+  max level sum 52 → 54; no run worse. No starvations (was 2). The
+  remaining deaths: mage-4 poison at 1,390; druid-0 and druid-1 a small
+  kobold; druid-2 a crow; priest-0 a giant white mouse; priest-4 a
+  battle-scarred veteran. All are early casters who do not cast yet (#127).
+- Dossiers: D1842–D1847 for the baseline. D1828–D1841 are the deaths of the
+  two intermediate commits of this PR (each a committed source, RULES 12).
+
+**Defect 1 of #172** (Return must outrank a live explore goal) did not
+reproduce once the light was fixed. The return-home rule fires in three
+full runs (necro-3 at 76,810, rogue-1 at 75,801, ranger-0 at 75,302) and
+each reaches town within 250 turns, where Town mode takes over. It is not
+changed here.
+
 ## 2026-11-13: shooting and Speed (#127, T5.3, first slice)
 
 **Play change in three full runs (the rangers); new full baseline.**
