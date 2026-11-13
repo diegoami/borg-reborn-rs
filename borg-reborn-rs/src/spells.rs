@@ -179,6 +179,29 @@ pub fn attacks(w: &World, k: &Knowledge) -> Vec<Attack> {
     out
 }
 
+/// A spell that feeds the character, learned and with its book in the
+/// pack (Remove Hunger, nature realm, `class.txt`; #176): its index, its
+/// cast, and whether the mana is in hand now.
+pub fn nourish(w: &World, k: &Knowledge) -> Option<(Action, bool)> {
+    let s = w.character.status.as_ref()?;
+    let (i, sp) = w
+        .character
+        .spells
+        .iter()
+        .enumerate()
+        .find(|(_, sp)| sp.nourish && sp.flags & LEARNED != 0 && sp.flags & FORGOTTEN == 0)?;
+    let item = book_item(w, k, sp.book)?;
+    let l = letter(k, s.class, sp.book, i)?;
+    Some((
+        Action::Cast {
+            book: item,
+            letter: l,
+            aim: sp.aim,
+        },
+        sp.mana <= s.sp,
+    ))
+}
+
 /// Whether the character knows an attack spell and carries its book,
 /// mana and light aside: the readiness gate's ranged attack (#125).
 pub fn knows_attack(w: &World, k: &Knowledge) -> bool {
@@ -286,6 +309,28 @@ mod tests {
         );
         // 3d4 is 7.5 on average; 22% fail leaves 5.85.
         assert!((a[0].damage - 5.85).abs() < 1e-9, "{a:?}");
+    }
+
+    #[test]
+    fn remove_hunger_is_food_when_learned_with_its_book() {
+        // #176: the nature realm's NOURISH spell feeds a broke caster.
+        let (mut w, k) = setup(true);
+        w.character.spells[1].nourish = true;
+        w.character.spells[1].flags = LEARNED;
+        let (cast, mana) = nourish(&w, &k).expect("learned, book in the pack");
+        assert_eq!(
+            cast,
+            Action::Cast {
+                book: 1,
+                letter: b'b',
+                aim: false
+            }
+        );
+        assert!(mana);
+        w.character.status.as_mut().unwrap().sp = 0;
+        assert_eq!(nourish(&w, &k).map(|(_, m)| m), Some(false), "no mana yet");
+        w.character.spells[1].flags = 0;
+        assert_eq!(nourish(&w, &k), None, "not learned");
     }
 
     #[test]
