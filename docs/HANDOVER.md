@@ -2,6 +2,36 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: Remove Hunger is food (#176, part); arm A's zoo run
+
+- **Every remaining starvation ends with 1 gold** (a Ration costs 3): the
+  character earns too little to buy food. The nature realm's Remove Hunger
+  (`class.txt`, `NOURISH:INC_TO`; druid L2, ranger L3) feeds without gold.
+  The observation marks a spell with `EF_NOURISH` (`Spell::nourish`). A
+  learned one with its book counts as food (`has_food`), and the Eat step
+  casts it when no ration is carried, resting for its mana first when
+  resting is safe. A broke priest (no such spell) is still open in #176.
+- **Measured:** guard arm 34 → **35** alive (starvation 2 → 1); baseline
+  unchanged (39/45, 44 of 45 runs identical).
+- Dossiers D1925–D1930.
+
+**The zoo ran arm A** (`3113c2e2`, guard off) on classes-1800
+(borg-zoo `results` branch, `results/reborn-g1-classes-1800/43501324055-1`).
+Arm B has not run.
+
+| (1,800 cells) | alive | reach D=5 | reach DL2 | mean max level |
+| --- | --- | --- | --- | --- |
+| pristine C control (e473720) | 66% | **6.9%** (Warrior 34%) | 38–93% by class | 2.6–6.6 |
+| arm A | **86%** | **0.0%** in every class | 0–2% | 1.1–1.5 |
+
+89% of arm A's survivors gain no level and no gold between turns 25,000
+and 100,000: the travel guard's freeze (#183). No character is ready for
+DL2 under the readiness gate (worst turn of DL0–7 natives under half max
+HP; Grip and Fang are in the band). G1's verdict waits for the owner's D
+and margin; at D = 5 arm A is below the control in every class where the
+control is above the margin. The readiness gate is the next design
+question, to be measured as its own arm.
+
 ## 2026-11-13: status blows deal their dice; no exploring under pursuit (#184)
 
 - **Status and economic blows deal their dice** before their effect
