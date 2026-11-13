@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1856; distinct starting conditions: 1855; retained process attempts: 1856 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1875; distinct starting conditions: 1874; retained process attempts: 1875 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1862,6 +1862,25 @@ Dossiers: 1856; distinct starting conditions: 1855; retained process attempts: 1
 | [D1874-rust-seed102](D1874-rust-seed102/report.md) | unassigned | `e2575fc07a15` | 102 | a small kobold | 6029 | unassessed |
 | [D1875-rust-seed1000](D1875-rust-seed1000/report.md) | unassigned | `e2575fc07a15` | 1000 | a giant white mouse | 17038 | unassessed |
 | [D1876-rust-seed1010](D1876-rust-seed1010/report.md) | unassigned | `e2575fc07a15` | 1010 | a giant white mouse | 11066 | unassessed |
+| [D1877-rust-seed1013](D1877-rust-seed1013/report.md) | unassigned | `e2575fc07a15` | 1013 | a scout | 7022 | unassessed |
+| [D1878-rust-seed1014](D1878-rust-seed1014/report.md) | unassigned | `e2575fc07a15` | 1014 | a fatal wound | 3070 | unassessed |
+| [D1879-rust-seed1020](D1879-rust-seed1020/report.md) | unassigned | `e2575fc07a15` | 1020 | a giant yellow centipede | 6017 | unassessed |
+| [D1880-rust-seed1023](D1880-rust-seed1023/report.md) | unassigned | `e2575fc07a15` | 1023 | a giant white mouse | 19991 | unassessed |
+| [D1881-rust-seed1030](D1881-rust-seed1030/report.md) | unassigned | `e2575fc07a15` | 1030 | Grip, Farmer Maggot's Dog | 3436 | unassessed |
+| [D1882-rust-seed1031](D1882-rust-seed1031/report.md) | unassigned | `e2575fc07a15` | 1031 | poison | 6950 | unassessed |
+| [D1883-rust-seed1033](D1883-rust-seed1033/report.md) | unassigned | `e2575fc07a15` | 1033 | poison | 16610 | unassessed |
+| [D1884-rust-seed1040](D1884-rust-seed1040/report.md) | unassigned | `e2575fc07a15` | 1040 | a small kobold | 5078 | unassessed |
+| [D1885-rust-seed1041](D1885-rust-seed1041/report.md) | unassigned | `e2575fc07a15` | 1041 | a floating eye | 8548 | unassessed |
+| [D1886-rust-seed1042](D1886-rust-seed1042/report.md) | unassigned | `e2575fc07a15` | 1042 | a cave spider | 1797 | unassessed |
+| [D1887-rust-seed1044](D1887-rust-seed1044/report.md) | unassigned | `e2575fc07a15` | 1044 | a small kobold | 8831 | unassessed |
+| [D1888-rust-seed1050](D1888-rust-seed1050/report.md) | unassigned | `e2575fc07a15` | 1050 | a grey mushroom patch | 1514 | unassessed |
+| [D1889-rust-seed1053](D1889-rust-seed1053/report.md) | unassigned | `e2575fc07a15` | 1053 | a giant white mouse | 10452 | unassessed |
+| [D1890-rust-seed1043](D1890-rust-seed1043/report.md) | unassigned | `e2575fc07a15` | 1043 | starvation | 83890 | unassessed |
+| [D1891-rust-seed1060](D1891-rust-seed1060/report.md) | unassigned | `e2575fc07a15` | 1060 | a floating eye | 30182 | unassessed |
+| [D1892-rust-seed1061](D1892-rust-seed1061/report.md) | unassigned | `e2575fc07a15` | 1061 | starvation | 84450 | unassessed |
+| [D1893-rust-seed1071](D1893-rust-seed1071/report.md) | unassigned | `e2575fc07a15` | 1071 | a floating eye | 8237 | unassessed |
+| [D1894-rust-seed1072](D1894-rust-seed1072/report.md) | unassigned | `e2575fc07a15` | 1072 | a floating eye | 21084 | unassessed |
+| [D1895-rust-seed1073](D1895-rust-seed1073/report.md) | unassigned | `e2575fc07a15` | 1073 | Grip, Farmer Maggot's Dog | 6505 | unassessed |
 
 ## Aggregated actions
 
