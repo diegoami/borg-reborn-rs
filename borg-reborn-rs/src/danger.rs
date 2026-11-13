@@ -631,11 +631,26 @@ fn blow_pmf(blow: &Blow, ac: i32) -> (Vec<f64>, f64, f64) {
         return (out, d, d);
     }
     if dice_n * sides > 64 {
-        // Too wide to enumerate: a two-point mean/max model, declared.
+        // Too wide to enumerate per assessment: a two-point model, declared.
+        // All the mass sits on 0 and on the largest roll, weighted so the
+        // mean is kept: P(max) = mean / max. It is a distribution (it sums
+        // to 1), keeps `expected` exact and overstates the spread, which is
+        // conservative for `p_death` (#164: it used to return `[0, mean]`,
+        // mass `mean` at damage 1, which is not a distribution). The widest
+        // blow in `monster.txt` is 20d10, so the vector stays short.
         let mean = (dice_n as f64) * ((sides + 1) as f64) / 2.0 + base as f64;
         let max = (dice_n * sides + base) as f64;
         let (mean, max) = (reduce(mean, ac), reduce(max, ac));
-        return (vec![0.0, mean], mean, max);
+        let top = max.round().max(1.0) as usize;
+        let p_top = if max > 0.0 {
+            (mean / max).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let mut out = vec![0.0; top + 1];
+        out[0] = 1.0 - p_top;
+        out[top] += p_top;
+        return (out, mean, max);
     }
     // Enumerate the dice by dynamic programming, then fold in the base.
     let mut pmf = vec![0.0; dice_n * sides + 1];
@@ -1274,6 +1289,39 @@ mod tests {
             "a monster that adds nothing is left out: {:?}",
             s.sources
         );
+    }
+
+    #[test]
+    fn a_wide_blow_is_a_distribution() {
+        // #164: a blow too wide to enumerate (10d10, dice × sides > 64)
+        // must still be a probability distribution, with its mean kept, so
+        // that `p_death` is a probability and not a clamped artefact.
+        let blow = Blow {
+            method: "HIT".into(),
+            effect: "HURT".into(),
+            power: 60,
+            dice: Dice {
+                base: 0,
+                dice: 10,
+                sides: 10,
+                m_bonus: 0,
+            },
+        };
+        let (pmf, mean, max) = blow_pmf(&blow, 0);
+        let total: f64 = pmf.iter().sum();
+        assert!((total - 1.0).abs() < 1e-9, "sums to {total}");
+        let kept: f64 = pmf.iter().enumerate().map(|(d, p)| d as f64 * p).sum();
+        assert!((kept - mean).abs() < 0.6, "mean {mean} kept as {kept}");
+        assert!((max - 100.0).abs() < 1e-9 && (mean - 55.0).abs() < 1e-9);
+
+        let k = knowledge(race("colossus", 110, 0, &[(10, 10)], &[]));
+        let mut w = world(Some((2, 1, 110, true)));
+        if let Some(s) = w.character.status.as_mut() {
+            s.max_hp = 50;
+            s.hp = 50;
+        }
+        let a = assess(&w, &k, 1, 1, 1, 50);
+        assert!(a.p_death > 0.0 && a.p_death < 1.0, "{a:?}");
     }
 
     #[test]
