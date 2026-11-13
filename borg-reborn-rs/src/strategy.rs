@@ -967,6 +967,21 @@ impl FirstStrategy {
             self.rule = "starving with no food: return home";
             return Mode::Return;
         }
+        // A breeder colony on the level (#183; c08 §8.10: kill the first
+        // breeder or leave the level, never rest while a colony grows):
+        // leave by the way home, before resting. Contact still answers
+        // first (Engage, below).
+        let colony = ctx.params.breeder_colony > 0
+            && crate::danger::breeders(ctx.world, ctx.knowledge)
+                >= ctx.params.breeder_colony as usize;
+        if colony
+            && ctx.world.level.depth > 0
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "a breeder colony on the level: leave it";
+            return Mode::Return;
+        }
         // The recovery invariant first (GOALS principle 7): hurt and
         // safe means rest now.
         let hurt = ctx.view.hp * 100 < ctx.view.max_hp * ctx.params.rest_below_hp_pct;
@@ -1753,6 +1768,56 @@ mod tests {
             failures: &[],
         };
         assert!(FirstStrategy::has_food(&ctx), "a known ration is");
+    }
+
+    #[test]
+    fn a_breeder_colony_sends_the_borg_home() {
+        // #183: four breeders seen on DL1, none in reach, a hurt character:
+        // it leaves (Return) instead of resting beside a growing colony.
+        // Three, below the colony, and it rests.
+        let decide = |map: &[&str]| {
+            let (mut s, mut w, mut k, mut p, m, mut rng, params) = ctx_of(map, 5, 20);
+            if k.races.len() < 2 {
+                k.races.resize(2, Default::default());
+                k.races[1].index = 1;
+            }
+            // MULTIPLY is RF 17: byte 2, bit 0.
+            k.races[1].flags = vec![0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0];
+            w.level.depth = 1;
+            if let Some(st) = w.character.status.as_mut() {
+                st.depth = 1;
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            s.decide(&mut ctx).mode
+        };
+        assert_eq!(
+            decide(&[
+                "############",
+                "#@.....MM..#",
+                "#......MM..#",
+                "############"
+            ]),
+            "return"
+        );
+        assert_eq!(
+            decide(&[
+                "############",
+                "#@.....MM..#",
+                "#......M...#",
+                "############"
+            ]),
+            "recover"
+        );
     }
 
     #[test]

@@ -329,6 +329,20 @@ pub fn worst_turn(w: &World, k: &Knowledge, race: &MonsterRace) -> f64 {
     moves * melee.max(spell)
 }
 
+/// The breeders (`MULTIPLY`) the Borg still believes are on the level:
+/// tracks whose confidence is at least 0.1, a breeder seen within about
+/// nine of its own moves (declared; #183).
+pub fn breeders(w: &World, k: &Knowledge) -> usize {
+    w.level
+        .monsters
+        .iter()
+        .filter(|t| {
+            k.race(t.race).is_some_and(|r| has(&r.flags, rf::MULTIPLY))
+                && t.confidence(w.turn, k) >= 0.1
+        })
+        .count()
+}
+
 /// Whether the character's known gear gives Free Action (`OF_FREE_ACT`):
 /// the DL20 kit gate (c15 DEPTH-02).
 pub fn has_free_action(w: &World) -> bool {
