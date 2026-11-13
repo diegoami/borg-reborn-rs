@@ -84,18 +84,43 @@ def ended(name, msgs):
                for m in msgs)
 
 
-def blow_messages(name, msgs):
-    """(hits, misses) the engine printed for this monster's blows."""
+BLOW_METHODS_TXT = ROOT / 'engine/angband/lib/gamedata/blow_methods.txt'
+
+
+def read_blow_acts(path=BLOW_METHODS_TXT):
+    """The engine's melee blow phrases ('hits you', 'bites you', ...), from
+    blow_methods.txt's act: lines with {target} as 'you'."""
+    if not Path(path).is_file():
+        return ()
+    with open(path) as f:
+        acts = [line[4:].strip().replace('{target}', 'you')
+                for line in f if line.startswith('act:')]
+    return tuple(a for a in acts if a)
+
+
+BLOW_ACTS = read_blow_acts()
+
+
+def blow_messages(name, msgs, acts=None):
+    """(hits, misses) the engine printed for this monster's melee blows.
+    Only the engine's own blow phrases count (#165): a spell line such as
+    'points at you and curses' names the character but is not a blow. A
+    miss is 'misses you.' (mon-attack.c:722)."""
+    acts = BLOW_ACTS if acts is None else acts
     heads = (f'The {name} ', f'{name} ', f'{name}, ')
     hits = misses = 0
     for m in msgs:
-        if not m.startswith(heads) or ' you' not in m:
+        head = next((h for h in heads if m.startswith(h)), None)
+        if head is None:
             continue
-        if m.endswith('misses you.'):
+        rest = m[len(head):]
+        if rest.startswith('misses you'):
             misses += 1
-        else:
+        elif any(rest.startswith(a) for a in acts):
             hits += 1
     return hits, misses
+
+
 PDEATH_BINS = [0.0, 0.001, 0.01, 0.05, 0.2, 1.0000001]
 
 
