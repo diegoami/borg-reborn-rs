@@ -170,6 +170,19 @@ pub fn best_swap(w: &World, k: &Knowledge) -> Option<Swap> {
     best
 }
 
+/// The pack launcher to wield when the bow slot is empty (#127): the first
+/// aware one. A launcher is never valued against another here (no swap of
+/// one for another); the town buys a sling only for an empty slot.
+pub fn launcher_to_wield(w: &World) -> Option<usize> {
+    let c = &w.character;
+    if c.has_launcher() || !c.equipment.iter().any(|s| s.slot_type == 2) {
+        return None;
+    }
+    c.inventory
+        .iter()
+        .position(|it| it.aware && it.tval == tv::BOW)
+}
+
 /// The pack light to wield when the light slot is empty (#172): the aware
 /// light with the most fuel left.
 ///

@@ -99,6 +99,10 @@ pub enum Action {
     /// (`ui-input.c:textui_get_aim_dir:1652-1658`, `target_set_closest`)
     /// (#127).
     Cast { book: usize, letter: u8, aim: bool },
+    /// Throw the pack item at this index at the closest target (`v`,
+    /// `player-attack.c:do_cmd_throw:1363`: the item prompt opens on the
+    /// inventory, then the aim prompt takes `'`) (#127).
+    Throw { item: usize },
 }
 
 /// The spell menu's selection letters (`ui-menu.c:41`,
@@ -167,6 +171,13 @@ impl Action {
                 if let Some(l) = letter {
                     k.push(u32::from(l));
                 }
+            }
+            Action::Throw { item } => {
+                k.push(b'v' as u32);
+                k.push(u32::from(
+                    PACK_LETTERS[item.checked_index(PACK_LETTERS.len(), "pack item")],
+                ));
+                k.push(b'\'' as u32);
             }
             Action::Cast { book, letter, aim } => {
                 k.push(b'm' as u32);
@@ -256,12 +267,13 @@ impl Action {
                 used: o.status.pack_used,
                 items: carried_items(o),
             },
-            Action::Quaff { item } | Action::Read { item } | Action::Eat { item } => {
-                Effect::Consumed {
-                    kind: o.inventory.get(item).map_or(0, |i| i.kind),
-                    number: o.inventory.get(item).map_or(0, |i| i.number),
-                }
-            }
+            Action::Quaff { item }
+            | Action::Read { item }
+            | Action::Eat { item }
+            | Action::Throw { item } => Effect::Consumed {
+                kind: o.inventory.get(item).map_or(0, |i| i.kind),
+                number: o.inventory.get(item).map_or(0, |i| i.number),
+            },
             Action::Wield { item } => Effect::Wielded {
                 kind: o.inventory.get(item).map_or(0, |i| i.kind),
                 from_turn: o.turn,
@@ -832,6 +844,16 @@ mod tests {
             }
             .keys(&o),
             vec![ESCAPE, b'G' as u32, u32::from(PACK_LETTERS[1])]
+        );
+        // Throw: `v`, the item, `'` for the closest target.
+        assert_eq!(
+            Action::Throw { item: 1 }.keys(&o),
+            vec![
+                ESCAPE,
+                b'v' as u32,
+                u32::from(PACK_LETTERS[1]),
+                b'\'' as u32
+            ]
         );
         // Cast: `m`, the book, the spell, `'` for the closest target.
         assert_eq!(
