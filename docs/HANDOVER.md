@@ -2,6 +2,37 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: M5 source refresh (RULES 21)
+
+**No play change.** M5 starts with its `--update` PR.
+
+- **Pins moved:** borg-rs `4ed3263`, better-borg-c `4603703`,
+  neo-angband-tracker `c2ddf2c`, borg-zoo `c5f1b04` and borg-runner
+  `e55ac6f`. The copies in `reference/` and the death index are refreshed.
+  Upstream Angband stays at `e473720` (the engine contract).
+- **borg-agent retired:** its pin is dropped, with its mentions in RULES 7
+  and 21 and the refresh script's docstring (left for this PR by #152).
+- **Read:** recorded in `docs/research/KNOWLEDGE.md` (reading-state rows
+  and an "M5 source refresh" note).
+  - **borg-runner edition 7:** readiness is the destination's worst
+    round, not its experience (`mmf-mage.3`); Deep Descent is `max_depth`
+    + 5 (`effect-handler-general.c:1166-1168`); class kit facts for
+    Priest, Ranger and Mage.
+  - **better-borg-c:** no new deaths. `borg_guess_race` moved to lines
+    874-889, so `observation.rs` cites the new lines.
+  - **borg-zoo:** our milestone-E specimen is catalogued, there is a
+    pristine `classes-1800` rerun (a G1 control candidate, not yet read),
+    and the `clevel` stop mapping (borg-zoo#48), so the stale note in
+    `docs/ZOO-INTERFACE.md` is corrected.
+  - **borg-rs:** v11R carry; munchkin default back to FALSE.
+- References reproduce 3/3, 3/3, 45/45; dossiers D1779–D1794 (the new
+  source hash).
+- The issue sections of the refresh report fail from cloud sessions
+  (GitHub GraphQL is refused there); issues were not read on this
+  refresh.
+
+**Next:** #125 (T5.1 depth readiness).
+
 ## 2026-11-13: the M4 review's notes (#165)
 
 **No play change** (measured): smoke 3/3, smoke-exact 3/3, full 45/45

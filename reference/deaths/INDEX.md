@@ -1790,5 +1790,21 @@ are not independent.*
 | borg-reborn-rs | [D1776-rust-seed1063](../../docs/deaths/D1776-rust-seed1063/report.md) | High-Elf Rogue | Fang, Farmer Maggot's Dog | 25237 | 2 | 3 | — | unassessed | D1776-rust-seed1063: Fang, Farmer Maggot's Dog at turn 25237 |
 | borg-reborn-rs | [D1777-rust-seed1070](../../docs/deaths/D1777-rust-seed1070/report.md) | Half-Troll Ranger | starvation | 89750 | 2 | 3 | — | unassessed | D1777-rust-seed1070: starvation at turn 89750 |
 | borg-reborn-rs | [D1778-rust-seed1074](../../docs/deaths/D1778-rust-seed1074/report.md) | Human Ranger | a floating eye | 3880 | 1 | 1 | — | unassessed | D1778-rust-seed1074: a floating eye at turn 3880 |
+| borg-reborn-rs | [D1779-rust-seed102](../../docs/deaths/D1779-rust-seed102/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 18376 | 2 | 1 | — | unassessed | D1779-rust-seed102: Fang, Farmer Maggot's Dog at turn 18376 |
+| borg-reborn-rs | [D1780-rust-seed1000](../../docs/deaths/D1780-rust-seed1000/report.md) | Human Warrior | a crow | 95559 | 2 | 2 | — | unassessed | D1780-rust-seed1000: a crow at turn 95559 |
+| borg-reborn-rs | [D1781-rust-seed1010](../../docs/deaths/D1781-rust-seed1010/report.md) | Half-Elf Mage | a kobold | 9288 | 2 | 1 | — | unassessed | D1781-rust-seed1010: a kobold at turn 9288 |
+| borg-reborn-rs | [D1782-rust-seed1014](../../docs/deaths/D1782-rust-seed1014/report.md) | Dwarf Mage | poison | 1390 | 1 | 1 | — | unassessed | D1782-rust-seed1014: poison at turn 1390 |
+| borg-reborn-rs | [D1783-rust-seed1020](../../docs/deaths/D1783-rust-seed1020/report.md) | Elf Druid | a giant white mouse | 7912 | 1 | 2 | — | unassessed | D1783-rust-seed1020: a giant white mouse at turn 7912 |
+| borg-reborn-rs | [D1784-rust-seed1021](../../docs/deaths/D1784-rust-seed1021/report.md) | Hobbit Druid | a small kobold | 6367 | 1 | 1 | — | unassessed | D1784-rust-seed1021: a small kobold at turn 6367 |
+| borg-reborn-rs | [D1785-rust-seed1022](../../docs/deaths/D1785-rust-seed1022/report.md) | Gnome Druid | a crow | 2531 | 1 | 1 | — | unassessed | D1785-rust-seed1022: a crow at turn 2531 |
+| borg-reborn-rs | [D1786-rust-seed1030](../../docs/deaths/D1786-rust-seed1030/report.md) | Hobbit Priest | a giant white mouse | 8008 | 1 | 2 | — | unassessed | D1786-rust-seed1030: a giant white mouse at turn 8008 |
+| borg-reborn-rs | [D1787-rust-seed1034](../../docs/deaths/D1787-rust-seed1034/report.md) | Half-Troll Priest | a battle-scarred veteran | 2147 | 0 | 1 | — | unassessed | D1787-rust-seed1034: a battle-scarred veteran at turn 2147 |
+| borg-reborn-rs | [D1788-rust-seed1044](../../docs/deaths/D1788-rust-seed1044/report.md) | Dunadan Necromancer | a fatal wound | 4580 | 2 | 1 | — | unassessed | D1788-rust-seed1044: a fatal wound at turn 4580 |
+| borg-reborn-rs | [D1789-rust-seed1052](../../docs/deaths/D1789-rust-seed1052/report.md) | Half-Troll Paladin | starvation | 91190 | 0 | 1 | — | unassessed | D1789-rust-seed1052: starvation at turn 91190 |
+| borg-reborn-rs | [D1790-rust-seed1043](../../docs/deaths/D1790-rust-seed1043/report.md) | Half-Troll Necromancer | a scruffy little dog | 89158 | 0 | 2 | — | unassessed | D1790-rust-seed1043: a scruffy little dog at turn 89158 |
+| borg-reborn-rs | [D1791-rust-seed1053](../../docs/deaths/D1791-rust-seed1053/report.md) | Dunadan Paladin | a scrawny cat | 85335 | 0 | 1 | — | unassessed | D1791-rust-seed1053: a scrawny cat at turn 85335 |
+| borg-reborn-rs | [D1792-rust-seed1063](../../docs/deaths/D1792-rust-seed1063/report.md) | High-Elf Rogue | Fang, Farmer Maggot's Dog | 25237 | 2 | 3 | — | unassessed | D1792-rust-seed1063: Fang, Farmer Maggot's Dog at turn 25237 |
+| borg-reborn-rs | [D1793-rust-seed1070](../../docs/deaths/D1793-rust-seed1070/report.md) | Half-Troll Ranger | starvation | 89750 | 2 | 3 | — | unassessed | D1793-rust-seed1070: starvation at turn 89750 |
+| borg-reborn-rs | [D1794-rust-seed1074](../../docs/deaths/D1794-rust-seed1074/report.md) | Human Ranger | a floating eye | 3880 | 1 | 1 | — | unassessed | D1794-rust-seed1074: a floating eye at turn 3880 |
 
-1783 cases.
+1799 cases.
