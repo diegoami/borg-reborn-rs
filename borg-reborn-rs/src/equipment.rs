@@ -35,6 +35,7 @@ mod slot {
     pub const WEAPON: u16 = 1;
     pub const RING: u16 = 3;
     pub const AMULET: u16 = 4;
+    pub const LIGHT: u16 = 5;
     pub const BODY_ARMOR: u16 = 6;
     pub const CLOAK: u16 = 7;
     pub const SHIELD: u16 = 8;
@@ -169,6 +170,37 @@ pub fn best_swap(w: &World, k: &Knowledge) -> Option<Swap> {
     best
 }
 
+/// The pack light to wield when the light slot is empty (#172): the aware
+/// light with the most fuel left.
+///
+/// A torch that burns out is deleted from the light slot
+/// (`player-util.c:player_update_light:713-726`, `OF_BURNS_OUT`), and
+/// nothing lights it again: unlit, the character cannot read
+/// (`player-util.c:player_can_read`) and sees no grid it does not stand
+/// next to in a lit room. Every full run of the #172 baseline lost its
+/// first torch, and the runs that starved spent their last 25,000 turns in
+/// the dark with two spare torches and a Word of Recall in the pack. A
+/// light is not judged by the Pareto rule above: no light is worse than
+/// any light. A light with no fuel left (`timeout` 0) does not count.
+pub fn light_to_wield(w: &World) -> Option<usize> {
+    let c = &w.character;
+    let empty = c
+        .equipment
+        .iter()
+        .any(|s| s.slot_type == slot::LIGHT && s.item.is_none());
+    if !empty {
+        return None;
+    }
+    c.inventory
+        .iter()
+        .enumerate()
+        .filter(|(_, it)| it.aware && it.tval == tv::LIGHT && it.timeout > 0)
+        // The most fuel, then the lowest pack index (`max_by_key` keeps
+        // the last of equal keys, so the index is negated).
+        .max_by_key(|&(i, it)| (it.timeout, std::cmp::Reverse(i)))
+        .map(|(i, _)| i)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -224,6 +256,33 @@ mod tests {
         assert!(s.after.melee > s.before.melee, "{s:?}");
         // The reverse is not better: no swap back.
         assert!(!better(&s.after, &s.before));
+    }
+
+    #[test]
+    fn an_empty_light_slot_takes_the_pack_light_with_most_fuel() {
+        let (mut w, _) = setup(crate::knowledge::tests::warrior());
+        w.character.equipment.push(Slot {
+            slot_type: slot::LIGHT,
+            item: None,
+        });
+        let base = dagger(&w);
+        let torch = |timeout: i16| Item {
+            tval: tv::LIGHT,
+            timeout,
+            ..base.clone()
+        };
+        w.character.inventory = vec![base.clone(), torch(0), torch(900), torch(2500)];
+        assert_eq!(light_to_wield(&w), Some(3));
+        // An unknown kind is not wielded, nor a spent one.
+        w.character.inventory[3].aware = false;
+        assert_eq!(light_to_wield(&w), Some(2));
+        w.character.inventory.truncate(2);
+        assert_eq!(light_to_wield(&w), None);
+        // A light already wielded: nothing to do.
+        w.character.inventory = vec![torch(2500)];
+        let at = w.character.equipment.len() - 1;
+        w.character.equipment[at].item = Some(torch(10));
+        assert_eq!(light_to_wield(&w), None);
     }
 
     #[test]
