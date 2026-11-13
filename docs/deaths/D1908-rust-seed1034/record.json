@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1908-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Half-Troll Priest",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 99880,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "menu",
+    "git_rev": "7598d50f1e62c4d76b4cbdfb61e0c98ccad92c75",
+    "git_dirty": "no",
+    "source_sha256": "438e83451d5e61d4f760b37a180b28385415b4be50aa7a3073de0d5e1a441e98",
+    "binary_sha256": "e193d9c2d85752a29f7858b02b13b1e51cd46a109117f3bdb1088f508c7e50bb",
+    "borg_txt_sha256": "3ce21b05cbf0a960ae70ffe9b71ea38e9593f9b25b2cd9be89f841feae1f8cc8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 9804
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-3-priest-4",
+      "result_sha256": "4c7f4e9350aac4cf70ed8e9331725eb4b0addbe6c32c2e67c371370ec251377d",
+      "raw_sha256": {
+        "keys.log": "4c7f4e9350aac4cf70ed8e9331725eb4b0addbe6c32c2e67c371370ec251377d",
+        "messages.log": "5014605c5ca8705ff712ade7dcfc7bf171a785dbce19fd40b67a9223fba40c31",
+        "state.log": "e42e2724369051f8ca39dfaa5ebfa48b4f091489e6fc8ce4d48c18ddc798455c"
+      },
+      "source_commit": "7598d50f1e62c4d76b4cbdfb61e0c98ccad92c75",
+      "binary_sha256": "e193d9c2d85752a29f7858b02b13b1e51cd46a109117f3bdb1088f508c7e50bb"
+    }
+  ],
+  "encounter_family": "start-fbd5205af19fa8e892bc6445c4bffa483867e765e8a0536f10e772c9b42a886a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "47949da9cd91e91de93104fa2e7884fa3adbe0f2646b6cf0d9d6a360975b3d86",
+    "config.txt": "20107157744cfbd8e823e293418852e03aa9bb3557faee37bd91673ac8699225",
+    "depths.json": "94a7fad58e55c7f1cd73cbfff33510522d844b64ec62daf3bfeccefc8b8a0d5c",
+    "params.json": "450913421079f5053f5202f1afc4bc781e98c8c2a9438aac00f5af463946da9e",
+    "summary.json": "2a9b5dc193069afa06cae2ce2eb0f68e3995fba088c55e9f9b7cef166f841edf",
+    "trace-tail.jsonl": "eb1880571f8fcdf216590a1849f7bfc6882b34fc0a8b730ca48417fc8f318195"
+  },
+  "investigation": null,
+  "issue": null
+}
