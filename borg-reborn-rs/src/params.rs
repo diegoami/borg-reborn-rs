@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 21] = [
+pub const TABLE: [Param; 22] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -235,6 +235,19 @@ pub const TABLE: [Param; 21] = [
                    breeding at 4 in its 3x3 (mon-move.c, monster_turn_multiply); 4 is the \
                    declared colony",
     },
+    Param {
+        name: "level_stall_turns",
+        unit: "game turns on one level without progress (0: never leave for it)",
+        min: 0,
+        max: 1_000_000,
+        default: 5000,
+        evidence: "#201: 38 of the full suite's 39 survivors walked between two grids on DL1 \
+                   from about turn 15,000 to the cap. Progress is a new grid mapped, experience \
+                   or a level change; the C Borg leaves a level after 10,000 of its turns on it \
+                   whatever it does there (borg-think-dungeon.c:1247, 'Leaving (boredom)'). \
+                   500 player turns at normal speed with nothing mapped and nothing learned; \
+                   declared, to be measured",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -261,6 +274,7 @@ pub struct Params {
     pub readiness_band_below: i32,
     pub readiness_band_above: i32,
     pub breeder_colony: i32,
+    pub level_stall_turns: i32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -299,6 +313,7 @@ impl Default for Params {
             readiness_band_below: default_of("readiness_band_below") as i32,
             readiness_band_above: default_of("readiness_band_above") as i32,
             breeder_colony: default_of("breeder_colony") as i32,
+            level_stall_turns: default_of("level_stall_turns") as i32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -369,6 +384,7 @@ impl Params {
                 "readiness_band_below" => p.readiness_band_below = v as i32,
                 "readiness_band_above" => p.readiness_band_above = v as i32,
                 "breeder_colony" => p.breeder_colony = v as i32,
+                "level_stall_turns" => p.level_stall_turns = v as i32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -400,6 +416,7 @@ impl Params {
                 "readiness_band_below" => i64::from(self.readiness_band_below),
                 "readiness_band_above" => i64::from(self.readiness_band_above),
                 "breeder_colony" => i64::from(self.breeder_colony),
+                "level_stall_turns" => i64::from(self.level_stall_turns),
                 _ => 0,
             }
         };

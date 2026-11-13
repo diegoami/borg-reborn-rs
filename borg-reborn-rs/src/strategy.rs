@@ -260,6 +260,18 @@ pub struct FirstStrategy {
     /// state refusals that `can_read`/`can_attack` now prevent; if
     /// item-specific refusals recur, bar by item kind (#165).
     refused: BTreeMap<Action, i64>,
+    /// The best this level has given so far and when it last grew (#201).
+    progress: Option<LevelProgress>,
+}
+
+/// What a level has given: the grids mapped and the experience, at their
+/// best, and the game turn either last grew (#201).
+#[derive(Clone, Copy, Debug)]
+struct LevelProgress {
+    generation: u64,
+    mapped: i64,
+    exp: i32,
+    since: i64,
 }
 
 impl Default for FirstStrategy {
@@ -273,6 +285,7 @@ impl Default for FirstStrategy {
             last_action: None,
             rule: "",
             refused: BTreeMap::new(),
+            progress: None,
         }
     }
 }
@@ -1055,6 +1068,31 @@ impl FirstStrategy {
             .is_some_and(|s| s.food < ctx.params.eat_below_food)
             && !Self::has_food(ctx);
         let block_descend = starving_no_food && ctx.world.level.depth > 0;
+        // What the level has given (#201): a new grid mapped or experience
+        // is progress; a new level starts the count again.
+        let level_idle = {
+            let generation = ctx.world.level.generation;
+            let mapped = Self::mapped(ctx.world);
+            let exp = ctx.world.character.status.as_ref().map_or(0, |s| s.exp);
+            match &mut self.progress {
+                Some(p) if p.generation == generation => {
+                    if mapped > p.mapped || exp > p.exp {
+                        p.mapped = p.mapped.max(mapped);
+                        p.exp = p.exp.max(exp);
+                        p.since = turn;
+                    }
+                }
+                _ => {
+                    self.progress = Some(LevelProgress {
+                        generation,
+                        mapped,
+                        exp,
+                        since: turn,
+                    })
+                }
+            }
+            self.progress.as_ref().map_or(0, |p| turn - p.since)
+        };
         if block_descend
             && Self::adjacent(ctx).is_empty()
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
@@ -1153,6 +1191,23 @@ impl FirstStrategy {
             && !Self::ready_for(ctx, depth)
         {
             self.rule = "not ready for this depth: go up";
+            return Mode::Return;
+        }
+        // A level that has given nothing for `level_stall_turns` is left
+        // (#201): no grid mapped and no experience gained. Without this, 38
+        // of the full suite's 39 survivors walked between two grids on DL1
+        // from about turn 15,000 to the cap, each goal stalling, cooling and
+        // being chosen again on the same grids. The C Borg leaves a level it
+        // has stayed on too long whatever it does there
+        // (borg-think-dungeon.c:1247). Return is the way out: a known recall
+        // read in safety, the up staircase, or the frontier toward one.
+        if ctx.params.level_stall_turns > 0
+            && depth > 0
+            && level_idle >= i64::from(ctx.params.level_stall_turns)
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "the level has given nothing: leave it";
             return Mode::Return;
         }
         // No travel goal survives a level generation. In particular,
