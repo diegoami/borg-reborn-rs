@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1827; distinct starting conditions: 1826; retained process attempts: 1827 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1828; distinct starting conditions: 1827; retained process attempts: 1828 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1833,6 +1833,7 @@ Dossiers: 1827; distinct starting conditions: 1826; retained process attempts: 1
 | [D1845-rust-seed1021](D1845-rust-seed1021/report.md) | unassigned | `c048db9e689d` | 1021 | a small kobold | 6367 | unassessed |
 | [D1846-rust-seed1030](D1846-rust-seed1030/report.md) | unassigned | `c048db9e689d` | 1030 | a giant white mouse | 8008 | unassessed |
 | [D1847-rust-seed1034](D1847-rust-seed1034/report.md) | unassigned | `c048db9e689d` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1848-rust-seed102](D1848-rust-seed102/report.md) | unassigned | `4fa37de9730e` | 102 | poison | 15220 | unassessed |
 
 ## Aggregated actions
 

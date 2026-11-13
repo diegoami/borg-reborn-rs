@@ -1,6 +1,6 @@
 {
   "actions": [],
-  "cases": 1827,
+  "cases": 1828,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 49,
     "Grip, Farmer Maggot's Dog": 136,
@@ -50,11 +50,11 @@
     "an acolyte": 17,
     "an aimless-looking merchant": 1,
     "an apprentice": 53,
-    "poison": 53,
+    "poison": 54,
     "starvation": 194
   },
-  "death_process_attempts": 1827,
-  "distinct_starting_conditions": 1826,
+  "death_process_attempts": 1828,
+  "distinct_starting_conditions": 1827,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -77,6 +77,7 @@
     "452ec40e2d7ed339ad148354a2375f7289d08a66": 46,
     "457559ec3d5fa04b86c8a2030a112d91e1f7d11d": 1,
     "46e1e3c69c8de03be4dd24e02fdeb1d8404ccf51": 11,
+    "4fa37de9730edb4bae709d0b98dcf5b5673fccbc": 1,
     "5211e752b18155115db74a88f2513e5a5575941a": 16,
     "630a2f48ef9e658a8dec35d2a611630442411ff8": 46,
     "6318cd2b8271b888375a816b9932380c28cb7a92": 47,
