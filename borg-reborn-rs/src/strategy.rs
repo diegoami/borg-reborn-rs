@@ -314,16 +314,22 @@ impl FirstStrategy {
         // One turn: a rest is interrupted when a monster arrives, and
         // what matters now is whether one can reach and strike. A distant
         // monster does not make the next turn unsafe.
-        assess(
+        // On the composite scale, disabling included (#183): a floating eye
+        // in reach deals no hit points worth a risk, but its gaze paralyses
+        // again and again while the Borg rests beside it.
+        let a = assess(
             ctx.world,
             ctx.knowledge,
             x,
             y,
             ctx.params.threat_horizon,
             ctx.params.risk_aversion_pct,
-        )
-        .risk(ctx.params.risk_aversion_pct)
-            <= 0.0
+        );
+        crate::tactics::composite(
+            &a,
+            ctx.params.risk_aversion_pct,
+            f64::from(ctx.view.hp.max(1)),
+        ) <= 0.0
     }
 
     /// The one step that most reduces danger: the cheapest of the eight
