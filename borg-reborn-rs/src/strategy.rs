@@ -1431,7 +1431,15 @@ impl FirstStrategy {
         if cure.is_some() {
             self.rule = "bleeding out: drink a cure";
         }
-        let wield = light.or(swap.map(|s| s.item));
+        // An empty bow slot takes a pack launcher on a quiet grid (#127).
+        let launcher = quiet
+            .then(|| crate::equipment::launcher_to_wield(ctx.world))
+            .flatten()
+            .filter(|&item| !self.refused.contains_key(&Action::Wield { item }));
+        if light.is_none() && launcher.is_some() {
+            self.rule = "a launcher in the pack: wield it";
+        }
+        let wield = light.or(launcher).or(swap.map(|s| s.item));
         // A spell to learn is studied when the grid is quiet, after the
         // light and before an equipment swap (T5.3, #127; `spells.rs`).
         let study = if quiet && light.is_none() {

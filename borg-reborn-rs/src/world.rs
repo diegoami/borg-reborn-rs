@@ -386,7 +386,9 @@ impl Character {
     /// (`player-attack.c:ranged_damage:554-582`, before criticals and slays).
     /// Returns (quiver index, damage per shot). Extra shots and might are
     /// not modelled: one shot per turn, declared.
-    pub fn shot(&self, k: &Knowledge) -> Option<(usize, f64)> {
+    /// The ammunition tval the wielded launcher fires, from its kind's
+    /// `SHOOTS_*` flag (#127).
+    pub fn ammo_tval(&self, k: &Knowledge) -> Option<u8> {
         let launcher = self
             .equipment
             .iter()
@@ -400,15 +402,32 @@ impl Character {
                 .get((flag - 1) / 8)
                 .is_some_and(|b| b & (1 << ((flag - 1) % 8)) != 0)
         };
-        let ammo_tval = if kf(10) {
-            tv::SHOT
+        if kf(10) {
+            Some(tv::SHOT)
         } else if kf(11) {
-            tv::ARROW
+            Some(tv::ARROW)
         } else if kf(12) {
-            tv::BOLT
+            Some(tv::BOLT)
         } else {
-            return None;
-        };
+            None
+        }
+    }
+
+    /// Whether a launcher is wielded.
+    pub fn has_launcher(&self) -> bool {
+        self.equipment
+            .iter()
+            .any(|s| s.slot_type == EQUIP_BOW && s.item.is_some())
+    }
+
+    pub fn shot(&self, k: &Knowledge) -> Option<(usize, f64)> {
+        let launcher = self
+            .equipment
+            .iter()
+            .find(|s| s.slot_type == EQUIP_BOW)
+            .and_then(|s| s.item.as_ref())?;
+        let kind = k.kind(launcher.kind)?;
+        let ammo_tval = self.ammo_tval(k)?;
         let mult = f64::from(kind.pval.base.max(1));
         let (i, ammo) = self
             .quiver

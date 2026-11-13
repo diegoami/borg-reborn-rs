@@ -193,6 +193,55 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         }
     }
 
+    // A thrown flask of oil (#127): `v` at the closest target, like the shot.
+    // Its damage is the engine's for a THROWING item thrown by hand:
+    // dice x (2 + weight / 12) (`player-attack.c:ranged_damage:568-579`; a
+    // flask is 1d4 and 2 lb, so 7.5 on average). Hit chance not modelled,
+    // as for the shot (declared).
+    if shot_possible(w) {
+        let flask = w
+            .character
+            .inventory
+            .iter()
+            .enumerate()
+            .find(|(_, it)| it.aware && it.tval == tv::FLASK && it.number > 0);
+        let target = w
+            .level
+            .monsters
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| t.in_view && t.hp >= 0)
+            .filter(|(_, t)| crate::danger::line_clear(w, x, y, t.x, t.y))
+            .min_by_key(|(_, t)| ((t.x - x).abs().max((t.y - y).abs()), t.index));
+        if let (Some((fi, f)), Some((i, t))) = (flask, target) {
+            let d = (t.x - x).abs().max((t.y - y).abs());
+            let dice = f64::from(f.dd) * (f64::from(f.ds) + 1.0) / 2.0;
+            let dam = (dice + f64::from(f.to_d)) * f64::from(2 + i32::from(f.weight) / 12);
+            if dam > 0.0 && (d <= 1 || !crate::danger::never_move(k, t)) {
+                let removed = if d <= 1 {
+                    one_threat(w, k, t, x, y, horizon).risk(aversion)
+                } else {
+                    one_round(w, k, t).risk(aversion)
+                };
+                let share = (dam / f64::from(t.hp.max(1))).min(1.0);
+                let status = current
+                    .per_monster
+                    .get(i)
+                    .map_or(0.0, |m| (m.disabling + 0.5 * m.summoning) * hp);
+                let gain = (removed + status) * share;
+                let risk_after = (current_risk - gain).max(0.0);
+                out.push(Response {
+                    action: Action::Throw { item: fi },
+                    score: gain - risk_after,
+                    risk_after,
+                    gain,
+                    cost: 0.0,
+                    why: "thrown oil at the closest monster",
+                });
+            }
+        }
+    }
+
     // An attack spell (T5.3, #127): `'` at the aim prompt targets the
     // closest visible monster in line of fire (`target_set_closest`), the
     // shot's target. Its gain is scored as the shot's: the share of that
@@ -1088,6 +1137,33 @@ mod tests {
         assert!(!responses(&w, &k, &p, &v)
             .iter()
             .any(|x| x.action == Action::Shoot));
+    }
+
+    #[test]
+    fn a_coming_monster_takes_a_thrown_flask() {
+        // #127: a flask of oil (1d4, 2 lb) thrown by hand deals
+        // 1d4 x (2 + 20 / 12) = 7.5 on average (player-attack.c:568-579).
+        let (mut w, k, v, p) = setup(
+            &["#########", "#@.....M#", "#########"],
+            20,
+            20,
+            10,
+            110,
+            None,
+        );
+        let mut flask = w.character.equipment[0].item.clone().unwrap();
+        flask.tval = tv::FLASK;
+        flask.dd = 1;
+        flask.ds = 4;
+        flask.weight = 20;
+        flask.number = 5;
+        w.character.inventory = vec![flask];
+        let r = responses(&w, &k, &p, &v);
+        let throw = r
+            .iter()
+            .find(|x| x.action == Action::Throw { item: 0 })
+            .expect("a coming monster in line of fire takes the flask");
+        assert!(throw.gain > 0.0, "{throw:?}");
     }
 
     #[test]
