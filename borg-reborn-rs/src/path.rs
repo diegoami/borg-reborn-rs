@@ -85,8 +85,17 @@ impl Goal {
                         // and treating it as unfinished held seven full-suite
                         // runs in explore/cooldown loops until starvation
                         // (T3.7's G0 check).
+                        // A grid already stood on is not a destination
+                        // either: standing there showed all it can show at
+                        // this light. Without this, two frontier grids whose
+                        // unknown neighbours stay dark (no light, the town
+                        // at night, an UNLIGHT necromancer) took turns as
+                        // the nearest target, and the Borg walked between
+                        // them until it starved (#172's ranger-0, #176's
+                        // priest-4, #177's necromancer: Walk 9 / Walk 1).
                         let standable = enter_cost(w, x, y).is_some();
-                        if !known || !standable || (x, y) == player(w) {
+                        let stood = level.at(x, y).is_some_and(|g| g.stood);
+                        if !known || !standable || stood || (x, y) == player(w) {
                             continue;
                         }
                         let unknown = DIRS.iter().any(|(_, dx, dy)| {
@@ -643,6 +652,23 @@ pub(crate) mod tests {
         let mut p = Paths::new(&w);
         assert_eq!(p.distance(&w, &k, &Goal::Frontier), UNREACHED);
         assert_eq!(p.step(&w, &k, &Goal::Frontier), None);
+    }
+
+    #[test]
+    fn a_frontier_already_stood_on_is_not_walked_back_to() {
+        // #176/#177/#172: two frontier grids whose unknown neighbours stay
+        // dark, one each side. The Borg just came from the west one; it
+        // goes on east instead of turning back.
+        let (mut w, k) = world(&["#######", "#?.@.?#", "#######"]);
+        assert!(w.level.at(3, 1).is_some_and(|g| g.stood), "underfoot");
+        let mut p = Paths::new(&w);
+        // Both frontiers are a step away; the first in DIRS order (west) wins.
+        assert_eq!(p.step(&w, &k, &Goal::Frontier), Some(4));
+        if let Some(g) = w.level.at_mut(2, 1) {
+            g.stood = true;
+        }
+        let mut p = Paths::new(&w);
+        assert_eq!(p.step(&w, &k, &Goal::Frontier), Some(6));
     }
 
     #[test]
