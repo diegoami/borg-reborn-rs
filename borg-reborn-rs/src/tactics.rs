@@ -282,13 +282,13 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
         });
     }
 
-    // Consumables: a known cure and a better weapon. The cure's effect
-    // value is the game's own where Knowledge carries it; a Cure Light
-    // Wounds is 2d8 (mean 9, class.txt effect data is not in Knowledge yet,
-    // so the mean is declared here).
+    // Consumables: a known cure and a better weapon. A Cure Light Wounds
+    // heals 20 (`object.txt`: `effect:HEAL_HP`, `dice:20`, no percentage;
+    // `effect-handler-attack.c:effect_handler_HEAL_HP:212-217`; #175: the
+    // 2d8 declared here before was an older version's).
     if view.hp < view.max_hp {
         if let Some((i, _)) = pack_item(w, k, "Cure Light Wounds") {
-            let heal = 9.0_f64.min(f64::from(view.max_hp - view.hp));
+            let heal = 20.0_f64.min(f64::from(view.max_hp - view.hp));
             out.push(Response {
                 action: Action::Quaff { item: i },
                 score: heal - current_risk,
@@ -478,7 +478,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
 }
 
 /// The first aware pack item whose knowledge name is `name`.
-fn pack_item<'a>(
+pub(crate) fn pack_item<'a>(
     w: &'a World,
     k: &Knowledge,
     name: &str,

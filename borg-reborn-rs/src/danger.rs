@@ -53,6 +53,8 @@ mod mon_tmd {
 /// `TMD_*` indices (`list-player-timed.h`: the enum counts its `TMD(...)`
 /// lines from 0).
 mod tmd {
+    pub const POISONED: usize = 7;
+    pub const CUT: usize = 8;
     pub const BLIND: usize = 2;
     pub const PARALYZED: usize = 3;
     pub const CONFUSED: usize = 4;
@@ -562,6 +564,16 @@ fn melee_threat(
         round_pmf = convolve(&round_pmf, &hit_pmf(&pmf, p_hit), usize::MAX);
         expected_per_round += p_hit * mean;
         worst_per_round += max;
+        // A POISON blow also adds 5 + 1d(rlev) to the poison timer
+        // (`mon-blows.c:melee_effect_handler_POISON:683-684`), one hit point
+        // a turn later on (`pending_bleed`); resisting poison stops it
+        // (`player_timed.txt` POISONED `fail:2:POIS`). Counted in the
+        // expected and worst loss, not in this round's death chance (#175).
+        if blow.effect == "POISON" && resist(w, elem::POIS) >= 1.0 {
+            let rlev = f64::from(race.level.max(1));
+            expected_per_round += p_hit * (5.0 + (rlev + 1.0) / 2.0);
+            worst_per_round += 5.0 + rlev;
+        }
     }
     // The rounds it actually spends attacking. Sleeping: it must wake
     // first; the C Borg scales by sleepiness (`:2439-2450`), here half,
@@ -589,8 +601,53 @@ fn melee_threat(
 
 fn hp_of(w: &World) -> i32 {
     // Current hit points, not the maximum: a character at 3/49 is in
-    // danger from a hit that would be trivial at full health.
-    w.character.status.as_ref().map_or(1, |s| s.hp.max(1))
+    // danger from a hit that would be trivial at full health. The poison
+    // and cuts already on the character take their share first (#175).
+    w.character
+        .status
+        .as_ref()
+        .map_or(1, |s| (s.hp - pending_bleed(w)).max(1))
+}
+
+/// `adj_con_fix[]` (`player-calcs.c:686-725`): the extra amount the poison,
+/// cut and stun timers fall each player turn, by the CON index.
+const ADJ_CON_FIX: [i32; 38] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 5, 6, 6, 7, 7,
+    8, 8, 8, 9, 9, 9,
+];
+
+/// The hit points the poison and cut timers already on the character will
+/// still take (#175). Each player turn `process_world` takes 1 for poison
+/// and 1, 2 or 3 for a cut by its grade (`game-world.c:513-541`), while
+/// both timers fall by `adj_con_fix[CON] + 1` (`game-world.c:decrease_timeouts:281-320`),
+/// and nothing regenerates meanwhile (`player-util.c:player_regen_hp:468-470`).
+/// A Mortal Wound never falls: it takes everything.
+pub fn pending_bleed(w: &World) -> i32 {
+    let Some(s) = w.character.status.as_ref() else {
+        return 0;
+    };
+    let timed = |i: usize| i32::from(s.timed.get(i).copied().unwrap_or(0)).max(0);
+    // STAT_CON is the fifth stat (list-stats.h).
+    let con = s.stat_ind.get(4).copied().unwrap_or(0).max(0) as usize;
+    let adjust = ADJ_CON_FIX[con.min(ADJ_CON_FIX.len() - 1)] + 1;
+    let poison = (timed(tmd::POISONED) + adjust - 1) / adjust;
+    // The cut grades of `player_timed.txt` (CUT): Graze to 10, Light Cut
+    // to 25, Bad to 50, Nasty to 100, Severe to 200, Deep Gash to 1000,
+    // Mortal Wound above.
+    let mut cut = timed(tmd::CUT);
+    if cut > 1000 {
+        return s.hp.max(0) + poison;
+    }
+    let mut bleed = 0;
+    while cut > 0 {
+        bleed += match cut {
+            201.. => 3,
+            101..=200 => 2,
+            _ => 1,
+        };
+        cut -= adjust;
+    }
+    poison + bleed
 }
 
 fn protected(w: &World, effect: &str) -> bool {
@@ -1182,6 +1239,57 @@ mod tests {
         assert!(a.expected > 0.0 && a.expected < 6.0, "{a:?}");
         assert!((a.worst - 6.0).abs() < 1e-9, "{a:?}");
         assert!(a.p_death > 0.0 && a.p_death < 1.0, "{a:?}");
+    }
+
+    #[test]
+    fn poison_and_cuts_bleed_the_hit_points_left() {
+        let mut w = world(None);
+        let set = |w: &mut World, i: usize, v: i16, con: i32| {
+            let s = w.character.status.as_mut().unwrap();
+            if s.timed.len() <= i {
+                s.timed.resize(i + 1, 0);
+            }
+            s.timed[i] = v;
+            s.stat_ind[4] = con;
+        };
+        assert_eq!(pending_bleed(&w), 0);
+        // 12 turns of poison at an ordinary CON (adjust 1): 12 hit points.
+        set(&mut w, tmd::POISONED, 12, 0);
+        assert_eq!(pending_bleed(&w), 12);
+        // At CON index 15 (18/00) adjust is 3: ceil(12 / 3) = 4.
+        set(&mut w, tmd::POISONED, 12, 15);
+        assert_eq!(pending_bleed(&w), 4);
+        // p_death reads the hit points the poison leaves: 20 - 12 = 8.
+        set(&mut w, tmd::POISONED, 12, 0);
+        assert_eq!(hp_of(&w), 8);
+        // A Severe Cut of 120 (adjust 1): 20 turns at 2, then 100 at 1.
+        set(&mut w, tmd::POISONED, 0, 0);
+        set(&mut w, tmd::CUT, 120, 0);
+        assert_eq!(pending_bleed(&w), 140);
+        // A Mortal Wound never closes.
+        set(&mut w, tmd::CUT, 5000, 0);
+        assert!(pending_bleed(&w) >= 20);
+    }
+
+    #[test]
+    fn a_poison_blow_costs_its_timer_too() {
+        let mut r = race("worm", 110, 0, &[(1, 2)], &[]);
+        let hurt = {
+            let k = knowledge(r.clone());
+            assess(&world(Some((2, 1, 110, true))), &k, 1, 1, 1, 50).expected
+        };
+        r.blows[0].effect = "POISON".into();
+        let k = knowledge(r);
+        let w = world(Some((2, 1, 110, true)));
+        let poison = assess(&w, &k, 1, 1, 1, 50).expected;
+        // Level 1: 5 + 1d1 = 6 more turns of poison per hit, times the hit
+        // chance, on top of the same 1d2.
+        assert!(poison > hurt + 1.0, "{hurt} vs {poison}");
+        // Resisting poison stops the timer.
+        let mut w = w;
+        w.character.gear.resist[elem::POIS] = 1;
+        let resisted = assess(&w, &k, 1, 1, 1, 50).expected;
+        assert!(resisted < poison, "{resisted} vs {poison}");
     }
 
     #[test]
