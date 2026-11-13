@@ -400,14 +400,7 @@ impl FirstStrategy {
                 hp,
             )
         };
-        // Step back only when the next grid is riskier by at least half a
-        // hit point: the path's own resolution (`danger_with` rounds the
-        // risk to whole steps). Below it the path already judged the step
-        // free, and retreating flips the Borg back and forth: #176's
-        // priest-4 spent 20,000 turns between two town grids because a
-        // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
-        // next one.
-        if at(x + dx, y + dy) >= at(x, y) + 0.5 {
+        if at(x + dx, y + dy) > at(x, y) {
             return Self::retreat_step(ctx).map(Action::Walk);
         }
         Some(Action::Walk(d))
