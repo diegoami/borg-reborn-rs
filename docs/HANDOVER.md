@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: shooting and Speed (#127, T5.3, first slice)
+
+**Play change in three full runs (the rangers); new full baseline.**
+
+- **`Action::Shoot`** is `h`, `do_cmd_fire_at_nearest`
+  (`player-attack.c:1412-1443`): the first quiver ammunition the launcher
+  takes, at the closest visible monster, with no prompt.
+  `Character::shot` reads the launcher's ammunition type (`KF_SHOOTS_*`,
+  10/11/12) and multiplier (`pval`) from its kind
+  (`player-calcs.c:2265-2275`) and the damage as `ranged_damage` does
+  (`:554-582`). The tactical response scores the share of the target's
+  threat one shot removes; at range, that is the round it deals once
+  adjacent. Never-movers at range are not shot; blind, confused or
+  paralysed, no shot. One shot a turn; the hit chance is not modelled
+  (declared, as for melee).
+- **A Potion of Speed** (+10, `player-calcs.c:2176-2177`) is offered at
+  the threat the same grid has at speed + 10, for one consumable.
+- **bbc D0010 is rebuilt from its dossier** (`overall-assessment.md:16`:
+  Main Gauche wielded, Short Bow x2 in the bow slot, eleven 1d4 arrows in
+  the quiver). The fixture had the bow as the weapon, the arrows in the
+  pack and wrong kinds. It now uses the engine's kinds 34/77/81/247 (added
+  to the fixture knowledge from a `BORG_KNOWLEDGE_LOG` dump), and is
+  active: the Borg shoots the kobold. The fixture loader gains a quiver.
+- **D0014** now offers Speed, but the dagger's one-hit kill of the 6-HP
+  falcon outscores it, so it stays a gap (#127): the owner's Speed→CLW
+  line is a sequencing question.
+- The readiness ranged gate uses `Character::shot` (ammunition the
+  launcher fires).
+- **Measured:** 9 shots in the full suite, none refused. `full-7-ranger-4`
+  survives (was a floating eye at 3,880); `full-7-ranger-3` survives;
+  `full-7-ranger-0` now starves at 88,180 — the starvation residue,
+  filed as **#172**. Survival 34/45. Full reference regenerated; dossiers
+  D1817–D1827.
+
+**Left in #127:** spells (study, cast, Magic Missile's evaluation, priest
+prayer randomness, book priorities), devices with failure chances, thrown
+oil, and D0014's Speed→CLW sequence.
+
 ## 2026-11-13: equipment valued by effect (#126, T5.2)
 
 **Play change in two full runs; new full baseline.**

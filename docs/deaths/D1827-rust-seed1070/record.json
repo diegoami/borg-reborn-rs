@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1827-rust-seed1070",
+  "run_kind": "harness",
+  "character": "Half-Troll Ranger",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 88180,
+    "race_idx": 7,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1070,
+    "flags": "menu",
+    "git_rev": "46e1e3c69c8de03be4dd24e02fdeb1d8404ccf51",
+    "git_dirty": "no",
+    "source_sha256": "b07615a75aeb9fef659782f82e7ad944dc53da61c99f6a7f49685ecddc9e90cf",
+    "binary_sha256": "140c2c0d9d4ff6c73e7e1fad89b149fefa2bd19d67fbd75fbe1ca52d4787df26",
+    "borg_txt_sha256": "e4164d3484a44de22fb275de68d0d691d30bdbd4ab3e670ac06601d1a48961a8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8771
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-7-ranger-0",
+      "result_sha256": "6685c6e37b817b8d8e948fb9a939043ae4f239fd0b4667bb9ebf1acc933de271",
+      "raw_sha256": {
+        "keys.log": "6685c6e37b817b8d8e948fb9a939043ae4f239fd0b4667bb9ebf1acc933de271",
+        "messages.log": "a9ec88a61c5a9608f6d9e2ccff28e17bcce0a777cc4e02893708ed9bbd438976",
+        "state.log": "26ea45a5b98f2985cc0311bb08f9554343280d09ea2acfc59be3601241fca9cd"
+      },
+      "source_commit": "46e1e3c69c8de03be4dd24e02fdeb1d8404ccf51",
+      "binary_sha256": "140c2c0d9d4ff6c73e7e1fad89b149fefa2bd19d67fbd75fbe1ca52d4787df26"
+    }
+  ],
+  "encounter_family": "start-d0c98c03675ce7f711a502d6cc33864c9566eff29887a3c601889bf12d9948bd",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "61379216f7cc1fdc802cae056c5428ac502fbd1aaabaff035858ac3ad247ea51",
+    "config.txt": "1a8c6175a31a123623c7cf5147307294c7ef0d008a3af05b331b5dfb9f828207",
+    "depths.json": "dcaef8983a0dfe60cd9772f3029e35cdd9d615da96fbf065fcbf6f55c24eb9d3",
+    "params.json": "cf58464c6f527125073de08cc111e88812693412e9ff10182b0221d8b36195e6",
+    "summary.json": "a37dc2882cb4bd7a4c2e21871bebd877347edb3739d9010de5da94322a9655bc",
+    "trace-tail.jsonl": "46d6a5251f5007f3fd4e8ad1f90bd62edca500ae27f4545da856bf2504732547"
+  },
+  "investigation": null,
+  "issue": null
+}
