@@ -65,6 +65,10 @@
     {
       "action": "Read",
       "item": "a known Phase Door, an escape while afraid"
+    },
+    {
+      "action": "Quaff",
+      "item": "Cure Light Wounds: 20 HP at 8/33, an answer that is not an attack (#175)"
     }
   ],
   "map": [
@@ -84,7 +88,7 @@
     "ACCUMULATED_KNOWLEDGE.md edition 4, fear section"
   ],
   "construction": "Gnome Druid CL4, 3/33 HP, D2, TMD_AFRAID=5. The report measures fear as -20 to-hit, +8 AC and no attacks; the crow is placed at 2 HP so the exchange says attack, and the shrieker two tiles north. The room is constructed. The room is wide enough that the blink's 8-12 band has remembered floor (the original room's size is not recorded).",
-  "limits": "The report is an agent-player run, not a Borg death; its fear measurement is the evidence. The assessment now refuses the attack while TMD_AFRAID is set, so the fixture requires a walk; the specific escape route is not measured.",
+  "limits": "The report is an agent-player run, not a Borg death; its fear measurement is the evidence. The assessment now refuses the attack while TMD_AFRAID is set, so the fixture requires a walk; the specific escape route is not measured. #175: Cure Light Wounds heals 20 (object.txt HEAL_HP dice:20), not the 9 the model declared when this fixture was written; at 8/33 HP with the attack refused, drinking it is an answer as sound as leaving, so it is feasible. The fixture's rule, no attack while afraid, is unchanged.",
   "player": {
     "race": 4,
     "class": 2,

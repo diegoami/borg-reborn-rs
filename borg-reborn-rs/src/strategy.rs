@@ -406,6 +406,34 @@ impl FirstStrategy {
         Some(Action::Walk(d))
     }
 
+    /// The cure to drink when the poison and cuts on the character would
+    /// take every hit point left (#175), from `object.txt`: Neutralize
+    /// Poison (`CURE:POISONED`) when poisoned, else the strongest known Cure
+    /// Wounds potion: Critical heals 60 and cures cuts and poison, Serious
+    /// heals 40 and cures cuts, Light heals 20 and lowers a cut by 20.
+    fn bleed_cure(ctx: &DecisionCtx) -> Option<usize> {
+        let s = ctx.world.character.status.as_ref()?;
+        let bleed = crate::danger::pending_bleed(ctx.world);
+        if bleed < s.hp {
+            return None;
+        }
+        let poisoned = s.timed.get(7).copied().unwrap_or(0) > 0;
+        let potion = |name: &str| {
+            crate::tactics::pack_item(ctx.world, ctx.knowledge, name)
+                .filter(|(_, it)| it.tval == crate::world::tv::POTION)
+                .map(|(i, _)| i)
+        };
+        let first = if poisoned {
+            potion("Neutralize Poison")
+        } else {
+            None
+        };
+        first
+            .or_else(|| potion("Cure Critical Wounds"))
+            .or_else(|| potion("Cure Serious Wounds"))
+            .or_else(|| potion("Cure Light Wounds"))
+    }
+
     /// Whether the readiness policy allows `depth` (T5.1, #125; see
     /// `readiness.rs`). Depth 1 always passes.
     fn ready_for(ctx: &DecisionCtx, depth: i32) -> bool {
@@ -1270,6 +1298,17 @@ impl FirstStrategy {
         if light.is_some() {
             self.rule = "no light: wield one from the pack";
         }
+        // Bleeding out (#175): the poison and cuts already on the character
+        // will take every hit point left, and nothing regenerates while
+        // they last (`danger::pending_bleed`). Resting cannot save it; a
+        // cure can. Only a monster in reach comes first.
+        let cure = (light.is_none() && mode != Mode::Engage && Self::adjacent(ctx).is_empty())
+            .then(|| Self::bleed_cure(ctx))
+            .flatten()
+            .filter(|&item| !self.refused.contains_key(&Action::Quaff { item }));
+        if cure.is_some() {
+            self.rule = "bleeding out: drink a cure";
+        }
         let wield = light.or(swap.map(|s| s.item));
         // A spell to learn is studied when the grid is quiet, after the
         // light and before an equipment swap (T5.3, #127; `spells.rs`).
@@ -1282,7 +1321,10 @@ impl FirstStrategy {
             self.rule = "a spell to learn: study it";
         }
         let wield = if study.is_some() { None } else { wield };
-        let chosen = study.or(wield.map(|item| Action::Wield { item }));
+        let chosen = match cure {
+            Some(item) => Some(Action::Quaff { item }),
+            None => study.or(wield.map(|item| Action::Wield { item })),
+        };
         let action = match chosen {
             Some(a) => a,
             None => match self.mode_step(ctx, mode) {
@@ -1705,6 +1747,40 @@ mod tests {
             failures: &[],
         };
         assert!(FirstStrategy::has_food(&ctx), "a known ration is");
+    }
+
+    #[test]
+    fn a_character_bleeding_out_drinks_a_cure_before_resting() {
+        // #175, smoke-mage-2 (D1848): poisoned for more turns than its hit
+        // points, it rested to death. With a Cure Light Wounds (kind 3) in
+        // the pack it drinks it; with its poison below its hit points it
+        // does not.
+        let poison = |turns: i16| {
+            let (mut s, mut w, k, mut p, m, mut rng, params) =
+                ctx_of(&["#######", "#@....#", "#######"], 6, 20);
+            w.character.inventory = vec![item(3, 1, true)];
+            if let Some(st) = w.character.status.as_mut() {
+                if st.timed.len() <= 7 {
+                    st.timed.resize(8, 0);
+                }
+                st.timed[7] = turns;
+                st.stat_ind[4] = 0;
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            s.decide(&mut ctx).action
+        };
+        assert_eq!(poison(10), Action::Quaff { item: 0 });
+        assert_ne!(poison(3), Action::Quaff { item: 0 });
     }
 
     #[test]

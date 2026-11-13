@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1832; distinct starting conditions: 1831; retained process attempts: 1832 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1844; distinct starting conditions: 1843; retained process attempts: 1844 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1838,6 +1838,18 @@ Dossiers: 1832; distinct starting conditions: 1831; retained process attempts: 1
 | [D1850-rust-seed1042](D1850-rust-seed1042/report.md) | unassigned | `4fa37de9730e` | 1042 | a cave spider | 3347 | unassessed |
 | [D1851-rust-seed1034](D1851-rust-seed1034/report.md) | unassigned | `4fa37de9730e` | 1034 | starvation | 97380 | unassessed |
 | [D1852-rust-seed1043](D1852-rust-seed1043/report.md) | unassigned | `4fa37de9730e` | 1043 | Fang, Farmer Maggot's Dog | 80541 | unassessed |
+| [D1853-rust-seed1014](D1853-rust-seed1014/report.md) | unassigned | `a74a446c09ce` | 1014 | a giant white mouse | 7893 | unassessed |
+| [D1854-rust-seed1040](D1854-rust-seed1040/report.md) | unassigned | `a74a446c09ce` | 1040 | a small kobold | 5078 | unassessed |
+| [D1855-rust-seed1042](D1855-rust-seed1042/report.md) | unassigned | `a74a446c09ce` | 1042 | a cave spider | 3347 | unassessed |
+| [D1856-rust-seed1034](D1856-rust-seed1034/report.md) | unassigned | `a74a446c09ce` | 1034 | starvation | 99880 | unassessed |
+| [D1857-rust-seed1043](D1857-rust-seed1043/report.md) | unassigned | `a74a446c09ce` | 1043 | Fang, Farmer Maggot's Dog | 80541 | unassessed |
+| [D1858-rust-seed1062](D1858-rust-seed1062/report.md) | unassigned | `a74a446c09ce` | 1062 | poison | 4220 | unassessed |
+| [D1859-rust-seed1014](D1859-rust-seed1014/report.md) | unassigned | `e8b9cb10b071` | 1014 | a giant white mouse | 7893 | unassessed |
+| [D1860-rust-seed1040](D1860-rust-seed1040/report.md) | unassigned | `e8b9cb10b071` | 1040 | a small kobold | 5078 | unassessed |
+| [D1861-rust-seed1042](D1861-rust-seed1042/report.md) | unassigned | `e8b9cb10b071` | 1042 | a cave spider | 3347 | unassessed |
+| [D1862-rust-seed1034](D1862-rust-seed1034/report.md) | unassigned | `e8b9cb10b071` | 1034 | starvation | 99880 | unassessed |
+| [D1863-rust-seed1043](D1863-rust-seed1043/report.md) | unassigned | `e8b9cb10b071` | 1043 | Fang, Farmer Maggot's Dog | 80541 | unassessed |
+| [D1864-rust-seed1062](D1864-rust-seed1062/report.md) | unassigned | `e8b9cb10b071` | 1062 | poison | 4220 | unassessed |
 
 ## Aggregated actions
 

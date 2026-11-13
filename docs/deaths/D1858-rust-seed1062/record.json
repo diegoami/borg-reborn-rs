@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1858-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 3,
+    "turn": 4220,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "a74a446c09ce416f877fb468e95554c9e1725790",
+    "git_dirty": "no",
+    "source_sha256": "aa4e7c3747d458f27c64688c73fecdf14b6c608a0cb5a0b3af84fff6dab86e81",
+    "binary_sha256": "4790106ed058c09656c792001a0c47be5080b421a6ce68640dbb267f782d8e79",
+    "borg_txt_sha256": "7333bbd27a21a09e4a74fcee94fd434a712081e329e8f564c2e958854c17ceb3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 474
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-6-rogue-2",
+      "result_sha256": "e842dab3ebd5b05bef4bf81dda54969a13db615961990c6927b979d8d3d1c34a",
+      "raw_sha256": {
+        "keys.log": "e842dab3ebd5b05bef4bf81dda54969a13db615961990c6927b979d8d3d1c34a",
+        "messages.log": "27aabacefaa85f946d8276cd8ad8d45667b9b655a81c6709653e307c25c49035",
+        "state.log": "5999d07f23fb9df791e143a129c23c107dcc0d40c246f4a12fbe1cc090bf87da"
+      },
+      "source_commit": "a74a446c09ce416f877fb468e95554c9e1725790",
+      "binary_sha256": "4790106ed058c09656c792001a0c47be5080b421a6ce68640dbb267f782d8e79"
+    }
+  ],
+  "encounter_family": "start-126d642fb17b3615686e7458c16323a49e229462f708bad0be7ec076c86bcbe2",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "dcc27f4f49078d41971d8880afa75b49685d05ff40a89ae9d34b81a20f423ec3",
+    "config.txt": "486fa035129cccad4b532f828015b70ec5d08c239138906dd12715442cd77fbf",
+    "depths.json": "ba331effca393fe9bd24383e11c86cce5f5d01758de7cc7bb962b195b420290f",
+    "params.json": "39205c1731523a870996baac0f37f826427223fee857748f543be30638b27b84",
+    "summary.json": "6b071dee65d216f74d2185b738ef3f01e77bd853c22f959aee05b6f6f0a1f5fa",
+    "trace-tail.jsonl": "d99002aefdbfaf06b02f7528c9b63cb2352234dd9147cbff9c3699d2e0cc71d8"
+  },
+  "investigation": null,
+  "issue": null
+}
