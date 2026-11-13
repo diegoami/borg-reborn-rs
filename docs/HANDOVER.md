@@ -41,7 +41,7 @@ reverted. It frees every character the flip held: full alive 41 → **24**,
 max depth sum 45 → 48, max level sum 67 → **121** (a warrior reaches
 clevel 10); smoke 3 → 2. Much of the suite's survival was this freeze.
 Survival against progress at that scale is the owner's call. Dossiers
-D1874–D1899 are that run's deaths.
+D1874–D1895 are that run’s deaths.
 
 ## 2026-11-13: a monster at 0 hit points is alive (#179)
 
