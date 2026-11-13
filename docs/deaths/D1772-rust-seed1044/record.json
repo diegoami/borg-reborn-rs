@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1772-rust-seed1044",
+  "run_kind": "harness",
+  "character": "Dunadan Necromancer",
+  "raw_cause": "a fatal wound",
+  "terminal": {
+    "cause": "a fatal wound",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 1,
+    "turn": 4580,
+    "race_idx": 8,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1044,
+    "flags": "menu",
+    "git_rev": "690ae98a53c99402e6d5d03eaeb560122b19785a",
+    "git_dirty": "no",
+    "source_sha256": "75c00ff5996fff35e21ec6c1fab9d0a624af363532802cf4fd354c46fee12069",
+    "binary_sha256": "52e0341fd2699b160d241e3a5c4497746223bb0504bbbd7dc8b8285c69d1c023",
+    "borg_txt_sha256": "b5f9f4658a9720cd8bcf5142afd62ab783d015e415408a9e0b475bdf20cdab6b",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 394
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-4-necro-4",
+      "result_sha256": "6affa3c3f7b694c5beeefef0db8d56d608c28efad46fcc68ab438027dc639262",
+      "raw_sha256": {
+        "keys.log": "6affa3c3f7b694c5beeefef0db8d56d608c28efad46fcc68ab438027dc639262",
+        "messages.log": "f35787f024ae99c0d4bdd8a7ff2b478fccbbcd0d88802e083ee37bec5fb5909d",
+        "state.log": "c619a7397b7a9866649b871ee4bb0ccda1cf23b5b470c19f4a1a3a746409c535"
+      },
+      "source_commit": "690ae98a53c99402e6d5d03eaeb560122b19785a",
+      "binary_sha256": "52e0341fd2699b160d241e3a5c4497746223bb0504bbbd7dc8b8285c69d1c023"
+    }
+  ],
+  "encounter_family": "start-61a56cacc4ec119dc380b2af236820d8b44909d5a03c505d91f6200458c08c4b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "6ec8f235bf0baad855805c190250e2f76d40d1afa4af794ddb7ad31eaf7e668e",
+    "config.txt": "49fa4b1fafa034c231d4fe90caeb2f090721f7540275139882ce8d88e9fe343b",
+    "depths.json": "b481f34c2c1494e8575fc80e9cbe5c51e14a7fb3273a7904c44623309b63410d",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "eaf4e493795bc97ea862f481e14e3a1773998a8e5c10223c7797e6a54ba0e8db",
+    "trace-tail.jsonl": "20fc31c9a05f8f033a4849baf628fd327b2195caed5633a11055c805b566ecbf"
+  },
+  "investigation": null,
+  "issue": null
+}

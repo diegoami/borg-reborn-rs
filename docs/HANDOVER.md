@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: the M4 review's notes (#165)
+
+**No play change** (measured): smoke 3/3, smoke-exact 3/3, full 45/45
+identical to the references.
+
+- `danger.rs`: sleep and confusion set the rounds a monster spends
+  attacking, and expected, worst, `p_death`, `disabling` and `economic`
+  all read them. Before, confusion scaled only expected and worst, and
+  sleep left `disabling` whole. Stun is applied where the engine applies
+  it: the hit chance falls by `STUN_HIT_REDUCTION`
+  (`mon-attack.c:353-356`) and the rolled dice by `STUN_DAM_REDUCTION`,
+  before armour (`:621-624`). Test: `confusion_and_stun_scale_every_term`.
+- `strategy.rs`: `has_food` and the Eat step require an aware item (test
+  `only_known_food_is_food`). The refusal bar's documentation names its
+  granularity: an exact `Action`, pack index included; bar by kind if
+  item refusals recur.
+- `tools/calibrate.py`: only the engine's melee blow phrases
+  (`blow_methods.txt` `act:` lines) and "misses you" count as blows. The
+  blow decomposition is unchanged on this baseline (no spell line had
+  matched).
+- Dossiers D1763–D1778; `check-no-time.py` 0 violations.
+
+**Next:** the M5 source refresh (its own PR), then #125.
+
 ## 2026-11-13: a wide blow is a distribution (#164)
 
 **No play change.** M4 review finding 2. `danger.rs:blow_pmf` returned
