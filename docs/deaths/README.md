@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1807; distinct starting conditions: 1806; retained process attempts: 1807 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1827; distinct starting conditions: 1826; retained process attempts: 1827 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1813,6 +1813,26 @@ Dossiers: 1807; distinct starting conditions: 1806; retained process attempts: 1
 | [D1825-rust-seed1061](D1825-rust-seed1061/report.md) | unassigned | `46e1e3c69c8d` | 1061 | starvation | 88680 | unassessed |
 | [D1826-rust-seed1053](D1826-rust-seed1053/report.md) | unassigned | `46e1e3c69c8d` | 1053 | a scrawny cat | 85335 | unassessed |
 | [D1827-rust-seed1070](D1827-rust-seed1070/report.md) | unassigned | `46e1e3c69c8d` | 1070 | starvation | 88180 | unassessed |
+| [D1828-rust-seed1014](D1828-rust-seed1014/report.md) | unassigned | `3c830cebf704` | 1014 | poison | 1390 | unassessed |
+| [D1829-rust-seed1020](D1829-rust-seed1020/report.md) | unassigned | `3c830cebf704` | 1020 | a small kobold | 3098 | unassessed |
+| [D1830-rust-seed1022](D1830-rust-seed1022/report.md) | unassigned | `3c830cebf704` | 1022 | a crow | 2531 | unassessed |
+| [D1831-rust-seed1021](D1831-rust-seed1021/report.md) | unassigned | `3c830cebf704` | 1021 | a small kobold | 6367 | unassessed |
+| [D1832-rust-seed1030](D1832-rust-seed1030/report.md) | unassigned | `3c830cebf704` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1833-rust-seed1034](D1833-rust-seed1034/report.md) | unassigned | `3c830cebf704` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1834-rust-seed1061](D1834-rust-seed1061/report.md) | unassigned | `3c830cebf704` | 1061 | starvation | 82880 | unassessed |
+| [D1835-rust-seed1070](D1835-rust-seed1070/report.md) | unassigned | `3c830cebf704` | 1070 | starvation | 82380 | unassessed |
+| [D1836-rust-seed1014](D1836-rust-seed1014/report.md) | unassigned | `a9210a39e09e` | 1014 | poison | 1390 | unassessed |
+| [D1837-rust-seed1020](D1837-rust-seed1020/report.md) | unassigned | `a9210a39e09e` | 1020 | a small kobold | 3098 | unassessed |
+| [D1838-rust-seed1022](D1838-rust-seed1022/report.md) | unassigned | `a9210a39e09e` | 1022 | a crow | 2531 | unassessed |
+| [D1839-rust-seed1021](D1839-rust-seed1021/report.md) | unassigned | `a9210a39e09e` | 1021 | a small kobold | 6367 | unassessed |
+| [D1840-rust-seed1030](D1840-rust-seed1030/report.md) | unassigned | `a9210a39e09e` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1841-rust-seed1034](D1841-rust-seed1034/report.md) | unassigned | `a9210a39e09e` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1842-rust-seed1014](D1842-rust-seed1014/report.md) | unassigned | `c048db9e689d` | 1014 | poison | 1390 | unassessed |
+| [D1843-rust-seed1020](D1843-rust-seed1020/report.md) | unassigned | `c048db9e689d` | 1020 | a small kobold | 3098 | unassessed |
+| [D1844-rust-seed1022](D1844-rust-seed1022/report.md) | unassigned | `c048db9e689d` | 1022 | a crow | 2531 | unassessed |
+| [D1845-rust-seed1021](D1845-rust-seed1021/report.md) | unassigned | `c048db9e689d` | 1021 | a small kobold | 6367 | unassessed |
+| [D1846-rust-seed1030](D1846-rust-seed1030/report.md) | unassigned | `c048db9e689d` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1847-rust-seed1034](D1847-rust-seed1034/report.md) | unassigned | `c048db9e689d` | 1034 | a battle-scarred veteran | 2147 | unassessed |
 
 ## Aggregated actions
 

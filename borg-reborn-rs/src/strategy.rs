@@ -1260,7 +1260,18 @@ impl FirstStrategy {
         if swap.is_some() {
             self.rule = "a better item in the pack: wear it";
         }
-        let action = match swap.map(|s| Action::Wield { item: s.item }) {
+        // No light outranks the swap and does not wait for a quiet grid:
+        // unlit, the Borg cannot read its escapes or see the frontier it
+        // walks to (#172). Only a monster in reach comes first (Engage).
+        let light = (mode != Mode::Engage && Self::adjacent(ctx).is_empty())
+            .then(|| crate::equipment::light_to_wield(ctx.world, ctx.knowledge))
+            .flatten()
+            .filter(|&item| !self.refused.contains_key(&Action::Wield { item }));
+        if light.is_some() {
+            self.rule = "no light: wield one from the pack";
+        }
+        let wield = light.or(swap.map(|s| s.item));
+        let action = match wield.map(|item| Action::Wield { item }) {
             Some(a) => a,
             None => match self.mode_step(ctx, mode) {
                 Some(a) => a,
@@ -1367,7 +1378,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.hp = hp;
             s.max_hp = max_hp;
-            s.food = 1000;
+            s.food = 5000; // Fed (above Hungry, 1500)
             s.pack_size = 23;
             s.pack_used = 1;
         }
@@ -1458,7 +1469,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.depth = 0;
             s.gold = gold;
-            s.food = 1000;
+            s.food = 5000; // Fed (above Hungry, 1500)
             s.pack_used = inventory.len() as i32;
             s.pack_size = 23;
         }

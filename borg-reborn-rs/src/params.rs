@@ -134,9 +134,13 @@ pub const TABLE: [Param; 20] = [
         unit: "food units",
         min: 0,
         max: 5000,
-        default: 300,
-        evidence: "c15 §12.4 and GOALS principle 7: eat before the food timer                    reaches starvation; 300 is a declared early threshold, not measured \
-                   (RULES 14)",
+        default: 1500,
+        evidence: "#172: the engine's Hungry boundary. player_timed.txt grades FOOD in percent \
+                   (Starving 1, Faint 4, Weak 8, Hungry 15) and constants.txt food-value 100 \
+                   scales them (player-timed.c:318-336): Faint is 400, Weak 800, Hungry 1500. \
+                   The manual (c01 §1.16): eat when Hungry appears, never reach Weak. The old \
+                   300 was below Faint: the Borg ate only after fainting began, and noticed \
+                   having no food too late to go home (the starvation residue since T4.6)",
     },
     Param {
         name: "risk_aversion_pct",
@@ -407,7 +411,7 @@ mod tests {
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(p.max_level_changes_per_turn, 2);
         assert_eq!((p.risk_aversion_pct, p.threat_horizon), (50, 1));
-        assert_eq!(p.eat_below_food, 300);
+        assert_eq!(p.eat_below_food, 1500);
         assert_eq!(
             (p.escape_item_hp, p.last_escape_hp, p.arrival_risk_hp),
             (1, 5, 3)
