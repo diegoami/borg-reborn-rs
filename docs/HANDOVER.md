@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-13: a wide blow is a distribution (#164)
+
+**No play change.** M4 review finding 2. `danger.rs:blow_pmf` returned
+`[0, mean]` for blows with dice × sides > 64: probability mass `mean` at
+damage 1, which is not a distribution, so `p_death` came out clamped to 1.
+The declared two-point model is now a real one: P(max) = mean / max and the
+rest on 0. It sums to 1 and keeps the mean; the spread is overstated, which
+is conservative. Only depth ≥ 36 monsters have such blows (20d10 at most).
+Test: `a_wide_blow_is_a_distribution`. References reproduce 3/3, 3/3,
+45/45; dossiers D1747–D1762.
+
 ## 2026-11-13: M4 reviewed and merged; growth factors are declared (#163)
 
 **M4 review.** GLM-5.3 reviewed #162 at `612fa97`. It reproduced every
