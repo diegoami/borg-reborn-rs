@@ -33,12 +33,12 @@ or a design, the handover. Two rules that keep it honest:
 
 | Source | Last read | What was covered | Re-read when |
 | --- | --- | --- | --- |
-| borg-runner (S15) | 2026-11-10, pin `1440f70` | everything we copy through `ACCUMULATED_KNOWLEDGE.md` **edition 4**, including the new `minimaxflash-1.5`, `minimaxflash-2.2`, `mmf-mage.2` and `mmx-war-1` reports and the renamed run copies | the report's copy lines: a changed `ACCUMULATED_KNOWLEDGE.md` means a new edition (read its own changelog paragraph, then the diff); new runs arrive as `knowledge/` + `records/` additions |
-| better-borg-c deaths (S4, S9, S11) | 2026-11-10, pin `a4cc2d4` | every copied dossier D0001–D0019 (`report.md`; `overall-assessment.md` for D0017–D0019), `REDESIGN-LESSONS.md`; no new dossiers on the M4 refresh | new death cases; a changed `REDESIGN-LESSONS.md` |
-| better-borg-c issues (S8) | 2026-11-10 | the earlier analysis set, then M11 #471 and the M4-relevant carries #459 (EATHURT), #454 (SCOOTIDX), #452 (GRANITESIM); the five `borg-danger.c` commits read at this pin | the report's `issues updated since` list |
-| neo-angband-tracker (S2, S14) | 2026-11-10 | the C Borg spec and the Tunable Plan at their pins; the strategy manual's chapters and appendices, and the official user manual (`reference/c-manual/`, `user-manual/`), as tasks need them (ch. 15 for M3) | when the pin moves (`--update`); otherwise per task, at the chapter or manual page the task cites. The strategy manual is the first reference for game behaviour; every number is checked against `engine/angband/` |
-| borg-zoo (S6) | 2026-11-10, pin `415183c` | the DESIGN and catalogue diff through the mode cutoff and explicit `normal` profile; #61's 24-cell buying-family request and its mixed result | changed catalogue/DESIGN copies; our specimens' issues |
-| borg-rs | 2026-11-10, pin `399c907` | #25's explicit buying-strategy seam and the reserve410 evidence boundary (rejected upstream margins and mixed 24-cell pilot); #27 buy-to-identify is open, not a result | family changes that affect control interpretation; buying-strategy measurements |
+| borg-runner (S15) | 2026-11-13, pin `e55ac6f` | everything we copy through `ACCUMULATED_KNOWLEDGE.md` **edition 7** (editions 5–7: their changelog paragraphs and the diff from edition 4), including the new `mmf-mage.3` (crow death), `mmx-pri-1`/`mmx-pri-1.2` (Dwarf Priest, two lives) and `mmx-ran-1` (first Ranger) knowledge and reports, `records/characters/`, and the `INSTRUCTIONS.md` diff ("Experience is the objective, not depth") | the report's copy lines: a changed `ACCUMULATED_KNOWLEDGE.md` means a new edition (read its own changelog paragraph, then the diff); new runs arrive as `knowledge/` + `records/` additions |
+| better-borg-c deaths (S4, S9, S11) | 2026-11-13, pin `4603703` | every copied dossier D0001–D0019, `REDESIGN-LESSONS.md`; no new or changed dossiers between `a4cc2d4` and `4603703` (INDEX.md's additions are our own cases) | new death cases; a changed `REDESIGN-LESSONS.md` |
+| better-borg-c issues (S8) | 2026-11-13 (commits only: the issue list is not reachable from cloud sessions) | the earlier analysis set and the M4 carries; the 10 commits `a4cc2d4..4603703`: M11 review corrections F1–F5 (`e8942e44`, docs and a patch file, no `src/` change), the v11 tag record (`368efd4e`), the newkill-95 carry (`d4175367`, `borg-flow-kill.c:borg_new_kill`, neo-angband-tracker#95); tag `4.2.6-impact-v9.1` (`618f1554`, release packaging) | the report's `issues updated since` list; any commit touching a `borg-*.c` function we cite |
+| neo-angband-tracker (S2, S14) | 2026-11-13, pin `c2ddf2c` (no copied path changed since `777eea1`) | the C Borg spec and the Tunable Plan at their pins; the strategy manual's chapters and appendices, and the official user manual (`reference/c-manual/`, `user-manual/`), as tasks need them (ch. 15 for M3) | when the pin moves (`--update`); otherwise per task, at the chapter or manual page the task cites. The strategy manual is the first reference for game behaviour; every number is checked against `engine/angband/` |
+| borg-zoo (S6) | 2026-11-13, pin `c5f1b04` | the DESIGN and catalogue diff: two dashboard tabs with one mode policy each (plain = `normal` post-cutoff, a build's own `default` pre-cutoff; a point needs a full class run, `DASHBOARD_MIN_CELLS = 1500`); new specimens `4.2.6-reborn-rust-e` (ours, tag `e`), `4.2.6-bbc-m11`, `4.2.6-rs-m11`, `rs-family-buying`, `rs-town`, `angband-42cd156-original`, `neo-765-original`; buying, switch-screen and town-negative profiles; the adapter's `clevel` stop mapping (`2416bb9`, borg-zoo#48) | changed catalogue/DESIGN copies; our specimens' issues; any `classes-1800` control rerun |
+| borg-rs | 2026-11-13, pin `4ed3263` | the v11R carry (PR #30, 18 units of better-borg-c M11, owner-accepted 2026-11-11, no cohort or benefit claim); buying family #26/#28 merged (opt-in, no tag); defaults audit: `borg_munchkin_by_class` built-in default back to FALSE (TRUE only via borg.txt), FORK-CORRECTIONS amendment | family changes that affect control interpretation; buying-strategy measurements |
 | angband | 2026-11-10, pin `42cd156` | the 12-commit log since our engine pin: rest interruption/completion, command flushing and Borg reaction changes noted for M4's executor work; our engine remains `e473720` byte for byte | only when a lifted executor or combat rule needs its citation re-checked |
 
 ## Distilled for the tasks ahead
@@ -213,6 +213,50 @@ Pointers, not copies: the line lives in the source, named beside it.
   (`minimaxflash-1.4#616`) — the executor's expected-effect check will
   catch this if we ever batch door-picking; a picked lock leaves you
   outside.
+
+- **M5 source refresh, 2026-11-13 (borg-runner `e55ac6f` edition 7,
+  better-borg-c `4603703`, borg-zoo `c5f1b04`, borg-rs `4ed3263`).** All
+  single-run evidence; nothing here is measured by borg-zoo (RULES 14).
+  - **Readiness is the destination's worst round, not its experience**
+    (`mmf-mage.3`): a CL1 Mage (8 HP) went to DL2 and died to a crow
+    (`sleepiness:0`, placed awake, `mon-make.c:1141`; speed 120, two 1d3
+    bites) with the up staircase five tiles away. INSTRUCTIONS now says
+    to stay until the deeper level's worst round is survivable and to
+    arrive with full SP. For T5.1: evaluate awake and fast monsters at
+    the destination, and keep the arrival staircase as the retreat.
+  - **Experience, not depth, is now the corpus's stated objective**
+    (edition 7 §1, an editorial change: 21 runs, 7 deaths, all at DL ≤ 2
+    and CL ≤ 4). Consistent with GOALS principle 6; no threshold follows.
+  - **Deep Descent is `max_depth` + 5**
+    (`effect-handler-general.c:1166-1168`; blocked only when the target
+    is not deeper). An unknown scroll at DL1 is Deep Descent 6.9% of the
+    time (`mmx-pri-1.2#176`), so reading unknown scrolls is a readiness
+    decision.
+  - **Class kit:** a Priest gets one blow with any weapon; thrown oil
+    hits at `35 − distance`. A Ranger's CL1 Short Bow (1d4×2) is no
+    better than the dagger (`player-calcs.c:2281-2282`: shots in tenths,
+    `lev/3`); oil is the early weapon; arrows cost 1 gold at the General
+    Store (`mmx-ran-1#19`). Soft Leather Armour costs 84, so purchase
+    order decides whether AC is bought. A Dwarf's digging turns veins
+    into income. The Mage's cast menu lists studied spells only, and a
+    letter moves the cursor rather than casting (an executor fact for
+    T5.3).
+  - **Magic Mapping coverage disagrees** between ACC §8.4 (16%, "a
+    convenience") and `mmx-pri-1.2#184` (27% window, ~65% staircase
+    chance): a purchase to measure, not a rule.
+  - **For the M4 threat model:** breeders are a per-decision HP tax (22 HP
+    in one 38-tile walk, `mmx-pri-1#81-82`); the silver mouse appears on
+    DL2 in packs of 11; `sleepiness:0` races start awake, a prior our
+    awake/asleep split could use.
+  - **G1:** the zoo catalogues our milestone-E specimen
+    (`4.2.6-reborn-rust-e`, before M3/M4) and reran `angband-e473-original`
+    on `classes-1800` on 2026-11-11 (`94f54bb`, descriptive): a candidate
+    control for T5.4. Its numbers are not read yet.
+  - **Citations:** better-borg-c `d4175367` moved
+    `borg-flow-kill.c:borg_guess_race` up 18 lines (now 874-889; body
+    unchanged); `observation.rs` cites the new lines. The carry itself
+    (`borg_new_kill` no longer forces PASS_WALL grids to floor) has no
+    counterpart here.
 
 ### Cross-cutting
 

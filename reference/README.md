@@ -7,16 +7,16 @@ PR that updates the pin and this table.
 
 | Path | Copied from | Commit | What is included |
 | --- | --- | --- | --- |
-| `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The C Borg specification. Its relative links point into neo-angband-tracker |
+| `c-borg/BORG_SPEC.md` | diegoami/neo-angband-tracker `docs/c-borg/` | `c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3` | The C Borg specification. Its relative links point into neo-angband-tracker |
 | `c-borg/TUNABLE-BORG-PLAN.md` | same | same | Revision 3 plus *What a remake leaves out* (2026-11-08) |
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
-| `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `777eea1d9bd6c4094e87fff23af3984dd23f7edb` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
-| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `a4cc2d41d3a5f1caa32e6b49c3149fea03a693dd` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
-| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `399c907950b1fd474ddfc1c5a5d4f86063778aac` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
+| `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `46037038cb0ce3a248ea22c06f02454818dbe4b4` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
+| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `4ed3263ba340ce907484465f2d3addbdf5eab8ed` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
-| `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `1440f703914c10de3fccd29ece94aa2a2d747cf3` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
+| `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
-| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `415183ce70ddbd1e0f074301cbb007c774d678b2` | Specimens, profiles and suites as of that commit |
+| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `c5f1b0429ea898c8d5484aa4f1ac0d681972aac7` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 

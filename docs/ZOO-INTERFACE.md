@@ -41,9 +41,9 @@ cannot pass unnoticed.
 
 **`stop_reason`** is one of `turns`, `death`, `clevel`, `depth`, `keys`,
 `stalled`, `borg_stopped` or `blocked`. The zoo maps `turns`, `death`,
-`depth`, `borg_stopped` and `blocked` (`STOP` in its adapter); its key for
-the level stop is `clev`, but ours writes `clevel`. The zoo never passes
-`-clev`, so no cell can stop that way.
+`clevel`, `depth`, `borg_stopped` and `blocked` (`STOP` in its adapter;
+`clevel` since borg-zoo `2416bb9`, borg-zoo#48, which keeps `clev` for
+older builds). The zoo never passes `-clev`, so no cell stops that way.
 
 Further fields of `summary.json` (`game_options`, `exact_turns`, `loaded`,
 the RNG states, …) are ours. The zoo may read them, but doesn't depend on

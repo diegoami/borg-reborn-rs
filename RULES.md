@@ -37,10 +37,10 @@ whatever the model.
    picks a reviewer or launches one itself. When the review arrives, the
    session processes its findings.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
-   borg-rs, borg-zoo, borg-agent) are **read only**, at pinned commits
+   borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session
    may open **issues**, and keep its own issues up to date, on borg-zoo,
-   borg-rs, better-borg-c, neo-angband-tracker and borg-agent, when the
+   borg-rs, better-borg-c and neo-angband-tracker, when the
    owner asks or when this repository needs a change there. It follows
    that repository's own conventions and links the issue in the handover.
    Anything else needed there, or a C Borg defect found here, is described
@@ -110,7 +110,7 @@ whatever the model.
 ## Moving sources
 
 21. **Every source moves** (owner, 2026-11-08): angband, the C Borgs,
-    borg-rs, borg-agent, the specification, the zoo and the death reports.
+    borg-rs, borg-runner, the specification, the zoo and the death reports.
     Every session starts with `python3 scripts/refresh-sources.py` and reads
     what it reports, new deaths first. Each milestone starts with a
     `--update` PR that moves the pins and refreshes `reference/` and the

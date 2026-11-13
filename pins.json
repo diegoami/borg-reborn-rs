@@ -11,29 +11,29 @@
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "399c907950b1fd474ddfc1c5a5d4f86063778aac",
+      "commit": "4ed3263ba340ce907484465f2d3addbdf5eab8ed",
       "role": "A reference only (docs/SPEC.md §2): the faithful Rust port of the C Borg. Its harness hooks and headless frontend were copied once and are ours (docs/PROVENANCE.md); nothing of it is a build input, an oracle or a control. Its docs/ are copied in reference/borg-rs/.",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-13",
       "issues": true,
       "watch_tags": "m*"
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "a4cc2d41d3a5f1caa32e6b49c3149fea03a693dd",
+      "commit": "46037038cb0ce3a248ea22c06f02454818dbe4b4",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
         "carries": 76
       },
       "role": "C Borg with verified fixes; native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/).",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-13",
       "issues": true,
       "watch_tags": "4.2.6-impact-v*",
       "borg_dir": "src/borg"
     },
     "neo-angband-tracker": {
       "repository": "diegoami/neo-angband-tracker",
-      "commit": "777eea1d9bd6c4094e87fff23af3984dd23f7edb",
+      "commit": "c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3",
       "paths": [
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
@@ -41,28 +41,21 @@
         "docs/c-manual/"
       ],
       "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects. Also the Angband Strategy Manual (docs/c-manual/ on the default branch, the complete version of S12's draft): copied in reference/c-manual/, with its copy of the official user manual.",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-13",
       "issues": true
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "415183ce70ddbd1e0f074301cbb007c774d678b2",
+      "commit": "c5f1b0429ea898c8d5484aa4f1ac0d681972aac7",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
-      "read_on": "2026-11-10",
-      "issues": true
-    },
-    "borg-agent": {
-      "repository": "diegoami/borg-agent",
-      "commit": "57a480ceffdd9d3ceaff80c24d40fd2a5b5d2b86",
-      "role": "Language-model player producing claims with evidence; its reviewed claims are inputs to strategy design (GOALS D11). Workflow template (milestones, reviewed branch).",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-13",
       "issues": true
     },
     "borg-runner": {
       "repository": "diegoami/borg-runner",
-      "commit": "1440f703914c10de3fccd29ece94aa2a2d747cf3",
+      "commit": "e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83",
       "role": "Language-model agents play upstream 4.2.6 (e473720, our engine) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-13",
       "issues": true
     }
   },

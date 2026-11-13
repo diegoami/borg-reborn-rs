@@ -2,7 +2,7 @@
 """Report and refresh what changed in the sources this repository pins.
 
 Everything in pins.json keeps moving: angband/angband, better-borg-c,
-borg-rs, borg-agent, the C Borg specification, the zoo catalogue and,
+borg-rs, borg-runner, the C Borg specification, the zoo catalogue and,
 above all, the death reports. This tool is how a session keeps up
 (task T1.0, issue #3).
 
