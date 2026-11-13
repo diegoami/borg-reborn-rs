@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 11] = [
+pub const TABLE: [Param; 17] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -129,6 +129,65 @@ pub const TABLE: [Param; 11] = [
         evidence: "GOALS principle 7 (a way home): keep the starting Recall, unlike bbc D0006, \
                    D0009, D0015, D0016, D0018 and D0019; c15 §12.4 says one if affordable",
     },
+    Param {
+        name: "eat_below_food",
+        unit: "food units",
+        min: 0,
+        max: 5000,
+        default: 300,
+        evidence: "c15 §12.4 and GOALS principle 7: eat before the food timer                    reaches starvation; 300 is a declared early threshold, not measured \
+                   (RULES 14)",
+    },
+    Param {
+        name: "risk_aversion_pct",
+        unit: "percent of the expected-to-worst gap",
+        min: 0,
+        max: 100,
+        default: 50,
+        evidence: "ARCHITECTURE L4: one risk tolerance for every consumer (paths, rest, retreat, \
+                   combat). 50 is the declared midpoint between expected and worst damage, not a \
+                   measured optimum; the calibration report (#124) replaces it",
+    },
+    Param {
+        name: "threat_horizon",
+        unit: "player turns",
+        min: 1,
+        max: 5,
+        default: 1,
+        evidence: "ARCHITECTURE L4: the assessment's horizon in player turns. 1 is the shortest \
+                   horizon in which a normal-speed adjacent monster acts; longer horizons are \
+                   the calibration report's (#124), not a tuned value",
+    },
+    Param {
+        name: "escape_item_hp",
+        unit: "hit points",
+        min: 0,
+        max: 100,
+        default: 1,
+        evidence: "T4.4 (#121): what spending one consumable escape costs on the ladder's \
+                   hit-point scale; 1 hit point is the declared price of a scroll the town \
+                   reserves replace (bbc D0013, D0014), to be measured (RULES 14)",
+    },
+    Param {
+        name: "last_escape_hp",
+        unit: "hit points",
+        min: 0,
+        max: 100,
+        default: 5,
+        evidence: "T4.4 (#121): the extra gain the last known escape scroll must promise \
+                   before it is spent; 5 hit points keeps the last Phase Door for what a step \
+                   cannot end (bbc D0013, D0014, D0018), to be measured (RULES 14)",
+    },
+    Param {
+        name: "arrival_risk_hp",
+        unit: "hit points",
+        min: 0,
+        max: 100,
+        default: 3,
+        evidence: "T4.4 (#121): the declared landing risk of a level-changing escape whose \
+                   arrival level nothing remembers (stairs, Deep Descent); 3 hit points is a \
+                   placeholder until the calibration report (#124) measures arrivals (RULES 14)",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -145,6 +204,12 @@ pub struct Params {
     pub reserve_cure: u32,
     pub reserve_escape: u32,
     pub reserve_recall: u32,
+    pub eat_below_food: i32,
+    pub risk_aversion_pct: i32,
+    pub threat_horizon: i32,
+    pub escape_item_hp: u32,
+    pub last_escape_hp: u32,
+    pub arrival_risk_hp: u32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -173,6 +238,12 @@ impl Default for Params {
             reserve_cure: default_of("reserve_cure") as u32,
             reserve_escape: default_of("reserve_escape") as u32,
             reserve_recall: default_of("reserve_recall") as u32,
+            eat_below_food: default_of("eat_below_food") as i32,
+            risk_aversion_pct: default_of("risk_aversion_pct") as i32,
+            threat_horizon: default_of("threat_horizon") as i32,
+            escape_item_hp: default_of("escape_item_hp") as u32,
+            last_escape_hp: default_of("last_escape_hp") as u32,
+            arrival_risk_hp: default_of("arrival_risk_hp") as u32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -233,6 +304,12 @@ impl Params {
                 "reserve_cure" => p.reserve_cure = v as u32,
                 "reserve_escape" => p.reserve_escape = v as u32,
                 "reserve_recall" => p.reserve_recall = v as u32,
+                "eat_below_food" => p.eat_below_food = v as i32,
+                "risk_aversion_pct" => p.risk_aversion_pct = v as i32,
+                "threat_horizon" => p.threat_horizon = v as i32,
+                "escape_item_hp" => p.escape_item_hp = v as u32,
+                "last_escape_hp" => p.last_escape_hp = v as u32,
+                "arrival_risk_hp" => p.arrival_risk_hp = v as u32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -254,6 +331,12 @@ impl Params {
                 "reserve_cure" => i64::from(self.reserve_cure),
                 "reserve_escape" => i64::from(self.reserve_escape),
                 "reserve_recall" => i64::from(self.reserve_recall),
+                "eat_below_food" => i64::from(self.eat_below_food),
+                "risk_aversion_pct" => i64::from(self.risk_aversion_pct),
+                "threat_horizon" => i64::from(self.threat_horizon),
+                "escape_item_hp" => i64::from(self.escape_item_hp),
+                "last_escape_hp" => i64::from(self.last_escape_hp),
+                "arrival_risk_hp" => i64::from(self.arrival_risk_hp),
                 _ => 0,
             }
         };
@@ -281,6 +364,12 @@ mod tests {
         );
         assert_eq!((p.explore_budget_turns, p.goal_cooldown_turns), (2000, 100));
         assert_eq!(p.max_level_changes_per_turn, 2);
+        assert_eq!((p.risk_aversion_pct, p.threat_horizon), (50, 1));
+        assert_eq!(p.eat_below_food, 300);
+        assert_eq!(
+            (p.escape_item_hp, p.last_escape_hp, p.arrival_risk_hp),
+            (1, 5, 3)
+        );
         assert_eq!(
             (
                 p.reserve_food,
@@ -314,6 +403,24 @@ mod tests {
         let t = p.table();
         assert_eq!(t["parameters"][2]["value"], 50);
         assert_eq!(t["parameters"][2]["default"], 75);
+    }
+
+    #[test]
+    fn a_profile_sets_every_name_without_panicking() {
+        // Every table entry sets its field: six names once fell through to
+        // the unreachable arm (T4.4, #121).
+        for param in TABLE {
+            let text = format!("{} = {}\n", param.name, param.default);
+            let p = Params::from_profile("t.txt", text.as_bytes()).unwrap();
+            let rows = p.table();
+            let row = rows["parameters"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|e| e["name"] == param.name)
+                .unwrap();
+            assert_eq!(row["value"], param.default, "{}", param.name);
+        }
     }
 
     #[test]

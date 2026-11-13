@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1552-rust-seed1040",
+  "run_kind": "harness",
+  "character": "Gnome Necromancer",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 89200,
+    "race_idx": 4,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1040,
+    "flags": "menu",
+    "git_rev": "9124a2b0c52c76deee152aedde38829205428601",
+    "git_dirty": "no",
+    "source_sha256": "b550dc79fb1e86e585622162923316176e8fd1450855b623b512a9a08610d197",
+    "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c",
+    "borg_txt_sha256": "a8bb901ac27e44b26240ccbbf98d78127e72e9f70b0d02a72376c03fbd1a92d8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8860
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-120b/full-4-necro-0",
+      "result_sha256": "70f919a15e04ade6f65e257889924988139bc36121983650d55fc9a9f448d334",
+      "raw_sha256": {
+        "keys.log": "70f919a15e04ade6f65e257889924988139bc36121983650d55fc9a9f448d334",
+        "messages.log": "07d6d1870bb23a5fa2f1c50b7b9903eb7b803e48af26e722d1c1d270d62ab89c",
+        "state.log": "7c53f50885b8fb9660cecec5d657139f19cc60b454be4cb4844cbb0e4345c5bd"
+      },
+      "source_commit": "9124a2b0c52c76deee152aedde38829205428601",
+      "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c"
+    }
+  ],
+  "encounter_family": "start-4afc3085e276236b3aa1a8052dd3f73391c5da8b78a9476fd45dc16263ab8c6c",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b65a6954a8c0091c24852549f8ff548581fefc6473aa77c53a9bbd785a02f02d",
+    "config.txt": "5a143444e08a484b5e6a6fcc502bb66ed1821af4e1847eb6e90a181f33274907",
+    "depths.json": "7219ea599c196774f0cb9394b68ea295c18e81a69cf91a0bbee64404ef3ba890",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "2aaa7a60e59d216f595b81726d838b4591cc68859a0bc94b9d2ce798bca47f7a",
+    "trace-tail.jsonl": "f7fed89708228ddd8e7d505cd35a98e8c2f78c66ae7e0ff10c8ae6e9cef4ba1a"
+  },
+  "investigation": null,
+  "issue": null
+}

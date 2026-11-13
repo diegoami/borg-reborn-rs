@@ -1,0 +1,127 @@
+{
+  "turn": 100,
+  "status": "gap",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 8,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    },
+    {
+      "kind": 241,
+      "tval": 26,
+      "sval": 99,
+      "number": 9,
+      "desc": "a Hazy Potion",
+      "aware": false
+    },
+    {
+      "kind": 247,
+      "tval": 26,
+      "sval": 24,
+      "number": 1,
+      "desc": "Speed",
+      "aware": true
+    },
+    {
+      "kind": 247,
+      "tval": 26,
+      "sval": 24,
+      "number": 1,
+      "desc": "Speed",
+      "aware": true
+    },
+    {
+      "kind": 242,
+      "tval": 26,
+      "sval": 99,
+      "number": 3,
+      "desc": "a Neutralize Poison potion",
+      "aware": true
+    },
+    {
+      "kind": 7,
+      "tval": 23,
+      "sval": 9,
+      "number": 1,
+      "desc": "a Maul (2d4)",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 201,
+      "hp": 40,
+      "max_hp": 152,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack",
+      "item": "the griffon with the Dagger instead of the Maul"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Wield",
+      "item": "the carried Maul"
+    },
+    {
+      "action": "Quaff",
+      "item": "Cure Light Wounds"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@G....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0011-dagger-for-maul",
+  "title": "D0011: the Dagger instead of the carried Maul, with known cures",
+  "dossier": "reference/deaths/better-borg-c/D0011-collected",
+  "citations": [
+    "overall-assessment.md:5-17,24-43,47-61",
+    "report.md:9-13"
+  ],
+  "construction": "Half-Elf Warrior CL11, 111/111 HP, D18. The dossier gives the Dagger in hand, the carried Maul, eight known CLW, two Speed and three Neutralize Poison. The griffon is constructed at 40/152 HP so the exchange says fight: the defect is the weapon, not the choice to fight.",
+  "limits": "No verified alternative: the Maul + CLW branch was not shown survivable. Wielding is not an executor action yet, so only the cure half of the alternative is judged.",
+  "blocked_by": 126,
+  "player": {
+    "race": 1,
+    "class": 0,
+    "level": 11,
+    "hp": 111,
+    "max_hp": 111,
+    "x": 4,
+    "y": 3
+  },
+  "depth": 18,
+  "max_depth": 18,
+  "current": {
+    "action": "Attack"
+  },
+  "pins_forbidden": true
+}

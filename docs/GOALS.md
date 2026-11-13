@@ -14,7 +14,7 @@ The owner asked which of these the Borg reborn should be:
 | **B. A family of competing Borgs** | Several Borgs, different designs, the zoo picks | Matches the per-class evidence; competition finds what works | Each Borg rebuilds perception, map memory, flow and items, the expensive part that differences in play do not come from |
 | **C. A Borg with optimisable parameters** | One design whose decision constants are named, ranged and tuned by experiment | Measurable; reversible; the TUNABLE plan's whole method | Tuning moves thresholds, not structure; several C Borg deaths come from structure (rules that never compare alternatives) |
 | **D. A learned policy** | Reinforcement or imitation learning at the core | Unbounded in principle | Long horizons, sparse death signal; symbolic bots still beat neural ones on NetHack; loses determinism and explainability; the TUNABLE plan advises against starting here |
-| **E. A model in the loop** | A language model chooses actions | Uses general knowledge | That is borg-agent's job, for *knowledge*, not play; slow, costly, non-deterministic |
+| **E. A model in the loop** | A language model chooses actions | Uses general knowledge | Slow, costly, non-deterministic. *Since 2026-11-11 it exists as secondary goal Q's play mode, a separate arm, never the measured Borg (D12)* |
 
 ## Recommendation: one substrate, a family of strategies, all of them tunable
 
@@ -89,6 +89,10 @@ of the same name:
 - **Arms:** the reborn Borg, built here, and the Borgs borg-zoo compares it
   with (D8). The zoo chooses, builds and runs the controls; this repository
   builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md).
+  **We request no control runs** (owner, 2026-11-11): the zoo runs the
+  original C Borg and better-borg-c in its own experiments, and a
+  comparison uses those results on the same suite and seeds. A zoo run
+  this repository asks for runs only our Borg.
   *Until milestone E, same-frontend C controls were built here (T1.3, #6).*
 - **Calculated by** borg-zoo, from its result cells (docs/SPEC.md §6, owner
   2026-11-09; this repository's `tools/endpoint.py`, T1.7, was retired in
@@ -98,7 +102,8 @@ of the same name:
   than per class, so it is **not** this endpoint.
 
 **Prerequisites of G1:** the run contract (T1.4), our specimen in borg-zoo's
-catalogue (T1.8, routed by the owner), and the zoo's controls and its
+catalogue (T1.8, routed by the owner), the zoo's existing control results
+on the suite (from its own experiments, not requested by us) and its
 calculation of the endpoint above (D8). Until then, numbers are descriptive.
 
 ### Staged targets
@@ -106,8 +111,8 @@ calculation of the endpoint above (D8). Until then, numbers are descriptive.
 | Stage | Target | Suite (borg-zoo) | Milestone |
 | --- | --- | --- | --- |
 | G0 | **Plays.** Starts, explores, fights, uses stairs and town. No stalls, no crashes, no harness failures on the smoke suites; same seed twice gives the same keys | `smoke`, borg-rs `smoke` | M3 |
-| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the pristine C Borg control (the zoo's) (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
-| G2 | **Better early.** Per class, better than the zoo's better-borg-c control at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
+| G1 | **Not worse early.** Per class, primary endpoint at T = 100,000, D = 5 is not worse than the pristine C Borg control (the zoo's existing results) (non-inferiority, margin agreed in advance) | `classes-1800` (9 classes × 200) | M5 |
+| G2 | **Better early.** Per class, better than the zoo's better-borg-c control (its existing results) at T = 100,000 with D raised (D = 10 proposed), confirmed on fresh seeds | `classes-1800`, confirmed on `classes-1800-b` | M6 |
 | G3 | **Better deep.** T = 400,000, D = 20 or more, per class | `deep-1000` and new per-class deep suites | M7+ |
 | G4 | **Wins.** Kills Morgoth without the excluded modes | long runs | long term |
 
@@ -211,12 +216,68 @@ These follow from the sources. Each cites the evidence behind it.
     Maul (about 7.6 against 21 damage per turn) because of an
     unidentified-weapon bonus and a per-blow weight (REDESIGN-LESSONS L10).
 
+## Secondary goal Q: a query surface for language models
+
+*Owner, 2026-11-11 (D12).* The Borg's judgement (danger, threats, the
+tactical alternatives, the strategy's decision and its reasons, reserves,
+equipment value) is exposed to language models through an MCP server,
+`borg-mcp`, so a model can ask the Borg's questions about a game state and
+get the Borg's answers, and so a model can **play** a hosted game through
+the Borg's executor (play mode). The users are models explaining deaths
+and making claims with evidence, people reading a death dossier, models
+reviewing a strategy change, and model players. The design draft is
+[QUERY-SURFACE.md](QUERY-SURFACE.md).
+
+**What holds:**
+
+1. **Secondary.** The primary goals (G0–G4) come first. Q never blocks a
+   primary milestone, and no primary exit criterion depends on it.
+2. **The measured Borg plays without a model.** The Borg's code never
+   calls a model, and the zoo specimen is always the model-free Borg
+   (principle 2, determinism). Query mode never sends keys. Play mode lets
+   a model play a hosted game as a **separate arm**: its own name, the
+   model and effort in the run record, every tool call logged, and every
+   game replayable key for key from its record. The model chooses among
+   executor actions; keys and prompts stay the executor's, and fair
+   information (D3) and the exclusions (D5) bind the model as they bind
+   the Borg.
+3. **Same repository, separate crate.** `borg-mcp` is a workspace member
+   that depends on the core; the core never depends on it, and nothing of
+   it is linked into a game build the harness or the zoo measures (ours or
+   the zoo's) or reaches the zoo contract. Q5's live host, if built, is its
+   own binary and never a measured build.
+4. **No new judgement in the server.** It calls the functions the Borg
+   plays with, through one stable, versioned facade (`query`). A question
+   that needs a new computation gets it in the core first.
+5. **Diagnosis first.** The purpose is to improve the model-free Borg
+   by explaining its deaths after the fact. Recorded runs, dossiers and
+   fixtures come first; counterfactuals next; play mode last, optional.
+
+**Roadmap** (owner, 2026-11-11: diagnosis first; tasks in PLAN.md):
+
+| Stage | Delivers | Done when |
+| --- | --- | --- |
+| Q0 | Pilot, no code: a session diagnoses deaths from what dossiers already hold (`trace-tail.jsonl`, `params.json`, `record.json`) | A hit rate on the reference deaths with known explanations (`reference/deaths/` bbc and rs, and the cases written up in `docs/FIXTURES.md` and REDESIGN-LESSONS): the same deciding **turn** (those dossiers hold no think-level trace) and the same cause and alternative; a triage table of our own deaths, with the deciding think where the dossier's trace reaches it and the turn otherwise; draft fixtures for the clearest, not committed as tests; the tools the pilot missed, a longer trace among them |
+| Q1 | The `query` facade in the core over replayed state; `harness/run.sh --record-state` | Facade tests on the decision fixtures and a recorded smoke run; replaying a run's thinks through the strategy reproduces every trace choice |
+| Q2 | `borg-mcp` over stdio with the diagnosis tools: `load_run`, `seek`, `view`, `why`, `threats`, `danger_at`, `reserves`, `params`, `knowledge` | A model client loads a death dossier and cites a think; schemas checked in; CI runs the server's tests |
+| Q3 | Counterfactuals: `responses`, `decide`, `what_if`, and `branch` (rerun the seed, take an alternative at a think, let the Borg continue, report what followed); claims and draft fixtures as outputs | `what_if` reproduces the death fixtures' alternatives; `branch` reproduces the original run when no alternative is given, and runs only in a build the zoo never gets |
+| Q4 | The diagnosis workflow: evaluation on known deaths, triage of a zoo batch, review of strategy changes | The evaluation meets the hit-rate threshold (**open: the owner fixes the threshold and the cases counted before Q4 starts**, after Q0's numbers); a batch's triage and its draft fixtures and issues are reviewed and filed |
+| Q5 | Play mode (optional; the owner decides after Q4): live hosting, `observe`, `options`, `act`, `autopilot` with hand-offs | A model plays the smoke seeds end to end, fully and in the hybrid; every game replays key for key from its record; no fairness or exclusion breach |
+
+Q0 touches no code and may run beside the primary milestone once the owner
+opens it. Q1 may start once M4 is merged, since the facade sits over M4's
+threat model. Each stage from Q1 is a milestone with a review PR, like the
+primary ones.
+
 ## Non-goals
 
 - Parity with the C Borg or borg-rs. Neither is an oracle for our
   decisions. Controls and comparisons are borg-zoo's (D8); borg-rs is a
   reference to copy from (docs/SPEC.md §2).
-- A model in the play loop, or machine learning at the core.
+- A model in the measured Borg's loop, or machine learning at the core.
+  *A model may query the Borg's judgement, or play as a separate arm
+  through play mode (secondary goal Q, D12); the Borg itself never calls
+  a model.*
 - Other engines (Neo Angband, variants) before the C 4.2.6 game is beaten.
 - Fixing C Borg bugs. A C Borg defect we find is reported to the owner for
   routing to neo-angband-tracker.
@@ -237,7 +298,8 @@ them.
 | D5 | Excluded | Munchkin start and lunal mode (already decided); money scum, self scum, the formula language, `borg_worships_*`, cheat death and respawn inside the Borg (proposed) |
 | D6 | Strategies by class | **One generic strategy with class profiles first**; a class gets its own strategy when evidence shows it needs a different structure |
 | D7 | Objective | Primary endpoint and **observation and scoring rule** as above (exact boundary, all attempted runs, per class, computed by borg-zoo; *`tools/endpoint.py` until TE.7*); **G1 at T = 100,000, D = 5**; D, T and margins fixed before each comparison |
-| D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
+| D8 | Controls | **borg-zoo's** (docs/SPEC.md §6, owner 2026-11-09): the zoo chooses the Borgs ours is compared with, runs them and computes every statistic. *Owner, 2026-11-11: the controls run in the zoo's own experiments; this repository requests runs of its own Borg only.* This repository builds only our Borg, through the zoo contract (docs/ZOO-INTERFACE.md). *Until milestone E, same-frontend controls (`c-pristine`, `c-bbc-m7`) were built here.* |
 | D9 | Workflow | **Milestones with a review PR** (borg-agent's method): task PRs merged by the session once CI is green; at a milestone's end the session stops and opens a PR from `main` to `reviewed`; the owner merges it |
 | D10 | Compute | Identity and regression suites locally under `/tmp/angband-validation.lock`; population comparisons through borg-zoo on GitHub Actions, started by the owner |
-| D11 | borg-agent, borg-runner | Their reviewed claims are inputs to strategy and parameter design. No dependency on either in code or in the plan's critical path. *borg-runner (S15), the accumulated knowledge of agent players, was added by the owner on 2026-11-10 on the same terms* |
+| D11 | borg-agent, borg-runner | *Amended 2026-11-11:* **borg-agent is retired** as an input (owner: a failed experiment that would need a rebuild); its roles, model-played games and claims with evidence, move to secondary goal Q (D12). **borg-runner** (S15, added 2026-11-10), the accumulated knowledge of agent players: its reviewed claims are inputs to strategy and parameter design, with no dependency in code or on the plan's critical path |
+| D12 | Query and play surface for models | **Secondary goal Q** (above, 2026-11-11, amended the same day): an MCP server, `borg-mcp`, a separate crate in this workspace. Its purpose is diagnosing the model-free Borg's deaths after the fact (Q0–Q4, owner 2026-11-11); query mode exposes the Borg's judgement read-only, and an optional play mode (Q5) lets a model play a hosted game through the executor as a separate arm. The measured Borg never calls a model; never on a primary milestone's critical path |

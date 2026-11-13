@@ -1,0 +1,108 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 7,
+      "tval": 23,
+      "sval": 9,
+      "weight": 120,
+      "desc": "a Mace (2d4)",
+      "dd": 2,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 3,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    },
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    },
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    },
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 7,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 17,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Ascend"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "dir": 6,
+      "item": "the 2-HP grey mold east of the player"
+    }
+  ],
+  "map": [
+    "###########",
+    "#<........#",
+    "#.........#",
+    "#...@m....#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "bbc-d0008-mold-stair-loop",
+  "title": "D0008: the grey mold beside the up staircase",
+  "dossier": "reference/deaths/better-borg-c/D0008-collected",
+  "citations": [
+    "report.md:5-7",
+    "overall-assessment.md:15-20,39-52,142-150"
+  ],
+  "construction": "Human Priest CL1, 13/13 HP, D1. The dossier gives the mold at 2 HP, the up staircase, two unused Phase scrolls and three used CLW; the 11x7 room and the exact stat line are constructed so the mold is adjacent and the stairs two steps away.",
+  "limits": "No owner-manual branch: this is the first of the two records that a killable adjacent mold was never attacked.",
+  "player": {
+    "race": 0,
+    "class": 3,
+    "level": 1,
+    "hp": 13,
+    "max_hp": 13,
+    "x": 4,
+    "y": 3
+  }
+}

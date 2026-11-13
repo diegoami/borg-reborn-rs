@@ -1,0 +1,107 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 8,
+      "tval": 23,
+      "sval": 5,
+      "weight": 30,
+      "desc": "a Whip (1d3)",
+      "dd": 1,
+      "ds": 3
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    },
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 2,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 4,
+      "y": 2,
+      "race": 52,
+      "hp": 1,
+      "max_hp": 9,
+      "speed": 120,
+      "sleep": 0
+    },
+    {
+      "x": 4,
+      "y": 1,
+      "race": 33,
+      "hp": 1,
+      "max_hp": 1,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack",
+      "item": "the crow while afraid: the engine refuses"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Walk",
+      "item": "away from the shrieker"
+    },
+    {
+      "action": "Read",
+      "item": "a known Phase Door, an escape while afraid"
+    }
+  ],
+  "map": [
+    "###############",
+    "#.............#",
+    "#...S.........#",
+    "#...c@........#",
+    "#.............#",
+    "#.............#",
+    "###############"
+  ],
+  "id": "fear-blocks-the-attack",
+  "title": "minimaxflash-1.5: afraid, a 2-HP crow, a shrieker two tiles away",
+  "dossier": "reference/borg-runner/records/minimaxflash-1.5/REPORT.md",
+  "citations": [
+    "REPORT.md:24-51,137-141,207-235",
+    "ACCUMULATED_KNOWLEDGE.md edition 4, fear section"
+  ],
+  "construction": "Gnome Druid CL4, 3/33 HP, D2, TMD_AFRAID=5. The report measures fear as -20 to-hit, +8 AC and no attacks; the crow is placed at 2 HP so the exchange says attack, and the shrieker two tiles north. The room is constructed. The room is wide enough that the blink's 8-12 band has remembered floor (the original room's size is not recorded).",
+  "limits": "The report is an agent-player run, not a Borg death; its fear measurement is the evidence. The assessment now refuses the attack while TMD_AFRAID is set, so the fixture requires a walk; the specific escape route is not measured.",
+  "player": {
+    "race": 4,
+    "class": 2,
+    "level": 4,
+    "hp": 8,
+    "max_hp": 33,
+    "sp": 2,
+    "max_sp": 2,
+    "x": 4,
+    "y": 3,
+    "timed": [
+      [
+        5,
+        5
+      ]
+    ]
+  },
+  "depth": 2,
+  "max_depth": 2
+}

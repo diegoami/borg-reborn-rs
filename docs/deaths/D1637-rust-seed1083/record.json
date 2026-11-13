@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1637-rust-seed1083",
+  "run_kind": "harness",
+  "character": "Human Blackguard",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 8546,
+    "race_idx": 0,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1083,
+    "flags": "menu",
+    "git_rev": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+    "git_dirty": "no",
+    "source_sha256": "1880ac0e7aaf9c344c4e1769a6c4d17a69dc5932c9b7d6328601eeb700388403",
+    "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68",
+    "borg_txt_sha256": "5042da45245dbf69c8f85635d2f2cbf253facc12a97b2c85860490094c7b639e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 644
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/borg-reborn-rs/harness/out/full-t44/full-8-blackguard-3",
+      "result_sha256": "ca52218835b714dc6df7e264f7898aeaa6f7937de58e37b75370ef8e19534336",
+      "raw_sha256": {
+        "keys.log": "ca52218835b714dc6df7e264f7898aeaa6f7937de58e37b75370ef8e19534336",
+        "messages.log": "74332d61f42f2488725767eb9c3f424cafc86fe841f1dc187c8579222c646001",
+        "state.log": "2d898fad0fd2ca80687cd408c81657d99efaf75c9958442a967e436295ec2493"
+      },
+      "source_commit": "bd249a207ccd732b00bcf98750ef718dd6545b7e",
+      "binary_sha256": "9356e034f5d77d4ed6e6c063e6a98d20cd280481e1de248a606f4cf3e0433e68"
+    }
+  ],
+  "encounter_family": "start-fc84ccf0f9db4f4e1c743321b9db56a5d5f4fafd9b050d9651b155a3ba2b5ed5",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "08fff6f6e3b3295df46f5577f17c67597b59d6898ed72f9e4b04a19de1827dd6",
+    "config.txt": "d6bde5d747d42f3d05fe421bb1fe771e616c8c3b941368fd78bb7e8442bfe075",
+    "depths.json": "afab10e8d7e1fc4a22b50add2c24b6c01c440a6efeb8cc9f498e9a42d7f6d27b",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "dd6b4fe275ad8d7f89f4e1497cadcb25d89d6d222448f54a695c6fe1fce19d70",
+    "trace-tail.jsonl": "a5efe04bf9c480c6fcd26dfce5a218a717f380a26e5a32eaa33f25c27134de18"
+  },
+  "investigation": null,
+  "issue": null
+}

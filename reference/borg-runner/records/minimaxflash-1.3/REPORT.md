@@ -24,7 +24,7 @@
 
 610 asks, 4,219 keypresses, turn 17,281. High-Elf Druid, **depth 1**,
 character level 4, alive at 33/33 HP and 7/7 SP. The third life of this
-character, carried on from `minimaxflash-1-again`. Played through
+character, carried on from `minimaxflash-1.2`. Played through
 OpenCode on MiniMax.
 
 Its own commit message is the summary: *"depth 1, level 4, alive; found

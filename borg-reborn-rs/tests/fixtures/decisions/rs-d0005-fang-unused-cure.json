@@ -1,0 +1,90 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 231,
+      "tval": 26,
+      "sval": 8,
+      "number": 1,
+      "desc": "Cure Light Wounds",
+      "aware": true
+    },
+    {
+      "kind": 243,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "a Potion of Sleep",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 48,
+      "hp": 22,
+      "max_hp": 25,
+      "speed": 120,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack",
+      "item": "Fang at 2 HP"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Quaff",
+      "item": "the one known Cure Light Wounds"
+    },
+    {
+      "action": "Walk",
+      "dir": 7,
+      "item": "the legal north-west step"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@F....#",
+    "#.........#",
+    "#<........#",
+    "###########"
+  ],
+  "id": "rs-d0005-fang-unused-cure",
+  "title": "rs D0005: 2/15 HP, Fang adjacent, one known CLW unused",
+  "dossier": "reference/deaths/borg-rs/D0005-recorded",
+  "citations": [
+    "overall-assessment.md:10-17,102-136",
+    "report.md:15-20"
+  ],
+  "construction": "Elf Necromancer CL2, 2/15 HP, D1. The dossier gives Fang at 22/25 HP and speed 120, the one known CLW and the legal NW step that was actually traversed; the room is constructed.",
+  "limits": "No verified rescue: the known CLW is now used; the legal NW step was traversed, the full route home not proved.",
+  "player": {
+    "race": 2,
+    "class": 4,
+    "level": 2,
+    "hp": 2,
+    "max_hp": 15,
+    "x": 4,
+    "y": 3
+  }
+}

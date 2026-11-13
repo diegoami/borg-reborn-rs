@@ -1,0 +1,122 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 250,
+      "tval": 28,
+      "sval": 99,
+      "number": 4,
+      "desc": "a Mottled Mushroom",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 81,
+      "tval": 3,
+      "sval": 1,
+      "number": 23,
+      "desc": "& Arrow~",
+      "aware": true
+    }
+  ],
+  "monsters": [],
+  "objects": [
+    {
+      "x": 5,
+      "y": 3,
+      "kind": 500
+    }
+  ],
+  "forbidden": [
+    {
+      "action": "Get",
+      "item": "the Bronze Wand underfoot at 23/23 slots"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Eat",
+      "item": "food, or leave for town"
+    },
+    {
+      "action": "Ascend",
+      "item": "to town"
+    },
+    {
+      "action": "Walk",
+      "dir": 1,
+      "item": "south-west toward the up staircase: the return-home goal's first step"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#....?....#",
+    "#....@....#",
+    "#.........#",
+    "#<........#",
+    "###########"
+  ],
+  "id": "bbc-d0009-full-pack-starvation",
+  "title": "D0009: starving with a full pack and an unknown wand underfoot",
+  "dossier": "reference/deaths/better-borg-c/D0009-collected",
+  "citations": [
+    "report.md:5-7",
+    "overall-assessment.md:24-30,40-57,92-102",
+    "review-anchors.json"
+  ],
+  "construction": "Half-Troll Necromancer CL10, 4/73 HP, D5, food 0, pack 23/23. The dossier gives the full pack, the 764 Bronze Wand refusals and no known food; the room and the stairs are constructed.",
+  "limits": "The 20+ unknown potions/scrolls/mushrooms cannot be eaten or read by this action set. The pickup loop itself is already prevented by the pack-full guard; Promoted by T4.6 (#123): starving with no known food chooses the return-home goal — recall in safety, the up staircase, then digging — over rest or descent.",
+  "player": {
+    "race": 7,
+    "class": 4,
+    "level": 10,
+    "hp": 4,
+    "max_hp": 73,
+    "sp": 13,
+    "max_sp": 13,
+    "x": 5,
+    "y": 3,
+    "pack_size": 23,
+    "pack_used": 23,
+    "food": 0
+  },
+  "depth": 5,
+  "max_depth": 9
+}

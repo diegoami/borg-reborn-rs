@@ -1,6 +1,6 @@
 {
   "schema": "borg-rs/c-consumer-adoption@1",
-  "phase": "impact_v9_accepted",
+  "phase": "impact_v10_accepted",
   "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
   "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
   "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
@@ -326,11 +326,78 @@
         "tag": "4.2.6-impact-v9",
         "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it"
       }
+    },
+    {
+      "id": "c-m10",
+      "target_commit": "6944d88e87d02e9d24e85438d25f0c6ef864c170",
+      "consumer_tag": "4.2.6-impact-v10",
+      "state": "reviewed_qualified_pass_owner_accepted",
+      "unit_kinds": {
+        "I-001": "local improvement unit (owner-directed, never proposed upstream); carried in C/Rust for C/Rust parity",
+        "I-002": "local improvement unit (owner-directed, never proposed upstream); carried in C/Rust for C/Rust parity",
+        "0099-crash-correction": "crash correction attached to the existing 0099 ledger entry; borg-rs already carried the same guard from milestone9, so the C side needed a comment sync only"
+      },
+      "consumer_carries": 3,
+      "carried_c_and_rust": 3,
+      "already_carried": "0099 crash correction (borg-rs carried the same square_in_bounds guard from milestone9)",
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/23",
+      "receipt": "docs/validation/2026-11-10-c-m10/README.md",
+      "record": "docs/adoption/c-m10/README.md",
+      "c_review": "https://github.com/diegoami/better-borg-c/issues/420",
+      "implementation_commit": "4f7152d",
+      "starting_rust_main": "8a7579d",
+      "game_cases": 131,
+      "c_rust_parity": 131,
+      "harness_diff_exit": 0,
+      "native_modes_before_after": "8/9 -> 9/9 normal (the fail->pass is the I-002 anchor fleeheal flee-low); ASan 5/5, no report",
+      "rust_fault_controls_detected": "I-001 13/23 cases; I-002 14/23 cases",
+      "behaviour_change_vs_m9": "94/131 cases; deaths 13 -> 14",
+      "rust_milestone_accepted": true,
+      "independent_review": {
+        "verdict": "qualified pass",
+        "acceptance_blockers": false,
+        "comment": "https://github.com/diegoami/borg-rs/issues/23#issuecomment-6770750242",
+        "reviewed_source": "b8cbbe1 (the batch; 1628eba adds only the review prompt)",
+        "reviewed_tree": "1628eba",
+        "c_rust_semantic_mismatch": "none found in the three units",
+        "independently_executed": [
+          "the full retained 131-case matrix re-derived with matrix.py over the retained C/Rust outputs and both retained fault suites; it regenerated an artefact exactly equal to the committed matrix.json (131/131 parity, harness/diff exit 0, I-001 13/23, I-002 14/23)",
+          "every raw key/message/state/final-save file hashed against the recorded rows",
+          "a fresh corrected C and Rust build pair completing the 23-case plan 23/23 with full parity and harness/diff exit 0, and every one of those 23x4 streams equal to the retained M10 streams",
+          "an independent I-001 fault rerun in a separate clone with only I-001-rust.patch reversed: exactly the recorded 13 cases differ, with exactly the recorded streams per case",
+          "all nine normal native fixture modes on fresh M9 and M10 C builds: 8/9 before, 9/9 after, all 18 logs byte-identical to the receipt copies",
+          "cargo test --release (103 passed, 1 ignored), clippy -D warnings clean, check-no-c-borg.sh (154/154 engine objects identical)",
+          "the removal-unit checks on another scratch clone: all five reverse-apply individually and together restore 8a7579d exactly; exact hunk-body matching gives 13 implementation hunks and 13 unit hunks with zero missing, extra or duplicate assignments"
+        ],
+        "taken_on_trust": [
+          "the consumer's C review/acceptance on better-borg-c#420 and its targeted-life, paired-cohort and regression-matrix narratives",
+          "the execution of the complete 131-case plan (author evidence; the reviewer rehashed and compared every retained output and independently reran 23 cases)",
+          "I-002's fault control (re-derived from its retained raw outputs, not independently rebuilt and rerun; the reviewer chose I-001 for the spot-check)",
+          "the five ASan necrolight rows (inspected, not independently rerun)",
+          "the discarded first Rust suite's own logs (not committed and not reconstructed)"
+        ],
+        "findings": {
+          "M10-R-01": "minor: the committed C-BUILD_ID is not the 131-case C suite's actual binary identity; fixed by adding MATRIX-C-BUILD_ID and MATRIX-RUST-BUILD_ID and a build_id field in current-m10-c-summary.json",
+          "M10-R-02": "minor: borg-caution.c's m10 hunks are not all byte-identical as claimed (the new include is placed in the local sorted block); fixed by narrowing the README wording, no C source change",
+          "M10-R-03": "observation: I-001's evidence is adequate for bounded parity adoption but is not a direct edge-case or policy-benefit oracle; no correction required, the stated limitation is preserved",
+          "M10-R-04": "note: status.json called fault-detected cases \"units\"; fixed to \"cases\""
+        },
+        "findings_addressed_in": "pending (this commit)",
+        "owner_accepted": true
+      },
+      "owner_acceptance": {
+        "instruction": "merge and tag",
+        "date": "2026-11-10",
+        "basis": "independent qualified pass with no acceptance blockers (borg-rs#23); findings M10-R-01, M10-R-02 and M10-R-04 addressed in dd9983b",
+        "tag": "4.2.6-impact-v10",
+        "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it",
+        "scope": "Tag 4.2.6-impact-v10 marks main with the C milestone10 carry, after 4.2.6-impact-v9 for milestone9"
+      }
     }
   ],
   "unchanged_engine_base": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
   "policy": "docs/C-CONSUMER-ADOPTION.md",
-  "next_action": "Impact v9 (C milestone9) accepted; tag 4.2.6-impact-v9 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
+  "next_action": "Impact v10 (C milestone10) accepted; tag 4.2.6-impact-v10 on the merge commit. No later C milestone is selected; the owner chooses the next target.",
   "independent_review": {
     "verdict": "pass",
     "acceptance_blockers": false,
@@ -354,13 +421,13 @@
     "tagging_delegated": true
   },
   "active_batch": {
-    "id": "c-m9",
-    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/21",
-    "starting_rust_main": "286215c",
-    "state": "accepted_impact_v9",
-    "ledger": "docs/adoption/c-m9/ledger.json",
-    "receipt": "docs/validation/2026-11-09-c-m9/README.md",
-    "branch": "claude/wonderful-bell-3a7j6m"
+    "id": "c-m10",
+    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/23",
+    "starting_rust_main": "8a7579d",
+    "state": "accepted_impact_v10",
+    "ledger": "docs/adoption/c-m10/ledger.json",
+    "receipt": "docs/validation/2026-11-10-c-m10/README.md",
+    "branch": "claude/m10-carry"
   },
   "m2_active_batch_record": {
     "id": "c-m2",

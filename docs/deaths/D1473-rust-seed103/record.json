@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1473-rust-seed103",
+  "run_kind": "harness",
+  "character": "Dwarf Priest",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2522,
+    "race_idx": 5,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 103,
+    "flags": "menu",
+    "git_rev": "4402f1241990f9686f59a33270ef19246e9417be",
+    "git_dirty": "no",
+    "source_sha256": "97df480544bed59a472ab0deca81fe68bcb8ca160847574cee80cfeda0824a86",
+    "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79",
+    "borg_txt_sha256": "f5e67cb9932b0ccb7cf5e23395dde69c62747668ed8aaf581a1645806a5b9a34",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 240
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/smoke-119/smoke-priest-3",
+      "result_sha256": "360cfbc9e298fadfe6324adb08571b6ffd68062bfcf94dfb7dc8447b8d986ad7",
+      "raw_sha256": {
+        "keys.log": "360cfbc9e298fadfe6324adb08571b6ffd68062bfcf94dfb7dc8447b8d986ad7",
+        "messages.log": "245942a9355aa7ed9c73d86769634a6fb81fe6f8aa4601a7de66b00d187f245a",
+        "state.log": "2eb14300bacf3f8232ff7dde5407d1466e7b0a3d76572e4ff3231ea3ea5e5152"
+      },
+      "source_commit": "4402f1241990f9686f59a33270ef19246e9417be",
+      "binary_sha256": "7f12e4a1a34656cfb45b30ba0b582ee10faa36c28c5996814e71ca3310718d79"
+    }
+  ],
+  "encounter_family": "start-2b3d91dbfe213353fef4e863f170d6102bf574d5611f318eb14716d62295a367",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a08d33d944aaa6c1f0f9e8e1785bf50be2d5fd86e3773a8a0d2abbeb82cc37a0",
+    "config.txt": "4ad1e76cf47ed2d929bd719af5393976f5241ec7e0c8e9ad055a4f4f9b5af6ce",
+    "depths.json": "198409039bcc4725ac0f13eb69d9d4fed0be23a035c1dd837cbd4b32a899f518",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "454acf34d74b74f1056b45288f62e39fc8634517ec3d29e12d17a941e7147dee",
+    "trace-tail.jsonl": "1dc46077176b7306e82df5e6a4d45dccb980139b1a07198cf980f89b02467d22"
+  },
+  "investigation": null,
+  "issue": null
+}

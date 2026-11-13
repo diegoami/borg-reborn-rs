@@ -1,0 +1,98 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 185,
+      "tval": 25,
+      "sval": 1,
+      "number": 1,
+      "desc": "Phase Door",
+      "aware": true
+    },
+    {
+      "kind": 6,
+      "tval": 27,
+      "sval": 1,
+      "number": 4,
+      "desc": "& Flask~ of oil",
+      "aware": true
+    },
+    {
+      "kind": 247,
+      "tval": 26,
+      "sval": 24,
+      "number": 1,
+      "desc": "Speed",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 48,
+      "hp": 25,
+      "max_hp": 25,
+      "speed": 120,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Attack",
+      "item": "Fang in melee or with oil at 4 HP"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Cast",
+      "item": "Magic Missile (1 SP, ignores armour)"
+    },
+    {
+      "action": "Read",
+      "item": "the Phase Door scroll at 4/16 HP"
+    }
+  ],
+  "map": [
+    "###############",
+    "#.............#",
+    "#.............#",
+    "#...@F........#",
+    "#.............#",
+    "#.............#",
+    "###############"
+  ],
+  "id": "fang-ac36-armour-ignoring-spell",
+  "title": "minimaxflash-2.2: Fang AC 36, oil is a 12% lottery",
+  "dossier": "reference/borg-runner/records/minimaxflash-2.2/REPORT.md",
+  "citations": [
+    "REPORT.md:196-220,228-240,306-311"
+  ],
+  "construction": "Gnome Mage CL2, 4/16 HP, D2. The report gives Fang at 25 HP, AC 36, speed 120, Magic Missile at 1 SP (never resists) and a Phase Door scroll. Fang is placed adjacent; the room is constructed. The room is wide enough that the blink's 8-12 band has remembered floor (the original room's size is not recorded).",
+  "limits": "An agent-player run, not a Borg death. The known Phase Door is now read at 4/16 HP; casting Magic Missile is still #127. The fixture checks the escape, not a measured rescue.",
+  "player": {
+    "race": 4,
+    "class": 1,
+    "level": 2,
+    "hp": 4,
+    "max_hp": 16,
+    "sp": 4,
+    "max_sp": 4,
+    "x": 4,
+    "y": 3
+  }
+}

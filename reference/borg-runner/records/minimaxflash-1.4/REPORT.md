@@ -11,7 +11,7 @@ carry-on of `minimaxflash-1.3`, which stopped alive on depth 1 at ask 609.*
 `docs/BRIEF.md` (all), `manuals/INSTRUCTIONS.md` (all), my own playbook
 `agents/minimax/COMMON.md` (all) and `agents/minimax/DRUID.md` (all), my own
 three write-ups `runs/minimaxflash-1/REPORT.md`,
-`runs/minimaxflash-1-again/REPORT.md` and `runs/minimaxflash-1.3/REPORT.md`,
+`runs/minimaxflash-1.2/REPORT.md` and `runs/minimaxflash-1.3/REPORT.md`,
 the inherited notebook `runs/minimaxflash-1.4/notebook.md` (106 lines),
 `tools/screen/{map,look,explore}.py`, and in `vendor/angband/` the source and
 data I needed for the questions I had: `src/player-path.c`, `src/mon-util.c`,

@@ -2,6 +2,695 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-12: remembered casters fade with confidence (#157, T4.8)
+
+**Play change in one full run; new full baseline.**
+
+- `danger.rs:one_threat` scales the ranged half of a monster's threat by
+  `Track::confidence`, as it already scaled the melee half. It also scales
+  `p_death` in both halves: the chance the monster is there times the
+  chance it kills if it is. The melee `p_death` was unscaled too, a
+  sibling of the same defect, fixed together here. Test:
+  `a_forgotten_caster_adds_almost_nothing`.
+- **Measured:** smoke 3/3, smoke-exact 3/3; full 44/45 identical.
+  `full-6-rogue-3` leaves its 75,000-turn loop around three forgotten
+  apprentices, reaches character level 3 and dies to Fang at 25,237
+  (p_death 0.93 at the fatal think; it fought on at 1 HP). Full survival
+  is 30/45, the T4.7 rate. The full reference is regenerated; dossiers are
+  D1715–D1730.
+- **Calibration:** pooled ratio back to 0.083 (it was 0.017 with the loop);
+  remembered out-of-view sources 893 windows at 0.015. Addendum in
+  [docs/M4-CALIBRATION.md](M4-CALIBRATION.md).
+
+**M4's tasks are all closed with this PR.** Next is the M4 review PR
+(`main` → `reviewed`), opened by the session with a review prompt. The
+owner chooses the reviewer (RULES 6).
+
+## 2026-11-12: the M3 review's small findings (#139)
+
+**Play change in three full runs; new full baseline.** Five cleanups:
+
+- `tactics`: responses and the weapon swap sort with `total_cmp`, through
+  `ord()`, which folds -0.0 into 0.0. Ties then fall through to risk, gain
+  and action rank exactly as under `partial_cmp`.
+- `strategy`: Engage's progress measure has its own sentinel
+  (`ENGAGE_NO_CONTACT`) when no monster is adjacent. Before, the empty case
+  was 0, which reads as a monster at 0 HP; a track's `hp` is 0 when its
+  health is unknown, so "no contact" and "contact with an unmeasured
+  monster" looked like no progress.
+- `strategy`: Explore's fallback stands still through `still()`, which
+  never opens a shop by holding on its entrance.
+- `executor`: Sell sends quantity digits and the prompt's Enter only for a
+  stacked item. A single item has no quantity prompt, and digits there
+  would be read as commands.
+- `strategy`: `retreat_step`'s documentation states its tie-break: the
+  first direction in `DIRS`, keypad order.
+
+**Measured:**
+- Smoke 3/3 and smoke-exact 3/3 are unchanged. Full: 42/45 unchanged.
+- Bisected on seed 1002, the Engage sentinel alone accounts for all three
+  differences: `full-0-warrior-2`, `full-0-warrior-3` (both still survive)
+  and `full-2-druid-0` (dies to the same giant white mouse swarm at 7,912
+  instead of 6,943). An Engage goal now keeps running while monsters come
+  and go, instead of stalling.
+- Full survival stays 31/45. The full reference is regenerated; dossiers
+  are D1700–D1714. `check-no-time.py` finds 0 violations and
+  `reconcile-deaths.py` is clean.
+- Regression tests: `scores_are_totally_ordered_and_zero_has_one_sign`,
+  `engage_progress_without_contact_is_not_a_dead_monster`, and the
+  single-item Sell keys.
+
+**Next:** #157 (remembered casters never fade), then the M4 review.
+
+## 2026-11-12: the trace says why, and only scored candidates (#138)
+
+**No play change; same baseline.** The M3 review's finding 3. The first
+strategy chooses its mode by a priority rule, so the trace's single
+candidate at score 1.0 claimed an alternative that was never weighed.
+
+- `candidates` now holds only scored alternatives, which are the tactical
+  responses of a contact think (T4.3). A rule-based think records none
+  (in `full-0-warrior-0`, 9,385 of 9,522 thinks).
+- New trace field `why` (`trace::Why`): the `choose_mode` rule that fired
+  (for example "contact: a monster in reach", "a live goal keeps its
+  mode"), the modes cooling down, and the goal's `goal_started` and
+  `goal_progressed`. `Goal.started` is now read: age is
+  `turn - goal_started`, stall is `turn - goal_progressed`. Old traces
+  parse (serde defaults).
+- Checked: smoke 3/3, smoke-exact 3/3, full 45/45 identical to the
+  references; `check-no-time.py` 0 violations. The new source hash gives
+  the 15 deaths new dossiers, D1685–D1699 (same games as D1670–D1684).
+- **Next:** #139 (small cleanups), #157 (remembered casters), then the M4
+  review.
+
+## 2026-11-12: a refused action changes the next decision (#137)
+
+**Play change; new full baseline.** The M3 review's finding 2: contact
+returns Engage before any cooldown, so an action the executor reported
+refused was chosen again. In the M4 baseline the refused action was a Read
+the engine forbids.
+
+- **`danger::can_read`** mirrors `player_can_read`
+  (`player-util.c:1166-1197`): blind (`TMD_BLIND` 2), confused (4), amnesiac
+  (25), or no light. No light is `no_light`, `!square_isseen` at the
+  character's grid (`cave-view.c:932-935`); the observation carries it as
+  `in_view` (`cave-map.c:119`) and the world as `seen == Some(turn)`. It
+  gates the tactical Phase Door, Teleportation and Recall, and the
+  Return/Stuck recall read.
+- **Refusals bar the action:** the strategy remembers its last action, and
+  a refusal bars that action until the mode's cooldown ends. Engage then
+  takes the next-best response. Contact still overrides Engage's cooldown,
+  which is the justification the issue asked for.
+- **Measured:** two full runs change, and smoke and smoke-exact are
+  identical. `full-6-rogue-3` survives the cap (was D1667: confused, it
+  re-read a refused Phase Door for forty turns before a cutpurse killed
+  it). `full-7-ranger-0` no longer reads Recall in the dark 13 times, and
+  still starves at the same turn. Refused-read violations: 23 → 0. Full
+  survival is 31/45. The full reference was regenerated at `798239a`, and a
+  fresh run reproduces it 45/45 (smoke 3/3 against the kept references).
+  Dossiers D1670–D1684; `reconcile-deaths.py` is clean.
+- **Found: #157.** The rogue's survival is a 75,000-turn walk loop around
+  three remembered apprentices. `one_threat` scales melee by track
+  confidence but not the ranged estimate, so a forgotten caster keeps
+  `expected 1.8`, `worst 14.4` at confidence 0.00015. It is opened as T4.8
+  in M4. The calibration report has an addendum for this baseline.
+- **Next:** #138, #139, #157 (M4), then the M4 review.
+
+## 2026-11-12: threat calibration and the M4 survival gate (#124)
+
+**No play change; same baseline.** T4.7 measures the threat model on the
+M4 baseline's games and checks the M4 exit. The report is
+[docs/M4-CALIBRATION.md](M4-CALIBRATION.md).
+
+- **The trace names its monsters** (`danger.rs:summary_detailed`):
+  `threat.sources` holds one line per monster with any non-zero term
+  (race, distance, speed, sleep, confusion/stun, in view, same-race group,
+  rounds, expected, worst, disabling, ranged). A floating eye's gaze has
+  no dice, only paralysis, so it counts. The trace is written after the
+  decision: the build reproduces smoke 3/3, smoke-exact 3/3 and full 45/45
+  byte for byte. The source hash changes, so the 16 deaths have new
+  dossiers, D1654–D1669 (same games as D1638–D1653).
+- **`tools/calibrate.py`** (with tests): windows cut on the key stream, not
+  on turns (`game-world.c:run_game_loop` lets faster monsters act before
+  the next key). It reports predicted against taken damage by
+  expected-damage bin, range, speed, status, attack form, group and choice;
+  p_death against deaths; disabling against onset messages (hunger faints
+  apart); a blow decomposition from `monster.txt` and the engine's hit and
+  miss messages; bootstrap intervals; named outliers.
+- **Found:** expected damage is about 10× what is taken (0.087, 90% CI
+  0.07–0.10). Per blow the model is right (1.70 HP predicted per blow
+  against 1.77 observed, hit rate 0.92). The gap is blows that never come:
+  the Borg's own blow kills or frightens the monster first in 48% of
+  standing windows, and survivors land 0.58 of the predicted blows (the
+  low-HP `+3` speed and erratic movers are candidates). Worst case is
+  exceeded in 0.14% of windows, only by unmodelled damage. 11 of 16 deaths
+  came with p_death ≥ 0.2 and the Borg fought. The other 5 were
+  starvation ×2, poison, an unseen biter while resting, and a floating eye.
+  For the eye, the engine deals ≥ 1 HP per paralysing blow to a character
+  already paralysed (`mon-blows.c:1019-1021`), and the Borg rested beside
+  it at 1/15 HP.
+- **Gate:** fixtures pass (21 active; the 3 gaps belong to M5), replay is
+  deterministic, G0 holds with a 10-second stall timeout, and every death
+  has a dossier. Survival 30/45 (67%) beside the zoo's C Borgs at 66%
+  (4.2.6) and 69% (bbc-m7) of `classes-1800`, descriptively. Our Borg gets
+  there at median depth 1 and character level 1; theirs reach depth 1–4
+  and level 1.5–7.
+- `decision_fixtures.rs` OWNERS drops #124.
+- **Refresh report:** angband +12, borg-rs +21 (2 copied docs changed),
+  better-borg-c +10 (new tags `4.2.6-impact-v8`…`v11`, `v9.1`),
+  **neo-angband-tracker +52** (the T4.6 entry said unmoved), borg-zoo +33
+  (catalogue changed), borg-runner +26 (new records and knowledge files);
+  borg-agent unmoved. The report's issue sections fail from cloud sessions
+  (GitHub GraphQL is refused there; the script would need the REST API).
+  Pin moves are their own PRs (RULES 21).
+
+**For the owner:**
+- **M4 is not finished.** The milestone still has the deferred M3 review
+  findings **#137** (Engage cooldown after refused actions), **#138** (real
+  decision candidates and goal timing) and **#139** (small cleanups). The
+  last handover said #124 was M4's last task. These come next. #137 may
+  change play, and then the gate's survival table needs a rerun (one
+  command, in the report). The M4 review PR waits for them.
+- The report's *What follows from it* lists four play changes the
+  calibration supports: blow frequency, the paralysis floor, unseen
+  attackers, and status damage. Each needs its own baseline. Decide
+  whether they belong to the M4 review or to M5.
+- This session pushed from `ccr-e0e99f46-go3y0w`, not `task/T4.7-…`: the
+  cloud session can push only to its own branch.
+
+## 2026-11-12: recovery, return home and progress under oscillation (#123)
+
+**Play change; new baseline.** T4.6 closes M4's behaviour half: the Borg
+recovers under pressure, goes home when the level cannot feed it, and digs
+out of sealed rooms. Smoke, smoke-exact and full references are regenerated
+in this PR; the diff against the old baseline is the declared change.
+(T4.4's merge line, carried along as announced: PR #154, merge commit
+f7f8a689; main is now 1915f091 after the docs commit.)
+
+- **The `return` mode** (`strategy.rs`): starving with no known food at
+  depth outranks recovery itself and bans descending (bbc D0009's full-pack
+  starvation, rust D1420's descend-on-the-staircase). The goal follows the
+  manual's recall-and-home routine (c15 §12.12): the up staircase underfoot
+  is always taken; a known Word of Recall is read early and only in safety;
+  otherwise travel to the up staircase, explore for one before any
+  down-stair fallback, then dig.
+- **Threatened travel** (`travel_step`): a path step that lands on a grid
+  more dangerous than where the Borg stands is refused, on the tactical
+  layer's composite scale (`tactics.rs:composite`, now shared) — the u32
+  `danger_with` rounds a small risk to zero and has no disabling half, so
+  bbc-d0006's NEVER_MOVE mold (confusion, no hit-point risk) read as a free
+  walk north. The retreat step reads the same scale.
+- **Heal-while-fleeing**: a live Recover goal with a monster about rests
+  anyway when no next blow can kill (`worst < hp`), letting the engine's
+  disturbance interrupt the rest (c15 REST-01, `src/player-util.c`; bbc
+  #408/#409) — a retreat loop (rust D1330) makes no progress under
+  oscillation; a rest does.
+- **Stuck escalates** (`dig_step`): with no staircase and no frontier
+  reachable anywhere, the stuck goal digs (`borg::diggable` — rubble,
+  magma, quartz, granite carry HURT_ROCK, engine `list-terrain.h:29-34`),
+  walks to a diggable wall, or reads a known recall scroll; it no longer
+  waits to starve (the M3 re-review's four sealed-room runs).
+- **Fixtures:** `bbc-d0006-deep-descent-readiness`,
+  `bbc-d0009-full-pack-starvation`, `rust-d1420-starvation-no-food` and
+  `rust-stuck-sealed-room` are **active** (the sealed-room fixture is now
+  the 3x3 its construction note always described). #123 leaves the gap
+  OWNERS: #124, #126, #127.
+- **Measured (the declared change):** smoke — the mage lives forty times
+  longer (451 → 18376 turns, reaches depth 2, dies to Fang; dossier
+  D1638) and the priest now survives the cap (was a grey mushroom patch
+  at 3586); smoke-exact diverges at the identical turns, so determinism
+  holds across both profiles. Full — 30 of 45 runs survive the 10001
+  player-turn cap (was 11 of 45); the 15 natural deaths are dossiered
+  (D1639–D1653) and `reconcile-deaths.py` is clean. Two late
+  **starvation** deaths (full-5-paladin-2 at 91190, full-7-ranger-0 at
+  89750 game turns) are the honest residue: runs the old baseline lost
+  to early monsters now live long enough to starve; the M4 survival
+  gate (#124) reads this baseline.
+- **Refresh report:** angband +12 (head 42cd156a), borg-rs +21 (2 copied
+  docs changed), better-borg-c +10, borg-zoo +33 (catalogue changed),
+  borg-runner +26 (new records and knowledge files); borg-agent and
+  neo-angband-tracker unmoved. Pin moves are their own PRs (RULES 21) and
+  are not in this one.
+- **Next:** #124 (T4.7 threat calibration report and the M4 survival gate,
+  closing M4). #126/#127 are M5 and stay untouched.
+
+## 2026-11-12: the manuals named as analysis sources
+
+The owner asked that the repository make its manual sources visible to every
+session: the **Angband Strategy Manual** and the **official user manual** in
+`reference/c-manual/` (S14). They are now named where a session starts and
+where the rules live:
+
+- `AGENTS.md` reading list, as an entry of its own, and a new *Game
+  knowledge, and where analysis starts* section: engine first, manuals
+  second, recorded play third;
+- `RULES.md` 16: read the relevant chapter before designing a rule, then
+  check every number in `engine/angband/` and cite the engine;
+- `README.md`: a *Game knowledge* section, and the manuals in the
+  neo-angband-tracker row;
+- `docs/SOURCES.md` S14 title and `docs/research/KNOWLEDGE.md`'s reading
+  state: the user manual is read with the strategy manual, per task.
+
+No pin, copy or code changed. `cargo test --workspace` checks the documents'
+links (`borg-reborn-rs/tests/repository.rs`).
+
+## 2026-11-12: the escape ladder (#121)
+
+**Play change; new baseline.** T4.4 replaces the staircase rule and the
+Phase placeholder with the escape ladder: step, Phase Door, Teleportation,
+Word of Recall and the stairs are all scored on the one hit-point scale by
+cost and sufficiency, not by a fixed monster list. Smoke, smoke-exact and
+full references are regenerated in this PR; the diff against the old
+baseline is the declared change.
+
+- **The ladder** (`tactics.rs`): a relocation's gain is the threat it
+  removes — a step's exactly as an escape's. A blink's `risk_after` is the
+  mean assessment over the remembered enterable grids of its landing band
+  (engine distance 8-12 for Phase Door's 10±25%; 45-75% of the longest
+  cardinal edge distance for Teleportation's 60%±25% —
+  `effect-handler-general.c:effect_handler_TELEPORT`); grids a visible
+  monster stands on are skipped, and an unestimated landing (an empty
+  band) is not an offered escape. A stair's landing is the declared
+  `arrival_risk_hp` — 0 for up-to-town — and Word of Recall's is the
+  25-turn mean wait beside what stands there; an active word is not
+  re-read (reading cancels it). Walking stays available after the last
+  consumable.
+- **Last-item protection:** a consumable escape pays `escape_item_hp` (1);
+  the last known escape scroll pays `last_escape_hp` (5) more. The last
+  Phase Door is kept beside a dying yeek and a never-moving eye, and still
+  spent at 4/16 HP against Fang.
+- **Never-movers give no parting blow** (`danger.rs:never_move`): a step
+  out of `RF_NEVER_MOVE` reach ends the threat for good (bbc D0013).
+- **Ties end threats:** score ties break by smaller `risk_after`, then
+  larger gain, then Attack over Walk (GOALS principle 6: killing the mold
+  beats stepping off it, bbc D0012).
+- **New parameters** (`params.rs`): `escape_item_hp` 1, `last_escape_hp`
+  5, `arrival_risk_hp` 3 — declared, to be measured (#124). Also fixed a
+  latent panic: `from_profile`'s match lacked six table names
+  (`eat_below_food`, `risk_aversion_pct`, `threat_horizon` among them), so
+  a profile setting one hit `unreachable!()`.
+- **Fixtures:** three new active ones — `bbc-d0013-eye-step-not-phase`,
+  `bbc-d0017-faster-pursuer-walk`, `bbc-d0018-dying-yeek-phase`.
+  `bbc-d0014` is re-pinned (Attack now; the fatal Read ended; Speed/CLW
+  stay #127). `bbc-d0012`'s worm masses moved to distance 2, where its own
+  construction note always said they were; `fang-ac36` and
+  `fear-blocks-the-attack` were widened to 15 columns so the blink band
+  has remembered floor (both construction notes amended). #122 is closed,
+  so the gap OWNERS are the open tasks only: #123, #124, #126, #127.
+- **Refresh report:** angband moved +12 commits past the pin, borg-rs +18
+  (one copied doc changed), better-borg-c +10 with new milestone tags
+  `4.2.6-impact-v8`…`v11` (v9.1 among them — new zoo specimens to
+  consider). Pin moves are their own PRs (RULES 21) and are not in this
+  one.
+- **Next:** #123 (T4.6 recovery/oscillation, owns four gap fixtures), #124
+  (T4.7 calibration and the survival gate — the smoke mage's death to a
+  grey mold's spores at 9/9 HP is calibration's first exhibit), #127
+  (T5.3, owns d0010/d0014's class answers).
+
+## 2026-11-11: play mode for models; borg-agent retired (owner, D11/D12 amended)
+
+The owner wants models to be able to **play** through `borg-mcp`, not only
+query it, and says borg-agent was a failed experiment that would need a
+rebuild. Documents only:
+
+- **GOALS:** D12 now covers a query *and play* surface; constraint 2 is
+  "the measured Borg plays without a model" (play mode is a separate arm,
+  logged and replayable, bound by D3 and D5); new roadmap stage **Q5,
+  play mode**, and Q4 (live) is no longer optional, since Q5 needs it.
+  *(Superseded the same day by the reorder below: Q4 became the diagnosis
+  workflow, live hosting moved into Q5, and play mode is optional.)*
+  D11: borg-agent retired as an input, its roles move to Q; borg-runner
+  stays. Option E and the non-goal reworded to match.
+- **RULES 24–25:** the zoo specimen is always the model-free Borg and the
+  Borg's code never calls a model; a model game is a separate arm with its
+  model, effort and tool calls recorded; in play mode the model chooses
+  only executor actions, and rules 11, 12 and 15 bind it.
+- **PLAN:** Q5's row and exit; Q4 no longer optional; the Neo Angband
+  line no longer mentions borg-agent.
+- **docs/QUERY-SURFACE.md:** *Play (Q5)*: tools `observe`, `options`,
+  `act`, `autopilot` (hand-off conditions), three arms (model, hybrid,
+  advised), the run record (`model.json`, `calls.jsonl`); *Workflows*:
+  explaining a death, triage, reviewing a change, hybrid play, and which
+  model for each; two new checks (play replay, arm separation).
+- **SOURCES S7, ARCHITECTURE L3, AGENTS:** borg-agent retired; its pin is
+  dropped in the next `--update` PR (RULES 21: pin moves are their own PRs).
+
+**For the owner:** nothing new to decide before Q starts. The hand-off
+conditions' defaults are an open question for Q5.
+
+**Same day, Q reordered around diagnosis (owner).** The MCP's purpose is
+diagnosing the model-free Borg's deaths after the fact; play mode is
+optional and last. New roadmap: **Q0** pilot (no code, #153: diagnose
+deaths from the dossiers as they are, measure a hit rate on known deaths,
+list the missing tools), **Q1** facade (#149–#151, unchanged), **Q2**
+diagnosis tools, **Q3** counterfactuals with **`branch`** (rerun the
+seed, force an alternative action at a think through a `branch` cargo
+feature the zoo never gets, let the Borg continue, report what followed;
+one sample, not a probability), **Q4** the diagnosis workflow and its
+evaluation, **Q5** play mode, optional, decided after Q4. The primary plan
+(M4–M7) is unchanged.
+
+**For the owner:** create the GitHub milestones Q0–Q5 (this replaces the
+earlier ask for Q1–Q4): #153 goes into Q0, #149–#151 into Q1; open Q0 when
+you want the pilot to run (it can run beside M4: it changes no code); fix
+the hit-rate threshold for Q4's evaluation, and which cases it counts,
+ideally after seeing Q0's numbers.
+
+**#152's review (owner and a second reviewer), fixed in the same PR:**
+- Q0's ground truth: the reference dossiers hold no trace or parameter
+  table, so calibration is by deciding *turn*, cause and alternative, on
+  the set #153 names;
+- our dossiers keep the last 200 thinks (`tools/export-death.py`), so the
+  triage gives the deciding think where the trace reaches it and the turn
+  otherwise, and a longer trace is a named Q0 output;
+- `branch` builds are marked `features=branch` in `BUILD_ID`, since the
+  source hash cannot tell feature builds apart; the zoo-contract refusal
+  is a new assertion to add in Q3, not an existing check;
+- RULES 24's scope restored to every measured game build (ours or the
+  zoo's), matching GOALS constraint 3;
+- "the server does not link the engine" replaces "engine-free";
+- the Q4 threshold is marked open in GOALS and PLAN;
+- QUERY-SURFACE's mode headings say *query mode* and *play mode*, as the
+  rules do;
+- draft fixtures are not committed as tests;
+- README no longer lists borg-agent as an input.
+
+Left for the pin PR (RULES 21): `pins.json`, RULES 7 and 21, and
+`scripts/refresh-sources.py`'s docstring, which still list borg-agent.
+
+## 2026-11-11: no control runs requested from the zoo (owner)
+
+The owner: borg-zoo already runs the original C Borg and better-borg-c in
+its other experiments, so this repository does not request runs of them.
+GOALS (observation rule, G1 prerequisites, G1/G2, D8), SPEC §6 and the M4
+and M5 exits now say that a zoo run we ask for is of our Borg only, and
+comparisons use the zoo's existing control results. Issues #124 (T4.7),
+#128 (T5.4) and #131 (T6.3) are updated to match.
+
+## 2026-11-11: secondary goal Q, the query surface (owner decision D12)
+
+The owner asked for the Borg's judgement to be exposed to language models
+over MCP, as a secondary goal with a roadmap, and for the rules to change
+to allow it. Documents only, no code:
+
+- **GOALS.md:** new section *Secondary goal Q* with its five constraints
+  and the Q1–Q4 roadmap; the non-goal "a model in the play loop" stays and
+  is clarified; D11 amended; **D12** added.
+- **RULES.md:** RULES 2 lets a session work on a Q milestone once the owner
+  opens it, never mixed with primary work; new RULES 24 (the Borg plays
+  without a model; the core never depends on `borg-mcp`) and 25 (no
+  judgement in the server; the versioned `query` facade).
+- **PLAN.md:** *Secondary track Q* with milestones Q1–Q4 and their exits.
+- **docs/QUERY-SURFACE.md:** the architecture draft. Decision: same
+  repository, separate crate (`borg-mcp` depends on the core's new
+  `query` facade, never the reverse); replay mode first (the
+  `BORG_OBSERVATION_LOG`, `BORG_WORLD_LOG`, `BORG_KNOWLEDGE_LOG` logs and
+  `trace.jsonl` already hold what is needed); live mode optional, one game
+  per process.
+- **ARCHITECTURE.md:** a pointer to the draft.
+
+**Review (#148, owner's comment):** three findings, all fixed. (1) Q1's
+exit said "the harness build's identity is unchanged", but
+`harness/identity.sh` hashes all of `borg-reborn-rs/` and `Cargo.lock`, so
+adding `query` changes it; the exit and the draft's checks now ask for
+the references to reproduce play, and say a changed source hash with
+unchanged play is not a new baseline (RULES 22). (2) RULES 2's wrap. (3)
+The replay-determinism check was in both TQ1.3 and Q3's exit, and the
+draft said CI from Q2; it is now Q1's alone.
+
+**Found:** a replay rebuilds `World` from observations, but not the
+strategy's own state (mode, goal, `Memory`, RNG). The draft replays the
+strategy too, with the run's seed and profile, and checks each choice
+against the trace, which makes every replay a determinism check.
+
+**Q1's tasks are filed** (#149 `run.sh --record-state`, #150 `query::State`,
+#151 strategy replay), labelled `task` but in no GitHub milestone: this
+session cannot create one.
+
+**For the owner:** create the GitHub milestones Q1–Q4 (move #149–#151 into
+Q1) when Q is to start (the plan says after M4 is merged); decide after Q3 whether
+Q4 (live) is wanted. The draft's open questions (transport library,
+snapshot interval, `what_if` look-ahead, live pause point) are settled in
+the stage named there. M4 continues unchanged.
+
+## 2026-11-10: item actions and the escape items (#122)
+
+The executor now has **Quaff**, **Read**, **Eat** and **Wield**: the
+pack letter, the command, and an effect checked next think (the kind's
+count fell, or the kind is in an equipment slot). The tactical layer uses
+them:
+
+- a known Cure Light Wounds is scored by hit points restored (2d8 mean,
+  declared) and chosen when it beats the alternatives; bbc D0002 and
+  rs D0005 now quaff it;
+- a known Phase Door is scored by the risk it removes, with landing risk
+  half for now; Fang AC36 reads it, and fear accepts it;
+- a better pack weapon is scored by the rounds it saves on the most
+  threatening adjacent monster;
+- a hungry character with a known ration enters `Mode::Eat` before the
+  timer reaches starvation (`eat_below_food`, new parameter, declared).
+
+**Fixtures:** 14 active, 7 gaps. New active: D0002/rs D0005 (known cure),
+Fang AC36 (known Phase), `rust-hungry-eats` (food). Fear accepts the
+Phase escape. D0014 now pins the **last Phase at full HP** for #121
+(landing risk and last-item protection); D0011's Wield is still not
+chosen over the attack; D0010/shoot and casting stay #127; the
+unknown-food/starvation and return-home gaps stay #122/#123.
+
+**New baseline (play change).** References: smoke 3/3, smoke-exact 3/3,
+full 45/45; boundary 3/3. 38 natural deaths, 0 unexported; 36 new
+dossiers D1566-D1601. Smoke has one 20,000-turn survivor and two deaths;
+**the full suite is 34/45 deaths and 11 survivors at the 100,000-turn cap**,
+deepest depth 3, with 3 starvation and 10 floating-eye deaths. That is a
+real behavioural change, not a survival claim: #124's calibration and the
+M4 gate judge it, and the zoo has not measured it. The floating-eye
+deaths are the escape-ladder case (#121), not a cure failure.
+
+**Sequencing.** #121 was started first and parked: every escape-ladder
+fixture but walking needs Phase/teleport actions, so #122 went first by
+owner decision. #121 resumes with real actions next.
+
+**Next:** #121 (T4.4), escape ladder and landing risk: last-item
+protection (D0014), the floating-eye case, and a real landing-risk
+estimate for Phase/teleport and level changes. Then #123.
+
+## 2026-11-10: tactical alternatives and the re-review (#120)
+
+`tactics.rs` replaces the first-applicable fight-or-retreat rule. Every
+think in contact generates and scores, on one hit-point scale:
+
+- an attack on each adjacent monster (only when `can_attack`; fear and
+  paralysis are refused by the engine), gain = the share of its threat the
+  attack removes;
+- a step to each of the eight neighbours, with the free hit every adjacent
+  monster gets when the step leaves its reach;
+- the up staircase underfoot when a threat is present (landing risk is
+  #121; a down staircase under fire is still not taken);
+- holding.
+
+The score is `gain - risk_after`, using T4.2's assessment, the one
+`risk_aversion_pct` and `threat_horizon`. A disabling or summoning risk
+costs expected hit points in the score (a declared upper bound), so a
+paralysis gaze is not free. Every response, including the losing ones,
+goes to the trace; #138 narrows the remaining contract.
+
+**Fixtures.** Ten active, ten gaps. Promoted: rs D0006 (kills the 2-HP
+mould), rust D1358 (attacks the 2-HP mouse instead of taking its free
+hit), rust D1413 (ascends with Fang adjacent and the stair underfoot).
+D0013/breeder accept the scored fight/step. The re-review's four
+sealed-room starvation runs are attached to #123; `Mode::Stuck` now names
+the state (`stuck` / "no mode can act") and `rust-stuck-sealed-room` plus
+`a_sealed_room_names_the_stuck_state` pin it. Search/dig/recall is #123.
+D0010 and Fang AC36 are gaps for #127 (shoot/cast); the cures and the
+return home are #122/#123.
+
+**New baseline (play change).** References regenerated: smoke 3/3,
+smoke-exact 3/3, full 45/45; boundary 3/3. 49 natural deaths, 0
+unexported; 47 new dossiers D1519-D1565 from the clean checkout. Smoke has
+one 20,000-turn survivor and two deaths; full is 45/45 deaths, deepest
+depth 3, longest 89,380 game turns, **20 starvation and 8 floating-eye
+deaths**. No survival claim: food is #122, the floating-eye/paralysis
+escape ladder is #121/#122, and the stuck exits are #123. The re-review's
+finding 2, G0's missing smoke-warrior death and the four sealed-room runs
+are recorded; the owner's #135 scope choice remains the owner's.
+
+**Next:** #121 (T4.4), the escape ladder with landing risk; it should take
+the stair-under-contact response beyond "upward only" and give the
+floating-eye deaths an escape. #122 then adds the actions; #123 the stuck
+exits.
+
+## 2026-11-10: one threat assessment (#119)
+
+`danger.rs` is now L4's assessment rather than the C Borg's full-damage sum.
+For each grid and horizon it returns:
+
+- `expected` damage: the engine's hit chance (`chance_of_monster_hit_base`,
+  `player-attack.c:hit_chance`) and armour (`adjust_dam_armor`) over the
+  attack rounds from the energy model;
+- `worst`: every blow hits at its largest roll;
+- `p_death`: exact convolution for small fights, a declared normal
+  approximation for large ones;
+- `disabling`: fear/blind/confuse/paralyse from blows and spells;
+- `summoning`: shrieks and `S_*` spells;
+- `economic`: theft, destruction and drains, never added to lethal risk.
+
+Ranged attacks use the C Borg's breath/shot estimates as a floor
+(`borg-danger.c:619-760`); uncommon effects use a conservative generic and
+are marked as estimates, because `Knowledge` does not carry the spell
+effect dice or breath divisors. LOS is a conservative Bresenham over the
+remembered level. Summoners/breeders use the C Borg's 1.5/1.8 growth
+factors. Remembered-unseen monsters scale by `Track::confidence`.
+
+One risk number is `expected + risk_aversion_pct * (worst - expected)`.
+Paths, rest, retreat, contact and combat pass the same tolerance;
+`threat_horizon` sets the window. Both are new parameter-table entries
+(50%, 1 turn) with evidence, not tuned values. Every trace line now has the
+six numbers (`threat`), which #124 reads. Fear and paralysis set
+`can_attack`/`can_act`; the engine refuses the attack, so the strategy
+cannot choose it.
+
+**Fixtures.** Seven active now: bbc D0008, D0012, D0013, D0019 (one
+apprentice does not cause whole-level flight), the breeder pack, fear
+(refused attack), and rust D1330 (the cat is seen and the stair is taken).
+Twelve gaps remain, all #120/#122: stairs under contact, retreat at 1 HP,
+the 2-HP mould, quaff/eat/read/wield. `bbc-d0006` pins Walk(7). The
+fixture catalogue records the promotions.
+
+**New baseline (play change).** Smoke/smoke-exact/full references are
+regenerated and match 3/3, 3/3 and 45/45; the exact-boundary check is 3/3.
+The smoke suite has one 20,000-turn survivor and two deaths; the full suite
+is 45/45 deaths, deepest depth 3, longest 89,440 game turns, with nine
+starvation deaths. 49 natural deaths in the runs, 0 unexported; 47 new
+dossiers D1472-D1518. **No survival claim**: starvation is #122, and the
+tactical layer that could use the new numbers is #120. The calibration
+report (#124) is where the estimates are checked against damage taken.
+
+**Next:** #120 (T4.3), tactical alternatives on one scale. It must promote
+the twelve gaps: cure/attack/stairs under contact, retreat versus the free
+hit. #122 then supplies the actions. The trace has the numbers; no
+threshold was tuned silently.
+
+## 2026-11-10: danger race flags, the #142 fix
+
+The T4.1 fixtures' first finding is fixed. `danger.rs` named `MULTIPLY`,
+`NEVER_BLOW` and `NEVER_MOVE` one higher than the engine enum (`RF_NONE` is 0
+and the first valid flag is 1), so a grey mould's `NEVER_MOVE` was read as
+`NEVER_BLOW`: it scored zero danger and the Borg rested beside it. Breeders
+lost the multiplier and `RAND_25` was misread as `NEVER_MOVE`.
+
+- Constants are now 17, 20 and 21, with the counting rule in the comment.
+- `race_flag_numbers_match_the_engine_enum` checks the real bytes: a grey
+  mould's byte 2 bit 4 is `NEVER_MOVE` and not `NEVER_BLOW`; a silver mouse
+  is `MULTIPLY | RAND_50`; an adjacent mould scores above zero.
+- Fixture promotion: `rs-d0006-mold-at-two-hp` no longer rests (Walk is the
+  recorded retreat) and moved from the #142 gap to #120; `rust-d1330-rest-
+  with-pursuer` no longer rests either, and its remaining gap is the
+  staircase under a seen threat (#120). `bbc-d0006`'s exploration path
+  changed from Walk(7) to Walk(9); the fixture pins the new direction.
+- This is a play change: smoke, smoke-exact and full references are
+  regenerated from build `3a74b98`, and the deaths at the new build
+  identity are re-recorded. The runs produced 51 natural deaths, 0
+  unexported, and 48 new dossiers D1424-D1471 (three repeats).
+- **The full suite is 45/45 deaths, deepest depth 2, longest 89,240 game
+  turns** (the longest run is 8,925 player turns). The previous baseline
+  reached depth 3. This is not evidence that the fix is worse: the old
+  model was resting beside moulds it could not see, and the strategy still
+  has no cure/escape action. It is a play change to be measured, not a
+  survival claim, and T4.2/T4.3 must judge it.
+
+**Checks.** `cargo test -p borg-reborn-rs` (including the fixtures),
+smoke and smoke-exact runs, `harness/diff` 3/3 and 3/3, the exact-boundary
+check 3/3, the full suite, and 45/45 reference diffs. The references are a
+new baseline, not an oracle; no survival or population claim.
+
+**Next:** #119 (T4.2), one threat assessment. The fixtures it must satisfy
+are `fear-blocks-the-attack` (#119), `bbc-d0006-deep-descent-readiness`
+(#119), and the #120 group (stairs under contact, retreat at 1 HP, the
+2-HP mould). #142 is closed by this task.
+
+## 2026-11-10: T4.1 death-derived decision fixtures (#118)
+
+Eighteen constructed `Observation` fixtures now replay deterministically in
+`borg-reborn-rs/tests/decision_fixtures.rs`; the catalogue and the M3
+triage are in [docs/FIXTURES.md](FIXTURES.md), the schema in
+`tests/fixtures/README.md`, and the engine data they read is the trimmed
+`tests/fixtures/knowledge.json` (a `BORG_KNOWLEDGE_LOG` dump at
+`e473720`).
+
+- **Four are active**: bbc D0008 (attack the adjacent 2-HP mould), bbc
+  D0012 (the owner branch's one-blow kill), bbc D0013 (no level flight
+  over one kobold), and `mmx-war-1` (one action per think in a breeder
+  pack). They must avoid the forbidden action and meet the alternative.
+- **Fourteen are gaps**, not skips: each pins the action the Borg takes
+  today and names the open M4 owner. When the action or decision changes,
+  the test fails and the fixture must be promoted. Owners: #119 (threat
+  horizon, fear), #120 (scored alternatives, stairs under contact), #122
+  (quaff/eat/read/wield), #142 (flag numbering).
+- **New finding, filed as #142**: `danger.rs` numbers `MULTIPLY`,
+  `NEVER_BLOW` and `NEVER_MOVE` one higher than the engine enum. A grey
+  mould's `NEVER_MOVE` is read as `NEVER_BLOW`, so it scores zero danger
+  and the Borg rests beside it; breeders lose the multiplier. The evidence
+  is in the issue; the fix needs a new reference baseline and belongs with
+  #119, not this PR.
+- **M3 triage** (D1326-D1420, 95 dossiers): 59 last actions were retreat
+  walks, 21 rests, 12 attacks, 2 explore walks, 1 recover walk; 4
+  starvation, 4 poison, 5 grey mould, 2 Fang. Four representative fixtures
+  cover the families; the rest repeat them (28 causes, one independent
+  death per encounter family).
+- The fixtures are constructed, not recorded: the committed dossiers lack
+  the original snapshots. Each file's `construction` says what was
+  invented and `limits` says what it cannot claim. The owner-manual
+  branches are diagnostics, not lives; their `verified` text quotes the
+  turn range and end state.
+- Doc state from the M3 review is corrected: PLAN says M4 is in progress
+  (T4.1), and #136 no longer carries `in progress`.
+
+**Checks.** `cargo fmt --all --check`, `cargo clippy --workspace
+--all-targets -- -D warnings`, `cargo test --workspace` and the script
+tests. No play code changed, so no engine build, smoke run or reference
+regeneration was needed; the fixtures are pure crate tests.
+
+**Re-recording.** `harness/identity.sh` hashes the whole `borg-reborn-rs/`
+tree, tests included, so adding the fixture test changed the build identity
+even though play is byte-identical. CI's smoke deaths therefore arrived as
+a new encounter family; they are re-recorded as D1421-D1423 from the CI
+registry (seed 102/103/101, the same deaths as D1373-D1375). This is the
+existing process cost of a test-only change. Whether test files belong in
+the build-input hash is a repo-level question for the owner; it does not
+block M4.
+
+**Next:** #119 (T4.2), one threat assessment. It must account for #142
+first (the fixture `rs-d0006-mold-at-two-hp` pins the wrong decision), then
+add status (fear), the group/breeder multiplier and the multi-step horizon
+that `rust-d1330-rest-with-pursuer` pins. #118's fixtures are the check.
+
+## 2026-11-10: M4 source refresh
+
+The owner directed M4 to start while #135 remains open for re-review.
+Pins moved for all five active sources; copied references and the death
+index are refreshed, with the new reading in
+[docs/research/KNOWLEDGE.md](research/KNOWLEDGE.md).
+
+- better-borg-c `a4cc2d4`: no new death dossiers. M11 #471 has 18 carry
+  units but no cohort/per-mode evidence and no v11 tag yet. Read the five
+  `borg-danger.c` corrections (partial-hit armour/chance, CON drain,
+  Crush's ranged value, rubble) and Shoot'N'Scoot's index fix.
+- borg-runner `1440f70`: edition 4, including the fear/shrieker death,
+  Fang AC36 versus Magic Missile, sparse sleeping monster placement,
+  the whole-level M map and `mmx-war-1`'s batched-key breeder death.
+  These become M4 fixture inputs.
+- borg-zoo `415183c`: use explicit `normal` for controls; `default`
+  changed meaning at the mode cutoff. reserve410's small pilot is mixed,
+  not support for a buying claim.
+- borg-rs `399c907`: the family now has an explicit buying-strategy seam;
+  buy-to-identify remains open. Angband's 12 new commits are noted for
+  M4's rest/executor work; our engine remains at `e473720` as specified.
+
+**Next:** #118 (T4.1), death-derived decision fixtures. Build the
+observation/scenario fixtures before changing the threat model, including
+the PLAN seed cases, the new fear/shrieker and Fang cases, and reproducible
+M3 deaths. No survival or tuning claim comes from the M11 package.
+
 ## 2026-11-10: M3 review blocker, bounded rerolls (#136)
 
 PR #135's review rejected the first G0 baseline: T3.7's up/down reroll

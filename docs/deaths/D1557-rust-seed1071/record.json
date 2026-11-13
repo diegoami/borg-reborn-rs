@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1557-rust-seed1071",
+  "run_kind": "harness",
+  "character": "Dunadan Ranger",
+  "raw_cause": "starvation",
+  "terminal": {
+    "cause": "starvation",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 3,
+    "level": 3,
+    "turn": 89280,
+    "race_idx": 8,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1071,
+    "flags": "menu",
+    "git_rev": "9124a2b0c52c76deee152aedde38829205428601",
+    "git_dirty": "no",
+    "source_sha256": "b550dc79fb1e86e585622162923316176e8fd1450855b623b512a9a08610d197",
+    "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c",
+    "borg_txt_sha256": "2fc19df7b5112ffffb073a980bc93b8c7170000f9707d1545a2272274db029d8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8811
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/diego/projects/borg-reborn-rs/harness/out/full-120b/full-7-ranger-1",
+      "result_sha256": "021da548f0222ef4ca2744b3a02fe5541803cdfc274c4a6f3ecca862c34be3fd",
+      "raw_sha256": {
+        "keys.log": "021da548f0222ef4ca2744b3a02fe5541803cdfc274c4a6f3ecca862c34be3fd",
+        "messages.log": "1e6e54cc98143570b04f952ad00242c62cfbc097f34b1394a1d8c3f0f826344d",
+        "state.log": "2ccbaf3605c63460dcded83ba82e020bb9f9dff1a9955df00ff1cb24955a00b3"
+      },
+      "source_commit": "9124a2b0c52c76deee152aedde38829205428601",
+      "binary_sha256": "28519d0ddd06f0941419567131c9525a3358b7fa81fd78a29d982c767389dc6c"
+    }
+  ],
+  "encounter_family": "start-3b52d43e4add630089ac1f040070a2f48cad6b2600f16f3b2ba5221846ade56b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b65a6954a8c0091c24852549f8ff548581fefc6473aa77c53a9bbd785a02f02d",
+    "config.txt": "8f8b02585181de9c13ee548903d9dffac173e1728db7c7d7bb518da19696af2b",
+    "depths.json": "2b4c5e3975e785bc3fa7ffd756c8f43a151ee91910d01fc6410f7259d1cbe23c",
+    "params.json": "924b1363e70d1614c34de6f8dd3d23b0c95b5f63c89056ab018307c79d96f96a",
+    "summary.json": "09e26797e636bafee3689b4851a63cf9d74b663630c258f0bc349b37109cf421",
+    "trace-tail.jsonl": "901500ad4550477d843169673dab4a16e6bd89e874e0f188ee72852b20c0f7b8"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -11,8 +11,11 @@ whatever the model.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
-   for the owner. A session that finds a goal or a task wrong says so in its
-   PR or in [docs/HANDOVER.md](docs/HANDOVER.md), and goes on with the rest.
+   for the owner. The secondary track Q (GOALS D12) has its own
+   milestones; a session works on one only when the owner opens it, and
+   never in the same PR as primary work. A session that finds a goal or
+   a task wrong says so in its PR or in [docs/HANDOVER.md](docs/HANDOVER.md),
+   and goes on with the rest.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
@@ -84,9 +87,14 @@ whatever the model.
     scum, stair-scumming, or cheat death inside the Borg.
 16. **Knowledge is lifted, decision code is not.** Formulas, tables, key
     sequences and prompt answers taken from the C Borg cite
-    `file:function:lines` at `e473720`. Code copied from another project is
-    recorded once in docs/PROVENANCE.md and is ours from then on
-    (docs/SPEC.md §2). The decision layer (strategy) is new code.
+    `file:function:lines` at `e473720`. The **Angband Strategy Manual**
+    (S14) and the **official user manual** under `reference/c-manual/` are
+    the first reference for how the game behaves: read the relevant chapter
+    before designing a rule, then check every number it gives in
+    `engine/angband/` (`src/` or `lib/gamedata/`) and cite the engine there.
+    Code copied from another project is recorded once in
+    docs/PROVENANCE.md and is ours from then on (docs/SPEC.md §2). The
+    decision layer (strategy) is new code.
 
 ## Files and machines
 
@@ -118,3 +126,25 @@ whatever the model.
     lifted from a C Borg cite `file:function:lines` in the form the
     refresh report recognises, so a later fix to that function in
     better-borg-c or borg-rs is reported and reviewed.
+
+## The query surface (secondary goal Q, owner 2026-11-11)
+
+24. **The measured Borg plays without a model.** The Borg's code never
+    calls a model, and the zoo specimen is always the model-free Borg. The
+    core never depends on `borg-mcp` (docs/QUERY-SURFACE.md), and nothing of
+    it is linked into a game build the harness or the zoo measures (ours or
+    the zoo's) or reaches the zoo contract; Q5's live host, if built, is its
+    own binary and never a measured build. Query
+    mode never sends keys, and a live query never changes `keys.log`. A
+    game played by a model through play mode is a **separate arm**: never
+    named or reported as the Borg, with the model, its effort and every
+    tool call in the run record, and replayable key for key.
+25. **The server has no judgement of its own.** Every answer comes from a
+    function the Borg plays with, through the versioned `query` facade.
+    A new computation goes into the core first, with its own task and
+    tests. A change to a report type or a tool schema bumps
+    `query::VERSION`. In play mode the model chooses only among executor
+    actions; keys and prompts are the executor's, and rules 11 (fair
+    information) and 15 (no exploits) bind the model as they bind the
+    Borg. A model-played death is recorded like any other (rule 12),
+    under its own arm.

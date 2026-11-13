@@ -33,6 +33,13 @@ pub mod feat {
     pub const STORE_GENERAL: u32 = 7;
     pub const STORE_ALCHEMY: u32 = 11;
     pub const HOME: u32 = 14;
+    pub const RUBBLE: u32 = 16;
+    pub const MAGMA: u32 = 17;
+    pub const QUARTZ: u32 = 18;
+    pub const MAGMA_K: u32 = 19;
+    pub const QUARTZ_K: u32 = 20;
+    pub const GRANITE: u32 = 21;
+    pub const PERM: u32 = 22;
     pub const PASS_RUBBLE: u32 = 24;
 }
 
@@ -64,6 +71,14 @@ pub fn walkable(f: Option<u32>) -> bool {
                 | feat::PASS_RUBBLE
         )
     )
+}
+
+/// Whether a known feature can be tunnelled: rubble, magma, quartz and
+/// granite carry HURT_ROCK (engine `list-terrain.h:29-34`); permanent
+/// walls (`FEAT_PERM`, :35) never do, and a secret door is opened, not
+/// dug (T4.6, #123).
+pub fn diggable(f: Option<u32>) -> bool {
+    matches!(f, Some(feat) if (feat::RUBBLE..=feat::GRANITE).contains(&feat))
 }
 
 /// Whether a known feature is a shop entrance (the home included).
@@ -396,6 +411,8 @@ fn write_trace(b: &mut Borg, view: &PlayerView, d: &Decision) {
             })
             .collect(),
         choice: format!("{:?}", d.action),
+        threat: d.threat.clone(),
+        why: d.why.clone(),
         violations: d.violations.clone(),
         prompts: b.executor.take_answered(),
         profile_sha256: b.params.profile_sha256.clone(),
@@ -530,7 +547,7 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
     // observation).
     let empty_knowledge = crate::knowledge::Knowledge::default();
     let knowledge = b.knowledge.as_ref().unwrap_or(&empty_knowledge);
-    let mut paths = crate::path::Paths::new(&b.world);
+    let mut paths = crate::path::Paths::new_with_risk(&b.world, b.params.risk_aversion_pct);
     let mut ctx = DecisionCtx {
         view,
         world: &b.world,

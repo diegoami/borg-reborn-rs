@@ -11,7 +11,7 @@
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "8a7579d11998c76b28c6e4f0f749b15d32fb7ba1",
+      "commit": "399c907950b1fd474ddfc1c5a5d4f86063778aac",
       "role": "A reference only (docs/SPEC.md §2): the faithful Rust port of the C Borg. Its harness hooks and headless frontend were copied once and are ours (docs/PROVENANCE.md); nothing of it is a build input, an oracle or a control. Its docs/ are copied in reference/borg-rs/.",
       "read_on": "2026-11-10",
       "issues": true,
@@ -19,7 +19,7 @@
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "06f57898b48c0d45e953bfdebfcc5665afefc7fb",
+      "commit": "a4cc2d41d3a5f1caa32e6b49c3149fea03a693dd",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
@@ -46,7 +46,7 @@
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "a092d1e132bd7d25960dc018d2ea54c2a8e23a82",
+      "commit": "415183ce70ddbd1e0f074301cbb007c774d678b2",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
       "read_on": "2026-11-10",
       "issues": true
@@ -60,7 +60,7 @@
     },
     "borg-runner": {
       "repository": "diegoami/borg-runner",
-      "commit": "883c4746895054270eaf2911d2b0012e3be49cb2",
+      "commit": "1440f703914c10de3fccd29ece94aa2a2d747cf3",
       "role": "Language-model agents play upstream 4.2.6 (e473720, our engine) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
       "read_on": "2026-11-10",
       "issues": true

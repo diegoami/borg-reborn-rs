@@ -117,7 +117,7 @@ menus, which is the rule the model runs follow for the same reason.
 |---|---|---|---|---|
 | **this session** | 971 | 4,741 | 1 | 2 |
 | `sonnet-1` (no prior knowledge) | 644 | 4,659 | 1 | 3 |
-| `sonnet-2-again` (used `l>g`) | 1,107 | 10,416 | **7** | 8 |
+| `sonnet-2.2` (used `l>g`) | 1,107 | 10,416 | **7** | 8 |
 
 Your session and the first model run are almost the same session: the same
 number of turns, the same depth, the same level, and **the same failure** —

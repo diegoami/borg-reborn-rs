@@ -101,8 +101,8 @@ egos, artifacts, spells by class, stores. Read from the engine's parsed
 data (`r_info`, `k_info`, …) at start, plus derived tables. Formulas lifted
 from the C Borg (for example per-blow damage adjustments in
 `borg_danger_physical()`) carry a `file:function:lines` citation at the pin
-and a unit test with the C values. Later, reviewed borg-agent claims feed
-in here.
+and a unit test with the C values. Later, reviewed claims (borg-runner's,
+and those made through the query and play surface, D12) feed in here.
 
 ### L4 Assessment
 
@@ -214,6 +214,14 @@ loops become visible.
 - **Performance budget.** A think must stay well under the time the zoo's
   wall limits allow. The baseline is about 110 s for 400,000 engine turns
   for the C Borg. The tactical look-ahead is bounded by design.
+
+### Outside the loop: the query surface (secondary goal Q)
+
+A read-only facade, `query`, over L2–L5 lets a separate workspace crate,
+`borg-mcp`, answer a language model's questions with the Borg's own
+functions, on replayed state. It is not a layer of play: the control loop
+above never calls it, and nothing of it is linked into the game. Draft:
+[QUERY-SURFACE.md](QUERY-SURFACE.md).
 
 ## What comes from where
 

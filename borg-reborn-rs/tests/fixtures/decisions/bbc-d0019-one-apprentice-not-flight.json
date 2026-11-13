@@ -1,0 +1,79 @@
+{
+  "turn": 100,
+  "status": "active",
+  "title": "D0019: one apprentice on DL2 is not a reason to leave the level",
+  "dossier": "reference/deaths/better-borg-c/D0019-collected",
+  "citations": [
+    "report.md:1-20",
+    "overall-assessment.md (scary-list flight)"
+  ],
+  "construction": "Half-Troll Necromancer CL2, 20/20 HP, D2. The dossier gives a single apprentice setting whole-level flight on DL2; the apprentice, the up staircase and the frontier are placed to test that one visible weak monster does not trigger a level exit. The room is constructed.",
+  "limits": "No verified survival alternative: the owner's takeover used a lucky Phase onto the stair corridor. The fixture checks the refusal to flee the level, not a rescue.",
+  "player": {
+    "race": 7,
+    "class": 4,
+    "level": 2,
+    "hp": 20,
+    "max_hp": 20,
+    "sp": 3,
+    "max_sp": 3,
+    "x": 5,
+    "y": 3
+  },
+  "depth": 2,
+  "max_depth": 2,
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    }
+  ],
+  "map": [
+    "#####?#####",
+    "#.........#",
+    "#..A......#",
+    "#....@....#",
+    "#<........#",
+    "###########"
+  ],
+  "monsters": [
+    {
+      "x": 3,
+      "y": 2,
+      "race": 39,
+      "hp": 15,
+      "max_hp": 15,
+      "sleep": 0
+    }
+  ],
+  "forbidden": [
+    {
+      "action": "Ascend",
+      "item": "whole-level flight over one apprentice"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Walk",
+      "item": "explore or fight, not the up staircase"
+    }
+  ],
+  "objects": [],
+  "id": "bbc-d0019-one-apprentice-not-flight"
+}

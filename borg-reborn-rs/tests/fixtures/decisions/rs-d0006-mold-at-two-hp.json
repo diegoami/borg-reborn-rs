@@ -1,0 +1,103 @@
+{
+  "turn": 100,
+  "status": "active",
+  "equipment": [
+    {
+      "slot": 1,
+      "kind": 6,
+      "tval": 23,
+      "sval": 4,
+      "weight": 12,
+      "desc": "a Dagger (1d4)",
+      "dd": 1,
+      "ds": 4
+    }
+  ],
+  "inventory": [
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 240,
+      "tval": 26,
+      "sval": 99,
+      "number": 2,
+      "desc": "an unknown potion",
+      "aware": false
+    },
+    {
+      "kind": 11,
+      "tval": 28,
+      "sval": 5,
+      "number": 7,
+      "desc": "& Ration~ of Food",
+      "aware": true
+    },
+    {
+      "kind": 4,
+      "tval": 19,
+      "sval": 1,
+      "number": 10,
+      "desc": "& Wooden Torch~",
+      "aware": true
+    }
+  ],
+  "monsters": [
+    {
+      "x": 5,
+      "y": 3,
+      "race": 17,
+      "hp": 2,
+      "max_hp": 2,
+      "sleep": 0
+    }
+  ],
+  "objects": [],
+  "forbidden": [
+    {
+      "action": "Walk",
+      "item": "the retreat/re-entry oscillation"
+    },
+    {
+      "action": "Descend"
+    }
+  ],
+  "feasible": [
+    {
+      "action": "Attack",
+      "item": "the 2-HP grey mold"
+    }
+  ],
+  "map": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#...@m....#",
+    "#....>....#",
+    "#.........#",
+    "###########"
+  ],
+  "id": "rs-d0006-mold-at-two-hp",
+  "title": "rs D0006: a stationary 2-HP mold, 2/15 HP, three retreats",
+  "dossier": "reference/deaths/borg-rs/D0006-recorded",
+  "citations": [
+    "overall-assessment.md:11-16,71-113,135-147",
+    "report.md:8-19"
+  ],
+  "construction": "Half-Elf Priest CL2, 2/15 HP, D1. The dossier gives the grey mold at 2 HP, the doorway and the down staircase; the room is constructed.",
+  "limits": "No verified alternative: descent, hold and mace were untested. The tactical layer now attacks the 2-HP stationary mould because the free hit from walking is worse; the fixture is active.",
+  "player": {
+    "race": 1,
+    "class": 3,
+    "level": 2,
+    "hp": 2,
+    "max_hp": 15,
+    "x": 4,
+    "y": 3
+  }
+}

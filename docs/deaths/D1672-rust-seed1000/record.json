@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1672-rust-seed1000",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a crow",
+  "terminal": {
+    "cause": "a crow",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 95559,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1000,
+    "flags": "menu",
+    "git_rev": "798239ad4644c15efb4309550cd0d8e793002f87",
+    "git_dirty": "no",
+    "source_sha256": "f6a3be0fe2c0446066824706c7711391c203f5a58d08c710097c901f289bbf49",
+    "binary_sha256": "48c0cd8794de2f3b739fd4b1c28b289180c0162a7c73bd039771f66da34d5549",
+    "borg_txt_sha256": "f20f7ed7065a31dec52467b932f8f9ea4b17f69922732c02c583e160b6ddb419",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 9522
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-0-warrior-0",
+      "result_sha256": "37b4797eaabe84c03dbbb5de75e392e3a484e71988ed3449372a06b28e033021",
+      "raw_sha256": {
+        "keys.log": "37b4797eaabe84c03dbbb5de75e392e3a484e71988ed3449372a06b28e033021",
+        "messages.log": "27e76549a3b77e897647a9c1d57c6c6febb459df04754f422c60b217f4ed7c5f",
+        "state.log": "ff607e4a0b16e61087f2a8da1688b8ea64f5aabbeded21ac080cf1771c563389"
+      },
+      "source_commit": "798239ad4644c15efb4309550cd0d8e793002f87",
+      "binary_sha256": "48c0cd8794de2f3b739fd4b1c28b289180c0162a7c73bd039771f66da34d5549"
+    }
+  ],
+  "encounter_family": "start-fe917ceb4d49b362ab4516148fe555eea8164bd56460333d5796678bfb39406d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c3eae3fe151c4c44cd146d86e3a67d1bc0cb46b6141e16e2cf4d0269d1f571bb",
+    "config.txt": "db5669342b38cbbf5f9d35b1c8ee10fd82dd1d1375c61be7750642aa15516d8c",
+    "depths.json": "f0e77b559d7070a0fcca28f83e27d5a6b011773d0958de518001b3d94028521e",
+    "params.json": "9b63927d0f7a305a93796f3b14c63b80be6b0727f48553758715429890a63022",
+    "summary.json": "65a3a347372f4b7e3ec0324da0846848691c514cae1fdde75e2ec535ccc736b3",
+    "trace-tail.jsonl": "f3109cac3737fb4343df2b696fee60efd34524df9d272e259f15dd29398b2f97"
+  },
+  "investigation": null,
+  "issue": null
+}

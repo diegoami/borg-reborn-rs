@@ -12,7 +12,7 @@
 //! placeholder's one-step retreat.
 
 use crate::borg::{stand_still, Memory, Rng};
-use crate::danger::danger;
+use crate::danger::{assess, can_act, danger_with, ThreatSummary};
 use crate::engine::PlayerView;
 use crate::executor::Action;
 use crate::knowledge::Knowledge;
@@ -23,6 +23,9 @@ use crate::world::World;
 use std::collections::BTreeMap;
 
 /// Directions 1–9 (keypad layout) as (dir, dx, dy).
+/// Engage's progress measure when no monster is adjacent (#139).
+const ENGAGE_NO_CONTACT: i64 = i64::MIN;
+
 pub const DIRS: [(u8, i32, i32); 8] = [
     (1, -1, 1),
     (2, 0, 1),
@@ -51,6 +54,19 @@ pub enum Mode {
     Descend,
     /// Reveal the level: walk to the frontier of the unknown.
     Explore,
+    /// Eat a known food item before the food timer reaches starvation.
+    Eat,
+    /// Head back to town when the level has nothing more to give:
+    /// starving with no food left (bbc D0009/D0011, rust D1420) follows
+    /// the manual's recall-and-home routine (c15 §12.12: leave when
+    /// there is nothing more to gain, read recall early and in a safe
+    /// spot) — take the up staircase, recall, or dig for the way up
+    /// (T4.6, #123).
+    Return,
+    /// No mode can act here: the frontier is empty and no staircase is
+    /// reachable. The state is named so the trace and the death dossier
+    /// say why the Borg is standing still (T4.6, #123).
+    Stuck,
 }
 
 impl Mode {
@@ -61,6 +77,9 @@ impl Mode {
             Mode::Town => "town",
             Mode::Descend => "descend",
             Mode::Explore => "explore",
+            Mode::Eat => "eat",
+            Mode::Return => "return",
+            Mode::Stuck => "stuck",
         }
     }
 }
@@ -182,6 +201,13 @@ pub struct Decision {
     pub budget_left: i64,
     /// The actions considered, with their scores.
     pub candidates: Vec<(Action, f64)>,
+    /// The assessment at the character's grid this think, for calibration
+    /// (`expected`, `worst`, `p_death`, ...). `None` only for decisions
+    /// made before a world exists.
+    pub threat: Option<ThreatSummary>,
+    /// Why the mode was chosen and the goal's timing (#138); `None` from a
+    /// strategy that does not say.
+    pub why: Option<crate::trace::Why>,
     pub violations: Vec<String>,
 }
 
@@ -217,6 +243,19 @@ pub struct FirstStrategy {
     /// A fresh generation may Explore first; it may not be rerolled on
     /// arrival (M3 review, PR #135 finding 1).
     rerolled_from: Option<u64>,
+    /// The tactical responses of the last think, best first, for the trace
+    /// (T4.3). Empty when no tactical choice was made.
+    last_candidates: Vec<(Action, f64)>,
+    /// The action the last think chose: the one the executor's next
+    /// report is about.
+    last_action: Option<Action>,
+    /// Which rule of `choose_mode` chose this think's mode, for the trace
+    /// (#138: the mode choice is a priority rule, not a score).
+    rule: &'static str,
+    /// Actions the executor reported refused, barred until this game turn
+    /// (#137). Contact keeps Engage live past its cooldown, so the
+    /// refusal must bar the action itself, not only the mode.
+    refused: BTreeMap<Action, i64>,
 }
 
 impl Default for FirstStrategy {
@@ -226,6 +265,10 @@ impl Default for FirstStrategy {
             goal: None,
             cooldowns: BTreeMap::new(),
             rerolled_from: None,
+            last_candidates: Vec::new(),
+            last_action: None,
+            rule: "",
+            refused: BTreeMap::new(),
         }
     }
 }
@@ -238,6 +281,20 @@ impl FirstStrategy {
         world.level.grids.iter().filter(|g| g.feat != 0).count() as i64
     }
 
+    /// Whether a known food item is in the pack.
+    fn has_food(ctx: &DecisionCtx) -> bool {
+        ctx.world.character.inventory.iter().any(|it| {
+            ctx.knowledge.kind(it.kind).is_some_and(|k| {
+                k.name
+                    .chars()
+                    .filter(|c| !matches!(c, '&' | '~'))
+                    .collect::<String>()
+                    .trim()
+                    == "Ration of Food"
+            })
+        })
+    }
+
     /// Whether resting is safe where the Borg stands: the strategy
     /// manual's rule in its strictest reading (c15 REST-01: no awake
     /// monster about to reach you) — no measurable danger at all. The C
@@ -246,15 +303,32 @@ impl FirstStrategy {
     /// (bbc D0017); M3 takes the strict form.
     fn may_rest(ctx: &DecisionCtx) -> bool {
         let (x, y) = (ctx.view.x, ctx.view.y);
-        danger(ctx.world, ctx.knowledge, x, y, 1) == 0
+        // One turn: a rest is interrupted when a monster arrives, and
+        // what matters now is whether one can reach and strike. A distant
+        // monster does not make the next turn unsafe.
+        assess(
+            ctx.world,
+            ctx.knowledge,
+            x,
+            y,
+            ctx.params.threat_horizon,
+            ctx.params.risk_aversion_pct,
+        )
+        .risk(ctx.params.risk_aversion_pct)
+            <= 0.0
     }
 
-    /// The one step that most reduces danger (a taste of L4 until M4's
-    /// tactical layer): the cheapest of the eight neighbours by danger,
-    /// then by flow distance, only through grids the Borg may enter.
+    /// The one step that most reduces danger: the cheapest of the eight
+    /// neighbours on the tactical layer's composite scale (T4.6, #123 —
+    /// `danger_with` rounds a small risk to 0 and ignores the disabling
+    /// half, so a NEVER_MOVE mold read as free), only through grids the
+    /// Borg may enter. Ties keep the first direction in [`DIRS`] order
+    /// (keypad 1, 2, 3, 4, 6, 7, 8, 9): only a strictly lower risk replaces
+    /// the best so far.
     fn retreat_step(ctx: &mut DecisionCtx) -> Option<u8> {
         let (x, y) = (ctx.view.x, ctx.view.y);
-        let mut best: Option<(u32, u32, u8)> = None;
+        let hp = f64::from(ctx.view.hp.max(1));
+        let mut best: Option<(f64, u8)> = None;
         for &(d, dx, dy) in DIRS.iter() {
             let (nx, ny) = (x + dx, y + dy);
             if crate::path::enter_cost(ctx.world, nx, ny).is_none() {
@@ -270,16 +344,127 @@ impl FirstStrategy {
             {
                 continue;
             }
-            let danger = danger(ctx.world, ctx.knowledge, nx, ny, 1);
+            let risk = crate::tactics::composite(
+                &assess(
+                    ctx.world,
+                    ctx.knowledge,
+                    nx,
+                    ny,
+                    ctx.params.threat_horizon,
+                    ctx.params.risk_aversion_pct,
+                ),
+                ctx.params.risk_aversion_pct,
+                hp,
+            );
             let better = match best {
                 None => true,
-                Some((b, _, _)) => danger < b,
+                Some((b, _)) => risk < b,
             };
             if better {
-                best = Some((danger, 0, d));
+                best = Some((risk, d));
             }
         }
-        best.map(|(_, _, d)| d)
+        best.map(|(_, d)| d)
+    }
+
+    /// One step along the flow toward `goal`, refused when that step
+    /// lands on a grid more dangerous than where the Borg stands (the
+    /// composite scale; T4.6, #123): threatened travel retreats rather
+    /// than walking deeper into reach. There is no `here > 0.0` gate —
+    /// d0006's NEVER_MOVE mold deals no hit-point risk anywhere, and
+    /// only the disabling half of the composite separates the grids.
+    fn travel_step(ctx: &mut DecisionCtx, goal: &PathGoal) -> Option<Action> {
+        let step = ctx.paths.step(ctx.world, ctx.knowledge, goal)?;
+        let &(d, dx, dy) = DIRS.iter().find(|&&(d, _, _)| d == step)?;
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        let hp = f64::from(ctx.view.hp.max(1));
+        let at = |x: i32, y: i32| {
+            crate::tactics::composite(
+                &assess(
+                    ctx.world,
+                    ctx.knowledge,
+                    x,
+                    y,
+                    ctx.params.threat_horizon,
+                    ctx.params.risk_aversion_pct,
+                ),
+                ctx.params.risk_aversion_pct,
+                hp,
+            )
+        };
+        if at(x + dx, y + dy) > at(x, y) {
+            return Self::retreat_step(ctx).map(Action::Walk);
+        }
+        Some(Action::Walk(d))
+    }
+
+    /// A known Word of Recall scroll in the pack (the reserve's aware
+    /// item; an unidentified scroll is not a way home, bbc D0011).
+    fn recall_scroll(ctx: &DecisionCtx) -> Option<usize> {
+        // A scroll the engine will not let the character read is not on
+        // hand this think (`player-util.c:player_can_read`; #137: Return
+        // read Recall with no light thirteen times, D1668).
+        if !crate::danger::can_read(ctx.world) {
+            return None;
+        }
+        ctx.world
+            .character
+            .inventory
+            .iter()
+            .enumerate()
+            .find(|(_, item)| item.aware && Reserve::Recall.matches(ctx.knowledge, item))
+            .map(|(i, _)| i)
+    }
+
+    /// Dig for a way out (T4.6, #123): alter an adjacent diggable wall,
+    /// else walk to a walkable grid next to one, else read a known Word
+    /// of Recall that is not already counting down.
+    fn dig_step(ctx: &mut DecisionCtx) -> Option<Action> {
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        for &(d, dx, dy) in DIRS.iter() {
+            if crate::borg::diggable(ctx.world.level.at(x + dx, y + dy).map(|g| g.feat)) {
+                return Some(Action::Alter(d));
+            }
+        }
+        let mut targets = Vec::new();
+        for gy in 0..ctx.world.level.height {
+            for gx in 0..ctx.world.level.width {
+                if !crate::borg::diggable(ctx.world.level.at(gx, gy).map(|g| g.feat)) {
+                    continue;
+                }
+                for &(_, dx, dy) in DIRS.iter() {
+                    let (nx, ny) = (gx + dx, gy + dy);
+                    if crate::path::enter_cost(ctx.world, nx, ny).is_some() {
+                        targets.push((nx, ny));
+                    }
+                }
+            }
+        }
+        if !targets.is_empty() {
+            if let Some(step) = ctx
+                .paths
+                .step(ctx.world, ctx.knowledge, &PathGoal::Grids(targets))
+            {
+                return Some(Action::Walk(step));
+            }
+        }
+        // No wall to dig known: a recall scroll is the other way out of
+        // a sealed room (word_recall counts down while one is active).
+        let recall_idle = ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.word_recall <= 0);
+        let scroll = if recall_idle {
+            Self::recall_scroll(ctx)
+        } else {
+            None
+        };
+        if let Some(item) = scroll {
+            return Some(Action::Read { item });
+        }
+        None
     }
 
     /// The adjacent visible monsters, in a deterministic order (by
@@ -294,72 +479,6 @@ impl FirstStrategy {
             .filter(|(_, t)| t.in_view && (t.x - x).abs().max((t.y - y).abs()) <= 1)
             .map(|(i, _)| i)
             .collect()
-    }
-
-    /// The exchange test (c15 FIGHT-01 through the danger sum, task
-    /// T3.4): engaging is worth it when the damage the monster deals
-    /// while we kill it costs less than every hit point we have. The
-    /// turns to kill are its hit points over our expected melee damage
-    /// per turn ([`crate::world::Character::melee_per_turn`], GOALS
-    /// principle 14); the damage while we do it is its danger at our
-    /// grid times those turns. No margin constant: M4's tactical layer
-    /// replaces this with the real comparison of alternatives.
-    fn exchange(ctx: &DecisionCtx, i: usize) -> Option<(f64, f64)> {
-        let t = &ctx.world.level.monsters[i];
-        let dpt = ctx.world.character.melee_per_turn(ctx.knowledge)?;
-        if dpt <= 0.0 || t.hp <= 0 {
-            return None;
-        }
-        let turns = t.hp as f64 / dpt;
-        let d = f64::from(crate::danger::one(
-            ctx.world,
-            ctx.knowledge,
-            t,
-            ctx.view.x,
-            ctx.view.y,
-            1,
-        ));
-        Some((d * turns, turns))
-    }
-
-    /// The best adjacent monster to fight: the one whose exchange costs
-    /// the least (bbc D0012's lesson: the 2-HP mold is a kill, not a
-    /// flight), with its direction.
-    fn best_fight(ctx: &DecisionCtx) -> Option<(u8, f64)> {
-        let (x, y) = (ctx.view.x, ctx.view.y);
-        Self::adjacent(ctx)
-            .into_iter()
-            .filter_map(|i| {
-                let t = &ctx.world.level.monsters[i];
-                let (cost, _) = Self::exchange(ctx, i)?;
-                let (dx, dy) = (t.x - x, t.y - y);
-                let dir = DIRS
-                    .iter()
-                    .find(|(_, ddx, ddy)| (*ddx, *ddy) == (dx, dy))
-                    .map(|(d, _, _)| *d)?;
-                Some((dir, cost, i))
-            })
-            .min_by_key(|&(_, cost, i)| (cost as i64, i))
-            .map(|(dir, cost, _)| (dir, cost))
-    }
-
-    /// The direction of the adjacent monster with the least danger, for
-    /// the cornered case: fighting beats dying on a wall.
-    fn cornered_fight(ctx: &DecisionCtx) -> Option<u8> {
-        let (x, y) = (ctx.view.x, ctx.view.y);
-        Self::adjacent(ctx)
-            .into_iter()
-            .filter_map(|i| {
-                let t = &ctx.world.level.monsters[i];
-                let d = crate::danger::one(ctx.world, ctx.knowledge, t, x, y, 1);
-                let dir = DIRS
-                    .iter()
-                    .find(|(_, dx, dy)| (*dx, *dy) == (t.x - x, t.y - y))
-                    .map(|(d, _, _)| *d)?;
-                Some((d, dir, i))
-            })
-            .min_by_key(|&(d, _, i)| (d, i))
-            .map(|(_, dir, _)| dir)
     }
 
     /// How many *identified* items of one reserve are in the pack. An
@@ -457,6 +576,34 @@ impl FirstStrategy {
     /// wear, but gold is the one loot that is value (S15 §6b) — and a
     /// dropped escape beside a fight is a rescue (bbc D0019). M3 takes
     /// what is underfoot whenever the pack has room; triage is M5's.
+    /// The assessment at the character's grid, with the strategy's horizon
+    /// and tolerance.
+    fn here_threat(ctx: &DecisionCtx) -> Option<ThreatSummary> {
+        Some(
+            assess(
+                ctx.world,
+                ctx.knowledge,
+                ctx.view.x,
+                ctx.view.y,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            )
+            .summary_detailed(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y),
+        )
+    }
+
+    /// Stand still without the shop-entrance trap: `,` on a shop opens the
+    /// store, so use the neighbouring direction when it would.
+    fn still(ctx: &DecisionCtx) -> Action {
+        let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
+        stand_still(here, |dx, dy| {
+            ctx.world
+                .level
+                .at(ctx.view.x + dx, ctx.view.y + dy)
+                .map(|g| g.feat)
+        })
+    }
+
     fn underfoot(ctx: &DecisionCtx) -> bool {
         ctx.world
             .level
@@ -484,24 +631,45 @@ impl FirstStrategy {
                     // Hurt with a monster about: step out of reach
                     // rather than rest beside it (bbc D0017's lesson in
                     // miniature: no mode may block recovery, and no
-                    // recovery may ignore the room).
+                    // recovery may ignore the room). But when no
+                    // monster's next blow can kill, rest anyway and let
+                    // the engine's disturbance interrupt it (T4.6, #123;
+                    // bbc #408/#409's heal-while-fleeing; c15 REST-01,
+                    // `src/player-util.c`): a live Recover goal makes
+                    // progress under oscillation where a retreat loop
+                    // (rust D1330) does not.
+                    let worst = assess(
+                        ctx.world,
+                        ctx.knowledge,
+                        ctx.view.x,
+                        ctx.view.y,
+                        ctx.params.threat_horizon,
+                        ctx.params.risk_aversion_pct,
+                    )
+                    .worst;
+                    if worst < f64::from(ctx.view.hp.max(1)) {
+                        return Some(Action::Rest(ctx.params.rest_turns));
+                    }
                     return Self::retreat_step(ctx).map(Action::Walk);
                 }
                 Some(Action::Rest(ctx.params.rest_turns))
             }
             Mode::Engage => {
-                if let Some((dir, cost)) = Self::best_fight(ctx) {
-                    if cost < f64::from(ctx.view.hp) {
-                        return Some(Action::Attack(dir));
-                    }
-                }
-                // The exchange loses: leave. A faster pursuer makes
-                // walking away a death (bbc D0018), and no safe step
-                // means a corner: fight the least dangerous one rather
-                // than die on a wall.
-                Self::retreat_step(ctx)
-                    .map(Action::Walk)
-                    .or_else(|| Self::cornered_fight(ctx).map(Action::Attack))
+                // The tactical layer (T4.3): every response, scored on the
+                // same risk scale. It replaces the first-applicable
+                // fight-or-retreat rule.
+                //
+                // Contact overrides Engage's cooldown (a monster in reach
+                // is answered this think), so a refused response is barred
+                // by itself until the cooldown ends (#137): the next-best
+                // response is taken instead of repeating the refusal.
+                let responses =
+                    crate::tactics::responses(ctx.world, ctx.knowledge, ctx.params, ctx.view);
+                self.last_candidates = responses.iter().map(|r| (r.action, r.score)).collect();
+                responses
+                    .iter()
+                    .find(|r| !self.refused.contains_key(&r.action))
+                    .map(|r| r.action)
             }
             Mode::Town => {
                 let job = Self::town_job(ctx)?;
@@ -526,7 +694,14 @@ impl FirstStrategy {
             }
             Mode::Descend => {
                 let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
-                let threat = danger(ctx.world, ctx.knowledge, ctx.view.x, ctx.view.y, 1);
+                let threat = danger_with(
+                    ctx.world,
+                    ctx.knowledge,
+                    ctx.view.x,
+                    ctx.view.y,
+                    ctx.params.threat_horizon,
+                    ctx.params.risk_aversion_pct,
+                );
                 if threat > 0
                     && matches!(
                         here,
@@ -548,11 +723,8 @@ impl FirstStrategy {
                     // pressing is dealt with first (engaged or escaped).
                     return Some(Action::Descend);
                 }
-                if let Some(step) =
-                    ctx.paths
-                        .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
-                {
-                    return Some(Action::Walk(step));
+                if let Some(action) = Self::travel_step(ctx, &PathGoal::Stairs { up: false }) {
+                    return Some(action);
                 }
                 // Only an exhausted level may reroll (S15 §2). A fresh
                 // level with a frontier belongs to Explore; selecting a
@@ -576,16 +748,93 @@ impl FirstStrategy {
                     self.rerolled_from = Some(ctx.world.level.generation);
                     Some(Action::Ascend)
                 } else {
-                    ctx.paths
-                        .step(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: true })
-                        .map(Action::Walk)
+                    Self::travel_step(ctx, &PathGoal::Stairs { up: true })
                 }
             }
-            Mode::Explore => {
-                let step = ctx
+            Mode::Return => {
+                let here = ctx.world.level.at(ctx.view.x, ctx.view.y).map(|g| g.feat);
+                if here == Some(crate::borg::feat::LESS) {
+                    // The up staircase is always taken: town is where the
+                    // return ends, threat or not — waiting on the stairs
+                    // only feeds the monster (c15 §12.12).
+                    return Some(Action::Ascend);
+                }
+                let threat = danger_with(
+                    ctx.world,
+                    ctx.knowledge,
+                    ctx.view.x,
+                    ctx.view.y,
+                    ctx.params.threat_horizon,
+                    ctx.params.risk_aversion_pct,
+                );
+                let recall_idle = ctx
+                    .world
+                    .character
+                    .status
+                    .as_ref()
+                    .is_some_and(|s| s.word_recall <= 0);
+                if threat == 0 && recall_idle {
+                    // Recall early and in a safe spot (c15 §12.12): a
+                    // known scroll read here beats walking up through a
+                    // dungeon that already starved the Borg once.
+                    if let Some(item) = Self::recall_scroll(ctx) {
+                        return Some(Action::Read { item });
+                    }
+                }
+                if let Some(action) = Self::travel_step(ctx, &PathGoal::Stairs { up: true }) {
+                    return Some(action);
+                }
+                // No up staircase known: explore for one before any
+                // down-stair fallback, then dig for the way up (rust
+                // D1420's sealed room).
+                if let Some(action) = Self::travel_step(ctx, &PathGoal::Frontier) {
+                    return Some(action);
+                }
+                Self::dig_step(ctx)
+            }
+            Mode::Stuck => {
+                // A staircase is on its way (cooldown, not absence, is
+                // what keeps Descend out): wait it out. With no stair
+                // and no frontier reachable anywhere, dig or recall for
+                // a way out (T4.6, #123; rust-stuck-sealed-room).
+                let down = ctx
                     .paths
-                    .step(ctx.world, ctx.knowledge, &PathGoal::Frontier);
-                Some(step.map_or(Action::Hold, Action::Walk))
+                    .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
+                    .remaining(ctx.world, ctx.view.x, ctx.view.y);
+                let up = ctx
+                    .paths
+                    .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: true })
+                    .remaining(ctx.world, ctx.view.x, ctx.view.y);
+                if down != UNREACHED || up != UNREACHED {
+                    return None;
+                }
+                Self::dig_step(ctx)
+            }
+            Mode::Eat => {
+                let item =
+                    ctx.world
+                        .character
+                        .inventory
+                        .iter()
+                        .enumerate()
+                        .find_map(|(i, it)| {
+                            let name = ctx
+                                .knowledge
+                                .kind(it.kind)?
+                                .name
+                                .chars()
+                                .filter(|c| !matches!(c, '&' | '~'))
+                                .collect::<String>();
+                            (name.trim() == "Ration of Food").then_some(i)
+                        })?;
+                Some(Action::Eat { item })
+            }
+            Mode::Explore => {
+                // Standing still goes through `still`, which never opens
+                // a shop by holding on its entrance (#139).
+                Some(
+                    Self::travel_step(ctx, &PathGoal::Frontier).unwrap_or_else(|| Self::still(ctx)),
+                )
             }
         }
     }
@@ -596,11 +845,13 @@ impl FirstStrategy {
             Mode::Recover => ctx.view.hp as i64,
             // The fight's progress is the threat going down: the least
             // hit points any adjacent monster has.
+            // With no adjacent monster the measure is its own value, not
+            // 0, which would read as a monster at 0 HP (#139).
             Mode::Engage => Self::adjacent(ctx)
                 .into_iter()
-                .map(|i| ctx.world.level.monsters[i].hp)
+                .map(|i| i64::from(ctx.world.level.monsters[i].hp))
                 .min()
-                .unwrap_or(0) as i64,
+                .unwrap_or(ENGAGE_NO_CONTACT),
             // Purchases move the reserve counts; identification sales move
             // the aware item count (down as well as up is still progress).
             Mode::Town => {
@@ -620,6 +871,17 @@ impl FirstStrategy {
             }
             Mode::Descend => ctx.world.level.depth as i64,
             Mode::Explore => Self::mapped(ctx.world),
+            Mode::Eat => ctx
+                .world
+                .character
+                .status
+                .as_ref()
+                .map_or(0, |s| i64::from(s.food)),
+            // Going up is depth shrinking; on one depth, mapping more of
+            // the level is the progress (the frontier walk that finds
+            // the up staircase).
+            Mode::Return => i64::from(ctx.world.level.depth) * 1_000_000 + Self::mapped(ctx.world),
+            Mode::Stuck => 0,
         }
     }
 
@@ -628,6 +890,26 @@ impl FirstStrategy {
     /// failed mode waits out its cooldown.
     fn choose_mode(&mut self, ctx: &mut DecisionCtx) -> Mode {
         let turn = ctx.view.turn;
+        // Starving with no food left outranks recovery itself: resting
+        // spends the food timer, and the level has nothing more to gain
+        // (the manual's recall-and-home routine, c15 §12.12; bbc D0009,
+        // rust D1420). Contact still answers first — Engage is chosen
+        // below. Descending deeper is banned the whole time (T4.6, #123).
+        let starving_no_food = ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.food < ctx.params.eat_below_food)
+            && !Self::has_food(ctx);
+        let block_descend = starving_no_food && ctx.world.level.depth > 0;
+        if block_descend
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "starving with no food: return home";
+            return Mode::Return;
+        }
         // The recovery invariant first (GOALS principle 7): hurt and
         // safe means rest now.
         let hurt = ctx.view.hp * 100 < ctx.view.max_hp * ctx.params.rest_below_hp_pct;
@@ -638,19 +920,36 @@ impl FirstStrategy {
                 .is_none_or(|&t| turn >= t)
             && Self::may_rest(ctx)
         {
+            self.rule = "hurt and safe: recover";
             return Mode::Recover;
         }
         // Contact second (task T3.4): a monster in reach is answered
         // this think — fought when the exchange wins it, left when it
         // does not. M4's tactical layer replaces the whole comparison.
         if !Self::adjacent(ctx).is_empty() {
+            self.rule = "contact: a monster in reach";
             return Mode::Engage;
+        }
+        // Food before the timer reaches starvation, but after contact and
+        // recovery.
+        if ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.food < ctx.params.eat_below_food)
+            && Self::has_food(ctx)
+            && self.cooldowns.get(&Mode::Eat).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "food below the threshold";
+            return Mode::Eat;
         }
         // Survival reserves outrank an already-live travel goal: arriving
         // in town with shopping to do must not immediately descend again
         // (GOALS principle 7). A completed or cooled town goal ends here.
         let town_cooled = self.cooldowns.get(&Mode::Town).is_none_or(|&t| turn >= t);
         if ctx.world.level.depth == 0 && town_cooled && Self::town_job(ctx).is_some() {
+            self.rule = "in town with a job to do";
             return Mode::Town;
         }
         if self.goal.as_ref().is_some_and(|g| g.mode == Mode::Town) {
@@ -679,10 +978,14 @@ impl FirstStrategy {
                 Mode::Town => i64::from(ctx.params.explore_budget_turns),
                 Mode::Descend => i64::from(ctx.params.explore_budget_turns),
                 Mode::Explore => i64::from(ctx.params.explore_budget_turns),
+                Mode::Eat => i64::from(ctx.params.explore_budget_turns),
+                Mode::Return => i64::from(ctx.params.explore_budget_turns),
+                Mode::Stuck => 0,
             };
             if !goal.stalled(turn, budget)
                 && self.cooldowns.get(&goal.mode).is_none_or(|&t| turn >= t)
             {
+                self.rule = "a live goal keeps its mode";
                 return goal.mode;
             }
             // The goal failed: cool the mode down (GOALS principle 6)
@@ -706,32 +1009,59 @@ impl FirstStrategy {
             .paths
             .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: false })
             .remaining(ctx.world, ctx.view.x, ctx.view.y);
+        let stairs_up = ctx
+            .paths
+            .map(ctx.world, ctx.knowledge, &PathGoal::Stairs { up: true })
+            .remaining(ctx.world, ctx.view.x, ctx.view.y);
         let cooled = |m: Mode| self.cooldowns.get(&m).is_none_or(|&t| turn >= t);
-        if descend_first && stairs != UNREACHED && cooled(Mode::Descend) {
-            Mode::Descend
-        } else if frontier != UNREACHED && cooled(Mode::Explore) {
-            Mode::Explore
-        } else if stairs != UNREACHED && cooled(Mode::Descend) {
-            Mode::Descend
-        } else {
-            // No frontier remains (or Explore is cooling): Descend's
-            // up-and-down reroll is the productive fallback. Choosing
-            // Explore with an empty frontier only holds (T3.7).
-            Mode::Descend
-        }
+        let on_stair =
+            ctx.world.level.at(ctx.view.x, ctx.view.y).is_some_and(|g| {
+                matches!(g.feat, crate::borg::feat::LESS | crate::borg::feat::MORE)
+            });
+        let (mode, rule) =
+            if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+                (Mode::Descend, "in town: take the stairs down")
+            } else if frontier != UNREACHED && cooled(Mode::Explore) {
+                (Mode::Explore, "a frontier is reachable")
+            } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
+                (Mode::Descend, "no frontier: a down staircase is reachable")
+            } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
+                // Nothing is reachable anywhere — a sealed room. Rerolling a
+                // fresh level from here is stair-scumming out of a trap
+                // (GOALS 9): dig the way out instead (T4.6, #123). The up
+                // staircase counts too: Descend's reroll travels up, so a
+                // reachable up stair must not read as stuck.
+                (Mode::Stuck, "nothing reachable: a sealed room")
+            } else if !block_descend && (on_stair || cooled(Mode::Descend)) {
+                // On a staircase, Descend's step takes it (including the up
+                // stair under threat). With none and a cooling Descend, name
+                // the stuck state instead of re-choosing the cooled mode every
+                // think (M3 re-review, 2026-11-10).
+                (
+                    Mode::Descend,
+                    "on a staircase, or descend cooled with nothing else",
+                )
+            } else {
+                (Mode::Stuck, "every way on is cooling or banned")
+            };
+        self.rule = rule;
+        mode
     }
 
     /// Fail the current goal when the executor reported the previous
     /// action refused: no progress is being made even though game time
     /// may be passing.
     fn note_failures(&mut self, ctx: &DecisionCtx) {
+        let turn = ctx.view.turn;
+        self.refused.retain(|_, until| turn < *until);
         if ctx.failures.is_empty() {
             return;
         }
-        self.cooldowns.insert(
-            self.mode,
-            ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
-        );
+        let until = turn + i64::from(ctx.params.goal_cooldown_turns);
+        self.cooldowns.insert(self.mode, until);
+        if let Some(action) = self.last_action {
+            self.refused.insert(action, until);
+        }
         self.goal = None;
     }
 }
@@ -742,6 +1072,44 @@ impl Strategy for FirstStrategy {
     }
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
+        self.rule = "";
+        let mut d = self.decide_now(ctx);
+        self.last_action = Some(d.action);
+        let turn = ctx.view.turn;
+        d.why = Some(crate::trace::Why {
+            rule: if self.rule.is_empty() && !can_act(ctx.world) {
+                "paralysed: no action".into()
+            } else {
+                self.rule.into()
+            },
+            cooling: self
+                .cooldowns
+                .iter()
+                .filter(|(_, &until)| turn < until)
+                .map(|(m, _)| m.name().to_string())
+                .collect(),
+            goal_started: self.goal.as_ref().map(|g| g.started),
+            goal_progressed: self.goal.as_ref().map(|g| g.progressed),
+        });
+        d
+    }
+}
+
+impl FirstStrategy {
+    fn decide_now(&mut self, ctx: &mut DecisionCtx) -> Decision {
+        if !can_act(ctx.world) {
+            let action = Self::still(ctx);
+            return Decision {
+                action,
+                mode: "disabled",
+                goal: "paralysed",
+                budget_left: 0,
+                candidates: Vec::new(),
+                threat: Self::here_threat(ctx),
+                why: None,
+                violations: Vec::new(),
+            };
+        }
         self.note_failures(ctx);
         let mode = self.choose_mode(ctx);
         self.mode = mode;
@@ -789,6 +1157,8 @@ impl Strategy for FirstStrategy {
                 goal: "stand still",
                 budget_left: 0,
                 candidates: vec![],
+                threat: Self::here_threat(ctx),
+                why: None,
                 violations: vec![why],
             };
         }
@@ -812,10 +1182,13 @@ impl Strategy for FirstStrategy {
                 goal: "stand still",
                 budget_left,
                 candidates: vec![],
+                threat: Self::here_threat(ctx),
+                why: None,
                 violations,
             };
         }
 
+        self.last_candidates.clear();
         let action = match self.mode_step(ctx, mode) {
             Some(a) => a,
             None => {
@@ -839,20 +1212,21 @@ impl Strategy for FirstStrategy {
             Mode::Town => "restock and identify",
             Mode::Descend => "reach the down staircase",
             Mode::Explore => "reveal the frontier",
+            Mode::Eat => "eat before starvation",
+            Mode::Return => "return home",
+            Mode::Stuck => "dig or search a way out",
         };
         Decision {
             action,
             mode: mode.name(),
             goal: goal_name,
             budget_left,
-            candidates: vec![(action_clone(&action), 1.0)],
+            candidates: std::mem::take(&mut self.last_candidates),
+            threat: Self::here_threat(ctx),
+            why: None,
             violations,
         }
     }
-}
-
-fn action_clone(a: &Action) -> Action {
-    *a
 }
 
 #[cfg(test)]
@@ -918,6 +1292,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.hp = hp;
             s.max_hp = max_hp;
+            s.food = 1000;
             s.pack_size = 23;
             s.pack_used = 1;
         }
@@ -1008,6 +1383,7 @@ mod tests {
         if let Some(s) = w.character.status.as_mut() {
             s.depth = 0;
             s.gold = gold;
+            s.food = 1000;
             s.pack_used = inventory.len() as i32;
             s.pack_size = 23;
         }
@@ -1050,6 +1426,286 @@ mod tests {
             busy: false,
             turn: w.turn,
         }
+    }
+
+    #[test]
+    fn the_decision_exposes_the_threat_numbers() {
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M..>#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        let t = d.threat.clone().expect("an assessment on every decision");
+        assert!(t.expected > 0.0 && t.worst >= t.expected, "{t:?}");
+        assert_eq!(t.horizon, params.threat_horizon);
+    }
+
+    #[test]
+    fn a_refused_engage_action_is_not_chosen_again() {
+        // #137: contact returns Engage before any cooldown, so a response
+        // the executor refused must be barred by itself, or the next think
+        // repeats it (a confused rogue's Phase Door, D1667; refused
+        // attacks in the M3 baseline).
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let first = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(first.mode, "engage");
+        let refused = ["after it: neither moved the character nor took game time".to_string()];
+        let second = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &refused,
+        );
+        assert_eq!(second.mode, "engage", "contact still answers");
+        assert_ne!(
+            second.action, first.action,
+            "the refusal changed the decision"
+        );
+        // Once the cooldown is over the action may be tried again.
+        let mut later = w.clone();
+        later.turn += i64::from(params.goal_cooldown_turns);
+        let mut p2 = Paths::new_with_risk(&later, params.risk_aversion_pct);
+        let third = decide_with(
+            &mut s,
+            &later,
+            &k,
+            &mut p2,
+            &m,
+            &mut rng,
+            &params,
+            &view(&later),
+            &[],
+        );
+        assert_eq!(third.action, first.action, "the bar ends with the cooldown");
+    }
+
+    #[test]
+    fn engage_progress_without_contact_is_not_a_dead_monster() {
+        // #139: with no adjacent monster the Engage measure is its own
+        // sentinel; 0 would read as a monster at 0 HP.
+        let (_, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@....#", "#######"], 20, 20);
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        assert_eq!(
+            FirstStrategy::measure(Mode::Engage, &ctx),
+            ENGAGE_NO_CONTACT
+        );
+        let (_, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#######"], 20, 20);
+        let v = view(&w);
+        let ctx = DecisionCtx {
+            view: &v,
+            world: &w,
+            knowledge: &k,
+            paths: &mut p,
+            mem: &m,
+            rng: &mut rng,
+            params: &params,
+            failures: &[],
+        };
+        let hp = i64::from(w.level.monsters[0].hp);
+        assert_eq!(FirstStrategy::measure(Mode::Engage, &ctx), hp);
+    }
+
+    #[test]
+    fn the_trace_names_the_rule_and_the_goal_timing() {
+        // #138: the mode is chosen by a priority rule, so the trace names
+        // the rule; only scored alternatives are candidates; Goal.started
+        // and Goal.progressed give the goal's age and stall.
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@......#", "#.......#", "#########"],
+            20,
+            20,
+        );
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        let why = d.why.expect("the first strategy says why");
+        assert!(!why.rule.is_empty(), "{why:?}");
+        assert!(
+            d.candidates.is_empty(),
+            "no synthetic candidate: {:?}",
+            d.candidates
+        );
+        assert_eq!(why.goal_started, Some(w.turn));
+        assert_eq!(why.goal_progressed, Some(w.turn));
+
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(
+            d.why.as_ref().map(|y| y.rule.as_str()),
+            Some("contact: a monster in reach")
+        );
+        assert!(d.candidates.len() > 1, "contact scores its responses");
+
+        // A refusal cools the mode, and the trace says so.
+        let refused = ["refused".to_string()];
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &refused,
+        );
+        assert_eq!(d.why.expect("why").cooling, vec!["engage".to_string()]);
+    }
+
+    #[test]
+    fn a_contact_decision_records_every_response() {
+        let (mut s, w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "engage");
+        assert!(
+            d.candidates.len() > 1,
+            "the trace has the real alternatives: {:?}",
+            d.candidates
+        );
+        assert_eq!(d.candidates[0].0, d.action);
+    }
+
+    #[test]
+    fn a_sealed_room_escalates_the_stuck_state_to_digging() {
+        // Nothing is reachable anywhere, so the first think already digs
+        // (T4.6, #123): granite is one step away in every direction and
+        // carries HURT_ROCK (engine `list-terrain.h:34`).
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@..#", "#####"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "stuck", "{d:?}");
+        assert_eq!(d.goal, "dig or search a way out");
+        assert_eq!(d.action, Action::Alter(1), "the first think digs");
+    }
+
+    #[test]
+    fn starving_with_no_food_returns_home_instead_of_descending() {
+        // Food timer at starvation, no food in the pack, a down staircase
+        // in the room: the Borg heads home, never deeper (T4.6, #123;
+        // bbc D0009, rust D1420).
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        let mut w = w;
+        w.character.status.as_mut().unwrap().food = 0;
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "return", "{d:?}");
+        assert_eq!(d.goal, "return home");
+        assert_ne!(d.action, Action::Descend);
+    }
+
+    #[test]
+    fn travel_never_steps_onto_a_more_dangerous_grid() {
+        // The frontier lies beyond a kobold in a one-wide corridor: the
+        // straight step north lands in its reach, so travel refuses it
+        // and retreats instead (T4.6, #123).
+        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(
+            &[
+                "#####", "#?..#", "#...#", "#M..#", "#...#", "#@..#", "#...#", "#####",
+            ],
+            20,
+            20,
+        );
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "explore", "{d:?}");
+        assert!(
+            matches!(d.action, Action::Walk(d) if !(7..=9).contains(&d)),
+            "not north toward the kobold: {:?}",
+            d.action
+        );
     }
 
     #[test]
@@ -1104,8 +1760,12 @@ mod tests {
             &[],
         );
         assert_eq!(d.mode, "engage");
-        assert_eq!(d.action, Action::Walk(6), "step away, east");
         assert_ne!(d.action, Action::Rest(75), "never rest beside a monster");
+        assert!(
+            matches!(d.action, Action::Attack(4) | Action::Walk(6)),
+            "fight or step, not rest: {:?}",
+            d.action
+        );
     }
 
     #[test]
@@ -1477,7 +2137,12 @@ mod tests {
             &[],
         );
         assert_eq!(d.mode, "engage");
-        assert_eq!(d.action, Action::Walk(6), "away, east of the monster");
+        assert_ne!(
+            d.action,
+            Action::Walk(6),
+            "walking into a heavy blow's free hit is not an escape"
+        );
+        assert_ne!(d.action, Action::Rest(75), "never rest beside a monster");
         // Cornered (walls all round but the monster): fight the only
         // fight there is rather than die on a wall.
         let (w_c, k) = crate::path::tests::world(&["######", "#@M###", "######"]);
@@ -1552,9 +2217,11 @@ mod tests {
     }
 
     #[test]
-    fn a_staircase_under_fire_is_not_taken() {
-        // On the down stair with a monster adjacent: the fight or the
-        // escape, never the staircase.
+    fn a_staircase_under_fire_is_a_scored_escape() {
+        // On the down stair with a monster adjacent, the staircase is one
+        // escape on the ladder (T4.4, #121): scored by its declared arrival
+        // risk against the exchange, not refused by rule. Here the stair
+        // beats the exchange.
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#>M@.#", "######"], 20, 20);
         if let Some(s) = w.character.status.as_mut() {
@@ -1564,7 +2231,53 @@ mod tests {
         let mut p = crate::path::Paths::new(&w);
         let v = view(&w);
         let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
-        assert_ne!(d.action, Action::Descend, "never descend in contact");
+        assert_eq!(d.action, Action::Descend, "the stair beats the exchange");
+    }
+
+    #[test]
+    fn an_escape_descent_still_counts_against_the_reroll_cap() {
+        // The ladder's escape descent is a level change like any other:
+        // two of them at one game turn trip the generation-loop backstop
+        // (M3 review, blocking finding 1) even though the escape is scored.
+        let (mut s, mut w, k, _, mut m, mut rng, params) =
+            ctx_of(&["########", "#@>F...#", "#......#", "########"], 4, 20);
+        if let Some(s) = w.character.status.as_mut() {
+            s.x = 2;
+            s.y = 1;
+        }
+        let mut p = crate::path::Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Descend, "the escape descent is taken");
+        m.record(w.turn, Action::Descend);
+        m.record(w.turn, Action::Ascend);
+        let mut p = crate::path::Paths::new(&w);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.action, Action::Hold, "the reroll cap stands");
+        assert!(
+            d.violations.iter().any(|v| v.contains("reroll cap")),
+            "{:?}",
+            d.violations
+        );
     }
 
     #[test]
