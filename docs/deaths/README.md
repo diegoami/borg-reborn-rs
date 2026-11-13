@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1898; distinct starting conditions: 1897; retained process attempts: 1898 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1904; distinct starting conditions: 1903; retained process attempts: 1904 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1904,6 +1904,12 @@ Dossiers: 1898; distinct starting conditions: 1897; retained process attempts: 1
 | [D1916-rust-seed1040](D1916-rust-seed1040/report.md) | unassigned | `9f401cbef492` | 1040 | a small kobold | 5078 | unassessed |
 | [D1917-rust-seed1034](D1917-rust-seed1034/report.md) | unassigned | `9f401cbef492` | 1034 | starvation | 99880 | unassessed |
 | [D1918-rust-seed1070](D1918-rust-seed1070/report.md) | unassigned | `9f401cbef492` | 1070 | a white worm mass | 82363 | unassessed |
+| [D1919-rust-seed1012](D1919-rust-seed1012/report.md) | unassigned | `c93d0f2385af` | 1012 | a grey mushroom patch | 3975 | unassessed |
+| [D1920-rust-seed1020](D1920-rust-seed1020/report.md) | unassigned | `c93d0f2385af` | 1020 | a fruit bat | 3329 | unassessed |
+| [D1921-rust-seed1040](D1921-rust-seed1040/report.md) | unassigned | `c93d0f2385af` | 1040 | a small kobold | 5078 | unassessed |
+| [D1922-rust-seed1042](D1922-rust-seed1042/report.md) | unassigned | `c93d0f2385af` | 1042 | Grip, Farmer Maggot's Dog | 12805 | unassessed |
+| [D1923-rust-seed1034](D1923-rust-seed1034/report.md) | unassigned | `c93d0f2385af` | 1034 | a scrawny cat | 96931 | unassessed |
+| [D1924-rust-seed1070](D1924-rust-seed1070/report.md) | unassigned | `c93d0f2385af` | 1070 | a white worm mass | 88102 | unassessed |
 
 ## Aggregated actions
 
