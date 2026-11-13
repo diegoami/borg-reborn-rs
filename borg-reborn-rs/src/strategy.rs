@@ -1367,6 +1367,32 @@ impl FirstStrategy {
                 }
             },
         };
+        // Confused, a step goes in a random direction three times in four
+        // (`player-util.c:player_confuse_dir:1358-1361`). Beside lava
+        // (`FEAT_LAVA`, which burnt full-1-mage-4 from 11 HP to -150 in the
+        // town, #183), a walk outside a fight waits the confusion out.
+        let confused = ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.timed.get(4).copied().unwrap_or(0) > 0);
+        let (x, y) = (ctx.view.x, ctx.view.y);
+        let lava_near = DIRS.iter().any(|&(_, dx, dy)| {
+            ctx.world
+                .level
+                .at(x + dx, y + dy)
+                .is_some_and(|g| g.feat == crate::borg::feat::LAVA)
+        });
+        let action =
+            if confused && lava_near && mode != Mode::Engage && matches!(action, Action::Walk(_)) {
+                self.rule = "confused beside lava: wait it out";
+                let here = ctx.world.level.at(x, y).map(|g| g.feat);
+                let around = |dx: i32, dy: i32| ctx.world.level.at(x + dx, y + dy).map(|g| g.feat);
+                stand_still(here, around)
+            } else {
+                action
+            };
         let goal_name = match mode {
             Mode::Recover => "rest to full",
             Mode::Engage => "win the exchange",
@@ -1768,6 +1794,44 @@ mod tests {
             failures: &[],
         };
         assert!(FirstStrategy::has_food(&ctx), "a known ration is");
+    }
+
+    #[test]
+    fn a_confused_character_beside_lava_does_not_walk() {
+        // #183, full-1-mage-4: confused in the town, a random step into
+        // lava. The map's `~` is not a feature the test world knows, so
+        // the lava is set by hand east of the character.
+        let run = |confused: bool| {
+            let (mut s, mut w, k, mut p, m, mut rng, params) =
+                ctx_of(&["#######", "#@...?#", "#.....#", "#######"], 20, 20);
+            if let Some(g) = w.level.at_mut(1, 2) {
+                g.feat = crate::borg::feat::LAVA;
+            }
+            if let Some(st) = w.character.status.as_mut() {
+                if st.timed.len() <= 4 {
+                    st.timed.resize(5, 0);
+                }
+                st.timed[4] = if confused { 5 } else { 0 };
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            let a = s.decide(&mut ctx).action;
+            (a, s.rule)
+        };
+        let (a, _) = run(false);
+        assert!(matches!(a, Action::Walk(_)), "{a:?}");
+        let (a, rule) = run(true);
+        assert!(!matches!(a, Action::Walk(_)), "{a:?}");
+        assert_eq!(rule, "confused beside lava: wait it out");
     }
 
     #[test]
