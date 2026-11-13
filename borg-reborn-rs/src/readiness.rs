@@ -39,7 +39,7 @@
 use crate::danger::{has_free_action, worst_turn};
 use crate::knowledge::Knowledge;
 use crate::params::Params;
-use crate::world::{tv, World, EQUIP_BOW};
+use crate::world::{tv, World};
 
 /// What the policy found for one depth.
 #[derive(Clone, Debug, PartialEq)]
@@ -155,22 +155,11 @@ fn count(w: &World, k: &Knowledge, tval: u8, names: &[&str]) -> u32 {
         .sum()
 }
 
-/// A ranged attack carried: a launcher with ammunition in the quiver, or
-/// flasks of oil to throw (five, a declared handful). Using them is #127's;
-/// the gate asks for the kit.
+/// A ranged attack carried: a launcher with ammunition it fires
+/// (`Character::shot`, the engine's ammunition type, #127), or flasks of oil
+/// to throw (five, a declared handful). The gate asks for the kit.
 fn has_ranged(w: &World, k: &Knowledge) -> bool {
-    let launcher = w
-        .character
-        .equipment
-        .iter()
-        .any(|s| s.slot_type == EQUIP_BOW && s.item.is_some());
-    let ammo: u32 = w
-        .character
-        .quiver
-        .iter()
-        .map(|it| u32::from(it.number))
-        .sum();
-    (launcher && ammo > 0) || count(w, k, tv::FLASK, &["Flask of oil"]) >= 5
+    w.character.shot(k).is_some() || count(w, k, tv::FLASK, &["Flask of oil"]) >= 5
 }
 
 /// A kind's name without the article and plural marks (`& Flask~ of oil`).

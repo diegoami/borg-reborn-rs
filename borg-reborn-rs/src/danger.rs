@@ -819,7 +819,7 @@ fn erfc(x: f64) -> f64 {
     }
 }
 
-fn line_clear(w: &World, x0: i32, y0: i32, x1: i32, y1: i32) -> bool {
+pub(crate) fn line_clear(w: &World, x0: i32, y0: i32, x1: i32, y1: i32) -> bool {
     // Bresenham over the remembered level; walls block. The engine's
     // projectability is more subtle (permissive corners); this is the
     // declared conservative approximation until docs/ENGINE-READS lists it.

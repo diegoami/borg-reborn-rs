@@ -1611,7 +1611,7 @@ mod tests {
         );
         // With the kit (and the band's monsters well inside its HP) it
         // stays to explore instead.
-        let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
+        let (mut s, mut w, mut k, mut p, m, mut rng, params) = ctx_of(
             &["#########", "#@.....<#", "#.......#", "#########"],
             200,
             200,
@@ -1621,12 +1621,17 @@ mod tests {
             st.depth = 6;
             st.max_depth = 6;
         }
-        w.character.inventory = vec![item(5, 1, true), item(3, 3, true)];
-        w.character.quiver = vec![item(1, 10, true)];
-        w.character.equipment.push(crate::observation::Slot {
-            slot_type: crate::world::EQUIP_BOW,
-            item: Some(item(2, 1, true)),
+        // The ranged attack is five flasks of oil (tval 27).
+        k.kinds.push(crate::knowledge::ObjectKind {
+            index: 7,
+            name: "& Flask~ of oil".into(),
+            tval: 27,
+            ..Default::default()
         });
+        let mut oil = item(1, 5, true);
+        oil.kind = 7;
+        oil.tval = 27;
+        w.character.inventory = vec![item(5, 1, true), item(3, 3, true), oil];
         let r = crate::readiness::ready(&w, &k, &params, 6);
         assert!(r.ok(), "{r:?}");
         let d = decide_with(
