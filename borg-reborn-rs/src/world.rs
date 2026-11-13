@@ -130,6 +130,13 @@ pub struct Remembered {
     pub top_kind: Option<u32>,
     pub trap: bool,
     pub webbed: bool,
+    /// The Borg has stood here on this level (#176/#177/#172). Standing on
+    /// a grid shows everything it can show at the light the character has:
+    /// a frontier grid stood on whose unknown neighbour stayed unknown (the
+    /// dark, the unlit town at night, an `UNLIGHT` character) will not
+    /// reveal it by being visited again.
+    #[serde(default)]
+    pub stood: bool,
 }
 
 /// A monster the Borg has seen. Out of view it is not forgotten: the track
@@ -442,7 +449,7 @@ impl Level {
         self.grids.get((y * self.width + x) as usize)
     }
 
-    fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Remembered> {
+    pub(crate) fn at_mut(&mut self, x: i32, y: i32) -> Option<&mut Remembered> {
         if x < 0 || y < 0 || x >= self.width || y >= self.height {
             return None;
         }
@@ -543,6 +550,9 @@ impl World {
                     self.level.see(p.x0 + dx, p.y0 + dy, g, o.turn);
                 }
             }
+        }
+        if let Some(r) = self.level.at_mut(o.status.x, o.status.y) {
+            r.stood = true;
         }
         for seen in &o.objects {
             if let Some(r) = self.level.at_mut(seen.x, seen.y) {
