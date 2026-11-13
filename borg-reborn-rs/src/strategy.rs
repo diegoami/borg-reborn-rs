@@ -998,7 +998,26 @@ impl FirstStrategy {
         // Contact second (task T3.4): a monster in reach is answered
         // this think — fought when the exchange wins it, left when it
         // does not. M4's tactical layer replaces the whole comparison.
-        if !Self::adjacent(ctx).is_empty() {
+        // A monster in reach that threatens nothing (Farmer Maggot, no
+        // blows) is not a fight: c15 FIGHT-06, don't fight for nothing.
+        // #183: full-4-necro-3 attacked Maggot 493 times in the town, every
+        // response scoring 0, and starved with 195 gold.
+        let in_reach_threat = !Self::adjacent(ctx).is_empty() && {
+            let a = assess(
+                ctx.world,
+                ctx.knowledge,
+                ctx.view.x,
+                ctx.view.y,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            );
+            crate::tactics::composite(
+                &a,
+                ctx.params.risk_aversion_pct,
+                f64::from(ctx.view.hp.max(1)),
+            ) > 0.0
+        };
+        if in_reach_threat {
             self.rule = "contact: a monster in reach";
             return Mode::Engage;
         }
@@ -1794,6 +1813,34 @@ mod tests {
             failures: &[],
         };
         assert!(FirstStrategy::has_food(&ctx), "a known ration is");
+    }
+
+    #[test]
+    fn a_harmless_monster_in_reach_is_not_a_fight() {
+        // #183, full-4-necro-3: Farmer Maggot (no blows) next to the Borg
+        // held it in Engage until it starved. A monster with blows still
+        // engages.
+        let mode = |harmless: bool| {
+            let (mut s, w, mut k, mut p, m, mut rng, params) =
+                ctx_of(&["#######", "#@M...#", "#.....#", "#######"], 20, 20);
+            if harmless {
+                k.races[1].blows.clear();
+            }
+            let v = view(&w);
+            let mut ctx = DecisionCtx {
+                view: &v,
+                world: &w,
+                knowledge: &k,
+                paths: &mut p,
+                mem: &m,
+                rng: &mut rng,
+                params: &params,
+                failures: &[],
+            };
+            s.decide(&mut ctx).mode
+        };
+        assert_eq!(mode(false), "engage");
+        assert_ne!(mode(true), "engage");
     }
 
     #[test]
