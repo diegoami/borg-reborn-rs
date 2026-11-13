@@ -1235,22 +1235,51 @@ impl FirstStrategy {
         }
 
         self.last_candidates.clear();
-        let action = match self.mode_step(ctx, mode) {
+        // A better item in the pack is worn first, when nothing is near
+        // and the grid is quiet (T5.2, #126: valued by effect,
+        // `equipment.rs`). Under threat the tactical layer decides (its
+        // own weapon swap); here the swap costs a turn nothing contests.
+        let quiet = mode != Mode::Engage
+            && Self::adjacent(ctx).is_empty()
+            && danger_with(
+                ctx.world,
+                ctx.knowledge,
+                ctx.view.x,
+                ctx.view.y,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            ) == 0;
+        // A refused wield is barred like any refused action (#137), so a
+        // swap the engine will not make cannot loop.
+        let swap = if quiet {
+            crate::equipment::best_swap(ctx.world, ctx.knowledge)
+                .filter(|s| !self.refused.contains_key(&Action::Wield { item: s.item }))
+        } else {
+            None
+        };
+        if swap.is_some() {
+            self.rule = "a better item in the pack: wear it";
+        }
+        let action = match swap.map(|s| Action::Wield { item: s.item }) {
             Some(a) => a,
-            None => {
-                // The mode cannot act: its goal has failed here and
-                // there. Cool it down and fall through to the safest
-                // action that always uses time.
-                self.cooldowns.insert(
-                    mode,
-                    ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
-                );
-                self.goal = None;
-                let (x, y) = (ctx.view.x, ctx.view.y);
-                let here = ctx.world.level.at(x, y).map(|g| g.feat);
-                let around = |dx: i32, dy: i32| ctx.world.level.at(x + dx, y + dy).map(|g| g.feat);
-                stand_still(here, around)
-            }
+            None => match self.mode_step(ctx, mode) {
+                Some(a) => a,
+                None => {
+                    // The mode cannot act: its goal has failed here and
+                    // there. Cool it down and fall through to the safest
+                    // action that always uses time.
+                    self.cooldowns.insert(
+                        mode,
+                        ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns),
+                    );
+                    self.goal = None;
+                    let (x, y) = (ctx.view.x, ctx.view.y);
+                    let here = ctx.world.level.at(x, y).map(|g| g.feat);
+                    let around =
+                        |dx: i32, dy: i32| ctx.world.level.at(x + dx, y + dy).map(|g| g.feat);
+                    stand_still(here, around)
+                }
+            },
         };
         let goal_name = match mode {
             Mode::Recover => "rest to full",
@@ -1314,7 +1343,7 @@ mod tests {
             slot_type: 1,
             item: Some(crate::observation::Item {
                 kind: 300,
-                tval: 23,
+                tval: 9, // TV_SWORD (a dagger)
                 sval: 4,
                 number: 1,
                 weight: 120,

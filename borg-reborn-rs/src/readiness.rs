@@ -39,15 +39,7 @@
 use crate::danger::{has_free_action, worst_turn};
 use crate::knowledge::Knowledge;
 use crate::params::Params;
-use crate::world::{World, EQUIP_BOW};
-
-/// `TV_*` values the gates count: `list-tvals.h` numbers its `TV(...)`
-/// lines from `TV_NULL` = 0 (SCROLL is line 31, POTION 32, FLASK 33).
-mod tv {
-    pub const FLASK: u8 = 27;
-    pub const SCROLL: u8 = 25;
-    pub const POTION: u8 = 26;
-}
+use crate::world::{tv, World, EQUIP_BOW};
 
 /// What the policy found for one depth.
 #[derive(Clone, Debug, PartialEq)]

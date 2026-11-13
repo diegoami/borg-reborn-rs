@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1785; distinct starting conditions: 1784; retained process attempts: 1785 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1796; distinct starting conditions: 1795; retained process attempts: 1796 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1791,6 +1791,17 @@ Dossiers: 1785; distinct starting conditions: 1784; retained process attempts: 1
 | [D1803-rust-seed1061](D1803-rust-seed1061/report.md) | unassigned | `8bdd9c97c87e` | 1061 | starvation | 88680 | unassessed |
 | [D1804-rust-seed1053](D1804-rust-seed1053/report.md) | unassigned | `8bdd9c97c87e` | 1053 | a scrawny cat | 85335 | unassessed |
 | [D1805-rust-seed1074](D1805-rust-seed1074/report.md) | unassigned | `8bdd9c97c87e` | 1074 | a floating eye | 3880 | unassessed |
+| [D1806-rust-seed1014](D1806-rust-seed1014/report.md) | unassigned | `2f969dfbddf5` | 1014 | poison | 1390 | unassessed |
+| [D1807-rust-seed1020](D1807-rust-seed1020/report.md) | unassigned | `2f969dfbddf5` | 1020 | a small kobold | 3098 | unassessed |
+| [D1808-rust-seed1022](D1808-rust-seed1022/report.md) | unassigned | `2f969dfbddf5` | 1022 | a crow | 2531 | unassessed |
+| [D1809-rust-seed1021](D1809-rust-seed1021/report.md) | unassigned | `2f969dfbddf5` | 1021 | a small kobold | 6367 | unassessed |
+| [D1810-rust-seed1030](D1810-rust-seed1030/report.md) | unassigned | `2f969dfbddf5` | 1030 | a giant white mouse | 8008 | unassessed |
+| [D1811-rust-seed1034](D1811-rust-seed1034/report.md) | unassigned | `2f969dfbddf5` | 1034 | a battle-scarred veteran | 2147 | unassessed |
+| [D1812-rust-seed1052](D1812-rust-seed1052/report.md) | unassigned | `2f969dfbddf5` | 1052 | starvation | 91190 | unassessed |
+| [D1813-rust-seed1043](D1813-rust-seed1043/report.md) | unassigned | `2f969dfbddf5` | 1043 | a scruffy little dog | 89158 | unassessed |
+| [D1814-rust-seed1061](D1814-rust-seed1061/report.md) | unassigned | `2f969dfbddf5` | 1061 | starvation | 88680 | unassessed |
+| [D1815-rust-seed1053](D1815-rust-seed1053/report.md) | unassigned | `2f969dfbddf5` | 1053 | a scrawny cat | 85335 | unassessed |
+| [D1816-rust-seed1074](D1816-rust-seed1074/report.md) | unassigned | `2f969dfbddf5` | 1074 | a floating eye | 3880 | unassessed |
 
 ## Aggregated actions
 

@@ -5,7 +5,7 @@
     {
       "slot": 1,
       "kind": 6,
-      "tval": 23,
+      "tval": 9,
       "sval": 4,
       "weight": 12,
       "desc": "a Dagger (1d4)",
@@ -40,7 +40,7 @@
     },
     {
       "kind": 250,
-      "tval": 28,
+      "tval": 29,
       "sval": 99,
       "number": 4,
       "desc": "a Mottled Mushroom",

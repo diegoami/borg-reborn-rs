@@ -22,6 +22,53 @@ const MON_TMD_SLEEP: usize = 0;
 /// `ELEM_MAX` (list-elements.h).
 pub const ELEM_MAX: usize = 25;
 /// `EQUIP_WEAPON` (list-equip-slots.h).
+/// `TV_*` values: `list-tvals.h` numbers its `TV(...)` entries from
+/// `TV_NULL` = 0 (T5.2, #126). The observation carries the engine's own
+/// tval, so these, not the pre-4.2 numbers (sword 23), are what an item
+/// says it is.
+pub mod tv {
+    pub const SHOT: u8 = 2;
+    pub const ARROW: u8 = 3;
+    pub const BOLT: u8 = 4;
+    pub const BOW: u8 = 5;
+    pub const DIGGING: u8 = 6;
+    pub const HAFTED: u8 = 7;
+    pub const POLEARM: u8 = 8;
+    pub const SWORD: u8 = 9;
+    pub const BOOTS: u8 = 10;
+    pub const GLOVES: u8 = 11;
+    pub const HELM: u8 = 12;
+    pub const CROWN: u8 = 13;
+    pub const SHIELD: u8 = 14;
+    pub const CLOAK: u8 = 15;
+    pub const SOFT_ARMOR: u8 = 16;
+    pub const HARD_ARMOR: u8 = 17;
+    pub const DRAG_ARMOR: u8 = 18;
+    pub const LIGHT: u8 = 19;
+    pub const AMULET: u8 = 20;
+    pub const RING: u8 = 21;
+    pub const SCROLL: u8 = 25;
+    pub const POTION: u8 = 26;
+    pub const FLASK: u8 = 27;
+    pub const FOOD: u8 = 28;
+    pub const MUSHROOM: u8 = 29;
+
+    /// A melee weapon: hafted, polearm or sword (a digger digs; a bow
+    /// shoots).
+    pub fn is_melee(tval: u8) -> bool {
+        matches!(tval, HAFTED | POLEARM | SWORD)
+    }
+
+    /// Body, cloak, shield, helm, gloves or boots: what `calc_mana` weighs
+    /// (`player-calcs.c:1505-1525`).
+    pub fn is_armour(tval: u8) -> bool {
+        matches!(
+            tval,
+            BOOTS | GLOVES | HELM | CROWN | SHIELD | CLOAK | SOFT_ARMOR | HARD_ARMOR | DRAG_ARMOR
+        )
+    }
+}
+
 pub const EQUIP_WEAPON: u16 = 1;
 /// `EQUIP_BOW` (list-equip-slots.h).
 pub const EQUIP_BOW: u16 = 2;
