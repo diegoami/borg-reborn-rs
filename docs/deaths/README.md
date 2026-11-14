@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2139; distinct starting conditions: 2135; retained process attempts: 2139 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2140; distinct starting conditions: 2136; retained process attempts: 2140 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2145,6 +2145,7 @@ Dossiers: 2139; distinct starting conditions: 2135; retained process attempts: 2
 | [D2157-rust-seed1021](D2157-rust-seed1021/report.md) | unassigned | `f04f3290a99d` | 1021 | a giant yellow centipede | 2581 | unassessed |
 | [D2158-rust-seed1020](D2158-rust-seed1020/report.md) | unassigned | `f04f3290a99d` | 1020 | a giant yellow centipede | 23988 | unassessed |
 | [D2159-rust-seed1044](D2159-rust-seed1044/report.md) | unassigned | `f04f3290a99d` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
+| [D2160-rust-seed1052](D2160-rust-seed1052/report.md) | unassigned | `f04f3290a99d` | 1052 | a giant white louse | 26634 | unassessed |
 
 ## Aggregated actions
 

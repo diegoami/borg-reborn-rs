@@ -269,20 +269,30 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
         return Some(bored && stairs_down(st));
     }
     let restock = crate::borg_prepared::borg_must_return_to_town(st).is_some();
+    let mut advanced = false;
     if let Some(r) = running().as_mut() {
-        if restock {
+        if restock && r.step < usize::MAX {
             // The core must restock: the trip ends here, at home.
             r.step = usize::MAX;
+            advanced = true;
         } else if r.target() == Some(depth) {
             r.step += 1;
+            advanced = true;
         }
     }
-    if restock {
+    if restock && advanced {
         borg_note(st, "# Errand: must restock, the trip goes home.");
     }
     let t = target(st)?;
-    borg_note(st, &format!("# Errand: DL{depth} explored, next DL{t}."));
-    Some(walk(st, depth, t))
+    if advanced {
+        borg_note(st, &format!("# Errand: DL{depth} explored, next DL{t}."));
+    }
+    // The core is done with this level. With no staircase known toward the
+    // target, any staircase: a fresh level is the way on, as the core
+    // itself does when it is bored and cannot dive (DL1 up is the town,
+    // and the trip goes on from there). Without this, warriors with DL2
+    // as the target sat on a used-up DL1 with no down staircase known.
+    Some(walk(st, depth, t) || stairs_down(st) || stairs_up(st))
 }
 
 /// `GOAL_FLEE` (borg-flow.h), as the core's think modules declare it.
