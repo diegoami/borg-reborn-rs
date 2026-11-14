@@ -722,7 +722,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
 /// Returns the reason you are not prepared.
 pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
     // borg-reborn-rs (#208): a dive errand's depths count as prepared.
-    if crate::shell::prepared_override(depth) {
+    if crate::shell::prepared_override(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH), depth) {
         return None;
     }
     // Town and First level

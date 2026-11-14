@@ -73,9 +73,13 @@ pub fn errand() -> Option<Errand> {
 }
 
 /// `borg_prepared`'s override: a depth the dive errand asks for counts as
-/// prepared.
-pub(crate) fn prepared_override(depth: i32) -> bool {
-    matches!(errand(), Some(Errand::DiveTo(n)) if depth <= n)
+/// prepared once the character is at or below it, so the core does not
+/// climb back up from it. Deeper depths keep the core's own answer: the
+/// steering does the diving, and an override of the next depth switched off
+/// the core's "bored and unable to dive: go to town" (full-0-warrior-0 and
+/// full-3-priest-0 diverged there, and died later in a different game).
+pub(crate) fn prepared_override(current: i32, depth: i32) -> bool {
+    matches!(errand(), Some(Errand::DiveTo(n)) if depth <= n && depth <= current)
 }
 
 /// `GOAL_FLEE` (borg-flow.h), as the core's think modules declare it.
@@ -158,9 +162,10 @@ mod tests {
     #[test]
     fn the_dive_overrides_readiness_only_down_to_its_depth() {
         set_errand(Some(Errand::DiveTo(4)), 0);
-        assert!(prepared_override(4));
-        assert!(!prepared_override(5));
+        assert!(prepared_override(4, 4));
+        assert!(!prepared_override(4, 5), "deeper than the errand");
+        assert!(!prepared_override(2, 3), "deeper than the character");
         set_errand(None, 0);
-        assert!(!prepared_override(2), "no errand, no override");
+        assert!(!prepared_override(2, 2), "no errand, no override");
     }
 }
