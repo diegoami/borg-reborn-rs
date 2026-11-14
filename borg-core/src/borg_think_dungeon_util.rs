@@ -722,6 +722,10 @@ fn note_with(st: &mut BorgState, prefix: &[u8], text: &[u8], suffix: &[u8]) {
 /// Leave the level if necessary (or bored)
 /// Scumming defined in borg_prepared.
 pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
+    // borg-reborn-rs (#208): a trips errand decides where a level leads.
+    if let Some(r) = crate::shell::on_leave_level(st, bored) {
+        return r;
+    }
     let mut g = 0;
     let mut try_not_to_descend = false;
 

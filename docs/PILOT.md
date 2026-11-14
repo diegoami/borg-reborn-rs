@@ -41,78 +41,63 @@ The same seeds, through `tools/progress.py`:
 | mean character level | 5.47 | 3.98 |
 | reached DL5 | 18 | 0 |
 
-## C2: errands over the core (#208): dive to N, in progress
+## C2: errands over the core (#208): trips, in progress
 
-- **The shell's footprint in borg-rs's code:** one new file,
-  `borg-core/src/shell.rs`, plus three hook calls marked
-  `borg-reborn-rs (#208)`:
-  - `borg_prepared`: depths down to N count as prepared, so the core does
-    not climb back up from them;
-  - `borg_think`: before the dungeon think, the errand ends at depth N or at
-    its budget, through the core's own auto-stop (`borg_oops`);
-  - `borg_think_dungeon`: right after `borg_caution`, the errand steers. It
-    flows to a known down staircase and takes it, with the core's own
-    power-dive steps.
-- **How it is called:** `BORG_ERRAND=dive:N`, `BORG_ERRAND_BUDGET`
-  (game turns), and the outcome in `BORG_ERRAND_OUT`.
-- **With no errand, play is borg-rs's byte for byte** (smoke 3/3).
+**No stair-scumming, no town scumming.** borg-rs's `borg.txt` has the
+munchkin start off, but `borg_munchkin_by_class = TRUE` turned it back on
+for Warriors, Druids and Rangers: they stair-scummed to
+`borg_munchkin_class_depth` (6). `borg_self_scum = TRUE` let a level-10
+character wait in town until it could afford a wanted item. Both are off
+(owner, 2026-11-14). They are switched off in `borg-core/overrides.txt`,
+which `harness/run.sh` applies over borg-rs's own `borg.txt`; the vendored
+file stays as borg-rs ships it.
 
-One character per class (the `-0` line of each class in the full suite,
-`menu`), budget 60,000 game turns:
+**The errand is trips** (owner, 2026-11-14): explore DL1 and go back to
+town; then DL1, DL2, DL1 and back to town; and so on. The player writes
+the plan.
+- **The syntax.** `BORG_ERRAND=trips:1*/1,2,1*/1,2,3,2,1*` lists trips
+  separated by `/` and levels by `,`.
+- **Repeating trips.** A trip marked `*` repeats until borg-rs is prepared
+  for the next trip's deepest level; the last one repeats until the budget.
+  The player writes the ladder, borg-rs's readiness climbs it: a mage stays
+  on town-DL1-town longer, a warrior moves on sooner.
+- **On a level of the plan, borg-rs plays as itself.** The level is
+  explored when borg-rs decides to leave it (`borg_leave_level`, hooked).
+- **Between levels, the errand walks the stairs**, after `borg_caution`,
+  with borg-rs's own stair flows. A trip starts from town by the down
+  staircase, never by a recall.
+- **No level is forced.** A planned level borg-rs is not prepared for
+  (`borg_prepared`) is skipped and noted. If borg-rs must restock, the trip
+  ends at home.
+- **With no errand, every hook returns at once.**
 
-| | done | died | out of budget |
-|---|---|---|---|
-| `dive:3` | 6 of 9 (4,300–18,200 turns) | 3 | 0 |
-| `dive:5` | 6 of 9 (6,800–24,300 turns) | 3 | 0 |
+**The first errand, dive to N, was dropped.** It took weak characters
+deeper than their level, and killed them: 5 to 8 extra deaths in 45, mostly
+casters on DL2–4 (owner: an errand must not dive unprepared, and must not
+cancel the way home). Tracing its two early deaths showed that its
+readiness override also switched off borg-rs's own "bored and unable to
+dive: go to town". The override is gone.
 
-- **The two early deaths, traced.** Without an errand, borg-rs's
-  warrior-0 and priest-0 live to the cap; under `dive:3` both die on DL1.
-  - **Shopping is not the cause.** Up to the split, both runs make the same
-    town choices. Both warriors sell Word of Recall and Berserk Strength
-    and buy torches: that is borg-rs's munchkin start, with or without the
-    errand.
-  - **The split.** Both pairs split at a DL1 level with no known down
-    staircase:
-    - without the errand, borg-rs says "heading up (bored and unable to
-      dive: Clevel < depth)";
-    - with it, the readiness override (prepared down to N) switched that
-      rule off, and the Borg wandered for 40–70 turns before leaving for
-      another reason ("Spent too long on level").
-  - **The deaths are borg-rs's own decisions in a game that had become a
-    different one.** The warrior fled a kobold archer at 4/20 HP with no
-    Phase Door. The priest died confused beside a grey mushroom patch. The
-    errand's steering played no part in either.
-  - **The fix.** The override now holds only depths at or above the
-    current one, so the core does not climb back up from a depth the dive
-    reached. The steering does the diving.
-- **The sample**, after the fix. All 45 full-suite characters (`menu`,
-  60,000-turn cap, budget 50,000):
+**Trial.** One character per class (the `-0` line of each class in the
+full suite, `menu`), with no munchkin and no town scumming:
 
-  | | reached N | died | out of budget | mean max depth |
-  |---|---|---|---|---|
-  | no errand | n/a | 8 | n/a | 2.89 |
-  | `dive:3` | 34 (median 10,574 turns, 1,803–46,697) | 8 | 3 | 2.71 |
-  | `dive:5` | 25 (median 11,438 turns, 2,612–45,647) | 13 | 7 | 3.98 |
+| | no errand (60,000 turns) | `trips:1*/1,2,1*/1,2,3,2,1*` (budget 55,000) |
+|---|---|---|
+| deaths | 2 (druid: small kobold; paladin: grey mold) | 1 (druid: giant yellow centipede) |
+| character levels | 6, 4, 1, 3, 5, 2, 5, 5, 2 | 5, 3, 1, 3, 3, 4, 5, 4, 2 |
+| max depth | 1–3 | 1–2 |
+| trips home | — | 23 to 106 per character |
 
-  **The deaths that happen only under the errand:**
-  - 5 under `dive:3`, 8 under `dive:5`;
-  - mostly casters (mage, priest, necromancer) at character levels 1–5;
-  - on DL2–DL4;
-  - killed by wild cats, a scout, a cutpurse, Fang, a white jelly, a fatal
-    wound.
-
-  That is the cost of a dive: a weak character arrives where its level
-  would not have taken it yet. A dive run stops when it arrives, so per
-  turn played it is riskier than borg-rs's own play even where the totals
-  match.
-- **A first version steered only through readiness**, with the override
-  at N, then at N + 5. It left three or four characters on DL1 until the
-  budget ran out: borg-rs dives only when bored, or when it is prepared for
-  five levels deeper. Steering after caution replaced it.
+- **The characters gain levels at about borg-rs's own pace**, in explicit
+  town-level-town cycles, and reach DL2 only when borg-rs judges them
+  prepared.
+- **A trip is short.** borg-rs at levels 1–3 tires of a DL1 level in a few
+  hundred turns; the errand turns each of those into a trip home.
 
 ## Next
 
 1. C2:
+   - measure the ladder on all 45 characters against no errand;
    - add *shop*;
    - add the `^Z` keys and `run.sh` flags.
 2. C3 (#209): danger and caution into the domain behind a shadow check;

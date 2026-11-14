@@ -136,6 +136,16 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
+# borg-rs's core: our overrides of its settings (borg-core/overrides.txt).
+if [ "${BORG_CORE:-}" = borg-rs ]; then
+    while IFS= read -r line; do
+        case "$line" in ''|'#'*) continue;; esac
+        name="${line%% =*}"
+        grep -q "^$name = " "$OUT/user/borg.txt" || {
+            echo "run.sh: override '$name' is not a borg.txt setting" >&2; exit 2; }
+        sed -i "s/^$name = .*/$line/" "$OUT/user/borg.txt"
+    done < "$ROOT/borg-core/overrides.txt"
+fi
 {
     echo "flags=$FLAGS"
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
