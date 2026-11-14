@@ -47,7 +47,17 @@
 //!   stops and hands control back. `N` (1-1000): when the danger where it
 //!   stands (`borg_danger`, one turn) reaches N% of its current hit
 //!   points. `flee` (or `true`) is 100: one turn could kill it.
+//! - `/explored N|off`: a setting: a level of the plan counts as explored
+//!   once N% of its floor is seen (default 90), or, off, only when the
+//!   core is done with it.
+//! - `/stall N|off`: a setting: a level of the plan is given up after N
+//!   game turns with nothing new seen (default 10,000).
 //! - `/stop`: clear the errand.
+//!
+//! **Fear overrides the plan.** A core that wants town ends the trip; one
+//! that flees a level leaves it its own way; a level of the plan it leaves
+//! by its own move (stairs, Deep Descent, Teleport Level, a trap door)
+//! counts as explored, and the plan goes on from where it arrives.
 //!
 //! A line can hold several, separated by `;` (`/stopscared 50; /dive 2;
 //! /walk-back`): settings apply at once, the errands run in turn, each
@@ -66,7 +76,10 @@
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_MAXHP};
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
-use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE};
+use crate::headers::list_terrain_h::{
+    FEAT_BROKEN, FEAT_CLOSED, FEAT_FLOOR, FEAT_LESS, FEAT_MORE, FEAT_NONE, FEAT_OPEN,
+    FEAT_PASS_RUBBLE,
+};
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
 use std::sync::atomic::{AtomicI32, Ordering};
@@ -100,6 +113,12 @@ pub enum Command {
     Errand(Errand),
     /// `None`: off; `Some(N)`: danger at N% of the current hit points.
     StopScared(Option<i32>),
+    /// `/explored N`: a level of the plan is explored at N% of its floor
+    /// seen (`None`: only when the core is done with it).
+    Explored(Option<i32>),
+    /// `/stall N`: a level of the plan is given up after N game turns with
+    /// nothing new seen (`None`: never).
+    Stall(Option<i32>),
     Stop,
 }
 
@@ -128,6 +147,14 @@ impl Command {
                 "true" | "on" | "yes" | "flee" => Some(100),
                 "false" | "off" | "no" => None,
                 n => Some(n.parse::<i32>().ok().filter(|n| (1..=1000).contains(n))?),
+            }),
+            ("explored", v) => Command::Explored(match v.to_ascii_lowercase().as_str() {
+                "off" | "false" | "no" => None,
+                n => Some(n.parse::<i32>().ok().filter(|n| (1..=100).contains(n))?),
+            }),
+            ("stall", v) => Command::Stall(match v.to_ascii_lowercase().as_str() {
+                "off" | "false" | "no" => None,
+                n => Some(n.parse::<i32>().ok().filter(|n| *n >= 100)?),
             }),
             ("stop", "") | ("none", "") => Command::Stop,
             _ => return None,
@@ -260,6 +287,17 @@ struct Running {
     recall: bool,
     /// The command, for the report.
     name: String,
+    /// The level the character is on, as the errand watches it.
+    watch: Option<Watch>,
+}
+
+/// The level under the errand: its depth, the grids the core knows of it,
+/// and the last game turn that number grew.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Watch {
+    depth: i32,
+    known: u32,
+    progress: i64,
 }
 
 /// A plan that starts at the character's depth.
@@ -299,6 +337,17 @@ impl Running {
 
 /// `/stopscared`: -1 off, N danger at N% of the current hit points.
 static STOP_SCARED: AtomicI32 = AtomicI32::new(-1);
+
+/// `/explored`: the share of a level's floor seen at which a level of the
+/// plan counts as explored; 0, only when the core is done with it (owner,
+/// 2026-11-14: "happy at 90% or something").
+static EXPLORED_PCT: AtomicI32 = AtomicI32::new(90);
+
+/// `/stall`: game turns with nothing new seen after which a level of the
+/// plan is given up; 0, never. 10,000 is 1,000 player turns at normal
+/// speed. A paladin on DL3 rested on a staircase for 60,000 turns, never
+/// done with the level (docs/PILOT.md).
+static STALL_TURNS: AtomicI32 = AtomicI32::new(10_000);
 
 /// Set `/stopscared`.
 pub fn set_stop_scared(level: Option<i32>) {
@@ -348,6 +397,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             from_here,
             recall,
             name,
+            watch: None,
         }
     });
 }
@@ -362,6 +412,14 @@ pub fn apply(command: Command, budget: i64) -> bool {
         }
         Command::StopScared(level) => {
             set_stop_scared(level);
+            false
+        }
+        Command::Explored(pct) => {
+            EXPLORED_PCT.store(pct.unwrap_or(0), Ordering::Relaxed);
+            false
+        }
+        Command::Stall(turns) => {
+            STALL_TURNS.store(turns.unwrap_or(0), Ordering::Relaxed);
             false
         }
         Command::Stop => {
@@ -533,7 +591,28 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
             }];
         }
         let arrived = r.end == End::Arrive && r.target() == Some(depth);
+        // A new level. If the core left a level of the plan before the
+        // errand was done with it (it fled, read Deep Descent or Teleport
+        // Level, fell through a trap door), its fear overrides the plan:
+        // that level counts as explored, and the plan goes on from here.
+        let left = match r.watch {
+            Some(w) if w.depth != depth => {
+                let fled = w.depth > 0 && r.target() == Some(w.depth);
+                if fled {
+                    r.step += 1;
+                }
+                r.watch = None;
+                fled.then_some(w.depth)
+            }
+            _ => None,
+        };
         drop(guard);
+        if let Some(d) = left {
+            borg_note(
+                st,
+                &format!("# Errand: the core left DL{d} its own way; counted explored."),
+            );
+        }
         if arrived {
             finish(st, "done");
             return Some(true);
@@ -686,11 +765,76 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         return true;
     }
     // In town the core shops and leaves by itself (`on_leave_level`); on a
-    // level of the plan it explores.
-    if depth == 0 || depth == t {
+    // level of the plan it explores, until it is done with the level, or
+    // the level is explored enough, or nothing new is seen for too long.
+    if depth == 0 {
         return false;
     }
+    if depth == t {
+        let Some(why) = level_done(st, depth) else {
+            return false;
+        };
+        borg_note(st, &format!("# Errand: DL{depth} {why}."));
+        return on_leave_level(st, true).unwrap_or(false);
+    }
     walk(st, depth, t)
+}
+
+/// Whether the level under the errand is done with before the core says so:
+/// `/explored` (the share of its floor seen) or `/stall` (nothing new seen
+/// for that many game turns). The share counts the level's real floor, a
+/// read of the engine (the core reads it too, its "cheats"); it only ends
+/// a level, it never steers a move.
+fn level_done(st: &BorgState, depth: i32) -> Option<String> {
+    let turn = i64::from(engine::game_turn());
+    let (mut floor, mut seen, mut known) = (0u32, 0u32, 0u32);
+    for y in 0..crate::borg_cave::AUTO_MAX_Y {
+        for x in 0..crate::borg_cave::AUTO_MAX_X {
+            if !engine::square_in_bounds(x, y) {
+                continue;
+            }
+            let mine = st.cave.grid(x, y).feat != FEAT_NONE as u8;
+            known += u32::from(mine);
+            if matches!(
+                u32::from(engine::square_feat(x, y)),
+                FEAT_FLOOR
+                    | FEAT_CLOSED
+                    | FEAT_OPEN
+                    | FEAT_BROKEN
+                    | FEAT_LESS
+                    | FEAT_MORE
+                    | FEAT_PASS_RUBBLE
+            ) {
+                floor += 1;
+                seen += u32::from(mine);
+            }
+        }
+    }
+    let stalled = {
+        let mut guard = running();
+        let r = guard.as_mut()?;
+        let w = r.watch.get_or_insert(Watch {
+            depth,
+            known,
+            progress: turn,
+        });
+        if known > w.known {
+            w.known = known;
+            w.progress = turn;
+        }
+        turn - w.progress
+    };
+    let pct = EXPLORED_PCT.load(Ordering::Relaxed);
+    if pct > 0 && floor > 0 && seen * 100 >= floor * pct as u32 {
+        return Some(format!("explored: {seen} of {floor} floor grids seen"));
+    }
+    let stall = i64::from(STALL_TURNS.load(Ordering::Relaxed));
+    if stall > 0 && stalled >= stall {
+        return Some(format!(
+            "given up: nothing new seen for {stalled} game turns"
+        ));
+    }
+    None
 }
 
 /// The core wants town for its own reasons: scared enough to flee to town
@@ -868,6 +1012,10 @@ mod tests {
         assert_eq!(C::parse("/stopscared maybe"), None);
         assert_eq!(C::parse("/stop"), Some(C::Stop));
         assert_eq!(C::parse("none"), Some(C::Stop));
+        assert_eq!(C::parse("/explored 80"), Some(C::Explored(Some(80))));
+        assert_eq!(C::parse("/explored off"), Some(C::Explored(None)));
+        assert_eq!(C::parse("/explored 120"), None);
+        assert_eq!(C::parse("/stall 5000"), Some(C::Stall(Some(5000))));
         assert_eq!(C::parse("/fly"), None);
     }
 
@@ -889,6 +1037,7 @@ mod tests {
             from_here: None,
             recall: false,
             name: String::new(),
+            watch: None,
         };
         assert_eq!(dive.target(), Some(3));
         let mut stop = Running {
@@ -936,6 +1085,7 @@ mod tests {
             from_here: None,
             recall: false,
             name: String::new(),
+            watch: None,
         };
         assert_eq!(r.target(), Some(1));
         r.step = 1;
