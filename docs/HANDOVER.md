@@ -2,6 +2,54 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: the freeze, and the trip loop (#201)
+
+- **"Alive" counted a Borg that had stopped playing.** On main (f0942d9a),
+  38 of the full suite's 39 survivors walked between two grids on DL1 from
+  about turn 15,000 to the cap. `tools/progress.py` now reports, per run and
+  per suite: turns frozen, distinct grids, maximum depth and character
+  level. **No survival figure is reported without it.**
+- **The trip loop** (owner, 2026-11-14), replacing the HP gate:
+  - in town, restock (and give unknown consumables to identify them);
+  - take the stairs down to the target depth;
+  - explore that level;
+  - go home when it is explored or gives nothing for `level_stall_turns`
+    (5,000);
+  - repeat on a new level.
+  The target depth is `max(1, clevel x depth_per_clevel_pct / 100)`
+  (default 50). It replaces T5.1's readiness gate, which never opened DL2
+  for a level-1 character. Class, race and power terms are for the zoo to
+  sweep, as arms.
+- **The travel guard is released** (e2575fc0, #183, owner): a step retreats
+  only from half a hit point. Two loops it left are closed:
+  - a refused grid is barred from the planner, target included, for
+    `goal_cooldown_turns`, so the planner and the guard cannot take turns;
+  - a stationary monster that one turn of melee is expected to kill (a grey
+    mushroom patch) no longer turns travel back, unless the step risks
+    death. A broader version, "any stationary monster", walked characters
+    into floating eyes, molds and jellies (33 deaths) and was reverted.
+- **Measured, full suite (45 runs):**
+
+  | | main | this PR |
+  |---|---|---|
+  | alive | 39 | 13 |
+  | alive and moving (frozen < 20,000) | 1 | 9 |
+  | mean turns frozen | 72,000 | 7,667 |
+  | mean max depth | 1.04 | 1.67 |
+  | mean character level | 1.38 | 3.98 |
+  | reached DL5 | 0 | 0 |
+
+  An earlier arm of this PR reached DL5 once (warrior-0, level 8).
+- **Deaths: 32 of 45 (main 6).** The owner chose to merge this as the
+  baseline and work the deaths as their own issues. Causes: soldier 5,
+  small kobold 3, giant white mouse 3, Fang 3, poison 3, floating eye 2,
+  acolyte 2, and one each of Grip, cave spider, green naga, black naga,
+  giant white louse, kobold, fatal wound, wild dog, battle-scarred veteran,
+  apprentice and gallant.
+- **Left:** four survivors still freeze, two of them `Alter(1)` digging
+  loops. The references (smoke, smoke-exact, full) are regenerated at this
+  build. Dossiers D1938-D2092.
+
 ## 2026-11-13: town sessions, the first step of the town plan (#191)
 
 - **`borg-reborn-rs/src/town.rs`**, three switches, all off by default:
