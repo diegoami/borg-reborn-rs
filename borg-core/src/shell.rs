@@ -615,8 +615,12 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
                     r.step += 1;
                     left = Some(w.depth);
                 }
-                if let Some(t) = r.target() {
-                    if depth > 0 && depth < w.depth && t > depth {
+                // A rise that ends the plan (off its last level) did not
+                // explore that level either: `/dive-exploring 2` was
+                // reported done when the core rose off DL2.
+                let next = r.target().or(left);
+                if let Some(t) = next {
+                    if depth > 0 && depth < w.depth && (t > depth || r.target().is_none()) {
                         unfit = Some((w.depth, t));
                         if r.end == End::Home && r.skip_unprepared {
                             r.step = usize::MAX;
@@ -632,7 +636,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         }
         let command = !r.skip_unprepared;
         drop(guard);
-        if let Some(d) = left {
+        if let (Some(d), None) = (left, unfit) {
             borg_note(
                 st,
                 &format!("# Errand: the core left DL{d} its own way; counted explored."),
