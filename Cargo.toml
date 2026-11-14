@@ -1,6 +1,7 @@
 [workspace]
 members = ["borg-reborn-rs"]
 resolver = "2"
+exclude = ["vendor/angband-recorder"]
 
 [profile.release]
 debug = 1

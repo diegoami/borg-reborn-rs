@@ -27,7 +27,7 @@ inputs_of() {
     case "$1" in
         # docs/SPEC.md §3.6: the pristine tree, our patches, frontend and build
         # files, and the Rust Borg (engine/tests/ are not build inputs).
-        rust) echo "engine/angband engine/patches engine/frontend engine/CMakeLists.txt engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM borg-reborn-rs Cargo.toml Cargo.lock";;
+        rust) echo "engine/angband engine/patches engine/frontend engine/CMakeLists.txt engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM borg-reborn-rs Cargo.toml Cargo.lock engine/recorder-hooks.patch recorder-pin.json vendor/angband-recorder";;
         *) echo "identity.sh: the only implementation is rust, not '$1' (docs/SPEC.md §6)" >&2; exit 2;;
     esac
 }

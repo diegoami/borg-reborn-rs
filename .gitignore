@@ -1,7 +1,8 @@
 build/
 harness/out/
 target/
-vendor/
+vendor/*
+!vendor/angband-recorder/
 __pycache__/
 /.angband-reborn/
 /docs/deaths/.registry.lock

@@ -341,8 +341,11 @@ static void borgh_finish(const char *reason)
 		_exit(3);
 	}
 
-	/* Do not save; do not run the normal quit hooks */
-	_exit(0);
+#ifdef BORG_RECORDING
+    { extern void ar_finish(void); ar_finish(); }
+#endif
+    /* Do not save; do not run the normal quit hooks */
+    _exit(0);
 }
 
 void borgh_setting(int index, const char *name, int value)
@@ -585,6 +588,10 @@ static void borgh_checkpoint(void)
 		_exit(3);
 	}
 	if (snapshot == 0) {
+#ifdef BORG_RECORDING
+        /* The saver child must never consume or append the parent's streams. */
+        { extern void ar_snapshot_enter(void); ar_snapshot_enter(); }
+#endif
 #ifdef __linux__
 		/* Do not leave a saving child behind if the supervised engine is
 		 * killed. Check the race between fork and installing this guard. */

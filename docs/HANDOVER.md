@@ -3077,3 +3077,13 @@ T1.8 writes it.
   and dossiers at the pinned commits. Its classifications are leads, not
   findings. SOURCES.md's table of death patterns was checked by hand
   against the dossiers' `assessment.json`.
+
+## 2026-11-14: optional standalone recorder (#210)
+
+The owner separately authorized this integration during angband-recorder setup. The v0.1.0 crate is linked through the existing Rust library, hooks apply only to the generated engine copy, and the default harness remains recorder-off. Exact pin and design: docs/ANGBAND-RECORDER.md. The recorder-enabled short native capture/replay passed; no strategy work or pristine engine bytes were changed. New raw runs stay outside Git. In-game branching remains future recorder work.
+
+Recorder integration CI passed the gameplay/perception comparisons but required
+new build-identity death dossiers. D2093/D2094 reproduce CI controls 102/1020;
+keys, messages and state channels match the CI artifact, whose original record
+and build identities are retained in ci-evidence.json. Both remain unassessed
+validation controls, not a strategy/performance claim. No death check is waived.

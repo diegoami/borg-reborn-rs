@@ -13,6 +13,7 @@ path = "src/lib.rs"
 crate-type = ["rlib", "staticlib"]
 
 [features]
+recording = ["dep:angband-recorder"]
 # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
 borgh = []
 # Test builds only (CI): perception runs while the player hallucinates, and
@@ -28,3 +29,5 @@ libc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+
+angband-recorder = { path = "../vendor/angband-recorder", optional = true, features = ["ffi"] }

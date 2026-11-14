@@ -1,0 +1,13 @@
+{
+  "engine": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+  "frames": 89,
+  "turn": 81,
+  "inputs": 209,
+  "final_saves": {
+    "RecorderTest": "b35a8dafb7348b37b17c38fd4b2b6e00e4e89512025bc24e3c5a8292811f1124"
+  },
+  "round_trip": "PASS",
+  "changed_rng_rejected": true,
+  "binary_sha256": "552e501bae5c7fd54338174aa3bd3fcacf5c91cbdecd6a607d10bca4434ed4da",
+  "prepared_build": false
+}

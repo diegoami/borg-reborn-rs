@@ -57,3 +57,7 @@ mod tests {
         assert!(ENGINE_PIN.bytes().all(|b| b.is_ascii_hexdigit()));
     }
 }
+
+// Link the recorder through this existing Rust staticlib, never a second runtime.
+#[cfg(feature = "recording")]
+pub use angband_recorder as recorder;

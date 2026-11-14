@@ -1,0 +1,25 @@
+name: verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - run: cargo fmt --check
+      - run: cargo test --locked
+      - run: cargo clippy --locked --all-targets --features ffi -- -D warnings
+      - run: git clone --bare https://github.com/angband/angband.git /tmp/vanilla.git
+      - run: python3 tests/round-trip.py --engine /tmp/vanilla.git --output /tmp/recorder-proof
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verification
+          path: |
+            /tmp/recorder-proof/result.json
+            /tmp/recorder-proof/test.log

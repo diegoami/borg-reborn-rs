@@ -28,3 +28,7 @@ tools instead of the removed ones. The rest of
 the tools copied in T1.6 (recorded in `tools/IMPORTED.json` until then) were
 removed in TE.6, and so were borg-rs's `angband/` tree, the `borg-rs/` shim
 crate and `harness/measurement/`.
+
+## Angband Recorder (owner integration, 2026-11-14)
+
+Optional recorder crate/host adapter v0.1.0 at c4986b26b9fd1c14852df4f1b7393d9030cf812a. See recorder-pin.json and docs/ANGBAND-RECORDER.md. Donor credits are retained in the vendored CREDITS.md; engine/Borg policy is unchanged.

@@ -1,0 +1,198 @@
+--- a/src/main.c
++++ b/src/main.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file main.c
+  * \brief Core game initialisation for UNIX (and other) machines
+@@ -136,6 +139,9 @@
+  */
+ static void extended_quit_hook(const char *s)
+ {
++#ifdef BORG_RECORDING
++	record_frame("exit", record_key_count());
++#endif
+ 	textui_cleanup();
+ 	cleanup_angband();
+ #ifdef SOUND
+@@ -548,6 +554,9 @@
+ 	/* Make sure we have a display! */
+ 	if (!done) quit("Unable to prepare any 'display module'!");
+ 
++#ifdef BORG_RECORDING
++	record_init();
++#endif
+ 	/* Catch nasty signals */
+ 	signals_init(modules[i].hup_disconnects, modules[i].tstp_default);
+ 
+--- a/src/ui-term.c
++++ b/src/ui-term.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-term.c
+  * \brief A generic, efficient, terminal window package
+@@ -2683,7 +2686,11 @@
+  *
+  * Remove the input event if "take" is true.
+  */
++#ifdef BORG_RECORDING
++static errr recording_real_inkey(ui_event *ch, bool wait, bool take)
++#else
+ errr Term_inkey(ui_event *ch, bool wait, bool take)
++#endif
+ {
+ 	/* Assume no key */
+ 	memset(ch, 0, sizeof *ch);
+@@ -3291,3 +3298,15 @@
+ 	}
+ 	return result;
+ }
++
++#ifdef BORG_RECORDING
++errr Term_inkey(ui_event *ch, bool wait, bool take)
++{
++    int result;
++    if (wait) record_frame("wait", record_key_count());
++    if (!record_input_replay(ch, wait, take, &result))
++        result = recording_real_inkey(ch, wait, take);
++    record_input_result(ch, wait, take, result);
++    return result;
++}
++#endif
+--- a/src/ui-input.c
++++ b/src/ui-input.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-input.c
+  * \brief Some high-level UI functions, inkey()
+@@ -230,6 +233,9 @@
+ 	if (inkey_hack)
+ 	{
+ 		ke.key = (*inkey_hack)(inkey_xtra);
++#ifdef BORG_RECORDING
++		ke.key = record_borg_key(ke.key);
++#endif
+ #ifdef BORG_HARNESS
+ 		/* borg-rs harness: log the key (the oracle for C/Rust diffs) */
+ 		if (borgh_key_hook) (*borgh_key_hook)(ke.key);
+--- a/src/ui-game.c
++++ b/src/ui-game.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-game.c
+  * \brief Game management for the traditional text UI
+@@ -633,6 +636,9 @@
+ 
+ errr textui_get_cmd(cmd_context context)
+ {
++#ifdef BORG_RECORDING
++	if (context == CTX_GAME) record_frame("command", record_key_count());
++#endif
+ #ifdef BORG_HARNESS
+ 	if (context == CTX_GAME && borgh_command_hook) (*borgh_command_hook)();
+ #endif
+@@ -958,6 +964,9 @@
+ 		 * is needed */
+ 		while (!player->is_dead && player->upkeep->playing) {
+ 			pre_turn_refresh();
++#ifdef BORG_RECORDING
++			record_frame("tick", record_key_count());
++#endif
+ 			cmd_get_hook(CTX_GAME);
+ 			run_game_loop();
+ 		}
+--- a/src/message.c
++++ b/src/message.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file message.c
+  * \brief Message handling
+@@ -129,6 +132,9 @@
+  */
+ void message_add(const char *str, uint16_t type)
+ {
++#ifdef BORG_RECORDING
++	record_message(str, type);
++#endif
+ 	message_t *m;
+ 
+ #ifdef BORG_HARNESS
+--- a/src/z-file.c
++++ b/src/z-file.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file z-file.c
+  * \brief Low-level file (and directory) handling
+@@ -869,7 +872,11 @@
+ bool file_exists(const char *fname)
+ {
+ 	struct stat st;
++#ifdef BORG_RECORDING
++return ar_exists(stat(fname, &st) == 0);
++#else
+ 	return (stat(fname, &st) == 0);
++#endif
+ }
+ 
+ #elif defined(WINDOWS)
+@@ -1006,7 +1013,13 @@
+ 			break;
+ 		}
+ 		case MODE_READ:
+-			f->fh = fopen(buf, "rb");
++			f->fh = fopen(
++#ifdef BORG_RECORDING
++record_read_path(buf),
++#else
++buf,
++#endif
++"rb");
+ 			break;
+ 		case MODE_APPEND:
+ 			f->fh = fopen(buf, "a+");
+--- a/src/z-rand.c
++++ b/src/z-rand.c
+@@ -1,3 +1,7 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#define getpid() record_pid()
++#endif
+ /**
+  * \file z-rand.c
+  * \brief A Random Number Generator for Angband
+--- a/src/savefile.c
++++ b/src/savefile.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file savefile.c
+  * \brief Savefile loading and saving main routines
+@@ -390,6 +393,9 @@
+ 	bool ok = false;
+ 
+ 	/* Generate a CharOutput.txt, mainly for angband.live, when saving. */
++#ifdef BORG_RECORDING
++	if (!record_in_snapshot())
++#endif
+ 	(void) save_charoutput();
+ 
+ 	/* New savefile */

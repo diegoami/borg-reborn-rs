@@ -1,0 +1,84 @@
+{
+  "workflow_run": "https://github.com/diegoami/borg-reborn-rs/actions/runs/43615843628",
+  "artifact": "ci-death-registry",
+  "original_record": {
+    "schema": "borg-reborn-rs/death-record@1",
+    "id": "D0002-rust-seed1020",
+    "run_kind": "harness",
+    "character": "Elf Druid",
+    "raw_cause": "a giant white mouse",
+    "terminal": {
+      "cause": "a giant white mouse",
+      "dead": true,
+      "depth": 1,
+      "max_depth": 1,
+      "level": 2,
+      "turn": 8922,
+      "race_idx": 2,
+      "class_idx": 2
+    },
+    "identity": {
+      "impl": "rust",
+      "seed": 1020,
+      "flags": "menu",
+      "git_rev": "7a428b9d319a442a71dda5e7ec7055476d497dc2",
+      "git_dirty": "no",
+      "source_sha256": "0522d6675fb3f1c21c2557bbc529e4177d5d3ab694ea01b35c8d5cf29fc70f3a",
+      "binary_sha256": "add49ad80a58ce51e54289701d01eb196ce484ad5477142dc253a27830a2b4e4",
+      "borg_txt_sha256": "20bf43a4b2b07e06b1b8a3087df9daf18346d4786190f2f774c59d3c71fd19fd",
+      "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+    },
+    "decision_trace": {
+      "file": "trace-tail.jsonl",
+      "lines": 200,
+      "of": 751
+    },
+    "attempts": [
+      {
+        "role": "original",
+        "outcome": "death",
+        "raw_directory": "/home/runner/work/borg-reborn-rs/borg-reborn-rs/harness/out/rerun-source",
+        "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
+        "raw_sha256": {
+          "keys.log": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
+          "messages.log": "770bf5c38f86bfd8e484c607be5bf5414a51717034bb475746b249affb7a7386",
+          "state.log": "eeb130bc50c09f07e13aaf263ad63812d0217650f86db369e7ade09633c58bce"
+        },
+        "source_commit": "7a428b9d319a442a71dda5e7ec7055476d497dc2",
+        "binary_sha256": "add49ad80a58ce51e54289701d01eb196ce484ad5477142dc253a27830a2b4e4"
+      }
+    ],
+    "encounter_family": "start-dd2dcbde5fa1b30abcc2c2a573e4455997421ae1bceafc40806cfc15aeb26d5d",
+    "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+    "files_sha256": {
+      "build.json": "ba534d3eab87bba285a4ed2b480cf579a9fcd51fce1a673b337a3fa6741ebf02",
+      "config.txt": "f66bfa5198ed7bd8db10703fe3fb886eb0ad66ac84326a8cc11e4ba59830d110",
+      "depths.json": "5286600f4634a72e92eef1e8151835a442833ba75c828b05da84aa173486b860",
+      "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+      "summary.json": "acd8a1894bbf603b70cdf8011537bd88a0dcdb339aca0538cc3764403d617743",
+      "trace-tail.jsonl": "2bd09b377f55b5a4622a8908a0c4540197d36477db2169ad26eecca44740692d"
+    },
+    "investigation": null,
+    "issue": null
+  },
+  "original_build": {
+    "binary": "/home/runner/work/borg-reborn-rs/borg-reborn-rs/build/rust/game/angband",
+    "binary_sha256": "add49ad80a58ce51e54289701d01eb196ce484ad5477142dc253a27830a2b4e4",
+    "built_utc": "2026-11-14T16:30:21Z",
+    "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "engine_upstream": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+    "git_dirty": "no",
+    "git_rev": "7a428b9d319a442a71dda5e7ec7055476d497dc2",
+    "impl": "rust",
+    "inputs_dirty": "no",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "source_sha256": "0522d6675fb3f1c21c2557bbc529e4177d5d3ab694ea01b35c8d5cf29fc70f3a"
+  },
+  "same_encounter_family": true,
+  "matching_raw_channels": {
+    "keys.log": true,
+    "messages.log": true,
+    "state.log": true
+  },
+  "qualification": "Local reproduction and CI control, not additional independent play."
+}

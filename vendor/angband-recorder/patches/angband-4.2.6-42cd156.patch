@@ -1,0 +1,257 @@
+--- a/src/main.c
++++ b/src/main.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file main.c
+  * \brief Core game initialisation for UNIX (and other) machines
+@@ -133,6 +136,9 @@
+  */
+ static void extended_quit_hook(const char *s)
+ {
++#ifdef BORG_RECORDING
++	record_frame("exit", record_key_count());
++#endif
+ 	textui_cleanup();
+ 	cleanup_angband();
+ #ifdef SOUND
+@@ -545,6 +551,11 @@
+ 	/* Make sure we have a display! */
+ 	if (!done) quit("Unable to prepare any 'display module'!");
+ 
++	/* Capture begins before init_angband reads game files or seeds the RNG. */
++#ifdef BORG_RECORDING
++	record_init();
++#endif
++
+ 	/* Catch nasty signals */
+ 	signals_init(modules[i].hup_disconnects, modules[i].tstp_default);
+ 
+--- a/src/ui-term.c
++++ b/src/ui-term.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-term.c
+  * \brief A generic, efficient, terminal window package
+@@ -2734,7 +2737,11 @@
+  *
+  * Remove the input event if "take" is true.
+  */
++#ifdef BORG_RECORDING
++static errr recording_real_inkey(ui_event *ch, bool wait, bool take)
++#else
+ errr Term_inkey(ui_event *ch, bool wait, bool take)
++#endif
+ {
+ 	/* Assume no key */
+ 	memset(ch, 0, sizeof *ch);
+@@ -3342,3 +3349,15 @@
+ 	}
+ 	return result;
+ }
++
++#ifdef BORG_RECORDING
++errr Term_inkey(ui_event *ch, bool wait, bool take)
++{
++    int result;
++    if (wait) record_frame("wait", record_key_count());
++    if (!record_input_replay(ch, wait, take, &result))
++        result = recording_real_inkey(ch, wait, take);
++    record_input_result(ch, wait, take, result);
++    return result;
++}
++#endif
+--- a/src/ui-input.c
++++ b/src/ui-input.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-input.c
+  * \brief Some high-level UI functions, inkey()
+@@ -225,6 +228,9 @@
+ 	if (inkey_hack)
+ 	{
+ 		ke.key = (*inkey_hack)(inkey_xtra);
++#ifdef BORG_RECORDING
++		ke.key = record_borg_key(ke.key);
++#endif
+ 		if (ke.key.type != EVT_NONE)
+ 		{
+ 			/* Cancel the various "global parameters" */
+--- a/src/ui-game.c
++++ b/src/ui-game.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file ui-game.c
+  * \brief Game management for the traditional text UI
+@@ -628,6 +631,9 @@
+ 
+ errr textui_get_cmd(cmd_context context)
+ {
++#ifdef BORG_RECORDING
++	if (context == CTX_GAME) record_frame("command", record_key_count());
++#endif
+ 	if (context == CTX_GAME)
+ 		textui_process_command();
+ 
+@@ -942,6 +948,9 @@
+ 		 * is needed */
+ 		while (!player->is_dead && player->upkeep->playing) {
+ 			pre_turn_refresh();
++#ifdef BORG_RECORDING
++			record_frame("tick", record_key_count());
++#endif
+ 			cmd_get_hook(CTX_GAME);
+ 			run_game_loop();
+ 		}
+--- a/src/message.c
++++ b/src/message.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file message.c
+  * \brief Message handling
+@@ -123,6 +126,9 @@
+  */
+ void message_add(const char *str, uint16_t type)
+ {
++#ifdef BORG_RECORDING
++	record_message(str, type);
++#endif
+ 	message_t *m;
+ 
+ 	if (messages->head &&
+--- a/src/z-file.c
++++ b/src/z-file.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file z-file.c
+  * \brief Low-level file (and directory) handling
+@@ -869,7 +872,11 @@
+ bool file_exists(const char *fname)
+ {
+ 	struct stat st;
+-	return (stat(fname, &st) == 0);
++#ifdef BORG_RECORDING
++    return ar_exists(stat(fname, &st) == 0);
++#else
++    return (stat(fname, &st) == 0);
++#endif
+ }
+ 
+ #elif defined(WINDOWS)
+@@ -1006,7 +1013,13 @@
+ 			break;
+ 		}
+ 		case MODE_READ:
+-			f->fh = fopen(buf, "rb");
++			f->fh = fopen(
++#ifdef BORG_RECORDING
++                record_read_path(buf),
++#else
++                buf,
++#endif
++                "rb");
+ 			break;
+ 		case MODE_APPEND:
+ 			f->fh = fopen(buf, "a+");
+--- a/src/z-rand.c
++++ b/src/z-rand.c
+@@ -1,3 +1,7 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#define getpid() record_pid()
++#endif
+ /**
+  * \file z-rand.c
+  * \brief A Random Number Generator for Angband
+--- a/src/savefile.c
++++ b/src/savefile.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file savefile.c
+  * \brief Savefile loading and saving main routines
+@@ -390,6 +393,9 @@
+ 	bool ok = false;
+ 
+ 	/* Generate a CharOutput.txt, mainly for angband.live, when saving. */
++#ifdef BORG_RECORDING
++	if (!record_in_snapshot())
++#endif
+ 	(void) save_charoutput();
+ 
+ 	/* New savefile */
+--- a/src/main-test.c
++++ b/src/main-test.c
+@@ -1,3 +1,6 @@
++#ifdef BORG_RECORDING
++#include "native-replay.h"
++#endif
+ /**
+  * \file main-test.c
+  * \brief Pseudo-UI for end-to-end testing.
+@@ -279,7 +282,17 @@
+ static void term_data_link(int i) {
+ 	term *t = &td.t;
+ 
+-	term_init(t, 80, 24, 256);
++#ifdef BORG_RECORDING
++    term_init(t, getenv("BORG_REPLAY_WIDTH") ? atoi(getenv("BORG_REPLAY_WIDTH")) : 80,
++        getenv("BORG_REPLAY_HEIGHT") ? atoi(getenv("BORG_REPLAY_HEIGHT")) : 24,
++        getenv("BORG_REPLAY_KEY_SIZE") ? atoi(getenv("BORG_REPLAY_KEY_SIZE")) : 256);
++    if (getenv("BORG_REPLAY_DIR") || getenv("ANGBAND_REPLAY_DIR")) {
++        t->soft_cursor = getenv("BORG_REPLAY_SOFT_CURSOR") && atoi(getenv("BORG_REPLAY_SOFT_CURSOR"));
++        t->complex_input = getenv("BORG_REPLAY_COMPLEX_INPUT") && atoi(getenv("BORG_REPLAY_COMPLEX_INPUT"));
++    }
++#else
++    term_init(t, 80, 24, 256);
++#endif
+ 
+ 	t->init_hook = term_init_test;
+ 	t->nuke_hook = term_nuke_test;
+@@ -314,7 +327,7 @@
+ 	 * Reset savefile set by main.c:  don't want it to interfere with the
+ 	 * test.
+ 	 */
+-	savefile[0] = '\0';
++    savefile[0] = '\0';
+ 
+ 	term_data_link(0);
+ 	return 0;
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,5 +1,7 @@
+ cmake_minimum_required(VERSION 3.7...3.26 FATAL_ERROR)
+ project(Angband LANGUAGES C)
++option(SUPPORT_BORG_RECORDING "Build the external Rust Angband recorder" OFF)
++set(ANGBAND_RECORDER_DIR "" CACHE PATH "Pinned angband-recorder source directory")
+ string(TOLOWER ${PROJECT_NAME} OUR_EXECUTABLE_NAME)
+ 
+ # Append the custom modules to the search path.
+@@ -1114,3 +1116,8 @@
+     add_custom_target(allunittests)
+ endif()
+ add_dependencies(alltests allunittests)
++
++if(SUPPORT_BORG_RECORDING)
++    include("${ANGBAND_RECORDER_DIR}/cmake/AngbandRecorder.cmake")
++    angband_recorder(OurCoreLib OurExecutable)
++endif()
