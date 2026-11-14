@@ -137,7 +137,9 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
 # borg-rs's core: our overrides of its settings (borg-core/overrides.txt).
-if [ "${BORG_CORE:-}" = borg-rs ]; then
+# BORG_CORE_OVERRIDES=off keeps borg-rs's own settings: the parity check
+# against borg-rs's build at the pin (docs/PILOT.md).
+if [ "${BORG_CORE:-}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" != off ]; then
     while IFS= read -r line; do
         case "$line" in ''|'#'*) continue;; esac
         name="${line%% =*}"

@@ -1506,7 +1506,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Note if ignorig messages
-    if st.msgs.dont_react {
+    if st.borg.dont_react {
         borg_note(st, "# Borg ignoring messges.");
     }
 

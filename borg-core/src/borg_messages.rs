@@ -719,11 +719,11 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
 
     if streq(msg, b"You have been knocked out.") {
         borg_note(st, "Ignoring Messages While KO'd");
-        st.msgs.dont_react = true;
+        st.borg.dont_react = true;
     }
     if streq(msg, b"You are paralyzed") {
         borg_note(st, "Ignoring Messages While Paralyzed");
-        st.msgs.dont_react = true;
+        st.borg.dont_react = true;
     }
 
     // Hallucination -- Open

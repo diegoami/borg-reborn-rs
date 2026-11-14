@@ -642,13 +642,27 @@ fn backup_forbidden(st: &BorgState, i: i32) -> [bool; 2] {
     [randarts() && item.art_idx != 0 && !item.ident, item.cursed && !item.uncursable]
 }
 
+/// The emergency-swap choice (`borg_backup_swap`).
+///
+/// The candidate with the lower danger is worn; the weapon wins a tie. A
+/// candidate that does not exist keeps the 9999 sentinel, so it can only be
+/// chosen in a 9999 tie, where the acceptance threshold rejects the swap
+/// anyway.
+fn backup_swap_choice(armour_swap: i32, weapon_swap: i32, b_p1: i32, b_p2: i32) -> (i32, i32) {
+    if b_p2 <= b_p1 {
+        (b_p2, weapon_swap - 1)
+    } else {
+        (b_p1, armour_swap - 1)
+    }
+}
+
 /// Place our "swap" if needed (`borg_backup_swap`). Both the armour and
 /// the weapon swap are evaluated and the one with the lower danger (but
 /// see docs/c-bugs.md) is worn when it lowers the danger `p` enough.
 /// The borg is forbidden to swap out certain resistances.
 pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
-    let mut b_p1: i32 = 0;
-    let mut b_p2: i32 = 0;
+    let mut b_p1: i32 = 9999;
+    let mut b_p2: i32 = 9999;
 
     let mut save_rconf: i32 = 0;
     let mut save_rblind: i32 = 0;
@@ -669,11 +683,6 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
 
     /* (`armour_swap` / `weapon_swap` are read where C reads them:
      * `borg_notice(true)` recomputes them) */
-
-    /* make sure we have an appropriate swap */
-    if st.trait_swap.armour_swap == 0 && st.trait_swap.weapon_swap == 0 {
-        return false;
-    }
 
     if st.trait_swap.armour_swap != 0 {
         /* Save our normal condition */
@@ -767,14 +776,13 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
         }
     }
 
-    /* Prefer the lower danger among available swaps. */
-    let (b_p, swap) = if st.trait_swap.weapon_swap != 0
-        && (st.trait_swap.armour_swap == 0 || b_p2 <= b_p1)
-    {
-        (b_p2, st.trait_swap.weapon_swap - 1)
-    } else {
-        (b_p1, st.trait_swap.armour_swap - 1)
-    };
+    /* Pass on the swap which yields the best result */
+    let (b_p, swap) = backup_swap_choice(
+        st.trait_swap.armour_swap,
+        st.trait_swap.weapon_swap,
+        b_p1,
+        b_p2,
+    );
 
     /* good swap.  Make sure it helps a significant amount */
     let avoidance = i32::from(st.borg.avoidance);
@@ -1587,5 +1595,23 @@ mod tests {
             let want = tval == TV_SHOT as i32 || tval == TV_ARROW as i32 || tval == TV_BOLT as i32;
             assert_eq!(borg_is_ammo(tval), want, "tval {}", tval);
         }
+    }
+
+    /// v12R: the upstream emergency-swap rule. The lower danger wins and the
+    /// weapon wins a tie; an absent candidate keeps the 9999 sentinel.
+    #[test]
+    fn emergency_swap_chooses_the_lower_danger() {
+        // armour only: the armour is worn
+        assert_eq!(backup_swap_choice(3, 0, 40, 9999), (40, 2));
+        // weapon only: the weapon is worn
+        assert_eq!(backup_swap_choice(0, 5, 9999, 30), (30, 4));
+        // both: the lower danger wins
+        assert_eq!(backup_swap_choice(3, 5, 40, 30), (30, 4));
+        assert_eq!(backup_swap_choice(3, 5, 30, 40), (30, 2));
+        // a tie goes to the weapon
+        assert_eq!(backup_swap_choice(3, 5, 40, 40), (40, 4));
+        // neither candidate: the sentinel is returned, and the acceptance
+        // threshold rejects it, so no key is queued from it
+        assert_eq!(backup_swap_choice(0, 0, 9999, 9999), (9999, -1));
     }
 }

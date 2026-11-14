@@ -878,10 +878,6 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
 
     let nu = n as usize;
 
-    // The race of the slot *before* it is set (C bug 24): its flags decide
-    // the grid below.
-    let old_r_idx = st.kills.kills[nu].r_idx;
-
     {
         let kill = &mut st.kills.kills[nu];
 
@@ -974,18 +970,6 @@ fn borg_new_kill(st: &mut BorgState, r_idx: u32, y: i32, x: i32) -> i32 {
     if st.borg.tr(BI_LIGHT) != 0 && borg_los(st, kill.pos.y, kill.pos.x, st.borg.c.y, st.borg.c.x)
     {
         st.borg.goal.type_0 = 0;
-    }
-
-    // Force the monster to be sitting on a floor grid unless that monster
-    // can pass through walls; force the ghostly monster to be in a wall
-    // grid (both by the slot's old race, see above)
-    let old_pass_wall = rf_has(old_r_idx, RF_PASS_WALL);
-    let ag = st.cave.grid_mut(x, y);
-    if !old_pass_wall {
-        ag.feat = FEAT_FLOOR as u8;
-    }
-    if old_pass_wall {
-        ag.feat = FEAT_GRANITE as u8;
     }
 
     // Count up out list of Nasties

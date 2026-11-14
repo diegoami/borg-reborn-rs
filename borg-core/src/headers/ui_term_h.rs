@@ -32,7 +32,7 @@ pub struct term {
     pub always_pict: bool,
     pub higher_pict: bool,
     pub always_text: bool,
-    pub unused_flag: bool,
+    pub xtra_clear: bool,
     pub never_bored: bool,
     pub never_frosh: bool,
     pub sidebar_mode: ::core::ffi::c_int,

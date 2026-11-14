@@ -26,8 +26,7 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 use crate::engine;
 
-/// The queue of parsed messages waiting for `borg_update()`, and
-/// `borg_dont_react`.
+/// The queue of parsed messages waiting for `borg_update()`.
 ///
 /// The queue globals are defined in borg-messages.c, which allocates them
 /// (`borg_init_messages`) and frees them (`borg_free_messages`); this
@@ -37,8 +36,6 @@ use crate::engine;
 /// against the `Vec` lengths (an empty `Vec` is the C NULL).
 #[derive(Default)]
 pub struct MsgState {
-    /// `borg_dont_react`: queue nothing (set while knocked out/paralyzed)
-    pub dont_react: bool,
     /// `borg_msg_len`: bytes of `buf` in use
     pub len: i16,
     /// `borg_msg_siz`: size of `buf`
@@ -75,7 +72,7 @@ fn my_strcpy(dst: &mut [u8], src: &[u8], bufsize: usize) {
 /// caller's buffer (it writes a NUL over the ',' through a cast-away
 /// `const`); the queued copy never has the ','.
 pub fn borg_react(st: &mut BorgState, msg: &[u8], buf: &[u8]) -> bool {
-    if st.msgs.dont_react || st.borg.tr(BI_ISPARALYZED) != 0 {
+    if st.borg.dont_react || st.borg.tr(BI_ISPARALYZED) != 0 {
         borg_note(st, "# Ignoring messages.");
         return false;
     }

@@ -108,7 +108,7 @@ pub struct BorgState {
     /// borg-magic.c: `borg_magics`, `borg_spell_ratings`
     pub magic: MagicState,
     /// borg-messages.c / borg-messages-react.c: the message queue
-    /// (`borg_msg_*`) and `borg_dont_react`
+    /// (`borg_msg_*`)
     pub msgs: MsgState,
     /// borg-messages.c: `borg_match`, the message tables (`suffix_pain`,
     /// `suffix_hit_by`, `spell_msgs`, `spell_invis_msgs`) and the
