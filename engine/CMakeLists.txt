@@ -19,6 +19,7 @@ set(REPO "${ENGINE}/..")
 set(TREE "${CMAKE_BINARY_DIR}/tree")
 
 option(SUPPORT_X11 "Also build the X11 frontend (to watch the Borg play)" OFF)
+option(SUPPORT_BORG_RECORDING "Enable the pinned Rust Angband recorder" OFF)
 set(BORG_FEATURES "" CACHE STRING "Extra cargo features of the Rust Borg (tests only)")
 
 # The patched copy of the tree, remade whenever the tree or a patch changes.
@@ -28,6 +29,19 @@ file(REMOVE_RECURSE "${TREE}")
 execute_process(COMMAND "${ENGINE}/apply-patches.sh" "${TREE}" RESULT_VARIABLE PATCHED)
 if(NOT PATCHED EQUAL 0)
     message(FATAL_ERROR "engine/apply-patches.sh failed")
+endif()
+
+if(SUPPORT_BORG_RECORDING)
+    execute_process(COMMAND python3 "${REPO}/borg-reborn-rs/check-recorder-pin.py"
+        "${REPO}/recorder-pin.json" "${REPO}/vendor/angband-recorder" RESULT_VARIABLE RECORDER_PIN)
+    if(NOT RECORDER_PIN EQUAL 0)
+        message(FATAL_ERROR "Recorder pin differs")
+    endif()
+    execute_process(COMMAND patch --batch --fuzz=0 -p1 --input "${ENGINE}/recorder-hooks.patch"
+        WORKING_DIRECTORY "${TREE}" RESULT_VARIABLE RECORDER_PATCH)
+    if(NOT RECORDER_PATCH EQUAL 0)
+        message(FATAL_ERROR "Recorder hooks do not apply")
+    endif()
 endif()
 
 include("${ENGINE}/sources.cmake")
@@ -60,8 +74,11 @@ endif()
 set(CARGO_TARGET "${CMAKE_BINARY_DIR}/cargo")
 set(BORG_LIB "${CARGO_TARGET}/release/libborg_reborn_rs.a")
 set(FEATURES "borgh")
+if(SUPPORT_BORG_RECORDING)
+    set(FEATURES "${FEATURES},recording")
+endif()
 if(BORG_FEATURES)
-    set(FEATURES "borgh,${BORG_FEATURES}")
+    set(FEATURES "${FEATURES},${BORG_FEATURES}")
 endif()
 add_custom_target(rust_borg ALL
     COMMAND cargo build --release --locked -p borg-reborn-rs --features "${FEATURES}"
@@ -77,3 +94,13 @@ add_custom_target(game_lib ALL
     COMMAND "${CMAKE_COMMAND}" -P "${TREE}/src/cmake/scripts/copy_with_exclude.cmake"
         -- "${CMAKE_BINARY_DIR}/game" "${TREE}/lib" "Makefile" ".deps" ".gitignore"
     VERBATIM)
+
+if(SUPPORT_BORG_RECORDING)
+    target_sources(angband PRIVATE "${REPO}/vendor/angband-recorder/host/angband.c"
+        "${REPO}/vendor/angband-recorder/host/observations.c")
+    target_include_directories(angband PRIVATE "${REPO}/vendor/angband-recorder/include"
+        "${REPO}/vendor/angband-recorder/host")
+    target_compile_definitions(angband PRIVATE BORG_RECORDING
+        ANGBAND_RECORDER_BUILD="borg-reborn-recorder-v0.1.0")
+    set_property(TARGET angband APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--wrap=time")
+endif()

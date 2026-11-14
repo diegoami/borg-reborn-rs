@@ -22,7 +22,7 @@ if [ -f "$BUILD/CMakeCache.txt" ] && ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=$
 fi
 SRC_BEFORE=$("$ID" source-hash "$IMPL")
 cmake -S "$ROOT/engine" -B "$BUILD" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
+    -DSUPPORT_BORG_RECORDING=OFF -DBORG_FEATURES="$TEST_FEATURES" -DSUPPORT_X11="${BORG_X11:-OFF}" >"$BUILD.cmake.log" 2>&1 || {
     cat "$BUILD.cmake.log"; exit 1; }
 make -C "$BUILD" -j"$(nproc)" >"$BUILD.make.log" 2>&1 || {
     tail -50 "$BUILD.make.log"; exit 1; }
