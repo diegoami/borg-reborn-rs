@@ -196,6 +196,54 @@ on sooner is one string.
 
 The runs' dossiers are committed (`docs/deaths`).
 
+**Pace by class and level** (owner, 2026-11-14: how fast the ladder moves
+depends on class and level).
+- **`@N` gates.** `@N` after a trip lets the ladder reach it only from
+  character level N. Without it, the ladder moves on once borg-rs is
+  prepared for the trip's deepest level. borg-rs still skips any single
+  level it is not prepared for.
+- **Class ladders.** `BORG_ERRAND=ladder` takes the class's line from
+  `borg-core/ladders.txt`; `BORG_LADDERS` points at another file.
+- **The gates.** The owner halved the first guess:
+  - warriors and blackguards: DL1-2-1 from level 2, DL1-2-3-2-1 from
+    level 4, DL1-…-4-…-1 from level 6;
+  - paladins, rogues and rangers: 3, 5 and 7;
+  - casters: 4, 7 and 9.
+- **The walk on.** The first run of the halved ladders moved on but could
+  not get down: on a used-up DL1 with no known down staircase, the errand
+  had taken over borg-rs's own way on (a fresh level). Warrior-1 logged
+  "next DL2" 227 times. Fixed: a used-up level with no staircase toward the
+  target takes any staircase.
+
+| full suite, v12 | deaths | mean level | mean max depth | DL3+ |
+|---|---|---|---|---|
+| no errand | 11 | 3.40 | 1.84 | 4 |
+| generic ladder `trips:1*/1,2,1*/1,2,3,2,1*` | 7 | 2.96 | 1.53 | 0 |
+| class ladders, halved | 8 | 3.29 | 1.96 | 5 |
+
+Per class (deaths / mean level / mean max depth, 5 characters each):
+
+| class | no errand | class ladder |
+|---|---|---|
+| warrior | 0 / 5.4 / 2.4 | 2 / 4.2 / 3.4 |
+| blackguard | 1 / 3.0 / 2.0 | 0 / 3.6 / 3.2 |
+| paladin | 1 / 3.0 / 1.6 | 1 / 3.6 / 1.6 |
+| rogue | 1 / 4.0 / 2.2 | 0 / 4.0 / 2.0 |
+| ranger | 2 / 3.8 / 2.0 | 0 / 4.4 / 2.0 |
+| priest | 0 / 3.4 / 2.0 | 0 / 2.8 / 1.6 |
+| druid | 4 / 1.6 / 1.2 | 2 / 2.2 / 1.4 |
+| necromancer | 1 / 3.0 / 1.6 | 1 / 2.4 / 1.2 |
+| mage | 1 / 3.4 / 1.6 | 2 / 2.4 / 1.2 |
+
+- **Overall, the class ladders go deeper than borg-rs's own play** (mean
+  1.96 against 1.84; 5 at DL3+ against 4), with fewer deaths (8 against 11).
+- **The fighters' ladders work as meant.** Warriors and blackguards reach
+  DL3–4.
+- **The casters' ladders do not.** Mages and necromancers level more
+  slowly than without the errand. Their trips are short, and their gates
+  (level 4 for DL2) are reached late. Their pace is the next thing to tune.
+
+
 ## Next
 
 1. C2:

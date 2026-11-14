@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2168-rust-seed1052",
+  "run_kind": "harness",
+  "character": "Half-Troll Paladin",
+  "raw_cause": "a giant white louse",
+  "terminal": {
+    "cause": "a giant white louse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 5,
+    "turn": 26634,
+    "race_idx": 7,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1052,
+    "flags": "menu",
+    "git_rev": "d219ded36892e166b3fb3e109f4a72e370537fc7",
+    "git_dirty": "no",
+    "source_sha256": "15063ba20bb15df64f9520445d9f798b28d00615fd4d1e8f237167e5aa1533a5",
+    "binary_sha256": "95f9e85dbba5ae5d3777a905dc1582fcfb879a3f2fff1b305eaf6e21336a7469",
+    "borg_txt_sha256": "b151c276671c318ae06b4d843469da93c1020ea6ecbace1ce48ed75fb99fea38",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-5-paladin-2",
+      "result_sha256": "d50f4534d0c71831038610fbe74dadc896a6c0007872e91abc5cad68214d19c8",
+      "raw_sha256": {
+        "keys.log": "d50f4534d0c71831038610fbe74dadc896a6c0007872e91abc5cad68214d19c8",
+        "messages.log": "0e393ce768e60e08bdfe9298eba860b4d9e4f4fba7593ed074b5d1e700a3ac2e",
+        "state.log": "ea70fff555aea7507e7a97328139b4f34844b99ca34c259c46168f8a2713c9d3"
+      },
+      "source_commit": "d219ded36892e166b3fb3e109f4a72e370537fc7",
+      "binary_sha256": "95f9e85dbba5ae5d3777a905dc1582fcfb879a3f2fff1b305eaf6e21336a7469"
+    }
+  ],
+  "encounter_family": "start-7ca340bebecdf070e0aae71f0596d66b05325122d34f35ce5617fb62d0ab612a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "21132ba4ea1ba222a5b65fb2b764e55e309ea0c35d2379ddd47df150fc17f568",
+    "config.txt": "05632cb2c9d121f3b7850b189d0f28ef341fcfd59d62e11a479bd29222dfc4e1",
+    "depths.json": "ee9239445bcfd02ce35bd32eb798cdf39ee5e9280e75942055c7e84a7b67ce3b",
+    "summary.json": "da5668540361fb6d50da723bcddb3d127cfb9999d2207227f1f7cc092c57d74e"
+  },
+  "investigation": null,
+  "issue": null
+}
