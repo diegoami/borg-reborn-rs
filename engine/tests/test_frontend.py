@@ -38,8 +38,21 @@ class FrontendContractTest(unittest.TestCase):
 
     def test_the_dropped_options_are_gone(self):
         self.assertEqual(DROPPED & self.flags, set())
-        for word in ('BORG_RECORDING', 'native-replay', 'frames_fp', 'states_fp'):
+        for word in ('native-replay', 'frames_fp', 'states_fp'):
             self.assertNotIn(word, self.text)
+
+    def test_optional_recorder_has_only_guarded_lifecycle_hooks(self):
+        # Owner #210 permits the external recorder; the old frame/observer
+        # implementation remains absent from this frontend. Its two lifecycle
+        # calls disappear from the default build.
+        blocks = re.findall(r'#ifdef BORG_RECORDING\n(.*?)#endif', self.text, re.S)
+        self.assertEqual(len(blocks), 2)
+        self.assertTrue(any('ar_finish()' in block for block in blocks))
+        self.assertTrue(any('ar_snapshot_enter()' in block for block in blocks))
+        default = re.sub(r'#ifdef BORG_RECORDING\n.*?#endif', '', self.text, flags=re.S)
+        self.assertNotIn('ar_finish', default)
+        self.assertNotIn('ar_snapshot_enter', default)
+        self.assertNotIn('BORG_RECORDING', default)
 
     def test_every_contract_field_is_written(self):
         written = set(re.findall(r'\\"([a-z_]+)\\":', self.text))

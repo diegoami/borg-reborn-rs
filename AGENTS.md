@@ -135,3 +135,11 @@ milestone. Name both in the review PR.
 Heavy runs take `flock /tmp/angband-validation.lock`, like the owner's other
 Angband work (RULES 17). The C Borg repositories and borg-rs may have
 checkouts in sibling directories. Read them, never write to them.
+
+## Optional recorder (owner #210, 2026-11-14)
+
+The standalone Rust recorder is an owner-authorized optional integration. Read
+docs/ANGBAND-RECORDER.md and recorder-pin.json for its exact release and build
+recipe. Its hooks apply to the generated tree only and the default harness
+remains off. The old copied T1.6 recorder remains removed; this is a pinned
+external crate through the existing Rust staticlib, not a borg-rs dependency.

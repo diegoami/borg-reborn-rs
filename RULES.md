@@ -148,3 +148,12 @@ whatever the model.
     information) and 15 (no exploits) bind the model as they bind the
     Borg. A model-played death is recorded like any other (rule 12),
     under its own arm.
+
+## Owner recorder integration, 2026-11-14
+
+Task #210 permits the standalone angband-recorder crate and its versioned
+BORG_RECORDING hooks on the generated engine copy. This supplements rule 9's
+guard list for the optional recorder only; engine/angband remains pristine,
+and the normal harness explicitly disables the recorder. The dependency is
+sealed in recorder-pin.json and linked through our existing Rust library.
+No strategy, default frontend flags or measured baseline changes are implied.
