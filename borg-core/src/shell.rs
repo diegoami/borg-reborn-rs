@@ -564,8 +564,7 @@ fn target(st: &mut BorgState) -> Option<i32> {
 /// `Some(true)` means the think is over (the Borg stops).
 pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     let turn = i64::from(engine::game_turn());
-    // The engine's depth: the core's own (`BI_CDEPTH`) is stale on the
-    // first think (DL1 in town), which read as a rise from DL1 at turn 1.
+    // The engine's depth, read before the core's update of the think.
     let depth = engine::player_depth();
     // `/stopscared`: with or without an errand, a scared core hands over.
     let level = STOP_SCARED.load(Ordering::Relaxed);
@@ -602,7 +601,10 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         // rule takes the stairs up below character level 10 when it is not
         // prepared): a trip goes home; a player's command stops. Without
         // this the errand walked down, the core walked up, and connected
-        // stairs looped for 50,000 turns (docs/PILOT.md).
+        // stairs looped for 50,000 turns (docs/PILOT.md). A rise to town is
+        // not one: the core goes home to shop or restock (at turn 1 it
+        // flees the town's urchins to DL1 and comes back to finish
+        // shopping), and the errand goes on from there.
         let mut left = None;
         let mut unfit = None;
         if r.watch.is_none_or(|w| w.depth != depth) {
@@ -612,7 +614,7 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
                     left = Some(w.depth);
                 }
                 if let Some(t) = r.target() {
-                    if depth < w.depth && t > depth {
+                    if depth > 0 && depth < w.depth && t > depth {
                         unfit = Some((w.depth, t));
                         if r.end == End::Home && r.skip_unprepared {
                             r.step = usize::MAX;
