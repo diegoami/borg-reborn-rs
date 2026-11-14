@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: command errands and `/stopscared` levels
+
+- **Commands** at `^Z /` or `BORG_ERRAND`: `/town`, `/walk-back`,
+  `/explore-back`, `/dive N`, `/explore-level`, `/dive-exploring N`,
+  `/ladder`, `/trips`, `/stop`; `;` runs several in turn.
+  `/stopscared off|flee|N` stops at N% of HP in one-turn danger.
+  docs/PILOT.md has the trials. With no errand, play is borg-rs's (CI green
+  on `0e28665` with no new dossiers).
+- **Settings live in `harness/borg.txt`** (borg-rs's v12 file, munchkin
+  and self-scum off, our three keys); `borg-core/overrides.txt` is gone.
+  Earlier entries below that name it are history.
+- **Open:**
+  - a stall guard for command errands: a paladin on DL3 rested on a
+    staircase for 60k turns and never left, so `/explore-back` never
+    finished;
+  - `/town` recalls only with a scroll in the pack, and borg-rs keeps its
+    first one in the home;
+  - the casters' ladder pace; the zoo run (prompt with the owner);
+  - C3 (#209), the move of danger and caution behind a shadow check, has
+    not started.
+
 ## 2026-11-14: borg-core at borg-rs milestone 12, and borg-rs's engine (patch 08)
 
 - **borg-core is re-pinned to borg-rs `4.2.6-impact-v12`** (`e6d13fc`;

@@ -299,6 +299,38 @@ escape to town if they are scared?").
 - The other classes are unchanged.
 
 
+**Commands** (owner, 2026-11-14), typed at `^Z /`, or given as
+`BORG_ERRAND` / `borg_reborn_errand` (`borg-core/src/shell.rs` documents
+each):
+- `/town`, `/walk-back`, `/explore-back`, `/dive N`, `/explore-level`,
+  `/dive-exploring N`, `/ladder`, `/trips ...` and `/stop`;
+- several on one line, separated by `;`, run in turn
+  (`/dive 3; /walk-back`);
+- `/stopscared off|flee|N`: stop and hand control back when borg-rs's
+  one-turn danger where it stands reaches N% of current HP (`flee` is
+  100). A first version used borg-rs's flee flags and stopped every
+  character at turn 1: borg-rs sets `fleeing_to_town` in town, past a
+  "scary" urchin, and the flag stays set on DL1.
+
+| `/stopscared`, class ladder | warrior 1000 | paladin 1050 | mage 1010 |
+|---|---|---|---|
+| 100 | turn 4,350, DL1 | 22,939, DL2, clvl 5 | 11,253, DL1 |
+| 50 | 4,350 | 736 | 8,121 |
+| 25 | 3,609 | 736 | 8,121 |
+
+From DL3 (`/dive 3; /X`, warrior 1000 and paladin 1050, 80k turns):
+- `/town` and `/walk-back`: home at turns 34,581 (warrior) and 75,639
+  (paladin). Each pair played the same game. borg-rs sells its starting
+  Word of Recall to the home, so `/town` had none to read; the warrior's
+  recall was borg-rs's own.
+- `/explore-back`: the warrior explored DL3, DL2 and DL1 and was home at
+  turn 49,674. **The paladin never finished DL3**: from about turn 20k to
+  the 80k cap it rested on an up staircase, casting Sense Invisible,
+  without ever deciding to leave. An explored level is borg-rs's own
+  decision to leave it (`borg_leave_level`), and this loop never reaches
+  it. A command errand needs a stall guard (no new grid, no fight, no
+  level change for N turns: take the stairs toward the target); not done.
+
 ## Next
 
 1. C2:
