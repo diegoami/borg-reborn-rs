@@ -3,12 +3,12 @@
 docs/SPEC.md §2 amendment). This tool keeps that copy honest and refreshable
 (review #227, finding 9).
 
-  tools/borg-core-vendor.py delta [--repo vendor/borg-rs]
+  scripts/borg-core-vendor.py delta [--repo vendor/borg-rs]
       our changes to borg-rs at the pin, as a patch (paths under borg-core/)
-  tools/borg-core-vendor.py check [--repo vendor/borg-rs]
+  scripts/borg-core-vendor.py check [--repo vendor/borg-rs]
       borg-core/ is borg-rs at the pin, plus our own files (OURS) and the
       files carrying our hooks (HOOKED); exit 1 otherwise
-  tools/borg-core-vendor.py refresh REV [--repo vendor/borg-rs]
+  scripts/borg-core-vendor.py refresh REV [--repo vendor/borg-rs]
       re-vendor at REV: each file merged three ways (base: borg-rs at the
       pin, theirs: borg-rs at REV, ours: borg-core/), our own files kept,
       PIN written; conflicts are left marked in the file and listed (exit 1)

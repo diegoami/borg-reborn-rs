@@ -68,7 +68,7 @@ cargo test --workspace --exclude borg-core && cargo test --release -p borg-core
 its unit tests link without the engine only in release, so the checks are
 CI's (`.github/workflows/ci.yml`): `cargo fmt --check -p borg-reborn-rs`,
 not `cargo fmt --check`; never run `rustfmt` on a vendored file.
-`tools/borg-core-vendor.py check` (with `vendor/borg-rs`) shows that
+`scripts/borg-core-vendor.py check` (with `vendor/borg-rs`) shows that
 `borg-core/` is borg-rs at its pin plus our declared files and hooks.
 
 Engine builds and suites (see [harness/README.md](harness/README.md)) run under the shared lock:

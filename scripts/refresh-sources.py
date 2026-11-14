@@ -194,13 +194,13 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
                 w(f"- **new tags** `{tag_pattern}`: {', '.join(new_tags)} (a new milestone: a new specimen for borg-zoo to consider)\n")
         # borg-core/ is borg-rs vendored at its own pin (borg-core/PIN), which
         # --update never moves: it is re-vendored on purpose, in its own PR
-        # (review #227, finding 9; tools/borg-core-vendor.py).
+        # (review #227, finding 9; scripts/borg-core-vendor.py).
         vendored = root / 'borg-core' / 'PIN'
         if pin['repository'] == 'diegoami/borg-rs' and vendored.exists():
             core_pin = vendored.read_text().split()[0]
             paths = ['borg-rs', 'harness/borg.txt', 'angband/src/borg/borg.txt', 'angband/src/borg/borg-init.c']
             n = git(src.repo, 'rev-list', '--count', f'{core_pin}..{src.head}', '--', *paths).stdout.strip()
-            hint = ' (re-vendor: `tools/borg-core-vendor.py refresh REV`, in its own PR)' if n not in ('', '0') else ''
+            hint = ' (re-vendor: `scripts/borg-core-vendor.py refresh REV`, in its own PR)' if n not in ('', '0') else ''
             w(f"- vendored core `borg-core/` at {core_pin[:12]}: {n or '?'} borg-rs commits since touch its files{hint}\n")
         borg_dir = pin.get('borg_dir')
         if borg_dir:

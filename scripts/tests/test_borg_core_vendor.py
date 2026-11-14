@@ -1,4 +1,4 @@
-"""tools/borg-core-vendor.py (review #227, finding 9). Run: python3 -m unittest discover -s tools/tests"""
+"""scripts/borg-core-vendor.py (review #227, finding 9). Run: python3 -m unittest discover -s scripts/tests"""
 
 import importlib.util
 import subprocess
