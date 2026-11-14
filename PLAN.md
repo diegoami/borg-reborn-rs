@@ -40,9 +40,59 @@ as history; M1's engine tree and harness came from borg-rs and are replaced in E
 | **M2. Perception and world model** | `Observation`, world model, knowledge tables, decision trace, parameter table | Perception agrees with the engine on recorded runs (declared exceptions only; SPEC.md §7); observations serialise and replay into the world model without the game; every engine read is listed (D3 audit, SPEC.md §5) | **done**: reviewed in #99 (Kimi K3.1 Pro, four passes; findings fixed in #100–#104), tag `m2` (2026-11-10) |
 | **M3. A Borg that plays** | Executor and prompts, paths, exploration, melee, pickup, stairs, rest, town restock; the first strategy without the full tactical layer; death dossiers | **G0**: no stall, crash or harness failure on the smoke suites; deterministic replay; every natural death recorded with its decision trace | in review (#135) |
 | **M4. Danger and survival** | The threat model and its calibration, reserves, escapes, the tactical layer, survival invariants | Calibration report on recorded runs; fixtures from the death cases (below) pass; early-suite deaths set beside the zoo's existing C Borg results (descriptive; no control run requested) | in progress: T4.1–T4.7 done ([calibration and gate](docs/M4-CALIBRATION.md), #124); T4.8 (#157) and the deferred M3 review findings #137–#139 done; the milestone's tasks are complete and the M4 review is next |
-| **M5. Readiness and progression** | Readiness policy per class, equipment valuation, item use, spells for casters, ranged combat | **G1** on `classes-1800` against the zoo's existing control results (owner starts the zoo run of our Borg only; prerequisites in [GOALS.md](docs/GOALS.md#observation-and-scoring-rule)) | in progress (M4 review findings #163–#165, the source refresh T5.1 #125, T5.2 #126 and the starvation residue #172 done; #127 in progress) |
+| **M5. Readiness and progression** (paused: the repivot) | Readiness policy per class, equipment valuation, item use, spells for casters, ranged combat | **G1** on `classes-1800` against the zoo's existing control results (owner starts the zoo run of our Borg only; prerequisites in [GOALS.md](docs/GOALS.md#observation-and-scoring-rule)) | in progress (M4 review findings #163–#165, the source refresh T5.1 #125, T5.2 #126 and the starvation residue #172 done; #127 in progress) |
 | **M6. The family** | Class profiles, the first class-specific strategy where M5's data shows the need, a tuning loop (screening and racing) | **G2**, confirmed on fresh seeds | not started |
 | **M7+** | Deeper suites, mid game, death-driven iterations | **G3**, then G4 | not started |
+
+## The repivot, and tracks P and R (owner, 2026-11-14)
+
+The POC showed that a Borg built here from first principles does not beat
+borg-rs. The repository now hosts **borg-rs's decision core**
+(`borg-core/`, vendored at borg-rs v12; docs/SPEC.md §2 amendment) with
+**errands** around it (docs/ERRANDS.md). The engine is upstream
+`42cd156ac`, the commit borg-rs plays (#216). Our own core stays the
+default and is frozen: **M5–M7 are paused**, their open issues kept.
+
+Work now runs in two tracks, side by side, each with its own milestones,
+labels and review PRs (AGENTS.md *Choosing the work*). A session is
+assigned to one track by the owner.
+
+### Track P: calibration of borg-rs's core (epic #218)
+
+Named parameters in place of borg-rs's hard-coded thresholds (about 400 in
+fight, flee and recovery, against 44 `borg.txt` settings), and a decision
+trace. **At the defaults play is byte-identical** (full 45/45 against borg-rs
+v12).
+
+| Milestone | Label | What it delivers | Exit (all must hold) | State |
+| --- | --- | --- | --- | --- |
+| **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | **in progress** |
+| **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | not started |
+| **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | not started |
+
+### Track R: the redesign epic (epic #217)
+
+borg-rs's decisions re-expressed subsystem by subsystem in our domain, in a
+new crate `borg-next/`. Each port runs beside the original every think
+(**shadow check**) and switches over only when the full suite's keys stay
+byte-identical. Ported code reads borg-rs's memory through a typed view,
+not our perception, until R6. A subsystem is ported after track P has
+named its thresholds.
+
+| Milestone | Label | What it delivers | Exit (all must hold) | State |
+| --- | --- | --- | --- | --- |
+| **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **in progress** |
+| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | not started |
+| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | not started |
+| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |
+| **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
+| **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
+
+Estimates (2026-11-14, to be redone after R2): R1 1–2 weeks, R2 2–3, R3–R5
+3–4 each; R1–R5 about 3 to 5 months. Track P: 1–2 weeks per milestone.
+
+GitHub milestones are not used for P and R (labels are); the owner may
+create them, and a session then files each issue in its milestone as well.
 
 ## Secondary track Q: the query surface
 
