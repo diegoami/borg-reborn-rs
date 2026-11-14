@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2011; distinct starting conditions: 2010; retained process attempts: 2011 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2039; distinct starting conditions: 2038; retained process attempts: 2039 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2017,6 +2017,34 @@ Dossiers: 2011; distinct starting conditions: 2010; retained process attempts: 2
 | [D2029-rust-seed1061](D2029-rust-seed1061/report.md) | unassigned | `d106510a3471` | 1061 | starvation | 90750 | unassessed |
 | [D2030-rust-seed1073](D2030-rust-seed1073/report.md) | unassigned | `d106510a3471` | 1073 | a giant yellow centipede | 58950 | unassessed |
 | [D2031-rust-seed1083](D2031-rust-seed1083/report.md) | unassigned | `d106510a3471` | 1083 | an acolyte | 33152 | unassessed |
+| [D2032-rust-seed1010](D2032-rust-seed1010/report.md) | unassigned | `dae0d086c015` | 1010 | a floating eye | 26921 | unassessed |
+| [D2033-rust-seed1011](D2033-rust-seed1011/report.md) | unassigned | `dae0d086c015` | 1011 | poison | 13790 | unassessed |
+| [D2034-rust-seed1002](D2034-rust-seed1002/report.md) | unassigned | `dae0d086c015` | 1002 | a giant white louse | 89735 | unassessed |
+| [D2035-rust-seed1013](D2035-rust-seed1013/report.md) | unassigned | `dae0d086c015` | 1013 | a battle-scarred veteran | 22980 | unassessed |
+| [D2036-rust-seed1014](D2036-rust-seed1014/report.md) | unassigned | `dae0d086c015` | 1014 | a giant white mouse | 25774 | unassessed |
+| [D2037-rust-seed1012](D2037-rust-seed1012/report.md) | unassigned | `dae0d086c015` | 1012 | Fang, Farmer Maggot's Dog | 71627 | unassessed |
+| [D2038-rust-seed1020](D2038-rust-seed1020/report.md) | unassigned | `dae0d086c015` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2039-rust-seed1021](D2039-rust-seed1021/report.md) | unassigned | `dae0d086c015` | 1021 | a fatal wound | 3950 | unassessed |
+| [D2040-rust-seed1022](D2040-rust-seed1022/report.md) | unassigned | `dae0d086c015` | 1022 | a giant white mouse | 17265 | unassessed |
+| [D2041-rust-seed1030](D2041-rust-seed1030/report.md) | unassigned | `dae0d086c015` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
+| [D2042-rust-seed1024](D2042-rust-seed1024/report.md) | unassigned | `dae0d086c015` | 1024 | a kobold | 41864 | unassessed |
+| [D2043-rust-seed1031](D2043-rust-seed1031/report.md) | unassigned | `dae0d086c015` | 1031 | a giant white mouse | 54569 | unassessed |
+| [D2044-rust-seed1023](D2044-rust-seed1023/report.md) | unassigned | `dae0d086c015` | 1023 | a soldier | 85754 | unassessed |
+| [D2045-rust-seed1033](D2045-rust-seed1033/report.md) | unassigned | `dae0d086c015` | 1033 | a giant white mouse | 24771 | unassessed |
+| [D2046-rust-seed1040](D2046-rust-seed1040/report.md) | unassigned | `dae0d086c015` | 1040 | an acolyte | 3647 | unassessed |
+| [D2047-rust-seed1041](D2047-rust-seed1041/report.md) | unassigned | `dae0d086c015` | 1041 | a giant white louse | 54510 | unassessed |
+| [D2048-rust-seed1042](D2048-rust-seed1042/report.md) | unassigned | `dae0d086c015` | 1042 | a wild dog | 10924 | unassessed |
+| [D2049-rust-seed1044](D2049-rust-seed1044/report.md) | unassigned | `dae0d086c015` | 1044 | a small kobold | 4427 | unassessed |
+| [D2050-rust-seed1043](D2050-rust-seed1043/report.md) | unassigned | `dae0d086c015` | 1043 | a floating eye | 91688 | unassessed |
+| [D2051-rust-seed1050](D2051-rust-seed1050/report.md) | unassigned | `dae0d086c015` | 1050 | a baby white dragon | 77146 | unassessed |
+| [D2052-rust-seed1053](D2052-rust-seed1053/report.md) | unassigned | `dae0d086c015` | 1053 | a blue yeek | 87135 | unassessed |
+| [D2053-rust-seed1062](D2053-rust-seed1062/report.md) | unassigned | `dae0d086c015` | 1062 | a soldier | 13291 | unassessed |
+| [D2054-rust-seed1070](D2054-rust-seed1070/report.md) | unassigned | `dae0d086c015` | 1070 | a small kobold | 10213 | unassessed |
+| [D2055-rust-seed1060](D2055-rust-seed1060/report.md) | unassigned | `dae0d086c015` | 1060 | a soldier | 65097 | unassessed |
+| [D2056-rust-seed1074](D2056-rust-seed1074/report.md) | unassigned | `dae0d086c015` | 1074 | a soldier | 21652 | unassessed |
+| [D2057-rust-seed1072](D2057-rust-seed1072/report.md) | unassigned | `dae0d086c015` | 1072 | poison | 63440 | unassessed |
+| [D2058-rust-seed1083](D2058-rust-seed1083/report.md) | unassigned | `dae0d086c015` | 1083 | an acolyte | 33152 | unassessed |
+| [D2059-rust-seed1084](D2059-rust-seed1084/report.md) | unassigned | `dae0d086c015` | 1084 | a giant white louse | 59282 | unassessed |
 
 ## Aggregated actions
 
