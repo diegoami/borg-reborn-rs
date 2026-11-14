@@ -17,6 +17,11 @@ behind it is in PR #206 (docs/REDESIGN.md, docs/PILOT.md).*
 | budget | `BORG_ERRAND_BUDGET` | game turns; 0, none |
 | outcome | `BORG_ERRAND_OUT` | a file: one JSON line per errand that ends |
 
+Each of these environment settings that is set is written to the run's
+`config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
+a ladders file), and `tools/rerun-death.py` sets them again when it reruns a
+death (review #227, finding 8).
+
 `harness/borg.txt` is borg-rs's `borg.txt` with its munchkin start by class
 and its town scumming off (owner, 2026-11-14) and these keys added; the
 zoo copies it. `BORG_CORE_OVERRIDES=off` runs borg-rs's own copy
