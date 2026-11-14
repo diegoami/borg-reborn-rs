@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import shutil
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,7 +51,9 @@ with open('/tmp/angband-validation.lock', 'a') as lock:
     events = [json.loads(l) for l in (out / 'record/inputs.jsonl').read_text().splitlines()]
     assert any(e['kind'] == 'bot' for e in events), 'no bot actions captured'
     assert (out / 'record/frames.jsonl').stat().st_size, 'no observed frames'
+    # Build the generic reader outside any enclosing consumer workspace.
+    shutil.copytree(ROOT / 'vendor/angband-recorder', out / 'reader-source')
     subprocess.run(['cargo', 'run', '--quiet', '--locked', '--manifest-path',
-                    str(ROOT / 'vendor/angband-recorder/Cargo.toml'), '--target-dir', str(out / 'reader-build'),
+                    str(out / 'reader-source/Cargo.toml'), '--target-dir', str(out / 'reader-build'),
                     '--', 'verify', str(out / 'record'), str(out / 'replay')], check=True)
 print('Consumer recorder round trip passed, including final native save bytes')
