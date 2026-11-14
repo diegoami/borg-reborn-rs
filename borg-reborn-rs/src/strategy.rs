@@ -465,7 +465,18 @@ impl FirstStrategy {
         // priest-4 spent 20,000 turns between two town grids because a
         // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
         // next one.
-        if at(x + dx, y + dy) >= at(x, y) + 0.5 {
+        // A monster that never moves beside the next grid is not a reason
+        // to turn back (#201): it threatens only the grids next to it, and
+        // contact hands the choice to the tactical layer, which fights it
+        // or leaves. Without this, full-0-warrior-1 (37 HP) walked back and
+        // forth for 24,000 turns before a grey mushroom patch (2 HP) that
+        // stood between it and the rest of the level.
+        let (nx, ny) = (x + dx, y + dy);
+        let blocker = ctx.world.level.monsters.iter().any(|t| {
+            crate::danger::never_move(ctx.knowledge, t)
+                && (t.x - nx).abs().max((t.y - ny).abs()) <= 1
+        });
+        if !blocker && at(nx, ny) >= at(x, y) + 0.5 {
             return Self::retreat_step(ctx).map(Action::Walk);
         }
         Some(Action::Walk(d))
