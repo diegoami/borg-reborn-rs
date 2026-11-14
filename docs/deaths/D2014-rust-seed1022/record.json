@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2014-rust-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 10355,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1022,
+    "flags": "menu",
+    "git_rev": "d106510a3471274713a8db1e8b42d9dec291a1c4",
+    "git_dirty": "no",
+    "source_sha256": "8081ccea187df8117bd1c8890b8911ec66fc37d5c368a45aeb524766db6caba4",
+    "binary_sha256": "16af8bc81f591fd05188fb2ea02d4c9b2b33a813c0dc0be1f03ae70953c018a1",
+    "borg_txt_sha256": "ffb38dfa422f79eb8b9d030f317394fcb4dec4d7461fce78d88cd905230680f2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1053
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-2-druid-2",
+      "result_sha256": "c7e70faefa634f00a15e879b1601db7dd399fb0d92e2ac95b4808a8af22d39f0",
+      "raw_sha256": {
+        "keys.log": "c7e70faefa634f00a15e879b1601db7dd399fb0d92e2ac95b4808a8af22d39f0",
+        "messages.log": "6d54a2fa6cf3a744876951ba80623b72802527e6e609c3a638b59d9442446eee",
+        "state.log": "b878d591915f5eedb6304d290c9f848c7a3d16eee0b620d5134462f895751e0d"
+      },
+      "source_commit": "d106510a3471274713a8db1e8b42d9dec291a1c4",
+      "binary_sha256": "16af8bc81f591fd05188fb2ea02d4c9b2b33a813c0dc0be1f03ae70953c018a1"
+    }
+  ],
+  "encounter_family": "start-7a796049b527ce5d86c9b431e865c552bdaa84467e0ace363344a50fd4d45542",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "54832551252b19c2e8bb4f1a3a9e69bc325e27a1cb3a9b70bf391ab43a529d3a",
+    "config.txt": "37912e687df89e6068bd15cdfcad84cd7b84025645d277848c991b1def3eed9e",
+    "depths.json": "0216c918d156908ec6dcfc4204550814dd0694268e8521600ceb562f7a8d2919",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "7ad4b207878065a7ef13ffaad5392c8c03a399469bbd52f097f176d2b9673118",
+    "trace-tail.jsonl": "ba3faa80f91c4037a2dab1a866cba91a4332d385d12099244a05774a35dc8c38"
+  },
+  "investigation": null,
+  "issue": null
+}

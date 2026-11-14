@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1989; distinct starting conditions: 1988; retained process attempts: 1989 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2011; distinct starting conditions: 2010; retained process attempts: 2011 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1995,6 +1995,28 @@ Dossiers: 1989; distinct starting conditions: 1988; retained process attempts: 1
 | [D2007-rust-seed1080](D2007-rust-seed1080/report.md) | unassigned | `5e286dbf81e7` | 1080 | poison | 21520 | unassessed |
 | [D2008-rust-seed1083](D2008-rust-seed1083/report.md) | unassigned | `5e286dbf81e7` | 1083 | poison | 59970 | unassessed |
 | [D2009-rust-seed1084](D2009-rust-seed1084/report.md) | unassigned | `5e286dbf81e7` | 1084 | a giant white louse | 51350 | unassessed |
+| [D2010-rust-seed1012](D2010-rust-seed1012/report.md) | unassigned | `d106510a3471` | 1012 | an apprentice | 43328 | unassessed |
+| [D2011-rust-seed1020](D2011-rust-seed1020/report.md) | unassigned | `d106510a3471` | 1020 | a giant yellow centipede | 5199 | unassessed |
+| [D2012-rust-seed1021](D2012-rust-seed1021/report.md) | unassigned | `d106510a3471` | 1021 | a fatal wound | 3950 | unassessed |
+| [D2013-rust-seed1013](D2013-rust-seed1013/report.md) | unassigned | `d106510a3471` | 1013 | a soldier | 40099 | unassessed |
+| [D2014-rust-seed1022](D2014-rust-seed1022/report.md) | unassigned | `d106510a3471` | 1022 | a small kobold | 10355 | unassessed |
+| [D2015-rust-seed1023](D2015-rust-seed1023/report.md) | unassigned | `d106510a3471` | 1023 | Grip, Farmer Maggot's Dog | 16575 | unassessed |
+| [D2016-rust-seed1030](D2016-rust-seed1030/report.md) | unassigned | `d106510a3471` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
+| [D2017-rust-seed1011](D2017-rust-seed1011/report.md) | unassigned | `d106510a3471` | 1011 | poison | 51460 | unassessed |
+| [D2018-rust-seed1014](D2018-rust-seed1014/report.md) | unassigned | `d106510a3471` | 1014 | a giant white louse | 80279 | unassessed |
+| [D2019-rust-seed1040](D2019-rust-seed1040/report.md) | unassigned | `d106510a3471` | 1040 | a small kobold | 5078 | unassessed |
+| [D2020-rust-seed1034](D2020-rust-seed1034/report.md) | unassigned | `d106510a3471` | 1034 | an apprentice | 55098 | unassessed |
+| [D2021-rust-seed1041](D2021-rust-seed1041/report.md) | unassigned | `d106510a3471` | 1041 | a green worm mass | 43548 | unassessed |
+| [D2022-rust-seed1044](D2022-rust-seed1044/report.md) | unassigned | `d106510a3471` | 1044 | a small kobold | 4427 | unassessed |
+| [D2023-rust-seed1043](D2023-rust-seed1043/report.md) | unassigned | `d106510a3471` | 1043 | a giant white mouse | 22743 | unassessed |
+| [D2024-rust-seed1042](D2024-rust-seed1042/report.md) | unassigned | `d106510a3471` | 1042 | an apprentice | 64074 | unassessed |
+| [D2025-rust-seed1060](D2025-rust-seed1060/report.md) | unassigned | `d106510a3471` | 1060 | poison | 18860 | unassessed |
+| [D2026-rust-seed1062](D2026-rust-seed1062/report.md) | unassigned | `d106510a3471` | 1062 | a soldier | 13291 | unassessed |
+| [D2027-rust-seed1054](D2027-rust-seed1054/report.md) | unassigned | `d106510a3471` | 1054 | a giant white mouse | 66097 | unassessed |
+| [D2028-rust-seed1064](D2028-rust-seed1064/report.md) | unassigned | `d106510a3471` | 1064 | a soldier | 90655 | unassessed |
+| [D2029-rust-seed1061](D2029-rust-seed1061/report.md) | unassigned | `d106510a3471` | 1061 | starvation | 90750 | unassessed |
+| [D2030-rust-seed1073](D2030-rust-seed1073/report.md) | unassigned | `d106510a3471` | 1073 | a giant yellow centipede | 58950 | unassessed |
+| [D2031-rust-seed1083](D2031-rust-seed1083/report.md) | unassigned | `d106510a3471` | 1083 | an acolyte | 33152 | unassessed |
 
 ## Aggregated actions
 

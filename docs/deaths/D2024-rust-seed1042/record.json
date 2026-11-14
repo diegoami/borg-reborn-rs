@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2024-rust-seed1042",
+  "run_kind": "harness",
+  "character": "Half-Orc Necromancer",
+  "raw_cause": "an apprentice",
+  "terminal": {
+    "cause": "an apprentice",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 64074,
+    "race_idx": 6,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1042,
+    "flags": "menu",
+    "git_rev": "d106510a3471274713a8db1e8b42d9dec291a1c4",
+    "git_dirty": "no",
+    "source_sha256": "8081ccea187df8117bd1c8890b8911ec66fc37d5c368a45aeb524766db6caba4",
+    "binary_sha256": "16af8bc81f591fd05188fb2ea02d4c9b2b33a813c0dc0be1f03ae70953c018a1",
+    "borg_txt_sha256": "bd1fad7705c0d09d21f383b79f51a50445beaa00ed904f5227e14aa5e08b4cf7",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 5864
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-4-necro-2",
+      "result_sha256": "354183ab3082f7fa26be4bc9c7e3eb75ff037dc991c85ad08c3b8d8df71622d7",
+      "raw_sha256": {
+        "keys.log": "354183ab3082f7fa26be4bc9c7e3eb75ff037dc991c85ad08c3b8d8df71622d7",
+        "messages.log": "890fdbde83cb3052f20e71bdfa67df8dc1b3cc697ea436501f95196ce0b6faf2",
+        "state.log": "e02235962ad1066f4f440e76c668590485f578535c6731d37181ed2dda6ae573"
+      },
+      "source_commit": "d106510a3471274713a8db1e8b42d9dec291a1c4",
+      "binary_sha256": "16af8bc81f591fd05188fb2ea02d4c9b2b33a813c0dc0be1f03ae70953c018a1"
+    }
+  ],
+  "encounter_family": "start-3d542a57e13ecc4eac93d23e476db4fdbf5d7eff1e47d1b633cee5bd505ea295",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "54832551252b19c2e8bb4f1a3a9e69bc325e27a1cb3a9b70bf391ab43a529d3a",
+    "config.txt": "adf477bf8aa1d38b9c95aec8da773cabfdbe6def98c773f546942effcc8629fd",
+    "depths.json": "5b3cee219a5302b54a48540c1c7f35061488c787f4ae45c0e6cbde2dda4984b7",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "60515f797a43ce8437f845e98a47942cdff6e1243d1e71d8c6c84feae985e3a0",
+    "trace-tail.jsonl": "f944c50392cd16eadc4f7839610bb319b2412ff8c1e39fcc0445f722132e65e2"
+  },
+  "investigation": null,
+  "issue": null
+}
