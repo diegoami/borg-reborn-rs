@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2099-rust-seed1013",
+  "run_kind": "harness",
+  "character": "Gnome Mage",
+  "raw_cause": "a battle-scarred veteran",
+  "terminal": {
+    "cause": "a battle-scarred veteran",
+    "dead": true,
+    "depth": 0,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 22980,
+    "race_idx": 4,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1013,
+    "flags": "menu",
+    "git_rev": "572ab754cf46f6eba1c6916d4c2441456e283400",
+    "git_dirty": "no",
+    "source_sha256": "e9d22e0cc8d833284e69d4e299b8bd1e118b706e6e68ac3958c355004697c367",
+    "binary_sha256": "a01286934d376a7380b5bd3824aa024575ffbc3b8817aa18eec661f36f318f0a",
+    "borg_txt_sha256": "e13e8bd7865dc4a7db4c17546bf55581ef02ea1ce9b1e29217a875eba8a99642",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 2248
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-1-mage-3",
+      "result_sha256": "576982de6590d55775a7d86f95a4bdaba84cc6e29342ca925189c2931afda604",
+      "raw_sha256": {
+        "keys.log": "576982de6590d55775a7d86f95a4bdaba84cc6e29342ca925189c2931afda604",
+        "messages.log": "ef9c078f8fffa1b990c2d58f3daec9d7c483d1e582d38701aa9347b5d50ed757",
+        "state.log": "d0477af2e30432f4310cb4c39b8b0023da90ebbd997c86477c39c802b084dc73"
+      },
+      "source_commit": "572ab754cf46f6eba1c6916d4c2441456e283400",
+      "binary_sha256": "a01286934d376a7380b5bd3824aa024575ffbc3b8817aa18eec661f36f318f0a"
+    }
+  ],
+  "encounter_family": "start-73f761620e07d2fb9df7357a8efa871c53210e19211b33ad467b67cd206fe166",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "81e32495e9f44330fdc91992f8ba5716f06d30883a4e994df90b9796a22f4797",
+    "config.txt": "3d0dc650ca5603aa8b046852e6156643349c4ca5185eccd733a3266c3f207f35",
+    "depths.json": "f4a66d12d152414cc263f497705f61363125efdc84cdc792d884378f3a963ae6",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "397a0a32231392c5b270c5d7987c5939e9ae56563f1401cd4ef8755fd76b92ce",
+    "trace-tail.jsonl": "46fb1987be77efc60a5627b41da2ac05ab8bd77708bfc077379c98e1d5a74e6b"
+  },
+  "investigation": null,
+  "issue": null
+}

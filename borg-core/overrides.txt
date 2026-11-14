@@ -1,0 +1,11 @@
+# borg-reborn-rs's settings for borg-rs's core (#208), applied by
+# harness/run.sh over borg-core/borg.txt (borg-rs's own, unchanged) when
+# BORG_CORE=borg-rs. One "name = value" per line.
+#
+# No stair-scumming, in any class (owner, 2026-11-14): borg-rs's
+# munchkin start by class makes Warriors, Druids and Rangers scum stairs
+# down to borg_munchkin_class_depth.
+borg_munchkin_by_class = FALSE
+# No town scumming: waiting in town for the gold to buy a wanted item
+# ("can take a very long time", borg.txt).
+borg_self_scum = FALSE

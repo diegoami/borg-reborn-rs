@@ -1,5 +1,5 @@
 [workspace]
-members = ["borg-reborn-rs"]
+members = ["borg-reborn-rs", "borg-core"]
 resolver = "2"
 
 [profile.release]

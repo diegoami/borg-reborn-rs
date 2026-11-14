@@ -25,6 +25,14 @@ def strip_guarded(text):
     return re.sub(r'#ifdef (?:%s)\n(?:.*\n)*?#endif[^\n]*\n' % '|'.join(GUARDS), '', text)
 
 
+def unguarded_patches():
+    """The patches that change the game on purpose, each declaring it in its
+    header with 'Not guarded:' and the reason. Today only 08, borg-rs's engine
+    (owner, 2026-11-14), until the shared engine repository replaces it."""
+    return {p.name for p in (ENGINE / 'patches').glob('*.patch')
+            if 'Not guarded:' in p.read_text().split('--- a/', 1)[0]}
+
+
 def code(text):
     """The text without its empty lines: blank lines are not code."""
     return '\n'.join(l for l in text.splitlines() if l.strip())
@@ -55,6 +63,13 @@ class PatchSeriesTest(unittest.TestCase):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.dest = Path(cls.tmp.name) / 'tree'
         cls.applied = subprocess.run([str(ENGINE / 'apply-patches.sh'), str(cls.dest)], capture_output=True, text=True)
+        # The guarded series on its own: what the guard check reads.
+        cls.guarded = Path(cls.tmp.name) / 'guarded'
+        subprocess.run(['cp', '-a', str(ENGINE / 'angband'), str(cls.guarded)], check=True)
+        for p in sorted((ENGINE / 'patches').glob('*.patch')):
+            if p.name not in unguarded_patches():
+                subprocess.run(['patch', '-s', '-p1', '-d', str(cls.guarded), '--forward',
+                                '--no-backup-if-mismatch'], stdin=p.open(), check=True)
 
     @classmethod
     def tearDownClass(cls):
@@ -66,7 +81,10 @@ class PatchSeriesTest(unittest.TestCase):
     def test_every_patch_says_why(self):
         for p in sorted((ENGINE / 'patches').glob('*.patch')):
             head = p.read_text().split('--- a/', 1)[0]
-            self.assertIn('Guarded by', head, p.name)
+            self.assertTrue('Guarded by' in head or 'Not guarded:' in head, p.name)
+
+    def test_only_the_engine_patch_is_unguarded(self):
+        self.assertLessEqual(unguarded_patches(), {'08-borg-rs-engine.patch'})
 
     def test_with_the_guards_off_the_files_are_upstreams(self):
         # Every changed line sits inside an #ifdef BORG_HARNESS / USE_BORGH
@@ -77,11 +95,12 @@ class PatchSeriesTest(unittest.TestCase):
                                        '\tstruct tm *date;\n\n\tdate = localtime(&cur_time);\n')}
         changed = set()
         for p in sorted((ENGINE / 'patches').glob('*.patch')):
-            changed.update(re.findall(r'^\+\+\+ b/(\S+)', p.read_text(), re.M))
+            if p.name not in unguarded_patches():
+                changed.update(re.findall(r'^\+\+\+ b/(\S+)', p.read_text(), re.M))
         self.assertTrue(changed)
         for rel in sorted(changed):
             upstream = (ENGINE / 'angband' / rel).read_text()
-            patched = strip_guarded((self.dest / rel).read_text())
+            patched = strip_guarded((self.guarded / rel).read_text())
             if rel in declared:
                 old, new = declared[rel]
                 upstream = upstream.replace(old, new)

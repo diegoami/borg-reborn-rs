@@ -125,13 +125,29 @@ if [ "$CHECKPOINT_EVERY" != 0 ]; then
     mkdir -p "$OUT/checkpoints"
     BORGH_FLAGS+=(-checkpoint-every "$CHECKPOINT_EVERY" -checkpoint-dir "$OUT/checkpoints")
 fi
+# borg-rs's core (BORG_CORE=borg-rs, #207) reads borg.txt: it gets its own,
+# borg-rs's harness/borg.txt at the pin (borg-core/borg.txt).
+BORG_TXT="$ROOT/harness/borg.txt"
+[ "${BORG_CORE:-}" = borg-rs ] && BORG_TXT="$ROOT/borg-core/borg.txt"
 # The run's user/borg.txt, as before: the Rust Borg does not read it, but
 # the zoo's adapter copies harness/borg.txt (docs/ZOO-INTERFACE.md) and its
 # hash is part of a death's encounter family.
 sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
-    "$ROOT/harness/borg.txt" > "$OUT/user/borg.txt"
+    "$BORG_TXT" > "$OUT/user/borg.txt"
+# borg-rs's core: our overrides of its settings (borg-core/overrides.txt).
+# BORG_CORE_OVERRIDES=off keeps borg-rs's own settings: the parity check
+# against borg-rs's build at the pin (docs/PILOT.md).
+if [ "${BORG_CORE:-}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" != off ]; then
+    while IFS= read -r line; do
+        case "$line" in ''|'#'*) continue;; esac
+        name="${line%% =*}"
+        grep -q "^$name = " "$OUT/user/borg.txt" || {
+            echo "run.sh: override '$name' is not a borg.txt setting" >&2; exit 2; }
+        sed -i "s/^$name = .*/$line/" "$OUT/user/borg.txt"
+    done < "$ROOT/borg-core/overrides.txt"
+fi
 {
     echo "flags=$FLAGS"
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
