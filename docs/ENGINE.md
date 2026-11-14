@@ -23,6 +23,14 @@ patch series applied unchanged (two hunks at new offsets), the core source
 list is unchanged, and one bindings constant moved (`TMD_FLAG_NONSTACKING`,
 1 to 2, unused).
 
+On the new engine our own Borg plays 44 of the full suite's 45 games as
+before; smoke and smoke-exact are unchanged. The one that moves is the
+druid of seed 1024 (`full-2-druid-4`): it splits after a rest at game turn
+3,521, and where it died to a kobold at turn 41,864 it now lives to the
+cap. The full reference is regenerated for it. borg-rs's core
+(`BORG_CORE=borg-rs`, no errand) plays all 45 exactly as a fresh build of
+borg-rs v12.
+
 One file, `lib/user/save/Makefile`, is ignored by upstream's own
 `.gitignore` but tracked upstream, so it is force-added here too.
 

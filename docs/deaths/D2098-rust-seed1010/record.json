@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2098-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 26921,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "menu",
+    "git_rev": "809b8bda3a7e403001a06264c4d5aaecf257a6a7",
+    "git_dirty": "no",
+    "source_sha256": "d59b562f765b8a623eb9e2148eb041eb6da2a9f38e7627a10a20997f7ef95fe0",
+    "binary_sha256": "44937eb8ba684b598d967b102c67e38076a9d4cf8b03ce3278d6ad0e6607824f",
+    "borg_txt_sha256": "b194dddebfe5e16f9b1a5172d92ba8cb0bead9345fc6bdd38c4169e3401b7aad",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 2562
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/-home-user-borg-reborn-rs/ba597da2-8648-547c-a22f-1fc2379bafa6/scratchpad/pin/harness/out/full-rust/full-1-mage-0",
+      "result_sha256": "071735d4dbab95125578238ae441770d41a8be61545da5548eb4401d020d3c54",
+      "raw_sha256": {
+        "keys.log": "071735d4dbab95125578238ae441770d41a8be61545da5548eb4401d020d3c54",
+        "messages.log": "0d5c88a9163223cfb05363c364544c35ba7b56aa8f06a9798a18582a6b14b322",
+        "state.log": "887c23808d643e53250b7f879d7244e59d76cdbd94cb5f6fd5bd3c0d839afe63"
+      },
+      "source_commit": "809b8bda3a7e403001a06264c4d5aaecf257a6a7",
+      "binary_sha256": "44937eb8ba684b598d967b102c67e38076a9d4cf8b03ce3278d6ad0e6607824f"
+    }
+  ],
+  "encounter_family": "start-7b5bcb1bec918951d357b2aa2bf44bebe42126e850594b55f514ba35b944e786",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "0f39584cd126bc7bf9866258450552813ee7463cfb3ae0195426f59aabf41710",
+    "config.txt": "0da123b7fe137e805fb1eca74490e37aae116b1f63b62e16ef1ea557c601a93c",
+    "depths.json": "aa6c11b0d94c9204d27ae79371fb45969a57734c6ae6bad9d0f10a29bf28b50a",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "c1b593c36f5c8018a5f2144fda8c3dd4b1a4bc397c5c267590fd34f120d70bd2",
+    "trace-tail.jsonl": "c2f008951e550057f6fe425e85c494f1f26f25dcde2824c1029932fac8d4e386"
+  },
+  "investigation": null,
+  "issue": null
+}
