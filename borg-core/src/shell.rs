@@ -50,14 +50,54 @@ pub enum Errand {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Trip {
     pub levels: Vec<i32>,
-    /// Repeat until the core is prepared for the next trip's deepest level
-    /// (the last trip: until the budget).
+    /// Repeat until the ladder may move on to the next trip (the last
+    /// trip: until the budget).
     pub repeat: bool,
+    /// `@N`: the ladder reaches this trip only from character level N.
+    /// Without it, only once the core is prepared for its deepest level.
+    pub min_level: Option<i32>,
+}
+
+/// The class names of `class.txt`, in its order (`player->class->cidx`).
+const CLASSES: [&str; 9] = [
+    "warrior",
+    "mage",
+    "druid",
+    "priest",
+    "necromancer",
+    "paladin",
+    "rogue",
+    "ranger",
+    "blackguard",
+];
+
+/// The default ladders by class (`borg-core/ladders.txt`), or the file
+/// `BORG_LADDERS` names.
+fn ladders_text() -> String {
+    std::env::var_os("BORG_LADDERS")
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .unwrap_or_else(|| include_str!("../ladders.txt").to_string())
+}
+
+/// `BORG_ERRAND=ladder`: the ladder of the character's class.
+pub fn class_ladder() -> Option<Errand> {
+    let class = *CLASSES.get(engine::class_cidx() as usize)?;
+    ladder_of(&ladders_text(), class)
+}
+
+fn ladder_of(text: &str, class: &str) -> Option<Errand> {
+    text.lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .filter_map(|l| l.split_once('='))
+        .find(|(name, _)| name.trim() == class)
+        .and_then(|(_, plan)| Errand::parse(plan.trim()))
 }
 
 impl Errand {
-    /// `trips:1*/1,2,1*/1,2,3,2,1` (the `BORG_ERRAND` syntax): trips
-    /// separated by `/`, levels by `,`, `*` after a trip to repeat it.
+    /// `trips:1*/1,2,1*@5/1,2,3,2,1*@10` (the `BORG_ERRAND` syntax): trips
+    /// separated by `/`, levels by `,`, `*` after a trip to repeat it, `@N`
+    /// for the character level the ladder needs to reach it.
     pub fn parse(s: &str) -> Option<Errand> {
         let (name, arg) = s.split_once(':')?;
         if name != "trips" {
@@ -66,7 +106,10 @@ impl Errand {
         let trips: Option<Vec<Trip>> = arg
             .split('/')
             .map(|trip| {
-                let trip = trip.trim();
+                let (trip, min_level) = match trip.trim().split_once('@') {
+                    Some((t, l)) => (t, Some(l.trim().parse::<i32>().ok()?)),
+                    None => (trip.trim(), None),
+                };
                 let (body, repeat) = match trip.strip_suffix('*') {
                     Some(b) => (b, true),
                     None => (trip, false),
@@ -75,7 +118,11 @@ impl Errand {
                     .split(',')
                     .map(|l| l.trim().parse().ok().filter(|d: &i32| *d >= 1))
                     .collect();
-                levels.map(|levels| Trip { levels, repeat })
+                levels.map(|levels| Trip {
+                    levels,
+                    repeat,
+                    min_level,
+                })
             })
             .collect();
         trips
@@ -163,9 +210,12 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         if depth == 0 && r.target() == Some(0) {
             r.step = 0;
             if r.trips[r.trip].repeat {
-                r.trips
-                    .get(r.trip + 1)
-                    .map(|next| next.levels.iter().copied().max().unwrap_or(1))
+                r.trips.get(r.trip + 1).map(|next| {
+                    (
+                        next.levels.iter().copied().max().unwrap_or(1),
+                        next.min_level,
+                    )
+                })
             } else {
                 r.trip += 1;
                 None
@@ -174,9 +224,14 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
             None
         }
     };
-    if let Some(deepest) = next_deepest {
-        // A repeating trip moves on once the core is ready for the next.
-        if crate::borg_prepared::borg_prepared(st, deepest).is_none() {
+    if let Some((deepest, min_level)) = next_deepest {
+        // A repeating trip moves on at the next trip's character level, or,
+        // with none set, once the core is ready for its deepest level.
+        let ready = match min_level {
+            Some(level) => st.borg.tr(BI_CLEVEL) >= level,
+            None => crate::borg_prepared::borg_prepared(st, deepest).is_none(),
+        };
+        if ready {
             if let Some(r) = running().as_mut() {
                 r.trip += 1;
             }
@@ -322,17 +377,43 @@ mod tests {
             Some(Errand::Trips(vec![
                 Trip {
                     levels: vec![1],
-                    repeat: true
+                    repeat: true,
+                    min_level: None
                 },
                 Trip {
                     levels: vec![1, 2, 1],
-                    repeat: false
+                    repeat: false,
+                    min_level: None
                 },
             ]))
         );
+        assert_eq!(
+            Errand::parse("trips:1*/1,2,1*@5"),
+            Some(Errand::Trips(vec![
+                Trip {
+                    levels: vec![1],
+                    repeat: true,
+                    min_level: None
+                },
+                Trip {
+                    levels: vec![1, 2, 1],
+                    repeat: true,
+                    min_level: Some(5)
+                },
+            ]))
+        );
+        assert_eq!(Errand::parse("trips:1*/1,2@x"), None);
         assert_eq!(Errand::parse("trips:1,0"), None, "depth 0 is not a level");
         assert_eq!(Errand::parse("trips:"), None);
         assert_eq!(Errand::parse("dive:5"), None);
+    }
+
+    #[test]
+    fn every_class_has_a_ladder() {
+        let text = include_str!("../ladders.txt");
+        for class in CLASSES {
+            assert!(ladder_of(text, class).is_some(), "{class}");
+        }
     }
 
     #[test]
@@ -340,6 +421,7 @@ mod tests {
         let trip = |levels: Vec<i32>| Trip {
             levels,
             repeat: false,
+            min_level: None,
         };
         let mut r = Running {
             trips: vec![trip(vec![1]), trip(vec![1, 2, 1])],

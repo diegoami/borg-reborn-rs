@@ -255,10 +255,14 @@ extern "C" fn do_cmd_borg() {
     if crate::borg::core_is_borg_rs() {
         // An errand for the core (#208): `BORG_ERRAND=trips:1/1,2,1`, with an
         // optional budget in game turns (`BORG_ERRAND_BUDGET`).
-        if let Some(e) = std::env::var("BORG_ERRAND")
-            .ok()
-            .and_then(|s| borg_rs::shell::Errand::parse(&s))
-        {
+        // `BORG_ERRAND=ladder` takes the class's ladder (borg-core/ladders.txt).
+        if let Some(e) = std::env::var("BORG_ERRAND").ok().and_then(|s| {
+            if s == "ladder" {
+                borg_rs::shell::class_ladder()
+            } else {
+                borg_rs::shell::Errand::parse(&s)
+            }
+        }) {
             let budget = std::env::var("BORG_ERRAND_BUDGET")
                 .ok()
                 .and_then(|b| b.parse().ok())
