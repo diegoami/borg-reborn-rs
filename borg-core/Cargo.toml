@@ -19,3 +19,9 @@ test-force-nested = []
 
 [dependencies]
 libc = "0.2"
+
+# borg-reborn-rs (#207): borg-rs's code is linted by borg-rs's own CI, on its
+# toolchain. Here, newer clippy releases would fail our `-D warnings` on code
+# we do not change; compiler warnings still count.
+[lints.clippy]
+all = { level = "allow", priority = -1 }
