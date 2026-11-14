@@ -16,7 +16,7 @@ runs `engine/tests/test_zoo_contract.py`.*
 | runs `harness/build.sh` in the checkout, with `BORG_IMPL=<impl>` | `BORG_IMPL=rust` is the only implementation; any other value fails loudly (exit 2) |
 | copies `build/<impl>/game/` | `game/angband` and its data `game/lib/`, self-contained (the game finds `./lib/` from its working directory) |
 | reads `build/<impl>/BUILD_ID` (`key=value` lines) | at least `binary_sha256` (equal to the copied binary's SHA-256) and `rustc` |
-| copies `harness/borg.txt` and writes it, with its profile's settings, as the run's `user/borg.txt` | the file exists. The Rust Borg doesn't read it: its own parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given, as in the zoo's runs |
+| copies `harness/borg.txt` and writes it, with its profile's settings, as the run's `user/borg.txt` | the file exists. It is borg-rs's `borg.txt` (the vendored core reads it) with no stair-scumming and no town scumming, plus two keys this repository's Borg reads (#207, #208): `borg_reborn_core` (`reborn`, the default, or `borg-rs`) and `borg_reborn_errand` (`none`, `ladder`, or a `trips:` plan). A zoo profile selects an arm by setting them. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
 
 ## Run
 

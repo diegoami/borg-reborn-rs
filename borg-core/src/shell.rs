@@ -71,6 +71,20 @@ const CLASSES: [&str; 9] = [
     "blackguard",
 ];
 
+/// A setting of the run's `borg.txt` (`ANGBAND_DIR_USER/borg.txt`) that
+/// the shell reads: `borg_reborn_core`, `borg_reborn_errand`. The zoo
+/// writes a run's settings there (its profiles), not in the environment.
+pub fn borg_txt_setting(name: &str) -> Option<String> {
+    let path = engine::path_build_user(1024, b"borg.txt");
+    let text = std::fs::read_to_string(String::from_utf8_lossy(&path).as_ref()).ok()?;
+    text.lines()
+        .map(str::trim)
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| l.split_once('='))
+        .find(|(n, _)| n.trim() == name)
+        .map(|(_, v)| v.trim().to_string())
+}
+
 /// The default ladders by class (`borg-core/ladders.txt`), or the file
 /// `BORG_LADDERS` names.
 fn ladders_text() -> String {

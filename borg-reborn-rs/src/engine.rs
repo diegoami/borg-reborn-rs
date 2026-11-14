@@ -256,13 +256,20 @@ extern "C" fn do_cmd_borg() {
         // An errand for the core (#208): `BORG_ERRAND=trips:1/1,2,1`, with an
         // optional budget in game turns (`BORG_ERRAND_BUDGET`).
         // `BORG_ERRAND=ladder` takes the class's ladder (borg-core/ladders.txt).
-        if let Some(e) = std::env::var("BORG_ERRAND").ok().and_then(|s| {
-            if s == "ladder" {
-                borg_rs::shell::class_ladder()
-            } else {
-                borg_rs::shell::Errand::parse(&s)
-            }
-        }) {
+        // The environment first, else the run's borg.txt (the zoo).
+        let errand = std::env::var("BORG_ERRAND")
+            .ok()
+            .or_else(|| borg_rs::shell::borg_txt_setting("borg_reborn_errand"));
+        if let Some(e) = errand
+            .filter(|s| s != "none" && !s.is_empty())
+            .and_then(|s| {
+                if s == "ladder" {
+                    borg_rs::shell::class_ladder()
+                } else {
+                    borg_rs::shell::Errand::parse(&s)
+                }
+            })
+        {
             let budget = std::env::var("BORG_ERRAND_BUDGET")
                 .ok()
                 .and_then(|b| b.parse().ok())

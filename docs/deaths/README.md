@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2165; distinct starting conditions: 2161; retained process attempts: 2165 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2167; distinct starting conditions: 2163; retained process attempts: 2167 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2171,6 +2171,8 @@ Dossiers: 2165; distinct starting conditions: 2161; retained process attempts: 2
 | [D2183-rust-seed1053](D2183-rust-seed1053/report.md) | unassigned | `99539df31cfe` | 1053 | a soldier | 26170 | unassessed |
 | [D2184-rust-seed102](D2184-rust-seed102/report.md) | unassigned | `99539df31cfe` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2185-rust-seed1020](D2185-rust-seed1020/report.md) | unassigned | `99539df31cfe` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2186-rust-seed102](D2186-rust-seed102/report.md) | unassigned | `aab2937872e2` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2187-rust-seed1020](D2187-rust-seed1020/report.md) | unassigned | `aab2937872e2` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 
