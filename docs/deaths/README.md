@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2108; distinct starting conditions: 2107; retained process attempts: 2108 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2126; distinct starting conditions: 2122; retained process attempts: 2126 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2114,6 +2114,24 @@ Dossiers: 2108; distinct starting conditions: 2107; retained process attempts: 2
 | [D2126-rust-seed1082](D2126-rust-seed1082/report.md) | unassigned | `572ab754cf46` | 1082 | a soldier | 61969 | unassessed |
 | [D2127-rust-seed102](D2127-rust-seed102/report.md) | unassigned | `a36f5757819a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2128-rust-seed1020](D2128-rust-seed1020/report.md) | unassigned | `a36f5757819a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2129-rust-seed1011](D2129-rust-seed1011/report.md) | unassigned | `a36f5757819a` | 1011 | a cave spider | 18903 | unassessed |
+| [D2130-rust-seed1020](D2130-rust-seed1020/report.md) | unassigned | `a36f5757819a` | 1020 | a small kobold | 9547 | unassessed |
+| [D2131-rust-seed1023](D2131-rust-seed1023/report.md) | unassigned | `a36f5757819a` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D2132-rust-seed1021](D2132-rust-seed1021/report.md) | unassigned | `a36f5757819a` | 1021 | a fruit bat | 30109 | unassessed |
+| [D2133-rust-seed1022](D2133-rust-seed1022/report.md) | unassigned | `a36f5757819a` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D2134-rust-seed1043](D2134-rust-seed1043/report.md) | unassigned | `a36f5757819a` | 1043 | a wild cat | 23423 | unassessed |
+| [D2135-rust-seed1050](D2135-rust-seed1050/report.md) | unassigned | `a36f5757819a` | 1050 | a grey mold | 24096 | unassessed |
+| [D2136-rust-seed1062](D2136-rust-seed1062/report.md) | unassigned | `a36f5757819a` | 1062 | a soldier | 49147 | unassessed |
+| [D2137-rust-seed1072](D2137-rust-seed1072/report.md) | unassigned | `a36f5757819a` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D2138-rust-seed1074](D2138-rust-seed1074/report.md) | unassigned | `a36f5757819a` | 1074 | poison | 22250 | unassessed |
+| [D2139-rust-seed1084](D2139-rust-seed1084/report.md) | unassigned | `a36f5757819a` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2140-rust-seed1004](D2140-rust-seed1004/report.md) | unassigned | `a36f5757819a` | 1004 | a wild cat | 8801 | unassessed |
+| [D2141-rust-seed1011](D2141-rust-seed1011/report.md) | unassigned | `a36f5757819a` | 1011 | a grey mushroom patch | 3035 | unassessed |
+| [D2142-rust-seed1013](D2142-rust-seed1013/report.md) | unassigned | `a36f5757819a` | 1013 | a giant yellow centipede | 9316 | unassessed |
+| [D2143-rust-seed1021](D2143-rust-seed1021/report.md) | unassigned | `a36f5757819a` | 1021 | a giant yellow centipede | 2581 | unassessed |
+| [D2144-rust-seed1020](D2144-rust-seed1020/report.md) | unassigned | `a36f5757819a` | 1020 | a giant yellow centipede | 23988 | unassessed |
+| [D2145-rust-seed1044](D2145-rust-seed1044/report.md) | unassigned | `a36f5757819a` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
+| [D2146-rust-seed1052](D2146-rust-seed1052/report.md) | unassigned | `a36f5757819a` | 1052 | a giant white louse | 26634 | unassessed |
 
 ## Aggregated actions
 

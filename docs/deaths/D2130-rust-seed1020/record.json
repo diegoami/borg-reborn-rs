@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2130-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 9547,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "menu",
+    "git_rev": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+    "git_dirty": "no",
+    "source_sha256": "ea7d1a0faed88fcba174e194ae21eabed93331fa1978b56377a34389f1cae512",
+    "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352",
+    "borg_txt_sha256": "5cf3ba19d2f6289ef37b51a0a8184fa6fa6085e80113db0b3f975d5a801afeca",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/none-full-2-druid-0",
+      "result_sha256": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+      "raw_sha256": {
+        "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+        "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+        "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+      },
+      "source_commit": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+      "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352"
+    }
+  ],
+  "encounter_family": "start-69c18e438240d5d266ac3b75e3ff60cf91c9f36077fb75d5e298bbfbff9fc69d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a7707ecee1cb5b086d1cdb3189f30ff5374e5117ca91c7b5fa996271c6f3c7ac",
+    "config.txt": "d37193fe6e0a02855dd98479b07c942cbc1a17e0664919e43141d042a4a37b3b",
+    "depths.json": "533a365f2830c55eca6cbee4c04cf100b2f85de33843ba5c1e72d4bf00e1ca2d",
+    "summary.json": "696200a924d5712b781f0be5a5f7f8e4ec46c663f2acbcba03eacb9e2637ac4f"
+  },
+  "investigation": null,
+  "issue": null
+}

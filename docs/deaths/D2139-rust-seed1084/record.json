@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2139-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Blackguard",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 3,
+    "level": 2,
+    "turn": 22908,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "menu",
+    "git_rev": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+    "git_dirty": "no",
+    "source_sha256": "ea7d1a0faed88fcba174e194ae21eabed93331fa1978b56377a34389f1cae512",
+    "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352",
+    "borg_txt_sha256": "e1f755e00b7a198ecebb7ec791914ae95b99ead93dc430c3c3b43469fecfd76d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/none-full-8-blackguard-4",
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "source_commit": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+      "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352"
+    }
+  ],
+  "encounter_family": "start-8b4117b34c80685797038ab5fb23a122763e5fa15defd287a1bfd837bf19364f",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a7707ecee1cb5b086d1cdb3189f30ff5374e5117ca91c7b5fa996271c6f3c7ac",
+    "config.txt": "5976f4191595a011d214f203d290368f628b5ed8c4445c45af06b34e4beda2cd",
+    "depths.json": "9e1264e77d05bb9c81fe8bec89fc1fda643ce0088f150bffe3bc41105ad1f4dd",
+    "summary.json": "b6c176f958a157d474e4664ce5af9bceb28f40e95cc3a8ca3a73a8986e07f3bf"
+  },
+  "investigation": null,
+  "issue": null
+}

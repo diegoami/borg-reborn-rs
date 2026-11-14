@@ -157,6 +157,45 @@ full suite, `menu`), with no munchkin and no town scumming:
 - **A trip is short.** borg-rs at levels 1–3 tires of a DL1 level in a few
   hundred turns; the errand turns each of those into a trip home.
 
+**The trial on all 45 characters, at v12** (borg-rs `4.2.6-impact-v12`, its
+engine through patch 08, munchkin and town scumming off, `menu`):
+
+| | no errand (60,000 turns) | `trips:1*/1,2,1*/1,2,3,2,1*` (budget 55,000) |
+|---|---|---|
+| deaths | 11 | 7 |
+| mean character level | 3.40 | 2.96 |
+| mean max depth | 1.84 | 1.53 |
+| reached DL3 or deeper | 4 | 0 |
+| trips home | — | median 43 per character |
+| outcome | — | 38 at the budget, 7 dead |
+
+**Deaths, character by character:**
+- **8 die only without the errand:**
+  - druid-2 (giant yellow centipede), druid-3 (metallic red centipede);
+  - necromancer-3 (wild cat), paladin-0 (grey mold), rogue-2 (soldier);
+  - ranger-2 (giant white mouse), ranger-4 (poison);
+  - blackguard-4 (grey mushroom patch).
+- **4 die only under the errand:**
+  - warrior-4 (wild cat), mage-3 (giant yellow centipede) and
+    necromancer-4 (Grip): all at character level 1 on DL1;
+  - paladin-2 (giant white louse) at level 5 on DL1.
+
+**The errand trades progress for safety.** Fewer deaths, but slower
+levels and shallower play; no character reached DL3 by the budget.
+
+- **Why no DL3.** The ladder moves on only when borg-rs is prepared for the
+  next trip's deepest level. borg-rs's readiness is cautious: the median
+  character skipped no level, it simply stayed on the trip it was ready
+  for.
+- **Why it is slower.** Trips are short. borg-rs tires of a DL1 level
+  quickly, and the errand turns each of those into a trip home.
+
+Both the readiness the ladder waits on and the length of a trip are for
+the owner to tune. The ladder is the player's: a warrior ladder that moves
+on sooner is one string.
+
+The runs' dossiers are committed (`docs/deaths`).
+
 ## Next
 
 1. C2:

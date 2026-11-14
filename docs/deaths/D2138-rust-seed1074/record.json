@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2138-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 3,
+    "turn": 22250,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "menu",
+    "git_rev": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+    "git_dirty": "no",
+    "source_sha256": "ea7d1a0faed88fcba174e194ae21eabed93331fa1978b56377a34389f1cae512",
+    "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352",
+    "borg_txt_sha256": "e14fe0312ae06a16c6bfeee011d025da436d24a94eb4b2b1db7397b8cade4d27",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/none-full-7-ranger-4",
+      "result_sha256": "adf910ee154722cb124c4e7b1c4e016aacc61a05d5847459eecf9058c7a172fe",
+      "raw_sha256": {
+        "keys.log": "adf910ee154722cb124c4e7b1c4e016aacc61a05d5847459eecf9058c7a172fe",
+        "messages.log": "342b55931eb619d14999ca410324a61d17333d7111e10b37fc5d6dd5f61b0bf5",
+        "state.log": "a5e3a7b7af2bb038bce9e01143105587d5850dd32031b304f1a2c44b95694b55"
+      },
+      "source_commit": "a36f5757819aa724b02e8c749724b8fdc1f0b37c",
+      "binary_sha256": "1855718b5e295b3d6702df53ec6d9962c84965e21c3c3f98459cab795f7f9352"
+    }
+  ],
+  "encounter_family": "start-a9377f6c042595bb204c5a364428201b1566fe5f2669470e79d8691d8bc9ad08",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a7707ecee1cb5b086d1cdb3189f30ff5374e5117ca91c7b5fa996271c6f3c7ac",
+    "config.txt": "1d13adeae4f28b62851d283ce3ce401178a583598f8a1ce672b6eaaf17082f8d",
+    "depths.json": "d817208c0c65c10a20e382293c20d2805054beb874062ea84241c24206016229",
+    "summary.json": "2e1c89d8e0554fa52490719fc94ac25a9efde1cf35bb966d740de52e0270640d"
+  },
+  "investigation": null,
+  "issue": null
+}
