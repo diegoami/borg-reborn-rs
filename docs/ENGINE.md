@@ -116,8 +116,11 @@ Our CMake project (docs/SPEC.md §3.6; task TE.4):
 - `-DSUPPORT_X11=ON` also builds the X11 frontend (for the launcher, TE.6).
 
 `harness/build.sh` (`BORG_IMPL=rust`, the zoo's entry point) runs it and
-writes `build/rust/BUILD_ID`. The build inputs (`harness/identity.sh`) are
-`engine/` (tests aside), `borg-reborn-rs/`, `Cargo.toml` and `Cargo.lock`.
+writes `build/rust/BUILD_ID`. The build inputs are the paths `harness/identity.sh` lists: `engine/`
+(tests aside), `borg-reborn-rs/`, `borg-core/` (borg-rs's vendored core,
+since #214), `Cargo.toml`, `Cargo.lock`, and the recorder's inputs
+(`engine/recorder-hooks.patch`, `recorder-pin.json`,
+`vendor/angband-recorder`, since #211).
 
 **Reproduction (TE.4):** the Rust Borg built here plays byte-identical keys,
 messages and states to its build on borg-rs's tree: smoke 3/3, full 45/45,
