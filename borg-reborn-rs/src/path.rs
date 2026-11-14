@@ -219,7 +219,10 @@ impl DistanceMap {
         };
         let mut queue: BinaryHeap<Reverse<(u32, i32, i32)>> = BinaryHeap::new();
         for &(x, y) in targets {
-            if x < 0 || y < 0 || x >= width || y >= height {
+            // A barred grid is no goal either (#201): the guard refused the
+            // step into it, and a target pulls the path there as surely as
+            // a road does.
+            if x < 0 || y < 0 || x >= width || y >= height || barred.contains(&(x, y)) {
                 continue;
             }
             let base = standing_cost(w, k, x, y, risk_aversion_pct);
@@ -739,6 +742,9 @@ pub(crate) mod tests {
         let mut p = Paths::new(&w);
         assert_ne!(p.distance(&w, &k, &goal), UNREACHED);
         p.bar(vec![(3, 1)]);
+        assert_eq!(p.distance(&w, &k, &goal), UNREACHED); // The barred grid is the goal itself: no goal is left.
+        let mut p = Paths::new(&w);
+        p.bar(vec![(5, 1)]);
         assert_eq!(p.distance(&w, &k, &goal), UNREACHED);
     }
 
