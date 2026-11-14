@@ -16,16 +16,20 @@
 
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_MAXHP};
 use crate::engine;
+use crate::headers::list_terrain_h::FEAT_MORE;
+use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
 use std::sync::Mutex;
 
 /// An errand.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Errand {
-    /// Go down to depth `N` as fast as the core's own diving allows: every
-    /// depth down to `N` counts as prepared (`borg_prepared`), so the core's
-    /// power-dive takes the stairs. Its caution, escapes and fleeing still
-    /// run. Ends at depth `N`.
+    /// Go down to depth `N`: above it, after the core's caution, flow to a
+    /// known down staircase and take it, the core's own power-dive steps
+    /// (`borg_think_dungeon.rs`, Lunal mode: `borg_flow_old(GOAL_FLEE)`,
+    /// `borg_flow_stair_more`, `>`); with none known, the core explores as
+    /// usual. Depths down to `N` count as prepared (`borg_prepared`), so the
+    /// core does not climb back up from them. Ends at depth `N`.
     DiveTo(i32),
 }
 
@@ -72,6 +76,28 @@ pub fn errand() -> Option<Errand> {
 /// prepared.
 pub(crate) fn prepared_override(depth: i32) -> bool {
     matches!(errand(), Some(Errand::DiveTo(n)) if depth <= n)
+}
+
+/// `GOAL_FLEE` (borg-flow.h), as the core's think modules declare it.
+const GOAL_FLEE: i32 = 7;
+
+/// After the core's caution: steer toward the errand. `true` when a step
+/// was queued.
+pub(crate) fn steer(st: &mut BorgState) -> bool {
+    let Some(Errand::DiveTo(n)) = errand() else {
+        return false;
+    };
+    let depth = st.borg.tr(BI_CDEPTH);
+    if depth == 0 || depth >= n {
+        return false;
+    }
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    if u32::from(st.cave.grid(x, y).feat) == FEAT_MORE {
+        crate::borg_io::borg_keypress(st, keycode_t::from(b'>'));
+        return true;
+    }
+    crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+        || crate::borg_flow_stairs::borg_flow_stair_more(st, GOAL_FLEE, true, false)
 }
 
 /// Before the dungeon think: end the errand when its predicate holds or its

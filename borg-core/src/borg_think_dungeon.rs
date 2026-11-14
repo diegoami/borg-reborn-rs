@@ -1536,6 +1536,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#208): an errand steers here, after caution.
+    if crate::shell::steer(st) {
+        return true;
+    }
+
     /*** if returning from dungeon in bad shape...***/
     if st.borg.tr(BI_LIGHT) == 0
         || st.borg.tr(BI_ISCUT) != 0
