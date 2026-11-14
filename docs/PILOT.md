@@ -41,6 +41,49 @@ The same seeds, through `tools/progress.py`:
 | mean character level | 5.47 | 3.98 |
 | reached DL5 | 18 | 0 |
 
+## Re-pin to borg-rs milestone 12 (2026-11-14)
+
+borg-core moved from `4ed3263` to borg-rs's accepted milestone 12 (tag
+`4.2.6-impact-v12`, `e6d13fc`). Owner's choice: the accepted milestone,
+with munchkin and town scumming kept off by `borg-core/overrides.txt`.
+Milestone 12 and borg-rs `main` still ship `borg_munchkin_by_class = TRUE`.
+Munchkin and lunal are removed from the code only on the unmerged
+`feature/trip-policy` (borg-rs#60), which also brings a trip-policy seam,
+`borg_trip.rs`.
+
+**Carrying borg-rs's changes.** This is the pilot's first measurement of
+it. Our changes to the vendored crate (9 files) were exported as one patch
+against `4ed3263` and applied to v12 with no conflict and no offset. borg-rs
+had changed 8 of its files (+51 −44) in between. `borg.txt` and the C
+reference files did not change. Builds, clippy and tests passed (borg-core
+124, ours 152).
+
+**Parity at v12**, run with borg-rs's own settings (`BORG_CORE_OVERRIDES=off`)
+against a fresh build of borg-rs v12:
+
+| | identical |
+|---|---|
+| smoke | 3/3 |
+| full | **44/45** |
+| our core: smoke, smoke-exact | 3/3, 3/3 |
+
+**The one difference is the engine's, not the Borg's.**
+- **Milestone 12 changes borg-rs's Angband tree.** It imports later engine
+  fixes into `cmd-cave.c`, `player-util.c`, `player-timed.c`,
+  `game-world.c`, `ui-term.c` and others (32 files, +674 −128). Among them
+  is a new end-of-rest condition, `player_timed_continues_rest` in
+  `player_resting_complete_special`. Our engine is upstream `e473720`, byte
+  for byte.
+- **Where it shows.** In `full-2-druid-4`, at game turn 16,281, just after
+  a recall to town, both sides issue the same rest (`R&` Enter). In
+  borg-rs's v12 engine the rest runs to 16,611. In ours it ends at once,
+  the Borg rests again, and the games part.
+- **Exact parity at v12** needs the same engine. Either our patch series
+  carries borg-rs's v12 engine changes, or the comparison accepts the
+  engine as a declared difference. That is a decision for the owner,
+  because it also changes the engine our own core and the zoo measure on
+  (RULES 9: the upstream tree is never edited; patches are ours).
+
 ## C2: errands over the core (#208): trips, in progress
 
 **No stair-scumming, no town scumming.** borg-rs's `borg.txt` has the
