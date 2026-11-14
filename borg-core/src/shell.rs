@@ -9,14 +9,18 @@
 //! (a mage repeats town-DL1-town longer, a warrior goes deeper sooner).
 //!
 //! - **On a level of the plan the core plays as itself.** The level is
-//!   explored when the core decides to leave it (`borg_leave_level`); the
-//!   trip then goes to its next level, or home.
+//!   explored when the core is bored with it and free to go either way:
+//!   `borg_leave_level` has weighed its own reasons (readiness for this
+//!   depth, restocking, selling, fixed level or experience) and none holds.
+//!   Then the trip goes to its next level, or home. Otherwise the core's
+//!   choice stands, and the level watch reads where it arrives.
 //! - **Between levels the errand walks the stairs**, after the core's
 //!   caution, with the core's own stair flows. The next trip starts by the
 //!   down staircase (never a recall to the maximum depth).
 //! - **The core's own readiness stands.** A planned level the core is not
 //!   prepared for (`borg_prepared`) is skipped and noted, never forced. A
-//!   core that must go back to town to restock ends the trip there.
+//!   core that goes back to town to restock does so its own way; the level
+//!   stays in the plan, and the errand takes it back.
 //! - **A trip marked `*` repeats** until the core is prepared for the
 //!   deepest level of the next trip (`borg_prepared`); the last one repeats
 //!   until the budget. The player writes the ladder, the core's readiness
@@ -153,7 +157,7 @@ impl Command {
             }),
             ("stall", v) => Command::Stall(match v.to_ascii_lowercase().as_str() {
                 "off" | "false" | "no" => None,
-                n => Some(n.parse::<i32>().ok().filter(|n| *n >= 100)?),
+                n => Some(n.parse::<i32>().ok().filter(|n| *n >= 1)?),
             }),
             ("stop", "") | ("none", "") => Command::Stop,
             _ => return None,
@@ -288,6 +292,9 @@ struct Running {
     name: String,
     /// The level the character is on, as the errand watches it.
     watch: Option<Watch>,
+    /// The character the errand was given to (class), and the last game
+    /// turn seen: a new character drops the errand (review #227, finding 5).
+    owner: Option<(u32, i64)>,
 }
 
 /// The level under the errand: its depth, the grids the core knows of it,
@@ -397,6 +404,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             recall,
             name,
             watch: None,
+            owner: None,
         }
     });
 }
@@ -571,6 +579,22 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         finish(st, "scared");
         return Some(true);
     }
+    // A new character in this process (reincarnation, another save): the
+    // errand and its queue were the old one's (review #227, finding 5).
+    let stale = {
+        let mut guard = running();
+        let r = guard.as_mut()?;
+        let class = engine::class_cidx();
+        let stale = r.owner.is_some_and(|(c, last)| c != class || turn < last);
+        r.owner = Some((class, turn));
+        stale
+    };
+    if stale {
+        borg_note(st, "# Errand: a new character; the errand is dropped.");
+        NEXT.lock().unwrap().clear();
+        set_errand(None, 0);
+        return None;
+    }
     // A plan that starts here, and the arrival of a dive.
     {
         let mut guard = running();
@@ -709,48 +733,50 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
             return None;
         }
     };
-    report(st, outcome, turn);
-    set_errand(None, 0);
-    crate::borg_think::borg_oops(st, &format!("errand {outcome}"));
+    // Through `finish`, so a `;` queue goes on (review #227, finding 4).
+    finish(st, outcome);
     Some(true)
 }
 
-/// The core decided to leave the level (`borg_leave_level`): the level is
-/// explored. The trip moves on, and the errand walks toward its next level.
-/// `None` lets the core decide as usual.
+/// Town (`borg_leave_level` at depth 0): the core shops until it is bored,
+/// then the trip starts by the stairs (never a recall to the maximum
+/// depth). `None` lets the core decide as usual.
 pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
-    if !active() {
+    if !active() || st.borg.tr(BI_CDEPTH) != 0 {
+        return None;
+    }
+    Some(bored && stairs_down(st))
+}
+
+/// In the dungeon, `borg_leave_level` once the core has weighed its own
+/// reasons (readiness for this depth, restocking, selling, fixed level or
+/// experience, the time on the level). `free`: the core is bored with the
+/// level (done with it), and none of those reasons holds (not rising, not
+/// restocking, prepared for this depth). Only then is the level explored
+/// and the way on the errand's. Otherwise `None`: the core's own choice
+/// stands (it keeps exploring, climbs, or goes home), and the level watch
+/// reads where it arrives. Review #227, findings 1-3: the hook used to run
+/// first, so routine `borg_leave_level(st, false)` calls ended levels, and
+/// the core's readiness and restock reasons were skipped.
+pub(crate) fn on_leave_choice(st: &mut BorgState, free: bool) -> Option<bool> {
+    if !active() || !free {
         return None;
     }
     let depth = st.borg.tr(BI_CDEPTH);
-    if depth == 0 {
-        // Town: the core shops until it is bored, then the trip starts by
-        // the stairs.
-        return Some(bored && stairs_down(st));
-    }
     if scared_home(st) {
         if running().as_ref().is_some_and(|r| r.end != End::Home) {
             // The player's command cannot go on: hand control back.
             finish(st, "aborted: the core wants town");
             return Some(true);
         }
-        // The core wants town: it leaves its own way (stairs up, recall).
         return None;
     }
-    let restock = crate::borg_prepared::borg_must_return_to_town(st).is_some();
     let mut advanced = false;
     if let Some(r) = running().as_mut() {
-        if restock && r.step < usize::MAX {
-            // The core must restock: the trip ends here, at home.
-            r.step = usize::MAX;
-            advanced = true;
-        } else if r.target() == Some(depth) {
+        if r.target() == Some(depth) {
             r.step += 1;
             advanced = true;
         }
-    }
-    if restock && advanced {
-        borg_note(st, "# Errand: must restock, the trip goes home.");
     }
     let Some(t) = target(st) else {
         // The plan's last level is explored (`/explore-level`,
@@ -761,11 +787,11 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
     if advanced {
         borg_note(st, &format!("# Errand: DL{depth} explored, next DL{t}."));
     }
-    // The core is done with this level. With no staircase known toward the
-    // target, any staircase: a fresh level is the way on, as the core
-    // itself does when it is bored and cannot dive (DL1 up is the town,
-    // and the trip goes on from there). Without this, warriors with DL2
-    // as the target sat on a used-up DL1 with no down staircase known.
+    // With no staircase known toward the target, any staircase: a fresh
+    // level is the way on, as the core itself does when it is bored and
+    // cannot dive (DL1 up is the town, and the trip goes on from there).
+    // Without this, warriors with DL2 as the target sat on a used-up DL1
+    // with no down staircase known.
     Some(walk(st, depth, t) || stairs_down(st) || stairs_up(st))
 }
 
@@ -789,15 +815,13 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         }
         return false;
     }
-    if st.borg.goal.leaving || st.borg.goal.fleeing {
-        return false;
-    }
     let depth = st.borg.tr(BI_CDEPTH);
     let Some(t) = target(st) else {
         return false;
     };
     // `/town`: the core's own recall (scroll, rod, spell, activation) when
-    // it has one; until it takes effect the stairs up are walked anyway.
+    // it has one, even while it is leaving or fleeing the level (review
+    // #227, finding 6); until it takes effect the stairs up are walked.
     let recall = running().as_ref().is_some_and(|r| r.recall);
     if recall
         && t == 0
@@ -806,6 +830,9 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         && crate::borg_escape::borg_recall(st)
     {
         return true;
+    }
+    if st.borg.goal.leaving || st.borg.goal.fleeing {
+        return false;
     }
     // In town the core shops and leaves by itself (`on_leave_level`); on a
     // level of the plan it explores, until it is done with the level, or
@@ -861,8 +888,12 @@ fn level_done(st: &BorgState, depth: i32) -> Option<String> {
             known,
             progress: turn,
         });
-        if w.known == 0 {
+        if w.known == 0 || known < w.known {
+            // First count, or the core rebuilt its map without a level
+            // change (its clock-wrap precaution): the clock starts again
+            // (review #227, finding 7).
             w.known = known;
+            w.progress = turn;
         } else if known > w.known {
             w.known = known;
             w.progress = turn;
@@ -1083,6 +1114,7 @@ mod tests {
             recall: false,
             name: String::new(),
             watch: None,
+            owner: None,
         };
         assert_eq!(dive.target(), Some(3));
         let mut stop = Running {
@@ -1131,6 +1163,7 @@ mod tests {
             recall: false,
             name: String::new(),
             watch: None,
+            owner: None,
         };
         assert_eq!(r.target(), Some(1));
         r.step = 1;

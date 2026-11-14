@@ -722,7 +722,7 @@ fn note_with(st: &mut BorgState, prefix: &[u8], text: &[u8], suffix: &[u8]) {
 /// Leave the level if necessary (or bored)
 /// Scumming defined in borg_prepared.
 pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
-    // borg-reborn-rs (#208): a trips errand decides where a level leads.
+    // borg-reborn-rs (#208): in town, an errand's trip starts by the stairs.
     if let Some(r) = crate::shell::on_leave_level(st, bored) {
         return r;
     }
@@ -993,6 +993,15 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* Go Up */
+    // borg-reborn-rs (#208, review #227): with its own reasons weighed, a
+    // core that is bored and free to go either way follows the errand.
+    if let Some(r) = crate::shell::on_leave_choice(
+        st,
+        bored && !st.borg.goal.rising && !need_restock && prep_cur_depth.is_none(),
+    ) {
+        return r;
+    }
+
     if g < 0 {
         if !engine::player_opt(OPT_birth_force_descend) {
             /* Take next stairs */
