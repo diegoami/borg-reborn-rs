@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2133; distinct starting conditions: 2129; retained process attempts: 2133 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2139; distinct starting conditions: 2135; retained process attempts: 2139 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2139,6 +2139,12 @@ Dossiers: 2133; distinct starting conditions: 2129; retained process attempts: 2
 | [D2151-rust-seed1020](D2151-rust-seed1020/report.md) | unassigned | `b0589bbf79e7` | 1020 | a giant yellow centipede | 23988 | unassessed |
 | [D2152-rust-seed1044](D2152-rust-seed1044/report.md) | unassigned | `b0589bbf79e7` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
 | [D2153-rust-seed1052](D2153-rust-seed1052/report.md) | unassigned | `b0589bbf79e7` | 1052 | a giant white louse | 26634 | unassessed |
+| [D2154-rust-seed1004](D2154-rust-seed1004/report.md) | unassigned | `f04f3290a99d` | 1004 | a wild cat | 8801 | unassessed |
+| [D2155-rust-seed1011](D2155-rust-seed1011/report.md) | unassigned | `f04f3290a99d` | 1011 | a grey mushroom patch | 3035 | unassessed |
+| [D2156-rust-seed1013](D2156-rust-seed1013/report.md) | unassigned | `f04f3290a99d` | 1013 | a giant yellow centipede | 9316 | unassessed |
+| [D2157-rust-seed1021](D2157-rust-seed1021/report.md) | unassigned | `f04f3290a99d` | 1021 | a giant yellow centipede | 2581 | unassessed |
+| [D2158-rust-seed1020](D2158-rust-seed1020/report.md) | unassigned | `f04f3290a99d` | 1020 | a giant yellow centipede | 23988 | unassessed |
+| [D2159-rust-seed1044](D2159-rust-seed1044/report.md) | unassigned | `f04f3290a99d` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
 
 ## Aggregated actions
 

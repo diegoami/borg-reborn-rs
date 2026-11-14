@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2154-rust-seed1004",
+  "run_kind": "harness",
+  "character": "Gnome Warrior",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 8801,
+    "race_idx": 4,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1004,
+    "flags": "menu",
+    "git_rev": "f04f3290a99d1311346e7d7d5686cc2e83648cfa",
+    "git_dirty": "no",
+    "source_sha256": "d4315696e718d45c12bf6c9de634110679e0a10320b429e489a8e22925f70d99",
+    "binary_sha256": "60d8b41a3b5bf04721ca8b56047bc601d98bb296dd4b4a1a8bb429d2e8a939f9",
+    "borg_txt_sha256": "3e263d9d1dfc5ba3f38a0c23d873b0628710c74b31f71c95739671c60abbf988",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-0-warrior-4",
+      "result_sha256": "43e6400ff6aa038e269599b71b59f20e9dd3a6c6d5f8d63e1176c259a48a6532",
+      "raw_sha256": {
+        "keys.log": "43e6400ff6aa038e269599b71b59f20e9dd3a6c6d5f8d63e1176c259a48a6532",
+        "messages.log": "8fc9871a7fe798279fa3cbcb708c295ebbff76f7424f28331cb9b990668793b3",
+        "state.log": "1cce432fb4e3f5bb0908f0283791d9b9340eda385e65a561bea07c871202ab07"
+      },
+      "source_commit": "f04f3290a99d1311346e7d7d5686cc2e83648cfa",
+      "binary_sha256": "60d8b41a3b5bf04721ca8b56047bc601d98bb296dd4b4a1a8bb429d2e8a939f9"
+    }
+  ],
+  "encounter_family": "start-0e6b3e0bb01979dd78212caa7778bba624ca2d4c8d779676cdb0d21f8f1d8eb3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "752b9f05ae493caea2c187bb92eaec35aa6468209407a733a1ca3eb7d4419be6",
+    "config.txt": "e415016221d1f7fab5859b61b9852960561213673d5ebcfc8674e07fdcdd9a84",
+    "depths.json": "823b001cabaac7fc5dc037f718cebb8be4a9afc8915454fa78c402cdb623c576",
+    "summary.json": "7512bcdc9c90d16746d8f5a63b2f9c2d6430c3798d22c1cf8b2298643b1aa78d"
+  },
+  "investigation": null,
+  "issue": null
+}
