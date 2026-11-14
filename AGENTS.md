@@ -74,18 +74,33 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 
 ## Choosing the work
 
-PLAN.md's milestone table says which milestone is in progress. **Work only
-inside it.** Tasks are GitHub issues labelled `task` in that GitHub
-milestone:
+**Work happens in tracks** (owner, 2026-11-14). PLAN.md lists them:
+
+| track | label | what | epic |
+|---|---|---|---|
+| **P** | `track:P` | calibration of borg-rs's core: named parameters, a decision trace | #218 |
+| **R** | `track:R` | the redesign: borg-rs's decisions re-expressed in our domain, behind a shadow check | #217 |
+| Q | `track:Q` | the query surface (only when the owner opens it) | |
+
+**A session works on one track**, the one the owner names in its first
+message ("work on track P"). Without one, ask the owner; do not pick. Inside
+the track, **work only in its milestone marked in progress** in PLAN.md.
+Each milestone has a label of its own (`P1`, `R1`, ...):
 
 ```sh
-gh issue list --milestone "E. Our own integration" --label task --state open
+gh issue list --label task --label "track:P" --label P1 --state open
 ```
 
-Take the lowest-numbered open task issue whose **Needs** issues are closed
-(or in an open PR you can stack on, RULES 5) and that has no `in progress`
-label. Add the `in progress` label and comment with your branch name before
-you start.
+Take the lowest-numbered open task issue of that milestone whose **Needs**
+issues are closed (or in an open PR you can stack on, RULES 5) and that has
+no `in progress` label. A Needs issue may belong to the other track: track R
+ports a subsystem only after track P has named its thresholds. Add the
+`in progress` label and comment with your branch name before you start.
+
+Two sessions on different tracks share `borg-core/`. Keep each change to
+the files its task names, merge `main` into your branch before the PR, and
+never rewrite the other track's work to make yours fit; say so in the PR
+and the handover instead.
 
 At the end of a task:
 1. `cargo fmt --check`, `cargo clippy --workspace -- -D warnings` and
@@ -96,8 +111,9 @@ At the end of a task:
    and `Closes #N` for its issue;
 4. **you merge it yourself** once CI is green (RULES 1).
 
-When the milestone's last task is merged, **stop** and open the review PR
-(PLAN.md). Do not start the next milestone.
+When your track's milestone has its last task merged, **stop** and open the
+review PR (PLAN.md). Do not start the track's next milestone, and do not
+move to the other track.
 
 ## Models
 

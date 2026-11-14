@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: two tracks, P (calibration) and R (the redesign epic)
+
+- **Owner:** both threads, side by side: the calibration workaround in
+  borg-rs's core (track P, epic #218) and the full redesign (track R, epic
+  #217). PLAN.md has their milestones and exits; AGENTS.md *Choosing the
+  work* says how a session takes a track (the owner names it; labels
+  `track:P` / `track:R` and `P1` / `R1` ...).
+- **In progress:** P1 (#219 parameter table and caution, #220 danger and
+  escape, #221 recovery, #222 the decision trace) and R1 (#223 `borg-next`
+  and the typed view, #224 the shadow harness, #225 the carry procedure).
+  #209 (pilot C3) is now R2.1.
+- **GitHub milestones** are not created for P and R (the session's tools
+  cannot); labels stand in. M5–M7 are paused.
+- **The review of option C as merged** (the vendored core, the errands, the
+  re-pin) is with the owner: the prompt is pinned to `main` `ad428a39`.
+
 ## 2026-11-14: the engine re-pinned to upstream 42cd156ac (#215)
 
 - **Every Borg plays upstream Angband** (owner). borg-rs v12's engine is
