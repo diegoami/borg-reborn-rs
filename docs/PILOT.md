@@ -331,6 +331,62 @@ From DL3 (`/dive 3; /X`, warrior 1000 and paladin 1050, 80k turns):
   it. A command errand needs a stall guard (no new grid, no fight, no
   level change for N turns: take the stairs toward the target); not done.
 
+**The stair loop, and the ladders measured again** (2026-11-14).
+- **The loop.** Below character level 10, borg-rs takes the stairs up from
+  a level it is not prepared for ("Needing to get back on correct depth",
+  `borg_think_dungeon.rs`, before caution). The errand walked back down,
+  and connected stairs looped: a ranger for 55,000 turns, and the "resting
+  paladin" above was in the same loop between DL2 and DL3 (119,000 such
+  notes). Every ladder trial above ran with this possible; their numbers
+  are superseded by the table below.
+- **The fix.** The errand watches every level change. A rise that stays in
+  the dungeon while the plan wants deeper means the core is not fit there:
+  a ladder trip goes home, a player's command (`/dive N`,
+  `/dive-exploring N`) stops ("the core rose from DL2, not fit for DL3").
+  A rise to town is not one (the core goes home to shop; at turn 1 it
+  flees the town's urchins to DL1 and comes straight back): the level
+  stays in the plan.
+- **Fear overrides the plan** (owner, 2026-11-14): a level of the plan
+  the core leaves for another dungeon level its own way counts as
+  explored.
+- **Explored at 90%** (owner, 2026-11-14: "happy at 90% or something"):
+  `/explored N` (default 90) ends a level once N% of its real floor is
+  seen; `/stall N` (default 10,000 game turns) gives it up when nothing new
+  is seen. Neither fired in the command trials: the core was done first.
+- **Parity:** with no errand and borg-rs's own `borg.txt`, the full suite
+  is 45/45 identical with the v12 oracle.
+
+| full suite, v12, this build | deaths | mean level | mean max depth | DL3+ |
+|---|---|---|---|---|
+| no errand (munchkin and self-scum off) | 12 | 4.04 | 2.13 | 9 |
+| class ladders | **6** | 4.00 | 1.98 | 5 |
+
+| class (deaths / level / max depth) | no errand | class ladder |
+|---|---|---|
+| warrior | 0 / 6.6 / 3.0 | 1 / 4.4 / 2.0 |
+| mage | 1 / 4.0 / 1.6 | 1 / 3.4 / 1.6 |
+| druid | 4 / 1.8 / 1.2 | 1 / 3.2 / 1.6 |
+| priest | 0 / 4.0 / 2.0 | 0 / 3.4 / 1.8 |
+| necromancer | 1 / 3.0 / 1.6 | 1 / 2.6 / 1.6 |
+| paladin | 1 / 3.8 / 1.8 | 1 / 4.2 / 2.0 |
+| rogue | 1 / 5.0 / 2.6 | 0 / 5.6 / 2.0 |
+| ranger | 3 / 4.2 / 3.2 | 0 / 5.2 / 2.2 |
+| blackguard | 1 / 4.0 / 2.2 | 1 / 4.0 / 3.0 |
+
+- **The ladder halves the deaths** (12 to 6) at the same mean level
+  (4.00 against 4.04), a little shallower (1.98 against 2.13).
+- **Druids gain most** (4 deaths to 1, level 1.8 to 3.2); rangers (3 to 0)
+  and rogues too.
+- **Warriors pay**: no deaths without the errand at level 6.6 and DL3.0;
+  with the ladder, 1 death, level 4.4, DL2.0. The second-tier gates hold
+  them back.
+- The no-errand baseline differs from the earlier one (11 / 3.40 / 1.84):
+  that one ran on an earlier build and settings file; this table compares
+  both arms on one build. Five seeds per class: a lead, not a claim
+  (RULES 14); the zoo run measures it.
+- The 28 deaths of these suites (no errand, ladder, parity) are
+  `docs/deaths/D2188`-`D2215`.
+
 ## Next
 
 1. C2:

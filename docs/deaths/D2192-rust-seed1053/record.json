@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2192-rust-seed1053",
+  "run_kind": "harness",
+  "character": "Dunadan Paladin",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 3,
+    "turn": 26170,
+    "race_idx": 8,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1053,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "51c3e94088af478f2d3562a743d01cb78b4f87b93dd0893da6aae30661dca9ed",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/ladder/full-5-paladin-3",
+      "result_sha256": "d4d83cc80e64df1bb5b543bee5362295b835482b85698169eab1331c91e32230",
+      "raw_sha256": {
+        "keys.log": "d4d83cc80e64df1bb5b543bee5362295b835482b85698169eab1331c91e32230",
+        "messages.log": "d5ee9f83f1122b78b3a340ad9ebb6d47e872ee095afeca44be8ce9446a2edf86",
+        "state.log": "92e98a9c13f3af63f70262fdf9e0022ddeb1ffb366e21e99af3e7f421425af8d"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-9964e0cf748eb30366d672b3c19373c2c63c0473e97454f7b3b85f448a143cf3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "25e765514ec6e6ddeba26081407659c2ea614d8a988a0fb5ca572e3c86a4976b",
+    "depths.json": "eb21f1e057a6d9a03e714a11f5508bcafeb1e2d4ad3d44462eaa8c23136f6915",
+    "summary.json": "6ba678edf92e6c864a231b9dc77de974ccef573aca043cbe586e6aa20eece4cf"
+  },
+  "investigation": null,
+  "issue": null
+}

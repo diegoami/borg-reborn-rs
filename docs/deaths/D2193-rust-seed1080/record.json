@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2193-rust-seed1080",
+  "run_kind": "harness",
+  "character": "Dunadan Blackguard",
+  "raw_cause": "a snaga",
+  "terminal": {
+    "cause": "a snaga",
+    "dead": true,
+    "depth": 7,
+    "max_depth": 7,
+    "level": 5,
+    "turn": 56483,
+    "race_idx": 8,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1080,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "4fcedf4d32a69fc314a9beb6e6cc591896a270c861479c6f9b383f2a826e254c",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/ladder/full-8-blackguard-0",
+      "result_sha256": "478d55a16d17bf99dc3e79bb7c26aaf2d0a62cdf302ec2ea105e882d85c7ab30",
+      "raw_sha256": {
+        "keys.log": "478d55a16d17bf99dc3e79bb7c26aaf2d0a62cdf302ec2ea105e882d85c7ab30",
+        "messages.log": "0676adfbae3c880d46167983cf6678d7e25a79608a0a5cb09351363c485eef50",
+        "state.log": "36e183dd4862f05957686bf61eebffc6659b08a5a4ab02dcb6acd45a2e951878"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-df232137a890997fc6a5a981544796fe521d7a509e88c278e74cc4231acfd205",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "6aa660708f582cf3a68a8b3e3c3c1790450a4eb5884d71e9d376dabb56d6a6b3",
+    "depths.json": "6feef10f4398da9a6fad7b748871be1ee15a02c669d5303f0bceefd4656ab10d",
+    "summary.json": "4f4cead5c6422135c72597b3cb9cd87b66a52f0c9221c2483be7262ce33732a3"
+  },
+  "investigation": null,
+  "issue": null
+}

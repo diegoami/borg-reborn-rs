@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2198-rust-seed1023",
+  "run_kind": "harness",
+  "character": "Dwarf Druid",
+  "raw_cause": "a metallic red centipede",
+  "terminal": {
+    "cause": "a metallic red centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 13184,
+    "race_idx": 5,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1023,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "b2ab0ed936b876d503ec03c90f456bfdd19413608f71fd922ef532fc3f6efb8e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/none/full-2-druid-3",
+      "result_sha256": "a842a5177954184a1cf9706a0cc0c35e2c3421b830bacb05f42c9a339091220f",
+      "raw_sha256": {
+        "keys.log": "a842a5177954184a1cf9706a0cc0c35e2c3421b830bacb05f42c9a339091220f",
+        "messages.log": "773e8d04dec1f5dec7b3c546c921bc0bf57004a6cf32ee3abe565028b5f6f306",
+        "state.log": "917208c762248a29dddc26c30de61b6bdfaf93bd95f08ff78c81c2404db7a7b2"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-82e652e611428b0e6cb75abf776ff94ad5f5c0d1ea2d9010068f91d2f759a647",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "eb40bca135991b8a21960569a615ec3873ab43858f7c5664773ad65b51c0ce19",
+    "depths.json": "fd215581c63e7c4edd41b68dae16c0c81ba6abd728a74379ecf172baafc34eba",
+    "summary.json": "b2e1260e03ae4946e8cd5bdc4152ce0e7ac0d921f86bff9f39698c3a4a1c04a9"
+  },
+  "investigation": null,
+  "issue": null
+}

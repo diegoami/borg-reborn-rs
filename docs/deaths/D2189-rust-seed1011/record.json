@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2189-rust-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3035,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1011,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "83f6d73356b5dbc8cc6f44b0612c810aa7205e2f8d193bcc7736207b30317ff4",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/ladder/full-1-mage-1",
+      "result_sha256": "8313933e11fe9e49bb3d4dcaad051ef7b6a28847fe91ab6469c5ad493913c52a",
+      "raw_sha256": {
+        "keys.log": "8313933e11fe9e49bb3d4dcaad051ef7b6a28847fe91ab6469c5ad493913c52a",
+        "messages.log": "e59ef7c6fbe09769cecfde543bec022c8cdf44b8b2d17081dac3b7e1c5416042",
+        "state.log": "6b435477fa911664728b13e92dc6a6b8833a1f72c28e990f1d10313a33428a85"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-08945131c6c6ec0c8749e42942c1d75869246b2d1d7d46dee00e6770d7f00e98",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "9f96ddfc4405d96099ba8feb680233052ec5cd5930e5548c5e1409a3bda99141",
+    "depths.json": "11fb106928ea2da595151063696c511d7aa610aa59a1c85da91c9a4593ca795e",
+    "summary.json": "90357be3144308ce4514ea5f237ee5fe1f283281e04ea5afe2a4c34c6f3215b7"
+  },
+  "investigation": null,
+  "issue": null
+}

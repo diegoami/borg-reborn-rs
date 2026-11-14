@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2215-rust-seed1082",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a yellow mold",
+  "terminal": {
+    "cause": "a yellow mold",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 6,
+    "level": 8,
+    "turn": 75085,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1082,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "5f671ec41ef5d0ce4bb6e69ec3c30170e6b371d04eda53ec6e1d9b05abe6b849",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/parity/full-8-blackguard-2",
+      "result_sha256": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+      "raw_sha256": {
+        "keys.log": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+        "messages.log": "a7bb14404d245d86660c958b176c3f66e0eada41d5147cd68ef5db24304c3187",
+        "state.log": "16a262cb0071eced0548c489efd418d725082f19352eaf92d8235d4b7ccfd409"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-b5cd2f341df3bc07c9d62a139a6faff81413fe5f45350c7e3bdc8a04912bfb8a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "0cea396378bba547be911152e23dde7c76c730804bce9e848118b38a3afca0e7",
+    "depths.json": "4135fd09492d5021a3a6ab2c9ff258af911e26963d284ea681847378b1bb8509",
+    "summary.json": "048a452aa67038b79d8d8739f97a49ff2867fdc8cb1012e7b07d43bafb4ca78c"
+  },
+  "investigation": null,
+  "issue": null
+}

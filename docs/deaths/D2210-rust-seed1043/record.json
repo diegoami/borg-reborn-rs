@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2210-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Human Necromancer",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 38617,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/parity/full-4-necro-3",
+      "result_sha256": "1c78d7d5d0652d9f5c3124b0c9effd0fdadf7bc60192b3ee43a03e0cb2ab5130",
+      "raw_sha256": {
+        "keys.log": "1c78d7d5d0652d9f5c3124b0c9effd0fdadf7bc60192b3ee43a03e0cb2ab5130",
+        "messages.log": "bc58c459fc76e63c77868f500796d418bd3da55448d058bcd1926fda5d8e616e",
+        "state.log": "415a854b6aaa411bb2d11f65e183aaafc65799e10d2630f96f842831b5ef18a1"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-98956b72570135b73796d12a3cc19781d4170baa2f4cc4e77d551ef89a65baee",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "ec439057860aaf3474fdefdc301fdf59d3623dd2cd85b6dc62aed0a0a19024fc",
+    "depths.json": "606ba2af2ec1cc96b1bd8e0bfef2d8b0111a670e86ceb25d2f20d806ee0e1979",
+    "summary.json": "e8b0f728920b9da93a2c0d120371ba9d5d1bbf83a83025cb79ded8d4dacff7ab"
+  },
+  "investigation": null,
+  "issue": null
+}

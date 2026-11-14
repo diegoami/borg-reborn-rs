@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2202-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "a giant white mouse",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 40785,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "-",
+    "git_rev": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+    "git_dirty": "no",
+    "source_sha256": "1838f4fcd9674327bcb6894484513c0030ba3a42e02d6fa11137caa0112aa1e6",
+    "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e",
+    "borg_txt_sha256": "f53e929d363b1b9bf1173deac8630dc0f15ba308f4e87a4e0638f1ec2f04dbde",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/c2b/none/full-7-ranger-2",
+      "result_sha256": "2bbda4cbc42ff6e313ddc4fbc2dc866d6728d470c9ae57dbe5e1890b0aa395a6",
+      "raw_sha256": {
+        "keys.log": "2bbda4cbc42ff6e313ddc4fbc2dc866d6728d470c9ae57dbe5e1890b0aa395a6",
+        "messages.log": "b89d60b88825fe925622ebcc83cb2b29f0612cd64cd9fb89d29b569321246adb",
+        "state.log": "79300448e13f2cc613b7cc51c223d3d60732203909b575c698ad6a7c9aaba3be"
+      },
+      "source_commit": "5f62523e5515ddb56ff5ffbdb6f5c28688dfe6a5",
+      "binary_sha256": "df9c39b38a0524bc55961677ff7f6ab89b945e46c0b895355674bfbd9f8f5e1e"
+    }
+  ],
+  "encounter_family": "start-afd1abd6051a4ef7d5518c7e678a202c976b2803cb72e3ece2b9b713b5155db4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b778bbacba3cf3896affa47f2efba457155f301ae25716ca98fa60c08045ff47",
+    "config.txt": "37356f9f8540037dc6bc482be72267f03194f4166ea1ca15af6124d9789b1024",
+    "depths.json": "eec2256a0d0ab631f83eaf0d265bd98cd69a8b461b70ce41df9734d038d4b598",
+    "summary.json": "2ae8bb7636260cd217cc627403b5341fd160f124d958ac1e16f1ef4b7885f690"
+  },
+  "investigation": null,
+  "issue": null
+}
