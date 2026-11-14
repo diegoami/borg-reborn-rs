@@ -9,7 +9,7 @@
 # Build inputs (paths relative to the checkout root), docs/SPEC.md §3.6:
 #   rust  engine/angband/ engine/patches/ engine/frontend/ engine/CMakeLists.txt
 #         engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM
-#         borg-reborn-rs/ Cargo.toml Cargo.lock
+#         borg-reborn-rs/ borg-core/ Cargo.toml Cargo.lock
 # They are the files git tracks under those paths plus the untracked files
 # that .gitignore does not exclude, as they are in the working tree (not as
 # committed): source-hash is sha256 over "<git blob id> <path>" lines, so
@@ -27,7 +27,7 @@ inputs_of() {
     case "$1" in
         # docs/SPEC.md §3.6: the pristine tree, our patches, frontend and build
         # files, and the Rust Borg (engine/tests/ are not build inputs).
-        rust) echo "engine/angband engine/patches engine/frontend engine/CMakeLists.txt engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM borg-reborn-rs Cargo.toml Cargo.lock";;
+        rust) echo "engine/angband engine/patches engine/frontend engine/CMakeLists.txt engine/sources.cmake engine/apply-patches.sh engine/UPSTREAM borg-reborn-rs borg-core Cargo.toml Cargo.lock";;
         *) echo "identity.sh: the only implementation is rust, not '$1' (docs/SPEC.md §6)" >&2; exit 2;;
     esac
 }

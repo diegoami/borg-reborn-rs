@@ -285,6 +285,13 @@ static BORG: Mutex<Option<Borg>> = Mutex::new(None);
 /// The game options the Borg sets when it starts (docs/ENGINE.md).
 pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 
+/// Whether the decision core is borg-rs's (`BORG_CORE=borg-rs`, #207),
+/// read once.
+pub fn core_is_borg_rs() -> bool {
+    static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *CORE.get_or_init(|| std::env::var("BORG_CORE").is_ok_and(|v| v == "borg-rs"))
+}
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {

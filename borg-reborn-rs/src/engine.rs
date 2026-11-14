@@ -250,6 +250,12 @@ extern "C" fn inkey_hook(flush_first: c_int) -> b::keypress {
 /// `angband/src/cmd-misc.c`).
 #[no_mangle]
 extern "C" fn do_cmd_borg() {
+    // The decision core (#207, the option-C pilot): borg-rs's, vendored at
+    // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
+    if crate::borg::core_is_borg_rs() {
+        borg_rs::do_cmd_borg();
+        return;
+    }
     crate::borg::command();
 }
 

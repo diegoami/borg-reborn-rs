@@ -13,9 +13,14 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - run: cargo fmt --all --check
+      # borg-core is borg-rs vendored at its pin (#207): kept in borg-rs's
+      # own formatting, and tested as borg-rs tests it (release: the unit
+      # tests link without the engine only when unused engine calls are
+      # optimised out).
+      - run: cargo fmt --check -p borg-reborn-rs
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace
+      - run: cargo test --workspace --exclude borg-core
+      - run: cargo test --release -p borg-core
       - run: bash -n scripts/setup.sh
       - run: python3 -m unittest discover -s scripts/tests
       - run: python3 -m unittest discover -s tools/tests

@@ -125,13 +125,17 @@ if [ "$CHECKPOINT_EVERY" != 0 ]; then
     mkdir -p "$OUT/checkpoints"
     BORGH_FLAGS+=(-checkpoint-every "$CHECKPOINT_EVERY" -checkpoint-dir "$OUT/checkpoints")
 fi
+# borg-rs's core (BORG_CORE=borg-rs, #207) reads borg.txt: it gets its own,
+# borg-rs's harness/borg.txt at the pin (borg-core/borg.txt).
+BORG_TXT="$ROOT/harness/borg.txt"
+[ "${BORG_CORE:-}" = borg-rs ] && BORG_TXT="$ROOT/borg-core/borg.txt"
 # The run's user/borg.txt, as before: the Rust Borg does not read it, but
 # the zoo's adapter copies harness/borg.txt (docs/ZOO-INTERFACE.md) and its
 # hash is part of a death's encounter family.
 sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
-    "$ROOT/harness/borg.txt" > "$OUT/user/borg.txt"
+    "$BORG_TXT" > "$OUT/user/borg.txt"
 {
     echo "flags=$FLAGS"
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"

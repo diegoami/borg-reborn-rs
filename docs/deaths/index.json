@@ -1,8 +1,8 @@
 {
   "actions": [],
-  "cases": 2072,
+  "cases": 2073,
   "causes_by_distinct_start": {
-    "Fang, Farmer Maggot's Dog": 62,
+    "Fang, Farmer Maggot's Dog": 63,
     "Grip, Farmer Maggot's Dog": 153,
     "a baby white dragon": 1,
     "a battle-scarred veteran": 26,
@@ -61,8 +61,8 @@
     "poison": 77,
     "starvation": 211
   },
-  "death_process_attempts": 2072,
-  "distinct_starting_conditions": 2071,
+  "death_process_attempts": 2073,
+  "distinct_starting_conditions": 2072,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -72,6 +72,7 @@
     "155c25aae6ba6d38b8535d1a575b1e271c3f6e41": 48,
     "1915f0910d12a0e62882c10646b303c831ee630e": 1,
     "1a7b9e3e1f20633ed226fffd840b854aa0bce290": 46,
+    "1c7e97c107789720bf8c601d315006907821400d": 1,
     "2d8673b766c3f2d9fb513edb6a57ea9661daea62": 15,
     "2f969dfbddf5fa2ff6decd2b4b5697372931b229": 11,
     "315fa05c6dc4c63e9d4e0ba91b590ca854361c7f": 33,
