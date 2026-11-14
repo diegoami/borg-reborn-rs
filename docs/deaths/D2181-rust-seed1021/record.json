@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2181-rust-seed1021",
+  "run_kind": "harness",
+  "character": "Hobbit Druid",
+  "raw_cause": "a white worm mass",
+  "terminal": {
+    "cause": "a white worm mass",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3718,
+    "race_idx": 3,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1021,
+    "flags": "menu",
+    "git_rev": "99539df31cfe50867abe419242eea55edf0cc3ce",
+    "git_dirty": "no",
+    "source_sha256": "77b283a788a2513395be3896d0108301a530cdf5f035c43476a37d828795ab66",
+    "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c",
+    "borg_txt_sha256": "9bd5d73e52a660669baa5415a42881b58cb53617841a3ce50f5e0eb8052a8a97",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-2-druid-1",
+      "result_sha256": "55fa45948570a97d2e4ea9b1551408018c6fbe3aadc8d19b3d5713cdf6065cba",
+      "raw_sha256": {
+        "keys.log": "55fa45948570a97d2e4ea9b1551408018c6fbe3aadc8d19b3d5713cdf6065cba",
+        "messages.log": "92f60042af139979181fe6588bb7bbc50706c9b62c02c1210effa36e8bcfc2bd",
+        "state.log": "01abcef39410fe3e34a575e3fb800b968d23dcefe5b08b75a3875cdd0e4c8ccb"
+      },
+      "source_commit": "99539df31cfe50867abe419242eea55edf0cc3ce",
+      "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c"
+    }
+  ],
+  "encounter_family": "start-4934af6136ce8008401613d2cc6eab8eb7c09f95d533219a67033ae0d0af9a8d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "18fa21b71749538340a4cd6ad03f3145a3c6e39b7127d39b048540ab530c82a2",
+    "config.txt": "88f23b5887f375fc4ee2868466c6123d97b77903d033c6e9d9e374c10e2142ec",
+    "depths.json": "2f94438fbf35bbdba8f16cba110e191e5d9cce8a0028e4ee4ed6e23e5fc67ecf",
+    "summary.json": "b9f0ae208b4ffef8053e42e6b73755136fbf8f837c04d121454c017bac4bf1e4"
+  },
+  "investigation": null,
+  "issue": null
+}

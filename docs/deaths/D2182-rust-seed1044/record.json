@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2182-rust-seed1044",
+  "run_kind": "harness",
+  "character": "Dunadan Necromancer",
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 11183,
+    "race_idx": 8,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1044,
+    "flags": "menu",
+    "git_rev": "99539df31cfe50867abe419242eea55edf0cc3ce",
+    "git_dirty": "no",
+    "source_sha256": "77b283a788a2513395be3896d0108301a530cdf5f035c43476a37d828795ab66",
+    "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c",
+    "borg_txt_sha256": "d2640115619dd58a21f85234772bff4e448622ace442863f2787a92d67bed0b8",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-4-necro-4",
+      "result_sha256": "35cfa45167e915db3540fe0167d76f220ff11a52c416390f4cdf5de62fd00f66",
+      "raw_sha256": {
+        "keys.log": "35cfa45167e915db3540fe0167d76f220ff11a52c416390f4cdf5de62fd00f66",
+        "messages.log": "fa0ea6a3930030c0b21558dd629cf56c5ae5c954c4066a89509d45cbb6e04b35",
+        "state.log": "e70c182f897d9c61346d1b613ca1c327a63dbff15dceb7e6b654f05949b9a130"
+      },
+      "source_commit": "99539df31cfe50867abe419242eea55edf0cc3ce",
+      "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c"
+    }
+  ],
+  "encounter_family": "start-4b5e4656f5477b4acbbb9da74a82b08fb70a5bad82d77c9f9f0c326bd9c9e08b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "18fa21b71749538340a4cd6ad03f3145a3c6e39b7127d39b048540ab530c82a2",
+    "config.txt": "301c7fcbfa143479bd68b8383d12cf0820f0d6a5a5686cb1298cd136ff44ca07",
+    "depths.json": "279bebe9c8a02df3a999aa4723495d3f306a6e38ee9cb15fdfd822b27edd8c17",
+    "summary.json": "64b3aba94424366206326735dc77077ae0660f2476d39b4346b83922586a2f22"
+  },
+  "investigation": null,
+  "issue": null
+}

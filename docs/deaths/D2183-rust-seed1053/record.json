@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2183-rust-seed1053",
+  "run_kind": "harness",
+  "character": "Dunadan Paladin",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 3,
+    "turn": 26170,
+    "race_idx": 8,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1053,
+    "flags": "menu",
+    "git_rev": "99539df31cfe50867abe419242eea55edf0cc3ce",
+    "git_dirty": "no",
+    "source_sha256": "77b283a788a2513395be3896d0108301a530cdf5f035c43476a37d828795ab66",
+    "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c",
+    "borg_txt_sha256": "dcb7d6287962766c65608cfc0b7fcd4af7b853b14666e1829eda140a3fcffee1",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-5-paladin-3",
+      "result_sha256": "d4d83cc80e64df1bb5b543bee5362295b835482b85698169eab1331c91e32230",
+      "raw_sha256": {
+        "keys.log": "d4d83cc80e64df1bb5b543bee5362295b835482b85698169eab1331c91e32230",
+        "messages.log": "d5ee9f83f1122b78b3a340ad9ebb6d47e872ee095afeca44be8ce9446a2edf86",
+        "state.log": "92e98a9c13f3af63f70262fdf9e0022ddeb1ffb366e21e99af3e7f421425af8d"
+      },
+      "source_commit": "99539df31cfe50867abe419242eea55edf0cc3ce",
+      "binary_sha256": "4ccabcf0f94a69b89516e22f2c8aea1a976496bfd6e9aea59d710b9a6df5ab4c"
+    }
+  ],
+  "encounter_family": "start-3f9760e142a5823cf6565625fcc0db60a20f1238cb89bd9e6f88fecbcfdc60ce",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "18fa21b71749538340a4cd6ad03f3145a3c6e39b7127d39b048540ab530c82a2",
+    "config.txt": "233aee67ff0c513e5e177980d4c12a046140ea9a191fb596fcc9dc2da121abbb",
+    "depths.json": "adedf827b962424ed9ea637fcae7f617c14743bb56eaa5afa2141f6bcac8b910",
+    "summary.json": "8aeea074ad1fd8a1859346fc72acecf52e494b1906984fc3f51dba61dfbf7935"
+  },
+  "investigation": null,
+  "issue": null
+}
