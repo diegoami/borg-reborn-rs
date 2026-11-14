@@ -29,5 +29,6 @@ libc = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
+borg-core = { path = "../borg-core" }
 
 angband-recorder = { path = "../vendor/angband-recorder", optional = true, features = ["ffi"] }

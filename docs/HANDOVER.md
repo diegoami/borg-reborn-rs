@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: errands on main, without borg-rs's engine (split from PR #206)
+
+- **What came in.** borg-rs's decision core, vendored at milestone 12
+  (`e6d13fc`), as `borg-core/`, and our errands over it
+  (`borg-core/src/shell.rs`). docs/ERRANDS.md lists the commands, settings
+  and rules; docs/SPEC.md §2 is amended for the vendored core only.
+- **What did not.** `engine/patches/08-borg-rs-engine.patch` and
+  `tools/engine-patch.py` stay in PR #206, with the evaluation
+  (docs/REDESIGN.md, docs/ARCHITECTURE-COMPARISON.md, docs/PILOT.md). The
+  engine here is still upstream `e473720`, so our own core and its
+  references are unchanged.
+- **The cost.** borg-rs's core plays on our engine, not its own: 44 of 45
+  of the full suite's games are identical to a fresh build of borg-rs v12
+  (keys, messages, states). The rest differ through engine differences
+  (the end of a rest), not through the shell. When the shared engine
+  repository is pinned (owner, another session), parity should be 45/45.
+- **Open:** a shop errand; the casters' ladder pace; the zoo run (prompt
+  with the owner); C3 (#209) not started; PR #206 still carries the
+  evaluation and patch 08.
+
 ## 2026-11-14: the freeze, and the trip loop (#201)
 
 - **"Alive" counted a Borg that had stopped playing.** On main (f0942d9a),

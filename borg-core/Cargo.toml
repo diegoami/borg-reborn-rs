@@ -1,0 +1,27 @@
+[package]
+name = "borg-core"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-2.0-only"
+description = "Rust port of the Angband Borg (automatic player)"
+publish = false
+
+[lib]
+name = "borg_rs"
+path = "src/lib.rs"
+crate-type = ["rlib"]
+
+[features]
+# Test only (harness/regress/nested): every 500th think step shows two long
+# messages, so the engine waits for a key and runs a nested Borg turn.
+# Changes the key stream; never part of a real build.
+test-force-nested = []
+
+[dependencies]
+libc = "0.2"
+
+# borg-reborn-rs (#207): borg-rs's code is linted by borg-rs's own CI, on its
+# toolchain. Here, newer clippy releases would fail our `-D warnings` on code
+# we do not change; compiler warnings still count.
+[lints.clippy]
+all = { level = "allow", priority = -1 }

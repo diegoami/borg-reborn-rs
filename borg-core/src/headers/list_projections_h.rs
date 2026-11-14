@@ -1,0 +1,35 @@
+//! `/home/user/borg-rs/angband/src/list-projections.h`
+pub use super::project_h::C2RustUnnamedH_27;
+#[allow(unused_imports)]
+use super::*;
+pub const PROJ_MON_CRUSH: C2RustUnnamedH_27 = 55;
+pub const PROJ_MON_DRAIN: C2RustUnnamedH_27 = 54;
+pub const PROJ_MON_STUN: C2RustUnnamedH_27 = 53;
+pub const PROJ_MON_HOLD: C2RustUnnamedH_27 = 52;
+pub const PROJ_MON_CONF: C2RustUnnamedH_27 = 51;
+pub const PROJ_MON_SLOW: C2RustUnnamedH_27 = 50;
+pub const PROJ_MON_SPEED: C2RustUnnamedH_27 = 49;
+pub const PROJ_MON_HEAL: C2RustUnnamedH_27 = 48;
+pub const PROJ_MON_POLY: C2RustUnnamedH_27 = 47;
+pub const PROJ_MON_CLONE: C2RustUnnamedH_27 = 46;
+pub const PROJ_SLEEP_ALL: C2RustUnnamedH_27 = 45;
+pub const PROJ_SLEEP_EVIL: C2RustUnnamedH_27 = 44;
+pub const PROJ_SLEEP_UNDEAD: C2RustUnnamedH_27 = 43;
+pub const PROJ_DISP_ALL: C2RustUnnamedH_27 = 42;
+pub const PROJ_DISP_EVIL: C2RustUnnamedH_27 = 41;
+pub const PROJ_DISP_UNDEAD: C2RustUnnamedH_27 = 40;
+pub const PROJ_TURN_ALL: C2RustUnnamedH_27 = 39;
+pub const PROJ_TURN_LIVING: C2RustUnnamedH_27 = 38;
+pub const PROJ_TURN_EVIL: C2RustUnnamedH_27 = 37;
+pub const PROJ_TURN_UNDEAD: C2RustUnnamedH_27 = 36;
+pub const PROJ_AWAY_ALL: C2RustUnnamedH_27 = 35;
+pub const PROJ_AWAY_EVIL: C2RustUnnamedH_27 = 34;
+pub const PROJ_AWAY_SPIRIT: C2RustUnnamedH_27 = 33;
+pub const PROJ_AWAY_UNDEAD: C2RustUnnamedH_27 = 32;
+pub const PROJ_MAKE_TRAP: C2RustUnnamedH_27 = 31;
+pub const PROJ_MAKE_DOOR: C2RustUnnamedH_27 = 30;
+pub const PROJ_KILL_TRAP: C2RustUnnamedH_27 = 29;
+pub const PROJ_KILL_DOOR: C2RustUnnamedH_27 = 28;
+pub const PROJ_KILL_WALL: C2RustUnnamedH_27 = 27;
+pub const PROJ_DARK_WEAK: C2RustUnnamedH_27 = 26;
+pub const PROJ_LIGHT_WEAK: C2RustUnnamedH_27 = 25;

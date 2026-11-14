@@ -21,10 +21,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "borg-core"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "borg-reborn-rs"
 version = "0.0.0"
 dependencies = [
  "angband-recorder",
+ "borg-core",
  "libc",
  "serde",
  "serde_json",
