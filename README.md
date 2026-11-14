@@ -2,7 +2,7 @@
 
 The Angband Borg reborn, in Rust: an automatic player for Angband, redesigned
 from the ground up in how it **plays**. It stands on its own: the game is
-upstream Angband 4.2.6 at `e473720ed88a0f0c7ca66815cef3000eb4a38bc3`, byte for
+upstream Angband 4.2.6 at `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`, byte for
 byte, behind upstream's own Borg seam (`do_cmd_borg`, `inkey_hack`; started
 with **Ctrl-Z**, **z**), and the integration around it (a small patch series of
 harness hooks, the headless frontend, the bindings, the build, the harness) is
@@ -38,7 +38,7 @@ follows the same files.
 
 What the Borg knows about the game comes, in this order, from the engine,
 from two manuals, and from recorded play. The engine
-([`engine/angband/`](engine/angband/), upstream `e473720`) is the only
+([`engine/angband/`](engine/angband/), upstream `42cd156ac`) is the only
 authority: every formula, table and prompt is checked in `src/` or
 `lib/gamedata/` and cited there (RULES 16). The manuals are copied in
 [`reference/c-manual/`](reference/c-manual/README.md) (S14): the **Angband

@@ -5,13 +5,31 @@ frontend (TE.2), bindings (TE.3) and build (TE.4) follow.*
 
 ## The tree: `engine/angband/`
 
-Upstream Angband at `e473720ed88a0f0c7ca66815cef3000eb4a38bc3`,
+Upstream Angband at `42cd156ac9f95ddf4311e88dd7ad462292d6d1d6`,
 **byte for byte** (`engine/UPSTREAM`). It was extracted from the upstream
 repository (`git archive` of that commit), not from borg-rs. Its tree id,
-`99a0549aaba851809eaf2c9117351b85d3788945`, equals the commit's tree.
+`36257987a683646296e9c53a4535c085472d62dd`, equals the commit's tree.
 `engine/tests/test_engine.py` checks that at `HEAD` and refuses local
 changes. The tree is never edited: changes are patches applied to a copy at
 build time (`engine/apply-patches.sh DEST`).
+
+Re-pinned from `e473720` on 2026-11-14 (#215, owner: every Borg plays
+upstream Angband): `42cd156ac` is upstream `master` 12 commits later, the
+commit borg-rs v12 plays. The changes that touch play: timed effects with
+`COMPLETE_REST` (`player_timed.txt`, `player-timed.c`) decide when a complete
+rest ends; deep descent flushes the command queue; a rest's continuation is
+a background command; `TERM_XTRA_CLEAR` is split from `total_erase`. The
+patch series applied unchanged (two hunks at new offsets), the core source
+list is unchanged, and one bindings constant moved (`TMD_FLAG_NONSTACKING`,
+1 to 2, unused).
+
+On the new engine our own Borg plays 44 of the full suite's 45 games as
+before; smoke and smoke-exact are unchanged. The one that moves is the
+druid of seed 1024 (`full-2-druid-4`): it splits after a rest at game turn
+3,521, and where it died to a kobold at turn 41,864 it now lives to the
+cap. The full reference is regenerated for it. borg-rs's core
+(`BORG_CORE=borg-rs`, no errand) plays all 45 exactly as a fresh build of
+borg-rs v12.
 
 One file, `lib/user/save/Makefile`, is ignored by upstream's own
 `.gitignore` but tracked upstream, so it is force-added here too.

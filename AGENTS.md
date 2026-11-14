@@ -24,7 +24,7 @@ session, a local one, any model, or a person. It is the only entry point;
 
 The Angband Borg reborn in Rust: a ground-up redesign of how the Borg
 **plays**. **[docs/SPEC.md](docs/SPEC.md) is the top-level contract.** The
-game is upstream Angband `e473720` byte for byte; the integration (patch
+game is upstream Angband `42cd156ac` byte for byte; the integration (patch
 series, frontend, bindings, build, harness, tools) is ours, and no part
 depends on borg-rs, which is only a reference to copy from (SPEC §2). Parity
 with the C Borg is not a goal. [borg-zoo](https://diegoami.github.io/borg-zoo/)
@@ -36,7 +36,7 @@ checked against the engine itself (T2.5).
 
 The Borg's knowledge of the game has three inputs, in this order:
 
-1. **The engine** (`engine/angband/`, at `e473720`). It is the only
+1. **The engine** (`engine/angband/`, at `42cd156ac`). It is the only
    authority: a formula, a table, a prompt or a key sequence is checked in
    `src/` or `lib/gamedata/` and cited there (RULES 16).
 2. **The manuals**, copied in [`reference/c-manual/`](reference/c-manual/README.md)
@@ -121,7 +121,7 @@ milestone. Name both in the review PR.
 | `scripts/refresh-sources.py` | Reports what moved since each pin: commits, new death cases, new tags (new control arms), changed C Borg functions we cite, updated issues. `--update` refreshes pins, `reference/` copies and the death index in their own PR (RULES 21) |
 | `reference/deaths/INDEX.md` | Generated index of every Borg death we know of: better-borg-c, borg-rs and ours |
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
-| `engine/` | The engine integration (docs/ENGINE.md): `angband/` (upstream `e473720`, byte for byte, never edited, RULES 9), `patches/` (our harness hooks), `frontend/` (mode `borgh`), `bindings/` (bindgen), `CMakeLists.txt` and `sources.cmake` (our build), `tests/` |
+| `engine/` | The engine integration (docs/ENGINE.md): `angband/` (upstream `42cd156ac`, byte for byte, never edited, RULES 9), `patches/` (our harness hooks), `frontend/` (mode `borgh`), `bindings/` (bindgen), `CMakeLists.txt` and `sources.cmake` (our build), `tests/` |
 | `harness/` | build (`build.sh`), run, suite, diff, identity, boundary and zoo checks, references; see [harness/README.md](harness/README.md) |
 | `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
 | `watch-borg.sh`, `tools/rerun-death.py`, `tools/death_registry.py` | the launcher to watch the Borg (X11), the rerun of a recorded death with its logs, the registry's index (TE.6; the copied GUI, recording and replay tools are gone) |

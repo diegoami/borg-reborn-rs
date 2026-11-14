@@ -4,9 +4,9 @@
   "pins": {
     "angband": {
       "repository": "angband/angband",
-      "commit": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+      "commit": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
       "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; engine/angband/ is its tree byte for byte (docs/SPEC.md §3). Its src/borg/ was the source of the c-pristine control built here until milestone E (T1.3); the zoo builds the controls now (SPEC §6).",
-      "read_on": "2026-11-10",
+      "read_on": "2026-11-14",
       "borg_dir": "src/borg"
     },
     "borg-rs": {
@@ -54,7 +54,7 @@
     "borg-runner": {
       "repository": "diegoami/borg-runner",
       "commit": "e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83",
-      "role": "Language-model agents play upstream 4.2.6 (e473720, our engine) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
+      "role": "Language-model agents play upstream 4.2.6 (e473720, our engine until #215) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
       "read_on": "2026-11-13",
       "issues": true
     }

@@ -2,7 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-14: errands on main, without borg-rs's engine (split from PR #206)
+## 2026-11-14: the engine re-pinned to upstream 42cd156ac (#215)
+
+- **Every Borg plays upstream Angband** (owner). borg-rs v12's engine is
+  upstream `42cd156ac`, 12 official commits after our `e473720`, plus one
+  debug-mode fix (`cmd-wizard.c`); "borg-rs's engine corrections" in the
+  entry below were mostly those upstream commits. `engine/angband/` is now
+  `42cd156ac` byte for byte (docs/ENGINE.md).
+- **Results.** borg-rs's core: 45/45 identical to borg-rs v12's build (it
+  was 44/45). Our own core: smoke and smoke-exact unchanged, full 44/45;
+  the druid of seed 1024 lives instead of dying at turn 41,864 (full
+  reference regenerated, 32 dossiers of the new build committed).
+- **PR #206's patch 08 and `tools/engine-patch.py` are obsolete.** #206 is
+  to be trimmed to the evaluation documents.
+- **Next:** the review of option C as merged (the vendored core, the
+  errands, the contract changes, this re-pin); the owner picks the
+  reviewer.
+
+## 2026-11-14: errands on main, on e473720 (split from PR #206)
 
 - **What came in.** borg-rs's decision core, vendored at milestone 12
   (`e6d13fc`), as `borg-core/`, and our errands over it
@@ -13,7 +30,7 @@
   (docs/REDESIGN.md, docs/ARCHITECTURE-COMPARISON.md, docs/PILOT.md). The
   engine here is still upstream `e473720`, so our own core and its
   references are unchanged.
-- **The cost.** borg-rs's core plays on our engine, not its own: 44 of 45
+- **The cost** (until #215 above). borg-rs's core plays on our engine, not its own: 44 of 45
   of the full suite's games are identical to a fresh build of borg-rs v12
   (keys, messages, states). The rest differ through engine differences
   (the end of a rest), not through the shell. When the shared engine

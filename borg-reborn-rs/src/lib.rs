@@ -45,7 +45,7 @@ pub mod world;
 pub const BORG_NAME: &str = "borg-reborn-rs";
 
 /// The upstream Angband commit every Borg in the family plays.
-pub const ENGINE_PIN: &str = "e473720ed88a0f0c7ca66815cef3000eb4a38bc3";
+pub const ENGINE_PIN: &str = "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6";
 
 #[cfg(test)]
 mod tests {

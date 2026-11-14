@@ -602,7 +602,8 @@ fn run(_f: &Fixture, o: &Observation) -> (Decision, String, Knowledge) {
     (d, digest, k)
 }
 
-/// A few values against `lib/gamedata/monster.txt` at `e473720`, so a
+/// A few values against `lib/gamedata/monster.txt` at `42cd156ac` (as at
+/// `e473720`), so a
 /// corrupted or hand-edited slice cannot pass unnoticed.
 #[test]
 fn the_knowledge_slice_matches_the_game_data() {
