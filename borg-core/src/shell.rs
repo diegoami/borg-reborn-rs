@@ -268,6 +268,10 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
         // the stairs.
         return Some(bored && stairs_down(st));
     }
+    if scared_home(st) {
+        // The core wants town: it leaves its own way (stairs up, recall).
+        return None;
+    }
     let restock = crate::borg_prepared::borg_must_return_to_town(st).is_some();
     let mut advanced = false;
     if let Some(r) = running().as_mut() {
@@ -304,6 +308,13 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
     if !active() {
         return false;
     }
+    // A scared core is not held to the plan (owner, 2026-11-14). It wants
+    // town: the trip ends and goes home. It wants off this level: it
+    // leaves its own way (the think's "flee the level" steps), and the
+    // trip goes on from wherever it arrives.
+    if scared_home(st) || st.borg.goal.leaving || st.borg.goal.fleeing {
+        return false;
+    }
     let depth = st.borg.tr(BI_CDEPTH);
     let Some(t) = target(st) else {
         return false;
@@ -314,6 +325,26 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         return false;
     }
     walk(st, depth, t)
+}
+
+/// The core wants town for its own reasons: scared enough to flee to town
+/// (`fleeing_to_town`), or rising out of a depth it is not fit for
+/// (`rising`). The trip ends: home is its next level.
+fn scared_home(st: &mut BorgState) -> bool {
+    if st.borg.tr(BI_CDEPTH) == 0 || !(st.borg.goal.fleeing_to_town || st.borg.goal.rising) {
+        return false;
+    }
+    let ended = match running().as_mut() {
+        Some(r) if r.step < usize::MAX && r.target().is_some_and(|t| t > 0) => {
+            r.step = usize::MAX;
+            true
+        }
+        _ => false,
+    };
+    if ended {
+        borg_note(st, "# Errand: the core wants town, the trip goes home.");
+    }
+    true
 }
 
 /// One step of the stairs from `depth` toward `t`, with the core's own
