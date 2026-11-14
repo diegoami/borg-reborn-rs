@@ -595,22 +595,56 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         // errand was done with it (it fled, read Deep Descent or Teleport
         // Level, fell through a trap door), its fear overrides the plan:
         // that level counts as explored, and the plan goes on from here.
-        let left = match r.watch {
-            Some(w) if w.depth != depth => {
-                let fled = w.depth > 0 && r.target() == Some(w.depth);
-                if fled {
+        // A core that rises by its own choice while the plan wants deeper
+        // is not fit for the plan's depth (its "keep on a suitable level"
+        // rule takes the stairs up below character level 10 when it is not
+        // prepared): a trip goes home; a player's command stops. Without
+        // this the errand walked down, the core walked up, and connected
+        // stairs looped for 50,000 turns (docs/PILOT.md).
+        let mut left = None;
+        let mut unfit = None;
+        if r.watch.is_none_or(|w| w.depth != depth) {
+            if let Some(w) = r.watch {
+                if w.depth > 0 && r.target() == Some(w.depth) {
                     r.step += 1;
+                    left = Some(w.depth);
                 }
-                r.watch = None;
-                fled.then_some(w.depth)
+                if let Some(t) = r.target() {
+                    if depth < w.depth && t > depth {
+                        unfit = Some((w.depth, t));
+                        if r.end == End::Home && r.skip_unprepared {
+                            r.step = usize::MAX;
+                        }
+                    }
+                }
             }
-            _ => None,
-        };
+            r.watch = Some(Watch {
+                depth,
+                known: 0,
+                progress: turn,
+            });
+        }
+        let command = !r.skip_unprepared;
         drop(guard);
         if let Some(d) = left {
             borg_note(
                 st,
                 &format!("# Errand: the core left DL{d} its own way; counted explored."),
+            );
+        }
+        if let Some((from, t)) = unfit {
+            if command {
+                finish(
+                    st,
+                    &format!("aborted: the core rose from DL{from}, not fit for DL{t}"),
+                );
+                return Some(true);
+            }
+            borg_note(
+                st,
+                &format!(
+                    "# Errand: the core rose from DL{from}, not fit for DL{t}; the trip goes home."
+                ),
             );
         }
         if arrived {
@@ -818,7 +852,9 @@ fn level_done(st: &BorgState, depth: i32) -> Option<String> {
             known,
             progress: turn,
         });
-        if known > w.known {
+        if w.known == 0 {
+            w.known = known;
+        } else if known > w.known {
             w.known = known;
             w.progress = turn;
         }
