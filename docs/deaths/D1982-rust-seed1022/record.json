@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1982-rust-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 5110,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1022,
+    "flags": "menu",
+    "git_rev": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+    "git_dirty": "no",
+    "source_sha256": "a6be7f4960f3e716f17bc5c9710e06948c4bdb00bce9c12b151c672c182dd218",
+    "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e",
+    "borg_txt_sha256": "ffb38dfa422f79eb8b9d030f317394fcb4dec4d7461fce78d88cd905230680f2",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 523
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-2-druid-2",
+      "result_sha256": "b270f1b50b7899355949632905dde05a16c0e2251d92e3302eca0f15590ea645",
+      "raw_sha256": {
+        "keys.log": "b270f1b50b7899355949632905dde05a16c0e2251d92e3302eca0f15590ea645",
+        "messages.log": "203bc8a1b5cbea7fcf3da2f3e60d0be923b51c4f42f513726f5b6dcfff539043",
+        "state.log": "c33fd184bf6465f5b2498018bcc0a42d820595ba6f1a4d6a9f4f6326c7bfdb4f"
+      },
+      "source_commit": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+      "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e"
+    }
+  ],
+  "encounter_family": "start-145bb6ca4314b5304712bbd2703c1ef2b6671e32a43e4916be2e9ca77fa66f1b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2a159d261c7cfe67571e22eb9033a846d12e80f4e7c5f6d90d4bb0421b3434d8",
+    "config.txt": "37912e687df89e6068bd15cdfcad84cd7b84025645d277848c991b1def3eed9e",
+    "depths.json": "01082e13eb04fb9d2df7f9bd6cbd748393ab1734b693adcec9a2eaaf3e46595c",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "2d06287768a6930cd1d9c39aa58ffa0ac9aabb7300b47c19776de0def22131c6",
+    "trace-tail.jsonl": "3ae5d54e6e73a61197f2e1e55cec04fb3cddb3c2ed43a4bc07fd4075d561c82b"
+  },
+  "investigation": null,
+  "issue": null
+}

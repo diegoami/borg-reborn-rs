@@ -260,6 +260,21 @@ pub struct FirstStrategy {
     /// state refusals that `can_read`/`can_attack` now prevent; if
     /// item-specific refusals recur, bar by item kind (#165).
     refused: BTreeMap<Action, i64>,
+    /// The best this level has given so far and when it last grew (#201).
+    progress: Option<LevelProgress>,
+    /// Grids the travel guard refused, by level generation, barred from
+    /// the paths until this game turn (#201).
+    barred: Vec<(u64, (i32, i32), i64)>,
+}
+
+/// What a level has given: the grids mapped and the experience, at their
+/// best, and the game turn either last grew (#201).
+#[derive(Clone, Copy, Debug)]
+struct LevelProgress {
+    generation: u64,
+    mapped: i64,
+    exp: i32,
+    since: i64,
 }
 
 impl Default for FirstStrategy {
@@ -273,6 +288,8 @@ impl Default for FirstStrategy {
             last_action: None,
             rule: "",
             refused: BTreeMap::new(),
+            progress: None,
+            barred: Vec::new(),
         }
     }
 }
@@ -445,7 +462,47 @@ impl FirstStrategy {
                 hp,
             )
         };
-        if at(x + dx, y + dy) > at(x, y) {
+        // Step back only when the next grid is riskier by at least half a
+        // hit point: the path's own resolution (`danger_with` rounds the
+        // risk to whole steps). Below it the path already judged the step
+        // free, and retreating flips the Borg back and forth: #176's
+        // priest-4 spent 20,000 turns between two town grids because a
+        // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
+        // next one.
+        // A monster that never moves and that one turn of melee is expected
+        // to kill does not turn the Borg back (#201): beside it, the
+        // tactical layer's attack removes all its threat (`responses`: the
+        // blow's share of its hit points is 1). full-0-warrior-3 (17 HP)
+        // circled before a grey mushroom patch (2 HP) for 40,000 turns.
+        // Anything the blow does not kill (floating eye, molds, jellies)
+        // is still refused, and so is a step that risks death.
+        let (nx, ny) = (x + dx, y + dy);
+        let dpt = ctx
+            .world
+            .character
+            .melee_per_turn(ctx.knowledge)
+            .unwrap_or(0.0);
+        let one_blow = ctx.world.level.monsters.iter().any(|t| {
+            t.in_view
+                && crate::danger::never_move(ctx.knowledge, t)
+                && t.hp >= 0
+                && dpt > f64::from(t.hp)
+                && (t.x - nx).abs().max((t.y - ny).abs()) <= 1
+        });
+        let safe = || {
+            assess(
+                ctx.world,
+                ctx.knowledge,
+                nx,
+                ny,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            )
+            .p_death
+                == 0.0
+        };
+        if !(one_blow && safe()) && at(nx, ny) >= at(x, y) + 0.5 {
+            ctx.paths.note_refused((x + dx, y + dy));
             return Self::retreat_step(ctx).map(Action::Walk);
         }
         Some(Action::Walk(d))
@@ -482,7 +539,19 @@ impl FirstStrategy {
     /// Whether the readiness policy allows `depth` (T5.1, #125; see
     /// `readiness.rs`). Depth 1 always passes.
     fn ready_for(ctx: &DecisionCtx, depth: i32) -> bool {
-        crate::readiness::ready(ctx.world, ctx.knowledge, ctx.params, depth).ok()
+        depth <= Self::target_depth(ctx)
+    }
+
+    /// The depth a trip goes to (#201, owner 2026-11-14): the willingness
+    /// to go down is a parameter of the character, tuned by the zoo, not
+    /// a gate on the worst monster that might appear. It replaces T5.1's
+    /// readiness gate (the worst turn of every race in [d-2, d+5] under
+    /// half the HP), which never opened DL2 for a level-1 character: the
+    /// full suite's survivors stayed on DL1 for 85,000 turns. Class, race
+    /// and power terms come as further parameters, measured as arms.
+    fn target_depth(ctx: &DecisionCtx) -> i32 {
+        let clevel = ctx.world.character.status.as_ref().map_or(1, |s| s.level);
+        (clevel * ctx.params.depth_per_clevel_pct / 100).max(1)
     }
 
     /// A known Word of Recall scroll in the pack (the reserve's aware
@@ -1055,6 +1124,31 @@ impl FirstStrategy {
             .is_some_and(|s| s.food < ctx.params.eat_below_food)
             && !Self::has_food(ctx);
         let block_descend = starving_no_food && ctx.world.level.depth > 0;
+        // What the level has given (#201): a new grid mapped or experience
+        // is progress; a new level starts the count again.
+        let level_idle = {
+            let generation = ctx.world.level.generation;
+            let mapped = Self::mapped(ctx.world);
+            let exp = ctx.world.character.status.as_ref().map_or(0, |s| s.exp);
+            match &mut self.progress {
+                Some(p) if p.generation == generation => {
+                    if mapped > p.mapped || exp > p.exp {
+                        p.mapped = p.mapped.max(mapped);
+                        p.exp = p.exp.max(exp);
+                        p.since = turn;
+                    }
+                }
+                _ => {
+                    self.progress = Some(LevelProgress {
+                        generation,
+                        mapped,
+                        exp,
+                        since: turn,
+                    })
+                }
+            }
+            self.progress.as_ref().map_or(0, |p| turn - p.since)
+        };
         if block_descend
             && Self::adjacent(ctx).is_empty()
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
@@ -1155,6 +1249,23 @@ impl FirstStrategy {
             self.rule = "not ready for this depth: go up";
             return Mode::Return;
         }
+        // A level that has given nothing for `level_stall_turns` is left
+        // (#201): no grid mapped and no experience gained. Without this, 38
+        // of the full suite's 39 survivors walked between two grids on DL1
+        // from about turn 15,000 to the cap, each goal stalling, cooling and
+        // being chosen again on the same grids. The C Borg leaves a level it
+        // has stayed on too long whatever it does there
+        // (borg-think-dungeon.c:1247). Return is the way out: a known recall
+        // read in safety, the up staircase, or the frontier toward one.
+        if ctx.params.level_stall_turns > 0
+            && depth > 0
+            && level_idle >= i64::from(ctx.params.level_stall_turns)
+            && Self::adjacent(ctx).is_empty()
+            && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
+        {
+            self.rule = "the level has given nothing: leave it";
+            return Mode::Return;
+        }
         // No travel goal survives a level generation. In particular,
         // depth 1 → town → depth 1 at one game turn is not goal progress:
         // the new level must be evaluated for Explore first (M3 review).
@@ -1211,14 +1322,28 @@ impl FirstStrategy {
         // explored level rerolls (Descend's step) instead of descending.
         let depth = ctx.world.level.depth;
         let ready_next = depth == 0 || Self::ready_for(ctx, depth + 1);
-        let dive = depth > 0 && Self::ready_for(ctx, depth + 5);
+        // The trip (#201): above the target depth the stairs come first.
+        let dive = depth > 0 && ready_next;
         let (mode, rule) =
             if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
                 (Mode::Descend, "in town: take the stairs down")
             } else if dive && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
-                (Mode::Descend, "ready for five levels deeper: dive")
+                (
+                    Mode::Descend,
+                    "above the target depth: take the stairs down",
+                )
             } else if frontier != UNREACHED && cooled(Mode::Explore) {
                 (Mode::Explore, "a frontier is reachable")
+            } else if depth > 0
+                && !ready_next
+                && !block_descend
+                && cooled(Mode::Return)
+                && (stairs != UNREACHED || stairs_up != UNREACHED)
+            {
+                // The trip's end (#201): the level at the target depth is
+                // explored; go home, sell and buy, and come back to a new
+                // level.
+                (Mode::Return, "nothing more to do on this level: go home")
             } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend && ready_next {
                 (Mode::Descend, "no frontier: a down staircase is reachable")
             } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
@@ -1269,7 +1394,23 @@ impl Strategy for FirstStrategy {
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
         self.rule = "";
+        // The grids the travel guard refused stay out of every path for a
+        // cooldown (#201): with them in, the planner stepped toward a grid
+        // the guard refused, the guard stepped back, and the Borg walked
+        // between two grids until the turn cap (a grey mushroom patch in a
+        // corridor: 24,000 turns of full-0-warrior-1).
+        {
+            let (generation, turn) = (ctx.world.level.generation, ctx.view.turn);
+            self.barred
+                .retain(|&(g, _, until)| g == generation && turn < until);
+            let grids = self.barred.iter().map(|&(_, xy, _)| xy).collect();
+            ctx.paths.bar(grids);
+        }
         let mut d = self.decide_now(ctx);
+        if let Some(grid) = ctx.paths.take_refused() {
+            let until = ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns);
+            self.barred.push((ctx.world.level.generation, grid, until));
+        }
         self.last_action = Some(d.action);
         let turn = ctx.view.turn;
         d.why = Some(crate::trace::Why {
@@ -1604,6 +1745,14 @@ mod tests {
         )
     }
 
+    /// A level-4 character: its target depth is DL2, so on DL1 the stairs
+    /// down come first and an explored level is left by them (#201).
+    fn above_target(w: &mut World) {
+        if let Some(st) = w.character.status.as_mut() {
+            st.level = 4;
+        }
+    }
+
     /// A test consumable. Kinds 1–6 are food, light, cure, escape, Recall
     /// and an unknown potion, installed by `ctx_of`.
     fn item(kind: u32, number: u8, aware: bool) -> Item {
@@ -1800,10 +1949,9 @@ mod tests {
     }
 
     #[test]
-    fn an_unready_character_goes_up() {
-        // T5.1 (#125), c15 DEPTH-04: at DL6 without the DL5 kit (Word of
-        // Recall, three cures, a ranged attack) the Borg is not ready for
-        // the depth it stands on, and goes up.
+    fn a_character_below_its_target_depth_goes_up() {
+        // #201: below its target depth (a level-0 character targets DL1)
+        // the Borg goes up.
         let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
             &["#########", "#@.....<#", "#.......#", "#########"],
             20,
@@ -1830,10 +1978,10 @@ mod tests {
             d.why.as_ref().map(|y| y.rule.as_str()),
             Some("not ready for this depth: go up")
         );
-        // With the kit (and the band's monsters well inside its HP) it
-        // stays to explore instead.
-        let (mut s, mut w, mut k, mut p, m, mut rng, params) = ctx_of(
-            &["#########", "#@.....<#", "#.......#", "#########"],
+        // A character whose target depth is DL6 (level 12) stays to
+        // explore instead (#201).
+        let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@.....<#", "#......?#", "#########"],
             200,
             200,
         );
@@ -1841,20 +1989,8 @@ mod tests {
         if let Some(st) = w.character.status.as_mut() {
             st.depth = 6;
             st.max_depth = 6;
+            st.level = 12;
         }
-        // The ranged attack is five flasks of oil (tval 27).
-        k.kinds.push(crate::knowledge::ObjectKind {
-            index: 7,
-            name: "& Flask~ of oil".into(),
-            tval: 27,
-            ..Default::default()
-        });
-        let mut oil = item(1, 5, true);
-        oil.kind = 7;
-        oil.tval = 27;
-        w.character.inventory = vec![item(5, 1, true), item(3, 3, true), oil];
-        let r = crate::readiness::ready(&w, &k, &params, 6);
-        assert!(r.ok(), "{r:?}");
         let d = decide_with(
             &mut s,
             &w,
@@ -2323,6 +2459,7 @@ mod tests {
     #[test]
     fn takes_the_down_staircase_when_on_it() {
         let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
         // Move the player onto the stair, then rebuild the pathfinder
         // for that world (a map never outlives its observation).
         if let Some(s) = w.character.status.as_mut() {
@@ -2338,8 +2475,8 @@ mod tests {
     #[test]
     fn a_stalled_goal_cools_down_and_the_next_mode_takes_over() {
         // The frontier exists but the goal never progresses: after the
-        // budget the mode is cooled and descend (stairs known) takes
-        // over.
+        // budget the mode is cooled, and at the target depth the trip
+        // ends (#201).
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["#######", "#@.?.>#", "#.....#", "#######"], 20, 20);
         // Stall the goal: think once so a goal exists, then let the
@@ -2354,20 +2491,14 @@ mod tests {
         let mut p = crate::path::Paths::new(&w);
         let v = view(&w);
         let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
-        assert_eq!(
-            d.mode, "descend",
-            "explore stalled: the cooldown hands the level to descend"
-        );
-        assert!(
-            matches!(d.action, Action::Walk(_)),
-            "a step toward the '>' through the second row: {:?}",
-            d.action
-        );
+        assert_eq!(d.mode, "return", "explore stalled: the trip ends");
     }
 
     #[test]
     fn executor_failures_fail_the_goal() {
-        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.?#", "#####"], 20, 20);
+        let (mut s, mut w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#####", "#@.?#", "#####"], 20, 20);
+        above_target(&mut w);
         let v = view(&w);
         let d = decide_with(
             &mut s,
@@ -2385,9 +2516,34 @@ mod tests {
     }
 
     #[test]
-    fn the_level_exhausted_falls_to_descend() {
-        // No frontier: the level is mapped; descend is the mode.
+    fn an_explored_level_at_the_target_depth_ends_the_trip() {
+        // #201: the trip's loop. At the target depth (a level-0 character
+        // targets DL1) an explored level sends the Borg home.
         let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "return", "{d:?}");
+        assert_eq!(
+            d.why.as_ref().map(|y| y.rule.as_str()),
+            Some("nothing more to do on this level: go home")
+        );
+    }
+
+    #[test]
+    fn the_level_exhausted_falls_to_descend() {
+        // No frontier, above the target depth: the stairs down.
+        let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
+        let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
             &w,
@@ -2407,6 +2563,7 @@ mod tests {
     fn an_exhausted_level_rerolls_from_its_up_staircase() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2423,7 +2580,9 @@ mod tests {
         assert_eq!(d.mode, "descend");
         assert_eq!(d.action, Action::Ascend, "take the exit, do not hold on it");
 
-        let (mut s, w, k, _, m, mut rng, params) = ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
@@ -2444,6 +2603,7 @@ mod tests {
     fn an_unsafe_up_staircase_retreats_instead_of_holding() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<M.#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         // A remembered threat is not visible contact, so Engage does not
         // answer it. The stair remains unsafe and must not trap Descend.
@@ -2472,6 +2632,7 @@ mod tests {
     #[test]
     fn a_fresh_level_explores_instead_of_rerolling() {
         let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
         let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
@@ -2516,6 +2677,7 @@ mod tests {
     fn an_exhausted_frontier_can_reroll_but_a_fresh_one_cannot() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<.?#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2554,6 +2716,7 @@ mod tests {
     fn rerolls_are_capped_per_level_and_per_game_turn() {
         let (mut s, mut w, k, _, mem, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2587,6 +2750,7 @@ mod tests {
 
         let (mut s, mut w, k, _, mut mem, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         mem.record(w.turn, Action::Descend);
         mem.record(w.turn, Action::Ascend);

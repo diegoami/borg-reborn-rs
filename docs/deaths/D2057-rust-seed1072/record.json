@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2057-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 5,
+    "turn": 63440,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "menu",
+    "git_rev": "dae0d086c01528458936b722cc2d0a16c7acc7c7",
+    "git_dirty": "no",
+    "source_sha256": "e8d160560e51f58efc78eb1d69371b9e27074dbe41035783be43782a597a612a",
+    "binary_sha256": "a550848f3867776344639daf5b702925e134d3e570dcaa9fab5f70021d8b4d25",
+    "borg_txt_sha256": "ea743d09d98ba69aefd5ca3560bb149f21cc5d77b611147855e4acb779eb56df",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 6137
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-7-ranger-2",
+      "result_sha256": "6f24913b24268126ae4a2c0320cb2fabfc1e8c1373d98163cf6b8265f4406e81",
+      "raw_sha256": {
+        "keys.log": "6f24913b24268126ae4a2c0320cb2fabfc1e8c1373d98163cf6b8265f4406e81",
+        "messages.log": "8d1a4ec72eb471a700a5e7cc67f251b2ff5126bdf16f546e1f46d2dff3d70449",
+        "state.log": "9ce26048cc901dbeda16a0d3da9a045b929c48e2f3effd910f3b1fa1288193f5"
+      },
+      "source_commit": "dae0d086c01528458936b722cc2d0a16c7acc7c7",
+      "binary_sha256": "a550848f3867776344639daf5b702925e134d3e570dcaa9fab5f70021d8b4d25"
+    }
+  ],
+  "encounter_family": "start-902502daba8b5e1c80244d175df83c4d9711f3fd4d84c9b12610d149eb94d4f2",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "955c4bc2eeebf3daf5cac8cb2151ba3fe4df7278efc98a96c56bee4ddec165fb",
+    "config.txt": "2231fd48a6266bffe80bf845c69bda90b9fba272fde5fa530154642eb65c6576",
+    "depths.json": "e7da339df25fdeba6bcb1cfef091c7fdf2bde45c42acc0019b43160c133a9899",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "09198b85cb9d98def11d0db34b50e43c61cdd476e8ac180bec1649655e582a4f",
+    "trace-tail.jsonl": "475de6b7dac041da4013fe7584e14a7af654fc908152e1485f4eb060a0310d95"
+  },
+  "investigation": null,
+  "issue": null
+}

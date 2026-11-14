@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2009-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Blackguard",
+  "raw_cause": "a giant white louse",
+  "terminal": {
+    "cause": "a giant white louse",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 4,
+    "level": 8,
+    "turn": 51350,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "menu",
+    "git_rev": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+    "git_dirty": "no",
+    "source_sha256": "a6be7f4960f3e716f17bc5c9710e06948c4bdb00bce9c12b151c672c182dd218",
+    "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e",
+    "borg_txt_sha256": "d64fd65cc2f6851678242bd70b3a513b4a7522a0b93fa8635269c1cbb0a3225d",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 4819
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-8-blackguard-4",
+      "result_sha256": "290275cb9723924f146126f0bfdd50fa654d762969418bd6a72c37c50db657eb",
+      "raw_sha256": {
+        "keys.log": "290275cb9723924f146126f0bfdd50fa654d762969418bd6a72c37c50db657eb",
+        "messages.log": "36d6a5ce2a480e9aa136aa5725c4f0ae13556c7fb91770ef1d458300bbb5dfb4",
+        "state.log": "e2512686aa40575b9cd847d1dbc0d3d3172deeb288098c83f95f3bc8d087ffb9"
+      },
+      "source_commit": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+      "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e"
+    }
+  ],
+  "encounter_family": "start-9ee4d2a2489a8e955a3efe6ff7f0f4caa0475a3d99e6311d7ba658052929c797",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2a159d261c7cfe67571e22eb9033a846d12e80f4e7c5f6d90d4bb0421b3434d8",
+    "config.txt": "957e4bc6f6ef62ef9b8236de6fc19c4d859f71635376e17dcd7d3cefe1852658",
+    "depths.json": "8d6f730d996cbc16cb097a5b81c8669b8fea7206348286fceac444594ad5b48f",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "315958607b4bbaca6ef016af037b553284e855de79dbea56a150acea70da089c",
+    "trace-tail.jsonl": "b6e87d68035b86b3298e9087458c79dcfb5c3667040c8258da94b979dd316c6b"
+  },
+  "investigation": null,
+  "issue": null
+}

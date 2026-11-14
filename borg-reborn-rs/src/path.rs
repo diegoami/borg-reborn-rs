@@ -209,6 +209,7 @@ impl DistanceMap {
         targets: &[(i32, i32)],
         threat_on: bool,
         risk_aversion_pct: i32,
+        barred: &[(i32, i32)],
     ) -> DistanceMap {
         let (width, height) = (w.level.width.max(0), w.level.height.max(0));
         let mut map = DistanceMap {
@@ -218,7 +219,10 @@ impl DistanceMap {
         };
         let mut queue: BinaryHeap<Reverse<(u32, i32, i32)>> = BinaryHeap::new();
         for &(x, y) in targets {
-            if x < 0 || y < 0 || x >= width || y >= height {
+            // A barred grid is no goal either (#201): the guard refused the
+            // step into it, and a target pulls the path there as surely as
+            // a road does.
+            if x < 0 || y < 0 || x >= width || y >= height || barred.contains(&(x, y)) {
                 continue;
             }
             let base = standing_cost(w, k, x, y, risk_aversion_pct);
@@ -250,6 +254,9 @@ impl DistanceMap {
                 let Some(cost) = enter_cost(w, nx, ny) else {
                     continue;
                 };
+                if barred.contains(&(nx, ny)) {
+                    continue;
+                }
                 let step = cost
                     + if occupied.contains(&(nx, ny)) { 10 } else { 0 }
                     + if threat_on {
@@ -343,6 +350,11 @@ pub struct Paths {
     thinks: u64,
     risk_aversion_pct: i32,
     maps: Vec<(Goal, DistanceMap)>,
+    /// Grids the strategy's travel guard refused recently (#201): no map
+    /// routes through them, so the planner and the guard cannot take turns.
+    barred: Vec<(i32, i32)>,
+    /// The grid the guard refused this think, for the strategy to bar.
+    refused: Option<(i32, i32)>,
 }
 
 impl Paths {
@@ -360,7 +372,26 @@ impl Paths {
             thinks: w.thinks,
             risk_aversion_pct,
             maps: Vec::new(),
+            barred: Vec::new(),
+            refused: None,
         }
+    }
+
+    /// Bar these grids from every map of this think (#201). Maps already
+    /// built are dropped.
+    pub fn bar(&mut self, grids: Vec<(i32, i32)>) {
+        self.barred = grids;
+        self.maps.clear();
+    }
+
+    /// The travel guard refused the step into this grid (#201).
+    pub fn note_refused(&mut self, grid: (i32, i32)) {
+        self.refused = Some(grid);
+    }
+
+    /// The grid refused this think, if any.
+    pub fn take_refused(&mut self) -> Option<(i32, i32)> {
+        self.refused.take()
     }
 
     /// The world must still be the snapshot this `Paths` was built for.
@@ -383,7 +414,14 @@ impl Paths {
         let i = match index {
             Some(i) => i,
             None => {
-                let map = DistanceMap::build(w, k, &goal.targets(w), true, self.risk_aversion_pct);
+                let map = DistanceMap::build(
+                    w,
+                    k,
+                    &goal.targets(w),
+                    true,
+                    self.risk_aversion_pct,
+                    &self.barred,
+                );
                 self.maps.push((goal.clone(), map));
                 self.maps.len() - 1
             }
@@ -692,6 +730,22 @@ pub(crate) mod tests {
         }
         let mut p = Paths::new(&w);
         assert_eq!(p.step(&w, &k, &Goal::Frontier), Some(6));
+    }
+
+    #[test]
+    fn a_barred_grid_closes_a_corridor() {
+        // #201: a grid the travel guard refused is out of every map, so the
+        // planner reports the corridor's far end unreachable instead of
+        // stepping toward a grid the guard will refuse again.
+        let (w, k) = world(&["#######", "#@...>#", "#######"]);
+        let goal = Goal::Stairs { up: false };
+        let mut p = Paths::new(&w);
+        assert_ne!(p.distance(&w, &k, &goal), UNREACHED);
+        p.bar(vec![(3, 1)]);
+        assert_eq!(p.distance(&w, &k, &goal), UNREACHED); // The barred grid is the goal itself: no goal is left.
+        let mut p = Paths::new(&w);
+        p.bar(vec![(5, 1)]);
+        assert_eq!(p.distance(&w, &k, &goal), UNREACHED);
     }
 
     #[test]
