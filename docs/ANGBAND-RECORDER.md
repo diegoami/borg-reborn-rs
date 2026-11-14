@@ -23,8 +23,8 @@ recorder checks the recomputed terminal/bot stream and never supplies engine
 RNG or bot decisions. Use the standalone CLI verify on the two output trees.
 The frontend finalizes before _exit; normal quit also has an atexit finalizer.
 
-No strategy, default profile, measured baseline or existing death workflow is
-changed. The one-file tree and in-game branch menu are future recorder work.
+Default play, stored reference streams and the existing death workflow remain
+unchanged. The integration establishes a new source/build identity. The one-file tree and in-game branch menu are future recorder work.
 
 Existing harness checkpoint children explicitly call ar_snapshot_enter before
 saving. Otherwise a child can append to inherited recording streams or consume
