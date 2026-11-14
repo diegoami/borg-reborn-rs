@@ -113,7 +113,6 @@ One character per class (the `-0` line of each class in the full suite,
 ## Next
 
 1. C2:
-   - trace the two early deaths;
    - add *shop*;
    - add the `^Z` keys and `run.sh` flags.
 2. C3 (#209): danger and caution into the domain behind a shadow check;
