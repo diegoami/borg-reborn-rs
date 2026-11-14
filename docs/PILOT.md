@@ -283,6 +283,20 @@ escape to town if they are scared?").
   - warriors still go deepest (DL3.0) and still pay most (2 deaths);
   - the casters still level more slowly than without the errand.
 
+**Warriors and blackguards on the second tier** (owner, 2026-11-14): gates
+3, 5 and 7, as paladins, rogues and rangers.
+
+| full suite, v12 | deaths | mean level | mean max depth | DL3+ |
+|---|---|---|---|---|
+| no errand | 11 | 3.40 | 1.84 | 4 |
+| class ladders, fighters on 2/4/6 | 6 | 3.40 | 1.76 | 3 |
+| class ladders, fighters on 3/5/7 | **5** | 3.33 | 1.64 | 3 |
+
+- Warriors go from 2 deaths, level 4.2 and DL3.0 to 1 death, level 3.8 and
+  DL2.0.
+- Blackguards go from 0, 3.6 and DL2.0 to 0, 3.4 and DL2.0.
+- The other classes are unchanged.
+
 
 ## Next
 
