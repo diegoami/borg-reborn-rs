@@ -41,6 +41,8 @@ rebuilt in Rust.
 
 ## What borg-rs is
 
+Layer by layer: [ARCHITECTURE-COMPARISON.md](ARCHITECTURE-COMPARISON.md).
+
 | | borg-rs | this repository |
 |---|---|---|
 | purpose | the C Borg ported to Rust, verified byte for byte against C; since v10, its own family of Borgs (borg-rs#25) | a ground-up Borg; POC finished |
