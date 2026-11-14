@@ -588,6 +588,10 @@ static void borgh_checkpoint(void)
 		_exit(3);
 	}
 	if (snapshot == 0) {
+#ifdef BORG_RECORDING
+        /* The saver child must never consume or append the parent's streams. */
+        { extern void ar_snapshot_enter(void); ar_snapshot_enter(); }
+#endif
 #ifdef __linux__
 		/* Do not leave a saving child behind if the supervised engine is
 		 * killed. Check the race between fork and installing this guard. */

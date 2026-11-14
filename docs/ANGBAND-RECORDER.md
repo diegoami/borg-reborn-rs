@@ -25,3 +25,8 @@ The frontend finalizes before _exit; normal quit also has an atexit finalizer.
 
 No strategy, default profile, measured baseline or existing death workflow is
 changed. The one-file tree and in-game branch menu are future recorder work.
+
+Existing harness checkpoint children explicitly call ar_snapshot_enter before
+saving. Otherwise a child can append to inherited recording streams or consume
+its own copy of a buffered replay cursor. The integration test exercises actual
+forked checkpoints and compares their save bytes as well as native streams.

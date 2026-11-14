@@ -113,3 +113,14 @@ jobs:
       - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
       - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D*-rust-* | head -1)" "$RUNNER_TEMP/rerun"
+
+  recorder:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev
+      - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build/recorder -j4
+      - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"
