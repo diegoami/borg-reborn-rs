@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1932; distinct starting conditions: 1931; retained process attempts: 1932 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1956; distinct starting conditions: 1955; retained process attempts: 1956 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1938,6 +1938,30 @@ Dossiers: 1932; distinct starting conditions: 1931; retained process attempts: 1
 | [D1950-rust-seed1061](D1950-rust-seed1061/report.md) | unassigned | `eb43cfe8c644` | 1061 | starvation | 90180 | unassessed |
 | [D1951-rust-seed1070](D1951-rust-seed1070/report.md) | unassigned | `eb43cfe8c644` | 1070 | starvation | 89720 | unassessed |
 | [D1952-rust-seed1073](D1952-rust-seed1073/report.md) | unassigned | `eb43cfe8c644` | 1073 | a fatal wound | 7180 | unassessed |
+| [D1953-rust-seed1010](D1953-rust-seed1010/report.md) | unassigned | `d4cde78fd36c` | 1010 | a soldier | 10186 | unassessed |
+| [D1954-rust-seed1012](D1954-rust-seed1012/report.md) | unassigned | `d4cde78fd36c` | 1012 | a small kobold | 18369 | unassessed |
+| [D1955-rust-seed1020](D1955-rust-seed1020/report.md) | unassigned | `d4cde78fd36c` | 1020 | a giant yellow centipede | 5199 | unassessed |
+| [D1956-rust-seed1021](D1956-rust-seed1021/report.md) | unassigned | `d4cde78fd36c` | 1021 | a fatal wound | 3950 | unassessed |
+| [D1957-rust-seed1023](D1957-rust-seed1023/report.md) | unassigned | `d4cde78fd36c` | 1023 | a soldier ant | 4148 | unassessed |
+| [D1958-rust-seed1022](D1958-rust-seed1022/report.md) | unassigned | `d4cde78fd36c` | 1022 | an acolyte | 11800 | unassessed |
+| [D1959-rust-seed1024](D1959-rust-seed1024/report.md) | unassigned | `d4cde78fd36c` | 1024 | Fang, Farmer Maggot's Dog | 8921 | unassessed |
+| [D1960-rust-seed1031](D1960-rust-seed1031/report.md) | unassigned | `d4cde78fd36c` | 1031 | Grip, Farmer Maggot's Dog | 27509 | unassessed |
+| [D1961-rust-seed1030](D1961-rust-seed1030/report.md) | unassigned | `d4cde78fd36c` | 1030 | a soldier | 39238 | unassessed |
+| [D1962-rust-seed1013](D1962-rust-seed1013/report.md) | unassigned | `d4cde78fd36c` | 1013 | poison | 65590 | unassessed |
+| [D1963-rust-seed1040](D1963-rust-seed1040/report.md) | unassigned | `d4cde78fd36c` | 1040 | a small kobold | 5078 | unassessed |
+| [D1964-rust-seed1043](D1964-rust-seed1043/report.md) | unassigned | `d4cde78fd36c` | 1043 | a small kobold | 17489 | unassessed |
+| [D1965-rust-seed1044](D1965-rust-seed1044/report.md) | unassigned | `d4cde78fd36c` | 1044 | a small kobold | 4516 | unassessed |
+| [D1966-rust-seed1034](D1966-rust-seed1034/report.md) | unassigned | `d4cde78fd36c` | 1034 | starvation | 85470 | unassessed |
+| [D1967-rust-seed1041](D1967-rust-seed1041/report.md) | unassigned | `d4cde78fd36c` | 1041 | a soldier | 61773 | unassessed |
+| [D1968-rust-seed1052](D1968-rust-seed1052/report.md) | unassigned | `d4cde78fd36c` | 1052 | a soldier | 59140 | unassessed |
+| [D1969-rust-seed1053](D1969-rust-seed1053/report.md) | unassigned | `d4cde78fd36c` | 1053 | a giant white louse | 30740 | unassessed |
+| [D1970-rust-seed1060](D1970-rust-seed1060/report.md) | unassigned | `d4cde78fd36c` | 1060 | poison | 18860 | unassessed |
+| [D1971-rust-seed1062](D1971-rust-seed1062/report.md) | unassigned | `d4cde78fd36c` | 1062 | a kobold shaman | 95130 | unassessed |
+| [D1972-rust-seed1071](D1972-rust-seed1071/report.md) | unassigned | `d4cde78fd36c` | 1071 | a floating eye | 10257 | unassessed |
+| [D1973-rust-seed1073](D1973-rust-seed1073/report.md) | unassigned | `d4cde78fd36c` | 1073 | a cave spider | 46063 | unassessed |
+| [D1974-rust-seed1083](D1974-rust-seed1083/report.md) | unassigned | `d4cde78fd36c` | 1083 | a soldier | 32160 | unassessed |
+| [D1975-rust-seed1084](D1975-rust-seed1084/report.md) | unassigned | `d4cde78fd36c` | 1084 | a rock lizard | 33603 | unassessed |
+| [D1976-rust-seed1081](D1976-rust-seed1081/report.md) | unassigned | `d4cde78fd36c` | 1081 | a soldier | 56970 | unassessed |
 
 ## Aggregated actions
 

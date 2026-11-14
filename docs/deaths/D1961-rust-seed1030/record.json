@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D1961-rust-seed1030",
+  "run_kind": "harness",
+  "character": "Hobbit Priest",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 5,
+    "turn": 39238,
+    "race_idx": 3,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1030,
+    "flags": "menu",
+    "git_rev": "d4cde78fd36cf54b5213755139b2288188f1e34d",
+    "git_dirty": "no",
+    "source_sha256": "c197963bca4d3be993611200dfedd3f0a64ce7f6e710dd32b83c5cb6ce0968a9",
+    "binary_sha256": "7e53ddb7a31eafb51c849d29d92429b5d57bff63c986ac0e1885e9da8c458a1c",
+    "borg_txt_sha256": "2471be3f0edeaa3a7ea314b4d49f691e70b3fd34825be6bbfdda01452233366f",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 3691
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-3-priest-0",
+      "result_sha256": "32016f610582d5d2350b28322d16bcea021876fb9bf4bf86c59e801476383b10",
+      "raw_sha256": {
+        "keys.log": "32016f610582d5d2350b28322d16bcea021876fb9bf4bf86c59e801476383b10",
+        "messages.log": "d24a3bbef05b5f926bf79115c1c01187f9e97f8bf2bc593ff4775cbb70c840fd",
+        "state.log": "ac305c806bfe7c39f106aa94096d3e1d740825819c9b63f2d43dc37b970295cc"
+      },
+      "source_commit": "d4cde78fd36cf54b5213755139b2288188f1e34d",
+      "binary_sha256": "7e53ddb7a31eafb51c849d29d92429b5d57bff63c986ac0e1885e9da8c458a1c"
+    }
+  ],
+  "encounter_family": "start-7e744f74a72fd49845fc8d54e0c6c3d042ba77979484de595cb44fbf85adbd76",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "01f938c6bef01df2b18f39020aee9eddbc6b96c0f0d08604f73134a371bf1e33",
+    "config.txt": "5d97578dc77132e8394f6d15ce5c2905b8366aafbd7fc7de9f79b2432c96b8bd",
+    "depths.json": "2ae6deccbcf1b35dd63ec8a19e91d621d89799d4df4e1fb14c1f3e9ea68c9786",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "f15b7779e8acd559f545f00bc8c8c7ebb9f6e6ca65b5c5806e8da3e913306ed4",
+    "trace-tail.jsonl": "c285363007d7496592a6ee05e4f774110d4c6429bc505f596801cbaf12c547f5"
+  },
+  "investigation": null,
+  "issue": null
+}
