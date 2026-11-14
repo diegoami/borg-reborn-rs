@@ -262,6 +262,9 @@ pub struct FirstStrategy {
     refused: BTreeMap<Action, i64>,
     /// The best this level has given so far and when it last grew (#201).
     progress: Option<LevelProgress>,
+    /// Grids the travel guard refused, by level generation, barred from
+    /// the paths until this game turn (#201).
+    barred: Vec<(u64, (i32, i32), i64)>,
 }
 
 /// What a level has given: the grids mapped and the experience, at their
@@ -286,6 +289,7 @@ impl Default for FirstStrategy {
             rule: "",
             refused: BTreeMap::new(),
             progress: None,
+            barred: Vec::new(),
         }
     }
 }
@@ -466,6 +470,7 @@ impl FirstStrategy {
         // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
         // next one.
         if at(x + dx, y + dy) >= at(x, y) + 0.5 {
+            ctx.paths.note_refused((x + dx, y + dy));
             return Self::retreat_step(ctx).map(Action::Walk);
         }
         Some(Action::Walk(d))
@@ -1357,7 +1362,23 @@ impl Strategy for FirstStrategy {
 
     fn decide(&mut self, ctx: &mut DecisionCtx) -> Decision {
         self.rule = "";
+        // The grids the travel guard refused stay out of every path for a
+        // cooldown (#201): with them in, the planner stepped toward a grid
+        // the guard refused, the guard stepped back, and the Borg walked
+        // between two grids until the turn cap (a grey mushroom patch in a
+        // corridor: 24,000 turns of full-0-warrior-1).
+        {
+            let (generation, turn) = (ctx.world.level.generation, ctx.view.turn);
+            self.barred
+                .retain(|&(g, _, until)| g == generation && turn < until);
+            let grids = self.barred.iter().map(|&(_, xy, _)| xy).collect();
+            ctx.paths.bar(grids);
+        }
         let mut d = self.decide_now(ctx);
+        if let Some(grid) = ctx.paths.take_refused() {
+            let until = ctx.view.turn + i64::from(ctx.params.goal_cooldown_turns);
+            self.barred.push((ctx.world.level.generation, grid, until));
+        }
         self.last_action = Some(d.action);
         let turn = ctx.view.turn;
         d.why = Some(crate::trace::Why {
