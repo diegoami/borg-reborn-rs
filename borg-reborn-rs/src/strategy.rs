@@ -458,7 +458,14 @@ impl FirstStrategy {
                 hp,
             )
         };
-        if at(x + dx, y + dy) > at(x, y) {
+        // Step back only when the next grid is riskier by at least half a
+        // hit point: the path's own resolution (`danger_with` rounds the
+        // risk to whole steps). Below it the path already judged the step
+        // free, and retreating flips the Borg back and forth: #176's
+        // priest-4 spent 20,000 turns between two town grids because a
+        // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
+        // next one.
+        if at(x + dx, y + dy) >= at(x, y) + 0.5 {
             return Self::retreat_step(ctx).map(Action::Walk);
         }
         Some(Action::Walk(d))
@@ -495,7 +502,19 @@ impl FirstStrategy {
     /// Whether the readiness policy allows `depth` (T5.1, #125; see
     /// `readiness.rs`). Depth 1 always passes.
     fn ready_for(ctx: &DecisionCtx, depth: i32) -> bool {
-        crate::readiness::ready(ctx.world, ctx.knowledge, ctx.params, depth).ok()
+        depth <= Self::target_depth(ctx)
+    }
+
+    /// The depth a trip goes to (#201, owner 2026-11-14): the willingness
+    /// to go down is a parameter of the character, tuned by the zoo, not
+    /// a gate on the worst monster that might appear. It replaces T5.1's
+    /// readiness gate (the worst turn of every race in [d-2, d+5] under
+    /// half the HP), which never opened DL2 for a level-1 character: the
+    /// full suite's survivors stayed on DL1 for 85,000 turns. Class, race
+    /// and power terms come as further parameters, measured as arms.
+    fn target_depth(ctx: &DecisionCtx) -> i32 {
+        let clevel = ctx.world.character.status.as_ref().map_or(1, |s| s.level);
+        (clevel * ctx.params.depth_per_clevel_pct / 100).max(1)
     }
 
     /// A known Word of Recall scroll in the pack (the reserve's aware
@@ -1266,14 +1285,28 @@ impl FirstStrategy {
         // explored level rerolls (Descend's step) instead of descending.
         let depth = ctx.world.level.depth;
         let ready_next = depth == 0 || Self::ready_for(ctx, depth + 1);
-        let dive = depth > 0 && Self::ready_for(ctx, depth + 5);
+        // The trip (#201): above the target depth the stairs come first.
+        let dive = depth > 0 && ready_next;
         let (mode, rule) =
             if descend_first && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
                 (Mode::Descend, "in town: take the stairs down")
             } else if dive && stairs != UNREACHED && cooled(Mode::Descend) && !block_descend {
-                (Mode::Descend, "ready for five levels deeper: dive")
+                (
+                    Mode::Descend,
+                    "above the target depth: take the stairs down",
+                )
             } else if frontier != UNREACHED && cooled(Mode::Explore) {
                 (Mode::Explore, "a frontier is reachable")
+            } else if depth > 0
+                && !ready_next
+                && !block_descend
+                && cooled(Mode::Return)
+                && (stairs != UNREACHED || stairs_up != UNREACHED)
+            {
+                // The trip's end (#201): the level at the target depth is
+                // explored; go home, sell and buy, and come back to a new
+                // level.
+                (Mode::Return, "nothing more to do on this level: go home")
             } else if stairs != UNREACHED && cooled(Mode::Descend) && !block_descend && ready_next {
                 (Mode::Descend, "no frontier: a down staircase is reachable")
             } else if stairs == UNREACHED && stairs_up == UNREACHED && frontier == UNREACHED {
@@ -1659,6 +1692,14 @@ mod tests {
         )
     }
 
+    /// A level-4 character: its target depth is DL2, so on DL1 the stairs
+    /// down come first and an explored level is left by them (#201).
+    fn above_target(w: &mut World) {
+        if let Some(st) = w.character.status.as_mut() {
+            st.level = 4;
+        }
+    }
+
     /// A test consumable. Kinds 1–6 are food, light, cure, escape, Recall
     /// and an unknown potion, installed by `ctx_of`.
     fn item(kind: u32, number: u8, aware: bool) -> Item {
@@ -1855,10 +1896,9 @@ mod tests {
     }
 
     #[test]
-    fn an_unready_character_goes_up() {
-        // T5.1 (#125), c15 DEPTH-04: at DL6 without the DL5 kit (Word of
-        // Recall, three cures, a ranged attack) the Borg is not ready for
-        // the depth it stands on, and goes up.
+    fn a_character_below_its_target_depth_goes_up() {
+        // #201: below its target depth (a level-0 character targets DL1)
+        // the Borg goes up.
         let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
             &["#########", "#@.....<#", "#.......#", "#########"],
             20,
@@ -1885,10 +1925,10 @@ mod tests {
             d.why.as_ref().map(|y| y.rule.as_str()),
             Some("not ready for this depth: go up")
         );
-        // With the kit (and the band's monsters well inside its HP) it
-        // stays to explore instead.
-        let (mut s, mut w, mut k, mut p, m, mut rng, params) = ctx_of(
-            &["#########", "#@.....<#", "#.......#", "#########"],
+        // A character whose target depth is DL6 (level 12) stays to
+        // explore instead (#201).
+        let (mut s, mut w, k, mut p, m, mut rng, params) = ctx_of(
+            &["#########", "#@.....<#", "#......?#", "#########"],
             200,
             200,
         );
@@ -1896,20 +1936,8 @@ mod tests {
         if let Some(st) = w.character.status.as_mut() {
             st.depth = 6;
             st.max_depth = 6;
+            st.level = 12;
         }
-        // The ranged attack is five flasks of oil (tval 27).
-        k.kinds.push(crate::knowledge::ObjectKind {
-            index: 7,
-            name: "& Flask~ of oil".into(),
-            tval: 27,
-            ..Default::default()
-        });
-        let mut oil = item(1, 5, true);
-        oil.kind = 7;
-        oil.tval = 27;
-        w.character.inventory = vec![item(5, 1, true), item(3, 3, true), oil];
-        let r = crate::readiness::ready(&w, &k, &params, 6);
-        assert!(r.ok(), "{r:?}");
         let d = decide_with(
             &mut s,
             &w,
@@ -2378,6 +2406,7 @@ mod tests {
     #[test]
     fn takes_the_down_staircase_when_on_it() {
         let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
         // Move the player onto the stair, then rebuild the pathfinder
         // for that world (a map never outlives its observation).
         if let Some(s) = w.character.status.as_mut() {
@@ -2393,8 +2422,8 @@ mod tests {
     #[test]
     fn a_stalled_goal_cools_down_and_the_next_mode_takes_over() {
         // The frontier exists but the goal never progresses: after the
-        // budget the mode is cooled and descend (stairs known) takes
-        // over.
+        // budget the mode is cooled, and at the target depth the trip
+        // ends (#201).
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["#######", "#@.?.>#", "#.....#", "#######"], 20, 20);
         // Stall the goal: think once so a goal exists, then let the
@@ -2409,20 +2438,14 @@ mod tests {
         let mut p = crate::path::Paths::new(&w);
         let v = view(&w);
         let d = decide_with(&mut s, &w, &k, &mut p, &m, &mut rng, &params, &v, &[]);
-        assert_eq!(
-            d.mode, "descend",
-            "explore stalled: the cooldown hands the level to descend"
-        );
-        assert!(
-            matches!(d.action, Action::Walk(_)),
-            "a step toward the '>' through the second row: {:?}",
-            d.action
-        );
+        assert_eq!(d.mode, "return", "explore stalled: the trip ends");
     }
 
     #[test]
     fn executor_failures_fail_the_goal() {
-        let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.?#", "#####"], 20, 20);
+        let (mut s, mut w, k, mut p, m, mut rng, params) =
+            ctx_of(&["#####", "#@.?#", "#####"], 20, 20);
+        above_target(&mut w);
         let v = view(&w);
         let d = decide_with(
             &mut s,
@@ -2440,9 +2463,34 @@ mod tests {
     }
 
     #[test]
-    fn the_level_exhausted_falls_to_descend() {
-        // No frontier: the level is mapped; descend is the mode.
+    fn an_explored_level_at_the_target_depth_ends_the_trip() {
+        // #201: the trip's loop. At the target depth (a level-0 character
+        // targets DL1) an explored level sends the Borg home.
         let (mut s, w, k, mut p, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        let d = decide_with(
+            &mut s,
+            &w,
+            &k,
+            &mut p,
+            &m,
+            &mut rng,
+            &params,
+            &view(&w),
+            &[],
+        );
+        assert_eq!(d.mode, "return", "{d:?}");
+        assert_eq!(
+            d.why.as_ref().map(|y| y.rule.as_str()),
+            Some("nothing more to do on this level: go home")
+        );
+    }
+
+    #[test]
+    fn the_level_exhausted_falls_to_descend() {
+        // No frontier, above the target depth: the stairs down.
+        let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
+        let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
             &w,
@@ -2462,6 +2510,7 @@ mod tests {
     fn an_exhausted_level_rerolls_from_its_up_staircase() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2478,7 +2527,9 @@ mod tests {
         assert_eq!(d.mode, "descend");
         assert_eq!(d.action, Action::Ascend, "take the exit, do not hold on it");
 
-        let (mut s, w, k, _, m, mut rng, params) = ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        let (mut s, mut w, k, _, m, mut rng, params) =
+            ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
@@ -2499,6 +2550,7 @@ mod tests {
     fn an_unsafe_up_staircase_retreats_instead_of_holding() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<M.#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         // A remembered threat is not visible contact, so Engage does not
         // answer it. The stair remains unsafe and must not trap Descend.
@@ -2527,6 +2579,7 @@ mod tests {
     #[test]
     fn a_fresh_level_explores_instead_of_rerolling() {
         let (mut s, mut w, k, _, m, mut rng, params) = ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+        above_target(&mut w);
         let mut p = Paths::new(&w);
         let d = decide_with(
             &mut s,
@@ -2571,6 +2624,7 @@ mod tests {
     fn an_exhausted_frontier_can_reroll_but_a_fresh_one_cannot() {
         let (mut s, mut w, k, _, m, mut rng, params) =
             ctx_of(&["######", "#@<.?#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2609,6 +2663,7 @@ mod tests {
     fn rerolls_are_capped_per_level_and_per_game_turn() {
         let (mut s, mut w, k, _, mem, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         let mut p = Paths::new(&w);
         let d = decide_with(
@@ -2642,6 +2697,7 @@ mod tests {
 
         let (mut s, mut w, k, _, mut mem, mut rng, params) =
             ctx_of(&["######", "#@<..#", "######"], 20, 20);
+        above_target(&mut w);
         w.character.status.as_mut().unwrap().x = 2;
         mem.record(w.turn, Action::Descend);
         mem.record(w.turn, Action::Ascend);

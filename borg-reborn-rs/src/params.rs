@@ -24,7 +24,7 @@ pub struct Param {
 }
 
 /// The first strategy's parameters (M3: modes, budgets and town reserves).
-pub const TABLE: [Param; 22] = [
+pub const TABLE: [Param; 23] = [
     Param {
         name: "max_tries_per_turn",
         unit: "thinks at one game turn",
@@ -248,6 +248,17 @@ pub const TABLE: [Param; 22] = [
                    500 player turns at normal speed with nothing mapped and nothing learned; \
                    declared, to be measured",
     },
+    Param {
+        name: "depth_per_clevel_pct",
+        unit: "% of the character level: a trip's target depth",
+        min: 1,
+        max: 500,
+        default: 50,
+        evidence: "#201 (owner, 2026-11-14): the willingness to go down is an optimisation \
+                   parameter, replacing T5.1's readiness gate, which kept every survivor on \
+                   DL1. Target depth = max(1, clevel x this / 100): level 10 plays DL5. \
+                   Declared, to be tuned by the zoo; class, race and power terms come as arms",
+    },
 ];
 
 /// The values a run uses, and where they came from.
@@ -275,6 +286,7 @@ pub struct Params {
     pub readiness_band_above: i32,
     pub breeder_colony: i32,
     pub level_stall_turns: i32,
+    pub depth_per_clevel_pct: i32,
     /// The profile file, or "default" when none was given.
     pub profile: String,
     /// SHA-256 of the profile file's bytes, or of the empty string for the
@@ -314,6 +326,7 @@ impl Default for Params {
             readiness_band_above: default_of("readiness_band_above") as i32,
             breeder_colony: default_of("breeder_colony") as i32,
             level_stall_turns: default_of("level_stall_turns") as i32,
+            depth_per_clevel_pct: default_of("depth_per_clevel_pct") as i32,
             profile: "default".into(),
             profile_sha256: sha256_hex(b""),
         }
@@ -385,6 +398,7 @@ impl Params {
                 "readiness_band_above" => p.readiness_band_above = v as i32,
                 "breeder_colony" => p.breeder_colony = v as i32,
                 "level_stall_turns" => p.level_stall_turns = v as i32,
+                "depth_per_clevel_pct" => p.depth_per_clevel_pct = v as i32,
                 _ => unreachable!("every table entry has a field"),
             }
         }
@@ -417,6 +431,7 @@ impl Params {
                 "readiness_band_above" => i64::from(self.readiness_band_above),
                 "breeder_colony" => i64::from(self.breeder_colony),
                 "level_stall_turns" => i64::from(self.level_stall_turns),
+                "depth_per_clevel_pct" => i64::from(self.depth_per_clevel_pct),
                 _ => 0,
             }
         };
