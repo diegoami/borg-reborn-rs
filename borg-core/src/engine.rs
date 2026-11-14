@@ -2497,6 +2497,11 @@ pub fn player_grid() -> loc {
     player_ref().grid
 }
 
+/// `player->depth`. borg-reborn-rs (#208): the errands' depth.
+pub fn player_depth() -> i32 {
+    i32::from(player_ref().depth)
+}
+
 /// `player->opts.lazymove_delay`
 pub fn player_lazymove_delay() -> u8 {
     player_ref().opts.lazymove_delay

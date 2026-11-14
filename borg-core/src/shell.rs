@@ -564,7 +564,9 @@ fn target(st: &mut BorgState) -> Option<i32> {
 /// `Some(true)` means the think is over (the Borg stops).
 pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     let turn = i64::from(engine::game_turn());
-    let depth = st.borg.tr(BI_CDEPTH);
+    // The engine's depth: the core's own (`BI_CDEPTH`) is stale on the
+    // first think (DL1 in town), which read as a rise from DL1 at turn 1.
+    let depth = engine::player_depth();
     // `/stopscared`: with or without an errand, a scared core hands over.
     let level = STOP_SCARED.load(Ordering::Relaxed);
     if level > 0 && depth > 0 && scared(st, level) {
