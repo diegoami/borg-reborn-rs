@@ -111,9 +111,10 @@ munchkin start off, but `borg_munchkin_by_class = TRUE` turned it back on
 for Warriors, Druids and Rangers: they stair-scummed to
 `borg_munchkin_class_depth` (6). `borg_self_scum = TRUE` let a level-10
 character wait in town until it could afford a wanted item. Both are off
-(owner, 2026-11-14). They are switched off in `borg-core/overrides.txt`,
-which `harness/run.sh` applies over borg-rs's own `borg.txt`; the vendored
-file stays as borg-rs ships it.
+(owner, 2026-11-14). They are switched off in `harness/borg.txt`, borg-rs's
+own `borg.txt` with those two settings changed and our three keys added,
+which every run and the zoo use; the vendored `borg-core/borg.txt` stays as
+borg-rs ships it (`BORG_CORE_OVERRIDES=off` runs it, for parity).
 
 **The errand is trips** (owner, 2026-11-14): explore DL1 and go back to
 town; then DL1, DL2, DL1 and back to town; and so on. The player writes

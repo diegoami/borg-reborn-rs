@@ -27,8 +27,41 @@
 //!   through the core's own stop (`borg_oops`); its outcome goes to
 //!   `BORG_ERRAND_OUT` (one JSON line) when that is set.
 //!
-//! With no errand set, nothing here changes a decision: every hook returns
-//! at once, and play is borg-rs's byte for byte.
+//! **Commands** (owner, 2026-11-14), typed at `^Z /` or given as
+//! `BORG_ERRAND` / `borg_reborn_errand`; each hands control back (the
+//! core's `borg_oops`) when it is done:
+//!
+//! - `/town`: home fast: the core reads Word of Recall if it can
+//!   (`borg_recall`), else the stairs up; done in town.
+//! - `/walk-back`: home by the stairs only, finding each up staircase; done
+//!   in town.
+//! - `/explore-back`: the level it is on and each level above it explored,
+//!   in turn, then home; done in town.
+//! - `/dive N`: the stairs down to DL N, not exploring; done on arrival.
+//! - `/explore-level`: the core explores the level it is on; done when it
+//!   is done with it.
+//! - `/dive-exploring N`: each level from here down to DL N explored, in
+//!   turn; done when DL N is.
+//! - `/ladder`, `/trips ...`: as above; they never end (a `*` trip repeats).
+//! - `/stopscared off|flee|N`: a setting, not an errand: when the Borg
+//!   stops and hands control back. `N` (1-1000): when the danger where it
+//!   stands (`borg_danger`, one turn) reaches N% of its current hit
+//!   points. `flee` (or `true`) is 100: one turn could kill it.
+//! - `/stop`: clear the errand.
+//!
+//! A line can hold several, separated by `;` (`/stopscared 50; /dive 2;
+//! /walk-back`): settings apply at once, the errands run in turn, each
+//! starting when the one before it is done. Any other ending (scared,
+//! aborted, the budget) drops the rest.
+//!
+//! The player's commands are the player's: `/dive` and `/dive-exploring`
+//! do not skip a level the core is not prepared for (the ladders do), and
+//! a command the core's own fear makes impossible (it wants town) stops
+//! and hands control back.
+//!
+//! With no errand set and `/stopscared` off, nothing here changes a
+//! decision: every hook returns at once, and play is borg-rs's byte for
+//! byte.
 
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_MAXHP};
 use crate::borg_io::{borg_keypress, borg_note};
@@ -36,6 +69,7 @@ use crate::engine;
 use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE};
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::Mutex;
 
 /// An errand.
@@ -44,6 +78,61 @@ pub enum Errand {
     /// Trips, in order. Each trip is the levels to explore, in order, and
     /// ends in town.
     Trips(Vec<Trip>),
+    /// The class's ladder (`borg-core/ladders.txt`), resolved when it is set.
+    Ladder,
+    /// Home; done in town.
+    Town,
+    /// The stairs down to DL N, not exploring; done on arrival.
+    Dive(i32),
+    /// The level the character is on, explored; done when the core is done.
+    ExploreLevel,
+    /// Each level from here down to DL N explored; done when DL N is.
+    DiveExploring(i32),
+    /// Home by the stairs only; done in town.
+    WalkBack,
+    /// Each level from here up to DL1 explored, then home; done in town.
+    ExploreBack,
+}
+
+/// A line typed at `^Z /` (or given in `BORG_ERRAND`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Command {
+    Errand(Errand),
+    /// `None`: off; `Some(N)`: danger at N% of the current hit points.
+    StopScared(Option<i32>),
+    Stop,
+}
+
+impl Command {
+    /// `/town`, `/dive 2`, `/explore-level`, `/dive-exploring 2`, `/ladder`,
+    /// `/trips 1*/1,2,1*@3`, `/stopscared true`, `/stop`. The slash is
+    /// optional; `trips:...` and `dive:2` are accepted too.
+    pub fn parse(line: &str) -> Option<Command> {
+        let line = line.trim();
+        let line = line.strip_prefix('/').unwrap_or(line);
+        let (name, arg) = match line.find(|c: char| c == ' ' || c == ':') {
+            Some(i) => (&line[..i], line[i + 1..].trim()),
+            None => (line, ""),
+        };
+        let depth = || arg.parse::<i32>().ok().filter(|d| *d >= 1);
+        Some(match (name.to_ascii_lowercase().as_str(), arg) {
+            ("town", "") => Command::Errand(Errand::Town),
+            ("dive", _) => Command::Errand(Errand::Dive(depth()?)),
+            ("explore-level", "") => Command::Errand(Errand::ExploreLevel),
+            ("dive-exploring", _) => Command::Errand(Errand::DiveExploring(depth()?)),
+            ("ladder", "") => Command::Errand(Errand::Ladder),
+            ("walk-back", "") => Command::Errand(Errand::WalkBack),
+            ("explore-back", "") => Command::Errand(Errand::ExploreBack),
+            ("trips", _) => Command::Errand(Errand::parse(&format!("trips:{arg}"))?),
+            ("stopscared", v) => Command::StopScared(match v.to_ascii_lowercase().as_str() {
+                "true" | "on" | "yes" | "flee" => Some(100),
+                "false" | "off" | "no" => None,
+                n => Some(n.parse::<i32>().ok().filter(|n| (1..=1000).contains(n))?),
+            }),
+            ("stop", "") | ("none", "") => Command::Stop,
+            _ => return None,
+        })
+    }
 }
 
 /// One trip: the levels to explore, in order, then home.
@@ -159,15 +248,61 @@ struct Running {
     started: Option<i64>,
     /// Levels skipped because the core was not prepared for them.
     skipped: u32,
+    /// What ends the errand.
+    end: End,
+    /// Skip a planned level the core is not prepared for (the ladders), or
+    /// not (the player's commands).
+    skip_unprepared: bool,
+    /// The plan starts where the character stands, resolved at the first
+    /// think: `ExploreLevel`, `DiveExploring(N)`, `ExploreBack`.
+    from_here: Option<FromHere>,
+    /// Read Word of Recall to go home, when the core can (`/town`).
+    recall: bool,
+    /// The command, for the report.
+    name: String,
+}
+
+/// A plan that starts at the character's depth.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FromHere {
+    /// This level.
+    Here,
+    /// This level and each one below, down to DL N.
+    DownTo(i32),
+    /// This level and each one above, up to DL1.
+    UpToOne,
+}
+
+/// What ends an errand.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum End {
+    /// Each trip goes home; the errand ends when every trip is over.
+    Home,
+    /// Done on arriving at the plan's level (`/dive`).
+    Arrive,
+    /// Done when the plan's last level is explored, where it is.
+    Stop,
 }
 
 impl Running {
     /// The depth the errand wants now: a level of the trip, 0 for home, or
-    /// `None` when every trip is over.
+    /// `None` when the errand is over.
     fn target(&self) -> Option<i32> {
         let trip = self.trips.get(self.trip)?;
-        Some(trip.levels.get(self.step).copied().unwrap_or(0))
+        match trip.levels.get(self.step) {
+            Some(&d) => Some(d),
+            None if self.end == End::Home => Some(0),
+            None => None,
+        }
     }
+}
+
+/// `/stopscared`: -1 off, N danger at N% of the current hit points.
+static STOP_SCARED: AtomicI32 = AtomicI32::new(-1);
+
+/// Set `/stopscared`.
+pub fn set_stop_scared(level: Option<i32>) {
+    STOP_SCARED.store(level.unwrap_or(-1), Ordering::Relaxed);
 }
 
 static ERRAND: Mutex<Option<Running>> = Mutex::new(None);
@@ -178,14 +313,167 @@ fn running() -> std::sync::MutexGuard<'static, Option<Running>> {
 
 /// Set (or clear) the errand, with a budget in game turns (0: none).
 pub fn set_errand(errand: Option<Errand>, budget: i64) {
-    *running() = errand.map(|Errand::Trips(trips)| Running {
-        trips,
-        trip: 0,
-        step: 0,
-        budget,
-        started: None,
-        skipped: 0,
+    let errand = match errand {
+        Some(Errand::Ladder) => class_ladder(),
+        e => e,
+    };
+    *running() = errand.map(|e| {
+        let name = format!("{e:?}");
+        let one = |levels| {
+            vec![Trip {
+                levels,
+                repeat: false,
+                min_level: None,
+            }]
+        };
+        let (trips, end, skip, from_here) = match e {
+            Errand::Trips(t) => (t, End::Home, true, None),
+            Errand::Ladder => (Vec::new(), End::Home, true, None),
+            Errand::Town | Errand::WalkBack => (one(vec![]), End::Home, false, None),
+            Errand::Dive(n) => (one(vec![n]), End::Arrive, false, None),
+            Errand::ExploreLevel => (Vec::new(), End::Stop, false, Some(FromHere::Here)),
+            Errand::DiveExploring(n) => (Vec::new(), End::Stop, false, Some(FromHere::DownTo(n))),
+            Errand::ExploreBack => (Vec::new(), End::Home, false, Some(FromHere::UpToOne)),
+        };
+        let recall = name == "Town";
+        Running {
+            trips,
+            trip: 0,
+            step: 0,
+            budget,
+            started: None,
+            skipped: 0,
+            end,
+            skip_unprepared: skip,
+            from_here,
+            recall,
+            name,
+        }
     });
+}
+
+/// Apply a command: set the errand or the setting. `true` when an errand
+/// was set (the caller starts the Borg).
+pub fn apply(command: Command, budget: i64) -> bool {
+    match command {
+        Command::Errand(e) => {
+            set_errand(Some(e), budget);
+            active()
+        }
+        Command::StopScared(level) => {
+            set_stop_scared(level);
+            false
+        }
+        Command::Stop => {
+            NEXT.lock().unwrap().clear();
+            set_errand(None, 0);
+            false
+        }
+    }
+}
+
+/// The errands queued after the running one (`/dive 2; walk-back`): each
+/// starts when the one before it is done; any other ending drops them.
+static NEXT: Mutex<std::collections::VecDeque<Errand>> =
+    Mutex::new(std::collections::VecDeque::new());
+
+/// The commands of a line, separated by `;`; `Err` names the first one it
+/// cannot read.
+pub fn parse_line(line: &str) -> Result<Vec<Command>, String> {
+    line.split(';')
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .map(|c| Command::parse(c).ok_or_else(|| c.to_string()))
+        .collect()
+}
+
+/// Apply a command line: commands separated by `;`, settings at once, the
+/// first errand now and the rest after it. `Ok(true)` when an errand runs;
+/// `Err` names a command it cannot read, and then nothing is applied.
+pub fn apply_line(line: &str, budget: i64) -> Result<bool, String> {
+    let commands = parse_line(line)?;
+    let mut errands = std::collections::VecDeque::new();
+    for c in commands {
+        match c {
+            Command::Errand(e) => errands.push_back(e),
+            other => {
+                apply(other, budget);
+            }
+        }
+    }
+    let Some(first) = errands.pop_front() else {
+        return Ok(active());
+    };
+    *NEXT.lock().unwrap() = errands;
+    Ok(apply(Command::Errand(first), budget))
+}
+
+/// `^Z /`: read a command line and apply it; an errand starts the Borg.
+pub(crate) fn borg_cmd_errand(st: &mut BorgState) {
+    let mut buf = [0u8; 80];
+    if !engine::get_string(
+        st,
+        c"Errand (/town /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stopscared off|flee|N /stop; ...): ",
+        &mut buf,
+        80,
+    ) {
+        return;
+    }
+    let line =
+        String::from_utf8_lossy(&buf[..buf.iter().position(|&c| c == 0).unwrap_or(0)]).into_owned();
+    match apply_line(&line, 0) {
+        Ok(true) => crate::borg_commands::borg_cmd_start(st),
+        Ok(false) => {}
+        Err(c) => borg_note(st, &format!("# Errand: unknown command '{c}'.")),
+    }
+}
+
+/// `/stopscared`: the danger where it stands reaches `level`% of its hit
+/// points. The core's flee flags are not fear here: it sets `fleeing` for
+/// routine moves, and `fleeing_to_town` only in town, where it stays set
+/// on the level below (a first version that counted them stopped every
+/// character at turn 1).
+fn scared(st: &mut BorgState, level: i32) -> bool {
+    let hp = st.borg.tr(BI_CURHP).max(1);
+    let (x, y) = (st.borg.c.x, st.borg.c.y);
+    let danger = crate::borg_danger::borg_danger(st, y, x, 1, true, false);
+    let hit = i64::from(danger) * 100 >= i64::from(hp) * i64::from(level);
+    if hit {
+        borg_note(
+            st,
+            &format!("# Errand: scared, danger {danger} against {hp} hit points."),
+        );
+    }
+    hit
+}
+
+/// End the errand with this outcome: the next queued errand starts if this
+/// one is done, otherwise control goes back to the player.
+fn finish(st: &mut BorgState, outcome: &str) {
+    let turn = i64::from(engine::game_turn());
+    report(st, outcome, turn);
+    let budget = running().as_ref().map_or(0, |r| r.budget);
+    let next = {
+        let mut q = NEXT.lock().unwrap();
+        if outcome == "done" {
+            q.pop_front()
+        } else {
+            q.clear();
+            None
+        }
+    };
+    match next {
+        Some(e) => {
+            borg_note(st, &format!("# Errand: done, next {e:?}."));
+            set_errand(Some(e), budget);
+            // The think must queue a key; a harmless one.
+            borg_keypress(st, crate::borg_io::ESCAPE);
+        }
+        None => {
+            set_errand(None, 0);
+            crate::borg_think::borg_oops(st, &format!("errand {outcome}"));
+        }
+    }
 }
 
 /// Whether an errand is running.
@@ -197,8 +485,12 @@ pub fn active() -> bool {
 /// prepared for.
 fn target(st: &mut BorgState) -> Option<i32> {
     loop {
-        let t = running().as_ref()?.target()?;
-        if t == 0 || crate::borg_prepared::borg_prepared(st, t).is_none() {
+        let (t, skip) = {
+            let guard = running();
+            let r = guard.as_ref()?;
+            (r.target()?, r.skip_unprepared)
+        };
+        if t == 0 || !skip || crate::borg_prepared::borg_prepared(st, t).is_none() {
             return Some(t);
         }
         borg_note(st, &format!("# Errand: not prepared for DL{t}, skipped."));
@@ -215,6 +507,38 @@ fn target(st: &mut BorgState) -> Option<i32> {
 pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     let turn = i64::from(engine::game_turn());
     let depth = st.borg.tr(BI_CDEPTH);
+    // `/stopscared`: with or without an errand, a scared core hands over.
+    let level = STOP_SCARED.load(Ordering::Relaxed);
+    if level > 0 && depth > 0 && scared(st, level) {
+        finish(st, "scared");
+        return Some(true);
+    }
+    // A plan that starts here, and the arrival of a dive.
+    {
+        let mut guard = running();
+        let r = guard.as_mut()?;
+        if let Some(plan) = r.from_here.take() {
+            let here = depth.max(1);
+            let levels = match plan {
+                FromHere::Here => vec![here],
+                FromHere::DownTo(n) if n > here => (here..=n).collect(),
+                FromHere::DownTo(_) => vec![here],
+                FromHere::UpToOne if depth == 0 => vec![],
+                FromHere::UpToOne => (1..=depth).rev().collect(),
+            };
+            r.trips = vec![Trip {
+                levels,
+                repeat: false,
+                min_level: None,
+            }];
+        }
+        let arrived = r.end == End::Arrive && r.target() == Some(depth);
+        drop(guard);
+        if arrived {
+            finish(st, "done");
+            return Some(true);
+        }
+    }
     // Home after a trip: what comes next (the readiness check runs outside
     // the lock: `borg_prepared` reads the core's state only).
     let next_deepest = {
@@ -283,6 +607,11 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
         return Some(bored && stairs_down(st));
     }
     if scared_home(st) {
+        if running().as_ref().is_some_and(|r| r.end != End::Home) {
+            // The player's command cannot go on: hand control back.
+            finish(st, "aborted: the core wants town");
+            return Some(true);
+        }
         // The core wants town: it leaves its own way (stairs up, recall).
         return None;
     }
@@ -301,7 +630,12 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
     if restock && advanced {
         borg_note(st, "# Errand: must restock, the trip goes home.");
     }
-    let t = target(st)?;
+    let Some(t) = target(st) else {
+        // The plan's last level is explored (`/explore-level`,
+        // `/dive-exploring`): done, where it is.
+        finish(st, "done");
+        return Some(true);
+    };
     if advanced {
         borg_note(st, &format!("# Errand: DL{depth} explored, next DL{t}."));
     }
@@ -326,13 +660,31 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
     // town: the trip ends and goes home. It wants off this level: it
     // leaves its own way (the think's "flee the level" steps), and the
     // trip goes on from wherever it arrives.
-    if scared_home(st) || st.borg.goal.leaving || st.borg.goal.fleeing {
+    if scared_home(st) {
+        if running().as_ref().is_some_and(|r| r.end != End::Home) {
+            finish(st, "aborted: the core wants town");
+            return true;
+        }
+        return false;
+    }
+    if st.borg.goal.leaving || st.borg.goal.fleeing {
         return false;
     }
     let depth = st.borg.tr(BI_CDEPTH);
     let Some(t) = target(st) else {
         return false;
     };
+    // `/town`: the core's own recall (scroll, rod, spell, activation) when
+    // it has one; until it takes effect the stairs up are walked anyway.
+    let recall = running().as_ref().is_some_and(|r| r.recall);
+    if recall
+        && t == 0
+        && depth > 0
+        && st.borg.goal.recalling == 0
+        && crate::borg_escape::borg_recall(st)
+    {
+        return true;
+    }
     // In town the core shops and leaves by itself (`on_leave_level`); on a
     // level of the plan it explores.
     if depth == 0 || depth == t {
@@ -401,11 +753,12 @@ fn report(st: &BorgState, outcome: &str, turn: i64) {
     let Some(path) = std::env::var_os("BORG_ERRAND_OUT") else {
         return;
     };
-    let (trips, skipped) = running()
-        .as_ref()
-        .map_or((0, 0), |r| (r.trip.min(r.trips.len()), r.skipped));
+    let (name, trips, skipped) = running().as_ref().map_or((String::new(), 0, 0), |r| {
+        (r.name.clone(), r.trip.min(r.trips.len()), r.skipped)
+    });
     let line = format!(
-        "{{\"errand\":\"trips\",\"outcome\":\"{outcome}\",\"turn\":{turn},\"trips_done\":{trips},\"skipped\":{skipped},\"depth\":{},\"clevel\":{},\"chp\":{},\"mhp\":{}}}\n",
+        "{{\"errand\":\"{}\",\"outcome\":\"{outcome}\",\"turn\":{turn},\"trips_done\":{trips},\"skipped\":{skipped},\"depth\":{},\"clevel\":{},\"chp\":{},\"mhp\":{}}}\n",
+        name.replace('"', "'"),
         st.borg.tr(BI_CDEPTH),
         st.borg.tr(BI_CLEVEL),
         st.borg.tr(BI_CURHP),
@@ -464,6 +817,99 @@ mod tests {
     }
 
     #[test]
+    fn a_line_holds_commands_in_turn() {
+        use Command as C;
+        assert_eq!(
+            parse_line("/stopscared 40; /dive 2;/walk-back"),
+            Ok(vec![
+                C::StopScared(Some(40)),
+                C::Errand(Errand::Dive(2)),
+                C::Errand(Errand::WalkBack)
+            ])
+        );
+        assert_eq!(parse_line("/dive 2; /sing"), Err("/sing".to_string()));
+    }
+
+    #[test]
+    fn commands_parse() {
+        use Command as C;
+        assert_eq!(C::parse("/town"), Some(C::Errand(Errand::Town)));
+        assert_eq!(C::parse("/dive 2"), Some(C::Errand(Errand::Dive(2))));
+        assert_eq!(C::parse("dive:3"), Some(C::Errand(Errand::Dive(3))));
+        assert_eq!(C::parse("/dive"), None);
+        assert_eq!(C::parse("/dive 0"), None);
+        assert_eq!(
+            C::parse("/explore-level"),
+            Some(C::Errand(Errand::ExploreLevel))
+        );
+        assert_eq!(
+            C::parse("/dive-exploring 2"),
+            Some(C::Errand(Errand::DiveExploring(2)))
+        );
+        assert_eq!(C::parse("/ladder"), Some(C::Errand(Errand::Ladder)));
+        assert_eq!(C::parse("/walk-back"), Some(C::Errand(Errand::WalkBack)));
+        assert_eq!(
+            C::parse("/explore-back"),
+            Some(C::Errand(Errand::ExploreBack))
+        );
+        assert!(matches!(
+            C::parse("/trips 1*/1,2,1*@3"),
+            Some(C::Errand(Errand::Trips(_)))
+        ));
+        assert!(matches!(
+            C::parse("trips:1*/1,2,1"),
+            Some(C::Errand(Errand::Trips(_)))
+        ));
+        assert_eq!(C::parse("/stopscared true"), Some(C::StopScared(Some(100))));
+        assert_eq!(C::parse("/stopscared flee"), Some(C::StopScared(Some(100))));
+        assert_eq!(C::parse("/stopscared 50"), Some(C::StopScared(Some(50))));
+        assert_eq!(C::parse("/stopscared off"), Some(C::StopScared(None)));
+        assert_eq!(C::parse("/stopscared 0"), None);
+        assert_eq!(C::parse("/stopscared maybe"), None);
+        assert_eq!(C::parse("/stop"), Some(C::Stop));
+        assert_eq!(C::parse("none"), Some(C::Stop));
+        assert_eq!(C::parse("/fly"), None);
+    }
+
+    #[test]
+    fn a_dive_ends_on_arrival_and_town_ends_home() {
+        let dive = Running {
+            trips: vec![Trip {
+                levels: vec![3],
+                repeat: false,
+                min_level: None,
+            }],
+            trip: 0,
+            step: 0,
+            budget: 0,
+            started: None,
+            skipped: 0,
+            end: End::Arrive,
+            skip_unprepared: false,
+            from_here: None,
+            recall: false,
+            name: String::new(),
+        };
+        assert_eq!(dive.target(), Some(3));
+        let mut stop = Running {
+            end: End::Stop,
+            ..dive.clone()
+        };
+        stop.step = 1;
+        assert_eq!(stop.target(), None, "explored: done where it is");
+        let town = Running {
+            trips: vec![Trip {
+                levels: vec![],
+                repeat: false,
+                min_level: None,
+            }],
+            end: End::Home,
+            ..dive
+        };
+        assert_eq!(town.target(), Some(0));
+    }
+
+    #[test]
     fn every_class_has_a_ladder() {
         let text = include_str!("../ladders.txt");
         for class in CLASSES {
@@ -485,6 +931,11 @@ mod tests {
             budget: 0,
             started: None,
             skipped: 0,
+            end: End::Home,
+            skip_unprepared: true,
+            from_here: None,
+            recall: false,
+            name: String::new(),
         };
         assert_eq!(r.target(), Some(1));
         r.step = 1;

@@ -75,7 +75,7 @@ struct BorgCommand {
 
 /// The Borg commands (`borg_commands[]`), in C's order (the help lists
 /// them in this order).
-const BORG_COMMANDS: [BorgCommand; 29] = [
+const BORG_COMMANDS: [BorgCommand; 30] = [
     BorgCommand { selection: b'?', description: "borg command help", function: borg_cmd_help },
     BorgCommand { selection: b'$', description: "reload borg.txt file", function: borg_cmd_init_txt_file },
     BorgCommand { selection: b'z', description: "activate borg", function: borg_cmd_start },
@@ -105,6 +105,8 @@ const BORG_COMMANDS: [BorgCommand; 29] = [
     BorgCommand { selection: b'o', description: "object details", function: borg_cmd_object_desc },
     BorgCommand { selection: b'R', description: "respawn", function: borg_cmd_respawn },
     BorgCommand { selection: b'v', description: "version", function: borg_cmd_version },
+    // borg-reborn-rs (#208): the errands' command line.
+    BorgCommand { selection: b'/', description: "errand (/dive N, /town, ...)", function: crate::shell::borg_cmd_errand },
 ];
 
 /// The area of the two menus (`region area = { 21, 5, 1, 10 }`).
@@ -209,7 +211,7 @@ fn help_line(cmd: &BorgCommand) -> Vec<u8> {
 }
 
 /// Set up the Borg and start it (`borg_cmd_start`).
-fn borg_cmd_start(st: &mut BorgState) {
+pub(crate) fn borg_cmd_start(st: &mut BorgState) {
     // Make sure the important game options are set correctly
     crate::borg_init::borg_reinit_options(st);
 
