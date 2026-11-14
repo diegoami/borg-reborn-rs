@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2171-rust-seed1001",
+  "run_kind": "harness",
+  "character": "Half-Elf Warrior",
+  "raw_cause": "a cutpurse",
+  "terminal": {
+    "cause": "a cutpurse",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 12413,
+    "race_idx": 1,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1001,
+    "flags": "menu",
+    "git_rev": "67c89d6d26a113b3db625cf345ccd217474d60a2",
+    "git_dirty": "no",
+    "source_sha256": "48a2bd0df0fd40c84da868d91f7dbd90c8529e4550c4c8bc1dcb66fca48225a2",
+    "binary_sha256": "4daec64929243a4f3589604c285efb2c44983fff52a88ed45fc65258138179ff",
+    "borg_txt_sha256": "22216f3288b2cd0ca7bb152297679a742e160ef9ba5234af5d8dd57e2e670606",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/trip/v12/ladder-full-0-warrior-1",
+      "result_sha256": "f8bb2bbc11d1922588fbf7caea9b4700ef10309e54745eaf315cd30b47451ded",
+      "raw_sha256": {
+        "keys.log": "f8bb2bbc11d1922588fbf7caea9b4700ef10309e54745eaf315cd30b47451ded",
+        "messages.log": "9e3b977d52585245874dcb4bc2eba1f81972921e0d10cdb486de615a43660340",
+        "state.log": "201db9eba86a87b687565c95fce48a88852371a78f8ecfef2edd055c94b12c7a"
+      },
+      "source_commit": "67c89d6d26a113b3db625cf345ccd217474d60a2",
+      "binary_sha256": "4daec64929243a4f3589604c285efb2c44983fff52a88ed45fc65258138179ff"
+    }
+  ],
+  "encounter_family": "start-beb96e5de447ffa92327472f5d89addde94e92f62e366c6504b13a7f2ade0ac0",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "b8641d9f394732fa8b9e5218021b412cad11711297b7c0827bae7afd8f921b05",
+    "config.txt": "419257b6588f60ea6c03105fda81d980d3c5684402fd1b49630bd55555045ea2",
+    "depths.json": "d55563fa2d62b9123503131a2cc9b79b8a8da4baeda5d1843cdfa743dc135eef",
+    "summary.json": "946e9dcfba92c820566ab8658ca9475de43f5b00200c404d7ef947c274ba1280"
+  },
+  "investigation": null,
+  "issue": null
+}

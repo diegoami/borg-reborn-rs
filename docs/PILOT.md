@@ -243,6 +243,46 @@ Per class (deaths / mean level / mean max depth, 5 characters each):
   slowly than without the errand. Their trips are short, and their gates
   (level 4 for DL2) are reached late. Their pace is the next thing to tune.
 
+**A scared core is not held to the plan** (owner, 2026-11-14: "do characters
+escape to town if they are scared?").
+- **Before.** Caution (Phase Door, teleport, Recall, the stairs underfoot)
+  always ran first, and a restock ended the trip. But the steering ran
+  before the think's "flee the level" steps and walked a fleeing character
+  back to the planned depth. It also overrode `fleeing_to_town` ("Scary guy
+  on level") and `rising` (out of depth).
+- **Now.**
+  - When the core wants town, the trip ends and the core goes home its own
+    way.
+  - When it is leaving or fleeing a level, it leaves its own way, and the
+    trip goes on from where it arrives.
+  - "The core wants town" ended a trip 14 times in the 45 runs.
+
+| full suite, v12 | deaths | mean level | mean max depth | DL3+ |
+|---|---|---|---|---|
+| no errand | 11 | 3.40 | 1.84 | 4 |
+| class ladders, halved | 8 | 3.29 | 1.96 | 5 |
+| class ladders, halved, scared core free | **6** | **3.40** | 1.76 | 3 |
+
+| class (deaths / level / max depth) | no errand | class ladder, scared core free |
+|---|---|---|
+| warrior | 0 / 5.4 / 2.4 | 2 / 4.2 / 3.0 |
+| blackguard | 1 / 3.0 / 2.0 | 0 / 3.6 / 2.0 |
+| paladin | 1 / 3.0 / 1.6 | 1 / 3.8 / 1.6 |
+| rogue | 1 / 4.0 / 2.2 | 0 / 4.6 / 2.2 |
+| ranger | 2 / 3.8 / 2.0 | 0 / 3.8 / 1.6 |
+| priest | 0 / 3.4 / 2.0 | 0 / 2.8 / 1.4 |
+| druid | 4 / 1.6 / 1.2 | 1 / 2.4 / 1.6 |
+| necromancer | 1 / 3.0 / 1.6 | 1 / 2.4 / 1.2 |
+| mage | 1 / 3.4 / 1.6 | 1 / 3.0 / 1.2 |
+
+- **Against borg-rs's own play:**
+  - deaths fall from 11 to 6;
+  - levels are equal on average;
+  - depth is a little lower.
+- **By class:**
+  - warriors still go deepest (DL3.0) and still pay most (2 deaths);
+  - the casters still level more slowly than without the errand.
+
 
 ## Next
 
