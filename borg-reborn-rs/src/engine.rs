@@ -253,6 +253,18 @@ extern "C" fn do_cmd_borg() {
     // The decision core (#207, the option-C pilot): borg-rs's, vendored at
     // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
     if crate::borg::core_is_borg_rs() {
+        // An errand for the core (#208): `BORG_ERRAND=dive:N`, with an
+        // optional budget in game turns (`BORG_ERRAND_BUDGET`).
+        if let Some(e) = std::env::var("BORG_ERRAND")
+            .ok()
+            .and_then(|s| borg_rs::shell::Errand::parse(&s))
+        {
+            let budget = std::env::var("BORG_ERRAND_BUDGET")
+                .ok()
+                .and_then(|b| b.parse().ok())
+                .unwrap_or(0);
+            borg_rs::shell::set_errand(Some(e), budget);
+        }
         borg_rs::do_cmd_borg();
         return;
     }

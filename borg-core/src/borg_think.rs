@@ -229,6 +229,11 @@ pub fn borg_think(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#208): an errand that is done stops the Borg here.
+    if let Some(done) = crate::shell::before_dungeon_think(st) {
+        return done;
+    }
+
     /* Do something */
     crate::borg_think_dungeon::borg_think_dungeon(st)
 }
