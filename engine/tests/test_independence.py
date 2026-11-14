@@ -64,8 +64,11 @@ class IndependenceTest(unittest.TestCase):
                         found.append(f'{rel}:{n}: {what}: {line.strip()[:100]}')
         self.assertEqual(found, [], '\n'.join(found))
 
-    def test_the_workspace_has_only_our_crate(self):
-        self.assertRegex((ROOT / 'Cargo.toml').read_text(), r'members = \["borg-reborn-rs"\]')
+    def test_the_workspace_has_only_our_crates(self):
+        # borg-core is borg-rs's crate vendored at a pin (the option-C pilot,
+        # #207, owner 2026-11-14): a copy in this repository (docs/SPEC.md
+        # §2.2, docs/PROVENANCE.md), not a borg-rs checkout or crate.
+        self.assertRegex((ROOT / 'Cargo.toml').read_text(), r'members = \["borg-reborn-rs", "borg-core"\]')
         self.assertFalse((ROOT / 'borg-rs').exists())
         self.assertFalse((ROOT / 'angband').exists())
 

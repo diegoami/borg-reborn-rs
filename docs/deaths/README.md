@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2073; distinct starting conditions: 2072; retained process attempts: 2073 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2074; distinct starting conditions: 2073; retained process attempts: 2074 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2079,6 +2079,7 @@ Dossiers: 2073; distinct starting conditions: 2072; retained process attempts: 2
 | [D2091-rust-seed1084](D2091-rust-seed1084/report.md) | unassigned | `315fa05c6dc4` | 1084 | a gallant | 94134 | unassessed |
 | [D2092-rust-seed102](D2092-rust-seed102/report.md) | unassigned | `315fa05c6dc4` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2093-rust-seed102](D2093-rust-seed102/report.md) | unassigned | `1c7e97c10778` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2094-rust-seed102](D2094-rust-seed102/report.md) | unassigned | `31f05e74c095` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 
 ## Aggregated actions
 
