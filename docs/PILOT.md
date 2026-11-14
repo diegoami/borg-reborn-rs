@@ -65,18 +65,48 @@ One character per class (the `-0` line of each class in the full suite,
 | `dive:3` | 6 of 9 (4,300–18,200 turns) | 3 | 0 |
 | `dive:5` | 6 of 9 (6,800–24,300 turns) | 3 | 0 |
 
-- **Without an errand, borg-rs's warrior-0 and priest-0 live to the cap.**
-  Under the errand they die on DL1 early: the warrior at 6,765 (a kobold
-  archer), the priest at 3,740 (a grey mushroom patch). That is the errand's
-  cost, and two causes are possible:
-  - **The override reaches shopping.** borg-rs's shopping reads
-    `borg_prepared`, so the kit it buys changes.
-  - **Diving walks past monsters.** The core would otherwise have fought
-    them on its own terms.
+- **The two early deaths, traced.** Without an errand, borg-rs's
+  warrior-0 and priest-0 live to the cap; under `dive:3` both die on DL1.
+  - **Shopping is not the cause.** Up to the split, both runs make the same
+    town choices. Both warriors sell Word of Recall and Berserk Strength
+    and buy torches: that is borg-rs's munchkin start, with or without the
+    errand.
+  - **The split.** Both pairs split at a DL1 level with no known down
+    staircase:
+    - without the errand, borg-rs says "heading up (bored and unable to
+      dive: Clevel < depth)";
+    - with it, the readiness override (prepared down to N) switched that
+      rule off, and the Borg wandered for 40–70 turns before leaving for
+      another reason ("Spent too long on level").
+  - **The deaths are borg-rs's own decisions in a game that had become a
+    different one.** The warrior fled a kobold archer at 4/20 HP with no
+    Phase Door. The priest died confused beside a grey mushroom patch. The
+    errand's steering played no part in either.
+  - **The fix.** The override now holds only depths at or above the
+    current one, so the core does not climb back up from a depth the dive
+    reached. The steering does the diving.
+- **The sample**, after the fix. All 45 full-suite characters (`menu`,
+  60,000-turn cap, budget 50,000):
 
-  Which one it is, is to be traced before the errand is called done.
-- **A first version** steered only through readiness, with the override at
-  N, then at N + 5. It left three or four characters on DL1 until the
+  | | reached N | died | out of budget | mean max depth |
+  |---|---|---|---|---|
+  | no errand | n/a | 8 | n/a | 2.89 |
+  | `dive:3` | 34 (median 10,574 turns, 1,803–46,697) | 8 | 3 | 2.71 |
+  | `dive:5` | 25 (median 11,438 turns, 2,612–45,647) | 13 | 7 | 3.98 |
+
+  **The deaths that happen only under the errand:**
+  - 5 under `dive:3`, 8 under `dive:5`;
+  - mostly casters (mage, priest, necromancer) at character levels 1–5;
+  - on DL2–DL4;
+  - killed by wild cats, a scout, a cutpurse, Fang, a white jelly, a fatal
+    wound.
+
+  That is the cost of a dive: a weak character arrives where its level
+  would not have taken it yet. A dive run stops when it arrives, so per
+  turn played it is riskier than borg-rs's own play even where the totals
+  match.
+- **A first version steered only through readiness**, with the override
+  at N, then at N + 5. It left three or four characters on DL1 until the
   budget ran out: borg-rs dives only when bored, or when it is prepared for
   five levels deeper. Steering after caution replaced it.
 
