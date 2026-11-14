@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2084-rust-seed1064",
+  "run_kind": "harness",
+  "character": "Kobold Rogue",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 4601,
+    "race_idx": 10,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1064,
+    "flags": "menu",
+    "git_rev": "315fa05c6dc4c63e9d4e0ba91b590ca854361c7f",
+    "git_dirty": "no",
+    "source_sha256": "c0ede76ce7d078d7d4bf14e43591ac19983517e0b353dfd23e15ff8b5d2f6f50",
+    "binary_sha256": "f974d5bef21642b5c85890807b6d27e06c35163fb098c18c601f3a04c32d103c",
+    "borg_txt_sha256": "9f2d2a66b14eddc64864c5b4b1c065eccf5a9a8b75166a0b1847fbb1bffb1b2b",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 475
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-6-rogue-4",
+      "result_sha256": "9c86acff4be283bef416d925b56aaabfa797328b97c75c2fe573dac04fe71691",
+      "raw_sha256": {
+        "keys.log": "9c86acff4be283bef416d925b56aaabfa797328b97c75c2fe573dac04fe71691",
+        "messages.log": "e284c75ae5e9f226cb31301a0184f46162916aa3d840c7ab78d80e065169015e",
+        "state.log": "63db7b2b5ca2831b052a8a5e55ef3fd389086f745a4862b79878a53cc4c5fcef"
+      },
+      "source_commit": "315fa05c6dc4c63e9d4e0ba91b590ca854361c7f",
+      "binary_sha256": "f974d5bef21642b5c85890807b6d27e06c35163fb098c18c601f3a04c32d103c"
+    }
+  ],
+  "encounter_family": "start-b54e1f167c0968597ae4eaf46bf831de3afd674bad134efbc0c2930594ba86d7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "37921cf46eb1d707be06d9e9535a5db2aa3959bb50a968add8965009dc1ce963",
+    "config.txt": "3bd337549d4028a2d8ea7f89aa52ea8dc2db8b4e003e5c06892b0dd4aa3da630",
+    "depths.json": "49f49d3b305ffbbfb4b052cf6b7bf7dc25ebb492b4a29b5dc54b49ca2aa6694a",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "84040b5f62aa12ae2e813da258bcea618d5fcc7ae4adeb1720f650bc54eb5b11",
+    "trace-tail.jsonl": "50bd550ef248bfef774fc507d55f3fdb078ea4cf8c9799424656812269ec43e1"
+  },
+  "investigation": null,
+  "issue": null
+}
