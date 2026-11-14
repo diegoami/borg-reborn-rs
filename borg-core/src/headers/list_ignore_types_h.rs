@@ -1,0 +1,31 @@
+//! `/home/user/borg-rs/angband/src/list-ignore-types.h`
+pub use super::obj_ignore_h::C2RustUnnamedH_40;
+#[allow(unused_imports)]
+use super::*;
+pub const ITYPE_NONE: C2RustUnnamedH_40 = 0;
+pub const ITYPE_LIGHT: C2RustUnnamedH_40 = 26;
+pub const ITYPE_AMULET: C2RustUnnamedH_40 = 25;
+pub const ITYPE_RING: C2RustUnnamedH_40 = 24;
+pub const ITYPE_DIGGER: C2RustUnnamedH_40 = 23;
+pub const ITYPE_FEET: C2RustUnnamedH_40 = 22;
+pub const ITYPE_HANDGEAR: C2RustUnnamedH_40 = 21;
+pub const ITYPE_HEADGEAR: C2RustUnnamedH_40 = 20;
+pub const ITYPE_SHIELD: C2RustUnnamedH_40 = 19;
+pub const ITYPE_ELVEN_CLOAK: C2RustUnnamedH_40 = 18;
+pub const ITYPE_CLOAK: C2RustUnnamedH_40 = 17;
+pub const ITYPE_POWER_DRAGON_ARMOR: C2RustUnnamedH_40 = 16;
+pub const ITYPE_BALANCE_DRAGON_ARMOR: C2RustUnnamedH_40 = 15;
+pub const ITYPE_HIGH_DRAGON_ARMOR: C2RustUnnamedH_40 = 14;
+pub const ITYPE_MULTI_DRAGON_ARMOR: C2RustUnnamedH_40 = 13;
+pub const ITYPE_BASIC_DRAGON_ARMOR: C2RustUnnamedH_40 = 12;
+pub const ITYPE_BODY_ARMOR: C2RustUnnamedH_40 = 11;
+pub const ITYPE_ROBE: C2RustUnnamedH_40 = 10;
+pub const ITYPE_BOLT: C2RustUnnamedH_40 = 9;
+pub const ITYPE_ARROW: C2RustUnnamedH_40 = 8;
+pub const ITYPE_SHOT: C2RustUnnamedH_40 = 7;
+pub const ITYPE_CROSSBOW: C2RustUnnamedH_40 = 6;
+pub const ITYPE_BOW: C2RustUnnamedH_40 = 5;
+pub const ITYPE_SLING: C2RustUnnamedH_40 = 4;
+pub const ITYPE_GREAT: C2RustUnnamedH_40 = 3;
+pub const ITYPE_BLUNT: C2RustUnnamedH_40 = 2;
+pub const ITYPE_SHARP: C2RustUnnamedH_40 = 1;

@@ -250,6 +250,40 @@ extern "C" fn inkey_hook(flush_first: c_int) -> b::keypress {
 /// `angband/src/cmd-misc.c`).
 #[no_mangle]
 extern "C" fn do_cmd_borg() {
+    // The decision core (#207, the option-C pilot): borg-rs's, vendored at
+    // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
+    if crate::borg::core_is_borg_rs() {
+        // An errand or a setting for the core (#208): `BORG_ERRAND` (`/dive
+        // 2`, `/town`, `/ladder`, `trips:...`: borg-core/src/shell.rs), with
+        // an optional budget in game turns (`BORG_ERRAND_BUDGET`), and
+        // `BORG_STOPSCARED`. The environment first, else the run's borg.txt
+        // (`borg_reborn_errand`, `borg_reborn_stopscared`: the zoo). In the
+        // game, `^Z /` types one.
+        let setting = |env: &str, key: &str| {
+            std::env::var(env)
+                .ok()
+                .or_else(|| borg_rs::shell::borg_txt_setting(key))
+                .filter(|s| !s.is_empty() && s != "none")
+        };
+        if let Some(c) = setting("BORG_STOPSCARED", "borg_reborn_stopscared")
+            .and_then(|v| borg_rs::shell::Command::parse(&format!("stopscared {v}")))
+        {
+            borg_rs::shell::apply(c, 0);
+        }
+        if let Some(line) = setting("BORG_ERRAND", "borg_reborn_errand") {
+            let budget = std::env::var("BORG_ERRAND_BUDGET")
+                .ok()
+                .and_then(|b| b.parse().ok())
+                .unwrap_or(0);
+            // A command it cannot read applies nothing: the Borg plays as
+            // it would without one, and says so.
+            if let Err(c) = borg_rs::shell::apply_line(&line, budget) {
+                eprintln!("borg: unknown errand command '{c}'");
+            }
+        }
+        borg_rs::do_cmd_borg();
+        return;
+    }
     crate::borg::command();
 }
 

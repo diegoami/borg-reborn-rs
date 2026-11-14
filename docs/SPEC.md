@@ -23,6 +23,17 @@ particular.
 
 ## 2. Independence
 
+> **Amended 2026-11-14 (owner: the repivot, option C; docs/ERRANDS.md).**
+> One part follows borg-rs on purpose, and is re-synced at each borg-rs
+> milestone the owner picks. **The decision core:** borg-rs's crate is
+> vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`.
+> Our changes to it are one patch: `src/shell.rs` (the errands) and the
+> hooks marked `borg-reborn-rs (#207)` and `(#208)`. The engine is
+> unchanged (upstream `e473720`); borg-rs's own engine corrections are not
+> carried (PR #206, until the shared engine repository). §2.1's "no
+> dependency" and §2.2's "no copy kept in sync" hold for everything else,
+> and our own core still needs nothing from borg-rs.
+
 1. **No dependency.** No build, test, check or decision needs a borg-rs
    checkout, a borg-rs pin, a borg-rs reference output or a borg-rs result.
    Nothing here must stay equal to anything in borg-rs. There is no re-sync
