@@ -58,7 +58,8 @@ The test also enforces:
 ## The knowledge slice
 
 `knowledge.json` is the engine's own static data, trimmed from a
-`BORG_KNOWLEDGE_LOG` dump at the engine pin `e473720`. It keeps the monster
+`BORG_KNOWLEDGE_LOG` dump at the engine pin `e473720`; none of its data
+changed at `42cd156ac` (#215 changed only `player_timed.txt`). It keeps the monster
 races the fixtures name, all nine classes, all player races, the stores, the
 energy and stat tables, and the five reserve kinds. Do not edit values by
 hand. To regenerate, run a game with `BORG_KNOWLEDGE_LOG=knowledge.json`

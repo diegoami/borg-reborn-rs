@@ -319,7 +319,7 @@ fn screen_text(row: i32, col: i32, len: Option<i32>) -> String {
 /// The message line as the prompt catcher reads it (channel A): row 0's
 /// text, whether its first text cell carries the dark attribute
 /// (`COLOUR_DARK`, z-color.h:23 — a blank or undrawn line), and the
-/// terminal cursor (`Term_locate`, ui-term.c:2477-2488, read as the C
+/// terminal cursor (`Term_locate`, ui-term.c:2528-2539, read as the C
 /// Borg does at borg.c:278-279).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct MessageLine {

@@ -94,8 +94,8 @@ void do_cmd_redraw(void)
 								   PR_OBJECT | PR_MONLIST | PR_ITEMLIST);
 	}
 
-	/* Clear screen */
-	Term_clear();
+	/* Clear every window */
+	(void)Term_clear_all();
 
 	if (character_dungeon) {
 		/* Update */
@@ -113,7 +113,7 @@ void do_cmd_redraw(void)
 	}
 
 	/* Redraw every window */
-	(void) Term_redraw_all();
+	(void)Term_redraw_all();
 }
 
 
@@ -196,6 +196,9 @@ void textui_cmd_rest(void)
 
 	/* Ask for duration */
 	if (!get_string(p, out_val, sizeof(out_val))) return;
+
+	/* Reset state left over from a prior interrupted rest. */
+	player_resting_cancel(player, false);
 
 	/* Rest... */
 	if (out_val[0] == '&') {
