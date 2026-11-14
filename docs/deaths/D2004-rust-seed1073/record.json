@@ -1,0 +1,60 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2004-rust-seed1073",
+  "run_kind": "harness",
+  "character": "Kobold Ranger",
+  "raw_cause": "a floating eye",
+  "terminal": {
+    "cause": "a floating eye",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 33653,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1073,
+    "flags": "menu",
+    "git_rev": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+    "git_dirty": "no",
+    "source_sha256": "a6be7f4960f3e716f17bc5c9710e06948c4bdb00bce9c12b151c672c182dd218",
+    "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e",
+    "borg_txt_sha256": "9879ff34e80d65b349e0a74cd5ff0f43adb270f355a23efda5cde9e1c6f9de59",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 3111
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/home/user/borg-reborn-rs/harness/out/full/full-7-ranger-3",
+      "result_sha256": "0d692d6e6a0cdc5d8281861c1937eee9b079277fc498a86a8e94f4905c5db641",
+      "raw_sha256": {
+        "keys.log": "0d692d6e6a0cdc5d8281861c1937eee9b079277fc498a86a8e94f4905c5db641",
+        "messages.log": "c6edb7137058da43b0094d7a3f34f7c3d727a118e3616c878d3114ad3682b45f",
+        "state.log": "f6101a232359a80f2e109ec8aa2797d586440db67c9f095f85f43271f8580dec"
+      },
+      "source_commit": "5e286dbf81e790a36cb9e086ae7e1b4a4d0887e9",
+      "binary_sha256": "a3cec54525467a6aa92d5d393b6ceea2a072280fd777a9b0fd1fce650ae7596e"
+    }
+  ],
+  "encounter_family": "start-84055b000ac9c4cdff632a19c0a33786bc8b3d65ac4f8fd8ee0a19cb28b74ae8",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "2a159d261c7cfe67571e22eb9033a846d12e80f4e7c5f6d90d4bb0421b3434d8",
+    "config.txt": "8985f8ad9af4ec30f16f19d2038744e506bc2aa2ecd70053dac0837b2ffda142",
+    "depths.json": "684cbdc071d390863e3285bb275c4a84204c76a1a6dfea34a5fb21b77ce53905",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "040b1cf2d826dfaa35d2a28198ae9f6dbd6e13ea2e5f86723611d8f89d413315",
+    "trace-tail.jsonl": "1f52da584c5ea041cf7ff75ff30b44eddbdc61b9faa25ec0f445c5d8c26a466b"
+  },
+  "investigation": null,
+  "issue": null
+}

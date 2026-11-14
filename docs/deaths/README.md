@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 1956; distinct starting conditions: 1955; retained process attempts: 1956 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 1989; distinct starting conditions: 1988; retained process attempts: 1989 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -1962,6 +1962,39 @@ Dossiers: 1956; distinct starting conditions: 1955; retained process attempts: 1
 | [D1974-rust-seed1083](D1974-rust-seed1083/report.md) | unassigned | `d4cde78fd36c` | 1083 | a soldier | 32160 | unassessed |
 | [D1975-rust-seed1084](D1975-rust-seed1084/report.md) | unassigned | `d4cde78fd36c` | 1084 | a rock lizard | 33603 | unassessed |
 | [D1976-rust-seed1081](D1976-rust-seed1081/report.md) | unassigned | `d4cde78fd36c` | 1081 | a soldier | 56970 | unassessed |
+| [D1977-rust-seed1000](D1977-rust-seed1000/report.md) | unassigned | `5e286dbf81e7` | 1000 | a silver jelly | 58149 | unassessed |
+| [D1978-rust-seed1012](D1978-rust-seed1012/report.md) | unassigned | `5e286dbf81e7` | 1012 | a grey mushroom patch | 1758 | unassessed |
+| [D1979-rust-seed1011](D1979-rust-seed1011/report.md) | unassigned | `5e286dbf81e7` | 1011 | poison | 92070 | unassessed |
+| [D1980-rust-seed1021](D1980-rust-seed1021/report.md) | unassigned | `5e286dbf81e7` | 1021 | a fatal wound | 3950 | unassessed |
+| [D1981-rust-seed1020](D1981-rust-seed1020/report.md) | unassigned | `5e286dbf81e7` | 1020 | a giant yellow centipede | 5199 | unassessed |
+| [D1982-rust-seed1022](D1982-rust-seed1022/report.md) | unassigned | `5e286dbf81e7` | 1022 | poison | 5110 | unassessed |
+| [D1983-rust-seed1023](D1983-rust-seed1023/report.md) | unassigned | `5e286dbf81e7` | 1023 | a soldier ant | 4148 | unassessed |
+| [D1984-rust-seed1024](D1984-rust-seed1024/report.md) | unassigned | `5e286dbf81e7` | 1024 | Fang, Farmer Maggot's Dog | 8921 | unassessed |
+| [D1985-rust-seed1014](D1985-rust-seed1014/report.md) | unassigned | `5e286dbf81e7` | 1014 | an apprentice | 47416 | unassessed |
+| [D1986-rust-seed1031](D1986-rust-seed1031/report.md) | unassigned | `5e286dbf81e7` | 1031 | Grip, Farmer Maggot's Dog | 80297 | unassessed |
+| [D1987-rust-seed1030](D1987-rust-seed1030/report.md) | unassigned | `5e286dbf81e7` | 1030 | a black naga | 69470 | unassessed |
+| [D1988-rust-seed1033](D1988-rust-seed1033/report.md) | unassigned | `5e286dbf81e7` | 1033 | a cutpurse | 23817 | unassessed |
+| [D1989-rust-seed1040](D1989-rust-seed1040/report.md) | unassigned | `5e286dbf81e7` | 1040 | a small kobold | 5078 | unassessed |
+| [D1990-rust-seed1041](D1990-rust-seed1041/report.md) | unassigned | `5e286dbf81e7` | 1041 | a black naga | 23061 | unassessed |
+| [D1991-rust-seed1032](D1991-rust-seed1032/report.md) | unassigned | `5e286dbf81e7` | 1032 | a giant white louse | 45291 | unassessed |
+| [D1992-rust-seed1042](D1992-rust-seed1042/report.md) | unassigned | `5e286dbf81e7` | 1042 | a floating eye | 11936 | unassessed |
+| [D1993-rust-seed1044](D1993-rust-seed1044/report.md) | unassigned | `5e286dbf81e7` | 1044 | a small kobold | 4516 | unassessed |
+| [D1994-rust-seed1034](D1994-rust-seed1034/report.md) | unassigned | `5e286dbf81e7` | 1034 | a giant white louse | 72365 | unassessed |
+| [D1995-rust-seed1052](D1995-rust-seed1052/report.md) | unassigned | `5e286dbf81e7` | 1052 | a giant white mouse | 12110 | unassessed |
+| [D1996-rust-seed1053](D1996-rust-seed1053/report.md) | unassigned | `5e286dbf81e7` | 1053 | a giant white louse | 30740 | unassessed |
+| [D1997-rust-seed1054](D1997-rust-seed1054/report.md) | unassigned | `5e286dbf81e7` | 1054 | a floating eye | 28996 | unassessed |
+| [D1998-rust-seed1043](D1998-rust-seed1043/report.md) | unassigned | `5e286dbf81e7` | 1043 | a soldier | 55168 | unassessed |
+| [D1999-rust-seed1062](D1999-rust-seed1062/report.md) | unassigned | `5e286dbf81e7` | 1062 | a yellow mold | 79140 | unassessed |
+| [D2000-rust-seed1064](D2000-rust-seed1064/report.md) | unassigned | `5e286dbf81e7` | 1064 | a fatal wound | 5290 | unassessed |
+| [D2001-rust-seed1061](D2001-rust-seed1061/report.md) | unassigned | `5e286dbf81e7` | 1061 | a grey mold | 97760 | unassessed |
+| [D2002-rust-seed1071](D2002-rust-seed1071/report.md) | unassigned | `5e286dbf81e7` | 1071 | a floating eye | 9987 | unassessed |
+| [D2003-rust-seed1070](D2003-rust-seed1070/report.md) | unassigned | `5e286dbf81e7` | 1070 | a soldier | 55615 | unassessed |
+| [D2004-rust-seed1073](D2004-rust-seed1073/report.md) | unassigned | `5e286dbf81e7` | 1073 | a floating eye | 33653 | unassessed |
+| [D2005-rust-seed1072](D2005-rust-seed1072/report.md) | unassigned | `5e286dbf81e7` | 1072 | an acolyte | 55183 | unassessed |
+| [D2006-rust-seed1074](D2006-rust-seed1074/report.md) | unassigned | `5e286dbf81e7` | 1074 | an apprentice | 44805 | unassessed |
+| [D2007-rust-seed1080](D2007-rust-seed1080/report.md) | unassigned | `5e286dbf81e7` | 1080 | poison | 21520 | unassessed |
+| [D2008-rust-seed1083](D2008-rust-seed1083/report.md) | unassigned | `5e286dbf81e7` | 1083 | poison | 59970 | unassessed |
+| [D2009-rust-seed1084](D2009-rust-seed1084/report.md) | unassigned | `5e286dbf81e7` | 1084 | a giant white louse | 51350 | unassessed |
 
 ## Aggregated actions
 
