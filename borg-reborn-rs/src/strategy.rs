@@ -469,7 +469,39 @@ impl FirstStrategy {
         // priest-4 spent 20,000 turns between two town grids because a
         // squint-eyed rogue last seen 8,000 turns before put 0.0004 on the
         // next one.
-        if at(x + dx, y + dy) >= at(x, y) + 0.5 {
+        // A monster that never moves and that one turn of melee is expected
+        // to kill does not turn the Borg back (#201): beside it, the
+        // tactical layer's attack removes all its threat (`responses`: the
+        // blow's share of its hit points is 1). full-0-warrior-3 (17 HP)
+        // circled before a grey mushroom patch (2 HP) for 40,000 turns.
+        // Anything the blow does not kill (floating eye, molds, jellies)
+        // is still refused, and so is a step that risks death.
+        let (nx, ny) = (x + dx, y + dy);
+        let dpt = ctx
+            .world
+            .character
+            .melee_per_turn(ctx.knowledge)
+            .unwrap_or(0.0);
+        let one_blow = ctx.world.level.monsters.iter().any(|t| {
+            t.in_view
+                && crate::danger::never_move(ctx.knowledge, t)
+                && t.hp >= 0
+                && dpt > f64::from(t.hp)
+                && (t.x - nx).abs().max((t.y - ny).abs()) <= 1
+        });
+        let safe = || {
+            assess(
+                ctx.world,
+                ctx.knowledge,
+                nx,
+                ny,
+                ctx.params.threat_horizon,
+                ctx.params.risk_aversion_pct,
+            )
+            .p_death
+                == 0.0
+        };
+        if !(one_blow && safe()) && at(nx, ny) >= at(x, y) + 0.5 {
             ctx.paths.note_refused((x + dx, y + dy));
             return Self::retreat_step(ctx).map(Action::Walk);
         }
