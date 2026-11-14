@@ -2,6 +2,113 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: the repivot to borg-rs's core, and the option-C pilot (#205-#209)
+
+**Where things stand.** Everything is on branch `ccr-e0e99f46-go3y0w`, in
+**PR #206, open and not merged** (9 commits over main `e9a6a521`). The
+owner chose option C and asked for the pilot. PR #206 now carries both the
+evaluation and the pilot. CI has not run on the pilot commits yet.
+
+**The repivot (owner, 2026-11-14).** The POC proved that a Borg built from
+first principles will not beat borg-rs: on the same 45 seeds, borg-rs has
+35 alive and 18 at DL5, and ours 13 and 0. The new goal is borg-rs's play in
+this repository's domain, so that strategies can be changed and tried one
+layer at a time, plus **errands**. Our own Borg's M5 work is paused:
+#192–#198 (the town plan), #203 (deaths) and #204 (last freezes).
+
+**Documents** (all in PR #206):
+- `docs/REDESIGN.md`: options A, B and C, the pilot, errands, and a Rust
+  Angband (not now; `fork()` the C engine for branching instead).
+- `docs/ARCHITECTURE-COMPARISON.md`: borg-rs and borg-reborn-rs compared
+  layer by layer.
+- `docs/PILOT.md`: the pilot's results. Keep it current.
+
+**Pilot C1 (#207): met.**
+- **The vendored core.** borg-rs is vendored at its pin `4ed3263` as
+  `borg-core/`. The package is renamed; the library is still `borg_rs`. It
+  is recorded in docs/PROVENANCE.md and meant to be refreshed at new pins.
+- **Selecting it.** `BORG_CORE=borg-rs` selects that core at run time. Our
+  `do_cmd_borg` (`engine.rs`) dispatches to `borg_rs::do_cmd_borg`, whose
+  `#[no_mangle]` was removed. Our core stays the default, byte for byte.
+- **Parity:** full suite 45/45 and smoke 3/3 identical (keys, messages,
+  state) with **a fresh build of borg-rs at the pin**. borg-rs's committed
+  `harness/reference/` is **stale**: its own build does not reproduce it.
+  To rerun the oracle:
+  1. `git -C vendor/borg-rs archive 4ed3263` into a scratch directory;
+  2. `git init` and commit there (borg-rs's `identity.sh` needs git);
+  3. `BORG_IMPL=rust harness/build.sh`;
+  4. `harness/suite.sh smoke|full`.
+- **borg-rs's suites have no `menu` flag:** 15 of 45 runs then play
+  another race or class (`check-characters.py` fails the suite). Parity
+  runs use borg-rs's suite as it is; every measurement uses `menu`.
+- **Other changes for the vendored crate:**
+  - **CI:** `cargo fmt --check -p borg-reborn-rs` (borg-core keeps
+    borg-rs's formatting); `cargo test --workspace --exclude borg-core`;
+    `cargo test --release -p borg-core` (its tests link without the engine
+    only in release, as borg-rs runs them).
+  - **Identity:** `harness/identity.sh` hashes `borg-core/`.
+  - **Test data:** borg-core's tests read `borg-core/c-reference/`
+    (borg-rs's C `borg-init.c` and `borg.txt`) and `borg-core/borg.txt`.
+
+**borg-rs's settings.** `harness/run.sh` gives the core its own
+`borg-core/borg.txt`, then applies `borg-core/overrides.txt`. The overrides
+are:
+- `borg_munchkin_by_class = FALSE`: it had turned stair-scumming back on
+  for Warriors, Druids and Rangers.
+- `borg_self_scum = FALSE`: no waiting in town for gold.
+
+**Owner: no scumming of any kind.** With the overrides, play is no longer
+borg-rs's byte for byte. A parity check must pass the same settings to
+borg-rs's `run.sh` (its `NAME=VALUE` flags), or run without the overrides.
+
+**Pilot C2 (#208): the trips errand, in progress.**
+- **How it plugs in:** `borg-core/src/shell.rs`, plus three marked hooks in
+  borg-rs's code:
+  - `borg_think` (before the dungeon think: the errand's end);
+  - `borg_think_dungeon` (after `borg_caution`: steering);
+  - `borg_leave_level` (a level is explored; where it leads).
+- **How it is called:** `BORG_ERRAND=trips:1*/1,2,1*/1,2,3,2,1*`,
+  `BORG_ERRAND_BUDGET` (game turns), and the outcome line in
+  `BORG_ERRAND_OUT`.
+- **The rules:**
+  - each trip is levels in order, then home;
+  - `*` repeats a trip until borg-rs is prepared for the next trip's
+    deepest level;
+  - borg-rs plays each level as itself;
+  - a level borg-rs is not prepared for is skipped;
+  - a restock need ends the trip at home.
+- **Trial, nine characters:** 1 death (druid) against 2 without an errand,
+  and character levels like borg-rs's own (docs/PILOT.md).
+- **The first errand, *dive to N*, was dropped** (owner). It dove weak
+  characters unprepared: 5 to 8 extra deaths in 45. Its readiness override
+  also switched off borg-rs's own trips home.
+
+**Next, in order:**
+1. **C2: the ladder on all 45 characters** (`menu`), against no errand,
+   both with the overrides. Report deaths, levels, depth and trips.
+2. **C2: *shop*,** then `^Z` keys and `run.sh` flags for errands. Today
+   errands are environment variables only. Class-specific default ladders
+   are the player's choice (owner: mages repeat town-DL1-town longer,
+   warriors dive earlier).
+3. **C3 (#209):** move danger and caution (6,508 lines) into the domain
+   behind a per-think shadow check. Measure lines, time, mismatches and the
+   cost of carrying one borg-rs change. Write the report for the owner's
+   go/no-go.
+4. **Merge PR #206** when CI is green and the owner agrees: it carries the
+   evaluation as well as code.
+
+**Gaps to know about:**
+- **The pilot's deaths are not in `docs/deaths/`.** The runs wrote them to
+  `/tmp`, which a session restart loses. RULES 12 wants every death of a
+  measured run committed. The owner decides whether pilot runs count;
+  otherwise the next measured runs should record into `docs/deaths`. One
+  pilot death, D2093 (seed 102, the first pilot smoke), is committed.
+- **`watch-borg.sh` and `play.sh` do not set `BORG_CORE` yet.** Watching
+  borg-rs's core in X11 needs `BORG_CORE=borg-rs`, and `play.sh` does not
+  apply `overrides.txt`.
+- **The no-errand smoke parity was last checked before the overrides.**
+  With them, it differs from borg-rs on purpose.
+
 ## 2026-11-14: the freeze, and the trip loop (#201)
 
 - **"Alive" counted a Borg that had stopped playing.** On main (f0942d9a),
