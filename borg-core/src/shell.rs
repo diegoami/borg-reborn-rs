@@ -609,7 +609,9 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
         let mut unfit = None;
         if r.watch.is_none_or(|w| w.depth != depth) {
             if let Some(w) = r.watch {
-                if w.depth > 0 && r.target() == Some(w.depth) {
+                // To town, the level stays in the plan: the core went to
+                // shop or restock, and the errand takes it back.
+                if w.depth > 0 && depth > 0 && r.target() == Some(w.depth) {
                     r.step += 1;
                     left = Some(w.depth);
                 }
