@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-14: borg-core at borg-rs milestone 12, and borg-rs's engine (patch 08)
+
+- **borg-core is re-pinned to borg-rs `4.2.6-impact-v12`** (`e6d13fc`;
+  `borg-core/PIN`). Our 9-file patch applied with no conflict.
+- **Munchkin is still on in borg-rs.** v12 and `main` still ship
+  `borg_munchkin_by_class = TRUE`; only the unmerged `feature/trip-policy`
+  removes it. Our `borg-core/overrides.txt` keeps it off, with town
+  scumming. `BORG_CORE_OVERRIDES=off` runs borg-rs's own settings, for
+  parity.
+- **v12 plays on upstream `42cd156ac` plus borg-rs's fork corrections, not
+  on `e473720`.**
+  - `engine/patches/08-borg-rs-engine.patch` (`tools/engine-patch.py`)
+    carries that engine, code and game data. Parity: smoke 3/3, full 45/45.
+  - It is a stopgap. The owner will extract this engine into a shared
+    repository every client pins to, in another session, and re-pin; then
+    patch 08 and `tools/engine-patch.py` go.
+  - SPEC §2 is amended. The engine tests require 08 to declare itself
+    unguarded. The independence test names `borg-core`, which pilot C1 had
+    broken unnoticed.
+- **Our own core on the new engine:** full 44/45 identical, the full
+  reference regenerated, 32 dossiers committed.
+- **Not run yet on v12:** the trips trial (docs/PILOT.md C2 used the earlier
+  pin).
+
 ## 2026-11-14: the repivot to borg-rs's core, and the option-C pilot (#205-#209)
 
 **Where things stand.** Everything is on branch `ccr-e0e99f46-go3y0w`, in
