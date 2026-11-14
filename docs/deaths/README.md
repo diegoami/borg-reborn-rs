@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2126; distinct starting conditions: 2122; retained process attempts: 2126 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2133; distinct starting conditions: 2129; retained process attempts: 2133 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2132,6 +2132,13 @@ Dossiers: 2126; distinct starting conditions: 2122; retained process attempts: 2
 | [D2144-rust-seed1020](D2144-rust-seed1020/report.md) | unassigned | `a36f5757819a` | 1020 | a giant yellow centipede | 23988 | unassessed |
 | [D2145-rust-seed1044](D2145-rust-seed1044/report.md) | unassigned | `a36f5757819a` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
 | [D2146-rust-seed1052](D2146-rust-seed1052/report.md) | unassigned | `a36f5757819a` | 1052 | a giant white louse | 26634 | unassessed |
+| [D2147-rust-seed1011](D2147-rust-seed1011/report.md) | unassigned | `b0589bbf79e7` | 1011 | a grey mushroom patch | 3035 | unassessed |
+| [D2148-rust-seed1004](D2148-rust-seed1004/report.md) | unassigned | `b0589bbf79e7` | 1004 | a wild cat | 8801 | unassessed |
+| [D2149-rust-seed1013](D2149-rust-seed1013/report.md) | unassigned | `b0589bbf79e7` | 1013 | a giant yellow centipede | 9316 | unassessed |
+| [D2150-rust-seed1021](D2150-rust-seed1021/report.md) | unassigned | `b0589bbf79e7` | 1021 | a giant yellow centipede | 2581 | unassessed |
+| [D2151-rust-seed1020](D2151-rust-seed1020/report.md) | unassigned | `b0589bbf79e7` | 1020 | a giant yellow centipede | 23988 | unassessed |
+| [D2152-rust-seed1044](D2152-rust-seed1044/report.md) | unassigned | `b0589bbf79e7` | 1044 | Grip, Farmer Maggot's Dog | 11183 | unassessed |
+| [D2153-rust-seed1052](D2153-rust-seed1052/report.md) | unassigned | `b0589bbf79e7` | 1052 | a giant white louse | 26634 | unassessed |
 
 ## Aggregated actions
 
