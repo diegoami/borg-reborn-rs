@@ -2502,6 +2502,24 @@ pub fn player_depth() -> i32 {
     i32::from(player_ref().depth)
 }
 
+/// A key for the character, from what its birth fixed: the hit points
+/// rolled for each level, height, weight, age and name (FNV-1a).
+/// borg-reborn-rs (#208, re-review #227): an errand belongs to one
+/// character.
+pub fn player_birth_key() -> u64 {
+    let p = player_ref();
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut eat = |b: u8| {
+        h ^= u64::from(b);
+        h = h.wrapping_mul(0x0100_0000_01b3);
+    };
+    for v in p.player_hp.iter().chain([&p.ht_birth, &p.wt_birth, &p.age]) {
+        v.to_le_bytes().into_iter().for_each(&mut eat);
+    }
+    c_array_bytes(&p.full_name).into_iter().for_each(&mut eat);
+    h
+}
+
 /// `player->opts.lazymove_delay`
 pub fn player_lazymove_delay() -> u8 {
     player_ref().opts.lazymove_delay

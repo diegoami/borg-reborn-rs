@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2235-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Human Priest",
+  "raw_cause": "a scout",
+  "terminal": {
+    "cause": "a scout",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 39470,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "-",
+    "git_rev": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+    "git_dirty": "no",
+    "source_sha256": "aafd68eace2714f8c5d06b77b7da9d7c30f2f485970ebb6f27f9528f61fd6094",
+    "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d",
+    "borg_txt_sha256": "b994b99efeccba1aa72fcccbfb2b594010b558dde3dc91a1916e5b8bead9020e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out4/parity/full-3-priest-4",
+      "result_sha256": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+      "raw_sha256": {
+        "keys.log": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+        "messages.log": "e8d1cd646a94d3e3b8379b08371d34f45593bc462b54cea8789882b24763e0c6",
+        "state.log": "3c074b3c2ef27fafe450abe14601d172adb86f54e70f90fed75836b2a0d18b3a"
+      },
+      "source_commit": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+      "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d"
+    }
+  ],
+  "encounter_family": "start-0bf04289be0b21fdc3466a2e98a5de554ebd6d71919ad64f5d46603d111964df",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7cd74ff91da5ded72caf53bdb85424de12bc36ad6a3f276be5df754c6bd56e00",
+    "config.txt": "ddb740f9cdba5d668c2317ed53312e51427ac7996fcd9923d6025e4a9d2e0e20",
+    "depths.json": "ffba1d2a234e2d2e65ae871165c2f04ec58499da82e984d35bb94395e0cbfa97",
+    "params-core.json": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea",
+    "summary.json": "b5d5a5723524f785f584167b12e24995d15752f017438ea5777f6eb162671310"
+  },
+  "investigation": null,
+  "issue": null
+}
