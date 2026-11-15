@@ -143,8 +143,8 @@ class RefreshTest(unittest.TestCase):
         self.assertTrue((ref / 'LESSONS.md').exists())
         self.assertIn('at pin', self.report(), 'after the update the pin is current')
 
-    def test_our_cases_link_to_the_cemetery_and_the_copies_stay_local(self):
-        # Our own cases are recorded in borg-cemetery; the index links there.
+    def test_historical_cases_link_to_their_actual_local_archive(self):
+        # Historical cases are not imported: their links must resolve locally.
         # The copied reference registries keep their local relative links.
         write(self.root, {
             'docs/deaths/D0100-ours/report.md': '# D0100 our death\n',
@@ -154,7 +154,8 @@ class RefreshTest(unittest.TestCase):
         })
         rs.write_index(self.root)
         index = (self.root / rs.INDEX).read_text()
-        self.assertIn(f'{rs.CEMETERY_URL}/tree/main/deaths/D0100-ours', index)
+        self.assertIn('../../docs/deaths/D0100-ours/report.md', index)
+        self.assertNotIn('/tree/main/deaths/D0100-ours', index)
         self.assertIn('recorded in [borg-cemetery]', index)
         # The reference copies still link into this repository.
         self.assertIn('reference/deaths/better-borg-c/D0001-a/report.md', index)
@@ -173,6 +174,7 @@ class RefreshTest(unittest.TestCase):
             rs.write_index(self.root)
         index = (self.root / rs.INDEX).read_text()
         self.assertIn('D0200-other', index)
+        self.assertIn(f'{rs.CEMETERY_URL}/tree/main/deaths/D0200-other', index)
         self.assertNotIn('D0100-ours', index)
 
     def test_failed_update_changes_nothing(self):

@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
+
+- The owner explicitly instructed: "ok then merge it and continue with other
+  tasks", after the current review/fix scope was explained. This accepts
+  the P1–P3 retrospective/promotion scope and delegates merging #260.
+  The standing track-p gate remains in force for future work.
+- #285 passed CI and integrated at1949530b. Main then contained the
+  death-tool ownership change811f338a (#282); synchronize it here before
+  #260. Preserve both handovers and regenerate the historical index using
+  local links, retaining all2378 local cases throughD2398.
+- Gameplay/build source remains4182670d. No external repository write or
+  migration occurs here. The pending errand-selector task #269 stays on
+  track-p; #272's RNG qualification was already implemented in #280.
+- This sync must pass required CI before integration; then perform the
+  owner-authorized #260 merge and record its actual merge commit on GitHub.
+
+## 2026-11-15: owner-requested death-tool ownership (#273)
+
+- The four native death-tool implementations moved to borg-cemetery with their
+  source provenance and original tests. Local command paths are API-checked thin
+  pointers; the harness and Borg instrumentation remain here.
+- Normal exports target the cemetery checkout. Explicit temporary destinations
+  and the existing historical CI reconciliation guard remain unchanged. The
+  cemetery owns catalogue/presentation updates; its historical index is not
+  overwritten by the native registry formatter. No bulk dossier migration.
+- CI engine tests clear policy BORG_* variables; pointer discovery also finds
+  the pinned vendor/borg-cemetery checkout without that environment variable.
+  The test and all its assertions remain unchanged.
+- CI reads an immutable cemetery revision from death-tools-pin.txt and checks it
+  out without a write credential. Local tools locate the sibling of the primary
+  checkout or BORG_CEMETERY_DIR. No source/build inputs or gameplay changed.
+- Reused logic preserves family/key-stream deduplication, repair, source-matched
+  reruns, errand/ladders settings and missing-death failures. Existing tools tests
+  pass against the external implementation; required CI remains the merge gate.
+- This is owner-directed storage infrastructure, not new P/R strategy work or
+  implementation of the diagnosis/counterfactual plans #153/#212.
+
+
 ## 2026-11-15: synchronize cemetery documentation (#284)
 
 - Main advanced to `f441296f` (#276) after #280 passed CI. Preserve that
@@ -59,7 +97,12 @@
   not a shopping removal. Synchronizing main removes the head divergence;
   the task PR's CI checks the integrated tree before any track-p merge.
 
-## 2026-11-15: the death registry points at borg-cemetery (#276)
+## 2026-11-15: earlier pointer documentation (#276; routing superseded by #273)
+
+This entry records the preceding pointer-only change. The #273 entry above and
+`docs/deaths/POINTER.md` describe the current ownership and routing. In particular,
+the historical cases remain local and their index links were corrected to their
+actual locations; reconciliation does not copy evidence.
 
 - The death dossiers are recorded in **borg-cemetery**, the canonical
   home for recorded Borg runs, written death investigations and playable
