@@ -4,9 +4,9 @@ Status: owner-requested design proposal, 2026-11-15. No model connection,
 controller, new observation read or default-policy change is implemented by
 this document. Implementation and any amendments to SPEC/RULES/GOALS require
 owner review. This proposal extends [QUERY-SURFACE.md](QUERY-SURFACE.md),
-issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308): a YAML
-block embedded directly in borg.txt, with named profiles and plans. No
-external TOML/profile-file system is required.
+issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308): a plain level-phase plan embedded directly in borg.txt. The owner rejected
+both the full scripting language and YAML; Borg profiles remain ordinary
+borg.txt configurations with their own level schedules.
 
 ## What the player can request
 
@@ -55,7 +55,7 @@ No silent amendment of the current meaning of Q's `advised` mode is intended.
 | Rich inspection | Q1/Q2 versioned read-only facade and fair state, knowledge and provenance reports |
 | Active tactical proposals | Accepted R2 danger/escape/recovery and R3 combat interfaces, action receipts and effect-once execution |
 | Equipment/stock advice | Accepted R4 item/spell/stock interfaces and inventory work #293 |
-| Bounded plan adoption | Simple profiles/errand plans #305: checked names, town-only profile switches, progress and interruption receipts |
+| Bounded plan adoption | Simple level-phase plans #305: checked errands, safe phase transitions, progress and interruption receipts; later parameter APIs require their own review |
 | Live delegation | Accepted Q5 host boundaries and R1/R5 control/goal ownership; Q3 for counterfactual verification where available |
 | Track B | Owner reference unresolved: current main defines P/R/Q, not B. Clarify before assigning implementation work. |
 
@@ -179,11 +179,10 @@ Validation order: schema/version/size; request/run/character/state/encounter
 binding; capability versions and epoch; current preconditions/knowledge;
 resource and target existence; action legality; invariant/reserve/abort checks;
 then controller horizon. Rejected proposals never partially mutate inventory,
-parameters, plan frames or the game. Profile proposals use the simple format's
-complete validation, atomic
-switch and cache invalidation, never edit borg.txt directly. Its first version
-allows switching only in town; a live fight response cannot bypass that by
-requesting a parameter patch. Richer tactical controls need their own accepted
+parameters, plan frames or the game. Configuration suggestions are reviewed for a later plan; the first simple
+phase format has no live parameter/profile setter. The adviser cannot add one
+by returning a parameter patch or writing borg.txt. Later setters need separate
+validation, atomic application and cache invalidation. Richer tactical controls need their own accepted
 API rather than extensions that recreate the rejected full scripting language.
 
 A reviewed multi-step tactic is still reconsidered each think. A target can die,

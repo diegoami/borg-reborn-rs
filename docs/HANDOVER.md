@@ -2,21 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: owner-requested tactical LLM adviser design (#306)
+## 2026-11-15: tactical LLM adviser proposal (#306, PR #309)
 
-- Latest #308 configuration entry is an inline here-document-style YAML
-  block in borg.txt. Advice selects names from that frozen block; no
-  external profile loader or model-written configuration is implied.
-
-- Follow-up: #308 was simplified at the owner's request. Advice now refers
-  to named profiles/plans and separately reviewed tactical actions; it
-  cannot generate the rejected DSL or bypass town-only profile switching.
-
-- [TACTICAL-ADVISER.md](TACTICAL-ADVISER.md): The owner requested a second design for difficult-fight delegation and actionable Borg advice. The proposal extends Q/#153/#212 and the language proposal #305 with rich fair snapshots, typed validated proposals, leases/fallbacks and offline replay. Active advice uses a separate opt-in arm; the normal measured Borg remains model-free. Track-R/Q interfaces and track B require resolution before implementation. No model/engine/network implementation is included.
-- Validation is document/link review and `git diff --check`; examples and
-  schemas are proposed, not executable or tested runtime features. The
-  owner chooses the reviewer and accepts the design. Keep the draft PR
-  open for that review; no implementation milestone is being started.
+- Separate opt-in adviser/host design, extending Q/#153/#212. No network
+  or runtime implementation; the measured Borg stays model-free.
+- #308 now uses the owner's plain level-phase block in borg.txt, not YAML
+  or the full DSL. The minimal runner has no live parameter/profile setters.
+  Configuration suggestions are for reviewed later plans, while active
+  fight actions need a separately accepted R/Q capability API.
+- The adviser cannot smuggle scripts or new parameter setters into that
+  small format. Structured packets, bounded control, validation, fallbacks
+  and replay remain in this independent draft for owner review.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
