@@ -18,13 +18,13 @@
     "impl": "rust",
     "seed": 1084,
     "flags": "menu",
-    "git_rev": "251d39c41f8e5e9ed77d8fe77bcfa54d7cf2bdd8",
+    "git_rev": "3075dae917583b86aad04dfeceab61b91e0e7735",
     "git_dirty": "yes",
-    "source_sha256": "6b8e794fe358a481afa6058325dacbbc7ea69dc616d6c9f33563902456d247be",
-    "binary_sha256": "7461739b9192373a72642ab2f3adcc9b0bebaba7d430874e0830cafddad15bc6",
+    "source_sha256": "66eca6d7ecb8bbe1d6b0cd75fd32ad1d9a018aafa6c0263250ab8b0c19fb0901",
+    "binary_sha256": "c3d7147aed0549ac6a70ad7acdb1ea89e1377a1c0abc984af7c2966154d527a7",
     "borg_txt_sha256": "488eec53ca3f58c9634d0b7f5b23560cf50aa35e20e7a1478af039c1cb03c762",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
-    "params_core_sha256": "161b92c8466ab569a326137f5ca4f681b1bf396ea7d57144c64830fe45d7200c"
+    "params_core_sha256": "d77669361c6739af5cce757a10fa63197e4c13c6f6f76d5c528fb7bb8b328b0b"
   },
   "decision_trace": null,
   "core_decision_trace": {
@@ -36,25 +36,25 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/workspace/work/p22-full/full-8-blackguard-4",
+      "raw_directory": "/workspace/work/p21-integrated-full/full-8-blackguard-4",
       "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
       "raw_sha256": {
         "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
         "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
         "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
       },
-      "source_commit": "251d39c41f8e5e9ed77d8fe77bcfa54d7cf2bdd8",
-      "binary_sha256": "7461739b9192373a72642ab2f3adcc9b0bebaba7d430874e0830cafddad15bc6"
+      "source_commit": "3075dae917583b86aad04dfeceab61b91e0e7735",
+      "binary_sha256": "c3d7147aed0549ac6a70ad7acdb1ea89e1377a1c0abc984af7c2966154d527a7"
     }
   ],
-  "encounter_family": "start-2c06f34532d98f93c084dbb8379a6de9c525225bd27609a260fd4355b709e8e3",
+  "encounter_family": "start-b17cf2cc03df834bbe32bf81ad617f632bd81db1ea52d81995055e8a312ee7a9",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "e62491b053238c5f76c1c21c3c7f795a63003bd8651e3ff7845e0f557e9abab1",
-    "config.txt": "1aae094206669a4f3e24217fecce44f3535579bfb1eb2724c11acaff3124c893",
+    "build.json": "ef3d155bd2c6f9f76e874c130b224d972c13c1974cad6c18ea57067063982a8b",
+    "config.txt": "672291c6057fa646e2bffe9f22894535338f10ce116f462f85308c595b329af7",
     "depths.json": "b94aa168600bb956fb76da2be5a06f736ddeaee48db5da389a844adb1b420680",
-    "params-core.json": "161b92c8466ab569a326137f5ca4f681b1bf396ea7d57144c64830fe45d7200c",
-    "summary.json": "c750988c31a1bf7b073cad3fd96f6742c2dfd5887981074f1db2c5d6e35d28cf",
+    "params-core.json": "d77669361c6739af5cce757a10fa63197e4c13c6f6f76d5c528fb7bb8b328b0b",
+    "summary.json": "0b73a0b5b6e66317e3d5aec736a6f2a5bcf0958b32340ac501402b771a90a997",
     "trace-core-tail.jsonl": "2b6297fc8c108f687536473c0e7f108e42f2332e34d1355c455fa8974ff43201"
   },
   "investigation": null,
