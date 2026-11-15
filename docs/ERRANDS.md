@@ -18,7 +18,7 @@ behind it is in PR #206 (docs/REDESIGN.md, docs/PILOT.md).*
 | outcome | `BORG_ERRAND_OUT` | a file: one JSON line per errand that ends |
 
 Configured errands are validated before the vendored core starts. An absent
-setting or exactly `none` disables errands. Empty/unknown command lines,
+setting, an empty string, or exactly `none` disables errands. Unknown or malformed command lines,
 including an invalid command after a valid prefix, stop the process with
 exit status 2 and the setting's source/value on stderr. `BORG_ERRAND` takes
 precedence over `borg_reborn_errand`, including `none` overriding a file

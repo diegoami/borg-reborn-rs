@@ -5,14 +5,18 @@
 ## 2026-11-15: strict configured errands (#269), validation in progress
 
 - Stacked on #289; targets track-p after the owner-authorized #260
-  promotion. Valid commands, environment precedence, absent/none disabling
-  and original-core isolation are preserved. Invalid/empty errand command
+  promotion. Valid commands, environment precedence, absent/empty/none disabling
+  and original-core isolation are preserved. Invalid errand command
   lines now fail with source/value diagnostics and exit2 instead of
   continuing an unconstrained run. Parsing validates the entire command
   line before applying any prefix.
 - Pure tests and actual pinned-zoo/native process cases exercise invalid
   file/environment values, valid overrides and original-core isolation.
   ERRANDS.md and ZOO-INTERFACE.md state the intentional input change.
+- The first candidate (014e64a4/source77f040ff) passed pure/native-selector
+  cases but failed the pre-existing shopping fixture, which uses an empty
+  string to disable errands. Preserve that legacy empty alias; the test
+  itself is unchanged. Its full-suite evidence remains with its own build.
 - Required checks/gameplay validation and evidence retention are pending;
   no population experiment or main promotion for this task is authorized.
 

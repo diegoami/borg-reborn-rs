@@ -70,7 +70,7 @@ An absent selector defaults to reborn. Every other value (including a
 boolean written as `TRUE`, an empty string, or integer 2) fails with exit
 status 2 and source/value diagnostics. `BORG_CORE` takes precedence over
 the file; clear it for profile-only measurement. The vendored core's `borg_reborn_errand` also fails with exit status 2
-for invalid configured command lines; `none` or absence disables errands.
+for invalid configured command lines; `none`, an empty string, or absence disables errands.
 Clear `BORG_ERRAND` for file-only profile measurement. The pinned adapter
 only serializes booleans/integers, so arbitrary errand commands require a
 native caller; an integer/boolean is not a valid errand. See ERRANDS.md.

@@ -150,7 +150,7 @@ class CoreProfileContractTest(unittest.TestCase):
                 self.assertFalse((out / 'trace-core.jsonl').exists())
 
     def test_errand_environment_precedence_and_invalid_command_lines(self):
-        for value in ['', '; ;', 'true', 'dvie 2', '/town; typo']:
+        for value in ['; ;', 'true', 'dvie 2', '/town; typo']:
             with self.subTest(value=value):
                 out, record = self.cell('invalid-errand-env-' + str(len(value)),
                                        {'borg_reborn_core': 1}, {'BORG_ERRAND': value})
@@ -158,7 +158,7 @@ class CoreProfileContractTest(unittest.TestCase):
                 self.assertIn('exit code 2', record['error'])
                 self.assertIn('BORG_ERRAND: invalid errand selector',
                               (out / 'stderr.log').read_text())
-        for name, value in [('none', 'none'), ('command', '/dive 2')]:
+        for name, value in [('none', 'none'), ('empty', ''), ('command', '/dive 2')]:
             out, record = self.cell('valid-errand-env-' + name,
                                    {'borg_reborn_core': 1, 'borg_reborn_errand': 7},
                                    {'BORG_ERRAND': value})

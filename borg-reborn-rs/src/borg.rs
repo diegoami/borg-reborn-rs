@@ -349,7 +349,7 @@ pub fn configured_errand() -> Option<String> {
 
 fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<String>, String> {
     match value {
-        None | Some("none") => Ok(None),
+        None | Some("" | "none") => Ok(None),
         Some(value) => {
             let invalid =
                 |reason: &str| format!("{source}: invalid errand selector {value:?}: {reason}");
@@ -711,7 +711,7 @@ mod tests {
 
     #[test]
     fn configured_errands_preserve_valid_commands_and_reject_silent_fallback() {
-        for value in [None, Some("none")] {
+        for value in [None, Some(""), Some("none")] {
             assert_eq!(parse_errand_setting(value, "BORG_ERRAND"), Ok(None));
         }
         for value in [
@@ -729,16 +729,7 @@ mod tests {
             );
         }
         for source in ["BORG_ERRAND", "borg.txt borg_reborn_errand"] {
-            for value in [
-                "",
-                " ",
-                "; ;",
-                "true",
-                "2",
-                "dvie 2",
-                "/dive 0",
-                "/town; typo",
-            ] {
+            for value in [" ", "; ;", "true", "2", "dvie 2", "/dive 0", "/town; typo"] {
                 let error = parse_errand_setting(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
                 assert!(error.contains(&format!("{value:?}")));
