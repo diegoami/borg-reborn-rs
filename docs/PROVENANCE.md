@@ -42,3 +42,13 @@ The three-way refresh preserves declared OURS/HOOKED changes.
 [Integration decisions](M13-INTEGRATION.md) enumerate conflicts, the native
 read-only query patch, receiving option ABI adapter and parameter migration.
 Engine/harness, recorder and cemetery integration remain receiving-owned.
+
+## Recorded wild-cat incident fix (#350)
+
+Receiving-owned hooks remove the retired opportunistic stair-loot path from
+borg_think_dungeon_util/borg_flow_take, keep known monster squares out of
+GOAL_FLEE movement, and correct ordinary healing and short-escape decisions.
+The additional donor deviations in borg_flow.rs and borg_flow_take.rs are
+explicitly declared in the vendor checker. These intentionally change vendored
+core play; the recorded M13 parity evidence retains its original source.
+No engine or recorder implementation is copied or patched for this fix.

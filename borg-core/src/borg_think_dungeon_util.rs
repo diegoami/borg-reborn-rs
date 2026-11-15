@@ -25,8 +25,7 @@ use crate::borg::BorgTime;
 use crate::borg_escape::borg_recall;
 use crate::borg_flow::{borg_flow_old, AUTO_TEMP_MAX};
 use crate::borg_flow_misc::borg_flow_light;
-use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
-use crate::borg_flow_take::borg_flow_take_scum;
+use crate::borg_flow_stairs::{borg_flow_stair_less, borg_flow_stair_more};
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item_use::{
     borg_activate_item, borg_activate_ring, borg_read_scroll, borg_use_staff, borg_use_things,
@@ -51,13 +50,13 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_AEZHEAL, BI_ALIFE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_GOLD,
     BI_ISFIXEXP, BI_ISFIXLEV, BI_ISHUNGRY, BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL,
-    BI_MAXDEPTH, BI_MAXSP, BI_PREP_BIG_FIGHT, BI_QUIVER_SLOTS, BI_RECALL, BI_REG,
+    BI_MAXDEPTH, BI_MAXSP, BI_PREP_BIG_FIGHT, BI_RECALL, BI_REG,
     BI_SAURON_DEAD,
 };
 use crate::headers::list_object_flags_h::OF_NO_FUEL;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
-    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_MORE,
+    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, 
     FEAT_NONE, FEAT_OPEN, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE,
 };
 use crate::headers::ui_event_h::keycode_t;
@@ -65,7 +64,6 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// `GOAL_TAKE` (borg-flow.h)
-const GOAL_TAKE: i32 = 2;
 /// `GOAL_BORE` (borg-flow.h)
 const GOAL_BORE: i32 = 6;
 /// `GOAL_FLEE` (borg-flow.h)
@@ -101,11 +99,6 @@ fn key(c: u8) -> keycode_t {
 /// `INVEN_LIGHT` (`z_info->pack_size + 5`).
 fn inven_light() -> usize {
     usize::from(engine::z_info().pack_size) + 5
-}
-
-/// `PACK_SLOTS` (`z_info->pack_size - borg.trait[BI_QUIVER_SLOTS]`).
-fn pack_slots(st: &BorgState) -> i32 {
-    i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS)
 }
 
 /// `borg_grids[y][x].feat` as a terrain index.
@@ -412,255 +405,6 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
     }
 
     /* Nothing to do */
-    false
-}
-
-/// `track_more` or `track_less` (borg-flow-stairs.c).
-#[derive(Clone, Copy)]
-enum Stairs {
-    More,
-    Less,
-}
-
-fn stairs(st: &mut BorgState, which: Stairs) -> &mut crate::borg_flow_stairs::StairTrack {
-    match which {
-        Stairs::More => &mut st.stairs.more,
-        Stairs::Less => &mut st.stairs.less,
-    }
-}
-
-/// "Track the newly discovered stairs": append the Borg's grid as entry
-/// `i` if `i` is the end of the list and there is room.
-fn track_stair(st: &mut BorgState, which: Stairs, i: i32) {
-    let c = st.borg.c;
-    let t = stairs(st, which);
-    if i == i32::from(t.num) && i < i32::from(t.size) {
-        t.x[i as usize] = c.x;
-        t.y[i as usize] = c.y;
-        t.num += 1;
-    }
-}
-
-/// The distance to the nearest stair of the list, starting from the best
-/// distance `b_j` found so far (-1 = none).
-fn nearest_stair(st: &BorgState, which: Stairs, mut b_j: i32) -> i32 {
-    let t = match which {
-        Stairs::More => &st.stairs.more,
-        Stairs::Less => &st.stairs.less,
-    };
-    for i in 0..usize::try_from(t.num).unwrap_or(0) {
-        let (x, y) = (t.x[i], t.y[i]);
-
-        /* How far is the nearest stairs */
-        let j = engine::distance(st.borg.c, loc { x, y });
-
-        /* skip the far ones */
-        if b_j <= j && b_j != -1 {
-            continue;
-        }
-
-        /* track it */
-        b_j = j;
-    }
-    b_j
-}
-
-/// This is an exploitation function.  The borg will stair scum
-/// in the dungeon to grab items close to the stair.
-pub fn borg_think_stair_scum(st: &mut BorgState) -> bool {
-    let mut b_j = -1;
-
-    /* `ag`: the Borg's grid (the Borg does not move during the call) */
-    let (ax, ay) = (st.borg.c.x, st.borg.c.y);
-
-    let feat = u32::from(engine::square_feat(st.borg.c.x, st.borg.c.y));
-
-    /* examine equipment and swaps */
-    crate::borg_trait::borg_notice(st, true);
-
-    /* No scumming mode if starving or in town */
-    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.tr(BI_ISWEAK) != 0 {
-        borg_note(st, "# Leaving Scumming Mode. (Town or Weak)");
-        return false;
-    }
-
-    /* No scumming if inventory is full.  Require one empty slot */
-    if st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
-        return false;
-    }
-
-    /* if borg is just starting on this level, he may not
-     * know that a stair is under him.  Cheat to see if one is
-     * there
-     */
-    if feat == FEAT_MORE && feat_at(st, ax, ay) != FEAT_MORE {
-        /* Check for an existing "down stairs" */
-        let mut i = 0;
-        while i < i32::from(st.stairs.more.num) {
-            /* We already knew about that one */
-            if st.stairs.more.x[i as usize] == st.borg.c.x
-                && st.stairs.more.y[i as usize] == st.borg.c.y
-            {
-                break;
-            }
-            i += 1;
-        }
-
-        /* Track the newly discovered "down stairs" */
-        track_stair(st, Stairs::More, i);
-
-        /* tell the array */
-        st.cave.grid_mut(ax, ay).feat = FEAT_MORE as u8;
-    }
-
-    if feat == FEAT_LESS && feat_at(st, ax, ay) != FEAT_LESS {
-        /* Check for an existing "up stairs" */
-        let mut i = 0;
-        while i < i32::from(st.stairs.less.num) {
-            /* We already knew about this one */
-            /* (break, like the down-stair loop above: continuing past a
-             * match re-adds the known staircase as a duplicate) */
-            if st.stairs.less.x[i as usize] == st.borg.c.x
-                && st.stairs.less.y[i as usize] == st.borg.c.y
-            {
-                break;
-            }
-            i += 1;
-        }
-
-        /* Track the newly discovered "up stairs" */
-        track_stair(st, Stairs::Less, i);
-
-        /* Tell the array */
-        st.cave.grid_mut(ax, ay).feat = FEAT_LESS as u8;
-    }
-
-    /* First deal with staying alive */
-
-    /* Require light */
-    let need = borg_maintain_light(st);
-    if need == BorgNeed::MetNeed {
-        return true;
-    } else if need == BorgNeed::UnmetNeed {
-        borg_note(st, "# Scum. (need fuel)");
-    }
-
-    /* Track down some interesting gear */
-    /* XXX Should we allow him great flexibility in retrieving loot? (not
-     * always safe?)*/
-    /* Continue flowing towards objects */
-    if borg_flow_old(st, GOAL_TAKE) {
-        return true;
-    }
-
-    /* Find a (viewable) object */
-    if borg_flow_take_scum(st, true, 6) {
-        return true;
-    }
-
-    /*leave level right away. */
-    borg_note(st, "# Fleeing level. Scumming Mode");
-    st.borg.goal.fleeing = true;
-
-    /* Scumming Mode - Going down */
-    if st.stairs.more.num != 0
-        && (feat_at(st, ax, ay) == FEAT_MORE
-            || feat_at(st, ax, ay) == FEAT_LESS
-            || st.borg.tr(BI_CDEPTH) < 30)
-    {
-        if st.stairs.more.num >= 2 {
-            borg_note(st, "# Scumming Mode: I know of a down stair.");
-        }
-
-        /* Check for an existing "down stairs" */
-        b_j = nearest_stair(st, Stairs::More, b_j);
-
-        /* if the downstair is close and path is safe, continue on */
-        if b_j < 8 || feat_at(st, ax, ay) == FEAT_MORE || st.borg.tr(BI_CDEPTH) < 30 {
-            /* Note */
-            borg_note(st, "# Scumming Mode.  Power Diving. ");
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to DownStair */
-            if borg_flow_stair_more(st, GOAL_FLEE, false, false) {
-                return true;
-            }
-
-            /* if standing on a stair */
-            if feat_at(st, ax, ay) == FEAT_MORE {
-                /* Take the DownStair */
-                borg_keypress(st, key(b'>'));
-
-                return true;
-            }
-        }
-    }
-
-    /* Scumming Mode - Going up */
-    if st.stairs.less.num != 0
-        && st.borg.tr(BI_CDEPTH) != 1
-        && (feat_at(st, ax, ay) == FEAT_MORE || feat_at(st, ax, ay) == FEAT_LESS)
-    {
-        /* `tmp_ag`: the Borg's grid again */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Check for an existing "up stairs" (`b_j` carries over from the
-         * down stairs, C bug 47) */
-        b_j = nearest_stair(st, Stairs::Less, b_j);
-
-        /* if the upstair is close and safe path, continue */
-        if b_j < 8 || feat_at(st, tx, ty) == FEAT_LESS {
-            /* Note */
-            borg_note(st, "# Scumming Mode.  Power Climb. ");
-
-            /* Set to help borg move better */
-            st.borg.goal.less = true;
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to UpStair */
-            if borg_flow_stair_less(st, GOAL_FLEE, false) {
-                borg_note(st, "# Looking for stairs. Scumming Mode.");
-
-                /* Success */
-                return true;
-            }
-
-            if feat_at(st, tx, ty) == FEAT_LESS && !engine::player_opt(OPT_birth_force_descend) {
-                /* Take the Up Stair */
-                borg_keypress(st, key(b'<'));
-                return true;
-            }
-        }
-    }
-
-    /* Special case where the borg is off a stair and there
-     * is a monster in LOS.  He could freeze and unhook, or
-     * move to the closest stair and risk the run.
-     */
-    if st.borg.tr(BI_CDEPTH) >= 2 {
-        /* Continue fleeing to stair */
-        if borg_flow_old(st, GOAL_FLEE) {
-            return true;
-        }
-
-        /* Note */
-        borg_note(st, "# Scumming Mode.  Any Stair. ");
-
-        /* Try to find some stairs */
-        if borg_flow_stair_both(st, GOAL_FLEE, true) {
-            return true;
-        }
-    }
-
-    /* return to normal borg_think_dungeon */
     false
 }
 

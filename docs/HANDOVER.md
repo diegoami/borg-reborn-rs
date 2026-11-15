@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-directed wild-cat survival fix (#350)
+
+- The original PlanMage GUI recording was replayed with its frozen binary;
+  all streams, final save and complete core trace verify. Native saves at
+  411638/648/658/668 match the recorded world fingerprints. Reloading them
+  loses Borg process memory; nevertheless all four original-source fresh
+  Borg branches die to wild cats, making them useful scenario fixtures.
+- Remove the return-to-town stair-looting path, reject known occupied flee
+  steps, use ordinary cures deterministically at useful wound sizes even
+  when fleeing at lethal HP, and consider usable Phase Door separately from
+  the conservative APHASE preparedness trait. A trapped/lethal flee can
+  try a short escape despite unknown landing grids; arena/curse restrictions
+  and the configured emergency failure bound remain enforced.
+- Diagnostic instrumentation found a 5% legal/affordable Phase Door excluded
+  by APHASE's 3% trait gate, followed by 100 unknown landing samples rejected.
+  The initial healing/path patch still lost two nearby-save starts; those
+  failed controls remain retained. With the emergency escape correction,
+  all four fixed starts survive the bounded follow-up at full HP. This is
+  one incident, not four independent lives or a population improvement.
+- Fixture archive is pinned to player-cemetery bec33f4, with SHA256 checks;
+  CI requires the real four saves. The standard native suite passes 69 tests.
+  Required final checks and source-qualified no-plan controls are pending.
+- Recorder-owned rolling save retention and turn-based read-only viewing
+  are developed separately in angband-recorder; do not silently replace the
+  pinned vendor or claim live Borg memory is restored by a native save.
+
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
 - Main advanced through #308 to 820140e0 while M13 sync CI was running.
