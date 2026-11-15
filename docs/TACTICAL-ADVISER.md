@@ -4,7 +4,7 @@ Status: owner-requested design proposal, 2026-11-15. No model connection,
 controller, new observation read or default-policy change is implemented by
 this document. Implementation and any amendments to SPEC/RULES/GOALS require
 owner review. This proposal extends [QUERY-SURFACE.md](QUERY-SURFACE.md),
-issues #153/#212, and the game-plan language proposal in issue #305.
+issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308).
 
 ## What the player can request
 
@@ -53,7 +53,7 @@ No silent amendment of the current meaning of Q's `advised` mode is intended.
 | Rich inspection | Q1/Q2 versioned read-only facade and fair state, knowledge and provenance reports |
 | Active tactical proposals | Accepted R2 danger/escape/recovery and R3 combat interfaces, action receipts and effect-once execution |
 | Equipment/stock advice | Accepted R4 item/spell/stock interfaces and inventory work #293 |
-| Bounded plan adoption | Game-plan language #305: typed AST, scopes, transactional parameters and interruption/checkpoints |
+| Bounded plan adoption | Simple profiles/errand plans #305: checked names, town-only profile switches, progress and interruption receipts |
 | Live delegation | Accepted Q5 host boundaries and R1/R5 control/goal ownership; Q3 for counterfactual verification where available |
 | Track B | Owner reference unresolved: current main defines P/R/Q, not B. Clarify before assigning implementation work. |
 
@@ -162,10 +162,13 @@ be executed. Illustrative shape (IDs and values are examples, not live schema):
 ```
 
 `decision` is `propose`, `abstain`, or `request_details`. Supported proposal
-variants are: one offered candidate; a bounded ordered rule set compiled to
-the game-plan AST; a preparation/stock/loadout plan for later execution; or a
-scoped parameter/profile patch limited to an explicitly authorised registry
-subset. Alternative variants are mutually exclusive and schema-checked.
+variants are: one offered candidate; a named, reviewed errand plan/profile for
+later execution; or, once a
+separate tactical API is accepted, a bounded named tactic with checked arguments.
+Preparation/stock/loadout proposals use those named capabilities rather than
+inventing a script or editing profile files. The first profile format has no
+arbitrary parameter patches or model-generated rule blocks. Alternative variants
+are mutually exclusive and schema-checked.
 The response may explain uncertainty/confidence, but a confidence number is
 not evidence of legality or expected survival. Unknown fields/IDs and executable
 text are rejected. Models cannot expand their own leases or authority.
@@ -174,10 +177,14 @@ Validation order: schema/version/size; request/run/character/state/encounter
 binding; capability versions and epoch; current preconditions/knowledge;
 resource and target existence; action legality; invariant/reserve/abort checks;
 then controller horizon. Rejected proposals never partially mutate inventory,
-parameters, plan frames or the game. Any allowed patch uses the language's
-atomic commit/rollback and cache invalidation, never edits borg.txt directly.
+parameters, plan frames or the game. Profile proposals use the simple format's
+complete validation, atomic
+switch and cache invalidation, never edit borg.txt directly. Its first version
+allows switching only in town; a live fight response cannot bypass that by
+requesting a parameter patch. Richer tactical controls need their own accepted
+API rather than extensions that recreate the rejected full scripting language.
 
-Even a valid multi-step rule set is reconsidered each think. A target can die,
+A reviewed multi-step tactic is still reconsidered each think. A target can die,
 move or become unseen; a spell can fail, a wand can run out, and an escape can
 be blocked. The executor owns prompts and expected-effect receipts; advice
 cannot insist the next action succeeded. No raw key sequences, arbitrary Rust,
@@ -238,7 +245,7 @@ Borg victory or silently added to the standard specimen/reference baseline.
    diagnosis against known explanations (#153); no action adoption.
 2. Observe-only adviser through Q, with noninterference and bounded payload
    tests. Measure explanation/actionability and record abstentions and errors.
-3. Simulated/recorded acceptance through the plan validator, then isolated
+3. Simulated/recorded acceptance through the capability/profile validators, then isolated
    counterfactuals (#212/Q3) where exact reconstruction is qualified.
 4. Explicitly accepted opt-in Q5 host and hybrid-advice mode; bounded live
    handoffs, failure injection and full recorded replay qualification.

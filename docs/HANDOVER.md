@@ -4,6 +4,10 @@
 
 ## 2026-11-15: owner-requested tactical LLM adviser design (#306)
 
+- Follow-up: #308 was simplified at the owner's request. Advice now refers
+  to named profiles/plans and separately reviewed tactical actions; it
+  cannot generate the rejected DSL or bypass town-only profile switching.
+
 - [TACTICAL-ADVISER.md](TACTICAL-ADVISER.md): The owner requested a second design for difficult-fight delegation and actionable Borg advice. The proposal extends Q/#153/#212 and the language proposal #305 with rich fair snapshots, typed validated proposals, leases/fallbacks and offline replay. Active advice uses a separate opt-in arm; the normal measured Borg remains model-free. Track-R/Q interfaces and track B require resolution before implementation. No model/engine/network implementation is included.
 - Validation is document/link review and `git diff --check`; examples and
   schemas are proposed, not executable or tested runtime features. The
