@@ -15,6 +15,8 @@
   allocated dossier IDs collided: full main dossiers D2356/D2357/D2358 are
   retained here as D2373/D2374/D2375, with integration-origin.json. Track R
   dossiers and all original build/source hashes remain intact.
+- Repeated refresh CI preserved its two original-core control deaths as
+  D2385/D2386 from run 43707798024. All validation deaths remain unassessed.
 - First refresh CI recorded a cave-spider death at turn 18903. Its exact
   build/source evidence is preserved as D2376 from run 43707564133; no death
   gate was weakened.
