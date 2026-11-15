@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+
+## 2026-11-15: track P, P1.1 (#219), calibration foundation
+
+- `borg-core/src/params.rs` defines 200 caution parameters with the v12
+  defaults, units, inclusive ranges, descriptions and pre-extraction source
+  lines (`726e04fa`). Initialization reads the environment over borg.txt
+  once, rejects invalid input loudly, and writes `params-core.json`.
+- The harness records its hash; dossiers preserve and hash the table, and
+  include it in encounter identity. CALIBRATION.md lists the catalogue and
+  the constants retained as game/representation data. Hooks are marked #219
+  in `borg_caution.rs`, `borg_init.rs` and `lib.rs` for a future refresh.
+- Main's errand fixes through `46d0b40e` were merged without changing their
+  code. The combined revision's full suite is 45/45 identical to the earlier
+  main baseline (`726e04fa`), in keys, messages and states. The direct v12
+  comparison and final errand/override evidence are being completed.
+- Rust tests (the CI recipe: release for borg-core), Clippy, formatting,
+  parser tests and Python tests pass. The initial baseline suite's timing
+  aggregation failed because bc was missing; it was rerun intact after
+  installing the utility locally. No suite condition was weakened.
+- Remaining P1 tasks are #220 (danger/escape), #221 (recovery) and #222
+  (the named decision trace). P2 and track R are not part of this change.
+
 ## 2026-11-14: two tracks, P (calibration) and R (the redesign epic)
 
 - **Owner:** both threads, side by side: the calibration workaround in
