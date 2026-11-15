@@ -19,6 +19,10 @@
 - No-errand keys/messages/states match `8351f0a3` byte for byte for 3,000
   turns at seeds 1010 (warrior), 1001 (mage), 1002 (rogue); all survived.
   This is regression evidence, not a ranking of the errands' reliability.
+- CI's standard natural-death runs are retained as D2356 (vendored core,
+  seed 1011) and D2357 (reborn core, seed 1020), reproduced locally at
+  source hash `bcd9f0a9404e`. D2356 reconciles with the downloaded CI
+  registry; neither run used shopping. No death guard was weakened.
 - Rust formatting, Clippy, workspace tests (excluding borg-core), release
   borg-core tests and the vendor check pass. The corner freeze remains
   undiagnosed; no population experiment or GUI shopping session was run.
