@@ -35,6 +35,7 @@ core's own stop) when it is done.
 | command | what it does | done |
 |---|---|---|
 | `/town` | home: Word of Recall if the core has one, else the stairs up | in town |
+| `/shopping` | in town, run the core's buying, selling and home-inventory round | when shopping is finished, before leaving town |
 | `/walk-back` | home by the stairs only | in town |
 | `/explore-back` | this level and each one above it explored, in turn, then home | in town |
 | `/dive N` | the stairs down to DL N, not exploring | on arrival |
@@ -51,6 +52,16 @@ Several commands can go on one line, separated by `;`
 (`/stopscared 50; /dive 3; /walk-back`). Settings apply at once. Errands
 run in turn, each one starting when the one before it is done. Any other
 ending (scared, aborted, the budget) drops the rest.
+
+`/shopping` uses the core's existing choices about what is worth buying,
+selling, storing at home or taking from home. It does not force a purchase
+or a visit to a store with nothing useful to do. The game's selling option
+still applies (the default is no selling for gold). It stays in town and
+hands control back outside the store UI when the core would normally leave
+after shopping. If caution needs to descend, it aborts and hands control back.
+Calling it in the dungeon aborts; use `/town; /shopping` to return first.
+`BORG_ERRAND_BUDGET` and `/stall` bound the round; no completion ranking of
+the errands has been measured.
 
 ## Rules
 
