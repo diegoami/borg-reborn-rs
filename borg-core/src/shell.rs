@@ -36,6 +36,8 @@
 //!
 //! - `/town`: home fast: the core reads Word of Recall if it can
 //!   (`borg_recall`), else the stairs up; done in town.
+//! - `/shopping`: in town, buy, sell and manage the home with the core's
+//!   own choices; done when the core would leave town after shopping.
 //! - `/walk-back`: home by the stairs only, finding each up staircase; done
 //!   in town.
 //! - `/explore-back`: the level it is on and each level above it explored,
@@ -98,6 +100,8 @@ pub enum Errand {
     Ladder,
     /// Home; done in town.
     Town,
+    /// One shopping round in town; stop before leaving town.
+    Shopping,
     /// The stairs down to DL N, not exploring; done on arrival.
     Dive(i32),
     /// The level the character is on, explored; done when the core is done.
@@ -139,6 +143,7 @@ impl Command {
         let depth = || arg.parse::<i32>().ok().filter(|d| *d >= 1);
         Some(match (name.to_ascii_lowercase().as_str(), arg) {
             ("town", "") => Command::Errand(Errand::Town),
+            ("shopping", "") => Command::Errand(Errand::Shopping),
             ("dive", _) => Command::Errand(Errand::Dive(depth()?)),
             ("explore-level", "") => Command::Errand(Errand::ExploreLevel),
             ("dive-exploring", _) => Command::Errand(Errand::DiveExploring(depth()?)),
@@ -331,12 +336,17 @@ enum End {
     Arrive,
     /// Done when the plan's last level is explored, where it is.
     Stop,
+    /// Let the core finish its shopping, then stop before leaving town.
+    Shopping,
 }
 
 impl Running {
     /// The depth the errand wants now: a level of the trip, 0 for home, or
     /// `None` when the errand is over.
     fn target(&self) -> Option<i32> {
+        if self.end == End::Shopping {
+            return Some(0);
+        }
         let trip = self.trips.get(self.trip)?;
         match trip.levels.get(self.step) {
             Some(&d) => Some(d),
@@ -397,6 +407,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             Errand::Trips(t) => (t, End::Home, true, None),
             Errand::Ladder => (Vec::new(), End::Home, true, None),
             Errand::Town | Errand::WalkBack => (one(vec![]), End::Home, false, None),
+            Errand::Shopping => (Vec::new(), End::Shopping, false, None),
             Errand::Dive(n) => (one(vec![n]), End::Arrive, false, None),
             Errand::ExploreLevel => (Vec::new(), End::Stop, false, Some(FromHere::Here)),
             Errand::DiveExploring(n) => (Vec::new(), End::Stop, false, Some(FromHere::DownTo(n))),
@@ -490,7 +501,7 @@ pub(crate) fn borg_cmd_errand(st: &mut BorgState) {
     let mut buf = [0u8; 80];
     if !engine::get_string(
         st,
-        c"Errand (/town /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stopscared off|flee|N /stop; ...): ",
+        c"Errand (/town /shopping /walk-back /explore-back /dive N /dive-exploring N /explore-level /ladder /stopscared off|flee|N /stop; ...): ",
         &mut buf,
         80,
     ) {
@@ -606,6 +617,49 @@ pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
     if level > 0 && depth > 0 && scared(st, level) {
         finish(st, "scared");
         return Some(true);
+    }
+    // Shopping is a town session, not a trip that is done on arrival in
+    // town. Never let the generic trip indexing advance its empty plan.
+    let shopping = {
+        let mut guard = running();
+        let r = guard.as_mut()?;
+        if r.end == End::Shopping {
+            let first = r.started.is_none();
+            let started = *r.started.get_or_insert(turn);
+            let elapsed = turn - started;
+            let stall = i64::from(STALL_TURNS.load(Ordering::Relaxed));
+            let outcome = if depth != 0 {
+                Some("aborted: shopping requires town")
+            } else if r.budget > 0 && elapsed >= r.budget {
+                Some("budget")
+            } else if stall > 0 && elapsed >= stall.max(10_000) {
+                Some("aborted: shopping did not finish")
+            } else {
+                None
+            };
+            Some((first, outcome))
+        } else {
+            None
+        }
+    };
+    if let Some((first, outcome)) = shopping {
+        if let Some(outcome) = outcome {
+            finish(st, outcome);
+            return Some(true);
+        }
+        if first {
+            // A manual player may already have spent a long time in town.
+            // Give this requested round the core's normal shopping window
+            // instead of inheriting its old town/anti-bounce timeout.
+            st.borg.time.level = st.borg.time.now;
+            st.borg.antibounce_count = 0;
+            st.borg.goal.type_0 = 0;
+            st.borg.goal.shop = -1;
+            st.borg.goal.ware = -1;
+            st.borg.goal.item = -1;
+            borg_note(st, "# Errand: shopping round in town.");
+        }
+        return None;
     }
     // A plan that starts here, and the arrival of a dive.
     {
@@ -762,6 +816,14 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
     if !active() || st.borg.tr(BI_CDEPTH) != 0 {
         return None;
     }
+    if running().as_ref().is_some_and(|r| r.end == End::Shopping) {
+        if bored {
+            // The core has explored town, checked its shops and home, and
+            // has no further transaction to do. Hand over instead of diving.
+            finish(st, "done");
+        }
+        return Some(bored);
+    }
     if !bored || target(st).is_none_or(|t| t == 0) {
         return Some(false);
     }
@@ -773,6 +835,17 @@ pub(crate) fn on_leave_level(st: &mut BorgState, bored: bool) -> Option<bool> {
         return Some(refuse_descent(st, 1));
     }
     Some(stairs_down(st))
+}
+
+/// Caution may take the stairs directly, before the ordinary town-leave
+/// hook. A town-only shopping job hands over rather than escaping below.
+pub(crate) fn shopping_departure(st: &mut BorgState) -> bool {
+    let shopping = running().as_ref().is_some_and(|r| r.end == End::Shopping);
+    if !shopping || st.borg.tr(BI_CDEPTH) != 0 {
+        return false;
+    }
+    finish(st, "aborted: the core needs to leave town");
+    true
 }
 
 /// In the dungeon, `borg_leave_level` once the core has weighed its own
@@ -848,6 +921,23 @@ pub(crate) fn steer(st: &mut BorgState) -> bool {
         return false;
     }
     let depth = st.borg.tr(BI_CDEPTH);
+    if running().as_ref().is_some_and(|r| r.end == End::Shopping) {
+        // Remain after caution but before the general exploration/leave
+        // decisions. In particular, "nothing to sell" must not bypass
+        // purchases and home management by power-diving out of town.
+        if st.borg.goal.fleeing || st.borg.mon.scary {
+            return shopping_departure(st);
+        }
+        if crate::borg_think_store::borg_choose_shop(st) {
+            let shop = i32::from(st.borg.goal.shop);
+            if !crate::borg_flow_misc::borg_flow_shop_entry(st, shop) {
+                finish(st, "aborted: no way to the selected shop");
+            }
+        } else {
+            finish(st, "done");
+        }
+        return true;
+    }
     // `/town`: the core's own recall (scroll, rod, spell, activation) when
     // it has one, whatever else the core wants (review #227, finding 6,
     // and re-review 5); until it takes effect the stairs up are walked.
@@ -1217,6 +1307,8 @@ mod tests {
     fn commands_parse() {
         use Command as C;
         assert_eq!(C::parse("/town"), Some(C::Errand(Errand::Town)));
+        assert_eq!(C::parse("/shopping"), Some(C::Errand(Errand::Shopping)));
+        assert_eq!(C::parse("/shopping 2"), None);
         assert_eq!(C::parse("/dive 2"), Some(C::Errand(Errand::Dive(2))));
         assert_eq!(C::parse("dive:3"), Some(C::Errand(Errand::Dive(3))));
         assert_eq!(C::parse("/dive"), None);
