@@ -234,7 +234,7 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
 - **Deaths:** every natural death of a measured run (`harness/run.sh`,
   the zoo's cells) gets a dossier (RULES 12); watched games are not
   recorded (owner, 2026-11-10).
-  `tools/export-death.py` (ours) is kept, with the trace tail and the
+  `tools/export-death.py` remains a pointer to the cemetery-owned implementation, with the trace tail and the
   parameters (T2.4).
   - `docs/deaths/` then holds two generations: D0001–D0525 on today's
     borg-rs-based tree, each dossier keeping its own `source_sha256`, and

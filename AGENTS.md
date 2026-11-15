@@ -150,12 +150,12 @@ milestone. Name both in the review PR.
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `engine/` | The engine integration (docs/ENGINE.md): `angband/` (upstream `42cd156ac`, byte for byte, never edited, RULES 9), `patches/` (our harness hooks), `frontend/` (mode `borgh`), `bindings/` (bindgen), `CMakeLists.txt` and `sources.cmake` (our build), `tests/` |
 | `harness/` | build (`build.sh`), run, suite, diff, identity, boundary and zoo checks, references; see [harness/README.md](harness/README.md) |
-| `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
+| `tools/export-death.py` | Thin pointer to the cemetery-owned exporter; normal dossiers go to borg-cemetery (RULES 12) |
 | `watch-borg.sh`, `tools/rerun-death.py`, `tools/death_registry.py` | the launcher to watch the Borg (X11), the rerun of a recorded death with its logs, the registry's index (TE.6; the copied GUI, recording and replay tools are gone) |
 | (removed) | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
 | `docs/ZOO-INTERFACE.md` | The contract borg-zoo's adapter calls: build, run, outputs (TE.7) |
 | `docs/QUERY-SURFACE.md` | Secondary goal Q (D12): the draft of `borg-mcp`, the MCP server through which language models query the Borg's judgement (query mode) or play a hosted game as a separate arm (play mode) |
-| `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format. **The canonical registry lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery)**; `docs/deaths/POINTER.md` names the seam (`BORG_DEATH_RECORDS_DIR`) and where the cases now live |
+| `docs/deaths/` | Preserved historical validation archive; canonical new death reports/analysis live in borg-cemetery |
 
 ## Local machine notes
 
