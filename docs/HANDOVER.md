@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: corrected R2 event-count wording (#313)
+
+- Per mode, R2 records 15,032,802 tape events, including 700,980 policy-entry
+  markers: actual dependency requests are 14,331,822. The raw @1 evidence
+  keeps its original field names/values. R2-COUNT-CLARIFICATION.json hashes
+  both source reports and derives the split; R2-VALIDATION.md and the live
+  shadow contract use accurate terms. Earlier handover entries are historical.
+- #302 is owner-accepted/merged and tagged r2; PLAN reflects acceptance.
+  Runtime code and all parity evidence are unchanged. This is stacked on
+  source-gate PR #321. Follow-ups #314–#316 remain before R3 planning.
+
 ## 2026-11-15: R2 accepted; source gate follow-up #312
 
 - Owner accepted Claude Opus 5.5's non-blocking R2 review and authorized

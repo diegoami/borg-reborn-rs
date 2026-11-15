@@ -36,8 +36,13 @@ mutex is never held while a policy or engine dependency runs.
 
 Internal ported entry markers compare function identity and arguments even
 when escape is called inside caution. Statistics distinguish root stateful
-comparisons, internal policy entries, individual entry points and dependency
-requests. Positive coverage of caution, escape and recovery is required;
+comparisons, internal policy entries, individual entry points and tape events. In `shadow-stats@1`, the legacy field
+`dependency_requests` includes the `policy::` entry markers. Subtract the sum
+of `stateful_points` (equivalently caution_calls + escape_calls + recovery_calls)
+to obtain actual dependency requests. The R2 full suite has 15,032,802 events,
+700,980 markers and 14,331,822 actual requests per mode. Historical raw JSON
+keeps its original schema/values; future telemetry must retain these explicit
+semantics or version a changed contract. Positive coverage of caution, escape and recovery is required;
 wall-helper comparisons cannot stand in for stateful comparisons.
 
 The workspace intentionally uses panic=abort. An incompatible replay request,
