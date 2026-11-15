@@ -56,7 +56,7 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_object_flags_h::OF_NO_FUEL;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_terrain_h::{
-    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K, 
+    FEAT_BROKEN, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_MAGMA, FEAT_MAGMA_K,
     FEAT_NONE, FEAT_OPEN, FEAT_PERM, FEAT_QUARTZ, FEAT_QUARTZ_K, FEAT_RUBBLE,
 };
 use crate::headers::ui_event_h::keycode_t;
