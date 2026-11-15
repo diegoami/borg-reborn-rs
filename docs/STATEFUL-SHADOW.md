@@ -48,13 +48,19 @@ different return/final state logs the mismatch and retains the driving
 policy's result. Diagnostic request-divergence runs count as controlled
 operational failures, never deaths or successful games.
 
-The source gate in scripts/decision_surface.py rejects direct core/engine
-imports and paths outside the recorded boundary, unnamed trait reads in the
-port, unsafe/extern bypasses and tape manipulation by policy code. It is a
-closed import/path check, not Rust semantic analysis. Compilation verifies
-API names/types. Future carries must audit the complete changed native files,
-new fields and methods as well as the function-name watcher. All new native
-state fields must satisfy snapshot Clone/PartialEq or compilation fails.
+The syntactic source gate in scripts/decision_surface.py checks the three
+native policies and every Rust file recursively under stateful/, including
+the dispatcher and newly added modules. It rejects known core/module aliases,
+unsupported memory/local paths, raw trait indexing/reads, unsafe/extern and
+direct dependency bypasses. Only the exact existing dispatcher type import
+and named mana-write adapter are exempted, never the entire file. Regression
+fixtures include all five bypasses reported in R2 review #302.
+
+This is not Rust semantic analysis and does not prove arbitrary code cannot
+bypass recording. Compilation verifies names/types; manual review must inspect
+fields, methods, macros and every changed dependency as well as the watcher.
+All new native state fields must satisfy snapshot Clone/PartialEq or
+compilation fails.
 
 Tests verify that effects/RNG execute once, input-state disagreement cannot
 be hidden by post-state replacement, changed requests/returns/final states

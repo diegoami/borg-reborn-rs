@@ -1,4 +1,4 @@
-"""Fail closed if a stateful policy gains an unrecorded dependency (R2 #286)."""
+"""Syntactic stateful dependency checks; manual Rust review remains required."""
 import re
 from pathlib import Path
 from rust_ports import mask_non_code
@@ -11,17 +11,53 @@ NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
 PORT_NAMESPACES = {'decision_api', 'decision_tape', 'memory', 'threat_facts'}
 
 
-def inspect(text, port=False):
-    """This is a closed import/path gate, not a Rust semantic analysis.
+# Exact audited code exceptions, never a file-wide exemption. Changing these
+# requires reviewing the dispatch types / sole native BI write explicitly.
+DISPATCH_IMPORT = 'use borg_rs::{decisions::{Decision,Value},memory::BorgState,};'
+MANA_ADAPTER = ('fn set_mana(st:&mut BorgState,value:i32){'
+                'st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize]=value;}')
 
-    Compilation verifies that every callable API name has a wrapper. The
-    gate prevents a future carry from bypassing that API with a direct core
-    call, even if the carried native code would otherwise compile.
+
+def inspect(text, port=False, dispatch=False):
+    """Catch known import/path bypasses, not arbitrary Rust semantics.
+
+    Compilation checks API names/types; manual review must still inspect
+    fields, methods, macros and every carried dependency.
     """
     code = mask_non_code(text)
+    if port and dispatch:
+        # Normalize whitespace only for matching the exact adapter/import.
+        # Remove just these snippets, then inspect all remaining code.
+        for snippet in (DISPATCH_IMPORT, MANA_ADAPTER):
+            pattern = r'\s*'.join(re.escape(token) for token in
+                                     re.findall(r'\w+|[^\w\s]', snippet))
+            code = re.sub(pattern, '', code, count=1)
+    if port:
+        errors = []
+        if re.search(r'\buse\s+borg_rs\s*(?:as\b|;)', code):
+            errors.append('policy may not alias/import the core crate')
+        for match in re.finditer(r'\buse\s+borg_rs\s*::([^;]+);', code):
+            if re.search(r'\bas\b', re.sub(r'\bparam\s+as\s+p\b', 'param', match[1])):
+                errors.append('policy may not alias core dependencies')
+        if re.search(r'\btrait_\s*\[|\.\s*tr\s*\(', code):
+            errors.append('port reads or writes an unnamed native trait')
+        # The full memory/type path is restricted even outside use statements.
+        for match in re.finditer(r'\bborg_rs\s*::\s*(memory|threat_facts|decisions)\s*::\s*(\w+)', code):
+            allowed_names = {'memory': {'BorgState'},
+                             'threat_facts': {'param', 'Param'},
+                             'decisions': {'Decision', 'Value'} if dispatch else set()}
+            if match[2] not in allowed_names[match[1]]:
+                errors.append(f'unrecorded path borg_rs::{match[1]}::{match[2]}')
+        if re.search(r'\buse\s+borg_rs\s*::\s*(?:memory|threat_facts|decision_tape|decisions)\s*;', code):
+            errors.append('policy may not import a dependency namespace')
+        for match in re.finditer(r'\bcrate\s*::\s*(\w+)', code):
+            if match[1] != 'View':
+                errors.append(f'unrecorded local namespace crate::{match[1]}')
+    else:
+        errors = []
+    code = re.sub(r'\s*::\s*', '::', code)
     prefix = 'borg_rs' if port else 'crate'
-    allowed = PORT_NAMESPACES if port else NATIVE_NAMESPACES
-    errors = []
+    allowed = (PORT_NAMESPACES | ({'decisions'} if dispatch else set())) if port else NATIVE_NAMESPACES
     for m in re.finditer(r'\b' + prefix + r'::(\w+)', code):
         if m[1] not in allowed:
             errors.append(f'unrecorded namespace {prefix}::{m[1]}')
@@ -50,8 +86,6 @@ def inspect(text, port=False):
         permitted = {'decision_api','decision_tape'} if port else {'decision_api','decision_tape','shadow','decisions',*NATIVE}
         if namespace not in permitted:
             errors.append(f'unrecorded call {prefix}::{namespace}::{name}')
-    if port and re.search(r'\.tr\s*\(', code):
-        errors.append('port reads an unnamed native trait')
     if re.search(r'\b(?:unsafe|extern)\b', code):
         errors.append('policy bypasses the safe dependency boundary')
     return errors
@@ -59,15 +93,21 @@ def inspect(text, port=False):
 
 def check(root):
     root = Path(root)
-    for directory, names, port in [('borg-core/src', NATIVE, False),
-                                    ('borg-next/src/stateful', PORTS, True)]:
-        for name in names:
-            path = root / directory / (name + '.rs')
-            errors = inspect(path.read_text(), port)
-            if errors:
-                raise ValueError(f'{path}: ' + '; '.join(errors))
-    return len(NATIVE) + len(PORTS)
+    paths = [(root / 'borg-core/src' / (name + '.rs'), False)
+             for name in NATIVE]
+    directory = root / 'borg-next/src/stateful'
+    # Required roots must exist; discover all additional Rust modules too.
+    for name in (*PORTS, 'mod'):
+        if not (directory / (name + '.rs')).is_file():
+            raise ValueError(f'missing stateful module {name}')
+    paths += [(path, True) for path in sorted(directory.rglob('*.rs'))]
+    for path, port in paths:
+        errors = inspect(path.read_text(), port,
+                         dispatch=port and path == directory / 'mod.rs')
+        if errors:
+            raise ValueError(f'{path}: ' + '; '.join(errors))
+    return len(paths)
 
 
 if __name__ == '__main__':
-    print(f'{check(Path(__file__).resolve().parents[1])} stateful policy files have a closed dependency surface')
+    print(f'{check(Path(__file__).resolve().parents[1])} stateful files pass syntactic dependency checks (manual review required)')
