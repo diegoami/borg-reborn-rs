@@ -105,6 +105,16 @@ jobs:
           git -C vendor/borg-zoo checkout -q --detach "$zoo_pin"
           echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
       # The build, the source list and the frontend's contract on the binary (TE.4).
+      # #350: immutable, source-qualified saves from the recorded wild-cat incident.
+      - run: |
+          python3 - <<'PYFIXTURE'
+          import json, os, pathlib, urllib.request
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / f['archive']
+          urllib.request.urlretrieve('https://raw.githubusercontent.com/' + f['repository'] + '/' + f['commit'] + '/recordings/' + f['archive'], target)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
+          PYFIXTURE
       - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1

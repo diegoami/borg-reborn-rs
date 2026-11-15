@@ -445,6 +445,30 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
+    // borg-reborn-rs (#350): known ordinary cures are survival resources,
+    // including while fleeing. At useful wound sizes do not randomly skip
+    // them, and cap their benefit at max HP when checking the next round.
+    if danger > 0
+        && (danger >= hp_down || danger >= st.borg.tr(BI_CURHP))
+        && (pct_down >= p(Param::caution_clw_min_loss)
+            || danger >= st.borg.tr(BI_CURHP))
+    {
+        for (sval, amount, divisor) in [
+            (st.item_val.sv_potion_cure_light, clw_heal, p(Param::caution_clw_danger_divisor)),
+            (st.item_val.sv_potion_cure_serious, csw_heal, p(Param::caution_csw_danger_divisor)),
+            (st.item_val.sv_potion_cure_critical, ccw_heal, p(Param::caution_ccw_danger_divisor)),
+        ] {
+            let gain = amount.min(hp_down);
+            if danger < st.borg.tr(BI_CURHP) + gain
+                && gain > danger / divisor
+                && borg_quaff_potion(st, sval)
+            {
+                borg_note(st, "# Healing before further movement or combat.");
+                return true;
+            }
+        }
+    }
+
     // Heal when wounded a percent of the time
     let mut chance = engine::randint0(100);
 
@@ -1663,6 +1687,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
 
+    // borg-reborn-rs (#350): use a viable short escape when the current
+    // retreat is surrounded, rather than healing into repeated bump fights.
+    if pos_danger > 0
+        && (borg_surround || pos_danger >= st.borg.tr(BI_CURHP))
+        && crate::borg_escape::borg_escape_trapped(st)
+    {
+        return true;
+    }
+
     if !st.borg.goal.fleeing {
         // Start being cautious and trying to not die
         if st.borg.tr(BI_CLASS) == CLASS_MAGE
@@ -1693,11 +1726,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
                 return true;
             }
         }
-    } else if pos_danger < st.borg.tr(BI_CURHP) {
-        // Fleeing, but this grid is survivable this round: still tend to
-        // wounds, poison and cuts instead of staying untreated for the
-        // rest of the level. The flee goal itself is untouched, and
-        // borg_heal()'s own danger gates still apply.
+    } else {
+        // borg-reborn-rs (#350): healing can make a lethal grid survivable.
+        // Do not reject the attempt merely because current HP is too low.
+        // borg_heal checks whether the actual cure buys enough HP; the
+        // flee goal remains set and escape remains available afterward.
         //
         // (Consumer improvement unit I-002, better-borg-c `4.2.6-impact-v10`.)
         if borg_heal(st, pos_danger) {

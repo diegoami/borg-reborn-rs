@@ -1,0 +1,13 @@
+{
+  "binary": "/tmp/borg-fix-wild-cat-20261115/build/rust/game/angband",
+  "binary_sha256": "27f5646114167cbb080eb20f95227097a36b77b6c86cca8feec4f4766b12526a",
+  "built_utc": "2026-11-15T22:29:34Z",
+  "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+  "git_dirty": "yes",
+  "git_rev": "5e8454ab390a7d6e0fba0de51086ce6f19d2df2e",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+}

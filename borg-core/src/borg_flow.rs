@@ -63,6 +63,7 @@ const BORG_DIG_HARD: i32 = 40;
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
 const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
+const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
@@ -1085,6 +1086,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     st.borg.goal.g.x = x;
     st.borg.goal.g.y = y;
 
+    // borg-reborn-rs (#350): an escape route is never permission to attack.
+    // Leave a blocked route to caution/combat rather than emitting a bump.
+    if ag.kill != 0 && i32::from(st.borg.goal.type_0) == GOAL_FLEE {
+        return false;
+    }
+
     /* Monsters -- Attack */
     if ag.kill != 0 {
         let kill = st.kills.kills[usize::from(ag.kill)];
@@ -1360,6 +1367,13 @@ fn select_step(st: &BorgState) -> i32 {
 
         /* avoid screen edges */
         if !(1..AUTO_MAX_X).contains(&x) || !(1..AUTO_MAX_Y).contains(&y) {
+            continue;
+        }
+
+        // Prefer another usable step when a flee flow meets a monster.
+        if i32::from(st.borg.goal.type_0) == GOAL_FLEE
+            && st.cave.grid(x, y).kill != 0
+        {
             continue;
         }
 
