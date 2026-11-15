@@ -46,6 +46,9 @@ class PlanTest(unittest.TestCase):
                                     'BORG_STOPSCARED': '50'})
         with tempfile.TemporaryDirectory() as t:
             self.assertEqual(rd.plan(dossier(t))['env'], {}, 'a run without settings has none')
+        with tempfile.TemporaryDirectory() as t:
+            p = rd.plan(dossier(t, config_extra='borg_errand=\n'))
+        self.assertEqual(p['env'], {'BORG_ERRAND': ''}, 'set but empty stays set')
 
     def test_a_changed_ladders_file_is_refused(self):
         with tempfile.TemporaryDirectory() as t:

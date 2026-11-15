@@ -3,6 +3,50 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: track P integration with the option-C fixes
+
+- P1.4's first head passed CI, but its merge was rejected after main's
+  option-C fixes landed (#238). The premature merged-status comment was
+  corrected immediately. Integrated main e514e8b1, preserving its shell
+  changes; the only conflicts were independently allocated dossier IDs.
+- Our original P1.4 cases are now D2242–D2253; D2254–D2264 preserve the
+  integrated build's eleven new deaths. Identities and evidence remain
+  intact, indexes/hashes regenerated. Both registries reconcile.
+- Integrated full **45/45**, 295,464 named trace rows, current-shell ladder
+  trace on/off, original-core smoke **3/3**, death fixture and all required
+  checks pass. P1.4-VALIDATION.md identifies both builds. CI reruns before
+  merging; downstream P2 branches will receive the integrated parent and
+  rerun game validation. No review PR has been merged or reviewer launched.
+
+## 2026-11-15: the option-C review and re-review fixed (#227)
+
+- **Review #227** (Kimi K3.1 Pro): 13 findings, fixed in #230, #231 and
+  #233. **The re-review** found 3 blocking issues and 7 more, fixed in
+  #236's PR. The errand shell now:
+  - ends a level in one place (`move_on`) whether the core is done with it,
+    or `/explored` or `/stall` says so; the thresholds are measured on
+    every think, the core's own leaving and fleeing included;
+  - never walks down to a level the core is not prepared for: a command
+    stops ("not prepared for DLn"), a ladder trip goes home;
+  - tells fear (`fleeing_to_town`, or rising while not prepared for this
+    depth: the trip ends) from a town errand of the core's own (rising
+    while prepared: restock, sell, fix its level; the plan waits);
+  - gives up steering after `/stall` (at least 10,000 game turns) on one
+    level without moving on: a command stops ("no way on"), a ladder lets
+    the core play on. A ladder necromancer that sold and re-bought in town
+    for 13,890 turns no longer freezes; the owner's "runs to a corner"
+    case is not reproduced yet;
+  - ties an errand to its character (birth key: HP rolls, height, weight,
+    age, name).
+- **Measured:** `/explored` and `/stall` fire in play (with low settings).
+  The 90% default does not bind early: borg-rs is bored with a DL1 level
+  after seeing about 3% of its floor. No errand: full 45/45 identical to
+  borg-rs v12.
+- **Open:** the owner's corner case (seed and class unknown); the
+  blackguard who rests "to gain Mana" for 23,000 turns is borg-rs's own
+  (blackguards do not regain mana by resting), for track P or an issue
+  upstream; RULES 4 (no AI trailers) was broken by this session's earlier
+  commits and PR bodies, which cannot be amended.
 
 ## 2026-11-15: track P, P2.1 (#240), attack parameters
 
@@ -15,7 +59,7 @@
   Both are retained without an improvement claim (P2.1-VALIDATION.md).
 - Required Rust/Python/vendor checks pass. Defaults restore original
   source bytes apart from import and three comparison promotions.
-  D2226–D2237 preserve twelve natural deaths; none are missing.
+  D2265–D2276 preserve twelve natural deaths; none are missing.
 - Stacked on P1.4 #246 while its engine CI finishes. Remaining track P:
   defence #241, item use #242, power #243, zoo profiles #244, sweep #245.
   Owner authorized this continuation across milestone handoffs; review
@@ -33,7 +77,7 @@
 - The recovery override changes the named check at turn 561, from
   borg_flow_take to borg_recover, and retains the known negative outcome.
 - Death dossiers retain the last 200 core rows and their hashes/counts.
-  D2214–D2225 preserve all twelve measured natural deaths, reconciled.
+  D2242–D2253 preserve all twelve measured natural deaths, reconciled.
   Rust/Python/format/vendor checks pass; P1.4-VALIDATION.md has evidence.
 - P1.1–P1.3 merged (#234, #235, #237) after green CI. The owner explicitly
   authorized all remaining P tasks on 2026-11-15, including continuation
