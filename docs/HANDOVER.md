@@ -4,6 +4,16 @@
 
 
 
+## 2026-11-15: track P, P2.4 (#243), power extraction in progress
+
+- Audited and extracted 727 equipment/inventory/activation valuation
+  parameters (1734 total). Numeric game encodings and mechanics are retained;
+  default expansion restores the original source bytes after removing the
+  import and necessary i64 parameter promotions. No vendored formatting.
+- Release unit tests and Clippy pass; game validation follows integration
+  of the concurrent main errand-shell fixes through the parent stack.
+  A boundary test rejects zero divisors and out-of-storage-range timers.
+
 ## 2026-11-15: track P, P2.3 (#242), item-use extraction in progress
 
 - Extracted 19 parameters at 20 sites (1007 entries total). Default full
