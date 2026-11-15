@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 spec = importlib.util.spec_from_file_location('refresh_sources', HERE.parent / 'refresh-sources.py')
@@ -141,6 +142,38 @@ class RefreshTest(unittest.TestCase):
         self.assertIn('2 cases.', index)
         self.assertTrue((ref / 'LESSONS.md').exists())
         self.assertIn('at pin', self.report(), 'after the update the pin is current')
+
+    def test_our_cases_link_to_the_cemetery_and_the_copies_stay_local(self):
+        # Our own cases are recorded in borg-cemetery; the index links there.
+        # The copied reference registries keep their local relative links.
+        write(self.root, {
+            'docs/deaths/D0100-ours/report.md': '# D0100 our death\n',
+            'docs/deaths/D0100-ours/record.json': json.dumps({'character': 'Human Warrior',
+                                                              'raw_cause': 'a grey mold'}),
+            'docs/deaths/D0100-ours/assessment.json': json.dumps({'classification': 'unassessed'}),
+        })
+        rs.write_index(self.root)
+        index = (self.root / rs.INDEX).read_text()
+        self.assertIn(f'{rs.CEMETERY_URL}/tree/main/deaths/D0100-ours', index)
+        self.assertIn('recorded in [borg-cemetery]', index)
+        # The reference copies still link into this repository.
+        self.assertIn('reference/deaths/better-borg-c/D0001-a/report.md', index)
+
+    def test_the_registry_directory_is_overridable(self):
+        # BORG_DEATH_RECORDS_DIR is the seam every tool honours; the index
+        # reads the registry from it, so a checkout can keep the dossiers
+        # outside the tree.
+        other = self.root / 'elsewhere'
+        write(other, {
+            'D0200-other/report.md': '# D0200 other death\n',
+            'D0200-other/record.json': json.dumps({'character': 'Gnome Mage', 'raw_cause': 'a soldier'}),
+            'D0200-other/assessment.json': json.dumps({'classification': 'unassessed'}),
+        })
+        with mock.patch.dict(os.environ, {'BORG_DEATH_RECORDS_DIR': str(other)}):
+            rs.write_index(self.root)
+        index = (self.root / rs.INDEX).read_text()
+        self.assertIn('D0200-other', index)
+        self.assertNotIn('D0100-ours', index)
 
     def test_failed_update_changes_nothing(self):
         pins = json.loads((self.root / 'pins.json').read_text())
