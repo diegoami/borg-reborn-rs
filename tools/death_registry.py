@@ -96,6 +96,12 @@ def aggregate(root):
                'versions': dict(Counter(a['source_commit'] for a in attempts.values())), 'actions': list(actions.values()),
                'limit': 'Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate'}
     text = '# Rust Borg death records\n\nEvery confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.\n\n'
+    text += ('> **The canonical registry lives in\n'
+             '> [borg-cemetery](https://github.com/diegoami/borg-cemetery)** — recorded\n'
+             '> Borg runs, written death investigations and playable saved scenarios.\n'
+             '> This copy is the one this repository\'s tools write and reconcile\n'
+             '> against; see [POINTER.md](POINTER.md) for the seam\n'
+             '> (`BORG_DEATH_RECORDS_DIR`) and where the cases now live.\n\n')
     text += f"Dossiers: {summary['cases']}; distinct starting conditions: {summary['distinct_starting_conditions']}; retained process attempts: {summary['death_process_attempts']} (including repeats). This registry is not a survival-rate estimate.\n\n"
     text += '| Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |\n| --- | --- | --- | --- | --- | --- | --- |\n'
     for path, record, assessment in records:

@@ -2,6 +2,13 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
+> **The canonical registry lives in
+> [borg-cemetery](https://github.com/diegoami/borg-cemetery)** — recorded
+> Borg runs, written death investigations and playable saved scenarios.
+> This copy is the one this repository's tools write and reconcile
+> against; see [POINTER.md](POINTER.md) for the seam
+> (`BORG_DEATH_RECORDS_DIR`) and where the cases now live.
+
 Dossiers: 2378; distinct starting conditions: 2375; retained process attempts: 2378 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |

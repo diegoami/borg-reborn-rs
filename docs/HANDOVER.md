@@ -2,7 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: retrospective review #259 fixes in progress (#275)
+## 2026-11-15: synchronize cemetery documentation (#284)
+
+- Main advanced to `f441296f` (#276) after #280 passed CI. Preserve that
+  documentation/tooling change on track-p through a CI-checked sync PR;
+  main and the owner promotion remain unmerged by this session.
+- Resolved handover by retaining both sessions' entries. Regenerated the
+  death registry/index using the incoming generator: all2378 cases through
+  D2398 and the canonical cemetery notice survive. No case is moved to
+  another repository and the runtime source remains `4182670d`.
+- The migration snapshot in #276 describes D2358/2338 cases as of its
+  original pin; track-p has since added40 dossiers in #280. The migration
+  session must include D2359–D2398 in its eventual identity-preserving move.
+- #269's core-selector component and #270/#271 are addressed by #280;
+  #269's additional errand-selector investigation remains open. Owner
+  acceptance of #259/#260 remains pending. See P-REVIEW-VALIDATION.md.
+
+## 2026-11-15: retrospective review #259 fixes complete on track-p (#275)
 
 - Stacked on #277 into track-p. Strict core selector accepts only
   reborn/0 and borg-rs/1, preserving default and environment precedence;
@@ -42,6 +58,49 @@
 - Review #260 F1: `gh pr diff 260 --name-only` showed six policy/CI files,
   not a shopping removal. Synchronizing main removes the head divergence;
   the task PR's CI checks the integrated tree before any track-p merge.
+
+## 2026-11-15: the death registry points at borg-cemetery (#276)
+
+- The death dossiers are recorded in **borg-cemetery**, the canonical
+  home for recorded Borg runs, written death investigations and playable
+  saved scenarios. This repository keeps the code that writes and
+  reconciles them; `docs/deaths/POINTER.md` says where the cases live
+  and which seam serves both homes.
+- The seam is `BORG_DEATH_RECORDS_DIR`, already honoured by
+  `tools/export-death.py`, `tools/death_registry.py` and
+  `tools/reconcile-deaths.py`. **The export path and its defaults are
+  unchanged**, so no bulk migration happened and the CI reconcile gate
+  (RULES 12) is the same gate. The routing of exports is #273's, and
+  the move and the reconciliation are the other session's.
+- Two hazards are documented for that session, both found here:
+  - **the case ids collide.** Ours run `D0001`–`D2358`; the cemetery's
+    run `D0001`–`D0007` and mean *different deaths* by each id. A
+    directory copy would clobber the cemetery's seven cases. The
+    mapping has to be written down before the move; `encounter_family`
+    survives a renumbering.
+  - **the registry generator would overwrite the cemetery's index.**
+    `tools/death_registry.py` writes `index.json` and `README.md` into
+    the registry root. Both index files carry the same schema
+    (`borg-rs/death-index@1`) and key set, so a content check cannot
+    tell the registries apart; the guard has to be about which
+    directory the generator was pointed at.
+- `reference/deaths/INDEX.md` links our 2,338 cases to the cemetery and
+  keeps the copied reference registries local; `BORG_CEMETERY_URL` and
+  `BORG_DEATH_RECORDS_DIR` override the targets.
+- The registry's README notice lives in the generator's **template**,
+  not in the generated file: the generator rewrites `README.md` from
+  scratch, and a hand-written notice there was silently lost on the
+  next run. `tools/tests/test_death_registry.py` pins that it survives
+  a second regeneration.
+- AGENTS.md, RULES.md 12, README.md, docs/SPEC.md, docs/SOURCES.md,
+  reference/README.md and tools/README.md name the cemetery.
+- Checks pass: formatting, Clippy, 161 workspace tests, 19 scripts, 74
+  tools, 40 engine tests (16 environment skips). `tools/death_registry.py`
+  is idempotent and the reconcile gate resolves the registry.
+- The P1–P3 retrospective review, the track-p workflow review and the R1
+  review were also completed: `docs/REVIEW-259-P1-P3.md`,
+  `docs/REVIEW-260-WORKFLOW.md`, `docs/REVIEW-266-R1.md`, with the
+  findings posted on #259, #260 and #266 and filed as #269–#272.
 
 ## 2026-11-15: owner-requested /shopping (#208)
 
