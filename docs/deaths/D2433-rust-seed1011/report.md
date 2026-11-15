@@ -1,4 +1,4 @@
-# D2402-rust-seed1011: a cave spider at turn 18903
+# D2433-rust-seed1011: a cave spider at turn 18903
 
 Elf Mage, character level 2, depth 1 (max 1), seed 1011, implementation `rust`, flags `menu`.
 

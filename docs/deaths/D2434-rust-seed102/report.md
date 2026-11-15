@@ -1,4 +1,4 @@
-# D2403-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640
+# D2434-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640
 
 Elf Mage, character level 1, depth 1 (max 1), seed 102, implementation `rust`, flags `menu`.
 

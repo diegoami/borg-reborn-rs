@@ -2,7 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-<<<<<<< HEAD
+## 2026-11-15: complete loop-levels integration in #298
+
+- Main advanced to2bb9b72f (#297) during validation. Preserve its loop-levels
+  implementation, docs and tests, with no P change to that policy.
+- Its three additional independently allocated dossiers are imported as
+  D2433–D2435 with unchanged source/attempt identities. The same explicit
+  mapping now covers all nine imported recorder/loop cases.
+- Pre-loop sourcec4a38683 passed full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3 and47 engine tests (one skip); ten deaths are
+  D2423–D2432. Disk exhaustion prevented the first fixture launch, then a
+  fresh retry passed. Only regenerable caches were cleared.
+- Validate the combined source before #292's authorized promotion. Later
+  strict fear/budget work stays excluded. No experiment is launched.
+
 ## 2026-11-15: owner authorizes #292 promotion; synchronize main (#298)
 
 - The owner explicitly instructed "you can merge 292 and continue" after
@@ -51,7 +64,7 @@
 - Required CI remains the task integration gate. The owner authorized
   #260's earlier scope; this later task stays on track-p for its separate
   review/promotion decision. No population experiment was launched.
-=======
+
 ## 2026-11-15: owner-requested repeating level interval (#294)
 
 - `/loop-levels A B` explores every intermediate level in both directions:
@@ -88,7 +101,6 @@
   `/tmp/pr206-preserved-85429a831316`. #268's consumer dependency fix is a
   prerequisite here; no recorder implementation or engine gameplay changes
   are part of this errand.
->>>>>>> origin/main
 
 ## 2026-11-15: owner-requested completion of recorder dependency PR #268
 
