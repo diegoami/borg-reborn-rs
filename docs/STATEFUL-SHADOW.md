@@ -45,6 +45,15 @@ keeps its original schema/values; future telemetry must retain these explicit
 semantics or version a changed contract. Positive coverage of caution, escape and recovery is required;
 wall-helper comparisons cannot stand in for stateful comparisons.
 
+Use `harness/check-shadow.py --require-all-entries RUN_OR_SUITE` to require
+positive counts for all 11 public entries across the given runs, and verify
+that their sum agrees with subsystem counts. The `stateful-entries` suite
+isolates High-Elf Rogue 1063 at the existing 100,000-turn cap. It exercises
+rare `borg_caution_teleport` as well as all ten other entries; CI requires
+the strict gate separately for check and switch. Entry coverage does not
+prove every branch, successful action or real-carry change executes. The
+full R2 counts and focused fixture evidence are in R2-ENTRY-COVERAGE.json.
+
 The workspace intentionally uses panic=abort. An incompatible replay request,
 input state or result type writes a durable mismatch to shadow.jsonl, then
 stops with exit 2 before an unrecorded dependency can run. It does not invent

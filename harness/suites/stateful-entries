@@ -1,0 +1,5 @@
+# Targeted public-entry fixture from the unsealed R2 full suite.
+# All 11 public stateful entries, including the rare caution_teleport entry.
+# Positive entries do not prove branch coverage or v13 carry branch execution.
+# NAME SEED RACE CLASS TURNS FLAGS
+stateful-entries-rogue-1063 1063 9 6 100000 menu
