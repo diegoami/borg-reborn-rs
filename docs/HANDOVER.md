@@ -20,7 +20,8 @@
 - 318 core release tests pass (four existing ignored), 165 workspace tests,
   Clippy, formatting, generated bindings, 19 source-tool and 78 tool tests.
   Native C/Rust option ABI checks and all 13 profile/isolation tests pass.
-  Final engine/CI results are attached to PR #332 and M13-VALIDATION.json.
+  Final engine suite passes55 with one upstream-checkout comparison skipped.
+  CI results are attached to PR #332 and M13-VALIDATION.json.
 - M13-VALIDATION.json retains exact source/build/config/log identities for
   all150 validation attempt summaries, including the earlier smoke reporting
   failure (missing bc) and its separate successful rerun. Failed initial

@@ -16301,7 +16301,7 @@
     "Opt-in cases use the exact donor harness with each actual executable, so the effective town/trip configuration and its hash are recorded.",
     "The first receiver smoke attempt completed its games but failed suite reporting because bc was missing; the partial directory is retained.",
     "Source refresh reports missing reference checkouts; no general source pins were moved.",
-    "All 13 profile/isolation tests were subsequently run with the pinned Zoo checkout; reference-engine and recorded-perception fixtures remain outside this local check."
+    "Final engine suite passes 55 tests with one upstream-checkout comparison skipped because vendor/angband is absent. Profile/isolation and binding checks were run after installing their dependencies; no assertion was weakened."
   ],
   "validated_runtime_commit": "f67966a56b30b14004cb2c2b0ce787c4ca458fc2",
   "runtime_identity_note": "Receiving build records the precommit dirty checkout; its source_sha256 exactly matches the committed runtime inputs. Later evidence/index commits do not change those inputs.",
@@ -16316,8 +16316,6 @@
     "workspace_pass": 165,
     "script_tests_pass": 19,
     "tool_tests_pass": 78,
-    "engine_tests_pass": 40,
-    "engine_fixture_skips": 15,
     "c_abi_probe_pass": 1,
     "profile_isolation_pass": 13,
     "plan_replay_records": 656,
@@ -16330,7 +16328,11 @@
     "original_full_strict_matches": 45,
     "original_smoke_strict_matches": 3,
     "receiving_natural_death_dossiers": 44,
-    "donor_control_natural_death_dossiers": 12
+    "donor_control_natural_death_dossiers": 12,
+    "engine_initial_suite_pass": 40,
+    "engine_initial_suite_skips": 15,
+    "engine_final_suite_pass": 55,
+    "engine_final_suite_skips": 1
   },
   "death_dossiers": [
     {
