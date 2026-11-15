@@ -21,7 +21,8 @@
   and UTF-8 failures, with absent-file defaults; native startup tests prove
   no silent fallback. The wider legacy-reader/re-entry work remains #317.
 - BOM/CRLF are supported; oversized input reports size before UTF-8 errors.
-  Budget values match accepted main's exact unset/0/none semantics. Our new
+  Budget values match accepted main's unbounded zero/none semantics, including
+  signed/leading-zero spellings but excluding whitespace. Our new
   module is formatted for readability; shared donor code was not reformatted.
   Plan examples moved to harness/plans to separate them from BORG_PROFILE.
 - Initialization errors still exit 2; live unsaved-game recovery is not

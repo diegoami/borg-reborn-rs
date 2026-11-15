@@ -46,7 +46,7 @@ The POC has exactly **one errand: `loop-levels A B`**, reusing the existing
 implementation, spelling and readiness policy. Zero is town. `ladder`, `trips`,
 `loop-level` aliases and other errands are rejected in this file. The command
 name must be exactly lowercase `loop-levels`, without a slash or colon. Both
-endpoint orders are allowed: `loop-levels 5 3` explores downward first. This is the
+endpoint orders are allowed: `loop-levels 5 3` starts at DL5, explores DL4 then DL3, and returns. This is the
 minimum needed to test the model; extra commands must earn their place later.
 A phase has one command, not an arbitrary program.
 
@@ -92,8 +92,8 @@ before the preserved-plan acknowledgement is written. This is checked again
 on core reinitialization for another character. The chosen class is the actual game character's class.
 A requested plan with the original reborn backend is rejected rather than
 ignored. A nonempty automatic `BORG_ERRAND`/`borg_reborn_errand` conflicts with
-the plan. The POC also rejects `BORG_ERRAND_BUDGET` except absent, exact `0` or
-exact `none` (no whitespace); use the bounded
+the plan. The POC also rejects `BORG_ERRAND_BUDGET` except absent, a zero integer or
+exact `none` (no whitespace), matching the accepted main parser; use the bounded
 native diagnostic driver below. Unreadable/non-UTF-8 borg.txt is diagnosed when plan selection is consulted,
 not treated as an absent plan. Missing borg.txt retains absent defaults.
 Configuration errors exit 2 at Borg initialization, including in interactive

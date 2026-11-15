@@ -213,12 +213,14 @@ fn checked_setting(name: &str) -> Option<String> {
 }
 fn validate_budget(value: Option<&str>) -> Result<(), String> {
     match value {
-        None | Some("0" | "none") => Ok(()),
-        _ => {
-            Err("POC plans require BORG_ERRAND_BUDGET unset, 0 or none (without whitespace)".into())
-        }
+        None | Some("none") => Ok(()),
+        Some(value) if value.parse::<i64>().ok() == Some(0) => Ok(()),
+        _ => Err(
+            "POC plans require BORG_ERRAND_BUDGET unset, zero or none (without whitespace)".into(),
+        ),
     }
 }
+
 fn decode_plan(bytes: &[u8]) -> Result<&str, String> {
     if bytes.len() > 65536 {
         return Err("plan exceeds 64 KiB".into());
@@ -389,7 +391,14 @@ mod tests {
         large.push(0xff);
         assert_eq!(decode_plan(&large).unwrap_err(), "plan exceeds 64 KiB");
         assert!(decode_plan(&[0xff]).unwrap_err().contains("UTF-8"));
-        for v in [None, Some("0"), Some("none")] {
+        for v in [
+            None,
+            Some("0"),
+            Some("none"),
+            Some("+0"),
+            Some("-0"),
+            Some("000"),
+        ] {
             assert!(validate_budget(v).is_ok());
         }
         for v in ["", " 0 ", "-1", "1", "NONE"] {
