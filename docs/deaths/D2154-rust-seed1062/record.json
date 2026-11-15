@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2154-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 3,
+    "turn": 49147,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+    "git_dirty": "yes",
+    "source_sha256": "f49e1c2f0c7e045005f93185b06e32babfe9eb78454a9ca4bf4e67433c98bec2",
+    "binary_sha256": "2f922ac0bce67214231340cf14ee91a94ac0df66fb9ea378a8f2b644dccac3da",
+    "borg_txt_sha256": "3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/parameter-full/full-6-rogue-2",
+      "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+      "raw_sha256": {
+        "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+        "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+        "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+      },
+      "source_commit": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+      "binary_sha256": "2f922ac0bce67214231340cf14ee91a94ac0df66fb9ea378a8f2b644dccac3da"
+    }
+  ],
+  "encounter_family": "start-3a23bd818f3e6c9cc15673d90f151b5b5c75b2e075f47e3c0d64529b79fb5eb4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "63a73cddfcd27a906689e5b9afe650444455b4530df18651ed8e48d410e60cef",
+    "config.txt": "f818b05cf73d667805fc358ab8718a17f35a7844fcb25763762d3dff2fe0b361",
+    "depths.json": "73af7e2ebf7397375b9e6948fe653a90556e9954481b0a11f825947092ee4b45",
+    "params-core.json": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786",
+    "summary.json": "b91158908d86e52bcc238e43f3166637ec3d1d3e54a321ccd5040477a70cab71"
+  },
+  "investigation": null,
+  "issue": null
+}

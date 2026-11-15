@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2165-rust-seed101",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a snaga",
+  "terminal": {
+    "cause": "a snaga",
+    "dead": true,
+    "depth": 17,
+    "max_depth": 17,
+    "level": 4,
+    "turn": 12007,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 101,
+    "flags": "menu",
+    "git_rev": "6a6e6b7359876f8439c0b9b23d762fd7d0d38aca",
+    "git_dirty": "yes",
+    "source_sha256": "d10e013f79f1437bb43f08b2779e26b501d4885697fd5dc0466d5ad92f76d439",
+    "binary_sha256": "80cfac795611b1792436d5c1ce1f1313971324913081bc8d28020ea1c5262154",
+    "borg_txt_sha256": "0a39a4c4fb2cd56d4daea3dd06ae4dbb63fb71e7a24ee9c3a632a746dfcbdeba",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/parameter-merged-ladder",
+      "result_sha256": "5cdf971a95c3db0520838c8e91c29d2227cce086e3726eea0974f503296a4024",
+      "raw_sha256": {
+        "keys.log": "5cdf971a95c3db0520838c8e91c29d2227cce086e3726eea0974f503296a4024",
+        "messages.log": "1aad252884fa4d8712c222d72cf25ba0de1afff2e109dc9d951d255865ef8eea",
+        "state.log": "108cc3147f460d9b46ece0d580be8f7deba8469a0140907426b528533c786e61"
+      },
+      "source_commit": "6a6e6b7359876f8439c0b9b23d762fd7d0d38aca",
+      "binary_sha256": "80cfac795611b1792436d5c1ce1f1313971324913081bc8d28020ea1c5262154"
+    }
+  ],
+  "encounter_family": "start-0af8beba2384af2c3883d94c3bfaf4bc489f989e42d0c5cd522f9513edfdb4bc",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "1395331cf16345281c7824bd2b6b7907eb3736a7d6aaec490c509d900a49a573",
+    "config.txt": "0b402d14257b3e81db9b7ccfe16099aca445230cbec24932c8f595477a713a08",
+    "depths.json": "87814050b0a25b6dfa1c4ae5781f5bd5804d4e0cfbd6f6cd9939bb6f9020da5e",
+    "params-core.json": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786",
+    "summary.json": "ea49c6d58ebb463539b84ac00cccdef4e1b1357f810e1b5d4360072cea6d7766"
+  },
+  "investigation": null,
+  "issue": null
+}

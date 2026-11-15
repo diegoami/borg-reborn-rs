@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2172-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Human Priest",
+  "raw_cause": "a scout",
+  "terminal": {
+    "cause": "a scout",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 39470,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "-",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770",
+    "borg_txt_sha256": "b994b99efeccba1aa72fcccbfb2b594010b558dde3dc91a1916e5b8bead9020e",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/v12-full/full-3-priest-4",
+      "result_sha256": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+      "raw_sha256": {
+        "keys.log": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+        "messages.log": "e8d1cd646a94d3e3b8379b08371d34f45593bc462b54cea8789882b24763e0c6",
+        "state.log": "3c074b3c2ef27fafe450abe14601d172adb86f54e70f90fed75836b2a0d18b3a"
+      },
+      "source_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+      "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770"
+    }
+  ],
+  "encounter_family": "start-f96eee123d2c20c37e2c91ac26e9671e0dd3e88a156b4b660226643816cfac23",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "71ef40a60009a2aa39cc16b39a00c9d8618d56dc2207a89530eb811aedeb0c08",
+    "config.txt": "b8c77b5f78cd80ffa3f25651d9bddf8b1f7bb6e298f460d2cc679825ce0f61a4",
+    "summary.json": "8ce79d188ffa682e69099b7b8de60f6abf16d5060035e24af021f8b7d0fa04d2"
+  },
+  "investigation": null,
+  "issue": null
+}

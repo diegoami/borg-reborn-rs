@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2170-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 9547,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770",
+    "borg_txt_sha256": "94f240dca22046ee4c2b35bcd6625c563dcb594bfeb12bb865937d6f2a33589a",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/v12-full/full-2-druid-0",
+      "result_sha256": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+      "raw_sha256": {
+        "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+        "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+        "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+      },
+      "source_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+      "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770"
+    }
+  ],
+  "encounter_family": "start-0b21aadcc2906708405717fbaddd31098e0950cbe5e878e6507273f0ca2bafe0",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "71ef40a60009a2aa39cc16b39a00c9d8618d56dc2207a89530eb811aedeb0c08",
+    "config.txt": "0b02646137486cfb1599c309c9ac1a498b5a2c616480876d62240e156b80bbb7",
+    "summary.json": "b9042a9aecf33bf1f7fca11b38dbe38b7ae848a675ec6666d25bedb4d952a539"
+  },
+  "investigation": null,
+  "issue": null
+}

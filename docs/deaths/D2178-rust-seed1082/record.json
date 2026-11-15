@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2178-rust-seed1082",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a yellow mold",
+  "terminal": {
+    "cause": "a yellow mold",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 6,
+    "level": 8,
+    "turn": 75085,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1082,
+    "flags": "-",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770",
+    "borg_txt_sha256": "5f671ec41ef5d0ce4bb6e69ec3c30170e6b371d04eda53ec6e1d9b05abe6b849",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/v12-full/full-8-blackguard-2",
+      "result_sha256": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+      "raw_sha256": {
+        "keys.log": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+        "messages.log": "a7bb14404d245d86660c958b176c3f66e0eada41d5147cd68ef5db24304c3187",
+        "state.log": "16a262cb0071eced0548c489efd418d725082f19352eaf92d8235d4b7ccfd409"
+      },
+      "source_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+      "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770"
+    }
+  ],
+  "encounter_family": "start-3859a6ca60b31ec4b1fb302c6cbc37604e1e20f38a4b7c48a629c8b464f2c136",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "71ef40a60009a2aa39cc16b39a00c9d8618d56dc2207a89530eb811aedeb0c08",
+    "config.txt": "584c21928863b8a949783769b982751ebeb7ba5f069bdb2c832d981216a9692e",
+    "summary.json": "58f4fd4542a0cc49303b568a8d054c4c275995343722913727b913290daca5df"
+  },
+  "investigation": null,
+  "issue": null
+}
