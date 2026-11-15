@@ -294,3 +294,15 @@ The alternate program receives recorded dependency results on an owned Rust
 policy snapshot. Engine effects and RNG draws execute once. Every request,
 input state, final state and return must agree; nested dependencies preserve
 the active tape. STATEFUL-SHADOW.md gives the contract and failure behavior.
+
+
+## Track R migration status after R2 review
+
+Accepted R2 moves danger/caution/escape/recovery into borg-next with typed
+native-memory reads and a verified comparison boundary. Its policy structure
+is still native: it is the migration foundation for this architecture, not
+completion of the redesigned assessment, tactics or modes described above.
+Native/port policy carries currently require edits to both copies.
+[The R3 plan](R3-PLAN.md) separates cheap fresh typed access, attack/defence
+migration and later policy/modes work. It forbids caching reads across effects
+and makes no unmeasured performance or gameplay-improvement claim.
