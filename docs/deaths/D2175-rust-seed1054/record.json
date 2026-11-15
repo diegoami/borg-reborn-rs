@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2175-rust-seed1054",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 11486,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "-",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770",
+    "borg_txt_sha256": "5402f6fe7bde7d15c27f1b45e4c5ac52686c81eaa7bc4c0305b1e3245591097a",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/v12-full/full-5-paladin-4",
+      "result_sha256": "a87d41eb5dc306259cec1bdbf640b4fa5a5da6a4678d71c95dfe222763cffe0b",
+      "raw_sha256": {
+        "keys.log": "a87d41eb5dc306259cec1bdbf640b4fa5a5da6a4678d71c95dfe222763cffe0b",
+        "messages.log": "c6f2704b4e48e9153a60b0432ff895ba02913b016b9fc5d56ad520b4dde3705b",
+        "state.log": "d3b6c3f2c4d5948051a30d274aca53cef48d312e05b7ad76f842c77d89a31525"
+      },
+      "source_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+      "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770"
+    }
+  ],
+  "encounter_family": "start-4967a1bc9e4860a412754862d6f0cda090d0335a6595168ec3abeb7a6de87b2b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "71ef40a60009a2aa39cc16b39a00c9d8618d56dc2207a89530eb811aedeb0c08",
+    "config.txt": "4806d58167916e298aabd55dde493fce7100780ffff2eec81e9f2e2e10ca1142",
+    "summary.json": "2d00f03d6416218e224a03de4b46de22bb67e634cb4d7168ad0a962b5b17c750"
+  },
+  "investigation": null,
+  "issue": null
+}

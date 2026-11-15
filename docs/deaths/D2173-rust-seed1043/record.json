@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2173-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Human Necromancer",
+  "raw_cause": "a wild dog",
+  "terminal": {
+    "cause": "a wild dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 38617,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "-",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770",
+    "borg_txt_sha256": "509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/v12-full/full-4-necro-3",
+      "result_sha256": "1c78d7d5d0652d9f5c3124b0c9effd0fdadf7bc60192b3ee43a03e0cb2ab5130",
+      "raw_sha256": {
+        "keys.log": "1c78d7d5d0652d9f5c3124b0c9effd0fdadf7bc60192b3ee43a03e0cb2ab5130",
+        "messages.log": "bc58c459fc76e63c77868f500796d418bd3da55448d058bcd1926fda5d8e616e",
+        "state.log": "415a854b6aaa411bb2d11f65e183aaafc65799e10d2630f96f842831b5ef18a1"
+      },
+      "source_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+      "binary_sha256": "7b09256334d8f7a25ac8d04e1feb97de688b4bab0b7962bc5793a62d8f8e0770"
+    }
+  ],
+  "encounter_family": "start-e5935c6d19b8e52bd412e7cf4e684562ab8ed0b2489bf357fb3dd373ee027b33",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "71ef40a60009a2aa39cc16b39a00c9d8618d56dc2207a89530eb811aedeb0c08",
+    "config.txt": "a386432300e282d953d72392cee6ccc48317fcd9326ad7000edb8811a36417b2",
+    "summary.json": "0d4c7c4cfd48cc464860b7bf6966854e2f95ac0e39448693b2d2ebdc9401f111"
+  },
+  "investigation": null,
+  "issue": null
+}

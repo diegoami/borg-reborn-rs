@@ -49,6 +49,23 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # Track P (#219): exercise the vendored core's real initialization,
+      # not only the pure parser. Separate registry: its full decision trace
+      # is P1.4, while the original core's dossiers below require trace.jsonl.
+      - run: BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-params 1010 0 0 3000 menu
+      - run: |
+          python3 - <<'PYCORE'
+          import hashlib, json, pathlib
+          run = pathlib.Path('harness/out/core-params')
+          data = (run / 'params-core.json').read_bytes()
+          settings = json.loads(data)
+          assert settings and all(p['value'] == p['default'] and p['origin'] == 'default' for p in settings)
+          assert 'params_core_sha256=' + hashlib.sha256(data).hexdigest() in (run / 'config.txt').read_text()
+          PYCORE
+          if BORG_CORE=borg-rs BORG_PARAM_CAUTION_CLW_MIN_LOSS=101 harness/run.sh harness/out/core-invalid 1010 0 0 3000 menu; then
+            echo 'invalid core parameter was accepted'; exit 1
+          fi
+          grep -q 'caution_clw_min_loss: 101 outside 0..=100' harness/out/core-invalid/stderr.log
       # The build, the source list and the frontend's contract on the binary (TE.4).
       - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.

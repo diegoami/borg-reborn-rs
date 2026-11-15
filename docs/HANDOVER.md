@@ -2,6 +2,45 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+
+## 2026-11-15: track P, P1.1 (#219), calibration foundation
+
+- `borg-core/src/params.rs` defines 200 caution parameters with the v12
+  defaults, units, inclusive ranges, descriptions and pre-extraction source
+  lines (`726e04fa`). Initialization reads the environment over borg.txt
+  once, rejects invalid input loudly, and writes `params-core.json`.
+- The harness records its hash; dossiers preserve and hash the table, and
+  include it in encounter identity. CALIBRATION.md lists the catalogue and
+  the constants retained as game/representation data. Hooks are marked #219
+  in `borg_caution.rs`, `borg_init.rs` and `lib.rs` for a future refresh.
+- Main's errand fixes through `46d0b40e` were merged without changing their
+  code; the later documentation/vendoring-tool update through `c2c4e61d`
+  was also merged. The vendoring tool now recognizes params.rs as ours and
+  caution as hooked; `check` passes.
+- **Play parity:** full 45/45 against pinned borg-rs v12 `e6d13fc`, in
+  keys/messages/states; all shared game-summary fields agree. The standard
+  cross-repository diff still fails on three existing frontend telemetry
+  fields (our frontend reports 0/0/{} for the vendored core), documented in
+  [P1.1-VALIDATION.md](P1.1-VALIDATION.md). Full 45/45 against the earlier
+  main baseline passes the standard diff. Original-core smoke is 3/3;
+  a 20,000-turn ladder errand matches main exactly.
+- **Override evidence:** seed 1000 Human Warrior, only
+  `caution_flee_danger_hp_multiplier=0`: first key difference at turn 567,
+  first state-trace difference at turn 577. The move_max_hp=0 trial did not
+  change that seed and is retained as a negative functional check.
+- **Dossiers:** D2141–D2182 retain the measured validation deaths, including
+  intermediate builds and the donor suite's legacy-birth attempt. No natural
+  death is missing from the final run outputs. The core table is preserved.
+- **Remote CI:** the workflow is active, but no GitHub Actions runs are
+  attached to the PR; only GitGuardian has reported. The task PR remains
+  open until the repository's CI requirement can be met.
+- Rust tests (the CI recipe: release for borg-core), Clippy, formatting,
+  parser tests and Python tests pass. The initial baseline suite's timing
+  aggregation failed because bc was missing; it was rerun intact after
+  installing the utility locally. No suite condition was weakened.
+- Remaining P1 tasks are #220 (danger/escape), #221 (recovery) and #222
+  (the named decision trace). P2 and track R are not part of this change.
+
 ## 2026-11-14: two tracks, P (calibration) and R (the redesign epic)
 
 - **Owner:** both threads, side by side: the calibration workaround in

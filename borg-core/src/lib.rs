@@ -91,6 +91,8 @@ pub(crate) mod state;
 pub mod regress;
 // borg-reborn-rs (#208): the errands' API.
 pub mod shell;
+// borg-reborn-rs (#219): calibration registry.
+pub(crate) mod params;
 
 /// The `^Z` command of this core (borg-reborn-rs #207): the shell's
 /// `do_cmd_borg` calls it when `BORG_CORE=borg-rs` selects this core.

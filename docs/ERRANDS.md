@@ -73,3 +73,9 @@ ending (scared, aborted, the budget) drops the rest.
   takes it back.
 - **With no errand set and `/stopscared` off, nothing changes.** Every hook
   returns at once.
+
+## Calibration (track P)
+
+The vendored core's caution thresholds can be set independently of errands.
+See [CALIBRATION.md](CALIBRATION.md) for the registry, precedence, bounds
+and run/dossier output. Defaults retain the existing policy.
