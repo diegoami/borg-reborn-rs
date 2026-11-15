@@ -76,7 +76,7 @@ whatever the model.
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
     never inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in `docs/deaths/` or
+    registry, uploads it, and fails if a death is not in the registry or
     a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
     deaths of test-feature builds are not natural deaths of an arm and are
     kept apart.

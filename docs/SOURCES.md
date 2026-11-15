@@ -149,7 +149,7 @@ make and this one can.
 | Harness scripts | `harness/build.sh`, `run.sh`, `suite.sh`, `diff`, `suites/` | Same names and semantics; suites for the reborn Borg |
 | Engine boundary | `borg-rs/src/engine.rs` (~3,300 lines, the only `unsafe`) | Reused as the substrate's foundation |
 | Launchers and replay | `run-rust-borg.sh`, `start-borg.sh`, `run-borg-headless.py`, `replay-borg.py`, `produce_death.py`, `replay_next_death.py`, `tools/` | Same commands and options, pointed at the reborn Borg (M1–M3) |
-| Death records | `docs/deaths/`, `tools/record-death.py`, `aggregate-deaths.py` | Same format from the first natural death |
+| Death records | `docs/deaths/`, `tools/record-death.py`, `aggregate-deaths.py` | Same format from the first natural death. The canonical registry lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery) |
 | `BorgState` | `borg-rs/src/state.rs` | A reference for what the C Borg remembers; not our state model |
 
 ## S10: prior art outside Angband
