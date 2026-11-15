@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: stopscared validation complete (#295)
+
+- Source27d7f453 passes full45/45 v12 play parity,295,464 classified rows,
+  original smoke3/3/fixture,53 engine tests (one skip),155+4+5 original/
+  143 core tests (one ignored), Clippy/formatting and19/78 Python tests.
+  Three valid fear-setting controls match synchronized base byte for byte.
+- Preserve both source variants' ten deaths. Explicit ID map retains
+  pre-loop8f45f46b records atD2446–D2455; final deaths areD2456–D2465.
+  Both registries and identity/hash checks pass. P295-VALIDATION.md records
+  actual builds, compatibility limits and the infrastructure retries.
+- Task CI gates track-p merge. #292 promotion does not accept this later
+  task; a separate owner review/promotion remains required.
+
+## 2026-11-15: strict configured stopscared (#295), validation pending
+
+- Stacked on main synchronization #298. This task is excluded from the
+  owner-authorized #292 promotion and later integrates into track-p only.
+- Reject invalid/non-UTF-8 fear values with source/value diagnostics and
+  exit2. Preserve valid aliases, numeric1–1000, empty/none/default handling,
+  environment precedence and original-core isolation. Interactive shell
+  parsing is unchanged. Native/profile tests cover the real startup paths.
+- Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
+  evidence retention and task CI are pending. No experiment is launched.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full45/45 v12 play parity,295,464 named
