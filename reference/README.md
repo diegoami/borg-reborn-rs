@@ -42,7 +42,9 @@ The retired draft strategy manual (S12) had the same convention; its copy
 is in git history.
 
 `deaths/INDEX.md` is generated from the copies and from our own
-`docs/deaths/` by `scripts/refresh-sources.py`. Refresh everything with
+registry (recorded in [borg-cemetery](https://github.com/diegoami/borg-cemetery);
+the local copy is `docs/deaths/`, or `BORG_DEATH_RECORDS_DIR`) by
+`scripts/refresh-sources.py`. Refresh everything with
 `scripts/refresh-sources.py --update` (RULES 21); the copy rules are the
 `copies` section of `pins.json`.
 

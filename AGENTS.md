@@ -155,7 +155,7 @@ milestone. Name both in the review PR.
 | (removed) | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
 | `docs/ZOO-INTERFACE.md` | The contract borg-zoo's adapter calls: build, run, outputs (TE.7) |
 | `docs/QUERY-SURFACE.md` | Secondary goal Q (D12): the draft of `borg-mcp`, the MCP server through which language models query the Borg's judgement (query mode) or play a hosted game as a separate arm (play mode) |
-| `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
+| `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format. **The canonical registry lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery)**; `docs/deaths/POINTER.md` names the seam (`BORG_DEATH_RECORDS_DIR`) and where the cases now live |
 
 ## Local machine notes
 
