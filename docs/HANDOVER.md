@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R2 accepted; source gate follow-up #312
+
+- Owner accepted Claude Opus 5.5's non-blocking R2 review and authorized
+  merge/continuation. #302 is merged into the feature-only review ledger,
+  tagged r2; feature runtime stays at cee4c94. Main/global reviewed receive no R.
+- #312 checks all stateful Rust modules recursively, including mod.rs,
+  rejects the five reported bypasses, and narrowly matches only the existing
+  dispatch import/mana adapter. Tests cover new nested modules, extra raw
+  reads in mod.rs and altered adapters. It remains a syntactic aid requiring
+  manual dependency review, not a semantic proof.
+- No runtime source is changed here. The accepted R2 full-suite evidence and
+  its exact input hash remain applicable. Review follow-ups #313–#316 remain
+  tracked; #313 clarifies markers vs dependency requests before R3 planning.
+
 ## 2026-11-15: R2 exit evidence complete, feature-only review checkpoint
 
 - Danger #283 is merged; #291 completes caution, escape and recovery and the
