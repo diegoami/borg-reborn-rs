@@ -4,7 +4,7 @@ Bugs always take priority. Each natural death gets a curated dossier with its ac
 
 To comment, open **Discuss** beside the case below. The linked GitHub investigation is the durable feedback thread; suggestions are checked against evidence and linked to actions. See [the feedback process](FEEDBACK.md). Chat feedback is copied there before it is considered tracked.
 
-Dossiers: 19; distinct starting conditions: 16; recorded death process attempts: 27 (including repeats/reference variants). This registry is not a survival-rate estimate.
+Dossiers: 30; distinct starting conditions: 27; recorded death process attempts: 38 (including repeats/reference variants). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -27,6 +27,17 @@ Dossiers: 19; distinct starting conditions: 16; recorded death process attempts:
 | [D0017](D0017-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/403) | `5cd2258dd78d` | 2993630922 | poison | 1094860 | escaped Mirkwood spiders by Teleportation staff at 7 HP, then rested for Recall while poisoned with 9 CCW and Herbal Curing unused; fleeing-gated healing, retreat-before-escape order, CCW tier window and Speed gate; no reusable original-C defect established |
 | [D0018](D0018-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/401) | `5cd2258dd78d` | 2993630923 | a wild cat | 33471 | twitchy-fallback Phase spend, scary-level walking retreat from a faster monster, unidentified cures and starting/restock inventory; owner's verified manual branch from 33363 also dies; no reusable original-C defect established |
 | [D0019](D0019-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/406) | `5cd2258dd78d` | 2993630924 | a cutpurse | 8056 | scary-list flight, last Phase spent in a clear stair corridor, attack-before-pickup ignoring an adjacent dropped Phase Door, and starting inventory; owner's verified manual branch from 7703 survives by a lucky Phase to the stair corridor; no reusable original-C defect established |
+| [D0020](D0020-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630925 | poison | 92490 | unassessed |
+| [D0021](D0021-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630926 | Grip, Farmer Maggot's Dog | 10881 | unassessed |
+| [D0022](D0022-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630927 | poison | 6220 | unassessed |
+| [D0023](D0023-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630928 | a giant white ant | 122054 | unassessed |
+| [D0024](D0024-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630929 | an ironfist priest | 854813 | unassessed |
+| [D0025](D0025-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630930 | a clear icky thing | 46642 | unassessed |
+| [D0026](D0026-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630933 | a fatal wound | 70010 | unassessed |
+| [D0027](D0027-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630934 | starvation | 709990 | unassessed |
+| [D0028](D0028-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630935 | a soldier | 502176 | unassessed |
+| [D0029](D0029-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630937 | poison | 8050 | unassessed |
+| [D0030](D0030-collected/report.md) | [Discuss](https://github.com/diegoami/better-borg-c/issues/163) | `5cd2258dd78d` | 2993630938 | a wild cat | 2626 | unassessed |
 
 ## Aggregated actions
 

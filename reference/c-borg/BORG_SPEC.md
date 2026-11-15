@@ -23,8 +23,7 @@ example read from the source, so that a rebuild can recognise them. The
 examples are described by their code, not by finding number, and nothing in
 this document records whether any finding is open, fixed or disputed.
 
-**Scope:** the C Borg only. Nothing here describes the Neo TypeScript port
-or the Mandos derivative.
+**Scope:** the C Borg only. Nothing here describes the Neo TypeScript port.
 
 **Reading rules.**
 
