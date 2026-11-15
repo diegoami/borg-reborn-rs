@@ -11,6 +11,9 @@
   and the existing historical CI reconciliation guard remain unchanged. The
   cemetery owns catalogue/presentation updates; its historical index is not
   overwritten by the native registry formatter. No bulk dossier migration.
+- CI engine tests clear policy BORG_* variables; pointer discovery also finds
+  the pinned vendor/borg-cemetery checkout without that environment variable.
+  The test and all its assertions remain unchanged.
 - CI reads an immutable cemetery revision from death-tools-pin.txt and checks it
   out without a write credential. Local tools locate the sibling of the primary
   checkout or BORG_CEMETERY_DIR. No source/build inputs or gameplay changed.

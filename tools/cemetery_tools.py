@@ -15,6 +15,11 @@ def locate(repo):
         except (OSError, subprocess.CalledProcessError):
             primary = repo
         cemetery = primary.parent / 'borg-cemetery'
+        if not (cemetery / 'scripts/native/API_VERSION').is_file():
+            # CI tests deliberately clear policy BORG_* variables. Its pinned
+            # checkout is still discoverable without treating tooling as policy.
+            candidates = (repo / 'vendor/borg-cemetery', primary / 'vendor/borg-cemetery')
+            cemetery = next((p for p in candidates if (p / 'scripts/native/API_VERSION').is_file()), cemetery)
     api = cemetery / 'scripts/native/API_VERSION'
     if not api.is_file() or api.read_text().strip() != '1':
         raise RuntimeError('The death tools now live in borg-cemetery. Update/clone https://github.com/diegoami/borg-cemetery beside this repository, or set BORG_CEMETERY_DIR to its checkout (death-tool API 1 required).')

@@ -32,6 +32,16 @@ class CemeteryPointerTest(unittest.TestCase):
             with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch('cemetery_tools.subprocess.check_output', return_value=str(root / 'borg-reborn-rs/.git') + '\n'):
                 self.assertEqual(locate(root / 'borg-reborn-rs/.worktrees/task'), root / 'borg-cemetery')
 
+    def test_ci_pin_is_found_when_policy_environment_is_cleared(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            repo = root / 'source'
+            native = repo / 'vendor/borg-cemetery/scripts/native'
+            native.mkdir(parents=True)
+            (native / 'API_VERSION').write_text('1\n')
+            with patch.dict(os.environ, BORG_CEMETERY_DIR=''), patch('cemetery_tools.subprocess.check_output', return_value=str(repo / '.git') + '\n'):
+                self.assertEqual(locate(repo), repo / 'vendor/borg-cemetery')
+
     def test_forwarded_functions_keep_the_actual_consumer_context(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
