@@ -15,9 +15,16 @@
 - Document implicit factor-1 source citations without moving them to the
   adjacent factor-3 branch, qualify RNG preservation at defaults, remove
   a stale retained-literal claim, and document strict name casing.
-- Validation, evidence recovery and final review pin are pending. Do not
-  run CORE-SWEEP.md until its source pin is refreshed after these fixes.
-  No owner acceptance or promotion to main is implied.
+- Validated source `4182670d` at implementation pin `132aeb26`: full45/45
+  v12 play parity,295,464 named rows, trace on/off, original smoke3/3,
+  native profile5/5, engine42 (one skip), required Rust and17/70 Python
+  checks pass. P-REVIEW-VALIDATION.md records limits and input changes.
+- Reproduced old-source original-core full45/45; preserved30 new deaths
+  D2359–D2388 plus existing D2355. Updated build's ten deaths are
+  D2389–D2398; both registries reconcile. Actual build identities retained.
+- Sweep prompt/examples now pin `132aeb26`, with pinned-catalogue validation.
+  Required CI must pass before track-p integration. Owner acceptance of
+  #259/#260 is still pending; no promotion or population run is authorized.
 
 ## 2026-11-15: review #260 follow-up (#274)
 
