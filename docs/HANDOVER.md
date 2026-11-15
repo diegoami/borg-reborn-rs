@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: reviewed P349 synchronization (#360)
+
+- Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
+  The review reports 88 tool tests, script tests, all 2,547 archive cases
+  and real mode/umask imports. Required CI and P342 play evidence were
+  taken on trust; do not describe the later combined head as independently
+  re-reviewed. The accepted runtime changes in main remain separate evidence.
+- Merge main 7022017e (#355 safety fix) into track-p, retaining both handover
+  sections. This is the sole merge conflict. Runtime inputs and archive
+  packets remain byte-identical to that accepted main; the reviewed P
+  importer, tests, ignore rule and guidance remain intact.
+- #358 tracks source/umask bounds for published directories (including the
+  world-writable source case); #359 tracks read-only staging cleanup after
+  failed rename. Both are nonblocking follow-ups after this promotion.
+  No follow-up implementation is slipped into the reviewed pin.
+- Local checks pass: 88 tool tests, 19 source-tool tests, all 2,553
+  archive packages, vendor audit, formatting and Clippy. Required Rust
+  tests and sync CI must pass before integration and promotion.
+  #341's fresh-donor baseline audit follows this gate; it must distinguish
+  historical M13 parity from #355's intentional later policy changes.
+
+
 ## 2026-11-15: owner-directed wild-cat survival fix (#350)
 
 - The original PlanMage GUI recording was replayed with its frozen binary;
@@ -34,6 +56,25 @@
 - Recorder-owned rolling save retention and turn-based read-only viewing
   are developed separately in angband-recorder; do not silently replace the
   pinned vendor or claim live Borg memory is restored by a native save.
+
+
+## 2026-11-15: import guidance and staging follow-up (#333)
+
+- Generic AGENTS.md guidance now applies to every track. Clarify that the
+  legacy guarantee covers the full record and declared payload files;
+  undeclared analysis/extra files are outside it. Qualified packets remain
+  immutable in every file. No evidence or inventory is rewritten.
+- Keep staging private while incomplete; publish with the source directory's
+  ordinary access bits, respecting private sources. Files keep process-umask
+  limits as well as source-file access; generated metadata follows the source
+  record's limits. Re-import does not alter existing access. Ignore abandoned
+  historical staging directories without deleting another process's work.
+- All 88 tool tests and 19 script tests pass, including publication modes
+  0750/0700 and immutable payload verification. All 2,547 archive cases
+  verify; staging ignore is checked. Game inputs remain exactly #342 source
+  87717140, so its Rust/native/play evidence applies. Required CI is pending.
+  Prepared separately from #331/#346; integrate only after that promotion,
+  then open a separate pinned milestone review before main.
 
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
