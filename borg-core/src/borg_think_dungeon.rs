@@ -24,7 +24,6 @@
 // borg-reborn-rs (#222): one selected-check hook per successful return.
 use crate::core_trace::choice;
 use crate::borg::BorgTime;
-use crate::borg_attack_munchkin::{borg_munchkin_mage, borg_munchkin_melee};
 use crate::borg_caution::borg_caution;
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{borg_allow_teleport, borg_dimension_door, borg_recall, borg_shadow_shift};
@@ -38,11 +37,11 @@ use crate::borg_flow_kill::{
     borg_flow_kill_direct, borg_near_monster_type,
 };
 use crate::borg_flow_misc::{
-    borg_check_rest, borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
+    borg_flow_recover, borg_flow_shop_entry, borg_flow_spastic, borg_flow_vault,
     borg_flow_vein, borg_twitchy,
 };
 use crate::borg_flow_stairs::{borg_flow_stair_both, borg_flow_stair_less, borg_flow_stair_more};
-use crate::borg_flow_take::{borg_delete_take, borg_flow_take, borg_flow_take_lunal};
+use crate::borg_flow_take::{borg_delete_take, borg_flow_take};
 use crate::borg_io::{borg_keypress, borg_note, ESCAPE, KC_ENTER};
 use crate::borg_item_enchant::borg_enchanting;
 use crate::borg_item_use::{
@@ -59,9 +58,9 @@ use crate::borg_light::{borg_check_light, borg_light_beam, borg_maintain_light, 
 use crate::borg_magic::borg_spell;
 use crate::borg_magic_play::borg_play_magic;
 use crate::borg_prepared::borg_must_return_to_town;
-use crate::borg_projection::borg_projectable;
 use crate::borg_recover::borg_recover;
 use crate::borg_store_sell::borg_count_sell;
+use crate::borg_trip;
 use crate::borg_think_dungeon_util::{
     borg_excavate_vault, borg_leave_level, borg_money_scum, borg_think_dungeon_light,
     borg_think_stair_scum,
@@ -70,14 +69,12 @@ use crate::borg_think_store::borg_choose_shop;
 use crate::borg_trait::borg_notice;
 use crate::engine;
 use crate::borg_headers::borg_h::{
-    BORG_DELAY_FACTOR, BORG_MONEY_SCUM_AMOUNT, BORG_MUNCHKIN_DEPTH, BORG_MUNCHKIN_START,
-    BORG_PLAYS_RISKY, BORG_SELF_LUNAL,
+    BORG_DELAY_FACTOR, BORG_MONEY_SCUM_AMOUNT, BORG_PLAYS_RISKY,
 };
 use crate::borg_headers::borg_magic_h::{PHASE_DOOR, PORTAL, TELEPORT_SELF};
 use crate::borg_headers::borg_trait_h::{
     BI_AGLYPH, BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_GOLD, BI_ISBLIND,
-    BI_ISCONFUSED, BI_ISCUT, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISWEAK, BI_KING, BI_LIGHT,
-    BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_RECALL,
+    BI_ISCONFUSED, BI_ISCUT, BI_ISPOISONED, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXHP, BI_MAXSP, BI_QUIVER_SLOTS, BI_RECALL,
 };
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_flags_h::PF_COMBAT_REGEN;
@@ -138,11 +135,6 @@ fn inven_wield() -> usize {
     usize::from(engine::z_info().pack_size)
 }
 
-/// `INVEN_LIGHT` (`z_info->pack_size + 5`).
-fn inven_light() -> usize {
-    usize::from(engine::z_info().pack_size) + 5
-}
-
 /// `borg_items[PACK_SLOTS - back].iqty` (`PACK_SLOTS` is
 /// `z_info->pack_size - borg.trait[BI_QUIVER_SLOTS]`). A negative index
 /// panics (C reads before `borg_items`).
@@ -168,95 +160,15 @@ fn prepared_null(st: &mut BorgState, depth: i32) -> bool {
     crate::borg_prepared::borg_prepared_buf(st, depth).is_none()
 }
 
-/// `track_more` or `track_less` (borg-flow-stairs.c).
-#[derive(Clone, Copy)]
-enum Stairs {
-    More,
-    Less,
-}
-
-fn stairs(st: &BorgState, which: Stairs) -> &crate::borg_flow_stairs::StairTrack {
-    match which {
-        Stairs::More => &st.stairs.more,
-        Stairs::Less => &st.stairs.less,
-    }
-}
-
-fn stairs_mut(st: &mut BorgState, which: Stairs) -> &mut crate::borg_flow_stairs::StairTrack {
-    match which {
-        Stairs::More => &mut st.stairs.more,
-        Stairs::Less => &mut st.stairs.less,
-    }
-}
-
-/// The start of `borg_think_dungeon_lunal`/`_munchkin`: if the game shows
-/// a staircase under the Borg that its map does not, add it to the stair
-/// list and the map (`ag` is the Borg's grid).
-fn track_stairs_under(st: &mut BorgState, feat: u32, ax: i32, ay: i32) {
-    if feat == FEAT_MORE && feat_at(st, ax, ay) != FEAT_MORE {
-        /* Check for an existing "down stairs" */
-        let mut i = 0;
-        while i < i32::from(st.stairs.more.num) {
-            /* We already knew about that one */
-            if st.stairs.more.x[i as usize] == st.borg.c.x
-                && st.stairs.more.y[i as usize] == st.borg.c.y
-            {
-                break;
-            }
-            i += 1;
-        }
-
-        /* Track the newly discovered "down stairs" */
-        track_stair(st, Stairs::More, i);
-
-        /* tell the array */
-        st.cave.grid_mut(ax, ay).feat = FEAT_MORE as u8;
-    }
-
-    if feat == FEAT_LESS && feat_at(st, ax, ay) != FEAT_LESS {
-        /* Check for an existing "up stairs": C's loop `continue`s instead
-         * of `break`ing, so it always ends at the end of the list (C bug
-         * 47, the same loop as in borg_think_stair_scum) */
-        let i = i32::from(st.stairs.less.num).max(0);
-
-        /* Track the newly discovered "up stairs" */
-        track_stair(st, Stairs::Less, i);
-
-        /* Tell the array */
-        st.cave.grid_mut(ax, ay).feat = FEAT_LESS as u8;
-    }
-}
-
-/// "Track the newly discovered stairs": append the Borg's grid as entry
-/// `i` if `i` is the end of the list and there is room.
-fn track_stair(st: &mut BorgState, which: Stairs, i: i32) {
-    let c = st.borg.c;
-    let t = stairs_mut(st, which);
-    if i == i32::from(t.num) && i < i32::from(t.size) {
-        t.x[i as usize] = c.x;
-        t.y[i as usize] = c.y;
-        t.num += 1;
-    }
-}
-
-/// The distance to the nearest stair of the list, starting from the best
-/// distance `b_j` found so far (-1 = none). With `projectable`, stairs the
-/// Borg cannot project to are skipped ("Is it reachable or behind a
-/// wall?").
-fn nearest_stair(st: &mut BorgState, which: Stairs, mut b_j: i32, projectable: bool) -> i32 {
-    let mut i = 0;
-    while i < i32::from(stairs(st, which).num) {
-        let t = stairs(st, which);
-        let (x, y) = (t.x[i as usize], t.y[i as usize]);
-        i += 1;
-
+/// The distance to the nearest up staircase, starting from the best
+/// distance `b_j` found so far (-1 = none). (The lunal and munchkin
+/// thinkers also scanned the down list and skipped stairs they could not
+/// project to; they were removed, borg-rs#60.)
+fn nearest_up_stair(st: &BorgState, mut b_j: i32) -> i32 {
+    let t = &st.stairs.less;
+    for i in 0..usize::try_from(t.num).unwrap_or(0) {
         /* How far is the nearest stairs */
-        let j = engine::distance(st.borg.c, loc { x, y });
-
-        /* Is it reachable or behind a wall? */
-        if projectable && !borg_projectable(st, y, x, st.borg.c.y, st.borg.c.x) {
-            continue;
-        }
+        let j = engine::distance(st.borg.c, loc { x: t.x[i], y: t.y[i] });
 
         /* skip the far ones */
         if b_j <= j && b_j != -1 {
@@ -295,669 +207,6 @@ fn start_leaving_fleeing(st: &mut BorgState, why: &str) {
 fn check_light_for_doors(st: &mut BorgState) -> bool {
     (st.borg.time.detect_doors == 0 || borg_timer(st, st.borg.time.detect_doors) >= 500)
         && borg_check_light(st)
-}
-
-/// This is an exploitation function.  The borg will stair scum
-/// in the dungeon to get to the bottom of the dungeon asap.
-/// Once down there, he can be told to do something.
-///
-/// Dive if stairs are close and safe.
-/// Retreat off level if monster has LOS to borg.
-/// Fill Lantern
-/// Eat food
-/// Call light.  might be dangerous because monster get a chance to hit us.
-fn borg_think_dungeon_lunal(st: &mut BorgState) -> bool {
-    let mut b_j = -1;
-
-    /* `ag`: the Borg's grid at the start */
-    let (ax, ay) = (st.borg.c.x, st.borg.c.y);
-
-    let feat = u32::from(engine::square_feat(st.borg.c.x, st.borg.c.y));
-
-    /* examine equipment and swaps */
-    borg_notice(st, true);
-
-    /* No Lunal mode if starving or in town */
-    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.tr(BI_ISWEAK) != 0 {
-        borg_note(st, "# Leaving Lunal Mode. (Town or Weak)");
-        st.borg.lunal_mode = false;
-        return false;
-    }
-
-    /* if borg is just starting on this level, he may not
-     * know that a stair is under him.  Cheat to see if one is
-     * there
-     */
-    track_stairs_under(st, feat, ax, ay);
-
-    /* Act normal on 1 unless stairs are seen*/
-    if st.borg.tr(BI_CDEPTH) == 1 && st.stairs.more.num == 0 {
-        st.borg.lunal_mode = false;
-        return false;
-    }
-
-    /* If no down stair is known, act normal */
-    if st.stairs.more.num == 0 && st.stairs.less.num == 0 {
-        borg_note(st, "# Leaving Lunal Mode. (No Stairs seen)");
-        st.borg.lunal_mode = false;
-        return false;
-    }
-
-    /* If self scumming and getting closer to zone, act normal */
-    if st.cfg(BORG_SELF_LUNAL) != 0
-        && (st.borg.tr(BI_MAXDEPTH) <= st.borg.tr(BI_CDEPTH) + 15
-            || {
-                let d = st.borg.tr(BI_CDEPTH) - 5;
-                !prepared_null(st, d)
-            }
-            || st.borg.tr(BI_CDEPTH) >= 50
-            || st.borg.tr(BI_CDEPTH) == 0
-            || st.borg.tr(BI_ISWEAK) != 0)
-    {
-        st.borg.lunal_mode = false;
-        st.borg.goal.fleeing = false;
-        st.borg.goal.fleeing_lunal = false;
-        borg_note(st, "# Self Lunal mode disengaged normally.");
-        return false;
-    }
-
-    /* First deal with staying alive */
-
-    /* Require light */
-    let need = borg_maintain_light(st);
-    if need == BorgNeed::MetNeed {
-        return true;
-    } else if need == BorgNeed::UnmetNeed {
-        borg_note(st, "# Lunal. (need fuel)");
-    }
-
-    /* No Light at all */
-    if st.borg.tr(BI_LIGHT) == 0 && st.items.items[inven_light()].tval == 0 {
-        borg_note(st, "# No Light at all.");
-        return false;
-    }
-
-    /* Define if safe_place is true or not */
-    let safe_place = borg_check_rest(st, st.borg.c.y, st.borg.c.x);
-
-    /* Recover from any nasty condition */
-    if safe_place && borg_recover(st) {
-        return true;
-    }
-
-    /* Consume needed things */
-    if safe_place && borg_use_things(st) {
-        return true;
-    }
-
-    /* Consume needed things */
-    if st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
-        return true;
-    }
-
-    /* Crush junk if convenient */
-    if safe_place && borg_drop_junk(st) {
-        return true;
-    }
-
-    /* Track down some interesting gear */
-    /* Continue flowing towards objects */
-    if safe_place && borg_flow_old(st, GOAL_TAKE) {
-        return true;
-    }
-
-    /* Find a (viewable) object */
-    if safe_place && borg_flow_take_lunal(st, true, 4) {
-        return true;
-    }
-
-    /*leave level right away. */
-    borg_note(st, "# Fleeing level. Lunal Mode");
-    st.borg.goal.fleeing_lunal = true;
-    st.borg.goal.fleeing = true;
-
-    /* Full of Items - Going up */
-    if st.stairs.less.num != 0
-        && pack_slot_iqty(st, 2) != 0
-        && (safe_place || feat_at(st, ax, ay) == FEAT_MORE || feat_at(st, ax, ay) == FEAT_LESS)
-    {
-        let mut closeness = 8;
-
-        /* `tmp_ag`: the Borg's grid */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Check for an existing "up stairs" */
-        b_j = nearest_stair(st, Stairs::Less, b_j, false);
-
-        /* if on depth 1, try to venture more to get back to town */
-        if st.borg.tr(BI_CDEPTH) == 1 && st.stairs.less.num != 0 {
-            closeness = 20;
-        }
-
-        /* if the upstair is close and safe path, continue */
-        if (b_j < closeness && safe_place) || feat_at(st, tx, ty) == FEAT_LESS {
-            /* Note */
-            borg_note(st, "# Lunal Mode.  Power Climb (needing to sell). ");
-
-            /* Set to help borg move better */
-            st.borg.goal.less = true;
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to UpStair */
-            if borg_flow_stair_less(st, GOAL_FLEE, false) {
-                borg_note(st, "# Looking for stairs. Lunal Mode (needing to sell).");
-
-                /* Success */
-                return true;
-            }
-
-            if feat_at(st, tx, ty) == FEAT_LESS && !force_descend() {
-                /* Take the Up Stair */
-                borg_keypress(st, key(b'<'));
-                return true;
-            }
-        }
-    }
-
-    /* Lunal Mode - Going down */
-    if st.stairs.more.num != 0
-        && (safe_place
-            || feat_at(st, ax, ay) == FEAT_MORE
-            || feat_at(st, ax, ay) == FEAT_LESS
-            || st.borg.tr(BI_CDEPTH) < 30)
-    {
-        if st.stairs.more.num >= 2 {
-            borg_note(st, "# Lunal Mode: I know of a down stair.");
-        }
-
-        /* Check for an existing "down stairs" (`b_j` carries over from
-         * the up-stair scan, C bug 49) */
-        b_j = nearest_stair(st, Stairs::More, b_j, false);
-
-        /* if the downstair is close and path is safe, continue on */
-        if (b_j < 8 && safe_place)
-            || feat_at(st, ax, ay) == FEAT_MORE
-            || st.borg.tr(BI_CDEPTH) < 30
-        {
-            /* Note */
-            borg_note(st, "# Lunal Mode.  Power Diving. ");
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to DownStair */
-            if borg_flow_stair_more(st, GOAL_FLEE, true, false) {
-                return true;
-            }
-
-            /* if standing on a stair */
-            if feat_at(st, ax, ay) == FEAT_MORE {
-                /* Take the downstairs */
-                borg_keypress(st, key(b'>'));
-
-                return true;
-            }
-        }
-    }
-
-    /* Lunal Mode - Going up */
-    if st.stairs.less.num != 0
-        && st.borg.tr(BI_CDEPTH) != 1
-        && (safe_place || feat_at(st, ax, ay) == FEAT_MORE || feat_at(st, ax, ay) == FEAT_LESS)
-    {
-        /* `tmp_ag`: the Borg's grid */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Check for an existing "up stairs" (`b_j` carries over, C bug
-         * 49) */
-        b_j = nearest_stair(st, Stairs::Less, b_j, false);
-
-        /* if the upstair is close and safe path, continue */
-        if (b_j < 8 && safe_place) || feat_at(st, tx, ty) == FEAT_LESS {
-            /* Note */
-            borg_note(st, "# Lunal Mode.  Power Climb. ");
-
-            /* Set to help borg move better */
-            st.borg.goal.less = true;
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to UpStair */
-            if borg_flow_stair_less(st, GOAL_FLEE, false) {
-                borg_note(st, "# Looking for stairs. Lunal Mode.");
-
-                /* Success */
-                return true;
-            }
-
-            if feat_at(st, tx, ty) == FEAT_LESS && !force_descend() {
-                /* Take the Up Stair */
-                borg_keypress(st, key(b'<'));
-                return true;
-            }
-        }
-    }
-
-    /* Special case where the borg is off a stair and there
-     * is a monster in LOS.  He could freeze and unhook, or
-     * move to the closest stair and risk the run.
-     */
-    if st.borg.tr(BI_CDEPTH) >= 2 {
-        /* Continue fleeing to stair */
-        if borg_flow_old(st, GOAL_FLEE) {
-            return true;
-        }
-
-        /* Note */
-        borg_note(st, "# Lunal Mode.  Any Stair. ");
-
-        /* Try to find some stairs */
-        if borg_flow_stair_both(st, GOAL_FLEE, true) {
-            return true;
-        }
-    }
-
-    /* Lunal Mode - Reached 99 */
-    if st.borg.tr(BI_CDEPTH) == 99 {
-        borg_note(st, "# Lunal Mode ended at depth.");
-    }
-
-    /* Unable to do it */
-    if st.borg.tr(BI_CDEPTH) > 1 {
-        borg_note(st, "# Lunal Mode ended incorrectly.");
-    }
-
-    /* return to normal borg_think_dungeon */
-    borg_note(st, "Leaving Lunal Mode. (End of Lunal Mode)");
-    st.borg.lunal_mode = false;
-    st.borg.goal.fleeing_lunal = false;
-    st.borg.goal.fleeing = false;
-    false
-}
-
-/// The "Power Climb" step of munchkin mode: flow to an up staircase, or
-/// take the one under the Borg (`tmp_ag` at `(tx, ty)`).
-fn munchkin_climb(st: &mut BorgState, tx: i32, ty: i32, note: &str, looking: &str) -> bool {
-    /* Note */
-    borg_note(st, note);
-
-    /* Set to help borg move better */
-    st.borg.goal.less = true;
-
-    /* Continue leaving the level */
-    if borg_flow_old(st, GOAL_FLEE) {
-        return true;
-    }
-
-    /* Flow to UpStair */
-    if borg_flow_stair_less(st, GOAL_FLEE, true) {
-        borg_note(st, looking);
-
-        /* Success */
-        return true;
-    }
-
-    if feat_at(st, tx, ty) == FEAT_LESS && !force_descend() {
-        /* Take the Up Stair */
-        borg_keypress(st, key(b'<'));
-        return true;
-    }
-    false
-}
-
-/// This is an exploitation function.  The borg will stair scum
-/// in the dungeon to get to a sweet spot to gather items.
-///
-/// Dive if stairs are close and safe.
-/// Retreat off level if monster has LOS to borg.
-/// Fill Lantern
-/// Eat food
-/// Call light.  might be dangerous because monster get a chance to hit us.
-fn borg_think_dungeon_munchkin(st: &mut BorgState) -> bool {
-    /* (C's `bb_j`, the nearest reachable up stair of the "too deep" scan,
-     * is computed but never read) */
-    let mut b_j = -1;
-    let mut closeness = 8;
-
-    /* `ag`: the Borg's grid, until the adjacent-monster scan below moves
-     * it to the last neighbour it looks at (C bug 49) */
-    let (mut ax, mut ay) = (st.borg.c.x, st.borg.c.y);
-
-    let feat = u32::from(engine::square_feat(st.borg.c.x, st.borg.c.y));
-
-    /* examine equipment and swaps */
-    borg_notice(st, true);
-
-    /* Not if starving or in town */
-    if st.borg.tr(BI_CDEPTH) == 0 || st.borg.tr(BI_ISWEAK) != 0 {
-        borg_note(st, "# Leaving munchkin Mode. (Town or Weak)");
-        st.borg.munchkin_mode = false;
-        return false;
-    }
-
-    /* Not while poisoned or hallucinating. Stair travel does not age the
-     * world clock (level entry grants minimum move energy and the world
-     * tick is skipped during level generation), so these timed ailments
-     * can never wear off while the borg shuttles between stairs. Leave
-     * them to the ordinary recovery path, which ages turns normally. */
-    if st.borg.tr(BI_ISPOISONED) != 0 || st.borg.tr(BI_ISIMAGE) != 0 {
-        borg_note(st, "# Leaving munchkin Mode. (Poisoned or Hallucinating)");
-        st.borg.munchkin_mode = false;
-        return false;
-    }
-
-    /* if borg is just starting on this level, he may not
-     * know that a stair is under him.  Cheat to see if one is
-     * there
-     */
-    track_stairs_under(st, feat, ax, ay);
-
-    /* Act normal on 1 unless stairs are seen*/
-    if st.borg.tr(BI_CDEPTH) == 1 && st.stairs.more.num == 0 {
-        st.borg.munchkin_mode = false;
-        return false;
-    }
-
-    /* If no down stair is known, act normal */
-    if st.stairs.more.num == 0 && st.stairs.less.num == 0 {
-        borg_note(st, "# Leaving Munchkin Mode. (No Stairs seen)");
-        st.borg.munchkin_mode = false;
-        return false;
-    }
-
-    /* First deal with staying alive */
-
-    /* Require light */
-    let need = borg_maintain_light(st);
-    if need == BorgNeed::MetNeed {
-        return true;
-    } else if need == BorgNeed::UnmetNeed {
-        borg_note(st, "# Munchkin. (need fuel)");
-    }
-
-    /* No Light at all */
-    if st.borg.tr(BI_LIGHT) == 0 {
-        borg_note(st, "# No Light at all.");
-    }
-
-    /* Define if safe_place is true or not */
-    let safe_place = borg_check_rest(st, st.borg.c.y, st.borg.c.x);
-
-    /* Can do a little attacking. */
-    if borg_munchkin_mage(st) {
-        return true;
-    }
-    if borg_munchkin_melee(st) {
-        return true;
-    }
-
-    /* Consume needed things */
-    if safe_place && borg_use_things(st) {
-        return true;
-    }
-
-    /* Consume needed things */
-    if st.borg.tr(BI_ISHUNGRY) != 0 && borg_use_things(st) {
-        return true;
-    }
-
-    /* Wear stuff and see if it's good */
-    if safe_place && borg_wear_stuff(st) {
-        return true;
-    }
-
-    if safe_place && borg_remove_stuff(st) {
-        return true;
-    }
-
-    /* Crush junk if convenient */
-    if safe_place && borg_drop_junk(st) {
-        return true;
-    }
-
-    /* Learn learn and test useful spells */
-    if safe_place && borg_play_magic(st, true) {
-        return true;
-    }
-
-    /* Track down some interesting gear */
-    /* Continue flowing towards objects */
-    if borg_flow_old(st, GOAL_TAKE) {
-        return true;
-    }
-
-    /* Borg may be off the stair and a monster showed up. */
-
-    /* Find a (viewable) object */
-    if safe_place && borg_flow_take_lunal(st, true, 5) {
-        return true;
-    }
-
-    /* Recover from any nasty condition */
-    if safe_place && borg_recover(st) {
-        return true;
-    }
-
-    /*leave level right away. */
-    borg_note(st, "# Fleeing level. Munchkin Mode");
-    st.borg.goal.fleeing_munchkin = true;
-    st.borg.goal.fleeing = true;
-
-    /* Increase the range of the borg a bit.  Only when the character
-     * level term can be positive: below level 10 it would shrink the range. */
-    if st.borg.tr(BI_CDEPTH) <= 10 && st.borg.tr(BI_CLEVEL) > 10 {
-        closeness += (st.borg.tr(BI_CLEVEL) - 10) + (10 - st.borg.tr(BI_CDEPTH));
-    }
-
-    /* Full of Items - Going up */
-    if st.stairs.less.num != 0
-        && pack_slot_iqty(st, 2) != 0
-        && (safe_place || feat_at(st, ax, ay) == FEAT_LESS || st.borg.tr(BI_LIGHT) == 0)
-    {
-        /* `tmp_ag`: the Borg's grid */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Check for an existing "up stairs" */
-        b_j = nearest_stair(st, Stairs::Less, b_j, true);
-
-        /* if on depth 1, try to venture more to get back to town */
-        if st.borg.tr(BI_CDEPTH) == 1 && st.stairs.less.num != 0 {
-            closeness = 20;
-        }
-
-        /* if the upstair is close and safe path, continue */
-        if ((b_j < closeness && safe_place) || feat_at(st, tx, ty) == FEAT_LESS)
-            && munchkin_climb(
-                st,
-                tx,
-                ty,
-                "# Munchkin Mode.  Power Climb (needing to sell). ",
-                "# Looking for stairs. Munchkin Mode (needing to sell).",
-            )
-        {
-            return true;
-        }
-    }
-
-    /* Too deep. trying to gradually move shallow.  Going up */
-    if (st.stairs.less.num != 0 && st.borg.tr(BI_CDEPTH) > st.cfg(BORG_MUNCHKIN_DEPTH))
-        && (safe_place || feat_at(st, ax, ay) == FEAT_LESS)
-    {
-        /* `tmp_ag`: the Borg's grid */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Reset */
-        b_j = -1;
-
-        /* Check for an existing "up stairs" */
-        b_j = nearest_stair(st, Stairs::Less, b_j, true);
-
-        /* if the upstair is close and safe path, continue */
-        if ((b_j < closeness && safe_place) || feat_at(st, tx, ty) == FEAT_LESS)
-            && munchkin_climb(
-                st,
-                tx,
-                ty,
-                "# Munchkin Mode.  Power Climb. ",
-                "# Looking for stairs. Munchkin Mode.",
-            )
-        {
-            return true;
-        }
-    }
-
-    /* Going down */
-    if (st.stairs.more.num != 0 && st.borg.tr(BI_CDEPTH) < st.cfg(BORG_MUNCHKIN_DEPTH))
-        && (safe_place || feat_at(st, ax, ay) == FEAT_MORE)
-    {
-        /* Reset */
-        b_j = -1;
-
-        if st.stairs.more.num >= 1 {
-            borg_note(st, "# Munchkin Mode: I know of a down stair.");
-        }
-
-        /* Check for an existing "down stairs" */
-        b_j = nearest_stair(st, Stairs::More, b_j, true);
-
-        /* if the downstair is close and path is safe, continue on */
-        if (b_j < closeness && safe_place)
-            || feat_at(st, ax, ay) == FEAT_MORE
-            || st.borg.tr(BI_CDEPTH) == 1
-        {
-            /* Note */
-            borg_note(st, "# Munchkin Mode.  Power Diving. ");
-
-            /* Continue leaving the level */
-            if borg_flow_old(st, GOAL_FLEE) {
-                return true;
-            }
-
-            /* Flow to DownStair */
-            if borg_flow_stair_more(st, GOAL_FLEE, true, false) {
-                return true;
-            }
-
-            /* if standing on a stair */
-            if feat_at(st, ax, ay) == FEAT_MORE {
-                /* Take the DownStair */
-                borg_keypress(st, key(b'>'));
-
-                return true;
-            }
-        }
-    }
-
-    /* Going up */
-    if (st.stairs.less.num != 0 && st.borg.tr(BI_CDEPTH) != 1 && safe_place)
-        || feat_at(st, ax, ay) == FEAT_LESS
-    {
-        /* `tmp_ag`: the Borg's grid */
-        let (tx, ty) = (st.borg.c.x, st.borg.c.y);
-
-        /* Check for an existing "up stairs" (`b_j` carries over, C bug
-         * 49) */
-        b_j = nearest_stair(st, Stairs::Less, b_j, true);
-
-        /* if the upstair is close and safe path, continue */
-        if ((b_j < closeness && safe_place) || feat_at(st, tx, ty) == FEAT_LESS)
-            && munchkin_climb(
-                st,
-                tx,
-                ty,
-                "# Munchkin Mode.  Power Climb. ",
-                "# Looking for stairs. Munchkin Mode.",
-            )
-        {
-            return true;
-        }
-    }
-
-    /* Special case where the borg is off a stair and there
-     * is a monster in LOS.  He could freeze and unhook, or
-     * move to the closest stair and risk the run.
-     */
-    if st.borg.tr(BI_CDEPTH) >= 2 || !safe_place {
-        /* Continue fleeing to stair */
-        if borg_flow_old(st, GOAL_FLEE) {
-            return true;
-        }
-
-        /* Note */
-        borg_note(st, "# Munchkin Mode.  Any Stair. ");
-
-        /* Adjacent Monster.  Either attack it, or try to outrun it */
-        for i in 0..8 {
-            let y = st.borg.c.y + i32::from(engine::ddy_ddd(i));
-            let x = st.borg.c.x + i32::from(engine::ddx_ddd(i));
-
-            /* Bounds check */
-            if !engine::square_in_bounds(x, y) {
-                continue;
-            }
-
-            /* Get the grid */
-            (ax, ay) = (x, y);
-
-            /* Monster is adjacent to the borg */
-            if st.cave.grid(ax, ay).kill != 0 {
-                /* Check for an existing "up stairs" */
-                b_j = nearest_stair(st, Stairs::Less, b_j, true);
-
-                /* Check for an existing "down stairs" */
-                b_j = nearest_stair(st, Stairs::More, b_j, true);
-
-                /* Can the borg risk the run? */
-                if b_j <= 3 {
-                    /* Try to find some stairs */
-                    if borg_flow_stair_both(st, GOAL_FLEE, false) {
-                        return true;
-                    }
-                } else {
-                    /* Try to kill it */
-                    if crate::borg_fight_attack::borg_attack(st, false) {
-                        return true;
-                    }
-                }
-            } /* Adjacent to kill */
-        } /* Scanning neighboring grids */
-
-        /* Try to find some stairs */
-        if borg_flow_stair_both(st, GOAL_FLEE, false) {
-            return true;
-        }
-
-        /* Re-acquire the Borg's own grid: the adjacent-monster scan above
-         * leaves ag pointing at the last neighbour it examined. */
-        (ax, ay) = (st.borg.c.x, st.borg.c.y);
-
-        if feat_at(st, ax, ay) == FEAT_LESS && !force_descend() {
-            /* Take the Up Stair */
-            borg_keypress(st, key(b'<'));
-            return true;
-        }
-        if feat_at(st, ax, ay) == FEAT_MORE {
-            /* Take the Stair */
-            borg_keypress(st, key(b'>'));
-            return true;
-        }
-    }
-
-    /* return to normal borg_think_dungeon */
-    borg_note(st, "Leaving Munchkin Mode. (End of Mode)");
-    st.borg.munchkin_mode = false;
-    st.borg.goal.fleeing_munchkin = false;
-    st.borg.goal.fleeing = false;
-    false
 }
 
 /// Perform an action in the dungeon under boosted bravery
@@ -1423,7 +672,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= st.borg.tr(BI_CLEVEL) - 5
     {
         /* Check for an existing "up stairs" */
-        b_j = nearest_stair(st, Stairs::Less, b_j, false);
+        b_j = nearest_up_stair(st, b_j);
 
         let leash = st.borg.tr(BI_CLEVEL).wrapping_mul(3).wrapping_add(14);
 
@@ -1451,45 +700,6 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* examine equipment and swaps */
     borg_notice(st, true);
-
-    /* Quick check to see if borg needs to engage his lunal mode */
-    if st.cfg(BORG_SELF_LUNAL) != 0 && st.cfg(BORG_PLAYS_RISKY) == 0
-    /* Risky borg in a hurry */
-    {
-        /* Prepared for much deeper */
-        /* in the right depth range of depths */
-        /* below level one (not in a shopping loop) */
-        /* and not too shallow */
-        let d = st.borg.tr(BI_CDEPTH) + 15;
-        if prepared_null(st, d)
-            && st.borg.tr(BI_MAXDEPTH) >= st.borg.tr(BI_CDEPTH) + 15
-            && st.borg.tr(BI_CDEPTH) >= 1
-            && st.borg.tr(BI_CDEPTH) > st.borg.tr(BI_CLEVEL) / 3
-        {
-            st.borg.lunal_mode = true;
-
-            /* Enter the Lunal scumming mode */
-            if st.borg.lunal_mode && borg_think_dungeon_lunal(st) {
-                return choice!("borg_think_dungeon_lunal");
-            }
-        }
-    }
-
-    /* Quick check to see if borg needs to engage his lunal mode for
-     * munchkin_start */
-    if st.cfg(BORG_MUNCHKIN_START) != 0 && st.borg.tr(BI_MAXCLEVEL) < 12 {
-        if st.borg.tr(BI_CDEPTH) >= 1 {
-            st.borg.munchkin_mode = true;
-
-            /* Enter the Lunal scumming mode */
-            if borg_think_dungeon_munchkin(st) {
-                return choice!("borg_think_dungeon_munchkin");
-            }
-        }
-
-        /* Must not be in munchkin mode then */
-        st.borg.munchkin_mode = false;
-    }
 
     /* Keep borg on a suitable level */
     if st.stairs.less.num != 0 && st.borg.tr(BI_CLEVEL) < 10 && !st.borg.goal.less && {
@@ -1573,9 +783,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
 
         if borg_choose_shop(st) {
+            if crate::borg_town_live::execute_outside(st) { return true; }
             /* Try and visit a shop, if so desired */
             let shop = i32::from(st.borg.goal.shop);
-            if borg_flow_shop_entry(st, shop) {
+            if shop >= 0 && borg_flow_shop_entry(st, shop) {
                 return choice!("borg_flow_shop_entry");
             }
         }
@@ -1959,10 +1170,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Leave the level */
     if (st.borg.goal.leaving && st.borg.goal.recalling == 0 && st.borg.mon.unique == 0)
-        || (st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 25
-            && st.borg.tr(BI_GOLD) < 25000
-            && borg_count_sell(st) >= 13)
+        || borg_trip::legacy_sale_hold(st)
     {
         if st.borg.ready_morgoth == 0 && !force_descend() {
             borg_note(st, "# Fleeing and leaving the level (Looking for Up Stair).");
@@ -1988,11 +1196,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
 
         /* Only go up if needing to sell */
-        if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 25
-            && st.borg.tr(BI_GOLD) < 25000
-            && borg_count_sell(st) >= 13
-        {
+        if borg_trip::legacy_sale_hold(st) {
             st.borg.stair_more = false;
         }
 
@@ -2023,11 +1227,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
 
         /* No down if needing to sell */
-        if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 25
-            && st.borg.tr(BI_GOLD) < 25000
-            && borg_count_sell(st) >= 13
-        {
+        if borg_trip::legacy_sale_hold(st) {
             st.borg.stair_more = false;
         }
 
@@ -2135,9 +1335,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Visit the shops */
     if borg_choose_shop(st) {
+        if crate::borg_town_live::execute_outside(st) { return true; }
         /* Try and visit a shop, if so desired */
         let shop = i32::from(st.borg.goal.shop);
-        if borg_flow_shop_entry(st, shop) {
+        if shop >= 0 && borg_flow_shop_entry(st, shop) {
             return choice!("borg_flow_shop_entry");
         }
     }

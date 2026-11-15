@@ -16,6 +16,8 @@ crate-type = ["rlib"]
 # messages, so the engine waits for a key and runs a nested Borg turn.
 # Changes the key stream; never part of a real build.
 test-force-nested = []
+# Test-only FFI for the native PR83 regression fixture; absent in normal builds.
+test-town-review = []
 
 [dependencies]
 libc = "0.2"

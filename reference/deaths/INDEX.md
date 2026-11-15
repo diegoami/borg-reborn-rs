@@ -2487,5 +2487,49 @@ family start from the same state, so they are not independent.*
 | borg-reborn-rs | [D2473-rust-seed1084](../../docs/deaths/D2473-rust-seed1084/report.md) | Half-Elf Blackguard | a grey mushroom patch | 22908 | 1 | 2 | — | unassessed | D2473-rust-seed1084: a grey mushroom patch at turn 22908 |
 | borg-reborn-rs | [D2474-rust-seed102](../../docs/deaths/D2474-rust-seed102/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2474-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
 | borg-reborn-rs | [D2475-rust-seed1020](../../docs/deaths/D2475-rust-seed1020/report.md) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2475-rust-seed1020: a giant white mouse at turn 8922 |
+| borg-reborn-rs | [D2476-rust-seed1011](../../docs/deaths/D2476-rust-seed1011/report.md) | Elf Mage | a cave spider | 18903 | 1 | 2 | — | unassessed | D2476-rust-seed1011: a cave spider at turn 18903 |
+| borg-reborn-rs | [D2477-rust-seed1020](../../docs/deaths/D2477-rust-seed1020/report.md) | Elf Druid | a small kobold | 9547 | 1 | 1 | — | unassessed | D2477-rust-seed1020: a small kobold at turn 9547 |
+| borg-reborn-rs | [D2478-rust-seed1021](../../docs/deaths/D2478-rust-seed1021/report.md) | Hobbit Druid | a fruit bat | 30109 | 1 | 1 | — | unassessed | D2478-rust-seed1021: a fruit bat at turn 30109 |
+| borg-reborn-rs | [D2479-rust-seed1022](../../docs/deaths/D2479-rust-seed1022/report.md) | Gnome Druid | a giant yellow centipede | 14120 | 1 | 1 | — | unassessed | D2479-rust-seed1022: a giant yellow centipede at turn 14120 |
+| borg-reborn-rs | [D2480-rust-seed1023](../../docs/deaths/D2480-rust-seed1023/report.md) | Dwarf Druid | a metallic red centipede | 13184 | 1 | 1 | — | unassessed | D2480-rust-seed1023: a metallic red centipede at turn 13184 |
+| borg-reborn-rs | [D2481-rust-seed1043](../../docs/deaths/D2481-rust-seed1043/report.md) | Half-Troll Necromancer | a wild cat | 23423 | 1 | 2 | — | unassessed | D2481-rust-seed1043: a wild cat at turn 23423 |
+| borg-reborn-rs | [D2482-rust-seed1050](../../docs/deaths/D2482-rust-seed1050/report.md) | Dwarf Paladin | a grey mold | 24096 | 1 | 2 | — | unassessed | D2482-rust-seed1050: a grey mold at turn 24096 |
+| borg-reborn-rs | [D2483-rust-seed1062](../../docs/deaths/D2483-rust-seed1062/report.md) | Dunadan Rogue | a soldier | 49147 | 2 | 3 | — | unassessed | D2483-rust-seed1062: a soldier at turn 49147 |
+| borg-reborn-rs | [D2484-rust-seed1072](../../docs/deaths/D2484-rust-seed1072/report.md) | High-Elf Ranger | a giant white mouse | 40785 | 1 | 4 | — | unassessed | D2484-rust-seed1072: a giant white mouse at turn 40785 |
+| borg-reborn-rs | [D2485-rust-seed1074](../../docs/deaths/D2485-rust-seed1074/report.md) | Human Ranger | poison | 22250 | 1 | 3 | — | unassessed | D2485-rust-seed1074: poison at turn 22250 |
+| borg-reborn-rs | [D2486-rust-seed1073](../../docs/deaths/D2486-rust-seed1073/report.md) | Kobold Ranger | a gallant | 94857 | 7 | 4 | — | unassessed | D2486-rust-seed1073: a gallant at turn 94857 |
+| borg-reborn-rs | [D2487-rust-seed1084](../../docs/deaths/D2487-rust-seed1084/report.md) | Half-Elf Blackguard | a grey mushroom patch | 22908 | 1 | 2 | — | unassessed | D2487-rust-seed1084: a grey mushroom patch at turn 22908 |
+| borg-reborn-rs | [D2488-rust-seed102](../../docs/deaths/D2488-rust-seed102/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2488-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
+| borg-reborn-rs | [D2489-rust-seed1004](../../docs/deaths/D2489-rust-seed1004/report.md) | Gnome Warrior | poison | 86960 | 1 | 7 | — | unassessed | D2489-rust-seed1004: poison at turn 86960 |
+| borg-reborn-rs | [D2490-rust-seed1010](../../docs/deaths/D2490-rust-seed1010/report.md) | Half-Elf Mage | a floating eye | 26921 | 1 | 2 | — | unassessed | D2490-rust-seed1010: a floating eye at turn 26921 |
+| borg-reborn-rs | [D2491-rust-seed1011](../../docs/deaths/D2491-rust-seed1011/report.md) | Elf Mage | poison | 13790 | 1 | 2 | — | unassessed | D2491-rust-seed1011: poison at turn 13790 |
+| borg-reborn-rs | [D2492-rust-seed1012](../../docs/deaths/D2492-rust-seed1012/report.md) | Hobbit Mage | Fang, Farmer Maggot's Dog | 31646 | 1 | 3 | — | unassessed | D2492-rust-seed1012: Fang, Farmer Maggot's Dog at turn 31646 |
+| borg-reborn-rs | [D2493-rust-seed1013](../../docs/deaths/D2493-rust-seed1013/report.md) | Gnome Mage | a battle-scarred veteran | 22980 | 0 | 1 | — | unassessed | D2493-rust-seed1013: a battle-scarred veteran at turn 22980 |
+| borg-reborn-rs | [D2494-rust-seed1014](../../docs/deaths/D2494-rust-seed1014/report.md) | Dwarf Mage | a cave spider | 36276 | 2 | 4 | — | unassessed | D2494-rust-seed1014: a cave spider at turn 36276 |
+| borg-reborn-rs | [D2495-rust-seed1020](../../docs/deaths/D2495-rust-seed1020/report.md) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2495-rust-seed1020: a giant white mouse at turn 8922 |
+| borg-reborn-rs | [D2496-rust-seed1021](../../docs/deaths/D2496-rust-seed1021/report.md) | Hobbit Druid | a fatal wound | 3950 | 1 | 1 | — | unassessed | D2496-rust-seed1021: a fatal wound at turn 3950 |
+| borg-reborn-rs | [D2497-rust-seed1022](../../docs/deaths/D2497-rust-seed1022/report.md) | Gnome Druid | a giant white mouse | 17265 | 1 | 1 | — | unassessed | D2497-rust-seed1022: a giant white mouse at turn 17265 |
+| borg-reborn-rs | [D2498-rust-seed1030](../../docs/deaths/D2498-rust-seed1030/report.md) | Hobbit Priest | Grip, Farmer Maggot's Dog | 15420 | 1 | 2 | — | unassessed | D2498-rust-seed1030: Grip, Farmer Maggot's Dog at turn 15420 |
+| borg-reborn-rs | [D2499-rust-seed1031](../../docs/deaths/D2499-rust-seed1031/report.md) | Gnome Priest | a black naga | 36583 | 1 | 2 | — | unassessed | D2499-rust-seed1031: a black naga at turn 36583 |
+| borg-reborn-rs | [D2500-rust-seed1032](../../docs/deaths/D2500-rust-seed1032/report.md) | Dwarf Priest | a small kobold | 20267 | 1 | 3 | — | unassessed | D2500-rust-seed1032: a small kobold at turn 20267 |
+| borg-reborn-rs | [D2501-rust-seed1033](../../docs/deaths/D2501-rust-seed1033/report.md) | Half-Orc Priest | a giant white mouse | 24771 | 1 | 3 | — | unassessed | D2501-rust-seed1033: a giant white mouse at turn 24771 |
+| borg-reborn-rs | [D2502-rust-seed1040](../../docs/deaths/D2502-rust-seed1040/report.md) | Gnome Necromancer | an acolyte | 3647 | 1 | 1 | — | unassessed | D2502-rust-seed1040: an acolyte at turn 3647 |
+| borg-reborn-rs | [D2503-rust-seed1023](../../docs/deaths/D2503-rust-seed1023/report.md) | Dwarf Druid | a soldier | 85754 | 2 | 4 | — | unassessed | D2503-rust-seed1023: a soldier at turn 85754 |
+| borg-reborn-rs | [D2504-rust-seed1034](../../docs/deaths/D2504-rust-seed1034/report.md) | Half-Troll Priest | poison | 96890 | 3 | 6 | — | unassessed | D2504-rust-seed1034: poison at turn 96890 |
+| borg-reborn-rs | [D2505-rust-seed1041](../../docs/deaths/D2505-rust-seed1041/report.md) | Dwarf Necromancer | a soldier | 54489 | 2 | 5 | — | unassessed | D2505-rust-seed1041: a soldier at turn 54489 |
+| borg-reborn-rs | [D2506-rust-seed1042](../../docs/deaths/D2506-rust-seed1042/report.md) | Half-Orc Necromancer | a wild dog | 10924 | 1 | 2 | — | unassessed | D2506-rust-seed1042: a wild dog at turn 10924 |
+| borg-reborn-rs | [D2507-rust-seed1043](../../docs/deaths/D2507-rust-seed1043/report.md) | Half-Troll Necromancer | a floating eye | 91688 | 1 | 2 | — | unassessed | D2507-rust-seed1043: a floating eye at turn 91688 |
+| borg-reborn-rs | [D2508-rust-seed1044](../../docs/deaths/D2508-rust-seed1044/report.md) | Dunadan Necromancer | a small kobold | 4427 | 1 | 1 | — | unassessed | D2508-rust-seed1044: a small kobold at turn 4427 |
+| borg-reborn-rs | [D2509-rust-seed1050](../../docs/deaths/D2509-rust-seed1050/report.md) | Dwarf Paladin | an apprentice | 48288 | 2 | 5 | — | unassessed | D2509-rust-seed1050: an apprentice at turn 48288 |
+| borg-reborn-rs | [D2510-rust-seed1053](../../docs/deaths/D2510-rust-seed1053/report.md) | Dunadan Paladin | a giant white louse | 69538 | 3 | 7 | — | unassessed | D2510-rust-seed1053: a giant white louse at turn 69538 |
+| borg-reborn-rs | [D2511-rust-seed1062](../../docs/deaths/D2511-rust-seed1062/report.md) | Dunadan Rogue | a soldier | 13291 | 2 | 4 | — | unassessed | D2511-rust-seed1062: a soldier at turn 13291 |
+| borg-reborn-rs | [D2512-rust-seed1064](../../docs/deaths/D2512-rust-seed1064/report.md) | Kobold Rogue | Fang, Farmer Maggot's Dog | 4601 | 1 | 1 | — | unassessed | D2512-rust-seed1064: Fang, Farmer Maggot's Dog at turn 4601 |
+| borg-reborn-rs | [D2513-rust-seed1070](../../docs/deaths/D2513-rust-seed1070/report.md) | Half-Troll Ranger | a small kobold | 10213 | 1 | 2 | — | unassessed | D2513-rust-seed1070: a small kobold at turn 10213 |
+| borg-reborn-rs | [D2514-rust-seed1063](../../docs/deaths/D2514-rust-seed1063/report.md) | High-Elf Rogue | a green naga | 73529 | 3 | 6 | — | unassessed | D2514-rust-seed1063: a green naga at turn 73529 |
+| borg-reborn-rs | [D2515-rust-seed1073](../../docs/deaths/D2515-rust-seed1073/report.md) | Kobold Ranger | Fang, Farmer Maggot's Dog | 65568 | 1 | 3 | — | unassessed | D2515-rust-seed1073: Fang, Farmer Maggot's Dog at turn 65568 |
+| borg-reborn-rs | [D2516-rust-seed1074](../../docs/deaths/D2516-rust-seed1074/report.md) | Human Ranger | a soldier | 21652 | 2 | 4 | — | unassessed | D2516-rust-seed1074: a soldier at turn 21652 |
+| borg-reborn-rs | [D2517-rust-seed1082](../../docs/deaths/D2517-rust-seed1082/report.md) | Kobold Blackguard | a soldier | 61969 | 1 | 4 | — | unassessed | D2517-rust-seed1082: a soldier at turn 61969 |
+| borg-reborn-rs | [D2518-rust-seed1083](../../docs/deaths/D2518-rust-seed1083/report.md) | Human Blackguard | an acolyte | 33152 | 2 | 4 | — | unassessed | D2518-rust-seed1083: an acolyte at turn 33152 |
+| borg-reborn-rs | [D2519-rust-seed1084](../../docs/deaths/D2519-rust-seed1084/report.md) | Half-Elf Blackguard | a gallant | 94134 | 4 | 8 | — | unassessed | D2519-rust-seed1084: a gallant at turn 94134 |
 
-2480 cases.
+2524 cases.

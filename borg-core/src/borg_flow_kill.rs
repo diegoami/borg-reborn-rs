@@ -66,9 +66,8 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 use crate::{borg_flow, borg_flow_misc};
 
-/// `GOAL_KILL`, `GOAL_TAKE`, `GOAL_DIGGING` (borg-flow.h)
+/// `GOAL_KILL`, `GOAL_DIGGING` (borg-flow.h)
 const GOAL_KILL: i16 = 1;
-const GOAL_TAKE: i16 = 2;
 const GOAL_DIGGING: i32 = 10;
 
 /// `CLASS_*` (list-class.h order)
@@ -503,10 +502,11 @@ fn borg_update_kill_old(st: &mut BorgState, i: usize) {
 
     // Special check on uniques, sometimes the death
     // is not caught so he thinks they are still running
-    // around (C bug 24: indexed by the kill, not the race)
+    // around (patch 0122: index the death by the race,
+    // not by the kill record)
     let r = engine::race(usize::from(kill.r_idx));
     if rf_has(kill.r_idx, RF_UNIQUE) && r.max_num == 0 {
-        st.kills.race_death[i] = 1;
+        st.kills.race_death[kill.r_idx as usize] = 1;
     }
 
     update_kill_tail(st, i);
@@ -649,13 +649,12 @@ fn borg_follow_kill_aux(st: &BorgState, i: usize, y: i32, x: i32) -> bool {
 }
 
 /// Clear the goal after a tracked monster moved: kill goals aimed at its
-/// new grid (without ESP), or any munchkin take goal.
+/// new grid (without ESP).
 fn clear_goal_after_move(st: &mut BorgState, pos: loc) {
     let (fy, fx) = st.flow.first();
-    if (st.borg.tr(BI_ESP) == 0
+    if st.borg.tr(BI_ESP) == 0
         && st.borg.goal.type_0 == GOAL_KILL
-        && (fy == pos.y && fx == pos.x))
-        || (st.borg.goal.type_0 == GOAL_TAKE && st.borg.munchkin_mode)
+        && (fy == pos.y && fx == pos.x)
     {
         st.borg.goal.type_0 = 0;
     }
@@ -3200,8 +3199,9 @@ pub fn borg_init_flow_kill(st: &mut BorgState) {
 
     // *** XXX XXX XXX Hack -- Cheat ***
 
-    // Extract dead uniques (C bug 24: the test is inverted, so this marks
-    // non-uniques with max_num 0)
+    // Extract dead uniques (patch 0121: the test was inverted, which
+    // marked non-uniques with max_num 0; it now seeds the dead-unique
+    // table with the uniques)
     for i in 1..(r_max as i32 - 1) {
         let r = engine::race(i as usize);
 
@@ -3211,7 +3211,7 @@ pub fn borg_init_flow_kill(st: &mut BorgState) {
         }
 
         // Skip non-uniques
-        if rf_has(i as u32, RF_UNIQUE) {
+        if !rf_has(i as u32, RF_UNIQUE) {
             continue;
         }
 

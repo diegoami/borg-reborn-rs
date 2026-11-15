@@ -44,6 +44,7 @@ use crate::borg_update::UpdateState;
 
 #[derive(Default)]
 pub struct BorgState {
+    pub trip: crate::borg_trip::TripState,
     /// The token engine object handles borrow (`engine::Access`): a handle
     /// made from `&st.access` cannot be kept across an engine call that
     /// takes `&mut BorgState` (docs/SELF-REVIEW.md L4).

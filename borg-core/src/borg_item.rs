@@ -32,6 +32,10 @@ pub struct BorgItem {
     pub ident: bool,
     pub needs_ident: bool,
     pub aware: bool,
+    /// The game's flavour awareness (`object_flavor_is_aware`), unlike
+    /// `aware`, which C forces true in a store. Rust-only, read by the
+    /// town plan alone: a shop's `{unseen}` ware is `!flavour_aware`.
+    pub flavour_aware: bool,
     /// `xxxx` (never read, in C either)
     #[allow(dead_code)]
     pub xxxx: bool,
@@ -110,6 +114,7 @@ pub fn blank_item() -> borg_item {
         kind: 0,
         ident: false,
         needs_ident: false,
+        flavour_aware: false,
         aware: false,
         xxxx: false,
         tval: 0,

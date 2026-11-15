@@ -176,6 +176,9 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
     /* Log the message */
     note_desc(st, b"# Quaffing ", i as usize, b".");
 
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "quaff", &st.items.items[i as usize]);
+
     /* Perform the action */
     borg_keypress(st, key(b'q'));
     borg_keypress(st, letter(i));
@@ -198,6 +201,9 @@ pub fn borg_quaff_unknown(st: &mut BorgState) -> bool {
 
     /* Log the message */
     note_desc(st, b"# Quaffing unknown potion ", n as usize, b".");
+
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "quaff", &st.items.items[n as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'q'));
@@ -238,6 +244,9 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     /* Log the message */
     note_desc(st, b"# Reading ", i as usize, b".");
 
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "read", &st.items.items[i as usize]);
+
     /* Perform the action */
     borg_keypress(st, ESCAPE);
     borg_keypress(st, ESCAPE);
@@ -272,6 +281,9 @@ pub fn borg_read_unknown(st: &mut BorgState) -> bool {
 
     /* Log the message */
     note_desc(st, b"# Reading unknown scroll ", n as usize, b".");
+
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "read", &st.items.items[n as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'r'));
@@ -500,6 +512,9 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
     /* Log the message */
     note_desc(st, b"# Zapping ", i as usize, b".");
 
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "zap", &st.items.items[i as usize]);
+
     /* Perform the action */
     borg_keypress(st, key(b'z'));
     borg_keypress(st, letter(i));
@@ -526,6 +541,9 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     /* Log the message */
     note_desc(st, b"# Using ", i as usize, b".");
 
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
+
     /* Perform the action */
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
@@ -545,6 +563,9 @@ pub fn borg_use_unknown(st: &mut BorgState) -> bool {
 
     /* Log the message */
     note_desc(st, b"# Using unknown Staff ", n as usize, b".");
+
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "use", &st.items.items[n as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'u'));
@@ -601,6 +622,9 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
 
     /* Log the message */
     note_desc(st, b"# Using ", i as usize, b".");
+
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "use", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'u'));
@@ -678,6 +702,9 @@ pub fn borg_aim_wand(st: &mut BorgState, sval: i32) -> bool {
 
     /* Log the message */
     note_desc(st, b"# Aiming ", i as usize, b".");
+
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "aim", &st.items.items[i as usize]);
 
     /* Perform the action */
     borg_keypress(st, key(b'a'));
@@ -790,6 +817,9 @@ pub fn borg_activate_ring(st: &mut BorgState, ring_sval: i32) -> bool {
         /* Log the message */
         note_desc(st, b"# Activating ring ", i as usize, b".");
 
+        /* The session object log: what the Borg uses. */
+        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
+
         /* Perform the action */
         borg_keypress(st, key(b'A'));
         borg_keypress(st, letter(i - inven_wield()));
@@ -885,6 +915,9 @@ pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
     /* Log the message */
     note_desc(st, b"# Activating dragon scale ", body as usize, b".");
 
+    /* The session object log: what the Borg uses. */
+    crate::borg_object_log::log_use(st, "activate", &st.items.items[body as usize]);
+
     /* Perform the action */
     borg_keypress(st, key(b'A'));
     borg_keypress(st, letter(body - inven_wield()));
@@ -920,6 +953,9 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 
         /* Log the message */
         note_desc(st, b"# Activating item ", i as usize, b".");
+
+        /* The session object log: what the Borg uses. */
+        crate::borg_object_log::log_use(st, "activate", &st.items.items[i as usize]);
 
         /* Perform the action */
         borg_keypress(st, key(b'A'));

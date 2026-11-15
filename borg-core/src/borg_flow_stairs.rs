@@ -22,7 +22,7 @@ use crate::borg_headers::borg_magic_h::{
     RAPID_REGENERATION, RESISTANCE, SMITE_EVIL, VENOM,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_GOLD, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT,
+    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_CURSP, BI_FOOD, BI_ISHUNGRY, BI_ISWEAK, BI_LIGHT,
     BI_MAXSP, BI_WB_POIS, BI_WS_EVIL,
 };
 use crate::headers::list_options_h::OPT_birth_force_descend;
@@ -173,7 +173,7 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     }
 
     /* Absolutely no diving if no light */
-    if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 && !st.borg.munchkin_mode {
+    if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 {
         return false;
     }
 
@@ -229,8 +229,8 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
 
     /* if there are no down stairs, don't filter use of up stairs */
     if st.stairs.less.num != 0 {
-        /* not unless safe or munchkin/Lunal Mode or brave */
-        if !st.borg.lunal_mode && !st.borg.munchkin_mode && !brave {
+        /* not unless safe or brave */
+        if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;
             if crate::borg_prepared::borg_prepared_c(st, depth).is_some() {
                 return false;
@@ -249,17 +249,12 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
         }
 
         /* If I need to sell crap, then don't go down */
-        if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 25
-            && st.borg.tr(BI_GOLD) < 25000
-            && crate::borg_store_sell::borg_count_sell(st) >= 13
-            && !st.borg.munchkin_mode
-        {
+        if crate::borg_trip::legacy_sale_hold(st) {
             return false;
         }
 
         /* No diving if no light */
-        if st.borg.tr(BI_LIGHT) == 0 && !st.borg.munchkin_mode {
+        if st.borg.tr(BI_LIGHT) == 0 {
             return false;
         }
     }
