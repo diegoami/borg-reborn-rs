@@ -9,7 +9,7 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > validation evidence. See [POINTER.md](POINTER.md) for the seam
 > (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2522; distinct starting conditions: 2519; retained process attempts: 2522 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2523; distinct starting conditions: 2520; retained process attempts: 2523 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -42,6 +42,7 @@ Dossiers: 2522; distinct starting conditions: 2519; retained process attempts: 2
 | [D0000-q5df0ec55c6ecc8336a7da03c59227fbd342e9b60d55eb921b151045b5415f47b](D0000-q5df0ec55c6ecc8336a7da03c59227fbd342e9b60d55eb921b151045b5415f47b/report.md) | unassigned | `b58e7b445159` | 1012 | Fang, Farmer Maggot's Dog | 31646 | unassessed |
 | [D0000-q603eefb93c1b619ffad61b8b3718499ccd9c0e83643700e8258a0fb4f5e419e6](D0000-q603eefb93c1b619ffad61b8b3718499ccd9c0e83643700e8258a0fb4f5e419e6/report.md) | unassigned | `b58e7b445159` | 1014 | a cave spider | 36276 | unassessed |
 | [D0000-q6c5274e3d3f9f4e0310a4609d2dfa761395263d73311882ed452c4e04dbf3a9d](D0000-q6c5274e3d3f9f4e0310a4609d2dfa761395263d73311882ed452c4e04dbf3a9d/report.md) | unassigned | `69fa6a920d4b` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-q6cb111c012c9662589ebd246e9c17f1fefcdfacab1ea7dbeb2a79335798dd915](D0000-q6cb111c012c9662589ebd246e9c17f1fefcdfacab1ea7dbeb2a79335798dd915/report.md) | unassigned | `69fa6a920d4b` | 1020 | a giant white mouse | 8922 | unassessed |
 | [D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e](D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e/report.md) | unassigned | `754593a03348` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D0000-q75ec945918987b1db88bdfe70f02489bae1bbd828fe381dc6629d4becda738ea](D0000-q75ec945918987b1db88bdfe70f02489bae1bbd828fe381dc6629d4becda738ea/report.md) | unassigned | `69fa6a920d4b` | 1020 | a small kobold | 9547 | unassessed |
 | [D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5](D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5/report.md) | unassigned | `754593a03348` | 1043 | a wild cat | 23423 | unassessed |

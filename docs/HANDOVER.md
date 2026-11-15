@@ -15,7 +15,7 @@
 - Combined validation passes: 45/45 M13 play-log triples and deterministic
   summaries, 242,641 classified rows, three policy-on controls, original
   smoke/save-load fixture, required Rust and 60 engine tests (one skip).
-  Thirteen fresh deaths reconcile; 2,522 archive cases verify. Exact build
+  Fourteen fresh deaths reconcile; 2,523 archive cases verify. Exact build
   and limitations: P342-VALIDATION.md. Required sync CI is pending.
 - The prior review receipt names its old exact head; record a fresh pin
   and the integration evidence for the owner-authorized promotion.

@@ -8,7 +8,8 @@ only handover and generated archive indexes conflict. Both handover histories
 are retained and indexes are regenerated from the complete archive.
 
 Relative to current main, the only borg-core changes are the reviewed
-shell reader and the parameter loader's use of that reader. All M13 modules,
+shell reader and the parameter loader's use of that reader. The added/removed source lines of the P patch are exactly the same as the
+reviewed patch (verified ignoring changed hunk offsets). All M13 modules,
 defaults, retired parameters, engine adapters and pin remain from main.
 Upstream stays `42cd156ac`. No additional donor refresh is performed.
 
@@ -35,7 +36,8 @@ All 45 full-suite default vendored-core play-log hash triples match the
 accepted receiver-full evidence in M13-VALIDATION.json. Deterministic summary
 fields match too; wall_seconds is excluded. The trace has 242,641 contiguous
 classified rows. Original-core smoke matches all three references; the
-extra-option save/load fixture passes. Three native policy-on class controls
+extra-option save/load fixture passes. The original-core seed 1020 death
+control also completes and is retained for CI reconciliation. Three native policy-on class controls
 (0, 1, 6) reconstruct the exact accepted borg.txt hashes and match all play
 logs against M13 evidence. No policy replay corpus or new population
 experiment is run; no improvement claim is made.
@@ -48,9 +50,9 @@ configurations matching the recorded hashes; those successful attempts do
 not conceal the initial command failure. Inherited patch-file whitespace
 warnings are retained rather than altering M13's accepted patch bytes.
 
-Thirteen new natural deaths are exported with the actual combined build,
+Fourteen new natural deaths are exported with the actual combined build,
 qualified and mapped in P342-VALIDATION-DOSSIER-MAP.json. Reconciliation finds
-none missing or unrecorded. The archive now verifies 2,522 cases. Original
+none missing or unrecorded. The archive now verifies 2,523 cases. Original
 build identities are never relabelled. Canonical cemetery contents and
 ownership are unchanged.
 
