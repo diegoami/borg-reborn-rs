@@ -69,6 +69,10 @@ if [ "$FLAGS" != "-" ]; then
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
             terminal-save) BORGH_FLAGS+=(-save-final-state "$OUT/final.save");;
             keep-load-rng) BORGH_FLAGS+=(-keep-load-rng);;
+            start-depth=*)
+                start_depth="${fl#start-depth=}"
+                [[ "$start_depth" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: start-depth must be 1..999' >&2; exit 2; }
+                BORGH_FLAGS+=(-start-depth "$start_depth");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }

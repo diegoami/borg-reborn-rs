@@ -48,6 +48,8 @@
  *   -random-birth choose race and class using the seeded birth menu's *
  *   -clev N       stop when the character level reaches N (0 = no limit)
  *   -depth N      stop when the max depth reaches N (0 = no limit)
+ *   -start-depth N  generate dungeon level N and play from birth there
+ *                 (synthetic/diagnostic; no save and not a natural run)
  *   -keylog FILE  keypress log (default: none)
  *   -msglog FILE  message log: every message_add() call, Borg notes
  *                 included (default: none)
@@ -127,6 +129,7 @@ static long opt_turns = 0;
 static long opt_keys = 0;
 static int opt_clev = 0;
 static int opt_depth = 0;
+static int opt_start_depth = 0;
 static const char *opt_keylog = NULL;
 static const char *opt_msglog = NULL;
 static const char *opt_statelog = NULL;
@@ -636,6 +639,23 @@ static void borgh_checkpoint(void)
 
 static void prepare_borg_start(void)
 {
+	if (opt_start_depth) {
+		/* A synthetic scenario: generate the requested dungeon level and
+		 * play it from birth. This is diagnostic only, not a natural run. */
+		if (opt_load) quit("borgh: -start-depth cannot load a save");
+		if (opt_start_depth < 1 || opt_start_depth >= z_info->max_depth)
+			quit("borgh: -start-depth must be between 1 and max_depth-1");
+		player->max_depth = player->recall_depth = opt_start_depth;
+		/* A synthetic dungeon is one-way: no town, no recall. Otherwise a
+		 * low-level character simply returns to town and the scenario is
+		 * no longer the generated level. */
+		option_set("birth_force_descend", true);
+		option_set("birth_no_recall", true);
+		dungeon_change_level(player, opt_start_depth);
+		/* Let the level change take this command's energy, as the wizard
+		 * jump does, so generation runs before the Borg's first think. */
+		player->upkeep->energy_use = z_info->move_energy;
+	}
 	if (opt_load) {
 		/* A missing/dead save must never silently become a birth run. */
 		if (!player || player->is_dead || !player->race || !player->class ||
@@ -825,6 +845,8 @@ errr init_borgh(int argc, char *argv[])
 			opt_clev = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-depth")) {
 			opt_depth = (int)arg_long(argc, argv, &i);
+		} else if (streq(argv[i], "-start-depth")) {
+			opt_start_depth = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-keylog")) {
 			if (++i >= argc) quit("borgh: missing value for -keylog");
 			opt_keylog = argv[i];
