@@ -59,6 +59,18 @@ class QualifiedImportTest(unittest.TestCase):
             self.assertEqual(imp.package(target)[0], identifier)
         self.assertEqual(json.loads((self.dest / 'index.json').read_text())['distinct_starting_conditions'], 2)
 
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_published_package_preserves_source_directory_access(self):
+        for mode in [0o750, 0o700]:
+            source = self.exported(f'access-{mode}')
+            source.chmod(mode)
+            identifier, _ = imp.import_packages([source], self.dest)[0]
+            target = self.dest / identifier
+            self.assertEqual(target.stat().st_mode & 0o777, mode)
+            self.assertEqual(imp.package(target)[0], identifier)
+            self.assertEqual((target / imp.ORIGINAL).read_bytes(),
+                             (source / 'record.json').read_bytes())
+
     def test_identical_import_and_reimport_are_idempotent(self):
         source = self.exported('one')
         identifier, _ = imp.import_packages([source], self.dest)[0]

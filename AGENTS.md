@@ -81,15 +81,21 @@ flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
 harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
 ```
 
+## Retained evidence: all tracks
+
+For historical validation imports on any track, qualify provisional native
+IDs using `tools/import-deaths.py` and run its `--check` before committing.
+See [RULES.md](RULES.md) rule 12 and
+[docs/DOSSIER-IMPORT.md](docs/DOSSIER-IMPORT.md). Preserve source records and
+payloads from both branches when synchronizing; never rewrite the accepted
+inventory or replace a historical death to hide an ID collision.
+
 ## Track P integration and review gate (owner, 2026-11-15)
 
 **Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
 RULES.md before P work. Start P task branches from `origin/track-p`, target
 P task PRs at `track-p`, and merge them there only after required CI passes.
-Close the task issue explicitly with its integration PR/commit.
-For retained validation evidence, import provisional native dossiers using
-`tools/import-deaths.py`; run its `--check` before committing. See
-[docs/DOSSIER-IMPORT.md](docs/DOSSIER-IMPORT.md). Never send
+Close the task issue explicitly with its integration PR/commit. Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review

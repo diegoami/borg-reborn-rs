@@ -2,6 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: import guidance and staging follow-up (#333)
+
+- Generic AGENTS.md guidance now applies to every track. Clarify that the
+  legacy guarantee covers the full record and declared payload files;
+  undeclared analysis/extra files are outside it. Qualified packets remain
+  immutable in every file. No evidence or inventory is rewritten.
+- Keep staging private while incomplete; publish with the source directory's
+  ordinary access bits, respecting private sources. Files keep process-umask
+  semantics; re-import does not alter existing access. Ignore abandoned
+  historical staging directories without deleting another process's work.
+- All 88 tool tests and 19 script tests pass, including publication modes
+  0750/0700 and immutable payload verification. All 2,523 archive cases
+  verify; staging ignore is checked. Game inputs remain exactly #342 source
+  e1c2e4d9, so its Rust/native/play evidence applies. Required CI is pending.
+  Prepared separately from #331/#346; integrate only after that promotion,
+  then open a separate pinned milestone review before main.
+
 ## 2026-11-15: synchronize M13 main with accepted P review (#342)
 
 - Owner authorized #331 promotion. GitHub rejected it after main advanced

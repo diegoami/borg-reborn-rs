@@ -34,7 +34,13 @@ including the original report and assessment, retain their exact bytes.
 already imported package can be imported again without adding an attempt.
 Concurrent import processes use the cemetery-owned registry lock, publish
 complete directories atomically, and delegate index generation to that same
-owned toolkit. Existing differing data is never overwritten.
+owned toolkit. Existing differing data is never overwritten. Staging stays
+private until all files are written. At publication, a new directory keeps
+the source directory's ordinary access bits (not special permission bits);
+file access follows the importing process's umask. Re-import leaves existing
+package permissions unchanged. This does not grant access to a private source.
+A killed process can leave a `.import-*` directory; Git ignores historical
+staging paths. Do not remove another process's active staging directory.
 
 These are immutable **historical validation packages**, not a new death
 export implementation or a replacement for cemetery investigations. Do not
@@ -52,8 +58,13 @@ and result hash. The tests check this explicitly.
 
 `docs/deaths/legacy-cases.json` freezes the pre-adoption archive from the
 accepted #307 head. Those IDs and source identities are not rewritten.
-The inventory protects identity fields, first result hashes and recorded
-file-hash declarations, and CI verifies the retained file bytes too.
+The inventory protects the complete record, including identity fields, first
+result hashes and file-hash declarations. CI verifies the record's declared
+payload files. Legacy analysis files such as `assessment.json` and `report.md`
+are generally not declared: editing/deleting those files or adding extra
+files is outside that legacy guarantee. Qualified packages, by contrast,
+are immutable in every file. Keep new investigations in the cemetery-owned
+workflow rather than treating undeclared legacy files as verified evidence.
 New evidence must have a verified qualified ID and receipt. CI rejects
 unknown numeric IDs, missing legacy cases, identity/hash changes or damaged
 qualified packages. A deliberate historical migration requires an explicit

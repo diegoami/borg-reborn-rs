@@ -115,11 +115,11 @@ def import_packages(sources, destination):
     destination = Path(destination).resolve()
     if destination == (locate(ROOT) / 'deaths').resolve():
         raise ValueError('The canonical cemetery is owned by its registrar; use that delivery workflow')
-    prepared = [package(source) for source in sources]
+    prepared = [(Path(source), package(source)) for source in sources]
     owner = registry_module()
     result = []
     with owner.registry_lock(destination):
-        for identifier, files in prepared:
+        for source, (identifier, files) in prepared:
             final = destination / identifier
             if final.exists():
                 if final.is_symlink() or {p.name for p in final.iterdir()} != set(files):
@@ -133,6 +133,9 @@ def import_packages(sources, destination):
             try:
                 for name, data in files.items():
                     (stage / name).write_bytes(data)
+                # Keep staging private while incomplete, then preserve source access.
+                # Special permission bits are not part of an evidence package.
+                stage.chmod(source.stat().st_mode & 0o777)
                 stage.rename(final)
             finally:
                 if stage.exists():
