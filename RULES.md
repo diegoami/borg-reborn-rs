@@ -90,7 +90,11 @@ not undo other-track work already authorized before the gate.
     there.
 12. **Every natural death of a measured run is recorded** as a dossier
     under `docs/deaths/` (borg-rs format; the decision trace from M3), with
-    the actual source, build, implementation, profile and seed. A measured
+    the actual source, build, implementation, profile and seed. The
+    canonical registry lives in **[borg-cemetery](https://github.com/diegoami/borg-cemetery)**;
+    this repository writes and reconciles it through the
+    `BORG_DEATH_RECORDS_DIR` seam (`docs/deaths/POINTER.md`), and the rule
+    binds in both homes. A measured
     run is one played through `harness/run.sh`: a suite, a single run, CI
     or the zoo's cells. This applies from the first game played (T1.2, #5),
     whichever arm died. Games watched with `watch-borg.sh` are not measured
@@ -98,7 +102,7 @@ not undo other-track work already authorized before the gate.
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
     never inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in `docs/deaths/` or
+    registry, uploads it, and fails if a death is not in the registry or
     a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
     deaths of test-feature builds are not natural deaths of an arm and are
     kept apart.
