@@ -3,6 +3,24 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: owner changes P integration to track-p (#257)
+
+- The owner requires `track-p` (explicit spelling correction), with task
+  PRs merged there after CI and regular milestone reviews before any
+  promotion to main. The owner chooses the reviewer and accepts each
+  milestone; the session never treats green CI as review approval.
+- Saved the rule in AGENTS.md, RULES.md, PLAN.md and GOALS.md. P review
+  fixes use track-p too; other-track PRs keep their own bases/workflows.
+  CI now runs on track-p pushes as well as main and pull requests.
+- P1–P3 runtime changes were already on main8351f0a3. This is a historical
+  exception needing retrospective review, not independently reviewed work.
+  Do not rewrite/revert main. A full combined review uses the pre-P main
+  baseline c2c4e61d; the owner promotion PR into main currently changes only
+  workflow documents/CI because runtime code was already merged.
+- Checked open PRs: no P task PRs are pending; #251/#255/#256 are review
+  snapshots to supersede with the combined review. R PR #248 and the
+  separate repivot PR #206 are untouched. No reviewer or experiment is run.
+
 ## 2026-11-15: P3.2 sweep handoff (#245)
 
 - CORE-SWEEP.md is an exact-commit-pinned prompt for the owner’s zoo

@@ -81,6 +81,31 @@ flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
 harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
 ```
 
+## Track P integration and review gate (owner, 2026-11-15)
+
+**Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
+RULES.md before P work. Start P task branches from `origin/track-p`, target
+P task PRs at `track-p`, and merge them there only after required CI passes.
+Close the task issue explicitly with its integration PR/commit. Never send
+or merge a P task PR directly into `main` because CI passed.
+
+At every milestone, stop and open a pinned **`track-p` → `main`** review
+PR. The owner selects/runs the review; fix findings through `track-p` task
+PRs. Keep promotion unmerged until the owner accepts the milestone review
+and CI passes. The owner merges the promotion or explicitly delegates that
+reviewed merge. Then the next milestone may start. Keep the reviewed head
+fixed while the review is active; record a new exact pin after fixes.
+Synchronize needed `main` changes through a CI-checked PR into `track-p`,
+preserving the other track's work. Do not force-push the integration branch.
+This P-specific rule overrides the generic merge instructions below; other
+tracks keep their own authorized workflow.
+
+Migration: P1–P3 were already on main at `8351f0a3` before this decision.
+They need retrospective review; do not describe them as independently
+reviewed or rewrite/revert main to simulate pre-merge review. The combined
+review and handover identify that historical exception. All new P tasks
+and review fixes follow the gate above.
+
 ## Choosing the work
 
 **Work happens in tracks** (owner, 2026-11-14). PLAN.md lists them:
@@ -103,11 +128,13 @@ gh issue list --label task --label "track:P" --label P1 --state open
 Take the lowest-numbered open task issue of that milestone whose **Needs**
 issues are closed (or in an open PR you can stack on, RULES 5) and that has
 no `in progress` label. A Needs issue may belong to the other track: track R
-ports a subsystem only after track P has named its thresholds. Add the
+ports a subsystem only after P has named its thresholds and the relevant
+P milestone has been reviewed and promoted to `main`. Add the
 `in progress` label and comment with your branch name before you start.
 
 Two sessions on different tracks share `borg-core/`. Keep each change to
-the files its task names, merge `main` into your branch before the PR, and
+the files its task names, synchronize the applicable integration branch
+(`track-p` for P, otherwise the track’s authorized base) before the PR, and
 never rewrite the other track's work to make yours fit; say so in the PR
 and the handover instead.
 
@@ -120,7 +147,9 @@ At the end of a task:
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;
-4. **you merge it yourself** once CI is green (RULES 1).
+4. **you merge it yourself into the authorized integration branch** once
+   CI is green (`track-p` for P; RULES 1). P promotion to `main` requires
+   the owner-accepted milestone review, not just task CI.
 
 When your track's milestone has its last task merged, **stop** and open the
 review PR (PLAN.md). Do not start the track's next milestone, and do not
