@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2136-rust-seed1050",
+  "run_kind": "harness",
+  "character": "Dwarf Paladin",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 24096,
+    "race_idx": 5,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1050,
+    "flags": "-",
+    "git_rev": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+    "git_dirty": "yes",
+    "source_sha256": "55068854ae7452dd17ef8f9440814c8dce1341e4c21483170df7aa5d8e363565",
+    "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d",
+    "borg_txt_sha256": "188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rev-out/parity/full-5-paladin-0",
+      "result_sha256": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+      "raw_sha256": {
+        "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+        "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+        "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+      },
+      "source_commit": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+      "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d"
+    }
+  ],
+  "encounter_family": "start-76eb2f0399839b0d944c80c3934ce134792a20ae07bbcf92ac242a8e05d1c28b",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7478f7b53ddc35a8c12c7529bbe830beda0e068d122fa42eae4f3a4009e1d743",
+    "config.txt": "389fc66aecbcf4f4855538bd1a6143a294420d5ad59642203858e2ce4b172c90",
+    "depths.json": "b7433563472fc1a603e0e8b7b10e57faa310ddc97e06191c6fe44545bb3a58f6",
+    "summary.json": "6debdcac7eb35e28937988272a076d0bd8416b916e06472e309e59bbab087b36"
+  },
+  "investigation": null,
+  "issue": null
+}

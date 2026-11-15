@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2138-rust-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a cave orc",
+  "terminal": {
+    "cause": "a cave orc",
+    "dead": true,
+    "depth": 8,
+    "max_depth": 8,
+    "level": 8,
+    "turn": 89961,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+    "git_dirty": "yes",
+    "source_sha256": "55068854ae7452dd17ef8f9440814c8dce1341e4c21483170df7aa5d8e363565",
+    "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d",
+    "borg_txt_sha256": "253a0af1d5f14b7c3279f284d2acb89f224e3f43561b38a0a5389b66ade30d87",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rev-out/parity/full-6-rogue-3",
+      "result_sha256": "8bbfc012915dad0b1a8b002d96fc9f55c5465147674999e3cd7d311b10036ee2",
+      "raw_sha256": {
+        "keys.log": "8bbfc012915dad0b1a8b002d96fc9f55c5465147674999e3cd7d311b10036ee2",
+        "messages.log": "4b28d9b1241365d15b0359f9681a05505750e4dfaf0a8a92375bedd43274eda7",
+        "state.log": "876962233b43252591692fd71f6a75ec58e8bd2c347a5fb40bbb51d81ebd7b7b"
+      },
+      "source_commit": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+      "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d"
+    }
+  ],
+  "encounter_family": "start-949818149e4c8e7ae5aa93d2bae4c53be2e70c4c8b75c0096b785e1f071daf57",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7478f7b53ddc35a8c12c7529bbe830beda0e068d122fa42eae4f3a4009e1d743",
+    "config.txt": "11163eeadc4db76bbcf1c00a4c51c67111e10935d78e800472148ef8d470b357",
+    "depths.json": "56040fac9ab2f141b73115c044811ce63fb3e952bcab638dbe063201f2e54b46",
+    "summary.json": "ce56066d5a5712bb9e92490e01934ff4ad89639234bcf335c08a4c9653758a27"
+  },
+  "investigation": null,
+  "issue": null
+}

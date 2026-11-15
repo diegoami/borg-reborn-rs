@@ -54,8 +54,12 @@ ending (scared, aborted, the budget) drops the rest.
 
 ## Rules
 
-- **On a level of the plan, the core plays as itself.** The errand only
-  walks the stairs between levels, after the core's caution.
+- **On a level of the plan, the core plays as itself.** The level is
+  explored when the core is bored with it and free to go either way: it
+  has weighed its own reasons to climb or go home (readiness for this
+  depth, restocking, selling, fixed level or experience) and none holds;
+  or `/explored` or `/stall` says so. Between levels the errand walks the
+  stairs, after the core's caution.
 - **No level is forced.** A ladder skips a level the core is not prepared
   for. When the core climbs back up off the plan inside the dungeon (below
   character level 10 it leaves a level it is not prepared for), a ladder

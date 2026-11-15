@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2132-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 9547,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+    "git_dirty": "yes",
+    "source_sha256": "55068854ae7452dd17ef8f9440814c8dce1341e4c21483170df7aa5d8e363565",
+    "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d",
+    "borg_txt_sha256": "94f240dca22046ee4c2b35bcd6625c563dcb594bfeb12bb865937d6f2a33589a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rev-out/parity/full-2-druid-0",
+      "result_sha256": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+      "raw_sha256": {
+        "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+        "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+        "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+      },
+      "source_commit": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+      "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d"
+    }
+  ],
+  "encounter_family": "start-bb7243f5234e41d01bd25e3a9c1fbc1e7cf1e36e8670b98597d1b347291d7674",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7478f7b53ddc35a8c12c7529bbe830beda0e068d122fa42eae4f3a4009e1d743",
+    "config.txt": "3ac7678cc0137dbaf5c1e497d2eee11c2873037b570e08152d62fa04e1087c6d",
+    "depths.json": "0efba100a3804991d86bff8f8205466645a43199a7ce489491c2cad4431d82a4",
+    "summary.json": "dc6cd8157c238ec5b2babf71f4de5c7efe42f352000607ba405933e3eed94614"
+  },
+  "investigation": null,
+  "issue": null
+}
