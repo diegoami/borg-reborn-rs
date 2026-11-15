@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-SCOPE = ['engine', 'harness', 'tools', 'borg-reborn-rs', '.github', 'Cargo.toml', 'Cargo.lock', 'watch-borg.sh']
+SCOPE = ['engine', 'harness', 'tools', 'borg-reborn-rs', 'borg-next', '.github', 'Cargo.toml', 'Cargo.lock', 'watch-borg.sh']
 SUFFIXES = {'.py', '.sh', '.rs', '.c', '.h', '.yml', '.yaml', '.toml', '.cmake', '.txt', '.lock', ''}
 SKIP = {'engine/angband', 'harness/out', 'harness/reference', 'engine/tests/test_independence.py'}
 # Uses of borg-rs, as opposed to mentions of where a file came from.
@@ -68,7 +68,13 @@ class IndependenceTest(unittest.TestCase):
         # borg-core is borg-rs's crate vendored at a pin (the option-C pilot,
         # #207, owner 2026-11-14): a copy in this repository (docs/SPEC.md
         # §2.2, docs/PROVENANCE.md), not a borg-rs checkout or crate.
-        self.assertRegex((ROOT / 'Cargo.toml').read_text(), r'members = \["borg-reborn-rs", "borg-core"\]')
+        self.assertRegex((ROOT / 'Cargo.toml').read_text(), r'members = \["borg-reborn-rs", "borg-core", "borg-next"\]')
+        # Track R flows inward: shell -> next -> core, never core -> next.
+        self.assertNotIn('borg-next', (ROOT / 'borg-core/Cargo.toml').read_text())
+        self.assertIn('borg-core = { path = "../borg-core" }',
+                      (ROOT / 'borg-next/Cargo.toml').read_text())
+        self.assertIn('borg-next = { path = "../borg-next" }',
+                      (ROOT / 'borg-reborn-rs/Cargo.toml').read_text())
         self.assertFalse((ROOT / 'borg-rs').exists())
         self.assertFalse((ROOT / 'angband').exists())
 

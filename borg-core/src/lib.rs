@@ -101,3 +101,6 @@ pub(crate) mod core_trace;
 pub fn do_cmd_borg() {
     engine::do_cmd_borg()
 }
+
+// borg-reborn-rs (#223): memory types for the Track R view.
+pub mod memory;

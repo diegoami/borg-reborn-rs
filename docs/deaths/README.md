@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2335; distinct starting conditions: 2332; retained process attempts: 2335 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2342; distinct starting conditions: 2339; retained process attempts: 2342 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2341,6 +2341,13 @@ Dossiers: 2335; distinct starting conditions: 2332; retained process attempts: 2
 | [D2353-rust-seed101](D2353-rust-seed101/report.md) | unassigned | `66aff7999c28` | 101 | a snaga | 12007 | unassessed |
 | [D2354-rust-seed102](D2354-rust-seed102/report.md) | unassigned | `66aff7999c28` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2355-rust-seed1020](D2355-rust-seed1020/report.md) | unassigned | `66aff7999c28` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2356-rust-seed102](D2356-rust-seed102/report.md) | unassigned | `53006188548e` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2357-rust-seed1020](D2357-rust-seed1020/report.md) | unassigned | `53006188548e` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2358-rust-seed102](D2358-rust-seed102/report.md) | unassigned | `35ab27fd11fb` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2359-rust-seed1020](D2359-rust-seed1020/report.md) | unassigned | `35ab27fd11fb` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2360-rust-seed1011](D2360-rust-seed1011/report.md) | unassigned | `46b687ccdd72` | 1011 | a cave spider | 18903 | unassessed |
+| [D2361-rust-seed1020](D2361-rust-seed1020/report.md) | unassigned | `5fbc0e60848a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2362-rust-seed102](D2362-rust-seed102/report.md) | unassigned | `5fbc0e60848a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 
 ## Aggregated actions
 

@@ -253,6 +253,7 @@ extern "C" fn do_cmd_borg() {
     // The decision core (#207, the option-C pilot): borg-rs's, vendored at
     // its pin in `borg-core/`, when `BORG_CORE=borg-rs`; ours otherwise.
     if crate::borg::core_is_borg_rs() {
+        borg_next::register();
         // An errand or a setting for the core (#208): `BORG_ERRAND` (`/dive
         // 2`, `/town`, `/ladder`, `trips:...`: borg-core/src/shell.rs), with
         // an optional budget in game turns (`BORG_ERRAND_BUDGET`), and

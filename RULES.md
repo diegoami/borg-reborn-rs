@@ -8,6 +8,12 @@ whatever the model.
 1. **A session merges its own task PRs** into `main` once CI is green, with
    no approval needed. The one merge a session never makes is a milestone's
    **review PR** (`main` → `reviewed`). That one is the owner's.
+   **Track R exception (owner, 2026-11-15):** R task PRs target and merge
+   into `feature/track-r`, never `main`. Green CI and milestone completion
+   do not authorize promotion of the unfinished redesign to `main` or
+   `reviewed`. Promotion requires the owner's explicit approval of a ready
+   redesign. Main may be merged into the feature branch to carry Track P
+   changes forward.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits

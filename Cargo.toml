@@ -1,5 +1,5 @@
 [workspace]
-members = ["borg-reborn-rs", "borg-core"]
+members = ["borg-reborn-rs", "borg-core", "borg-next"]
 resolver = "2"
 exclude = ["vendor/angband-recorder"]
 

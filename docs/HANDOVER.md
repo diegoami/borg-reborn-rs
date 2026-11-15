@@ -3,6 +3,33 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1.1 evidence reconciled before integration
+
+- Local checks on main's completed Track P baseline: 138 core tests (one
+  existing ignored), 165 workspace tests, Clippy, formatting, scripts and
+  independence checks pass. Vendoring declarations preserve both tracks.
+- Preserved all four earlier CI runs' natural death evidence as D2356–D2360,
+  deduplicating repeated encounter/key identities. Each imported case keeps
+  its original source/build identity and records the originating CI run.
+  The current build's cave-spider case resolves the engine CI failure.
+- A native build has source hash `90900e6253cc`; smoke is 3/3 identical to
+  the checked-in reference. D2361–D2362 preserve its natural deaths; the
+  short seed-102/race-1/class-1 run survived its 3,000-turn cap.
+- All task PRs continue into `feature/track-r`. The owner authorized
+  continuing the tasks there, with milestone review to follow.
+
+## 2026-11-15: Track R stays on its feature branch (owner)
+
+- The owner requires the unfinished redesign to stay out of `main`.
+  Created `feature/track-r` from main `8351f0a3`; PR #248 now targets it.
+  Future R task branches start from and merge into `feature/track-r`.
+- Green task CI authorizes integration into that feature branch only.
+  Milestone completion does not authorize promotion to `main` or `reviewed`.
+  The owner explicitly approves a ready redesign before any such promotion.
+- Main's completed Track P work was merged into the R1.1 task branch;
+  conflicts in handover, provenance and vendoring declarations preserve
+  both tracks. No R implementation has been merged into main.
+
 ## 2026-11-15: P3.2 sweep handoff (#245)
 
 - CORE-SWEEP.md is an exact-commit-pinned prompt for the owner’s zoo
@@ -133,6 +160,37 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track R started, R1.1 (#223)
+
+- Branch `task/R1.1-typed-view` starts from main `6a2b30cf`, independently
+  of track P's open P1.4 PR. Main's errand fixes through `e514e8b1`
+  were subsequently merged cleanly. R1 is active; #224 is next.
+- Added `borg-next`, with all 265 native traits named and grouped, plus
+  borrowed goals, status, entity records and checked cave access. Each
+  trait field cites its `BI_*` index. Entity IDs, holes, coordinates and
+  integer values are preserved. No engine is read by the view.
+- `borg-core::memory` exposes source types and an empty `Shadow` trait;
+  startup registers borg-next once. No think calls it or constructs the
+  view yet. #224 adds the actual hooks, modes and comparison. The core
+  has no dependency on borg-next.
+- Workspace, independence checks, CI formatting, vendoring declarations,
+  provenance and architecture now include the new crate. The source hash
+  includes borg-next, so its later changes cannot reuse a build identity.
+- Checks: fmt for our two crates, workspace Clippy with warnings denied,
+  workspace tests excluding core (165 passed), release core tests (134
+  passed, one existing ignored), 16 scripts tests, 69 tools tests, two
+  independence tests, vendoring check and diff whitespace check pass.
+  All 265 trait indices were checked to occur exactly once in the view.
+- No measured games were run locally for this frame-only task; no full
+  45/45 or shadow parity claim is made. The view has four engine-free
+  tests; checked allocated-grid access has a core regression test.
+- Read-only source refresh reports 46 borg-rs commits since its reference
+  pin, five touching the vendored core after v12, and 44 added better-borg-c
+  death files. No policy correction or pin move is mixed into this task.
+  A milestone source refresh remains separate under RULES 21; the carry
+  experiment belongs to #225. The view uses the current vendored v12
+  source, including track P's merged parameter changes.
 
 ## 2026-11-15: track P, P2.4 (#243), power extraction in progress
 
