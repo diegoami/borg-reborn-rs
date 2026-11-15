@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2391-rust-seed1021",
+  "run_kind": "harness",
+  "character": "Hobbit Druid",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 4,
+    "level": 1,
+    "turn": 3608,
+    "race_idx": 3,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1021,
+    "flags": "menu",
+    "git_rev": "132aeb26a54a7988ca013256f752fce19f24afc9",
+    "git_dirty": "yes",
+    "source_sha256": "4182670dfb294135edca35c3650ae73c5e1ce50b818aa0934560c37263c8eb70",
+    "binary_sha256": "315489b386edfa5d795aa25122ed5e4112f4a31838bb41f28bf3280e2ef3d776",
+    "borg_txt_sha256": "22f26b18b131354886de8f90b14c79bb98f839609094abd4f50213900fd416b4",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 908
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-full/full-2-druid-1",
+      "result_sha256": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+      "raw_sha256": {
+        "keys.log": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+        "messages.log": "d74ec5bd8acb04981bcbce756a680d8a62262ca11c42e634874dd260bd4f42a3",
+        "state.log": "82127e32d5ceede3b4ae7fade7faead94b869118b1f4d6f164cea6f8d0f12d69"
+      },
+      "source_commit": "132aeb26a54a7988ca013256f752fce19f24afc9",
+      "binary_sha256": "315489b386edfa5d795aa25122ed5e4112f4a31838bb41f28bf3280e2ef3d776"
+    }
+  ],
+  "encounter_family": "start-f898cef06dd8c0b435a3fb719a19ff23b4bf5943f0285f623c497afabacde3ee",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4cb3715e22f42fccffb14e0bbe5f6ea8837a2f759f50fec7a9c6f9d55d6d0a1c",
+    "config.txt": "ca688d72b74036ff602f686e6930b5330d88a3f4e8b539844edd71efbbc7fa26",
+    "depths.json": "0ec48811f6295bb45727bff06812bec4d81e8aba0c1d001f08da08fca8c1ff4a",
+    "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "summary.json": "5124ae4a4e1b4aacf727dd96a02e2029a455764c6b4d8a3b267ddb26c5123cc6",
+    "trace-core-tail.jsonl": "429dd3528de83596d8dc788334033d5931f806f15258df77310dc75a184b139d"
+  },
+  "investigation": null,
+  "issue": null
+}

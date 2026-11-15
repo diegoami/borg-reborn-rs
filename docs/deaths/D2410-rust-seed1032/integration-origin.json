@@ -1,0 +1,7 @@
+{
+  "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+  "original_case": "D2370-rust-seed1032",
+  "local_case": "D2410-rust-seed1032",
+  "original_record_sha256": "b7e4f2f89180c157babb2e89f526c90b21c32c5a6ffe4fa4e6a4a204eb7e4132",
+  "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+}

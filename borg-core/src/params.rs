@@ -231,7 +231,7 @@ parameters! {
     caution_retreat_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1014", "Number of Borg turns of danger evaluated along a retreat."),
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1223", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1514", "Number of Borg turns of danger evaluated at the current grid."),
-    caution_recall_rest_turns => (500, "turns", 1, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
+    caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
     // borg-reborn-rs (#220): source lines in danger/escape/recovery at 30ab9d66.
     danger_monblow_hurt_fear => (400, "danger", 0, 5000, "borg_danger.rs:208", "Additional melee danger for MONBLOW_HURT (n += 400;)."),
     danger_monblow_hurt_hit_power => (60, "hit_power", 0, 1000, "borg_danger.rs:210", "Legacy hit-power estimate used for MONBLOW_HURT in partial melee danger."),
@@ -405,7 +405,7 @@ parameters! {
     danger_melee_hit_luck_percent => (150, "percent", 100, 300, "borg_danger.rs:657", "Sets melee hit luck percent, measured in percent, in the existing danger rule."),
     danger_melee_hit_ac_scale => (300, "coefficient", 0, 1000, "borg_danger.rs:657", "Sets melee hit ac scale, measured in coefficient, in the existing danger rule."),
     danger_melee_hit_ac_divisor => (4, "divisor", 1, 1000, "borg_danger.rs:657", "Sets melee hit ac divisor, measured in divisor, in the existing danger rule."),
-    danger_melee_hit_power_scale => (3, "divisor", 1, 1000, "borg_danger.rs:657", "Sets melee hit power scale, measured in divisor, in the existing danger rule."),
+    danger_melee_hit_power_scale => (3, "denominator multiplier", 1, 1000, "borg_danger.rs:657", "Positive multiplier inside the melee hit-chance denominator; zero would divide by zero."),
     danger_melee_hit_floor_percent => (5, "percent", 0, 100, "borg_danger.rs:663", "Sets melee hit floor percent, measured in percent, in the existing danger rule."),
     danger_summon_protected_divisor => (100, "divisor", 1, 1000, "borg_danger.rs:707", "Sets summon protected divisor, measured in divisor, in the existing danger rule."),
     danger_summon_corridor_divisor => (1000, "divisor", 1, 10000, "borg_danger.rs:710", "Sets summon corridor divisor, measured in divisor, in the existing danger rule."),
@@ -479,13 +479,13 @@ parameters! {
     danger_regional_fear_max_depth => (80, "depth", 0, 127, "borg_danger.rs:2544", "Sets regional fear max depth, measured in depth, in the existing danger rule."),
     danger_morgoth_regional_fear_cap => (300, "danger", 0, 5000, "borg_danger.rs:2549", "Sets morgoth regional fear cap, measured in danger, in the existing danger rule."),
     danger_monster_fear_bounce_limit => (200, "count", 0, 1000, "borg_danger.rs:2556", "Sets monster fear bounce limit, measured in count, in the existing danger rule."),
-    danger_rsf_s_kin_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1685", "Protected-summon spell-power risk multiplier for RSF_S_KIN."),
-    danger_rsf_s_hi_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1703", "Protected-summon spell-power risk multiplier for RSF_S_HI_DEMON."),
-    danger_rsf_s_hydra_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1759", "Protected-summon spell-power risk multiplier for RSF_S_HYDRA."),
-    danger_rsf_s_ainu_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1777", "Protected-summon spell-power risk multiplier for RSF_S_AINU."),
-    danger_rsf_s_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1795", "Protected-summon spell-power risk multiplier for RSF_S_DEMON."),
-    danger_rsf_s_hi_undead_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1813", "Protected-summon spell-power risk multiplier for RSF_S_HI_UNDEAD."),
-    danger_rsf_s_unique_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1849", "Protected-summon spell-power risk multiplier for RSF_S_UNIQUE."),
+    danger_rsf_s_kin_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1685", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_KIN."),
+    danger_rsf_s_hi_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1703", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_DEMON."),
+    danger_rsf_s_hydra_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1759", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HYDRA."),
+    danger_rsf_s_ainu_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1777", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_AINU."),
+    danger_rsf_s_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1795", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_DEMON."),
+    danger_rsf_s_hi_undead_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1813", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_UNDEAD."),
+    danger_rsf_s_unique_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1849", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_UNIQUE."),
     escape_antisummon_reset_turns => (50, "turns", 0, 100000, "borg_escape.rs:77", "Sets antisummon reset turns, measured in turns, in the existing escape rule."),
     escape_recall_fail => (60, "percent", 0, 100, "borg_escape.rs:95", "Sets recall fail, measured in percent, in the existing escape rule."),
     escape_recall_depth_window => (5, "depth", 0, 127, "borg_escape.rs:107", "Sets recall depth window, measured in depth, in the existing escape rule."),
@@ -636,7 +636,7 @@ parameters! {
     recover_mana_rest_danger_divisor => (10, "divisor", 1, 1000, "borg_recover.rs:463", "Sets mana rest danger divisor, in divisor, in the existing recovery rule."),
     recover_mana_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:469", "Sets mana rest min food, in count, in the existing recovery rule."),
     recover_munchkin_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:492", "Sets munchkin rest min food, in count, in the existing recovery rule."),
-    recover_rod_rest_turns => (100, "turns", 1, 9999, "borg_recover.rs:404", "Number of rest turns queued while waiting for a healing/recall rod to recharge."),
+    recover_rod_rest_turns => (100, "turns", 2, 9999, "borg_recover.rs:404", "Number of rest turns queued while waiting for a healing/recall rod to recharge."),
     // borg-reborn-rs (#240): attack source at 5d9abb8f.
     attack_melee_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:380", "Attack melee min hit tenths: existing policy tenths."),
     attack_melee_bonus_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:388", "Attack melee bonus min level: existing policy level."),
@@ -1917,7 +1917,10 @@ mod tests {
 
     #[test]
     fn p2_divisors_and_narrow_timers_reject_unsafe_inputs() {
-        for spec in SPECS.iter().filter(|s| s.unit == "divisor") {
+        for spec in SPECS
+            .iter()
+            .filter(|s| matches!(s.unit, "divisor" | "denominator multiplier"))
+        {
             let text = format!("borg_param_{} = 0", spec.name);
             assert!(
                 parse(&text, &BTreeMap::new(), SPECS).is_err(),
@@ -1972,6 +1975,34 @@ mod tests {
         assert_eq!((cap.value, cap.origin), (1, "environment"));
         let phase = &settings[Param::escape_phase_tolerance as usize];
         assert_eq!((phase.value, phase.origin), (12, "borg.txt"));
+    }
+
+    #[test]
+    fn explicit_rest_durations_exclude_engine_repeat_sentinel() {
+        // ui-command.c:textui_cmd_rest parses decimal turns; cmd-cave.c:
+        // do_cmd_rest treats 1 as the previous rest count, not one turn.
+        for name in ["caution_recall_rest_turns", "recover_rod_rest_turns"] {
+            for value in [0, 1, 10000] {
+                assert!(parse(
+                    &format!("borg_param_{name} = {value}"),
+                    &BTreeMap::new(),
+                    SPECS
+                )
+                .is_err());
+            }
+            for value in [2, 12, 9999] {
+                let values = parse(
+                    &format!("borg_param_{name} = {value}"),
+                    &BTreeMap::new(),
+                    SPECS,
+                )
+                .unwrap();
+                assert_eq!(
+                    values.iter().find(|s| s.spec.name == name).unwrap().value,
+                    value
+                );
+            }
+        }
     }
 
     #[test]

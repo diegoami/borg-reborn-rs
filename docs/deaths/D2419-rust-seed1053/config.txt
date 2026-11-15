@@ -1,0 +1,5 @@
+flags=menu
+borg_txt_sha256=51c3e94088af478f2d3562a743d01cb78b4f87b93dd0893da6aae30661dca9ed
+profile=harness/profiles/reborn-default.txt
+profile_sha256=372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91
+borg_core=reborn

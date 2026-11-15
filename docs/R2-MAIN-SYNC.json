@@ -1,0 +1,286 @@
+{
+  "main_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+  "case_namespace_note": "P review reports use their original main IDs; map them through these original_case/local_case rows in the Track R historical registry. No canonical cemetery write or migration was performed.",
+  "cases": [
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2359-rust-seed1004",
+      "local_case": "D2399-rust-seed1004",
+      "original_record_sha256": "011657b0133cd8dd931f6d75052af45ee8ef9fe3036b33dc983589ba8b6fa369",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2360-rust-seed1010",
+      "local_case": "D2400-rust-seed1010",
+      "original_record_sha256": "b18bf46f51f4bf14448aab769368670a71aafb24b6f91f63dc496ddbcba658f1",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2361-rust-seed1011",
+      "local_case": "D2401-rust-seed1011",
+      "original_record_sha256": "6bab1facadfbbb17790aa3b8d914578512da6e856e50203f0a776ca03e0505f1",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2362-rust-seed1012",
+      "local_case": "D2402-rust-seed1012",
+      "original_record_sha256": "c913fad433b5e6e546b21f8ec59c4f9d9753bbf4f1f541e7e5d42f1bd52d4d5a",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2363-rust-seed1013",
+      "local_case": "D2403-rust-seed1013",
+      "original_record_sha256": "806937a808325240c7e461d051bbfa2429cd3bb3dde6117b8b46dd0a1952ebc7",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2364-rust-seed1014",
+      "local_case": "D2404-rust-seed1014",
+      "original_record_sha256": "122df7184fc8e66927e7d3bfd7ef23768a370152874b24a78eeb2c332e506d8e",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2365-rust-seed1021",
+      "local_case": "D2405-rust-seed1021",
+      "original_record_sha256": "b08af53403a72fa69f2a9d2d920f63432a5f4115205aee894c0f494c0eb886f8",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2366-rust-seed1022",
+      "local_case": "D2406-rust-seed1022",
+      "original_record_sha256": "f01d5c633d165f06c727ac3e628b1158ef068fd93190b19e4348eb77b40c411b",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2367-rust-seed1023",
+      "local_case": "D2407-rust-seed1023",
+      "original_record_sha256": "af9ad9e04f0a87a741e1314a9c3a747d9a3fe94bd022b4bac34f72de3cf6ab28",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2368-rust-seed1030",
+      "local_case": "D2408-rust-seed1030",
+      "original_record_sha256": "328d8d842a0eab756ee93adfba14b85cec52e2aeea9afa7d537b90490aaf2647",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2369-rust-seed1031",
+      "local_case": "D2409-rust-seed1031",
+      "original_record_sha256": "6bd1fed72d172048ff53001ee313c527af482881f545c1f08c2c7723a14e4920",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2370-rust-seed1032",
+      "local_case": "D2410-rust-seed1032",
+      "original_record_sha256": "b7e4f2f89180c157babb2e89f526c90b21c32c5a6ffe4fa4e6a4a204eb7e4132",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2371-rust-seed1033",
+      "local_case": "D2411-rust-seed1033",
+      "original_record_sha256": "d45bf8199ed950f2cafd296f040d03bc431ff36dcd36a637c1f8ca01f2909485",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2372-rust-seed1034",
+      "local_case": "D2412-rust-seed1034",
+      "original_record_sha256": "50349e541ba8e22b35fc3d466428206d84cba52103bcc7ea21d3a5d875876b5a",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2373-rust-seed1040",
+      "local_case": "D2413-rust-seed1040",
+      "original_record_sha256": "4277d127aa690556bee63f87c5525f043e6370c667bcd55356c75b2b10c88774",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2374-rust-seed1041",
+      "local_case": "D2414-rust-seed1041",
+      "original_record_sha256": "ae8eb37384f90706517854496931b6ab8fe666735b9227b15885c859c94b6854",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2375-rust-seed1042",
+      "local_case": "D2415-rust-seed1042",
+      "original_record_sha256": "2500d24ac43ff4626cbc6750cbb1d9491acff6ab927e88d158d8c1b3222fc74f",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2376-rust-seed1043",
+      "local_case": "D2416-rust-seed1043",
+      "original_record_sha256": "90f71daf9199316d35237a03d0e02c9f6fa8efeafbea3bc2d971decf7862891b",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2377-rust-seed1044",
+      "local_case": "D2417-rust-seed1044",
+      "original_record_sha256": "7dd6d44349ac9a14c1a497b2291d0f9213108eadfdbd3ecbdf13402642f00443",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2378-rust-seed1050",
+      "local_case": "D2418-rust-seed1050",
+      "original_record_sha256": "dce22d9f3c32c2b0d2412f8eca53717dcc038654b2fcb6e0ade604258d0d0cde",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2379-rust-seed1053",
+      "local_case": "D2419-rust-seed1053",
+      "original_record_sha256": "caf7b4417a295d36c609ddcd5220c1e17b66c2eb5c171b94f075f9bb4c3ae4ad",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2380-rust-seed1062",
+      "local_case": "D2420-rust-seed1062",
+      "original_record_sha256": "dbe50da70cac8113e359f980115edad3cb568f3fb9df34712612b4cce3016a5f",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2381-rust-seed1063",
+      "local_case": "D2421-rust-seed1063",
+      "original_record_sha256": "1452e1933d9e62117c2d487d59e51f4f335dc89677a2888842508df9ee175ba8",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2382-rust-seed1064",
+      "local_case": "D2422-rust-seed1064",
+      "original_record_sha256": "d11e918e58b23def090ef289d5a86d85d5386f942065b4c05e2fbddf018cb703",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2383-rust-seed1070",
+      "local_case": "D2423-rust-seed1070",
+      "original_record_sha256": "761fd46a74c9bf5501a0d650e3c58aa820349f9ca9f2353afe373e57785e26fc",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2384-rust-seed1073",
+      "local_case": "D2424-rust-seed1073",
+      "original_record_sha256": "f89e9b5ed93fcfeb77889034a0a01e3a4c0417e2136170dfc88c321e867928c8",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2385-rust-seed1074",
+      "local_case": "D2425-rust-seed1074",
+      "original_record_sha256": "904cbac89c621b924fe013215bbbc395abc061ba99f0445bd11159106a1049ea",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2386-rust-seed1082",
+      "local_case": "D2426-rust-seed1082",
+      "original_record_sha256": "3598f09c363ed3dd1247c17d17fb80febcb05cd3a76612ebccd5bcd154561129",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2387-rust-seed1083",
+      "local_case": "D2427-rust-seed1083",
+      "original_record_sha256": "995f83905182789c71b98a27c5c95df56f04f9bad772c8b8da7f08fc43bee1b5",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2388-rust-seed1084",
+      "local_case": "D2428-rust-seed1084",
+      "original_record_sha256": "418dec8700f070f42f93c13715abd3216bfd91a9630b3a1e70b42d45b1a69edb",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2389-rust-seed1011",
+      "local_case": "D2429-rust-seed1011",
+      "original_record_sha256": "d134d65afd0acfa7fec98167fd78decae806bd443474a27445b960f8f6f11105",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2390-rust-seed1020",
+      "local_case": "D2430-rust-seed1020",
+      "original_record_sha256": "6783ccc3993b01f0bd4c0348e7658e4d10cad458510dcce7703a750682775e77",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2391-rust-seed1021",
+      "local_case": "D2431-rust-seed1021",
+      "original_record_sha256": "84cee4fd44ac7856b6bbf9eea978f95eb61cbdb14297d509a5eef2c6748715c8",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2392-rust-seed1043",
+      "local_case": "D2432-rust-seed1043",
+      "original_record_sha256": "17acec7d3505f4258d44ee7144bbb8cfb1a9bfde5502fd34aca73b93ef92522f",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2393-rust-seed1050",
+      "local_case": "D2433-rust-seed1050",
+      "original_record_sha256": "f5afe1980a39fa79bd930f3399757ec8b99309a891d98d903cef7e5cb3620659",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2394-rust-seed1062",
+      "local_case": "D2434-rust-seed1062",
+      "original_record_sha256": "cea07918d452c14c7c68f2a38cbf3b1d6b057c71c0f8a72e2dea06eb92b7514f",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2395-rust-seed1072",
+      "local_case": "D2435-rust-seed1072",
+      "original_record_sha256": "3781dcc2d23f845a0255a1d2baa98f671fc43c920eff528617df6656a84b0f7b",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2396-rust-seed1084",
+      "local_case": "D2436-rust-seed1084",
+      "original_record_sha256": "b329f8c571ecc52b42bbde13c7d42c2b0c8644100e9e18f7d61cbd8878501b49",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2397-rust-seed102",
+      "local_case": "D2437-rust-seed102",
+      "original_record_sha256": "39e0f8660fb691e544a64bce682b611fb446dbcb3c1090b91bbacb16163234fd",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    },
+    {
+      "source_commit": "0ed0e5ded22b4bf692e6eaf292849893079fb1bd",
+      "original_case": "D2398-rust-seed1020",
+      "local_case": "D2438-rust-seed1020",
+      "original_record_sha256": "0ea776d44db47c75c266e4290a68522e2f7e6ea27668fe496cf36b530738a5ec",
+      "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
+    }
+  ]
+}

@@ -81,6 +81,38 @@ flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
 harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
 ```
 
+## Track P integration and review gate (owner, 2026-11-15)
+
+**Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
+RULES.md before P work. Start P task branches from `origin/track-p`, target
+P task PRs at `track-p`, and merge them there only after required CI passes.
+Close the task issue explicitly with its integration PR/commit. Never send
+or merge a P task PR directly into `main` because CI passed.
+
+At every milestone, stop and open a pinned **`track-p` → `main`** review
+PR. The owner selects/runs the review; fix findings through `track-p` task
+PRs. Keep promotion unmerged until the owner accepts the milestone review
+and CI passes. The owner merges the promotion or explicitly delegates that
+reviewed merge. Then the next milestone may start. Keep the reviewed head
+fixed while the review is active; record a new exact pin after fixes.
+Synchronize needed `main` changes through a CI-checked PR into `track-p`,
+preserving the other track's work. Do not force-push the integration branch.
+This P-specific rule overrides the generic merge instructions below; other
+tracks keep their own authorized workflow.
+
+Migration: P1–P3 were already on main at `8351f0a3` before this decision.
+They need retrospective review; do not describe them as independently
+reviewed or rewrite/revert main to simulate pre-merge review. The combined
+review and handover identify that historical exception. All new P tasks
+and review fixes follow the gate above.
+
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
+
 ## Choosing the work
 
 **Work happens in tracks** (owner, 2026-11-14). PLAN.md lists them:
@@ -103,7 +135,8 @@ gh issue list --label task --label "track:P" --label P1 --state open
 Take the lowest-numbered open task issue of that milestone whose **Needs**
 issues are closed (or in an open PR you can stack on, RULES 5) and that has
 no `in progress` label. A Needs issue may belong to the other track: track R
-ports a subsystem only after track P has named its thresholds. Add the
+ports a subsystem only after P has named its thresholds and the relevant
+P milestone has been reviewed and promoted to `main`. Add the
 `in progress` label and comment with your branch name before you start.
 
 **Track R branch rule (owner, 2026-11-15).** Start R task branches from
@@ -114,7 +147,8 @@ promotion. Milestone completion alone does not permit it. Synchronize main
 into the integration branch to inherit Track P work, then update task branches.
 
 Two sessions on different tracks share `borg-core/`. Keep each change to
-the files its task names, merge `main` into your branch before the PR, and
+the files its task names, synchronize the applicable integration branch
+(`track-p` for P, otherwise the track’s authorized base) before the PR, and
 never rewrite the other track's work to make yours fit; say so in the PR
 and the handover instead.
 
@@ -127,12 +161,13 @@ At the end of a task:
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;
-4. **you merge it yourself** once CI is green, into `feature/track-r`
-   for Track R and `main` otherwise (RULES 1).
+4. **you merge it yourself into the authorized integration branch** once
+   CI is green (`track-p` for P; RULES 1). P promotion to `main` requires
+   the owner-accepted milestone review, not just task CI.
 
 When your track's milestone has its last task merged, **stop** and open the
-review PR (PLAN.md). Track R uses its feature-only review ledger and an
-exact snapshot; it never targets main or global reviewed for this review. Do not start the track's next milestone, and do not
+review PR (PLAN.md). Track R uses an immutable feature snapshot into
+review/track-r-baseline, never main or global reviewed. Do not start the track's next milestone, and do not
 move to the other track.
 
 ## Models
@@ -159,12 +194,12 @@ milestone. Name both in the review PR.
 | `scripts/setup.sh` | Tools check and pinned checkouts in `vendor/` (ignored by git). A checkout found at another revision is reported, not moved; `--checkout` moves clean ones, `--strict` fails on any mismatch. To read a pin regardless of the checkout: `git -C vendor/NAME show COMMIT:path` |
 | `engine/` | The engine integration (docs/ENGINE.md): `angband/` (upstream `42cd156ac`, byte for byte, never edited, RULES 9), `patches/` (our harness hooks), `frontend/` (mode `borgh`), `bindings/` (bindgen), `CMakeLists.txt` and `sources.cmake` (our build), `tests/` |
 | `harness/` | build (`build.sh`), run, suite, diff, identity, boundary and zoo checks, references; see [harness/README.md](harness/README.md) |
-| `tools/export-death.py` | Writes a basic death dossier at the end of every run that died (RULES 12) |
+| `tools/export-death.py` | Thin pointer to the cemetery-owned exporter; normal dossiers go to borg-cemetery (RULES 12) |
 | `watch-borg.sh`, `tools/rerun-death.py`, `tools/death_registry.py` | the launcher to watch the Borg (X11), the rerun of a recorded death with its logs, the registry's index (TE.6; the copied GUI, recording and replay tools are gone) |
 | (removed) | borg-rs's GUI and headless launchers, recording, verified replay, human takeover and death workflow, copied in T1.6 with the adaptations listed at the top of [tools/README.md](tools/README.md) |
 | `docs/ZOO-INTERFACE.md` | The contract borg-zoo's adapter calls: build, run, outputs (TE.7) |
 | `docs/QUERY-SURFACE.md` | Secondary goal Q (D12): the draft of `borg-mcp`, the MCP server through which language models query the Borg's judgement (query mode) or play a hosted game as a separate arm (play mode) |
-| `docs/deaths/` | From M1 (T1.2, before the first game): our death dossiers, borg-rs format |
+| `docs/deaths/` | Preserved historical validation archive; canonical new death reports/analysis live in borg-cemetery |
 
 ## Local machine notes
 
