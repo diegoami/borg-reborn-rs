@@ -93,6 +93,13 @@ jobs:
           name: ci-core-death-registry
           path: ${{ runner.temp }}/core-deaths
           if-no-files-found: ignore
+      # P3: exercise the actual profile serializer and run_cell at our zoo pin.
+      - run: |
+          zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")
+          git init -q vendor/borg-zoo
+          git -C vendor/borg-zoo fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
+          git -C vendor/borg-zoo checkout -q --detach "$zoo_pin"
+          echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
       # The build, the source list and the frontend's contract on the binary (TE.4).
       - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.

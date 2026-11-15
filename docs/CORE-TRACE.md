@@ -1,9 +1,10 @@
 # Vendored-core decision trace
 
 With `BORG_CORE=borg-rs`, each completed core think writes one JSON line to
-`BORG_RUN_DIR/trace-core.jsonl`. The harness sets that directory. Set
+`BORG_RUN_DIR/trace-core.jsonl`. The harness sets that directory. Native borgh adapter calls use the parent
+of `-summary FILE` when BORG_RUN_DIR is absent (P3). Set
 `BORG_CORE_TRACE=off` (also `0` or `false`) to disable it; without a run
-directory it is disabled. This stream is separate from the original
+directory or frontend summary destination it is disabled. This stream is separate from the original
 reborn core's `trace.jsonl`.
 
 Schema `borg-reborn-rs/core-trace@1` records:
