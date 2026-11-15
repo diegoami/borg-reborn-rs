@@ -1026,6 +1026,27 @@ parameters! {
     defend_refresh_resistance_horizon => (2, "turns", 1, 10, "borg_fight_defend.rs:3532", "Defend refresh resistance horizon: existing policy turns."),
     defend_refresh_resistance_duration => (25000, "duration", 0, 32767, "borg_fight_defend.rs:3553", "Defend refresh resistance duration: existing policy duration."),
 
+    // borg-reborn-rs (#242): item_use source at 5d9abb8f.
+    item_use_ccw_recent_window => (4, "turns", 1, 10, "borg_item_use.rs:148", "Item_Use ccw recent window: existing policy turns."),
+    item_use_ccw_recent_skip_chance => (75, "percent", 0, 100, "borg_item_use.rs:148", "Item_Use ccw recent skip chance: existing policy percent."),
+    item_use_ccw_min_stock => (2, "count", 0, 255, "borg_item_use.rs:153", "Item_Use ccw min stock: existing policy count."),
+    item_use_food_heal_critical_hp => (4, "hp", 0, 10000, "borg_item_use.rs:423", "Item_Use food heal critical hp: existing policy hp."),
+    item_use_rod_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:461", "Item_Use rod equip max failure: existing policy permille."),
+    item_use_rod_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:494", "Item_Use rod use max failure: existing policy permille."),
+    item_use_staff_use_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:586", "Item_Use staff use max failure: existing policy permille."),
+    item_use_staff_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:641", "Item_Use staff equip max failure: existing policy permille."),
+    item_use_staff_teleport_max_failure => (650, "permille", 0, 1000, "borg_item_use.rs:650", "Item_Use staff teleport max failure: existing policy permille."),
+    item_use_ring_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:748", "Item_Use ring equip max failure: existing policy permille."),
+    item_use_dragon_equip_max_failure => (500, "permille", 0, 1000, "borg_item_use.rs:867", "Item_Use dragon equip max failure: existing policy permille."),
+    item_use_unholy_min_hp => (90, "hp", 0, 10000, "borg_item_use.rs:1010", "Item_Use unholy min hp: existing policy hp."),
+    item_use_recharge_wand_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1179", "Item_Use recharge wand max charges: existing policy count."),
+    item_use_recharge_staff_max_charges => (1, "count", 0, 255, "borg_item_use.rs:1196", "Item_Use recharge staff max charges: existing policy count."),
+    item_use_recharge_stacked_min_charges => (1, "count", 0, 255, "borg_item_use.rs:1208", "Item_Use recharge stacked min charges: existing policy count."),
+    item_use_recharge_low_charges => (2, "count", 0, 255, "borg_item_use.rs:1188", "Item_Use recharge low charges: existing policy count."),
+    item_use_recharge_fail => (96, "percent", 0, 100, "borg_item_use.rs:1189", "Item_Use recharge fail: existing policy percent."),
+    item_use_teleport_staff_min_charges => (3, "count", 0, 255, "borg_item_use.rs:1201", "Item_Use teleport staff min charges: existing policy count."),
+    item_use_recharge_min_total_stock => (4, "count", 0, 255, "borg_item_use.rs:1208", "Item_Use recharge min total stock: existing policy count."),
+
 }
 
 #[derive(Serialize)]
@@ -1157,6 +1178,7 @@ mod tests {
             let module = match prefix {
                 "attack" => "fight_attack",
                 "defend" => "fight_defend",
+                "item" => "item_use",
                 _ => prefix,
             };
             assert_eq!(file, format!("borg_{module}.rs"));

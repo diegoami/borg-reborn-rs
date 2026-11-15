@@ -1256,3 +1256,44 @@ healing and escapes distinguish mechanics from policy. Engine authority:
 and `lib/gamedata/class.txt`/`activation.txt` (effects and durations).
 Legacy predicted effects/durations and redundant branch order are retained,
 not asserted to be accurate engine models.
+
+## Item use (P2.3) (#242)
+
+19 named parameters. Source locations and validated input ranges
+are also recorded in `params-core.json` for each run. Defaults retain the
+existing policy; no tuning recommendation is implied.
+
+| Name | Default | Unit | Source line |
+| --- | ---: | --- | ---: |
+| `item_use_ccw_recent_window` | 4 | turns | 148 |
+| `item_use_ccw_recent_skip_chance` | 75 | percent | 148 |
+| `item_use_ccw_min_stock` | 2 | count | 153 |
+| `item_use_food_heal_critical_hp` | 4 | hp | 423 |
+| `item_use_rod_equip_max_failure` | 500 | permille | 461 |
+| `item_use_rod_use_max_failure` | 500 | permille | 494 |
+| `item_use_staff_use_max_failure` | 500 | permille | 586 |
+| `item_use_staff_equip_max_failure` | 500 | permille | 641 |
+| `item_use_staff_teleport_max_failure` | 650 | permille | 650 |
+| `item_use_ring_equip_max_failure` | 500 | permille | 748 |
+| `item_use_dragon_equip_max_failure` | 500 | permille | 867 |
+| `item_use_unholy_min_hp` | 90 | hp | 1010 |
+| `item_use_recharge_wand_max_charges` | 1 | count | 1179 |
+| `item_use_recharge_staff_max_charges` | 1 | count | 1196 |
+| `item_use_recharge_stacked_min_charges` | 1 | count | 1208 |
+| `item_use_recharge_low_charges` | 2 | count | 1188 |
+| `item_use_recharge_fail` | 96 | percent | 1189 |
+| `item_use_teleport_staff_min_charges` | 3 | count | 1201 |
+| `item_use_recharge_min_total_stock` | 4 | count | 1208 |
+
+Item-use source lines refer to `5d9abb8f`; total 1007 entries. Retained
+mechanics/interface data: 75% confusion skill modifier, the copied device
+failure formula (including its documented zero-divisor case), percentage
+and permille scales, EF_NOURISH subtype identifiers 0/2/3, inventory slot
+offsets, keys/effect IDs, zero charge/readiness and status guards. Recharge
+stock thresholds of one are policy and have names. Rod recall bypass,
+activation ordering and unknown-item scans retain their existing behavior.
+Read manual chapter7 and its device/recharge sections; engine authority is
+`src/player-util.c:get_use_device_chance`, `src/effect-handler-general.c`
+(recharge/nourishment), and `lib/gamedata/object.txt`/`activation.txt`. The
+legacy failure estimate is retained, not presented as an exact modern
+formula or silently corrected.

@@ -3,6 +3,16 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.3 item-use validation complete
+
+- 19 parameters/20 sites,1007 total; default expansion restores original
+  bytes. Full45/45,295,464 named rows, current-shell ladder, original-core
+  smoke/death and required checks pass on both source identities.
+- CCW-stock trial has no change; the rod-failure trial changes queued keys
+  at90378 on Half-Elf Warrior seed1001, on both builds. No improvement claim.
+- D2311–D2322 retain original evidence; D2323–D2333 preserve eleven new
+  natural deaths. Both registries reconcile. P2.3-VALIDATION.md has details.
+
 ## 2026-11-15: P2.2 integrated validation complete
 
 - Defence retains 45/45, named traces and current-shell ladder parity
@@ -64,6 +74,17 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track P, P2.3 (#242), item-use extraction in progress
+
+- Extracted 19 parameters at 20 sites (1007 entries total). Default full
+  45/45 and ladder parity pass on the pre-integration branch; default
+  expansion reproduces the original source bytes. Rust/Python checks pass.
+- The CCW-stock diagnostic on seed1011 causes no change; the rod-failure
+  diagnostic is pending. Every measured death is retained.
+- Another session's errand-shell fixes landed on main while P1.4 CI ran.
+  Integrating them through the stack and rerunning before final PR gates;
+  the older reports remain evidence for their actual source identities.
 
 ## 2026-11-15: track P, P2.2 (#241), defence parameters
 

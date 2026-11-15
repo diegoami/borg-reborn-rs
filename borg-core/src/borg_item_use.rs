@@ -15,6 +15,8 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
+// borg-reborn-rs (#242): named item_use policy; default operations unchanged.
+use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
@@ -145,12 +147,12 @@ pub fn borg_quaff_crit(st: &mut BorgState, no_check: bool) -> bool {
     /* Avoid drinking CCW twice in a row. */
     let last = st.item_use.when_last_quaff;
     let elapsed = st.borg.time.now - last;
-    if last != 0 && elapsed <= 4 && elapsed > 0 && (engine::randint0(100) + 1 < 75) {
+    if last != 0 && elapsed <= param(Param::item_use_ccw_recent_window) && elapsed > 0 && (engine::randint0(100) + 1 < param(Param::item_use_ccw_recent_skip_chance)) {
         return false;
     }
 
     /* Save the last two for when we really need them */
-    if st.borg.tr(BI_ACCW) < 2 {
+    if st.borg.tr(BI_ACCW) < param(Param::item_use_ccw_min_stock) {
         return false;
     }
 
@@ -420,7 +422,7 @@ pub fn borg_eat_food_any(st: &mut BorgState) -> bool {
         return true;
     }
     /* Consume in order, when hurting */
-    if (st.borg.tr(BI_CURHP) < 4 || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP))
+    if (st.borg.tr(BI_CURHP) < param(Param::item_use_food_heal_critical_hp) || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP))
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
@@ -458,7 +460,7 @@ pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool {
     let fail = device_fail(skill, lev);
 
     /* Roll for usage (at least 1/2 chance of success. */
-    if fail > 500 {
+    if fail > param(Param::item_use_rod_equip_max_failure) {
         return false;
     }
 
@@ -491,7 +493,7 @@ pub fn borg_zap_rod(st: &mut BorgState, sval: i32) -> bool {
     let fail = device_fail(skill, lev);
 
     /* Roll for usage */
-    if sval != st.item_val.sv_rod_recall && fail > 500 {
+    if sval != st.item_val.sv_rod_recall && fail > param(Param::item_use_rod_use_max_failure) {
         return false;
     }
 
@@ -583,7 +585,7 @@ pub fn borg_use_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     let fail = device_fail(skill, lev);
 
     /* Roll for usage, but if its a Teleport be generous. */
-    if fail > 500 {
+    if fail > param(Param::item_use_staff_use_max_failure) {
         if sval != st.item_val.sv_staff_teleportation {
             return false;
         }
@@ -638,7 +640,7 @@ pub fn borg_equips_staff_fail(st: &mut BorgState, sval: i32) -> bool {
     }
 
     /* Roll for usage, but if its a Teleport be generous. */
-    if fail > 500 {
+    if fail > param(Param::item_use_staff_equip_max_failure) {
         /* No real chance of success on other types of staffs */
         if sval != st.item_val.sv_staff_teleportation {
             return false;
@@ -647,7 +649,7 @@ pub fn borg_equips_staff_fail(st: &mut BorgState, sval: i32) -> bool {
         /* We need to give some "desperation attempt to teleport staff" */
         if sval == st.item_val.sv_staff_teleportation && st.borg.tr(BI_ISCONFUSED) == 0 {
             /* We really have no chance, return false, attempt the scroll */
-            if fail < 650 {
+            if fail < param(Param::item_use_staff_teleport_max_failure) {
                 return false;
             }
         }
@@ -745,7 +747,7 @@ pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
         let fail = device_fail(skill, lev);
 
         /* Roll for usage, but if its a Teleport be generous. */
-        if fail > 500 {
+        if fail > param(Param::item_use_ring_equip_max_failure) {
             continue;
         }
 
@@ -864,7 +866,7 @@ pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
     let fail = (100 * numerator) / denominator;
 
     /* Roll for usage, but if its a Teleport be generous. */
-    if fail > 500 {
+    if fail > param(Param::item_use_dragon_equip_max_failure) {
         return false;
     }
 
@@ -1007,7 +1009,7 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_ISFIXEXP) != 0
         && (borg_spell(st, REVITALIZE)
             || borg_spell(st, REMEMBRANCE)
-            || (st.borg.tr(BI_CURHP) > 90 && borg_spell(st, UNHOLY_REPRIEVE))
+            || (st.borg.tr(BI_CURHP) > param(Param::item_use_unholy_min_hp) && borg_spell(st, UNHOLY_REPRIEVE))
             || borg_activate_item(st, st.act.restore_exp)
             || borg_activate_item(st, st.act.restore_st_lev)
             || borg_activate_item(st, st.act.restore_life)
@@ -1176,7 +1178,7 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
         let pval = i32::from(item.pval);
 
         /* Wands with no charges can be charged */
-        if tval == TV_WAND && pval <= 1 {
+        if tval == TV_WAND && pval <= param(Param::item_use_recharge_wand_max_charges) {
             charge = true;
         }
 
@@ -1185,27 +1187,27 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
             /* Allow staves to be recharged at 2 charges if
              * the borg has the big recharge spell. And its not a *Dest*
              */
-            if pval < 2
-                && borg_spell_okay_fail(st, RECHARGING, 96)
+            if pval < param(Param::item_use_recharge_low_charges)
+                && borg_spell_okay_fail(st, RECHARGING, param(Param::item_use_recharge_fail))
                 && sval < st.item_val.sv_staff_power
             {
                 charge = true;
             }
 
             /* recharge any staff at 0 charges */
-            if pval <= 1 {
+            if pval <= param(Param::item_use_recharge_staff_max_charges) {
                 charge = true;
             }
 
             /* Staves of teleport get recharged at 2 charges in town */
-            if sval == st.item_val.sv_staff_teleportation && pval < 3 && st.borg.tr(BI_CDEPTH) == 0
+            if sval == st.item_val.sv_staff_teleportation && pval < param(Param::item_use_teleport_staff_min_charges) && st.borg.tr(BI_CDEPTH) == 0
             {
                 charge = true;
             }
 
             /* They stack.  If quantity is 4 and pval is 1, then there are 4
              * charges. */
-            if i32::from(item.iqty) + pval >= 4 && pval >= 1 {
+            if i32::from(item.iqty) + pval >= param(Param::item_use_recharge_min_total_stock) && pval >= param(Param::item_use_recharge_stacked_min_charges) {
                 charge = false;
             }
         }
@@ -1217,7 +1219,7 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
 
         /* Attempt to recharge */
         if borg_read_scroll(st, st.item_val.sv_scroll_recharging)
-            || borg_spell_fail(st, RECHARGING, 96)
+            || borg_spell_fail(st, RECHARGING, param(Param::item_use_recharge_fail))
             || borg_activate_item(st, st.act.recharge)
         {
             /* Message (the item is unchanged by the calls above) */
