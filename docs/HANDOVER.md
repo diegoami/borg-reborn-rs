@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: budget validation complete (#296)
+
+- Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3/fixture,55 engine tests (one skip),156+4+5
+  original/143 core tests (one ignored), Clippy/formatting and19/78 Python
+  tests. Six paired valid-budget cases match #295 byte for byte.
+- Preserve ten natural deaths atD2466–D2475; reconciliation passes with
+  actual build identity. P296-VALIDATION.md records intentional invalid-
+  input changes, finite-budget semantics and infrastructure/test retries.
+- Integrate into track-p after required CI, then stop for separate owner
+  review/promotion with #295/#299. The #292 authorization excludes this.
+
 ## 2026-11-15: strict errand budgets (#296), validation pending
 
 - Stacked on #295. Invalid configured budgets now exit2 with source/value
