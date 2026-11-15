@@ -1,11 +1,10 @@
 # Calibrating borg-rs's core (track P)
 
-P1.1 (#219) gives caution 200 parameters; P1.2 (#220) adds 366 in danger
-and escape, for 566 total. P1.3 (#221) adds 37 recovery settings, bringing the table to
-603 entries. This changes calibration access, not the default
-policy. No value here is claimed
-to improve play; the defaults are the vendored v12 values. The configured
-ranges are input bounds for experiments, not measured recommendations.
+P1 exposes603 caution/danger/escape/recovery parameters. P2 adds167
+attack,218 defence,19 item-use and727 power values: **1734 total**.
+Defaults retain the vendored v12 policy. Input bounds support experiments;
+no value is recommended or claimed to improve play. Each section below
+identifies its pre-extraction source and retained mechanics/interface data.
 
 ## Configuration and records
 
@@ -2061,3 +2060,7 @@ Engine authority: `src/player-calcs.c` (carry, mana/weight and stat indexing),
 frequency weights are hypotheses, not game facts or recommendations. The
 copied activation damage estimates remain legacy model data, not a claim
 of exact agreement with every current effect.
+
+The power weights govern static valuation (`borg_uses_dynamic_calcs = FALSE`).
+The existing dynamic formula subsystem and its configuration switch are
+unchanged; enabling it delegates valuation to the borg.txt formula rules.

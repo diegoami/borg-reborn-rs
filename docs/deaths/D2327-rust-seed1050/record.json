@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2327-rust-seed1050",
+  "run_kind": "harness",
+  "character": "Dwarf Paladin",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 24096,
+    "race_idx": 5,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1050,
+    "flags": "menu",
+    "git_rev": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+    "git_dirty": "yes",
+    "source_sha256": "c9f0bed483d6ad8dcef3f813684271dd7b844d525d57441b1862a615e728ff16",
+    "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb",
+    "borg_txt_sha256": "188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1806
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p23-integrated-full/full-5-paladin-0",
+      "result_sha256": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+      "raw_sha256": {
+        "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+        "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+        "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+      },
+      "source_commit": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+      "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb"
+    }
+  ],
+  "encounter_family": "start-6b7709e437d54e79321cc98bb6187425ef04692316f781f00169070c5b82227e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "eec2d46b599694b09ffe30612a5fe3dbd57fd7ba137315d72882486e75333c57",
+    "config.txt": "e693834aad19bde73774e570e6311d130c90ab8e918f34b340998482c02be7f1",
+    "depths.json": "b7433563472fc1a603e0e8b7b10e57faa310ddc97e06191c6fe44545bb3a58f6",
+    "params-core.json": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040",
+    "summary.json": "61eaef6d514b554d13f36b3676283d3111b9db76de8db2cd8bdfec1e72fc5698",
+    "trace-core-tail.jsonl": "80479c6310c24026fdcdf472fd7586cb74706a781e83f147afe6c51212e694ea"
+  },
+  "investigation": null,
+  "issue": null
+}

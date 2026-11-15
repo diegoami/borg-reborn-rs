@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2331-rust-seed101",
+  "run_kind": "harness",
+  "character": "Human Warrior",
+  "raw_cause": "a snaga",
+  "terminal": {
+    "cause": "a snaga",
+    "dead": true,
+    "depth": 17,
+    "max_depth": 17,
+    "level": 4,
+    "turn": 12007,
+    "race_idx": 0,
+    "class_idx": 0
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 101,
+    "flags": "menu",
+    "git_rev": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+    "git_dirty": "yes",
+    "source_sha256": "c9f0bed483d6ad8dcef3f813684271dd7b844d525d57441b1862a615e728ff16",
+    "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb",
+    "borg_txt_sha256": "0a39a4c4fb2cd56d4daea3dd06ae4dbb63fb71e7a24ee9c3a632a746dfcbdeba",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1079
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p23-integrated-ladder",
+      "result_sha256": "5cdf971a95c3db0520838c8e91c29d2227cce086e3726eea0974f503296a4024",
+      "raw_sha256": {
+        "keys.log": "5cdf971a95c3db0520838c8e91c29d2227cce086e3726eea0974f503296a4024",
+        "messages.log": "1aad252884fa4d8712c222d72cf25ba0de1afff2e109dc9d951d255865ef8eea",
+        "state.log": "108cc3147f460d9b46ece0d580be8f7deba8469a0140907426b528533c786e61"
+      },
+      "source_commit": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+      "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb"
+    }
+  ],
+  "encounter_family": "start-7d48196733e9aa28a31101b58db7cda42bc3195a2881de713125820d0f57ce54",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "eec2d46b599694b09ffe30612a5fe3dbd57fd7ba137315d72882486e75333c57",
+    "config.txt": "4faf2eee95cee6b139ce0faa35166db6e5be7c3e80ac1d5fdf3e5269a944bdc2",
+    "depths.json": "87814050b0a25b6dfa1c4ae5781f5bd5804d4e0cfbd6f6cd9939bb6f9020da5e",
+    "params-core.json": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040",
+    "summary.json": "e33984a7beb34e99525b26e11caac423e05b6b0689daa9b71b8e3ac5a2aaadcf",
+    "trace-core-tail.jsonl": "bde4208bd7811377e37bfb865a4a0b92405dc34659c05b4227f65f60be31c488"
+  },
+  "investigation": null,
+  "issue": null
+}

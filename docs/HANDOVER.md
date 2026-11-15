@@ -3,6 +3,49 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.4 power valuation complete
+
+- 727 parameters (1734 total) cover activation values, equipment scores,
+  speed/armour tiers, inventory quantities/weights and readiness rewards.
+  Retained mechanics and the unchanged dynamic-formula switch are declared.
+- Full45/45,295,464 named rows, current-shell ladder, original-core smoke
+  and death fixture pass. A zero unidentified-weapon bonus changes queued
+  keys at5656 on Human Warrior seed1000; no improvement claim.
+- Default expansion reproduces original bytes with only necessary i64
+  parameter promotions removed.137 core tests, required Rust checks,
+  17 scripts/70 tools tests and vendoring pass. D2334–D2344 retain eleven
+  natural deaths, fully reconciled (P2.4-VALIDATION.md).
+- P1 review snapshot is #251, unmerged. P3 #244 tests integer zoo profiles
+  and native diagnostics; #245 provides the owner's sweep prompt. Owner
+  authorized continuation; no reviewer or population experiment launched.
+
+## 2026-11-15: P2.3 item-use validation complete
+
+- 19 parameters/20 sites,1007 total; default expansion restores original
+  bytes. Full45/45,295,464 named rows, current-shell ladder, original-core
+  smoke/death and required checks pass on both source identities.
+- CCW-stock trial has no change; the rod-failure trial changes queued keys
+  at90378 on Half-Elf Warrior seed1001, on both builds. No improvement claim.
+- D2311–D2322 retain original evidence; D2323–D2333 preserve eleven new
+  natural deaths. Both registries reconcile. P2.3-VALIDATION.md has details.
+
+## 2026-11-15: P2.2 integrated validation complete
+
+- Defence retains 45/45, named traces and current-shell ladder parity
+  after the parent integration. The actual diagnostic character is Hobbit
+  Priest (race index3 with menu letters); the report now states it correctly.
+- Required checks pass again. D2289–D2299 retain original evidence and
+  D2300–D2310 preserve eleven integrated-build deaths, reconciled.
+
+## 2026-11-15: P2.1 integrated validation complete
+
+- Attack parameters retain 45/45 default parity and the same diagnostic
+  divergence after receiving current main through P1.4. Current-shell
+  ladder, named trace, original-core smoke/death and required checks pass.
+- D2265–D2276 retain original evidence; D2277–D2288 add the integrated
+  build's twelve natural deaths. Both registries reconcile. CI reruns on
+  the updated task head; downstream task branches receive these records.
+
 ## 2026-11-15: track P integration with the option-C fixes
 
 - P1.4's first head passed CI, but its merge was rejected after main's
@@ -78,7 +121,7 @@
   changes the priest's selected check at turn36902 from borg_caution to
   borg_attack. See P2.2-VALIDATION.md; no improvement claim.
 - All required Rust/Python/vendor checks and default-expansion audit pass.
-  D2277–D2287 preserve eleven natural deaths, reconciled without omissions.
+  D2289–D2299 preserve eleven natural deaths, reconciled without omissions.
 - Initially stacked on #247; pending CI gates will merge in task order.
   Remaining P work: item use #242, power #243, profile contract #244 and
   owner sweep prompt #245. Review PRs stay unmerged for the owner.
