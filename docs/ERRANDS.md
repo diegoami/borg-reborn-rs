@@ -40,6 +40,21 @@ non-integer, overflowing or non-UTF-8 values exit 2 with source/value
 diagnostics instead of removing the bound. The budget is ignored when
 no vendored-core command line is configured, or with the original core.
 
+A missing `borg.txt` means file settings are absent. Other read errors,
+including invalid UTF-8 anywhere in the file, stop configuration with exit
+status 2 and a path/error diagnostic. Environment overrides retain priority;
+a file is read only when a setting or the parameter loader consults it.
+Core parameters use the same read policy.
+
+Fear and errand settings are read on command entry, including re-entry
+(`^Z`); core selection and the parameter snapshot remain process-cached.
+In a vendored-core session, a newly invalid setting or unreadable file
+encountered by that reader terminates the process
+without an automatic save. Edit configuration before starting a fresh
+process, and preserve an interactive game's save before changing it. The
+reader's valid-to-invalid re-entry path is covered in a subprocess test;
+live interactive driving and automatic save recovery are not claimed.
+
 Each of these environment settings that is set is written to the run's
 `config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
 a ladders file), and `tools/rerun-death.py` sets them again when it reruns a

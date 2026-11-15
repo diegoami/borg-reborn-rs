@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner accepted #307; strict file reads (#317)
+
+- Owner instructed "ok merge and do the follow ups". #307 merged into
+  main at b58e7b44. Future #317–#319 promotion remains separately gated.
+- Treat only a missing borg.txt as absent. Diagnose other I/O/UTF-8 errors
+  with file context and exit status 2 when configuration is consulted.
+  The parameter loader shares that policy; Unix paths retain OS bytes.
+- Preserve lazy environment precedence and valid/missing-file defaults.
+  Document fatal re-entry behavior rather than claiming safe live reload;
+  subprocess reader re-entry and native startup paths are tested separately.
+- Local validation passes: full 45-case v12 parity, 295,464 trace rows,
+  original smoke/fixture, 59 engine tests (one skip), required Rust checks
+  and script/tool tests. Ten deaths retained as D2476–D2485; reconciliation
+  passes. Exact build and limitations: P317-VALIDATION.md. CI gates merge.
+
 ## 2026-11-15: sweep provenance and catalogue assembly (#299)
 
 - Stacked on #296; documentation-only follow-up, excluded from #292's

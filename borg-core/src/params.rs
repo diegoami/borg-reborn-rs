@@ -1857,13 +1857,7 @@ fn parse<'a>(
 pub(crate) fn initialize() {
     VALUES.get_or_init(|| {
         let result = (|| -> Result<Vec<i32>, String> {
-            let path = crate::engine::path_build_user(1024, b"borg.txt");
-            let path = String::from_utf8_lossy(&path);
-            let text = match std::fs::read_to_string(path.as_ref()) {
-                Ok(text) => text,
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
-                Err(e) => return Err(format!("{path}: {e}")),
-            };
+            let text = crate::shell::borg_txt_contents()?;
             let mut env = BTreeMap::new();
             for (name, value) in std::env::vars_os() {
                 if let Some(name) = name.to_str().and_then(|n| n.strip_prefix("BORG_PARAM_")) {
