@@ -1,0 +1,90 @@
+diff --git a/borg-core/src/borg_recover.rs b/borg-core/src/borg_recover.rs
+index a3ef2b37..2feb334b 100644
+--- a/borg-core/src/borg_recover.rs
++++ b/borg-core/src/borg_recover.rs
+@@ -270,8 +270,6 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
+         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_healing)
+-            || borg_activate_item(st, st.act.heal1)
+-            || borg_activate_item(st, st.act.heal2)
+             || borg_quaff_crit(st, false))
+     {
+         return true;
+@@ -283,9 +281,7 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
+         && (borg_quaff_crit(st, true)
+             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_curing)
+-            || borg_zap_rod(st, st.item_val.sv_rod_healing)
+-            || borg_activate_item(st, st.act.heal1)
+-            || borg_activate_item(st, st.act.heal2))
++            || borg_zap_rod(st, st.item_val.sv_rod_healing))
+     {
+         return true;
+     }
+@@ -323,13 +319,11 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
+     if st.borg.tr(BI_ISBLIND) != 0
+         && q < param(Param::recover_costly_blind_chance)
+         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
+-            || borg_eat(st, TV_FOOD as i32, st.item_val.sv_food_waybread)
+             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+             || borg_quaff_crit(st, false)
+             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+-            || borg_zap_rod(st, st.item_val.sv_rod_curing)
+-            || borg_activate_item(st, st.act.food_waybread))
++            || borg_zap_rod(st, st.item_val.sv_rod_curing))
+     {
+         return true;
+     }
+diff --git a/borg-next/src/stateful/recovery.rs b/borg-next/src/stateful/recovery.rs
+index 62c97eb0..851cec50 100644
+--- a/borg-next/src/stateful/recovery.rs
++++ b/borg-next/src/stateful/recovery.rs
+@@ -282,8 +282,6 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
+         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_healing)
+-            || borg_activate_item(st, st.act.heal1)
+-            || borg_activate_item(st, st.act.heal2)
+             || borg_quaff_crit(st, false))
+     {
+         return true;
+@@ -295,9 +293,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
+         && (borg_quaff_crit(st, true)
+             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+             || borg_zap_rod(st, st.item_val.sv_rod_curing)
+-            || borg_zap_rod(st, st.item_val.sv_rod_healing)
+-            || borg_activate_item(st, st.act.heal1)
+-            || borg_activate_item(st, st.act.heal2))
++            || borg_zap_rod(st, st.item_val.sv_rod_healing))
+     {
+         return true;
+     }
+@@ -341,13 +337,11 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
+     if crate::View::new(st).status.isblind != 0
+         && q < param(Param::recover_costly_blind_chance)
+         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
+-            || borg_eat(st, TV_FOOD as i32, st.item_val.sv_food_waybread)
+             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+             || borg_quaff_crit(st, false)
+             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
+-            || borg_zap_rod(st, st.item_val.sv_rod_curing)
+-            || borg_activate_item(st, st.act.food_waybread))
++            || borg_zap_rod(st, st.item_val.sv_rod_curing))
+     {
+         return true;
+     }
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..f8f63b69 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,7 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++test-track-r-recovery-carry = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

@@ -107,6 +107,7 @@ pub enum Detect {
 /// The detection arrays have `old_panels.y + 1` rows of `old_panels.x + 1`
 /// entries each (one more than the panels, as in C: "the code is sloppy
 /// about current panel plus one"); empty = NULL.
+#[derive(Clone, PartialEq)]
 pub struct UpdateState {
     /// `borg_wank_num`: entries of `wanks` in use
     pub wank_num: i32,

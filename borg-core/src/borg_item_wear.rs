@@ -50,6 +50,7 @@ use crate::state::BorgState;
 /// borg-item-wear.c globals: the artifacts worn recently, to avoid
 /// wear/take-off loops.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct WearState {
     /// `track_worn_num`
     pub track_worn_num: i16,

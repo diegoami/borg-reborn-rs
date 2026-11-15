@@ -73,6 +73,7 @@ use crate::state::BorgState;
 
 /// The module's globals (borg-fight-defend.c).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct FightDefendState {
     /// `borg_attempting_refresh_resist`: for the Resistance spell
     pub attempting_refresh_resist: bool,

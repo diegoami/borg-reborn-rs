@@ -71,6 +71,7 @@ const TRACK_VEIN_SIZE: i16 = 100;
 
 /// borg-flow-misc.c globals and file statics.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct FlowMiscState {
     /// `track_shop_x`: the store doors (9 entries, empty = NULL)
     pub track_shop_x: Vec<i32>,

@@ -33,6 +33,7 @@ pub const BORG_LIGHT: u16 = 0x10;
 /// `borg_glow_x`, `borg_glow_y`; filled by `borg_flow_light()` in
 /// borg-flow-misc.c). The player grid is always entry 0 of the light set
 /// after `borg_update_light()` when the player has a light.
+#[derive(Clone, PartialEq)]
 pub struct LightState {
     /// `borg_light_n`
     pub light_n: i16,

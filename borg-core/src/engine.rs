@@ -173,6 +173,7 @@ pub fn do_cmd_borg() {
 
 /// The token that object handles borrow (`BorgState::access`).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct Access {
     /// Not zero-sized, so its address identifies the root state's field.
     _addr: u8,

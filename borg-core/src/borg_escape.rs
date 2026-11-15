@@ -18,19 +18,19 @@
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
-use crate::borg_cave_util::{
+use crate::decision_api::borg_cave_util::{
     borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid,
 };
-use crate::borg_danger::borg_danger;
-use crate::borg_flow_kill::borg_shoot_scoot_safe;
-use crate::borg_io::{borg_keypress, borg_note, ESCAPE};
-use crate::borg_item_use::{
+use crate::decision_api::borg_danger::borg_danger;
+use crate::decision_api::borg_flow_kill::borg_shoot_scoot_safe;
+use crate::decision_api::borg_io::{borg_keypress, borg_note, ESCAPE};
+use crate::decision_api::borg_item_use::{
     borg_activate_item, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
-use crate::borg_projection::{borg_distance, borg_los, borg_target};
+use crate::decision_api::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::decision_api::borg_projection::{borg_distance, borg_los, borg_target};
 use crate::borg_update::Detect;
-use crate::engine;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
     DIMENSION_DOOR, PHASE_DOOR, PORTAL, SHADOW_SHIFT, TELEPORT_LEVEL, TELEPORT_SELF,
@@ -88,7 +88,8 @@ fn phase_not_escape(st: &mut BorgState) {
 
 /// Attempt to induce WORD_OF_RECALL
 /// artifact activations added throughout this code
-pub fn borg_recall(st: &mut BorgState) -> bool {
+pub(crate) fn borg_recall_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_recall",format!("{:?}",())); }
     // Multiple "recall" fails
     if st.borg.goal.recalling == 0 {
         // Try to "recall"
@@ -161,7 +162,8 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
 /// will see that several monsters are approaching him and he may
 /// become surrounded then die.  This routine looks at near-by monsters
 /// and determines the likelihood of him getting surrounded.
-pub fn borg_surrounded(st: &mut BorgState) -> bool {
+pub(crate) fn borg_surrounded_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_surrounded",format!("{:?}",())); }
     let mut safe_grids = 8;
     let mut non_safe_grids = 0;
     let mut monsters = 0;
@@ -306,7 +308,8 @@ pub fn borg_surrounded(st: &mut BorgState) -> bool {
 /// This method is used in town to chase the stairs.
 ///
 /// XXX XXX XXX We should attempt to walk "around" buildings.
-pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
+pub(crate) fn borg_freedom_native(st: &mut BorgState, y: i32, x: i32) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_freedom",format!("{:?}",(y,x,))); }
     let mut f = 0;
 
     // Chase down stairs in town
@@ -443,7 +446,8 @@ fn count_scary(
 }
 
 /// Help determine if PHASE_DOOR seems like a good idea
-pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
+pub(crate) fn borg_caution_phase_native(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_caution_phase",format!("{:?}",(emergency,turns,))); }
     // must have the ability
     if st.borg.tr(BI_APHASE) == 0 {
         return false;
@@ -468,7 +472,8 @@ pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> boo
 }
 
 /// Help determine if "Teleport" seems like a good idea
-pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
+pub(crate) fn borg_caution_teleport_native(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_caution_teleport",format!("{:?}",(emergency,turns,))); }
     // Extract panel
     let q_x = st.core.w_x / borg_panel_wid();
     let q_y = st.core.w_y / borg_panel_hgt();
@@ -526,7 +531,8 @@ fn borg_escape_stair(st: &mut BorgState) -> bool {
 }
 
 /// Is teleport currently allowed
-pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
+pub(crate) fn borg_allow_teleport_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_allow_teleport",format!("{:?}",())); }
     // No teleporting in arena levels
     if engine::player_arena_level() {
         return false;
@@ -546,7 +552,8 @@ pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
 }
 
 /// short range teleport + pain
-pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
+pub(crate) fn borg_shadow_shift_native(st: &mut BorgState, allow_fail: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_shadow_shift",format!("{:?}",(allow_fail,))); }
     // disallow if hp too low
     if st.borg.tr(BI_CURHP) < param(Param::escape_shadow_shift_min_hp) {
         return false;
@@ -555,7 +562,8 @@ pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
 }
 
 /// medium range teleport
-pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
+pub(crate) fn borg_dimension_door_native(st: &mut BorgState, allow_fail: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_dimension_door",format!("{:?}",(allow_fail,))); }
     // for now keep the range at under 50, for performance
     let range = param(Param::escape_dimension_door_range);
 
@@ -654,7 +662,8 @@ fn near_unique_1_8(st: &BorgState) -> bool {
 
 /// Try to phase door or teleport
 /// b_q is the danger of the least dangerous square around us.
-pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
+pub(crate) fn borg_escape_native(st: &mut BorgState, b_q: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_escape",format!("{:?}",(b_q,))); }
     let mut risky_boost = 0;
 
     // only escape with spell if fail is low
@@ -1258,4 +1267,49 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     false
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_recall(st:&mut BorgState)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::Recall) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_surrounded(st:&mut BorgState)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::Surrounded) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_freedom(st:&mut BorgState,y:i32,x:i32)->i32 {
+match crate::shadow::decision(st,crate::decisions::Decision::Freedom { y,x }) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_caution_phase(st:&mut BorgState,emergency:i32,turns:i32)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::CautionPhase { emergency,turns }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_caution_teleport(st:&mut BorgState,emergency:i32,turns:i32)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::CautionTeleport { emergency,turns }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_allow_teleport(st:&mut BorgState)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::AllowTeleport) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_shadow_shift(st:&mut BorgState,allow_fail:i32)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::ShadowShift { allow_fail }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_dimension_door(st:&mut BorgState,allow_fail:i32)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::DimensionDoor { allow_fail }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_escape(st:&mut BorgState,b_q:i32)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::Escape { b_q }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }

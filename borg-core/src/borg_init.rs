@@ -47,6 +47,7 @@ const TXT_BUF: usize = 1024;
 
 /// borg-init.c's globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct InitState {
     /// `borg_initialized`
     pub initialized: bool,
@@ -908,6 +909,7 @@ mod tests {
 
     /// A borg.txt in memory: `file_getl()` semantics (z-file.c), a stub
     /// formula loader that skips to the `[END` line, recorded outputs.
+    #[derive(Clone, PartialEq)]
     struct FakeTxt {
         st: BorgState,
         data: Vec<u8>,

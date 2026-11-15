@@ -43,6 +43,7 @@ use crate::borg_trait_swap::TraitSwapState;
 use crate::borg_update::UpdateState;
 
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct BorgState {
     /// The token engine object handles borrow (`engine::Access`): a handle
     /// made from `&st.access` cannot be kept across an engine call that

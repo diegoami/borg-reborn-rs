@@ -2,6 +2,89 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R2 exit evidence complete, feature-only review checkpoint
+
+- Danger #283 is merged; #291 completes caution, escape and recovery and the
+  measured parent #209 report. Final merge requires green CI and targets
+  feature/track-r only. The owner chose and accepted R1 review #266; no R2
+  reviewer is selected or launched here. R3 remains stopped at this checkpoint.
+- Combined runtime cd66d935d4b9 includes reviewed main 0ed0e5de and pinned
+  cemetery tools 33c37552. Smoke off/check/switch is 3/3 identical. Full check
+  and switch each have 45/45 v12 play-log parity, zero mismatches, 378,351
+  stateful transactions and 15,032,802 dependency requests. Known frontend
+  telemetry differences remain; standard cross-repo summary equality is 0/45.
+- R2-VALIDATION.md, R2-COMPARISON.json, immutable pre-sync evidence and all
+  controls retain exact builds, hashes, coverage, deaths and limits. Native
+  forced nesting has seven real entries/mode; opaque nesting has a separate
+  effect-once fixture. Surrounded request and recovery return controls fail
+  non-vacuously; matching re-ports give zero and changed-native play.
+- The real dc790dc recovery unit carries/re-ports six removed attempts on
+  two fixtures with no exposed disagreement: an honest negative control,
+  not v13 policy parity. Core PIN stays v12; #264 retains the production
+  carry/view/provenance/baseline gate and the need for targeted branch fixtures.
+- All final-source natural deaths are D2439–D2446; switch repeats them.
+  Exact original-core CI controls are D2447/D2448. All reconcile. The 40
+  imported P cases retain original records and 240 verified file hashes
+  under the R2-MAIN-SYNC map. No canonical cemetery data was written.
+- Provisional R3–R5 effort forecasts and their reasons are in PLAN.md/report.
+  These are planning judgments, not survival/performance claims or delivery
+  dates. No population experiment, sealed suite or R3 work was started.
+
+## 2026-11-15: carry reviewed main into R2 before final validation
+
+- Main advanced to 0ed0e5de after owner-accepted P promotion #260. Merge
+  retains strict core selectors, safer parameter bounds/documentation, the
+  P review evidence and cemetery-owned death tools at pin 33c37552. Both
+  track workflows survive; R still targets feature/track-r and its own ledger.
+- All 40 incoming P dossiers survive as feature-local D2399–D2438; R1/R2
+  IDs remain stable. R2-MAIN-SYNC.json maps original main IDs to local IDs,
+  and every imported case retains its exact original record bytes and all
+  source/build/file hashes. P review prose uses the original main namespace.
+  No canonical cemetery write or bulk migration was performed.
+- Death tool implementations remain cemetery-owned compatibility pointers.
+  The thin rerun adapter extends canonical SETTINGS with BORG_SHADOW before
+  CLI dispatch, preserving R1's recorded-mode restoration/inheritance cleanup.
+  The pinned canonical API otherwise lacked that R-specific setting.
+- R2-PRE-SYNC-COMPARISON.json retains 45/45 v12 play parity in both modes,
+  378,351 stateful transactions and 15,032,802 requests per mode, plus all
+  pre-sync deaths D2389–D2398. Forced native nested entry passes check/switch
+  with seven real nested entries per mode and identical logs.
+- State controls: surrounded reversal stops with a durable mismatch in both
+  modes; re-porting restores zero and changed-native play. Recovery return
+  controls log six/eight disagreements; re-porting gives zero. A real recovery
+  patch from dc790dc (six ineffective cure attempts removed) builds and
+  re-ports cleanly on two fixtures, but exposes no actual disagreement there.
+  It is a negative control, not evidence of changed-branch behavior.
+- Combined-source Rust/Python checks and final native full gates are rerun
+  before merge. Explicit BORG_DEATH_RECORDS_DIR=docs/deaths keeps this
+  validation in the retained historical registry; canonical storage remains
+  the default for normal exports. All R code remains outside main.
+
+## 2026-11-15: R2 stateful ports (#286), validation in progress
+
+- Owner authorized continuing after accepted R1. Source refresh #279 and
+  complete danger #283 have merged green into feature/track-r. This branch
+  task/R2.1-stateful adds caution, escape and recovery behind typed requests,
+  named View reads and a closed 68-function dependency surface.
+- Check drives native policy; switch drives the port. The alternate program
+  replays recorded dependencies on owned Rust state; effects/RNG run once.
+  Input state is compared before any post-state replacement, and final state,
+  all requests and return values must agree. Nested transactions preserve
+  their suspended parent tape. STATEFUL-SHADOW.md records the contract.
+- Smoke off/check/switch is 3/3 byte-identical in keys/messages/state.
+  Each enabled suite has zero mismatches across 8,707 root stateful
+  comparisons and 927,169 dependency requests, with positive caution,
+  escape and recovery entry coverage. A 3,000-turn check also passed.
+- Snapshot/effect-once, divergence and nested-entry tests pass; 142 core
+  tests pass (one existing ignored), 73 tools and 22 source-tool tests pass.
+  Full native/reference check/switch, marked fault/re-port and real carry
+  measurements are in progress; their evidence precedes merge.
+- The manifest now names 60 port functions. Source watcher: **five changed
+  ported functions** at moving reference 727ccff (healing, whole danger,
+  physical danger, spell danger, recovery). This is a positive warning,
+  not adopted v13 policy. Core PIN remains e6d13fc; #264 stays the future
+  production carry gate. R3 does not start before R2 milestone review.
+
 ## 2026-11-15: R2 danger slice (#281), stateful parent #209 stays open
 
 - Branch task/R2.1-danger is initially stacked on #279, targets feature/track-r.
@@ -56,6 +139,149 @@
   Watcher: 25 native functions changed since the core pin; **zero ported
   functions changed**, a negative control, not a claim of no port risk.
   Only wall_like is ported so far; #209 remains the full stateful port task.
+
+## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
+
+- The owner explicitly instructed: "ok then merge it and continue with other
+  tasks", after the current review/fix scope was explained. This accepts
+  the P1–P3 retrospective/promotion scope and delegates merging #260.
+  The standing track-p gate remains in force for future work.
+- #285 passed CI and integrated at1949530b. Main then contained the
+  death-tool ownership change811f338a (#282); synchronize it here before
+  #260. Preserve both handovers and regenerate the historical index using
+  local links, retaining all2378 local cases throughD2398.
+- Gameplay/build source remains4182670d. No external repository write or
+  migration occurs here. The pending errand-selector task #269 stays on
+  track-p; #272's RNG qualification was already implemented in #280.
+- This sync must pass required CI before integration; then perform the
+  owner-authorized #260 merge and record its actual merge commit on GitHub.
+
+## 2026-11-15: owner-requested death-tool ownership (#273)
+
+- The four native death-tool implementations moved to borg-cemetery with their
+  source provenance and original tests. Local command paths are API-checked thin
+  pointers; the harness and Borg instrumentation remain here.
+- Normal exports target the cemetery checkout. Explicit temporary destinations
+  and the existing historical CI reconciliation guard remain unchanged. The
+  cemetery owns catalogue/presentation updates; its historical index is not
+  overwritten by the native registry formatter. No bulk dossier migration.
+- CI engine tests clear policy BORG_* variables; pointer discovery also finds
+  the pinned vendor/borg-cemetery checkout without that environment variable.
+  The test and all its assertions remain unchanged.
+- CI reads an immutable cemetery revision from death-tools-pin.txt and checks it
+  out without a write credential. Local tools locate the sibling of the primary
+  checkout or BORG_CEMETERY_DIR. No source/build inputs or gameplay changed.
+- Reused logic preserves family/key-stream deduplication, repair, source-matched
+  reruns, errand/ladders settings and missing-death failures. Existing tools tests
+  pass against the external implementation; required CI remains the merge gate.
+- This is owner-directed storage infrastructure, not new P/R strategy work or
+  implementation of the diagnosis/counterfactual plans #153/#212.
+
+
+## 2026-11-15: synchronize cemetery documentation (#284)
+
+- Main advanced to `f441296f` (#276) after #280 passed CI. Preserve that
+  documentation/tooling change on track-p through a CI-checked sync PR;
+  main and the owner promotion remain unmerged by this session.
+- Resolved handover by retaining both sessions' entries. Regenerated the
+  death registry/index using the incoming generator: all2378 cases through
+  D2398 and the canonical cemetery notice survive. No case is moved to
+  another repository and the runtime source remains `4182670d`.
+- The migration snapshot in #276 describes D2358/2338 cases as of its
+  original pin; track-p has since added40 dossiers in #280. The migration
+  session must include D2359–D2398 in its eventual identity-preserving move.
+- #269's core-selector component and #270/#271 are addressed by #280;
+  #269's additional errand-selector investigation remains open. Owner
+  acceptance of #259/#260 remains pending. See P-REVIEW-VALIDATION.md.
+
+## 2026-11-15: retrospective review #259 fixes complete on track-p (#275)
+
+- Stacked on #277 into track-p. Strict core selector accepts only
+  reborn/0 and borg-rs/1, preserving default and environment precedence;
+  invalid values exit 2 with their source/value. Added pure and actual
+  native-profile contract coverage.
+- Engine/manual evidence confirms decimal rest turns, rather than the
+  review's proposed key-digit interpretation. Preserve names/defaults,
+  exclude engine repeat sentinel 1 with bounds 2–9999. The hit-power
+  multiplier is inside a denominator: clarify its unit, keep zero invalid.
+- Document implicit factor-1 source citations without moving them to the
+  adjacent factor-3 branch, qualify RNG preservation at defaults, remove
+  a stale retained-literal claim, and document strict name casing.
+- Validated source `4182670d` at implementation pin `132aeb26`: full45/45
+  v12 play parity,295,464 named rows, trace on/off, original smoke3/3,
+  native profile5/5, engine42 (one skip), required Rust and17/70 Python
+  checks pass. P-REVIEW-VALIDATION.md records limits and input changes.
+- Reproduced old-source original-core full45/45; preserved30 new deaths
+  D2359–D2388 plus existing D2355. Updated build's ten deaths are
+  D2389–D2398; both registries reconcile. Actual build identities retained.
+- Sweep prompt/examples now pin `132aeb26`, with pinned-catalogue validation.
+  Required CI must pass before track-p integration. Owner acceptance of
+  #259/#260 is still pending; no promotion or population run is authorized.
+
+## 2026-11-15: review #260 follow-up (#274)
+
+- Integrated main `83cf442a` into the task branch for `track-p`, preserving
+  shopping #267, its engine checks and dossiers D2356–D2358. No main merge
+  or force push is authorized by this task.
+- Clarified in all four workflow entry documents that pre-rule P1–P3 need
+  owner acceptance of retrospective review #259, not a second runtime
+  promotion. New P work still needs reviewed promotion. Other tracks keep
+  their existing authorization; reviewer recommendations are not acceptance.
+- Archived the two P reports unchanged from review branch commit
+  `ade599661355bd5556015c8cf0a50b54d661a703`; no R work was imported.
+  The reports retain the reviewer's assertions; #275 records corrections
+  where engine evidence disagrees. #259 and #260 remain owner review PRs.
+- Review #260 F1: `gh pr diff 260 --name-only` showed six policy/CI files,
+  not a shopping removal. Synchronizing main removes the head divergence;
+  the task PR's CI checks the integrated tree before any track-p merge.
+
+## 2026-11-15: earlier pointer documentation (#276; routing superseded by #273)
+
+This entry records the preceding pointer-only change. The #273 entry above and
+`docs/deaths/POINTER.md` describe the current ownership and routing. In particular,
+the historical cases remain local and their index links were corrected to their
+actual locations; reconciliation does not copy evidence.
+
+- The death dossiers are recorded in **borg-cemetery**, the canonical
+  home for recorded Borg runs, written death investigations and playable
+  saved scenarios. This repository keeps the code that writes and
+  reconciles them; `docs/deaths/POINTER.md` says where the cases live
+  and which seam serves both homes.
+- The seam is `BORG_DEATH_RECORDS_DIR`, already honoured by
+  `tools/export-death.py`, `tools/death_registry.py` and
+  `tools/reconcile-deaths.py`. **The export path and its defaults are
+  unchanged**, so no bulk migration happened and the CI reconcile gate
+  (RULES 12) is the same gate. The routing of exports is #273's, and
+  the move and the reconciliation are the other session's.
+- Two hazards are documented for that session, both found here:
+  - **the case ids collide.** Ours run `D0001`–`D2358`; the cemetery's
+    run `D0001`–`D0007` and mean *different deaths* by each id. A
+    directory copy would clobber the cemetery's seven cases. The
+    mapping has to be written down before the move; `encounter_family`
+    survives a renumbering.
+  - **the registry generator would overwrite the cemetery's index.**
+    `tools/death_registry.py` writes `index.json` and `README.md` into
+    the registry root. Both index files carry the same schema
+    (`borg-rs/death-index@1`) and key set, so a content check cannot
+    tell the registries apart; the guard has to be about which
+    directory the generator was pointed at.
+- `reference/deaths/INDEX.md` links our 2,338 cases to the cemetery and
+  keeps the copied reference registries local; `BORG_CEMETERY_URL` and
+  `BORG_DEATH_RECORDS_DIR` override the targets.
+- The registry's README notice lives in the generator's **template**,
+  not in the generated file: the generator rewrites `README.md` from
+  scratch, and a hand-written notice there was silently lost on the
+  next run. `tools/tests/test_death_registry.py` pins that it survives
+  a second regeneration.
+- AGENTS.md, RULES.md 12, README.md, docs/SPEC.md, docs/SOURCES.md,
+  reference/README.md and tools/README.md name the cemetery.
+- Checks pass: formatting, Clippy, 161 workspace tests, 19 scripts, 74
+  tools, 40 engine tests (16 environment skips). `tools/death_registry.py`
+  is idempotent and the reconcile gate resolves the registry.
+- The P1–P3 retrospective review, the track-p workflow review and the R1
+  review were also completed: `docs/REVIEW-259-P1-P3.md`,
+  `docs/REVIEW-260-WORKFLOW.md`, `docs/REVIEW-266-R1.md`, with the
+  findings posted on #259, #260 and #266 and filed as #269–#272.
 
 ## 2026-11-15: owner-requested /shopping (#208)
 
@@ -170,6 +396,24 @@
 - Main's completed Track P work was merged into the R1.1 task branch;
   conflicts in handover, provenance and vendoring declarations preserve
   both tracks. No R implementation has been merged into main.
+
+## 2026-11-15: owner changes P integration to track-p (#257)
+
+- The owner requires `track-p` (explicit spelling correction), with task
+  PRs merged there after CI and regular milestone reviews before any
+  promotion to main. The owner chooses the reviewer and accepts each
+  milestone; the session never treats green CI as review approval.
+- Saved the rule in AGENTS.md, RULES.md, PLAN.md and GOALS.md. P review
+  fixes use track-p too; other-track PRs keep their own bases/workflows.
+  CI now runs on track-p pushes as well as main and pull requests.
+- P1–P3 runtime changes were already on main8351f0a3. This is a historical
+  exception needing retrospective review, not independently reviewed work.
+  Do not rewrite/revert main. A full combined review uses the pre-P main
+  baseline c2c4e61d; the owner promotion PR into main currently changes only
+  workflow documents/CI because runtime code was already merged.
+- Checked open PRs: no P task PRs are pending; #251/#255/#256 are review
+  snapshots to supersede with the combined review. R PR #248 and the
+  separate repivot PR #206 are untouched. No reviewer or experiment is run.
 
 ## 2026-11-15: P3.2 sweep handoff (#245)
 

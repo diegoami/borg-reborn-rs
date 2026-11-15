@@ -234,11 +234,14 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
 - **Deaths:** every natural death of a measured run (`harness/run.sh`,
   the zoo's cells) gets a dossier (RULES 12); watched games are not
   recorded (owner, 2026-11-10).
-  `tools/export-death.py` (ours) is kept, with the trace tail and the
+  `tools/export-death.py` remains a pointer to the cemetery-owned implementation, with the trace tail and the
   parameters (T2.4).
   - `docs/deaths/` then holds two generations: D0001–D0525 on today's
     borg-rs-based tree, each dossier keeping its own `source_sha256`, and
-    the runs after E as new encounter families.
+    the runs after E as new encounter families. The canonical registry is
+    **[borg-cemetery](https://github.com/diegoami/borg-cemetery)**; this
+    repository writes and reconciles it through `BORG_DEATH_RECORDS_DIR`
+    (`docs/deaths/POINTER.md`).
   - `tools/reconcile-deaths.py` keys on (family, key stream), so the two
     never mix.
 - **The zoo:** borg-zoo measures our Borg through **the zoo contract**,
@@ -359,7 +362,7 @@ Unchanged in intent from docs/ARCHITECTURE.md, re-founded on §3–§5:
 | The copied `tools/` (GUI recording, replay viewer, human takeover, native recording, the death workflow, their tests, 2 C files with 2 headers) and the root launchers | copied from borg-rs and better-borg-c in T1.6 | **Dropped** in TE.6, all of it (owner, §11 q1): the death tooling imports the recording toolkit | replaced by `tools/rerun-death.py` (rerun a death with the Borg's logs), `tools/death_registry.py` (the index) and `watch-borg.sh` (one launcher) |
 | `tools/IMPORTED.json`, `tools/README.md` | the import record of T1.6 | **Replace** with `docs/PROVENANCE.md` | §2.2 |
 | `engine.rs`, `borg.rs`, `observation.rs`, `world.rs`, `knowledge.rs`, `params.rs`, `trace.rs` | ours (M1, T2.1–T2.4) | **Keep**, re-based on the new bindings | the Borg layers are ours |
-| `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own | §4 |
+| `docs/deaths/` (D0001–D0525) | ours, on borg-rs's tree | **Keep** as history, a generation of its own; the canonical registry now lives in [borg-cemetery](https://github.com/diegoami/borg-cemetery) | §4 |
 | `pins.json`: borg-rs | build source, `engine_tree` record, `borg_dir` | **Reference only**: `engine_tree` and borg-rs's `borg_dir` removed; the refresh report's watch of cited C Borg functions uses the angband pin's `src/borg` | §2 |
 | `reference/borg-rs/` | copies of borg-rs docs | **Keep** as reference | §2.3 |
 | `reference/c-borg/`, `reference/c-manual/`, `reference/deaths/`, `reference/zoo/`, `docs/research/` | sources and digests | **Keep** | |

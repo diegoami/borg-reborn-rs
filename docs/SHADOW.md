@@ -71,3 +71,12 @@ consistent total counts. Wall-helper traffic cannot stand in for a complete
 danger comparison. All three appear under ported_points; caution, escape
 and recovery remain explicitly unported. The R2 milestone's stateful ports
 and final carry report remain #209; #281 alone does not complete R2.
+
+## R2 stateful slice (#286)
+
+Caution, recovery and nine public escape entry points now have independent
+ported programs. Their check/switch adapter compares complete transactions,
+not only acted/keys. STATEFUL-SHADOW.md specifies effect-once execution,
+request/input-state checks, internal entry markers, full final-state equality,
+nested transactions, controlled divergence exits and the closed source gate.
+No R2 points remain deliberately unported. Off remains the native path.

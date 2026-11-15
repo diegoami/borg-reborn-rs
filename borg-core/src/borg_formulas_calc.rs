@@ -45,6 +45,7 @@ pub enum Op {
 
 /// `enum token_type` plus the token's payload (`void *token`).
 #[derive(Clone, Copy)]
+#[derive(PartialEq)]
 pub enum TokenKind {
     /// `TOK_VALUE`: a parsed `value(type, index)`
     Value(ValueSec),
@@ -56,6 +57,7 @@ pub enum TokenKind {
 
 /// `struct token`
 #[derive(Clone, Copy)]
+#[derive(PartialEq)]
 pub struct Token {
     pub kind: TokenKind,
     pub not: bool,
@@ -64,6 +66,7 @@ pub struct Token {
 
 /// `struct borg_calculation`
 #[derive(Clone, Default)]
+#[derive(PartialEq)]
 pub struct Calculation {
     pub tokens: Vec<Token>,
     pub max_depth: i32,
@@ -71,6 +74,7 @@ pub struct Calculation {
 
 /// borg-formulas-calc.c globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct CalcState {
     /// `calculations`
     pub calculations: Vec<Calculation>,
@@ -662,6 +666,7 @@ mod tests {
     /// Test environment: `value(N)` parses to an index; the value of
     /// index n is `vals[n]`, and index 99 means "the range index".
     #[derive(Default)]
+    #[derive(Clone, PartialEq)]
     struct Env {
         vals: Vec<i32>,
         errors: Vec<String>,

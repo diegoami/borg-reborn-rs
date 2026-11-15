@@ -73,6 +73,7 @@ pub struct BorgTake {
 
 /// borg-flow-take.c globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct TakeState {
     /// `borg_takes`: the object list (empty = NULL, else 256 entries)
     pub takes: Vec<BorgTake>,

@@ -1,6 +1,6 @@
 """Track P3: real pinned zoo profile -> borg.txt -> core parameter parsing.
 
-Three small contract cells, not a population experiment. Import the zoo's
+Small contract cells, not a population experiment. Import the zoo's
 committed tree, never its working Python files or cached modules. The run
 uses the adapter unchanged, with no BORG_* environment. The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
@@ -61,7 +61,7 @@ class CoreProfileContractTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def cell(self, name, settings):
+    def cell(self, name, settings, overrides=None):
         profile = {'description': 'core parameter contract', 'settings': settings}
         cat = {
             'profiles': {name: profile},
@@ -75,6 +75,7 @@ class CoreProfileContractTest(unittest.TestCase):
         out = self.root / 'cells' / self.catalogue.cell_key(cell)
         # No ambient core, errand or parameter override can make this pass.
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
+        env.update(overrides or {})
         with patch.dict(os.environ, env, clear=True):
             record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
         self.assertEqual(record['profile_sha256'], self.catalogue.profile_sha256(profile))
@@ -110,3 +111,28 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params.json').is_file())
         self.assertFalse((out / 'params-core.json').exists())
+
+    def test_invalid_numeric_core_selector_is_not_an_original_core_run(self):
+        for value in [2, 7, True]:
+            with self.subTest(value=value):
+                out, record = self.cell(f'invalid-core-{value}', {'borg_reborn_core': value})
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('borg.txt borg_reborn_core: invalid core selector',
+                              (out / 'stderr.log').read_text())
+                self.assertFalse((out / 'params-core.json').exists())
+                self.assertFalse((out / 'params.json').exists())
+
+    def test_environment_selector_precedence_in_actual_process(self):
+        for value in ['', 'true', '2', 'borg_rs']:
+            with self.subTest(value=value):
+                out, record = self.cell('invalid-env-' + (value or 'empty'),
+                                       {'borg_reborn_core': 1}, {'BORG_CORE': value})
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('BORG_CORE: invalid core selector',
+                              (out / 'stderr.log').read_text())
+        out, record = self.cell('valid-env-wins', {'borg_reborn_core': 7},
+                                {'BORG_CORE': 'borg-rs'})
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertTrue((out / 'params-core.json').exists())

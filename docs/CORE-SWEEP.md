@@ -1,6 +1,8 @@
 # Track P: owner-run calibration sweep prompt
 
 This is a handoff, not a launched experiment or an improvement claim.
+The review-fix pin must pass validation and owner milestone acceptance
+before dispatch; see P-REVIEW-VALIDATION.md.
 The owner starts population experiments and agrees confirmation suites
 (borg-zoo RULES 8 and this repository RULES 20). P1–P3 review PRs remain
 unmerged for the owner's chosen reviewer. No sealed suite is opened here.
@@ -13,7 +15,7 @@ experiment below; wait for the owner to start it. Do not edit another
 repository or launch an Actions population run on this prompt alone.
 
 Read **diegoami/borg-reborn-rs at
-`801e1fc1fefa046528e07a3487ed015e3c0267a7`** (P3.1 task head), especially
+`132aeb26a54a7988ca013256f752fce19f24afc9`** (review #259 fixes; validation in P-REVIEW-VALIDATION.md), especially
 CALIBRATION.md, CORE-TRACE.md, ZOO-INTERFACE.md, P3.1-VALIDATION.md and the
 example profiles. Its build source hash is
 `1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9`.
@@ -41,7 +43,7 @@ BORG_CORE, BORG_ERRAND, BORG_PARAM_* and other inherited Borg controls.
 The file must select the core and values itself. No C Borg control or
 engine change is required for this within-specimen parameter experiment.
 
-Register specimen `reborn-p-core-801e1fc1` at the full commit above,
+Register specimen `reborn-p-core-132aeb26` at the full commit above,
 `kind:borg-rs`, `impl:rust`, `exact_turns:true`, `depth_stream:true`.
 The catalogue fragment and exploratory experiment are supplied beside
 this prompt. Run the zoo's tests, `python3 -m zoo plan --experiment ...`

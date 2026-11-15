@@ -53,6 +53,7 @@ const CLASS_WARRIOR: i32 = 0;
 const MEMSET_SIZE: usize = 8;
 
 /// borg-store-sell.c globals.
+#[derive(Clone, PartialEq)]
 pub struct StoreSellState {
     /// `sold_item_tval`
     pub sold_item_tval: [i32; 10],

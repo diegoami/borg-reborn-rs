@@ -17,17 +17,17 @@
 
 // borg-reborn-rs (#221): named recovery values; default arithmetic/order preserved.
 use crate::params::{value as param, Param};
-use crate::borg_danger::borg_danger;
-use crate::borg_inventory::borg_slot;
-use crate::borg_io::{borg_keypress, borg_note, KC_ENTER};
-use crate::borg_item_use::{
+use crate::decision_api::borg_danger::borg_danger;
+use crate::decision_api::borg_inventory::borg_slot;
+use crate::decision_api::borg_io::{borg_keypress, borg_note, KC_ENTER};
+use crate::decision_api::borg_item_use::{
     borg_activate_item, borg_eat, borg_quaff_crit, borg_quaff_potion, borg_read_scroll,
     borg_use_staff_fail, borg_zap_rod,
 };
-use crate::borg_light::{borg_check_light_only, borg_maintain_light, BorgNeed};
-use crate::borg_magic::{borg_spell, borg_spell_okay};
-use crate::borg_flow_misc;
-use crate::engine;
+use crate::decision_api::borg_light::{borg_check_light_only, borg_maintain_light, BorgNeed};
+use crate::decision_api::borg_magic::{borg_spell, borg_spell_okay};
+use crate::decision_api::borg_flow_misc;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_magic_h::{
     BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
     RECHARGING, REMEMBRANCE, REMOVE_HUNGER, RESTORATION, REVITALIZE, UNHOLY_REPRIEVE,
@@ -85,7 +85,8 @@ fn rod_charging(st: &mut BorgState, sval: i32) -> bool {
 /// this is only true if the "danger" is less than the "reward" of doing
 /// the healing spell, and if there are no monsters which might soon step
 /// around the corner and attack.
-pub fn borg_recover(st: &mut BorgState) -> bool {
+pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::recovery.borg_recover",format!("{:?}",())); }
     /*** Handle annoying situations ***/
     let need = borg_maintain_light(st);
     if need == BorgNeed::MetNeed {
@@ -523,4 +524,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_recover(st:&mut BorgState)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::Recover) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }

@@ -70,6 +70,7 @@ impl StairTrack {
 
 /// borg-flow-stairs.c globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct StairsState {
     /// `track_less`: the "up" stairs
     pub less: StairTrack,
