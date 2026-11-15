@@ -27,6 +27,8 @@ def inspect(text, port=False, dispatch=False):
     fields, methods, macros and every carried dependency.
     """
     code = re.sub(r'\s*::\s*', '::', mask_non_code(text))
+    # Raw identifier spelling must not hide the same dependency/method.
+    code = re.sub(r'\br#(?=\w)', '', code)
     code = re.sub(r'\buse\s*::', 'use ', code)
     if port and dispatch:
         # Normalize whitespace only for matching the exact adapter/import.

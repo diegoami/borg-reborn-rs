@@ -82,6 +82,8 @@ class DecisionSurfaceTest(unittest.TestCase):
                      'st.borg.trait_.get(i)',
                      'let native = decision.native; native(st);',
                      'Decision::native(request, st);',
+                     'Decision::Caution.r#native(st);',
+                     'use r#borg_rs as core;',
                      'use super as parent;', 'use crate as root;',
                      'use ::borg_rs as core;',
                      'use {borg_rs as core};',
