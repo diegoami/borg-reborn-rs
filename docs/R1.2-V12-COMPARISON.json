@@ -1,0 +1,128 @@
+{
+  "runs": [
+    "full-0-warrior-0",
+    "full-0-warrior-1",
+    "full-0-warrior-2",
+    "full-0-warrior-3",
+    "full-0-warrior-4",
+    "full-1-mage-0",
+    "full-1-mage-1",
+    "full-1-mage-2",
+    "full-1-mage-3",
+    "full-1-mage-4",
+    "full-2-druid-0",
+    "full-2-druid-1",
+    "full-2-druid-2",
+    "full-2-druid-3",
+    "full-2-druid-4",
+    "full-3-priest-0",
+    "full-3-priest-1",
+    "full-3-priest-2",
+    "full-3-priest-3",
+    "full-3-priest-4",
+    "full-4-necro-0",
+    "full-4-necro-1",
+    "full-4-necro-2",
+    "full-4-necro-3",
+    "full-4-necro-4",
+    "full-5-paladin-0",
+    "full-5-paladin-1",
+    "full-5-paladin-2",
+    "full-5-paladin-3",
+    "full-5-paladin-4",
+    "full-6-rogue-0",
+    "full-6-rogue-1",
+    "full-6-rogue-2",
+    "full-6-rogue-3",
+    "full-6-rogue-4",
+    "full-7-ranger-0",
+    "full-7-ranger-1",
+    "full-7-ranger-2",
+    "full-7-ranger-3",
+    "full-7-ranger-4",
+    "full-8-blackguard-0",
+    "full-8-blackguard-1",
+    "full-8-blackguard-2",
+    "full-8-blackguard-3",
+    "full-8-blackguard-4"
+  ],
+  "identical_logs": [
+    "keys.log",
+    "messages.log",
+    "state.log"
+  ],
+  "shared_summary_differences": {
+    "borg_decisions": 45,
+    "borg_rng": 45,
+    "effective_settings": 45,
+    "wall_seconds": 45
+  },
+  "our_build": {
+    "impl": "rust",
+    "git_rev": "2545f8416dad1b0eaa2e8d34c69745473a37a08c",
+    "git_dirty": "yes",
+    "inputs_dirty": "yes",
+    "source_sha256": "aabe60c9cdbc6b6be3db847620412e3e3df484dbfb684d6b8e73f6b4859b0c70",
+    "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+    "binary": "/workspace/borg-reborn-rs/build/rust/game/angband",
+    "binary_sha256": "224957d1d39b367ad3890bfd40e0c756d81fce7ab90021ae2a75f741928baa96",
+    "cc": "cc (Debian 14.2.0-19) 14.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "built_utc": "2026-11-15T08:30:00Z"
+  },
+  "v12_build": {
+    "impl": "rust",
+    "git_rev": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+    "git_dirty": "no",
+    "inputs_dirty": "no",
+    "source_sha256": "62d09c9253264684d4f67aea8bdc266b42e899197a4d7ca838a010e553afe44b",
+    "binary": "/workspace/work/r-v12/build/rust/game/angband",
+    "binary_sha256": "18f8bd069ad7dc6eb6d7da3f5ca8a89ffc5580a5ff6636c076c93aada8e1d582",
+    "cc": "cc (Debian 14.2.0-19) 14.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "built_utc": "2026-11-15T08:35:13Z"
+  },
+  "v12_repository": "diegoami/borg-rs",
+  "donor_deaths": [
+    {
+      "case": "D2169-rust-seed1011",
+      "status": "repeat",
+      "run": "full-1-mage-1"
+    },
+    {
+      "case": "D2170-rust-seed1020",
+      "status": "repeat",
+      "run": "full-2-druid-0"
+    },
+    {
+      "case": "D2171-rust-seed1021",
+      "status": "repeat",
+      "run": "full-2-druid-1"
+    },
+    {
+      "case": "D2179-rust-seed1043",
+      "status": "repeat",
+      "run": "full-4-necro-3"
+    },
+    {
+      "case": "D2174-rust-seed1050",
+      "status": "repeat",
+      "run": "full-5-paladin-0"
+    },
+    {
+      "case": "D2180-rust-seed1062",
+      "status": "repeat",
+      "run": "full-6-rogue-2"
+    },
+    {
+      "case": "D2181-rust-seed1072",
+      "status": "repeat",
+      "run": "full-7-ranger-2"
+    },
+    {
+      "case": "D2182-rust-seed1084",
+      "status": "repeat",
+      "run": "full-8-blackguard-4"
+    }
+  ]
+}
