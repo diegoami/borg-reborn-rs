@@ -2,6 +2,87 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: the recorder adapter is a configure dependency (#268)
+
+- **M1 review F17** (Low) in the angband-recorder M1 review asked for two
+  things: add the adapter to CMake's configure dependencies, and cover it
+  with a generated-tree dependency test. Both are done.
+- `engine/recorder-hooks.patch` is applied at **configure** time, by
+  `execute_process` inside the `SUPPORT_BORG_RECORDING` block, so the
+  only way to re-apply it is to re-configure. `CMAKE_CONFIGURE_DEPENDS`
+  listed `engine/patches/*.patch` and `engine/UPSTREAM` but not the
+  adapter, so a plain incremental `cmake --build` could keep stale
+  hooks after the adapter changed. `engine/CMakeLists.txt:29` now
+  declares it.
+- `engine/tests/test_build.py` gains two tests: one asserts the
+  declaration, and one is **functional** — it configures a throwaway
+  build, records the generated tree's mtime, touches only the adapter
+  patch, runs `make cmake_check_build_system` and asserts the tree was
+  re-applied. The test was reproduced as failing on unfixed `main`
+  (the tree's mtime did not move) and passing here.
+- **The game is unchanged.** `engine/patches/`, `engine/frontend/`,
+  `engine/sources.cmake`, `engine/apply-patches.sh` and
+  `engine/recorder-hooks.patch` are byte-identical to `main`, so the
+  generated tree's content is identical: smoke is **3/3** against the
+  reference. The recorder-enabled build configures, builds and passes
+  `harness/check-recorder.py` ("Consumer recorder round trip passed").
+- The vendored recorder and `recorder-pin.json` are untouched (v0.1.0 /
+  `c4986b26b9fd`); re-vendoring the recorder's own corrections is a
+  separate step.
+- The branch's new build identity produced three new deaths (D2359–D2361),
+  retained with their trace tails and hashes. The two earlier red CI runs
+  on this branch were the RULES 12 reconcile gate refusing exactly those
+  unrecorded deaths.
+- **Open:** the upstream tree's *content* is still not a configure
+  dependency — `engine/UPSTREAM` is a marker file (the tree id), so an
+  in-place edit under `engine/angband/` does not re-apply the generated
+  tree. Filed as #288; benign today (a re-pin updates `UPSTREAM`, RULES 9
+  forbids editing the tree, and `engine/tests/test_engine.py` catches
+  it), and out of F17's scope.
+
+## 2026-11-15: the death registry points at borg-cemetery (#276)
+
+- The death dossiers are recorded in **borg-cemetery**, the canonical
+  home for recorded Borg runs, written death investigations and playable
+  saved scenarios. This repository keeps the code that writes and
+  reconciles them; `docs/deaths/POINTER.md` says where the cases live
+  and which seam serves both homes.
+- The seam is `BORG_DEATH_RECORDS_DIR`, already honoured by
+  `tools/export-death.py`, `tools/death_registry.py` and
+  `tools/reconcile-deaths.py`. **The export path and its defaults are
+  unchanged**, so no bulk migration happened and the CI reconcile gate
+  (RULES 12) is the same gate. The routing of exports is #273's, and
+  the move and the reconciliation are the other session's.
+- Two hazards are documented for that session, both found here:
+  - **the case ids collide.** Ours run `D0001`–`D2358`; the cemetery's
+    run `D0001`–`D0007` and mean *different deaths* by each id. A
+    directory copy would clobber the cemetery's seven cases. The
+    mapping has to be written down before the move; `encounter_family`
+    survives a renumbering.
+  - **the registry generator would overwrite the cemetery's index.**
+    `tools/death_registry.py` writes `index.json` and `README.md` into
+    the registry root. Both index files carry the same schema
+    (`borg-rs/death-index@1`) and key set, so a content check cannot
+    tell the registries apart; the guard has to be about which
+    directory the generator was pointed at.
+- `reference/deaths/INDEX.md` links our 2,338 cases to the cemetery and
+  keeps the copied reference registries local; `BORG_CEMETERY_URL` and
+  `BORG_DEATH_RECORDS_DIR` override the targets.
+- The registry's README notice lives in the generator's **template**,
+  not in the generated file: the generator rewrites `README.md` from
+  scratch, and a hand-written notice there was silently lost on the
+  next run. `tools/tests/test_death_registry.py` pins that it survives
+  a second regeneration.
+- AGENTS.md, RULES.md 12, README.md, docs/SPEC.md, docs/SOURCES.md,
+  reference/README.md and tools/README.md name the cemetery.
+- Checks pass: formatting, Clippy, 161 workspace tests, 19 scripts, 74
+  tools, 40 engine tests (16 environment skips). `tools/death_registry.py`
+  is idempotent and the reconcile gate resolves the registry.
+- The P1–P3 retrospective review, the track-p workflow review and the R1
+  review were also completed: `docs/REVIEW-259-P1-P3.md`,
+  `docs/REVIEW-260-WORKFLOW.md`, `docs/REVIEW-266-R1.md`, with the
+  findings posted on #259, #260 and #266 and filed as #269–#272.
+
 ## 2026-11-15: owner-requested /shopping (#208)
 
 - Added `/shopping`: a town-only round of the vendored core's buying,
