@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R1 accepted, R2 opened (#278)
+
+- Owner explicitly authorized merging #266 and continuing Track R. Review
+  #266 accepted R1 with no blockers; its exact report is REVIEW-266-R1.md.
+  The review merged into review/track-r-baseline at 0a3e9457 (tag r1),
+  never main or global reviewed. R2 #209 is now in progress.
+- Review follow-ups: expand the port manifest and mismatch/re-port controls
+  as R2 grows; #264 still gates future v13 adoption and the new-trait
+  completeness check. Record the port watcher line in each carry handover.
+- Synchronized main 83cf442a, including its town shopping errand. Independently
+  allocated dossier IDs collided: full main dossiers D2356/D2357/D2358 are
+  retained here as D2373/D2374/D2375, with integration-origin.json. Track R
+  dossiers and all original build/source hashes remain intact.
+- R2 source report: no new source deaths; borg-zoo moves 7109a026 to
+  f5043c96. Its catalogue gains town shopping profiles/specimens/suites and
+  extends explicit mode guards to borg-rs. Reborn's single play mode remains
+  outside that legacy guard. No population experiment or sealed suite opened.
+- Core PIN stays e6d13fc (v12); the moving borg-rs reference stays 727ccff.
+  Watcher: 25 native functions changed since the core pin; **zero ported
+  functions changed**, a negative control, not a claim of no port risk.
+  Only wall_like is ported so far; #209 remains the full stateful port task.
+
 ## 2026-11-15: owner-requested /shopping (#208)
 
 - Added `/shopping`: a town-only round of the vendored core's buying,
