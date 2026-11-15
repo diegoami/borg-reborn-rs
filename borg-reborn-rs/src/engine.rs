@@ -259,15 +259,7 @@ extern "C" fn do_cmd_borg() {
         // `BORG_STOPSCARED`. The environment first, else the run's borg.txt
         // (`borg_reborn_errand`, `borg_reborn_stopscared`: the zoo). In the
         // game, `^Z /` types one.
-        let setting = |env: &str, key: &str| {
-            std::env::var(env)
-                .ok()
-                .or_else(|| borg_rs::shell::borg_txt_setting(key))
-                .filter(|s| !s.is_empty() && s != "none")
-        };
-        if let Some(c) = setting("BORG_STOPSCARED", "borg_reborn_stopscared")
-            .and_then(|v| borg_rs::shell::Command::parse(&format!("stopscared {v}")))
-        {
+        if let Some(c) = crate::borg::configured_stopscared() {
             borg_rs::shell::apply(c, 0);
         }
         if let Some(line) = crate::borg::configured_errand() {

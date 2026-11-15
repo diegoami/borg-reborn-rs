@@ -172,3 +172,45 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params.json').exists())
         self.assertFalse((out / 'params-core.json').exists())
+
+    def test_invalid_stopscared_settings_fail_with_source_and_value(self):
+        for value in [0, -1, 1001]:
+            out, record = self.cell(f'invalid-fear-file-{value}', {
+                'borg_reborn_core': 1, 'borg_reborn_stopscared': value,
+            })
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('borg.txt borg_reborn_stopscared: invalid stopscared value',
+                          (out / 'stderr.log').read_text())
+        for value in ['bogus', '0', '1001', 'off; /dive 2']:
+            out, record = self.cell('invalid-fear-env-' + str(len(value)),
+                                   {'borg_reborn_core': 1}, {'BORG_STOPSCARED': value})
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('BORG_STOPSCARED: invalid stopscared value',
+                          (out / 'stderr.log').read_text())
+
+    def test_valid_fear_overrides_and_original_core_isolation(self):
+        for name, value in [('off', 'off'), ('none', 'none'), ('empty', '')]:
+            out, record = self.cell('valid-fear-' + name,
+                                   {'borg_reborn_core': 1, 'borg_reborn_stopscared': 1001},
+                                   {'BORG_STOPSCARED': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+            self.assertTrue((out / 'params-core.json').exists())
+        _, record = self.cell('valid-fear-file-false', {
+            'borg_reborn_core': 1, 'borg_reborn_stopscared': False,
+        })
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        out, record = self.cell('original-ignores-fear',
+                               {'borg_reborn_core': 0, 'borg_reborn_stopscared': 1001},
+                               {'BORG_STOPSCARED': 'bogus'})
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertTrue((out / 'params.json').exists())
+
+    def test_non_utf8_fear_environment_is_not_silently_ignored(self):
+        out, record = self.cell('invalid-fear-bytes', {'borg_reborn_core': 1},
+                               {'BORG_STOPSCARED': os.fsdecode(b'\xff')})
+        self.assertEqual(record['outcome'], 'harness_failure', record)
+        self.assertIn('exit code 2', record['error'])
+        self.assertIn('BORG_STOPSCARED: invalid non-UTF-8 stopscared value',
+                      (out / 'stderr.log').read_text())

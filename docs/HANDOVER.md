@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: strict configured stopscared (#295), validation pending
+
+- Stacked on main synchronization #298. This task is excluded from the
+  owner-authorized #292 promotion and later integrates into track-p only.
+- Reject invalid/non-UTF-8 fear values with source/value diagnostics and
+  exit2. Preserve valid aliases, numeric1–1000, empty/none/default handling,
+  environment precedence and original-core isolation. Interactive shell
+  parsing is unchanged. Native/profile tests cover the real startup paths.
+- Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
+  evidence retention and task CI are pending. No experiment is launched.
+
 ## 2026-11-15: owner authorizes #292 promotion; synchronize main (#298)
 
 - The owner explicitly instructed "you can merge 292 and continue" after

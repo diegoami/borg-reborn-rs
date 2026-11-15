@@ -363,6 +363,43 @@ fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<Stri
     }
 }
 
+/// A configured fear threshold is either valid or a configuration error;
+/// an invalid value must not silently become the core's default threshold.
+pub fn configured_stopscared() -> Option<borg_rs::shell::Command> {
+    let environment = std::env::var_os("BORG_STOPSCARED");
+    let file = if environment.is_none() {
+        borg_rs::shell::borg_txt_setting("borg_reborn_stopscared")
+    } else {
+        None
+    };
+    let selected = if let Some(value) = environment.as_ref() {
+        value
+            .to_str()
+            .ok_or_else(|| format!("BORG_STOPSCARED: invalid non-UTF-8 stopscared value {value:?}"))
+            .and_then(|value| parse_stopscared_setting(Some(value), "BORG_STOPSCARED"))
+    } else {
+        parse_stopscared_setting(file.as_deref(), "borg.txt borg_reborn_stopscared")
+    };
+    selected.unwrap_or_else(|error| {
+        eprintln!("borg-reborn-rs: {error}");
+        std::process::exit(2);
+    })
+}
+
+fn parse_stopscared_setting(
+    value: Option<&str>,
+    source: &str,
+) -> Result<Option<borg_rs::shell::Command>, String> {
+    match value {
+        None | Some("" | "none") => Ok(None),
+        Some(value) => borg_rs::shell::Command::parse(&format!("stopscared {value}"))
+            .map(Some)
+            .ok_or_else(|| format!(
+                "{source}: invalid stopscared value {value:?}; expected off, flee, or 1..=1000 (boolean aliases also accepted)"
+            )),
+    }
+}
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {
@@ -733,6 +770,45 @@ mod tests {
                 let error = parse_errand_setting(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
                 assert!(error.contains(&format!("{value:?}")));
+            }
+        }
+    }
+
+    #[test]
+    fn configured_fear_preserves_aliases_and_rejects_invalid_thresholds() {
+        for value in [None, Some(""), Some("none")] {
+            assert!(parse_stopscared_setting(value, "BORG_STOPSCARED")
+                .unwrap()
+                .is_none());
+        }
+        for (value, expected) in [
+            ("off", None),
+            ("FALSE", None),
+            ("no", None),
+            ("flee", Some(100)),
+            ("true", Some(100)),
+            ("on", Some(100)),
+            ("YES", Some(100)),
+            ("1", Some(1)),
+            ("1000", Some(1000)),
+        ] {
+            let command = parse_stopscared_setting(Some(value), "BORG_STOPSCARED").unwrap();
+            assert!(
+                matches!(command, Some(borg_rs::shell::Command::StopScared(n)) if n == expected)
+            );
+        }
+        for source in ["BORG_STOPSCARED", "borg.txt borg_reborn_stopscared"] {
+            for value in [
+                "bogus",
+                "0",
+                "-1",
+                "1001",
+                "2147483648",
+                " ",
+                "off; /dive 2",
+            ] {
+                let error = parse_stopscared_setting(Some(value), source).unwrap_err();
+                assert!(error.contains(source) && error.contains(&format!("{value:?}")));
             }
         }
     }

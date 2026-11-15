@@ -18,12 +18,20 @@ behind it is in PR #206 (docs/REDESIGN.md, docs/PILOT.md).*
 | outcome | `BORG_ERRAND_OUT` | a file: one JSON line per errand that ends |
 
 Configured errands are validated before the vendored core starts. An absent
-setting, an empty string, or exactly `none` disables errands. Unknown or malformed command lines,
+setting, an empty string, or exactly `none` disables errands. Unknown or
+malformed command lines,
 including an invalid command after a valid prefix, stop the process with
 exit status 2 and the setting's source/value on stderr. `BORG_ERRAND` takes
 precedence over `borg_reborn_errand`, including `none` overriding a file
 command. Valid command syntax and interactive prompt handling are unchanged.
 The original reborn core ignores this vendored-core setting.
+
+The configured fear threshold is also strict: invalid values exit 2 with
+source/value diagnostics. `BORG_STOPSCARED` overrides the file setting;
+absence, empty and exact `none` retain the core default and suppress a
+file override. Explicit `off` disables the threshold. Existing boolean
+aliases (`true`/`on`/`yes` for `flee`, `false`/`no` for `off`) and thresholds
+1–1000 retain their behavior. The original core ignores this setting.
 
 Each of these environment settings that is set is written to the run's
 `config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
