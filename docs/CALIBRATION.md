@@ -11,6 +11,9 @@ identifies its pre-extraction source and retained mechanics/interface data.
 At core initialization, values are loaded once for the process, including
 reincarnations. Precedence is `BORG_PARAM_<UPPERCASE_NAME>`, then
 `borg_param_<name>` in the run's `ANGBAND_DIR_USER/borg.txt`, then the default.
+Names are case-sensitive: file keys use lowercase, for example
+`borg_param_recover_rest_sp_tenths`; environment keys use uppercase,
+`BORG_PARAM_RECOVER_REST_SP_TENTHS`. Mixed-case names are rejected.
 Other `borg.txt` settings are unchanged. For example:
 
 ```text
@@ -39,6 +42,12 @@ The parameter table and all marked hooks are ours. Source locations below
 refer to **borg_caution.rs at reborn commit `726e04fa`**, before extraction,
 not to the file's shifting line numbers after the hooks.
 
+The core selector accepts exactly `reborn`/`0` and `borg-rs`/`1`.
+`BORG_CORE` takes precedence over `borg_reborn_core` in borg.txt; absent
+both, the original reborn core remains the default. Invalid selectors,
+including an empty environment value, fail with source/value diagnostics
+and exit status 2 instead of silently selecting another measured arm.
+
 ## Units and arithmetic
 
 - `hp`, `sp`, `gold`, `level`, `depth`, `count`, `grids` and `votes` use
@@ -47,11 +56,23 @@ not to the file's shifting line numbers after the hooks.
   failure scale, 0–1000. Loss means missing HP, not remaining HP.
 - `tenths` is the numerator of `x * parameter / 10`. `multiplier` is the
   factor of `x * parameter`; `divisor` is the denominator of `x / parameter`
-  and is always positive. The integer operations keep their original order.
+  and is always positive. `denominator multiplier` means a factor inside
+  a denominator: `danger_melee_hit_power_scale` multiplies `(level + power)`
+  before division, so its lower bound remains 1. Integer operations keep
+  their original order.
 - `turns` uses the existing caller's clock: Borg-clock ticks for memory
   and delays, danger horizons in Borg turns, engine rest count for
-  `caution_recall_rest_turns`, and the original fuel timeout unit for
+  `caution_recall_rest_turns` and `recover_rod_rest_turns`, and the original fuel timeout unit for
   `caution_nasty_light_timeout`. There is no clock conversion.
+- The two numeric rest parameters queue `R`, decimal digits, Enter.
+  These request engine turns (manual `command.rst:186–194`;
+  `ui-command.c:textui_cmd_rest:191–226`). Engine
+  `cmd-cave.c:do_cmd_rest:1639–1645` treats 1 as the previous rest count,
+  so explicit duration bounds are 2–9999. Defaults 500/100 are unchanged;
+  disturbances can interrupt rest before that requested duration.
+- Protected-summon power citations with default 1 point to the original
+  `p += spell_power` branch: its multiplier was implicit. The nearby
+  literal `* 3` belongs to a different branch and is not that default.
 - Healing band endpoints remain separate parameters. Changing them can
   intentionally create gaps or overlaps; tune the bands as a policy.
 
@@ -65,13 +86,13 @@ representation or game structure rather than an adjustable decision:
 - Zero tests for a boolean/status, town depth, empty inventory, no danger,
   dead/missing monsters or no goal; -1 sentinels; index zero, loop
   increments and one-based monster-table boundaries.
-- Eight neighbor directions, adjacency at one grid, the exactly-one
-  monster/one-blow test, the first retreat step and the 2/3 history offsets
+- Eight neighbor directions, adjacency at one grid, the first retreat step and the 2/3 history offsets
   required to recognize the same bounce pattern. Fast-monster safety's
   two-grid reach is tunable separately.
 - 100 for percent conversion and random-number domains, 10 for tenths,
-  11 for the regional fear-grid indexing. The RNG domain and number/order
-  of RNG calls stay fixed; the chance cutoffs are parameters.
+  11 for the regional fear-grid indexing. The RNG domain stays fixed. At defaults the number/order of RNG calls
+  is preserved; changing landing samples/trials changes draw counts and
+  the subsequent stream. Chance cutoffs are parameters.
 - `near.unique >= 10` is the encoded questor category. Depth 100 is
   Morgoth's level, the `< 100` questor exclusion is that boundary, and
   `CDEPTH + 1` is the next dungeon level. The strategy's 98/85/80 depth
@@ -289,7 +310,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_retreat_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1014` |
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1223` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1514` |
-| `caution_recall_rest_turns` | 500 | turns | 1–9999 | `borg_caution.rs:1630` |
+| `caution_recall_rest_turns` | 500 | turns | 2–9999 | `borg_caution.rs:1630` |
 
 
 ## P1.2: danger and escape (#220)
@@ -555,7 +576,7 @@ the vendored mechanics model:
 | `danger_melee_hit_luck_percent` | 150 | percent | 100–300 | `borg_danger.rs:657` |
 | `danger_melee_hit_ac_scale` | 300 | coefficient | 0–1000 | `borg_danger.rs:657` |
 | `danger_melee_hit_ac_divisor` | 4 | divisor | 1–1000 | `borg_danger.rs:657` |
-| `danger_melee_hit_power_scale` | 3 | divisor | 1–1000 | `borg_danger.rs:657` |
+| `danger_melee_hit_power_scale` | 3 | denominator multiplier | 1–1000 | `borg_danger.rs:657` |
 | `danger_melee_hit_floor_percent` | 5 | percent | 0–100 | `borg_danger.rs:663` |
 | `danger_summon_protected_divisor` | 100 | divisor | 1–1000 | `borg_danger.rs:707` |
 | `danger_summon_corridor_divisor` | 1000 | divisor | 1–10000 | `borg_danger.rs:710` |
@@ -807,7 +828,7 @@ item preference, random roll or effect was changed.
 | `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
-| `recover_rod_rest_turns` | 100 | turns | 1–9999 | `borg_recover.rs:404` |
+| `recover_rod_rest_turns` | 100 | turns | 2–9999 | `borg_recover.rs:404` |
 
 ## Named decision trace (P1.4)
 

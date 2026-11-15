@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: retrospective review #259 fixes in progress (#275)
+
+- Stacked on #277 into track-p. Strict core selector accepts only
+  reborn/0 and borg-rs/1, preserving default and environment precedence;
+  invalid values exit 2 with their source/value. Added pure and actual
+  native-profile contract coverage.
+- Engine/manual evidence confirms decimal rest turns, rather than the
+  review's proposed key-digit interpretation. Preserve names/defaults,
+  exclude engine repeat sentinel 1 with bounds 2–9999. The hit-power
+  multiplier is inside a denominator: clarify its unit, keep zero invalid.
+- Document implicit factor-1 source citations without moving them to the
+  adjacent factor-3 branch, qualify RNG preservation at defaults, remove
+  a stale retained-literal claim, and document strict name casing.
+- Validated source `4182670d` at implementation pin `132aeb26`: full45/45
+  v12 play parity,295,464 named rows, trace on/off, original smoke3/3,
+  native profile5/5, engine42 (one skip), required Rust and17/70 Python
+  checks pass. P-REVIEW-VALIDATION.md records limits and input changes.
+- Reproduced old-source original-core full45/45; preserved30 new deaths
+  D2359–D2388 plus existing D2355. Updated build's ten deaths are
+  D2389–D2398; both registries reconcile. Actual build identities retained.
+- Sweep prompt/examples now pin `132aeb26`, with pinned-catalogue validation.
+  Required CI must pass before track-p integration. Owner acceptance of
+  #259/#260 is still pending; no promotion or population run is authorized.
+
 ## 2026-11-15: review #260 follow-up (#274)
 
 - Integrated main `83cf442a` into the task branch for `track-p`, preserving
