@@ -13,8 +13,9 @@ and [issue350](https://github.com/diegoami/borg-reborn-rs/issues/350).
   helper path. It must not spend turns collecting copper before caution.
 - GOAL_FLEE rejects a known occupied next step and selects an available
   detour. It never implicitly authorizes a bump attack through that square.
-- While fleeing or facing lethal danger, known CLW/CSW/CCW are considered
-  deterministically at useful wound sizes. The heal's benefit is capped
+- Known CLW/CSW/CCW bypass the RNG skip when modeled next-round damage
+  can match the current wounds or kill the character, including while fleeing.
+  Small cures must still pass the existing damage-efficiency limits. The heal's benefit is capped
   at missing HP before testing whether it buys a survivable next round.
 - APHASE's conservative preparation count is not a complete escape
   capability test. In this case Phase Door was legal/affordable at5% fail,

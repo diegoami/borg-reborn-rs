@@ -449,16 +449,18 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // including while fleeing. At useful wound sizes do not randomly skip
     // them, and cap their benefit at max HP when checking the next round.
     if danger > 0
-        && (st.borg.goal.fleeing || danger >= st.borg.tr(BI_CURHP))
+        && (danger >= hp_down || danger >= st.borg.tr(BI_CURHP))
         && (pct_down >= p(Param::caution_clw_min_loss)
             || danger >= st.borg.tr(BI_CURHP))
     {
-        for (sval, amount) in [
-            (st.item_val.sv_potion_cure_light, clw_heal),
-            (st.item_val.sv_potion_cure_serious, csw_heal),
-            (st.item_val.sv_potion_cure_critical, ccw_heal),
+        for (sval, amount, divisor) in [
+            (st.item_val.sv_potion_cure_light, clw_heal, p(Param::caution_clw_danger_divisor)),
+            (st.item_val.sv_potion_cure_serious, csw_heal, p(Param::caution_csw_danger_divisor)),
+            (st.item_val.sv_potion_cure_critical, ccw_heal, p(Param::caution_ccw_danger_divisor)),
         ] {
-            if danger < st.borg.tr(BI_CURHP) + amount.min(hp_down)
+            let gain = amount.min(hp_down);
+            if danger < st.borg.tr(BI_CURHP) + gain
+                && gain > danger / divisor
                 && borg_quaff_potion(st, sval)
             {
                 borg_note(st, "# Healing before further movement or combat.");
