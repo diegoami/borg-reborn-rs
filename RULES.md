@@ -111,6 +111,15 @@ not undo other-track work already authorized before the gate.
     a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
     deaths of test-feature builds are not natural deaths of an arm and are
     kept apart.
+
+    **Dossier allocation (owner, 2026-11-15, #338):** final numeric IDs are
+    assigned centrally on acceptance into borg-cemetery. Branch-local IDs
+    are provisional and cross-branch references require an exact containing
+    registry commit (plus CI run/registry namespace before commit). Preserve
+    published evidence and mappings; reject numeric collisions on import,
+    even when directory suffixes differ. See docs/DEATH-ID-POLICY.md. Local
+    exports do not by themselves establish canonical publication acceptance.
+
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
