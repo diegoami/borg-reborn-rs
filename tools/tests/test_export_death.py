@@ -85,6 +85,21 @@ class ExportTest(unittest.TestCase):
         c, _ = ed.export(make_run(self.base, 'untraced', seed=7), 'c', self.build)
         self.assertIsNone(json.loads((self.reg / c / 'record.json').read_text())['decision_trace'])
 
+    def test_named_core_trace_tail_is_preserved_and_hashed(self):
+        run = make_run(self.base, 'core-trace')
+        (run / 'params-core.json').write_text('[]\n')
+        rows = [{'think': i, 'check': 'borg_caution', 'keys': [27]} for i in range(1, 251)]
+        (run / 'trace-core.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
+        case, _ = ed.export(run, 'rust', self.build)
+        d = self.reg / case
+        tail = [json.loads(l) for l in (d / 'trace-core-tail.jsonl').read_text().splitlines()]
+        self.assertEqual(tail, rows[-200:])
+        rec = json.loads((d / 'record.json').read_text())
+        self.assertEqual(rec['core_decision_trace'], {'file': 'trace-core-tail.jsonl', 'lines': 200, 'of': 250})
+        self.assertIsNone(rec['decision_trace'])
+        self.assertIn('trace-core-tail.jsonl', rec['files_sha256'])
+        self.assertIn('Core decision trace: the last 200 of 250 thinks', (d / 'report.md').read_text())
+
     def test_vendored_core_parameters_are_preserved_and_hashed(self):
         run = make_run(self.base, 'core')
         params = '[{"name":"caution_clw_min_loss","value":20}]\n'

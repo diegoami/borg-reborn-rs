@@ -50,8 +50,8 @@ jobs:
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
       # Track P (#219): exercise the vendored core's real initialization,
-      # not only the pure parser. Separate registry: its full decision trace
-      # is P1.4, while the original core's dossiers below require trace.jsonl.
+      # not only the pure parser. Its named trace has a separate registry;
+      # original-core dossiers below retain their trace.jsonl contract.
       - run: BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-params 1010 0 0 3000 menu
       - run: |
           python3 - <<'PYCORE'
@@ -61,11 +61,38 @@ jobs:
           settings = json.loads(data)
           assert settings and all(p['value'] == p['default'] and p['origin'] == 'default' for p in settings)
           assert 'params_core_sha256=' + hashlib.sha256(data).hexdigest() in (run / 'config.txt').read_text()
+          rows = [json.loads(l) for l in (run / 'trace-core.jsonl').read_text().splitlines()]
+          assert rows and [r['think'] for r in rows] == list(range(1, len(rows) + 1))
+          assert all(r['schema'] == 'borg-reborn-rs/core-trace@1' and r['check'] != 'unclassified' for r in rows)
+          assert all(isinstance(r['keys'], list) and set(r['goals']) == {'leaving', 'fleeing', 'fleeing_to_town', 'rising'} for r in rows)
           PYCORE
           if BORG_CORE=borg-rs BORG_PARAM_CAUTION_CLW_MIN_LOSS=101 harness/run.sh harness/out/core-invalid 1010 0 0 3000 menu; then
             echo 'invalid core parameter was accepted'; exit 1
           fi
           grep -q 'caution_clw_min_loss: 101 outside 0..=100' harness/out/core-invalid/stderr.log
+      # P1.4: recording leaves the game unchanged, and the final thinks of
+      # a real death survive in the named core trace's dossier tail.
+      - run: |
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_CORE_TRACE=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-off 1010 0 0 3000 menu
+          for f in keys.log messages.log state.log; do cmp "harness/out/core-params/$f" "harness/out/core-trace-off/$f"; done
+          test ! -e harness/out/core-trace-off/trace-core.jsonl
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1011 2 1 100000 menu
+          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
+          python3 - "$RUNNER_TEMP/core-deaths" <<'PYCORE'
+          import json, pathlib, sys
+          cases = list(pathlib.Path(sys.argv[1]).glob('D*-rust-*'))
+          assert cases
+          for case in cases:
+              rows = [json.loads(l) for l in (case / 'trace-core-tail.jsonl').read_text().splitlines()]
+              assert rows and len(rows) <= 200 and all(r['check'] != 'unclassified' for r in rows)
+              assert json.loads((case / 'record.json').read_text())['core_decision_trace']['lines'] == len(rows)
+          PYCORE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-core-death-registry
+          path: ${{ runner.temp }}/core-deaths
+          if-no-files-found: ignore
       # The build, the source list and the frontend's contract on the binary (TE.4).
       - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.

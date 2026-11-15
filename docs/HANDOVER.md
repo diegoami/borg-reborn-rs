@@ -3,6 +3,21 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: track P integration with the option-C fixes
+
+- P1.4's first head passed CI, but its merge was rejected after main's
+  option-C fixes landed (#238). The premature merged-status comment was
+  corrected immediately. Integrated main e514e8b1, preserving its shell
+  changes; the only conflicts were independently allocated dossier IDs.
+- Our original P1.4 cases are now D2242–D2253; D2254–D2264 preserve the
+  integrated build's eleven new deaths. Identities and evidence remain
+  intact, indexes/hashes regenerated. Both registries reconcile.
+- Integrated full **45/45**, 295,464 named trace rows, current-shell ladder
+  trace on/off, original-core smoke **3/3**, death fixture and all required
+  checks pass. P1.4-VALIDATION.md identifies both builds. CI reruns before
+  merging; downstream P2 branches will receive the integrated parent and
+  rerun game validation. No review PR has been merged or reviewer launched.
+
 ## 2026-11-15: the option-C review and re-review fixed (#227)
 
 - **Review #227** (Kimi K3.1 Pro): 13 findings, fixed in #230, #231 and
@@ -32,6 +47,27 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track P, P1.4 (#222), named core decisions
+
+- Added the independent `trace-core.jsonl` stream, successful root-check
+  hooks, core state/danger/goals/errand/queued keys and immediate line writes.
+  Nested thinks retain separate selection frames. CORE-TRACE.md specifies
+  the sampling point, composite-root names and schema limitations.
+- Full **45/45** matches P1.3 and pinned v12 play logs. All 295,464 rows
+  parse with contiguous sequences and no unclassified decisions. Tracing
+  off preserves play; default-profile ladder remains identical.
+- The recovery override changes the named check at turn 561, from
+  borg_flow_take to borg_recover, and retains the known negative outcome.
+- Death dossiers retain the last 200 core rows and their hashes/counts.
+  D2242–D2253 preserve all twelve measured natural deaths, reconciled.
+  Rust/Python/format/vendor checks pass; P1.4-VALIDATION.md has evidence.
+- P1.1–P1.3 merged (#234, #235, #237) after green CI. The owner explicitly
+  authorized all remaining P tasks on 2026-11-15, including continuation
+  beyond milestone review handoffs. Task PRs merge after CI; review PRs
+  stay unmerged for the owner's chosen reviewer. P2 tasks #240–#243 and
+  P3 tasks #244–#245 implement the remaining PLAN scope. No reviewer or
+  population experiment is launched by this session.
 
 ## 2026-11-15: track P, P1.3 (#221), recovery parameters
 
