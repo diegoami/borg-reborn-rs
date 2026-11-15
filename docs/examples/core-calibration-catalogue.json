@@ -1,0 +1,80 @@
+{
+  "note": "Catalogue fragments for an owner PR; no suite or experiment has run. Merge with existing catalogue so collision checks cover all existing seeds.",
+  "specimens": {
+    "reborn-p-core-801e1fc1": {
+      "kind": "borg-rs",
+      "impl": "rust",
+      "repository": "diegoami/borg-reborn-rs",
+      "ref": "801e1fc1fefa046528e07a3487ed015e3c0267a7",
+      "exact_turns": true,
+      "depth_stream": true,
+      "carries": 0,
+      "label": "Track P calibrated vendored core, ordinary play",
+      "source": "https://github.com/diegoami/borg-reborn-rs/commit/801e1fc1fefa046528e07a3487ed015e3c0267a7"
+    }
+  },
+  "suites": {
+    "core-mage-rest-dev-128-v1": {
+      "description": "Fresh Mage rest-threshold development; freeze before outcomes.",
+      "role": "development",
+      "seed_rule": {
+        "generator": "sha256-v1",
+        "count": 128
+      },
+      "cap": 100000,
+      "wall_seconds": 900,
+      "stall_seconds": 90,
+      "birth": "assigned",
+      "characters": {
+        "classes": [
+          "Mage"
+        ],
+        "races": [
+          "Human",
+          "Half-Elf",
+          "Elf",
+          "Hobbit",
+          "Gnome",
+          "Dwarf",
+          "Half-Orc",
+          "Half-Troll",
+          "Dunadan",
+          "High-Elf",
+          "Kobold"
+        ]
+      },
+      "saves": false
+    },
+    "core-mage-rest-confirm-900-v1": {
+      "description": "Fresh Mage rest-threshold confirmation; freeze before outcomes.",
+      "role": "confirmation",
+      "seed_rule": {
+        "generator": "sha256-v1",
+        "count": 900
+      },
+      "cap": 100000,
+      "wall_seconds": 900,
+      "stall_seconds": 90,
+      "birth": "assigned",
+      "characters": {
+        "classes": [
+          "Mage"
+        ],
+        "races": [
+          "Human",
+          "Half-Elf",
+          "Elf",
+          "Hobbit",
+          "Gnome",
+          "Dwarf",
+          "Half-Orc",
+          "Half-Troll",
+          "Dunadan",
+          "High-Elf",
+          "Kobold"
+        ]
+      },
+      "saves": false
+    }
+  }
+}

@@ -126,3 +126,7 @@ They explicitly disable dynamic valuation as well as special modes. The
 `power_*` parameters govern the static power implementation; choosing
 `borg_uses_dynamic_calcs = TRUE` delegates valuation to the existing
 borg.txt formula subsystem and does not apply those static weights.
+
+The owner-run sweep handoff is [CORE-SWEEP.md](CORE-SWEEP.md). It pins the
+validated specimen and supplies fresh-suite/candidate-selection/confirmation
+rules; it does not launch a population experiment.

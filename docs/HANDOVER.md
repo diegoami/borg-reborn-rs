@@ -3,6 +3,25 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P3.2 sweep handoff (#245)
+
+- CORE-SWEEP.md is an exact-commit-pinned prompt for the owner’s zoo
+  session, with sample catalogue/profile/experiment fragments. It specifies
+  128-seed exploration, fixed candidate selection and900 fresh matched
+  confirmation pairs, prespecified success/failure accounting and exact
+  analysis. No population experiment or sealed-set inspection occurred.
+- The actual pinned catalogue validates384 exploratory cells and the two
+  draft suites’ disjoint assignments. The sizing script reproduces the
+  exact boundary-model power. P3.2-VALIDATION.md records the checks.
+- Build inputs are identical to P3.1; its45/45 play parity, profile contract,
+  named trace and eleven preserved deaths apply. Task PRs merge only after
+  green CI. All P1–P3 deliverables are implemented when this task merges;
+  milestone review snapshots remain for the owner's chosen reviewer.
+- P1 review #251 pins main33ebdc1e. That real merge is verified by its
+  parents, although GitHub left #246 open after a502; the stale PR and
+  issue were closed manually after verification. No source was reverted.
+  P2/P3 review snapshots are opened when their final task merges.
+
 ## 2026-11-15: P3.1 validation complete
 
 - The real pinned zoo profile contract passes3 cells with no BORG_* policy
