@@ -400,6 +400,32 @@ fn parse_stopscared_setting(
     }
 }
 
+/// A configured errand budget is a nonnegative number of game turns.
+/// This is consulted only for a configured vendored-core command line.
+pub fn configured_errand_budget() -> i64 {
+    let value = std::env::var_os("BORG_ERRAND_BUDGET");
+    let selected = match value.as_ref() {
+        None => Ok(0),
+        Some(value) => value
+            .to_str()
+            .ok_or_else(|| format!("BORG_ERRAND_BUDGET: invalid non-UTF-8 budget {value:?}"))
+            .and_then(|value| parse_errand_budget(Some(value))),
+    };
+    selected.unwrap_or_else(|error| {
+        eprintln!("borg-reborn-rs: {error}");
+        std::process::exit(2);
+    })
+}
+
+fn parse_errand_budget(value: Option<&str>) -> Result<i64, String> {
+    match value {
+        None | Some("none") => Ok(0),
+        Some(value) => value.parse::<i64>().ok().filter(|n| *n >= 0).ok_or_else(|| {
+            format!("BORG_ERRAND_BUDGET: invalid budget {value:?}; expected 0..={} game turns or none (0 means unbounded)", i64::MAX)
+        }),
+    }
+}
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {
@@ -810,6 +836,33 @@ mod tests {
                 let error = parse_stopscared_setting(Some(value), source).unwrap_err();
                 assert!(error.contains(source) && error.contains(&format!("{value:?}")));
             }
+        }
+    }
+
+    #[test]
+    fn configured_budget_cannot_silently_remove_its_bound() {
+        for (value, expected) in [
+            (None, 0),
+            (Some("none"), 0),
+            (Some("0"), 0),
+            (Some("1"), 1),
+            (Some("+12"), 12),
+            (Some("9223372036854775807"), i64::MAX),
+        ] {
+            assert_eq!(parse_errand_budget(value), Ok(expected));
+        }
+        for value in [
+            "bogus",
+            "",
+            " ",
+            "-1",
+            "-9223372036854775808",
+            "9223372036854775808",
+            "1.5",
+            " 12 ",
+        ] {
+            let error = parse_errand_budget(Some(value)).unwrap_err();
+            assert!(error.contains("BORG_ERRAND_BUDGET") && error.contains(&format!("{value:?}")));
         }
     }
 

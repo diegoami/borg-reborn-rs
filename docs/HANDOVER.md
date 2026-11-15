@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: strict errand budgets (#296), validation pending
+
+- Stacked on #295. Invalid configured budgets now exit2 with source/value
+  diagnostics instead of silently becoming unbounded. Accept integer
+  0..i64::MAX; absent/0/exact none mean no bound. Negative, empty,
+  non-integer, overflowing and non-UTF-8 budgets are rejected.
+- Preserve positive budgets and original-core/inactive-errand isolation.
+  Actual native tests exercise finite stopping, invalid values and the
+  ignored inactive contexts. Interactive shell parsing is unchanged.
+- This task is excluded from the already-authorized #292 promotion.
+  Required checks/gameplay/evidence validation and task CI are pending.
+  No experiment or external repository write is authorized here.
+
 ## 2026-11-15: strict configured stopscared (#295), validation pending
 
 - Stacked on main synchronization #298. This task is excluded from the

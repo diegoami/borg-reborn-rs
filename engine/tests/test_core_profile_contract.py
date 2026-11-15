@@ -214,3 +214,36 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertIn('exit code 2', record['error'])
         self.assertIn('BORG_STOPSCARED: invalid non-UTF-8 stopscared value',
                       (out / 'stderr.log').read_text())
+
+    def test_invalid_errand_budget_cannot_become_unbounded(self):
+        values = ['bogus', '', '-1', '9223372036854775808', '1.5']
+        for i, value in enumerate(values):
+            out, record = self.cell(f'invalid-budget-{i}', {'borg_reborn_core': 1},
+                                   {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('BORG_ERRAND_BUDGET: invalid budget',
+                          (out / 'stderr.log').read_text())
+        out, record = self.cell('invalid-budget-bytes', {'borg_reborn_core': 1},
+                               {'BORG_ERRAND': '/dive 2',
+                                'BORG_ERRAND_BUDGET': os.fsdecode(b'\xff')})
+        self.assertEqual(record['outcome'], 'harness_failure', record)
+        self.assertIn('BORG_ERRAND_BUDGET: invalid non-UTF-8 budget',
+                      (out / 'stderr.log').read_text())
+
+    def test_valid_budget_and_inactive_core_isolation(self):
+        for value in ['0', 'none', '9223372036854775807']:
+            _, record = self.cell('valid-budget-' + value, {'borg_reborn_core': 1},
+                                  {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+        out, record = self.cell('finite-budget', {'borg_reborn_core': 1},
+                               {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': '1'})
+        self.assertEqual(record['outcome'], 'borg_stopped', record)
+        self.assertLess(json.loads((out / 'summary.json').read_text())['game_turns'], 300)
+        for name, settings, errand in [
+            ('original', {'borg_reborn_core': 0}, '/dive 2'),
+            ('inactive', {'borg_reborn_core': 1}, 'none'),
+        ]:
+            _, record = self.cell('ignored-budget-' + name, settings,
+                                  {'BORG_ERRAND': errand, 'BORG_ERRAND_BUDGET': 'bogus'})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
