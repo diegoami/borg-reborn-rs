@@ -47,8 +47,9 @@ SETTINGS = ('BORG_CORE', 'BORG_CORE_OVERRIDES', 'BORG_ERRAND', 'BORG_STOPSCARED'
 def settings(config):
     """The environment a dossier's run had, from its config.txt. A ladders
     file must still be the one the run read."""
-    env = {v: config[v.lower()] for v in SETTINGS if config.get(v.lower())}
-    if 'BORG_LADDERS' in env:
+    # Empty values too: set but empty is not unset (re-review #227, 6).
+    env = {v: config[v.lower()] for v in SETTINGS if v.lower() in config}
+    if env.get('BORG_LADDERS'):
         path = Path(env['BORG_LADDERS'])
         want = config.get('borg_ladders_sha256')
         have = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None

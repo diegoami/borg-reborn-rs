@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2219-rust-seed1020",
+  "run_kind": "harness",
+  "character": "Elf Druid",
+  "raw_cause": "a small kobold",
+  "terminal": {
+    "cause": "a small kobold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 9547,
+    "race_idx": 2,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1020,
+    "flags": "-",
+    "git_rev": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+    "git_dirty": "yes",
+    "source_sha256": "82586ab82a6f2675da55b8226efe8854d1ea2b27df653cef5b38964e47d1cc4a",
+    "binary_sha256": "89b92dc005a1e9819af581cc6278d787a6a2e0981566cfd01b3eda71ca6d654c",
+    "borg_txt_sha256": "94f240dca22046ee4c2b35bcd6625c563dcb594bfeb12bb865937d6f2a33589a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out2/parity/full-2-druid-0",
+      "result_sha256": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+      "raw_sha256": {
+        "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+        "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+        "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+      },
+      "source_commit": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+      "binary_sha256": "89b92dc005a1e9819af581cc6278d787a6a2e0981566cfd01b3eda71ca6d654c"
+    }
+  ],
+  "encounter_family": "start-3bc8d87f6ce0d4ce8b6db10ff7cb451d6d6f60d9847da32994d8e621816d20fa",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4a4df2cf1dd6fe9e9399a6a0643fa93e00bae5b5cdb135a7284dc20c696565fa",
+    "config.txt": "bc229d316bb988e7cd4e7f9dc44ee63c54d76fcb558970c85e79969f71279739",
+    "depths.json": "0efba100a3804991d86bff8f8205466645a43199a7ce489491c2cad4431d82a4",
+    "params-core.json": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786",
+    "summary.json": "1c3f76bc513580fda24293547e62c56ba461f603fef88dd329dd33d45b9a337a"
+  },
+  "investigation": null,
+  "issue": null
+}

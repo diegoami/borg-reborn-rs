@@ -1,11 +1,9 @@
-# D2215-rust-seed1020: a small kobold at turn 9547
+# D2215-rust-seed1020: a giant white mouse at turn 8922
 
-Elf Druid, character level 1, depth 1 (max 1), seed 1020, implementation `rust`, flags `menu`.
+Elf Druid, character level 2, depth 1 (max 1), seed 1020, implementation `rust`, flags `menu`.
 
-Build `a45b434e4427100e5695715b7e74d822ac9428b2` (dirty: yes), binary `4af981aeba3c`. Keys `42c17d0d67df`; raw logs stay in `/workspace/work/p14-full/full-2-druid-0` (not committed).
+Build `30ab9d664403ecf4b9e43317c2aacd33f979d946` (dirty: yes), binary `752f5a050974`. Keys `c542b7d80373`; raw logs stay in `/tmp/claude-0/-home-user-borg-reborn-rs/ba597da2-8648-547c-a22f-1fc2379bafa6/scratchpad/rr/harness/out/rerun-source` (not committed).
 
-Core decision trace: the last 200 of 1027 thinks in `trace-core-tail.jsonl`, with selected check, queued keys and `params-core.json`.
+Decision trace: the last 200 of 751 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 
 **Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run (RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.
-
-P1.4 validation context (#222): p14-full/full-2-druid-0. Diagnostic/regression evidence; no improvement claim.

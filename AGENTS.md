@@ -25,8 +25,10 @@ session, a local one, any model, or a person. It is the only entry point;
 The Angband Borg reborn in Rust: a ground-up redesign of how the Borg
 **plays**. **[docs/SPEC.md](docs/SPEC.md) is the top-level contract.** The
 game is upstream Angband `42cd156ac` byte for byte; the integration (patch
-series, frontend, bindings, build, harness, tools) is ours, and no part
-depends on borg-rs, which is only a reference to copy from (SPEC §2). Parity
+series, frontend, bindings, build, harness, tools) is ours. borg-rs is a
+reference to copy from, except its decision core, vendored at a pin as
+`borg-core/` with our errands around it (SPEC §2 amendment, the repivot of
+2026-11-14; docs/ERRANDS.md). Our own core depends on nothing of borg-rs. Parity
 with the C Borg is not a goal. [borg-zoo](https://diegoami.github.io/borg-zoo/)
 measures our Borg and makes every comparison (SPEC §6), through the zoo
 contract ([docs/ZOO-INTERFACE.md](docs/ZOO-INTERFACE.md)). Perception is
