@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2393-rust-seed1050",
+  "run_kind": "harness",
+  "character": "Dwarf Paladin",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 24096,
+    "race_idx": 5,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1050,
+    "flags": "menu",
+    "git_rev": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
+    "git_dirty": "yes",
+    "source_sha256": "2b59c452bbf17f30150043ac6eda03ded1d457cc231fe4b6adcda0a666a39f87",
+    "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a",
+    "borg_txt_sha256": "188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1806
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r2-stateful/harness/out/r2-stateful-full-check/full-5-paladin-0",
+      "result_sha256": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+      "raw_sha256": {
+        "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+        "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+        "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+      },
+      "source_commit": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
+      "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a"
+    }
+  ],
+  "encounter_family": "start-bd3707ad8f213c09aee66349a6b7c36ea68d18485678c224890bbdb297f85957",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a63ddfd2288e456cd1e37432371152a3639f0c1a296e4f291db5929b383978a4",
+    "config.txt": "1a1ae2d59b84acb3547c1b553e76d4d348d46be2309fadf5cf4ed2136522a4bf",
+    "depths.json": "b7433563472fc1a603e0e8b7b10e57faa310ddc97e06191c6fe44545bb3a58f6",
+    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "summary.json": "add58cb9bed1201422ed5eeb00f65a8eb5ea6d5832c9320ed6299c190e4eea84",
+    "trace-core-tail.jsonl": "0633a564fc73c4e361ac17a5351054f0324edf221d48795c46eea80aec41126e"
+  },
+  "investigation": null,
+  "issue": null
+}

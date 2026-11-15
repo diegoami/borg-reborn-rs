@@ -210,6 +210,10 @@ also need run/registry namespacing before commit. Preserve old evidence and
 origin mappings; run `python3 scripts/check-death-ids.py docs/deaths` before
 integration. It detects numeric collisions that git's path merge can miss.
 Canonical publication changes remain the cemetery owner's work.
+For retained validation evidence on every track, run `tools/import-deaths.py`
+and its `--check` before historical integration; see docs/DOSSIER-IMPORT.md.
+Use the full qualified storage ID, preserve origin maps, and never enlarge
+the frozen legacy inventory merely to admit an overlapping provisional ID.
 
 ## Local machine notes
 

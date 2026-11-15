@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-3-priest-0",
+      "raw_sha256": {
+        "keys.log": "251d0d44300885c9718e03fd23d42842acb66526af55b6b71088fe5c15bdb9fa",
+        "messages.log": "168d6dfef20482c7930f71601ec4efa6818ca29b8aa7c80c247329e4d2c48b3e",
+        "state.log": "7366df2aacf257ac01d3127ab5dc02cd59a2d531bad1dfe8751795c181493b3a"
+      },
+      "result_sha256": "251d0d44300885c9718e03fd23d42842acb66526af55b6b71088fe5c15bdb9fa",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Hobbit Priest",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 1516
+  },
+  "encounter_family": "start-26f5704f34fac9af56f2d78a56ff8fe9b201c7b7c11933b5e9cd10dcfd9b6960",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "1aa41714aa9bb10ff984244f3c2f9b66107db81b5c1aa01da7c021842e23ff95",
+    "depths.json": "9e85d6406103d4ef01ccd82dfde774b1867f76492004a6292fac276a82021815",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "db414d94ef9d9e75c6a69b757ca1dda15c79f347800ab62e89a71811cd9065e1",
+    "trace-tail.jsonl": "5e3fadef2a7fd83702853246fe18c56947d78d88cb80d9bfa8c1a46adacdedf9"
+  },
+  "id": "D0000-q1cb2a3d4538b77ae78c3975b49019ac8d22c60e0e97f8afdf71589834d32575c",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "c42d41497a27529164e221c31af7d02d5f181f3ecae70b5f18a816da3d532e38",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1030,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "Grip, Farmer Maggot's Dog",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "Grip, Farmer Maggot's Dog",
+    "class_idx": 3,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 3,
+    "turn": 15420
+  }
+}

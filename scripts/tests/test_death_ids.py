@@ -41,3 +41,13 @@ class DeathIdsTest(unittest.TestCase):
                 module.check(Path(name))
             with self.assertRaisesRegex(ValueError, 'missing registry'):
                 module.check(Path(name) / 'missing')
+
+    def test_full_qualified_storage_ids_are_not_numeric_zero(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            for char in ('a', 'b'):
+                self.record(root, 'D0000-q' + char * 64)
+            self.assertEqual(module.check(root), 2)
+            self.record(root, 'D0000-qshort')
+            with self.assertRaisesRegex(ValueError, 'invalid qualified storage'):
+                module.check(root)

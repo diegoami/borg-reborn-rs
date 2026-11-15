@@ -18,13 +18,13 @@
     "impl": "rust",
     "seed": 1062,
     "flags": "menu",
-    "git_rev": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
+    "git_rev": "132aeb26a54a7988ca013256f752fce19f24afc9",
     "git_dirty": "yes",
-    "source_sha256": "2b59c452bbf17f30150043ac6eda03ded1d457cc231fe4b6adcda0a666a39f87",
-    "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a",
+    "source_sha256": "4182670dfb294135edca35c3650ae73c5e1ce50b818aa0934560c37263c8eb70",
+    "binary_sha256": "315489b386edfa5d795aa25122ed5e4112f4a31838bb41f28bf3280e2ef3d776",
     "borg_txt_sha256": "3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
-    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12"
+    "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4"
   },
   "decision_trace": null,
   "core_decision_trace": {
@@ -36,26 +36,26 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/workspace/work/r2-stateful/harness/out/r2-stateful-full-check/full-6-rogue-2",
+      "raw_directory": "/workspace/work/p-review-full/full-6-rogue-2",
       "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
       "raw_sha256": {
         "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
         "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
         "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
       },
-      "source_commit": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
-      "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a"
+      "source_commit": "132aeb26a54a7988ca013256f752fce19f24afc9",
+      "binary_sha256": "315489b386edfa5d795aa25122ed5e4112f4a31838bb41f28bf3280e2ef3d776"
     }
   ],
-  "encounter_family": "start-2989b47bb52914ce185080f6f82754fafb4316738639fb89e0ebb05764fb6710",
+  "encounter_family": "start-91fc53c8c7b5a5d02bac9d8866f89861450eee1a5fb6a26e3acfec31041f9112",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "a63ddfd2288e456cd1e37432371152a3639f0c1a296e4f291db5929b383978a4",
-    "config.txt": "bf63fc76853b3194672261ec13b2957c39ca4e362adb0676525f063c29d44633",
+    "build.json": "4cb3715e22f42fccffb14e0bbe5f6ea8837a2f759f50fec7a9c6f9d55d6d0a1c",
+    "config.txt": "1308694d3e964c7c8f6da4769428b106c1043f2bc17854ec35e7db3ffeab1cab",
     "depths.json": "73af7e2ebf7397375b9e6948fe653a90556e9954481b0a11f825947092ee4b45",
-    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
-    "summary.json": "080747bcfa38fcd0d4e9ba5897806cf87c85ab38d6af0c89acf23809b1a8ae0b",
-    "trace-core-tail.jsonl": "cd5e8f4b605e90dba9d75af06ecda4fc31d81ef823dbd312074607bf06524d43"
+    "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "summary.json": "273d76796e6a5279e2ca7296d8eababc4969a323cc565b9afc0ffe6728e4efbe",
+    "trace-core-tail.jsonl": "6b7d2486f13dd01fcb0e04ba6c51945563cbd3be3008530ba45abe24d6880bc3"
   },
   "investigation": null,
   "issue": null

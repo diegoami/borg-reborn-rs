@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-4-necro-0",
+      "raw_sha256": {
+        "keys.log": "6dc5f0eb5909e74b15797ba8e21b1684d76a3e16f7552509af3ab325aa1e68ed",
+        "messages.log": "deb82e826f63e41b0e3195c7841465205fafb95d01470e3ba3502e65cc864574",
+        "state.log": "2844e9e2608e22a2bbfc754a39c907e4180280eb7c0cbccfe89a375a84839613"
+      },
+      "result_sha256": "6dc5f0eb5909e74b15797ba8e21b1684d76a3e16f7552509af3ab325aa1e68ed",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Gnome Necromancer",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 359
+  },
+  "encounter_family": "start-5c0b4e5e8f26caea75b4be7982cfe308bead15a00eb8ec3e8a298ef75d35ca54",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "c5c6c1d00f7fc744543585496d9c2f352db4794692dc41fb2ee5a2d739024bbc",
+    "depths.json": "ddd64ae64292061442e00b8b148fd1e98535384313734f2115b393562eb3a7af",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "dd566515b852eb1b89b8e5aca9411d7bc0f3c83daa2abf48282962a1a02fda96",
+    "trace-tail.jsonl": "0d9ec342f0ecc5f31d12a730bca06625c2f9f0a88a79e1d09f268c0deca86ea9"
+  },
+  "id": "D0000-q38379eb48db07e38c6224448467f624bb7d628a87678e99834273775e19baf50",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "5e4f6c598cb2e6f233e1ac24e74f7a981885fda874774f43663b98b80d852ea0",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1040,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "an acolyte",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "an acolyte",
+    "class_idx": 4,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 4,
+    "turn": 3647
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-8-blackguard-4",
+      "raw_sha256": {
+        "keys.log": "12b98a73e854335299a1fcc3069687754277013c3f888b9000d40ca9533d23ac",
+        "messages.log": "a714080ef606da6e6ec7ad955438ef4b55aeaaebcb850d5fa03084f78a204b54",
+        "state.log": "271caa04756bc6d5ff0a3c26e6514140a54b62c0c394cbeb65281bb1bcdd1dd9"
+      },
+      "result_sha256": "12b98a73e854335299a1fcc3069687754277013c3f888b9000d40ca9533d23ac",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Half-Elf Blackguard",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8856
+  },
+  "encounter_family": "start-4c5cba6406ff97e9a9e48cbf7f73a963422cf78d31829478b91fa82a7376aea8",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "9be60bf2841b2667ca73ecc4fc0667fc912f0274d26f59f320e7e60f35858a60",
+    "depths.json": "a2a9e8e366b3297787140308b4730c0786a5a2bb9f1ce540e00552be43b7e6a2",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "4e14349b14fb5d50513fc46031611d58bc9f6f99f6720fbbd6d5ffc8a062d4cb",
+    "trace-tail.jsonl": "e54ec4670ba5158b729888cd640ad1282089e4dbbe76b587f71b366636c0df12"
+  },
+  "id": "D0000-q89df692ef2858e025f324496a953bbeb34f2911d10e95327402a7d0da5904924",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "997f6d1a2e6e1453ac39b852559c1a331a76c2748375a303cab641540c8ea996",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1084,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a gallant",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a gallant",
+    "class_idx": 8,
+    "dead": true,
+    "depth": 4,
+    "level": 8,
+    "max_depth": 4,
+    "race_idx": 1,
+    "turn": 94134
+  }
+}

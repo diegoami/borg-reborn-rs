@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "224957d1d39b367ad3890bfd40e0c756d81fce7ab90021ae2a75f741928baa96",
+      "outcome": "death",
+      "raw_directory": "/workspace/borg-reborn-rs/harness/out/r12-off-full/full-6-rogue-2",
+      "raw_sha256": {
+        "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+        "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+        "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+      },
+      "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+      "role": "original",
+      "source_commit": "2545f8416dad1b0eaa2e8d34c69745473a37a08c"
+    }
+  ],
+  "character": "Dunadan Rogue",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 5008
+  },
+  "decision_trace": null,
+  "encounter_family": "start-5327ac9ee5cbc01238c9b0bade24ce1ece2055f6e05c2958e6ba251046a02f38",
+  "files_sha256": {
+    "build.json": "32457c04e91b1cb8030aee1eac291569d80ec2e692f909a0d41af75d0af41e58",
+    "config.txt": "99e742a35ad32f136e2d5f55ae96e74fe4cb947a6d0aff35e347b4b43456a971",
+    "depths.json": "73af7e2ebf7397375b9e6948fe653a90556e9954481b0a11f825947092ee4b45",
+    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "summary.json": "2240a9473e4c44e5b822d23a1ee36efe6ce634e5e492102fd6baba7887f9e052",
+    "trace-core-tail.jsonl": "6b7d2486f13dd01fcb0e04ba6c51945563cbd3be3008530ba45abe24d6880bc3"
+  },
+  "id": "D0000-qac5cedd544883e081803da538096028b9c26c8ee8c3b5e0c850fa458c9b395c9",
+  "identity": {
+    "binary_sha256": "224957d1d39b367ad3890bfd40e0c756d81fce7ab90021ae2a75f741928baa96",
+    "borg_txt_sha256": "3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "2545f8416dad1b0eaa2e8d34c69745473a37a08c",
+    "impl": "rust",
+    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1062,
+    "source_sha256": "aabe60c9cdbc6b6be3db847620412e3e3df484dbfb684d6b8e73f6b4859b0c70"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a soldier",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a soldier",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 2,
+    "level": 3,
+    "max_depth": 3,
+    "race_idx": 8,
+    "turn": 49147
+  }
+}

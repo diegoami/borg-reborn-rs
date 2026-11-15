@@ -2,7 +2,7 @@
 
 Elf Mage, character level 1, depth 1 (max 1), seed 102, implementation `rust`, flags `menu`.
 
-Build `35ab27fd11fb6bfbf3dcf3f45dcf93451e59cdd2` (dirty: no), binary `76a81463cb3c`. Keys `50491fa13924`; raw logs stay in `/home/runner/work/borg-reborn-rs/borg-reborn-rs/harness/out/smoke-rust-1/smoke-mage-2` (not committed).
+Build `8fe1d1c5353f4e04c309262670732bfb31848cbe` (dirty: no), binary `fcf81d6f4dff`. Keys `50491fa13924`; raw logs stay in `/tmp/borg-shopping-ci-smoke-mage-20261115` (not committed).
 
 Decision trace: the last 200 of 373 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 

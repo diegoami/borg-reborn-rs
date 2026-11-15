@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-2-druid-3",
+      "raw_sha256": {
+        "keys.log": "ed2f3cc45b02f41da804c7750e46dbcbf08d4caf51ed8af435b94aa6174f3438",
+        "messages.log": "569376f94bfcced9d72607ed2047ed5fcaac83bb4a3430affa32cfb5e3f3a104",
+        "state.log": "3638e1c3715a691dc3e336d579a8b59b8fedd8c1551d3d63fdf3ed7f752f48f8"
+      },
+      "result_sha256": "ed2f3cc45b02f41da804c7750e46dbcbf08d4caf51ed8af435b94aa6174f3438",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Dwarf Druid",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 8021
+  },
+  "encounter_family": "start-fe4110286d76a5412481d702c82b8ae9486a0d00a49b7b4bb7714927362f6c8f",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "0e021e4313e0bc8b1fc83755c6b9735f2a61610737e9d0f67ab62bf036220e03",
+    "depths.json": "741c1156a09e0a20d4265ccffddffe2b033caff81f9b0058f31030231ab5d545",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "59978c91aaa616d7bd9c219c99c8e750656b536165265b284c793090618b1ce5",
+    "trace-tail.jsonl": "d2019bf605c76e8896015f834580aced7e3f2331023d11906dc2e6085211b6fb"
+  },
+  "id": "D0000-qbed82fb56a6de81455ff8146468b4ef31bdd70411b25f41d21faaff773658310",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "b2ab0ed936b876d503ec03c90f456bfdd19413608f71fd922ef532fc3f6efb8e",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1023,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a soldier",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a soldier",
+    "class_idx": 2,
+    "dead": true,
+    "depth": 2,
+    "level": 4,
+    "max_depth": 2,
+    "race_idx": 5,
+    "turn": 85754
+  }
+}
