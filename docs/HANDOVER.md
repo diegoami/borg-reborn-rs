@@ -10,7 +10,8 @@
   immutable in every file. No evidence or inventory is rewritten.
 - Keep staging private while incomplete; publish with the source directory's
   ordinary access bits, respecting private sources. Files keep process-umask
-  semantics; re-import does not alter existing access. Ignore abandoned
+  limits as well as source-file access; generated metadata follows the source
+  record's limits. Re-import does not alter existing access. Ignore abandoned
   historical staging directories without deleting another process's work.
 - All 88 tool tests and 19 script tests pass, including publication modes
   0750/0700 and immutable payload verification. All 2,547 archive cases

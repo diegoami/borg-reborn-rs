@@ -37,7 +37,8 @@ complete directories atomically, and delegate index generation to that same
 owned toolkit. Existing differing data is never overwritten. Staging stays
 private until all files are written. At publication, a new directory keeps
 the source directory's ordinary access bits (not special permission bits);
-file access follows the importing process's umask. Re-import leaves existing
+file access is limited by both source permissions and the importing process's
+umask. Generated metadata uses the source record's access limits. Re-import leaves existing
 package permissions unchanged. This does not grant access to a private source.
 A killed process can leave a `.import-*` directory; Git ignores historical
 staging paths. Do not remove another process's active staging directory.

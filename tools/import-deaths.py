@@ -132,7 +132,13 @@ def import_packages(sources, destination):
             stage = Path(tempfile.mkdtemp(prefix='.import-', dir=destination))
             try:
                 for name, data in files.items():
-                    (stage / name).write_bytes(data)
+                    asset = stage / name
+                    asset.write_bytes(data)
+                    original = source / name
+                    if not original.exists():
+                        original = source / 'record.json'  # generated receipt/original metadata
+                    # A shared directory must not expose a private source file.
+                    asset.chmod(asset.stat().st_mode & original.stat().st_mode & 0o777)
                 # Keep staging private while incomplete, then preserve source access.
                 # Special permission bits are not part of an evidence package.
                 stage.chmod(source.stat().st_mode & 0o777)
