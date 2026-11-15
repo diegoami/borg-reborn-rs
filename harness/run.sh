@@ -152,6 +152,14 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
         echo "profile_sha256=$(sha256sum < "$PROFILE" | cut -d' ' -f1)"
     fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
+    # The settings the environment gives the Borg (docs/ERRANDS.md): they
+    # change play, so the record says them, and tools/rerun-death.py sets
+    # them again (review #227, finding 8). Only those set: a run without
+    # any keeps the record it always had.
+    for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
+        if [ -n "${!v:-}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
+    done
+    if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
 } > "$OUT/config.txt"
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd
 DATA_ARGS=()
