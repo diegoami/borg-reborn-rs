@@ -126,14 +126,21 @@ promoted to `main`.
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
 | **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225); the separate moving-reference refresh (#262) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **done**: accepted and merged in #266; feature-only tag `r1` |
-| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **in progress**: owner authorized after #266; #209 |
+| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **review checkpoint**: #209 exit evidence in R2-VALIDATION.md; final #291 CI/merge then feature-only review |
 | **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | not started |
 | **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |
 | **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 
-Estimates (2026-11-14, to be redone after R2): R1 1–2 weeks, R2 2–3, R3–R5
-3–4 each; R1–R5 about 3 to 5 months. Track P: 1–2 weeks per milestone.
+R2 reforecast (2026-11-15; [measured report](docs/R2-VALIDATION.md)):
+6,806 physical policy lines plus 36 dispatch and 702 core-adapter lines.
+The 65m38s initial issue-to-implementation envelope includes validation and
+bookkeeping; it is not exclusive coding time or a lines-per-week rate.
+Provisional effort relative to this R2 migration: **R3 1.5–2×**, **R4 2–3×**,
+**R5 1.5–2.5×**, reflecting larger owned facts, inventory/store effects,
+and modes/path/cache design. These supersede the initial calendar guesses;
+the owner sets dates and the R3 task breakdown after R2 review. Track P's
+schedule remains its own decision.
 
 GitHub milestones are not used for P and R (labels are); the owner may
 create them, and a session then files each issue in its milestone as well.

@@ -6,7 +6,8 @@ With shadow off, each wrapper immediately calls its original implementation;
 no state is copied, no arguments are formatted and no tape/files are created.
 
 In check, the native program drives the real state and engine. In switch,
-the port drives them. The other program runs on an owned Rust policy snapshot
+the port drives them. A switch disagreement is a validation failure; no
+engine rollback is claimed. The other program runs on an owned Rust policy snapshot
 and receives recorded responses. **The engine is never cloned or rewound.**
 
 The closed `decision_api` surface has 68 dependency functions. A stateful

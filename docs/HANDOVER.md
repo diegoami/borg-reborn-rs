@@ -2,6 +2,34 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R2 exit evidence complete, feature-only review checkpoint
+
+- Danger #283 is merged; #291 completes caution, escape and recovery and the
+  measured parent #209 report. Final merge requires green CI and targets
+  feature/track-r only. The owner chose and accepted R1 review #266; no R2
+  reviewer is selected or launched here. R3 remains stopped at this checkpoint.
+- Combined runtime cd66d935d4b9 includes reviewed main 0ed0e5de and pinned
+  cemetery tools 33c37552. Smoke off/check/switch is 3/3 identical. Full check
+  and switch each have 45/45 v12 play-log parity, zero mismatches, 378,351
+  stateful transactions and 15,032,802 dependency requests. Known frontend
+  telemetry differences remain; standard cross-repo summary equality is 0/45.
+- R2-VALIDATION.md, R2-COMPARISON.json, immutable pre-sync evidence and all
+  controls retain exact builds, hashes, coverage, deaths and limits. Native
+  forced nesting has seven real entries/mode; opaque nesting has a separate
+  effect-once fixture. Surrounded request and recovery return controls fail
+  non-vacuously; matching re-ports give zero and changed-native play.
+- The real dc790dc recovery unit carries/re-ports six removed attempts on
+  two fixtures with no exposed disagreement: an honest negative control,
+  not v13 policy parity. Core PIN stays v12; #264 retains the production
+  carry/view/provenance/baseline gate and the need for targeted branch fixtures.
+- All final-source natural deaths are D2439–D2446; switch repeats them.
+  Exact original-core CI controls are D2447/D2448. All reconcile. The 40
+  imported P cases retain original records and 240 verified file hashes
+  under the R2-MAIN-SYNC map. No canonical cemetery data was written.
+- Provisional R3–R5 effort forecasts and their reasons are in PLAN.md/report.
+  These are planning judgments, not survival/performance claims or delivery
+  dates. No population experiment, sealed suite or R3 work was started.
+
 ## 2026-11-15: carry reviewed main into R2 before final validation
 
 - Main advanced to 0ed0e5de after owner-accepted P promotion #260. Merge

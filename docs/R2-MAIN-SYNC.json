@@ -282,5 +282,11 @@
       "original_record_sha256": "0ea776d44db47c75c266e4290a68522e2f7e6ea27668fe496cf36b530738a5ec",
       "reason": "independent branch-local numeric IDs collide; original record and source-file hashes are retained"
     }
-  ]
+  ],
+  "hash_audit": {
+    "cases": 40,
+    "file_hashes_checked": 240,
+    "original_records_preserved": true
+  },
+  "owned_port_and_adapter_blobs_unchanged_by_main_sync": true
 }
