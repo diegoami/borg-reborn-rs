@@ -244,3 +244,32 @@ above never calls it, and nothing of it is linked into the game. Draft:
   escapes may be enough (M4).
 - Where class strategies first need different structure, as opposed to
   different parameters (M6, from data).
+
+
+## Track R: porting behind a shadow check
+
+The R1 frame has this dependency direction:
+`borg-reborn-rs` → `borg-next` → `borg-core`. The shell also keeps its
+existing direct dependency on `borg-core`. The core never depends on
+`borg-next`. `borg-core::memory` exports the source state types, trait
+indices and the empty `Shadow` registration interface; `borg-next::register`
+installs the implementation when the shell starts the vendored core.
+R1.1 has no decision methods or calls through that registration. R1.2 adds
+the shadow harness, its comparison points and off/check/switch modes.
+
+`borg-next::View::new(&BorgState)` constructs a fresh read-only view for a
+think. R1.2 will call it at the comparison points; R1.1 deliberately leaves
+play untouched. The named trait fields cover all 265 `BI_*` entries, in
+semantic groups, with an exact source index in every field's documentation.
+Character HP/SP, level, depth and speed retain the native integer values;
+status and resistance values are not normalized to booleans. Goals and
+core status borrow their source records. Entity iterators keep native
+slot IDs and positions, omit the zero sentinel and deleted entries, and
+iterate in slot order. Grid access returns the core's remembered grid,
+including unknown features, or no grid outside the map/before allocation.
+The view cannot mutate the state or outlive a mutable update to it.
+
+Until R6, **ported decisions read borg-rs's own memory, not our L1/L2
+perception or engine truth**. That includes its mistaken or incomplete
+knowledge: changing perception while porting policy would break parity.
+Track P names a subsystem's thresholds before R ports its decisions.

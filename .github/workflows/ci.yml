@@ -17,7 +17,7 @@ jobs:
       # own formatting, and tested as borg-rs tests it (release: the unit
       # tests link without the engine only when unused engine calls are
       # optimised out).
-      - run: cargo fmt --check -p borg-reborn-rs
+      - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core
       - run: cargo test --release -p borg-core

@@ -4,6 +4,37 @@
 
 
 
+## 2026-11-15: track R started, R1.1 (#223)
+
+- Branch `task/R1.1-typed-view` starts from main `6a2b30cf`, independently
+  of track P's open P1.4 PR. R1 is the active milestone; #224 is next.
+- Added `borg-next`, with all 265 native traits named and grouped, plus
+  borrowed goals, status, entity records and checked cave access. Each
+  trait field cites its `BI_*` index. Entity IDs, holes, coordinates and
+  integer values are preserved. No engine is read by the view.
+- `borg-core::memory` exposes source types and an empty `Shadow` trait;
+  startup registers borg-next once. No think calls it or constructs the
+  view yet. #224 adds the actual hooks, modes and comparison. The core
+  has no dependency on borg-next.
+- Workspace, independence checks, CI formatting, vendoring declarations,
+  provenance and architecture now include the new crate. The source hash
+  includes borg-next, so its later changes cannot reuse a build identity.
+- Checks: fmt for our two crates, workspace Clippy with warnings denied,
+  workspace tests excluding core (165 passed), release core tests (134
+  passed, one existing ignored), 16 scripts tests, 70 tools tests, two
+  independence tests, vendoring check and diff whitespace check pass.
+  All 265 trait indices were checked to occur exactly once in the view.
+- No measured games were run locally for this frame-only task; no full
+  45/45 or shadow parity claim is made. The view has four engine-free
+  tests; checked allocated-grid access has a core regression test.
+- Read-only source refresh reports 46 borg-rs commits since its reference
+  pin, five touching the vendored core after v12, and 44 added better-borg-c
+  death files. No policy correction or pin move is mixed into this task.
+  A milestone source refresh remains separate under RULES 21; the carry
+  experiment belongs to #225. The view uses the current vendored v12
+  source, including track P's merged parameter changes.
+
+
 ## 2026-11-15: track P, P1.3 (#221), recovery parameters
 
 - Added 37 recovery parameters (603 total): cure chances, HP/SP gates,
