@@ -386,11 +386,6 @@ pub fn borg_flow_recover(st: &mut BorgState, dist: i32) -> bool {
         return false;
     }
 
-    /* If Scumming, then do not rest */
-    if b.lunal_mode || b.munchkin_mode {
-        return false;
-    }
-
     /* No need if hungry */
     if b.tr(BI_ISHUNGRY) != 0 {
         return false;
@@ -1326,7 +1321,6 @@ pub fn borg_check_rest(st: &mut BorgState, y: i32, x: i32) -> bool {
     let b = &st.borg;
     let t = &b.temp;
     if (t.bless || t.hero || t.berserk || t.fastcast || t.regen || t.smite_evil)
-        && !b.munchkin_mode
         && b.tr(BI_CURHP) >= b.tr(BI_MAXHP) * 8 / 10
         && b.tr(BI_CURSP) >= b.tr(BI_MAXSP) * 7 / 10
     {
@@ -1358,7 +1352,7 @@ pub fn borg_check_rest(st: &mut BorgState, y: i32, x: i32) -> bool {
      * which is what I like to do right before I take a stair,
      * Unless I am down by three quarters of my SP.
      */
-    if b.no_rest_prep >= 1 && !b.munchkin_mode && b.tr(BI_CURSP) > b.tr(BI_MAXSP) / 4 && b.tr(BI_CDEPTH) < 85 {
+    if b.no_rest_prep >= 1 && b.tr(BI_CURSP) > b.tr(BI_MAXSP) / 4 && b.tr(BI_CDEPTH) < 85 {
         return false;
     }
 
@@ -1391,7 +1385,7 @@ pub fn borg_check_rest(st: &mut BorgState, y: i32, x: i32) -> bool {
         let b = &st.borg;
 
         /* Be concerned if low on food */
-        if (b.tr(BI_LIGHT) == 0 || b.tr(BI_ISWEAK) != 0 || b.tr(BI_FOOD) < 2) && !b.munchkin_mode {
+        if b.tr(BI_LIGHT) == 0 || b.tr(BI_ISWEAK) != 0 || b.tr(BI_FOOD) < 2 {
             return false;
         }
     }
@@ -1439,18 +1433,20 @@ pub fn borg_check_rest(st: &mut BorgState, y: i32, x: i32) -> bool {
         }
 
         /* If monster is asleep, dont worry */
-        if !kill.awake && d > 8 && !st.borg.munchkin_mode {
+        if !kill.awake && d > 8 {
             i += 1;
             continue;
         }
 
-        /* one call for dangers */
+        /* Rate the monster at its own grid, not at (y, x): this is the
+         * danger it poses once it has closed in, so a melee monster a few
+         * grids away still counts against resting here. (patch 0130) */
         let p = borg_danger_one_kill(st, y9, x9, 1, i, true, true);
 
         /* Ignore proximity checks while inside a vault */
         if !borg_in_vault {
             /* Real scary guys pretty close */
-            if d < 5 && p > i32::from(st.borg.avoidance) / 3 && !st.borg.munchkin_mode {
+            if d < 5 && p > i32::from(st.borg.avoidance) / 3 {
                 return false;
             }
 
@@ -1460,14 +1456,6 @@ pub fn borg_check_rest(st: &mut BorgState, y: i32, x: i32) -> bool {
 
         /* should check LOS... monster to me concerned for Ranged Attacks */
         if borg_los(st, y9, x9, y, x) && kill.ranged_attack != 0 {
-            return false;
-        }
-
-        /* Special handling for the munchkin mode */
-        if st.borg.munchkin_mode
-            && borg_los(st, y9, x9, y, x)
-            && (kill.awake && !engine::race_flag_has(r_idx, RF_NEVER_MOVE))
-        {
             return false;
         }
 

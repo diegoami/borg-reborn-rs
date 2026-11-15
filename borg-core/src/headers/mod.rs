@@ -46,6 +46,7 @@ pub mod mon_msg_h;
 pub mod mon_timed_h;
 pub mod monster_h;
 pub mod obj_curse_h;
+pub mod obj_gear_h;
 pub mod obj_desc_h;
 pub mod obj_ignore_h;
 pub mod obj_knowledge_h;

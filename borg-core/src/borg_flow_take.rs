@@ -21,19 +21,17 @@
 
 use crate::borg::BorgTime;
 use crate::borg_cave_view::BORG_VIEW;
-use crate::borg_item::{quiver_end, quiver_start};
 use crate::borg_projection::borg_distance;
 use crate::headers::__stddef_wchar_t_h::wchar_t;
-use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_MUNCHKIN_START, BORG_VERBOSE};
+use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_VERBOSE};
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_AMMO_TVAL, BI_CLEVEL, BI_FAST_SHOTS, BI_GOLD, BI_ISIMAGE, BI_LIGHT,
     BI_QUIVER_SLOTS,
 };
-use crate::headers::list_kind_flags_h::KF_INSTA_ART;
 use crate::headers::list_mon_race_flags_h::{RF_KILL_ITEM, RF_TAKE_ITEM};
 use crate::headers::list_terrain_h::FEAT_FLOOR;
 use crate::headers::list_tvals_h::{
-    TV_ARROW, TV_BOLT, TV_GOLD, TV_POTION, TV_ROD, TV_SCROLL, TV_SHOT,
+    TV_ARROW, TV_BOLT, TV_GOLD, TV_SHOT,
 };
 use crate::state::BorgState;
 use crate::{borg_flow, borg_flow_misc, borg_io, engine};
@@ -707,205 +705,6 @@ fn scum_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     /* Attempt to Commit the flow */
     if !borg_flow::borg_flow_commit(st, c"Scum item", i32::from(GOAL_TAKE)) {
         return false;
-    }
-
-    /* Take one step */
-    if !borg_flow::borg_flow_old(st, i32::from(GOAL_TAKE)) {
-        return false;
-    }
-
-    /* Success */
-    true
-}
-
-/// Prepare to "flow" towards special objects to "take"
-/// (`borg_flow_take_lunal`).
-///
-/// As in C, dead entries (`kidx == 0`) are skipped, and the "bad item"
-/// verdict is used: an item the routine marked bad is not a target outside
-/// munchkin mode (0101/0101a); see docs/c-bugs.md.
-pub fn borg_flow_take_lunal(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    if !lunal_select(st, viewable) {
-        return false;
-    }
-    lunal_flow(st, viewable, nearness)
-}
-
-/// The object selection of `borg_flow_take_lunal`: fills `borg_temp_*`; false when
-/// there is nothing to take.
-fn lunal_select(st: &mut BorgState, viewable: bool) -> bool {
-    /* Efficiency -- Nothing to take */
-    if st.takes.cnt == 0 {
-        return false;
-    }
-
-    /* Check for an existing "up stairs" */
-    let (b_stair, _) = nearest_up_stair(st);
-
-    /* Nothing yet */
-    st.flow.temp_n = 0;
-
-    let z = engine::z_info();
-    let qss = i32::from(z.quiver_slot_size);
-
-    /* Scan the object list -- set filter*/
-    let mut i: i32 = 1;
-    while i < i32::from(st.takes.nxt) {
-        let take = st.takes.takes[i as usize];
-        i += 1;
-        /* Skip dead objects */
-        if take.kidx == 0 {
-            continue;
-        }
-        let kidx = take.kidx as usize;
-        let k = engine::kind(kidx);
-
-        /* Access the location */
-        let x = i32::from(take.x);
-        let y = i32::from(take.y);
-        let lunal_note = |st: &mut BorgState| {
-            note(
-                st,
-                &[b"# Lunal Item ", engine::kind_name(kidx), format!(", at {},{}", y, x).as_bytes()],
-            );
-        };
-
-        /* all items start bad */
-        let mut item_bad = true;
-
-        /* Gold is good to have */
-        if take.tval == TV_GOLD as i32 {
-            lunal_note(st);
-            item_bad = false;
-        }
-
-        let pack_slots = pack_slots(st);
-
-        /* If full can I absorb the item into an existing stack */
-        if item_bad && take.value > 0 {
-            if crate::borg_item_wear::borg_is_ammo(take.tval) {
-                /* Scan the quiver */
-                for ii in quiver_start()..quiver_end() {
-                    let it = &st.items.items[ii as usize];
-
-                    /* skip empty slots */
-                    if it.iqty == 0 {
-                        continue;
-                    }
-
-                    /* skip full slots */
-                    if i32::from(it.iqty) == qss {
-                        continue;
-                    }
-
-                    /* Both objects should have the same kind value */
-                    if take.kidx != it.kind {
-                        continue;
-                    }
-
-                    if k.sval == i32::from(it.sval) && k.tval == i32::from(it.tval) {
-                        item_bad = false;
-                    }
-                }
-            } else if st.items.items[(pack_slots - 1) as usize].iqty != 0 {
-                /* Scan the inventory */
-                for ii in 0..pack_slots {
-                    let it = &st.items.items[ii as usize];
-
-                    /* skip empty slots */
-                    if it.iqty == 0 {
-                        continue;
-                    }
-
-                    /* Both objects should have the same kind value */
-                    if take.kidx != it.kind {
-                        continue;
-                    }
-
-                    /* Certain types of items can stack */
-                    if k.sval == i32::from(it.sval)
-                        && k.tval == i32::from(it.tval)
-                        && (u32::from(it.tval) == TV_POTION
-                            || u32::from(it.tval) == TV_SCROLL
-                            || u32::from(it.tval) == TV_ROD)
-                    {
-                        item_bad = false;
-                    }
-                }
-            }
-        }
-
-        /* Require one empty slot */
-        if st.items.items[(pack_slots - 1) as usize].iqty == 0 && item_bad {
-            /* for ammo, make sure the quiver isn't full */
-            if !crate::borg_item_wear::borg_is_ammo(take.tval)
-                || st.items.items[(quiver_end() - 1) as usize].iqty == 0
-            {
-                /* Certain Potions are worthless */
-                if take.tval == TV_POTION as i32
-                    && k.sval >= st.item_val.sv_potion_inc_str
-                    && k.sval <= st.item_val.sv_potion_detect_invis
-                {
-                    lunal_note(st);
-                    item_bad = false;
-                }
-
-                /* Certain insta_arts are good.  Note that there is no top
-                 * end of this.  So if an item were added after the last
-                 * artifact, it would also be picked up.
-                 */
-                if engine::flag_has(&k.kind_flags, KF_INSTA_ART as i32) {
-                    lunal_note(st);
-                    item_bad = false;
-                }
-
-                /* if scumming the start of the game, take all items to
-                 * sell them */
-                if st.cfg(BORG_MUNCHKIN_START) != 0 {
-                    /* Certain known items are junky and should be ignored.
-                     * Grab only things of value
-                     */
-                    if take.value >= 1 {
-                        item_bad = false;
-                    }
-                }
-            }
-        }
-        /* Skip items the Borg does not want (outside munchkin collection) */
-        if item_bad && !st.borg.munchkin_mode {
-            continue;
-        }
-
-        /* Require line of sight if requested */
-        if viewable && st.cave.grid(x, y).info & BORG_VIEW == 0 {
-            continue;
-        }
-
-        /* don't go too far from the stairs */
-        if borg_flow_misc::borg_flow_far_from_stairs(st, x, y, b_stair) {
-            continue;
-        }
-
-        /* Careful -- Remember it */
-        st.flow.temp_push(y, x);
-    }
-
-    /* Nothing to take */
-    st.flow.temp_n != 0
-}
-
-/// The flow part of `borg_flow_take_lunal`, after `lunal_select`.
-fn lunal_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
-    spread_to_temp(st, nearness, false, viewable, true);
-
-    /* Attempt to Commit the flow */
-    if !borg_flow::borg_flow_commit(st, c"munchkin item", i32::from(GOAL_TAKE)) {
-        return false;
-    }
-
-    /* Check for monsters before walking over to the item */
-    if crate::borg_light::borg_check_light(st) {
-        return true;
     }
 
     /* Take one step */

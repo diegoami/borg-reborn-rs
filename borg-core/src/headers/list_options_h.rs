@@ -2,6 +2,7 @@
 pub use super::option_h::C2RustUnnamedH_21;
 #[allow(unused_imports)]
 use super::*;
+pub const OPT_store_buy_direct: C2RustUnnamedH_21 = 46;
 pub const OPT_birth_percent_damage: C2RustUnnamedH_21 = 45;
 pub const OPT_birth_levels_persist: C2RustUnnamedH_21 = 44;
 pub const OPT_birth_know_flavors: C2RustUnnamedH_21 = 43;

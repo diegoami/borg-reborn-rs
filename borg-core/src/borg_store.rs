@@ -157,6 +157,7 @@ fn borg_price_item(obj: StoreObject, store_buying: bool, qty: i32, this_store: i
 
 /// Cheat the "Store" screen
 pub fn borg_notice_store(st: &mut BorgState) {
+    let live = crate::borg_town_live::active(st);
     // Scan each store
     for store_num in 0..usize::from(engine::z_info().store_max) {
         // The store's wares and the two tables the analyzer reads are
@@ -190,7 +191,9 @@ pub fn borg_notice_store(st: &mut BorgState) {
             );
 
             // Save the declared cost
-            store.shops[store_num].ware[slot].cost = borg_price_item(o_ptr, false, 1, store_num as i32);
+            store.shops[store_num].ware[slot].cost = if live && store_num != BORG_HOME {
+                o_ptr.purchase_quote(store_num)
+            } else { borg_price_item(o_ptr, false, 1, store_num as i32) };
         }
 
         // save a backup copy of the store.  This list should never change

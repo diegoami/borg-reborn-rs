@@ -1,0 +1,92 @@
+# Read-only exact stack/price queries for the M13 town planner (#328).
+# Guarded by BORG_HARNESS; no state mutation or gameplay change.
+--- a/src/obj-gear.c
++++ b/src/obj-gear.c
+@@ -779,6 +779,38 @@
+ 	return obj->number - MAX(num_left, 0);
+ }
+ 
++#ifdef BORG_HARNESS
++/* FORK: exact compatible room in existing quiver stacks. The planner
++ * separately accounts for the aggregate pack slots reserved by missiles. */
++int inven_quiver_stack_room(const struct player *p, const struct object *obj)
++{
++    int i, room = 0;
++    if (!tval_is_ammo(obj)) return 0;
++    for (i = 0; i < z_info->quiver_size; ++i) {
++        const struct object *held = p->upkeep->quiver[i];
++        if (held && object_stackable(held, obj, OSTACK_PACK))
++            room += MAX(z_info->quiver_slot_size - held->number, 0);
++    }
++    return room;
++}
++
++/* FORK: read-only Borg affordance query. Restrict quiver expansion to
++ * already reserved pack room, then count existing pack-stack absorption.
++ * This does not carry, split, identify or otherwise change an object. */
++int inven_merge_num(const struct player *p, const struct object *obj)
++{
++    int remaining = obj->number, free_pack = 0, quiver = 0, i;
++    quiver_absorb_num(p, obj, &free_pack, &quiver);
++    remaining -= quiver;
++    for (i = 0; i < z_info->pack_size && remaining > 0; ++i) {
++        const struct object *held = p->upkeep->inven[i];
++        if (held && object_stackable(held, obj, OSTACK_PACK))
++            remaining -= held->kind->base->max_stack - held->number;
++    }
++    return obj->number - MAX(remaining, 0);
++}
++
++#endif /* BORG_HARNESS */
+ /**
+  * Check if we have space for some of an item in the pack.
+  */
+--- a/src/obj-gear.h
++++ b/src/obj-gear.h
+@@ -54,6 +54,10 @@
+ struct object *gear_object_for_use(struct player *p, struct object *obj,
+ 	int num, bool message, bool *none_left);
+ int inven_carry_num(const struct player *p, const struct object *obj);
++#ifdef BORG_HARNESS
++int inven_quiver_stack_room(const struct player *p, const struct object *obj);
++int inven_merge_num(const struct player *p, const struct object *obj);
++#endif /* BORG_HARNESS */
+ bool inven_carry_okay(const struct object *obj);
+ void inven_item_charges(struct object *obj);
+ void inven_carry(struct player *p, struct object *obj, bool absorb,
+--- a/src/store.c
++++ b/src/store.c
+@@ -576,6 +576,21 @@
+  *
+  * The black market always charges twice as much as it should.
+  */
++#ifdef BORG_HARNESS
++/* FORK: read-only public sale offer for the exact stack the store would
++ * receive, including native charge/timeout redistribution and owner caps. */
++int store_sale_quote(struct store *store, const struct object *obj, int qty)
++{
++    struct object offered;
++    int price;
++    assert(obj && qty > 0 && qty <= obj->number);
++    object_copy_amt(&offered, (struct object *)obj, qty);
++    price = price_item(store, &offered, true, qty);
++    object_wipe(&offered);
++    return price;
++}
++
++#endif /* BORG_HARNESS */
+ int price_item(struct store *store, const struct object *obj,
+ 			   bool store_buying, int qty)
+ {
+--- a/src/store.h
++++ b/src/store.h
+@@ -96,4 +96,9 @@
+ extern void do_cmd_buy(struct command *cmd);
+ extern void do_cmd_retrieve(struct command *cmd);
+ 
++#ifdef BORG_HARNESS
++/* Read-only quote for an exact player sale, including charge splitting. */
++int store_sale_quote(struct store *store, const struct object *obj, int qty);
++
++#endif /* BORG_HARNESS */
+ #endif /* INCLUDED_STORE_H */

@@ -167,6 +167,13 @@ pub fn borg_item_note_needs_id(st: &BorgState, item: &borg_item) -> bool {
     contains(&crate::borg_item::item_note(st, item), b"{??}")
 }
 
+/// Consumables whose unknown flavour can be learned by a successful sale.
+/// Having a buyer is checked separately; Home storage teaches nothing.
+pub(crate) fn flavour_sale_type(tval: u8) -> bool {
+    use crate::headers::list_tvals_h::*;
+    matches!(u32::from(tval), TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_FLASK)
+}
+
 #[cfg(test)]
 mod tests {
     use super::contains;

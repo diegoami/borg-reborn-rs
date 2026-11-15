@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: M13 town/trip donor refresh (#328)
+
+- Verified tag 4.2.6-rs-town-trip-m13-v1 peels to 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea.
+  Refreshed with the three-way vendor workflow. See M13-INTEGRATION.md for
+  all nine conflict resolutions, five retired parameters and corrected
+  potion-healing defaults. Vendor check passes; OURS/HOOKED work is retained.
+- Keep the receiving engine/layout and standard store UI. Three guarded,
+  read-only native queries supply exact sale quotes and stack room. The
+  donor-only option returns false before accessing player memory. C/Rust
+  regressions independently check the receiving option ABI.
+- 318 core release tests pass (four existing ignored), 165 workspace tests,
+  Clippy, formatting, generated bindings, 19 source-tool and 78 tool tests
+  pass. Executed engine checks pass; fixture-dependent tests are identified
+  in the final validation receipt. Fresh donor and receiving builds succeeded.
+- Exact-tag native full parity and small opt-in validation are in progress;
+  the PR remains draft until those receipts are attached. Raw attempts are
+  retained under /workspace/work/m13-validation. One earlier smoke suite
+  completed its games but reporting failed because bc was absent; its partial
+  output is retained and a corrected rerun is queued.
+- Both policies default off. No Zoo repin, population experiment, Track R
+  promotion or additional Track P promotion. #293 remains separate.
+
+
 ## 2026-11-15: sweep provenance and catalogue assembly (#299)
 
 - Stacked on #296; documentation-only follow-up, excluded from #292's

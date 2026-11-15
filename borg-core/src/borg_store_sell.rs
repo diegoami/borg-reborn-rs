@@ -177,7 +177,7 @@ fn is_swap(st: &mut BorgState, i: i32) -> bool {
 ///
 /// Ego items may stack as long as they have the same ego-item type.
 /// This is primarily to allow ego-missiles to stack.
-fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &borg_item) -> bool {
+pub(crate) fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &borg_item) -> bool {
     // NOTE: This assumes the giving of one item at a time
     let total = i32::from(o_ptr.iqty) + 1;
 
@@ -224,6 +224,13 @@ fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &borg_item) -> 
 
         // Weapons and Armor (fall through), Rings, Amulets, Lites:
         // require full knowledge of both items (fall through)
+        //
+        // Not clippy's `aware` (needless_bool, clippy 1.100): the `return`
+        // leaves the whole function ("not similar") for an unaware item,
+        // while the arm's value only sets `bonuses`. The suggestion would
+        // let an unaware weapon fall through with `bonuses = false` and
+        // change what stacks, and so the key log.
+        #[allow(clippy::needless_bool)]
         TV_BOW | TV_DIGGING | TV_HAFTED | TV_POLEARM | TV_SWORD | TV_BOOTS | TV_GLOVES
         | TV_HELM | TV_CROWN | TV_SHIELD | TV_CLOAK | TV_SOFT_ARMOR | TV_HARD_ARMOR
         | TV_DRAG_ARMOR | TV_RING | TV_AMULET | TV_LIGHT => {
@@ -785,7 +792,7 @@ fn borg_has_mutiple(st: &mut BorgState, idx: i32) -> bool {
     false
 }
 
-fn borg_store_buys(item: &borg_item, who: i32) -> bool {
+pub(crate) fn borg_store_buys(item: &borg_item, who: i32) -> bool {
     let tval = u32::from(item.tval);
     match who + 1 {
         // General Store
@@ -1115,12 +1122,20 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
 /// Sell items to the current shop, if desired
 pub fn borg_think_shop_sell(st: &mut BorgState) -> bool {
+    sell_selected(st, false)
+}
+
+pub fn sell_one_selected(st: &mut BorgState) -> bool {
+    sell_selected(st, true)
+}
+
+fn sell_selected(st: &mut BorgState, one: bool) -> bool {
     // Sell something if requested
     if st.borg.goal.shop == st.think.shop_num && st.borg.goal.item >= 0 {
         let idx = st.borg.goal.item as usize;
         let item = st.items.items[idx];
 
-        let qty = borg_min_item_quantity(st, &item);
+        let qty = if one { 1 } else { borg_min_item_quantity(st, &item) };
 
         // Log
         let mut note = b"# Selling ".to_vec();

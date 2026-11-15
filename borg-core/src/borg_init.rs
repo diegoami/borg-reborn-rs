@@ -19,11 +19,9 @@ use std::ffi::CStr;
 use crate::borg_io::{borg_note, borg_warning};
 use crate::cctype::{c_isdigit, c_toupper};
 use crate::borg_headers::borg_h::{
-    BORG_ALLOW_STRANGE_OPTS, BORG_CHEAT_DEATH, BORG_ENCHANT_LIMIT, BORG_LUNAL_MODE,
-    BORG_MAX_SETTINGS, BORG_MUNCHKIN_BY_CLASS, BORG_MUNCHKIN_CLASS_DEPTH, BORG_MUNCHKIN_DEPTH,
-    BORG_MUNCHKIN_LEVEL, BORG_MUNCHKIN_START, BORG_RESPAWN_CLASS,
-    BORG_RESPAWN_RACE, BORG_RESPAWN_WINNERS, BORG_RESTORE_IGNORE_SETTINGS, BORG_STOP_KING,
-    BORG_USES_DYNAMIC_CALCS,
+    BORG_ALLOW_STRANGE_OPTS, BORG_CHEAT_DEATH, BORG_ENCHANT_LIMIT, BORG_MAX_SETTINGS,
+    BORG_RESPAWN_CLASS, BORG_RESPAWN_RACE, BORG_RESPAWN_WINNERS, BORG_RESTORE_IGNORE_SETTINGS,
+    BORG_STOP_DLEVEL, BORG_STOP_KING, BORG_USES_DYNAMIC_CALCS,
 };
 use crate::headers::game_event_h::{
     game_event_data, game_event_type, EVENT_LEAVE_GAME, EVENT_MESSAGE_FLUSH,
@@ -55,11 +53,9 @@ pub struct InitState {
     pub game_closed: bool,
     /// `borg_init_failure`
     pub init_failure: bool,
-    /// `borg_munchkin_start_setting`: the munchkin start as borg.txt gave
-    /// it, before the class rule
-    pub munchkin_start_setting: i32,
-    /// `borg_munchkin_depth_setting`
-    pub munchkin_depth_setting: i32,
+    /// The retired settings borg.txt named, in file order: the index into
+    /// [`RETIRED_SETTINGS`] and the value the line gave (borg-rs#60).
+    pub retired_seen: Vec<(usize, i32)>,
 }
 
 /// One borg.txt setting (`struct borg_setting`).
@@ -92,9 +88,6 @@ const fn i(name: &'static CStr, default_value: i32) -> BorgSetting {
 /// entry that ends the C table). Must match the `BORG_*` enum of borg.h.
 pub const BORG_SETTINGS: [BorgSetting; BORG_MAX_SETTINGS as usize] = [
     b(c"borg_verbose", false),
-    b(c"borg_munchkin_start", false),
-    i(c"borg_munchkin_level", 12),
-    i(c"borg_munchkin_depth", 16),
     b(c"borg_worships_damage", false),
     b(c"borg_worships_speed", false),
     b(c"borg_worships_hp", false),
@@ -117,8 +110,6 @@ pub const BORG_SETTINGS: [BorgSetting; BORG_MAX_SETTINGS as usize] = [
     i(c"borg_delay_factor", 0),
     i(c"borg_money_scum_amount", 0),
     b(c"borg_self_scum", true),
-    b(c"borg_lunal_mode", false),
-    b(c"borg_self_lunal", false),
     i(c"borg_enchant_limit", 12),
     i(c"borg_dump_level", 1),
     i(c"borg_save_death", 1),
@@ -126,50 +117,128 @@ pub const BORG_SETTINGS: [BorgSetting; BORG_MAX_SETTINGS as usize] = [
     b(c"borg_allow_strange_opts", false),
     b(c"borg_autosave", false),
     b(c"borg_restore_ignore_settings", false),
-    b(c"borg_munchkin_by_class", false),
-    i(c"borg_munchkin_class_depth", 6),
     i(c"borg_buy_strategy_default", 0),
-    i(c"borg_buy_strategy_munchkin", -1),
     i(c"borg_buy_strategy_current_classes", 0),
     i(c"borg_buy_strategy_reserve410_classes", 0),
-    i(c"borg_buy_strategy_current_munchkin_classes", 0),
-    i(c"borg_buy_strategy_reserve410_munchkin_classes", 0),
     i(c"borg_buy_identify", 0),
+    b(c"borg_town_no_stores", false),
+    i(c"borg_town_plan", 0),
+    i(c"borg_town_w_light", 100),
+    i(c"borg_town_w_food", 100),
+    i(c"borg_town_w_bleeding", 100),
+    i(c"borg_town_w_poison", 100),
+    i(c"borg_town_w_escape", 50),
+    i(c"borg_town_w_knowledge", 25),
+    i(c"borg_town_w_power", 50),
+    i(c"borg_town_w_trip", 50),
+    i(c"borg_town_share", 10),
+    i(c"borg_town_light_depth", 15),
+    i(c"borg_town_food_trip", 10),
+    i(c"borg_town_target_depth", 0),
+    i(c"borg_town_trip_turns", 0),
+    i(c"borg_town_w_gold", 25),
+    i(c"borg_town_depth_gain", 1),
+    i(c"borg_town_explore_turns", 1000),
+    i(c"borg_town_stair_turns", 50),
+    i(c"borg_town_food_turns", 3000),
+    i(c"borg_town_light_turns", 5000),
+    i(c"borg_town_risk", 1000),
+    i(c"borg_town_home_discount", 500),
+    i(c"borg_town_w_space", 25),
+    i(c"borg_town_power_scale", 40000),
+    i(c"borg_trip_policy", 0),
+    i(c"borg_trip_depth_margin", 0),
+    i(c"borg_trip_pack_slack", 2),
+    i(c"borg_trip_unknown_stacks", 4),
+    i(c"borg_trip_return_gold", 0),
+    i(c"borg_town_w_attack", 100),
+    i(c"borg_town_w_magic", 100),
+    i(c"borg_town_w_support", 50),
+    i(c"borg_town_w_restore", 100),
+    i(c"borg_town_attack_turns", 100),
+    i(c"borg_town_support_turns", 1000),
+    i(c"borg_town_w_ranger_missiles", 250),
+    i(c"borg_town_ranger_missile_turns", 50),
 ];
 
-/// Class indexes of borg-trait.h used by the munchkin class rule.
-const CLASS_WARRIOR: u32 = 0;
-const CLASS_DRUID: u32 = 2;
-const CLASS_RANGER: u32 = 7;
+/// What a retired setting may still say in an old borg.txt (borg-rs#60).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RetiredInert {
+    /// Only this value is inert: it is what the removed mode read as "off".
+    Value(i32),
+    /// Any value is inert: a parameter of a removed mode, read by nothing.
+    Any,
+}
 
-/// `borg_munchkin_class_settings()`: Warriors, Druids and Rangers survive
-/// their first levels more often with a munchkin start. When borg.txt
-/// leaves the munchkin start off and `borg_munchkin_by_class` is on, these
-/// classes use it anyway, stair-scumming at `borg_munchkin_class_depth`.
-/// Every other class plays as borg.txt says. This runs again after a
-/// reincarnation, since the class may change. `cidx` is
-/// `player->class->cidx` (`None` while there is no player class).
-/// (better-borg-c milestone8, owner change PR302.)
-pub fn borg_munchkin_class_settings(st: &mut BorgState, cidx: Option<u32>) {
-    let Some(cidx) = cidx else {
-        return;
+/// One retired setting: the name, its kind (as in [`BorgSetting`]), the
+/// value that is still accepted, and what to do instead.
+pub struct RetiredSetting {
+    pub name: &'static CStr,
+    pub kind: u8,
+    pub inert: RetiredInert,
+    pub advice: &'static str,
+}
+
+const fn retired(
+    name: &'static CStr,
+    kind: u8,
+    inert: RetiredInert,
+    advice: &'static str,
+) -> RetiredSetting {
+    RetiredSetting { name, kind, inert, advice }
+}
+
+/// The settings of the removed munchkin and lunal modes (borg-rs#60). There
+/// is one play mode, and how deep a trip goes and when it returns is the
+/// trip policy's (`borg_trip_*`, docs/TRIP-POLICY.md).
+///
+/// The migration rule: a borg.txt line naming one of these is **accepted
+/// with a warning** when it says what the removed mode read as off (or names
+/// a parameter only the mode read), and **rejected** - start-up fails, the
+/// warning names the setting - when it would have turned a removed mode on.
+/// Silently accepting it would let an old config believe the mode still
+/// runs. The C oracle keeps these settings (it is the record of the old
+/// algorithm); `harness/diff` accepts them on the C side only at these
+/// inert values.
+pub const RETIRED_SETTINGS: &[RetiredSetting] = &[
+    retired(c"borg_munchkin_start", b'b', RetiredInert::Value(0),
+        "the munchkin start was removed; delete the line"),
+    retired(c"borg_munchkin_level", b'i', RetiredInert::Any,
+        "a parameter of the removed munchkin start; delete the line"),
+    retired(c"borg_munchkin_depth", b'i', RetiredInert::Any,
+        "a parameter of the removed munchkin start; to bound the trip depth use borg_trip_depth_margin or borg_no_deeper"),
+    retired(c"borg_lunal_mode", b'b', RetiredInert::Value(0),
+        "the lunal mode was removed; delete the line"),
+    retired(c"borg_self_lunal", b'b', RetiredInert::Value(0),
+        "the self-lunal mode was removed; delete the line"),
+    retired(c"borg_munchkin_by_class", b'b', RetiredInert::Value(0),
+        "the class-based munchkin start was removed; delete the line"),
+    retired(c"borg_munchkin_class_depth", b'i', RetiredInert::Any,
+        "a parameter of the removed class-based munchkin start; delete the line"),
+    retired(c"borg_buy_strategy_munchkin", b'i', RetiredInert::Value(-1),
+        "there is no munchkin mode to select a buying strategy for; use borg_buy_strategy_default"),
+    retired(c"borg_buy_strategy_current_munchkin_classes", b'i', RetiredInert::Value(0),
+        "there is no munchkin mode; move the class bits to borg_buy_strategy_current_classes"),
+    retired(c"borg_buy_strategy_reserve410_munchkin_classes", b'i', RetiredInert::Value(0),
+        "there is no munchkin mode; move the class bits to borg_buy_strategy_reserve410_classes"),
+];
+
+/// The verdict on a retired setting's line: `Ok` with the warning to give,
+/// or `Err` with the rejection.
+pub fn retired_verdict(index: usize, value: i32) -> Result<String, String> {
+    let r = &RETIRED_SETTINGS[index];
+    let name = r.name.to_str().expect("ASCII setting name");
+    let inert = match r.inert {
+        RetiredInert::Value(v) => v == value,
+        RetiredInert::Any => true,
     };
-    if st.core.cfg.is_empty() {
-        return;
-    }
-
-    let (start, depth) = (st.init.munchkin_start_setting, st.init.munchkin_depth_setting);
-    let cfg = &mut st.core.cfg;
-    cfg[BORG_MUNCHKIN_START as usize] = start;
-    cfg[BORG_MUNCHKIN_DEPTH as usize] = depth;
-
-    if start != 0 || cfg[BORG_MUNCHKIN_BY_CLASS as usize] == 0 {
-        return;
-    }
-
-    if cidx == CLASS_WARRIOR || cidx == CLASS_DRUID || cidx == CLASS_RANGER {
-        cfg[BORG_MUNCHKIN_START as usize] = 1;
-        cfg[BORG_MUNCHKIN_DEPTH as usize] = cfg[BORG_MUNCHKIN_CLASS_DEPTH as usize];
+    if inert {
+        Ok(format!("** borg.txt: {name} is retired and ignored (borg-rs#60): {}", r.advice))
+    } else {
+        Err(format!(
+            "**STARTUP FAILURE** borg.txt: {name} = {value} would enable a removed mode (borg-rs#60): {}",
+            r.advice
+        ))
     }
 }
 
@@ -277,8 +346,6 @@ pub(crate) trait TxtEnv {
     fn warning(&mut self, what: &str);
     /// `Term_fresh()`
     fn term_fresh(&mut self);
-    /// `player->class->cidx` (`None` while there is no player class)
-    fn class_cidx(&mut self) -> Option<u32>;
 }
 
 /// The borg.txt of the game (`None` once closed).
@@ -306,9 +373,6 @@ impl TxtEnv for TxtFile<'_> {
     }
     fn term_fresh(&mut self) {
         engine::term_fresh();
-    }
-    fn class_cidx(&mut self) -> Option<u32> {
-        engine::class_cidx_if_set()
     }
 }
 
@@ -375,6 +439,21 @@ pub(crate) fn read_txt_settings<E: TxtEnv>(env: &mut E) -> (bool, bool) {
             continue;
         }
 
+        // a retired setting (borg-rs#60): parse its value with its old
+        // kind, judge it once the file is read
+        let retired = RETIRED_SETTINGS.iter().enumerate().find_map(|(r, rs)| {
+            let mut value = [match rs.inert {
+                RetiredInert::Value(v) => v,
+                RetiredInert::Any => 0,
+            }];
+            borg_proc_setting(&mut value, 0, rs.name.to_bytes(), rs.kind, line)
+                .then_some((r, value[0]))
+        });
+        if let Some(seen) = retired {
+            env.st().init.retired_seen.push(seen);
+            continue;
+        }
+
         // other settings
         if prefix_i(line, b"REQ") {
             old_formulas_found = true;
@@ -437,38 +516,28 @@ pub(crate) fn finish_txt_settings<E: TxtEnv>(
         env.term_fresh();
     }
 
+    // the retired settings (borg-rs#60): warn about the inert ones, refuse
+    // to start with one that would enable a removed mode
+    let seen = std::mem::take(&mut env.st().init.retired_seen);
+    for &(r, value) in &seen {
+        match retired_verdict(r, value) {
+            Ok(note) => {
+                env.warning(&note);
+                warning = true;
+            }
+            Err(error) => {
+                env.warning(&error);
+                env.st().init.init_failure = true;
+                warning = true;
+            }
+        }
+    }
+    env.st().init.retired_seen = seen;
+
     let st = env.st();
     let cfg = &mut st.core.cfg;
 
-    // lunal mode is a default rather than a setting
-    st.borg.lunal_mode = cfg[BORG_LUNAL_MODE as usize] != 0;
-
-    // a few sanity range checks (C: `<= lo` then `>= hi` tests)
-    let level = BORG_MUNCHKIN_LEVEL as usize;
-    cfg[level] = cfg[level].clamp(1, 50);
-
-    let depth = BORG_MUNCHKIN_DEPTH as usize;
-    if cfg[depth] <= 1 {
-        cfg[depth] = 8;
-    }
-    if cfg[depth] >= 100 {
-        cfg[depth] = 100;
-    }
-
-    let class_depth = BORG_MUNCHKIN_CLASS_DEPTH as usize;
-    if cfg[class_depth] <= 1 {
-        cfg[class_depth] = 8;
-    }
-    if cfg[class_depth] >= 100 {
-        cfg[class_depth] = 100;
-    }
-
-    st.init.munchkin_start_setting = cfg[BORG_MUNCHKIN_START as usize];
-    st.init.munchkin_depth_setting = cfg[depth];
-    let cidx = env.class_cidx();
-    let st = env.st();
-    borg_munchkin_class_settings(st, cidx);
-    let cfg = &mut st.core.cfg;
+    // (the munchkin level/depth range checks went with the mode, borg-rs#60)
 
     let enchant = BORG_ENCHANT_LIMIT as usize;
     cfg[enchant] = cfg[enchant].clamp(8, 15);
@@ -494,6 +563,14 @@ pub(crate) fn finish_txt_settings<E: TxtEnv>(
         env.warning(error);
         env.st().init.init_failure = true;
     }
+    if !matches!(env.st().cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN), 0 | 1) {
+        env.warning("borg_town_plan must be 0 (control) or 1 (live planner)");
+        env.st().init.init_failure = true;
+    }
+    if let Some(error) = crate::borg_trip::config_error(&env.st().core.cfg) {
+        env.warning(error);
+        env.st().init.init_failure = true;
+    }
 
     // Success
     warning
@@ -512,7 +589,7 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
     crate::borg_trait::borg_trait_init(st);
 
     // a couple of spot checks on settings definitions
-    if BORG_SETTINGS[BORG_MUNCHKIN_LEVEL as usize].name != c"borg_munchkin_level"
+    if BORG_SETTINGS[BORG_STOP_DLEVEL as usize].name != c"borg_stop_dlevel"
         || BORG_SETTINGS[BORG_RESPAWN_RACE as usize].name != c"borg_respawn_race"
     {
         engine::msg(st, b"borg settings structures not correct.  aborting. ");
@@ -697,9 +774,6 @@ extern "C" fn borg_leave_game(
 /// Prepare some stuff based on the player race and class
 /// (`borg_prepare_race_class_info`).
 pub fn borg_prepare_race_class_info(st: &mut BorgState) {
-    // The munchkin start may depend on the class
-    borg_munchkin_class_settings(st, engine::class_cidx_if_set());
-
     // Initialize the various spell arrays by book
     crate::borg_magic::borg_prepare_book_info(st);
 
@@ -913,12 +987,11 @@ mod tests {
         data: Vec<u8>,
         pos: usize,
         out: Vec<String>,
-        class: Option<u32>,
     }
 
     impl FakeTxt {
         fn new(data: &[u8]) -> Self {
-            FakeTxt { st: BorgState::default(), data: data.to_vec(), pos: 0, out: Vec::new(), class: None }
+            FakeTxt { st: BorgState::default(), data: data.to_vec(), pos: 0, out: Vec::new() }
         }
 
         /// `file_getl(f, buf, len)` (z-file.c), on `data`.
@@ -970,7 +1043,6 @@ mod tests {
             let w = finish_txt_settings(&mut env, found, old);
             let mut out = env.out;
             out.push(format!("RET {}", i32::from(w)));
-            out.push(format!("LUNAL {}", i32::from(env.st.borg.lunal_mode)));
             for (i, v) in env.st.core.cfg.iter().enumerate() {
                 out.push(format!("CFG {i} {v}"));
             }
@@ -1000,9 +1072,6 @@ mod tests {
         fn term_fresh(&mut self) {
             self.out.push("FRESH".into());
         }
-        fn class_cidx(&mut self) -> Option<u32> {
-            self.class
-        }
     }
 
     fn cfg_of(data: &[u8]) -> (Vec<i32>, Vec<String>) {
@@ -1019,12 +1088,32 @@ mod tests {
     fn table_matches_enum() {
         use crate::borg_headers::borg_h::*;
         assert_eq!(BORG_SETTINGS[BORG_VERBOSE as usize].name, c"borg_verbose");
-        assert_eq!(BORG_SETTINGS[BORG_MUNCHKIN_LEVEL as usize].name, c"borg_munchkin_level");
+        assert_eq!(BORG_SETTINGS[BORG_STOP_DLEVEL as usize].name, c"borg_stop_dlevel");
         assert_eq!(BORG_SETTINGS[BORG_RESPAWN_RACE as usize].name, c"borg_respawn_race");
         assert_eq!(
             BORG_SETTINGS[BORG_RESTORE_IGNORE_SETTINGS as usize].name,
             c"borg_restore_ignore_settings"
         );
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_PLAN as usize].name, c"borg_town_plan");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_W_LIGHT as usize].name, c"borg_town_w_light");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_W_TRIP as usize].name, c"borg_town_w_trip");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_SHARE as usize].name, c"borg_town_share");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_FOOD_TRIP as usize].name, c"borg_town_food_trip");
+        assert_eq!(BORG_SETTINGS[BORG_TRIP_POLICY as usize].name, c"borg_trip_policy");
+        assert_eq!(BORG_SETTINGS[BORG_TRIP_RETURN_GOLD as usize].name, c"borg_trip_return_gold");
+        assert_eq!(BORG_MAX_SETTINGS as usize, BORG_SETTINGS.len());
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_TARGET_DEPTH as usize].name, c"borg_town_target_depth");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_TRIP_TURNS as usize].name, c"borg_town_trip_turns");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_W_GOLD as usize].name, c"borg_town_w_gold");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_DEPTH_GAIN as usize].name, c"borg_town_depth_gain");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_EXPLORE_TURNS as usize].name, c"borg_town_explore_turns");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_STAIR_TURNS as usize].name, c"borg_town_stair_turns");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_FOOD_TURNS as usize].name, c"borg_town_food_turns");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_LIGHT_TURNS as usize].name, c"borg_town_light_turns");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_RISK as usize].name, c"borg_town_risk");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_HOME_DISCOUNT as usize].name, c"borg_town_home_discount");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_W_SPACE as usize].name, c"borg_town_w_space");
+        assert_eq!(BORG_SETTINGS[BORG_TOWN_POWER_SCALE as usize].name, c"borg_town_power_scale");
     }
 
     /// Expected values from the C parser (borg-init.c with stubs).
@@ -1034,16 +1123,15 @@ mod tests {
         let (cfg, out) = cfg_of(b"");
         let defaults: Vec<i32> = BORG_SETTINGS.iter().map(|s| s.default_value).collect();
         assert_eq!(cfg, defaults);
-        assert_eq!(out, ["RET 0", "LUNAL 0"]);
+        assert_eq!(out, ["RET 0"]);
 
         let (cfg, _) = cfg_of(
-            b"  BORG_VERBOSE=yes\r\nborg_munchkin_level  = -  3\nborg_stop_dlevel==-12x\n\
+            b"  BORG_VERBOSE=yes\r\nborg_stop_dlevel==-12x\n\
               borg_uses_swaps Nope\nborg_respawn_race 11\nborg_respawn_class -2\n\
               borg_enchant_limit 99999999999\nborg_no_deeper -\nborg_respawn_winners\tTRUE\n\
-              # borg_kills_uniques = TRUE\n borg_lunal_mode 1\nborg_munchkin_depth 0\n",
+              # borg_kills_uniques = TRUE\n",
         );
         assert_eq!(cfg[BORG_VERBOSE as usize], 1);
-        assert_eq!(cfg[BORG_MUNCHKIN_LEVEL as usize], 1);
         assert_eq!(cfg[BORG_STOP_DLEVEL as usize], -12);
         assert_eq!(cfg[BORG_USES_SWAPS as usize], 0);
         assert_eq!(cfg[BORG_RESPAWN_RACE as usize], 0);
@@ -1055,8 +1143,6 @@ mod tests {
         assert_eq!(cfg[BORG_NO_DEEPER as usize], 127);
         assert_eq!(cfg[BORG_STOP_KING as usize], 0);
         assert_eq!(cfg[BORG_KILLS_UNIQUES as usize], 0);
-        assert_eq!(cfg[BORG_LUNAL_MODE as usize], 1);
-        assert_eq!(cfg[BORG_MUNCHKIN_DEPTH as usize], 8);
 
         // an integer setting followed by a non-number keeps its default and
         // the parser moves on (milestone6 patch 0057; the original looped
@@ -1073,86 +1159,97 @@ mod tests {
                 "WARN ** Borg's dynamic calculations enabled but old formulas found in borg.txt.",
                 "WARN ** formulas disabled ** ",
                 "FRESH",
-                "RET 1",
-                "LUNAL 0"
+                "RET 1"
             ]
         );
     }
 
-    /// The munchkin start by class (better-borg-c milestone8, PR302):
-    /// Warriors, Druids and Rangers take it at `borg_munchkin_class_depth`
-    /// unless borg.txt turns the munchkin start on or the rule off.
+    /// The retired settings (borg-rs#60): an inert line is accepted with a
+    /// warning and changes nothing; a line that would enable a removed mode
+    /// fails start-up and names the setting; no line re-enables a mode.
     #[test]
-    fn munchkin_class_rule() {
-        use crate::borg_headers::borg_h::BORG_MUNCHKIN_START;
-        let run = |data: &[u8], class: Option<u32>| {
+    fn retired_settings_migrate_or_reject() {
+        let run = |data: &[u8]| {
             let mut env = FakeTxt::new(data);
-            env.class = class;
             let (found, old) = read_txt_settings(&mut env);
-            finish_txt_settings(&mut env, found, old);
-            let c = &env.st.core.cfg;
-            (c[BORG_MUNCHKIN_START as usize], c[BORG_MUNCHKIN_DEPTH as usize])
+            let warned = finish_txt_settings(&mut env, found, old);
+            (env.st.init.init_failure, warned, env.out, env.st.core.cfg)
         };
-        // with no borg.txt the rule is off: the original C Borg's behaviour
-        for class in [0, 1, 2, 3, 4, 5, 6, 7, 8] {
-            assert_eq!(run(b"", Some(class)), (0, 16), "class {class}");
-        }
-        assert_eq!(run(b"", None), (0, 16));
-        // the rule on: the three classes take the munchkin start at depth 6
-        for class in [0, 2, 7] {
-            assert_eq!(
-                run(b"borg_munchkin_by_class = TRUE\n", Some(class)),
-                (1, 6),
-                "class {class}"
-            );
-        }
-        // every other class, and no player class yet
-        for class in [1, 3, 4, 5, 6, 8] {
-            assert_eq!(
-                run(b"borg_munchkin_by_class = TRUE\n", Some(class)),
-                (0, 16),
-                "class {class}"
-            );
-        }
-        assert_eq!(run(b"borg_munchkin_by_class = TRUE\n", None), (0, 16));
-        // the rule off, a munchkin start from borg.txt, the depth setting
-        assert_eq!(run(b"borg_munchkin_by_class = FALSE\n", Some(0)), (0, 16));
-        assert_eq!(run(b"borg_munchkin_start = TRUE\n", Some(0)), (1, 16));
-        assert_eq!(
-            run(b"borg_munchkin_by_class = TRUE\nborg_munchkin_class_depth = 9\n", Some(2)),
-            (1, 9)
-        );
-        assert_eq!(
-            run(b"borg_munchkin_by_class = TRUE\nborg_munchkin_class_depth = 0\n", Some(7)),
-            (1, 8)
-        );
+        let defaults: Vec<i32> = BORG_SETTINGS.iter().map(|s| s.default_value).collect();
 
-        // a reincarnation into another class restores the borg.txt values
-        let mut env = FakeTxt::new(b"borg_munchkin_by_class = TRUE\n");
-        env.class = Some(0);
-        let (found, old) = read_txt_settings(&mut env);
-        finish_txt_settings(&mut env, found, old);
-        borg_munchkin_class_settings(&mut env.st, Some(1));
-        let c = &env.st.core.cfg;
-        assert_eq!((c[BORG_MUNCHKIN_START as usize], c[BORG_MUNCHKIN_DEPTH as usize]), (0, 16));
+        // a config with no retired line: no warning, no failure
+        let (failed, warned, out, cfg) = run(b"borg_verbose = FALSE\n");
+        assert!(!failed && !warned && out.is_empty());
+        assert_eq!(cfg, defaults);
+
+        // the old shipped config's values: all inert, one warning each,
+        // and the effective settings are the defaults
+        let old = b"borg_lunal_mode = FALSE\nborg_self_lunal = FALSE\n\
+            borg_munchkin_start = FALSE\nborg_munchkin_level = 12\nborg_munchkin_depth = 16\n\
+            borg_munchkin_by_class = FALSE\nborg_munchkin_class_depth = 6\n\
+            borg_buy_strategy_munchkin = -1\nborg_buy_strategy_current_munchkin_classes = 0\n\
+            borg_buy_strategy_reserve410_munchkin_classes = 0\n";
+        let (failed, warned, out, cfg) = run(old);
+        assert!(!failed);
+        assert!(warned);
+        assert_eq!(out.len(), RETIRED_SETTINGS.len());
+        assert!(out
+            .iter()
+            .all(|l| l.starts_with("WARN ** borg.txt: ") && l.contains("retired and ignored")));
+        assert_eq!(cfg, defaults);
+
+        // a parameter of a removed mode is inert whatever it says
+        let (failed, _, out, _) = run(b"borg_munchkin_depth = 4\nborg_munchkin_level = 5\n");
+        assert!(!failed);
+        assert_eq!(out.len(), 2);
+
+        // every switch that enabled a mode is rejected, by name
+        for line in [
+            &b"borg_munchkin_start = TRUE\n"[..],
+            b"borg_lunal_mode 1\n",
+            b"borg_self_lunal = yes\n",
+            b"borg_munchkin_by_class = TRUE\n",
+            b"borg_buy_strategy_munchkin = 1\n",
+            b"borg_buy_strategy_munchkin = 0\n",
+            b"borg_buy_strategy_current_munchkin_classes = 4\n",
+            b"borg_buy_strategy_reserve410_munchkin_classes = 1\n",
+        ] {
+            let (failed, warned, out, cfg) = run(line);
+            let text = String::from_utf8_lossy(line);
+            assert!(failed, "{text}");
+            assert!(warned, "{text}");
+            let name = text.split([' ', '=']).next().unwrap();
+            assert_eq!(out.len(), 1, "{text}");
+            assert!(out[0].contains("STARTUP FAILURE") && out[0].contains(name), "{text}: {out:?}");
+            assert_eq!(cfg, defaults, "{text}");
+        }
+
+        // each line is judged: a rejected line is not undone by a later one
+        let (failed, _, out, _) = run(b"borg_munchkin_start = TRUE\nborg_munchkin_start = FALSE\n");
+        assert!(failed);
+        assert_eq!(out.len(), 2);
+
+        // a retired name is not a prefix of a live setting, nor the reverse
+        for r in RETIRED_SETTINGS {
+            let r = r.name.to_bytes();
+            for s in BORG_SETTINGS.iter() {
+                let s = s.name.to_bytes();
+                assert!(!r.starts_with(s) && !s.starts_with(r));
+            }
+        }
     }
 
     #[test]
     fn buying_strategy_settings_parse_and_validate() {
         use crate::borg_headers::borg_h::*;
         let (cfg, _) = cfg_of(
-            b"borg_buy_strategy_default = 1\nborg_buy_strategy_munchkin = 0\n\
+            b"borg_buy_strategy_default = 1\n\
               borg_buy_strategy_current_classes = 1\nborg_buy_strategy_reserve410_classes = 2\n\
-              borg_buy_strategy_current_munchkin_classes = 4\n\
-              borg_buy_strategy_reserve410_munchkin_classes = 8\n\
               borg_buy_identify = 1\n",
         );
         assert_eq!(cfg[BORG_BUY_STRATEGY_DEFAULT as usize], 1);
-        assert_eq!(cfg[BORG_BUY_STRATEGY_MUNCHKIN as usize], 0);
         assert_eq!(cfg[BORG_BUY_STRATEGY_CURRENT_CLASSES as usize], 1);
         assert_eq!(cfg[BORG_BUY_STRATEGY_RESERVE410_CLASSES as usize], 2);
-        assert_eq!(cfg[BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES as usize], 4);
-        assert_eq!(cfg[BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES as usize], 8);
         assert_eq!(cfg[BORG_BUY_IDENTIFY as usize], 1);
 
         let mut env = FakeTxt::new(
@@ -1169,16 +1266,49 @@ mod tests {
         let text: Vec<u8> = default_txt_file().concat();
         let text = String::from_utf8(text).unwrap();
         assert!(text.starts_with("# BORG.txt default settings \n"));
-        assert!(text.contains("\n\nborg_verbose = FALSE\nborg_munchkin_start = FALSE\n"));
+        assert!(text.contains("\n\nborg_verbose = FALSE\nborg_worships_damage = FALSE\n"));
         assert!(text.contains("\nborg_respawn_class = -1\n"));
         assert!(text.ends_with(
-            "borg_buy_strategy_default = 0\nborg_buy_strategy_munchkin = -1\n\
+            "borg_buy_strategy_default = 0\n\
              borg_buy_strategy_current_classes = 0\nborg_buy_strategy_reserve410_classes = 0\n\
-             borg_buy_strategy_current_munchkin_classes = 0\n\
-             borg_buy_strategy_reserve410_munchkin_classes = 0\n\
-             borg_buy_identify = 0\n"
+             borg_buy_identify = 0\nborg_town_no_stores = FALSE\n\
+             borg_town_plan = 0\nborg_town_w_light = 100\nborg_town_w_food = 100\n\
+             borg_town_w_bleeding = 100\nborg_town_w_poison = 100\nborg_town_w_escape = 50\n\
+             borg_town_w_knowledge = 25\nborg_town_w_power = 50\nborg_town_w_trip = 50\n\
+             borg_town_share = 10\nborg_town_light_depth = 15\nborg_town_food_trip = 10\n\
+             borg_town_target_depth = 0\nborg_town_trip_turns = 0\nborg_town_w_gold = 25\n\
+             borg_town_depth_gain = 1\nborg_town_explore_turns = 1000\nborg_town_stair_turns = 50\nborg_town_food_turns = 3000\nborg_town_light_turns = 5000\nborg_town_risk = 1000\nborg_town_home_discount = 500\nborg_town_w_space = 25\nborg_town_power_scale = 40000\n\
+             borg_trip_policy = 0\nborg_trip_depth_margin = 0\nborg_trip_pack_slack = 2\n\
+             borg_trip_unknown_stacks = 4\nborg_trip_return_gold = 0\n\
+             borg_town_w_attack = 100\nborg_town_w_magic = 100\nborg_town_w_support = 50\n\
+             borg_town_w_restore = 100\nborg_town_attack_turns = 100\nborg_town_support_turns = 1000\nborg_town_w_ranger_missiles = 250\nborg_town_ranger_missile_turns = 50\n"
         ));
-        assert!(text.contains("\nborg_munchkin_by_class = FALSE\n"));
+        assert!(!text.contains("munchkin") && !text.contains("lunal"));
+    }
+
+    /// The town inventory redesign's parameter vector (borg-rs#36): the
+    /// twelve settings parse like any other int setting.
+    #[test]
+    fn town_settings_parse() {
+        use crate::borg_headers::borg_h::*;
+        let (cfg, _) = cfg_of(
+            b"borg_town_plan = 1\nborg_town_w_light = 90\nborg_town_w_food = 80\n\
+              borg_town_w_bleeding = 70\nborg_town_w_poison = 60\nborg_town_w_escape = 55\n\
+              borg_town_w_knowledge = 45\nborg_town_w_power = 35\nborg_town_w_trip = 25\n\
+              borg_town_share = 4\nborg_town_light_depth = 20\nborg_town_food_trip = 12\n",
+        );
+        assert_eq!(cfg[BORG_TOWN_PLAN as usize], 1);
+        assert_eq!(cfg[BORG_TOWN_W_LIGHT as usize], 90);
+        assert_eq!(cfg[BORG_TOWN_W_FOOD as usize], 80);
+        assert_eq!(cfg[BORG_TOWN_W_BLEEDING as usize], 70);
+        assert_eq!(cfg[BORG_TOWN_W_POISON as usize], 60);
+        assert_eq!(cfg[BORG_TOWN_W_ESCAPE as usize], 55);
+        assert_eq!(cfg[BORG_TOWN_W_KNOWLEDGE as usize], 45);
+        assert_eq!(cfg[BORG_TOWN_W_POWER as usize], 35);
+        assert_eq!(cfg[BORG_TOWN_W_TRIP as usize], 25);
+        assert_eq!(cfg[BORG_TOWN_SHARE as usize], 4);
+        assert_eq!(cfg[BORG_TOWN_LIGHT_DEPTH as usize], 20);
+        assert_eq!(cfg[BORG_TOWN_FOOD_TRIP as usize], 12);
     }
 
     /// Differential check against the C parser: for every file in
@@ -1250,21 +1380,65 @@ mod tests {
     /// whose two values differ is a product choice, named here; every other
     /// new setting reproduces the behaviour the original C Borg had.
     ///
-    /// `borg_munchkin_by_class` is the one that differs: the built-in default
-    /// is FALSE, the original C Borg's behaviour, and the product's milestone
-    /// 8 decision (better-borg-c PR302, `fd683ced`) is carried by the two
-    /// borg.txt files instead. `docs/ZOO-INTERFACE.md` is the prose version
-    /// of this table, and the audit behind it.
+    /// `borg_munchkin_by_class` was enabled in the delivered configs for M8;
+    /// owner direction on 2026-11-14 disabled it by default, and borg-rs#60
+    /// retired it with the other mode settings (`RETIRED_FAMILY_SETTINGS`).
+    /// The five `borg_trip_*` settings are the trip policy's (borg-rs#60,
+    /// docs/TRIP-POLICY.md); `borg_trip_policy = 0` keeps today's behaviour.
     const NEW_SETTINGS: &[(&str, u8, i32, &str)] = &[
-        ("borg_munchkin_by_class", b'b', 0, "TRUE"),
-        ("borg_munchkin_class_depth", b'i', 6, "6"),
         ("borg_buy_strategy_default", b'i', 0, "0"),
-        ("borg_buy_strategy_munchkin", b'i', -1, "-1"),
         ("borg_buy_strategy_current_classes", b'i', 0, "0"),
         ("borg_buy_strategy_reserve410_classes", b'i', 0, "0"),
-        ("borg_buy_strategy_current_munchkin_classes", b'i', 0, "0"),
-        ("borg_buy_strategy_reserve410_munchkin_classes", b'i', 0, "0"),
         ("borg_buy_identify", b'i', 0, "0"),
+        ("borg_town_no_stores", b'b', 0, "FALSE"),
+        ("borg_town_plan", b'i', 0, "0"),
+        ("borg_town_w_light", b'i', 100, "100"),
+        ("borg_town_w_food", b'i', 100, "100"),
+        ("borg_town_w_bleeding", b'i', 100, "100"),
+        ("borg_town_w_poison", b'i', 100, "100"),
+        ("borg_town_w_escape", b'i', 50, "50"),
+        ("borg_town_w_knowledge", b'i', 25, "25"),
+        ("borg_town_w_power", b'i', 50, "50"),
+        ("borg_town_w_trip", b'i', 50, "50"),
+        ("borg_town_share", b'i', 10, "10"),
+        ("borg_town_light_depth", b'i', 15, "15"),
+        ("borg_town_food_trip", b'i', 10, "10"),
+        ("borg_town_target_depth", b'i', 0, "0"),
+        ("borg_town_trip_turns", b'i', 0, "0"),
+        ("borg_town_w_gold", b'i', 25, "25"),
+        ("borg_town_depth_gain", b'i', 1, "1"),
+        ("borg_town_explore_turns", b'i', 1000, "1000"),
+        ("borg_town_stair_turns", b'i', 50, "50"),
+        ("borg_town_food_turns", b'i', 3000, "3000"),
+        ("borg_town_light_turns", b'i', 5000, "5000"),
+        ("borg_town_risk", b'i', 1000, "1000"),
+        ("borg_town_home_discount", b'i', 500, "500"),
+        ("borg_town_w_space", b'i', 25, "25"),
+        ("borg_town_power_scale", b'i', 40000, "40000"),
+        ("borg_trip_policy", b'i', 0, "0"),
+        ("borg_trip_depth_margin", b'i', 0, "0"),
+        ("borg_trip_pack_slack", b'i', 2, "2"),
+        ("borg_trip_unknown_stacks", b'i', 4, "4"),
+        ("borg_trip_return_gold", b'i', 0, "0"),
+        ("borg_town_w_attack", b'i', 100, "100"),
+        ("borg_town_w_magic", b'i', 100, "100"),
+        ("borg_town_w_support", b'i', 50, "50"),
+        ("borg_town_w_restore", b'i', 100, "100"),
+        ("borg_town_attack_turns", b'i', 100, "100"),
+        ("borg_town_support_turns", b'i', 1000, "1000"),
+        ("borg_town_w_ranger_missiles", b'i', 250, "250"),
+        ("borg_town_ranger_missile_turns", b'i', 50, "50"),
+
+    ];
+
+    /// The family settings borg-rs#60 retired (they were declared new
+    /// settings until then): name and kind.
+    const RETIRED_FAMILY_SETTINGS: &[(&str, u8)] = &[
+        ("borg_munchkin_by_class", b'b'),
+        ("borg_munchkin_class_depth", b'i'),
+        ("borg_buy_strategy_munchkin", b'i'),
+        ("borg_buy_strategy_current_munchkin_classes", b'i'),
+        ("borg_buy_strategy_reserve410_munchkin_classes", b'i'),
     ];
 
     /// The setting lines of a borg.txt: the name and the value, in order.
@@ -1288,12 +1462,33 @@ mod tests {
         BORG_SETTINGS.iter().find(|s| s.name.to_str().ok() == Some(name))
     }
 
+    /// The retired entry for a setting name.
+    fn retired_setting(name: &str) -> Option<&'static RetiredSetting> {
+        RETIRED_SETTINGS.iter().find(|s| s.name.to_str().ok() == Some(name))
+    }
+
+    /// A setting is live or retired, never both; every retired setting was
+    /// an upstream or a declared family setting, with the same kind.
+    #[test]
+    fn retired_settings_left_the_table() {
+        for r in RETIRED_SETTINGS {
+            let name = r.name.to_str().unwrap();
+            assert!(setting(name).is_none(), "{name} is retired but still in the table");
+            let upstream = UPSTREAM_SETTINGS.iter().find(|(n, ..)| *n == name).map(|(_, k, _)| *k);
+            let family = RETIRED_FAMILY_SETTINGS.iter().find(|(n, _)| *n == name).map(|(_, k)| *k);
+            assert_eq!(upstream.or(family), Some(r.kind), "{name}");
+        }
+    }
+
     /// The upstream C Borg's defaults are the ones borg-rs keeps (RULES 1 of
     /// the zoo: a parameter enters it with a default that reproduces the
     /// original behaviour).
     #[test]
     fn upstream_defaults_are_unchanged() {
         for (name, kind, default) in UPSTREAM_SETTINGS {
+            if retired_setting(name).is_some() {
+                continue;
+            }
             let s = setting(name).unwrap_or_else(|| panic!("{name} is missing from the table"));
             assert_eq!(s.kind, *kind, "{name}");
             assert_eq!(s.default_value, *default, "{name}");
@@ -1322,10 +1517,13 @@ mod tests {
         }
     }
 
-    /// The C parser table and the Rust table carry the same settings, in the
-    /// same order, with the same kinds and defaults: the C Borg reads them
-    /// (and ignores the Rust-only ones), so a drift between the two would
-    /// make the two backends read different configurations.
+    /// The C parser table carries the Rust table's settings, in the same
+    /// order, with the same kinds and defaults, plus the retired mode
+    /// settings (borg-rs#60) that the C oracle keeps: the C Borg reads the
+    /// Rust-only ones (and ignores them), so a drift between the two would
+    /// make the two backends read different configurations. The retired
+    /// entries are the C oracle's only extra, each at the inert default
+    /// `harness/diff` accepts.
     #[test]
     fn the_c_table_matches_the_rust_table() {
         let c = include_str!("../c-reference/borg-init.c");
@@ -1356,17 +1554,27 @@ mod tests {
             };
             entries.push((name, kind.as_bytes()[0], value));
         }
-        assert_eq!(entries.len(), BORG_SETTINGS.len());
-        for (i, (name, kind, value)) in entries.iter().enumerate() {
+        let (retired, live): (Vec<_>, Vec<_>) =
+            entries.iter().partition(|(name, ..)| retired_setting(name).is_some());
+        assert_eq!(live.len(), BORG_SETTINGS.len());
+        for (i, (name, kind, value)) in live.iter().enumerate() {
             let s = &BORG_SETTINGS[i];
             assert_eq!(s.name.to_str().unwrap(), *name);
             assert_eq!(s.kind, *kind);
             assert_eq!(s.default_value, *value);
         }
+        assert_eq!(retired.len(), RETIRED_SETTINGS.len(), "every retired setting is in the C table");
+        for (name, kind, value) in retired {
+            let r = retired_setting(name).unwrap();
+            assert_eq!(r.kind, kind, "{name}");
+            if let RetiredInert::Value(v) = r.inert {
+                assert_eq!(v, value, "{name}: the C default is the inert value");
+            }
+        }
     }
 
     /// The two borg.txt copies carry the same settings, and between them they
-    /// name every setting in the table.
+    /// name every setting in the table and no retired one.
     #[test]
     fn the_borg_txt_copies_agree_and_name_every_setting() {
         let harness = borg_txt_settings(include_str!("../borg.txt"));
@@ -1378,6 +1586,9 @@ mod tests {
                 harness.iter().any(|(n, _)| n == name),
                 "{name} is missing from the borg.txt files"
             );
+        }
+        for (name, _) in &harness {
+            assert!(retired_setting(name).is_none(), "{name} is retired (borg-rs#60)");
         }
     }
 
@@ -1399,6 +1610,9 @@ mod tests {
                 .to_ascii_uppercase()
         };
         for (name, _, default) in UPSTREAM_SETTINGS {
+            if retired_setting(name).is_some() {
+                continue;
+            }
             let want = if setting(name).unwrap().kind == b'b' {
                 if *default != 0 { "TRUE" } else { "FALSE" }.to_string()
             } else {
