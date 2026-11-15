@@ -37,6 +37,28 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(p['profile'], 'harness/profiles/reborn-default.txt')
         self.assertEqual(p['keys_sha256'], 'k' * 64)
 
+    def test_the_runs_settings_come_back(self):
+        # Review #227, finding 8: an errand run reruns as itself.
+        with tempfile.TemporaryDirectory() as t:
+            p = rd.plan(dossier(t, config_extra='borg_core=borg-rs\nborg_errand=/dive 3; /walk-back\n'
+                                                 'borg_stopscared=50\n'))
+        self.assertEqual(p['env'], {'BORG_CORE': 'borg-rs', 'BORG_ERRAND': '/dive 3; /walk-back',
+                                    'BORG_STOPSCARED': '50'})
+        with tempfile.TemporaryDirectory() as t:
+            self.assertEqual(rd.plan(dossier(t))['env'], {}, 'a run without settings has none')
+
+    def test_a_changed_ladders_file_is_refused(self):
+        with tempfile.TemporaryDirectory() as t:
+            ladders = Path(t) / 'ladders.txt'
+            ladders.write_text('warrior = trips:1*\n')
+            good = rd.hashlib.sha256(ladders.read_bytes()).hexdigest()
+            p = rd.plan(dossier(t, config_extra=f'borg_ladders={ladders}\nborg_ladders_sha256={good}\n'))
+            self.assertEqual(p['env']['BORG_LADDERS'], str(ladders))
+            ladders.write_text('warrior = trips:1,2*\n')
+            (Path(t) / 'D0001-rust-seed102').rename(Path(t) / 'old')
+            with self.assertRaises(SystemExit):
+                rd.plan(dossier(t, config_extra=f'borg_ladders={ladders}\nborg_ladders_sha256={good}\n'))
+
     def test_only_rust_harness_dossiers(self):
         with tempfile.TemporaryDirectory() as t:
             with self.assertRaises(SystemExit):

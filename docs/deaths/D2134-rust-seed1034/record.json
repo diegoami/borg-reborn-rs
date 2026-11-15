@@ -1,0 +1,54 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2134-rust-seed1034",
+  "run_kind": "harness",
+  "character": "Human Priest",
+  "raw_cause": "a scout",
+  "terminal": {
+    "cause": "a scout",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 4,
+    "turn": 39470,
+    "race_idx": 7,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1034,
+    "flags": "-",
+    "git_rev": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+    "git_dirty": "yes",
+    "source_sha256": "55068854ae7452dd17ef8f9440814c8dce1341e4c21483170df7aa5d8e363565",
+    "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d",
+    "borg_txt_sha256": "b994b99efeccba1aa72fcccbfb2b594010b558dde3dc91a1916e5b8bead9020e",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rev-out/parity/full-3-priest-4",
+      "result_sha256": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+      "raw_sha256": {
+        "keys.log": "abd54f34fe5a0986a88820ba9b78ec3492e8c228345712782ef7c5eabd259fe5",
+        "messages.log": "e8d1cd646a94d3e3b8379b08371d34f45593bc462b54cea8789882b24763e0c6",
+        "state.log": "3c074b3c2ef27fafe450abe14601d172adb86f54e70f90fed75836b2a0d18b3a"
+      },
+      "source_commit": "726e04fa9d015244965f863ae0e0b34d1883c4c8",
+      "binary_sha256": "af999a440e6754276e578da9198779de09a5cb1aa7fcdcc66e02df19b3b4100d"
+    }
+  ],
+  "encounter_family": "start-e86278ed1190419266ee99b3efa2488dd03849903ec6e5fe99c6399700ac2c10",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7478f7b53ddc35a8c12c7529bbe830beda0e068d122fa42eae4f3a4009e1d743",
+    "config.txt": "b9dea4754cff834e72c7242c9315059934041dc51e01bd5193aaf79de211cfc1",
+    "depths.json": "ffba1d2a234e2d2e65ae871165c2f04ec58499da82e984d35bb94395e0cbfa97",
+    "summary.json": "d95752e7ccb983a1be8eb44f083c4e8a44b5a6ec81ab7ed2661ef5d6913ab9ca"
+  },
+  "investigation": null,
+  "issue": null
+}

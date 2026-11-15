@@ -38,6 +38,26 @@ def read_kv(path):
     return dict(l.split('=', 1) for l in path.read_text().splitlines() if '=' in l)
 
 
+# The settings harness/run.sh records when the environment gives them
+# (review #227, finding 8): the core, the errand and its options.
+SETTINGS = ('BORG_CORE', 'BORG_CORE_OVERRIDES', 'BORG_ERRAND', 'BORG_STOPSCARED', 'BORG_ERRAND_BUDGET',
+            'BORG_LADDERS')
+
+
+def settings(config):
+    """The environment a dossier's run had, from its config.txt. A ladders
+    file must still be the one the run read."""
+    env = {v: config[v.lower()] for v in SETTINGS if config.get(v.lower())}
+    if 'BORG_LADDERS' in env:
+        path = Path(env['BORG_LADDERS'])
+        want = config.get('borg_ladders_sha256')
+        have = hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
+        if have != want:
+            raise SystemExit(f'rerun-death: the run read ladders {path} ({str(want)[:12]}); '
+                             f'here it is {"missing" if have is None else have[:12]}')
+    return env
+
+
 def plan(case_dir):
     """What to run for a dossier: (seed, race, class, cap, flags, profile, expected keys hash, source)."""
     record = json.loads((case_dir / 'record.json').read_text())
@@ -64,6 +84,7 @@ def plan(case_dir):
         'flags': flags.replace('exact', '').replace(',,', ',').strip(',') or '-',
         'profile': config.get('profile'),
         'keys_sha256': record['attempts'][0]['result_sha256'],
+        'env': settings(config),
         'source_sha256': ident.get('source_sha256'),
         'git_rev': ident.get('git_rev'),
     }
@@ -88,7 +109,9 @@ def main(argv=None):
         raise SystemExit(f'rerun-death: {a.out} exists')
     a.out.mkdir(parents=True)
     # The build checked above, never an inherited ANGBAND_BIN.
-    env = {k: v for k, v in os.environ.items() if k != 'ANGBAND_BIN'}
+    env = {k: v for k, v in os.environ.items() if k != 'ANGBAND_BIN' and k not in SETTINGS}
+    # The run's own settings, never inherited ones.
+    env.update(p['env'])
     env.update(BORG_IMPL='rust',
                BORG_OBSERVATION_LOG=str(a.out / 'observations.jsonl'),
                BORG_WORLD_LOG=str(a.out / 'worlds.txt'),
