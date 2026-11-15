@@ -4,7 +4,9 @@ Status: owner-requested design proposal, 2026-11-15. No model connection,
 controller, new observation read or default-policy change is implemented by
 this document. Implementation and any amendments to SPEC/RULES/GOALS require
 owner review. This proposal extends [QUERY-SURFACE.md](QUERY-SURFACE.md),
-issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308).
+issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308): a YAML
+block embedded directly in borg.txt, with named profiles and plans. No
+external TOML/profile-file system is required.
 
 ## What the player can request
 

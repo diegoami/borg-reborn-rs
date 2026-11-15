@@ -4,6 +4,10 @@
 
 ## 2026-11-15: owner-requested tactical LLM adviser design (#306)
 
+- Latest #308 configuration entry is an inline here-document-style YAML
+  block in borg.txt. Advice selects names from that frozen block; no
+  external profile loader or model-written configuration is implied.
+
 - Follow-up: #308 was simplified at the owner's request. Advice now refers
   to named profiles/plans and separately reviewed tactical actions; it
   cannot generate the rejected DSL or bypass town-only profile switching.
