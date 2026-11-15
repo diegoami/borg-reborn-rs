@@ -1,0 +1,154 @@
+--- a/borg-core/src/borg_caution.rs
++++ b/borg-core/src/borg_caution.rs
+@@ -212,7 +212,6 @@
+ 
+     let hp_down = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
+     let pct_down = (st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP)) * 100 / st.borg.tr(BI_MAXHP);
+-<<<<<<< ours
+     let clw_heal = heal_amount(
+         hp_down,
+         p(Param::caution_clw_estimate_percent),
+@@ -234,15 +233,6 @@
+         p(Param::caution_heal_estimate_percent),
+         p(Param::caution_heal_estimate_min),
+     );
+-=======
+-    // Cure Light, Serious and Critical Wounds heal a fixed 20, 40 and 60
+-    // hit points (object.txt HEAL_HP dice, no percentage part) - patch 0133.
+-    // cmw_heal (30%, at least 50) is computed in C but never used.
+-    let clw_heal = 20;
+-    let csw_heal = 40;
+-    let ccw_heal = 60;
+-    let heal_heal = heal_amount(hp_down, 35, 300);
+->>>>>>> dc790dc46e13
+ 
+     // Quick check for rod success (used later on)
+     let mut rod_good = false;
+@@ -499,15 +489,9 @@
+         return false;
+     }
+ 
+-<<<<<<< ours
+-    // Cure light Wounds (2d10)
++    // Cure light Wounds (20)
+     if pct_down >= p(Param::caution_clw_min_loss)
+         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
+-=======
+-    // Cure light Wounds (20)
+-    if pct_down >= 30
+-        && (pct_down <= 40 || st.borg.tr(BI_CLEVEL) < 10)
+->>>>>>> dc790dc46e13
+         && danger < st.borg.tr(BI_CURHP) + clw_heal
+         && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
+         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
+@@ -517,15 +501,9 @@
+         borg_note(st, "# Healing Level 1.");
+         return true;
+     }
+-<<<<<<< ours
+-    // Cure Serious Wounds (4d10)
++    // Cure Serious Wounds (40)
+     if pct_down >= p(Param::caution_csw_min_loss)
+         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
+-=======
+-    // Cure Serious Wounds (40)
+-    if pct_down >= 40
+-        && (pct_down <= 50 || st.borg.tr(BI_CLEVEL) < 20)
+->>>>>>> dc790dc46e13
+         && danger < st.borg.tr(BI_CURHP) + csw_heal
+         && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
+         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+@@ -535,13 +513,8 @@
+         return true;
+     }
+ 
+-<<<<<<< ours
+-    // Cure Critical Wounds (6d10)
++    // Cure Critical Wounds (60)
+     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
+-=======
+-    // Cure Critical Wounds (60)
+-    if (50..=55).contains(&pct_down)
+->>>>>>> dc790dc46e13
+         && danger < st.borg.tr(BI_CURHP) + ccw_heal
+         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
+         && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
+--- a/borg-core/src/borg_danger.rs
++++ b/borg-core/src/borg_danger.rs
+@@ -1096,13 +1096,8 @@
+                     z = 200;
+                 }
+                 // Add fear for the effect
+-<<<<<<< ours
+                 p += param(Param::danger_rsf_br_grav_fear);
+-                if st.borg.tr(BI_RSND) != 0 {
+-=======
+-                p += 100;
+                 if st.borg.tr(BI_PSTUN) != 0 {
+->>>>>>> dc790dc46e13
+                     break 'b;
+                 }
+                 // if already stunned be REALLY nervous about this
+@@ -1570,13 +1565,8 @@
+                 z = (6 * 6) + spell_power;
+                 bolt = true;
+                 // Add fear for the effect
+-<<<<<<< ours
+                 p += param(Param::danger_rsf_bo_ice_fear);
+-                if st.borg.tr(BI_RSND) != 0 {
+-=======
+-                p += 20;
+                 if st.borg.tr(BI_PSTUN) != 0 {
+->>>>>>> dc790dc46e13
+                     break 'b;
+                 }
+                 // if already stunned be REALLY nervous about this
+--- a/borg-core/src/borg_fight_defend.rs
++++ b/borg-core/src/borg_fight_defend.rs
+@@ -1179,14 +1179,7 @@
+         fail_allowed -= param(Param::defend_shield_high_fail_adjustment);
+     } else if p1 > a * param(Param::defend_shield_mid_danger_multiplier) {
+         /* scary */
+-<<<<<<< ours
+         fail_allowed -= param(Param::defend_shield_mid_fail_adjustment);
+-    } else if p1 > (a * param(Param::defend_shield_low_danger_numerator)) / param(Param::defend_shield_low_danger_divisor) {
+-        /* a little scary */
+-        fail_allowed += param(Param::defend_shield_low_fail_adjustment);
+-=======
+-        fail_allowed -= 5;
+->>>>>>> dc790dc46e13
+     }
+ 
+     /* do I have the ability? */
+--- a/borg-core/src/params.rs
++++ b/borg-core/src/params.rs
+@@ -48,12 +48,12 @@
+     caution_mage_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:180", "Controls mage stat fix sp."),
+     caution_mage_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:181", "Controls mage stat fix votes."),
+     caution_heal_spell_fail => (15, "percent", 0, 100, "borg_caution.rs:196", "Controls heal spell fail."),
+-    caution_clw_estimate_percent => (15, "percent", 0, 100, "borg_caution.rs:201", "Controls clw estimate percent."),
+-    caution_clw_estimate_min => (15, "hp", 0, 10000, "borg_caution.rs:201", "Controls clw estimate min."),
+-    caution_csw_estimate_percent => (20, "percent", 0, 100, "borg_caution.rs:202", "Controls csw estimate percent."),
+-    caution_csw_estimate_min => (25, "hp", 0, 10000, "borg_caution.rs:202", "Controls csw estimate min."),
+-    caution_ccw_estimate_percent => (25, "percent", 0, 100, "borg_caution.rs:203", "Controls ccw estimate percent."),
+-    caution_ccw_estimate_min => (30, "hp", 0, 10000, "borg_caution.rs:203", "Controls ccw estimate min."),
++    caution_clw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:201", "Controls clw estimate percent."),
++    caution_clw_estimate_min => (20, "hp", 0, 10000, "borg_caution.rs:201", "Controls clw estimate min."),
++    caution_csw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:202", "Controls csw estimate percent."),
++    caution_csw_estimate_min => (40, "hp", 0, 10000, "borg_caution.rs:202", "Controls csw estimate min."),
++    caution_ccw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:203", "Controls ccw estimate percent."),
++    caution_ccw_estimate_min => (60, "hp", 0, 10000, "borg_caution.rs:203", "Controls ccw estimate min."),
+     caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:205", "Controls heal estimate percent."),
+     caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:205", "Controls heal estimate min."),
+     caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:211", "Controls healing rod fail."),
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,8 @@
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++# Isolated full-carry trial only.
++test-track-r-carry = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

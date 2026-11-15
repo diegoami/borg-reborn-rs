@@ -1,0 +1,27 @@
+diff --git a/borg-core/src/borg_danger.rs b/borg-core/src/borg_danger.rs
+index e0791de6..87cd924f 100644
+--- a/borg-core/src/borg_danger.rs
++++ b/borg-core/src/borg_danger.rs
+@@ -1959,7 +1959,8 @@ fn borg_danger_spell(
+ /// `borg_danger_one_kill`? Both loops test `feat == FEAT_GRANITE`: features
+ /// above granite (permanent wall, lava, passable rubble) are not walls here.
+ fn wall_like(feat: u32) -> bool {
+-    feat == FEAT_GRANITE
++    // Constructed carry-test fault: ordinary floor becomes a wall.
++    feat == crate::headers::list_terrain_h::FEAT_FLOOR || feat == FEAT_GRANITE
+         || feat == FEAT_MAGMA
+         || feat == FEAT_QUARTZ
+         || feat == FEAT_MAGMA_K
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..b2394f33 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,8 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++# Isolated carry-trial label; never a production feature.
++test-track-r-carry = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

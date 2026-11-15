@@ -23,6 +23,7 @@ reported, never fatal. Standard library only.
 """
 
 import argparse
+import importlib.util
 import datetime
 import json
 import re
@@ -202,6 +203,22 @@ def report(root, pins, fetch=True, issues=True, out=sys.stdout):
             n = git(src.repo, 'rev-list', '--count', f'{core_pin}..{src.head}', '--', *paths).stdout.strip()
             hint = ' (re-vendor: `scripts/borg-core-vendor.py refresh REV`, in its own PR)' if n not in ('', '0') else ''
             w(f"- vendored core `borg-core/` at {core_pin[:12]}: {n or '?'} borg-rs commits since touch its files{hint}\n")
+            # Track R (#225): names are measured from the core's pin, even
+            # after the separately maintained reference pin has advanced.
+            manifest = root / 'docs/ported-functions.json'
+            if manifest.exists():
+                spec = importlib.util.spec_from_file_location('borg_rust_ports', Path(__file__).with_name('rust_ports.py'))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                try:
+                    rust = module.changed(src.repo, core_pin, src.head, json.loads(manifest.read_text()))
+                    names = [f"{r['path']}:{r['function']}" for r in rust['changed_functions']]
+                    w(f"- **Rust functions changed since the core pin:** {', '.join(names) or 'none'}\n")
+                    ports = [f"{r['point']} ({r['change']})" for r in rust['ported_changes']]
+                    w(f"- **ported Rust functions changed:** {', '.join(ports) or 'none'}; source changes are not behavior evidence\n")
+                except (ValueError, OSError, KeyError) as error:
+                    w(f"- problem: cannot inspect ported Rust functions: {error}\n")
+
         borg_dir = pin.get('borg_dir')
         if borg_dir:
             if not cited:

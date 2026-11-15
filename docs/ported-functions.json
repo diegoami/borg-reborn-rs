@@ -1,0 +1,12 @@
+{
+  "schema": "borg-reborn-rs/ported-functions@1",
+  "ports": [
+    {
+      "point": "danger.wall_like",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "wall_like",
+      "port_path": "borg-next/src/shadow.rs",
+      "port_function": "wall_like"
+    }
+  ]
+}
