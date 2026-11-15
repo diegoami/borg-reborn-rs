@@ -1,0 +1,55 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/donor-full/full-6-rogue-2",
+      "raw_sha256": {
+        "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+        "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+        "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+      },
+      "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+      "role": "original",
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea"
+    }
+  ],
+  "character": "Dunadan Rogue",
+  "core_decision_trace": null,
+  "decision_trace": null,
+  "encounter_family": "start-eb66549994567401216e1754ea630c9e13bcbf10c5fac4c05e280be20500d012",
+  "files_sha256": {
+    "build.json": "7f7b355f3e1a4ff06f212b40d1b9415dc8d11154359fbc20b65535f9e7265a97",
+    "config.txt": "981cdebf443b3dd2a26f1780e720700937ab0512146ccf952c20b69a311fd203",
+    "summary.json": "33b0bddbb2db3e9caf097f1cee66f0f8f5c3f12b2452e9553bc4add22f3eb54e"
+  },
+  "id": "D0000-q38ed3569c112edfd3a21c1561fa2e4aec4c01594f1835b0795c5a69f8641e5c4",
+  "identity": {
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "borg_txt_sha256": "d44a0b4a9347cfa39ed07059950f2961cf03d4038ca2b315318cde941b9ecd6d",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": null,
+    "seed": 1062,
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a soldier",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a soldier",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 2,
+    "level": 3,
+    "max_depth": 3,
+    "race_idx": 8,
+    "turn": 49147
+  }
+}

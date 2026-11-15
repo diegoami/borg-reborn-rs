@@ -1,0 +1,55 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0011-rust-seed1074",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 3,
+    "turn": 22250,
+    "race_idx": 0,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1074,
+    "flags": "menu",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "git_dirty": "no",
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c",
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "borg_txt_sha256": "08be84d92d5d554b5669e456087a7a9984fcee628af35287fc28672b7a1386a0",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/donor-full/full-7-ranger-4",
+      "result_sha256": "adf910ee154722cb124c4e7b1c4e016aacc61a05d5847459eecf9058c7a172fe",
+      "raw_sha256": {
+        "keys.log": "adf910ee154722cb124c4e7b1c4e016aacc61a05d5847459eecf9058c7a172fe",
+        "messages.log": "342b55931eb619d14999ca410324a61d17333d7111e10b37fc5d6dd5f61b0bf5",
+        "state.log": "a5e3a7b7af2bb038bce9e01143105587d5850dd32031b304f1a2c44b95694b55"
+      },
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+      "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde"
+    }
+  ],
+  "encounter_family": "start-28f6e18c63caaaddf0456bb74a8b939518e1219dfa97b4c87eabde6e33f39125",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7f7b355f3e1a4ff06f212b40d1b9415dc8d11154359fbc20b65535f9e7265a97",
+    "config.txt": "8d61c0e194b76fd4659956636eac6b12811ecbabecdad5d8507d8ab62902ac44",
+    "summary.json": "a378fb019cb2a5473774b0f687c692a83c115811e7c802f52220bff9eb68358c"
+  },
+  "investigation": null,
+  "issue": null
+}
