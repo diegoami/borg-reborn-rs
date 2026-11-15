@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R3 accessor and ownership plan (#316)
+
+- R3-PLAN.md closes the roadmap follow-up from accepted R2 review: cheap
+  borrowed named access, fresh values after mutations, explicit item/spell
+  facts, ordered replay limits and a staged attack/defence migration.
+- R2 is explicitly a verified mechanical migration; modes and redesigned
+  decisions remain later work. 384 eager View sites are a source observation,
+  not a measured speed claim. No accessor optimization is implemented here.
+- Attack/defence are 4,583 + 3,592 = 8,175 physical lines at this baseline;
+  permanent buffs add a separate 775 lines and remain an explicit shared
+  dependency pending scope/parameter audit. No hidden expansion of R3.
+- Source-gate/count/entry follow-ups are #321/#322/#323. #315 native
+  hardening validation is queued under the shared engine lock. This planning
+  PR changes no runtime inputs and starts no game, population or sealed run.
+
 ## 2026-11-15: individual stateful entry coverage (#314)
 
 - `check-shadow.py --require-all-entries` requires all 11 public entries and
