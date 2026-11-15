@@ -3,6 +3,30 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P3.1 validation complete
+
+- The real pinned zoo profile contract passes3 cells with no BORG_* policy
+  environment: numeric core1, resolved parameter values/origins, invalid
+  rejection and original core0. Native diagnostics accompany the summary.
+- Full45/45,295,464 named rows, current-shell ladder, original-core smoke
+  and death fixture pass. Required checks and36 engine tests pass (two
+  environment skips). D2345–D2355 preserve eleven natural deaths, reconciled.
+- P3.1-VALIDATION.md and ZOO-INTERFACE.md document the remaining adapter
+  record limitation: its config_checked field still names the written file;
+  native parameter/trace files must be preserved and hashed for analysis.
+- Owner sweep handoff #245 is next; no population run has been launched.
+
+## 2026-11-15: P3.1 native zoo profile contract
+
+- Numeric borg_reborn_core=1 selects the vendored core;0 retains the
+  original core. This fits the pinned zoo's bool/int-only profile writer.
+- Native borgh calls without BORG_RUN_DIR place diagnostics beside their
+  existing -summary file, preserving explicit caller paths. No policy or
+  RNG behavior changes; the upstream engine and zoo pin remain untouched.
+- Three actual pinned-adapter contract cells pass with no BORG_* policy
+  environment: parsed profile values/origins, invalid-value exit2 and the
+  original-core selector. Example control/rest-SP7/8 profiles are provided.
+  Full/harness validation is retained in the final task report.
 ## 2026-11-15: P2.4 power valuation complete
 
 - 727 parameters (1734 total) cover activation values, equipment scores,
