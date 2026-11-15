@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2193-rust-seed1054",
+  "run_kind": "harness",
+  "character": "Human Paladin",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 11486,
+    "race_idx": 9,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1054,
+    "flags": "-",
+    "git_rev": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+    "git_dirty": "yes",
+    "source_sha256": "82586ab82a6f2675da55b8226efe8854d1ea2b27df653cef5b38964e47d1cc4a",
+    "binary_sha256": "89b92dc005a1e9819af581cc6278d787a6a2e0981566cfd01b3eda71ca6d654c",
+    "borg_txt_sha256": "5402f6fe7bde7d15c27f1b45e4c5ac52686c81eaa7bc4c0305b1e3245591097a",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out2/parity/full-5-paladin-4",
+      "result_sha256": "a87d41eb5dc306259cec1bdbf640b4fa5a5da6a4678d71c95dfe222763cffe0b",
+      "raw_sha256": {
+        "keys.log": "a87d41eb5dc306259cec1bdbf640b4fa5a5da6a4678d71c95dfe222763cffe0b",
+        "messages.log": "c6f2704b4e48e9153a60b0432ff895ba02913b016b9fc5d56ad520b4dde3705b",
+        "state.log": "d3b6c3f2c4d5948051a30d274aca53cef48d312e05b7ad76f842c77d89a31525"
+      },
+      "source_commit": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+      "binary_sha256": "89b92dc005a1e9819af581cc6278d787a6a2e0981566cfd01b3eda71ca6d654c"
+    }
+  ],
+  "encounter_family": "start-4f8f0422659cd2e229dcf0e92fbaa115a814c4cd6d64bde6ed0b213158a5aba7",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "4a4df2cf1dd6fe9e9399a6a0643fa93e00bae5b5cdb135a7284dc20c696565fa",
+    "config.txt": "69c5e979d0d9e048fbf64eaf6f59116e15699e9650abc1a3a19281ba4ef3dbab",
+    "depths.json": "fa5e8bbf8e388a788dd376591bf4e037756605c045ef6018f18027f5d7bec1e1",
+    "params-core.json": "b15f510bd445ba5b7a86308eadd33be240e0e0de4894920d0cb36d130e127786",
+    "summary.json": "66f8af14a2a4123744ebb474d07709dc4053c79debbbd56a5610a41ed11e5ca2"
+  },
+  "investigation": null,
+  "issue": null
+}
