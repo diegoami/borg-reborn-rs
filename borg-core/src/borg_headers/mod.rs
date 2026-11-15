@@ -2,7 +2,6 @@
 //! constants, enums and type names of the Borg. Not FFI: nothing here is
 //! shared with the C engine, and the module contains no `unsafe`. Types
 //! the converted modules define are re-exported under their C names.
-pub mod borg_attack_munchkin_h;
 pub mod borg_caution_h;
 pub mod borg_cave_h;
 pub mod borg_cave_light_h;

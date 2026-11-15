@@ -1386,6 +1386,59 @@ fn purchase_done(st: &mut BorgState) {
 
 /// Buy items from the current shop, if desired (`borg_think_shop_buy`).
 pub fn borg_think_shop_buy(st: &mut BorgState) -> bool {
+    buy_selected(st, true)
+}
+
+/// A Home withdrawal intended for sale is not a newly purchased keeper.
+pub fn take_selected_for_sale(st: &mut BorgState) -> bool {
+    buy_selected(st, false)
+}
+
+fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
+    let b = &mut st.buy;
+    if b.bought_item_nxt >= 9 {
+        b.bought_item_nxt = 0;
+    }
+    let i = b.bought_item_nxt as usize;
+    b.bought_item_pval[i] = i32::from(item.pval);
+    b.bought_item_tval[i] = i32::from(item.tval);
+    b.bought_item_sval[i] = i32::from(item.sval);
+    b.bought_item_store[i] = shop;
+    b.bought_item_nxt += 1;
+    if b.bought_item_num < b.bought_item_nxt {
+        b.bought_item_num = b.bought_item_nxt;
+    }
+}
+
+/// Live mode calls this only after observing the native transaction.
+pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
+    note_desc(st, "# Buying ", item, ".");
+    let shop_name = String::from_utf8_lossy(&crate::engine::store_feat_name(shop as usize)).to_string();
+    crate::borg_object_log::log_buy(st, item, &shop_name, item.cost, shop == BORG_HOME as i32);
+    crate::borg_town_dump::dump_purchase(st, shop, item);
+    if keep { remember_purchase(st, item, shop); }
+    if crate::borg_town_live::active(st) { reset_money_scum(st, item); }
+}
+
+fn reset_money_scum(st: &mut BorgState, item: &borg_item) {
+    /* if the borg is scumming and bought it.,
+     * reset the scum amount.
+     */
+    let scum = st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize];
+    if scum != 0 && item.cost >= scum.wrapping_mul(9) / 10 {
+        st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize] = 0;
+
+        /* Log */
+        let msg = format!(
+            "# Setting Money Scum to {}.",
+            st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize]
+        );
+        borg_note(st, &msg);
+    }
+
+}
+
+fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
     /* Buy something if requested */
     if i32::from(st.borg.goal.shop) == i32::from(st.think.shop_num) && st.borg.goal.ware >= 0 {
         let shop = st.borg.goal.shop as i32;
@@ -1402,46 +1455,21 @@ pub fn borg_think_shop_buy(st: &mut BorgState) -> bool {
             return false;
         }
 
-        /* Log */
-        note_desc(st, "# Buying ", &item, ".");
+        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false); }
 
         /* Buy the desired item */
         borg_keypress(st, purchase_target);
-        borg_keypress(st, keycode_t::from(b'p'));
+        if !crate::engine::player_opt(crate::headers::list_options_h::OPT_store_buy_direct) {
+            borg_keypress(st, keycode_t::from(b'p'));
 
-        /* Mega-Hack -- Accept the purchase */
-        borg_keypress(st, KC_ENTER);
-        borg_keypress(st, KC_ENTER);
-
-        /* if the borg is scumming and bought it.,
-         * reset the scum amount.
-         */
-        let scum = st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize];
-        if scum != 0 && item.cost >= scum.wrapping_mul(9) / 10 {
-            st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize] = 0;
-
-            /* Log */
-            let msg = format!(
-                "# Setting Money Scum to {}.",
-                st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize]
-            );
-            borg_note(st, &msg);
+            /* Mega-Hack -- Accept the purchase */
+            borg_keypress(st, KC_ENTER);
+            borg_keypress(st, KC_ENTER);
         }
 
-        /* Remember what we bought to avoid buy/sell loops */
-        let b = &mut st.buy;
-        if b.bought_item_nxt >= 9 {
-            b.bought_item_nxt = 0;
-        }
-        let i = b.bought_item_nxt as usize;
-        b.bought_item_pval[i] = i32::from(item.pval);
-        b.bought_item_tval[i] = i32::from(item.tval);
-        b.bought_item_sval[i] = i32::from(item.sval);
-        b.bought_item_store[i] = i32::from(st.borg.goal.shop);
-        b.bought_item_nxt += 1;
-        if b.bought_item_num < b.bought_item_nxt {
-            b.bought_item_num = b.bought_item_nxt;
-        }
+        if !crate::borg_town_live::active(st) { reset_money_scum(st, &item); }
+
+        if keep_purchase && !crate::borg_town_live::active(st) { remember_purchase(st, &item, shop); }
 
         purchase_done(st);
 

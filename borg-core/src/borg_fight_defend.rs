@@ -1180,9 +1180,6 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
     } else if p1 > a * param(Param::defend_shield_mid_danger_multiplier) {
         /* scary */
         fail_allowed -= param(Param::defend_shield_mid_fail_adjustment);
-    } else if p1 > (a * param(Param::defend_shield_low_danger_numerator)) / param(Param::defend_shield_low_danger_divisor) {
-        /* a little scary */
-        fail_allowed += param(Param::defend_shield_low_fail_adjustment);
     }
 
     /* do I have the ability? */

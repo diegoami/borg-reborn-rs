@@ -1008,6 +1008,8 @@ pub fn all_letters_nohjkl(i: i32) -> u8 {
 
 /// `all_letters[i]` (ui-menu.c): the menu letters a-z, A-Z (53 bytes with
 /// the NUL; panics past it, where C would read out of bounds).
+/// C mirror; the respawn birth menu now uses `all_letters_nohjkl` (0123).
+#[allow(dead_code)]
 pub fn all_letters(i: usize) -> u8 {
     // SAFETY: a constant array defined in ui-menu.c, declared with its C
     // length (`[c_char; 53]`); nothing writes it.
@@ -1514,7 +1516,48 @@ pub fn store_stock(access: &Access, store: usize) -> Vec<StoreObject<'_>> {
     list.iter().take_while(|o| !o.is_null()).map(|&o| StoreObject(o, PhantomData)).collect()
 }
 
+fn native_sale_quote(obj: *const crate::headers::object_h::object, shop: usize, quantity: i32) -> i32 {
+    assert!(shop < usize::from(z_info().store_max));
+    assert!(quantity >= 1);
+    // SAFETY: callers hold a live object handle and validated quantity; the
+    // public store offer includes native owner caps and Black Market rules.
+    unsafe { crate::headers::store_h::store_sale_quote(crate::headers::store_h::stores.add(shop), obj, quantity) }
+}
+
 impl StoreObject<'_> {
+
+    /// The native shop quote for one copy, as displayed to the player.
+    /// This is not the historical Borg's optimistic price approximation.
+    pub fn purchase_quote(self, store: usize) -> i32 {
+        self.check_value_qty(1);
+        assert!(store < usize::from(z_info().store_max), "store index out of range");
+        // SAFETY: the handle borrows a live stock object; stores has the
+        // checked number of entries. price_item reads the object/player
+        // and returns the same public quote the store UI uses; no callbacks.
+        unsafe { crate::headers::store_h::price_item(crate::headers::store_h::stores.add(store), self.0, false, 1) }
+    }
+
+    /// Native capacity for this offered stack; no inventory mutation.
+    pub fn carry_capacity(self) -> i32 {
+        // SAFETY: both player and borrowed object are live; query is read-only.
+        unsafe { crate::headers::obj_gear_h::inven_carry_num(crate::headers::player_h::player, self.0) }
+    }
+
+    pub fn quiver_stack_room(self) -> i32 {
+        // SAFETY: live object/player; counts native compatible quiver room only.
+        unsafe { crate::headers::obj_gear_h::inven_quiver_stack_room(crate::headers::player_h::player, self.0) }
+    }
+
+    pub fn merge_capacity(self) -> i32 {
+        // SAFETY: live object/player; native helper only counts existing room.
+        unsafe { crate::headers::obj_gear_h::inven_merge_num(crate::headers::player_h::player, self.0) }
+    }
+
+    pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
+        // SAFETY: this handle borrows a live store stock object.
+        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        native_sale_quote(self.0, shop, quantity)
+    }
 
     /// `object_desc(buf, 120, obj, mode, player)` (bytes up to the NUL).
     pub fn desc120(self, mode: u32) -> Vec<u8> {
@@ -1589,6 +1632,11 @@ pub fn feat_shopnum(feat: usize) -> u8 {
     unsafe { (*crate::headers::cave_h::f_info.add(feat)).shopnum }
 }
 
+/// `z_info->store_max`: the number of stores.
+pub fn store_max() -> u16 {
+    z_info().store_max
+}
+
 /// `f_info[stores[store].feat].name` (bytes up to the NUL).
 pub fn store_feat_name(store: usize) -> Vec<u8> {
     assert!(store < usize::from(z_info().store_max), "store index out of range");
@@ -1617,6 +1665,9 @@ pub fn player_square_shopnum() -> i32 {
 
 /// `player->opts.opt[opt]` (the `OPT(player, ...)` macro).
 pub fn player_opt(opt: u32) -> bool {
+    // borg-reborn-rs (#328): upstream 42cd156ac has the standard store UI.
+    // Never index the donor-only option into the receiving player_options.
+    if opt == crate::headers::list_options_h::OPT_store_buy_direct { return false; }
     player_ref().opts.opt[opt as usize]
 }
 
@@ -1700,6 +1751,12 @@ pub fn prt(s: &[u8], row: i32, col: i32) {
 pub struct CarriedObject<'a>(*const crate::headers::object_h::object, PhantomData<&'a Access>);
 
 impl CarriedObject<'_> {
+    pub fn sale_quote(self, shop: usize, quantity: i32) -> i32 {
+        // SAFETY: handle is a live carried object; reading number cannot re-enter.
+        assert!(quantity > 0 && quantity <= unsafe { i32::from((*self.0).number) });
+        native_sale_quote(self.0, shop, quantity)
+    }
+
 
     /// `obj && obj->kind`
     /// (`access` is checked by the caller, before it reads the slot.)
@@ -1762,6 +1819,26 @@ pub fn object_desc_full(obj: CarriedObject<'_>) -> Vec<u8> {
     let n = buf.iter().position(|&b| b == 0).unwrap_or(buf.len());
     buf[..n].to_vec()
 }
+
+/// Process-local opaque learning task, stable while the native object lives.
+/// A freed address can be reused and alias a still-unresolved task. It is not a
+/// generation identity and must not be persisted across save/load.
+/// No STORE/SPOIL flag and no hidden sval or generation level is exposed.
+pub fn object_learning_key(obj: CarriedObject<'_>) -> Vec<u8> {
+    // Ownership identity is opaque: it conveys no hidden kind or rune.
+    // Unlike combat descriptions it is stable while this object learns runes.
+    (obj.0 as usize).to_ne_bytes().to_vec()
+}
+/// Fixture-only bridge to the production learning key. Never linked into
+/// a normal Borg. The caller supplies a live native object.
+#[cfg(feature = "test-town-review")]
+#[no_mangle]
+pub unsafe extern "C" fn borg_rs_test_learning_identity(obj: *const crate::headers::object_h::object) -> u64 {
+    assert!(!obj.is_null());
+    object_learning_key(CarriedObject(obj, PhantomData)).into_iter()
+        .fold(1469598103934665603u64, |hash, b| (hash ^ u64::from(b)).wrapping_mul(1099511628211))
+}
+
 // Danger (borg-danger.c): cave squares, game tables and monster blows
 
 /// `square_in_bounds(cave, loc(x, y))` on the current level.
@@ -1837,6 +1914,9 @@ pub fn panel_contains(y: i32, x: i32) -> bool {
 
 /// `feat_is_trap_holding(feat)` (cave.c): can the terrain feature hold a
 /// trap?
+/// C mirror; the visible-trap exploration case was removed from the
+/// dark-flow scan (0127).
+#[allow(dead_code)]
 pub fn feat_is_trap_holding(feat: i32) -> bool {
     assert!((0..crate::headers::cave_h::FEAT_MAX as i32).contains(&feat), "feature out of range");
     // SAFETY: plain call; reads `f_info[feat]` (index checked above).
@@ -2268,6 +2348,49 @@ pub fn kind_effects(kind: usize) -> Vec<(u16, i32)> {
         // SAFETY: effects form a NULL-terminated list loaded at startup.
         unsafe {
             out.push(((*e).index, (*e).subtype));
+            e = (*e).next;
+        }
+    }
+    out
+}
+
+/// Mean loaded kind values for an explicitly hypothetical catalogue item.
+pub fn kind_value_average(value: crate::headers::z_rand_h::random_value) -> i32 {
+    // SAFETY: pure arithmetic; AVERAGE does not roll RNG.
+    unsafe { crate::headers::z_rand_h::randcalc(value, 0, crate::headers::z_rand_h::AVERAGE) }
+}
+
+/// Loaded rod cooldown, evaluated without drawing random numbers.
+pub fn kind_recharge_average(kind: usize) -> i32 {
+    // SAFETY: kind data lives for the game; AVERAGE draws no RNG values.
+    unsafe { crate::headers::z_rand_h::randcalc(self::kind(kind).time, 0, crate::headers::z_rand_h::AVERAGE) }
+}
+
+/// Average effect magnitudes, read without advancing the game's RNG.
+/// The list and dice expressions belong to immutable loaded kind data.
+pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
+    effect_values(self::kind(kind).effect, level)
+}
+
+pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
+    effect_values(spell_by_index_ref(index).effect, level)
+}
+
+fn effect_values(mut e: *const crate::headers::object_h::effect, level: i32) -> Vec<(u16, i32, i64)> {
+    let mut out = Vec::new();
+    while !e.is_null() {
+        // SAFETY: same loaded NULL-terminated list as kind_effects; AVERAGE
+        // evaluates bound dice expressions without rolling random numbers.
+        unsafe {
+            let mut value = crate::headers::z_rand_h::random_value { base: 0, dice: 0, sides: 0, m_bonus: 0 };
+            let mut amount = if (*e).dice.is_null() { 0 } else {
+                crate::headers::z_dice_h::dice_evaluate((*e).dice, level,
+                    crate::headers::z_rand_h::AVERAGE, &mut value)
+            };
+            if u32::from((*e).index) == crate::headers::list_effects_h::EF_TIMED_DEC && (*e).other > 0 {
+                amount = i32::from(player_timed((*e).subtype as u32)) / (*e).other;
+            }
+            out.push(((*e).index, (*e).subtype, i64::from(amount)));
             e = (*e).next;
         }
     }
@@ -3394,5 +3517,19 @@ mod arith_tests {
     #[should_panic(expected = "overflows int")]
     fn stat_min_amount() {
         modify_stat_value(18, i32::MIN);
+    }
+}
+
+// borg-reborn-rs (#328): keep the donor-only option outside the native ABI.
+#[cfg(test)]
+mod receiving_options_tests {
+    #[test]
+    fn standard_store_ui_does_not_read_a_donor_only_option() {
+        use crate::headers::option_h::player_options;
+        assert_eq!(crate::headers::option_h::OPT_MAX, 46);
+        assert_eq!(std::mem::size_of::<player_options>(), 50);
+        assert_eq!(std::mem::offset_of!(player_options, hitpoint_warn), 46);
+        // No player/engine exists in this test: a read would fail.
+        assert!(!super::player_opt(crate::headers::list_options_h::OPT_store_buy_direct));
     }
 }

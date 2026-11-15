@@ -238,9 +238,10 @@ fn borg_lookup_sval_fail(st: &mut BorgState, tval: i32, name: &str) -> i32 {
 
 /// Look up every sval and kval (`borg_init_item_val`).
 ///
-/// The C code's copy-and-paste slips are kept (see `docs/c-bugs.md`):
-/// `sv_wand_confuse_monster` is "Scare Monster", `sv_wand_elec_ball` is
-/// "Lightning Bolts", and `sv_potion_berserk` is looked up twice.
+/// Patch 0131 fixed the C code's copy-and-paste slips: the
+/// `sv_wand_confuse_monster` and `sv_wand_elec_ball` lookups now use the
+/// wands' own names ("Confuse Monster", "Lightning Balls"); the C code's
+/// `sv_potion_berserk` is still looked up twice (see `docs/c-bugs.md`).
 pub fn borg_init_item_val(st: &mut BorgState) {
     let mut tval = engine::tval_find_idx("food");
     st.item_val.sv_food_apple = borg_lookup_sval_fail(st, tval, "Apple");
@@ -424,7 +425,7 @@ pub fn borg_init_item_val(st: &mut BorgState) {
     st.item_val.sv_wand_hold_monster = borg_lookup_sval_fail(st, tval, "Hold Monster");
     st.item_val.sv_wand_slow_monster = borg_lookup_sval_fail(st, tval, "Slow Monster");
     st.item_val.sv_wand_fear_monster = borg_lookup_sval_fail(st, tval, "Scare Monster");
-    st.item_val.sv_wand_confuse_monster = borg_lookup_sval_fail(st, tval, "Scare Monster");
+    st.item_val.sv_wand_confuse_monster = borg_lookup_sval_fail(st, tval, "Confuse Monster");
     st.item_val.sv_wand_fire_bolt = borg_lookup_sval_fail(st, tval, "Fire Bolts");
     st.item_val.sv_wand_cold_bolt = borg_lookup_sval_fail(st, tval, "Frost Bolts");
     st.item_val.sv_wand_acid_bolt = borg_lookup_sval_fail(st, tval, "Acid Bolts");
@@ -432,7 +433,7 @@ pub fn borg_init_item_val(st: &mut BorgState) {
     st.item_val.sv_wand_fire_ball = borg_lookup_sval_fail(st, tval, "Fire Balls");
     st.item_val.sv_wand_cold_ball = borg_lookup_sval_fail(st, tval, "Cold Balls");
     st.item_val.sv_wand_acid_ball = borg_lookup_sval_fail(st, tval, "Acid Balls");
-    st.item_val.sv_wand_elec_ball = borg_lookup_sval_fail(st, tval, "Lightning Bolts");
+    st.item_val.sv_wand_elec_ball = borg_lookup_sval_fail(st, tval, "Lightning Balls");
     st.item_val.sv_wand_dragon_cold = borg_lookup_sval_fail(st, tval, "Dragon's Frost");
     st.item_val.sv_wand_dragon_fire = borg_lookup_sval_fail(st, tval, "Dragon's Flame");
     st.item_val.sv_wand_drain_life = borg_lookup_sval_fail(st, tval, "Drain Life");

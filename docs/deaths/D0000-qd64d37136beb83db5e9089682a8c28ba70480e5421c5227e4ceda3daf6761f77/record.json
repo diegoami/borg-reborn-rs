@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-4-necro-3",
+      "raw_sha256": {
+        "keys.log": "3eb72c9817b4de13f2beb87e69d49451f7d36fc0c215a28d269f24930ec816b4",
+        "messages.log": "a5bf172a56155b26109bb052fa322b932df9d89f7cd95c72597670c6d8bb7d34",
+        "state.log": "81e34fb77c9ecc252387487c9623504de3a3854504de777e237dbddca91461f7"
+      },
+      "result_sha256": "3eb72c9817b4de13f2beb87e69d49451f7d36fc0c215a28d269f24930ec816b4",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "Half-Troll Necromancer",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 9134
+  },
+  "encounter_family": "start-69b075e90cba635bb5c9bcff8e37dfa8e5b22a39f15f3708ea37a0d108d3f9da",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "1b51d88a2aa62b81b728a5684e784439ad19a70b183b555fed024e13f6691de3",
+    "depths.json": "8829c06dcc8773ee403aa82fe699ac1e0e235d70b8e20685b2ed07014c623247",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "90a80e63ce559716d705fd7b5405580af33f0df8f013fd1e86047b9a4f7cc646",
+    "trace-tail.jsonl": "c0269e1439aba96d6e866c22c195575c201da853c3af00fe0a82df1b68e1ec91"
+  },
+  "id": "D0000-qd64d37136beb83db5e9089682a8c28ba70480e5421c5227e4ceda3daf6761f77",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "c5beed4f14890681d7d9d398f3fe84026e865b5e8e10485ece04dee1bd884662",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1043,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a floating eye",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a floating eye",
+    "class_idx": 4,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 7,
+    "turn": 91688
+  }
+}

@@ -4,12 +4,15 @@
 //! experimental early escape/cure reserve inspired by better-borg-c#410, whose
 //! strict version was rejected after failing its declared survival/progress
 //! margins. It is opt-in and carries no claim of benefit.
+//!
+//! The selection was by class and by munchkin/non-munchkin mode until the
+//! modes were removed (borg-rs#60): there is one play mode, so the
+//! precedence is the class masks, then the global default. The three
+//! munchkin-only settings are retired (`borg_init::RETIRED_SETTINGS`).
 
 use crate::borg_headers::borg_h::{
-    BORG_BUY_STRATEGY_CURRENT_CLASSES, BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES,
-    BORG_BUY_IDENTIFY, BORG_BUY_STRATEGY_DEFAULT, BORG_BUY_STRATEGY_MUNCHKIN,
-    BORG_BUY_STRATEGY_RESERVE410_CLASSES, BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES,
-    BORG_MUNCHKIN_START,
+    BORG_BUY_IDENTIFY, BORG_BUY_STRATEGY_CURRENT_CLASSES, BORG_BUY_STRATEGY_DEFAULT,
+    BORG_BUY_STRATEGY_RESERVE410_CLASSES,
 };
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::{
@@ -54,16 +57,13 @@ fn class_bit(class: i32) -> i32 {
     }
 }
 
-/// Validate the seven family settings. A class may override a less specific
+/// Validate the four family settings. A class may override a less specific
 /// selection in either direction, but current and reserve masks at the same
 /// precedence may not conflict.
 pub fn config_error(cfg: &[i32]) -> Option<&'static str> {
     let get = |index: u32| cfg.get(index as usize).copied().unwrap_or(0);
     if !matches!(get(BORG_BUY_STRATEGY_DEFAULT), 0 | 1) {
         return Some("borg_buy_strategy_default must be 0 (current) or 1 (reserve410)");
-    }
-    if !matches!(get(BORG_BUY_STRATEGY_MUNCHKIN), -1..=1) {
-        return Some("borg_buy_strategy_munchkin must be -1, 0 or 1");
     }
     if !matches!(get(BORG_BUY_IDENTIFY), 0 | 1) {
         return Some("borg_buy_identify must be 0 or 1");
@@ -77,14 +77,6 @@ pub fn config_error(cfg: &[i32]) -> Option<&'static str> {
             BORG_BUY_STRATEGY_RESERVE410_CLASSES,
             "borg_buy_strategy_reserve410_classes",
         ),
-        (
-            BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES,
-            "borg_buy_strategy_current_munchkin_classes",
-        ),
-        (
-            BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES,
-            "borg_buy_strategy_reserve410_munchkin_classes",
-        ),
     ] {
         let value = get(index);
         if !(0..=CLASS_MASK_ALL).contains(&value) {
@@ -94,48 +86,25 @@ pub fn config_error(cfg: &[i32]) -> Option<&'static str> {
     if get(BORG_BUY_STRATEGY_CURRENT_CLASSES) & get(BORG_BUY_STRATEGY_RESERVE410_CLASSES) != 0 {
         return Some("current/reserve410 class masks conflict");
     }
-    if get(BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES)
-        & get(BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES)
-        != 0
-    {
-        return Some("current/reserve410 class+munchkin masks conflict");
-    }
     None
 }
 
-/// Resolve class+munchkin, then class, then munchkin, then the global default.
-/// Unspecified combinations select `current` through the zero-valued defaults.
-pub fn selected(cfg: &[i32], class: i32, munchkin: bool) -> BuyingStrategy {
+/// Resolve the class masks, then the global default. Unspecified classes
+/// select `current` through the zero-valued defaults.
+pub fn selected(cfg: &[i32], class: i32) -> BuyingStrategy {
     let get = |index: u32| cfg.get(index as usize).copied().unwrap_or(0);
     let bit = class_bit(class);
-    let mut strategy = BuyingStrategy::from_setting(get(BORG_BUY_STRATEGY_DEFAULT));
-
-    if munchkin && get(BORG_BUY_STRATEGY_MUNCHKIN) >= 0 {
-        strategy = BuyingStrategy::from_setting(get(BORG_BUY_STRATEGY_MUNCHKIN));
+    if get(BORG_BUY_STRATEGY_RESERVE410_CLASSES) & bit != 0 {
+        return BuyingStrategy::Reserve410;
     }
     if get(BORG_BUY_STRATEGY_CURRENT_CLASSES) & bit != 0 {
-        strategy = BuyingStrategy::Current;
+        return BuyingStrategy::Current;
     }
-    if get(BORG_BUY_STRATEGY_RESERVE410_CLASSES) & bit != 0 {
-        strategy = BuyingStrategy::Reserve410;
-    }
-    if munchkin {
-        if get(BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES) & bit != 0 {
-            strategy = BuyingStrategy::Current;
-        }
-        if get(BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES) & bit != 0 {
-            strategy = BuyingStrategy::Reserve410;
-        }
-    }
-    strategy
+    BuyingStrategy::from_setting(get(BORG_BUY_STRATEGY_DEFAULT))
 }
 
 pub fn selected_for(st: &BorgState) -> BuyingStrategy {
-    selected(
-        &st.core.cfg,
-        st.borg.tr(BI_CLASS),
-        st.cfg(BORG_MUNCHKIN_START) != 0,
-    )
+    selected(&st.core.cfg, st.borg.tr(BI_CLASS))
 }
 
 /// Whether the experimental early reserve is active and still has a deficit.
@@ -220,9 +189,7 @@ mod tests {
     use crate::borg_item::blank_item;
 
     fn cfg() -> Vec<i32> {
-        let mut cfg = vec![0; crate::borg_headers::borg_h::BORG_MAX_SETTINGS as usize];
-        cfg[BORG_BUY_STRATEGY_MUNCHKIN as usize] = -1;
-        cfg
+        vec![0; crate::borg_headers::borg_h::BORG_MAX_SETTINGS as usize]
     }
 
     fn state(strategy: i32) -> BorgState {
@@ -238,47 +205,31 @@ mod tests {
     }
 
     #[test]
-    fn defaults_and_precedence_cover_class_and_mode() {
+    fn defaults_and_class_precedence() {
         let c = cfg();
         for class in 0..9 {
-            for munchkin in [false, true] {
-                assert_eq!(selected(&c, class, munchkin), BuyingStrategy::Current);
-            }
+            assert_eq!(selected(&c, class), BuyingStrategy::Current);
         }
 
         let mut c = cfg();
         c[BORG_BUY_STRATEGY_DEFAULT as usize] = 1;
-        assert_eq!(selected(&c, 0, false), BuyingStrategy::Reserve410);
-        c[BORG_BUY_STRATEGY_MUNCHKIN as usize] = 0;
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Current);
-        c[BORG_BUY_STRATEGY_RESERVE410_CLASSES as usize] = 1;
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Reserve410);
-        c[BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES as usize] = 1;
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Current);
-        c[BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES as usize] = 0;
-        c[BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES as usize] = 1;
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Reserve410);
-        assert_eq!(selected(&c, 0, false), BuyingStrategy::Reserve410);
-        assert_eq!(selected(&c, 1, true), BuyingStrategy::Current);
+        assert_eq!(selected(&c, 0), BuyingStrategy::Reserve410);
+        c[BORG_BUY_STRATEGY_CURRENT_CLASSES as usize] = 1;
+        assert_eq!(selected(&c, 0), BuyingStrategy::Current);
+        assert_eq!(selected(&c, 1), BuyingStrategy::Reserve410);
+        // a class outside 0..9 has no mask bit and takes the default
+        assert_eq!(selected(&c, 9), BuyingStrategy::Reserve410);
     }
 
     #[test]
-    fn masks_can_describe_different_class_mode_pairs() {
+    fn masks_can_describe_different_classes() {
         let mut c = cfg();
-        // Warrior: reserve for both modes. Mage: current for both modes.
+        // Warrior: reserve. Mage: current.
         c[BORG_BUY_STRATEGY_RESERVE410_CLASSES as usize] = 0b01;
         c[BORG_BUY_STRATEGY_CURRENT_CLASSES as usize] = 0b10;
-        assert_eq!(selected(&c, 0, false), BuyingStrategy::Reserve410);
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Reserve410);
-        assert_eq!(selected(&c, 1, false), BuyingStrategy::Current);
-        assert_eq!(selected(&c, 1, true), BuyingStrategy::Current);
-
-        // Reverse Mage only for munchkin, without changing Warrior.
-        c[BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES as usize] = 0b01;
-        c[BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES as usize] = 0b10;
-        assert_eq!(selected(&c, 0, true), BuyingStrategy::Current);
-        assert_eq!(selected(&c, 1, true), BuyingStrategy::Reserve410);
-        assert_eq!(selected(&c, 1, false), BuyingStrategy::Current);
+        assert_eq!(selected(&c, 0), BuyingStrategy::Reserve410);
+        assert_eq!(selected(&c, 1), BuyingStrategy::Current);
+        assert_eq!(selected(&c, 2), BuyingStrategy::Current);
     }
 
     #[test]
@@ -286,9 +237,6 @@ mod tests {
         let mut c = cfg();
         assert_eq!(config_error(&c), None);
         c[BORG_BUY_STRATEGY_DEFAULT as usize] = 2;
-        assert!(config_error(&c).is_some());
-        c = cfg();
-        c[BORG_BUY_STRATEGY_MUNCHKIN as usize] = -2;
         assert!(config_error(&c).is_some());
         c = cfg();
         c[BORG_BUY_IDENTIFY as usize] = 2;
@@ -299,10 +247,6 @@ mod tests {
         c = cfg();
         c[BORG_BUY_STRATEGY_CURRENT_CLASSES as usize] = 1;
         c[BORG_BUY_STRATEGY_RESERVE410_CLASSES as usize] = 1;
-        assert!(config_error(&c).is_some());
-        c = cfg();
-        c[BORG_BUY_STRATEGY_CURRENT_MUNCHKIN_CLASSES as usize] = 2;
-        c[BORG_BUY_STRATEGY_RESERVE410_MUNCHKIN_CLASSES as usize] = 2;
         assert!(config_error(&c).is_some());
     }
 

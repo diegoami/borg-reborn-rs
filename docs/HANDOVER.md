@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: synchronize M13 main with accepted P review (#342)
+
+- Owner authorized #331 promotion. GitHub rejected it after main advanced
+  through #332. Preserve both implementations through a checked sync;
+  #333 waits until this promotion gate is resolved.
+- M13 source merges automatically with P's shared strict file reader.
+  Retain both handover histories. Regenerate conflicting indexes from all
+  evidence; qualify main's 44 provisional dossiers, retaining original
+  directories under validation/m13/source-deaths. No legacy record is
+  replaced. P342-M13-DOSSIER-MAP.json records source and qualified paths.
+- The prior review receipt names its old exact head. Combined M13/P
+  validation and CI are pending; record a fresh pin for review disposition.
+
 ## 2026-11-15: review documentation follow-up (#319)
 
 - Reflow P295/P296/P299 reports, restore missing spaces and make immutable
@@ -45,6 +58,41 @@
   original smoke/fixture, 59 engine tests (one skip), required Rust checks
   and script/tool tests. Ten deaths retained as D2476–D2485; reconciliation
   passes. Exact build and limitations: P317-VALIDATION.md. CI gates merge.
+## 2026-11-15: M13 town/trip donor refresh (#328)
+
+- Verified tag 4.2.6-rs-town-trip-m13-v1 peels to 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea.
+  Refreshed with the three-way vendor workflow. M13-INTEGRATION.md records
+  all nine conflicts, five retired parameters, corrected potion-healing
+  defaults, read-only native queries and the receiving option ABI adapter.
+  Vendor check passes. Errands/parameters/trace and recorder pins are retained.
+- Exact-tag donor full and receiving no-errand full: 45/45 byte-identical
+  keys/messages/states and effective configs; 12 natural deaths per side.
+  Complete cross-repository summary equality fails because the existing
+  telemetry schemas differ; the checker and its failed output are retained.
+  Original-core smoke3/3 and full45/45 strictly match stored references.
+- Three policy-on class pairs match play logs; 656 schema11 plans replay
+  (500 with a plan). Unit tests preserve old mappings; the external historical
+  replay corpus is not rerun. No urgent-purchase branch coverage is claimed.
+- 318 core release tests pass (four existing ignored), 165 workspace tests,
+  Clippy, formatting, generated bindings, 19 source-tool and 78 tool tests.
+  Native C/Rust option ABI checks and all 13 profile/isolation tests pass.
+  Final engine suite passes55 with one upstream-checkout comparison skipped.
+  CI results are attached to PR #332 and M13-VALIDATION.json.
+- M13-VALIDATION.json retains exact source/build/config/log identities for
+  all150 validation attempt summaries, including the earlier smoke reporting
+  failure (missing bc) and its separate successful rerun. Failed initial
+  build/tool setup attempts remain in the raw work logs. Source hash a585062c
+  matches committed runtime inputs f67966a5; receipts retain the actual dirty
+  precommit build identity rather than rewriting it as a later clean build.
+- All44 receiving natural deaths are retained as D2476–D2519 in the local
+  validation archive, with zero missing dossiers. Twelve donor control
+  dossiers are retained separately under docs/validation/m13/donor-deaths.
+  Repeated/paired attempts do not inflate independent counts. Raw logs are
+  at /workspace/work/m13-validation. Canonical cemetery contents/pins are unchanged.
+- Both policies default off. No Zoo repin, population study, Track R
+  promotion or additional Track P promotion. #293 remains separate; this
+  integration alone does not establish that its shopping report is fixed.
+
 
 ## 2026-11-15: sweep provenance and catalogue assembly (#299)
 

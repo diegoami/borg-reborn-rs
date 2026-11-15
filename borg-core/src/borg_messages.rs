@@ -1027,16 +1027,14 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         st.borg.antibounce_count = (i32::from(st.borg.antibounce_count) + 100) as i16;
 
         // ID all items (equipment, INVEN_WIELD ..= INVEN_FEET)
-        for i in inven_wield()..=inven_wield() + 11 {
-            let item = &mut st.items.items[i];
+        for item in &mut st.items.items[inven_wield()..=inven_wield() + 11] {
             if item.iqty != 0 {
                 item.ident = true;
             }
         }
 
         // ID all items (inventory; up to and including INVEN_WIELD)
-        for i in 0..=inven_wield() {
-            let item = &mut st.items.items[i];
+        for item in &mut st.items.items[..=inven_wield()] {
             if item.iqty != 0 {
                 item.ident = true;
             }
@@ -1169,9 +1167,9 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
         || prefix(msg, b"teleports you away.")
         || prefix(msg, b"gestures at your feet.")
     {
-        // If in Lunal mode better shut that off, he is not on the stairs
-        // anymore
-        st.borg.lunal_mode = false;
+        // The lunal mode is removed (borg-rs#60). The note is kept because
+        // it is in the C oracle's message log for every such spell, and the
+        // default-config parity compares messages.log byte for byte.
         borg_note(st, "# Disconnecting Lunal Mode due to monster spell.");
     }
 

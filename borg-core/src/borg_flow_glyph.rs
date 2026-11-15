@@ -67,8 +67,9 @@ fn ring(st: &BorgState, x: i32, y: i32) -> [(u8, bool); 24] {
     out
 }
 
-/// Note a glyph created under the Borg (unless already known); `false`
-/// if it was already known.
+/// Note a glyph created under the Borg; `true` when the grid is tracked,
+/// including when it was already known (patch 0119: the read is reported
+/// on a grid that is already tracked, so re-creating there is success).
 fn track_new_glyph(st: &mut BorgState) -> bool {
     let (bx, by) = (st.borg.c.x, st.borg.c.y);
 
@@ -77,7 +78,7 @@ fn track_new_glyph(st: &mut BorgState) -> bool {
     while i < i32::from(st.glyph.track.num) {
         /* Stop if we already new about this glyph */
         if st.glyph.track.x[i as usize] == bx && st.glyph.track.y[i as usize] == by {
-            return false;
+            return true;
         }
         i += 1;
     }
@@ -247,8 +248,8 @@ pub fn borg_flow_glyph(st: &mut BorgState) -> bool {
             }
             /* old center, making outlying glyphs, */
             else {
-                /* C's `tmp_glyph` is always 0 here */
-                let tmp_glyph = 0;
+                /* (0126) C dropped the always-zero glyph count from this
+                 * score; the count was already 0 here. */
 
                 for i in 0..24 {
                     /* Leave if this grid is not in good array */
@@ -266,7 +267,7 @@ pub fn borg_flow_glyph(st: &mut BorgState) -> bool {
                     }
 
                     /* Tweak -- Reward certain floors, punish distance */
-                    let v = 500 + (tmp_glyph * 500) - cost;
+                    let v = 500 - cost;
 
                     /* The grid is not searchable */
                     if v <= 0 {

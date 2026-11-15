@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-5-paladin-3",
+      "raw_sha256": {
+        "keys.log": "2b502839f5435f9db36bb1768136a7ae03d6c02d9285301efa244b4afd9ea087",
+        "messages.log": "c58cd7d672e08b23a77e7fc82fd1b24f8f604e72197f3cb0a02baf00433e83b4",
+        "state.log": "26d5df300c0333ffb2fd6727b4f67056046191aeda87c03866074e869abb1353"
+      },
+      "result_sha256": "2b502839f5435f9db36bb1768136a7ae03d6c02d9285301efa244b4afd9ea087",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "Dunadan Paladin",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 6935
+  },
+  "encounter_family": "start-ae297168c9c8ca98d0cf930cb656863f88c74468b58c2ad10fbfb68a024667e0",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "7ff4b92cb72805cc4dd0876eb89fbf6d94abca813ab29e115869647de841851f",
+    "depths.json": "116720df09fc24e6bb91166d565e0218407eef87705921669e70e9ab3cf6916c",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "3cabcbc5b55f90b46425b0ece09dbc3b037c728c11c15e38e8e11b906941e44b",
+    "trace-tail.jsonl": "7a5c54a7b30ed7e1a656c18eaa32c20d34f27f592d2ffc8063fff19ab60d9140"
+  },
+  "id": "D0000-q09ff0b79ed6599f63f5531b1019224c9d86eb9f29d8a61ed384a43f9800339ac",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "b81f927cdfdbaf8deb126bfe2569e5c97371268fe313cd9a0e90efb24ea691ac",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1053,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a giant white louse",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a giant white louse",
+    "class_idx": 5,
+    "dead": true,
+    "depth": 3,
+    "level": 7,
+    "max_depth": 3,
+    "race_idx": 8,
+    "turn": 69538
+  }
+}
