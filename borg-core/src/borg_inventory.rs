@@ -224,10 +224,5 @@ pub fn borg_item_worth_id(st: &mut BorgState, item: &borg_item) -> bool {
     }
 
     /* Things that can't be wielded can't be ID'd (potions, scrolls etc) */
-    let slot = borg_wield_slot(item);
-    if slot < 0 {
-        return false;
-    }
-
-    true
+    borg_wield_slot(item) >= 0
 }

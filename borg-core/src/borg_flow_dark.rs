@@ -28,8 +28,8 @@ use crate::borg_cave_view::BORG_VIEW;
 use crate::borg_danger::borg_danger;
 use crate::{borg_flow_misc, engine};
 use crate::borg_headers::borg_trait_h::{
-    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DISM, BI_DISP, BI_FOOD, BI_GOLD, BI_IFIRE, BI_ISBLIND,
-    BI_ISCONFUSED, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
+    BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_DISM, BI_DISP, BI_FOOD, BI_GOLD, BI_IFIRE, BI_ISCONFUSED,
+    BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
 use crate::headers::list_terrain_h::{
     FEAT_CLOSED, FEAT_GRANITE, FEAT_LAVA, FEAT_MAGMA, FEAT_MAGMA_K, FEAT_NONE, FEAT_PERM,
@@ -95,7 +95,7 @@ fn borg_timer(st: &BorgState, t: BorgTime) -> BorgTime {
 /// Determine if a grid is "interesting" (and should be explored)
 ///
 /// A grid is "interesting" if it is a closed door, rubble, hidden treasure,
-/// or a visible trap, or an "unknown" grid.
+/// or an "unknown" grid.
 /// or a non-perma-wall adjacent to a perma-wall. (GCV)
 fn borg_flow_dark_interesting(st: &mut BorgState, y: i32, x: i32) -> bool {
     /* Get the borg_grid */
@@ -194,59 +194,6 @@ fn borg_flow_dark_interesting(st: &mut BorgState, y: i32, x: i32) -> bool {
             }
         }
         /* this door should be ok to open */
-        return true;
-    }
-
-    /* Explore "visible traps" (C bug 31: no feature that gets here holds
-     * traps) */
-    if engine::feat_is_trap_holding(i32::from(ag.feat)) {
-        /* Do not disarm when blind */
-        if st.borg.tr(BI_ISBLIND) != 0 {
-            return false;
-        }
-
-        /* Do not disarm when confused */
-        if st.borg.tr(BI_ISCONFUSED) != 0 {
-            return false;
-        }
-
-        /* Do not disarm when hallucinating */
-        if st.borg.tr(BI_ISIMAGE) != 0 {
-            return false;
-        }
-
-        /* Do not flow without lite */
-        if st.borg.tr(BI_LIGHT) == 0 {
-            return false;
-        }
-
-        /* Do not disarm trap doors on level 99 */
-        if st.borg.tr(BI_CDEPTH) == 99 && ag.trap && !ag.glyph {
-            return false;
-        }
-
-        /* Do not disarm when you could end up dead */
-        if st.borg.tr(BI_CURHP) < 60 {
-            return false;
-        }
-
-        /* Do not disarm when clumsy */
-        if clumsy(st) {
-            return false;
-        }
-
-        /* Do not explore if a Scaryguy on the Level */
-        if st.borg.mon.scary {
-            return false;
-        }
-
-        /* NOTE: the flow code allows a borg to flow through a trap and so he
-         * may still try to disarm one on his way to the other interesting grid.
-         * If mods are made to the above criteria for disarming traps, then mods
-         * must also be made to borg_flow_spread() and borg_flow_direct()
-         */
-
-        /* Okay */
         return true;
     }
 

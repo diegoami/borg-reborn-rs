@@ -480,6 +480,7 @@ fn junk_keep_some(st: &BorgState, item: &borg_item) -> bool {
 
 /// Drop "junk" items, marking them for destruction (`borg_drop_junk`).
 pub fn borg_drop_junk(st: &mut BorgState) -> bool {
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH) == 0 && crate::borg_town_live::active(st) && st.cfg(crate::borg_headers::borg_h::BORG_TOWN_NO_STORES) == 0 { return false; }
     let mut b_i: i32 = -1;
     let mut fix = false;
     let mut b_p: i32 = st.borg.power;
@@ -809,6 +810,7 @@ fn hole_high_level_value(st: &BorgState, item: &borg_item, value: i32) -> i32 {
 /// happen if he fills up with artifacts, then he will probably act
 /// rather twitchy for a while.
 pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH) == 0 && crate::borg_town_live::active(st) && st.cfg(crate::borg_headers::borg_h::BORG_TOWN_NO_STORES) == 0 { return false; }
     let mut b_i: i32 = -1;
     let mut b_p: i32 = 0;
     let mut b_w: i32 = 0;
@@ -1087,6 +1089,7 @@ pub fn borg_drop_hole(st: &mut BorgState, desperate: bool) -> bool {
 /// is worth one gold per tenth of a pound.  This causes things like
 /// lanterns and chests and spikes to be considered "annoying".
 pub fn borg_drop_slow(st: &mut BorgState) -> bool {
+    if st.borg.tr(crate::borg_headers::borg_trait_h::BI_CDEPTH) == 0 && crate::borg_town_live::active(st) && st.cfg(crate::borg_headers::borg_h::BORG_TOWN_NO_STORES) == 0 { return false; }
     let mut b_i: i32 = -1;
     let mut b_p: i32 = 0;
 
@@ -1104,11 +1107,6 @@ pub fn borg_drop_slow(st: &mut BorgState) -> bool {
 
     /* Do not crush items unless we are slow */
     if st.borg.tr(BI_SPEED) >= 110 {
-        return false;
-    }
-
-    /* Not if in munchkin mode */
-    if st.borg.munchkin_mode {
         return false;
     }
 

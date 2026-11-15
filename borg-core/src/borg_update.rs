@@ -1252,9 +1252,8 @@ pub fn borg_update(st: &mut BorgState) {
         // Reset
         reset = true;
 
-        // save once per level, but not if Lunal Scumming
-        if st.core.cfg[BORG_AUTOSAVE as usize] != 0 && !st.borg.lunal_mode && !st.borg.munchkin_mode
-        {
+        // save once per level
+        if st.core.cfg[BORG_AUTOSAVE as usize] != 0 {
             st.borg.status.save = true;
         }
 
@@ -1838,6 +1837,9 @@ fn old_location_message(st: &mut BorgState, i: i32, msg: &[u8], hit_dist: i32) -
         if atoi(&msg[6..]) == RSF_TRAPS as i32 {
             return true;
         }
+
+        // M13 patch 0120 clears lunal state after teleportation in C.
+        // The Rust trip-policy branch retired that mode and its state.
     }
     false
 }
@@ -2003,8 +2005,6 @@ fn new_level(st: &mut BorgState) {
 
     // Assume not fleeing the level
     b.goal.fleeing = false;
-    b.goal.fleeing_lunal = false;
-    b.goal.fleeing_munchkin = false;
 
     // Assume not ignoring monsters
     b.goal.ignoring = false;

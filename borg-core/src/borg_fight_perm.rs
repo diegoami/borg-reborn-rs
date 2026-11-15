@@ -538,14 +538,6 @@ fn borg_perma_aux_venom(st: &mut BorgState) -> i32 {
         return 0;
     }
 
-    /* Obtain the cost of the spell */
-    let cost = borg_get_spell_power(st, SMITE_EVIL);
-
-    /* If its cheap, go ahead */
-    if too_costly(st, cost) {
-        return 0;
-    }
-
     /* Simulation */
     /* smite evil is a low priority */
     if st.traits.simulate {

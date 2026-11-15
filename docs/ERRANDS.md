@@ -2,7 +2,7 @@
 
 *Commands that give the Borg a job: go home, dive to a depth, explore a
 level, climb a ladder of trips. They run over **borg-rs's decision core**,
-vendored at borg-rs milestone 12 as `borg-core/` (docs/PROVENANCE.md). The
+vendored at the M13 town/trip integration tag as `borg-core/` (docs/PROVENANCE.md). The
 errand code is `borg-core/src/shell.rs`, plus the hook calls marked
 `borg-reborn-rs (#207)` / `(#208)` in the vendored files. The original
 evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reborn-rs/pull/206).*

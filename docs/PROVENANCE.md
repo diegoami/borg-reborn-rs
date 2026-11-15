@@ -33,3 +33,12 @@ crate and `harness/measurement/`.
 ## Angband Recorder (owner integration, 2026-11-14)
 
 Optional recorder crate/host adapter v0.1.0 at c4986b26b9fd1c14852df4f1b7393d9030cf812a. See recorder-pin.json and docs/ANGBAND-RECORDER.md. Donor credits are retained in the vendored CREDITS.md; engine/Borg policy is unchanged.
+
+## M13 refresh (#328)
+
+borg-core now vendors diegoami/borg-rs tag `4.2.6-rs-town-trip-m13-v1`,
+peeled commit `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, GPL-2.0-only.
+The three-way refresh preserves declared OURS/HOOKED changes.
+[Integration decisions](M13-INTEGRATION.md) enumerate conflicts, the native
+read-only query patch, receiving option ABI adapter and parameter migration.
+Engine/harness, recorder and cemetery integration remain receiving-owned.

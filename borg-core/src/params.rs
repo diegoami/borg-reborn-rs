@@ -48,12 +48,13 @@ parameters! {
     caution_mage_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:180", "Controls mage stat fix sp."),
     caution_mage_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:181", "Controls mage stat fix votes."),
     caution_heal_spell_fail => (15, "percent", 0, 100, "borg_caution.rs:196", "Controls heal spell fail."),
-    caution_clw_estimate_percent => (15, "percent", 0, 100, "borg_caution.rs:201", "Controls clw estimate percent."),
-    caution_clw_estimate_min => (15, "hp", 0, 10000, "borg_caution.rs:201", "Controls clw estimate min."),
-    caution_csw_estimate_percent => (20, "percent", 0, 100, "borg_caution.rs:202", "Controls csw estimate percent."),
-    caution_csw_estimate_min => (25, "hp", 0, 10000, "borg_caution.rs:202", "Controls csw estimate min."),
-    caution_ccw_estimate_percent => (25, "percent", 0, 100, "borg_caution.rs:203", "Controls ccw estimate percent."),
-    caution_ccw_estimate_min => (30, "hp", 0, 10000, "borg_caution.rs:203", "Controls ccw estimate min."),
+    // #328: fixed potion healing, donor 1443c2d1 borg_caution.rs (M13 patch0133).
+    caution_clw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:203", "Controls clw estimate percent."),
+    caution_clw_estimate_min => (20, "hp", 0, 10000, "borg_caution.rs:203", "Controls clw estimate min."),
+    caution_csw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:204", "Controls csw estimate percent."),
+    caution_csw_estimate_min => (40, "hp", 0, 10000, "borg_caution.rs:204", "Controls csw estimate min."),
+    caution_ccw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:205", "Controls ccw estimate percent."),
+    caution_ccw_estimate_min => (60, "hp", 0, 10000, "borg_caution.rs:205", "Controls ccw estimate min."),
     caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:205", "Controls heal estimate percent."),
     caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:205", "Controls heal estimate min."),
     caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:211", "Controls healing rod fail."),
@@ -635,7 +636,6 @@ parameters! {
     recover_mana_rest_sp_tenths => (8, "tenths", 0, 10, "borg_recover.rs:462", "Sets mana rest sp tenths, in tenths, in the existing recovery rule."),
     recover_mana_rest_danger_divisor => (10, "divisor", 1, 1000, "borg_recover.rs:463", "Sets mana rest danger divisor, in divisor, in the existing recovery rule."),
     recover_mana_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:469", "Sets mana rest min food, in count, in the existing recovery rule."),
-    recover_munchkin_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:492", "Sets munchkin rest min food, in count, in the existing recovery rule."),
     recover_rod_rest_turns => (100, "turns", 2, 9999, "borg_recover.rs:404", "Number of rest turns queued while waiting for a healing/recall rod to recharge."),
     // borg-reborn-rs (#240): attack source at 5d9abb8f.
     attack_melee_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:380", "Attack melee min hit tenths: existing policy tenths."),
@@ -930,9 +930,6 @@ parameters! {
     defend_shield_high_fail_adjustment => (10, "percent", 0, 100, "borg_fight_defend.rs:1177", "Defend shield high fail adjustment: existing policy percent."),
     defend_shield_mid_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_defend.rs:1178", "Defend shield mid danger multiplier: existing policy multiplier."),
     defend_shield_mid_fail_adjustment => (5, "percent", 0, 100, "borg_fight_defend.rs:1180", "Defend shield mid fail adjustment: existing policy percent."),
-    defend_shield_low_danger_numerator => (5, "multiplier", 0, 10, "borg_fight_defend.rs:1181", "Defend shield low danger numerator: existing policy multiplier."),
-    defend_shield_low_danger_divisor => (2, "divisor", 1, 1000, "borg_fight_defend.rs:1181", "Defend shield low danger divisor: existing policy divisor."),
-    defend_shield_low_fail_adjustment => (5, "percent", 0, 100, "borg_fight_defend.rs:1183", "Defend shield low fail adjustment: existing policy percent."),
     defend_shield_remnant_danger_divisor => (2, "divisor", 1, 1000, "borg_fight_defend.rs:1291", "Defend shield remnant danger divisor: existing policy divisor."),
     defend_berserk_min_max_hp => (100, "hp", 0, 10000, "borg_fight_defend.rs:1397", "Defend berserk min max hp: existing policy hp."),
     defend_hero_value => (5, "score", 0, 100000, "borg_fight_defend.rs:1453", "Defend hero value: existing policy score."),
@@ -1685,7 +1682,6 @@ parameters! {
     power_inventory_clevel_threshold_13 => (8, "level", 0, 51, "borg_power.rs:1428", "Power inventory clevel threshold 13: existing policy level."),
     power_inventory_aclw_limit => (5, "count", 0, 255, "borg_power.rs:1430", "Power inventory aclw limit: existing policy count."),
     power_inventory_aclw_weight => (550, "score", 0, 1100, "borg_power.rs:1430", "Power inventory aclw weight: existing policy score."),
-    power_inventory_maxclevel_threshold_2 => (10, "level", 0, 51, "borg_power.rs:1435", "Power inventory maxclevel threshold 2: existing policy level."),
     power_inventory_food_cure_conf_limit => (10, "count", 0, 255, "borg_power.rs:1439", "Power inventory food cure conf limit: existing policy count."),
     power_inventory_food_cure_conf_weight => (400, "score", 0, 800, "borg_power.rs:1439", "Power inventory food cure conf weight: existing policy score."),
     power_inventory_food_cure_blind_limit => (5, "count", 0, 255, "borg_power.rs:1445", "Power inventory food cure blind limit: existing policy count."),
@@ -1892,6 +1888,22 @@ pub(crate) fn initialize() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn m13_defaults_preserve_healing_fixes_and_retire_removed_branches() {
+        for (name, expected) in [
+            ("caution_clw_estimate_percent", 0), ("caution_clw_estimate_min", 20),
+            ("caution_csw_estimate_percent", 0), ("caution_csw_estimate_min", 40),
+            ("caution_ccw_estimate_percent", 0), ("caution_ccw_estimate_min", 60),
+        ] {
+            assert_eq!(SPECS.iter().find(|s| s.name == name).unwrap().default, expected);
+        }
+        for name in ["recover_munchkin_rest_min_food", "power_inventory_maxclevel_threshold_2",
+                     "defend_shield_low_danger_numerator", "defend_shield_low_danger_divisor",
+                     "defend_shield_low_fail_adjustment"] {
+            assert!(parse(&format!("borg_param_{name} = 1"), &BTreeMap::new(), SPECS).is_err());
+        }
+    }
 
     #[test]
     fn defaults_and_registry_are_valid() {

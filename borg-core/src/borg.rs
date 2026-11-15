@@ -47,8 +47,6 @@ pub struct Borg {
     pub panels: loc,
     pub avoidance: i16,
     pub oldchp: i16,
-    pub lunal_mode: bool,
-    pub munchkin_mode: bool,
     pub stair_less: bool,
     pub stair_more: bool,
     pub in_shop: bool,
@@ -82,6 +80,12 @@ pub struct Borg {
     pub book_idx: [i16; 9],
     pub need_statgain: [bool; 5],
     pub amt_statgain: [i16; 5],
+    /// The shop a human asked for in the Borg's command menu (`1` .. `8`,
+    /// `+`, `-`), overriding the strategy's own choice. `None` = the
+    /// strategy decides. The Borg walks to that shop and the override is
+    /// dropped once it has been there. Rust-only: the C borg has no such
+    /// field and its command menu has no such command.
+    pub shop_override: Option<i16>,
 }
 
 #[derive(Copy, Clone, Default)]
@@ -158,8 +162,6 @@ pub struct BorgGoal {
     pub rising: bool,
     pub leaving: bool,
     pub fleeing: bool,
-    pub fleeing_lunal: bool,
-    pub fleeing_munchkin: bool,
     pub fleeing_to_town: bool,
     pub ignoring: bool,
     pub less: bool,
@@ -404,6 +406,26 @@ fn user_abort(st: &mut BorgState) -> bool {
     false
 }
 
+/// The human-in-the-loop handover (`BORG_TOWN_PLAYER=1`).
+///
+/// While the character is in town, the Borg's input hook returns no key at
+/// all, and the engine reads the keyboard instead: the player has the
+/// controls in town, and the Borg has them in the dungeon. The Borg also
+/// does nothing in town - no shop, no equipment, no decision - which is
+/// what makes the handover safe: its keys and the player's keys never mix.
+///
+/// Off unless the environment variable says so, so the headless arms (the
+/// null arm among them) are untouched.
+fn player_in_town(st: &BorgState) -> bool {
+    static ON: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    let on = *ON.get_or_init(|| {
+        std::env::var("BORG_TOWN_PLAYER")
+            .map(|value| value == "1" || value.eq_ignore_ascii_case("true"))
+            .unwrap_or(false)
+    });
+    on && st.borg.tr(BI_CDEPTH) == 0
+}
+
 /// Return one keypress to the game (`generate_keypress`).
 fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     let mut key = keypress { type_0: EVT_KBRD, code: 0, mods: 0 };
@@ -416,6 +438,35 @@ fn generate_keypress(st: &mut BorgState, flush_first: bool) -> keypress {
     crate::borg_trait::borg_notice_player(st);
 
     if check_for_deactivate_or_death(st, &mut key) {
+        return key;
+    }
+
+    // The handover: in town, the player has the keyboard. The state is
+    // read first, so the record is of the state the player is looking at.
+    if player_in_town(st) {
+        // Look at the screen, so the Borg knows the town the player is
+        // walking through (the store doors, the walls, the player). The
+        // Borg needs that to visit a store on its own later.
+        crate::borg_update::borg_update(st);
+        crate::borg_item::borg_find_all_items(st);
+        crate::borg_town_dump::dump_town_state(st);
+        // borg_update above is where the Borg notices a new level (the
+        // depth against old_depth), so it already records the town here.
+        // The line below says the same thing once more, so the next level
+        // is a new level even at the depth it left from (up the stairs
+        // from DL1 and back down; recall up and down to the same max
+        // depth) should the update above ever move: redundant, harmless.
+        st.borg.status.old_depth = 0;
+        // A key the Borg queued before the handover must not be pressed
+        // on the next level: generate_keypress hands queued keys out
+        // before the Borg thinks.
+        borg_flush(st);
+
+        // The session object log: the player's purchases and pickups show
+        // up in the pack, and the pack is the only place they show up.
+        crate::borg_object_log::log_acquisitions(st);
+
+        key.type_0 = EVT_NONE;
         return key;
     }
 

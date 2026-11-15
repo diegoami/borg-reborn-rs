@@ -419,8 +419,8 @@ fn spread_blocked(
 
     /* flowing into monsters */
     if ag.kill != 0 {
-        /* Avoid if Desperate, lunal */
-        if b.status.desperate || b.lunal_mode || b.munchkin_mode {
+        /* Avoid if Desperate */
+        if b.status.desperate {
             return true;
         }
 
@@ -536,8 +536,7 @@ fn spread_blocked(
 /// depth, note that the maximum legal value of "depth" is 250.
 ///
 /// "Avoid" flag means the borg will not move onto unknown grids,
-/// nor to Monster grids if borg_desperate or borg.lunal_mode are
-/// set.
+/// nor to Monster grids if borg_desperate is set.
 ///
 /// "Sneak" will have the borg avoid grids which are adjacent to a monster.
 pub fn borg_flow_spread(
@@ -668,12 +667,12 @@ pub fn borg_flow_spread(
 /// Do the flows of the current mode skip the danger check
 /// (`borg_flow_ignores_danger`)?
 ///
-/// Retreating, lunal and munchkin flows, and digging flows, deliberately go
+/// Retreating flows and digging flows deliberately go
 /// through grids whatever their danger. A grid they pass has therefore not
 /// been checked, and must not be remembered as checked: a later flow in the
 /// normal mode would otherwise accept it without ever assessing its danger.
 fn borg_flow_ignores_danger(st: &BorgState) -> bool {
-    st.borg.status.desperate || st.borg.lunal_mode || st.borg.munchkin_mode || st.borg.status.digging
+    st.borg.status.desperate || st.borg.status.digging
 }
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.
@@ -786,11 +785,6 @@ fn close_breeder_door(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
             /* skip monster on door */
             if ag.kill != 0 {
-                continue;
-            }
-
-            /* Skip repeatedly closed doors */
-            if st.flow.track_door.num >= 255 {
                 continue;
             }
 

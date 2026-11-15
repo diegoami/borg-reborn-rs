@@ -727,9 +727,7 @@ fn item_tval_sval(st: &BorgState, i: i32) -> (u8, u8) {
 /// Cheat the "spell" info (`borg_cheat_spells`)
 pub fn borg_cheat_spells(st: &mut BorgState) {
     // Assume no books
-    for i in 0..9 {
-        st.borg.book_idx[i] = -1;
-    }
+    st.borg.book_idx.fill(-1);
 
     // Scan the pack
     for i in 0..i32::from(engine::z_info().pack_size) {
