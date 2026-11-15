@@ -65,7 +65,11 @@ them. `exact_turns` and `loaded` are in every summary, `true` or `false`
 
 The pinned adapter serializes integer and boolean settings. Set
 `borg_reborn_core: 1` to select borg-rs, or `0` for the original reborn
-core. Text selectors remain available to native callers. A profile's
+core. Native callers may use the text aliases `borg-rs` and `reborn`.
+An absent selector defaults to reborn. Every other value (including a
+boolean written as `TRUE`, an empty string, or integer 2) fails with exit
+status 2 and source/value diagnostics. `BORG_CORE` takes precedence over
+the file; clear it for profile-only measurement. A profile's
 `borg_param_<name>` integer sets any of the 1734 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:

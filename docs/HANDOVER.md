@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
+
+- The owner explicitly instructed: "ok then merge it and continue with other
+  tasks", after the current review/fix scope was explained. This accepts
+  the P1–P3 retrospective/promotion scope and delegates merging #260.
+  The standing track-p gate remains in force for future work.
+- #285 passed CI and integrated at1949530b. Main then contained the
+  death-tool ownership change811f338a (#282); synchronize it here before
+  #260. Preserve both handovers and regenerate the historical index using
+  local links, retaining all2378 local cases throughD2398.
+- Gameplay/build source remains4182670d. No external repository write or
+  migration occurs here. The pending errand-selector task #269 stays on
+  track-p; #272's RNG qualification was already implemented in #280.
+- This sync must pass required CI before integration; then perform the
+  owner-authorized #260 merge and record its actual merge commit on GitHub.
+
 ## 2026-11-15: owner-requested death-tool ownership (#273)
 
 - The four native death-tool implementations moved to borg-cemetery with their
@@ -23,6 +39,63 @@
 - This is owner-directed storage infrastructure, not new P/R strategy work or
   implementation of the diagnosis/counterfactual plans #153/#212.
 
+
+## 2026-11-15: synchronize cemetery documentation (#284)
+
+- Main advanced to `f441296f` (#276) after #280 passed CI. Preserve that
+  documentation/tooling change on track-p through a CI-checked sync PR;
+  main and the owner promotion remain unmerged by this session.
+- Resolved handover by retaining both sessions' entries. Regenerated the
+  death registry/index using the incoming generator: all2378 cases through
+  D2398 and the canonical cemetery notice survive. No case is moved to
+  another repository and the runtime source remains `4182670d`.
+- The migration snapshot in #276 describes D2358/2338 cases as of its
+  original pin; track-p has since added40 dossiers in #280. The migration
+  session must include D2359–D2398 in its eventual identity-preserving move.
+- #269's core-selector component and #270/#271 are addressed by #280;
+  #269's additional errand-selector investigation remains open. Owner
+  acceptance of #259/#260 remains pending. See P-REVIEW-VALIDATION.md.
+
+## 2026-11-15: retrospective review #259 fixes complete on track-p (#275)
+
+- Stacked on #277 into track-p. Strict core selector accepts only
+  reborn/0 and borg-rs/1, preserving default and environment precedence;
+  invalid values exit 2 with their source/value. Added pure and actual
+  native-profile contract coverage.
+- Engine/manual evidence confirms decimal rest turns, rather than the
+  review's proposed key-digit interpretation. Preserve names/defaults,
+  exclude engine repeat sentinel 1 with bounds 2–9999. The hit-power
+  multiplier is inside a denominator: clarify its unit, keep zero invalid.
+- Document implicit factor-1 source citations without moving them to the
+  adjacent factor-3 branch, qualify RNG preservation at defaults, remove
+  a stale retained-literal claim, and document strict name casing.
+- Validated source `4182670d` at implementation pin `132aeb26`: full45/45
+  v12 play parity,295,464 named rows, trace on/off, original smoke3/3,
+  native profile5/5, engine42 (one skip), required Rust and17/70 Python
+  checks pass. P-REVIEW-VALIDATION.md records limits and input changes.
+- Reproduced old-source original-core full45/45; preserved30 new deaths
+  D2359–D2388 plus existing D2355. Updated build's ten deaths are
+  D2389–D2398; both registries reconcile. Actual build identities retained.
+- Sweep prompt/examples now pin `132aeb26`, with pinned-catalogue validation.
+  Required CI must pass before track-p integration. Owner acceptance of
+  #259/#260 is still pending; no promotion or population run is authorized.
+
+## 2026-11-15: review #260 follow-up (#274)
+
+- Integrated main `83cf442a` into the task branch for `track-p`, preserving
+  shopping #267, its engine checks and dossiers D2356–D2358. No main merge
+  or force push is authorized by this task.
+- Clarified in all four workflow entry documents that pre-rule P1–P3 need
+  owner acceptance of retrospective review #259, not a second runtime
+  promotion. New P work still needs reviewed promotion. Other tracks keep
+  their existing authorization; reviewer recommendations are not acceptance.
+- Archived the two P reports unchanged from review branch commit
+  `ade599661355bd5556015c8cf0a50b54d661a703`; no R work was imported.
+  The reports retain the reviewer's assertions; #275 records corrections
+  where engine evidence disagrees. #259 and #260 remain owner review PRs.
+- Review #260 F1: `gh pr diff 260 --name-only` showed six policy/CI files,
+  not a shopping removal. Synchronizing main removes the head divergence;
+  the task PR's CI checks the integrated tree before any track-p merge.
 
 ## 2026-11-15: earlier pointer documentation (#276; routing superseded by #273)
 
@@ -98,6 +171,24 @@ actual locations; reconciliation does not copy evidence.
   undiagnosed; no population experiment or GUI shopping session was run.
 
 
+
+## 2026-11-15: owner changes P integration to track-p (#257)
+
+- The owner requires `track-p` (explicit spelling correction), with task
+  PRs merged there after CI and regular milestone reviews before any
+  promotion to main. The owner chooses the reviewer and accepts each
+  milestone; the session never treats green CI as review approval.
+- Saved the rule in AGENTS.md, RULES.md, PLAN.md and GOALS.md. P review
+  fixes use track-p too; other-track PRs keep their own bases/workflows.
+  CI now runs on track-p pushes as well as main and pull requests.
+- P1–P3 runtime changes were already on main8351f0a3. This is a historical
+  exception needing retrospective review, not independently reviewed work.
+  Do not rewrite/revert main. A full combined review uses the pre-P main
+  baseline c2c4e61d; the owner promotion PR into main currently changes only
+  workflow documents/CI because runtime code was already merged.
+- Checked open PRs: no P task PRs are pending; #251/#255/#256 are review
+  snapshots to supersede with the combined review. R PR #248 and the
+  separate repivot PR #206 are untouched. No reviewer or experiment is run.
 
 ## 2026-11-15: P3.2 sweep handoff (#245)
 
