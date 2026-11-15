@@ -1,4 +1,4 @@
-# D2448-rust-seed1020: a giant white mouse at turn 8922
+# D2478-rust-seed1020: a giant white mouse at turn 8922
 
 Elf Druid, character level 2, depth 1 (max 1), seed 1020, implementation `rust`, flags `menu`.
 

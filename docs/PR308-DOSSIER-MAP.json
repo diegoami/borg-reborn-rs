@@ -1,0 +1,27 @@
+{
+  "reason": "owner main-first sequencing; avoid P/R concurrent numeric IDs",
+  "reservation": "D2476-D2481",
+  "cases": [
+    {
+      "old": "D2446-rust-seed1011",
+      "new": "D2476-rust-seed1011",
+      "encounter_family": "start-a0f33277d34246669ab59ffba798d5f4f0496bb65935f9f8e5fe24385950cf80",
+      "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    },
+    {
+      "old": "D2447-rust-seed102",
+      "new": "D2477-rust-seed102",
+      "encounter_family": "start-59fa4d0349b5c76410bfe7cfbab9b60df641238fc4770b75d4be39eb6ca87e8d",
+      "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    },
+    {
+      "old": "D2448-rust-seed1020",
+      "new": "D2478-rust-seed1020",
+      "encounter_family": "start-0c6eff1289da249946cc58e1ad740276c57afbaa3142ef70304b7722878cbe96",
+      "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    }
+  ]
+}

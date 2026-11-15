@@ -1,6 +1,6 @@
 {
   "schema": "borg-reborn-rs/death-record@1",
-  "id": "D2446-rust-seed1011",
+  "id": "D2476-rust-seed1011",
   "run_kind": "harness",
   "character": "Elf Mage",
   "raw_cause": "a cave spider",
