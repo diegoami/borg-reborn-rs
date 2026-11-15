@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-selected dossier ID policy (#338)
+
+- Owner chose final numeric allocation centrally at cemetery acceptance;
+  branch-local IDs need exact containing registry commits. CI/pre-commit
+  artifacts additionally need run/registry namespaces. Published evidence
+  and original IDs/bytes remain unchanged; no per-track range is reserved.
+- DEATH-ID-POLICY.md and RULES/AGENTS record the rule. The consumer CI check
+  rejects suffix-different numeric collisions and folder/record disagreement,
+  retaining legacy D0526-recorded without rewriting it. It never allocates
+  or publishes. Current archive: 2,431 records and no numeric duplicates.
+- Canonical protocol confirmation/implementation is routed in #344.
+  No external repository or canonical record was written; do not claim
+  centralized publication machinery is already changed. Runtime is unchanged.
+
 ## 2026-11-15: #329 review processed; pre-carry gate fix #336
 
 - Claude Opus 5.5 accepts #329 with follow-ups and explicitly allows R3.

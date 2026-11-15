@@ -201,6 +201,16 @@ milestone. Name both in the review PR.
 | `docs/QUERY-SURFACE.md` | Secondary goal Q (D12): the draft of `borg-mcp`, the MCP server through which language models query the Borg's judgement (query mode) or play a hosted game as a separate arm (play mode) |
 | `docs/deaths/` | Preserved historical validation archive; canonical new death reports/analysis live in borg-cemetery |
 
+## Dossier IDs across branches (owner, 2026-11-15)
+
+Follow [DEATH-ID-POLICY.md](docs/DEATH-ID-POLICY.md): final numeric IDs belong
+to centralized cemetery acceptance. Local IDs are provisional; qualify
+cross-branch references by exact containing registry commit. CI artifacts
+also need run/registry namespacing before commit. Preserve old evidence and
+origin mappings; run `python3 scripts/check-death-ids.py docs/deaths` before
+integration. It detects numeric collisions that git's path merge can miss.
+Canonical publication changes remain the cemetery owner's work.
+
 ## Local machine notes
 
 Heavy runs take `flock /tmp/angband-validation.lock`, like the owner's other
