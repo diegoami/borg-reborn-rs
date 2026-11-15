@@ -87,12 +87,6 @@ jobs:
               assert rows and len(rows) <= 200 and all(r['check'] != 'unclassified' for r in rows)
               assert json.loads((case / 'record.json').read_text())['core_decision_trace']['lines'] == len(rows)
           PYCORE
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ci-core-death-registry
-          path: ${{ runner.temp }}/core-deaths
-          if-no-files-found: ignore
       # R1.2: zero mismatches must include real comparisons, not empty logs.
       # The pure helper is the only port; unported danger/caution stay native.
       - run: |
@@ -179,6 +173,13 @@ jobs:
       - run: shopt -s nullglob; for d in "$RUNNER_TEMP"/deaths/D*-rust-*/; do test -s "$d/trace-tail.jsonl" && test -s "$d/params.json" || { echo "no trace or params in $d"; exit 1; }; done
       # A death reruns from its dossier with the Borg's logs, same keys (TE.6).
       - run: python3 tools/rerun-death.py "$(ls -d "$RUNNER_TEMP"/deaths/D*-rust-* | head -1)" "$RUNNER_TEMP/rerun"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-core-death-registry
+          path: ${{ runner.temp }}/core-deaths
+          if-no-files-found: ignore
 
   recorder:
     runs-on: ubuntu-24.04
