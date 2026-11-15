@@ -252,14 +252,15 @@ The R1 frame has this dependency direction:
 `borg-reborn-rs` → `borg-next` → `borg-core`. The shell also keeps its
 existing direct dependency on `borg-core`. The core never depends on
 `borg-next`. `borg-core::memory` exports the source state types, trait
-indices and the empty `Shadow` registration interface; `borg-next::register`
+indices and the `Shadow` registration interface; `borg-next::register`
 installs the implementation when the shell starts the vendored core.
-R1.1 has no decision methods or calls through that registration. R1.2 adds
-the shadow harness, its comparison points and off/check/switch modes.
+R1.2 implements the shadow harness, native danger/caution boundaries and
+off/check/switch modes. Its first port is the pure danger `wall_like`
+helper; stateful danger/caution remain native until R2. See [SHADOW.md](SHADOW.md)
+for coverage, logs and the distinction between ported and unported points.
 
 `borg-next::View::new(&BorgState)` constructs a fresh read-only view for a
-think. R1.2 will call it at the comparison points; R1.1 deliberately leaves
-play untouched. The named trait fields cover all 265 `BI_*` entries, in
+think. The shadow harness builds it at the native comparison boundaries. The named trait fields cover all 265 `BI_*` entries, in
 semantic groups, with an exact source index in every field's documentation.
 Character HP/SP, level, depth and speed retain the native integer values;
 status and resistance values are not normalized to booleans. Goals and

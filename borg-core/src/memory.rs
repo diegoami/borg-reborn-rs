@@ -276,14 +276,11 @@ pub mod traits {
     pub use crate::borg_headers::borg_trait_h::BI_STR;
 }
 
-/// Track R's registered implementation. R1.2 adds decision comparison
-/// methods here; the core never depends on borg-next.
-pub trait Shadow: Send + Sync {}
+// borg-reborn-rs (#224): the hook implementation lives outside the view API.
+pub use crate::shadow::{register_shadow, Shadow};
 
-static SHADOW: std::sync::OnceLock<Box<dyn Shadow>> = std::sync::OnceLock::new();
-
-/// Install once; an empty registry is the default. No policy calls this
-/// registry in R1.1, so registration cannot alter a think or its keys.
-pub fn register_shadow(shadow: Box<dyn Shadow>) {
-    let _ = SHADOW.set(shadow);
+/// Native feature IDs used by the first pure danger port.
+pub mod terrain {
+    pub use crate::headers::list_terrain_h::{FEAT_GRANITE, FEAT_MAGMA,
+        FEAT_QUARTZ, FEAT_MAGMA_K, FEAT_QUARTZ_K, FEAT_RUBBLE};
 }

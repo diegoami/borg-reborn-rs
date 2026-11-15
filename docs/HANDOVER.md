@@ -3,6 +3,28 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1.2 shadow harness (#224), native validation complete
+
+- Stacked on #248; target is `feature/track-r`. No redesign merges to main.
+- Added dependency-inverted danger/caution boundaries and after-think
+  coverage. The only port is the pure danger `wall_like` helper. Off
+  registers nothing; check retains native results; switch uses the port
+  at ported points. Stateful danger/caution remain native and explicit.
+- Native smoke is 3/3 identical across all three modes, with 6,609,916
+  comparisons and zero mismatches in enabled runs. Missing or zero-coverage
+  evidence fails the CI gate. Unit tests exercise an injected mismatch.
+- The 45-game off suite completed; D2363–D2370 retain its eight deaths.
+  Independent pinned v12 at e6d13fc has 45/45 byte-identical keys, messages
+  and states. Its eight deaths repeat existing donor dossiers. The standard
+  diff still differs on three existing frontend telemetry fields (plus raw
+  wall times); no new game-summary difference. Exact identities and the
+  limitation are in R1.2-VALIDATION.md / R1.2-V12-COMPARISON.json.
+- Original-core smoke remains 3/3 identical; D2371–D2372 retain its deaths.
+  CI remains the final merge gate into the feature branch.
+- The harness records shadow mode and death replay restores it, excluding
+  inherited values. Formatting, Clippy, 168 workspace tests, 138 core tests
+  (one ignored), 72 tools tests, scripts and vendoring checks pass.
+
 ## 2026-11-15: R1.1 evidence reconciled before integration
 
 - Local checks on main's completed Track P baseline: 138 core tests (one
