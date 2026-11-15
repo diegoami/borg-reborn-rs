@@ -1,0 +1,55 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0004-rust-seed1022",
+  "run_kind": "harness",
+  "character": "Gnome Druid",
+  "raw_cause": "a giant yellow centipede",
+  "terminal": {
+    "cause": "a giant yellow centipede",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 14120,
+    "race_idx": 4,
+    "class_idx": 2
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1022,
+    "flags": "menu",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "git_dirty": "no",
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c",
+    "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31",
+    "borg_txt_sha256": "41baeab598a35735abbb446aa6a8b7e52442055cdd8b2a93c155a96aeedf8f56",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p341-validation/donor-full/full-2-druid-2",
+      "result_sha256": "5d143d91fc928bb44171ce27e2846cd22d84cce3164e91686a0481acd4ed9f94",
+      "raw_sha256": {
+        "keys.log": "5d143d91fc928bb44171ce27e2846cd22d84cce3164e91686a0481acd4ed9f94",
+        "messages.log": "aa4bf9d500633b218ab722007177f53c379e514213f8aef11ebd74a46e137590",
+        "state.log": "e8699cec479acd7785cad91a2fd411c7be494007617f4826666b138b2cb01405"
+      },
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+      "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31"
+    }
+  ],
+  "encounter_family": "start-7f066909751b8550b9b1e46e78f299545ca7cda84d48d2947265e96bda2e2030",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7bae72f640b60517c914d11487d0a5a70070f032411f9dc32505415843ed818d",
+    "config.txt": "f4bfd8c4b86ff30c50bd6d9656ba58c5c45f2846c5b05ed74e11256d58597461",
+    "summary.json": "fabffe3fe176fabf0ea428b8c1a5811fe95f4729a66ff244453753a419ecf67b"
+  },
+  "investigation": null,
+  "issue": null
+}
