@@ -13,7 +13,11 @@
   These are deliberate operational failures, not measured game deaths.
 - Only the invalid-memory path changes. Accepted R2 evidence retains its
   historical cd66 input identity; native validation below records the new
-  build separately. #321/#322 supply gate/count fixes; #323 independently
+  build separately in R2-GRID-VALIDATION.json. Smoke off/check/switch is
+  3/3 identical and each focused mode hits all 11 entries with zero mismatch;
+  play logs also match accepted R2. All 16 measured games reconcile three
+  natural deaths D2449–D2451. No new full v12 campaign is claimed.
+  #321/#322 supply gate/count fixes; #323 independently
   supplies the strict entry fixture and CI gate. All integrate on feature R.
 
 ## 2026-11-15: corrected R2 event-count wording (#313)
