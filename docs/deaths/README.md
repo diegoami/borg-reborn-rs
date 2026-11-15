@@ -9,7 +9,7 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > validation evidence. See [POINTER.md](POINTER.md) for the seam
 > (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2381; distinct starting conditions: 2378; retained process attempts: 2381 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2382; distinct starting conditions: 2379; retained process attempts: 2382 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2394,6 +2394,7 @@ Dossiers: 2381; distinct starting conditions: 2378; retained process attempts: 2
 | [D2396-rust-seed1084](D2396-rust-seed1084/report.md) | unassigned | `132aeb26a54a` | 1084 | a grey mushroom patch | 22908 | unassessed |
 | [D2397-rust-seed102](D2397-rust-seed102/report.md) | unassigned | `132aeb26a54a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2398-rust-seed1020](D2398-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2399-rust-seed1011](D2399-rust-seed1011/report.md) | unassigned | `bfbc9b7409b6` | 1011 | a cave spider | 18903 | unassessed |
 
 ## Aggregated actions
 
