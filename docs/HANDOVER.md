@@ -2,6 +2,82 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: final #292 synchronization validation complete (#298)
+
+- Combined source15289917 passes full45/45 v12 play parity,295,464 named
+  trace rows, original smoke3/3,50 engine tests (one local environment
+  skip), required Rust checks (154+4+5 original/143 core),19/78 Python
+  tests and vendoring. P292-SYNC-VALIDATION.md records exact builds/limits.
+- D2436–D2445 retain the final ten natural deaths; earlier sourcec4a38683
+  deathsD2423–D2432 also reconcile. Nine imported recorder/loop dossiers
+  retain exact source/attempt identities under the explicit ID map.
+- Required CI must pass before integration, then complete the owner-
+  authorized #292 main promotion. #295/#296/#299 remain separate later
+  work on track-p; no experiment or new reviewer is launched.
+
+## 2026-11-15: complete loop-levels integration in #298
+
+- Main advanced to2bb9b72f (#297) during validation. Preserve its loop-levels
+  implementation, docs and tests, with no P change to that policy.
+- Its three additional independently allocated dossiers are imported as
+  D2433–D2435 with unchanged source/attempt identities. The same explicit
+  mapping now covers all nine imported recorder/loop cases.
+- Pre-loop sourcec4a38683 passed full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3 and47 engine tests (one skip); ten deaths are
+  D2423–D2432. Disk exhaustion prevented the first fixture launch, then a
+  fresh retry passed. Only regenerable caches were cleared.
+- Validate the combined source before #292's authorized promotion. Later
+  strict fear/budget work stays excluded. No experiment is launched.
+
+## 2026-11-15: owner authorizes #292 promotion; synchronize main (#298)
+
+- The owner explicitly instructed "you can merge 292 and continue" after
+  the independent review recommended acceptance. Preserve the standing
+  track-p gate for later #295/#296/#299 work; those are excluded here.
+- Synchronize main352cefeb, preserving recorder CMake dependency handling,
+  guided-debugging rules/launcher changes and both sessions' handovers.
+  Recorder/engine/dependency pins are unchanged. The consumer CMake file
+  is a build input, so validate and retain evidence on the new source.
+- Recorder PR268 independently allocated six dossier IDs already used by
+  the P archive. Keep every existing P case unchanged; import its six new
+  cases underD2417–D2422, with source/attempt identities unchanged.
+  P292-DOSSIER-MAP.json records the exact old/new names and fingerprints.
+- Archive REVIEW-292-STRICT-ERRAND.md unchanged from the review branch.
+  Its base6acbf170 has the same tree as main0ed0e5de. Qualification: old
+  apply_line already parsed the whole line before applying commands; the
+  actual fixed defect was warning-and-continuing instead of failing.
+- Required validation/CI are pending before track-p integration and the
+  owner-authorized #292 merge. No population experiment is launched.
+
+## 2026-11-15: strict configured errands (#269), validation complete
+
+- Stacked on #289; targets track-p after the owner-authorized #260
+  promotion. Valid commands, environment precedence, absent/empty/none disabling
+  and original-core isolation are preserved. Invalid errand command
+  lines now fail with source/value diagnostics and exit2 instead of
+  continuing an unconstrained run. Parsing validates the entire command
+  line before applying any prefix.
+- Pure tests and actual pinned-zoo/native process cases exercise invalid
+  file/environment values, valid overrides and original-core isolation.
+  ERRANDS.md and ZOO-INTERFACE.md state the intentional input change.
+- The first candidate (014e64a4/source77f040ff) passed pure/native-selector
+  cases but failed the pre-existing shopping fixture, which uses an empty
+  string to disable errands. Preserve that legacy empty alias; the test
+  itself is unchanged. Its full-suite evidence remains with its own build.
+- Corrected sourcecb48d943 atc259f69c passes full45/45 v12 play parity,
+  295,464 named rows, trace on/off, original smoke3/3, all45 engine tests
+  (one local environment skip), required Rust checks and19/78 Python tests.
+  P269-VALIDATION.md records both candidates and the compatibility limits.
+- D2399–D2406 preserve the first candidate's eight full-suite deaths;
+  D2407–D2416 preserve ten corrected-build deaths. Both temporary
+  registries reconcile. Explicit historical/CI export destinations retain
+  the existing missing-death guard; no canonical migration/write occurs.
+- Sweep handoff/examples now pin2ec1f250 (same corrected sourcecb48d943),
+  with pinned catalogue validation and no population dispatch.
+- Required CI remains the task integration gate. The owner authorized
+  #260's earlier scope; this later task stays on track-p for its separate
+  review/promotion decision. No population experiment was launched.
+
 ## 2026-11-15: owner-requested repeating level interval (#294)
 
 - `/loop-levels A B` explores every intermediate level in both directions:

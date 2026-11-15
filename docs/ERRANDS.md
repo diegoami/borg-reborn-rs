@@ -17,6 +17,14 @@ evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reb
 | budget | `BORG_ERRAND_BUDGET` | game turns; 0, none |
 | outcome | `BORG_ERRAND_OUT` | a file: one JSON line per errand that ends |
 
+Configured errands are validated before the vendored core starts. An absent
+setting, an empty string, or exactly `none` disables errands. Unknown or malformed command lines,
+including an invalid command after a valid prefix, stop the process with
+exit status 2 and the setting's source/value on stderr. `BORG_ERRAND` takes
+precedence over `borg_reborn_errand`, including `none` overriding a file
+command. Valid command syntax and interactive prompt handling are unchanged.
+The original reborn core ignores this vendored-core setting.
+
 Each of these environment settings that is set is written to the run's
 `config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
 a ladders file), and `tools/rerun-death.py` sets them again when it reruns a
