@@ -12,8 +12,13 @@
   evidence; qualify main's 44 provisional dossiers, retaining original
   directories under validation/m13/source-deaths. No legacy record is
   replaced. P342-M13-DOSSIER-MAP.json records source and qualified paths.
-- The prior review receipt names its old exact head. Combined M13/P
-  validation and CI are pending; record a fresh pin for review disposition.
+- Combined validation passes: 45/45 M13 play-log triples and deterministic
+  summaries, 242,641 classified rows, three policy-on controls, original
+  smoke/save-load fixture, required Rust and 60 engine tests (one skip).
+  Thirteen fresh deaths reconcile; 2,522 archive cases verify. Exact build
+  and limitations: P342-VALIDATION.md. Required sync CI is pending.
+- The prior review receipt names its old exact head; record a fresh pin
+  and the integration evidence for the owner-authorized promotion.
 
 ## 2026-11-15: review documentation follow-up (#319)
 
