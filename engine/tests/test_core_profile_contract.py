@@ -238,8 +238,12 @@ class CoreProfileContractTest(unittest.TestCase):
             self.assertEqual(record['outcome'], 'turn_cap', record)
         out, record = self.cell('finite-budget', {'borg_reborn_core': 1},
                                {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': '1'})
-        self.assertEqual(record['outcome'], 'borg_stopped', record)
-        self.assertLess(json.loads((out / 'summary.json').read_text())['game_turns'], 300)
+        # The pinned adapter classifies an intentional Borg stop as stalled.
+        self.assertEqual(record['outcome'], 'stalled', record)
+        self.assertEqual(record['runner_outcome'], 'borg_stopped', record)
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(summary['stop_reason'], 'borg_stopped')
+        self.assertLess(summary['game_turns'], 300)
         for name, settings, errand in [
             ('original', {'borg_reborn_core': 0}, '/dive 2'),
             ('inactive', {'borg_reborn_core': 1}, 'none'),

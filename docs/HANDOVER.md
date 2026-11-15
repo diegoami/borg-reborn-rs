@@ -11,6 +11,10 @@
 - Preserve positive budgets and original-core/inactive-errand isolation.
   Actual native tests exercise finite stopping, invalid values and the
   ignored inactive contexts. Interactive shell parsing is unchanged.
+- The first native finite-budget assertion used the wrong zoo outcome:
+  the pinned adapter maps runner borg_stopped to stalled. The actual
+  budget stopped at turn11. Assert both layers and the native stop reason;
+  no product or adapter change is needed.
 - This task is excluded from the already-authorized #292 promotion.
   Required checks/gameplay/evidence validation and task CI are pending.
   No experiment or external repository write is authorized here.
