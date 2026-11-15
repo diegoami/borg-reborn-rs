@@ -21,7 +21,7 @@ Rust Borg plays, but only as a placeholder until M3. Tasks are GitHub issues
 ## Playing
 
 ```sh
-./watch-borg.sh [NAME]               # build (X11) and open the game; create/load a character, then Ctrl-Z, z
+./watch-borg.sh --name MyBorg        # build (X11) and open the game; create/load a character, then Ctrl-Z, z
 BORG_IMPL=rust harness/build.sh      # the headless build (the zoo's entry point)
 harness/run.sh OUT SEED RACE CLASS TURNS menu   # one deterministic headless run
 tools/rerun-death.py docs/deaths/DXXXX-... OUT  # rerun a recorded death with the Borg's logs
@@ -34,6 +34,9 @@ documents the death records. The death registry itself is in
 [borg-cemetery](https://github.com/diegoami/borg-cemetery); a dossier is
 addressed by its source-qualified identity and case directory. Historical
 `docs/deaths/` cases remain here; their IDs may collide with cemetery IDs.
+
+The character name defaults to `RustBorg`; use the same `--name` to reload
+its save. The positional form `./watch-borg.sh MyBorg` also works.
 
 Working on this repository: start at [AGENTS.md](AGENTS.md), then
 [RULES.md](RULES.md). It is model agnostic: any coding agent, or a person,

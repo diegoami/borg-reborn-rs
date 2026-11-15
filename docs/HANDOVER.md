@@ -2,6 +2,53 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: final #292 synchronization validation complete (#298)
+
+- Combined source15289917 passes full45/45 v12 play parity,295,464 named
+  trace rows, original smoke3/3,50 engine tests (one local environment
+  skip), required Rust checks (154+4+5 original/143 core),19/78 Python
+  tests and vendoring. P292-SYNC-VALIDATION.md records exact builds/limits.
+- D2436–D2445 retain the final ten natural deaths; earlier sourcec4a38683
+  deathsD2423–D2432 also reconcile. Nine imported recorder/loop dossiers
+  retain exact source/attempt identities under the explicit ID map.
+- Required CI must pass before integration, then complete the owner-
+  authorized #292 main promotion. #295/#296/#299 remain separate later
+  work on track-p; no experiment or new reviewer is launched.
+
+## 2026-11-15: complete loop-levels integration in #298
+
+- Main advanced to2bb9b72f (#297) during validation. Preserve its loop-levels
+  implementation, docs and tests, with no P change to that policy.
+- Its three additional independently allocated dossiers are imported as
+  D2433–D2435 with unchanged source/attempt identities. The same explicit
+  mapping now covers all nine imported recorder/loop cases.
+- Pre-loop sourcec4a38683 passed full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3 and47 engine tests (one skip); ten deaths are
+  D2423–D2432. Disk exhaustion prevented the first fixture launch, then a
+  fresh retry passed. Only regenerable caches were cleared.
+- Validate the combined source before #292's authorized promotion. Later
+  strict fear/budget work stays excluded. No experiment is launched.
+
+## 2026-11-15: owner authorizes #292 promotion; synchronize main (#298)
+
+- The owner explicitly instructed "you can merge 292 and continue" after
+  the independent review recommended acceptance. Preserve the standing
+  track-p gate for later #295/#296/#299 work; those are excluded here.
+- Synchronize main352cefeb, preserving recorder CMake dependency handling,
+  guided-debugging rules/launcher changes and both sessions' handovers.
+  Recorder/engine/dependency pins are unchanged. The consumer CMake file
+  is a build input, so validate and retain evidence on the new source.
+- Recorder PR268 independently allocated six dossier IDs already used by
+  the P archive. Keep every existing P case unchanged; import its six new
+  cases underD2417–D2422, with source/attempt identities unchanged.
+  P292-DOSSIER-MAP.json records the exact old/new names and fingerprints.
+- Archive REVIEW-292-STRICT-ERRAND.md unchanged from the review branch.
+  Its base6acbf170 has the same tree as main0ed0e5de. Qualification: old
+  apply_line already parsed the whole line before applying commands; the
+  actual fixed defect was warning-and-continuing instead of failing.
+- Required validation/CI are pending before track-p integration and the
+  owner-authorized #292 merge. No population experiment is launched.
+
 ## 2026-11-15: strict configured errands (#269), validation complete
 
 - Stacked on #289; targets track-p after the owner-authorized #260
@@ -31,6 +78,54 @@
   #260's earlier scope; this later task stays on track-p for its separate
   review/promotion decision. No population experiment was launched.
 
+## 2026-11-15: owner-requested repeating level interval (#294)
+
+- `/loop-levels A B` explores every intermediate level in both directions:
+  `3 5` means 3,4,5,4,3,...; 0 is town. Two distinct engine depths 0–127
+  are accepted. The route never completes on its own; budget/stopscared
+  and explicit stop retain their existing semantics.
+- Town intent suspends the route until actual town arrival, then restarts
+  the first endpoint. Unprepared descent returns home rather than forcing
+  a level or cancelling the loop. Town endpoints include the core's town
+  work. Existing inventory management (#293) is not replaced here.
+- Return travel can Recall; deep departures use the core's usual town
+  Recall/readiness/supply policy. Actual arrival is observed before travel
+  to the first waypoint; an adjacent DL1 target uses stairs. Pending Recall
+  is not reissued, and absent Recall falls back to stair travel.
+- Pure planner tests cover intermediate/reverse cycles, planned/unplanned
+  town, waiting for town despite cleared flags, unexpected rises and Recall
+  landing outside the interval. Three fixed-start engine tests cover
+  Recall plus restart/queue cancellation at budget, stairs-only repeated
+  visits and town override without aborting the loop. The original guided
+  session and frozen binary remain intact.
+- Formatting, Clippy, 162 workspace tests and 143 release-core tests pass
+  (one pre-existing core ignore); engine checks pass 47 tests with one
+  environment skip. The vendoring check passes. Against the #268 control
+  binary, no-errand keys/messages/states match over 3,000 turns each at
+  seeds 1010 (warrior), 1001 (mage), 1002 (rogue); all survived. This is
+  bounded regression evidence, not a population improvement claim.
+- Standard CI natural-death controls were reproduced at the final native
+  source hash `50de000425b6` and retained in the explicitly selected
+  historical validation registry: D2402 (vendored core, seed 1011), D2403
+  (reborn smoke, seed 102), D2404 (reborn rerun-source, seed 1020). No
+  loop was active in those controls; no missing-death guard was weakened.
+- #206 was closed as superseded; its three evaluation documents are
+  preserved by exact-source links in the closing comment and local archive
+  `/tmp/pr206-preserved-85429a831316`. #268's consumer dependency fix is a
+  prerequisite here; no recorder implementation or engine gameplay changes
+  are part of this errand.
+
+## 2026-11-15: owner-requested completion of recorder dependency PR #268
+
+- The F17 fix remains consumer CMake integration, with the recorder pin,
+  adapter contents and upstream game unchanged. The owner requested its
+  delivery after confirming this boundary.
+- The latest engine CI had passed the suites and stopped at missing
+  historical validation dossiers. At exact source `0dadea400855`, core
+  seed 1011 repeats D2399; the smoke and rerun-source cases are retained
+  as D2400 (seed 102) and D2401 (seed 1020). The explicit historical
+  registry override preserves the existing CI guard; it was not weakened.
+
 ## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
 
 - The owner explicitly instructed: "ok then merge it and continue with other
@@ -46,6 +141,37 @@
   track-p; #272's RNG qualification was already implemented in #280.
 - This sync must pass required CI before integration; then perform the
   owner-authorized #260 merge and record its actual merge commit on GitHub.
+## 2026-11-15: first guided shopping incident; inventory replacement #293
+
+- Owner observed no purchases and requested replacing the inherited town
+  inventory management. Follow-up #293 records the evidence and requested
+  direction; no inventory/caution policy change has been made yet.
+- The Dwarf Priest's round stored Recall and gave away both Cure Serious
+  Wounds potions under the no-selling option before selecting torches.
+  At turn 341 a distant battle-scarred veteran triggered the core's
+  leaving/fleeing flags; `/shopping` aborted at full HP and danger 0.
+  A second invocation aborted at the same turn. Inventory choices and
+  town-threat interruption are separate concerns.
+- Original evidence is preserved under the guided session's
+  `incidents/shopping-20261115T122211Z/`. The original live game was not
+  changed. `reproduction-from-last-frame-v3/` uses the frozen executable
+  and a copied last-frame native snapshot with its stored RNG: it loads
+  the same character and reproduces the abort at turn 341 without advancing
+  a turn. This is a fresh-Borg-state reproduction, not a verified replay
+  of the still-live original recording. No engine/recorder fix is implied.
+
+## 2026-11-15: local reconciliation with PR #282
+
+- Local main advanced to `811f338a`. Both incoming handover entries and
+  the local guided-session/launcher work are preserved; the handover's
+  concurrent insertions were combined. RULES 12's cemetery ownership and
+  the local guided-debugging rule 26 coexist.
+- Installed the exact `death-tools-pin.txt` revision, `33c375527a8e`, in
+  ignored `vendor/borg-cemetery`, where the compatibility pointers discover
+  it. No sibling cemetery checkout was present. The 78 tools tests and 19
+  scripts tests pass; shell syntax and diff checks pass.
+- Corrected tools/README.md's stale default export directory. The guided
+  recording and frozen executable were preserved; no game was restarted.
 
 ## 2026-11-15: owner-requested death-tool ownership (#273)
 
@@ -133,6 +259,46 @@ This entry records the preceding pointer-only change. The #273 entry above and
 the historical cases remain local and their index links were corrected to their
 actual locations; reconciliation does not copy evidence.
 
+## 2026-11-15: the recorder adapter is a configure dependency (#268)
+
+- **M1 review F17** (Low) in the angband-recorder M1 review asked for two
+  things: add the adapter to CMake's configure dependencies, and cover it
+  with a generated-tree dependency test. Both are done.
+- `engine/recorder-hooks.patch` is applied at **configure** time, by
+  `execute_process` inside the `SUPPORT_BORG_RECORDING` block, so the
+  only way to re-apply it is to re-configure. `CMAKE_CONFIGURE_DEPENDS`
+  listed `engine/patches/*.patch` and `engine/UPSTREAM` but not the
+  adapter, so a plain incremental `cmake --build` could keep stale
+  hooks after the adapter changed. `engine/CMakeLists.txt:29` now
+  declares it.
+- `engine/tests/test_build.py` gains two tests: one asserts the
+  declaration, and one is **functional** — it configures a throwaway
+  build, records the generated tree's mtime, touches only the adapter
+  patch, runs `make cmake_check_build_system` and asserts the tree was
+  re-applied. The test was reproduced as failing on unfixed `main`
+  (the tree's mtime did not move) and passing here.
+- **The game is unchanged.** `engine/patches/`, `engine/frontend/`,
+  `engine/sources.cmake`, `engine/apply-patches.sh` and
+  `engine/recorder-hooks.patch` are byte-identical to `main`, so the
+  generated tree's content is identical: smoke is **3/3** against the
+  reference. The recorder-enabled build configures, builds and passes
+  `harness/check-recorder.py` ("Consumer recorder round trip passed").
+- The vendored recorder and `recorder-pin.json` are untouched (v0.1.0 /
+  `c4986b26b9fd`); re-vendoring the recorder's own corrections is a
+  separate step.
+- The branch's new build identity produced three new deaths (D2359–D2361),
+  retained with their trace tails and hashes. The two earlier red CI runs
+  on this branch were the RULES 12 reconcile gate refusing exactly those
+  unrecorded deaths.
+- **Open:** the upstream tree's *content* is still not a configure
+  dependency — `engine/UPSTREAM` is a marker file (the tree id), so an
+  in-place edit under `engine/angband/` does not re-apply the generated
+  tree. Filed as #288; benign today (a re-pin updates `UPSTREAM`, RULES 9
+  forbids editing the tree, and `engine/tests/test_engine.py` catches
+  it), and out of F17's scope.
+
+## 2026-11-15: the death registry points at borg-cemetery (#276)
+
 - The death dossiers are recorded in **borg-cemetery**, the canonical
   home for recorded Borg runs, written death investigations and playable
   saved scenarios. This repository keeps the code that writes and
@@ -174,6 +340,28 @@ actual locations; reconciliation does not copy evidence.
   `docs/REVIEW-260-WORKFLOW.md`, `docs/REVIEW-266-R1.md`, with the
   findings posted on #259, #260 and #266 and filed as #269–#272.
 
+## 2026-11-15: owner-guided recorded debugging workflow
+
+- Active guided session: `.angband-reborn/guided/20261115T105724Z-ErrandDebug/`.
+  `session.json` records private save/recording paths, environment, frozen
+  executable hash and PIDs (recorder 99085, game 99087 when launched).
+  It starts at fresh birth; the owner chooses the character and errands.
+  Preserve this session and inspect its manifest/process before restarting.
+- A fresh X11 birth, `/town`, explicit save, save-and-quit (Escape at the
+  final prompt) and isolated-profile replay verified all recorder streams.
+  Receipt and original evidence are under the session's
+  `evidence/gui-qualification/`. No new engine/recorder patches were made.
+  Recorder changes, if needed, go through PRs in angband-recorder per owner.
+- RULES 26 and GUIDED-DEBUGGING.md define the requested workflow: the agent
+  launches a recorder-enabled private session, the owner reports problems
+  and saves if possible, and the agent collects evidence and reproduces.
+- Preserve the original build/configuration/starting save and recording,
+  verify the actual incident save, and collect live evidence if saving or
+  input fails. A save alone does not restore Borg process memory.
+- The qualified route is a short fresh-birth GUI session; arbitrary loaded
+  saves and long human sessions have not yet been qualified here. The
+  per-session manifest plus frozen runtime preserve the setup for diagnosis.
+
 ## 2026-11-15: owner-requested /shopping (#208)
 
 - Added `/shopping`: a town-only round of the vendored core's buying,
@@ -199,6 +387,21 @@ actual locations; reconciliation does not copy evidence.
   borg-core tests and the vendor check pass. The corner freeze remains
   undiagnosed; no population experiment or GUI shopping session was run.
 
+## 2026-11-15: owner-requested watched-game save fix
+
+- `watch-borg.sh` now passes the data directories before `-u`: upstream
+  resolves the save filename immediately when it parses `-u`, so the old
+  order selected the default build-tree save path instead of the persistent
+  `.angband-reborn/save` directory. The owner reported a save failure and
+  a new character after restarting; no recent matching save was found.
+- Added `--name NAME` and `--help`; the positional name and default
+  `RustBorg` still work. Use the same name to reload a character.
+- Validation: `bash -n`, `git diff --check`, and isolated launcher checks
+  with stubbed build/game commands pass for default, positional and named
+  launches, paths/names with spaces, save-directory argument ordering,
+  invalid arguments and build-only. A live GUI save/reload was not tested.
+- This fixes launch arguments; the reported corner freeze remains
+  undiagnosed. The nested-entry diagnostic alone does not prove its cause.
 
 
 ## 2026-11-15: owner changes P integration to track-p (#257)
