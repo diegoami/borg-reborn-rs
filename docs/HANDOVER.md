@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: #308 re-review accepted; integration conflicts tracked
+
+- Re-review at exact 0030b101 accepts the POC in isolation and confirms CI.
+  Report: https://github.com/diegoami/borg-reborn-rs/pull/308#issuecomment-6901041092.
+- All six POC evidence packages are now content-qualified, with original
+  record and payload bytes preserved. PR308-DOSSIER-MAP.json retains both
+  the earlier numeric rename history and the full source-qualified import
+  map. The numeric reservation was insufficient for concurrent task branches.
+  No other branch's evidence is replaced. #335 tracks the recovery.
+- Owner main-first sequencing remains. #331's second-merge synchronization
+  must consolidate the two strict config readers with lazy environment
+  precedence and run both native configuration suites. It must also import
+  newly accepted #332 evidence before enabling its legacy-inventory gate.
+  #317/#318 are closed on track-p, awaiting accepted #331 promotion; their
+  code is not silently imported here. See PR308-REVIEW-FIXES.md.
+- Draft remains for owner testing; no engine/recorder or gameplay changes
+  are made for the evidence recovery, and the guided game remains untouched.
+
 ## 2026-11-15: #308 returned-review fixes (reviewed head 19f2025b)
 
 - Owner chose main-first delivery for the independent POC; P/R synchronize
@@ -10,8 +28,9 @@
 - POC D2446–D2448 are renamed to D2476–D2478. PR308-DOSSIER-MAP.json
   records the exact mapping; source/build/family/attempt identities and
   evidence hashes are preserved. D2476–D2481 were reserved on #318 for
-  this delivery's old and revised-source controls, above all three branch
-  maxima. The global cemetery allocator policy remains #318 follow-up.
+  this delivery's old and revised-source controls. The re-review found that
+  concurrent unintegrated task branches had already used those numbers;
+  the later qualified recovery below supersedes this reservation.
 - The shipped file is tested by Plan::parse(include_str!(...)) for every
   class/default and level 1–50. The Python grammar approximation is removed;
   native checks load the real file. Canonical lowercase loop-levels is
