@@ -270,15 +270,15 @@ extern "C" fn do_cmd_borg() {
         {
             borg_rs::shell::apply(c, 0);
         }
-        if let Some(line) = setting("BORG_ERRAND", "borg_reborn_errand") {
+        if let Some(line) = crate::borg::configured_errand() {
             let budget = std::env::var("BORG_ERRAND_BUDGET")
                 .ok()
                 .and_then(|b| b.parse().ok())
                 .unwrap_or(0);
-            // A command it cannot read applies nothing: the Borg plays as
-            // it would without one, and says so.
+            // Configuration errors must not silently change the measured arm.
             if let Err(c) = borg_rs::shell::apply_line(&line, budget) {
-                eprintln!("borg: unknown errand command '{c}'");
+                eprintln!("borg-reborn-rs: invalid configured errand command {c:?}");
+                std::process::exit(2);
             }
         }
         borg_rs::do_cmd_borg();

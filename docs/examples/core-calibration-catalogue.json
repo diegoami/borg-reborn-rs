@@ -1,16 +1,16 @@
 {
   "note": "Catalogue fragments for an owner PR; no suite or experiment has run. Merge with existing catalogue so collision checks cover all existing seeds.",
   "specimens": {
-    "reborn-p-core-132aeb26": {
+    "reborn-p-core-2ec1f250": {
       "kind": "borg-rs",
       "impl": "rust",
       "repository": "diegoami/borg-reborn-rs",
-      "ref": "132aeb26a54a7988ca013256f752fce19f24afc9",
+      "ref": "2ec1f2507ec81f375a7967b2876597865458aa76",
       "exact_turns": true,
       "depth_stream": true,
       "carries": 0,
       "label": "Track P calibrated vendored core, ordinary play",
-      "source": "https://github.com/diegoami/borg-reborn-rs/commit/132aeb26a54a7988ca013256f752fce19f24afc9"
+      "source": "https://github.com/diegoami/borg-reborn-rs/commit/2ec1f2507ec81f375a7967b2876597865458aa76"
     }
   },
   "suites": {

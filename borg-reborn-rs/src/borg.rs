@@ -324,6 +324,45 @@ fn parse_core_selector(value: Option<&str>, source: &str) -> Result<bool, String
     }
 }
 
+/// Validate the configured shell command before a measured run starts.
+/// Original-core runs do not consult the vendored core's errand setting.
+pub fn configured_errand() -> Option<String> {
+    let environment = std::env::var_os("BORG_ERRAND");
+    let file = if environment.is_none() {
+        borg_rs::shell::borg_txt_setting("borg_reborn_errand")
+    } else {
+        None
+    };
+    let selected = if let Some(value) = environment.as_ref() {
+        value
+            .to_str()
+            .ok_or_else(|| format!("BORG_ERRAND: invalid non-UTF-8 errand selector {value:?}"))
+            .and_then(|value| parse_errand_setting(Some(value), "BORG_ERRAND"))
+    } else {
+        parse_errand_setting(file.as_deref(), "borg.txt borg_reborn_errand")
+    };
+    selected.unwrap_or_else(|error| {
+        eprintln!("borg-reborn-rs: {error}");
+        std::process::exit(2);
+    })
+}
+
+fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<String>, String> {
+    match value {
+        None | Some("" | "none") => Ok(None),
+        Some(value) => {
+            let invalid =
+                |reason: &str| format!("{source}: invalid errand selector {value:?}: {reason}");
+            let commands = borg_rs::shell::parse_line(value)
+                .map_err(|command| invalid(&format!("unknown command {command:?}")))?;
+            if commands.is_empty() {
+                return Err(invalid("empty command line; use none to disable errands"));
+            }
+            Ok(Some(value.to_owned()))
+        }
+    }
+}
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {
@@ -664,6 +703,34 @@ mod tests {
         for source in ["BORG_CORE", "borg.txt borg_reborn_core"] {
             for value in ["", "true", "2", "7", "borg_rs", "BORG-RS", " 1"] {
                 let error = parse_core_selector(Some(value), source).unwrap_err();
+                assert!(error.contains(source));
+                assert!(error.contains(&format!("{value:?}")));
+            }
+        }
+    }
+
+    #[test]
+    fn configured_errands_preserve_valid_commands_and_reject_silent_fallback() {
+        for value in [None, Some(""), Some("none")] {
+            assert_eq!(parse_errand_setting(value, "BORG_ERRAND"), Ok(None));
+        }
+        for value in [
+            "/town",
+            "/shopping",
+            "dive:2",
+            "trips:1*/1,2,1*@3",
+            "/town; /shopping",
+            "/stopscared off; /dive 2",
+            "/none",
+        ] {
+            assert_eq!(
+                parse_errand_setting(Some(value), "BORG_ERRAND"),
+                Ok(Some(value.into()))
+            );
+        }
+        for source in ["BORG_ERRAND", "borg.txt borg_reborn_errand"] {
+            for value in [" ", "; ;", "true", "2", "dvie 2", "/dive 0", "/town; typo"] {
+                let error = parse_errand_setting(Some(value), source).unwrap_err();
                 assert!(error.contains(source));
                 assert!(error.contains(&format!("{value:?}")));
             }
