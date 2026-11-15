@@ -69,3 +69,38 @@ class DecisionSurfaceTest(unittest.TestCase):
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):
                 surface.check(fixture)
+
+    def test_parent_paths_and_native_delegation_are_refused(self):
+        probe = """pub fn zz_probe(st: &mut BorgState) -> i32 {
+            let a = st.borg.trait_.get(super::super::BI_CURSP as usize).copied().unwrap_or(0);
+            let _ = super::Decision::Caution.native(st);
+            a
+        }"""
+        for code in [probe,
+                     'super::Decision::Freedom {y,x}.native(st);',
+                     'let t = &mut st.borg.trait_; t[i] = 0;',
+                     'st.borg.trait_.get(i)',
+                     'let native = decision.native; native(st);',
+                     'Decision::native(request, st);',
+                     'use super as parent;', 'use crate as root;',
+                     'self::parent::Decision::Caution.native(st);',
+                     'use super::escape::{borg_freedom, other};',
+                     'use super::escape::*;',
+                     'use super::escape::{borg_freedom as native};']:
+            with self.subTest(code=code):
+                self.assertTrue(surface.inspect(code, port=True), code)
+        for code in ['super::set_mana(st, value);',
+                     'use super::escape::{borg_freedom, borg_escape};']:
+            self.assertFalse(surface.inspect(code, port=True), code)
+
+    def test_outside_source_and_dispatch_imports_are_refused(self):
+        for code in ['include!("../x.rs");',
+                     '#[path = "../x.rs"] mod outside;',
+                     '#[cfg_attr(feature="bypass", path="../x.rs")] mod outside;',
+                     'use borg_rs::decisions::*;',
+                     'use borg_rs::decisions::{Decision, other};',
+                     'use borg_rs :: decisions :: {Decision, other};']:
+            with self.subTest(code=code):
+                self.assertTrue(surface.inspect(code, port=True, dispatch=True), code)
+        self.assertFalse(surface.inspect('use borg_rs::decisions::{Decision, Value};', port=True, dispatch=True))
+        self.assertFalse(surface.inspect('// trait_ include!("x"); super::Decision.native(st)\nlet text = "trait_ super::super #[path = x]";', port=True))

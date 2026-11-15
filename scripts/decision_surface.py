@@ -8,6 +8,8 @@ PORTS = ('caution', 'escape', 'recovery')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', *NATIVE}
+PARENT_ESCAPE = {'borg_caution_phase', 'borg_escape', 'borg_freedom',
+                 'borg_recall', 'borg_surrounded'}
 PORT_NAMESPACES = {'decision_api', 'decision_tape', 'memory', 'threat_facts'}
 
 
@@ -24,7 +26,7 @@ def inspect(text, port=False, dispatch=False):
     Compilation checks API names/types; manual review must still inspect
     fields, methods, macros and every carried dependency.
     """
-    code = mask_non_code(text)
+    code = re.sub(r'\s*::\s*', '::', mask_non_code(text))
     if port and dispatch:
         # Normalize whitespace only for matching the exact adapter/import.
         # Remove just these snippets, then inspect all remaining code.
@@ -34,12 +36,29 @@ def inspect(text, port=False, dispatch=False):
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
+        # A parent may expose private root imports and Decision::native.
+        # Remove only the audited local escape import and setter call prefix.
+        def local_escape(match):
+            names = [name.strip() for name in match[1].split(',') if name.strip()]
+            if names and set(names) <= PARENT_ESCAPE:
+                return ''
+            return match[0]
+        code = re.sub(r'\buse\s+super::escape::\{([^}]+)\}\s*;', local_escape, code)
+        code = re.sub(r'\bsuper::set_mana\s*(?=\()', '', code)
+        if re.search(r'\b(?:super|self)::', code):
+            errors.append('policy bypasses the audited parent dependency paths')
+        if re.search(r'\buse\s+(?:crate|super|self)\s*(?:as\b|;)', code):
+            errors.append('policy may not alias a local crate/module')
+        if re.search(r'(?:\.\s*|::)native\b', code):
+            errors.append('port may not delegate native policy')
+        if re.search(r'\binclude(?:_str|_bytes)?\s*!|#\s*!?\s*\[[^\]]*\bpath\s*=', code):
+            errors.append('policy may not include uninspected source files')
         if re.search(r'\buse\s+borg_rs\s*(?:as\b|;)', code):
             errors.append('policy may not alias/import the core crate')
         for match in re.finditer(r'\buse\s+borg_rs\s*::([^;]+);', code):
             if re.search(r'\bas\b', re.sub(r'\bparam\s+as\s+p\b', 'param', match[1])):
                 errors.append('policy may not alias core dependencies')
-        if re.search(r'\btrait_\s*\[|\.\s*tr\s*\(', code):
+        if re.search(r'\btrait_\b|\.\s*tr\s*\(', code):
             errors.append('port reads or writes an unnamed native trait')
         # The full memory/type path is restricted even outside use statements.
         for match in re.finditer(r'\bborg_rs\s*::\s*(memory|threat_facts|decisions)\s*::\s*(\w+)', code):
@@ -64,7 +83,8 @@ def inspect(text, port=False, dispatch=False):
     for m in re.finditer(r'\b' + prefix + r'::decision_tape::(\w+)\s*\(', code):
         if m[1] not in ('active', 'mark'):
             errors.append(f'policy may not drive the tape through {m[1]}')
-    exact_imports = {'threat_facts': {'param','Param'}, 'memory': {'BorgState'}} if port else {
+    exact_imports = {'threat_facts': {'param','Param'}, 'memory': {'BorgState'},
+                     'decisions': {'Decision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime'},
         'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y'}, 'borg_update': {'Detect'},
         'state': {'BorgState'}}

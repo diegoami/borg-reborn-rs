@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: #329 review processed; pre-carry gate fix #336
+
+- Claude Opus 5.5 accepts #329 with follow-ups and explicitly allows R3.
+  Owner acceptance/merge of #329 has not been inferred from review arrival.
+  Its pin 5cebb4c1 stays fixed. Findings 2–5 from #302 are resolved.
+- #336 closes the remaining parent-path native-delegation bypass before any
+  R3 carry: exact local escape imports/mana call only; reject other super/self
+  paths, native delegation, all raw trait_ uses outside the exact adapter,
+  outside includes/path attributes and non-exact decisions imports. Tests
+  retain the complete compiled reviewer probe and each alternative spelling.
+- Documented how to replace the single-seed entry fixture using unsealed
+  evidence without dropping the strict gate, plus the limits of the
+  subsystem-sum integrity check and the future policy_markers schema field.
+- No runtime inputs or old evidence change. Dossier allocation across tracks
+  needs an owner-level rule; preserve published IDs/bytes and qualify legacy
+  references by branch/commit while that decision is pending. Parsed-mode
+  diagnostic hardening is a non-blocking future task, not changed here.
+
 ## 2026-11-15: durable danger-grid failures (#315)
 
 - Replace the port's aborting grid expect with a diagnostic containing the
