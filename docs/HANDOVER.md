@@ -4,6 +4,27 @@
 
 
 
+## 2026-11-15: track P, P1.3 (#221), recovery parameters
+
+- Added 37 recovery parameters (603 total): cure chances, HP/SP gates,
+  danger limits/horizon, Unholy Reprieve's HP cutoff, rod-rest duration,
+  and mana/food/depth rest thresholds. The zero-danger guard, full-state
+  comparisons, status/charging flags and rest protocol remain categorical
+  state/interface data; CALIBRATION.md lists them and every parameter.
+- Full **45/45** matches P1.2 by the standard diff and pinned v12 by all
+  play-log bytes. Original-core smoke is **3/3** and ladder parity holds.
+  Default expansion reproduces the original executable tokens apart from
+  the equivalent `R100` decimal-digit loop.
+- `recover_rest_sp_tenths=10` changes Half-Elf Mage seed 1010 at turn 561.
+  It dies of poison at 2600 while the default survives; the negative
+  diagnostic result is retained, not recommended. See P1.3-VALIDATION.md.
+- Core tests (133 passed), original-crate tests, Clippy, formatting,
+  Python tests and vendoring check pass. D2202–D2213 retain every natural
+  validation death; reconciliation finds none missing.
+- This task is stacked on P1.2 PR #235; each task's PR retains its own CI
+  merge gate. P1's remaining task is #222, the named decision trace.
+
+
 ## 2026-11-15: track P, P1.2 (#220), danger and escape parameters
 
 - Added 366 parameters (566 total): per-blow/spell risk weights, fear

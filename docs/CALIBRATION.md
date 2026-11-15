@@ -1,7 +1,8 @@
 # Calibrating borg-rs's core (track P)
 
 P1.1 (#219) gives caution 200 parameters; P1.2 (#220) adds 366 in danger
-and escape, for 566 total. This changes calibration access, not the default
+and escape, for 566 total. P1.3 (#221) adds 37 recovery settings, bringing the table to
+603 entries. This changes calibration access, not the default
 policy. No value here is claimed
 to improve play; the defaults are the vendored v12 values. The configured
 ranges are input bounds for experiments, not measured recommendations.
@@ -749,3 +750,62 @@ the vendored mechanics model:
 | `danger_rsf_lash_damage` | 100 | danger | 0–5000 | `borg_danger.rs:800` |
 | `danger_rsf_spit_damage` | 100 | danger | 0–5000 | `borg_danger.rs:806` |
 | `danger_pfe_melee_divisor` | 2 | divisor | 1–1000 | `borg_danger.rs:212` |
+
+
+## P1.3: recovery (#221)
+
+Recovery's source locations refer to **`30ab9d66`**, before extraction.
+The controls cover its danger horizon and avoidance fraction; the injured
+and critical-HP chance bonuses; each cheap/expensive cure's chance;
+HP/SP gates; Unholy Reprieve's HP cutoff; rod-rest duration; and SP/depth,
+food and danger gates for ordinary and munchkin rest.
+
+Fractions retain their original multiply/divide order. Chance thresholds
+stay in 0–100; SP tenths in 0–10; denominators/horizons and rod-rest counts
+must be positive. The rod rest defaults to the same `R100<Enter>` keys.
+The zero-danger requirement for cheap healing remains a categorical
+no-danger guard. Status booleans, full-health/full-SP comparisons, rod
+presence/charging state, goal and terrain enums, regional fear geometry,
+RNG domain 100, tenths denominator 10, anti-bounce resets and the `R&`/`R*`
+rest protocol remain representation or game/interface data. No rest order,
+item preference, random roll or effect was changed.
+
+| Name | Default | Unit | Range | Original location |
+| --- | ---: | --- | --- | --- |
+| `recover_danger_horizon` | 1 | turns | 1–10 | `borg_recover.rs:98` |
+| `recover_danger_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:101` |
+| `recover_hurt_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:111` |
+| `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:112` |
+| `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:116` |
+| `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:117` |
+| `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:124` |
+| `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:160` |
+| `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:173` |
+| `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:186` |
+| `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:199` |
+| `recover_cheap_image_chance` | 75 | percent | 0–100 | `borg_recover.rs:207` |
+| `recover_cheap_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:214` |
+| `recover_cheap_heal_chance` | 75 | percent | 0–100 | `borg_recover.rs:215` |
+| `recover_cheap_heal_sp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:217` |
+| `recover_unholy_min_hp` | 90 | hp | 0–10000 | `borg_recover.rs:237` |
+| `recover_costly_stun_chance` | 25 | percent | 0–100 | `borg_recover.rs:266` |
+| `recover_costly_heavy_stun_chance` | 95 | percent | 0–100 | `borg_recover.rs:279` |
+| `recover_costly_cut_chance` | 25 | percent | 0–100 | `borg_recover.rs:292` |
+| `recover_critical_ccw_hp` | 10 | hp | 0–10000 | `borg_recover.rs:298` |
+| `recover_costly_poison_chance` | 25 | percent | 0–100 | `borg_recover.rs:305` |
+| `recover_costly_blind_chance` | 25 | percent | 0–100 | `borg_recover.rs:321` |
+| `recover_costly_confusion_chance` | 25 | percent | 0–100 | `borg_recover.rs:336` |
+| `recover_costly_fear_chance` | 25 | percent | 0–100 | `borg_recover.rs:350` |
+| `recover_costly_hunger_chance` | 25 | percent | 0–100 | `borg_recover.rs:362` |
+| `recover_costly_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:370` |
+| `recover_costly_heal_chance` | 25 | percent | 0–100 | `borg_recover.rs:371` |
+| `recover_rest_high_depth` | 85 | depth | 0–127 | `borg_recover.rs:418` |
+| `recover_rest_high_sp_tenths` | 7 | tenths | 0–10 | `borg_recover.rs:418` |
+| `recover_rest_sp_tenths` | 6 | tenths | 0–10 | `borg_recover.rs:418` |
+| `recover_mana_rest_max_level` | 40 | level | 1–51 | `borg_recover.rs:461` |
+| `recover_mana_rest_deep_depth` | 85 | depth | 0–127 | `borg_recover.rs:461` |
+| `recover_mana_rest_sp_tenths` | 8 | tenths | 0–10 | `borg_recover.rs:462` |
+| `recover_mana_rest_danger_divisor` | 10 | divisor | 1–1000 | `borg_recover.rs:463` |
+| `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
+| `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
+| `recover_rod_rest_turns` | 100 | turns | 1–9999 | `borg_recover.rs:404` |
