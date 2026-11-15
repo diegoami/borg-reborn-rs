@@ -713,6 +713,8 @@ pub fn borg_prepare_race_class_info(st: &mut BorgState) {
 
 /// Initialize the Borg (`borg_init`).
 pub fn borg_init(st: &mut BorgState) {
+    // borg-reborn-rs (#219): validate once before RNG or decisions.
+    crate::params::initialize();
     // Verify system
     // Redraw everything
     engine::do_cmd_redraw(st);

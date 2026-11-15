@@ -15,15 +15,28 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
+// borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
-use crate::borg_fight_defend::borg_defend;
 use crate::borg_escape::{
     borg_caution_phase, borg_escape, borg_freedom, borg_recall, borg_surrounded,
 };
+use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
     borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
+};
+use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
+use crate::borg_headers::borg_magic_h::{
+    BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
+    PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
+};
+use crate::borg_headers::borg_trait_h::{
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
+    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
+    BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
+    BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -39,24 +52,13 @@ use crate::borg_light::{borg_maintain_light, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
-use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
-use crate::borg_headers::borg_magic_h::{
-    BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
-    PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
-};
-use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
-    BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
-    BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
-    BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_SPEED,
-};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::TMD_OPP_ACID;
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
+use crate::params::{value as p, Param};
 use crate::state::BorgState;
 
 const CLASS_WARRIOR: i32 = 0;
@@ -99,13 +101,13 @@ fn set_cursp(st: &mut BorgState, v: i32) {
 /// was here three steps ago; or the anti-bounce counter is high.
 fn bouncing(st: &BorgState, y: i32, x: i32) -> bool {
     let ts = &st.flow.track_step;
-    (st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) * 7 / 10
+    (st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) * p(Param::caution_bounce_healthy_tenths) / 10
         && (ts.num > 2 && {
             let n2 = (ts.num - 2) as usize;
             let n3 = (ts.num - 3) as usize;
             ts.y[n2] == y && ts.x[n2] == x && ts.y[n3] == st.borg.c.y && ts.x[n3] == st.borg.c.x
         }))
-        || st.borg.antibounce_count >= 300
+        || i32::from(st.borg.antibounce_count) >= p(Param::caution_bounce_limit)
 }
 
 /// `!borg.trait[BI_ATELEPORT] && !borg.trait[BI_AESCAPE]) || rod_good`: may
@@ -145,7 +147,13 @@ fn heal_amount(hp_down: i32, pct: i32, min: i32) -> i32 {
 fn stats_needing_fix(st: &BorgState) -> i32 {
     let tr = |i| st.borg.tr(i);
     let mut n = 0;
-    for f in [BI_ISFIXSTR, BI_ISFIXINT, BI_ISFIXWIS, BI_ISFIXDEX, BI_ISFIXCON] {
+    for f in [
+        BI_ISFIXSTR,
+        BI_ISFIXINT,
+        BI_ISFIXWIS,
+        BI_ISFIXDEX,
+        BI_ISFIXCON,
+    ] {
         if tr(f) != 0 {
             n += 1;
         }
@@ -154,31 +162,37 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
     // Special cases get a second vote
     let class = tr(BI_CLASS);
     if class == CLASS_MAGE && tr(BI_ISFIXINT) != 0 {
-        n += 1;
+        n += p(Param::caution_caster_stat_vote);
     }
     if class == CLASS_PRIEST && tr(BI_ISFIXWIS) != 0 {
-        n += 1;
+        n += p(Param::caution_priest_stat_vote);
     }
     if class == CLASS_DRUID && tr(BI_ISFIXWIS) != 0 {
-        n += 1;
+        n += p(Param::caution_druid_stat_vote);
     }
     if class == CLASS_NECROMANCER && tr(BI_ISFIXINT) != 0 {
-        n += 1;
+        n += p(Param::caution_necromancer_stat_vote);
     }
     if class == CLASS_WARRIOR && tr(BI_ISFIXCON) != 0 {
-        n += 1;
+        n += p(Param::caution_warrior_stat_vote);
     }
-    if tr(BI_MAXHP) <= 850 && tr(BI_ISFIXCON) != 0 {
-        n += 1;
+    if tr(BI_MAXHP) <= p(Param::caution_stat_fix_hp_high) && tr(BI_ISFIXCON) != 0 {
+        n += p(Param::caution_stat_fix_vote_high);
     }
-    if tr(BI_MAXHP) <= 700 && tr(BI_ISFIXCON) != 0 {
-        n += 3;
+    if tr(BI_MAXHP) <= p(Param::caution_stat_fix_hp_low) && tr(BI_ISFIXCON) != 0 {
+        n += p(Param::caution_stat_fix_vote_low);
     }
-    if class == CLASS_PRIEST && tr(BI_MAXSP) < 100 && tr(BI_ISFIXWIS) != 0 {
-        n += 5;
+    if class == CLASS_PRIEST
+        && tr(BI_MAXSP) < p(Param::caution_priest_stat_fix_sp)
+        && tr(BI_ISFIXWIS) != 0
+    {
+        n += p(Param::caution_priest_stat_fix_votes);
     }
-    if class == CLASS_MAGE && tr(BI_MAXSP) < 100 && tr(BI_ISFIXINT) != 0 {
-        n += 5;
+    if class == CLASS_MAGE
+        && tr(BI_MAXSP) < p(Param::caution_mage_stat_fix_sp)
+        && tr(BI_ISFIXINT) != 0
+    {
+        n += p(Param::caution_mage_stat_fix_votes);
     }
     n
 }
@@ -193,22 +207,40 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
 ///
 /// Divides by `BI_MAXHP` like C (0 panics where C would trap).
 fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
-    let allow_fail = 15;
+    let allow_fail = p(Param::caution_heal_spell_fail);
     let avoidance = |st: &BorgState| i32::from(st.borg.avoidance);
 
     let hp_down = st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP);
     let pct_down = (st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP)) * 100 / st.borg.tr(BI_MAXHP);
-    let clw_heal = heal_amount(hp_down, 15, 15);
-    let csw_heal = heal_amount(hp_down, 20, 25);
-    let ccw_heal = heal_amount(hp_down, 25, 30);
+    let clw_heal = heal_amount(
+        hp_down,
+        p(Param::caution_clw_estimate_percent),
+        p(Param::caution_clw_estimate_min),
+    );
+    let csw_heal = heal_amount(
+        hp_down,
+        p(Param::caution_csw_estimate_percent),
+        p(Param::caution_csw_estimate_min),
+    );
+    let ccw_heal = heal_amount(
+        hp_down,
+        p(Param::caution_ccw_estimate_percent),
+        p(Param::caution_ccw_estimate_min),
+    );
     // cmw_heal (30%, at least 50) is computed in C but never used.
-    let heal_heal = heal_amount(hp_down, 35, 300);
+    let heal_heal = heal_amount(
+        hp_down,
+        p(Param::caution_heal_estimate_percent),
+        p(Param::caution_heal_estimate_min),
+    );
 
     // Quick check for rod success (used later on)
     let mut rod_good = false;
     if borg_slot(st, TV_ROD as i32, st.item_val.sv_rod_healing) != -1 {
         // Reasonable chance of success
-        if borg_activate_failure(st, TV_ROD as i32, st.item_val.sv_rod_healing) < 500 {
+        if borg_activate_failure(st, TV_ROD as i32, st.item_val.sv_rod_healing)
+            < p(Param::caution_healing_rod_fail)
+        {
             rod_good = true;
         }
     }
@@ -222,15 +254,15 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // and again at the end of borg_caution, when all other avenues have
     // failed
     if st.borg.tr(BI_ISCONFUSED) != 0 {
-        if pct_down >= 80
+        if pct_down >= p(Param::caution_confused_heal_loss)
             && danger - heal_heal < st.borg.tr(BI_CURHP)
             && borg_quaff_potion(st, st.item_val.sv_potion_healing)
         {
             borg_note(st, "# Fixing Confusion. Level 1");
             return true;
         }
-        if pct_down >= 85
-            && danger >= st.borg.tr(BI_CURHP) * 2
+        if pct_down >= p(Param::caution_confused_star_loss)
+            && danger >= st.borg.tr(BI_CURHP) * p(Param::caution_confused_star_danger_multiplier)
             && (borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_life))
         {
@@ -256,8 +288,10 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         if borg_equips_staff_fail(st, st.item_val.sv_staff_teleportation) {
             // check my skill, drink a potion
             if borg_activate_failure(st, TV_STAFF as i32, st.item_val.sv_staff_teleportation)
-                > 650
-                && danger < (avoidance(st) + ccw_heal) * 15 / 10
+                > p(Param::caution_confused_staff_fail)
+                && danger
+                    < (avoidance(st) + ccw_heal) * p(Param::caution_confused_cure_danger_tenths)
+                        / 10
                 && (borg_quaff_crit(st, true)
                     || borg_quaff_potion(st, st.item_val.sv_potion_healing))
             {
@@ -267,7 +301,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             // However, if I am in really big trouble and there is no way
             // I am going to be able to survive another round, take my
             // chances on the staff.
-            else if danger > avoidance(st) * 2 {
+            else if danger > avoidance(st) * p(Param::caution_confused_escape_danger_multiplier) {
                 borg_note(st, "# Too scary to fix Confusion. Level 4");
                 return false;
             }
@@ -284,21 +318,24 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         }
     }
     // Heal when blind. This is deadly.
-    if st.borg.tr(BI_ISBLIND) != 0 && engine::randint0(100) < 85 {
+    if st.borg.tr(BI_ISBLIND) != 0 && engine::randint0(100) < p(Param::caution_blind_cure_chance) {
         // if in extreme danger, use teleport then fix the
         // blindness later.
         // Check for a charged teleport staff
-        if danger > avoidance(st) * 25 / 10
+        if danger > avoidance(st) * p(Param::caution_blind_escape_danger_tenths) / 10
             && borg_equips_staff_fail(st, st.item_val.sv_staff_teleportation)
         {
             return false;
         }
-        if hp_down >= 300 && borg_quaff_potion(st, st.item_val.sv_potion_healing) {
+        if hp_down >= p(Param::caution_blind_heal_loss)
+            && borg_quaff_potion(st, st.item_val.sv_potion_healing)
+        {
             return true;
         }
         // Warriors with ESP won't need it so quickly
         if !(st.borg.tr(BI_CLASS) == CLASS_WARRIOR
-            && st.borg.tr(BI_CURHP) > st.borg.tr(BI_MAXHP) / 4
+            && st.borg.tr(BI_CURHP)
+                > st.borg.tr(BI_MAXHP) / p(Param::caution_blind_warrior_hp_divisor)
             && st.borg.tr(BI_ESP) != 0)
             && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
                 || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
@@ -315,7 +352,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // We generally try to conserve ez-heal pots
     if (st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0)
-        && (hp_down >= 400 || (danger > st.borg.tr(BI_CURHP) * 5 && hp_down > 100))
+        && (hp_down >= p(Param::caution_blind_confused_star_loss)
+            || (danger > st.borg.tr(BI_CURHP) * p(Param::caution_blind_confused_danger_multiplier)
+                && hp_down > p(Param::caution_blind_confused_min_loss)))
         && borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
     {
         borg_note(st, "# Fixing Confusion/Blind.");
@@ -324,12 +363,12 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // Healing and fighting Morgoth.
     if st.borg.near.unique >= 10
-        && st.borg.tr(BI_CURHP) <= 700
-        && ((st.borg.tr(BI_CURHP) > 250 && borg_spell_fail(st, HOLY_WORD, 14))
+        && st.borg.tr(BI_CURHP) <= p(Param::caution_questor_heal_hp)
+        && ((st.borg.tr(BI_CURHP) > p(Param::caution_questor_holy_word_hp) && borg_spell_fail(st, HOLY_WORD, p(Param::caution_questor_holy_word_fail)))
             // Choose Life over *Healing* to fix stats
-            || (stats_needing_fix >= 5 && borg_quaff_potion(st, st.item_val.sv_potion_life))
+            || (stats_needing_fix >= p(Param::caution_questor_life_stat_votes) && borg_quaff_potion(st, st.item_val.sv_potion_life))
             // Choose Life over Healing if way down on pts
-            || (hp_down > 500
+            || (hp_down > p(Param::caution_questor_life_loss)
                 && {
                     let sv = st.item_val.sv_potion_star_healing;
                     let k = borg_lookup_kind(st, TV_POTION as i32, sv);
@@ -341,9 +380,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             || borg_activate_item(st, st.act.heal1)
             || borg_activate_item(st, st.act.heal2)
             || borg_activate_item(st, st.act.heal3)
-            || (st.borg.tr(BI_CURHP) < 250 && borg_spell_fail(st, HOLY_WORD, 5))
-            || (st.borg.tr(BI_CURHP) > 550 && borg_spell_fail(st, HOLY_WORD, 15))
-            || borg_spell_fail(st, HEALING, 15)
+            || (st.borg.tr(BI_CURHP) < p(Param::caution_questor_emergency_holy_hp) && borg_spell_fail(st, HOLY_WORD, p(Param::caution_questor_emergency_holy_fail)))
+            || (st.borg.tr(BI_CURHP) > p(Param::caution_questor_safe_holy_hp) && borg_spell_fail(st, HOLY_WORD, p(Param::caution_questor_safe_holy_fail)))
+            || borg_spell_fail(st, HEALING, p(Param::caution_questor_healing_fail))
             || borg_quaff_potion(st, st.item_val.sv_potion_life)
             || borg_zap_rod(st, st.item_val.sv_rod_healing))
     {
@@ -353,8 +392,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // restore Mana
     // note, blow the staff charges easy because the staff will not last.
-    if st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / 5
-        && engine::randint0(100) < 50
+    if st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / p(Param::caution_magi_sp_divisor)
+        && engine::randint0(100) < p(Param::caution_magi_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_the_magi)
             || borg_activate_item(st, st.act.staff_magi))
     {
@@ -363,11 +402,11 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
     // blowing potions is harder
     // NOTE: must have enough mana to keep up or do a HEAL
-    if (st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / 10
-        || (st.borg.tr(BI_CURSP) < 70 && st.borg.tr(BI_MAXSP) > 200))
+    if (st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / p(Param::caution_restore_mana_sp_divisor)
+        || (st.borg.tr(BI_CURSP) < p(Param::caution_restore_mana_sp) && st.borg.tr(BI_MAXSP) > p(Param::caution_restore_mana_maxsp)))
         // use the potion if battling a unique and not too dangerous
         && (st.borg.near.unique >= 10
-            || (st.borg.near.unique != 0 && danger < avoidance(st) * 2)
+            || (st.borg.near.unique != 0 && danger < avoidance(st) * p(Param::caution_restore_mana_danger_multiplier))
             || (st.borg.tr(BI_ATELEPORT) + st.borg.tr(BI_AESCAPE) == 0
                 && danger > avoidance(st)))
         && (borg_use_staff_fail(st, st.item_val.sv_staff_the_magi)
@@ -390,9 +429,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Restoring while fighting Morgoth
-    if stats_needing_fix >= 5
+    if stats_needing_fix >= p(Param::caution_restore_stat_votes)
         && st.borg.near.unique >= 10
-        && st.borg.tr(BI_CURHP) > 650
+        && st.borg.tr(BI_CURHP) > p(Param::caution_restore_stat_hp)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_restoring)
             || borg_activate_item(st, st.act.restore_all))
     {
@@ -411,27 +450,37 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // if we are fighting a unique increase the odds of healing
     if st.borg.near.unique != 0 {
-        chance += 10;
+        chance += p(Param::caution_heal_unique_chance_bonus);
     }
 
     // if danger is close to the hp and healing will help, do it
     if danger >= st.borg.tr(BI_CURHP) && danger < st.borg.tr(BI_MAXHP) {
-        chance += 75;
+        chance += p(Param::caution_heal_lethal_chance_bonus);
     } else if st.borg.tr(BI_CLASS) != CLASS_PRIEST && st.borg.tr(BI_CLASS) != CLASS_PALADIN {
-        chance -= 25;
+        chance -= p(Param::caution_heal_nonpriest_chance_penalty);
     }
 
     // Risky Borgs are less likely to heal in the fight
     if st.cfg(BORG_PLAYS_RISKY) != 0 {
-        chance -= 5;
+        chance -= p(Param::caution_heal_risky_chance_penalty);
     }
 
-    if ((pct_down <= 15 && chance < 98)
-        || ((16..=25).contains(&pct_down) && chance < 95)
-        || ((26..=50).contains(&pct_down) && chance < 80)
-        || ((51..=65).contains(&pct_down) && chance < 50)
-        || ((66..=74).contains(&pct_down) && chance < 25)
-        || (pct_down >= 75 && chance < 1))
+    if ((pct_down <= p(Param::caution_heal_band1_max_loss)
+        && chance < p(Param::caution_heal_band1_skip_chance))
+        || ((p(Param::caution_heal_band2_min_loss)..=p(Param::caution_heal_band2_max_loss))
+            .contains(&pct_down)
+            && chance < p(Param::caution_heal_band2_skip_chance))
+        || ((p(Param::caution_heal_band3_min_loss)..=p(Param::caution_heal_band3_max_loss))
+            .contains(&pct_down)
+            && chance < p(Param::caution_heal_band3_skip_chance))
+        || ((p(Param::caution_heal_band4_min_loss)..=p(Param::caution_heal_band4_max_loss))
+            .contains(&pct_down)
+            && chance < p(Param::caution_heal_band4_skip_chance))
+        || ((p(Param::caution_heal_band5_min_loss)..=p(Param::caution_heal_band5_max_loss))
+            .contains(&pct_down)
+            && chance < p(Param::caution_heal_band5_skip_chance))
+        || (pct_down >= p(Param::caution_heal_band6_min_loss)
+            && chance < p(Param::caution_heal_band6_skip_chance)))
         && (st.borg.tr(BI_ISHEAVYSTUN) == 0
             && st.borg.tr(BI_ISSTUN) == 0
             && st.borg.tr(BI_ISPOISONED) == 0
@@ -441,10 +490,10 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Cure light Wounds (2d10)
-    if pct_down >= 30
-        && (pct_down <= 40 || st.borg.tr(BI_CLEVEL) < 10)
+    if pct_down >= p(Param::caution_clw_min_loss)
+        && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
-        && clw_heal > danger / 3 // No rope-a-doping
+        && clw_heal > danger / p(Param::caution_clw_danger_divisor) // No rope-a-doping
         && (borg_spell_fail(st, MINOR_HEALING, allow_fail)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
             || borg_activate_item(st, st.act.cure_light))
@@ -453,10 +502,10 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return true;
     }
     // Cure Serious Wounds (4d10)
-    if pct_down >= 40
-        && (pct_down <= 50 || st.borg.tr(BI_CLEVEL) < 20)
+    if pct_down >= p(Param::caution_csw_min_loss)
+        && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
-        && csw_heal > danger / 3 // No rope-a-doping
+        && csw_heal > danger / p(Param::caution_csw_danger_divisor) // No rope-a-doping
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_activate_item(st, st.act.cure_serious))
     {
@@ -465,9 +514,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Cure Critical Wounds (6d10)
-    if (50..=55).contains(&pct_down)
+    if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
-        && ccw_heal > danger / 3 // No rope-a-doping
+        && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
         && (borg_activate_item(st, st.act.cure_critical) || borg_quaff_crit(st, false))
     {
         borg_note(st, "# Healing Level 3.");
@@ -477,7 +526,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // If in danger try  one more Cure Critical if it will help
     if danger >= st.borg.tr(BI_CURHP)
         && danger < st.borg.tr(BI_MAXHP)
-        && st.borg.tr(BI_CURHP) < 50
+        && st.borg.tr(BI_CURHP) < p(Param::caution_emergency_ccw_hp)
         && danger < ccw_heal
         && borg_quaff_crit(st, true)
     {
@@ -487,9 +536,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // if deep, and low on HP, but in a zero danger spot, drink some CCW to
     // add a few HP before resting
-    if st.borg.tr(BI_CDEPTH) >= 80
-        && danger < 50
-        && pct_down >= 20
+    if st.borg.tr(BI_CDEPTH) >= p(Param::caution_deep_ccw_depth)
+        && danger < p(Param::caution_deep_ccw_danger)
+        && pct_down >= p(Param::caution_deep_ccw_loss)
         && borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
     {
         borg_note(st, "# Healing Level 5B.");
@@ -497,7 +546,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Heal step one (200hp)
-    if pct_down >= 55
+    if pct_down >= p(Param::caution_heal_device_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
         && ((rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
             || borg_activate_item(st, st.act.cure_full)
@@ -517,7 +566,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // game uniques, then bail out here in order to save our heal pots.
     // (unless morgoth is dead)
     // Priests won't need to bail, they have good heal spells.
-    if st.borg.tr(BI_MAXDEPTH) >= 98
+    if st.borg.tr(BI_MAXDEPTH) >= p(Param::caution_conserve_heal_depth)
         && st.borg.tr(BI_KING) == 0
         && st.borg.near.unique == 0
         && st.borg.tr(BI_CLASS) != CLASS_PRIEST
@@ -527,7 +576,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Heal step two (300hp)
-    if pct_down > 50
+    if pct_down > p(Param::caution_heal_potion_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
         && (borg_use_staff_fail(st, st.item_val.sv_staff_healing)
             || (st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
@@ -541,7 +590,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Healing step three (300hp).
-    if pct_down > 60
+    if pct_down > p(Param::caution_heal_all_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
         && ((st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
             || (rod_ok(st, rod_good) && borg_zap_rod(st, st.item_val.sv_rod_healing))
@@ -560,7 +609,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
 
     // Healing.  First use of EZ_Heals
-    if pct_down > 65
+    if pct_down > p(Param::caution_heal_unique_reserve_min_loss)
         && danger < st.borg.tr(BI_CURHP) + heal_heal
         && ((st.borg.near.evil_unique && borg_spell_fail(st, HOLY_WORD, allow_fail))
             || borg_spell_fail(st, HEALING, allow_fail)
@@ -586,7 +635,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // wasted.  They are saved for Morgoth and emergencies.  The
     // Emergency check is at the end of borg_caution() which is after the
     // borg_escape() routine.
-    if pct_down > 75
+    if pct_down > p(Param::caution_heal_last_resort_loss)
         && danger > st.borg.tr(BI_CURHP)
         && st.borg.tr(BI_ATELEPORT) + st.borg.tr(BI_AESCAPE) <= 0
         && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
@@ -600,15 +649,17 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     /*** Cures ***/
 
     // Dont do these in the middle of a fight, teleport out then try it
-    if danger > avoidance(st) * 2 / 10 {
+    if danger > avoidance(st) * p(Param::caution_cure_safe_danger_tenths) / 10 {
         return false;
     }
 
     // Cure poison when poisoned
     // This was moved from borg_caution.
-    if st.borg.tr(BI_ISPOISONED) != 0 && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2 {
-        if borg_spell_fail(st, CURE_POISON, 60)
-            || borg_spell_fail(st, HERBAL_CURING, 60)
+    if st.borg.tr(BI_ISPOISONED) != 0
+        && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_poison_cure_hp_divisor)
+    {
+        if borg_spell_fail(st, CURE_POISON, p(Param::caution_poison_cure_fail))
+            || borg_spell_fail(st, HERBAL_CURING, p(Param::caution_poison_herbal_fail))
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_poison)
             || borg_activate_item(st, st.act.cure_body)
             || borg_activate_item(st, st.act.cure_critical)
@@ -623,8 +674,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             || borg_activate_item(st, st.act.shroom_purging)
             // buy time
             || borg_quaff_crit(st, true)
-            || borg_spell_fail(st, HEALING, 60)
-            || borg_spell_fail(st, HOLY_WORD, 60)
+            || borg_spell_fail(st, HEALING, p(Param::caution_poison_healing_fail))
+            || borg_spell_fail(st, HOLY_WORD, p(Param::caution_poison_holy_fail))
             || borg_use_staff_fail(st, st.item_val.sv_staff_healing)
         {
             borg_note(st, "# Curing.");
@@ -643,7 +694,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // Cure poison when poisoned CRITICAL CHECK
     if st.borg.tr(BI_ISPOISONED) != 0
-        && (st.borg.tr(BI_CURHP) < 2 || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 20)
+        && (st.borg.tr(BI_CURHP) < p(Param::caution_poison_critical_hp)
+            || st.borg.tr(BI_CURHP)
+                < st.borg.tr(BI_MAXHP) / p(Param::caution_poison_critical_hp_divisor))
     {
         let sv_mana = st.borg.tr(BI_CURSP);
 
@@ -681,7 +734,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // Emergency check on healing.  Borg_heal has already been checked
         // but we did not use our ez_heal potions.  All other attempts to
         // save ourself have failed.  Use the ez_heal if I have it.
-        if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 20
+        if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_poison_reserve_hp_divisor)
             && (borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_life)
                 || borg_quaff_potion(st, st.item_val.sv_potion_healing))
@@ -699,10 +752,14 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
 
     // Cure wounds when bleeding, also critical check
     if st.borg.tr(BI_ISCUT) != 0
-        && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 3 || engine::randint0(100) < 20)
+        && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_cut_cure_hp_divisor)
+            || engine::randint0(100) < p(Param::caution_cut_cure_chance))
         && (borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
-            || borg_quaff_crit(st, st.borg.tr(BI_CURHP) < 10)
+            || borg_quaff_crit(
+                st,
+                st.borg.tr(BI_CURHP) < p(Param::caution_cut_critical_ccw_hp),
+            )
             || borg_spell(st, MINOR_HEALING)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
     {
@@ -710,7 +767,9 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     }
     // bleeding and about to die CRITICAL CHECK
     if st.borg.tr(BI_ISCUT) != 0
-        && (st.borg.tr(BI_CURHP) < 2 || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 20)
+        && (st.borg.tr(BI_CURHP) < p(Param::caution_cut_critical_hp)
+            || st.borg.tr(BI_CURHP)
+                < st.borg.tr(BI_MAXHP) / p(Param::caution_cut_critical_hp_divisor))
     {
         let sv_mana = st.borg.tr(BI_CURSP);
 
@@ -733,7 +792,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         // Emergency check on healing.  Borg_heal has already been checked
         // but we did not use our ez_heal potions.  All other attempts to
         // save ourselves have failed.  Use the ez_heal if I have it.
-        if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 20
+        if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_cut_reserve_hp_divisor)
             && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_life))
@@ -869,7 +928,7 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     // If you are within a few (3) steps of the stairs
     // and you can take some damage to get there
     // go for it
-    if b_j < 3
+    if b_j < p(Param::caution_desperate_stair_distance)
         && b_j != -1
         && pos_danger < st.borg.tr(BI_CURHP)
         && desperate_flow(st, true, "# Desperate for Stairs (one)")
@@ -878,12 +937,19 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     }
 
     // If you are next to steps of the stairs go for it
-    if b_j <= 2 && b_j != -1 && desperate_flow(st, true, "# Desperate for Stairs (two)") {
+    if b_j <= p(Param::caution_desperate_adjacent_up_distance)
+        && b_j != -1
+        && desperate_flow(st, true, "# Desperate for Stairs (two)")
+    {
         return true;
     }
 
     // Low level guys tend to waste money reading the recall scrolls
-    if b_j < 20 && b_j != -1 && st.borg.mon.scary && st.borg.tr(BI_CLEVEL) < 20 {
+    if b_j < p(Param::caution_desperate_scary_distance)
+        && b_j != -1
+        && st.borg.mon.scary
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_scary_level)
+    {
         let mut safe = true;
 
         // do not attempt it if an adjacent monster is faster than me
@@ -909,7 +975,9 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         }
 
         // Don't run from Grip or Fang
-        if (st.borg.tr(BI_CDEPTH) <= 5 && st.borg.tr(BI_CDEPTH) != 0 && st.borg.near.unique != 0)
+        if (st.borg.tr(BI_CDEPTH) <= p(Param::caution_desperate_unique_depth)
+            && st.borg.tr(BI_CDEPTH) != 0
+            && st.borg.near.unique != 0)
             || !safe
         {
             // try to take them on, you cant outrun them
@@ -919,7 +987,9 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     }
 
     // If you are next to steps of the down stairs go for it
-    b_m <= 2 && b_m != -1 && desperate_flow(st, false, "# Desperate for Stairs (four)")
+    b_m <= p(Param::caution_desperate_adjacent_down_distance)
+        && b_m != -1
+        && desperate_flow(st, false, "# Desperate for Stairs (four)")
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -1006,12 +1076,19 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             }
 
             // Require it to be somewhat close
-            if r >= 10 {
+            if r >= p(Param::caution_retreat_max_distance) {
                 break;
             }
 
             // Check danger of that spot
-            p1 = borg_danger(st, y1, x1, 1, true, false);
+            p1 = borg_danger(
+                st,
+                y1,
+                x1,
+                p(Param::caution_retreat_danger_horizon),
+                true,
+                false,
+            );
             if p1 >= pos_danger {
                 break;
             }
@@ -1021,26 +1098,29 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             if r == 1 {
                 // Not surrounded or surrounded and ignoring
                 if !borg_surround || (borg_surround && st.borg.goal.ignoring) {
-                    if p1 >= st.borg.tr(BI_CURHP) * 4 / 10 {
+                    if p1 >= st.borg.tr(BI_CURHP) * p(Param::caution_retreat_step_hp_tenths) / 10 {
                         break;
                     }
 
                     // Ought to be worth it
-                    if p1 > pos_danger * 5 / 10 {
+                    if p1 > pos_danger * p(Param::caution_retreat_step_danger_tenths) / 10 {
                         break;
                     }
                 } else {
                     // Surrounded, try to back-up
-                    if st.borg.tr(BI_CLEVEL) >= 20 {
-                        let limit = if b_r <= 5 {
-                            st.borg.tr(BI_CURHP) * 15 / 10
+                    if st.borg.tr(BI_CLEVEL) >= p(Param::caution_retreat_surrounded_level) {
+                        let limit = if b_r <= p(Param::caution_retreat_surrounded_distance) {
+                            st.borg.tr(BI_CURHP) * p(Param::caution_retreat_surrounded_hp_tenths)
+                                / 10
                         } else {
                             st.borg.tr(BI_CURHP)
                         };
                         if p1 >= limit {
                             break;
                         }
-                    } else if p1 >= st.borg.tr(BI_CURHP) * 4 {
+                    } else if p1
+                        >= st.borg.tr(BI_CURHP) * p(Param::caution_retreat_low_level_hp_multiplier)
+                    {
                         break;
                     }
                 }
@@ -1057,7 +1137,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
                     }
 
                     // Require current knowledge
-                    if borg_timer(st, kill.when) > 2 {
+                    if borg_timer(st, kill.when) > p(Param::caution_retreat_monster_age) {
                         continue;
                     }
 
@@ -1140,7 +1220,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
     // Fake the danger down if surrounded so that he can move.
     if borg_surround {
-        b_k = b_k * 12 / 10;
+        b_k = b_k * p(Param::caution_back_surrounded_danger_tenths) / 10;
     }
 
     // Check the freedom
@@ -1196,7 +1276,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             }
 
             // Require current knowledge
-            if borg_timer(st, kill.when) > 2 {
+            if borg_timer(st, kill.when) > p(Param::caution_back_monster_age) {
                 continue;
             }
 
@@ -1206,7 +1286,8 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             }
 
             // Check distance -- 2 grids away and he is faster than me
-            if engine::distance(kill.pos, loc { x, y }) <= 2
+            if engine::distance(kill.pos, loc { x, y })
+                <= p(Param::caution_back_fast_monster_distance)
                 && i32::from(kill.speed) > st.borg.tr(BI_SPEED)
                 && !borg_surround
             {
@@ -1220,7 +1301,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         }
 
         // Extract the danger there
-        let k = borg_danger(st, y, x, 1, true, false);
+        let k = borg_danger(st, y, x, p(Param::caution_back_danger_horizon), true, false);
 
         // Skip this grid if danger is higher than my HP.
         // Take my chances with fighting.
@@ -1232,7 +1313,9 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         // 40% reduction in the danger if higher level.  If the danger of
         // the new grid is close to the danger of my current grid, I'll stay
         // and fight.
-        if st.borg.tr(BI_MAXCLEVEL) >= 35 && k > b_k * 6 / 10 {
+        if st.borg.tr(BI_MAXCLEVEL) >= p(Param::caution_back_high_level)
+            && k > b_k * p(Param::caution_back_high_level_danger_tenths) / 10
+        {
             continue;
         }
 
@@ -1240,7 +1323,10 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         // danger of the new grid is close to the danger of my current grid,
         // I'll stay and fight unless I am low level and there is an
         // adjacent monster.
-        if st.borg.tr(BI_MAXCLEVEL) < 35 && !adjacent_monster && k > b_k * 8 / 10 {
+        if st.borg.tr(BI_MAXCLEVEL) < p(Param::caution_back_low_level)
+            && !adjacent_monster
+            && k > b_k * p(Param::caution_back_low_level_danger_tenths) / 10
+        {
             continue;
         }
 
@@ -1261,7 +1347,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         // Danger is the same, so look at the nature of the grid
         if b_k == k {
             // If I am low level, reward backing-up if safe
-            if st.borg.tr(BI_CLEVEL) <= 10
+            if st.borg.tr(BI_CLEVEL) <= p(Param::caution_back_injured_level)
                 && st.borg.tr(BI_CDEPTH) != 0
                 && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP)
                     || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP))
@@ -1270,7 +1356,7 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
             } else {
                 // Freedom of my grid is better than the next grid
                 // so stay put and fight.
-                if b_f > f || st.borg.tr(BI_CDEPTH) >= 85 {
+                if b_f > f || st.borg.tr(BI_CDEPTH) >= p(Param::caution_back_freedom_depth) {
                     continue;
                 }
             }
@@ -1327,10 +1413,10 @@ fn may_move_away(
 ) -> bool {
     ((danger_test && !nasty && st.borg.no_retreat == 0) || (borg_surround && pos_danger != 0))
         && !st.borg.morgoth_position
-        && borg_timer(st, st.borg.time.antisummon) >= 50
+        && borg_timer(st, st.borg.time.antisummon) >= p(Param::caution_move_antisummon_delay)
         && st.borg.tr(BI_ISCONFUSED) == 0
         && !engine::square_isvault(st.borg.c.x, st.borg.c.y)
-        && st.borg.tr(BI_CURHP) < 500
+        && st.borg.tr(BI_CURHP) < p(Param::caution_move_max_hp)
         && !(retreat && borg_adjacent_kill_in_one_blow(st))
 }
 
@@ -1362,7 +1448,7 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
         if engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
             continue;
         }
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > p(Param::caution_one_blow_monster_age) {
             continue;
         }
         if engine::distance(st.borg.c, kill.pos) != 1 {
@@ -1422,7 +1508,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     /*** Notice "nasty" situations ***/
 
     // About to run out of light is extremely nasty
-    if st.borg.tr(BI_LIGHT) == 0 && st.items.items[inven_light()].timeout < 250 {
+    if st.borg.tr(BI_LIGHT) == 0
+        && i32::from(st.items.items[inven_light()].timeout) < p(Param::caution_nasty_light_timeout)
+    {
         nasty = true;
     }
 
@@ -1435,7 +1523,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // if on level 100 and not ready for Morgoth, run
     if st.borg.tr(BI_CDEPTH) == 100
-        && borg_timer(st, st.borg.time.level) < 10
+        && borg_timer(st, st.borg.time.level) < p(Param::caution_questor_arrival_turns)
         && !st.borg.morgoth_position
         && st.borg.ready_morgoth <= 0
         && st.borg.tr(BI_KING) == 0
@@ -1469,16 +1557,16 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Only allow three 'escapes' per level unless heading for morogoth
     // or fighting a unique, then allow 85.
-    if ((st.borg.escapes > 3 && st.borg.mon.unique == 0 && st.borg.ready_morgoth == 0)
-        || st.borg.escapes > 55)
+    if ((i32::from(st.borg.escapes) > p(Param::caution_escape_limit) && st.borg.mon.unique == 0 && st.borg.ready_morgoth == 0)
+        || i32::from(st.borg.escapes) > p(Param::caution_escape_absolute_limit))
         // No leaving if going after questors
-        && st.borg.tr(BI_CDEPTH) <= 98
+        && st.borg.tr(BI_CDEPTH) <= p(Param::caution_escape_limit_max_depth)
     {
         // Start leaving
         start_leaving(st, "# Leaving (Too many escapes)");
 
         // Start fleeing
-        if st.borg.escapes > 3 {
+        if i32::from(st.borg.escapes) > p(Param::caution_escape_flee_limit) {
             start_fleeing(st, "# Fleeing (Too many escapes)");
         }
     }
@@ -1511,7 +1599,14 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Look around
-    let pos_danger = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    let pos_danger = borg_danger(
+        st,
+        st.borg.c.y,
+        st.borg.c.x,
+        p(Param::caution_danger_horizon),
+        true,
+        false,
+    );
 
     // Describe (briefly) the current situation
     // Danger (ignore stupid "fear" danger)
@@ -1612,7 +1707,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // do some swapping before running away!
     if crate::borg_trait::borg_uses_swaps(st)
-        && pos_danger > i32::from(st.borg.avoidance) / 3
+        && pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_swap_danger_divisor)
         && borg_backup_swap(st, pos_danger)
     {
         return true;
@@ -1627,9 +1722,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // rest here until lift off
         borg_note(st, "# Resting for Recall.");
         borg_keypress(st, key(b'R'));
-        borg_keypress(st, key(b'5'));
-        borg_keypress(st, key(b'0'));
-        borg_keypress(st, key(b'0'));
+        for digit in p(Param::caution_recall_rest_turns).to_string().bytes() {
+            borg_keypress(st, key(digit));
+        }
         borg_keypress(st, KC_ENTER);
 
         // I'm not in a store
@@ -1640,7 +1735,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall in town
     if st.borg.goal.recalling != 0
-        && st.borg.goal.recalling <= i32::from(st.traits.game_ratio) * 2
+        && st.borg.goal.recalling
+            <= i32::from(st.traits.game_ratio) * p(Param::caution_recall_prep_turns)
         && st.borg.tr(BI_CDEPTH) == 0
         && borg_prep_leave_level_spells(st)
     {
@@ -1654,7 +1750,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // just to restock and it is useless to restock
     // if you have just left town.
     if st.borg.near.unique == 0
-        && borg_timer(st, st.borg.time.town) > 200
+        && borg_timer(st, st.borg.time.town) > p(Param::caution_restock_town_delay)
         && crate::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH)).is_some()
     {
         // Start leaving
@@ -1668,10 +1764,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
         // Start fleeing
         if !st.borg.goal.fleeing
-            && st.borg.tr(BI_ACCW) < 2
-            && st.borg.tr(BI_FOOD) > 3
-            && st.borg.tr(BI_AFUEL) > 2
-            && borg_timer(st, st.borg.time.level) > 400
+            && st.borg.tr(BI_ACCW) < p(Param::caution_restock_ccw_count)
+            && st.borg.tr(BI_FOOD) > p(Param::caution_restock_food_count)
+            && st.borg.tr(BI_AFUEL) > p(Param::caution_restock_fuel_count)
+            && borg_timer(st, st.borg.time.level) > p(Param::caution_restock_level_delay)
         {
             // Flee
             let r = crate::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH));
@@ -1682,12 +1778,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         }
     }
     // Excessive danger
-    else if pos_danger > st.borg.tr(BI_CURHP) * 2 {
+    else if pos_danger > st.borg.tr(BI_CURHP) * p(Param::caution_flee_danger_hp_multiplier) {
         // Start fleeing
         // do not flee level if going after Morgoth or fighting a unique
         if !st.borg.goal.fleeing
             && st.borg.near.unique == 0
-            && st.borg.tr(BI_CLEVEL) < 50
+            && st.borg.tr(BI_CLEVEL) < p(Param::caution_flee_max_level)
             && !st.borg.status.vault
             && (st.borg.tr(BI_CDEPTH) < 100 && st.borg.ready_morgoth != 1)
         {
@@ -1701,7 +1797,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Potential danger (near death) in town
     else if st.borg.tr(BI_CDEPTH) == 0
         && pos_danger > st.borg.tr(BI_CURHP)
-        && st.borg.tr(BI_CLEVEL) < 50
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_town_flee_max_level)
     {
         // Flee now
         start_leaving(st, "# Leaving (potential danger)");
@@ -1716,7 +1812,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         || st.borg.mon.scary
         || st.borg.goal.fleeing_lunal
         || st.borg.goal.fleeing_munchkin
-        || ((pos_danger > avoidance || (st.borg.tr(BI_CLEVEL) < 5 && pos_danger > avoidance / 2))
+        || ((pos_danger > avoidance
+            || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
+                && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
             && on_upstair)
     // danger and standing on stair
     {
@@ -1775,8 +1873,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Prevent starvation
     if st.borg.tr(BI_ISWEAK) != 0 {
         // Attempt to satisfy hunger
-        if borg_eat_food_any(st) || borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING)
-        {
+        if borg_eat_food_any(st) || borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING) {
             // Success
             return true;
         }
@@ -1796,7 +1893,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Prevent breeder explosions when low level
-    if st.borg.near.breeder && st.borg.tr(BI_CLEVEL) < 15 {
+    if st.borg.near.breeder && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level) {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
 
@@ -1806,7 +1903,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if (st.stairs.less.num != 0 || st.stairs.more.num != 0)
         && (st.borg.goal.fleeing
             || st.borg.mon.scary
-            || (pos_danger > i32::from(st.borg.avoidance) && st.borg.tr(BI_CLEVEL) < 35))
+            || (pos_danger > i32::from(st.borg.avoidance)
+                && st.borg.tr(BI_CLEVEL) < p(Param::caution_desperate_max_level)))
         && desperate_for_stairs(st, pos_danger)
     {
         return true;
@@ -1819,7 +1917,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 2) we have boosted our avoidance because we are stuck
     // 3) we are in a Sea of Runes
     // 4) we are not in a vault
-    let danger_test = pos_danger > i32::from(st.borg.avoidance) / 3;
+    let danger_test =
+        pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
     if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && retreat(st, pos_danger, borg_surround)
     {
@@ -1848,7 +1947,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 4) the monster causing concern is asleep
     // 5) we are not in a vault
     // 6) loads of HP
-    let danger_test = pos_danger > i32::from(st.borg.avoidance) * 4 / 10;
+    let danger_test =
+        pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
     if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
         && back_away(st, pos_danger, borg_surround)
     {
@@ -1860,7 +1960,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // cure confusion, second check, first (slightly different) in
     // borg_heal
     if st.borg.tr(BI_ISCONFUSED) != 0 {
-        if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= 300
+        if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= p(Param::caution_confused_emergency_loss)
             && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_life))
@@ -1882,21 +1982,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Cure fear when afraid
     if (st.borg.tr(BI_ISAFRAID) != 0 && st.borg.tr(BI_CRSFEAR) == 0)
-        && (engine::randint0(100) < 70
+        && (engine::randint0(100) < p(Param::caution_fear_cure_chance)
             || (st.borg.tr(BI_CLASS) == CLASS_WARRIOR && st.borg.tr(BI_AMISSILES) <= 0))
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_boldness)
             || borg_quaff_potion(st, st.item_val.sv_potion_heroism)
             || borg_quaff_potion(st, st.item_val.sv_potion_berserk)
-            || borg_spell_fail(st, BERSERK_STRENGTH, 25) // berserk
-            || borg_spell_fail(st, HEROISM, 25) // hero
+            || borg_spell_fail(st, BERSERK_STRENGTH, p(Param::caution_fear_berserk_fail)) // berserk
+            || borg_spell_fail(st, HEROISM, p(Param::caution_fear_hero_fail)) // hero
             || borg_activate_item(st, st.act.cure_paranoia)
             || borg_activate_item(st, st.act.hero)
             || borg_activate_item(st, st.act.shero)
             || borg_activate_item(st, st.act.cure_mind)
             || borg_activate_item(st, st.act.rage_bless_resist)
             || borg_activate_item(st, st.act.rem_fear_pois)
-            || borg_spell_fail(st, HOLY_WORD, 25))
+            || borg_spell_fail(st, HOLY_WORD, p(Param::caution_fear_holy_fail)))
     {
         return true;
     }
@@ -1904,14 +2004,14 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     /*** Note impending death XXX XXX XXX ***/
 
     // Flee from low hit-points
-    if (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 3
-        || (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2
-            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_CLEVEL) * 3))
-        && st.borg.tr(BI_ACCW) < 3
-        && st.borg.tr(BI_AHEAL) < 1
+    if (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_flee_low_hp_divisor)
+        || (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_flee_moderate_hp_divisor)
+            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_CLEVEL) * p(Param::caution_flee_hp_per_level)))
+        && st.borg.tr(BI_ACCW) < p(Param::caution_flee_ccw_count)
+        && st.borg.tr(BI_AHEAL) < p(Param::caution_flee_heal_count)
         // Flee from low hit-points
         && st.borg.tr(BI_CDEPTH) != 0
-        && engine::randint0(100) < 25
+        && engine::randint0(100) < p(Param::caution_flee_low_hp_chance)
     {
         start_leaving(st, "# Leaving (low hit-points)");
         start_fleeing(st, "# Fleeing (low hit-points)");
@@ -1919,10 +2019,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Flee from bleeding wounds or poison and no heals
     if (st.borg.tr(BI_ISCUT) != 0 || st.borg.tr(BI_ISPOISONED) != 0)
-        && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2
+        && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_flee_status_hp_divisor)
         // Flee from bleeding wounds
         && st.borg.tr(BI_CDEPTH) != 0
-        && engine::randint0(100) < 25
+        && engine::randint0(100) < p(Param::caution_flee_status_chance)
     {
         start_leaving(st, "# Leaving (bleeding/poison)");
         start_fleeing(st, "# Fleeing (bleeding/poison)");
@@ -1931,16 +2031,16 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Emergency check on healing.  Borg_heal has already been checked but
     // but we did not use our ez_heal potions.  All other attempts to save
     // ourselves have failed.  Use the ez_heal if I have it.
-    if (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 10 // dangerously low HP -OR-
+    if (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_reserve_critical_hp_divisor) // dangerously low HP -OR-
         || (pos_danger > st.borg.tr(BI_CURHP) // extreme danger -AND-
-            && (st.borg.tr(BI_ATELEPORT) + st.borg.tr(BI_AESCAPE) <= 2
-                && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 4))
+            && (st.borg.tr(BI_ATELEPORT) + st.borg.tr(BI_AESCAPE) <= p(Param::caution_reserve_escape_count)
+                && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_reserve_danger_hp_divisor)))
         // low on escapes
-        || (st.borg.tr(BI_AEZHEAL) > 5 && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 4)
+        || (st.borg.tr(BI_AEZHEAL) > p(Param::caution_reserve_heal_count) && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / p(Param::caution_reserve_surplus_hp_divisor))
         // moderate danger, lots of heals
-        || (st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= 600
+        || (st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= p(Param::caution_reserve_unique_loss)
             && st.borg.near.unique != 0
-            && st.borg.tr(BI_CDEPTH) >= 85))
+            && st.borg.tr(BI_CDEPTH) >= p(Param::caution_reserve_unique_depth)))
         // moderate danger, unique, deep
         && (borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
             || borg_quaff_potion(st, st.item_val.sv_potion_healing)
@@ -1967,7 +2067,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // If I am waiting for recall,and in danger, buy time with
     // phase and cure_anythings.
     if st.borg.goal.recalling != 0
-        && pos_danger > i32::from(st.borg.avoidance) * 2
+        && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
     {
         return true;
@@ -1975,8 +2075,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // if I am gonna die next round, and I have no way to escape
     // use the unknown stuff (if I am low level).
-    if pos_danger > st.borg.tr(BI_CURHP) * 4
-        && st.borg.tr(BI_CLEVEL) < 20
+    if pos_danger > st.borg.tr(BI_CURHP) * p(Param::caution_unknown_danger_multiplier)
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_unknown_max_level)
         && st.borg.tr(BI_MAXSP) == 0
         && (borg_use_unknown(st)
             || borg_read_unknown(st)
@@ -2016,7 +2116,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
             borg_note(st, "# Fleeing and leaving the level. (fleeing munchkin)");
         }
         if pos_danger > i32::from(st.borg.avoidance)
-            && st.borg.tr(BI_CLEVEL) <= 49
+            && st.borg.tr(BI_CLEVEL) <= p(Param::caution_stair_danger_max_level)
             && u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_LESS
         {
             borg_note(st, "# Leaving level,  Some danger but I'm on a stair.");
@@ -2041,7 +2141,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         && (st.borg.tr(BI_LIGHT) == 0
             || st.borg.tr(BI_ISHUNGRY) != 0
             || st.borg.tr(BI_ISWEAK) != 0
-            || st.borg.tr(BI_FOOD) < 2)
+            || st.borg.tr(BI_FOOD) < p(Param::caution_stair_min_food))
     {
         st.borg.stair_more = false;
     }
@@ -2049,9 +2149,9 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     // If I need to sell crap, then don't go down if I can go up
     if st.stairs.less.num != 0
         && st.borg.tr(BI_CDEPTH) != 0
-        && st.borg.tr(BI_CLEVEL) < 25
-        && st.borg.tr(BI_GOLD) < 25000
-        && borg_count_sell(st) >= 13
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_sell_max_level)
+        && st.borg.tr(BI_GOLD) < p(Param::caution_sell_max_gold)
+        && borg_count_sell(st) >= p(Param::caution_sell_min_count)
     {
         st.borg.stair_more = false;
     }
@@ -2074,8 +2174,8 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
     // current mana with itself, true only for negative mana).
     if st.borg.tr(BI_ISCONFUSED) == 0
         && st.borg.tr(BI_ISBLIND) == 0
-        && st.borg.tr(BI_MAXSP) > 60
-        && st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / 4
+        && st.borg.tr(BI_MAXSP) > p(Param::caution_recall_mana_maxsp)
+        && st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) / p(Param::caution_recall_mana_divisor)
         && (borg_quaff_potion(st, st.item_val.sv_potion_restore_mana)
             || borg_activate_item(st, st.act.restore_mana))
     {
@@ -2083,17 +2183,20 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if borg_caution_phase(st, 50, 1)
-        && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-            || borg_spell_fail(st, PHASE_DOOR, 30)
-            || borg_spell_fail(st, PORTAL, 30)
-            || borg_activate_item(st, st.act.tele_phase))
+    if borg_caution_phase(
+        st,
+        p(Param::caution_recall_phase_tolerance),
+        p(Param::caution_recall_phase_horizon),
+    ) && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+        || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_recall_phase_fail))
+        || borg_spell_fail(st, PORTAL, p(Param::caution_recall_portal_fail))
+        || borg_activate_item(st, st.act.tele_phase))
     {
         borg_note(st, "# Buying time waiting for Recall.(2)");
         return true;
     }
 
-    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) < 100
+    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) < p(Param::caution_recall_cure_loss)
         && (borg_quaff_crit(st, true)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light))
@@ -2102,7 +2205,7 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) > 150
+    if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) > p(Param::caution_recall_heal_loss)
         && (borg_zap_rod(st, st.item_val.sv_rod_healing)
             || borg_quaff_potion(st, st.item_val.sv_potion_healing)
             || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)

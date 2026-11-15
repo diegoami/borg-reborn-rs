@@ -85,6 +85,22 @@ class ExportTest(unittest.TestCase):
         c, _ = ed.export(make_run(self.base, 'untraced', seed=7), 'c', self.build)
         self.assertIsNone(json.loads((self.reg / c / 'record.json').read_text())['decision_trace'])
 
+    def test_vendored_core_parameters_are_preserved_and_hashed(self):
+        run = make_run(self.base, 'core')
+        params = '[{"name":"caution_clw_min_loss","value":20}]\n'
+        (run / 'params-core.json').write_text(params)
+        with (run / 'config.txt').open('a') as f:
+            f.write('params_core_sha256=' + ed.sha256_file(run / 'params-core.json') + '\n')
+        case, _ = ed.export(run, 'rust', self.build)
+        d = self.reg / case
+        self.assertEqual((d / 'params-core.json').read_text(), params)
+        rec = json.loads((d / 'record.json').read_text())
+        self.assertEqual(rec['files_sha256']['params-core.json'], ed.sha256_file(run / 'params-core.json'))
+        self.assertEqual(rec['identity']['params_core_sha256'], ed.sha256_file(run / 'params-core.json'))
+        changed = dict(params_core_sha256='different')
+        self.assertNotEqual(ed.run_family({}, changed, 'rust', 'source'),
+                            ed.run_family({}, {}, 'rust', 'source'))
+
     def test_partial_suite_directory_is_recorded_as_final(self):
         run = make_run(self.base / 'out.partial.4242', 'dead')
         case, _ = ed.export(run, 'c', self.build)

@@ -92,7 +92,7 @@ def existing(reg):
 def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_sha, family):
     """The files of a basic dossier, {name: bytes}."""
     files = {}
-    for name in ('summary.json', 'config.txt', 'depths.json', 'params.json'):
+    for name in ('summary.json', 'config.txt', 'depths.json', 'params.json', 'params-core.json'):
         if (run_dir / name).exists():
             files[name] = (run_dir / name).read_bytes()
     # The reborn Borg's decision trace (T2.4): its last TRACE_TAIL lines,
@@ -127,6 +127,7 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
             'source_sha256': build.get('source_sha256'), 'binary_sha256': build.get('binary_sha256'),
             'borg_txt_sha256': config.get('borg_txt_sha256'),
             'profile_sha256': config.get('profile_sha256'),
+            'params_core_sha256': config.get('params_core_sha256'),
         },
         'decision_trace': ({'file': 'trace-tail.jsonl', 'lines': min(trace_lines, TRACE_TAIL), 'of': trace_lines}
                            if 'trace-tail.jsonl' in files else None),
@@ -184,13 +185,15 @@ def not_natural(summary, flags='-'):
     return None
 
 
-def family_of(impl, seed, race_idx, class_idx, source_sha256, borg_txt_sha256, save_sha256=None):
+def family_of(impl, seed, race_idx, class_idx, source_sha256, borg_txt_sha256, save_sha256=None, params_core_sha256=None):
     """The encounter family: what fixes the starting game. It uses the build-input
     hash (harness/identity.sh source-hash), not the binary's bytes: rebuilding the
     same source gives a different binary hash (the build stamps the commit) but the
     same game, so a rerun of the same run is a repeat, not a new death."""
     start = '|'.join(str(x) for x in ('v2', impl, seed, race_idx, class_idx, source_sha256 or 'unknown',
                                        borg_txt_sha256 or 'unknown', save_sha256 or ''))
+    if params_core_sha256:
+        start += '|params-core:' + params_core_sha256
     return 'start-' + hashlib.sha256(start.encode()).hexdigest()
 
 
@@ -208,7 +211,8 @@ def run_family(summary, config, impl, source_sha256, flags='-'):
     seed = None if summary.get('loaded') and keeps_rng else summary.get('seed')
     race = summary.get('played_race_idx', summary.get('race_idx'))
     cls = summary.get('played_class_idx', summary.get('class_idx'))
-    return family_of(impl, seed, race, cls, source_sha256, config.get('borg_txt_sha256'), config.get('save_sha256'))
+    return family_of(impl, seed, race, cls, source_sha256, config.get('borg_txt_sha256'), config.get('save_sha256'),
+                     config.get('params_core_sha256'))
 
 
 def export(run_dir, impl, build_id_path, flags='-'):

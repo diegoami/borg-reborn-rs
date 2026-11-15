@@ -173,6 +173,10 @@ set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
 fi
+# borg-reborn-rs (#219): environment overrides are part of the run identity.
+if [ -f "$OUT/params-core.json" ]; then
+    echo "params_core_sha256=$(sha256sum < "$OUT/params-core.json" | cut -d' ' -f1)" >> "$OUT/config.txt"
+fi
 # borg-reborn-rs: the depth stream (T1.4), then the death dossier
 # (tools/export-death.py, RULES 12) for every run that died a natural death.
 if [ -f "$ROOT/tools/depth-stream.py" ]; then

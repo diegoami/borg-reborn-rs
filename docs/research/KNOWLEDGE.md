@@ -29,6 +29,22 @@ or a design, the handover. Two rules that keep it honest:
 - **Nothing is a claim until the zoo measures it** (RULES 14). Candidate
   rules below are hypotheses with evidence, not results.
 
+## 2026-11-15: track P startup audit
+
+The read-only refresh report was run after setup. No pins or source copies
+were moved. better-borg-c has 172 commits after `4603703` (head `ef17ce4`),
+borg-rs 46 after `4ed3263` (head `727ccff`), the tracker 6 after `c2ddf2c`
+and the zoo 18 after `c5f1b04`; borg-runner and upstream Angband are unchanged.
+The new better-borg-c D0020–D0030 reports were read first: all are collected,
+unassessed deaths (poison, Grip, ants, priest, icky thing, wound,
+starvation, soldier, wild cat), not evidence for changing a default.
+
+P1.1 extracts the vendored v12 caution values exactly; it carries no newer
+policy or formula. The refresh flags danger/flow changes and later carries,
+including the faster-monster retreat correction (#523), as future refresh
+work. They must not be mixed into a default-preserving parameter extraction.
+The named source locations are pinned to reborn `726e04fa` in CALIBRATION.md.
+
 ## Reading state
 
 | Source | Last read | What was covered | Re-read when |
