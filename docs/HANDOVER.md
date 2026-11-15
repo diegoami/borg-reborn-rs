@@ -2,6 +2,62 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: reviewed P349 synchronization (#360)
+
+- Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
+  The review reports 88 tool tests, script tests, all 2,547 archive cases
+  and real mode/umask imports. Required CI and P342 play evidence were
+  taken on trust; do not describe the later combined head as independently
+  re-reviewed. The accepted runtime changes in main remain separate evidence.
+- Merge main 7022017e (#355 safety fix) into track-p, retaining both handover
+  sections. This is the sole merge conflict. Runtime inputs and archive
+  packets remain byte-identical to that accepted main; the reviewed P
+  importer, tests, ignore rule and guidance remain intact.
+- #358 tracks source/umask bounds for published directories (including the
+  world-writable source case); #359 tracks read-only staging cleanup after
+  failed rename. Both are nonblocking follow-ups after this promotion.
+  No follow-up implementation is slipped into the reviewed pin.
+- Local checks pass: 88 tool tests, 19 source-tool tests, all 2,553
+  archive packages, vendor audit, formatting and Clippy. Required Rust
+  tests and sync CI must pass before integration and promotion.
+  #341's fresh-donor baseline audit follows this gate; it must distinguish
+  historical M13 parity from #355's intentional later policy changes.
+
+
+## 2026-11-15: owner-directed wild-cat survival fix (#350)
+
+- The original PlanMage GUI recording was replayed with its frozen binary;
+  all streams, final save and complete core trace verify. Native saves at
+  411638/648/658/668 match the recorded world fingerprints. Reloading them
+  loses Borg process memory; nevertheless all four original-source fresh
+  Borg branches die to wild cats, making them useful scenario fixtures.
+- Remove the return-to-town stair-looting path, reject known occupied flee
+  steps, use ordinary cures deterministically at useful wound sizes even
+  when fleeing at lethal HP, and consider usable Phase Door separately from
+  the conservative APHASE preparedness trait. A trapped/lethal flee can
+  try a short escape despite unknown landing grids; arena/curse restrictions
+  and the configured emergency failure bound remain enforced.
+- Diagnostic instrumentation found a 5% legal/affordable Phase Door excluded
+  by APHASE's 3% trait gate, followed by 100 unknown landing samples rejected.
+  The initial healing/path patch still lost two nearby-save starts; those
+  failed controls remain retained. With the emergency escape correction,
+  all four fixed starts survive the bounded follow-up at full HP. This is
+  one incident, not four independent lives or a population improvement.
+- Fixture archive is pinned to player-cemetery bec33f4, with SHA256 checks;
+  CI requires the real four saves. The standard native suite passes 69 tests.
+  Final Rust checks pass (156+4+5 workspace,328 core/four ignores),
+  69 engine tests,87 tools/19 scripts, formatting/Clippy/vendor. Original
+  smoke matches3/3 in keys/messages/states. Six validation-control deaths
+  across intermediate/final sources are qualified;2553 archive cases
+  verify and all final controls reconcile with zero missing deaths.
+  Final source0f2e003f988f and binary27f564611416 were built from5e8454ab
+  with clean game inputs; only retained non-runtime evidence was uncommitted.
+  Actual identities are preserved in INCIDENT-350-VALIDATION.json.
+- Recorder-owned rolling save retention and turn-based read-only viewing
+  are developed separately in angband-recorder; do not silently replace the
+  pinned vendor or claim live Borg memory is restored by a native save.
+
+
 ## 2026-11-15: import guidance and staging follow-up (#333)
 
 - Generic AGENTS.md guidance now applies to every track. Clarify that the
@@ -19,6 +75,7 @@
   87717140, so its Rust/native/play evidence applies. Required CI is pending.
   Prepared separately from #331/#346; integrate only after that promotion,
   then open a separate pinned milestone review before main.
+
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
 - Main advanced through #308 to 820140e0 while M13 sync CI was running.

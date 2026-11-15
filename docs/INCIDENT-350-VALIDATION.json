@@ -1,0 +1,227 @@
+{
+  "kind": "diagnostic-native-save-counterfactuals-not-a-population-measurement",
+  "fixture_commit": "bec33f401a45716f70e28b491661c1c9984bd3f6",
+  "original_frozen_binary": "f13c46b148c6e614d21d0e525cf448df6c0376173882f1d31b069bdf97839885",
+  "initial_fixed_build_identity": "impl=rust\ngit_rev=2f74e1c5d57ce2b41ded1b5b694174b91b51f265\ngit_dirty=yes\ninputs_dirty=yes\nsource_sha256=112a13343258e9b3b0f6429566be9c0515e6641bbaf36dc9ae8c16b4a9a8ec97\nengine_upstream=42cd156ac9f95ddf4311e88dd7ad462292d6d1d6\nbinary=/tmp/borg-fix-wild-cat-20261115/build/rust/game/angband\nbinary_sha256=6d59d89631c9b28c8fcd54fd9e7b328083994864fba1662488cb24995b45dc8c\ncc=cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0\nrustc=rustc 1.98.1 (48a229cea 2026-09-01)\nbuilt_utc=2026-11-15T22:03:36Z\n",
+  "fresh_borg_after_load": true,
+  "full_original_replay_verified": true,
+  "native_world_fingerprints_match_recording": true,
+  "same_life_repeated_not_independent_samples": true,
+  "comparison": [
+    {
+      "start_turn": 411638,
+      "original": {
+        "dead": true,
+        "hp": -2,
+        "max_hp": 26,
+        "depth": 1,
+        "game_turns": 411679,
+        "death_cause": "a wild cat"
+      },
+      "fixed": {
+        "dead": false,
+        "hp": 26,
+        "max_hp": 26,
+        "depth": 0,
+        "game_turns": 414208,
+        "death_cause": ""
+      }
+    },
+    {
+      "start_turn": 411648,
+      "original": {
+        "dead": true,
+        "hp": -1,
+        "max_hp": 26,
+        "depth": 1,
+        "game_turns": 411696,
+        "death_cause": "a wild cat"
+      },
+      "fixed": {
+        "dead": false,
+        "hp": 26,
+        "max_hp": 26,
+        "depth": 1,
+        "game_turns": 414019,
+        "death_cause": ""
+      }
+    },
+    {
+      "start_turn": 411658,
+      "original": {
+        "dead": true,
+        "hp": -2,
+        "max_hp": 26,
+        "depth": 1,
+        "game_turns": 411701,
+        "death_cause": "a wild cat"
+      },
+      "fixed": {
+        "dead": false,
+        "hp": 26,
+        "max_hp": 26,
+        "depth": 1,
+        "game_turns": 413948,
+        "death_cause": ""
+      }
+    },
+    {
+      "start_turn": 411668,
+      "original": {
+        "dead": true,
+        "hp": -3,
+        "max_hp": 25,
+        "depth": 1,
+        "game_turns": 411824,
+        "death_cause": "a wild cat"
+      },
+      "fixed": {
+        "dead": false,
+        "hp": 26,
+        "max_hp": 26,
+        "depth": 0,
+        "game_turns": 413708,
+        "death_cause": ""
+      }
+    }
+  ],
+  "raw_session": "/home/diego/projects/borg-reborn-rs/vendor/player-cemetery/recordings/20261115T212321Z-PlanMage",
+  "failed_earlier_attempts_retained": [
+    "save-counterfactuals",
+    "save-counterfactuals-v2",
+    "save-counterfactuals-v3",
+    "save-counterfactuals-v4",
+    "save-counterfactuals-v6",
+    "save-counterfactuals-v7",
+    "phase-diagnostic",
+    "save-counterfactuals-final (narrowed healing failed one start; replaced by threat-sensitive rule)"
+  ],
+  "delivery_build": {
+    "impl": "rust",
+    "git_rev": "5e8454ab390a7d6e0fba0de51086ce6f19d2df2e",
+    "git_dirty": "yes",
+    "inputs_dirty": "no",
+    "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58",
+    "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+    "binary": "/tmp/borg-fix-wild-cat-20261115/build/rust/game/angband",
+    "binary_sha256": "27f5646114167cbb080eb20f95227097a36b77b6c86cca8feec4f4766b12526a",
+    "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "built_utc": "2026-11-15T22:29:34Z"
+  },
+  "fixed_proof_same_binary_as_delivery": true,
+  "delivery_game_inputs_clean": true,
+  "delivery_checkout_dirty_reason": "Previously retained intermediate-build validation dossiers only; actual build identity is preserved.",
+  "final_raw_controls": [
+    "/tmp/borg350-delivery-core1011",
+    "/tmp/borg350-delivery-smoke",
+    "/tmp/borg350-delivery-rerun"
+  ],
+  "source_qualified_control_map": [
+    {
+      "case": "D0000-q1c05af555bc06bf7d7f1e2815e076be974b33bf3ea577de06763ebe2f170aac0",
+      "identity": {
+        "binary_sha256": "b308455c39886856908c7ee01c4a47777f8d7ab84fc46a29d812a33f4939fddf",
+        "borg_txt_sha256": "9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb",
+        "flags": "menu",
+        "git_dirty": "no",
+        "git_rev": "4fa86ac995e9071b07dd9b3bca19bcdb7ee35ef5",
+        "impl": "rust",
+        "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 1011,
+        "source_sha256": "bb7c0ad57514fe4e8b72f6920dd3350616070b874abe6fdcdcc802dd8df96e85"
+      }
+    },
+    {
+      "case": "D0000-q5fd304921926e8969a3701c865f5a347e7c4200f67f15a7f29c2c04570f77605",
+      "identity": {
+        "binary_sha256": "b308455c39886856908c7ee01c4a47777f8d7ab84fc46a29d812a33f4939fddf",
+        "borg_txt_sha256": "dc25b7c1078f8a1d6f2caf5ffb6f52311a217d9d172446d1464ab5389578ca81",
+        "flags": "menu",
+        "git_dirty": "no",
+        "git_rev": "4fa86ac995e9071b07dd9b3bca19bcdb7ee35ef5",
+        "impl": "rust",
+        "params_core_sha256": null,
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 102,
+        "source_sha256": "bb7c0ad57514fe4e8b72f6920dd3350616070b874abe6fdcdcc802dd8df96e85"
+      }
+    },
+    {
+      "case": "D0000-q046b7b25ec35ac47a362315717cd69ac9445a246d478686e59bf986c1da0708d",
+      "identity": {
+        "binary_sha256": "b308455c39886856908c7ee01c4a47777f8d7ab84fc46a29d812a33f4939fddf",
+        "borg_txt_sha256": "2d208aa9e130797f66d87df530b9cf84f5b7d481d4a0638dfd0a322c38955a2e",
+        "flags": "menu",
+        "git_dirty": "no",
+        "git_rev": "4fa86ac995e9071b07dd9b3bca19bcdb7ee35ef5",
+        "impl": "rust",
+        "params_core_sha256": null,
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 1020,
+        "source_sha256": "bb7c0ad57514fe4e8b72f6920dd3350616070b874abe6fdcdcc802dd8df96e85"
+      }
+    },
+    {
+      "case": "D0000-q0975578bc6c4c631289a8e40935a67163489d1d1331d4724807cf5a32564e7eb",
+      "identity": {
+        "binary_sha256": "27f5646114167cbb080eb20f95227097a36b77b6c86cca8feec4f4766b12526a",
+        "borg_txt_sha256": "9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb",
+        "flags": "menu",
+        "git_dirty": "yes",
+        "git_rev": "5e8454ab390a7d6e0fba0de51086ce6f19d2df2e",
+        "impl": "rust",
+        "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 1011,
+        "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+      }
+    },
+    {
+      "case": "D0000-q328eb350c63dfaeab1c4e723720dbcd00122ae49b4ce308fcf5fc9d63782ddd4",
+      "identity": {
+        "binary_sha256": "27f5646114167cbb080eb20f95227097a36b77b6c86cca8feec4f4766b12526a",
+        "borg_txt_sha256": "dc25b7c1078f8a1d6f2caf5ffb6f52311a217d9d172446d1464ab5389578ca81",
+        "flags": "menu",
+        "git_dirty": "yes",
+        "git_rev": "5e8454ab390a7d6e0fba0de51086ce6f19d2df2e",
+        "impl": "rust",
+        "params_core_sha256": null,
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 102,
+        "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+      }
+    },
+    {
+      "case": "D0000-q79fc03ae1d57b904212e354f87c49b7e557218b9a73340ea5816562a95dfa9f8",
+      "identity": {
+        "binary_sha256": "27f5646114167cbb080eb20f95227097a36b77b6c86cca8feec4f4766b12526a",
+        "borg_txt_sha256": "2d208aa9e130797f66d87df530b9cf84f5b7d481d4a0638dfd0a322c38955a2e",
+        "flags": "menu",
+        "git_dirty": "yes",
+        "git_rev": "5e8454ab390a7d6e0fba0de51086ce6f19d2df2e",
+        "impl": "rust",
+        "params_core_sha256": null,
+        "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+        "seed": 1020,
+        "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+      }
+    }
+  ],
+  "local_checks": {
+    "workspace_tests": [
+      156,
+      4,
+      5
+    ],
+    "core_passed": 328,
+    "core_ignored": 4,
+    "engine_tests": 69,
+    "tool_tests": 87,
+    "script_tests": 19,
+    "vendor_check": "pass",
+    "original_smoke": "3/3 byte-identical keys/messages/states",
+    "missing_control_deaths": 0
+  }
+}

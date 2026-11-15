@@ -63,7 +63,6 @@ use crate::borg_store_sell::borg_count_sell;
 use crate::borg_trip;
 use crate::borg_think_dungeon_util::{
     borg_excavate_vault, borg_leave_level, borg_money_scum, borg_think_dungeon_light,
-    borg_think_stair_scum,
 };
 use crate::borg_think_store::borg_choose_shop;
 use crate::borg_trait::borg_notice;
@@ -629,17 +628,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     };
     borg_near_monster_type(st, dist);
 
-    /* Allow borg to jump back up to town if needed.  He probably fled town
-     * because he saw a scaryguy (BSV, SER, Maggot).  Since he is here on depth
-     * 1, do a quick check for items near the stairs that I can pick up before
-     * returning to town.
-     */
+    /* Return directly after fleeing town: no opportunistic stair looting. */
     if st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
-        /* Try to grab a close item while I'm down here */
-        if borg_think_stair_scum(st) {
-            return choice!("borg_think_stair_scum");
-        }
-
+        // borg-reborn-rs (#350): returning to town must not spend a turn
+        // collecting nearby loot before the survival checks below.
         start_leaving_fleeing(st, "finish shopping");
     }
 
