@@ -20,6 +20,39 @@
   #321/#322 supply gate/count fixes; #323 independently
   supplies the strict entry fixture and CI gate. All integrate on feature R.
 
+
+## 2026-11-15: R3 accessor and ownership plan (#316)
+
+- R3-PLAN.md closes the roadmap follow-up from accepted R2 review: cheap
+  borrowed named access, fresh values after mutations, explicit item/spell
+  facts, ordered replay limits and a staged attack/defence migration.
+- R2 is explicitly a verified mechanical migration; modes and redesigned
+  decisions remain later work. 384 eager View sites are a source observation,
+  not a measured speed claim. No accessor optimization is implemented here.
+- Attack/defence are 4,583 + 3,592 = 8,175 physical lines at this baseline;
+  permanent buffs add a separate 775 lines and remain an explicit shared
+  dependency pending scope/parameter audit. No hidden expansion of R3.
+- Source-gate/count/entry follow-ups are #321/#322/#323. #315 native
+  hardening validation is queued under the shared engine lock. This planning
+  PR changes no runtime inputs and starts no game, population or sealed run.
+
+## 2026-11-15: individual stateful entry coverage (#314)
+
+- `check-shadow.py --require-all-entries` requires all 11 public entries and
+  consistent subsystem/entry counts. A regression test shows aggregate
+  coverage can pass while the strict gate rejects a missing teleport entry.
+- The full R2 evidence passes this stricter gate in each mode. Focused
+  stateful-entries High-Elf Rogue 1063, 100k turns, repeats check/switch with
+  all 11 entries, zero mismatches and byte-identical keys/messages/states.
+  No natural deaths. Rare caution_teleport occurs once; freedom five times.
+  Exact hashes/counts/manifests are in R2-ENTRY-COVERAGE.json.
+- CI now runs this fixture and strict gate separately in each mode. These
+  are entry counts, not branch coverage or successful-action counts. Real
+  recovery-carry branch fixtures remain #264, and no sealed/population work
+  is authorized. Runtime code/source identity cd66d935 is unchanged.
+- Stacked on #322/#321. 83 tool tests pass. #315 separately hardens the
+  danger-grid failure diagnostic; #316 records R3 accessor/redesign planning.
+
 ## 2026-11-15: corrected R2 event-count wording (#313)
 
 - Per mode, R2 records 15,032,802 tape events, including 700,980 policy-entry
