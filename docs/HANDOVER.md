@@ -23,7 +23,14 @@
   one incident, not four independent lives or a population improvement.
 - Fixture archive is pinned to player-cemetery bec33f4, with SHA256 checks;
   CI requires the real four saves. The standard native suite passes 69 tests.
-  Required final checks and source-qualified no-plan controls are pending.
+  Final Rust checks pass (156+4+5 workspace,328 core/four ignores),
+  69 engine tests,87 tools/19 scripts, formatting/Clippy/vendor. Original
+  smoke matches3/3 in keys/messages/states. Six validation-control deaths
+  across intermediate/final sources are qualified;2553 archive cases
+  verify and all final controls reconcile with zero missing deaths.
+  Final source0f2e003f988f and binary27f564611416 were built from5e8454ab
+  with clean game inputs; only retained non-runtime evidence was uncommitted.
+  Actual identities are preserved in INCIDENT-350-VALIDATION.json.
 - Recorder-owned rolling save retention and turn-based read-only viewing
   are developed separately in angband-recorder; do not silently replace the
   pinned vendor or claim live Borg memory is restored by a native save.
