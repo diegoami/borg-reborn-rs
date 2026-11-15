@@ -50,6 +50,34 @@ qualify every human GUI interaction. Capture from process startup; turning
 recording on in an already running game is not supported by this pin.
 Verify the effective save path before substantial play.
 
+## Recent saves and quick inspection
+
+Owner follow-up after the PlanMage wild-cat death (#350): keep recent native
+save points with the recording in player-cemetery. Record whether retention
+is actually supported and enabled by the frozen executable. The recorder-owned
+implementation is [angband-recorder#7](https://github.com/diegoami/angband-recorder/pull/7);
+consuming it requires a tagged release and a dedicated pin update. Do not
+silently modify the vendored recorder or assume environment settings enable
+hooks missing from an older binary.
+
+For a supporting build, use ANGBAND_SAVE_WINDOW=128 and ANGBAND_SAVE_EVERY=1000
+before process startup. Its recording/checkpoints/index.json identifies recent
+living saves and periodic older points, with frame/turn/input provenance and
+hashes. Keep snapshots, index, plan/configuration and frozen runtime together.
+A final/dead save must not replace the last living checkpoint.
+
+Use `angband-recorder view RECORDING FRAME` for read-only inspection; the
+new reader also accepts `view RECORDING --turn TURN`, without running the
+Borg through the earlier game. Select an exact frame when several command
+boundaries share a turn. Copy the nearest earlier native save into a new
+private profile and preserve loaded RNG. First check whether the original
+build reproduces the reported failure from that point, then compare the fix.
+Loading restores the engine but starts a fresh Borg, so this is a saved-position
+counterfactual rather than verified replay of the parent's arbitrary suffix.
+The PlanMage case establishes both: the full original replay verifies, and
+four nearby saved-position original controls die while fixed controls survive.
+Replays and continued segments of that life are not new independent samples.
+
 ## When something looks wrong
 
 The owner tells the agent what happened and what was expected, for example:

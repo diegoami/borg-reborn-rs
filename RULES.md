@@ -211,6 +211,13 @@ No strategy, default frontend flags or measured baseline changes are implied.
     fixed through PRs in `diegoami/angband-recorder`, not by silently
     patching the vendored recorder or adding consumer engine workarounds;
     adopting a recorder update here is a separate pin-update change.
+    For supported recorded builds, retain recent living native checkpoints
+    and periodic older saves with the run in player-cemetery; record the
+    actual retention settings/capability. Never claim an older recorder
+    supports rolling saves just because environment variables were set.
+    Use recorded-frame viewing and the nearest earlier copied checkpoint
+    for fast incident work, proving original-build reproduction separately
+    from a fresh-Borg counterfactual. A save does not restore Borg memory.
     Watched sessions retain rule 12's distinction from measured runs;
     publishing recordings is a
     separate owner request.
