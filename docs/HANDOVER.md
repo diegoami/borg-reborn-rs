@@ -12,7 +12,12 @@
   selection lazy: explicit original-core overrides do not read borg.txt;
   environment plans on that core still fail, as do file plans when the
   core itself is selected from the file. Native suites cover both contracts.
-- Combined validation and CI are pending. #333 stays a separate draft.
+- Combined validation passes: required Rust checks (328 core tests, four
+  ignored), 68 native engine tests (one skip), 45/45 M13 play parity and
+  deterministic summaries, 242,641 classified rows, original smoke/death
+  controls, and three policy-on controls. Fourteen fresh deaths reconcile;
+  2,547 archive cases verify. P342-PLAN-VALIDATION.md names exact identities
+  and limitations. Required CI is pending; #333 stays a separate draft.
 
 ## 2026-11-15: synchronize M13 main with accepted P review (#342)
 

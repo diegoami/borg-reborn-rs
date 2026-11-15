@@ -86,6 +86,20 @@ class BorgFileConfigTest(unittest.TestCase):
         self.assertIn('core parameters:', result.stderr)
         self.assertIn('cannot read borg.txt', result.stderr)
 
+    def test_plan_core_isolation_preserves_lazy_environment_priority(self):
+        content = b'borg_reborn_core=0\nborg_plan=missing-plan.txt\n'
+        _, result = self.launch('file-original-plan', content)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('plans require BORG_CORE=borg-rs', result.stderr)
+        out, result = self.launch('env-original-file-plan', content, {'BORG_CORE': 'reborn'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((out / 'params.json').is_file())
+        _, result = self.launch('env-original-explicit-plan', b'# \xff', {
+            'BORG_CORE': 'reborn', 'BORG_ERRANDS_PLAN': 'missing-plan.txt',
+        })
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('plans require BORG_CORE=borg-rs', result.stderr)
+
     @unittest.skipUnless(os.name == 'posix', 'OS-byte paths require POSIX')
     def test_valid_config_in_a_non_utf8_user_directory(self):
         out, result = self.launch('raw-path', b'borg_reborn_core=1\n', raw_user=True)
