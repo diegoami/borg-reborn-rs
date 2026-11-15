@@ -1,3 +1,5 @@
+<!-- Cemetery ownership: normal death dossiers now live in diegoami/borg-cemetery. -->
+
 # borg-reborn-rs
 
 The Angband Borg reborn, in Rust: an automatic player for Angband, redesigned
@@ -65,3 +67,11 @@ knowledge and our own decision traces. Nothing is a claim until
 Licence: GPLv2 (see `LICENSE`), as borg-rs. Angband itself is dual-licensed
 GPLv2 / Angband licence; files copied from other projects keep their
 headers and are listed with their provenance.
+
+## Death evidence and analysis
+
+Canonical new death dossiers, human-readable investigations, replay/scenario
+reports and human alternatives belong in [borg-cemetery](https://github.com/diegoami/borg-cemetery).
+The existing `tools/export-death.py`, `rerun-death.py`, `death_registry.py` and
+`reconcile-deaths.py` paths forward to its owned implementation.
+[Setup and historical/CI compatibility](tools/README.md#cemetery-owned-death-tools).

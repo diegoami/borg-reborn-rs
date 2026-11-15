@@ -1,0 +1,25 @@
+name: Cemetery-owned death tools
+description: Read the pinned death-tool checkout without a write credential
+runs:
+  using: composite
+  steps:
+    - id: pin
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+        import os, re
+        pin = Path('death-tools-pin.txt').read_text().strip()
+        if not re.fullmatch('[0-9a-f]{40}', pin):
+            raise ValueError('death-tools-pin.txt must name an immutable cemetery commit')
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            output.write('commit=' + pin + '\n')
+        PY
+    - uses: actions/checkout@v4
+      with:
+        repository: diegoami/borg-cemetery
+        ref: ${{ steps.pin.outputs.commit }}
+        path: vendor/borg-cemetery
+        persist-credentials: false
+    - shell: bash
+      run: echo "BORG_CEMETERY_DIR=$GITHUB_WORKSPACE/vendor/borg-cemetery" >> "$GITHUB_ENV"

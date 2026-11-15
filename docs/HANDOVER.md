@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested death-tool ownership (#273)
+
+- The four native death-tool implementations moved to borg-cemetery with their
+  source provenance and original tests. Local command paths are API-checked thin
+  pointers; the harness and Borg instrumentation remain here.
+- Normal exports target the cemetery checkout. Explicit temporary destinations
+  and the existing historical CI reconciliation guard remain unchanged. The
+  cemetery owns catalogue/presentation updates; its historical index is not
+  overwritten by the native registry formatter. No bulk dossier migration.
+- CI reads an immutable cemetery revision from death-tools-pin.txt and checks it
+  out without a write credential. Local tools locate the sibling of the primary
+  checkout or BORG_CEMETERY_DIR. No source/build inputs or gameplay changed.
+- Reused logic preserves family/key-stream deduplication, repair, source-matched
+  reruns, errand/ladders settings and missing-death failures. Existing tools tests
+  pass against the external implementation; required CI remains the merge gate.
+- This is owner-directed storage infrastructure, not new P/R strategy work or
+  implementation of the diagnosis/counterfactual plans #153/#212.
+
+
 ## 2026-11-15: owner-requested /shopping (#208)
 
 - Added `/shopping`: a town-only round of the vendored core's buying,
