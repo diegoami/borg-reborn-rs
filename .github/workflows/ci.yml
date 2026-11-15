@@ -99,6 +99,16 @@ jobs:
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
           python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
+      # R2 review: aggregate totals cannot substitute for every public entry.
+      # The focused unsealed seed reaches rare caution_teleport; not all branches.
+      - name: Stateful entry-point coverage
+        run: |
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
+          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-check
+          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-switch
+          harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
+          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
           zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")

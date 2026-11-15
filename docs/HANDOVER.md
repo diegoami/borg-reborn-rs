@@ -2,6 +2,82 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: durable danger-grid failures (#315)
+
+- Replace the port's aborting grid expect with a diagnostic containing the
+  invalid coordinates, Borg clock, mode and validation_stopped=true, flushed
+  to shadow.jsonl before exit 2. Both scalar values and unknown game turn
+  are null; no engine query, fabricated scalar or recorder lock is involved.
+- Six subprocess cases exercise the actual Assessment.grid failure path in
+  check/switch for negative/out-of-bounds coordinates and unallocated memory.
+  These are deliberate operational failures, not measured game deaths.
+- Only the invalid-memory path changes. Accepted R2 evidence retains its
+  historical cd66 input identity; native validation below records the new
+  build separately in R2-GRID-VALIDATION.json. Smoke off/check/switch is
+  3/3 identical and each focused mode hits all 11 entries with zero mismatch;
+  play logs also match accepted R2. All 16 measured games reconcile three
+  natural deaths D2449–D2451. No new full v12 campaign is claimed.
+  #321/#322 supply gate/count fixes; #323 independently
+  supplies the strict entry fixture and CI gate. All integrate on feature R.
+
+
+## 2026-11-15: R3 accessor and ownership plan (#316)
+
+- R3-PLAN.md closes the roadmap follow-up from accepted R2 review: cheap
+  borrowed named access, fresh values after mutations, explicit item/spell
+  facts, ordered replay limits and a staged attack/defence migration.
+- R2 is explicitly a verified mechanical migration; modes and redesigned
+  decisions remain later work. 384 eager View sites are a source observation,
+  not a measured speed claim. No accessor optimization is implemented here.
+- Attack/defence are 4,583 + 3,592 = 8,175 physical lines at this baseline;
+  permanent buffs add a separate 775 lines and remain an explicit shared
+  dependency pending scope/parameter audit. No hidden expansion of R3.
+- Source-gate/count/entry follow-ups are #321/#322/#323. #315 native
+  hardening validation is queued under the shared engine lock. This planning
+  PR changes no runtime inputs and starts no game, population or sealed run.
+
+## 2026-11-15: individual stateful entry coverage (#314)
+
+- `check-shadow.py --require-all-entries` requires all 11 public entries and
+  consistent subsystem/entry counts. A regression test shows aggregate
+  coverage can pass while the strict gate rejects a missing teleport entry.
+- The full R2 evidence passes this stricter gate in each mode. Focused
+  stateful-entries High-Elf Rogue 1063, 100k turns, repeats check/switch with
+  all 11 entries, zero mismatches and byte-identical keys/messages/states.
+  No natural deaths. Rare caution_teleport occurs once; freedom five times.
+  Exact hashes/counts/manifests are in R2-ENTRY-COVERAGE.json.
+- CI now runs this fixture and strict gate separately in each mode. These
+  are entry counts, not branch coverage or successful-action counts. Real
+  recovery-carry branch fixtures remain #264, and no sealed/population work
+  is authorized. Runtime code/source identity cd66d935 is unchanged.
+- Stacked on #322/#321. 83 tool tests pass. #315 separately hardens the
+  danger-grid failure diagnostic; #316 records R3 accessor/redesign planning.
+
+## 2026-11-15: corrected R2 event-count wording (#313)
+
+- Per mode, R2 records 15,032,802 tape events, including 700,980 policy-entry
+  markers: actual dependency requests are 14,331,822. The raw @1 evidence
+  keeps its original field names/values. R2-COUNT-CLARIFICATION.json hashes
+  both source reports and derives the split; R2-VALIDATION.md and the live
+  shadow contract use accurate terms. Earlier handover entries are historical.
+- #302 is owner-accepted/merged and tagged r2; PLAN reflects acceptance.
+  Runtime code and all parity evidence are unchanged. This is stacked on
+  source-gate PR #321. Follow-ups #314–#316 remain before R3 planning.
+
+## 2026-11-15: R2 accepted; source gate follow-up #312
+
+- Owner accepted Claude Opus 5.5's non-blocking R2 review and authorized
+  merge/continuation. #302 is merged into the feature-only review ledger,
+  tagged r2; feature runtime stays at cee4c94. Main/global reviewed receive no R.
+- #312 checks all stateful Rust modules recursively, including mod.rs,
+  rejects the five reported bypasses, and narrowly matches only the existing
+  dispatch import/mana adapter. Tests cover new nested modules, extra raw
+  reads in mod.rs and altered adapters. It remains a syntactic aid requiring
+  manual dependency review, not a semantic proof.
+- No runtime source is changed here. The accepted R2 full-suite evidence and
+  its exact input hash remain applicable. Review follow-ups #313–#316 remain
+  tracked; #313 clarifies markers vs dependency requests before R3 planning.
+
 ## 2026-11-15: R2 exit evidence complete, feature-only review checkpoint
 
 - Danger #283 is merged; #291 completes caution, escape and recovery and the

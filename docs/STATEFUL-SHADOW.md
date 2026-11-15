@@ -36,9 +36,23 @@ mutex is never held while a policy or engine dependency runs.
 
 Internal ported entry markers compare function identity and arguments even
 when escape is called inside caution. Statistics distinguish root stateful
-comparisons, internal policy entries, individual entry points and dependency
-requests. Positive coverage of caution, escape and recovery is required;
+comparisons, internal policy entries, individual entry points and tape events. In `shadow-stats@1`, the legacy field
+`dependency_requests` includes the `policy::` entry markers. Subtract the sum
+of `stateful_points` (equivalently caution_calls + escape_calls + recovery_calls)
+to obtain actual dependency requests. The R2 full suite has 15,032,802 events,
+700,980 markers and 14,331,822 actual requests per mode. Historical raw JSON
+keeps its original schema/values; future telemetry must retain these explicit
+semantics or version a changed contract. Positive coverage of caution, escape and recovery is required;
 wall-helper comparisons cannot stand in for stateful comparisons.
+
+Use `harness/check-shadow.py --require-all-entries RUN_OR_SUITE` to require
+positive counts for all 11 public entries across the given runs, and verify
+that their sum agrees with subsystem counts. The `stateful-entries` suite
+isolates High-Elf Rogue 1063 at the existing 100,000-turn cap. It exercises
+rare `borg_caution_teleport` as well as all ten other entries; CI requires
+the strict gate separately for check and switch. Entry coverage does not
+prove every branch, successful action or real-carry change executes. The
+full R2 counts and focused fixture evidence are in R2-ENTRY-COVERAGE.json.
 
 The workspace intentionally uses panic=abort. An incompatible replay request,
 input state or result type writes a durable mismatch to shadow.jsonl, then
@@ -48,13 +62,28 @@ different return/final state logs the mismatch and retains the driving
 policy's result. Diagnostic request-divergence runs count as controlled
 operational failures, never deaths or successful games.
 
-The source gate in scripts/decision_surface.py rejects direct core/engine
-imports and paths outside the recorded boundary, unnamed trait reads in the
-port, unsafe/extern bypasses and tape manipulation by policy code. It is a
-closed import/path check, not Rust semantic analysis. Compilation verifies
-API names/types. Future carries must audit the complete changed native files,
-new fields and methods as well as the function-name watcher. All new native
-state fields must satisfy snapshot Clone/PartialEq or compilation fails.
+Invalid danger-grid memory uses the same controlled-stop principle: append a
+`danger.grid` diagnostic with coordinates and Borg clock, flush it, then exit
+2. No scalar is invented. The engine game turn is explicitly null because
+this path queries no engine state; it never takes the recorder mutex. Missing
+run directories or write errors are reported on stderr before exit. A six-case
+subprocess fixture exercises the actual grid failure path for both modes,
+covering out-of-bounds and unallocated memory. It is an operational diagnostic,
+not a natural game death or a successful shadow comparison.
+
+The syntactic source gate in scripts/decision_surface.py checks the three
+native policies and every Rust file recursively under stateful/, including
+the dispatcher and newly added modules. It rejects known core/module aliases,
+unsupported memory/local paths, raw trait indexing/reads, unsafe/extern and
+direct dependency bypasses. Only the exact existing dispatcher type import
+and named mana-write adapter are exempted, never the entire file. Regression
+fixtures include all five bypasses reported in R2 review #302.
+
+This is not Rust semantic analysis and does not prove arbitrary code cannot
+bypass recording. Compilation verifies names/types; manual review must inspect
+fields, methods, macros and every changed dependency as well as the watcher.
+All new native state fields must satisfy snapshot Clone/PartialEq or
+compilation fails.
 
 Tests verify that effects/RNG execute once, input-state disagreement cannot
 be hidden by post-state replacement, changed requests/returns/final states

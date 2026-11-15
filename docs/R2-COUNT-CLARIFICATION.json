@@ -1,0 +1,38 @@
+{
+  "schema": "borg-reborn-rs/r2-count-clarification@1",
+  "review": "https://github.com/diegoami/borg-reborn-rs/pull/302#issuecomment-6898552174",
+  "reviewed_snapshot": "cee4c94da49604bd3bece0e8cc6a88a8fe99caed",
+  "legacy_semantics": "shadow-stats@1 dependency_requests counts all tape events, including policy:: markers; raw evidence is unchanged",
+  "sources": {
+    "R2-COMPARISON.json": {
+      "sha256": "cd655d0d045e2c02a061cc6730b3ca9eef6881787da495a4d3c98216f5b95ea4",
+      "modes": {
+        "check": {
+          "tape_events": 15032802,
+          "policy_entry_markers": 700980,
+          "dependency_requests_excluding_markers": 14331822
+        },
+        "switch": {
+          "tape_events": 15032802,
+          "policy_entry_markers": 700980,
+          "dependency_requests_excluding_markers": 14331822
+        }
+      }
+    },
+    "R2-PRE-SYNC-COMPARISON.json": {
+      "sha256": "bed46e729673f35a6db5144fbc238953f6c03d71172b2fa9bb6c1c3b33b2364b",
+      "modes": {
+        "check": {
+          "tape_events": 15032802,
+          "policy_entry_markers": 700980,
+          "dependency_requests_excluding_markers": 14331822
+        },
+        "switch": {
+          "tape_events": 15032802,
+          "policy_entry_markers": 700980,
+          "dependency_requests_excluding_markers": 14331822
+        }
+      }
+    }
+  }
+}
