@@ -42,6 +42,14 @@ CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-0}"
 [[ "$CHECKPOINT_EVERY" =~ ^(0|[1-9][0-9]{0,8}|1000000000)$ ]] || {
     echo "run.sh: CHECKPOINT_EVERY must be 0..1000000000" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
+# The game reads BORG_LADDERS from its own directory: a relative path is
+# made absolute here, so the file hashed below is the file it reads
+# (re-review #227, 7). A missing file is refused rather than silently
+# replaced by the built-in ladders.
+if [ -n "${BORG_LADDERS:-}" ]; then
+    [ -f "$BORG_LADDERS" ] || { echo "run.sh: BORG_LADDERS=$BORG_LADDERS: no such file" >&2; exit 2; }
+    BORG_LADDERS="$(realpath "$BORG_LADDERS")"; export BORG_LADDERS
+fi
 [ -x "$BIN" ] || { echo "missing $BIN (run harness/build.sh)" >&2; exit 2; }
 OUT="$(realpath -m "$1")"; SEED="$2"; RACE="$3"; CLASS="$4"; TURNS="$5"; shift 5
 FLAGS="-"
@@ -154,10 +162,11 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
     # The settings the environment gives the Borg (docs/ERRANDS.md): they
     # change play, so the record says them, and tools/rerun-death.py sets
-    # them again (review #227, finding 8). Only those set: a run without
-    # any keeps the record it always had.
+    # them again (review #227, finding 8). Only those set, empty ones too
+    # (an empty BORG_ERRAND turns off the borg.txt fallback; re-review 6):
+    # a run without any keeps the record it always had.
     for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
-        if [ -n "${!v:-}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
+        if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
 } > "$OUT/config.txt"

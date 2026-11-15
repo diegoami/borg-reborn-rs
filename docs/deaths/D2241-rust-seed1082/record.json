@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2241-rust-seed1082",
+  "run_kind": "harness",
+  "character": "Human Ranger",
+  "raw_cause": "a yellow mold",
+  "terminal": {
+    "cause": "a yellow mold",
+    "dead": true,
+    "depth": 3,
+    "max_depth": 6,
+    "level": 8,
+    "turn": 75085,
+    "race_idx": 10,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1082,
+    "flags": "-",
+    "git_rev": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+    "git_dirty": "no",
+    "source_sha256": "aafd68eace2714f8c5d06b77b7da9d7c30f2f485970ebb6f27f9528f61fd6094",
+    "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d",
+    "borg_txt_sha256": "5f671ec41ef5d0ce4bb6e69ec3c30170e6b371d04eda53ec6e1d9b05abe6b849",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out4/parity/full-8-blackguard-2",
+      "result_sha256": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+      "raw_sha256": {
+        "keys.log": "26b14b29fa6206757eb830d67fad646671871eddd04453b7d47ba7e197ed41e6",
+        "messages.log": "a7bb14404d245d86660c958b176c3f66e0eada41d5147cd68ef5db24304c3187",
+        "state.log": "16a262cb0071eced0548c489efd418d725082f19352eaf92d8235d4b7ccfd409"
+      },
+      "source_commit": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+      "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d"
+    }
+  ],
+  "encounter_family": "start-3a3039a90bfec18b1fd23a58a7222fcef7d44a847a1ba820348ca7a9372e5876",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7cd74ff91da5ded72caf53bdb85424de12bc36ad6a3f276be5df754c6bd56e00",
+    "config.txt": "953753d4d2a0b3cf5c793c6de85c6abc56bccd97d0670ab55c969996fcf83f53",
+    "depths.json": "4135fd09492d5021a3a6ab2c9ff258af911e26963d284ea681847378b1bb8509",
+    "params-core.json": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea",
+    "summary.json": "abef6ae1603f767a3e361c3598bf58ac5623482c150b9af6413e4fa31d37763c"
+  },
+  "investigation": null,
+  "issue": null
+}
