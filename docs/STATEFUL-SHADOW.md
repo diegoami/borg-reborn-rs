@@ -47,12 +47,28 @@ wall-helper comparisons cannot stand in for stateful comparisons.
 
 Use `harness/check-shadow.py --require-all-entries RUN_OR_SUITE` to require
 positive counts for all 11 public entries across the given runs, and verify
-that their sum agrees with subsystem counts. The `stateful-entries` suite
+that their sum agrees with subsystem counts. That agreement is a file-integrity
+check: both totals come from the same visits loop, so it is not independent
+proof of coverage. The `stateful-entries` suite
 isolates High-Elf Rogue 1063 at the existing 100,000-turn cap. It exercises
 rare `borg_caution_teleport` as well as all ten other entries; CI requires
 the strict gate separately for check and switch. Entry coverage does not
 prove every branch, successful action or real-carry change executes. The
 full R2 counts and focused fixture evidence are in R2-ENTRY-COVERAGE.json.
+
+If a native carry moves the fixture's single teleport entry, keep the strict
+flag and fail the gate. Re-run the existing unsealed full suite on the exact
+new build, inspect per-entry counts, and select a replacement (or a second
+seed) that actually reaches the rare entry in both modes. Record the source,
+profile, seed, cap, all entry counts, outcomes and play-log hashes; rerun the
+focused check/switch gate and diff before updating the fixture/evidence in a
+reviewable PR. If no seed reaches it, add a declared targeted state fixture
+that exercises real policy, not invented counters. Never drop the flag,
+weaken assertions/caps/timeouts or use sealed seeds to regain green.
+
+At the next telemetry schema change, expose policy_markers separately from
+actual dependency requests. The current @1 field remains explicitly legacy;
+no runtime counter meaning changes as part of this documentation update.
 
 The workspace intentionally uses panic=abort. An incompatible replay request,
 input state or result type writes a durable mismatch to shadow.jsonl, then
@@ -77,7 +93,11 @@ the dispatcher and newly added modules. It rejects known core/module aliases,
 unsupported memory/local paths, raw trait indexing/reads, unsafe/extern and
 direct dependency bypasses. Only the exact existing dispatcher type import
 and named mana-write adapter are exempted, never the entire file. Regression
-fixtures include all five bypasses reported in R2 review #302.
+fixtures cover the #302 bypasses and #329's compiled parent-path probe,
+trait methods/borrows, native delegation, external includes/path attributes
+and non-exact decisions imports. Parent paths permit only the explicit local
+escape import names and the named mana setter call. The raw trait_ identifier
+is forbidden everywhere else, not merely its indexing spelling.
 
 This is not Rust semantic analysis and does not prove arbitrary code cannot
 bypass recording. Compilation verifies names/types; manual review must inspect
