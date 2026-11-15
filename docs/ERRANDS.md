@@ -46,8 +46,10 @@ status 2 and a path/error diagnostic. Environment overrides retain priority;
 a file is read only when a setting or the parameter loader consults it.
 Core parameters use the same read policy.
 
-These configured settings are also checked on command re-entry (`^Z`).
-A newly invalid setting or unreadable file then terminates the process
+Fear and errand settings are read on command entry, including re-entry
+(`^Z`); core selection and the parameter snapshot remain process-cached.
+In a vendored-core session, a newly invalid setting or unreadable file
+encountered by that reader terminates the process
 without an automatic save. Edit configuration before starting a fresh
 process, and preserve an interactive game's save before changing it. The
 reader's valid-to-invalid re-entry path is covered in a subprocess test;

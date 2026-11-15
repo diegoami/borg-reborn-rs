@@ -2487,5 +2487,15 @@ family start from the same state, so they are not independent.*
 | borg-reborn-rs | [D2473-rust-seed1084](../../docs/deaths/D2473-rust-seed1084/report.md) | Half-Elf Blackguard | a grey mushroom patch | 22908 | 1 | 2 | — | unassessed | D2473-rust-seed1084: a grey mushroom patch at turn 22908 |
 | borg-reborn-rs | [D2474-rust-seed102](../../docs/deaths/D2474-rust-seed102/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2474-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
 | borg-reborn-rs | [D2475-rust-seed1020](../../docs/deaths/D2475-rust-seed1020/report.md) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2475-rust-seed1020: a giant white mouse at turn 8922 |
+| borg-reborn-rs | [D2476-rust-seed1011](../../docs/deaths/D2476-rust-seed1011/report.md) | Elf Mage | a cave spider | 18903 | 1 | 2 | — | unassessed | D2476-rust-seed1011: a cave spider at turn 18903 |
+| borg-reborn-rs | [D2477-rust-seed1020](../../docs/deaths/D2477-rust-seed1020/report.md) | Elf Druid | a small kobold | 9547 | 1 | 1 | — | unassessed | D2477-rust-seed1020: a small kobold at turn 9547 |
+| borg-reborn-rs | [D2478-rust-seed1021](../../docs/deaths/D2478-rust-seed1021/report.md) | Hobbit Druid | Fang, Farmer Maggot's Dog | 3608 | 3 | 1 | — | unassessed | D2478-rust-seed1021: Fang, Farmer Maggot's Dog at turn 3608 |
+| borg-reborn-rs | [D2479-rust-seed1043](../../docs/deaths/D2479-rust-seed1043/report.md) | Half-Troll Necromancer | a wild cat | 23423 | 1 | 2 | — | unassessed | D2479-rust-seed1043: a wild cat at turn 23423 |
+| borg-reborn-rs | [D2480-rust-seed1050](../../docs/deaths/D2480-rust-seed1050/report.md) | Dwarf Paladin | a grey mold | 24096 | 1 | 2 | — | unassessed | D2480-rust-seed1050: a grey mold at turn 24096 |
+| borg-reborn-rs | [D2481-rust-seed1062](../../docs/deaths/D2481-rust-seed1062/report.md) | Dunadan Rogue | a soldier | 49147 | 2 | 3 | — | unassessed | D2481-rust-seed1062: a soldier at turn 49147 |
+| borg-reborn-rs | [D2482-rust-seed1072](../../docs/deaths/D2482-rust-seed1072/report.md) | High-Elf Ranger | Fang, Farmer Maggot's Dog | 8475 | 1 | 2 | — | unassessed | D2482-rust-seed1072: Fang, Farmer Maggot's Dog at turn 8475 |
+| borg-reborn-rs | [D2483-rust-seed1084](../../docs/deaths/D2483-rust-seed1084/report.md) | Half-Elf Blackguard | a grey mushroom patch | 22908 | 1 | 2 | — | unassessed | D2483-rust-seed1084: a grey mushroom patch at turn 22908 |
+| borg-reborn-rs | [D2484-rust-seed102](../../docs/deaths/D2484-rust-seed102/report.md) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2484-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
+| borg-reborn-rs | [D2485-rust-seed1020](../../docs/deaths/D2485-rust-seed1020/report.md) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2485-rust-seed1020: a giant white mouse at turn 8922 |
 
-2480 cases.
+2490 cases.
