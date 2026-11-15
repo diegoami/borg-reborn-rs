@@ -9,7 +9,7 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > validation evidence. See [POINTER.md](POINTER.md) for the seam
 > (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2425; distinct starting conditions: 2422; retained process attempts: 2425 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2428; distinct starting conditions: 2425; retained process attempts: 2428 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2438,6 +2438,9 @@ Dossiers: 2425; distinct starting conditions: 2422; retained process attempts: 2
 | [D2443-rust-seed1084](D2443-rust-seed1084/report.md) | unassigned | `a1515c47c20d` | 1084 | a grey mushroom patch | 22908 | unassessed |
 | [D2444-rust-seed102](D2444-rust-seed102/report.md) | unassigned | `a1515c47c20d` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2445-rust-seed1020](D2445-rust-seed1020/report.md) | unassigned | `a1515c47c20d` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2446-rust-seed1011](D2446-rust-seed1011/report.md) | unassigned | `71324cd8f435` | 1011 | a cave spider | 18903 | unassessed |
+| [D2447-rust-seed102](D2447-rust-seed102/report.md) | unassigned | `71324cd8f435` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2448-rust-seed1020](D2448-rust-seed1020/report.md) | unassigned | `71324cd8f435` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 

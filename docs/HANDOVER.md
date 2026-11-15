@@ -23,6 +23,11 @@
   intentionally refused until cemetery family/death-replay integration
   handles the extra input/state; do not call POC runs baseline measurements.
 - No engine/recorder changes; the original guided game stays untouched.
+- Local checks pass: formatting/Clippy, workspace and release-core tests,
+  19 scripts and 78 tools tests, vendoring, and native POC tests. Disabled
+  POC keys/messages/states match the control for 3,000 turns. Standard CI
+  controls (no plan selected) were reproduced at source 3b5503a881fe and
+  retained as D2446–D2448 in the explicit historical validation registry.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
