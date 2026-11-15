@@ -2,6 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: retrospective review #259 fixes in progress (#275)
+
+- Stacked on #277 into track-p. Strict core selector accepts only
+  reborn/0 and borg-rs/1, preserving default and environment precedence;
+  invalid values exit 2 with their source/value. Added pure and actual
+  native-profile contract coverage.
+- Engine/manual evidence confirms decimal rest turns, rather than the
+  review's proposed key-digit interpretation. Preserve names/defaults,
+  exclude engine repeat sentinel 1 with bounds 2–9999. The hit-power
+  multiplier is inside a denominator: clarify its unit, keep zero invalid.
+- Document implicit factor-1 source citations without moving them to the
+  adjacent factor-3 branch, qualify RNG preservation at defaults, remove
+  a stale retained-literal claim, and document strict name casing.
+- Validation, evidence recovery and final review pin are pending. Do not
+  run CORE-SWEEP.md until its source pin is refreshed after these fixes.
+  No owner acceptance or promotion to main is implied.
+
 ## 2026-11-15: review #260 follow-up (#274)
 
 - Integrated main `83cf442a` into the task branch for `track-p`, preserving
