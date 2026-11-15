@@ -1,28 +1,27 @@
-# Shared borg.txt examples (proposal)
+# Shared Borg configuration examples (proposal)
 
-[PR #308](https://github.com/diegoami/borg-reborn-rs/pull/308) proposes keeping
-profiles and errand plans **inside borg.txt**, as a literal YAML block:
+[PR #308](https://github.com/diegoami/borg-reborn-rs/pull/308) proposes plain
+level-condition phases directly in borg.txt:
 
 ```text
-borg_reborn_plan = <<BORG_PLAN
-version: 1
-profiles:
-  normal: {parameters: {}}
-plans:
-  start: [town, shopping]
-BORG_PLAN
+borg_plan = <<EOF
+  level <= 5
+    loop-level 0 2
+  5 < level <= 10
+    loop-level 0 4
+  10 < level <= 15
+    loop-level 2 6
+EOF
 ```
 
-Reviewed examples/fragments can live here as `NAME.borg.txt`. Copy the desired
-block/settings into the run's actual `ANGBAND_DIR_USER/borg.txt`; no runtime
-profile-directory search, external TOML file or separate plan-file setting is
-proposed. A normal watched game uses `.angband-reborn/user/borg.txt`; a guided
-game uses its own `SESSION/user/borg.txt` from the manifest. The block reader
-must skip all embedded lines when reading flat Borg settings.
+Not YAML/JSON/TOML. Shared class/progression profiles can live here as
+`NAME.borg.txt`: ordinary settings plus this plan. Select/copy the desired
+configuration into the run's user/borg.txt; no directory search or external
+plan loader. Watched games use `.angband-reborn/user/borg.txt`; guided games
+use `SESSION/user/borg.txt` from their manifest.
 
-See [the proposal](../../../docs/GAME-PLAN-LANGUAGE.md) for profiles, class
-ladder plans, precedence and migration. The embedded-block parser, runner and
-live switching are **not implemented**. Today core parameters still use flat
-`borg_param_<name> = INTEGER` settings read at initialization; see
-[CALIBRATION.md](../../../docs/CALIBRATION.md). Existing original-core
-`reborn-default.txt`/`BORG_PROFILE` and zoo JSON interfaces keep their meaning.
+The parser/runner are not implemented today. See [the proposal](../../../docs/GAME-PLAN-LANGUAGE.md)
+for boundary overlap checks, interrupting active errands and ladder migration.
+Current parameters still load once at initialization; see
+[CALIBRATION.md](../../../docs/CALIBRATION.md). Original-core
+`reborn-default.txt`/`BORG_PROFILE` and zoo JSON keep their meaning.

@@ -2,21 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: inline borg.txt plan proposal (#305, PR #308)
+## 2026-11-15: plain level-phase plan proposal (#305, PR #308)
 
-- Owner clarified: put a YAML plan directly inside borg.txt with an EOF-like
-  marker, not a separate profile-file system. The proposal now uses
-  `borg_reborn_plan = <<BORG_PLAN` plus a literal terminating marker.
-- One block contains named profiles/parameters, class ladder routines and
-  simple errand/repeat plans. Existing flat settings remain the base;
-  profile changes are proposed town-only overlays. No general DSL or
-  external TOML/plan-file loader is proposed.
-- Specifies marker parsing, skipping the entire block in every flat-setting
-  reader, restricted YAML validation, explicit failure and legacy migration.
-  Shared examples are copyable borg.txt fragments; the active file is the
-  actual run's user/borg.txt. Current binaries do not support the block yet.
-- Validation is document/link/whitespace and example-shape checks only;
-  no runtime parser, plan execution or parameter switching implemented.
+- Owner supplied the intended form: borg_plan here-document, level range
+  headers, and indented loop-level commands. Removed the YAML proposal,
+  until/while/repeat language and nested profile data.
+- Shared boundaries are exclusive on their lower side so levels 5 and 10
+  match one phase. Gaps hand back. Recheck guards during active endless
+  errands, switching at safe decision boundaries rather than requiring
+  artificial time budgets. Completed finite phases do not restart each think.
+- Borg profiles remain whole borg.txt configurations containing their own
+  ladders/progression policy; preserve legacy semantics through migration.
+  Parameter assignments and concrete unique tactics are later separate slices.
+- Documentation only: no parser/runner or live mutation implemented.
+  Links, fences, block shape and whitespace checked. The owner reviews
+  the reduced design; current runtime/recorded game remains untouched.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
