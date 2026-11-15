@@ -87,6 +87,13 @@ v12).
 | **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | implementation on main (#247, #249, #250, #252); retrospective review pending |
 | **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | implementation on main (#253, #254); retrospective review pending |
 
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
+
 ### Track R: the redesign epic (epic #217)
 
 borg-rs's decisions re-expressed subsystem by subsystem in our domain, in a
