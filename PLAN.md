@@ -8,6 +8,16 @@ is wrong.*
 
 ## Milestones, and when we stop for a review
 
+**Track P exception (owner, 2026-11-15):** task PRs target `track-p` and
+are merged there by the session after green CI. Every milestone stops for
+an owner-chosen review on a pinned `track-p` → `main` PR. Review fixes
+also land in `track-p`; only owner acceptance plus green CI permits
+promotion to `main`, merged by the owner or expressly delegated. Do not
+start the next P milestone or carry unreviewed P work onto main through
+another track. CI is a compatibility gate, not independent review. The
+following `main` → `reviewed` description is the historical/default flow
+for tracks without their own exception; it does not apply to new P work.
+
 We work in spurts. A **milestone** is a named set of tasks. Inside a
 milestone a session works normally: one task per branch and PR, and it
 **merges its own PR into `main` once CI is green** (RULES 1).
@@ -59,6 +69,13 @@ assigned to one track by the owner.
 
 ### Track P: calibration of borg-rs's core (epic #218)
 
+Integration branch: **`track-p`**. Task PR base: `track-p`. Milestone
+review/promotion: **`track-p` → `main`**, owner-reviewed before merge.
+P1–P3 implementation was already merged before this rule; a combined
+retrospective review covers that historical work. It does not certify
+prior independent review, and main is not rewritten. Pending/new P tasks
+and fixes use `track-p`; other-track PRs are not retargeted.
+
 Named parameters in place of borg-rs's hard-coded thresholds (about 400 in
 fight, flee and recovery, against 44 `borg.txt` settings), and a decision
 trace. **At the defaults play is byte-identical** (full 45/45 against borg-rs
@@ -66,9 +83,16 @@ v12).
 
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
-| **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | **in review**: snapshot #251 |
-| **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | tasks implemented in #247, #249, #250, #252; review handoff after green-CI merges (owner authorized continuation) |
-| **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | delivery complete after #245 merges; owner review remains (continuation authorized 2026-11-15) |
+| **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | implementation on main; owner accepted retrospective review; #260 promotion delegated (supersedes #251) |
+| **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | implementation on main (#247, #249, #250, #252); owner accepted retrospective review; #260 promotion delegated |
+| **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | implementation on main (#253, #254); owner accepted retrospective review; #260 promotion delegated |
+
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
 
 ### Track R: the redesign epic (epic #217)
 
@@ -77,7 +101,8 @@ new crate `borg-next/`. Each port runs beside the original every think
 (**shadow check**) and switches over only when the full suite's keys stay
 byte-identical. Ported code reads borg-rs's memory through a typed view,
 not our perception, until R6. A subsystem is ported after track P has
-named its thresholds.
+named its thresholds and the relevant P milestone has been reviewed and
+promoted to `main`.
 
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |

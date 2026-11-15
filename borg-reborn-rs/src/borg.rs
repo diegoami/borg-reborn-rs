@@ -291,11 +291,37 @@ pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 pub fn core_is_borg_rs() -> bool {
     static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CORE.get_or_init(|| {
-        std::env::var("BORG_CORE")
-            .ok()
-            .or_else(|| borg_rs::shell::borg_txt_setting("borg_reborn_core"))
-            .is_some_and(|v| matches!(v.as_str(), "borg-rs" | "1"))
+        let environment = std::env::var_os("BORG_CORE");
+        let file = if environment.is_none() {
+            borg_rs::shell::borg_txt_setting("borg_reborn_core")
+        } else {
+            None
+        };
+        let selected = if let Some(value) = environment.as_ref() {
+            value
+                .to_str()
+                .ok_or_else(|| format!("BORG_CORE: invalid non-UTF-8 core selector {value:?}"))
+                .and_then(|value| parse_core_selector(Some(value), "BORG_CORE"))
+        } else {
+            parse_core_selector(file.as_deref(), "borg.txt borg_reborn_core")
+        };
+        selected.unwrap_or_else(|error| {
+            eprintln!("borg-reborn-rs: {error}");
+            std::process::exit(2);
+        })
     })
+}
+
+/// The absence of a selector preserves the original-core default. Invalid
+/// selectors must never silently change the arm of a measured experiment.
+fn parse_core_selector(value: Option<&str>, source: &str) -> Result<bool, String> {
+    match value {
+        None | Some("reborn" | "0") => Ok(false),
+        Some("borg-rs" | "1") => Ok(true),
+        Some(value) => Err(format!(
+            "{source}: invalid core selector {value:?}; expected reborn/0 or borg-rs/1"
+        )),
+    }
 }
 
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
@@ -623,6 +649,26 @@ mod tests {
     use super::*;
     use crate::engine::KC_ENTER;
     use crate::observation::Observation;
+
+    #[test]
+    fn core_selector_rejects_silent_arm_changes() {
+        for (value, expected) in [
+            (None, false),
+            (Some("reborn"), false),
+            (Some("0"), false),
+            (Some("borg-rs"), true),
+            (Some("1"), true),
+        ] {
+            assert_eq!(parse_core_selector(value, "BORG_CORE"), Ok(expected));
+        }
+        for source in ["BORG_CORE", "borg.txt borg_reborn_core"] {
+            for value in ["", "true", "2", "7", "borg_rs", "BORG-RS", " 1"] {
+                let error = parse_core_selector(Some(value), source).unwrap_err();
+                assert!(error.contains(source));
+                assert!(error.contains(&format!("{value:?}")));
+            }
+        }
+    }
 
     /// An empty observation, for the key sequences of the actions the
     /// strategy chooses (none of them reads the pack).

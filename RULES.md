@@ -5,9 +5,24 @@ whatever the model.
 
 ## Owner and scope
 
-1. **A session merges its own task PRs** into `main` once CI is green, with
-   no approval needed. The one merge a session never makes is a milestone's
-   **review PR** (`main` → `reviewed`). That one is the owner's.
+1. **Track P integrates on `track-p`, never directly on `main`** (owner,
+   2026-11-15; branch spelling confirmed as `track-p`). A session creates P
+   task branches from `track-p`, targets task PRs at `track-p`, and merges
+   them there after CI is green. CI success is not review approval. At each
+   milestone, stop and open the review/promotion PR **`track-p` → `main`**,
+   pinned to an exact commit. The owner chooses/runs the review; findings
+   are fixed through PRs into `track-p`. Only after the milestone review is
+   accepted and CI is green does the owner merge that promotion, or
+   explicitly delegate that reviewed merge. A session never promotes P to
+   `main` under the generic task-merge permission. Do not integrate the
+   next P milestone before this review gate, unless the owner explicitly
+   changes the gate. Close completed P task issues explicitly after their
+   `track-p` merge, linking the PR/commit (GitHub closing keywords normally
+   wait for the default branch). Other tracks must not use a closed P task
+   to bypass its review gate by carrying unreviewed P changes onto `main`.
+   **Other tracks retain their own authorized workflow**; absent a track
+   exception, a session merges task PRs into `main` after green CI, and
+   leaves milestone review PRs (`main` → `reviewed`) to the owner.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
@@ -19,6 +34,13 @@ whatever the model.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
+
 ## Git and GitHub
 
 4. No AI attribution trailers in commits or PR bodies: no `Co-Authored-By`
@@ -27,9 +49,12 @@ whatever the model.
    says `Closes #N`. A branch may start from an unmerged one; the PR then
    says "stacked on #n". Each PR updates the handover. Mark the issue
    `in progress` when you start, so two sessions never take the same task. Never amend
-   published commits, force-push `main` or `reviewed`, or move tags.
+   published commits, force-push `main`, `track-p` or `reviewed`, or move tags.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
+   For P, the task merges into `track-p` and the review precedes promotion
+   to `main` (RULES 1); the older `main` → `reviewed` flow does not authorize
+   direct P task merges into `main`.
    **The owner chooses the reviewer** (owner, 2026-11-09). For every review
    (a milestone review, a re-review, a review of a spec or a plan) the
    session writes the review prompt, pinned to an exact commit, and gives it
