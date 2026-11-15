@@ -15,6 +15,18 @@
   assignments. No runtime/profile/endpoint/sample-size or source-pin
   change, measured run, external repository write or dispatch occurs.
 
+## 2026-11-15: budget validation complete (#296)
+
+- Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3/fixture,55 engine tests (one skip),156+4+5
+  original/143 core tests (one ignored), Clippy/formatting and19/78 Python
+  tests. Six paired valid-budget cases match #295 byte for byte.
+- Preserve ten natural deaths atD2466–D2475; reconciliation passes with
+  actual build identity. P296-VALIDATION.md records intentional invalid-
+  input changes, finite-budget semantics and infrastructure/test retries.
+- Integrate into track-p after required CI, then stop for separate owner
+  review/promotion with #295/#299. The #292 authorization excludes this.
+
 ## 2026-11-15: strict errand budgets (#296), validation pending
 
 - Stacked on #295. Invalid configured budgets now exit2 with source/value
@@ -32,6 +44,19 @@
   Required checks/gameplay/evidence validation and task CI are pending.
   No experiment or external repository write is authorized here.
 
+## 2026-11-15: stopscared validation complete (#295)
+
+- Source27d7f453 passes full45/45 v12 play parity,295,464 classified rows,
+  original smoke3/3/fixture,53 engine tests (one skip),155+4+5 original/
+  143 core tests (one ignored), Clippy/formatting and19/78 Python tests.
+  Three valid fear-setting controls match synchronized base byte for byte.
+- Preserve both source variants' ten deaths. Explicit ID map retains
+  pre-loop8f45f46b records atD2446–D2455; final deaths areD2456–D2465.
+  Both registries and identity/hash checks pass. P295-VALIDATION.md records
+  actual builds, compatibility limits and the infrastructure retries.
+- Task CI gates track-p merge. #292 promotion does not accept this later
+  task; a separate owner review/promotion remains required.
+
 ## 2026-11-15: strict configured stopscared (#295), validation pending
 
 - Stacked on main synchronization #298. This task is excluded from the
@@ -42,6 +67,19 @@
   parsing is unchanged. Native/profile tests cover the real startup paths.
 - Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
   evidence retention and task CI are pending. No experiment is launched.
+
+## 2026-11-15: final #292 synchronization validation complete (#298)
+
+- Combined source15289917 passes full45/45 v12 play parity,295,464 named
+  trace rows, original smoke3/3,50 engine tests (one local environment
+  skip), required Rust checks (154+4+5 original/143 core),19/78 Python
+  tests and vendoring. P292-SYNC-VALIDATION.md records exact builds/limits.
+- D2436–D2445 retain the final ten natural deaths; earlier sourcec4a38683
+  deathsD2423–D2432 also reconcile. Nine imported recorder/loop dossiers
+  retain exact source/attempt identities under the explicit ID map.
+- Required CI must pass before integration, then complete the owner-
+  authorized #292 main promotion. #295/#296/#299 remain separate later
+  work on track-p; no experiment or new reviewer is launched.
 
 ## 2026-11-15: complete loop-levels integration in #298
 

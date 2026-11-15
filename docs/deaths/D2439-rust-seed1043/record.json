@@ -18,10 +18,10 @@
     "impl": "rust",
     "seed": 1043,
     "flags": "menu",
-    "git_rev": "e159298f49d21cecf42eeae77d143c2dd6ccd749",
+    "git_rev": "a1515c47c20dea74f011796d2c303eb684ce5884",
     "git_dirty": "no",
-    "source_sha256": "8f45f46bc108d9a84e32ffe60b123d635edb2992fd908adf52e37c447b0f517d",
-    "binary_sha256": "ed3a8fa3a961c9c92bc2217b37f8b8f413aa2bc16ca320db908f55e37ccdf4bd",
+    "source_sha256": "15289917658b91656e6bb91993ad8efa29eeff1874fce2ffe9cbe05ce3b2a47f",
+    "binary_sha256": "791ce71d9869dfb56188b8e4bc2f73298b868f2886127a2e1819013cd59bdc7d",
     "borg_txt_sha256": "509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
     "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4"
@@ -36,25 +36,25 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/workspace/work/p295-full-retry/full-4-necro-3",
+      "raw_directory": "/workspace/work/p292-sync-final-full/full-4-necro-3",
       "result_sha256": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
       "raw_sha256": {
         "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
         "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
         "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
       },
-      "source_commit": "e159298f49d21cecf42eeae77d143c2dd6ccd749",
-      "binary_sha256": "ed3a8fa3a961c9c92bc2217b37f8b8f413aa2bc16ca320db908f55e37ccdf4bd"
+      "source_commit": "a1515c47c20dea74f011796d2c303eb684ce5884",
+      "binary_sha256": "791ce71d9869dfb56188b8e4bc2f73298b868f2886127a2e1819013cd59bdc7d"
     }
   ],
-  "encounter_family": "start-a40e49415c6a65cb82a973ffd0c15ebf332ded0ce482002b179fdc32ac7a2000",
+  "encounter_family": "start-cc64700d82e5cc67dba63f167272ca2b895a35ede5101bba7b8fefa0c178cf0a",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "eef164f3b08980a3b58359586a0080b68b26cb59f81b6af20c3c2ee111e373a3",
+    "build.json": "42ca18fa78df237718f993d15d1866a2d025b7292da2f8934c60b00632811736",
     "config.txt": "83beca65aa150d4adf6c06e42284a3506086f3b83752e0bc4d3f0ebb33626759",
     "depths.json": "40295dae61032bfa0aeeb60d2306695f0d1bbf40ca61243717a97585b53051ab",
     "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
-    "summary.json": "d61086b25d1eef587d445590839aba219294c98202ee5bc1f2ff08fffb108705",
+    "summary.json": "d2e406678c9f0cc664be66c041ee6fb285269045f0453defef96999724e897c8",
     "trace-core-tail.jsonl": "abc7e4ee223a396197ea97433ea2afa2c47ef69c13db321b2eb15352aafe17c1"
   },
   "investigation": null,
