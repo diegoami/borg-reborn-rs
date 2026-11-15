@@ -129,6 +129,8 @@ def refresh(repo, rev):
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_bytes(t)
             continue
+        if t is None and o is None:
+            continue  # both sides removed it (re-review #227, 8)
         if t is None or o is None or b is None:
             conflicts.append(f'{rel}: changed on one side, added or removed on the other')
             continue

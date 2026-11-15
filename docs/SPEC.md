@@ -19,7 +19,9 @@ It is **independent**: it owns every part it builds on, namely the
 integration with the game, the seam, the bindings, the headless frontend,
 the build, the harness, the evidence tools and the Borg itself. No part
 depends on, follows, or is limited by any other Borg project, borg-rs in
-particular.
+particular, with one exception made on purpose: borg-rs's decision core,
+vendored at a pin as `borg-core/` and selected by `BORG_CORE=borg-rs`
+(§2 amendment, 2026-11-14).
 
 ## 2. Independence
 
