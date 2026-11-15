@@ -37,7 +37,8 @@ validate those later-milestone implementations.
 - Full check and switch each match independent pinned v12 in all 45 games
   across keys/messages/states. Each mode has zero mismatches across
   66,900,787 whole-danger comparisons, 111,865 standalone-monster comparisons,
-  378,351 stateful transactions and 15,032,802 dependency requests. Internal
+  378,351 stateful transactions and 15,032,802 tape events: 14,331,822
+  dependency requests plus 700,980 policy-entry markers. Internal
   entry counts are 154,821 caution, 322,741 escape and 223,418 recovery.
   Check versus switch also passes the standard 45/45 same-build diff.
 - Game RNG and all other shared game fields agree with v12; the existing
@@ -49,6 +50,12 @@ validate those later-milestone implementations.
 - Unit/CI: 170 workspace tests, 143 core tests (one existing ignored), 24
   source-tool and 82 tool tests, formatting, Clippy and vendoring pass.
   Final engine/recorder CI remains the merge gate.
+
+The immutable `shadow-stats@1` evidence names its tape-event total
+`dependency_requests`; that legacy field includes policy markers. The count
+clarification in R2-COUNT-CLARIFICATION.json derives the corrected split from
+both preserved reports, with their exact hashes. This is a reporting correction,
+not a runtime change or a new game campaign.
 
 ## Non-vacuity and real carry
 
