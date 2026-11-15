@@ -42,6 +42,72 @@
   controls (no plan selected) were reproduced at source 3b5503a881fe and
   retained as D2446–D2448 in the explicit historical validation registry.
 
+## 2026-11-15: sweep provenance and catalogue assembly (#299)
+
+- Stacked on #296; documentation-only follow-up, excluded from #292's
+  authorized promotion. Correct stale1f5eb966 source hash for specimen
+  2ec1f250 to the actualcb48d943 hash, verified in a clean detached tree.
+- Name both catalogue fragments and the separate experiment manifest,
+  their assembly order and shared handoff revision; distinguish that
+  documentation pin from the runtime specimen pin. The profile filename
+  was already present, so qualify review292 F5's stronger claim.
+- Actual pinned-zoo static validation expands384 cells with128/900 disjoint
+  assignments. No runtime/profile/endpoint/sample-size or source-pin
+  change, measured run, external repository write or dispatch occurs.
+
+## 2026-11-15: budget validation complete (#296)
+
+- Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3/fixture,55 engine tests (one skip),156+4+5
+  original/143 core tests (one ignored), Clippy/formatting and19/78 Python
+  tests. Six paired valid-budget cases match #295 byte for byte.
+- Preserve ten natural deaths atD2466–D2475; reconciliation passes with
+  actual build identity. P296-VALIDATION.md records intentional invalid-
+  input changes, finite-budget semantics and infrastructure/test retries.
+- Integrate into track-p after required CI, then stop for separate owner
+  review/promotion with #295/#299. The #292 authorization excludes this.
+
+## 2026-11-15: strict errand budgets (#296), validation pending
+
+- Stacked on #295. Invalid configured budgets now exit2 with source/value
+  diagnostics instead of silently becoming unbounded. Accept integer
+  0..i64::MAX; absent/0/exact none mean no bound. Negative, empty,
+  non-integer, overflowing and non-UTF-8 budgets are rejected.
+- Preserve positive budgets and original-core/inactive-errand isolation.
+  Actual native tests exercise finite stopping, invalid values and the
+  ignored inactive contexts. Interactive shell parsing is unchanged.
+- The first native finite-budget assertion used the wrong zoo outcome:
+  the pinned adapter maps runner borg_stopped to stalled. The actual
+  budget stopped at turn11. Assert both layers and the native stop reason;
+  no product or adapter change is needed.
+- This task is excluded from the already-authorized #292 promotion.
+  Required checks/gameplay/evidence validation and task CI are pending.
+  No experiment or external repository write is authorized here.
+
+## 2026-11-15: stopscared validation complete (#295)
+
+- Source27d7f453 passes full45/45 v12 play parity,295,464 classified rows,
+  original smoke3/3/fixture,53 engine tests (one skip),155+4+5 original/
+  143 core tests (one ignored), Clippy/formatting and19/78 Python tests.
+  Three valid fear-setting controls match synchronized base byte for byte.
+- Preserve both source variants' ten deaths. Explicit ID map retains
+  pre-loop8f45f46b records atD2446–D2455; final deaths areD2456–D2465.
+  Both registries and identity/hash checks pass. P295-VALIDATION.md records
+  actual builds, compatibility limits and the infrastructure retries.
+- Task CI gates track-p merge. #292 promotion does not accept this later
+  task; a separate owner review/promotion remains required.
+
+## 2026-11-15: strict configured stopscared (#295), validation pending
+
+- Stacked on main synchronization #298. This task is excluded from the
+  owner-authorized #292 promotion and later integrates into track-p only.
+- Reject invalid/non-UTF-8 fear values with source/value diagnostics and
+  exit2. Preserve valid aliases, numeric1–1000, empty/none/default handling,
+  environment precedence and original-core isolation. Interactive shell
+  parsing is unchanged. Native/profile tests cover the real startup paths.
+- Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
+  evidence retention and task CI are pending. No experiment is launched.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full45/45 v12 play parity,295,464 named

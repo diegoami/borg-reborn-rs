@@ -372,6 +372,69 @@ fn parse_errand_setting(value: Option<&str>, source: &str) -> Result<Option<Stri
     }
 }
 
+/// A configured fear threshold is either valid or a configuration error;
+/// an invalid value must not silently become the core's default threshold.
+pub fn configured_stopscared() -> Option<borg_rs::shell::Command> {
+    let environment = std::env::var_os("BORG_STOPSCARED");
+    let file = if environment.is_none() {
+        borg_rs::shell::borg_txt_setting("borg_reborn_stopscared")
+    } else {
+        None
+    };
+    let selected = if let Some(value) = environment.as_ref() {
+        value
+            .to_str()
+            .ok_or_else(|| format!("BORG_STOPSCARED: invalid non-UTF-8 stopscared value {value:?}"))
+            .and_then(|value| parse_stopscared_setting(Some(value), "BORG_STOPSCARED"))
+    } else {
+        parse_stopscared_setting(file.as_deref(), "borg.txt borg_reborn_stopscared")
+    };
+    selected.unwrap_or_else(|error| {
+        eprintln!("borg-reborn-rs: {error}");
+        std::process::exit(2);
+    })
+}
+
+fn parse_stopscared_setting(
+    value: Option<&str>,
+    source: &str,
+) -> Result<Option<borg_rs::shell::Command>, String> {
+    match value {
+        None | Some("" | "none") => Ok(None),
+        Some(value) => borg_rs::shell::Command::parse(&format!("stopscared {value}"))
+            .map(Some)
+            .ok_or_else(|| format!(
+                "{source}: invalid stopscared value {value:?}; expected off, flee, or 1..=1000 (boolean aliases also accepted)"
+            )),
+    }
+}
+
+/// A configured errand budget is a nonnegative number of game turns.
+/// This is consulted only for a configured vendored-core command line.
+pub fn configured_errand_budget() -> i64 {
+    let value = std::env::var_os("BORG_ERRAND_BUDGET");
+    let selected = match value.as_ref() {
+        None => Ok(0),
+        Some(value) => value
+            .to_str()
+            .ok_or_else(|| format!("BORG_ERRAND_BUDGET: invalid non-UTF-8 budget {value:?}"))
+            .and_then(|value| parse_errand_budget(Some(value))),
+    };
+    selected.unwrap_or_else(|error| {
+        eprintln!("borg-reborn-rs: {error}");
+        std::process::exit(2);
+    })
+}
+
+fn parse_errand_budget(value: Option<&str>) -> Result<i64, String> {
+    match value {
+        None | Some("none") => Ok(0),
+        Some(value) => value.parse::<i64>().ok().filter(|n| *n >= 0).ok_or_else(|| {
+            format!("BORG_ERRAND_BUDGET: invalid budget {value:?}; expected 0..={} game turns or none (0 means unbounded)", i64::MAX)
+        }),
+    }
+}
+
 /// `^Z`: read the command key; `z` starts the Borg (as the C Borg's command
 /// menu does, so borgh's start script and the GUI work unchanged).
 pub fn command() {
@@ -743,6 +806,72 @@ mod tests {
                 assert!(error.contains(source));
                 assert!(error.contains(&format!("{value:?}")));
             }
+        }
+    }
+
+    #[test]
+    fn configured_fear_preserves_aliases_and_rejects_invalid_thresholds() {
+        for value in [None, Some(""), Some("none")] {
+            assert!(parse_stopscared_setting(value, "BORG_STOPSCARED")
+                .unwrap()
+                .is_none());
+        }
+        for (value, expected) in [
+            ("off", None),
+            ("FALSE", None),
+            ("no", None),
+            ("flee", Some(100)),
+            ("true", Some(100)),
+            ("on", Some(100)),
+            ("YES", Some(100)),
+            ("1", Some(1)),
+            ("1000", Some(1000)),
+        ] {
+            let command = parse_stopscared_setting(Some(value), "BORG_STOPSCARED").unwrap();
+            assert!(
+                matches!(command, Some(borg_rs::shell::Command::StopScared(n)) if n == expected)
+            );
+        }
+        for source in ["BORG_STOPSCARED", "borg.txt borg_reborn_stopscared"] {
+            for value in [
+                "bogus",
+                "0",
+                "-1",
+                "1001",
+                "2147483648",
+                " ",
+                "off; /dive 2",
+            ] {
+                let error = parse_stopscared_setting(Some(value), source).unwrap_err();
+                assert!(error.contains(source) && error.contains(&format!("{value:?}")));
+            }
+        }
+    }
+
+    #[test]
+    fn configured_budget_cannot_silently_remove_its_bound() {
+        for (value, expected) in [
+            (None, 0),
+            (Some("none"), 0),
+            (Some("0"), 0),
+            (Some("1"), 1),
+            (Some("+12"), 12),
+            (Some("9223372036854775807"), i64::MAX),
+        ] {
+            assert_eq!(parse_errand_budget(value), Ok(expected));
+        }
+        for value in [
+            "bogus",
+            "",
+            " ",
+            "-1",
+            "-9223372036854775808",
+            "9223372036854775808",
+            "1.5",
+            " 12 ",
+        ] {
+            let error = parse_errand_budget(Some(value)).unwrap_err();
+            assert!(error.contains("BORG_ERRAND_BUDGET") && error.contains(&format!("{value:?}")));
         }
     }
 
