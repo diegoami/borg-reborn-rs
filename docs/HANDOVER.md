@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: strict configured errands (#269), validation in progress
+
+- Stacked on #289; targets track-p after the owner-authorized #260
+  promotion. Valid commands, environment precedence, absent/none disabling
+  and original-core isolation are preserved. Invalid/empty errand command
+  lines now fail with source/value diagnostics and exit2 instead of
+  continuing an unconstrained run. Parsing validates the entire command
+  line before applying any prefix.
+- Pure tests and actual pinned-zoo/native process cases exercise invalid
+  file/environment values, valid overrides and original-core isolation.
+  ERRANDS.md and ZOO-INTERFACE.md state the intentional input change.
+- Required checks/gameplay validation and evidence retention are pending;
+  no population experiment or main promotion for this task is authorized.
+
 ## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
 
 - The owner explicitly instructed: "ok then merge it and continue with other

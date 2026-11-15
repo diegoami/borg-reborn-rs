@@ -136,3 +136,39 @@ class CoreProfileContractTest(unittest.TestCase):
                                 {'BORG_CORE': 'borg-rs'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params-core.json').exists())
+
+    def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
+        for value in [2, True]:
+            with self.subTest(value=value):
+                out, record = self.cell(f'invalid-errand-{value}', {
+                    'borg_reborn_core': 1, 'borg_reborn_errand': value,
+                })
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('borg.txt borg_reborn_errand: invalid errand selector',
+                              (out / 'stderr.log').read_text())
+                self.assertFalse((out / 'trace-core.jsonl').exists())
+
+    def test_errand_environment_precedence_and_invalid_command_lines(self):
+        for value in ['', '; ;', 'true', 'dvie 2', '/town; typo']:
+            with self.subTest(value=value):
+                out, record = self.cell('invalid-errand-env-' + str(len(value)),
+                                       {'borg_reborn_core': 1}, {'BORG_ERRAND': value})
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('BORG_ERRAND: invalid errand selector',
+                              (out / 'stderr.log').read_text())
+        for name, value in [('none', 'none'), ('command', '/dive 2')]:
+            out, record = self.cell('valid-errand-env-' + name,
+                                   {'borg_reborn_core': 1, 'borg_reborn_errand': 7},
+                                   {'BORG_ERRAND': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+            self.assertTrue((out / 'params-core.json').exists())
+
+    def test_original_core_ignores_vendored_errand_configuration(self):
+        out, record = self.cell('original-ignores-errand',
+                               {'borg_reborn_core': 0, 'borg_reborn_errand': 7},
+                               {'BORG_ERRAND': 'dvie 2'})
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertTrue((out / 'params.json').exists())
+        self.assertFalse((out / 'params-core.json').exists())
