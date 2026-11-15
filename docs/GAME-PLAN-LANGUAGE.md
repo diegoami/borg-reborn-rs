@@ -1,243 +1,233 @@
-# Simple Borg profiles and errand plans
+# Simple profiles and errand plans inside borg.txt
 
-Status: revised design proposal, 2026-11-15, following owner feedback on PR
-#308. This replaces the proposed general language with a small plan format.
-Nothing here implements live profile switching or changes the current runtime.
-Current commands remain documented in [ERRANDS.md](ERRANDS.md).
+Status: revised design proposal for PR #308, 2026-11-15. The owner requested
+an embedded YAML block in `borg.txt`, not a separate TOML/JSON profile system
+or a general programming language. The block parser and plan runner are not
+implemented by this document. Current commands remain in [ERRANDS.md](ERRANDS.md).
 
-## The model
+## One configuration file
 
-A **profile** is one editable file containing parameter overrides and named
-plans. A **plan** is a sequence of errands, optionally repeated until a simple
-condition holds. A profile can supply different plans/settings for a class.
-The engine supplies mechanics and safety; profiles supply the game policy.
-
-Ladders, starting routines, class progression and trip schedules belong in
-profiles. They should not become more special commands hard-coded into the
-Borg. Keep useful primitives: town, shopping, walk-back, explore-back, dive,
-explore-level, dive-exploring and loop-levels. `/ladder` may remain a familiar
-alias for the active profile's named `ladder` plan. Existing `/trips` syntax
-is a compatibility input, not a second language to extend indefinitely.
-
-No imports, mutable variables, custom functions, general arithmetic, nested
-event handlers or new type system. No arbitrary engine actions or raw keys.
-Named unique-fight tactics and LLM advice are later, separate capabilities.
-
-## Where to read and put profiles
-
-Proposed shared locations:
+Keep ordinary settings exactly where they are. Add one here-document-style
+setting whose contents are structured YAML:
 
 ```text
-harness/profiles/
-  reborn-default.txt            # existing original-core format; unchanged
-  borg-rs/
-    README.md                  # proposed profile format and storage contract
-    normal.toml                # reviewed defaults + ordinary named plans
-    cautious.toml              # separately reviewed settings/plans
+# Existing settings keep their existing meaning.
+borg_reborn_core = borg-rs
+borg_param_caution_flee_danger_hp_multiplier = 2
+
+borg_reborn_plan = <<BORG_PLAN
+version: 1
+initial_profile: cautious
+town: resume
+profiles:
+  normal:
+    parameters: {}
+  cautious:
+    parameters:
+      caution_flee_danger_hp_multiplier: 1
+plans:
+  start:
+    - repeat:
+        until: {level_at_least: 5}
+        steps:
+          - town
+          - {profile: cautious}
+          - shopping
+          - {errand: loop-levels, args: [0, 2], turns: 10000}
+    - town
+    - {profile: normal}
+    - {errand: loop-levels, args: [3, 5]}
+BORG_PLAN
 ```
 
-Personal profiles belong in `profiles/` under the actual game's user directory:
+`EOF` could be used instead of `BORG_PLAN`; it is a chosen delimiter, not
+part of YAML. The sample parameter values illustrate configuration, not a
+recommendation or a claim of improved play. Read parameter names/bounds in
+[CALIBRATION.md](CALIBRATION.md).
 
-```text
-.angband-reborn/user/profiles/my-plan.toml                  # normal watched game
-SESSION/user/profiles/my-plan.toml                         # guided/private game
-```
+The initial named plan is `start`. Without `initial_profile`, begin with
+the existing flat settings; `profiles` is optional until a profile is used.
+An explicit initial profile must exist in the block. A profile is a named set of parameter
+settings in `profiles`; a plan is a named sequence in `plans`. Selecting
+`profile normal` changes settings, not the running plan. Explicit selection
+of another named plan is a proposed `/plan NAME` command. No network lookup,
+external plan files, imports, mutable variables, general expressions or custom
+functions are needed. Unique tactics and LLM advice remain later proposals.
 
-`SESSION` is the session directory in its manifest, not a global save location.
-An initial standalone plan may also be selected by an explicit host-supplied
-file path, but the normal editing workflow is a single profile file.
+## Where to read and edit it
 
-Resolution is explicit and small:
+The active configuration is the run's `ANGBAND_DIR_USER/borg.txt`:
 
-- `profile cautious` selects shared `harness/profiles/borg-rs/cautious.toml`.
-- `profile user:my-plan` selects `ANGBAND_DIR_USER/profiles/my-plan.toml`.
-- Personal files do not silently shadow shared names. Names are simple file
-  basenames; paths/traversal and network lookup are not allowed in a plan.
-- Select a named plan from that file, normally `start`. A missing requested
-  file/plan, unknown backend/class override or invalid setting is an error.
+- Normal watched game: `.angband-reborn/user/borg.txt`.
+- Guided/private game: `SESSION/user/borg.txt`, using the directory recorded
+  in that session's manifest. Do not edit another run's file by accident.
+- Headless harness: `OUT/user/borg.txt`, generated from `harness/borg.txt`.
 
-These paths and commands are a proposal; the current Borg does **not** load
-these TOML files yet. Today, read the core parameter catalogue and bounds in
-[CALIBRATION.md](CALIBRATION.md). The vendored core reads settings once at
-initialization from its run's `ANGBAND_DIR_USER/borg.txt`:
+Reviewed shared examples can live in `harness/profiles/borg-rs/*.borg.txt` as
+complete Borg configurations or clearly labelled copyable fragments. The
+runtime still reads only its actual `borg.txt`; it does not search that
+folder, silently merge fragments or resolve profile names to other files.
+Copy the desired block/settings into the run configuration when preparing it.
+There is one authoritative block, not a default ladder plus several hidden
+profile files. The existing original-core `reborn-default.txt`/`BORG_PROFILE`
+and zoo catalogue JSON interfaces retain their separate meanings.
 
-```text
-borg_param_caution_flee_danger_hp_multiplier = 1
-```
+Today the vendored core loads flat `borg_param_<name> = INTEGER` settings
+once at initialization. It does not yet recognise this embedded plan syntax
+or reload parameters while playing. Do not paste the example into an old
+binary and assume a plan is running. This proposal specifies the required
+parser/validation change before the syntax becomes supported.
 
-That value is an illustration, not a recommended preset. An explicit
-`BORG_PARAM_*` environment value overrides borg.txt. Editing the file while
-playing does not currently hot-reload the parameter table. Existing
-`BORG_PROFILE` and `harness/profiles/reborn-default.txt` configure the original
-reborn core; they are not the vendored core's dynamic-profile loader.
-Zoo catalogue profile JSON is another existing interface, documented in
-[ZOO-INTERFACE.md](ZOO-INTERFACE.md); do not confuse it with these player files.
+## Block parsing and validation
 
-## One profile file
+The proposed header is `borg_reborn_plan = <<DELIMITER`. After recognizing
+it, a dedicated block reader consumes literal lines until a line containing
+exactly `DELIMITER`, starting in column zero. Delimiters are nonempty ASCII
+identifiers without whitespace. Normalize CRLF line endings for comparison;
+do not trim content indentation or interpolate environment/shell variables.
+A delimiter-like string inside an indented YAML scalar does not end the block.
+Choose a different delimiter if a root-level content line would collide.
 
-Use standard TOML for settings and multiline strings for plans. No separate
-manifest, imports or inheritance hierarchy:
+The ordinary flat-setting reader must **skip the entire block**, including
+both markers. YAML content must never be interpreted as flat Borg settings,
+formula rules or errand command lines. The reader must also be used when
+extracting core/errand settings, so a similarly named key inside YAML cannot
+change backend selection. Preserve existing borg.txt sections and comments.
+Do not bolt this onto a parser that still scans every embedded line separately.
 
-```toml
-version = 1
-backend = "borg-rs"
+Allow one block per file. Reject duplicate blocks, missing terminators,
+empty/malformed content, duplicate YAML keys, unknown schema versions/fields,
+invalid names, excessive sizes and unsupported steps. Use a JSON-compatible
+YAML subset: mappings, sequences and plain/quoted scalars only; no custom
+tags, object construction, anchors, aliases or merge keys. Do not coerce a
+boolean/string into an integer parameter. JSON objects could be accepted
+through the same schema later, but v1's documented format is this YAML block.
+No second free-form script language is stored inside YAML strings.
 
-[parameters]
-# Canonical names from CALIBRATION.md; bounds come from the existing registry.
-caution_flee_danger_hp_multiplier = 1
+Validate the complete block, all referenced profiles/plans and the effective
+backend before beginning play. An explicitly requested invalid plan fails
+loudly, rather than silently starting ordinary Borg play. With no block,
+existing flat settings and slash commands retain their current behaviour.
+A nonempty configured `borg_reborn_errand` conflicts with an automatic plan:
+reject the combination instead of inventing a precedence. Empty/`none`
+means disabled. Starting or replacing a plan interactively is explicit.
 
-[plans]
-start = """
-town resume
-repeat until level >= 5:
-    town
-    profile cautious
-    shopping
-    loop-levels 0 2 for 10000 turns
-town
-profile normal
-loop-levels 3 5
-"""
+## The small plan vocabulary
 
-# Optional, single-level class override; no recursive inheritance.
-[classes.warrior.plans]
-start = """
-town
-shopping
-loop-levels 0 2
-"""
-```
+Use YAML data, with these step forms only:
 
-The plan is illustrative, not executable today or a claim of improved play.
-Canonical parameter names are translated to the existing borg.txt key form
-when preparing startup configuration; profile metadata is not passed through
-as unrecognised Borg settings. Defaults plus the profile's parameter table,
-then its matching class overrides, form a complete effective configuration.
-Absent class entries use the common values/plans. Unknown class names fail
-validation rather than silently falling through.
-
-Switching settings with `profile normal` does not jump into normal's `start`
-plan. The current plan continues at the next line. Invoking a different named
-plan is an explicit player command, proposed as `/plan NAME`; choosing initial
-profile/plan is likewise explicit host configuration. Exact launch/UI spelling
-is an implementation detail to settle before delivering a loader.
-
-## The entire first plan format
-
-One command per line; `#` comments and blank lines are ignored. Indentation
-is four spaces; tabs are rejected. Version 1 has only these constructs:
-
-| Construct | Meaning |
+| Form | Meaning |
 | --- | --- |
-| An existing primitive errand and its arguments | Run it to completion using the existing core |
-| `ERRAND for N turns` | Run a bounded chunk; N is a positive game-turn budget |
-| `profile NAME` | Apply that named profile's settings between errands |
-| `repeat until level >= N:` | Check before each iteration; repeat its indented errands until character level reaches N |
-| `repeat until max-depth >= N:` | The same, using the character's reached depth |
-| `repeat until ready-for N:` | The same, using the Borg's existing readiness judgement |
-| `repeat forever:` | Repeat a yielding sequence indefinitely |
-| `town resume` or `town stop` | One top-level policy for a core-requested town detour; default resume |
+| `town`, `shopping`, `explore-level`, etc. | One existing primitive errand with no arguments |
+| `{errand: dive, args: [3]}` | A primitive errand with checked arguments |
+| `{errand: loop-levels, args: [0, 2], turns: 10000}` | A bounded chunk, measured in game turns |
+| `{profile: cautious}` | Select settings from the same block's named profile |
+| `repeat: {until: {level_at_least: 5}, steps: [...]}` | Check before each iteration, repeat the sequence |
+| `repeat: {forever: true, steps: [...]}` | Repeat a yielding sequence indefinitely |
 
-There are no arbitrary boolean expressions or nested repeat blocks in v1.
-Conditions are checked **between errands**, not continuously inside them.
-An endless errand inside an `until` block must have a `for` budget, otherwise
-it would prevent checking the condition again. Reject that plan on loading.
-An endless final errand or a final `repeat forever` is allowed; reject any
-following unreachable steps. A repeat must contain an errand that yields to
-the game; empty/profile-only loops are invalid. The host also bounds control
-steps per game decision, so an invalid plan cannot busy-loop without turns.
+The fixed `until` alternatives are `level_at_least`, `max_depth_at_least`
+and `ready_for`, each with one checked integer. Exactly one guard or
+`forever: true` is allowed. No compound expressions or nested repeats in v1.
+The top-level `town` policy is `resume` (default) or `stop`.
 
-A bounded chunk reaching its configured budget is an expected yield for this
-plan runner, so it advances to the next line/check. `scared`, unexpected abort,
-impossible action and errors stop the plan and hand control back with a reason.
-This requires an explicit adapter: existing slash-command queues still drop
-remaining commands on budget/abort, as documented today. Do not implement
-plans by blindly concatenating slash commands and changing their semantics.
+Guards are checked **between errands**, not continuously during a child.
+An endless errand inside a guarded repeat must have a finite `turns` budget;
+otherwise the guard could never be checked again. A repeat must contain a
+yielding errand. Reject empty/profile-only loops and steps after an endless
+final errand/repeat. The host bounds control work per game decision as well.
+A deliberate chunk budget is normal completion for this plan runner;
+`scared`, unexpected abort, impossible action and errors hand back to the
+player. Existing slash queues still clear on budget/abort: use an explicit
+adapter instead of changing those commands or concatenating strings.
 
-## Town interruptions, profiles and restart
+## Profiles and town recovery
 
-The core's emergency/town decisions take priority. With `town resume`, keep
-the current plan position, complete the core's town recovery, then retry the
-interrupted errand after checking readiness and supplies. With `town stop`,
-hand control back. Do not re-enter the same town request every think.
-`loop-levels` already owns its town interruption and restarts its first
-endpoint: the runner observes it instead of scheduling a duplicate town trip.
-Manual stop cancels the plan; it cannot be caught by a repeat.
+The base is existing flat borg.txt settings over registry defaults. Selecting
+a profile overlays its parameter table on that base, then optional class
+parameter overrides. It replaces the previous profile overlay rather than
+accumulating every previously selected profile's values. Thus `normal` with
+an empty table returns to the flat Borg configuration, not necessarily to
+compiled defaults. Explicit `BORG_PARAM_*` environment overrides are run
+locks; reject a conflicting profile value visibly rather than claiming it
+was applied. Backend, engine constants and birth options stay outside profiles.
 
-For the first implementation, profile changes are **town-only**, after the
-current command and prompts have finished. A profile line reached in the
-dungeon stops with “return to town before switching profile”; there is no
-invisible trip to town. Use an explicit `town` line, as in the example.
-Switching during a fight is not included in v1.
+For v1, switch profiles only **in town between completed errands**, with no
+pending prompt or half-executed command. A profile step reached in the dungeon
+stops with a request to return first; include an explicit `town` step, as in
+the example. Switching during a fight is separate future work. Validate every
+key, registry bound, allowed mutability and combination before committing.
+Apply the whole overlay and required cache refreshes together; failure leaves
+the old profile intact. Current startup-loaded parameters need an explicit
+live-update audit even for town switching. Reject startup-only keys in a live
+switch, instead of pretending a YAML parser makes every parameter mutable.
 
-Selecting a profile replaces the preceding profile's overrides; it does not
-accumulate settings from every previously selected file. Apply defaults plus
-the selected file/class overrides and explicit run locks. A conflicting
-profile value for a locked `BORG_PARAM_*` override is rejected visibly.
-Known names, registry bounds, supported mutability and combinations are
-validated before changing anything. Commit all settings together, refresh
-relevant danger/path/readiness/item caches, and record the effective table
-and its hash. Failure leaves the old profile intact. Current parameters are
-startup-loaded: even town switching requires that audit/implementation, not
-just a TOML parser. Initially reject keys not approved for live switching;
-keep startup-only keys fixed. Engine constants, birth options and backend
-selection are not switchable profile settings.
+Core emergency/town intent overrides the plan. `town: resume` preserves the
+plan position, completes recovery, then retries the interrupted errand with
+fresh readiness/supply checks; `stop` hands back. Do not re-enter one town
+request every think. `loop-levels` already owns its town detour and first-endpoint
+restart: observe that child state instead of scheduling a duplicate trip.
+Manual stop cancels the plan and cannot be caught by a repeat.
 
-Profiles are read and validated when the plan starts; pin the bytes/hashes of
-every referenced profile in the run bundle. File edits take effect only on an
-explicit reload at an idle town boundary. Reload validates the complete bundle
-first and requires an explicit restart of the selected named plan; it does not
-try to migrate a half-executed plan. Record old/new hashes and the restart.
-Pause/resume without reload retains the same plan position and frozen files.
-A native Angband save alone cannot restore the Borg's memory or plan cursor;
-use a qualified joint checkpoint/replay, or label a fresh-state restart honestly.
+Read and freeze the relevant configuration bytes at startup. File edits are
+not automatically applied mid-fight. A proposed explicit reload at an idle town
+boundary validates the complete file/block first, then restarts the selected
+named plan and records old/new configuration hashes. Pause/resume without
+reload keeps the cursor and the frozen settings. An Angband save alone does
+not restore Borg/plan memory: use qualified joint checkpoints/replay or label
+a fresh-state restart honestly.
 
-## Move existing policy into profiles without changing it by accident
+## Put ladder and class policy in the block
 
-1. Extract class ladder schedules and their level/readiness gates from
-   `borg-core/ladders.txt` into profile-owned data/plans. Keep a compatibility
-   adapter to the existing executor while doing this; avoid two authoritative
-   copies. Preserve existing `/ladder` behaviour until equivalence is checked.
-2. `/ladder` resolves the active profile/class `ladder` plan. Move class-specific
-   shopping/progression choices into the same files as their capability APIs
-   become available. A different schedule is an explicit different profile.
-3. Deprecate global ladder/trips configuration once profile replacements cover
-   their semantics. Translate old configuration with diagnostics; do not
-   silently change skip/unprepared rules, last-trip repetition or town recovery.
-4. Remove the legacy executor only after the simple plan format can represent
-   the old behaviour and fixed-start/class tests confirm it. If it cannot,
-   retain the deprecated adapter and state the unsupported conversion instead
-   of adding a general language to v1 or calling an approximation equivalent.
+A profile can own named plans and optional single-level class overrides:
 
-Later, add names of reviewed unique-fight tactics to profiles: a preparation
-kit, engagement requirement and named fight/retreat behaviour. Item counts,
-spell choices and action recipes need the accepted inventory/tactical APIs
-and their own design/tests; no tactical scripting syntax is proposed here.
-The LLM adviser in [PR #309](https://github.com/diegoami/borg-reborn-rs/pull/309)
-can eventually suggest a reviewed profile/tactic or bounded action through its
-own protocol; it does not require turning this plan format into a programming
-language.
+```yaml
+profiles:
+  normal:
+    parameters: {}
+    plans:
+      ladder:
+        - {errand: loop-levels, args: [0, 2]}
+    classes:
+      warrior:
+        plans:
+          ladder:
+            - {errand: loop-levels, args: [0, 3]}
+```
+
+This shows storage/lookup, not an equivalent translation of today's ladder.
+`/ladder` resolves the matching class's `ladder` plan, then the selected
+profile's common plan. Top-level plans are whole-game entry points; profile
+plans are named routines selected explicitly, not automatically on switching.
+Unknown names/classes fail validation; absent class entries use the common plan.
+
+Migration first relocates existing ladder schedules/gates into profile-owned
+data behind a compatibility adapter. Preserve class-specific readiness/skip
+rules, level gates, last-trip repetition and town behaviour before retiring
+`ladders.txt` or the old executor. If the reduced format cannot represent a
+legacy case, retain and document the deprecated adapter; do not call an
+approximation equivalent or grow another general language to remove it.
+`/trips` may remain a deprecated compatibility input, not new engine policy.
+
+Later add reviewed named unique tactics and preparation kits to profiles,
+using accepted item/spell/combat APIs and separate tests. No free-form tactical
+language is part of v1. [PR #309](https://github.com/diegoami/borg-reborn-rs/pull/309)
+may later propose a named profile/plan/tactic or supported bounded action,
+without writing arbitrary code or modifying this configuration file.
 
 ## Delivery and checks
 
-This design does not start an implementation milestone or amend SPEC/RULES.
-First implement static profile/plan validation and inspection, then sequential
-errands/repetition and town resume, then audited town-only switching and ladder
-migration. Keep fight tactics and active advice in later separate work.
+This is design only, not an implementation milestone or a SPEC/RULES amendment.
+Deliver the literal block reader and schema checks first, then sequential
+errands/repeats and town resume, then audited town-only profile changes and
+compatibility-preserving ladder migration. R control APIs and the accepted P
+registry remain dependencies; inventory work depends on #293/R4, and later
+unique tactics on accepted R2/R3/R4 capabilities. Track B remains undefined
+in current main: clarify it before scheduling, rather than inventing a track.
 
-Reuse the accepted P parameter registry and R control interfaces as they become
-available, respecting their review gates; inventory directives depend on #293
-and R4, and later fight behaviour on R2/R3. Track B remains undefined in current
-main (P/R/Q are documented); resolve the owner's reference before assigning
-implementation dependencies. Do not create a track or silently equate B with P.
-
-Acceptance checks: reject invalid files/names, bounds, unsupported live keys,
-non-yielding/unreachable loops and backend mismatches; prove profile replacement
-and failed-switch rollback; distinguish timed yield from abort; resume a town
-detour once; preserve all class ladder semantics during migration; preserve
-inactive-plan key streams. Record source spans, selected profile/plan/class,
-file hashes, effective parameter changes, current line/repeat state, errand
-outcomes and interruption reasons. Show these in a simple status/explain view.
-Examples and profile names above are design examples, not runnable features or
-recommended calibration results. The owner reviews the reduced format before
-implementation; no survival improvement is claimed.
+Acceptance checks cover flat-file compatibility and block isolation, CRLF and
+indented delimiters, truncation/duplicates/YAML features, unknown names/types,
+non-yielding/unreachable loops, planned budgets versus aborts, town resumption,
+profile replacement/rollback and class-ladder equivalence. Preserve inactive-plan
+key streams. Record the configuration/block hash, effective parameter epochs,
+profile/plan/class selection, current step/repeat state, outcomes and reasons.
+The examples are not runnable today and claim no improvement in play.

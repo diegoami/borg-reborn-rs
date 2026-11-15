@@ -1,21 +1,28 @@
-# Player Borg profiles (proposal)
+# Shared borg.txt examples (proposal)
 
-[PR #308](https://github.com/diegoami/borg-reborn-rs/pull/308) proposes shared
-player profiles here as `NAME.toml`: one file contains parameters, named
-errand plans and optional single-level class overrides. Ladder schedules and
-other progression policy belong in these profiles, not new hard-coded engine
-commands. See [the format and migration plan](../../../docs/GAME-PLAN-LANGUAGE.md).
+[PR #308](https://github.com/diegoami/borg-reborn-rs/pull/308) proposes keeping
+profiles and errand plans **inside borg.txt**, as a literal YAML block:
 
-Personal profiles go in `ANGBAND_DIR_USER/profiles/NAME.toml`; select them
-explicitly as `user:NAME`. Shared names are not silently shadowed. For a normal
-watched game the personal directory is `.angband-reborn/user/profiles/`; a
-guided game uses its own `SESSION/user/profiles/`.
+```text
+borg_reborn_plan = <<BORG_PLAN
+version: 1
+profiles:
+  normal: {parameters: {}}
+plans:
+  start: [town, shopping]
+BORG_PLAN
+```
 
-The TOML loader, named plan runner and live switching are **not implemented**.
-No `cautious` preset is shipped or claimed to improve play by this proposal.
-Today, the vendored core reads `borg_param_<name> = INTEGER` from its run's
-`borg.txt` at initialization; the catalogue/bounds are in
-[CALIBRATION.md](../../../docs/CALIBRATION.md). Environment overrides win.
-Existing `../reborn-default.txt` and `BORG_PROFILE` configure the original
-reborn core and keep their current meaning. Zoo profile JSON remains a
-separate measurement/configuration interface.
+Reviewed examples/fragments can live here as `NAME.borg.txt`. Copy the desired
+block/settings into the run's actual `ANGBAND_DIR_USER/borg.txt`; no runtime
+profile-directory search, external TOML file or separate plan-file setting is
+proposed. A normal watched game uses `.angband-reborn/user/borg.txt`; a guided
+game uses its own `SESSION/user/borg.txt` from the manifest. The block reader
+must skip all embedded lines when reading flat Borg settings.
+
+See [the proposal](../../../docs/GAME-PLAN-LANGUAGE.md) for profiles, class
+ladder plans, precedence and migration. The embedded-block parser, runner and
+live switching are **not implemented**. Today core parameters still use flat
+`borg_param_<name> = INTEGER` settings read at initialization; see
+[CALIBRATION.md](../../../docs/CALIBRATION.md). Existing original-core
+`reborn-default.txt`/`BORG_PROFILE` and zoo JSON interfaces keep their meaning.

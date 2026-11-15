@@ -2,24 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: simplified profile/errand-plan proposal (#305, PR #308)
+## 2026-11-15: inline borg.txt plan proposal (#305, PR #308)
 
-- Owner rejected the full language as overkill. GAME-PLAN-LANGUAGE.md now
-  specifies only errand sequences, bounded chunks, simple repeat-until
-  guards, a town resume policy and town-only named profile changes.
-- A proposed single TOML profile holds parameters and named plans, with
-  optional class overrides. Shared files live in harness/profiles/borg-rs;
-  private files in the game's user/profiles directory. The new README
-  distinguishes these proposed paths from current startup borg.txt and
-  original-core BORG_PROFILE support.
-- Owner requested moving ladder/trips/progression policy into profiles.
-  Keep /ladder as an alias and migrate through a compatibility adapter,
-  preserving class semantics before removing the old executor. Unique
-  tactics and active LLM advice stay separate later work, not a DSL in v1.
-- No imports, mutable variables, general expressions, nested handlers or
-  type-system implementation. Track B remains unresolved. This remains
-  an open design draft; no loader or live switching has been implemented.
-- Validation: document/link/whitespace checks; no gameplay change or tests.
+- Owner clarified: put a YAML plan directly inside borg.txt with an EOF-like
+  marker, not a separate profile-file system. The proposal now uses
+  `borg_reborn_plan = <<BORG_PLAN` plus a literal terminating marker.
+- One block contains named profiles/parameters, class ladder routines and
+  simple errand/repeat plans. Existing flat settings remain the base;
+  profile changes are proposed town-only overlays. No general DSL or
+  external TOML/plan-file loader is proposed.
+- Specifies marker parsing, skipping the entire block in every flat-setting
+  reader, restricted YAML validation, explicit failure and legacy migration.
+  Shared examples are copyable borg.txt fragments; the active file is the
+  actual run's user/borg.txt. Current binaries do not support the block yet.
+- Validation is document/link/whitespace and example-shape checks only;
+  no runtime parser, plan execution or parameter switching implemented.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
