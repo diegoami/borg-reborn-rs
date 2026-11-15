@@ -19,41 +19,45 @@ evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reb
 
 Configured errands are validated before the vendored core starts. An absent
 setting, an empty string, or exactly `none` disables errands. Unknown or
-malformed command lines,
-including an invalid command after a valid prefix, stop the process with
-exit status 2 and the setting's source/value on stderr. `BORG_ERRAND` takes
-precedence over `borg_reborn_errand`, including `none` overriding a file
-command. Valid command syntax and interactive prompt handling are unchanged.
-The original reborn core ignores this vendored-core setting.
+malformed command lines, including an invalid command after a valid prefix,
+stop the process with exit status 2 and the setting's source/value on
+stderr. `BORG_ERRAND` takes precedence over `borg_reborn_errand`, including
+`none` overriding a file command. Valid command syntax and interactive
+prompt handling are unchanged. The original reborn core ignores this
+vendored-core setting.
 
 The configured fear threshold is also strict: invalid values exit 2 with
 source/value diagnostics. `BORG_STOPSCARED` overrides the file setting;
-absence, empty and exact `none` retain the core default and suppress a
-file override. Explicit `off` disables the threshold. Existing boolean
-aliases (`true`/`on`/`yes` for `flee`, `false`/`no` for `off`) and thresholds
-1–1000 retain their behavior. The original core ignores this setting.
+absence, empty and exact `none` retain the core default and suppress a file
+override. Explicit `off` disables the threshold. Existing boolean aliases
+(`true`/`on`/`yes` for `flee`, `false`/`no` for `off`) and thresholds 1–1000
+retain their behavior. The original core ignores this setting. The
+stopscared command parser trims its argument before parsing; configured
+budget integers reject surrounding whitespace. Empty fear/errand settings
+retain their documented default/disabled aliases, while an empty budget is
+an error. Exact `none` keeps its documented meaning for each setting.
 
-With a configured vendored-core command line, `BORG_ERRAND_BUDGET` must
-be an integer from 0 through 9223372036854775807, or exactly `none`.
-Missing, `0` and `none` retain the unbounded meaning. Negative, empty,
-non-integer, overflowing or non-UTF-8 values exit 2 with source/value
-diagnostics instead of removing the bound. The budget is ignored when
-no vendored-core command line is configured, or with the original core.
+With a configured vendored-core command line, `BORG_ERRAND_BUDGET` must be
+an integer from 0 through 9223372036854775807, or exactly `none`. Missing,
+`0` and `none` retain the unbounded meaning. Negative, empty, non-integer,
+overflowing or non-UTF-8 values exit 2 with source/value diagnostics instead
+of removing the bound. The budget is ignored when no vendored-core command
+line is configured, or with the original core.
 
 A missing `borg.txt` means file settings are absent. Other read errors,
 including invalid UTF-8 anywhere in the file, stop configuration with exit
 status 2 and a path/error diagnostic. Environment overrides retain priority;
-a file is read only when a setting or the parameter loader consults it.
-Core parameters use the same read policy.
+a file is read only when a setting or the parameter loader consults it. Core
+parameters use the same read policy.
 
 Fear and errand settings are read on command entry, including re-entry
-(`^Z`); core selection and the parameter snapshot remain process-cached.
-In a vendored-core session, a newly invalid setting or unreadable file
-encountered by that reader terminates the process
-without an automatic save. Edit configuration before starting a fresh
-process, and preserve an interactive game's save before changing it. The
-reader's valid-to-invalid re-entry path is covered in a subprocess test;
-live interactive driving and automatic save recovery are not claimed.
+(`^Z`); core selection and the parameter snapshot remain process-cached. In
+a vendored-core session, a newly invalid setting or unreadable file
+encountered by that reader terminates the process without an automatic save.
+Edit configuration before starting a fresh process, and preserve an
+interactive game's save before changing it. The reader's valid-to-invalid
+re-entry path is covered in a subprocess test; live interactive driving and
+automatic save recovery are not claimed.
 
 Each of these environment settings that is set is written to the run's
 `config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
