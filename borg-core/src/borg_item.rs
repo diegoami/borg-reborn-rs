@@ -22,6 +22,7 @@ use crate::engine;
 
 /// One item as the Borg sees it (`borg_item`), with the C field names.
 #[derive(Copy, Clone)]
+#[derive(PartialEq)]
 pub struct BorgItem {
     pub desc: [core::ffi::c_char; 80],
     /// `note` (C: `char *note`, NULL = `None`): where the inscription
@@ -74,6 +75,7 @@ pub struct BorgItem {
 /// slot or shop ware) plus an offset into *that* element's `desc`, read at
 /// each use, as C's pointer is (see `NoteRef`, `item_note`).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct ItemState {
     pub items: Vec<borg_item>,
     pub safe_items: Vec<borg_item>,

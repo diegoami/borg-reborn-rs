@@ -1,6 +1,6 @@
 //! borg-reborn-rs (#223): source types for Track R's read-only view.
 //! This is a visibility boundary, not a new perception or decision hook.
-pub use crate::borg::{BorgGoal, BorgStatus};
+pub use crate::borg::{BorgGoal, BorgStatus, BorgTemp, BorgTimes};
 pub use crate::borg_cave::{BorgGrid, CaveState, AUTO_MAX_X, AUTO_MAX_Y};
 pub use crate::borg_flow_kill::BorgKill;
 pub use crate::borg_flow_take::BorgTake;

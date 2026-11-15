@@ -67,6 +67,7 @@ use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
 
 /// The module's globals (borg-fight-attack.c).
+#[derive(Clone, PartialEq)]
 pub struct FightAttackState {
     /// `successful_target`: zero is "haven't shot", positive is "good to
     /// shoot current target", negative is "shot and missed", -12 and lower

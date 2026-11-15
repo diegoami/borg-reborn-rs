@@ -41,6 +41,7 @@ pub struct BorgGrid {
 /// The map (`borg_grids`). In C, an array of `AUTO_MAX_Y` row pointers,
 /// each allocated (zeroed) by `borg_init_cave()`.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct CaveState {
     grids: Vec<BorgGrid>,
 }

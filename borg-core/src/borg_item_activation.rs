@@ -20,6 +20,7 @@ use crate::engine;
 
 /// The activation index of each activation the Borg knows (`act_*`).
 #[derive(Clone, Copy, Default, Debug)]
+#[derive(PartialEq)]
 pub struct ActivationIds {
     pub dragon_power: i32,
     pub dragon_shining: i32,

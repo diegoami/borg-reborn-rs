@@ -71,6 +71,7 @@ pub struct ReadMessage {
 }
 
 /// borg-messages.c globals and file statics.
+#[derive(Clone, PartialEq)]
 pub struct MessagesState {
     /// `borg_match`: a message containing this text cancels the Borg
     /// (`char[128]`, NUL-terminated; empty = off)
@@ -1549,6 +1550,7 @@ fn borg_init_spell_messages(st: &mut BorgState) {
 /// (better-borg-c milestone7 patch 0071).
 fn borg_get_parsed_pain(pain: &[u8], do_plural: bool) -> Vec<u8> {
     #[derive(PartialEq)]
+    #[derive(Clone)]
     enum Parse {
         Normal,
         Single,

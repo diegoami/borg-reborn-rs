@@ -36,12 +36,55 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/memory.rs', 'src/shadow.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/memory.rs', 'src/shadow.rs', 'src/threat_facts.rs', 'src/decision_api.rs', 'src/decision_tape.rs', 'src/decision_snapshot.rs', 'src/decisions.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
-    'Cargo.toml', 'src/borg_cave.rs', 'src/borg_power.rs', 'src/borg_item_use.rs', 'src/borg_fight_defend.rs', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
-    'src/borg_think_dungeon.rs', 'src/borg_think_dungeon_util.rs', 'src/engine.rs', 'src/lib.rs',
+    # #286 adds value snapshots alongside the original declared hooks.
+    'Cargo.toml',
+    'src/borg.rs',
+    'src/borg_caution.rs',
+    'src/borg_cave.rs',
+    'src/borg_cave_light.rs',
+    'src/borg_cave_view.rs',
+    'src/borg_commands.rs',
+    'src/borg_danger.rs',
+    'src/borg_escape.rs',
+    'src/borg_fight_attack.rs',
+    'src/borg_fight_defend.rs',
+    'src/borg_flow.rs',
+    'src/borg_flow_glyph.rs',
+    'src/borg_flow_kill.rs',
+    'src/borg_flow_misc.rs',
+    'src/borg_flow_stairs.rs',
+    'src/borg_flow_take.rs',
+    'src/borg_formulas.rs',
+    'src/borg_formulas_calc.rs',
+    'src/borg_init.rs',
+    'src/borg_inventory.rs',
+    'src/borg_io.rs',
+    'src/borg_item.rs',
+    'src/borg_item_activation.rs',
+    'src/borg_item_use.rs',
+    'src/borg_item_val.rs',
+    'src/borg_item_wear.rs',
+    'src/borg_magic.rs',
+    'src/borg_messages.rs',
+    'src/borg_messages_react.rs',
+    'src/borg_power.rs',
+    'src/borg_prepared.rs',
+    'src/borg_projection.rs',
+    'src/borg_recover.rs',
+    'src/borg_store.rs',
+    'src/borg_store_sell.rs',
+    'src/borg_think.rs',
+    'src/borg_think_dungeon.rs',
+    'src/borg_think_dungeon_util.rs',
+    'src/borg_update.rs',
+    'src/engine.rs',
+    'src/lib.rs',
+    'src/shadow.rs',
+    'src/state.rs',
 }
 
 

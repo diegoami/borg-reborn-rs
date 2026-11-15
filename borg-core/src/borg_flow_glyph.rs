@@ -35,6 +35,7 @@ const TRACK_GLYPH_SIZE: i16 = 200;
 
 /// borg-flow-glyph.c globals and file statics.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct GlyphState {
     /// `track_glyph`: the known glyphs of warding (the same
     /// `struct borg_track` as the stair lists; C `num`/`size` semantics)

@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, track-p]
   pull_request:
 
 jobs:
@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -45,6 +46,7 @@ jobs:
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
@@ -87,8 +89,8 @@ jobs:
               assert rows and len(rows) <= 200 and all(r['check'] != 'unclassified' for r in rows)
               assert json.loads((case / 'record.json').read_text())['core_decision_trace']['lines'] == len(rows)
           PYCORE
-      # R1.2: zero mismatches must include real comparisons, not empty logs.
-      # The pure helper is the only port; unported danger/caution stay native.
+      # Track R: pure danger and stateful caution/escape/recovery must have
+      # real coverage, zero mismatches and identical off/check/switch play.
       - run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
@@ -186,6 +188,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev
       - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release

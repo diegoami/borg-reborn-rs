@@ -45,3 +45,38 @@ and their check/switch full-suite gates belong to R2.
 
 The harness records `BORG_SHADOW` in config.txt; death replay restores it
 and removes an inherited mode when the recorded run did not set one.
+
+## R2 danger slice (#281)
+
+The port now owns complete whole-square and standalone-monster danger
+assessment, including physical blows, spells, movement horizons, simulation
+modifiers and native aggregation order. All BI reads use named View fields;
+ThreatMemory borrows buffs, clocks, simulation flags, fear maps, glyphs and
+monster slots. Both native danger entry points run once, then compare against
+this read-only port. Their calculations mutate no Borg or engine state and
+consume no RNG. Switch returns the ported scalar. Off never constructs a
+View, calls a port or reads a shadow-only engine turn.
+
+The immutable threat_facts service shares existing lower-level projection,
+floor/protection, spell-legality, blow classification, parameters and engine
+tables with the native implementation. These dependencies are deliberately
+unported; a zero does not independently validate them. Engine object
+pointers are reduced to value facts (including whether friends exist).
+Only the projection query's borrow signature changes, not its logic.
+
+Statistics distinguish danger_comparisons, monster_comparisons and
+wall_comparisons. The gate requires positive coverage of all three across
+a suite, exact danger call/comparison correspondence in each run, and
+consistent total counts. Wall-helper traffic cannot stand in for a complete
+danger comparison. All three appear under ported_points; caution, escape
+and recovery remain explicitly unported. The R2 milestone's stateful ports
+and final carry report remain #209; #281 alone does not complete R2.
+
+## R2 stateful slice (#286)
+
+Caution, recovery and nine public escape entry points now have independent
+ported programs. Their check/switch adapter compares complete transactions,
+not only acted/keys. STATEFUL-SHADOW.md specifies effect-once execution,
+request/input-state checks, internal entry markers, full final-state equality,
+nested transactions, controlled divergence exits and the closed source gate.
+No R2 points remain deliberately unported. Off remains the native path.

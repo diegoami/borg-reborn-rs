@@ -66,6 +66,7 @@ pub const FEAR_MONSTERS_HGT: usize = (AUTO_MAX_Y + 1) as usize;
 pub const FEAR_MONSTERS_WID: usize = (AUTO_MAX_X + 1) as usize;
 
 /// borg-danger.c globals.
+#[derive(Clone, PartialEq)]
 pub struct DangerState {
     /// `borg_fear_region`: extra fear per "region" (11x11 grids)
     pub fear_region: [[u16; FEAR_REGION_WID]; FEAR_REGION_HGT],
@@ -2002,7 +2003,11 @@ pub fn borg_danger_one_kill(
     full_damage: bool,
 ) -> i32 {
     let kill = st.kills.kills[i as usize];
-    danger_one_kill(st, &kill, y, x, c, i, average, full_damage)
+    // borg-reborn-rs (#281): exactly one native evaluation, immutable port.
+    let original = danger_one_kill(st, &kill, y, x, c, i, average, full_damage);
+    crate::shadow::monster_danger(st, crate::shadow::DangerInput {
+        y, x, turns:c, average, full:full_damage,
+    }, i, original)
 }
 
 /// `borg_danger_one_kill()` on a copy of `borg_kills[i]`.

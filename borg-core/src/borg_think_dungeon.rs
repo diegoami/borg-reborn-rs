@@ -89,6 +89,7 @@ use crate::state::BorgState;
 
 /// borg-think-dungeon.c globals: the current level "feeling".
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct ThinkDungeonState {
     /// `borg_feeling_danger`
     pub feeling_danger: i32,

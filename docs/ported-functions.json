@@ -7,6 +7,419 @@
       "native_function": "wall_like",
       "port_path": "borg-next/src/shadow.rs",
       "port_function": "wall_like"
+    },
+    {
+      "point": "danger.borg_danger",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "aggregate"
+    },
+    {
+      "point": "danger.borg_danger_physical",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_physical",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "physical_estimate"
+    },
+    {
+      "point": "danger.borg_danger_spell",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_spell",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "spell_estimate"
+    },
+    {
+      "point": "danger.borg_danger_one_kill",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_one_kill",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "estimate_monster"
+    },
+    {
+      "point": "danger.pfe_applies",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "pfe_applies",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "pfe_applies"
+    },
+    {
+      "point": "danger.rf",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "rf",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "rf"
+    },
+    {
+      "point": "danger.count_safe_spots",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "count_safe_spots",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "count_safe_spots"
+    },
+    {
+      "point": "danger.sleepable",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "sleepable",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "sleepable"
+    },
+    {
+      "point": "danger.crushable",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "crushable",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "crushable"
+    },
+    {
+      "point": "danger.monster_estimate",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "danger_one_kill",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "estimate_monster"
+    },
+    {
+      "point": "caution.key",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "caution.i2d",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "i2d",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "i2d"
+    },
+    {
+      "point": "caution.borg_timer",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "borg_timer",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "borg_timer"
+    },
+    {
+      "point": "caution.inven_light",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "inven_light",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "inven_light"
+    },
+    {
+      "point": "caution.set_cursp",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "set_cursp",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "set_cursp"
+    },
+    {
+      "point": "caution.bouncing",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "bouncing",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "bouncing"
+    },
+    {
+      "point": "caution.rod_ok",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "rod_ok",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "rod_ok"
+    },
+    {
+      "point": "caution.start_leaving",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "start_leaving",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "start_leaving"
+    },
+    {
+      "point": "caution.start_fleeing",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "start_fleeing",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "start_fleeing"
+    },
+    {
+      "point": "caution.heal_amount",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "heal_amount",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "heal_amount"
+    },
+    {
+      "point": "caution.stats_needing_fix",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "stats_needing_fix",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "stats_needing_fix"
+    },
+    {
+      "point": "caution.borg_heal",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "borg_heal",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "borg_heal"
+    },
+    {
+      "point": "caution.note_standing",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "note_standing",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "note_standing"
+    },
+    {
+      "point": "caution.nearest_free_stair",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "nearest_free_stair",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "nearest_free_stair"
+    },
+    {
+      "point": "caution.desperate_flow",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "desperate_flow",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "desperate_flow"
+    },
+    {
+      "point": "caution.desperate_for_stairs",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "desperate_for_stairs",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "desperate_for_stairs"
+    },
+    {
+      "point": "caution.retreat",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "retreat",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "retreat"
+    },
+    {
+      "point": "caution.back_away",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "back_away",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "back_away"
+    },
+    {
+      "point": "caution.may_move_away",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "may_move_away",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "may_move_away"
+    },
+    {
+      "point": "caution.borg_adjacent_kill_in_one_blow",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "borg_adjacent_kill_in_one_blow",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "borg_adjacent_kill_in_one_blow"
+    },
+    {
+      "point": "caution.borg_caution",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "borg_caution",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "borg_caution"
+    },
+    {
+      "point": "caution.note_with_reason",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "note_with_reason",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "note_with_reason"
+    },
+    {
+      "point": "caution.choose_stairs",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "choose_stairs",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "choose_stairs"
+    },
+    {
+      "point": "caution.buy_time_for_recall",
+      "native_path": "borg-rs/src/borg_caution.rs",
+      "native_function": "buy_time_for_recall",
+      "port_path": "borg-next/src/stateful/caution.rs",
+      "port_function": "buy_time_for_recall"
+    },
+    {
+      "point": "escape.key",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "escape.borg_timer",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_timer",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_timer"
+    },
+    {
+      "point": "escape.double_distance",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "double_distance",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "double_distance"
+    },
+    {
+      "point": "escape.rand_spread",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "rand_spread",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "rand_spread"
+    },
+    {
+      "point": "escape.reset_antisummon",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "reset_antisummon",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "reset_antisummon"
+    },
+    {
+      "point": "escape.phase_not_escape",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "phase_not_escape",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "phase_not_escape"
+    },
+    {
+      "point": "escape.borg_recall",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_recall",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_recall"
+    },
+    {
+      "point": "escape.borg_surrounded",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_surrounded",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_surrounded"
+    },
+    {
+      "point": "escape.borg_freedom",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_freedom",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_freedom"
+    },
+    {
+      "point": "escape.count_scary",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "count_scary",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "count_scary"
+    },
+    {
+      "point": "escape.borg_caution_phase",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_caution_phase",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_caution_phase"
+    },
+    {
+      "point": "escape.borg_caution_teleport",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_caution_teleport",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_caution_teleport"
+    },
+    {
+      "point": "escape.detect_wall",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "detect_wall",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "detect_wall"
+    },
+    {
+      "point": "escape.borg_escape_stair",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_escape_stair",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_escape_stair"
+    },
+    {
+      "point": "escape.borg_allow_teleport",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_allow_teleport",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_allow_teleport"
+    },
+    {
+      "point": "escape.borg_shadow_shift",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_shadow_shift",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_shadow_shift"
+    },
+    {
+      "point": "escape.borg_dimension_door",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_dimension_door",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_dimension_door"
+    },
+    {
+      "point": "escape.borg_teleport_off_level",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_teleport_off_level",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_teleport_off_level"
+    },
+    {
+      "point": "escape.avoid",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "avoid",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "avoid"
+    },
+    {
+      "point": "escape.near_unique_1_8",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "near_unique_1_8",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "near_unique_1_8"
+    },
+    {
+      "point": "escape.borg_escape",
+      "native_path": "borg-rs/src/borg_escape.rs",
+      "native_function": "borg_escape",
+      "port_path": "borg-next/src/stateful/escape.rs",
+      "port_function": "borg_escape"
+    },
+    {
+      "point": "recovery.key",
+      "native_path": "borg-rs/src/borg_recover.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/recovery.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "recovery.rest",
+      "native_path": "borg-rs/src/borg_recover.rs",
+      "native_function": "rest",
+      "port_path": "borg-next/src/stateful/recovery.rs",
+      "port_function": "rest"
+    },
+    {
+      "point": "recovery.rod_charging",
+      "native_path": "borg-rs/src/borg_recover.rs",
+      "native_function": "rod_charging",
+      "port_path": "borg-next/src/stateful/recovery.rs",
+      "port_function": "rod_charging"
+    },
+    {
+      "point": "recovery.borg_recover",
+      "native_path": "borg-rs/src/borg_recover.rs",
+      "native_function": "borg_recover",
+      "port_path": "borg-next/src/stateful/recovery.rs",
+      "port_function": "borg_recover"
     }
   ]
 }

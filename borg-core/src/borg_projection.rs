@@ -26,6 +26,7 @@ use crate::engine;
 
 /// The module's globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct ProjectionState {
     /// `borg_target_loc`: current targetted location
     pub target_loc: loc,
@@ -246,7 +247,7 @@ fn max_range() -> i32 {
 }
 
 /// `borg_fear_region[borg.c.y / 11][borg.c.x / 11] >= borg.avoidance / 20`
-fn fear_region_scary(st: &mut BorgState) -> bool {
+fn fear_region_scary(st: &BorgState) -> bool {
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     i32::from(st.danger.fear_region[(cy / 11) as usize][(cx / 11) as usize]) >= i32::from(st.borg.avoidance) / 20
 }
@@ -255,7 +256,8 @@ fn fear_region_scary(st: &mut BorgState) -> bool {
 /// Assume that there is no monster in the way.
 /// HACK: We refuse to assume that unknown grids are floors
 /// Adapted from "projectable()" in "spells1.c".
-pub fn borg_projectable(st: &mut BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+// borg-reborn-rs (#281): this query never mutates native memory.
+pub fn borg_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
     /* Start at the initial location */
     let mut y = y1;
     let mut x = x1;

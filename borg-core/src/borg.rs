@@ -35,6 +35,7 @@ pub const fn ktrl(c: u8) -> u32 {
 
 /// All the information the Borg knows about itself (`struct borg_struct`).
 #[derive(Clone, Default)]
+#[derive(PartialEq)]
 pub struct Borg {
     /// Indexed by `BI_*` (`borg.trait`, allocated by borg-trait.c).
     pub trait_: Vec<i32>,
@@ -86,6 +87,7 @@ pub struct Borg {
 
 #[derive(Copy, Clone, Default)]
 #[repr(C)]
+#[derive(PartialEq)]
 pub struct BorgBest {
     pub home: bool,
     pub tval: u8,
@@ -94,6 +96,7 @@ pub struct BorgBest {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgTemp {
     // C fields that no C code reads either (kept as in `borg_temp`).
     #[allow(dead_code)]
@@ -118,6 +121,7 @@ pub struct BorgTemp {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgStatus {
     pub active: bool,
     pub cancel: bool,
@@ -135,6 +139,7 @@ pub struct BorgStatus {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgTimes {
     pub now: BorgTime,
     pub level: BorgTime,
@@ -152,6 +157,7 @@ pub struct BorgTimes {
 }
 
 #[derive(Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgGoal {
     pub type_0: i16,
     pub g: loc,
@@ -177,6 +183,7 @@ pub struct BorgGoal {
 
 /// The player's settings saved while the Borg runs (borg-init.c).
 #[derive(Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgInitSave {
     /// The user's keymap mode (`KEYMAP_MODE_*`).
     pub key_mode: i32,
@@ -188,6 +195,7 @@ pub struct BorgInitSave {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgMonInfo {
     pub breeders: u16,
     pub scary: bool,
@@ -196,6 +204,7 @@ pub struct BorgMonInfo {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgIdInfo {
     pub morgoth: u32,
     pub sauron: u32,
@@ -238,6 +247,7 @@ pub struct BorgIdInfo {
 }
 
 #[derive(Copy, Clone, Default)]
+#[derive(PartialEq)]
 pub struct BorgNear {
     pub morgoth: bool,
     pub breeder: bool,
@@ -255,6 +265,7 @@ impl Borg {
 }
 
 /// borg.c's other globals.
+#[derive(Clone, PartialEq)]
 pub struct CoreState {
     /// Configuration from borg.txt (`borg_cfg`), indexed by `BORG_*`.
     pub cfg: Vec<i32>,

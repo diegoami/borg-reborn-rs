@@ -13,7 +13,7 @@ def check(roots):
     files = sorted({p for root in roots for p in Path(root).rglob('shadow-stats.jsonl')})
     if not files:
         raise ValueError('no shadow statistics found')
-    totals = {'comparisons': 0, 'danger_calls': 0, 'caution_calls': 0}
+    totals = {'comparisons': 0, 'danger_calls': 0, 'caution_calls': 0, 'danger_comparisons': 0, 'monster_comparisons': 0, 'wall_comparisons': 0, 'stateful_comparisons':0, 'escape_calls':0, 'recovery_calls':0}
     for path in files:
         previous = 0
         last = None
@@ -27,8 +27,17 @@ def check(roots):
             last = row
         if last is None:
             raise ValueError(f'{path}: empty statistics')
-        if last['ported_points'] != ['danger.wall_like']:
+        if last['ported_points'] != ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']:
             raise ValueError(f'{path}: unexpected port coverage')
+        if last['unported_points'] != []:
+            raise ValueError(f'{path}: unexpected unported points')
+        counts = last['counts']
+        if counts['danger_comparisons'] != counts['danger_calls']:
+            raise ValueError(f'{path}: danger calls were observed without comparisons')
+        if counts['stateful_comparisons'] > sum(counts[k] for k in ('caution_calls','escape_calls','recovery_calls')):
+            raise ValueError(f'{path}: stateful calls were observed without comparisons')
+        if counts['comparisons'] != sum(counts[k] for k in ('danger_comparisons', 'monster_comparisons', 'wall_comparisons', 'stateful_comparisons')):
+            raise ValueError(f'{path}: inconsistent comparison counts')
         if last['counts']['mismatches']:
             raise ValueError(f'{path}: reported shadow mismatches')
         mismatch = path.with_name('shadow.jsonl')

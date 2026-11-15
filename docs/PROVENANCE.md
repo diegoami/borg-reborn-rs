@@ -33,3 +33,34 @@ crate and `harness/measurement/`.
 ## Angband Recorder (owner integration, 2026-11-14)
 
 Optional recorder crate/host adapter v0.1.0 at c4986b26b9fd1c14852df4f1b7393d9030cf812a. See recorder-pin.json and docs/ANGBAND-RECORDER.md. Donor credits are retained in the vendored CREDITS.md; engine/Borg policy is unchanged.
+
+### Track R danger port (#281, R2)
+
+`borg-next/src/danger.rs` adapts `borg-rs/src/borg_danger.rs` at runtime
+pin e6d13fc9baff, with the already adopted Track P named parameters. The
+copyright and GPL/Angband license are retained in the file. This is our
+owned port, not a second vendored core. Trait reads use named R1 view
+fields; temporary buffs, simulation flags, fear maps, glyphs, monster slots
+and teleport exclusions come from a borrowed typed danger context.
+
+`borg-core/src/threat_facts.rs` supplies immutable engine/table facts and
+existing unported projection, grid, spell-legality and blow-classification
+queries. Both arms intentionally share these dependencies. The port owns
+physical/spell estimates, modifier ordering, per-monster combination and
+whole-square aggregation. It adds no engine reads to the fair-information
+surface beyond the reads the original danger code already makes. None of
+these services exposes RNG, key emission, mutation or original danger
+results. The projection query's unnecessarily mutable signature is narrowed
+to a shared borrow without changing its logic.
+
+### Track R stateful ports (#286, R2)
+
+`borg-next/src/stateful/{caution,escape,recovery}.rs` adapts borg-rs v12
+`e6d13fc9baff`'s borg_caution.rs, borg_escape.rs and borg_recover.rs, retaining
+copyright/license notices and the already adopted Track P named parameters.
+Native trait reads are re-expressed as named View fields; the port owns the
+policy branches, priorities, goal mutations and action selection. Existing
+unported operations are behind the shared closed dependency API, not copied
+as a second engine. STATEFUL-SHADOW.md describes effect-once record/replay,
+full state equality, nested entry, panic=abort handling and the source gate.
+The 68 exact dependency signatures are R2-STATEFUL-DEPENDENCIES.json.

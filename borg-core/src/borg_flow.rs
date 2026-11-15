@@ -88,6 +88,7 @@ pub fn borg_ddxy_ddd(i: usize) -> (i32, i32) {
 }
 
 /// borg-flow.c globals.
+#[derive(Clone, PartialEq)]
 pub struct FlowState {
     /// `flow_head`: next free slot of the queue
     pub head: i32,

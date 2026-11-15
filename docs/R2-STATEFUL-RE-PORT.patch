@@ -1,0 +1,50 @@
+diff --git a/borg-core/src/borg_escape.rs b/borg-core/src/borg_escape.rs
+index 5096450e..f6d30df8 100644
+--- a/borg-core/src/borg_escape.rs
++++ b/borg-core/src/borg_escape.rs
+@@ -162,7 +162,7 @@ pub(crate) fn borg_recall_native(st: &mut BorgState) -> bool {
+ /// will see that several monsters are approaching him and he may
+ /// become surrounded then die.  This routine looks at near-by monsters
+ /// and determines the likelihood of him getting surrounded.
+-pub(crate) fn borg_surrounded_native(st: &mut BorgState) -> bool {
++fn borg_surrounded_before_control(st: &mut BorgState) -> bool {
+     if crate::decision_tape::active() { crate::decision_tape::mark("policy::escape.borg_surrounded",format!("{:?}",())); }
+     let mut safe_grids = 8;
+     let mut non_safe_grids = 0;
+@@ -1313,3 +1313,5 @@ match crate::shadow::decision(st,crate::decisions::Decision::DimensionDoor { all
+ pub fn borg_escape(st:&mut BorgState,b_q:i32)->bool {
+ match crate::shadow::decision(st,crate::decisions::Decision::Escape { b_q }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+ }
++
++pub(crate) fn borg_surrounded_native(st:&mut BorgState)->bool { !borg_surrounded_before_control(st) }
+diff --git a/borg-next/src/stateful/escape.rs b/borg-next/src/stateful/escape.rs
+index 262cbb38..6489a506 100644
+--- a/borg-next/src/stateful/escape.rs
++++ b/borg-next/src/stateful/escape.rs
+@@ -166,7 +166,7 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
+ /// will see that several monsters are approaching him and he may
+ /// become surrounded then die.  This routine looks at near-by monsters
+ /// and determines the likelihood of him getting surrounded.
+-pub fn borg_surrounded(st: &mut BorgState) -> bool {
++fn borg_surrounded_before_control(st: &mut BorgState) -> bool {
+     if borg_rs::decision_tape::active() {
+         borg_rs::decision_tape::mark("policy::escape.borg_surrounded", format!("{:?}", ()));
+     }
+@@ -1422,3 +1422,5 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
+ 
+     false
+ }
++
++pub fn borg_surrounded(st:&mut BorgState)->bool { !borg_surrounded_before_control(st) }
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..de9a9fba 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,7 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++test-track-r-stateful = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

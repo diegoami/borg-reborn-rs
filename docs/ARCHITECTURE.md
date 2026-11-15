@@ -256,7 +256,8 @@ indices and the `Shadow` registration interface; `borg-next::register`
 installs the implementation when the shell starts the vendored core.
 R1.2 implements the shadow harness, native danger/caution boundaries and
 off/check/switch modes. Its first port is the pure danger `wall_like`
-helper; stateful danger/caution remain native until R2. See [SHADOW.md](SHADOW.md)
+helper. R2 #281 adds complete read-only danger assessment; caution, escape
+and recovery remain native under #209. See [SHADOW.md](SHADOW.md)
 for coverage, logs and the distinction between ported and unported points.
 
 `borg-next::View::new(&BorgState)` constructs a fresh read-only view for a
@@ -278,3 +279,18 @@ Track P names a subsystem's thresholds before R ports its decisions.
 The moving-core carry procedure, named Rust-function watch list and R1.3
 measurements are documented in [CARRY.md](CARRY.md). Reference pins and
 the runtime vendor pin remain separate; only the pure helper is ported in R1.
+
+R2 danger reads the typed View and its borrowed ThreatMemory context.
+An immutable threat_facts adapter supplies existing native dependencies,
+not original danger results. The port re-expresses physical/spell estimates,
+per-monster combination and whole-square aggregation with named trait fields
+and Track P parameters. No state or engine clone is needed for this pure
+subsystem; stateful decisions must use an effect-aware adapter before they
+can be claimed ported. See SHADOW.md and R2-DANGER-VALIDATION.md.
+
+R2 #286 supplies the stateful adapter and independent caution, escape and
+recovery programs. Check drives the native program; switch drives the port.
+The alternate program receives recorded dependency results on an owned Rust
+policy snapshot. Engine effects and RNG draws execute once. Every request,
+input state, final state and return must agree; nested dependencies preserve
+the active tape. STATEFUL-SHADOW.md gives the contract and failure behavior.

@@ -53,6 +53,7 @@ const CLASS_BLACKGUARD: i32 = 8;
 /// borg-prepared.c globals: track how many uniques are around at your
 /// depth (set by `borg_update()`).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct PreparedState {
     /// `borg_numb_live_unique`
     pub numb_live_unique: i32,

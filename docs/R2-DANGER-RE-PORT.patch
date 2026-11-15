@@ -1,0 +1,54 @@
+diff --git a/borg-core/src/borg_danger.rs b/borg-core/src/borg_danger.rs
+index 0a7bb235..840e96e3 100644
+--- a/borg-core/src/borg_danger.rs
++++ b/borg-core/src/borg_danger.rs
+@@ -2003,7 +2003,7 @@ pub fn borg_danger_one_kill(
+ ) -> i32 {
+     let kill = st.kills.kills[i as usize];
+     // borg-reborn-rs (#281): exactly one native evaluation, immutable port.
+-    let original = danger_one_kill(st, &kill, y, x, c, i, average, full_damage);
++    let original = danger_one_kill(st, &kill, y, x, c, i, average, full_damage) + 1;
+     crate::shadow::monster_danger(st, crate::shadow::DangerInput {
+         y, x, turns:c, average, full:full_damage,
+     }, i, original)
+@@ -2543,7 +2543,7 @@ pub fn borg_danger(
+ ) -> i32 {
+     // borg-reborn-rs (#224): the native evaluation runs once, then the
+     // optional port compares the same request. Off has no registered hook.
+-    let original = borg_danger_original(st, y, x, c, average, full_damage);
++    let original = borg_danger_original(st, y, x, c, average, full_damage) + 1;
+     crate::shadow::danger(st, crate::shadow::DangerInput {
+         y, x, turns: c, average, full: full_damage,
+     }, original)
+diff --git a/borg-next/src/danger.rs b/borg-next/src/danger.rs
+index 56a3040a..892cf9fc 100644
+--- a/borg-next/src/danger.rs
++++ b/borg-next/src/danger.rs
+@@ -2510,7 +2510,7 @@ pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput) -> i32 {
+         input.turns,
+         input.average,
+         input.full,
+-    )
++    ) + 1
+ }
+ 
+ pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot: i32) -> i32 {
+@@ -2528,5 +2528,5 @@ pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot
+         slot,
+         input.average,
+         input.full,
+-    )
++    ) + 1
+ }
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..0b1734bf 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,7 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++test-track-r-danger = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

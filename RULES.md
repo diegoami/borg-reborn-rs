@@ -5,9 +5,24 @@ whatever the model.
 
 ## Owner and scope
 
-1. **A session merges its own task PRs** into `main` once CI is green, with
-   no approval needed. The one merge a session never makes is a milestone's
-   **review PR** (`main` → `reviewed`). That one is the owner's.
+1. **Track P integrates on `track-p`, never directly on `main`** (owner,
+   2026-11-15; branch spelling confirmed as `track-p`). A session creates P
+   task branches from `track-p`, targets task PRs at `track-p`, and merges
+   them there after CI is green. CI success is not review approval. At each
+   milestone, stop and open the review/promotion PR **`track-p` → `main`**,
+   pinned to an exact commit. The owner chooses/runs the review; findings
+   are fixed through PRs into `track-p`. Only after the milestone review is
+   accepted and CI is green does the owner merge that promotion, or
+   explicitly delegate that reviewed merge. A session never promotes P to
+   `main` under the generic task-merge permission. Do not integrate the
+   next P milestone before this review gate, unless the owner explicitly
+   changes the gate. Close completed P task issues explicitly after their
+   `track-p` merge, linking the PR/commit (GitHub closing keywords normally
+   wait for the default branch). Other tracks must not use a closed P task
+   to bypass its review gate by carrying unreviewed P changes onto `main`.
+   **Other tracks retain their own authorized workflow**; absent a track
+   exception, a session merges task PRs into `main` after green CI, and
+   leaves milestone review PRs (`main` → `reviewed`) to the owner.
    **Track R exception (owner, 2026-11-15):** R task PRs target and merge
    into `feature/track-r`, never `main`. Green CI and milestone completion
    do not authorize promotion of the unfinished redesign to `main` or
@@ -25,6 +40,13 @@ whatever the model.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
+
 ## Git and GitHub
 
 4. No AI attribution trailers in commits or PR bodies: no `Co-Authored-By`
@@ -33,9 +55,12 @@ whatever the model.
    says `Closes #N`. A branch may start from an unmerged one; the PR then
    says "stacked on #n". Each PR updates the handover. Mark the issue
    `in progress` when you start, so two sessions never take the same task. Never amend
-   published commits, force-push `main` or `reviewed`, or move tags.
+   published commits, force-push `main`, `track-p` or `reviewed`, or move tags.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
+   For P, the task merges into `track-p` and the review precedes promotion
+   to `main` (RULES 1); the older `main` → `reviewed` flow does not authorize
+   direct P task merges into `main`.
    **The owner chooses the reviewer** (owner, 2026-11-09). For every review
    (a milestone review, a re-review, a review of a spec or a plan) the
    session writes the review prompt, pinned to an exact commit, and gives it
@@ -70,16 +95,19 @@ whatever the model.
     reads. Every engine read goes through the engine boundary and is listed
     there.
 12. **Every natural death of a measured run is recorded** as a dossier
-    under `docs/deaths/` (borg-rs format; the decision trace from M3), with
+    in `borg-cemetery/deaths/` by default (native dossier format; the decision trace from M3), with
     the actual source, build, implementation, profile and seed. A measured
     run is one played through `harness/run.sh`: a suite, a single run, CI
     or the zoo's cells. This applies from the first game played (T1.2, #5),
-    whichever arm died. Games watched with `watch-borg.sh` are not measured
+    whichever arm died. The toolkit is owned by borg-cemetery; local command
+    paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
+    isolated validation or historical registries. Existing `docs/deaths/` stays
+    retained as the historical validation baseline. Games watched with `watch-borg.sh` are not measured
     runs and are not recorded (owner, 2026-11-10, E review finding 3): they
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
     never inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in `docs/deaths/` or
+    registry, uploads it, and fails if a death is not in the registry or
     a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
     deaths of test-feature builds are not natural deaths of an arm and are
     kept apart.

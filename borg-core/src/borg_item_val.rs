@@ -21,6 +21,7 @@ use crate::engine;
 /// The svals (`sv_*`) and kind indexes (`kv_*`) of the items the Borg
 /// knows, looked up by name at startup. Field names are the C globals'.
 #[derive(Clone, Copy, Default, Debug)]
+#[derive(PartialEq)]
 pub struct ItemValState {
     pub sv_food_apple: i32,
     pub sv_food_ration: i32,

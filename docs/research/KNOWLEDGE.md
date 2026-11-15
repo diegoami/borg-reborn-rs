@@ -375,3 +375,15 @@ S15's selection rule:
 If a future export edition or a new manual volume matters to a task,
 extend the copy rule in a sources PR (RULES 21) rather than copying by
 hand.
+
+## R2 opening refresh, 2026-11-15 (#278)
+
+No new source deaths. Zoo f5043c96 extends explicit mode-profile guards
+to post-v8 borg-rs, retains archival exceptions, and adds town/shopping
+profiles and single-round specimens. Read DESIGN.md's mode-cutoff section
+and the changed catalogue profiles/specimens/suites. Reborn single-mode
+specimens are outside the legacy guard. These are adapter/catalogue changes,
+not evidence for a new survival policy. Runtime core remains v12 e6d13fc.
+The Rust watcher reports 25 changed native functions and zero changed
+ported functions: a valid negative control; helper/dependency changes still
+need inspection. Review #266's follow-ups remain R2/#264 work.
