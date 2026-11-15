@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested completion of recorder dependency PR #268
+
+- The F17 fix remains consumer CMake integration, with the recorder pin,
+  adapter contents and upstream game unchanged. The owner requested its
+  delivery after confirming this boundary.
+- The latest engine CI had passed the suites and stopped at missing
+  historical validation dossiers. At exact source `0dadea400855`, core
+  seed 1011 repeats D2399; the smoke and rerun-source cases are retained
+  as D2400 (seed 102) and D2401 (seed 1020). The explicit historical
+  registry override preserves the existing CI guard; it was not weakened.
+
 ## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
 
 - The owner explicitly instructed: "ok then merge it and continue with other
@@ -134,6 +145,46 @@ This entry records the preceding pointer-only change. The #273 entry above and
 `docs/deaths/POINTER.md` describe the current ownership and routing. In particular,
 the historical cases remain local and their index links were corrected to their
 actual locations; reconciliation does not copy evidence.
+
+## 2026-11-15: the recorder adapter is a configure dependency (#268)
+
+- **M1 review F17** (Low) in the angband-recorder M1 review asked for two
+  things: add the adapter to CMake's configure dependencies, and cover it
+  with a generated-tree dependency test. Both are done.
+- `engine/recorder-hooks.patch` is applied at **configure** time, by
+  `execute_process` inside the `SUPPORT_BORG_RECORDING` block, so the
+  only way to re-apply it is to re-configure. `CMAKE_CONFIGURE_DEPENDS`
+  listed `engine/patches/*.patch` and `engine/UPSTREAM` but not the
+  adapter, so a plain incremental `cmake --build` could keep stale
+  hooks after the adapter changed. `engine/CMakeLists.txt:29` now
+  declares it.
+- `engine/tests/test_build.py` gains two tests: one asserts the
+  declaration, and one is **functional** — it configures a throwaway
+  build, records the generated tree's mtime, touches only the adapter
+  patch, runs `make cmake_check_build_system` and asserts the tree was
+  re-applied. The test was reproduced as failing on unfixed `main`
+  (the tree's mtime did not move) and passing here.
+- **The game is unchanged.** `engine/patches/`, `engine/frontend/`,
+  `engine/sources.cmake`, `engine/apply-patches.sh` and
+  `engine/recorder-hooks.patch` are byte-identical to `main`, so the
+  generated tree's content is identical: smoke is **3/3** against the
+  reference. The recorder-enabled build configures, builds and passes
+  `harness/check-recorder.py` ("Consumer recorder round trip passed").
+- The vendored recorder and `recorder-pin.json` are untouched (v0.1.0 /
+  `c4986b26b9fd`); re-vendoring the recorder's own corrections is a
+  separate step.
+- The branch's new build identity produced three new deaths (D2359–D2361),
+  retained with their trace tails and hashes. The two earlier red CI runs
+  on this branch were the RULES 12 reconcile gate refusing exactly those
+  unrecorded deaths.
+- **Open:** the upstream tree's *content* is still not a configure
+  dependency — `engine/UPSTREAM` is a marker file (the tree id), so an
+  in-place edit under `engine/angband/` does not re-apply the generated
+  tree. Filed as #288; benign today (a re-pin updates `UPSTREAM`, RULES 9
+  forbids editing the tree, and `engine/tests/test_engine.py` catches
+  it), and out of F17's scope.
+
+## 2026-11-15: the death registry points at borg-cemetery (#276)
 
 - The death dossiers are recorded in **borg-cemetery**, the canonical
   home for recorded Borg runs, written death investigations and playable
