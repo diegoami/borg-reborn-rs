@@ -29,6 +29,18 @@ or a design, the handover. Two rules that keep it honest:
 - **Nothing is a claim until the zoo measures it** (RULES 14). Candidate
   rules below are hypotheses with evidence, not results.
 
+## 2026-11-15: P1.2 mechanics/policy audit
+
+The read-only refresh was rerun at P1.2 start; it reports the same source
+heads as the P1.1 startup audit below. No pin or copy moved. The escape
+manual ch. 13 was consulted; the frozen teleport landing model is explicitly
+not today's exact distribution (the already-flagged source #595 carry).
+Engine `blow_effects.txt` and `mon-attack.c:597–609` distinguish the legacy
+hit-power/PFE approximations from current game data. P1.2 names those
+weights while preserving defaults, and retains raw damage formulas at the
+vendored pin. CALIBRATION.md records that boundary; no correctness or
+improvement claim is inferred from parity or the diagnostic override.
+
 ## 2026-11-15: track P startup audit
 
 The read-only refresh report was run after setup. No pins or source copies

@@ -15,6 +15,8 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
+// borg-reborn-rs (#221): named recovery values; default arithmetic/order preserved.
+use crate::params::{value as param, Param};
 use crate::borg_danger::borg_danger;
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, KC_ENTER};
@@ -95,10 +97,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     /*** Do not recover when in danger ***/
 
     // Look around for danger
-    let p = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    let p = borg_danger(st, st.borg.c.y, st.borg.c.x, param(Param::recover_danger_horizon), true, false);
 
     // Never recover in dangerous situations
-    if p > i32::from(st.borg.avoidance) / 4 {
+    if p > i32::from(st.borg.avoidance) / param(Param::recover_danger_divisor) {
         return false;
     }
 
@@ -108,20 +110,20 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     let mut q = engine::randint0(100);
 
     // Half dead
-    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2 {
-        q -= 10;
+    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::recover_hurt_hp_divisor) {
+        q -= param(Param::recover_hurt_chance_bonus);
     }
 
     // Almost dead
-    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 4 {
-        q -= 10;
+    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::recover_critical_hp_divisor) {
+        q -= param(Param::recover_critical_chance_bonus);
     }
 
     /*** Use "cheap" cures ***/
 
     // Cure stun
     if st.borg.tr(BI_ISSTUN) != 0
-        && q < 75
+        && q < param(Param::recover_cheap_stun_chance)
         && (borg_activate_item(st, st.act.cure_body)
             || borg_activate_item(st, st.act.cure_critical)
             || borg_activate_item(st, st.act.cure_full)
@@ -157,7 +159,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure cuts
     if st.borg.tr(BI_ISCUT) != 0
-        && q < 75
+        && q < param(Param::recover_cheap_cut_chance)
         && (borg_activate_item(st, st.act.cure_light)
             || borg_spell(st, MINOR_HEALING)
             || borg_spell(st, HEALING)
@@ -170,7 +172,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure poison
     if st.borg.tr(BI_ISPOISONED) != 0
-        && q < 75
+        && q < param(Param::recover_cheap_poison_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_activate_item(st, st.act.rem_fear_pois)
             || borg_spell(st, HERBAL_CURING)
@@ -183,7 +185,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // Cure fear
     if st.borg.tr(BI_ISAFRAID) != 0
         && st.borg.tr(BI_CRSFEAR) == 0
-        && q < 75
+        && q < param(Param::recover_cheap_fear_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_activate_item(st, st.act.rem_fear_pois)
             || borg_spell(st, HEROISM)
@@ -196,7 +198,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Satisfy hunger
     if (st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0)
-        && q < 75
+        && q < param(Param::recover_cheap_hunger_chance)
         && (borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING))
     {
         return true;
@@ -204,17 +206,17 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Hallucination
     if st.borg.tr(BI_ISIMAGE) != 0
-        && q < 75
+        && q < param(Param::recover_cheap_image_chance)
         && borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
     {
         return true;
     }
 
     // Heal damage
-    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2
-        && q < 75
+    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::recover_cheap_heal_hp_divisor)
+        && q < param(Param::recover_cheap_heal_chance)
         && p == 0
-        && st.borg.tr(BI_CURSP) > st.borg.tr(BI_MAXSP) / 4
+        && st.borg.tr(BI_CURSP) > st.borg.tr(BI_MAXSP) / param(Param::recover_cheap_heal_sp_divisor)
         && (borg_activate_item(st, st.act.heal1)
             || borg_activate_item(st, st.act.heal2)
             || borg_activate_item(st, st.act.heal3)
@@ -234,7 +236,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             || borg_activate_item(st, st.act.restore_life)
             || borg_spell(st, REVITALIZE)
             || borg_spell(st, REMEMBRANCE)
-            || (st.borg.tr(BI_CURHP) > 90 && borg_spell(st, UNHOLY_REPRIEVE)))
+            || (st.borg.tr(BI_CURHP) > param(Param::recover_unholy_min_hp) && borg_spell(st, UNHOLY_REPRIEVE)))
     {
         return true;
     }
@@ -253,7 +255,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // cure stat drain with prayer
     if (st.borg.tr(BI_ISFIXSTR) != 0 || st.borg.tr(BI_ISFIXINT) != 0 || st.borg.tr(BI_ISFIXCON) != 0)
-        && st.borg.tr(BI_CURHP) > 90
+        && st.borg.tr(BI_CURHP) > param(Param::recover_unholy_min_hp)
         && borg_spell(st, UNHOLY_REPRIEVE)
     {
         return true;
@@ -263,7 +265,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure stun
     if st.borg.tr(BI_ISSTUN) != 0
-        && q < 25
+        && q < param(Param::recover_costly_stun_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_healing)
@@ -276,7 +278,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure heavy stun
     if st.borg.tr(BI_ISHEAVYSTUN) != 0
-        && q < 95
+        && q < param(Param::recover_costly_heavy_stun_chance)
         && (borg_quaff_crit(st, true)
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
@@ -289,25 +291,25 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure cuts
     if st.borg.tr(BI_ISCUT) != 0
-        && q < 25
+        && q < param(Param::recover_costly_cut_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_healing)
             || borg_activate_item(st, st.act.heal1)
             || borg_activate_item(st, st.act.heal2)
-            || borg_quaff_crit(st, st.borg.tr(BI_CURHP) < 10))
+            || borg_quaff_crit(st, st.borg.tr(BI_CURHP) < param(Param::recover_critical_ccw_hp)))
     {
         return true;
     }
 
     // Cure poison
     if st.borg.tr(BI_ISPOISONED) != 0
-        && q < 25
+        && q < param(Param::recover_costly_poison_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_poison)
             || borg_eat(st, TV_FOOD as i32, st.item_val.sv_food_waybread)
             || borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
-            || borg_quaff_crit(st, st.borg.tr(BI_CURHP) < 10)
+            || borg_quaff_crit(st, st.borg.tr(BI_CURHP) < param(Param::recover_critical_ccw_hp))
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
             || borg_activate_item(st, st.act.rem_fear_pois)
@@ -318,7 +320,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure blindness
     if st.borg.tr(BI_ISBLIND) != 0
-        && q < 25
+        && q < param(Param::recover_costly_blind_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_eat(st, TV_FOOD as i32, st.item_val.sv_food_waybread)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
@@ -333,7 +335,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure confusion
     if st.borg.tr(BI_ISCONFUSED) != 0
-        && q < 25
+        && q < param(Param::recover_costly_confusion_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_crit(st, false)
@@ -347,7 +349,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // Cure fear
     if st.borg.tr(BI_ISAFRAID) != 0
         && st.borg.tr(BI_CRSFEAR) == 0
-        && q < 25
+        && q < param(Param::recover_costly_fear_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_boldness)
             || borg_quaff_potion(st, st.item_val.sv_potion_heroism)
@@ -359,7 +361,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Satisfy hunger
     if (st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0)
-        && q < 25
+        && q < param(Param::recover_costly_hunger_chance)
         && (borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
             || borg_activate_item(st, st.act.satisfy))
     {
@@ -367,8 +369,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Heal damage
-    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2
-        && q < 25
+    if st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::recover_costly_heal_hp_divisor)
+        && q < param(Param::recover_costly_heal_chance)
         && (borg_zap_rod(st, st.item_val.sv_rod_healing)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_crit(st, false)
@@ -401,9 +403,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
         // Rest until done
         borg_keypress(st, key(b'R'));
-        borg_keypress(st, key(b'1'));
-        borg_keypress(st, key(b'0'));
-        borg_keypress(st, key(b'0'));
+        for digit in param(Param::recover_rod_rest_turns).to_string().bytes() {
+            borg_keypress(st, key(digit));
+        }
         borg_keypress(st, KC_ENTER);
 
         // I'm not in a store
@@ -415,7 +417,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     /*** Just Rest ***/
 
     // Rest until healed
-    let sp_tenths = if st.borg.tr(BI_CDEPTH) > 85 { 7 } else { 6 };
+    let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
     if st.borg.tr(BI_ISBLIND) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_ISCUT) == 0
@@ -458,15 +460,15 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Hack to recharge mana if a low level mage or priest
     if st.borg.tr(BI_MAXSP) != 0
-        && (st.borg.tr(BI_CLEVEL) <= 40 || st.borg.tr(BI_CDEPTH) >= 85)
-        && st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) * 8 / 10
-        && p < i32::from(st.borg.avoidance) / 10
+        && (st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level) || st.borg.tr(BI_CDEPTH) >= param(Param::recover_mana_rest_deep_depth))
+        && st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) * param(Param::recover_mana_rest_sp_tenths) / 10
+        && p < i32::from(st.borg.avoidance) / param(Param::recover_mana_rest_danger_divisor)
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && st.borg.tr(BI_ISWEAK) == 0
         && st.borg.tr(BI_ISCUT) == 0
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
-        && st.borg.tr(BI_FOOD) > 2
+        && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !st.borg.munchkin_mode
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
@@ -489,7 +491,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISCUT) == 0
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
-        && st.borg.tr(BI_FOOD) > 2
+        && st.borg.tr(BI_FOOD) > param(Param::recover_munchkin_rest_min_food)
         && (st.cave.grid(st.borg.c.x, st.borg.c.y).feat == FEAT_MORE as u8
             || st.cave.grid(st.borg.c.x, st.borg.c.y).feat == FEAT_LESS as u8)
     {

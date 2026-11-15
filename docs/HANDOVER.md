@@ -33,6 +33,55 @@
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
 
+## 2026-11-15: track P, P1.3 (#221), recovery parameters
+
+- Added 37 recovery parameters (603 total): cure chances, HP/SP gates,
+  danger limits/horizon, Unholy Reprieve's HP cutoff, rod-rest duration,
+  and mana/food/depth rest thresholds. The zero-danger guard, full-state
+  comparisons, status/charging flags and rest protocol remain categorical
+  state/interface data; CALIBRATION.md lists them and every parameter.
+- Full **45/45** matches P1.2 by the standard diff and pinned v12 by all
+  play-log bytes. Original-core smoke is **3/3** and ladder parity holds.
+  Default expansion reproduces the original executable tokens apart from
+  the equivalent `R100` decimal-digit loop.
+- `recover_rest_sp_tenths=10` changes Half-Elf Mage seed 1010 at turn 561.
+  It dies of poison at 2600 while the default survives; the negative
+  diagnostic result is retained, not recommended. See P1.3-VALIDATION.md.
+- Core tests (133 passed), original-crate tests, Clippy, formatting,
+  Python tests and vendoring check pass. D2202–D2213 retain every natural
+  validation death; reconciliation finds none missing.
+- This task is stacked on P1.2 PR #235; each task's PR retains its own CI
+  merge gate. P1's remaining task is #222, the named decision trace.
+
+
+## 2026-11-15: track P, P1.2 (#220), danger and escape parameters
+
+- Added 366 parameters (566 total): per-blow/spell risk weights, fear
+  adjustments, escape thresholds, spell-failure tolerances, sampling budgets
+  and danger horizons. Defaults and operation order are preserved. Source
+  locations are pinned to `30ab9d66`; CALIBRATION.md lists all names and
+  the retained mechanics-model data.
+- The source/engine audit distinguishes legacy estimates from facts: the
+  melee hit powers differ from current blow_effects.txt, and PFE's factor
+  2 approximates a level-dependent engine probability. Those weights are
+  named, not corrected. The older landing-distance model remains frozen;
+  source carry #595 is already flagged by the refresh report.
+- Full **45/45** matches P1.1 by the standard diff and pinned v12 by every
+  byte of the play logs; all shared game-summary fields agree. The known
+  frontend counter/settings discrepancy is unchanged. Original-core smoke
+  is **3/3**, and a 20,000-turn ladder matches P1.1 exactly.
+- `danger_maximum=1` changes seed 1000's first key at turn 4430 and its
+  state trace at the same turn. The escape-threshold trial on that seed
+  has no play change; both results are recorded without an improvement
+  claim. See [P1.2-VALIDATION.md](P1.2-VALIDATION.md).
+- Rust tests, Clippy, formatting, Python tests and vendoring check pass.
+  D2183–D2201 preserve the validation deaths; none are missing. The shared
+  lock covers every build and game run. The read-only source refresh was
+  rerun; no pins moved and no newer policy correction was carried.
+- CI is the merge gate; its final result is recorded on the task PR.
+  Remaining P1 work: #221 (recovery) and #222 (named decision trace).
+
+
 ## 2026-11-15: track P, P1.1 (#219), calibration foundation
 
 - `borg-core/src/params.rs` defines 200 caution parameters with the v12
@@ -61,9 +110,9 @@
 - **Dossiers:** D2141–D2182 retain the measured validation deaths, including
   intermediate builds and the donor suite's legacy-birth attempt. No natural
   death is missing from the final run outputs. The core table is preserved.
-- **Remote CI:** the workflow is active, but no GitHub Actions runs are
-  attached to the PR; only GitGuardian has reported. The task PR remains
-  open until the repository's CI requirement can be met.
+- **Remote CI:** Rust, engine and recorder passed on run `43658140254`;
+  P1.1 merged in #234 as `30ab9d66`. The initial draft's missing CI run
+  was resolved by the final push.
 - Rust tests (the CI recipe: release for borg-core), Clippy, formatting,
   parser tests and Python tests pass. The initial baseline suite's timing
   aggregation failed because bc was missing; it was rerun intact after
