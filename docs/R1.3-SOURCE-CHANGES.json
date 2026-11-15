@@ -1,0 +1,152 @@
+{
+  "base": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+  "head": "dc790dc46e131076c3ea6dad647d4d73d3c0d3d5",
+  "changed_functions": [
+    {
+      "path": "borg-rs/src/borg_caution.rs",
+      "function": "borg_heal",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_danger.rs",
+      "function": "borg_danger",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_danger.rs",
+      "function": "borg_danger_physical",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_danger.rs",
+      "function": "borg_danger_spell",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_fight_defend.rs",
+      "function": "borg_defend_aux_tele_away",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_fight_perm.rs",
+      "function": "borg_perma_aux_venom",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow.rs",
+      "function": "close_breeder_door",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_dark.rs",
+      "function": "borg_flow_dark_interesting",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_glyph.rs",
+      "function": "borg_flow_glyph",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_glyph.rs",
+      "function": "track_new_glyph",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_kill.rs",
+      "function": "borg_init_flow_kill",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_kill.rs",
+      "function": "borg_update_kill_old",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_flow_misc.rs",
+      "function": "borg_check_rest",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_item_val.rs",
+      "function": "borg_init_item_val",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_recover.rs",
+      "function": "borg_recover",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_reincarnate.rs",
+      "function": "borg_reincarnate_start",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_reincarnate.rs",
+      "function": "letter_key",
+      "change": "removed"
+    },
+    {
+      "path": "borg-rs/src/borg_reincarnate.rs",
+      "function": "letter_key_nohjkl",
+      "change": "added"
+    },
+    {
+      "path": "borg-rs/src/borg_trait.rs",
+      "function": "borg_notice_equipment",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_trait_swap.rs",
+      "function": "clear",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_trait_swap.rs",
+      "function": "clear_keeps_resist_fear_only",
+      "change": "removed"
+    },
+    {
+      "path": "borg-rs/src/borg_trait_swap.rs",
+      "function": "clear_resets_every_flag_including_fear",
+      "change": "added"
+    },
+    {
+      "path": "borg-rs/src/borg_trait_swap.rs",
+      "function": "note",
+      "change": "changed"
+    },
+    {
+      "path": "borg-rs/src/borg_trait_swap.rs",
+      "function": "prot_fear_marks_the_swap_resist_fear",
+      "change": "added"
+    },
+    {
+      "path": "borg-rs/src/borg_update.rs",
+      "function": "old_location_message",
+      "change": "changed"
+    }
+  ],
+  "ported_changes": [],
+  "changed_files": [
+    "borg-rs/src/borg_caution.rs",
+    "borg-rs/src/borg_danger.rs",
+    "borg-rs/src/borg_fight_defend.rs",
+    "borg-rs/src/borg_fight_perm.rs",
+    "borg-rs/src/borg_flow.rs",
+    "borg-rs/src/borg_flow_dark.rs",
+    "borg-rs/src/borg_flow_glyph.rs",
+    "borg-rs/src/borg_flow_kill.rs",
+    "borg-rs/src/borg_flow_misc.rs",
+    "borg-rs/src/borg_headers/borg_trait_h.rs",
+    "borg-rs/src/borg_init.rs",
+    "borg-rs/src/borg_item_val.rs",
+    "borg-rs/src/borg_recover.rs",
+    "borg-rs/src/borg_reincarnate.rs",
+    "borg-rs/src/borg_trait.rs",
+    "borg-rs/src/borg_trait_swap.rs",
+    "borg-rs/src/borg_update.rs",
+    "borg-rs/src/engine.rs"
+  ]
+}

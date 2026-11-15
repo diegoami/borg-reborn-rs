@@ -1,6 +1,5 @@
 """The carry watcher handles Rust literals, nested comments and real git revisions."""
 import importlib.util
-import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -59,6 +58,6 @@ trait T { fn declaration(&self); }
             with self.assertRaisesRegex(ValueError, 'missing in both'):
                 module.changed(repo, base, head, manifest)
 
-    def test_missing_file_and_unreadable_blob_are_not_silently_equal(self):
+    def test_unbalanced_function_is_rejected(self):
         with self.assertRaisesRegex(ValueError, 'unbalanced'):
             module.functions('fn unfinished() {')

@@ -1,0 +1,30 @@
+diff --git a/borg-next/src/shadow.rs b/borg-next/src/shadow.rs
+index 433c2cdc..592baf93 100644
+--- a/borg-next/src/shadow.rs
++++ b/borg-next/src/shadow.rs
+@@ -36,7 +36,8 @@ impl Mode {
+ /// These are native feature IDs, not a new passability policy. In particular
+ /// permanent walls, lava and passable rubble retain the original `false`.
+ pub fn wall_like(feature: u32) -> bool {
+-    matches!(
++    // Re-port of the constructed carry-test floor change.
++    feature == 1 || matches!(
+         feature,
+         FEAT_RUBBLE | FEAT_MAGMA | FEAT_QUARTZ | FEAT_MAGMA_K | FEAT_QUARTZ_K | FEAT_GRANITE
+     )
+@@ -230,13 +231,13 @@ mod tests {
+             .compare_wall(Mode::Off, 1, 1, FEAT_GRANITE, false)
+             .unwrap());
+         assert_eq!(recorder.counts.comparisons, 0);
+-        for feature in [0, 1, 2, 22, 23, 24, u32::MAX] {
++        for feature in [0, 2, 22, 23, 24, u32::MAX] {
+             assert!(!recorder
+                 .compare_wall(Mode::Check, 1, 1, feature, false)
+                 .unwrap());
+         }
+         for feature in [
+-            FEAT_RUBBLE,
++            1, FEAT_RUBBLE,
+             FEAT_MAGMA,
+             FEAT_QUARTZ,
+             FEAT_MAGMA_K,

@@ -3,6 +3,32 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1.3 carry procedure (#225), frame ready for review
+
+- `scripts/ported-changes.py` and the refresh report now identify changed
+  native Rust functions by name from borg-core/PIN, independently of the
+  reference pin, and intersect them with docs/ported-functions.json.
+  The real v13 comparison reports 25 changed functions, zero ported ones.
+- A full isolated refresh to dc790dc resolved three conflicted files while
+  retaining named parameters. It builds, passes vendoring check and makes
+  291,865 helper comparisons without mismatch. A separate focused healing
+  unit and constructed native-change/re-port controls test both negative
+  and positive paths. All diagnostic builds are marked test-track-r-carry.
+- CARRY.md, exact build identities, measured timing limits and reapplicable
+  patches preserve the procedure. Four refused repeats used existing
+  output directories; no games launched, and fresh-directory repeats
+  provide the verified evidence. No failure is counted as a death.
+- Production runtime hash is unchanged at aabe60c9cdbc; native core remains
+  v12. The five new v13 trait fields, parameter-provenance review and future
+  baseline choice are follow-up #264, not silently adopted policy.
+- Formatting, Clippy, 168 workspace tests, 138 core tests (one existing
+  ignored), 20 scripts tests, 72 tools tests and vendoring check pass.
+  R1.1 #248, R1.2 #261 and source refresh #263 are already merged into
+  feature/track-r. This final R1 task merges there only after CI is green.
+- R1 is the milestone review checkpoint. The review will use a pinned
+  feature snapshot into review/track-r-baseline; the owner chooses and runs
+  the reviewer. Main/global reviewed are not promotion targets.
+
 ## 2026-11-15: R1 moving-reference refresh (#262)
 
 - Separate source-only PR on `task/R1-source-refresh`, stacked on #261;

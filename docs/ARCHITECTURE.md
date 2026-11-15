@@ -274,3 +274,7 @@ Until R6, **ported decisions read borg-rs's own memory, not our L1/L2
 perception or engine truth**. That includes its mistaken or incomplete
 knowledge: changing perception while porting policy would break parity.
 Track P names a subsystem's thresholds before R ports its decisions.
+
+The moving-core carry procedure, named Rust-function watch list and R1.3
+measurements are documented in [CARRY.md](CARRY.md). Reference pins and
+the runtime vendor pin remain separate; only the pure helper is ported in R1.

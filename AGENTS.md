@@ -131,7 +131,8 @@ At the end of a task:
    for Track R and `main` otherwise (RULES 1).
 
 When your track's milestone has its last task merged, **stop** and open the
-review PR (PLAN.md). Do not start the track's next milestone, and do not
+review PR (PLAN.md). Track R uses its feature-only review ledger and an
+exact snapshot; it never targets main or global reviewed for this review. Do not start the track's next milestone, and do not
 move to the other track.
 
 ## Models

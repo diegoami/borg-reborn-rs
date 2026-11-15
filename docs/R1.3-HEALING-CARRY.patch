@@ -1,0 +1,36 @@
+diff --git a/borg-core/src/params.rs b/borg-core/src/params.rs
+index efb0129f..7e6254f3 100644
+--- a/borg-core/src/params.rs
++++ b/borg-core/src/params.rs
+@@ -48,12 +48,12 @@ parameters! {
+     caution_mage_stat_fix_sp => (100, "sp", 0, 10000, "borg_caution.rs:180", "Controls mage stat fix sp."),
+     caution_mage_stat_fix_votes => (5, "votes", 0, 100, "borg_caution.rs:181", "Controls mage stat fix votes."),
+     caution_heal_spell_fail => (15, "percent", 0, 100, "borg_caution.rs:196", "Controls heal spell fail."),
+-    caution_clw_estimate_percent => (15, "percent", 0, 100, "borg_caution.rs:201", "Controls clw estimate percent."),
+-    caution_clw_estimate_min => (15, "hp", 0, 10000, "borg_caution.rs:201", "Controls clw estimate min."),
+-    caution_csw_estimate_percent => (20, "percent", 0, 100, "borg_caution.rs:202", "Controls csw estimate percent."),
+-    caution_csw_estimate_min => (25, "hp", 0, 10000, "borg_caution.rs:202", "Controls csw estimate min."),
+-    caution_ccw_estimate_percent => (25, "percent", 0, 100, "borg_caution.rs:203", "Controls ccw estimate percent."),
+-    caution_ccw_estimate_min => (30, "hp", 0, 10000, "borg_caution.rs:203", "Controls ccw estimate min."),
++    caution_clw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:201", "Controls clw estimate percent."),
++    caution_clw_estimate_min => (20, "hp", 0, 10000, "borg_caution.rs:201", "Controls clw estimate min."),
++    caution_csw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:202", "Controls csw estimate percent."),
++    caution_csw_estimate_min => (40, "hp", 0, 10000, "borg_caution.rs:202", "Controls csw estimate min."),
++    caution_ccw_estimate_percent => (0, "percent", 0, 100, "borg_caution.rs:203", "Controls ccw estimate percent."),
++    caution_ccw_estimate_min => (60, "hp", 0, 10000, "borg_caution.rs:203", "Controls ccw estimate min."),
+     caution_heal_estimate_percent => (35, "percent", 0, 100, "borg_caution.rs:205", "Controls heal estimate percent."),
+     caution_heal_estimate_min => (300, "hp", 0, 10000, "borg_caution.rs:205", "Controls heal estimate min."),
+     caution_healing_rod_fail => (500, "permille", 0, 1000, "borg_caution.rs:211", "Controls healing rod fail."),
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..b2394f33 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,8 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++# Isolated carry-trial label; never a production feature.
++test-track-r-carry = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []

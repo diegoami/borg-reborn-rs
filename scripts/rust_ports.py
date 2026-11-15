@@ -1,8 +1,6 @@
 """Find changed Rust functions for the Track R carry report (stdlib only)."""
-import json
 import re
 import subprocess
-from pathlib import Path
 
 
 def mask_non_code(text):
@@ -110,10 +108,13 @@ def read(repo, ref, path):
 
 
 def changed(repo, base, head, manifest):
+    resolved = []
     for ref in (base, head):
         result = subprocess.run(['git', '-C', str(repo), 'rev-parse', '--verify', ref + '^{commit}'], capture_output=True, text=True)
         if result.returncode:
             raise ValueError(f'unknown commit: {ref}')
+        resolved.append(result.stdout.strip())
+    base, head = resolved
     paths = subprocess.run(['git', '-C', str(repo), 'diff', '--name-only', base, head, '--', 'borg-rs/src'], capture_output=True, text=True, check=True).stdout.splitlines()
     paths = {p for p in paths if p.endswith('.rs')}
     ports = {(p['native_path'], p['native_function']): p['point'] for p in manifest['ports']}
