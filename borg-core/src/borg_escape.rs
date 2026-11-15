@@ -14,6 +14,8 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
+// borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
+use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::{AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{
@@ -74,7 +76,7 @@ fn rand_spread(a: i32, d: i32) -> i32 {
 
 /// "Reset timer if borg was in a anti-summon corridor".
 fn reset_antisummon(st: &mut BorgState) {
-    if borg_timer(st, st.borg.time.antisummon) < 50 {
+    if borg_timer(st, st.borg.time.antisummon) < param(Param::escape_antisummon_reset_turns) {
         st.borg.time.antisummon = 0;
     }
 }
@@ -92,7 +94,7 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
         // Try to "recall"
         if borg_zap_rod(st, st.item_val.sv_rod_recall)
             || borg_activate_item(st, st.act.recall)
-            || borg_spell_fail(st, WORD_OF_RECALL, 60)
+            || borg_spell_fail(st, WORD_OF_RECALL, param(Param::escape_recall_fail))
             || borg_read_scroll(st, st.item_val.sv_scroll_word_of_recall)
         {
             // do we need to answer "Set recall depth to current depth? [y/n]"
@@ -104,11 +106,11 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
 
                 // Reset max depth when current depth is way deeper (5) than
                 // the third deepest unique.
-                if diff_max_from_desired_depth > 5
-                    && diff_cur_from_desired_depth <= 5
-                    && diff_cur_from_desired_depth > -5
+                if diff_max_from_desired_depth > param(Param::escape_recall_depth_window)
+                    && diff_cur_from_desired_depth <= param(Param::escape_recall_depth_window)
+                    && diff_cur_from_desired_depth > -param(Param::escape_recall_depth_window)
                 {
-                    if st.borg.tr(BI_CDEPTH) >= 80
+                    if st.borg.tr(BI_CDEPTH) >= param(Param::escape_recall_reset_min_depth)
                         && st.borg.tr(BI_CDEPTH) < 100
                         // Deep, and Sauron is dead
                         && st.kills.race_death[st.borg.id.sauron as usize] != 0
@@ -124,7 +126,7 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
                         // Do not reset Depth
                         borg_note(st, "# Not Resetting recall depth.");
                         borg_keypress(st, key(b'n'));
-                    } else if st.borg.tr(BI_MAXDEPTH) == 99 && st.prepared.numb_live_unique < 5 {
+                    } else if st.borg.tr(BI_MAXDEPTH) == 99 && st.prepared.numb_live_unique < param(Param::escape_recall_reset_unique_count) {
                         // Do reset Depth, cleaning up last uniques to hit
                         // Morgoth.
                         borg_note(st, "# Resetting recall depth.");
@@ -194,7 +196,7 @@ pub fn borg_surrounded(st: &mut BorgState) -> bool {
         let d = ax.max(ay);
 
         // if the monster is too far then skip it.
-        if d > 3 {
+        if d > param(Param::escape_surround_distance) {
             continue;
         }
 
@@ -262,7 +264,7 @@ pub fn borg_surrounded(st: &mut BorgState) -> bool {
     safe_grids -= non_safe_grids;
 
     // Am I in hallway? If so don't worry about it
-    if safe_grids == 1 && adjacent_monsters == 1 {
+    if safe_grids == param(Param::escape_surround_single_exit_count) && adjacent_monsters == param(Param::escape_surround_single_monster_count) {
         return false;
     }
 
@@ -313,11 +315,11 @@ pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
         let d = double_distance(y, x, st.stairs.more.y[0], st.stairs.more.x[0]);
 
         // Proximity is good
-        f += 1000 - d;
+        f += param(Param::escape_town_stair_value) - d;
 
         // Close proximity is great
-        if d < 4 {
-            f += 2000 - d * 500;
+        if d < param(Param::escape_town_stair_close_distance) {
+            f += param(Param::escape_town_stair_close_value) - d * param(Param::escape_town_stair_distance_penalty);
         }
     }
 
@@ -327,11 +329,11 @@ pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
         let d = double_distance(y, x, st.stairs.less.y[0], st.stairs.less.x[0]);
 
         // Proximity is good
-        f += 1000 - d;
+        f += param(Param::escape_dungeon_stair_value) - d;
 
         // Close proximity is great
-        if d < 4 {
-            f += 2000 - d * 500;
+        if d < param(Param::escape_dungeon_stair_close_distance) {
+            f += param(Param::escape_dungeon_stair_close_value) - d * param(Param::escape_dungeon_stair_distance_penalty);
         }
     }
 
@@ -359,13 +361,13 @@ fn count_scary(
 
     // Simulate 100 attempts
     let mut n = 0;
-    for _k in 0..100 {
+    for _k in 0..param(Param::escape_landing_samples) {
         let mut x = 0;
         let mut y = 0;
 
         // Pick a location
         let mut i = 0;
-        while i < 100 {
+        while i < param(Param::escape_landing_trials) {
             // Pick a (possibly illegal) location
             loop {
                 y = rand_spread(st.borg.c.y, dis);
@@ -415,7 +417,7 @@ fn count_scary(
         }
 
         // If low level, unknown squares are scary
-        if u32::from(st.cave.grid(ag.0, ag.1).feat) == FEAT_NONE && st.borg.tr(BI_MAXHP) < 30 {
+        if u32::from(st.cave.grid(ag.0, ag.1).feat) == FEAT_NONE && st.borg.tr(BI_MAXHP) < param(Param::escape_unknown_landing_max_hp) {
             n += 1;
             continue;
         }
@@ -424,7 +426,7 @@ fn count_scary(
         // in the real code it would keep trying but here we should
         // assume that there is unknown spots that you would be able
         // to go but may be dangerous.
-        if i >= 100 {
+        if i >= param(Param::escape_landing_trials) {
             n += 1;
             continue;
         }
@@ -484,7 +486,7 @@ pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> 
                 && detect_wall(st, q_y, q_x + 1)
                 && detect_wall(st, q_y + 1, q_x)
                 && detect_wall(st, q_y + 1, q_x + 1))
-                || borg_timer(st, st.borg.time.level) > 2000)
+                || borg_timer(st, st.borg.time.level) > param(Param::escape_unknown_teleport_level_turns))
     });
 
     // Too much danger
@@ -546,7 +548,7 @@ pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
 /// short range teleport + pain
 pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
     // disallow if hp too low
-    if st.borg.tr(BI_CURHP) < 12 {
+    if st.borg.tr(BI_CURHP) < param(Param::escape_shadow_shift_min_hp) {
         return false;
     }
     borg_spell_fail(st, SHADOW_SHIFT, allow_fail)
@@ -555,7 +557,7 @@ pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
 /// medium range teleport
 pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
     // for now keep the range at under 50, for performance
-    let range = 50;
+    let range = param(Param::escape_dimension_door_range);
 
     // Require ability (right now)
     if !borg_spell_okay_fail(st, DIMENSION_DOOR, allow_fail) {
@@ -598,7 +600,7 @@ pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
                 continue;
             }
 
-            let d = borg_danger(st, t_y, t_x, 2, true, false);
+            let d = borg_danger(st, t_y, t_x, param(Param::escape_dimension_door_horizon), true, false);
             if d < best_d {
                 best_d = d;
                 best.x = t_x;
@@ -647,7 +649,7 @@ fn avoid(st: &BorgState, tenths: i32, risky_boost: i32) -> i32 {
 
 /// `borg.near.unique >= 1 && borg.near.unique <= 8`
 fn near_unique_1_8(st: &BorgState) -> bool {
-    st.borg.near.unique >= 1 && st.borg.near.unique <= 8
+    st.borg.near.unique >= 1 && i32::from(st.borg.near.unique) <= param(Param::escape_near_unique_max_count)
 }
 
 /// Try to phase door or teleport
@@ -656,16 +658,16 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     let mut risky_boost = 0;
 
     // only escape with spell if fail is low
-    let mut allow_fail = 25;
+    let mut allow_fail = param(Param::escape_normal_fail);
 
     // if very healthy, allow extra fail
-    if st.borg.tr(BI_CURHP) * 100 / st.borg.tr(BI_MAXHP) > 70 {
-        allow_fail = 10;
+    if st.borg.tr(BI_CURHP) * 100 / st.borg.tr(BI_MAXHP) > param(Param::escape_healthy_hp_percent) {
+        allow_fail = param(Param::escape_healthy_fail);
     }
 
     // comprimised, get out of the fight
     if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-        allow_fail = 35;
+        allow_fail = param(Param::escape_stunned_fail);
     }
 
     // for emergencies
@@ -686,7 +688,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // Borgs who are in a sea of runes or trying to build one
     // and mostly healthy stay put
-    if st.borg.tr(BI_CDEPTH) == 100 && st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) * 5 / 10 {
+    if st.borg.tr(BI_CDEPTH) == 100 && st.borg.tr(BI_CURHP) >= st.borg.tr(BI_MAXHP) * param(Param::escape_morgoth_hold_hp_tenths) / 10 {
         // In a sea of runes
         if st.borg.morgoth_position {
             return false;
@@ -704,7 +706,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             }
         }
         // Touching at least 3 glyphs
-        if glyphs >= 3 {
+        if glyphs >= param(Param::escape_morgoth_hold_glyph_count) {
             return false;
         }
     }
@@ -722,7 +724,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // Risky borgs are more likely to stay in a fight
     if st.cfg(BORG_PLAYS_RISKY) != 0 {
-        risky_boost = 3;
+        risky_boost = param(Param::escape_risky_danger_extra_tenths);
     }
 
     let rb = risky_boost;
@@ -730,46 +732,46 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // 1. really scary, I'm about to die
     // Try an emergency teleport, or phase door as last resort
     if st.borg.tr(BI_ISHEAVYSTUN) != 0
-        || b_q > avoid(st, 45, rb)
-        || (b_q > avoid(st, 40, rb)
+        || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb)
+        || (b_q > avoid(st, param(Param::escape_morgoth_danger_tenths), rb)
             && st.borg.near.unique >= 10
             && st.borg.tr(BI_CDEPTH) == 100
-            && st.borg.tr(BI_CURHP) < 600)
-        || (b_q > avoid(st, 30, rb)
+            && st.borg.tr(BI_CURHP) < param(Param::escape_morgoth_max_hp))
+        || (b_q > avoid(st, param(Param::escape_sauron_danger_tenths), rb)
             && st.borg.near.unique >= 10
             && st.borg.tr(BI_CDEPTH) == 99
-            && st.borg.tr(BI_CURHP) < 600)
-        || (b_q > avoid(st, 25, rb)
+            && st.borg.tr(BI_CURHP) < param(Param::escape_sauron_max_hp))
+        || (b_q > avoid(st, param(Param::escape_deep_unique_danger_tenths), rb)
             && near_unique_1_8(st)
-            && st.borg.tr(BI_CDEPTH) >= 95
-            && st.borg.tr(BI_CURHP) < 550)
-        || (b_q > avoid(st, 17, rb) && near_unique_1_8(st) && st.borg.tr(BI_CDEPTH) < 95)
-        || (b_q > avoid(st, 15, rb) && st.borg.near.unique == 0)
+            && st.borg.tr(BI_CDEPTH) >= param(Param::escape_deep_unique_depth)
+            && st.borg.tr(BI_CURHP) < param(Param::escape_deep_unique_max_hp))
+        || (b_q > avoid(st, param(Param::escape_unique_danger_tenths), rb) && near_unique_1_8(st) && st.borg.tr(BI_CDEPTH) < param(Param::escape_deep_unique_depth))
+        || (b_q > avoid(st, param(Param::escape_ordinary_danger_tenths), rb) && st.borg.near.unique == 0)
     {
-        let tmp_allow_fail = 15;
+        let tmp_allow_fail = param(Param::escape_emergency_fail);
 
         if borg_escape_stair(st)
             || (borg_allow_teleport(st)
-                && (borg_dimension_door(st, tmp_allow_fail - 10)
-                    || borg_spell_fail(st, TELEPORT_SELF, tmp_allow_fail - 10)
-                    || borg_spell_fail(st, PORTAL, tmp_allow_fail - 10)
-                    || borg_shadow_shift(st, tmp_allow_fail - 10)
+                && (borg_dimension_door(st, tmp_allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_spell_fail(st, TELEPORT_SELF, tmp_allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_spell_fail(st, PORTAL, tmp_allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_shadow_shift(st, tmp_allow_fail - param(Param::escape_initial_fail_discount))
                     || borg_read_scroll(st, st.item_val.sv_scroll_teleport)
                     || borg_use_staff_fail(st, st.item_val.sv_staff_teleportation)
                     || borg_activate_item(st, st.act.tele_long)
                     || borg_teleport_off_level(st)
                     // revisit spells, increased fail rate
-                    || borg_dimension_door(st, tmp_allow_fail + 9)
-                    || borg_spell_fail(st, TELEPORT_SELF, tmp_allow_fail + 9)
-                    || borg_spell_fail(st, PORTAL, tmp_allow_fail + 9)
-                    || borg_shadow_shift(st, tmp_allow_fail + 9)
+                    || borg_dimension_door(st, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
+                    || borg_spell_fail(st, TELEPORT_SELF, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
+                    || borg_spell_fail(st, PORTAL, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
+                    || borg_shadow_shift(st, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
                     // revisit teleport, increased fail rate
                     || borg_use_staff(st, st.item_val.sv_staff_teleportation)
                     // Attempt Teleport Level
-                    || borg_spell_fail(st, TELEPORT_LEVEL, tmp_allow_fail + 9)
+                    || borg_spell_fail(st, TELEPORT_LEVEL, tmp_allow_fail + param(Param::escape_emergency_fail_extra))
                     // try phase at least, with some hedging of the safety of
                     // landing zone
-                    || (borg_caution_phase(st, 75, 2)
+                    || (borg_caution_phase(st, param(Param::escape_emergency_phase_tolerance), param(Param::escape_emergency_phase_horizon))
                         && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
                             || borg_activate_item(st, st.act.tele_phase)
                             || borg_spell_fail(st, PHASE_DOOR, tmp_allow_fail)
@@ -787,10 +789,10 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // try to teleport, get far away from here
         if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 10
-            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 10
+            && st.borg.tr(BI_CLEVEL) < param(Param::escape_last_ditch_max_level)
+            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_last_ditch_hp_divisor)
             && borg_allow_teleport(st)
-            && (borg_dimension_door(st, 90)
+            && (borg_dimension_door(st, param(Param::escape_last_ditch_dimension_fail))
                 || borg_spell(st, TELEPORT_SELF)
                 || borg_spell(st, PORTAL))
         {
@@ -802,7 +804,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // emergency phase activation no concern for safety of landing zone.
         if st.borg.tr(BI_CDEPTH) != 0
-            && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 10 || b_q > avoid(st, 45, rb))
+            && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_critical_phase_hp_divisor) || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb))
             && (borg_activate_item(st, st.act.tele_phase)
                 || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
         {
@@ -815,9 +817,9 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // emergency phase spell
         if st.borg.tr(BI_CDEPTH) != 0
-            && st.borg.tr(BI_CLEVEL) < 10
-            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 10
-            && (borg_spell_fail(st, PHASE_DOOR, 15) || borg_spell(st, PORTAL))
+            && st.borg.tr(BI_CLEVEL) < param(Param::escape_last_ditch_phase_max_level)
+            && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_last_ditch_phase_hp_divisor)
+            && (borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)) || borg_spell(st, PORTAL))
         {
             // Flee!
             borg_note(st, "# Danger Level 1.3  Critical Attempt");
@@ -831,10 +833,10 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // If fighting a unique and at the end of the game try to stay and
     // finish the fight.  Only bail out in extreme danger as above.
-    if b_q < avoid(st, 25, rb)
+    if b_q < avoid(st, param(Param::escape_endgame_stay_danger_tenths), rb)
         && st.borg.near.unique >= 1
-        && st.borg.near.unique <= 3
-        && st.borg.tr(BI_CDEPTH) >= 97
+        && i32::from(st.borg.near.unique) <= param(Param::escape_endgame_stay_unique_count)
+        && st.borg.tr(BI_CDEPTH) >= param(Param::escape_endgame_stay_min_depth)
     {
         return false;
     }
@@ -843,20 +845,20 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // Attempt to teleport (usually)
     // do not escape from uniques so quick
     if st.borg.tr(BI_ISHEAVYSTUN) != 0
-        || (b_q > avoid(st, 3, rb)
+        || (b_q > avoid(st, param(Param::escape_mage_danger_tenths), rb)
             && st.borg.tr(BI_CLASS) == CLASS_MAGE
-            && st.borg.tr(BI_CURSP) <= 20
-            && st.borg.tr(BI_MAXCLEVEL) >= 45)
-        || (b_q > avoid(st, 13, rb) && near_unique_1_8(st) && st.borg.tr(BI_CDEPTH) != 99)
-        || (b_q > avoid(st, 11, rb) && st.borg.near.unique == 0)
+            && st.borg.tr(BI_CURSP) <= param(Param::escape_mage_max_sp)
+            && st.borg.tr(BI_MAXCLEVEL) >= param(Param::escape_mage_min_level))
+        || (b_q > avoid(st, param(Param::escape_teleport_unique_danger_tenths), rb) && near_unique_1_8(st) && st.borg.tr(BI_CDEPTH) != 99)
+        || (b_q > avoid(st, param(Param::escape_teleport_ordinary_danger_tenths), rb) && st.borg.near.unique == 0)
     {
         // Try teleportation
         if borg_escape_stair(st)
             || (borg_allow_teleport(st)
-                && (borg_dimension_door(st, allow_fail - 10)
-                    || borg_spell_fail(st, TELEPORT_SELF, allow_fail - 10)
-                    || borg_spell_fail(st, PORTAL, allow_fail - 10)
-                    || borg_shadow_shift(st, allow_fail - 10)
+                && (borg_dimension_door(st, allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_spell_fail(st, TELEPORT_SELF, allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_spell_fail(st, PORTAL, allow_fail - param(Param::escape_initial_fail_discount))
+                    || borg_shadow_shift(st, allow_fail - param(Param::escape_initial_fail_discount))
                     || borg_use_staff_fail(st, st.item_val.sv_staff_teleportation)
                     || borg_activate_item(st, st.act.tele_long)
                     || borg_read_scroll(st, st.item_val.sv_scroll_teleport)
@@ -874,8 +876,8 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             return true;
         }
         // Phase door, if useful
-        if borg_caution_phase(st, 50, 2)
-            && borg_timer(st, st.borg.time.antisummon) > 50
+        if borg_caution_phase(st, param(Param::escape_teleport_phase_tolerance), param(Param::escape_teleport_phase_horizon))
+            && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
             && (borg_spell(st, PHASE_DOOR)
                 || borg_spell(st, PORTAL)
                 || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
@@ -892,16 +894,16 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // 3- not too bad
     // also run if stunned or it is scary here
     if st.borg.tr(BI_ISHEAVYSTUN) != 0
-        || (b_q > avoid(st, 13, rb) && st.borg.near.unique >= 2 && st.borg.near.unique <= 8)
-        || (b_q > avoid(st, 10, rb) && st.borg.near.unique == 0)
-        || (b_q > avoid(st, 10, rb)
+        || (b_q > avoid(st, param(Param::escape_phase_unique_danger_tenths), rb) && i32::from(st.borg.near.unique) >= param(Param::escape_phase_unique_min_count) && i32::from(st.borg.near.unique) <= param(Param::escape_near_unique_max_count))
+        || (b_q > avoid(st, param(Param::escape_phase_ordinary_danger_tenths), rb) && st.borg.near.unique == 0)
+        || (b_q > avoid(st, param(Param::escape_afraid_warrior_danger_tenths), rb)
             && st.borg.tr(BI_ISAFRAID) != 0
             && (st.borg.tr(BI_AMISSILES) <= 0 && st.borg.tr(BI_CLASS) == CLASS_WARRIOR))
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(st, 25, 2)
-                && borg_timer(st, st.borg.time.antisummon) > 50
+            || (borg_caution_phase(st, param(Param::escape_phase_tolerance), param(Param::escape_phase_horizon))
+                && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
                 && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                     || borg_spell_fail(st, PORTAL, allow_fail)
                     || borg_activate_item(st, st.act.tele_phase)
@@ -935,8 +937,8 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             return true;
         }
         // Phase door, if useful
-        if borg_caution_phase(st, 75, 2)
-            && borg_timer(st, st.borg.time.antisummon) > 50
+        if borg_caution_phase(st, param(Param::escape_fallback_phase_tolerance), param(Param::escape_fallback_phase_horizon))
+            && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
             && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                 || borg_spell_fail(st, PORTAL, allow_fail)
                 || borg_shadow_shift(st, allow_fail)
@@ -965,7 +967,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // if we got this far we tried to escape but couldn't...
         // time to flee
         if !st.borg.goal.fleeing
-            && (st.borg.near.unique == 0 || st.borg.tr(BI_CLEVEL) < 35)
+            && (st.borg.near.unique == 0 || st.borg.tr(BI_CLEVEL) < param(Param::escape_failed_teleport_flee_max_level))
             && !st.borg.status.vault
         {
             // Note
@@ -977,7 +979,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // Flee now
         if !st.borg.goal.leaving
-            && (st.borg.near.unique == 0 || st.borg.tr(BI_CLEVEL) < 35)
+            && (st.borg.near.unique == 0 || st.borg.tr(BI_CLEVEL) < param(Param::escape_failed_teleport_leave_max_level))
             && !st.borg.status.vault
         {
             // Flee!
@@ -989,18 +991,18 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     // 4- not too scary but I'm compromised
-    if (b_q > avoid(st, 8, rb)
-        && (st.borg.tr(BI_CLEVEL) < 35 || st.borg.tr(BI_CURHP) <= st.borg.tr(BI_MAXHP) / 3))
-        || (b_q > avoid(st, 9, rb)
+    if (b_q > avoid(st, param(Param::escape_compromised_danger_tenths), rb)
+        && (st.borg.tr(BI_CLEVEL) < param(Param::escape_compromised_max_level) || st.borg.tr(BI_CURHP) <= st.borg.tr(BI_MAXHP) / param(Param::escape_compromised_hp_divisor)))
+        || (b_q > avoid(st, param(Param::escape_compromised_unique_danger_tenths), rb)
             && near_unique_1_8(st)
-            && (st.borg.tr(BI_CLEVEL) < 35 || st.borg.tr(BI_CURHP) <= st.borg.tr(BI_MAXHP) / 3))
-        || (b_q > avoid(st, 6, rb) && st.borg.tr(BI_CLEVEL) <= 20 && st.borg.near.unique == 0)
-        || (b_q > avoid(st, 6, rb) && st.borg.tr(BI_CLEVEL) <= 35)
+            && (st.borg.tr(BI_CLEVEL) < param(Param::escape_compromised_unique_max_level) || st.borg.tr(BI_CURHP) <= st.borg.tr(BI_MAXHP) / param(Param::escape_compromised_unique_hp_divisor)))
+        || (b_q > avoid(st, param(Param::escape_compromised_ordinary_danger_tenths), rb) && st.borg.tr(BI_CLEVEL) <= param(Param::escape_compromised_ordinary_max_level) && st.borg.near.unique == 0)
+        || (b_q > avoid(st, param(Param::escape_compromised_general_danger_tenths), rb) && st.borg.tr(BI_CLEVEL) <= param(Param::escape_compromised_general_max_level))
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(st, 20, 2)
-                && borg_timer(st, st.borg.time.antisummon) > 50
+            || (borg_caution_phase(st, param(Param::escape_compromised_phase_tolerance), param(Param::escape_compromised_phase_horizon))
+                && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
                 && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                     || borg_spell_fail(st, PORTAL, allow_fail)
                     || borg_activate_item(st, st.act.tele_phase)
@@ -1038,7 +1040,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // time to flee
         if !st.borg.goal.fleeing
             && st.borg.near.unique == 0
-            && st.borg.tr(BI_CLEVEL) < 25
+            && st.borg.tr(BI_CLEVEL) < param(Param::escape_failed_compromised_flee_max_level)
             && !st.borg.status.vault
         {
             // Note
@@ -1058,9 +1060,9 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         }
         // Emergency Phase door if a weak mage
         if ((st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-            && st.borg.tr(BI_CLEVEL) <= 35)
-            && borg_caution_phase(st, 65, 2)
-            && borg_timer(st, st.borg.time.antisummon) > 50
+            && st.borg.tr(BI_CLEVEL) <= param(Param::escape_weak_caster_max_level))
+            && borg_caution_phase(st, param(Param::escape_weak_caster_phase_tolerance), param(Param::escape_weak_caster_phase_horizon))
+            && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
             && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                 || borg_activate_item(st, st.act.tele_phase)
                 || borg_activate_item(st, st.act.tele_long)
@@ -1077,12 +1079,12 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     // 5- not too scary but I'm very low level
-    if st.borg.tr(BI_CLEVEL) < 10
-        && (b_q > avoid(st, 5, rb) || (b_q > avoid(st, 7, rb) && near_unique_1_8(st)))
+    if st.borg.tr(BI_CLEVEL) < param(Param::escape_low_level_max_level)
+        && (b_q > avoid(st, param(Param::escape_low_level_danger_tenths), rb) || (b_q > avoid(st, param(Param::escape_low_level_unique_danger_tenths), rb) && near_unique_1_8(st)))
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(st, 20, 2)
+            || (borg_caution_phase(st, param(Param::escape_low_level_phase_tolerance), param(Param::escape_low_level_phase_horizon))
                 && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                     || borg_spell_fail(st, PORTAL, allow_fail)
                     || borg_activate_item(st, st.act.tele_phase)
@@ -1135,8 +1137,8 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         }
         // Emergency Phase door if a weak mage
         if ((st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-            && st.borg.tr(BI_CLEVEL) <= 8)
-            && borg_caution_phase(st, 65, 2)
+            && st.borg.tr(BI_CLEVEL) <= param(Param::escape_low_caster_max_level))
+            && borg_caution_phase(st, param(Param::escape_low_caster_phase_tolerance), param(Param::escape_low_caster_phase_horizon))
             && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                 || borg_activate_item(st, st.act.tele_phase)
                 || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
@@ -1156,13 +1158,13 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     if (st.borg.tr(BI_CLASS) == CLASS_MAGE
         || st.borg.tr(BI_CLASS) == CLASS_PRIEST
         || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-        && (b_q > avoid(st, 6, rb) || (b_q > avoid(st, 8, rb) && near_unique_1_8(st)))
-        && (st.borg.tr(BI_CURSP) <= st.borg.tr(BI_MAXSP) / 10 && st.borg.tr(BI_MAXSP) >= 100)
+        && (b_q > avoid(st, param(Param::escape_low_mana_danger_tenths), rb) || (b_q > avoid(st, param(Param::escape_low_mana_unique_danger_tenths), rb) && near_unique_1_8(st)))
+        && (st.borg.tr(BI_CURSP) <= st.borg.tr(BI_MAXSP) / param(Param::escape_low_mana_sp_divisor) && st.borg.tr(BI_MAXSP) >= param(Param::escape_low_mana_min_maxsp))
     {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(st, 20, 2)
-                && borg_timer(st, st.borg.time.antisummon) > 50
+            || (borg_caution_phase(st, param(Param::escape_low_mana_phase_tolerance), param(Param::escape_low_mana_phase_horizon))
+                && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
                 && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                     || borg_spell_fail(st, PORTAL, allow_fail)
                     || borg_activate_item(st, st.act.tele_phase)
@@ -1197,7 +1199,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // 7- Shoot N Scoot
     if (borg_spell_okay_fail(st, PHASE_DOOR, allow_fail)
         || borg_spell_okay_fail(st, PORTAL, allow_fail))
-        && borg_shoot_scoot_safe(st, 20, 2, b_q)
+        && borg_shoot_scoot_safe(st, param(Param::escape_scoot_tolerance), param(Param::escape_scoot_horizon), b_q)
         // Phase door
         && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
             || borg_spell_fail(st, PORTAL, allow_fail))
@@ -1212,11 +1214,11 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     // 8- not too scary but twitching
-    if st.borg.times_twitch > 50 {
+    if i32::from(st.borg.times_twitch) > param(Param::escape_twitch_limit) {
         // Phase door, if useful
         if borg_escape_stair(st)
-            || (borg_caution_phase(st, 20, 2)
-                && borg_timer(st, st.borg.time.antisummon) > 50
+            || (borg_caution_phase(st, param(Param::escape_twitch_phase_tolerance), param(Param::escape_twitch_phase_horizon))
+                && borg_timer(st, st.borg.time.antisummon) > param(Param::escape_phase_antisummon_delay)
                 && (borg_spell_fail(st, PHASE_DOOR, allow_fail)
                     || borg_spell_fail(st, PORTAL, allow_fail)
                     || borg_activate_item(st, st.act.tele_phase)

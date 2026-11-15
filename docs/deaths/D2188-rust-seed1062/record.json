@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2188-rust-seed1062",
+  "run_kind": "harness",
+  "character": "Dunadan Rogue",
+  "raw_cause": "a soldier",
+  "terminal": {
+    "cause": "a soldier",
+    "dead": true,
+    "depth": 2,
+    "max_depth": 3,
+    "level": 3,
+    "turn": 49147,
+    "race_idx": 8,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1062,
+    "flags": "menu",
+    "git_rev": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+    "git_dirty": "yes",
+    "source_sha256": "60bc0d6b0d6c2d063486b21115044126a9328b52d0c3732bc89cfcb315d4e904",
+    "binary_sha256": "8d5290f714671570dc6a0b84c621b8cfaad9dce314141e86f65b6f9f3bdb886c",
+    "borg_txt_sha256": "3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "308348cb980bc99a6b38c8cc59390389274f8ac4d0035ce759b5d1fd70e48224"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p12-full/full-6-rogue-2",
+      "result_sha256": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+      "raw_sha256": {
+        "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+        "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+        "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+      },
+      "source_commit": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+      "binary_sha256": "8d5290f714671570dc6a0b84c621b8cfaad9dce314141e86f65b6f9f3bdb886c"
+    }
+  ],
+  "encounter_family": "start-1ec3dcecbdfd3ea429c2eb58f5712b2e4685acd293391b28e3b793f3c1446244",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "20b2e88073ea5a870a245925963327e1c2d79807a1d99d672e7f97265c3aa59d",
+    "config.txt": "a39719c08e4b7a865e47bb2dbf61632b69c8f3f0ba2371a63a1e428b8d026d0d",
+    "depths.json": "73af7e2ebf7397375b9e6948fe653a90556e9954481b0a11f825947092ee4b45",
+    "params-core.json": "308348cb980bc99a6b38c8cc59390389274f8ac4d0035ce759b5d1fd70e48224",
+    "summary.json": "736673444b11f78a5a8f7b5975dda80ab0e3d7e81268d30a19530c645d685841"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -19,6 +19,8 @@
 //! `borg_kills` (`st.kills`, borg-flow-kill.c), copied once per monster,
 //! and its race from the engine's `r_info`.
 
+// borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
+use crate::params::{value as param, Param};
 use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_feature_protected};
 use crate::borg_cave_view::BORG_VIEW;
@@ -172,10 +174,10 @@ fn borg_danger_physical(
 
     // Mega-Hack -- unknown monsters (or "player ghosts"
     if kill.r_idx == 0 {
-        return 1000;
+        return param(Param::danger_unknown_physical);
     }
     if i32::from(kill.r_idx) >= i32::from(engine::z_info().r_max) - 1 {
-        return 1000;
+        return param(Param::danger_unknown_physical);
     }
 
     let r_idx = usize::from(kill.r_idx);
@@ -194,7 +196,7 @@ fn borg_danger_physical(
         let d_dice = blow.dice;
         let d_side = blow.sides;
 
-        let mut power: i32 = 0;
+        let mut power: i32 = param(Param::danger_default_hit_power);
 
         // Analyze the attack
         let effect = crate::borg_fight_attack::borg_mon_blow_effect(blow.effect_name.to_bytes()) as u32;
@@ -204,18 +206,18 @@ fn borg_danger_physical(
                 // fudge- some baddies kick and they tend to KO.  Avoid close
                 // combat like the plague.  10d2 is common but take any very
                 // low sides and high dice count as dangerous
-                if d_side < 3 && d_dice > 5 {
-                    n += 400;
+                if d_side < param(Param::danger_knockout_max_sides) && d_dice > param(Param::danger_knockout_min_dice) {
+                    n += param(Param::danger_monblow_hurt_fear);
                 }
-                power = 60;
+                power = param(Param::danger_monblow_hurt_hit_power);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_POISON => 'b: {
                 z = d_dice * d_side;
-                power = 5;
+                power = param(Param::danger_monblow_poison_hit_power);
                 if st.borg.tr(BI_RPOIS) != 0 {
                     break 'b;
                 }
@@ -223,102 +225,102 @@ fn borg_danger_physical(
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 10;
+                z += param(Param::danger_monblow_poison_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_DISENCHANT => 'b: {
                 z = d_dice * d_side;
-                power = 20;
+                power = param(Param::danger_monblow_disenchant_hit_power);
                 if st.borg.tr(BI_RDIS) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 500;
+                z += param(Param::danger_monblow_disenchant_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_DRAIN_CHARGES => {
                 z = d_dice * d_side;
                 // Add fear for the effect
-                z += 20;
-                power = 15;
+                z += param(Param::danger_monblow_drain_charges_fear);
+                power = param(Param::danger_monblow_drain_charges_hit_power);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_EAT_GOLD => 'b: {
                 z = d_dice * d_side;
                 // if in town and low level avoid them stupid urchins
-                if st.borg.tr(BI_CLEVEL) < 5 {
-                    z += 50;
+                if st.borg.tr(BI_CLEVEL) < param(Param::danger_gold_theft_low_level) {
+                    z += param(Param::danger_monblow_eat_gold_fear);
                 }
-                power = 5;
+                power = param(Param::danger_monblow_eat_gold_hit_power);
                 if 100 <= engine::adj_dex_safe(st.borg.tr(BI_DEX_INDEX) as usize)
                     + st.borg.tr(BI_CLEVEL)
                 {
                     break 'b;
                 }
-                if st.borg.tr(BI_GOLD) < 100 {
+                if st.borg.tr(BI_GOLD) < param(Param::danger_gold_theft_min_gold) {
                     break 'b;
                 }
-                if st.borg.tr(BI_GOLD) > 100000 {
+                if st.borg.tr(BI_GOLD) > param(Param::danger_gold_theft_max_gold) {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 5;
+                z += param(Param::danger_monblow_eat_gold_fear_2);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_EAT_ITEM => 'b: {
                 z = d_dice * d_side;
-                power = 5;
+                power = param(Param::danger_monblow_eat_item_hit_power);
                 if 100 <= engine::adj_dex_safe(st.borg.tr(BI_DEX_INDEX) as usize)
                     + st.borg.tr(BI_CLEVEL)
                 {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 5;
+                z += param(Param::danger_monblow_eat_item_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_EAT_FOOD => 'b: {
                 z = d_dice * d_side;
-                power = 5;
-                if st.borg.tr(BI_FOOD) > 5 {
+                power = param(Param::danger_monblow_eat_food_hit_power);
+                if st.borg.tr(BI_FOOD) > param(Param::danger_food_theft_reserve) {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 5;
+                z += param(Param::danger_monblow_eat_food_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_EAT_LIGHT => 'b: {
                 z = d_dice * d_side;
-                power = 5;
+                power = param(Param::danger_monblow_eat_light_hit_power);
                 let light = &st.items.items[inven_light()];
                 if light.timeout == 0 || engine::flag_has(&light.flags, OF_NO_FUEL as i32) {
                     break 'b;
                 }
-                if st.borg.tr(BI_AFUEL) > 5 {
+                if st.borg.tr(BI_AFUEL) > param(Param::danger_fuel_theft_reserve) {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 5;
+                z += param(Param::danger_monblow_eat_light_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -334,9 +336,9 @@ fn borg_danger_physical(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                z += 200; // We don't want our armour corroded.
+                z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -345,7 +347,7 @@ fn borg_danger_physical(
                     break 'b;
                 }
                 z = d_dice * d_side;
-                power = 10;
+                power = param(Param::danger_monblow_elec_hit_power);
                 if st.borg.tr(BI_RELEC) != 0 {
                     z = (z + 2) / 3;
                 }
@@ -353,9 +355,9 @@ fn borg_danger_physical(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                z *= 2;
+                z *= param(Param::danger_monblow_elec_damage_multiplier);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -364,7 +366,7 @@ fn borg_danger_physical(
                     break 'b;
                 }
                 z = d_dice * d_side;
-                power = 10;
+                power = param(Param::danger_monblow_fire_hit_power);
                 if st.borg.tr(BI_RFIRE) != 0 {
                     z = (z + 2) / 3;
                 }
@@ -372,9 +374,9 @@ fn borg_danger_physical(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                z *= 2;
+                z *= param(Param::danger_monblow_fire_damage_multiplier);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -383,7 +385,7 @@ fn borg_danger_physical(
                     break 'b;
                 }
                 z = d_dice * d_side;
-                power = 10;
+                power = param(Param::danger_monblow_cold_hit_power);
                 if st.borg.tr(BI_RCOLD) != 0 {
                     z = (z + 2) / 3;
                 }
@@ -391,66 +393,66 @@ fn borg_danger_physical(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                z *= 2;
+                z *= param(Param::danger_monblow_cold_damage_multiplier);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_BLIND => 'b: {
                 z = d_dice * d_side;
-                power = 2;
+                power = param(Param::danger_monblow_blind_hit_power);
                 if st.borg.tr(BI_RBLIND) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 10;
+                z += param(Param::danger_monblow_blind_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    z += 75;
+                    z += param(Param::danger_monblow_blind_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_CONFUSE => 'b: {
                 z = d_dice * d_side;
-                power = 10;
+                power = param(Param::danger_monblow_confuse_hit_power);
                 if st.borg.tr(BI_RCONF) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 200;
+                z += param(Param::danger_monblow_confuse_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    z += 200;
+                    z += param(Param::danger_monblow_confuse_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_TERRIFY => 'b: {
                 z = d_dice * d_side;
-                power = 10;
+                power = param(Param::danger_monblow_terrify_hit_power);
                 if st.borg.tr(BI_RFEAR) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                z *= 2;
+                z *= param(Param::danger_monblow_terrify_damage_multiplier);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_PARALYZE => 'b: {
                 z = d_dice * d_side;
-                power = 2;
+                power = param(Param::danger_monblow_paralyze_hit_power);
                 if st.borg.tr(BI_FRACT) != 0 {
                     break 'b;
                 }
-                z += 200;
+                z += param(Param::danger_monblow_paralyze_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -471,13 +473,13 @@ fn borg_danger_physical(
                 if borg_spell_legal(st, UNHOLY_REPRIEVE) {
                     break 'b;
                 }
-                z += 150;
+                z += param(Param::danger_monblow_lose_str_fear);
                 // extra scary to have str drain below 10
-                if st.borg.tr(BI_CSTR) < 10 {
-                    z += 100;
+                if st.borg.tr(BI_CSTR) < param(Param::danger_str_drain_low_stat) {
+                    z += param(Param::danger_monblow_lose_str_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -495,13 +497,13 @@ fn borg_danger_physical(
                 if borg_spell_legal(st, REVITALIZE) {
                     break 'b;
                 }
-                z += 150;
+                z += param(Param::danger_monblow_lose_dex_fear);
                 // extra scary to have drain below 10
-                if st.borg.tr(BI_CDEX) < 10 {
-                    z += 100;
+                if st.borg.tr(BI_CDEX) < param(Param::danger_dex_drain_low_stat) {
+                    z += param(Param::danger_monblow_lose_dex_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -523,13 +525,13 @@ fn borg_danger_physical(
                     break 'b;
                 }
                 // Add fear for the effect
-                z += 150;
+                z += param(Param::danger_monblow_lose_con_fear);
                 // extra scary to have con drain below 8
-                if st.borg.tr(BI_CCON) < 8 {
-                    z += 100;
+                if st.borg.tr(BI_CCON) < param(Param::danger_con_drain_low_stat) {
+                    z += param(Param::danger_monblow_lose_con_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -550,13 +552,13 @@ fn borg_danger_physical(
                 if borg_spell_legal(st, UNHOLY_REPRIEVE) {
                     break 'b;
                 }
-                z += 150;
+                z += param(Param::danger_monblow_lose_int_fear);
                 // extra scary for spell caster
                 if borg_spell_stat() == STAT_INT as i32 {
-                    z += 50;
+                    z += param(Param::danger_monblow_lose_int_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -574,30 +576,30 @@ fn borg_danger_physical(
                 if borg_spell_legal(st, REVITALIZE) {
                     break 'b;
                 }
-                z += 150;
+                z += param(Param::danger_monblow_lose_wis_fear);
                 // extra scary for pray'er
                 if borg_spell_stat() == STAT_WIS as i32 {
-                    z += 50;
+                    z += param(Param::danger_monblow_lose_wis_fear_2);
                 }
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_LOSE_ALL => {
                 z = d_dice * d_side;
-                power = 2;
+                power = param(Param::danger_monblow_lose_all_hit_power);
                 // only morgoth to make it easier to fight him
             }
 
             MONBLOW_SHATTER => {
                 z = d_dice * d_side;
-                z -= z * i32::from(if ac < 150 { ac } else { 150 }) / 250;
-                power = 60;
+                z -= z * (if i32::from(ac) < param(Param::danger_shatter_ac_cap) { i32::from(ac) } else { param(Param::danger_shatter_ac_cap) }) / param(Param::danger_shatter_ac_divisor);
+                power = param(Param::danger_monblow_shatter_hit_power);
                 // Add fear for the effect
-                z += 150;
+                z += param(Param::danger_monblow_shatter_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -605,10 +607,10 @@ fn borg_danger_physical(
                 let (fear, at_50) = match effect {
                     // do not worry about drain exp after level 50 (EXP_10
                     // tests `== 50`, the others `>= 50`)
-                    MONBLOW_EXP_10 => (100, st.borg.tr(BI_CLEVEL) == 50),
-                    MONBLOW_EXP_20 => (150, st.borg.tr(BI_CLEVEL) >= 50),
-                    MONBLOW_EXP_40 => (200, st.borg.tr(BI_CLEVEL) >= 50),
-                    _ => (250, st.borg.tr(BI_CLEVEL) >= 50),
+                    MONBLOW_EXP_10 => (param(Param::danger_exp10_fear), st.borg.tr(BI_CLEVEL) == param(Param::danger_exp_ignore_level)),
+                    MONBLOW_EXP_20 => (param(Param::danger_exp20_fear), st.borg.tr(BI_CLEVEL) >= param(Param::danger_exp_ignore_level)),
+                    MONBLOW_EXP_40 => (param(Param::danger_exp40_fear), st.borg.tr(BI_CLEVEL) >= param(Param::danger_exp_ignore_level)),
+                    _ => (param(Param::danger_exp80_fear), st.borg.tr(BI_CLEVEL) >= param(Param::danger_exp_ignore_level)),
                 };
                 z = d_dice * d_side;
                 if st.borg.tr(BI_HLIFE) != 0 {
@@ -626,16 +628,16 @@ fn borg_danger_physical(
                 // Add fear for the effect
                 z += fear;
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
             MONBLOW_HALLU => {
                 z = d_dice * d_side;
                 // Add fear for the effect
-                z += 250;
+                z += param(Param::danger_monblow_hallu_fear);
                 if half {
-                    z /= 2;
+                    z /= param(Param::danger_pfe_melee_divisor);
                 }
             }
 
@@ -654,13 +656,13 @@ fn borg_danger_physical(
             // figure out chance that monster will hit you.
             // add a 50% bonus in to account for bad luck.
             let chance = if (level + power) > 0 {
-                150 - (((i32::from(ac) * 300) / 4) / ((level + power) * 3))
+                param(Param::danger_melee_hit_luck_percent) - (((i32::from(ac) * param(Param::danger_melee_hit_ac_scale)) / param(Param::danger_melee_hit_ac_divisor)) / ((level + power) * param(Param::danger_melee_hit_power_scale)))
             } else {
                 -1
             };
 
             // always have a 5% chance of hitting.
-            let chance = if chance < 5 { 5 } else { chance };
+            let chance = if chance < param(Param::danger_melee_hit_floor_percent) { param(Param::danger_melee_hit_floor_percent) } else { chance };
             // never estimate more than the full damage of the blow.
             let chance = if chance > 100 { 100 } else { chance };
 
@@ -704,10 +706,10 @@ fn count_safe_spots(st: &BorgState, kill: &BorgKill, spot_safe: &mut i32) {
                     *spot_safe = 1;
                 }
                 if *spot_safe == 8 {
-                    *spot_safe = 100;
+                    *spot_safe = param(Param::danger_summon_protected_divisor);
                 }
                 if st.borg.morgoth_position || st.borg.status.anti_summon {
-                    *spot_safe = 1000;
+                    *spot_safe = param(Param::danger_summon_corridor_divisor);
                 }
             }
         }
@@ -763,10 +765,10 @@ fn borg_danger_spell(
 
     // Mega-Hack -- unknown monsters (or "player ghosts")
     if kill.r_idx == 0 {
-        return 1000;
+        return param(Param::danger_unknown_spell);
     }
     if i32::from(kill.r_idx) >= i32::from(engine::z_info().r_max) - 1 {
-        return 1000;
+        return param(Param::danger_unknown_spell);
     }
 
     // Paranoia -- Nothing to cast
@@ -792,18 +794,18 @@ fn borg_danger_spell(
         match u32::from(kill.spell[q]) {
             RSF_SHRIEK => {
                 // Add fear for the effect
-                p += 5;
+                p += param(Param::danger_rsf_shriek_fear);
             }
 
             RSF_WHIP => {
                 if d < 3 {
-                    z = 100;
+                    z = param(Param::danger_rsf_lash_damage);
                 }
             }
 
             RSF_SPIT => {
                 if d < 4 {
-                    z = 100;
+                    z = param(Param::danger_rsf_spit_damage);
                 }
             }
 
@@ -835,7 +837,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_br_acid_fear);
             }
 
             RSF_BR_ELEC => 'b: {
@@ -854,7 +856,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_br_elec_fear);
             }
 
             RSF_BR_FIRE => 'b: {
@@ -873,7 +875,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_br_fire_fear);
             }
 
             RSF_BR_COLD => 'b: {
@@ -892,7 +894,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_br_cold_fear);
             }
 
             RSF_BR_POIS => 'b: {
@@ -914,7 +916,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_br_pois_fear);
             }
 
             RSF_BR_NETH => 'b: {
@@ -928,7 +930,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 125;
+                p += param(Param::danger_rsf_br_neth_fear);
             }
 
             RSF_BR_LIGHT => 'b: {
@@ -944,9 +946,9 @@ fn borg_danger_spell(
                 if st.borg.tr(BI_RBLIND) != 0 {
                     break 'b;
                 }
-                p += 20;
+                p += param(Param::danger_rsf_br_light_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_br_light_fear_2);
                 }
             }
 
@@ -965,9 +967,9 @@ fn borg_danger_spell(
                 if st.borg.tr(BI_RBLIND) != 0 {
                     break 'b;
                 }
-                p += 20;
+                p += param(Param::danger_rsf_br_dark_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_br_dark_fear_2);
                 }
             }
 
@@ -985,13 +987,13 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 500;
+                    z += param(Param::danger_rsf_br_soun_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 1000;
+                    z += param(Param::danger_rsf_br_soun_fear_2);
                 }
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_br_soun_fear_3);
             }
 
             RSF_BR_CHAO => 'b: {
@@ -1004,11 +1006,11 @@ fn borg_danger_spell(
                     z = (z * 6) / 9;
                 }
                 // Add fear for the effect
-                p += 100;
+                p += param(Param::danger_rsf_br_chao_fear);
                 if st.borg.tr(BI_RKAOS) != 0 {
                     break 'b;
                 }
-                p += 200;
+                p += param(Param::danger_rsf_br_chao_fear_2);
             }
 
             RSF_BR_DISE => 'b: {
@@ -1023,7 +1025,7 @@ fn borg_danger_spell(
                 if st.borg.tr(BI_RDIS) != 0 {
                     break 'b;
                 }
-                p += 500;
+                p += param(Param::danger_rsf_br_dise_fear);
             }
 
             RSF_BR_NEXU => 'b: {
@@ -1039,7 +1041,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 100;
+                p += param(Param::danger_rsf_br_nexu_fear);
             }
 
             RSF_BR_TIME => {
@@ -1049,7 +1051,7 @@ fn borg_danger_spell(
                     z = 150;
                 }
                 // Add fear for the effect
-                p += 250;
+                p += param(Param::danger_rsf_br_time_fear);
             }
 
             RSF_BR_INER => {
@@ -1059,7 +1061,7 @@ fn borg_danger_spell(
                     z = 200;
                 }
                 // Add fear for the effect
-                p += 100;
+                p += param(Param::danger_rsf_br_iner_fear);
             }
 
             RSF_BR_GRAV => 'b: {
@@ -1069,16 +1071,16 @@ fn borg_danger_spell(
                     z = 200;
                 }
                 // Add fear for the effect
-                p += 100;
+                p += param(Param::danger_rsf_br_grav_fear);
                 if st.borg.tr(BI_RSND) != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 500;
+                    z += param(Param::danger_rsf_br_grav_fear_2);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 1000;
+                    z += param(Param::danger_rsf_br_grav_fear_3);
                 }
             }
 
@@ -1095,7 +1097,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_br_shar_fear);
             }
 
             RSF_BR_PLAS => 'b: {
@@ -1109,13 +1111,13 @@ fn borg_danger_spell(
                 }
                 // Pump this up if you have goi so that the borg is sure
                 // to be made nervous
-                p += 100;
+                p += param(Param::danger_rsf_br_plas_fear);
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 500;
+                    z += param(Param::danger_rsf_br_plas_fear_2);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 1000;
+                    z += param(Param::danger_rsf_br_plas_fear_3);
                 }
             }
 
@@ -1130,13 +1132,13 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 100;
+                    z += param(Param::danger_rsf_br_wall_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 500;
+                    z += param(Param::danger_rsf_br_wall_fear_2);
                 }
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_br_wall_fear_3);
             }
 
             RSF_BR_MANA => {
@@ -1169,7 +1171,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_ba_acid_fear);
             }
 
             RSF_BA_ELEC => 'b: {
@@ -1184,7 +1186,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_elec_fear);
             }
 
             RSF_BA_FIRE => 'b: {
@@ -1199,7 +1201,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_ba_fire_fear);
             }
 
             RSF_BA_COLD => 'b: {
@@ -1214,7 +1216,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_cold_fear);
             }
 
             RSF_BA_POIS => 'b: {
@@ -1232,7 +1234,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_pois_fear);
             }
 
             RSF_BA_SHAR => 'b: {
@@ -1244,7 +1246,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_shar_fear);
             }
 
             RSF_BA_NETH => 'b: {
@@ -1256,7 +1258,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 250;
+                p += param(Param::danger_rsf_ba_neth_fear);
             }
 
             RSF_BA_WATE => 'b: {
@@ -1266,31 +1268,31 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    p += 500;
+                    p += param(Param::danger_rsf_ba_wate_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    p += 1000;
+                    p += param(Param::danger_rsf_ba_wate_fear_2);
                 }
                 if st.borg.tr(BI_RCONF) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_ba_wate_fear_3);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_ba_wate_fear_4);
                 }
             }
 
             RSF_BA_MANA => {
                 z = (spell_power * 5) + (10 * 10);
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_ba_mana_fear);
             }
 
             RSF_BA_HOLY => {
                 z = 10 + ((spell_power * 3) / 2 + 1) / 2;
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_ba_holy_fear);
             }
 
             RSF_BA_DARK => 'b: {
@@ -1305,9 +1307,9 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_dark_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_ba_dark_fear_2);
                 }
             }
 
@@ -1323,9 +1325,9 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_ba_light_fear);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_ba_light_fear_2);
                 }
             }
 
@@ -1336,10 +1338,10 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    p += 500;
+                    p += param(Param::danger_rsf_storm_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    p += 1000;
+                    p += param(Param::danger_rsf_storm_fear_2);
                 }
                 // (C: `if (borg.trait[BI_RCONF]) break;` here, the last
                 // statement of the case)
@@ -1347,7 +1349,7 @@ fn borg_danger_spell(
 
             RSF_DRAIN_MANA => {
                 if st.borg.tr(BI_MAXSP) != 0 {
-                    p += 100;
+                    p += param(Param::danger_rsf_drain_mana_fear);
                 }
             }
 
@@ -1359,7 +1361,7 @@ fn borg_danger_spell(
 
             RSF_BRAIN_SMASH => {
                 z = (12 * (15 + 1)) / 2;
-                p += 200 - 2 * st.borg.tr(BI_SAV);
+                p += param(Param::danger_rsf_brain_smash_fear) - param(Param::danger_brain_smash_save_weight) * st.borg.tr(BI_SAV);
                 if p < 0 {
                     p = 0;
                 }
@@ -1371,7 +1373,7 @@ fn borg_danger_spell(
                 }
                 z = (spell_power / 3 * 2) * 5;
                 // reduce by % chance of save  (add 20% for fudge)
-                z = z * (120 - st.borg.tr(BI_SAV)) / 100;
+                z = z * (param(Param::danger_cause4_save_bias) - st.borg.tr(BI_SAV)) / 100;
             }
 
             RSF_BO_ACID => 'b: {
@@ -1387,7 +1389,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_bo_acid_fear);
             }
 
             RSF_BO_ELEC => 'b: {
@@ -1403,7 +1405,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_bo_elec_fear);
             }
 
             RSF_BO_FIRE => 'b: {
@@ -1419,7 +1421,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 40;
+                p += param(Param::danger_rsf_bo_fire_fear);
             }
 
             RSF_BO_COLD => 'b: {
@@ -1435,7 +1437,7 @@ fn borg_danger_spell(
                     z = (z + 2) / 3;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_bo_cold_fear);
             }
 
             RSF_BO_POIS => 'b: {
@@ -1462,7 +1464,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 200;
+                p += param(Param::danger_rsf_bo_neth_fear);
             }
 
             RSF_BO_WATE => 'b: {
@@ -1473,18 +1475,18 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    p += 500;
+                    p += param(Param::danger_rsf_bo_wate_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    p += 1000;
+                    p += param(Param::danger_rsf_bo_wate_fear_2);
                 }
                 if st.borg.tr(BI_RCONF) != 0 {
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_bo_wate_fear_3);
                 if st.borg.tr(BI_CLASS) == CLASS_MAGE {
-                    p += 20;
+                    p += param(Param::danger_rsf_bo_wate_fear_4);
                 }
             }
 
@@ -1492,7 +1494,7 @@ fn borg_danger_spell(
                 z = (spell_power * 5) / 2 + 50;
                 bolt = true;
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_bo_mana_fear);
             }
 
             RSF_BO_PLAS => 'b: {
@@ -1503,10 +1505,10 @@ fn borg_danger_spell(
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 500;
+                    z += param(Param::danger_rsf_bo_plas_fear);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 1000;
+                    z += param(Param::danger_rsf_bo_plas_fear_2);
                 }
             }
 
@@ -1514,16 +1516,16 @@ fn borg_danger_spell(
                 z = (6 * 6) + spell_power;
                 bolt = true;
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_bo_ice_fear);
                 if st.borg.tr(BI_RSND) != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
                 if st.borg.tr(BI_ISSTUN) != 0 {
-                    z += 50;
+                    z += param(Param::danger_rsf_bo_ice_fear_2);
                 }
                 if st.borg.tr(BI_ISHEAVYSTUN) != 0 {
-                    z += 1000;
+                    z += param(Param::danger_rsf_bo_ice_fear_3);
                 }
             }
 
@@ -1557,7 +1559,7 @@ fn borg_danger_spell(
             RSF_SCARE => {
                 if st.borg.tr(BI_SAV) < 100 {
                     // Add fear for the effect
-                    p += 10;
+                    p += param(Param::danger_rsf_scare_fear);
                 }
             }
 
@@ -1569,7 +1571,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_blind_fear);
             }
 
             RSF_CONF => 'b: {
@@ -1580,7 +1582,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_conf_fear);
             }
 
             RSF_SLOW => 'b: {
@@ -1591,7 +1593,7 @@ fn borg_danger_spell(
                     break 'b;
                 }
                 // Add fear for the effect
-                p += 5;
+                p += param(Param::danger_rsf_slow_fear);
             }
 
             RSF_HOLD => 'b: {
@@ -1601,17 +1603,17 @@ fn borg_danger_spell(
                 if st.borg.tr(BI_SAV) >= 100 {
                     break 'b;
                 }
-                p += 150;
+                p += param(Param::danger_rsf_hold_fear);
             }
 
             RSF_HASTE => {
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_haste_fear);
             }
 
             RSF_HEAL => {
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_heal_fear);
             }
 
             RSF_HEAL_KIN => {}
@@ -1620,55 +1622,55 @@ fn borg_danger_spell(
 
             RSF_TPORT => {
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_tport_fear);
             }
 
             RSF_TELE_TO => {
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_tele_to_fear);
             }
 
             RSF_TELE_SELF_TO => {
                 // Add fear for the effect
-                p += 20;
+                p += param(Param::danger_rsf_tele_self_to_fear);
             }
 
             RSF_TELE_AWAY => {
                 // Add fear for the effect
-                p += 10;
+                p += param(Param::danger_rsf_tele_away_fear);
             }
 
             RSF_TELE_LEVEL => {
                 if st.borg.tr(BI_SAV) < 100 {
                     // Add fear for the effect
-                    p += 50;
+                    p += param(Param::danger_rsf_tele_level_fear);
                 }
             }
 
             RSF_DARKNESS => {
                 // Add fear for the effect
-                p += 5;
+                p += param(Param::danger_rsf_darkness_fear);
             }
 
             RSF_TRAPS => {
                 // Add fear for the effect
-                p += 50;
+                p += param(Param::danger_rsf_traps_fear);
             }
 
             RSF_FORGET => {
                 if st.borg.tr(BI_SAV) < 100 {
                     // if you are a spell caster, this is a big issue
-                    if st.borg.tr(BI_CURSP) < 15 {
-                        p += 500;
+                    if st.borg.tr(BI_CURSP) < param(Param::danger_forget_low_sp) {
+                        p += param(Param::danger_rsf_forget_fear);
                     } else {
-                        p += 30;
+                        p += param(Param::danger_rsf_forget_fear_2);
                     }
                 }
             }
 
             RSF_SHAPECHANGE => {
                 // Add fear for the effect
-                p += 200;
+                p += param(Param::danger_rsf_shapechange_fear);
             }
 
             // Summoning is only as dangerous as the monster that is
@@ -1682,36 +1684,36 @@ fn borg_danger_spell(
                 // This is important when dealing with summoners.
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_kin_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 3;
+                    p += spell_power * param(Param::danger_rsf_s_kin_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 7;
+                    p += spell_power * param(Param::danger_rsf_s_kin_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
             RSF_S_HI_DEMON => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_hi_demon_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 6;
+                    p += spell_power * param(Param::danger_rsf_s_hi_demon_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 12;
+                    p += spell_power * param(Param::danger_rsf_s_hi_demon_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
@@ -1720,7 +1722,7 @@ fn borg_danger_spell(
                 if pfe || glyph || create_door || near_unique {
                     p += 0;
                 } else {
-                    p += spell_power * 5;
+                    p += spell_power * param(Param::danger_rsf_s_monster_power_multiplier);
                     p /= spot_safe;
                 }
             }
@@ -1730,12 +1732,12 @@ fn borg_danger_spell(
                 if pfe || glyph || create_door || near_unique {
                     p += 0;
                 } else {
-                    p += spell_power * 7;
+                    p += spell_power * param(Param::danger_rsf_s_monsters_power_multiplier);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
@@ -1744,84 +1746,84 @@ fn borg_danger_spell(
                 if pfe || glyph || create_door || near_unique {
                     p += 0;
                 } else {
-                    p += spell_power * 5;
+                    p += spell_power * param(Param::danger_rsf_s_animal_power_multiplier);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
             RSF_S_HYDRA => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_hydra_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 2;
+                    p += spell_power * param(Param::danger_rsf_s_hydra_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 5;
+                    p += spell_power * param(Param::danger_rsf_s_hydra_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
             RSF_S_AINU => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe || near_unique {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_ainu_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 3;
+                    p += spell_power * param(Param::danger_rsf_s_ainu_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 7;
+                    p += spell_power * param(Param::danger_rsf_s_ainu_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
             RSF_S_DEMON | RSF_S_UNDEAD | RSF_S_DRAGON => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_demon_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 3;
+                    p += spell_power * param(Param::danger_rsf_s_demon_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 7;
+                    p += spell_power * param(Param::danger_rsf_s_demon_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = (p * 75) / 100;
+                    p = (p * param(Param::danger_summon_unique_percent)) / 100;
                 }
             }
 
             RSF_S_HI_UNDEAD | RSF_S_WRAITH => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_hi_undead_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 6;
+                    p += spell_power * param(Param::danger_rsf_s_hi_undead_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 12;
+                    p += spell_power * param(Param::danger_rsf_s_hi_undead_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
@@ -1831,33 +1833,33 @@ fn borg_danger_spell(
                     // (C: no `p += spell_power` here, unlike the others)
                     p /= spot_safe;
                 } else if glyph || create_door || near_unique {
-                    p += spell_power * 6;
+                    p += spell_power * param(Param::danger_rsf_s_hi_dragon_power_multiplier);
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 12;
+                    p += spell_power * param(Param::danger_rsf_s_hi_dragon_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
             RSF_S_UNIQUE => {
                 count_safe_spots(st, kill, &mut spot_safe);
                 if pfe {
-                    p += spell_power;
+                    p += spell_power * param(Param::danger_rsf_s_unique_protected_power_multiplier);
                     p /= spot_safe;
                 } else if glyph || create_door {
-                    p += spell_power * 3; // slightly reduced danger for unique
+                    p += spell_power * param(Param::danger_rsf_s_unique_power_multiplier); // slightly reduced danger for unique
                     p /= spot_safe;
                 } else {
-                    p += spell_power * 6;
+                    p += spell_power * param(Param::danger_rsf_s_unique_power_multiplier_2);
                     p /= spot_safe;
                 }
                 // reduce the fear if it is a unique
                 if unique {
-                    p = p * 75 / 100;
+                    p = p * param(Param::danger_summon_unique_percent) / 100;
                 }
             }
 
@@ -1873,7 +1875,7 @@ fn borg_danger_spell(
         // Some borgs are concerned with the 'effects' of an attack.  ie, cold
         // attacks shatter potions, fire attacks burn scrolls, electric attacks
         // zap rings.
-        if st.borg.tr(BI_MAXDEPTH) >= 75 {
+        if st.borg.tr(BI_MAXDEPTH) >= param(Param::danger_ignore_side_effects_depth) {
             p = 0;
         }
 
@@ -1898,7 +1900,7 @@ fn borg_danger_spell(
     // Slightly decrease the danger if the borg is sitting in
     // a sea of runes.
     if st.borg.morgoth_position || st.borg.status.anti_summon {
-        total_dam = total_dam * 7 / 10;
+        total_dam = total_dam * param(Param::danger_corridor_spell_tenths) / 10;
     }
 
     // Average damage of all the spells & compare to most dangerous spell
@@ -1945,7 +1947,7 @@ fn borg_danger_spell(
     if !average {
         return av;
     }
-    if n >= av * 15 / 10 || n > st.borg.tr(BI_CURHP) * 8 / 10 {
+    if n >= av * param(Param::danger_worst_spell_average_tenths) / 10 || n > st.borg.tr(BI_CURHP) * param(Param::danger_worst_spell_hp_tenths) / 10 {
         n
     } else {
         // Average Danger
@@ -1969,7 +1971,7 @@ fn wall_like(feat: u32) -> bool {
 fn sleepable(st: &BorgState, kill: &BorgKill) -> bool {
     !rf(kill, RF_NO_SLEEP)
         && !rf(kill, RF_UNIQUE)
-        && i32::from(kill.level) <= st.borg.tr(BI_CLEVEL) - 15
+        && i32::from(kill.level) <= st.borg.tr(BI_CLEVEL) - param(Param::danger_sleep_level_margin)
 }
 
 /// Calculate the danger to a grid from a monster (`borg_danger_one_kill`).
@@ -2032,7 +2034,7 @@ fn danger_one_kill(
 
     // "player ghosts"
     if i32::from(kill.r_idx) >= i32::from(engine::z_info().r_max) - 1 {
-        return 100;
+        return param(Param::danger_ghost_monster);
     }
 
     let r_ptr = engine::race(usize::from(kill.r_idx));
@@ -2064,13 +2066,13 @@ fn danger_one_kill(
     }
 
     // Minimal distance
-    if d > 20 {
+    if d > param(Param::danger_monster_max_distance) {
         return 0;
     }
 
     // A very speedy borg will miscalculate danger of some monsters
-    if st.borg.tr(BI_SPEED) >= 135 {
-        fake_speed = if st.borg.near.unique != 0 { 120 } else { 125 };
+    if st.borg.tr(BI_SPEED) >= param(Param::danger_fast_player_threshold) {
+        fake_speed = if st.borg.near.unique != 0 { param(Param::danger_fast_player_unique_speed) } else { param(Param::danger_fast_player_normal_speed) };
     }
 
     // Consider the character haste and slow monster spells
@@ -2082,8 +2084,8 @@ fn danger_one_kill(
     }
 
     // Assume monsters are a little fast when you are low level
-    if st.borg.tr(BI_MAXHP) < 20 && st.borg.tr(BI_CDEPTH) != 0 {
-        monster_speed += 3;
+    if st.borg.tr(BI_MAXHP) < param(Param::danger_low_hp_speed_limit) && st.borg.tr(BI_CDEPTH) != 0 {
+        monster_speed += param(Param::danger_low_hp_monster_speed_bonus);
     }
 
     // Player energy per game turn
@@ -2119,8 +2121,8 @@ fn danger_one_kill(
     // going to hurt.
     // So we make sure the monster is at least as fast as us.
     // But the monster is allowed to be faster than us.
-    if q <= 10 {
-        q = 10;
+    if q <= param(Param::danger_minimum_monster_energy) {
+        q = param(Param::danger_minimum_monster_energy);
     }
 
     // Danger from physical attacks
@@ -2132,8 +2134,8 @@ fn danger_one_kill(
     // level is very high, reduce the danger value. This helps prevent the
     // borg from getting stuck due to overestimating danger and refusing to
     // move in both this area of the dungeon and over the course of the game.
-    if st.borg.antibounce_count > 1200 || st.borg.time.now - st.borg.time.level > 25000 {
-        v1 /= 5;
+    if i32::from(st.borg.antibounce_count) > param(Param::danger_stuck_bounce_limit) || st.borg.time.now - st.borg.time.level > param(Param::danger_stuck_level_turns) {
+        v1 /= param(Param::danger_stuck_melee_divisor);
     }
 
     // No attacks for some monsters
@@ -2147,30 +2149,30 @@ fn danger_one_kill(
     }
 
     // multipliers yield some trouble when I am weak
-    if rf(kill, RF_MULTIPLY) && st.borg.tr(BI_CLEVEL) < 20 {
+    if rf(kill, RF_MULTIPLY) && st.borg.tr(BI_CLEVEL) < param(Param::danger_breeder_melee_max_level) {
         // extra 50%
-        v1 += v1 * 15 / 10;
+        v1 += v1 * param(Param::danger_breeder_melee_extra_tenths) / 10;
     }
 
     let has_friends = !r_ptr.friends.is_null() || !r_ptr.friends_base.is_null();
 
     // Friends yield some trouble when I am weak
-    if has_friends && st.borg.tr(BI_CLEVEL) < 20 {
-        if st.borg.tr(BI_CLEVEL) < 15 {
+    if has_friends && st.borg.tr(BI_CLEVEL) < param(Param::danger_friends_melee_max_level) {
+        if st.borg.tr(BI_CLEVEL) < param(Param::danger_friends_melee_low_level) {
             // extra 80%
-            v1 += v1 * 18 / 10;
+            v1 += v1 * param(Param::danger_friends_melee_low_extra_tenths) / 10;
         } else {
             // extra 30%
-            v1 += v1 * 13 / 10;
+            v1 += v1 * param(Param::danger_friends_melee_extra_tenths) / 10;
         }
     }
 
     // Reduce danger from sleeping monsters
     if !kill.awake {
-        let inc = r_ptr.sleep + 5;
+        let inc = r_ptr.sleep + param(Param::danger_sleeping_melee_alertness);
         // Reduce the fear if Borg is higher level
-        if st.borg.tr(BI_CLEVEL) >= 25 {
-            v1 /= 2;
+        if st.borg.tr(BI_CLEVEL) >= param(Param::danger_sleeping_melee_min_level) {
+            v1 /= param(Param::danger_sleeping_melee_divisor);
         }
 
         // Tweak danger based on the "alertness" of the monster
@@ -2180,19 +2182,19 @@ fn danger_one_kill(
     // Reduce danger from sleeping monsters with the sleep 2 spell
     if flags.sleep_spell_ii && d == 1 && kill.awake && sleepable(st, kill) {
         // Under special circumstances force the damage to 0
-        if st.borg.tr(BI_CLEVEL) < 20 && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2 {
+        if st.borg.tr(BI_CLEVEL) < param(Param::danger_sleep2_melee_weak_level) && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::danger_sleep2_melee_weak_hp_divisor) {
             v1 = 0;
         } else {
-            v1 /= 3;
+            v1 /= param(Param::danger_sleep2_melee_divisor);
         }
     }
     // Reduce danger from sleeping monsters with the sleep 1,3 spell
     if flags.sleep_spell && kill.awake && sleepable(st, kill) {
         // Under special circumstances force the damage to 0
-        if st.borg.tr(BI_CLEVEL) < 20 && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2 {
+        if st.borg.tr(BI_CLEVEL) < param(Param::danger_sleep_melee_weak_level) && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::danger_sleep_melee_weak_hp_divisor) {
             v1 = 0;
         } else {
-            v1 /= d + 2;
+            v1 /= d + param(Param::danger_sleep_melee_distance_offset);
         }
     }
     if flags.crush_spell && crushable(st, kill) {
@@ -2201,17 +2203,17 @@ fn danger_one_kill(
 
     // Reduce danger from confused monsters
     if kill.confused {
-        v1 /= 2;
+        v1 /= param(Param::danger_confused_melee_divisor);
     }
     if kill.stunned {
-        v1 = v1 * 10 / 13;
+        v1 = v1 * param(Param::danger_stunned_melee_numerator) / param(Param::danger_stunned_melee_divisor);
     }
     if flags.confuse_spell && kill.awake && !kill.confused && sleepable(st, kill) {
         // Under special circumstances force the damage to 0
-        if st.borg.tr(BI_CLEVEL) < 20 && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / 2 {
+        if st.borg.tr(BI_CLEVEL) < param(Param::danger_confuse_spell_weak_level) && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::danger_confuse_spell_weak_hp_divisor) {
             v1 = 0;
         } else {
-            v1 /= d + 2;
+            v1 /= d + param(Param::danger_confuse_spell_distance_offset);
         }
     }
     // Perceive a reduce danger from scared monsters
@@ -2397,26 +2399,26 @@ fn danger_one_kill(
     // level is very high, reduce the danger value. This helps prevent the
     // borg from getting stuck due to overestimating danger and refusing to
     // move in both this area of the dungeon and over the course of the game.
-    if st.borg.antibounce_count > 1200 || st.borg.time.now - st.borg.time.level > 25000 {
-        v2 /= 5;
+    if i32::from(st.borg.antibounce_count) > param(Param::danger_stuck_bounce_limit) || st.borg.time.now - st.borg.time.level > param(Param::danger_stuck_level_turns) {
+        v2 /= param(Param::danger_stuck_spell_divisor);
     }
 
     // multipliers yield some trouble when I am weak
-    if rf(kill, RF_MULTIPLY) && st.borg.tr(BI_CLEVEL) < 20 {
-        v2 += v2 * 12 / 10;
+    if rf(kill, RF_MULTIPLY) && st.borg.tr(BI_CLEVEL) < param(Param::danger_breeder_spell_max_level) {
+        v2 += v2 * param(Param::danger_breeder_spell_extra_tenths) / 10;
     }
 
     // Friends yield some trouble when I am weak
-    if has_friends && st.borg.tr(BI_CLEVEL) < 20 {
-        v2 += v2 * 12 / 10;
+    if has_friends && st.borg.tr(BI_CLEVEL) < param(Param::danger_friends_spell_max_level) {
+        v2 += v2 * param(Param::danger_friends_spell_extra_tenths) / 10;
     }
 
     // Reduce danger from sleeping monsters
     if !kill.awake {
-        let inc = r_ptr.sleep + 5;
+        let inc = r_ptr.sleep + param(Param::danger_sleeping_spell_alertness);
         // weaklings and should still fear
-        if st.borg.tr(BI_CLEVEL) >= 25 {
-            v2 /= 2;
+        if st.borg.tr(BI_CLEVEL) >= param(Param::danger_sleeping_spell_min_level) {
+            v2 /= param(Param::danger_sleeping_spell_divisor);
         }
 
         // Tweak danger based on the "alertness" of the monster
@@ -2427,14 +2429,14 @@ fn danger_one_kill(
     // Reduce danger from sleeping monsters with the sleep 2 spell
     if flags.sleep_spell_ii {
         let clevel = st.borg.tr(BI_CLEVEL);
-        let max_level = if clevel < 15 { clevel } else { ((clevel - 10) / 4) * 3 + 10 };
+        let max_level = if clevel < param(Param::danger_sleep2_spell_linear_level) { clevel } else { ((clevel - param(Param::danger_sleep2_spell_level_subtract)) / param(Param::danger_sleep2_spell_level_divisor)) * param(Param::danger_sleep2_spell_level_multiplier) + param(Param::danger_sleep2_spell_level_add) };
         if d == 1
             && kill.awake
             && !rf(kill, RF_NO_SLEEP)
             && !rf(kill, RF_UNIQUE)
             && i32::from(kill.level) <= max_level
         {
-            v2 /= 3;
+            v2 /= param(Param::danger_sleep2_spell_divisor);
         }
     }
 
@@ -2445,18 +2447,18 @@ fn danger_one_kill(
 
     // Reduce danger from sleeping monsters with the sleep 1,3 spell
     if flags.sleep_spell {
-        v2 /= d + 2;
+        v2 /= d + param(Param::danger_sleep_spell_distance_offset);
     }
     // Reduce danger from confused monsters
     if kill.confused {
-        v2 /= 2;
+        v2 /= param(Param::danger_confused_spell_divisor);
     }
     // Reduce danger from stunned monsters
     if kill.stunned {
-        v2 = v2 * 10 / 13;
+        v2 = v2 * param(Param::danger_stunned_spell_numerator) / param(Param::danger_stunned_spell_divisor);
     }
     if flags.confuse_spell {
-        v2 /= 6;
+        v2 /= param(Param::danger_confuse_spell_divisor);
     }
 
     // (C: `#if 0` -- scared monsters still cast spells, they are still
@@ -2464,12 +2466,12 @@ fn danger_one_kill(
     if !full_damage {
         // reduce for frequency.
         let chance = (r_ptr.freq_innate + r_ptr.freq_spell) / 2;
-        if chance < 11 {
-            v2 = (v2 * 4) / 10;
-        } else if chance < 26 {
-            v2 = (v2 * 6) / 10;
-        } else if chance < 51 {
-            v2 = (v2 * 8) / 10;
+        if chance < param(Param::danger_frequency_low_percent) {
+            v2 = (v2 * param(Param::danger_frequency_low_tenths)) / 10;
+        } else if chance < param(Param::danger_frequency_mid_percent) {
+            v2 = (v2 * param(Param::danger_frequency_mid_tenths)) / 10;
+        } else if chance < param(Param::danger_frequency_high_percent) {
+            v2 = (v2 * param(Param::danger_frequency_high_tenths)) / 10;
         }
     }
 
@@ -2484,8 +2486,8 @@ fn danger_one_kill(
 
     // Maximal danger
     let p = v1.max(v2);
-    if p > 2000 {
-        2000
+    if p > param(Param::danger_maximum) {
+        param(Param::danger_maximum)
     } else {
         p
     }
@@ -2536,24 +2538,24 @@ pub fn borg_danger(
     let mut p: i32 = 0;
 
     if !engine::square_in_bounds(x, y) {
-        return 2000;
+        return param(Param::danger_maximum);
     }
 
     // Base danger (from regional fear) but not within a vault.  Cheating the
     // floor grid
-    if !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= 80 {
+    if !engine::square_isvault(x, y) && st.borg.tr(BI_CDEPTH) <= param(Param::danger_regional_fear_max_depth) {
         p += i32::from(st.danger.fear_region[(y / 11) as usize][(x / 11) as usize]) * c;
     }
 
     // Reduce regional fear on Depth 100
-    if st.borg.tr(BI_CDEPTH) == 100 && p >= 300 {
-        p = 300;
+    if st.borg.tr(BI_CDEPTH) == 100 && p >= param(Param::danger_morgoth_regional_fear_cap) {
+        p = param(Param::danger_morgoth_regional_fear_cap);
     }
 
     // Added danger (from a lot of monsters).
     // But do not add it if we have been bouncing for too long, or monster's
     // in a vault.  The fear_monsters[][] can induce some bouncy behavior.
-    if st.borg.antibounce_count <= 200 && !engine::square_isvault(x, y) {
+    if i32::from(st.borg.antibounce_count) <= param(Param::danger_monster_fear_bounce_limit) && !engine::square_isvault(x, y) {
         p += i32::from(st.danger.fear_monsters[y as usize][x as usize]) * c;
     }
 
@@ -2575,8 +2577,8 @@ pub fn borg_danger(
     }
 
     // Return the danger
-    if p > 2000 {
-        2000
+    if p > param(Param::danger_maximum) {
+        param(Param::danger_maximum)
     } else {
         p
     }
