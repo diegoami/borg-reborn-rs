@@ -305,10 +305,19 @@ pub fn core_is_borg_rs() -> bool {
         } else {
             parse_core_selector(file.as_deref(), "borg.txt borg_reborn_core")
         };
-        selected.unwrap_or_else(|error| {
+        let selected = selected.unwrap_or_else(|error| {
             eprintln!("borg-reborn-rs: {error}");
             std::process::exit(2);
-        })
+        });
+        // Owner-requested POC (#305): never ignore a plan on the wrong core.
+        if !selected
+            && (std::env::var_os("BORG_ERRANDS_PLAN").is_some()
+                || borg_rs::shell::borg_txt_setting("borg_plan").is_some())
+        {
+            eprintln!("borg-reborn-rs: errands plans require BORG_CORE=borg-rs");
+            std::process::exit(2);
+        }
+        selected
     })
 }
 

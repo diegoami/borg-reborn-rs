@@ -1,0 +1,16 @@
+# POC: plans are complete per class; an absent class uses [default].
+[default]
+  level <= 5
+    loop-levels 0 2
+  5 < level <= 10
+    loop-levels 0 4
+  10 < level <= 15
+    loop-levels 2 6
+
+[mage]
+  level <= 5
+    loop-levels 0 1
+  5 < level <= 10
+    loop-levels 0 2
+  10 < level <= 15
+    loop-levels 1 3

@@ -2,21 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: plain level-phase plan proposal (#305, PR #308)
+## 2026-11-15: working class-specific errand-plan POC (#305, PR #308)
 
-- Owner supplied the intended form: borg_plan here-document, level range
-  headers, and indented loop-level commands. Removed the YAML proposal,
-  until/while/repeat language and nested profile data.
-- Shared boundaries are exclusive on their lower side so levels 5 and 10
-  match one phase. Gaps hand back. Recheck guards during active endless
-  errands, switching at safe decision boundaries rather than requiring
-  artificial time budgets. Completed finite phases do not restart each think.
-- Borg profiles remain whole borg.txt configurations containing their own
-  ladders/progression policy; preserve legacy semantics through migration.
-  Parameter assignments and concrete unique tactics are later separate slices.
-- Documentation only: no parser/runner or live mutation implemented.
-  Links, fences, block shape and whitespace checked. The owner reviews
-  the reduced design; current runtime/recorded game remains untouched.
+- Owner rescoped the draft to a POC in a separate errands_plan.txt. The
+  implementation accepts [default] and class sections such as [mage],
+  non-overlapping level ranges and only loop-levels. Ladder/trips aliases
+  are not accepted in the new file; legacy slash paths remain outside the
+  opt-in POC until migration/removal is agreed after trying it.
+- BORG_ERRANDS_PLAN selects a file; alternatively borg_plan in user/borg.txt
+  resolves a relative path under that user directory. Wrong core, bad or
+  missing files, unsupported commands and automatic-errand conflicts fail
+  visibly. File bytes are frozen/preserved; no reload or live parameters.
+- Runtime replaces a phase once on level change, including an active loop,
+  and defers during stores/Recall. Gaps stop; manual errand/stop cancels it.
+  Four parser/controller tests and four native checks cover class/default
+  selection, a real mage level-up changing loops, bad input/gap handover
+  and refusing untracked plan inputs in the normal measured harness.
+- tools/try-errands-plan.py is the bounded diagnostic driver and preserves
+  exact file/binary/command provenance. Standard harness plan runs are
+  intentionally refused until cemetery family/death-replay integration
+  handles the extra input/state; do not call POC runs baseline measurements.
+- No engine/recorder changes; the original guided game stays untouched.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 

@@ -101,3 +101,6 @@ pub(crate) mod core_trace;
 pub fn do_cmd_borg() {
     engine::do_cmd_borg()
 }
+
+// Owner-requested class/level errand-plan POC (#305).
+pub mod errands_plan;

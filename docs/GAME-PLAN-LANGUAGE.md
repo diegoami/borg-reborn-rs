@@ -1,156 +1,150 @@
-# A level-based Borg plan inside borg.txt
+# Errands plan POC: class-specific level phases
 
-Status: revised design proposal for PR #308, 2026-11-15, based on the owner's
-concrete example. Replaces both the general language and YAML proposals.
-No parser, runner or live configuration change is implemented here.
+PR #308 is now a **working, opt-in POC**, not a full-language design. It tests
+one separate plain-text `errands_plan.txt`, class selection and phase changes
+in the real Borg. No YAML, embedded EOF block, profiles DSL or unique tactics.
 
-## The format
+## The file
+
+The checked-in example is
+[`harness/profiles/borg-rs/errands_plan.txt`](../harness/profiles/borg-rs/errands_plan.txt):
 
 ```text
-borg_plan = <<EOF
+[default]
   level <= 5
-    loop-level 0 2
+    loop-levels 0 2
   5 < level <= 10
-    loop-level 0 4
+    loop-levels 0 4
   10 < level <= 15
-    loop-level 2 6
-EOF
+    loop-levels 2 6
+
+[mage]
+  level <= 5
+    loop-levels 0 1
+  5 < level <= 10
+    loop-levels 0 2
+  10 < level <= 15
+    loop-levels 1 3
 ```
 
-This is plain indented plan text, not YAML/JSON/TOML. The lower bounds are
-exclusive because the owner's original shared boundaries would match two
-phases at levels 5 and 10. Reject overlapping ranges rather than introduce
-hidden ordering rules. The depths express the example, not a measured playing
-recommendation.
+A matching class section replaces the default **completely**. Its gaps do not
+fall through to the default. Classes without a section use `[default]`; with
+neither, startup fails visibly. Supported class names are `warrior`, `mage`,
+`druid`, `priest`, `necromancer`, `paladin`, `rogue`, `ranger`, `blackguard`.
+These example depths are not calibrated recommendations or improvement claims.
 
-Through character level 5, explore between town and DL2. At levels 6–10,
-explore between town and DL4. At levels 11–15, explore between DL2 and DL6.
-Each loop explores intermediate levels in both directions, subject to the
-core's readiness and safety. Zero is town. `loop-level` is the proposed plan
-spelling for the existing `/loop-levels` capability, not a second movement
-policy or an immediate rename of the slash command. See [ERRANDS.md](ERRANDS.md).
+The POC has exactly **one errand: `loop-levels A B`**, reusing the existing
+implementation, spelling and readiness policy. Zero is town. `ladder`, `trips`,
+`loop-level` aliases and other errands are rejected in this file. This is the
+minimum needed to test the model; extra commands must earn their place later.
+A phase has one command, not an arbitrary program.
 
-Above level 15 this example has no matching phase and hands back with a reason.
-Add `level > 15` with its errands to continue. No `until`, `while`, `repeat`,
-variables, imports, arbitrary expressions or nested handlers are needed.
+Headers are at column zero, level conditions have two spaces and the command
+has four. Blank lines and full-line comments are allowed; tabs, extra commands,
+empty/duplicate sections and unknown classes are errors. Conditions accept
+`level < N`, `<=`, `>`, `>=`, `==`, or `A < level <= B` / `A <= level <= B`.
+Integers must be positive and ranges nonempty/non-overlapping within a class.
+Bounds are checked for overflow. Shared boundaries must not overlap: use
+`5 < level <= 10` after `level <= 5`. Gaps, including level 16 above the
+example's final phase, hand control back with a diagnostic. Input is limited
+to 64 KiB and 256 phases. No imports, nesting, expressions or mutable settings.
 
-## Where it lives
+## Where it is read
 
-A Borg profile is the selected **borg.txt configuration**, with ordinary flat
-settings and one `borg_plan` block. There is no separate plan-file setting.
+From this POC checkout, a private watched game can also be started with
+`BORG_CORE=borg-rs BORG_ERRANDS_PLAN="$PWD/harness/profiles/borg-rs/errands_plan.txt" ./watch-borg.sh --name PlanPOC`.
+This is a new game/process; it does not hot-patch a running recorded binary.
 
-- Watched game: `.angband-reborn/user/borg.txt`.
-- Guided game: `SESSION/user/borg.txt`, using its recorded manifest.
-- Headless run: `OUT/user/borg.txt`, prepared from `harness/borg.txt`.
-- Reviewed examples: `harness/profiles/borg-rs/NAME.borg.txt`; select/copy a
-  desired configuration when preparing a run. No automatic directory search.
+Interactive selection through the vendored core's configuration:
 
-Warrior and mage profiles can contain different schedules without either being
-hard-coded into the engine. Existing original-core `reborn-default.txt` /
-`BORG_PROFILE` and zoo JSON interfaces keep their separate meanings.
-Parameter names and bounds remain in [CALIBRATION.md](CALIBRATION.md).
+```text
+# In the actual run's user/borg.txt:
+borg_reborn_core = borg-rs
+borg_plan = errands_plan.txt
+```
 
-Current binaries do not support `borg_plan`. Flat parameters still load once
-at initialization; editing borg.txt does not currently hot-reload them.
+Put that `errands_plan.txt` beside this borg.txt. Relative paths resolve under
+`ANGBAND_DIR_USER`, **not** the process's current directory. Absolute paths
+are accepted. `BORG_ERRANDS_PLAN=/absolute/path/errands_plan.txt` overrides the
+file setting. An empty explicit path is an error; with no selection, existing
+behaviour is unchanged. No automatic search or YAML/TOML profile loader.
 
-## Parsing and validation
+For normal watched games the files are `.angband-reborn/user/borg.txt` and
+`.angband-reborn/user/errands_plan.txt`. A guided game uses its own
+`SESSION/user/` directory from the manifest. Do not change the currently
+running frozen recording: it has the old executable. A new process/segment
+using a POC build is required.
 
-`borg_plan = <<DELIMITER` starts a literal block; an exact `DELIMITER` line in
-column zero ends it. `EOF` is the delimiter in the example. Permit a nonempty
-ASCII identifier without whitespace. Normalize CRLF for marker comparison;
-preserve indentation, with no shell/variable interpolation. A delimiter-like
-word on an indented line does not close the block.
+The file is loaded and validated once during core initialization, before
+policy decisions. The chosen class is the actual game character's class.
+A requested plan with the original reborn backend is rejected rather than
+ignored. A nonempty automatic `BORG_ERRAND`/`borg_reborn_errand` conflicts with
+the plan. The POC also rejects a nonzero `BORG_ERRAND_BUDGET`; use the bounded
+native diagnostic driver below. No hot reload or parameter mutation is provided.
+Existing parameters remain in borg.txt; see [CALIBRATION.md](CALIBRATION.md).
 
-Allow one block per file. Every flat-setting reader, including early core/
-errand selection, must skip the entire block and its markers. Embedded text
-must never become global settings or formula lines. A missing terminator,
-duplicate block, invalid requested plan or unsupported syntax fails loudly at
-startup. No block preserves existing behaviour. A nonempty automatic
-`borg_reborn_errand` conflicts with an automatic plan and is rejected; explicit
-interactive replacement is separate.
+## What runs
 
-Ignore blank lines and full-line `#` comments. Phase headers share an
-indentation; their commands are indented one level further. Use spaces, reject
-tabs/deeper nesting. V1 accepts only integer character-level comparisons:
-single lower/upper bounds or chained ranges. Operators are `<`, `<=`, `>`,
-`>=`, `==`; no arithmetic, functions, boolean expressions or arbitrary fields.
-Compile to integer intervals and reject overlaps. Gaps mean handover, including
-when loading a character outside all listed ranges. `level` is current level;
-experience drain can select an earlier phase, not silently the highest phase.
+The controller selects a phase once and retains its loop state. At safe
+non-store decision boundaries it checks current character level, not maximum
+level reached. Changing phase replaces the active loop once; an unchanged
+phase does not restart every think. Experience drain can select an earlier
+phase. Pending Recall is allowed to finish before selecting a new phase;
+store transactions and partially queued commands are not interrupted.
 
-Command lines use existing primitive errands and checked arguments: `town`,
-`shopping`, `walk-back`, `explore-back`, `dive N`, `explore-level`,
-`dive-exploring N`, and `loop-level A B`. Several errands may run in sequence;
-an endless errand must be last. Reject empty phases and unreachable steps.
+The existing loop still owns core-required town recovery and restarting its
+first endpoint. It does not force an unprepared level. Phase selection clears
+old path intent, not the core's safety flags. No match stops with a reason.
+`/stop`, a manually selected errand, or an errand's terminating outcome cancels
+the plan controller. A different character/older loaded game resets selection.
+An ordinary key pause retains existing Borg state; restarting the Borg resumes
+it. No in-process plan reload is implemented.
 
-## Execution
+Plan bytes are preserved as `BORG_RUN_DIR/errands_plan.txt` when diagnostics are
+enabled. Messages record `# Plan:` with source path, class, level, source line
+and installed loop. Existing traces expose that loop's target and decisions.
+The original file can be edited without changing the already parsed plan.
+A native save alone still does not capture Borg/plan memory; use recordings
+for exact lead-ins, not an unqualified fresh-state load claim.
 
-Select the matching phase at start. While it still matches, retain its current
-errand/cursor; do not restart the first command every think. Finite errands
-advance once. Completing all commands marks the phase finished and hands back,
-rather than repeating shopping automatically.
+## Run the POC
 
-Recheck the level guard at every safe decision boundary, **even while an
-endless loop errand runs**. A different phase cancels the previous strategic
-errand and starts the new phase's first command. The user need not add an
-artificial turn budget just to detect a level-up. Complete a pending prompt,
-multi-key command or store transaction before switching. Pending Recall and
-emergency recovery finish safely; never cancel Recall or queue commands into
-its prompts to satisfy a phase transition.
+Build this PR's version with `harness/build.sh` under the shared lock. Then:
 
-Core emergencies and town intent have priority. Pause for town recovery, then
-reevaluate the phase before resuming. `loop-levels` already owns its town detour
-and first-endpoint restart: observe it instead of adding a duplicate trip.
-Readiness still prevents forced descent. Manual stop cancels the plan.
-Abort/error/scared and no matching phase hand back with a visible reason.
-One strategic errand owns the game; commands do not execute concurrently.
+```sh
+flock /tmp/angband-validation.lock python3 tools/try-errands-plan.py \
+  --plan harness/profiles/borg-rs/errands_plan.txt \
+  --class 1 --seed 1001 --turns 3000 --out /tmp/my-mage-plan-poc
+```
 
-## Parameters, ladders and later tactics
+Class 1 is Mage; class 0 is Warrior. `--via-borg-txt` tests the relative-file
+setting instead of the environment override. Use a new output directory each
+time. The driver preserves exact plan bytes, executable hash, arguments,
+settings, console/messages/keys/state, summary and process result in `poc.json`.
+No network, engine patch or recorder modification is needed.
 
-The first delivery should implement the exact phase/errand format above.
-Later, permit existing `borg_param_<name> = INTEGER` assignments in a phase,
-using the existing registry rather than another expression language. These
-would be phase overrides over the flat configuration, removed on leaving the
-phase. Explicit environment run locks remain authoritative with visible
-conflict diagnostics.
+This driver is explicitly diagnostic, **not a measured zoo/harness arm**.
+The standard `harness/run.sh` refuses plan POC inputs: cemetery encounter-family
+and exact-source death reruns do not yet include this new input/controller
+state. That integration is required before enabling plans in measured arms;
+do not label a plan run as an ordinary model-free baseline or drop plan bytes
+from provenance. Diagnostic failures/deaths remain in the preserved output;
+no population experiment or survival improvement is claimed.
 
-Live updates need a separate mutability/cache audit and atomic apply/rollback;
-startup-only keys remain fixed. No backend, birth-option or engine-constant
-changes. Do not promise arbitrary mid-fight settings just because a block
-parser exists, or introduce nested YAML profiles to implement them.
+## Cleanup and next decision
 
-Move class ladders and trip schedules into the relevant Borg profiles.
-`/ladder` can remain a compatibility alias for the selected profile's plan.
-Relocate legacy data behind its compatibility adapter first; retire tables/
-executors only after the reduced format represents the semantics and class
-checks preserve readiness, skip rules, level gates, last-trip repetition and
-town recovery. Keep an explicitly deprecated adapter for unsupported legacy
-cases instead of calling an approximate schedule equivalent. No duplicate
-sources of ladder policy or growing a second `/trips` language.
+In the new plan format, ladder/trips are gone. Existing slash commands and
+`ladders.txt` remain only for current users outside the opt-in POC; removing
+those now would change unrelated defaults before validating the replacement.
+After the POC is accepted, migrate class schedules into plan files, update
+clients, and remove/deprecate the legacy menu/config/executor paths with
+explicit diagnostics and semantic checks. No new aliases or competing schedule
+sources should be added. Unsupported legacy semantics are not silently
+approximated by a level range.
 
-Reviewed named unique tactics and preparation kits come later through accepted
-combat/item/spell APIs, with a separate concrete design and tests. The
-[adviser proposal #309](https://github.com/diegoami/borg-reborn-rs/pull/309)
-must not smuggle arbitrary scripts into this small configuration format.
-
-## Records, delivery and checks
-
-Freeze configuration bytes/hash at start. Explicit reload validates the whole
-file first, then restarts the matching phase safely and records the reason;
-file edits do not silently alter a live plan. Record phase/line, errand cursor,
-level changes, interruption/outcome reasons and later parameter epochs. An
-Angband save alone cannot restore Borg/plan memory: require qualified joint
-checkpoint/replay or label a fresh-state restart honestly. Preserve recordings.
-
-Deliver block validation, then phase selection/active-errand cancellation,
-then compatibility-preserving ladder migration. Parameter updates and tactics
-are separate later slices. Reuse accepted R control APIs and P's registry;
-inventory/tactics depend on #293/R2/R3/R4 capabilities. Track B remains undefined
-in main and needs clarification before scheduling. No milestone or contract
-amendment is activated by this design draft.
-
-Checks: flat-file compatibility/block isolation, CRLF/truncation/delimiters,
-overlaps/gaps, levels 5/6/10/11/15/16, experience drain, endless-child phase
-change, completed phases not restarting, town recovery during a phase change,
-prompts/Recall, manual stop, ladder equivalence and inactive-plan key parity.
-No interpreter, live setting mutation or improved play is claimed here.
+The POC deliberately leaves out named parameter profiles, runtime setters,
+unique tactics, LLM control, reload and checkpoint migration. The purpose is
+to let the owner try real class-specific schedules and decide the file location,
+phase model and minimal errand set before expanding it. Later work still uses
+accepted R/P capabilities and review gates; track B remains unclarified.
+The separate adviser proposal (#309) is not implemented by this POC.

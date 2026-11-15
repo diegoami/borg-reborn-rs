@@ -198,7 +198,7 @@ pub struct Trip {
 }
 
 /// The class names of `class.txt`, in its order (`player->class->cidx`).
-const CLASSES: [&str; 9] = [
+pub(crate) const CLASSES: [&str; 9] = [
     "warrior",
     "mage",
     "druid",
@@ -516,6 +516,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
 pub fn apply(command: Command, budget: i64) -> bool {
     match command {
         Command::Errand(e) => {
+            crate::errands_plan::cancel();
             set_errand(Some(e), budget);
             active()
         }
@@ -532,6 +533,7 @@ pub fn apply(command: Command, budget: i64) -> bool {
             false
         }
         Command::Stop => {
+            crate::errands_plan::cancel();
             NEXT.lock().unwrap().clear();
             set_errand(None, 0);
             false
@@ -617,6 +619,7 @@ fn scared(st: &mut BorgState, level: i32) -> bool {
 /// End the errand with this outcome: the next queued errand starts if this
 /// one is done, otherwise control goes back to the player.
 fn finish(st: &mut BorgState, outcome: &str) {
+    crate::errands_plan::cancel();
     let turn = i64::from(engine::game_turn());
     report(st, outcome, turn);
     let budget = running().as_ref().map_or(0, |r| r.budget);
@@ -672,6 +675,7 @@ fn target(st: &mut BorgState) -> Option<i32> {
 /// next begins; the errand ends when the last is over, or at its budget.
 /// `Some(true)` means the think is over (the Borg stops).
 pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
+    if crate::errands_plan::tick(st) { return Some(true); }
     let turn = i64::from(engine::game_turn());
     // The engine's depth, read before the core's update of the think.
     let depth = engine::player_depth();
@@ -1728,4 +1732,14 @@ mod tests {
         r.trip = 2;
         assert_eq!(r.target(), None, "every trip is over");
     }
+}
+
+// Owner-requested POC (#305): internal installation does not cancel itself.
+pub(crate) fn install_plan_loop(first: i32, last: i32) {
+    NEXT.lock().unwrap().clear();
+    set_errand(Some(Errand::LoopLevels(first, last)), 0);
+}
+pub(crate) fn install_plan_stop() {
+    NEXT.lock().unwrap().clear();
+    set_errand(None, 0);
 }
