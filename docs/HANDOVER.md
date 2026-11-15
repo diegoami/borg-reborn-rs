@@ -2,6 +2,14 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested tactical LLM adviser design (#306)
+
+- [TACTICAL-ADVISER.md](TACTICAL-ADVISER.md): The owner requested a second design for difficult-fight delegation and actionable Borg advice. The proposal extends Q/#153/#212 and the language proposal #305 with rich fair snapshots, typed validated proposals, leases/fallbacks and offline replay. Active advice uses a separate opt-in arm; the normal measured Borg remains model-free. Track-R/Q interfaces and track B require resolution before implementation. No model/engine/network implementation is included.
+- Validation is document/link review and `git diff --check`; examples and
+  schemas are proposed, not executable or tested runtime features. The
+  owner chooses the reviewer and accepts the design. Keep the draft PR
+  open for that review; no implementation milestone is being started.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full45/45 v12 play parity,295,464 named
