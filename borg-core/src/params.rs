@@ -12,7 +12,7 @@ macro_rules! parameters {
     ($($name:ident => ($default:expr, $unit:expr, $min:expr, $max:expr, $source:expr, $description:expr)),* $(,)?) => {
         #[derive(Clone, Copy)]
         #[repr(usize)]
-        pub(crate) enum Param { $($name),* }
+        pub enum Param { $($name),* }
         pub(crate) const SPECS: &[Spec] = &[
             $(Spec { name: stringify!($name), default: $default, unit: $unit,
                 min: $min, max: $max, source: $source, description: $description }),*
@@ -1789,7 +1789,7 @@ struct Setting<'a> {
 static VALUES: OnceLock<Vec<i32>> = OnceLock::new();
 
 /// Pure lookup after init; isolated decision tests use the same defaults.
-pub(crate) fn value(param: Param) -> i32 {
+pub fn value(param: Param) -> i32 {
     let i = param as usize;
     VALUES.get().map_or(SPECS[i].default, |values| values[i])
 }

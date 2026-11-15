@@ -1,6 +1,5 @@
-//! R1.2's comparison harness. Only `danger.wall_like` is ported here.
-//! Danger and caution boundaries are observed but retain native decisions;
-//! their stateful ports belong to R2. No native function is run twice.
+//! Comparison harness for complete danger assessment and the wall helper.
+//! Caution remains native; no native function is run twice.
 use crate::View;
 use borg_rs::memory::terrain::*;
 use borg_rs::memory::BorgState;
@@ -46,6 +45,9 @@ pub fn wall_like(feature: u32) -> bool {
 struct Counts {
     thinks: u64,
     danger_calls: u64,
+    danger_comparisons: u64,
+    monster_comparisons: u64,
+    wall_comparisons: u64,
     caution_calls: u64,
     caution_actions: u64,
     comparisons: u64,
@@ -80,6 +82,7 @@ impl<W: Write> Recorder<W> {
         }
         let ported = wall_like(feature);
         self.counts.comparisons += 1;
+        self.counts.wall_comparisons += 1;
         if original != ported {
             self.counts.mismatches += 1;
             let row = serde_json::json!({
@@ -99,13 +102,50 @@ impl<W: Write> Recorder<W> {
         })
     }
 
+    fn compare_danger(
+        &mut self,
+        mode: Mode,
+        turn: i32,
+        borg_turn: i32,
+        input: DangerInput,
+        slot: Option<i32>,
+        results: (i32, i32),
+    ) -> std::io::Result<i32> {
+        let (original, ported) = results;
+        if mode == Mode::Off {
+            return Ok(original);
+        }
+        self.counts.comparisons += 1;
+        if slot.is_some() {
+            self.counts.monster_comparisons += 1;
+        } else {
+            self.counts.danger_comparisons += 1;
+        }
+        if original != ported {
+            self.counts.mismatches += 1;
+            let row = serde_json::json!({
+                "schema":"borg-reborn-rs/shadow@1", "mode":mode,
+                "turn":turn, "borg_turn":borg_turn,
+                "point":if slot.is_some() { "danger.one_monster" } else { "danger" },
+                "inputs":input, "slot":slot, "original":original,"ported":ported,
+            });
+            serde_json::to_writer(&mut self.mismatches, &row)?;
+            self.mismatches.write_all(b"\n")?;
+        }
+        Ok(if mode == Mode::Switch {
+            ported
+        } else {
+            original
+        })
+    }
+
     fn think(&mut self, mode: Mode, borg_turn: i32) -> std::io::Result<()> {
         self.counts.thinks += 1;
         let row = serde_json::json!({
             "schema": "borg-reborn-rs/shadow-stats@1", "mode": mode,
             "borg_turn": borg_turn,
-            "ported_points": ["danger.wall_like"],
-            "unported_points": ["danger", "caution"],
+            "ported_points": ["danger.wall_like", "danger", "danger.one_monster"],
+            "unported_points": ["caution", "escape", "recovery"],
             "counts": self.counts,
         });
         serde_json::to_writer(&mut self.stats, &row)?;
@@ -119,15 +159,44 @@ struct Next {
 }
 
 impl Shadow for Next {
-    fn danger(&self, state: &BorgState, _input: DangerInput, original: i32) -> i32 {
-        // Fresh native-memory view at the boundary. No full danger port yet.
-        let _view = View::new(state);
+    fn danger(&self, state: &BorgState, input: DangerInput, original: i32) -> i32 {
+        let view = View::new(state);
+        let ported = crate::danger::assess(&view, input);
+        let mut recorder = self.recorder.lock().expect("shadow recorder");
+        recorder.counts.danger_calls += 1;
+        recorder
+            .compare_danger(
+                self.mode,
+                borg_rs::threat_facts::game_turn(),
+                view.threat.clock.now,
+                input,
+                None,
+                (original, ported),
+            )
+            .unwrap_or_else(|e| failure(e))
+    }
+
+    fn monster_danger(
+        &self,
+        state: &BorgState,
+        input: DangerInput,
+        slot: i32,
+        original: i32,
+    ) -> i32 {
+        let view = View::new(state);
+        let ported = crate::danger::assess_monster(&view, input, slot);
         self.recorder
             .lock()
             .expect("shadow recorder")
-            .counts
-            .danger_calls += 1;
-        original
+            .compare_danger(
+                self.mode,
+                borg_rs::threat_facts::game_turn(),
+                view.threat.clock.now,
+                input,
+                Some(slot),
+                (original, ported),
+            )
+            .unwrap_or_else(|e| failure(e))
     }
 
     fn before_caution(&self, state: &BorgState) {
@@ -199,6 +268,38 @@ pub fn register() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scalar_disagreement_records_inputs_and_respects_mode() {
+        let input = DangerInput {
+            y: 9,
+            x: 14,
+            turns: 2,
+            average: true,
+            full: false,
+        };
+        for slot in [None, Some(3)] {
+            for (mode, expected) in [(Mode::Check, 91), (Mode::Switch, 92), (Mode::Off, 91)] {
+                let mut r = Recorder::new(Vec::new(), Vec::new());
+                assert_eq!(
+                    r.compare_danger(mode, 1000, 21, input, slot, (91, 92))
+                        .unwrap(),
+                    expected
+                );
+                if mode == Mode::Off {
+                    assert!(r.mismatches.is_empty());
+                    assert_eq!(r.counts.comparisons, 0);
+                } else {
+                    let row: serde_json::Value = serde_json::from_slice(&r.mismatches).unwrap();
+                    assert_eq!(row["inputs"]["turns"], 2);
+                    assert_eq!(row["original"], 91);
+                    assert_eq!(row["ported"], 92);
+                    assert_eq!(row["slot"], serde_json::json!(slot));
+                    assert_eq!(r.counts.mismatches, 1);
+                }
+            }
+        }
+    }
 
     #[test]
     fn check_keeps_native_switch_uses_port_and_both_log_actual_mismatch() {
