@@ -3,6 +3,35 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: the option-C review and re-review fixed (#227)
+
+- **Review #227** (Kimi K3.1 Pro): 13 findings, fixed in #230, #231 and
+  #233. **The re-review** found 3 blocking issues and 7 more, fixed in
+  #236's PR. The errand shell now:
+  - ends a level in one place (`move_on`) whether the core is done with it,
+    or `/explored` or `/stall` says so; the thresholds are measured on
+    every think, the core's own leaving and fleeing included;
+  - never walks down to a level the core is not prepared for: a command
+    stops ("not prepared for DLn"), a ladder trip goes home;
+  - tells fear (`fleeing_to_town`, or rising while not prepared for this
+    depth: the trip ends) from a town errand of the core's own (rising
+    while prepared: restock, sell, fix its level; the plan waits);
+  - gives up steering after `/stall` (at least 10,000 game turns) on one
+    level without moving on: a command stops ("no way on"), a ladder lets
+    the core play on. A ladder necromancer that sold and re-bought in town
+    for 13,890 turns no longer freezes; the owner's "runs to a corner"
+    case is not reproduced yet;
+  - ties an errand to its character (birth key: HP rolls, height, weight,
+    age, name).
+- **Measured:** `/explored` and `/stall` fire in play (with low settings).
+  The 90% default does not bind early: borg-rs is bored with a DL1 level
+  after seeing about 3% of its floor. No errand: full 45/45 identical to
+  borg-rs v12.
+- **Open:** the owner's corner case (seed and class unknown); the
+  blackguard who rests "to gain Mana" for 23,000 turns is borg-rs's own
+  (blackguards do not regain mana by resting), for track P or an issue
+  upstream; RULES 4 (no AI trailers) was broken by this session's earlier
+  commits and PR bodies, which cannot be amended.
 
 ## 2026-11-15: track P, P1.3 (#221), recovery parameters
 

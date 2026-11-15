@@ -72,6 +72,13 @@ class VendorTest(unittest.TestCase):
         self.assertEqual((self.core / 'src/shell.rs').read_text(), 'ours\n')
         self.assertEqual((self.core / 'PIN').read_text().strip(), new)
 
+    def test_a_file_removed_on_both_sides_is_no_conflict(self):
+        (self.core / 'src/b.rs').unlink()
+        git(self.repo, 'rm', '-q', 'borg-rs/src/b.rs')
+        new = commit(self.repo, {}, 'drop b')
+        self.assertEqual(bv.refresh(self.repo, new), [])
+        self.assertFalse((self.core / 'src/b.rs').exists())
+
     def test_refresh_reports_a_conflict(self):
         new = commit(self.repo, {'borg-rs/src/a.rs': LINES.replace('line 2\n', 'line 2 upstream\n')}, 'clash')
         self.assertEqual(bv.refresh(self.repo, new), ['src/a.rs: conflict, marked in the file'])
