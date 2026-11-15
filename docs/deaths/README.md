@@ -13,6 +13,16 @@ Dossiers: 2465; distinct starting conditions: 2462; retained process attempts: 2
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
+| [D0000-q1a98839cb7d0270f880b802bfeaa0c94da7a80019baa8f8966894437b296ac6d](D0000-q1a98839cb7d0270f880b802bfeaa0c94da7a80019baa8f8966894437b296ac6d/report.md) | unassigned | `754593a03348` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q48fc5486135f694e97def255d548522637cf13e82b865855d712cf43e0f96639](D0000-q48fc5486135f694e97def255d548522637cf13e82b865855d712cf43e0f96639/report.md) | unassigned | `754593a03348` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e](D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e/report.md) | unassigned | `754593a03348` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5](D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5/report.md) | unassigned | `754593a03348` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q7d2b25d9f5f206bb93dd627903c4e955bba7b44eded5e65ba169cacd1ce49865](D0000-q7d2b25d9f5f206bb93dd627903c4e955bba7b44eded5e65ba169cacd1ce49865/report.md) | unassigned | `754593a03348` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q9804224a034caae7918a62b980ad50ca478e5e3569f76f42b40e4a66b4d0ed65](D0000-q9804224a034caae7918a62b980ad50ca478e5e3569f76f42b40e4a66b4d0ed65/report.md) | unassigned | `754593a03348` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-qa4c6c641853b55ccc81975af1b9336cfe028287320f040cf82a856ae3e4ff6e4](D0000-qa4c6c641853b55ccc81975af1b9336cfe028287320f040cf82a856ae3e4ff6e4/report.md) | unassigned | `754593a03348` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-qc6ae75af05d1e013a87781a6c2efb1d30dbfbbd64cb0eb0b3035b25c57c69ad6](D0000-qc6ae75af05d1e013a87781a6c2efb1d30dbfbbd64cb0eb0b3035b25c57c69ad6/report.md) | unassigned | `754593a03348` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-qdb245594480c759935c5c58594870c6d9b347451e3fcfee106403158f3b7e516](D0000-qdb245594480c759935c5c58594870c6d9b347451e3fcfee106403158f3b7e516/report.md) | unassigned | `754593a03348` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qdfc789b0721d1b6fa647f699c636f883314d058217e8d1934e98aa09f2c15c74](D0000-qdfc789b0721d1b6fa647f699c636f883314d058217e8d1934e98aa09f2c15c74/report.md) | unassigned | `754593a03348` | 1084 | a grey mushroom patch | 22908 | unassessed |
 | [D0001-c-seed102](D0001-c-seed102/report.md) | unassigned | `321db9028fb3` | 102 | an acolyte | 7195 | unassessed |
 | [D0002-c-pristine-seed1052](D0002-c-pristine-seed1052/report.md) | unassigned | `3a3d36d5a2d1` | 1052 | a wild cat | 5021 | unassessed |
 | [D0003-c-pristine-seed1013](D0003-c-pristine-seed1013/report.md) | unassigned | `3a3d36d5a2d1` | 1013 | a fruit bat | 9782 | unassessed |
@@ -2468,16 +2478,6 @@ Dossiers: 2465; distinct starting conditions: 2462; retained process attempts: 2
 | [D2473-rust-seed1084](D2473-rust-seed1084/report.md) | unassigned | `ab0c0bb58362` | 1084 | a grey mushroom patch | 22908 | unassessed |
 | [D2474-rust-seed102](D2474-rust-seed102/report.md) | unassigned | `ab0c0bb58362` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2475-rust-seed1020](D2475-rust-seed1020/report.md) | unassigned | `ab0c0bb58362` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2476-rust-seed1011](D2476-rust-seed1011/report.md) | unassigned | `754593a03348` | 1011 | a cave spider | 18903 | unassessed |
-| [D2477-rust-seed1020](D2477-rust-seed1020/report.md) | unassigned | `754593a03348` | 1020 | a small kobold | 9547 | unassessed |
-| [D2478-rust-seed1021](D2478-rust-seed1021/report.md) | unassigned | `754593a03348` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2479-rust-seed1043](D2479-rust-seed1043/report.md) | unassigned | `754593a03348` | 1043 | a wild cat | 23423 | unassessed |
-| [D2480-rust-seed1050](D2480-rust-seed1050/report.md) | unassigned | `754593a03348` | 1050 | a grey mold | 24096 | unassessed |
-| [D2481-rust-seed1062](D2481-rust-seed1062/report.md) | unassigned | `754593a03348` | 1062 | a soldier | 49147 | unassessed |
-| [D2482-rust-seed1072](D2482-rust-seed1072/report.md) | unassigned | `754593a03348` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2483-rust-seed1084](D2483-rust-seed1084/report.md) | unassigned | `754593a03348` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2484-rust-seed102](D2484-rust-seed102/report.md) | unassigned | `754593a03348` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2485-rust-seed1020](D2485-rust-seed1020/report.md) | unassigned | `754593a03348` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 

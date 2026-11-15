@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: qualify imported validation dossiers (#318)
+
+- Keep the accepted #307 archive unchanged. New historical imports use
+  deterministic full package hashes; original record bytes and every payload
+  remain retained, with receipts. Numeric IDs are provisional outside the
+  cemetery-owned canonical registry. Native export/registry ownership stays
+  in borg-cemetery; no external write or alternative exporter is introduced.
+- Qualify the ten #317 packets using P318-DOSSIER-MAP.json. Legacy inventory
+  freezes all 2,455 accepted cases. CI rejects new bare IDs, altered legacy
+  records/payload hashes and damaged qualified packages. See DOSSIER-IMPORT.md.
+- Importer tests cover concurrent imports, duplicate provenance, idempotence,
+  source/payload integrity and independence counts. All 87 tool and 19
+  script tests pass; 2,465 archive packets verify. Real overlapping P/R
+  D2446 imports coexist in an isolated registry. Ten deaths reconcile with
+  the actual #317 BUILD_ID; source hash is unchanged. See P318-VALIDATION.md.
+
 ## 2026-11-15: owner accepted #307; strict file reads (#317)
 
 - Owner instructed "ok merge and do the follow ups". #307 merged into
