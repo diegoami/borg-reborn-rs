@@ -260,26 +260,15 @@ extern "C" fn do_cmd_borg() {
         // `BORG_STOPSCARED`. The environment first, else the run's borg.txt
         // (`borg_reborn_errand`, `borg_reborn_stopscared`: the zoo). In the
         // game, `^Z /` types one.
-        let setting = |env: &str, key: &str| {
-            std::env::var(env)
-                .ok()
-                .or_else(|| borg_rs::shell::borg_txt_setting(key))
-                .filter(|s| !s.is_empty() && s != "none")
-        };
-        if let Some(c) = setting("BORG_STOPSCARED", "borg_reborn_stopscared")
-            .and_then(|v| borg_rs::shell::Command::parse(&format!("stopscared {v}")))
-        {
+        if let Some(c) = crate::borg::configured_stopscared() {
             borg_rs::shell::apply(c, 0);
         }
-        if let Some(line) = setting("BORG_ERRAND", "borg_reborn_errand") {
-            let budget = std::env::var("BORG_ERRAND_BUDGET")
-                .ok()
-                .and_then(|b| b.parse().ok())
-                .unwrap_or(0);
-            // A command it cannot read applies nothing: the Borg plays as
-            // it would without one, and says so.
+        if let Some(line) = crate::borg::configured_errand() {
+            let budget = crate::borg::configured_errand_budget();
+            // Configuration errors must not silently change the measured arm.
             if let Err(c) = borg_rs::shell::apply_line(&line, budget) {
-                eprintln!("borg: unknown errand command '{c}'");
+                eprintln!("borg-reborn-rs: invalid configured errand command {c:?}");
+                std::process::exit(2);
             }
         }
         borg_rs::do_cmd_borg();

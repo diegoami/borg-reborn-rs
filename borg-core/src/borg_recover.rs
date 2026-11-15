@@ -38,7 +38,6 @@ use crate::borg_headers::borg_trait_h::{
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
     BI_ISWEAK, BI_MAXHP, BI_MAXSP,
 };
-use crate::headers::list_terrain_h::{FEAT_LESS, FEAT_MORE};
 use crate::headers::list_tvals_h::{TV_FOOD, TV_MUSHROOM, TV_ROD};
 use crate::headers::ui_event_h::keycode_t;
 use crate::state::BorgState;
@@ -265,13 +264,12 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
     /*** Use "expensive" cures ***/
 
     // Cure stun
+    // (the HEAL1 and HEAL2 activations cure only cuts, not stun; patch 0134)
     if st.borg.tr(BI_ISSTUN) != 0
         && q < param(Param::recover_costly_stun_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_healing)
-            || borg_activate_item(st, st.act.heal1)
-            || borg_activate_item(st, st.act.heal2)
             || borg_quaff_crit(st, false))
     {
         return true;
@@ -283,9 +281,7 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
         && (borg_quaff_crit(st, true)
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
-            || borg_zap_rod(st, st.item_val.sv_rod_healing)
-            || borg_activate_item(st, st.act.heal1)
-            || borg_activate_item(st, st.act.heal2))
+            || borg_zap_rod(st, st.item_val.sv_rod_healing))
     {
         return true;
     }
@@ -320,16 +316,15 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
     }
 
     // Cure blindness
+    // (Waybread cures only poison, so it is not tried here; patch 0134)
     if st.borg.tr(BI_ISBLIND) != 0
         && q < param(Param::recover_costly_blind_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
-            || borg_eat(st, TV_FOOD as i32, st.item_val.sv_food_waybread)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
             || borg_quaff_crit(st, false)
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
-            || borg_zap_rod(st, st.item_val.sv_rod_curing)
-            || borg_activate_item(st, st.act.food_waybread))
+            || borg_zap_rod(st, st.item_val.sv_rod_curing))
     {
         return true;
     }
@@ -470,48 +465,8 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
-        && !st.borg.munchkin_mode
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
-
-        // Rest until done
-        rest(st, b'*');
-
-        // I'm not in a store
-        st.borg.in_shop = false;
-
-        return true;
-    }
-
-    // Hack to recharge mana if a low level mage in munchkin mode
-    if st.borg.tr(BI_MAXSP) != 0
-        && st.borg.munchkin_mode
-        && (st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP) || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP))
-        && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
-        && st.borg.tr(BI_ISWEAK) == 0
-        && st.borg.tr(BI_ISCUT) == 0
-        && st.borg.tr(BI_ISHUNGRY) == 0
-        && st.borg.tr(BI_ISPOISONED) == 0
-        && st.borg.tr(BI_FOOD) > param(Param::recover_munchkin_rest_min_food)
-        && (st.cave.grid(st.borg.c.x, st.borg.c.y).feat == FEAT_MORE as u8
-            || st.cave.grid(st.borg.c.x, st.borg.c.y).feat == FEAT_LESS as u8)
-    {
-        borg_note(st, &format!("# Resting to gain munchkin HP/mana. (danger {p})..."));
-
-        // Rest until done
-        rest(st, b'*');
-
-        // I'm not in a store
-        st.borg.in_shop = false;
-
-        return true;
-    }
-
-    // Hack to heal blindness if in munchkin mode
-    if st.borg.tr(BI_ISBLIND) != 0 && st.borg.munchkin_mode {
-        // C passes the format string to borg_note() without format(), so
-        // the note keeps a literal "%d" (C bug 26).
-        borg_note(st, "# Resting to cure problem. (danger %d)...");
 
         // Rest until done
         rest(st, b'*');

@@ -170,6 +170,11 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     done
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
 } > "$OUT/config.txt"
+# Plan POC inputs are not yet part of the measured death/replay identity.
+if [ "${BORG_ERRANDS_PLAN+x}" = x ] || grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
+    echo "run.sh: plan POC is diagnostic only; use tools/try-errands-plan.py" >&2
+    exit 2
+fi
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd
 DATA_ARGS=()
 if [ -n "${BORGH_DATA_ROOT:-}" ]; then

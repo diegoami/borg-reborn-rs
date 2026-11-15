@@ -48,3 +48,8 @@ impl<'a> Facts<'a> {
         light.timeout == 0 || crate::engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32)
     }
 }
+
+#[cfg(feature = "test-m13-danger")]
+pub use crate::borg_danger::fixture_estimate;
+#[cfg(feature = "test-m13-danger")]
+pub use crate::engine::race_name;

@@ -13,6 +13,8 @@ path = "src/lib.rs"
 crate-type = ["rlib", "staticlib"]
 
 [features]
+# Declared synthetic M13 branch fixture; never a measured arm.
+test-m13-danger = ["borg-next/test-m13-danger"]
 recording = ["dep:angband-recorder"]
 # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
 borgh = []

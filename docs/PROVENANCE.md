@@ -64,3 +64,30 @@ unported operations are behind the shared closed dependency API, not copied
 as a second engine. STATEFUL-SHADOW.md describes effect-once record/replay,
 full state equality, nested entry, panic=abort handling and the source gate.
 The 68 exact dependency signatures are R2-STATEFUL-DEPENDENCIES.json.
+
+## M13 refresh (#328)
+
+borg-core now vendors diegoami/borg-rs tag `4.2.6-rs-town-trip-m13-v1`,
+peeled commit `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, GPL-2.0-only.
+The three-way refresh preserves declared OURS/HOOKED changes.
+[Integration decisions](M13-INTEGRATION.md) enumerate conflicts, the native
+read-only query patch, receiving option ABI adapter and parameter migration.
+Engine/harness, recorder and cemetery integration remain receiving-owned.
+
+## Track R M13 carry (#343, R3 preflight)
+
+The independently owned danger and stateful policy bodies are now carried
+from accepted main `2f74e1c5d57ce2b41ded1b5b694174b91b51f265`, whose native
+core is donor `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`. The v12 citations
+above describe the initial R2 adaptation and its immutable measurements.
+Five view fields preserve exact native BI_PSTUN/BI_VACID/BI_VELEC/BI_VFIRE/
+BI_VCOLD values. Physical cold's temporary-resistance asymmetry is retained
+exactly as in the donor. No independent gameplay improvement is claimed.
+
+The optional `test-m13-danger` build calls the actual native and owned
+estimators on declared constructed memories using loaded engine race/blow
+tables. Test-only native accessors are unavailable in production builds.
+The fixture performs no live-state writes, RNG draws or game effects; its
+input-projection fault control deliberately clears the five carried fields
+on a private port snapshot. It is a branch validation, never population
+or survival evidence. Normal policies never call the native accessor.

@@ -180,9 +180,10 @@ fn create_random_name(race: i32) -> Vec<u8> {
     name
 }
 
-/// `all_letters[i]` as a key: C `char` is signed.
-fn letter_key(i: u32) -> keycode_t {
-    engine::all_letters(i as usize) as i8 as i32 as keycode_t
+/// `all_letters_nohjkl[i]` as a key (patch 0123: the respawn birth menu
+/// has its own letter table, which skips h/j/k/l).
+fn letter_key_nohjkl(i: u32) -> keycode_t {
+    engine::all_letters_nohjkl(i as i32) as i8 as i32 as keycode_t
 }
 
 /// Kill the borg and force a reincarnation.
@@ -258,13 +259,13 @@ pub fn borg_reincarnate_start(st: &mut BorgState) {
 
     // pick race
     if race != engine::race_ridx() {
-        borg_keypress(st, letter_key(race));
+        borg_keypress(st, letter_key_nohjkl(race));
     }
     borg_keypress(st, KC_ENTER);
 
     // pick class
     if class != engine::class_cidx() {
-        borg_keypress(st, letter_key(class));
+        borg_keypress(st, letter_key_nohjkl(class));
     }
     borg_keypress(st, KC_ENTER);
 

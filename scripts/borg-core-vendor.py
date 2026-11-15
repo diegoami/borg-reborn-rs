@@ -36,12 +36,29 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/memory.rs', 'src/shadow.rs', 'src/threat_facts.rs', 'src/decision_api.rs', 'src/decision_tape.rs', 'src/decision_snapshot.rs', 'src/decisions.rs'}
+OURS = {
+    'PIN',
+    'ladders.txt',
+    'src/core_trace.rs',
+    'src/decision_api.rs',
+    'src/decision_snapshot.rs',
+    'src/decision_tape.rs',
+    'src/decisions.rs',
+    'src/errands_plan.rs',
+    'src/memory.rs',
+    'src/params.rs',
+    'src/shadow.rs',
+    'src/shell.rs',
+    'src/threat_facts.rs',
+}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
-    # #286 adds value snapshots alongside the original declared hooks.
+    # #343: Clone/PartialEq for owned town/trip memory.
+    'src/borg_town_live.rs',
+    'src/borg_trip.rs',
     'Cargo.toml',
+    'build.rs',
     'src/borg.rs',
     'src/borg_caution.rs',
     'src/borg_cave.rs',
@@ -82,6 +99,7 @@ HOOKED = {
     'src/borg_think_dungeon_util.rs',
     'src/borg_update.rs',
     'src/engine.rs',
+    'src/headers/option_h.rs',
     'src/lib.rs',
     'src/shadow.rs',
     'src/state.rs',

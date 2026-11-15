@@ -422,6 +422,7 @@ pub fn borg_item_analyze(
 
     /* always aware of items in the store */
     item.aware = in_store || real_item.flavor_is_aware();
+    item.flavour_aware = real_item.flavor_is_aware();
 
     /* get info from the known part of the object */
     item.ac = o.ac();

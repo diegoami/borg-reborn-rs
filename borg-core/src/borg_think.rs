@@ -48,6 +48,8 @@ pub struct ThinkState {
     pub sv_savefile: Vec<u8>,
     /// `justSaved` (static in `borg_check_save`)
     pub just_saved: bool,
+    pub town_action: Option<crate::borg_town_shadow::TownAction>,
+    pub town_live: crate::borg_town_live::LiveState,
 }
 
 impl Default for ThinkState {
@@ -57,6 +59,8 @@ impl Default for ThinkState {
             do_spell: true,
             sv_savefile: vec![0; SAVEFILE_LEN],
             just_saved: false,
+            town_action: None,
+            town_live: crate::borg_town_live::LiveState::default(),
         }
     }
 }
@@ -175,6 +179,16 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     /* find all items currently in use */
     crate::borg_item::borg_find_all_items(st);
 
+    /* The session object log: what appeared in the pack since the last
+     * look. */
+    crate::borg_object_log::log_acquisitions(st);
+
+    /* Record the state, if the state file is on and the character is in
+     * town. A human-in-the-loop session needs this: the human's choices
+     * come from the game's messages, and the states they were made in come
+     * from here. */
+    crate::borg_town_dump::dump_town_state(st);
+
     /* check to see if we should save */
     if borg_check_save(st) {
         return choice!("borg_check_save");
@@ -200,6 +214,10 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
 
     /* Examine the screen */
     crate::borg_update::borg_update(st);
+
+    // Remember learning opportunities only while actually in town. The
+    // dungeon decision must not inspect freshly restocked hidden shop data.
+    crate::borg_trip::observe_town(st);
 
     /* Evaluate the current world */
     st.borg.power = crate::borg_power::borg_power(st);

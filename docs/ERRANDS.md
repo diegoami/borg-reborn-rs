@@ -2,10 +2,10 @@
 
 *Commands that give the Borg a job: go home, dive to a depth, explore a
 level, climb a ladder of trips. They run over **borg-rs's decision core**,
-vendored at borg-rs milestone 12 as `borg-core/` (docs/PROVENANCE.md). The
+vendored at the M13 town/trip integration tag as `borg-core/` (docs/PROVENANCE.md). The
 errand code is `borg-core/src/shell.rs`, plus the hook calls marked
-`borg-reborn-rs (#207)` / `(#208)` in the vendored files. The evaluation
-behind it is in PR #206 (docs/REDESIGN.md, docs/PILOT.md).*
+`borg-reborn-rs (#207)` / `(#208)` in the vendored files. The original
+evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reborn-rs/pull/206).*
 
 ## Selecting the core
 
@@ -14,8 +14,50 @@ behind it is in PR #206 (docs/REDESIGN.md, docs/PILOT.md).*
 | core | `BORG_CORE`, else `borg_reborn_core` in the run's `borg.txt` | `reborn` (default: this repository's Borg, unchanged) or `borg-rs` |
 | errand | `BORG_ERRAND`, else `borg_reborn_errand` | a command line, below; `none` |
 | fear | `BORG_STOPSCARED`, else `borg_reborn_stopscared` | `off`, `flee`, `1`-`1000` |
-| budget | `BORG_ERRAND_BUDGET` | game turns; 0, none |
+| budget | `BORG_ERRAND_BUDGET` | nonnegative game turns; absent, `0` or `none` means unbounded |
 | outcome | `BORG_ERRAND_OUT` | a file: one JSON line per errand that ends |
+
+Configured errands are validated before the vendored core starts. An absent
+setting, an empty string, or exactly `none` disables errands. Unknown or
+malformed command lines, including an invalid command after a valid prefix,
+stop the process with exit status 2 and the setting's source/value on
+stderr. `BORG_ERRAND` takes precedence over `borg_reborn_errand`, including
+`none` overriding a file command. Valid command syntax and interactive
+prompt handling are unchanged. The original reborn core ignores this
+vendored-core setting.
+
+The configured fear threshold is also strict: invalid values exit 2 with
+source/value diagnostics. `BORG_STOPSCARED` overrides the file setting;
+absence, empty and exact `none` retain the core default and suppress a file
+override. Explicit `off` disables the threshold. Existing boolean aliases
+(`true`/`on`/`yes` for `flee`, `false`/`no` for `off`) and thresholds 1–1000
+retain their behavior. The original core ignores this setting. The
+stopscared command parser trims its argument before parsing; configured
+budget integers reject surrounding whitespace. Empty fear/errand settings
+retain their documented default/disabled aliases, while an empty budget is
+an error. Exact `none` keeps its documented meaning for each setting.
+
+With a configured vendored-core command line, `BORG_ERRAND_BUDGET` must be
+an integer from 0 through 9223372036854775807, or exactly `none`. Missing,
+`0` and `none` retain the unbounded meaning. Negative, empty, non-integer,
+overflowing or non-UTF-8 values exit 2 with source/value diagnostics instead
+of removing the bound. The budget is ignored when no vendored-core command
+line is configured, or with the original core.
+
+A missing `borg.txt` means file settings are absent. Other read errors,
+including invalid UTF-8 anywhere in the file, stop configuration with exit
+status 2 and a path/error diagnostic. Environment overrides retain priority;
+a file is read only when a setting or the parameter loader consults it. Core
+parameters use the same read policy.
+
+Fear and errand settings are read on command entry, including re-entry
+(`^Z`); core selection and the parameter snapshot remain process-cached. In
+a vendored-core session, a newly invalid setting or unreadable file
+encountered by that reader terminates the process without an automatic save.
+Edit configuration before starting a fresh process, and preserve an
+interactive game's save before changing it. The reader's valid-to-invalid
+re-entry path is covered in a subprocess test; live interactive driving and
+automatic save recovery are not claimed.
 
 Each of these environment settings that is set is written to the run's
 `config.txt` (`borg_core=`, `borg_errand=`, ...; `borg_ladders_sha256` for
@@ -36,6 +78,7 @@ core's own stop) when it is done.
 |---|---|---|
 | `/town` | home: Word of Recall if the core has one, else the stairs up | in town |
 | `/shopping` | in town, run the core's buying, selling and home-inventory round | when shopping is finished, before leaving town |
+| `/loop-levels A B` | explore every level from A to B, then back, repeatedly; 0 is town | never; town detours restart the route |
 | `/walk-back` | home by the stairs only | in town |
 | `/explore-back` | this level and each one above it explored, in turn, then home | in town |
 | `/dive N` | the stairs down to DL N, not exploring | on arrival |
@@ -63,6 +106,24 @@ Calling it in the dungeon aborts; use `/town; /shopping` to return first.
 `BORG_ERRAND_BUDGET` and `/stall` bound the round; no completion ranking of
 the errands has been measured.
 
+`/loop-levels 3 5` explores `3 → 4 → 5 → 4 → 3 → …`; `/loop-levels 5 3`
+starts at DL5 and goes the other way first. Supply two distinct depths in
+the engine's range, 0–127. `/loop-levels 0 3` includes town and the core's
+normal shopping/restocking at that endpoint, then repeats the dungeon trip.
+
+The core's own decision to go to town overrides a loop, including fear,
+restocking and an unprepared descent. The loop waits for arrival in town
+and restarts from its first endpoint after the core's town work. It does
+not skip an unprepared level or force a descent. A missing route lets the
+core try its own exploration/movement after the existing stall bound.
+Return travel can use the core's Recall; departure from town uses its usual
+Recall supply/readiness policy, otherwise stairs. Recall goes to the game's
+recall depth, not an arbitrary loop endpoint: after landing, the loop walks
+to the next planned level and explores it there. Pending Recall is allowed
+to finish. `/stopscared`, the errand budget and `/stop` still apply. An
+endless loop does not start following queued errands; budget/scared endings
+and `/stop` clear the remaining queue.
+
 ## Rules
 
 - **On a level of the plan, the core plays as itself.** The level is
@@ -74,14 +135,16 @@ the errands has been measured.
 - **No level is forced.** The errand never takes the stairs down to a
   level the core is not prepared for (`borg_prepared` for the level below):
   a ladder trip goes home instead, a command stops ("the core is not
-  prepared for DL3"). A ladder also skips a planned level the core is not
+  prepared for DL3"); a level loop goes home and retries after town. A
+  ladder also skips a planned level the core is not
   prepared for. When the core climbs back up off the plan inside the
   dungeon by itself (below character level 10 it leaves a level it is not
   prepared for), a ladder trip goes home and a command stops ("the core
   rose from DL2, not fit for DL3"). The commands do not skip levels.
 - **Fear overrides the plan.** If the core flees to town, or climbs out of
   a depth it is not prepared for, the trip ends and goes home, or a
-  command stops. If it flees a level, it leaves its own way, and a level
+  finite command stops; a level loop restarts after town. If it flees a
+  level, it leaves its own way, and a level
   of the plan it leaves for another dungeon level counts as explored.
 - **A trip to town of the core's own is not fear.** When it goes home to
   restock, sell, fix its level or experience, or because it misses home,

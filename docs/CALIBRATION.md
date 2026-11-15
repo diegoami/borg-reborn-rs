@@ -2085,3 +2085,12 @@ of exact agreement with every current effect.
 The power weights govern static valuation (`borg_uses_dynamic_calcs = FALSE`).
 The existing dynamic formula subsystem and its configuration switch are
 unchanged; enabling it delegates valuation to the borg.txt formula rules.
+
+## M13 parameter migration (#328)
+
+The earlier tables describe the historical v12 registry. M13 changes potion
+healing estimate defaults to zero percent plus fixed 20/40/60 HP for
+CLW/CSW/CCW and removes five parameters whose branches no longer exist.
+See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
+The live registry remains borg-core/src/params.rs; historical profiles are
+not rewritten or repinned. Both optional town/trip policies default off.

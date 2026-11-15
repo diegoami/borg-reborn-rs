@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "eac6ca5bbb26517a14fe901831c84db0fe37abdaa3212ea8ca48ecde2add1f07",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p317-full/full-4-necro-3",
+      "raw_sha256": {
+        "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+        "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+        "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+      },
+      "result_sha256": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+      "role": "original",
+      "source_commit": "754593a033487f8f28f48ca9e90856fdffa561c3"
+    }
+  ],
+  "character": "Half-Troll Necromancer",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 2065
+  },
+  "decision_trace": null,
+  "encounter_family": "start-25a7b1ea1309efd8769054c8ae036d3aa4a477d75aa7b4e0bb47082d2fec61b2",
+  "files_sha256": {
+    "build.json": "64d6b18a86f0d80654faf541b6fbfb1a35c6225a648e52132852c49e4e91ba3d",
+    "config.txt": "83beca65aa150d4adf6c06e42284a3506086f3b83752e0bc4d3f0ebb33626759",
+    "depths.json": "40295dae61032bfa0aeeb60d2306695f0d1bbf40ca61243717a97585b53051ab",
+    "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "summary.json": "ebc35c4af1c0973a26edbfd574fec52d6de3005ae5485b91f71f9ddd9f722ae0",
+    "trace-core-tail.jsonl": "abc7e4ee223a396197ea97433ea2afa2c47ef69c13db321b2eb15352aafe17c1"
+  },
+  "id": "D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5",
+  "identity": {
+    "binary_sha256": "eac6ca5bbb26517a14fe901831c84db0fe37abdaa3212ea8ca48ecde2add1f07",
+    "borg_txt_sha256": "509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "754593a033487f8f28f48ca9e90856fdffa561c3",
+    "impl": "rust",
+    "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1043,
+    "source_sha256": "69c447072d3822bef7dc9f9998cadfc113452ff406858f98c81bd0f44a567726"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a wild cat",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a wild cat",
+    "class_idx": 4,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 7,
+    "turn": 23423
+  }
+}

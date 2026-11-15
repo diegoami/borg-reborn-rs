@@ -271,6 +271,8 @@ impl Shadow for Next {
     }
 
     fn after_think(&self, state: &BorgState) {
+        #[cfg(feature = "test-m13-danger")]
+        crate::m13_fixture::run(state);
         self.recorder
             .lock()
             .expect("shadow recorder")
