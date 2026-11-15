@@ -1,0 +1,31 @@
+diff --git a/borg-core/src/borg_recover.rs b/borg-core/src/borg_recover.rs
+index a3ef2b37..3fd01cde 100644
+--- a/borg-core/src/borg_recover.rs
++++ b/borg-core/src/borg_recover.rs
+@@ -85,7 +85,7 @@ fn rod_charging(st: &mut BorgState, sval: i32) -> bool {
+ /// this is only true if the "danger" is less than the "reward" of doing
+ /// the healing spell, and if there are no monsters which might soon step
+ /// around the corner and attack.
+-pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
++fn borg_recover_before_control(st: &mut BorgState) -> bool {
+     if crate::decision_tape::active() { crate::decision_tape::mark("policy::recovery.borg_recover",format!("{:?}",())); }
+     /*** Handle annoying situations ***/
+     let need = borg_maintain_light(st);
+@@ -530,3 +530,5 @@ pub(crate) fn borg_recover_native(st: &mut BorgState) -> bool {
+ pub fn borg_recover(st:&mut BorgState)->bool {
+ match crate::shadow::decision(st,crate::decisions::Decision::Recover) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+ }
++
++pub(crate) fn borg_recover_native(st:&mut BorgState)->bool { let _=borg_recover_before_control(st); false }
+diff --git a/borg-reborn-rs/Cargo.toml b/borg-reborn-rs/Cargo.toml
+index 3916425e..7a4063cf 100644
+--- a/borg-reborn-rs/Cargo.toml
++++ b/borg-reborn-rs/Cargo.toml
+@@ -13,6 +13,7 @@ path = "src/lib.rs"
+ crate-type = ["rlib", "staticlib"]
+ 
+ [features]
++test-track-r-recovery-control = []
+ recording = ["dep:angband-recorder"]
+ # Harness builds only (harness/build.sh): report decisions to the borgh frontend.
+ borgh = []
