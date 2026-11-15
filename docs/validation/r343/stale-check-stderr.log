@@ -1,0 +1,51 @@
+
+thread '<unnamed>' (157966) panicked at borg-next/src/m13_fixture.rs:92:5:
+assertion `left == right` failed: M13 acid physical=false spell=7
+  left: 440
+ right: 340
+stack backtrace:
+   0: __rustc::rust_begin_unwind
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/panicking.rs:676:5
+   1: core::panicking::panic_fmt
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/panicking.rs:80:14
+   2: core::panicking::assert_failed_inner
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/panicking.rs:447:23
+   3: core::panicking::assert_failed::<i32, i32>
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/core/src/panicking.rs:407:5
+   4: borg_next::m13_fixture::check
+             at /workspace/work/r343-stale-danger/borg-next/src/m13_fixture.rs:92:5
+   5: borg_next::m13_fixture::run::{closure#0}
+             at /workspace/work/r343-stale-danger/borg-next/src/m13_fixture.rs:45:25
+   6: <std::sync::once::Once>::call_once::<borg_next::m13_fixture::run::{closure#0}>::{closure#0}
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/sync/once.rs:167:41
+   7: <std::sys::sync::once::futex::Once>::call
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/sys/sync/once/futex.rs:183:21
+   8: <std::sync::once::Once>::call_once::<borg_next::m13_fixture::run::{closure#0}>
+             at /rustc/0ef1bc386059596dada8fb65b50425aab2ea637a/library/std/src/sync/once.rs:167:20
+   9: borg_next::m13_fixture::run
+             at /workspace/work/r343-stale-danger/borg-next/src/m13_fixture.rs:9:10
+  10: <borg_next::shadow::Next as borg_rs::shadow::Shadow>::after_think
+             at /workspace/work/r343-stale-danger/borg-next/src/shadow.rs:275:9
+  11: borg_rs::shadow::after_think
+             at /workspace/work/r343-stale-danger/borg-core/src/shadow.rs:45:39
+  12: borg_rs::borg_think::borg_think
+             at /workspace/work/r343-stale-danger/borg-core/src/borg_think.rs:171:5
+  13: borg_rs::borg::generate_keypress
+             at /workspace/work/r343-stale-danger/borg-core/src/borg.rs:538:12
+  14: borg_rs::borg::borg_entry_point::{closure#0}
+             at /workspace/work/r343-stale-danger/borg-core/src/borg.rs:311:17
+  15: borg_rs::engine::enter::<borg_rs::headers::ui_event_h::keypress, borg_rs::borg::borg_entry_point::{closure#0}>
+             at /workspace/work/r343-stale-danger/borg-core/src/engine.rs:111:13
+  16: borg_rs::borg::borg_entry_point
+             at /workspace/work/r343-stale-danger/borg-core/src/borg.rs:310:5
+  17: inkey_ex
+  18: textui_get_command
+  19: textui_process_command
+  20: textui_get_cmd
+  21: play_game
+  22: main
+  23: <unknown>
+  24: __libc_start_main
+  25: _start
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+/workspace/work/r343-stale-danger/build/rust-test/game/angband: Exiting on signal 6!

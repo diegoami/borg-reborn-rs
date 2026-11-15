@@ -1,0 +1,10 @@
+   Compiling borg-core v0.1.0 (/workspace/work/r3-m13-carry/borg-core)
+    Finished `release` profile [optimized + debuginfo] target(s) in 54.75s
+     Running unittests src/lib.rs (/workspace/work/r3-cargo/release/build/borg-core/fadc2f0f49c521f1/out/borg_rs-fadc2f0f49c521f1)
+
+running 1 test
+replayed 984 records: 750 with a plan, 0 taking an urgent purchase first
+test borg_town_record::tests::a_run_s_records_all_replay ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 338 filtered out; finished in 1.93s
+
