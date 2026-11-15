@@ -816,3 +816,200 @@ The vendored core writes `trace-core.jsonl` and death dossiers retain its
 last 200 rows. See [CORE-TRACE.md](CORE-TRACE.md) for the schema, sampling
 point and opt-out, and [P1.4-VALIDATION.md](P1.4-VALIDATION.md) for default
 parity and the recovery override's named divergence.
+
+## Attack (P2.1, #240)
+
+167 attack parameters bring the registry to 770 entries. Source lines below
+refer to `borg_fight_attack.rs` at `5d9abb8f`. The existing policy and damage
+model are retained; these are not corrections to that model. Reviewed the
+combat manual (chapter 4) and Borg notes §§15.5/15.11 before extraction.
+
+Retained data: class/attack/effect identifiers; keycodes/directions; array
+sizes, loop/index increments and missing/invalid sentinels (-1, -2, -12,
+-500, -999, -9999); zero/status guards; adjacency and projection geometry
+(including bolt/beam/dispel radius sentinels, panel/fear-region sizes, angle
+table bounds); percentage/decimal units and dice means; slay/brand and
+resistance multipliers; copied spell/device/activation damage and range
+formulas, including crush self-cost and special strike blow counts.
+The item-destruction penalties, mana reserves/failure allowances, paranoia
+chances and strategic scoring weights are configurable.
+
+Engine authority: `src/player-attack.c` (melee/ranged damage and hit tests),
+`src/project.c` (projection geometry), `lib/gamedata/class.txt`,
+`object.txt`, `activation.txt` (spell/item effects). Copied estimates may
+differ from these current mechanics; no claim of exact engine modelling is
+made. In particular the legacy spell-damage dispatch remains frozen.
+Bounds require positive divisors/horizons, restrict leap distance to the
+spell's existing four-grid geometry, and keep the multiple-unique cutoff
+below questor rank 10. Numeric bounds are exploratory input limits, not
+recommended values.
+
+| Name | Default | Unit | Source line |
+| --- | ---: | --- | ---: |
+| `attack_melee_min_hit_tenths` | 8 | tenths | 380 |
+| `attack_melee_bonus_min_level` | 15 | level | 388 |
+| `attack_melee_hit_bonus` | 10 | percent | 389 |
+| `attack_mage_melee_min_sp` | 1 | mana | 394 |
+| `attack_mage_hit_penalty` | 10 | percent | 396 |
+| `attack_melee_overkill_multiplier` | 2 | multiplier | 408 |
+| `attack_mage_melee_max_level` | 40 | level | 416 |
+| `attack_mage_melee_damage_tenths` | 8 | tenths | 419 |
+| `attack_melee_unique_bonus` | 5 | multiplier | 430 |
+| `attack_melee_town_unique_numerator` | 2 | multiplier | 438 |
+| `attack_melee_town_unique_divisor` | 3 | divisor | 438 |
+| `attack_town_unique_min_level` | 5 | level | 441 |
+| `attack_melee_breeder_numerator` | 3 | multiplier | 448 |
+| `attack_melee_breeder_divisor` | 2 | divisor | 448 |
+| `attack_melee_summoner_numerator` | 3 | multiplier | 455 |
+| `attack_melee_summoner_divisor` | 2 | divisor | 455 |
+| `attack_melee_questor_bonus` | 5 | multiplier | 463 |
+| `attack_melee_sleep_danger_horizon` | 1 | turns | 478 |
+| `attack_melee_sleep_danger_multiplier` | 2 | multiplier | 480 |
+| `attack_melee_danger_horizon` | 2 | turns | 491 |
+| `attack_melee_partial_min_level` | 15 | level | 494 |
+| `attack_melee_partial_danger_divisor` | 10 | divisor | 495 |
+| `attack_status_low_level_cutoff` | 13 | level | 660 |
+| `attack_status_low_level_limit` | 10 | level | 660 |
+| `attack_status_level_offset` | 10 | level | 660 |
+| `attack_status_level_divisor` | 4 | divisor | 660 |
+| `attack_status_level_numerator` | 3 | multiplier | 660 |
+| `attack_status_level_base` | 10 | level | 660 |
+| `attack_status_danger_horizon` | 1 | turns | 691 |
+| `attack_fear_bonus_max_level` | 10 | level | 694 |
+| `attack_fear_danger_bonus` | 20 | danger | 695 |
+| `attack_arrow_point_blank_divisor` | 5 | divisor | 766 |
+| `attack_arrow_min_hit_tenths` | 8 | tenths | 769 |
+| `attack_mana_unique_min_potions` | 3 | count | 777 |
+| `attack_mana_unique_multiplier` | 2 | multiplier | 779 |
+| `attack_nether_point_blank_divisor` | 5 | divisor | 887 |
+| `attack_teleport_unique_injury` | 60 | percent | 995 |
+| `attack_teleport_unique_danger_tenths` | 13 | tenths | 1001 |
+| `attack_teleport_unique_max_depth` | 98 | depth | 1001 |
+| `attack_teleport_unique_min_count` | 2 | count | 1004 |
+| `attack_teleport_unique_max_count` | 8 | count | 1004 |
+| `attack_teleport_mage_unique_distance` | 2 | grids | 1007 |
+| `attack_teleport_vault_min_walls` | 2 | count | 1032 |
+| `attack_teleport_glyph_value` | 300 | score | 1062 |
+| `attack_teleport_morgoth_value` | 100 | score | 1070 |
+| `attack_teleport_low_sp` | 35 | mana | 1076 |
+| `attack_teleport_low_sp_value` | 150 | score | 1079 |
+| `attack_turn_danger_horizon` | 1 | turns | 1090 |
+| `attack_status_slow_speed_margin` | 5 | speed | 1098 |
+| `attack_fear_danger_horizon` | 2 | turns | 1160 |
+| `attack_fear_danger_multiplier` | 2 | multiplier | 1162 |
+| `attack_crush_monster_level_margin` | 5 | level | 1175 |
+| `attack_sleep_danger_horizon` | 1 | turns | 1198 |
+| `attack_missile_danger_horizon` | 1 | turns | 1236 |
+| `attack_missile_danger_tenths` | 2 | tenths | 1236 |
+| `attack_missile_level_margin` | 5 | level | 1238 |
+| `attack_missile_weak_max_level` | 20 | level | 1244 |
+| `attack_ranged_overkill_multiplier` | 2 | multiplier | 1258 |
+| `attack_ranged_unique_multiplier` | 3 | multiplier | 1265 |
+| `attack_ranged_town_unique_numerator` | 2 | multiplier | 1273 |
+| `attack_ranged_town_unique_divisor` | 3 | divisor | 1273 |
+| `attack_ranged_breeder_numerator` | 3 | multiplier | 1283 |
+| `attack_ranged_breeder_divisor` | 2 | divisor | 1283 |
+| `attack_ranged_summoner_numerator` | 3 | multiplier | 1290 |
+| `attack_ranged_summoner_divisor` | 2 | divisor | 1290 |
+| `attack_ranged_questor_bonus` | 9 | multiplier | 1298 |
+| `attack_bolt_max_target_age` | 2 | turns | 1347 |
+| `attack_bolt_unknown_min_walls` | 2 | count | 1388 |
+| `attack_bolt_unknown_min_grids` | 1 | count | 1388 |
+| `attack_bolt_sleep_danger_horizon` | 1 | turns | 1415 |
+| `attack_bolt_sleep_danger_divisor` | 2 | divisor | 1418 |
+| `attack_bolt_danger_horizon` | 1 | turns | 1428 |
+| `attack_bolt_kill_multiplier` | 2 | multiplier | 1432 |
+| `attack_destroy_unknown_boots_value` | 20 | score | 1450 |
+| `attack_destroy_unknown_ring_value` | 20 | score | 1456 |
+| `attack_destroy_speed_ring_value` | 2000 | score | 1459 |
+| `attack_destroy_valuable_potion_value` | 2000 | score | 1482 |
+| `attack_destroy_unknown_potion_value` | 20 | score | 1485 |
+| `attack_unmapped_fear_divisor` | 20 | divisor | 1531 |
+| `attack_ego_ammo_multiplier` | 99 | multiplier | 2193 |
+| `attack_throw_max_target_age` | 10 | turns | 2307 |
+| `attack_throw_fast_monster_margin` | 5 | speed | 2317 |
+| `attack_throw_min_item_value` | 100 | gold | 2408 |
+| `attack_throw_low_damage` | 5 | damage | 2408 |
+| `attack_reserve_mage_sp` | 6 | mana | 2503 |
+| `attack_reserve_ranger_sp` | 22 | mana | 2504 |
+| `attack_reserve_rogue_sp` | 20 | mana | 2505 |
+| `attack_reserve_priest_sp` | 8 | mana | 2506 |
+| `attack_reserve_paladin_sp` | 20 | mana | 2507 |
+| `attack_reserve_necromancer_sp` | 10 | mana | 2508 |
+| `attack_spell_paranoia_max_level` | 2 | level | 2534 |
+| `attack_spell_paranoia_chance` | 1 | percent | 2535 |
+| `attack_spell_unique_fail` | 40 | percent | 2546 |
+| `attack_spell_fail` | 25 | percent | 2546 |
+| `attack_primary_teleport_fail` | 15 | percent | 2562 |
+| `attack_primary_max_level` | 30 | level | 2562 |
+| `attack_spell_low_max_sp` | 50 | mana | 2575 |
+| `attack_spell_reserve_divisor` | 2 | divisor | 2580 |
+| `attack_spell_reserve_penalty` | 3 | multiplier | 2581 |
+| `attack_spell_deep_reserve_divisor` | 3 | divisor | 2585 |
+| `attack_spell_deep_reserve_penalty` | 5 | multiplier | 2586 |
+| `attack_escape_reserve_min_max_sp` | 30 | mana | 2592 |
+| `attack_escape_reserve_penalty` | 750 | multiplier | 2593 |
+| `attack_reserve_spell_max_level` | 15 | level | 2631 |
+| `attack_reserve_spell_fail` | 25 | percent | 2646 |
+| `attack_reserve_spell_danger_horizon` | 1 | turns | 2651 |
+| `attack_reserve_spell_danger_multiplier` | 2 | multiplier | 2651 |
+| `attack_reserve_spell_near_distance` | 7 | grids | 2679 |
+| `attack_reserve_spell_damage_margin` | 4 | damage | 2686 |
+| `attack_dispel_paranoia_chance` | 2 | percent | 2757 |
+| `attack_dispel_fail` | 25 | percent | 2762 |
+| `attack_dispel_reserve_divisor` | 2 | divisor | 2775 |
+| `attack_dispel_reserve_penalty` | 3 | multiplier | 2776 |
+| `attack_dispel_deep_reserve_divisor` | 3 | divisor | 2780 |
+| `attack_dispel_deep_reserve_penalty` | 5 | multiplier | 2781 |
+| `attack_dispel_escape_min_max_sp` | 30 | mana | 2786 |
+| `attack_dispel_escape_penalty` | 750 | multiplier | 2787 |
+| `attack_wand_paranoia_chance` | 2 | percent | 2818 |
+| `attack_wand_charge_penalty` | 50 | score | 2831 |
+| `attack_rod_paranoia_chance` | 2 | percent | 2854 |
+| `attack_rod_max_failure` | 500 | permille | 2859 |
+| `attack_unknown_device_paranoia_chance` | 2 | percent | 2911 |
+| `attack_unknown_wand_max_failure` | 500 | permille | 2929 |
+| `attack_unknown_wand_penalty_min_level` | 5 | level | 2937 |
+| `attack_unknown_wand_penalty` | 5 | score | 2938 |
+| `attack_unknown_wand_danger_horizon` | 1 | turns | 2949 |
+| `attack_unknown_wand_danger_tenths` | 7 | tenths | 2949 |
+| `attack_unknown_wand_emergency_value` | 999 | score | 2951 |
+| `attack_staff_paranoia_chance` | 5 | percent | 2994 |
+| `attack_activation_paranoia_chance` | 2 | percent | 3088 |
+| `attack_ring_paranoia_chance` | 2 | percent | 3132 |
+| `attack_dragon_paranoia_chance` | 2 | percent | 3171 |
+| `attack_leap_min_target_score` | 10 | score | 3284 |
+| `attack_leap_max_distance` | 4 | grids | 3296 |
+| `attack_vampire_max_distance` | 20 | grids | 3513 |
+| `attack_vampire_sleep_danger_horizon` | 1 | turns | 3577 |
+| `attack_vampire_sleep_danger_multiplier` | 2 | multiplier | 3579 |
+| `attack_vampire_danger_horizon` | 2 | turns | 3585 |
+| `attack_vampire_partial_min_level` | 15 | level | 3588 |
+| `attack_vampire_partial_danger_divisor` | 10 | divisor | 3589 |
+| `attack_flag_danger_horizon` | 4 | turns | 3618 |
+| `attack_crush_hp_margin` | 10 | hp | 3636 |
+| `attack_crush_hp_level_multiplier` | 4 | multiplier | 3636 |
+| `attack_crush_post_danger_multiplier` | 2 | multiplier | 3648 |
+| `attack_crush_min_post_hp` | 50 | hp | 3648 |
+| `attack_crush_reserve_divisor` | 2 | divisor | 3658 |
+| `attack_crush_reserve_penalty` | 10 | multiplier | 3659 |
+| `attack_trance_reserve_divisor` | 2 | divisor | 3704 |
+| `attack_trance_reserve_penalty` | 10 | multiplier | 3705 |
+| `attack_holy_word_min_loss` | 300 | hp | 3917 |
+| `attack_curse_min_hp` | 120 | hp | 4030 |
+| `attack_unknown_rod_damage` | 75 | damage | 4085 |
+| `attack_unknown_wand_damage` | 75 | damage | 4088 |
+| `attack_holy_staff_hp_divisor` | 2 | divisor | 4164 |
+| `attack_holy_staff_hurt_value` | 500 | score | 4164 |
+| `attack_holy_staff_value` | 120 | score | 4164 |
+| `attack_holy_activation_hp_divisor` | 2 | divisor | 4283 |
+| `attack_holy_activation_hurt_value` | 500 | score | 4283 |
+| `attack_holy_activation_value` | 120 | score | 4283 |
+| `attack_max_target_age` | 2 | turns | 4444 |
+| `attack_town_mage_max_level` | 10 | level | 4457 |
+| `attack_fast_monster_distance` | 2 | grids | 4466 |
+| `attack_scary_breeder_max_depth` | 5 | depth | 4476 |
+| `attack_scary_max_level_time` | 2000 | turns | 4478 |
+| `attack_scary_max_town_time` | 3000 | turns | 4478 |
+| `attack_scary_depth_multiplier` | 4 | multiplier | 4487 |
+| `attack_scary_min_level` | 10 | level | 4487 |

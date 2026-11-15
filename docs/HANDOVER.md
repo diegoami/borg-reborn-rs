@@ -4,6 +4,23 @@
 
 
 
+## 2026-11-15: track P, P2.1 (#240), attack parameters
+
+- Added 167 attack settings at 188 sites (770 total): scoring, mana
+  reserves, danger horizons, failure/paranoia limits and resource costs.
+  Retained damage/geometry/interface data is declared in CALIBRATION.md.
+- Full **45/45**, 295,464 named trace rows and ladder parity hold. A
+  zero overkill multiplier changes borg_attack to borg_flow_old at turn
+  141 and dies later; the earlier hit-threshold trial has no change.
+  Both are retained without an improvement claim (P2.1-VALIDATION.md).
+- Required Rust/Python/vendor checks pass. Defaults restore original
+  source bytes apart from import and three comparison promotions.
+  D2226–D2237 preserve twelve natural deaths; none are missing.
+- Stacked on P1.4 #246 while its engine CI finishes. Remaining track P:
+  defence #241, item use #242, power #243, zoo profiles #244, sweep #245.
+  Owner authorized this continuation across milestone handoffs; review
+  PRs remain unmerged and reviewers remain the owner's choice.
+
 ## 2026-11-15: track P, P1.4 (#222), named core decisions
 
 - Added the independent `trace-core.jsonl` stream, successful root-check
