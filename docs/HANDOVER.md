@@ -27,6 +27,11 @@
   Plan examples moved to harness/plans to separate them from BORG_PROFILE.
 - Initialization errors still exit 2; live unsaved-game recovery is not
   claimed. The POC stays diagnostic-only and the guided game is untouched.
+- PR308-REVIEW-FIXES.md records all finding dispositions and limits.
+  Revised source 8b9642d658f1 was built at e900d670; no-plan CI controls
+  are D2479–D2481 within the reservation. Local engine checks pass 62
+  tests (one environment skip), focused POC checks 7/7, and no-plan
+  3,000-turn keys/messages/states match. Required CI is rerun on the new head.
 
 ## 2026-11-15: working class-specific errand-plan POC (#305, PR #308)
 
