@@ -61,8 +61,15 @@ git log --oneline -5
 gh issue list --label "in progress"   # who is working on what
 bash scripts/setup.sh            # tools check; vendor/ checked out at the pins; safe to rerun
 python3 scripts/refresh-sources.py   # what moved in every source since its pin (read only)
-cargo test --workspace
+cargo test --workspace --exclude borg-core && cargo test --release -p borg-core
 ```
+
+`borg-core/` (borg-rs's crate, vendored) keeps borg-rs's own formatting and
+its unit tests link without the engine only in release, so the checks are
+CI's (`.github/workflows/ci.yml`): `cargo fmt --check -p borg-reborn-rs`,
+not `cargo fmt --check`; never run `rustfmt` on a vendored file.
+`scripts/borg-core-vendor.py check` (with `vendor/borg-rs`) shows that
+`borg-core/` is borg-rs at its pin plus our declared files and hooks.
 
 Engine builds and suites (see [harness/README.md](harness/README.md)) run under the shared lock:
 
@@ -103,8 +110,10 @@ never rewrite the other track's work to make yours fit; say so in the PR
 and the handover instead.
 
 At the end of a task:
-1. `cargo fmt --check`, `cargo clippy --workspace -- -D warnings` and
-   `cargo test --workspace` pass, as well as the task's own checks;
+1. `cargo fmt --check -p borg-reborn-rs`, `cargo clippy --workspace
+   --all-targets -- -D warnings`, `cargo test --workspace --exclude
+   borg-core` and `cargo test --release -p borg-core` pass (CI's commands),
+   as well as the task's own checks;
 2. docs/HANDOVER.md says what was done, what was found, what is left, and
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,

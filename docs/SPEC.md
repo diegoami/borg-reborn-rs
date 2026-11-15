@@ -204,11 +204,17 @@ frontend's flags and outputs, and `harness/borg.txt` (§3.5, §3.6, below).
     difference from the C set is declared
     with its reason (spec §1.2 warns that the options change the screen the
     Borg reads).
-  - **`harness/borg.txt`** stays only because the zoo's adapter copies it
-    (§4, the zoo). The Rust Borg does not read it. Its `borg_self_scum =
-    TRUE` (upstream's default) let the C Borgs money-scum in the zoo's
-    `4.2.6-reborn-c-*` specimens, which this repository built. The zoo is
-    told (RULES 7).
+  - **`harness/borg.txt`** is the run's `borg.txt`, which the zoo's adapter
+    also copies (§4, the zoo). Since the repivot (§2 amendment,
+    docs/ERRANDS.md) it is read: it is borg-rs's v12 file, which configures
+    borg-rs's core, with `borg_munchkin_by_class` and `borg_self_scum` set to
+    `FALSE` (owner, 2026-11-14: no stair-scumming, no town scumming), and
+    three keys of ours that select the decision core (`borg_reborn_core`),
+    an errand (`borg_reborn_errand`) and the fear stop
+    (`borg_reborn_stopscared`). Our own core still reads nothing else in
+    it. Until 2026-11-14 it was inert here, and its `borg_self_scum = TRUE`
+    (upstream's default) let the C Borgs money-scum in the zoo's
+    `4.2.6-reborn-c-*` specimens; the zoo was told (RULES 7).
 - **Environment:** `TZ=UTC`, `LANG=C.UTF-8` and `LC_ALL=C.UTF-8` for every
   run. The fixed-date hook sets the time `mon-make.c` reads to 0, but
   `localtime()` still turns it into a calendar date in the run's time zone
