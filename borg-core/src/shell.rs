@@ -210,43 +210,58 @@ pub(crate) const CLASSES: [&str; 9] = [
     "blackguard",
 ];
 
-/// Strict configuration read used by the plan POC. Missing files retain
-/// absent defaults; I/O/decoding failures are not an absent plan selection.
-pub fn read_borg_txt_setting(
-    path: &std::path::Path,
-    name: &str,
-) -> Result<Option<String>, String> {
-    let text = match std::fs::read_to_string(path) {
-        Ok(text) => text,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-        Err(error) => return Err(format!("{}: {error}", path.display())),
-    };
+/// A setting of the run's `borg.txt` (`ANGBAND_DIR_USER/borg.txt`).
+/// All shell and plan callers share the strict missing/read-error policy.
+pub fn borg_txt_setting(name: &str) -> Option<String> {
+    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt"))
+        .unwrap_or_else(|error| config_file_error(error));
+    borg_txt_setting_at(&path, name)
+}
+
+fn config_file_error(error: String) -> ! {
+    eprintln!("borg-reborn-rs: configuration: {error}");
+    std::process::exit(2)
+}
+
+fn borg_txt_path(bytes: Vec<u8>) -> Result<std::path::PathBuf, String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStringExt;
+        Ok(std::ffi::OsString::from_vec(bytes).into())
+    }
+    #[cfg(not(unix))]
+    {
+        String::from_utf8(bytes).map(std::path::PathBuf::from)
+            .map_err(|error| format!("invalid borg.txt path: {error}"))
+    }
+}
+
+fn read_borg_txt(path: &std::path::Path) -> Result<String, String> {
+    match std::fs::read_to_string(path) {
+        Ok(text) => Ok(text),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(String::new()),
+        Err(error) => Err(format!("{}: cannot read borg.txt: {error}", path.display())),
+    }
+}
+
+/// The parameter loader shares the same missing-file and read-error policy.
+pub(crate) fn borg_txt_contents() -> Result<String, String> {
+    let path = borg_txt_path(engine::path_build_user(1024, b"borg.txt"))?;
+    read_borg_txt(&path)
+}
+
+fn borg_txt_setting_at(path: &std::path::Path, name: &str) -> Option<String> {
+    borg_txt_value_at(path, name).unwrap_or_else(|error| config_file_error(error))
+}
+
+pub(crate) fn borg_txt_value_at(path: &std::path::Path, name: &str) -> Result<Option<String>, String> {
+    let text = read_borg_txt(path)?;
     Ok(text.lines()
         .map(str::trim)
         .filter(|l| !l.starts_with('#'))
         .filter_map(|l| l.split_once('='))
         .find(|(n, _)| n.trim() == name)
         .map(|(_, v)| v.trim().to_string()))
-}
-
-pub fn checked_borg_txt_setting(name: &str) -> Result<Option<String>, String> {
-    let path = engine::path_build_user(4096, b"borg.txt");
-    let path = String::from_utf8_lossy(&path);
-    read_borg_txt_setting(std::path::Path::new(path.as_ref()), name)
-}
-
-/// A setting of the run's `borg.txt` (`ANGBAND_DIR_USER/borg.txt`) that
-/// the shell reads. Legacy callers retain their existing contract; #317
-/// tracks migrating all configuration access to strict error handling.
-pub fn borg_txt_setting(name: &str) -> Option<String> {
-    let path = engine::path_build_user(1024, b"borg.txt");
-    let text = std::fs::read_to_string(String::from_utf8_lossy(&path).as_ref()).ok()?;
-    text.lines()
-        .map(str::trim)
-        .filter(|l| !l.starts_with('#'))
-        .filter_map(|l| l.split_once('='))
-        .find(|(n, _)| n.trim() == name)
-        .map(|(_, v)| v.trim().to_string())
 }
 
 /// The default ladders by class (`borg-core/ladders.txt`), or the file
@@ -1489,6 +1504,62 @@ fn report(st: &BorgState, outcome: &str, turn: i64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn config_test_dir() -> std::path::PathBuf {
+        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH)
+            .unwrap().as_nanos();
+        let root = std::env::temp_dir().join(format!("borg-config-{}-{nonce}", std::process::id()));
+        std::fs::create_dir(&root).unwrap();
+        root
+    }
+
+    #[test]
+    fn missing_config_is_absent_but_read_and_utf8_errors_are_not() {
+        let root = config_test_dir();
+        let path = root.join("borg.txt");
+        assert_eq!(read_borg_txt(&path).unwrap(), "");
+        assert_eq!(borg_txt_setting_at(&path, "borg_reborn_core"), None);
+        std::fs::write(&path, "# comment\nborg_reborn_core = 1\n").unwrap();
+        assert_eq!(borg_txt_setting_at(&path, "borg_reborn_core"), Some("1".into()));
+        std::fs::write(&path, b"borg_reborn_core = 1\n# \xff").unwrap();
+        let error = read_borg_txt(&path).unwrap_err();
+        assert!(error.contains("borg.txt") && error.contains("UTF-8"));
+        assert!(read_borg_txt(&root).unwrap_err().contains("cannot read borg.txt"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn config_paths_preserve_non_utf8_os_bytes() {
+        use std::os::unix::ffi::OsStrExt;
+        let root = config_test_dir();
+        let path = root.join(std::ffi::OsStr::from_bytes(b"user-\xff"));
+        let decoded = borg_txt_path(path.as_os_str().as_bytes().to_vec()).unwrap();
+        assert_eq!(decoded, path);
+        std::fs::write(&path, "borg_reborn_core=0").unwrap();
+        assert_eq!(borg_txt_setting_at(&decoded, "borg_reborn_core"), Some("0".into()));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn config_file_is_checked_again_on_reentry() {
+        if let Some(path) = std::env::var_os("BORG_CONFIG_TEST_PATH") {
+            let path = std::path::PathBuf::from(path);
+            assert_eq!(borg_txt_setting_at(&path, "borg_reborn_core"), Some("1".into()));
+            std::fs::write(&path, b"# \xff").unwrap();
+            borg_txt_setting_at(&path, "borg_reborn_core");
+            panic!("an invalid reread silently used defaults");
+        }
+        let root = config_test_dir();
+        let path = root.join("borg.txt");
+        std::fs::write(&path, "borg_reborn_core=1").unwrap();
+        let result = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "shell::tests::config_file_is_checked_again_on_reentry", "--nocapture"])
+            .env("BORG_CONFIG_TEST_PATH", &path).output().unwrap();
+        assert_eq!(result.status.code(), Some(2), "{:?}", result);
+        assert!(String::from_utf8_lossy(&result.stderr).contains("cannot read borg.txt"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn a_level_loop_explores_each_intermediate_level_in_both_directions() {

@@ -209,7 +209,7 @@ fn fatal(error: impl std::fmt::Display) -> ! {
     std::process::exit(2)
 }
 fn checked_setting(name: &str) -> Option<String> {
-    shell::checked_borg_txt_setting(name).unwrap_or_else(|e| fatal(e))
+    shell::borg_txt_setting(name)
 }
 fn validate_budget(value: Option<&str>) -> Result<(), String> {
     match value {
@@ -417,17 +417,17 @@ mod tests {
         std::fs::create_dir(&root).unwrap();
         let path = root.join("borg.txt");
         assert_eq!(
-            shell::read_borg_txt_setting(&path, "borg_plan").unwrap(),
+            shell::borg_txt_value_at(&path, "borg_plan").unwrap(),
             None
         );
         std::fs::write(&path, "borg_plan = errands_plan.txt\n").unwrap();
         assert_eq!(
-            shell::read_borg_txt_setting(&path, "borg_plan").unwrap(),
+            shell::borg_txt_value_at(&path, "borg_plan").unwrap(),
             Some("errands_plan.txt".into())
         );
         std::fs::write(&path, [0xff]).unwrap();
-        assert!(shell::read_borg_txt_setting(&path, "borg_plan").is_err());
-        assert!(shell::read_borg_txt_setting(&root, "borg_plan").is_err());
+        assert!(shell::borg_txt_value_at(&path, "borg_plan").is_err());
+        assert!(shell::borg_txt_value_at(&root, "borg_plan").is_err());
         std::fs::remove_file(path).unwrap();
         std::fs::remove_dir(root).unwrap();
     }

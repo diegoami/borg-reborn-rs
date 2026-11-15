@@ -2,6 +2,84 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
+
+- Main advanced through #308 to 820140e0 while M13 sync CI was running.
+  Preserve its plan implementation, qualified evidence and handover history.
+  Regenerate indexes rather than selecting one conflicting lineage.
+- Remove the duplicate/lossy plan file readers. Plan and shell settings now
+  share P's strict reader and OS-byte path handling. Keep core environment
+  selection lazy: explicit original-core overrides do not read borg.txt;
+  environment plans on that core still fail, as do file plans when the
+  core itself is selected from the file. Native suites cover both contracts.
+- Combined validation passes: required Rust checks (328 core tests, four
+  ignored), 68 native engine tests (one skip), 45/45 M13 play parity and
+  deterministic summaries, 242,641 classified rows, original smoke/death
+  controls, and three policy-on controls. Fourteen fresh deaths reconcile;
+  2,547 archive cases verify. P342-PLAN-VALIDATION.md names exact identities
+  and limitations. Required CI is pending; #333 stays a separate draft.
+
+## 2026-11-15: synchronize M13 main with accepted P review (#342)
+
+- Owner authorized #331 promotion. GitHub rejected it after main advanced
+  through #332. Preserve both implementations through a checked sync;
+  #333 waits until this promotion gate is resolved.
+- M13 source merges automatically with P's shared strict file reader.
+  Retain both handover histories. Regenerate conflicting indexes from all
+  evidence; qualify main's 44 provisional dossiers, retaining original
+  directories under validation/m13/source-deaths. No legacy record is
+  replaced. P342-M13-DOSSIER-MAP.json records source and qualified paths.
+- Combined validation passes: 45/45 M13 play-log triples and deterministic
+  summaries, 242,641 classified rows, three policy-on controls, original
+  smoke/save-load fixture, required Rust and 60 engine tests (one skip).
+  Fourteen fresh deaths reconcile; 2,523 archive cases verify. Exact build
+  and limitations: P342-VALIDATION.md. Required sync CI is pending.
+- The prior review receipt names its old exact head; record a fresh pin
+  and the integration evidence for the owner-authorized promotion.
+
+## 2026-11-15: review documentation follow-up (#319)
+
+- Reflow P295/P296/P299 reports, restore missing spaces and make immutable
+  hashes copyable. Values, revisions and dossier refs remain unchanged.
+  #307 PR prose was already corrected before its authorized promotion.
+- Describe existing lexical behavior: stopscared trims its parsed argument;
+  budget integers reject surrounding whitespace. Empty aliases differ.
+  Rewrap the complete ERRANDS.md configuration block. No parser, profile,
+  default or game/build input changes.
+- Diff/whitespace and immutable-value checks pass. This documentation task
+  reuses #317/#318 evidence; required CI gates track-p integration. Then
+  stop for owner-selected milestone review before main.
+
+## 2026-11-15: qualify imported validation dossiers (#318)
+
+- Keep the accepted #307 archive unchanged. New historical imports use
+  deterministic full package hashes; original record bytes and every payload
+  remain retained, with receipts. Numeric IDs are provisional outside the
+  cemetery-owned canonical registry. Native export/registry ownership stays
+  in borg-cemetery; no external write or alternative exporter is introduced.
+- Qualify the ten #317 packets using P318-DOSSIER-MAP.json. Legacy inventory
+  freezes all 2,455 accepted cases. CI rejects new bare IDs, altered legacy
+  records/payload hashes and damaged qualified packages. See DOSSIER-IMPORT.md.
+- Importer tests cover concurrent imports, duplicate provenance, idempotence,
+  source/payload integrity and independence counts. All 87 tool and 19
+  script tests pass; 2,465 archive packets verify. Real overlapping P/R
+  D2446 imports coexist in an isolated registry. Ten deaths reconcile with
+  the actual #317 BUILD_ID; source hash is unchanged. See P318-VALIDATION.md.
+
+## 2026-11-15: owner accepted #307; strict file reads (#317)
+
+- Owner instructed "ok merge and do the follow ups". #307 merged into
+  main at b58e7b44. Future #317–#319 promotion remains separately gated.
+- Treat only a missing borg.txt as absent. Diagnose other I/O/UTF-8 errors
+  with file context and exit status 2 when configuration is consulted.
+  The parameter loader shares that policy; Unix paths retain OS bytes.
+- Preserve lazy environment precedence and valid/missing-file defaults.
+  Document fatal re-entry behavior rather than claiming safe live reload;
+  subprocess reader re-entry and native startup paths are tested separately.
+- Local validation passes: full 45-case v12 parity, 295,464 trace rows,
+  original smoke/fixture, 59 engine tests (one skip), required Rust checks
+  and script/tool tests. Ten deaths retained as D2476–D2485; reconciliation
+  passes. Exact build and limitations: P317-VALIDATION.md. CI gates merge.
 ## 2026-11-15: #308 re-review accepted; integration conflicts tracked
 
 - Re-review at exact 0030b101 accepts the POC in isolation and confirms CI.
@@ -138,23 +216,23 @@
 ## 2026-11-15: sweep provenance and catalogue assembly (#299)
 
 - Stacked on #296; documentation-only follow-up, excluded from #292's
-  authorized promotion. Correct stale1f5eb966 source hash for specimen
-  2ec1f250 to the actualcb48d943 hash, verified in a clean detached tree.
+  authorized promotion. Correct stale 1f5eb966 source hash for specimen
+  2ec1f250 to the actual cb48d943 hash, verified in a clean detached tree.
 - Name both catalogue fragments and the separate experiment manifest,
   their assembly order and shared handoff revision; distinguish that
   documentation pin from the runtime specimen pin. The profile filename
   was already present, so qualify review292 F5's stronger claim.
-- Actual pinned-zoo static validation expands384 cells with128/900 disjoint
+- Actual pinned-zoo static validation expands 384 cells with 128/900 disjoint
   assignments. No runtime/profile/endpoint/sample-size or source-pin
   change, measured run, external repository write or dispatch occurs.
 
 ## 2026-11-15: budget validation complete (#296)
 
-- Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
-  rows, original smoke3/3/fixture,55 engine tests (one skip),156+4+5
-  original/143 core tests (one ignored), Clippy/formatting and19/78 Python
+- Combined source aed27276 passes full 45/45 v12 play parity, 295,464 named
+  rows, original smoke 3/3/fixture, 55 engine tests (one skip), 156+4+5
+  original / 143 core tests (one ignored), Clippy/formatting and 19/78 Python
   tests. Six paired valid-budget cases match #295 byte for byte.
-- Preserve ten natural deaths atD2466–D2475; reconciliation passes with
+- Preserve ten natural deaths at D2466–D2475; reconciliation passes with
   actual build identity. P296-VALIDATION.md records intentional invalid-
   input changes, finite-budget semantics and infrastructure/test retries.
 - Integrate into track-p after required CI, then stop for separate owner
@@ -179,9 +257,9 @@
 
 ## 2026-11-15: stopscared validation complete (#295)
 
-- Source27d7f453 passes full45/45 v12 play parity,295,464 classified rows,
-  original smoke3/3/fixture,53 engine tests (one skip),155+4+5 original/
-  143 core tests (one ignored), Clippy/formatting and19/78 Python tests.
+- Source27d7f453 passes full 45/45 v12 play parity, 295,464 classified rows,
+  original smoke 3/3/fixture,53 engine tests (one skip),155+4+5 original/
+  143 core tests (one ignored), Clippy/formatting and 19/78 Python tests.
   Three valid fear-setting controls match synchronized base byte for byte.
 - Preserve both source variants' ten deaths. Explicit ID map retains
   pre-loop8f45f46b records atD2446–D2455; final deaths areD2456–D2465.
@@ -203,9 +281,9 @@
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
-- Combined source15289917 passes full45/45 v12 play parity,295,464 named
-  trace rows, original smoke3/3,50 engine tests (one local environment
-  skip), required Rust checks (154+4+5 original/143 core),19/78 Python
+- Combined source15289917 passes full 45/45 v12 play parity, 295,464 named
+  trace rows, original smoke 3/3,50 engine tests (one local environment
+  skip), required Rust checks (154+4+5 original / 143 core),19/78 Python
   tests and vendoring. P292-SYNC-VALIDATION.md records exact builds/limits.
 - D2436–D2445 retain the final ten natural deaths; earlier sourcec4a38683
   deathsD2423–D2432 also reconcile. Nine imported recorder/loop dossiers
@@ -221,8 +299,8 @@
 - Its three additional independently allocated dossiers are imported as
   D2433–D2435 with unchanged source/attempt identities. The same explicit
   mapping now covers all nine imported recorder/loop cases.
-- Pre-loop sourcec4a38683 passed full45/45 v12 play parity,295,464 named
-  rows, original smoke3/3 and47 engine tests (one skip); ten deaths are
+- Pre-loop sourcec4a38683 passed full 45/45 v12 play parity, 295,464 named
+  rows, original smoke 3/3 and47 engine tests (one skip); ten deaths are
   D2423–D2432. Disk exhaustion prevented the first fixture launch, then a
   fresh retry passed. Only regenerable caches were cleared.
 - Validate the combined source before #292's authorized promotion. Later
@@ -263,9 +341,9 @@
   cases but failed the pre-existing shopping fixture, which uses an empty
   string to disable errands. Preserve that legacy empty alias; the test
   itself is unchanged. Its full-suite evidence remains with its own build.
-- Corrected sourcecb48d943 atc259f69c passes full45/45 v12 play parity,
-  295,464 named rows, trace on/off, original smoke3/3, all45 engine tests
-  (one local environment skip), required Rust checks and19/78 Python tests.
+- Corrected sourcecb48d943 atc259f69c passes full 45/45 v12 play parity,
+  295,464 named rows, trace on/off, original smoke 3/3, all45 engine tests
+  (one local environment skip), required Rust checks and 19/78 Python tests.
   P269-VALIDATION.md records both candidates and the compatibility limits.
 - D2399–D2406 preserve the first candidate's eight full-suite deaths;
   D2407–D2416 preserve ten corrected-build deaths. Both temporary
@@ -423,11 +501,11 @@
 - Document implicit factor-1 source citations without moving them to the
   adjacent factor-3 branch, qualify RNG preservation at defaults, remove
   a stale retained-literal claim, and document strict name casing.
-- Validated source `4182670d` at implementation pin `132aeb26`: full45/45
-  v12 play parity,295,464 named rows, trace on/off, original smoke3/3,
+- Validated source `4182670d` at implementation pin `132aeb26`: full 45/45
+  v12 play parity, 295,464 named rows, trace on/off, original smoke 3/3,
   native profile5/5, engine42 (one skip), required Rust and17/70 Python
   checks pass. P-REVIEW-VALIDATION.md records limits and input changes.
-- Reproduced old-source original-core full45/45; preserved30 new deaths
+- Reproduced old-source original-core full 45/45; preserved30 new deaths
   D2359–D2388 plus existing D2355. Updated build's ten deaths are
   D2389–D2398; both registries reconcile. Actual build identities retained.
 - Sweep prompt/examples now pin `132aeb26`, with pinned-catalogue validation.

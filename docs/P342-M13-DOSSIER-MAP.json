@@ -1,0 +1,182 @@
+{
+  "cases": {
+    "D2476-rust-seed1011": {
+      "original_directory": "docs/validation/m13/source-deaths/D2476-rust-seed1011",
+      "qualified_id": "D0000-qa67fe2c6e2edab422228eba1db94f6ce901217dcf6089163376e3500a3e3cbda"
+    },
+    "D2477-rust-seed1020": {
+      "original_directory": "docs/validation/m13/source-deaths/D2477-rust-seed1020",
+      "qualified_id": "D0000-q93bc1564d131e93915534f38628cb5c4dfc757b08b15168a9e2233227a7f73e1"
+    },
+    "D2478-rust-seed1021": {
+      "original_directory": "docs/validation/m13/source-deaths/D2478-rust-seed1021",
+      "qualified_id": "D0000-qf6de35221d1396436c4f6c036b246aa791805aa919c95e2add9431bcf6d5a8fe"
+    },
+    "D2479-rust-seed1022": {
+      "original_directory": "docs/validation/m13/source-deaths/D2479-rust-seed1022",
+      "qualified_id": "D0000-q44e3afbe234ad9f5044afd76e972536df068ea6a32ec14cb48383c38a7d0337f"
+    },
+    "D2480-rust-seed1023": {
+      "original_directory": "docs/validation/m13/source-deaths/D2480-rust-seed1023",
+      "qualified_id": "D0000-q96b67d3320c9b359c7b689a5147632d9c549210130ab749b39adf6fb99d12531"
+    },
+    "D2481-rust-seed1043": {
+      "original_directory": "docs/validation/m13/source-deaths/D2481-rust-seed1043",
+      "qualified_id": "D0000-q2e0766bd07a76e7ac79a963c280011a675c252d294f548efd93a03863ca3c264"
+    },
+    "D2482-rust-seed1050": {
+      "original_directory": "docs/validation/m13/source-deaths/D2482-rust-seed1050",
+      "qualified_id": "D0000-qbe872ee1aaadca9c31c096ef29b5c674b98217be11a78fb464839bf9d3ccbcdf"
+    },
+    "D2483-rust-seed1062": {
+      "original_directory": "docs/validation/m13/source-deaths/D2483-rust-seed1062",
+      "qualified_id": "D0000-qd812ef5bdb264dda7b407f876ddee84382a7cff1cab9befd553f0fce7ff62b5a"
+    },
+    "D2484-rust-seed1072": {
+      "original_directory": "docs/validation/m13/source-deaths/D2484-rust-seed1072",
+      "qualified_id": "D0000-q2f6d75c9ad9ae71bdbbf1afa990d4fca430ead4b4afdd6b1659c0a39c725e39a"
+    },
+    "D2485-rust-seed1074": {
+      "original_directory": "docs/validation/m13/source-deaths/D2485-rust-seed1074",
+      "qualified_id": "D0000-q79a20708fac8de0ff5cb261d3d3148ee44e132ddd0fb0350b54b20579d89bf0f"
+    },
+    "D2486-rust-seed1073": {
+      "original_directory": "docs/validation/m13/source-deaths/D2486-rust-seed1073",
+      "qualified_id": "D0000-q567246050b5fef9f902431aa554ecc8c7bb3cc230d56020f1ba8b7b5cef05d25"
+    },
+    "D2487-rust-seed1084": {
+      "original_directory": "docs/validation/m13/source-deaths/D2487-rust-seed1084",
+      "qualified_id": "D0000-q90a04aee81b0d3625f6c594d147eca1c59633f2e8774dcdf44bbfbfa6818d817"
+    },
+    "D2488-rust-seed102": {
+      "original_directory": "docs/validation/m13/source-deaths/D2488-rust-seed102",
+      "qualified_id": "D0000-q28ddc3854e374ab92131446570646d905d98a4f53b65f2bd4a05e09fd59c0a5f"
+    },
+    "D2489-rust-seed1004": {
+      "original_directory": "docs/validation/m13/source-deaths/D2489-rust-seed1004",
+      "qualified_id": "D0000-q0f1504159c9f5b6e195b6c54339c87b057dd32142da203e05a1b254398fc47dc"
+    },
+    "D2490-rust-seed1010": {
+      "original_directory": "docs/validation/m13/source-deaths/D2490-rust-seed1010",
+      "qualified_id": "D0000-q2ff4e1a83d550d0e1d1dabdee9e1e16ab28025720ea14da80d9d4b0eabdcad94"
+    },
+    "D2491-rust-seed1011": {
+      "original_directory": "docs/validation/m13/source-deaths/D2491-rust-seed1011",
+      "qualified_id": "D0000-qa2e3db676c182d564fdfb0c93ba6f4f35d6ed68e5696c547c4e0737f9aa027e7"
+    },
+    "D2492-rust-seed1012": {
+      "original_directory": "docs/validation/m13/source-deaths/D2492-rust-seed1012",
+      "qualified_id": "D0000-q5df0ec55c6ecc8336a7da03c59227fbd342e9b60d55eb921b151045b5415f47b"
+    },
+    "D2493-rust-seed1013": {
+      "original_directory": "docs/validation/m13/source-deaths/D2493-rust-seed1013",
+      "qualified_id": "D0000-qbd724d6ecbbe7f5d4d37077607072db769b0eaf1b3e7b4a1e76ea142625a4d27"
+    },
+    "D2494-rust-seed1014": {
+      "original_directory": "docs/validation/m13/source-deaths/D2494-rust-seed1014",
+      "qualified_id": "D0000-q603eefb93c1b619ffad61b8b3718499ccd9c0e83643700e8258a0fb4f5e419e6"
+    },
+    "D2495-rust-seed1020": {
+      "original_directory": "docs/validation/m13/source-deaths/D2495-rust-seed1020",
+      "qualified_id": "D0000-qf57c0c4a92b03e58ab28f3ea2caf096b8c94d5604e50dd3609d9f948a51e63b7"
+    },
+    "D2496-rust-seed1021": {
+      "original_directory": "docs/validation/m13/source-deaths/D2496-rust-seed1021",
+      "qualified_id": "D0000-qe3b8069af28583a352b904ad8cb3a5f5d53ac3c30418c75e1dc2f76db7572aa8"
+    },
+    "D2497-rust-seed1022": {
+      "original_directory": "docs/validation/m13/source-deaths/D2497-rust-seed1022",
+      "qualified_id": "D0000-q77b776cb192708b8aa1d90e73911b1ac42e527fcad9b9562dd2343ef00ead82a"
+    },
+    "D2498-rust-seed1030": {
+      "original_directory": "docs/validation/m13/source-deaths/D2498-rust-seed1030",
+      "qualified_id": "D0000-qd58c526d44a70c1f7892aed80972c3a298fbcd47f724ef636a2697036d12484e"
+    },
+    "D2499-rust-seed1031": {
+      "original_directory": "docs/validation/m13/source-deaths/D2499-rust-seed1031",
+      "qualified_id": "D0000-qb237aa07b661bff1b26b93b9b59ac606318b26914399d3f7fbf07578f1d93f1b"
+    },
+    "D2500-rust-seed1032": {
+      "original_directory": "docs/validation/m13/source-deaths/D2500-rust-seed1032",
+      "qualified_id": "D0000-q8d1db704167864be8187e44e9aedbaf9d719c6720d58a8a36aa577615dccb885"
+    },
+    "D2501-rust-seed1033": {
+      "original_directory": "docs/validation/m13/source-deaths/D2501-rust-seed1033",
+      "qualified_id": "D0000-q037883e0f5a193f8cacb1f243e4b23d05d99f0a3c0e849960cfed4c58d8a17c2"
+    },
+    "D2502-rust-seed1040": {
+      "original_directory": "docs/validation/m13/source-deaths/D2502-rust-seed1040",
+      "qualified_id": "D0000-q8a8de0041e50e03410dbcdd0440bb6478804819ef66a6bd1b4ba7af59cd02bce"
+    },
+    "D2503-rust-seed1023": {
+      "original_directory": "docs/validation/m13/source-deaths/D2503-rust-seed1023",
+      "qualified_id": "D0000-qe29f2acafede037064fa79fad28f37a64996d74614e8a3a55f2370b1875e6d0d"
+    },
+    "D2504-rust-seed1034": {
+      "original_directory": "docs/validation/m13/source-deaths/D2504-rust-seed1034",
+      "qualified_id": "D0000-q08f452c91ad70b49bc7d7202f853d5279a961a2ac882ab7300c79182840e4071"
+    },
+    "D2505-rust-seed1041": {
+      "original_directory": "docs/validation/m13/source-deaths/D2505-rust-seed1041",
+      "qualified_id": "D0000-qcab18507ac667bb0e8138817ccd3362ddca673e22acce5b7c51406c5929941bb"
+    },
+    "D2506-rust-seed1042": {
+      "original_directory": "docs/validation/m13/source-deaths/D2506-rust-seed1042",
+      "qualified_id": "D0000-q0e328c061321143eddd89ece8535f9de3c8f07fd5b35e1d70c45e2fd74c2c25d"
+    },
+    "D2507-rust-seed1043": {
+      "original_directory": "docs/validation/m13/source-deaths/D2507-rust-seed1043",
+      "qualified_id": "D0000-qd64d37136beb83db5e9089682a8c28ba70480e5421c5227e4ceda3daf6761f77"
+    },
+    "D2508-rust-seed1044": {
+      "original_directory": "docs/validation/m13/source-deaths/D2508-rust-seed1044",
+      "qualified_id": "D0000-q097e17ad73ae08b8c2e92895c796a80e066f55e4eb7f76f27a2c2834fc1be77b"
+    },
+    "D2509-rust-seed1050": {
+      "original_directory": "docs/validation/m13/source-deaths/D2509-rust-seed1050",
+      "qualified_id": "D0000-q91ae09ae21383cb9664b00bf41ac1c781d70001db593922bca9b081e8f13bccd"
+    },
+    "D2510-rust-seed1053": {
+      "original_directory": "docs/validation/m13/source-deaths/D2510-rust-seed1053",
+      "qualified_id": "D0000-q09ff0b79ed6599f63f5531b1019224c9d86eb9f29d8a61ed384a43f9800339ac"
+    },
+    "D2511-rust-seed1062": {
+      "original_directory": "docs/validation/m13/source-deaths/D2511-rust-seed1062",
+      "qualified_id": "D0000-q0b6f97615af71d38ee7d18ad88e09193b187c98d507480f9870029d1dcb15723"
+    },
+    "D2512-rust-seed1064": {
+      "original_directory": "docs/validation/m13/source-deaths/D2512-rust-seed1064",
+      "qualified_id": "D0000-q9a81296fb83a802dac74b64550d22149137df9212d21efbfd7fd503444b1677c"
+    },
+    "D2513-rust-seed1070": {
+      "original_directory": "docs/validation/m13/source-deaths/D2513-rust-seed1070",
+      "qualified_id": "D0000-qf18d3fb41254f4d919236b4baafb490123d33dcda70119968cbfeeb46661c423"
+    },
+    "D2514-rust-seed1063": {
+      "original_directory": "docs/validation/m13/source-deaths/D2514-rust-seed1063",
+      "qualified_id": "D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc"
+    },
+    "D2515-rust-seed1073": {
+      "original_directory": "docs/validation/m13/source-deaths/D2515-rust-seed1073",
+      "qualified_id": "D0000-q1eca49bdb430a704bb1ed22a1de383ca66427430ccf83db150c5ec563e6ae82f"
+    },
+    "D2516-rust-seed1074": {
+      "original_directory": "docs/validation/m13/source-deaths/D2516-rust-seed1074",
+      "qualified_id": "D0000-qa777ca43de7df3883d17deace7ba537d6d07fd367eab66f6365d24f07f4ab66b"
+    },
+    "D2517-rust-seed1082": {
+      "original_directory": "docs/validation/m13/source-deaths/D2517-rust-seed1082",
+      "qualified_id": "D0000-qe04f36850ca7aa16fa377ebbcfd6e9b7f9c0be4e108372c440d7f1968af2dc0c"
+    },
+    "D2518-rust-seed1083": {
+      "original_directory": "docs/validation/m13/source-deaths/D2518-rust-seed1083",
+      "qualified_id": "D0000-q3c88761445da58e827077c3f18155e83c977f047589b9565176803e5d33b3c47"
+    },
+    "D2519-rust-seed1084": {
+      "original_directory": "docs/validation/m13/source-deaths/D2519-rust-seed1084",
+      "qualified_id": "D0000-q23a309cd4bd9014b7926411262c1aad9712873235d33bcda3f59fb85c10f0c71"
+    }
+  },
+  "original_commit": "70b48cc10047f394114500eec6747e5fce486070",
+  "schema": "borg-reborn-rs/dossier-map@1"
+}

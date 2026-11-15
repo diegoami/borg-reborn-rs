@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0006-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 23423,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "menu",
+    "git_rev": "0a0c23a1d52ad9da4923844b7fd899a83241e8f0",
+    "git_dirty": "yes",
+    "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9",
+    "binary_sha256": "0bd996e1cc05a16873b49760c171afc3c5b147305cd1307244eb09828cd3cce2",
+    "borg_txt_sha256": "f76f524bcc83bd20c23f45c53610e0a24abce78f90aac3cde9cb05cac0807910",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 2065
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p342-plan-full/full-4-necro-3",
+      "result_sha256": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+      "raw_sha256": {
+        "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+        "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+        "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+      },
+      "source_commit": "0a0c23a1d52ad9da4923844b7fd899a83241e8f0",
+      "binary_sha256": "0bd996e1cc05a16873b49760c171afc3c5b147305cd1307244eb09828cd3cce2"
+    }
+  ],
+  "encounter_family": "start-1bfb8f89a1f87713a5abcc15c5a1c5be32c37006a45577f655dc2fc05eeefa3d",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "53886922bdc901570f850854b277974bf1b9672785d4f33210ff82bc43d05ecf",
+    "config.txt": "bb2819f08e06ac516013abbe157f7a03710a58cc3daee8b5fb80ff7fa60ab2ed",
+    "depths.json": "40295dae61032bfa0aeeb60d2306695f0d1bbf40ca61243717a97585b53051ab",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "66300ba47594d7c5e5349d8ff26316aa15fe564f08d1bcd98442510a9e279f22",
+    "trace-core-tail.jsonl": "f489e854b871a1c13654fd79d76676637ab91768a037811298cf56f99d303f58"
+  },
+  "investigation": null,
+  "issue": null
+}

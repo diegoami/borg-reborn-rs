@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-6-rogue-4",
+      "raw_sha256": {
+        "keys.log": "9c86acff4be283bef416d925b56aaabfa797328b97c75c2fe573dac04fe71691",
+        "messages.log": "e284c75ae5e9f226cb31301a0184f46162916aa3d840c7ab78d80e065169015e",
+        "state.log": "63db7b2b5ca2831b052a8a5e55ef3fd389086f745a4862b79878a53cc4c5fcef"
+      },
+      "result_sha256": "9c86acff4be283bef416d925b56aaabfa797328b97c75c2fe573dac04fe71691",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "Kobold Rogue",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 475
+  },
+  "encounter_family": "start-3fffa43370aa7a8f256471b4bc093b4eea4cd22a01b8d79b80fd969088f26cd8",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "00d4eeecaa968ec1acbdbf2db85c48310f3c2e519853e52e74f425562f404385",
+    "depths.json": "49f49d3b305ffbbfb4b052cf6b7bf7dc25ebb492b4a29b5dc54b49ca2aa6694a",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "3c809ba0a09d0ece8861bc97d541de92ec667d7597458adc23d8060e978b0dd1",
+    "trace-tail.jsonl": "50bd550ef248bfef774fc507d55f3fdb078ea4cf8c9799424656812269ec43e1"
+  },
+  "id": "D0000-q9a81296fb83a802dac74b64550d22149137df9212d21efbfd7fd503444b1677c",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "c7240527cc69ff930369ae5ac13b75242d4e5e0b7b0e5743153ec8bbe78b174c",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1064,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 10,
+    "turn": 4601
+  }
+}

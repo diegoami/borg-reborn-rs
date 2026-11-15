@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "0bd996e1cc05a16873b49760c171afc3c5b147305cd1307244eb09828cd3cce2",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p342-plan-full/full-5-paladin-0",
+      "raw_sha256": {
+        "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+        "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+        "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+      },
+      "result_sha256": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+      "role": "original",
+      "source_commit": "0a0c23a1d52ad9da4923844b7fd899a83241e8f0"
+    }
+  ],
+  "character": "Dwarf Paladin",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1806
+  },
+  "decision_trace": null,
+  "encounter_family": "start-039b7ecd74e2ff18c5e088388687452e022ea691f01f5a89d61a7a316374b5d9",
+  "files_sha256": {
+    "build.json": "53886922bdc901570f850854b277974bf1b9672785d4f33210ff82bc43d05ecf",
+    "config.txt": "b0c7c594a90d0cce68639b42e5e2cc94786a19939b31928a4997f21c4cf49226",
+    "depths.json": "b7433563472fc1a603e0e8b7b10e57faa310ddc97e06191c6fe44545bb3a58f6",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "7dff71d1e759f7803c76a6a7c931e657b93f30fd3a51d1a1ce765348506ac45b",
+    "trace-core-tail.jsonl": "16aa3d98b6409c2da3be5d04b7858c339c741985c4c27c83ef5143446539916b"
+  },
+  "id": "D0000-q777253e162da9191ee3e048182a32423bea811a36e34864976aedf75105d8e59",
+  "identity": {
+    "binary_sha256": "0bd996e1cc05a16873b49760c171afc3c5b147305cd1307244eb09828cd3cce2",
+    "borg_txt_sha256": "bdf974aeb5d0b808057ada9ab76f74d8798ce1e8fd53e6cc5754631dc94e4d75",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "0a0c23a1d52ad9da4923844b7fd899a83241e8f0",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1050,
+    "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a grey mold",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a grey mold",
+    "class_idx": 5,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 5,
+    "turn": 24096
+  }
+}

@@ -90,16 +90,18 @@ The file is loaded and validated once during core initialization, before
 policy decisions; the actual class must resolve to its own or default section
 before the preserved-plan acknowledgement is written. This is checked again
 on core reinitialization for another character. The chosen class is the actual game character's class.
-A requested plan with the original reborn backend is rejected rather than
-ignored. A nonempty automatic `BORG_ERRAND`/`borg_reborn_errand` conflicts with
+An environment-requested plan with the original reborn backend is rejected.
+A file-selected original core also rejects a file plan. Explicit
+`BORG_CORE=reborn` retains lazy environment priority and does not consult
+borg.txt, including its plan setting; use the vendored core for file plans. A nonempty automatic `BORG_ERRAND`/`borg_reborn_errand` conflicts with
 the plan. The POC also rejects `BORG_ERRAND_BUDGET` except absent, a zero integer or
 exact `none` (no whitespace), matching the accepted main parser; use the bounded
 native diagnostic driver below. Unreadable/non-UTF-8 borg.txt is diagnosed when plan selection is consulted,
 not treated as an absent plan. Missing borg.txt retains absent defaults.
 Configuration errors exit 2 at Borg initialization, including in interactive
 play: this does not claim unsaved-game recovery. Use the bounded diagnostic
-driver before enabling edited settings in a live game. The broader startup/
-re-entry work remains tracked in #317. No hot reload or parameter mutation is provided.
+driver before enabling edited settings in a live game. The shared strict-reader startup/re-entry contract is documented in
+ERRANDS.md (#317); plan selection uses that same reader. No hot reload or parameter mutation is provided.
 Existing parameters remain in borg.txt; see [CALIBRATION.md](CALIBRATION.md).
 
 ## What runs
