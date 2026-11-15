@@ -17,6 +17,37 @@
   track-p; #272's RNG qualification was already implemented in #280.
 - This sync must pass required CI before integration; then perform the
   owner-authorized #260 merge and record its actual merge commit on GitHub.
+## 2026-11-15: first guided shopping incident; inventory replacement #293
+
+- Owner observed no purchases and requested replacing the inherited town
+  inventory management. Follow-up #293 records the evidence and requested
+  direction; no inventory/caution policy change has been made yet.
+- The Dwarf Priest's round stored Recall and gave away both Cure Serious
+  Wounds potions under the no-selling option before selecting torches.
+  At turn 341 a distant battle-scarred veteran triggered the core's
+  leaving/fleeing flags; `/shopping` aborted at full HP and danger 0.
+  A second invocation aborted at the same turn. Inventory choices and
+  town-threat interruption are separate concerns.
+- Original evidence is preserved under the guided session's
+  `incidents/shopping-20261115T122211Z/`. The original live game was not
+  changed. `reproduction-from-last-frame-v3/` uses the frozen executable
+  and a copied last-frame native snapshot with its stored RNG: it loads
+  the same character and reproduces the abort at turn 341 without advancing
+  a turn. This is a fresh-Borg-state reproduction, not a verified replay
+  of the still-live original recording. No engine/recorder fix is implied.
+
+## 2026-11-15: local reconciliation with PR #282
+
+- Local main advanced to `811f338a`. Both incoming handover entries and
+  the local guided-session/launcher work are preserved; the handover's
+  concurrent insertions were combined. RULES 12's cemetery ownership and
+  the local guided-debugging rule 26 coexist.
+- Installed the exact `death-tools-pin.txt` revision, `33c375527a8e`, in
+  ignored `vendor/borg-cemetery`, where the compatibility pointers discover
+  it. No sibling cemetery checkout was present. The 78 tools tests and 19
+  scripts tests pass; shell syntax and diff checks pass.
+- Corrected tools/README.md's stale default export directory. The guided
+  recording and frozen executable were preserved; no game was restarted.
 
 ## 2026-11-15: owner-requested death-tool ownership (#273)
 
@@ -145,6 +176,28 @@ actual locations; reconciliation does not copy evidence.
   `docs/REVIEW-260-WORKFLOW.md`, `docs/REVIEW-266-R1.md`, with the
   findings posted on #259, #260 and #266 and filed as #269–#272.
 
+## 2026-11-15: owner-guided recorded debugging workflow
+
+- Active guided session: `.angband-reborn/guided/20261115T105724Z-ErrandDebug/`.
+  `session.json` records private save/recording paths, environment, frozen
+  executable hash and PIDs (recorder 99085, game 99087 when launched).
+  It starts at fresh birth; the owner chooses the character and errands.
+  Preserve this session and inspect its manifest/process before restarting.
+- A fresh X11 birth, `/town`, explicit save, save-and-quit (Escape at the
+  final prompt) and isolated-profile replay verified all recorder streams.
+  Receipt and original evidence are under the session's
+  `evidence/gui-qualification/`. No new engine/recorder patches were made.
+  Recorder changes, if needed, go through PRs in angband-recorder per owner.
+- RULES 26 and GUIDED-DEBUGGING.md define the requested workflow: the agent
+  launches a recorder-enabled private session, the owner reports problems
+  and saves if possible, and the agent collects evidence and reproduces.
+- Preserve the original build/configuration/starting save and recording,
+  verify the actual incident save, and collect live evidence if saving or
+  input fails. A save alone does not restore Borg process memory.
+- The qualified route is a short fresh-birth GUI session; arbitrary loaded
+  saves and long human sessions have not yet been qualified here. The
+  per-session manifest plus frozen runtime preserve the setup for diagnosis.
+
 ## 2026-11-15: owner-requested /shopping (#208)
 
 - Added `/shopping`: a town-only round of the vendored core's buying,
@@ -170,6 +223,21 @@ actual locations; reconciliation does not copy evidence.
   borg-core tests and the vendor check pass. The corner freeze remains
   undiagnosed; no population experiment or GUI shopping session was run.
 
+## 2026-11-15: owner-requested watched-game save fix
+
+- `watch-borg.sh` now passes the data directories before `-u`: upstream
+  resolves the save filename immediately when it parses `-u`, so the old
+  order selected the default build-tree save path instead of the persistent
+  `.angband-reborn/save` directory. The owner reported a save failure and
+  a new character after restarting; no recent matching save was found.
+- Added `--name NAME` and `--help`; the positional name and default
+  `RustBorg` still work. Use the same name to reload a character.
+- Validation: `bash -n`, `git diff --check`, and isolated launcher checks
+  with stubbed build/game commands pass for default, positional and named
+  launches, paths/names with spaces, save-directory argument ordering,
+  invalid arguments and build-only. A live GUI save/reload was not tested.
+- This fixes launch arguments; the reported corner freeze remains
+  undiagnosed. The nested-entry diagnostic alone does not prove its cause.
 
 
 ## 2026-11-15: owner changes P integration to track-p (#257)

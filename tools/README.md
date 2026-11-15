@@ -24,10 +24,11 @@ To watch the Borg play: `./watch-borg.sh` at the repository's root.
 
 1. Check out the dossier's `git_rev` (in `record.json`) if the current
    build is another source, and run `BORG_IMPL=rust harness/build.sh`.
-2. `tools/rerun-death.py docs/deaths/DXXXX-... OUT --checkpoint-every 500`
-   (the dossier's directory is `$BORG_DEATH_RECORDS_DIR`, default
-   `docs/deaths/`; the canonical copy lives in
-   [borg-cemetery](https://github.com/diegoami/borg-cemetery)).
+2. `tools/rerun-death.py /path/to/borg-cemetery/deaths/DXXXX-... OUT --checkpoint-every 500`.
+   Use the actual dossier directory: new exports default to
+   [borg-cemetery](https://github.com/diegoami/borg-cemetery)'s `deaths/`,
+   or the explicit `BORG_DEATH_RECORDS_DIR` override. Historical
+   `docs/deaths/DXXXX-...` dossiers remain usable at their existing paths.
 3. Read the rerun's trace and observations up to the death, or load a
    checkpoint before it.
 4. Write the findings into the dossier's `assessment.json` and `report.md`,
