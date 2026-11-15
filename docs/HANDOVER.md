@@ -15,6 +15,9 @@
   allocated dossier IDs collided: full main dossiers D2356/D2357/D2358 are
   retained here as D2373/D2374/D2375, with integration-origin.json. Track R
   dossiers and all original build/source hashes remain intact.
+- First refresh CI recorded a cave-spider death at turn 18903. Its exact
+  build/source evidence is preserved as D2376 from run 43707564133; no death
+  gate was weakened.
 - R2 source report: no new source deaths; borg-zoo moves 7109a026 to
   f5043c96. Its catalogue gains town shopping profiles/specimens/suites and
   extends explicit mode guards to borg-rs. Reborn's single play mode remains
