@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2239-rust-seed1063",
+  "run_kind": "harness",
+  "character": "Human Rogue",
+  "raw_cause": "a cave orc",
+  "terminal": {
+    "cause": "a cave orc",
+    "dead": true,
+    "depth": 8,
+    "max_depth": 8,
+    "level": 8,
+    "turn": 89961,
+    "race_idx": 9,
+    "class_idx": 6
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1063,
+    "flags": "-",
+    "git_rev": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+    "git_dirty": "no",
+    "source_sha256": "aafd68eace2714f8c5d06b77b7da9d7c30f2f485970ebb6f27f9528f61fd6094",
+    "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d",
+    "borg_txt_sha256": "253a0af1d5f14b7c3279f284d2acb89f224e3f43561b38a0a5389b66ade30d87",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out4/parity/full-6-rogue-3",
+      "result_sha256": "8bbfc012915dad0b1a8b002d96fc9f55c5465147674999e3cd7d311b10036ee2",
+      "raw_sha256": {
+        "keys.log": "8bbfc012915dad0b1a8b002d96fc9f55c5465147674999e3cd7d311b10036ee2",
+        "messages.log": "4b28d9b1241365d15b0359f9681a05505750e4dfaf0a8a92375bedd43274eda7",
+        "state.log": "876962233b43252591692fd71f6a75ec58e8bd2c347a5fb40bbb51d81ebd7b7b"
+      },
+      "source_commit": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+      "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d"
+    }
+  ],
+  "encounter_family": "start-524f804262c223cb7aa429e46de142a159e55ed54e717c0e619da017ce5cf561",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7cd74ff91da5ded72caf53bdb85424de12bc36ad6a3f276be5df754c6bd56e00",
+    "config.txt": "27baa6c41542ff3c7479cd2f3e59191e5d669c4f2d0edd93bd7da7942baacbf5",
+    "depths.json": "56040fac9ab2f141b73115c044811ce63fb3e952bcab638dbe063201f2e54b46",
+    "params-core.json": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea",
+    "summary.json": "4081187b098fbeb45001bc400a3ce2f254aad4f54fa38b3156d47f510063c45d"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2237-rust-seed1050",
+  "run_kind": "harness",
+  "character": "Dwarf Paladin",
+  "raw_cause": "a grey mold",
+  "terminal": {
+    "cause": "a grey mold",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 24096,
+    "race_idx": 5,
+    "class_idx": 5
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1050,
+    "flags": "-",
+    "git_rev": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+    "git_dirty": "no",
+    "source_sha256": "aafd68eace2714f8c5d06b77b7da9d7c30f2f485970ebb6f27f9528f61fd6094",
+    "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d",
+    "borg_txt_sha256": "188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/tmp/claude-0/rr-out4/parity/full-5-paladin-0",
+      "result_sha256": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+      "raw_sha256": {
+        "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+        "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+        "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+      },
+      "source_commit": "3de87e3ee39c44095ea31cc13979713b2dc2c0de",
+      "binary_sha256": "4a5cfd26eb161676fc36f980fcc8dfb1057b9333e73acfe3c713d0c70122b56d"
+    }
+  ],
+  "encounter_family": "start-bc9a4165f583325b42e21281b34f8e6d633fa6ef8f4e929ed2953b932d3745bf",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7cd74ff91da5ded72caf53bdb85424de12bc36ad6a3f276be5df754c6bd56e00",
+    "config.txt": "190b520f417c4d79d24d4d992e581bd6d97ba335e0ebc6b5b9e5dc7848a07a66",
+    "depths.json": "b7433563472fc1a603e0e8b7b10e57faa310ddc97e06191c6fe44545bb3a58f6",
+    "params-core.json": "b45f67c67ee6b76a8da4b1130f20016b1b0929af4cd1f69450bac813cee0e8ea",
+    "summary.json": "068ffe3bbc5e5c787195a26401e466b8e548545f5b3b00c6dc2509835ddc743a"
+  },
+  "investigation": null,
+  "issue": null
+}
