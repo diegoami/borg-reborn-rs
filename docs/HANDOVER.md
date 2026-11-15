@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: sweep provenance and catalogue assembly (#299)
+
+- Stacked on #296; documentation-only follow-up, excluded from #292's
+  authorized promotion. Correct stale1f5eb966 source hash for specimen
+  2ec1f250 to the actualcb48d943 hash, verified in a clean detached tree.
+- Name both catalogue fragments and the separate experiment manifest,
+  their assembly order and shared handoff revision; distinguish that
+  documentation pin from the runtime specimen pin. The profile filename
+  was already present, so qualify review292 F5's stronger claim.
+- Actual pinned-zoo static validation expands384 cells with128/900 disjoint
+  assignments. No runtime/profile/endpoint/sample-size or source-pin
+  change, measured run, external repository write or dispatch occurs.
+
 ## 2026-11-15: budget validation complete (#296)
 
 - Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
