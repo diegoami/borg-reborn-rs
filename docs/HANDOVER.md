@@ -4,6 +4,19 @@
 
 ## 2026-11-15: working class-specific errand-plan POC (#305, PR #308)
 
+- Owner requested all-class candidate plans to level 50. The example now
+  explicitly covers all nine classes plus a default, exactly once per level
+  1–49, and hands back at 50. Early gates follow legacy class groups; later
+  shared intervals are labelled hypotheses. They are not calibrated or a
+  claim that any character will reach 50. Core readiness still overrides them.
+- A new data test checks all classes/levels and the 50 handover; all five
+  POC engine/data tests pass, and the real mage loaded the complete new file
+  through the relative borg.txt setting. Native source hash stays 3b5503a881fe.
+- Follow-up #320 covers post-50 stats/resists/equipment/readiness, town visit
+  frequency, equipment policy and longer-run design. Zoo #114 already owns
+  checkpoint/resume storage; linked it and added the plan/controller state
+  required to resume a continued life without double-counting samples.
+
 - Owner rescoped the draft to a POC in a separate errands_plan.txt. The
   implementation accepts [default] and class sections such as [mage],
   non-overlapping level ranges and only loop-levels. Ladder/trips aliases

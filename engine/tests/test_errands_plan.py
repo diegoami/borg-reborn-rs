@@ -20,6 +20,26 @@ class ErrandsPlanTest(unittest.TestCase):
         env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
         r=subprocess.run(['python3',str(ROOT/'tools/try-errands-plan.py'),'--plan',str(source),'--out',str(out),'--class',str(cls),'--seed',str(seed),'--turns',str(turns)]+(['--via-borg-txt'] if via else []),env=env,capture_output=True,text=True,timeout=40)
         return r,out
+    def test_shipped_plans_cover_all_classes_and_stop_at_50(self):
+        lines=(ROOT/'harness/profiles/borg-rs/errands_plan.txt').read_text().splitlines()
+        sections={};name=None
+        for line in lines:
+            if line.startswith('['): name=line[1:-1];sections[name]=[]
+            elif line.startswith('  ') and not line.startswith('    '):
+                sections[name].append(line.strip())
+        classes={'warrior','mage','druid','priest','necromancer','paladin','rogue','ranger','blackguard'}
+        self.assertEqual(set(sections),classes|{'default'})
+        def matches(condition,level):
+            tokens=condition.split()
+            if tokens[0]=='level':
+                value=int(tokens[2]);return level<=value if tokens[1]=='<=' else level==value
+            return int(tokens[0])<level<=int(tokens[-1])
+        for name,guards in sections.items():
+            for level in range(1,50):
+                self.assertEqual(sum(matches(g,level) for g in guards),1,(name,level))
+            self.assertFalse(any(matches(g,50) for g in guards),name)
+        self.assertNotEqual(sections['warrior'],sections['mage'])
+
     def test_default_and_class_override(self):
         for name,cls,seed,route in [('warrior',0,1010,'loop-levels 0 2'),('mage',1,1001,'loop-levels 0 1')]:
             r,out=self.run_poc(name,cls=cls,seed=seed,via=(name=='mage'))

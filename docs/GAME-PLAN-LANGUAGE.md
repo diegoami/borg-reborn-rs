@@ -6,8 +6,12 @@ in the real Borg. No YAML, embedded EOF block, profiles DSL or unique tactics.
 
 ## The file
 
-The checked-in example is
-[`harness/profiles/borg-rs/errands_plan.txt`](../harness/profiles/borg-rs/errands_plan.txt):
+The full candidate file is
+[`harness/profiles/borg-rs/errands_plan.txt`](../harness/profiles/borg-rs/errands_plan.txt).
+It contains explicit schedules for all nine classes and one default. Every character level 1–49 has one phase; reaching level 50
+intentionally hands back, pending the capability-based follow-up. This does
+not guarantee reaching level 50. The small block below illustrates the format,
+not the full candidate file:
 
 ```text
 [default]
@@ -31,6 +35,11 @@ A matching class section replaces the default **completely**. Its gaps do not
 fall through to the default. Classes without a section use `[default]`; with
 neither, startup fails visibly. Supported class names are `warrior`, `mage`,
 `druid`, `priest`, `necromancer`, `paladin`, `rogue`, `ranger`, `blackguard`.
+Early gates in the full file follow the two groups in the existing
+owner-tuned ladders. Later intervals are shared hypotheses, not nine invented
+class calibrations. They do not override native preparedness. Later loops
+omit compulsory town endpoints and retain core-requested town recovery;
+town frequency is an evaluation question, not an established optimum.
 These example depths are not calibrated recommendations or improvement claims.
 
 The POC has exactly **one errand: `loop-levels A B`**, reusing the existing
@@ -45,8 +54,8 @@ empty/duplicate sections and unknown classes are errors. Conditions accept
 `level < N`, `<=`, `>`, `>=`, `==`, or `A < level <= B` / `A <= level <= B`.
 Integers must be positive and ranges nonempty/non-overlapping within a class.
 Bounds are checked for overflow. Shared boundaries must not overlap: use
-`5 < level <= 10` after `level <= 5`. Gaps, including level 16 above the
-example's final phase, hand control back with a diagnostic. Input is limited
+`5 < level <= 10` after `level <= 5`. Gaps hand control back with a diagnostic; the shipped file deliberately
+has a gap at level 50. Input is limited
 to 64 KiB and 256 phases. No imports, nesting, expressions or mutable settings.
 
 ## Where it is read
@@ -148,3 +157,9 @@ to let the owner try real class-specific schedules and decide the file location,
 phase model and minimal errand set before expanding it. Later work still uses
 accepted R/P capabilities and review gates; track B remains unclarified.
 The separate adviser proposal (#309) is not implemented by this POC.
+
+Next evaluation: [#320](https://github.com/diegoami/borg-reborn-rs/issues/320)
+tracks post-50 capability-driven depth, town/equipment policy and staged longer
+runs. Zoo checkpoint/resume storage is already tracked in
+[borg-zoo #114](https://github.com/diegoami/borg-zoo/issues/114), including exact
+continuation qualification. No resumed cohort or storage migration starts here.

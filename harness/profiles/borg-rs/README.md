@@ -1,6 +1,9 @@
 # Errands-plan POC examples
 
-`errands_plan.txt` contains a default schedule and a separate mage schedule.
+`errands_plan.txt` contains explicit schedules for all nine classes and a
+default. They cover levels 1–49 and hand back on reaching 50; they do not
+promise reaching it. Early class gates follow the old ladder groups; later
+intervals are shared, unvalidated hypotheses pending evaluation.
 It is plain text: class sections, level ranges, and exactly one supported
 errand, `loop-levels`. No ladder/trips aliases or general scripting language.
 
