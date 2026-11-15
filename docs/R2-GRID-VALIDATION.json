@@ -50,7 +50,7 @@
     "core_pass": 143,
     "core_existing_ignored": 1,
     "scripts": 27,
-    "tools": 82
+    "tools": 83
   },
   "runs": {
     "grid-smoke-off/smoke-mage-2": {
@@ -1763,5 +1763,6 @@
     "D2450-rust-seed102",
     "D2451-rust-seed1020"
   ],
-  "accepted_r2_smoke_and_focused_play_logs_unchanged": true
+  "accepted_r2_smoke_and_focused_play_logs_unchanged": true,
+  "integration_note": "Combined with source gate, count corrections, entry fixture/CI and R3 plan; runtime input hash remains identical to the recorded clean native build."
 }
