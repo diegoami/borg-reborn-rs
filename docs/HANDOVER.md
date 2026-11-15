@@ -3,6 +3,14 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.2 integrated validation complete
+
+- Defence retains 45/45, named traces and current-shell ladder parity
+  after the parent integration. The actual diagnostic character is Hobbit
+  Priest (race index3 with menu letters); the report now states it correctly.
+- Required checks pass again. D2289–D2299 retain original evidence and
+  D2300–D2310 preserve eleven integrated-build deaths, reconciled.
+
 ## 2026-11-15: P2.1 integrated validation complete
 
 - Attack parameters retain 45/45 default parity and the same diagnostic
@@ -56,6 +64,20 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track P, P2.2 (#241), defence parameters
+
+- Added 218 defence settings at 242 sites (988 total): danger/failure
+  windows, scoring, timers, banishment/destruction/teleport decisions,
+  visibility and panel-shift budgets. CALIBRATION.md lists retained data.
+- Full **45/45**, named traces and ladder parity hold. Suppressing Bless
+  changes the priest's selected check at turn36902 from borg_caution to
+  borg_attack. See P2.2-VALIDATION.md; no improvement claim.
+- All required Rust/Python/vendor checks and default-expansion audit pass.
+  D2289–D2299 preserve eleven natural deaths, reconciled without omissions.
+- Initially stacked on #247; pending CI gates will merge in task order.
+  Remaining P work: item use #242, power #243, profile contract #244 and
+  owner sweep prompt #245. Review PRs stay unmerged for the owner.
 
 ## 2026-11-15: track P, P2.1 (#240), attack parameters
 

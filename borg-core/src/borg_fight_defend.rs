@@ -21,6 +21,8 @@
 //! the best one. The simulations pretend to be protected, look at the danger
 //! again, and restore what they changed, in C's order.
 
+// borg-reborn-rs (#241): named defend policy; default operations unchanged.
+use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::BorgGrid;
 use crate::borg_cave_util::{
@@ -167,10 +169,10 @@ fn screwed(st: &BorgState) -> bool {
 fn scaled_fail(st: &BorgState, p1: i32, base: i32, mid: i32, low: i32) -> i32 {
     let a = avoid(st);
     if p1 > a {
-        base - 19
-    } else if p1 > (a * 2) / 3 {
+        base - param(Param::defend_scaled_fail_high_adjustment)
+    } else if p1 > (a * param(Param::defend_scaled_fail_mid_numerator)) / param(Param::defend_scaled_fail_mid_divisor) {
         base - mid
-    } else if p1 < a / 3 {
+    } else if p1 < a / param(Param::defend_scaled_fail_low_divisor) {
         base + low
     } else {
         base
@@ -180,9 +182,9 @@ fn scaled_fail(st: &BorgState, p1: i32, base: i32, mid: i32, low: i32) -> i32 {
 /// `(borg.near.unique ? ((borg.avoidance * 2) / 3) : (borg.avoidance / 2))`
 fn limit(st: &BorgState) -> i32 {
     if st.borg.near.unique != 0 {
-        (avoid(st) * 2) / 3
+        (avoid(st) * param(Param::defend_limit_unique_numerator)) / param(Param::defend_limit_unique_divisor)
     } else {
-        avoid(st) / 2
+        avoid(st) / param(Param::defend_limit_divisor)
     }
 }
 
@@ -196,7 +198,7 @@ fn improves(st: &BorgState, p1: i32, p2: i32, div: i32) -> bool {
 /// `p1 > avoidance / 10` and `p1 < avoidance * (unique ? 7 : 5) / 10`.
 fn some_danger(st: &BorgState, p1: i32) -> bool {
     let a = avoid(st);
-    p1 > a / 10 && p1 < (a * if st.borg.near.unique != 0 { 7 } else { 5 }) / 10
+    p1 > a / param(Param::defend_some_danger_divisor) && p1 < (a * if st.borg.near.unique != 0 { param(Param::defend_some_danger_unique_tenths) } else { param(Param::defend_some_danger_tenths) }) / 10
 }
 
 /// `!(ag->info & BORG_GLOW) && borg.trait[BI_LIGHT] == 0` for the Borg's
@@ -219,7 +221,7 @@ fn max_range() -> i32 {
 /// `borg_danger(borg.c.y, borg.c.x, 1, average, false)`
 fn danger_here(st: &mut BorgState, average: bool) -> i32 {
     let (y, x) = (st.borg.c.y, st.borg.c.x);
-    borg_danger(st, y, x, 1, average, false)
+    borg_danger(st, y, x, param(Param::defend_danger_horizon), average, false)
 }
 
 /// `borg_danger_one_kill(borg.c.y, borg.c.x, 1, i, true, full_damage)`
@@ -288,7 +290,7 @@ fn borg_log_spellpath(st: &mut BorgState) {
 
 /// Bless/Prayer to prepare for battle (`borg_defend_aux_bless`).
 fn borg_defend_aux_bless(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 25;
+    let fail_allowed = param(Param::defend_bless_fail);
 
     let mut borg_near_kill = false;
 
@@ -329,12 +331,12 @@ fn borg_defend_aux_bless(st: &mut BorgState, p1: i32) -> i32 {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 5 {
+        if borg_timer(st, kill.when) > param(Param::defend_bless_max_target_age) {
             continue;
         }
 
         /* Check the distance XXX XXX XXX */
-        if engine::distance(st.borg.c, kill.pos) > 3 {
+        if engine::distance(st.borg.c, kill.pos) > param(Param::defend_bless_near_distance) {
             continue;
         }
 
@@ -344,7 +346,7 @@ fn borg_defend_aux_bless(st: &mut BorgState, p1: i32) -> i32 {
 
     /* if we are in some danger but not much, go for a quick bless */
     let a = avoid(st);
-    if (p1 > a / 12 || tr(st, BI_CLEVEL) <= 15) && p1 > 0 && borg_near_kill && p1 < a / 2 {
+    if (p1 > a / param(Param::defend_bless_danger_divisor) || tr(st, BI_CLEVEL) <= param(Param::defend_bless_max_level)) && p1 > 0 && borg_near_kill && p1 < a / param(Param::defend_bless_max_danger_divisor) {
         /* Simulation */
         /* bless is a low priority */
         if simulating(st) {
@@ -354,7 +356,7 @@ fn borg_defend_aux_bless(st: &mut BorgState, p1: i32) -> i32 {
         borg_note(st, "# Attempting to cast Bless");
 
         /* No resting to recoup mana */
-        st.borg.no_rest_prep = 11000;
+        st.borg.no_rest_prep = param(Param::defend_bless_no_rest_duration);
 
         /* do it! */
         if borg_spell(st, BLESS)
@@ -390,7 +392,7 @@ fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_speed_fail_base), param(Param::defend_speed_fail_mid_adjustment), param(Param::defend_speed_fail_low_adjustment));
 
     /* only cast defense spells if fail rate is not too high */
     if borg_spell_okay_fail(st, HASTE_SELF, fail_allowed) {
@@ -440,20 +442,20 @@ fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32 {
     if st.borg.mon.scary {
         /* Further reduce danger to encourage speed use against scary or
          * unique monsters. */
-        p2 = p2 * 3 / 10;
+        p2 = p2 * param(Param::defend_speed_morgoth_tenths) / 10;
     }
 
     /* if we are fighting a unique cast it. */
     if good_speed && st.borg.near.unique != 0 {
-        p2 = p2 * 7 / 10;
+        p2 = p2 * param(Param::defend_speed_breeder_tenths) / 10;
     }
     /* if we are fighting a unique and a summoner cast it. */
     if st.borg.near.summoner && st.borg.near.unique != 0 {
-        p2 = p2 * 7 / 10;
+        p2 = p2 * param(Param::defend_speed_questor_tenths) / 10;
     }
     /* if the unique is Sauron cast it */
     if tr(st, BI_CDEPTH) == 99 && st.borg.near.unique >= 10 {
-        p2 = p2 * 6 / 10;
+        p2 = p2 * param(Param::defend_speed_sauron_tenths) / 10;
     }
 
     /* if the unique is a rather nasty one. */
@@ -465,16 +467,16 @@ fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32 {
             || unique_is(st, b"Brodda, the Easterling")
             || unique_is(st, b"Orfax, Son of Boldor"))
     {
-        p2 = p2 * 6 / 10;
+        p2 = p2 * param(Param::defend_speed_unique_tenths) / 10;
     }
 
     /* if the unique is Morgoth cast it */
     if tr(st, BI_CDEPTH) == 100 && st.borg.near.unique >= 10 {
-        p2 = p2 * 5 / 10;
+        p2 = p2 * param(Param::defend_speed_morgoth_fight_tenths) / 10;
     }
 
     /* Attempt to conserve Speed at end of game */
-    if tr(st, BI_CDEPTH) >= 97 && st.borg.near.unique == 0 && !good_speed {
+    if tr(st, BI_CDEPTH) >= param(Param::defend_speed_no_unique_min_depth) && st.borg.near.unique == 0 && !good_speed {
         p2 = 9999;
     }
 
@@ -482,8 +484,8 @@ fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32 {
     /* we may have before */
     let a = avoid(st);
     let u = st.borg.near.unique != 0;
-    if ((p1 > p2) && p2 <= (if u { (a * 2) / 3 } else { a / 2 }) && (p1 > (a / 5)) && good_speed)
-        || ((p1 > p2) && p2 <= (if u { (a * 2) / 3 } else { a / 3 }) && (p1 > (a / 7)))
+    if ((p1 > p2) && p2 <= (if u { (a * param(Param::defend_speed_good_unique_numerator)) / param(Param::defend_speed_good_unique_divisor) } else { a / param(Param::defend_speed_good_divisor) }) && (p1 > (a / param(Param::defend_speed_good_min_danger_divisor))) && good_speed)
+        || ((p1 > p2) && p2 <= (if u { (a * param(Param::defend_speed_unique_numerator)) / param(Param::defend_speed_unique_divisor) } else { a / param(Param::defend_speed_divisor) }) && (p1 > (a / param(Param::defend_speed_min_danger_divisor))))
     {
         /* Simulation */
         if simulating(st) {
@@ -493,7 +495,7 @@ fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32 {
         borg_note(st, "# Attempting to cast Speed");
 
         /* No resting to recoup mana */
-        st.borg.no_rest_prep = tr(st, BI_CLEVEL) * 1000;
+        st.borg.no_rest_prep = tr(st, BI_CLEVEL) * param(Param::defend_speed_no_rest_per_level);
 
         /* do it! */
         if borg_zap_rod(st, st.item_val.sv_rod_speed)
@@ -532,7 +534,7 @@ fn borg_defend_aux_grim_purpose(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_grim_purpose_fail_base), param(Param::defend_grim_purpose_fail_mid_adjustment), param(Param::defend_grim_purpose_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, GRIM_PURPOSE, fail_allowed) {
         return 0;
@@ -551,10 +553,10 @@ fn borg_defend_aux_grim_purpose(st: &mut BorgState, mut p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_grim_purpose_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
-            return p1 - p2 + 2;
+            return p1 - p2 + param(Param::defend_grim_purpose_score_bonus);
         }
 
         borg_note(st, "# Attempting to cast Grim Purpose");
@@ -562,11 +564,11 @@ fn borg_defend_aux_grim_purpose(st: &mut BorgState, mut p1: i32) -> i32 {
         /* do it! */
         if borg_spell(st, GRIM_PURPOSE) {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 13000;
+            st.borg.no_rest_prep = param(Param::defend_grim_purpose_no_rest_duration);
         }
 
         /* Value */
-        return p1 - p2 + 2;
+        return p1 - p2 + param(Param::defend_grim_purpose_score_bonus);
     }
 
     /* default to can't do it. */
@@ -616,21 +618,21 @@ fn borg_defend_aux_resist_fecap(st: &mut BorgState, mut p1: i32) -> i32 {
     /* If the borg is fighting a particular unique enhance the
      * benefit of the spell. */
     if st.borg.near.unique != 0 && unique_is(st, b"The Tarrasque") {
-        p2 = p2 * 8 / 10;
+        p2 = p2 * param(Param::defend_prayer_unique_tenths) / 10;
     }
 
     /* If borg is high enough level, he does not need to worry
      * about mana consumption.  Cast the good spell. */
-    if tr(st, BI_CLEVEL) >= 45 {
-        p2 = p2 * 8 / 10;
+    if tr(st, BI_CLEVEL) >= param(Param::defend_prayer_bonus_min_level) {
+        p2 = p2 * param(Param::defend_prayer_level_tenths) / 10;
     }
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_fecap_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
-            return p1 - p2 + 2;
+            return p1 - p2 + param(Param::defend_resist_fecap_score_bonus);
         }
 
         borg_note(st, "# Attempting to cast FECAP");
@@ -640,11 +642,11 @@ fn borg_defend_aux_resist_fecap(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_activate_item(st, st.act.rage_bless_resist)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_fecap_no_rest_duration);
         }
 
         /* Value */
-        return p1 - p2 + 2;
+        return p1 - p2 + param(Param::defend_resist_fecap_score_bonus);
     }
 
     /* default to can't do it. */
@@ -665,7 +667,7 @@ fn borg_defend_aux_resist_f(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_resist_f_fail_base), param(Param::defend_resist_f_fail_mid_adjustment), param(Param::defend_resist_f_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, RESISTANCE, fail_allowed)
         && !borg_equips_item(st, st.act.resist_all, true)
@@ -690,12 +692,12 @@ fn borg_defend_aux_resist_f(st: &mut BorgState, mut p1: i32) -> i32 {
     /* If the borg is fighting a particular unique enhance the
      * benefit of the spell. */
     if st.borg.near.unique != 0 && unique_is(st, b"The Tarrasque") {
-        p2 = p2 * 8 / 10;
+        p2 = p2 * param(Param::defend_resist_fire_unique_tenths) / 10;
     }
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_f_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -718,7 +720,7 @@ fn borg_defend_aux_resist_f(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_quaff_potion(st, st.item_val.sv_potion_resist_heat)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_f_no_rest_duration);
         }
 
         /* Value */
@@ -741,7 +743,7 @@ fn borg_defend_aux_resist_c(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_resist_c_fail_base), param(Param::defend_resist_c_fail_mid_adjustment), param(Param::defend_resist_c_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, RESISTANCE, fail_allowed)
         && !borg_equips_item(st, st.act.resist_all, true)
@@ -767,12 +769,12 @@ fn borg_defend_aux_resist_c(st: &mut BorgState, mut p1: i32) -> i32 {
     /* If the borg is fighting a particular unique enhance the
      * benefit of the spell. */
     if st.borg.near.unique != 0 && unique_is(st, b"The Tarrasque") {
-        p2 = p2 * 8 / 10;
+        p2 = p2 * param(Param::defend_resist_cold_unique_tenths) / 10;
     }
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_c_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -795,7 +797,7 @@ fn borg_defend_aux_resist_c(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_quaff_potion(st, st.item_val.sv_potion_resist_cold)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_c_no_rest_duration);
         }
 
         /* Value */
@@ -818,7 +820,7 @@ fn borg_defend_aux_resist_a(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_resist_a_fail_base), param(Param::defend_resist_a_fail_mid_adjustment), param(Param::defend_resist_a_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, RESISTANCE, fail_allowed)
         && !borg_equips_item(st, st.act.resist_acid, true)
@@ -841,7 +843,7 @@ fn borg_defend_aux_resist_a(st: &mut BorgState, mut p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_a_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -868,7 +870,7 @@ fn borg_defend_aux_resist_a(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_activate_item(st, st.act.rage_bless_resist)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_a_no_rest_duration);
         }
 
         /* Value */
@@ -890,7 +892,7 @@ fn borg_defend_aux_resist_e(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_resist_e_fail_base), param(Param::defend_resist_e_fail_mid_adjustment), param(Param::defend_resist_e_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, RESISTANCE, fail_allowed)
         && !borg_equips_item(st, st.act.resist_elec, true)
@@ -914,7 +916,7 @@ fn borg_defend_aux_resist_e(st: &mut BorgState, mut p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_e_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -942,7 +944,7 @@ fn borg_defend_aux_resist_e(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_activate_item(st, st.act.rage_bless_resist)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_e_no_rest_duration);
         }
 
         /* Value */
@@ -964,7 +966,7 @@ fn borg_defend_aux_resist_p(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_resist_p_fail_base), param(Param::defend_resist_p_fail_mid_adjustment), param(Param::defend_resist_p_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, RESIST_POISON, fail_allowed)
         && !borg_equips_item(st, st.act.resist_pois, true)
@@ -987,7 +989,7 @@ fn borg_defend_aux_resist_p(st: &mut BorgState, mut p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_resist_p_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -1003,7 +1005,7 @@ fn borg_defend_aux_resist_p(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_quaff_potion(st, st.item_val.sv_potion_resist_pois)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 21000;
+            st.borg.no_rest_prep = param(Param::defend_resist_p_no_rest_duration);
         }
 
         /* Value */
@@ -1029,7 +1031,7 @@ fn borg_defend_aux_prot_evil(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 5, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_prot_evil_fail_base), param(Param::defend_prot_evil_fail_mid_adjustment), param(Param::defend_prot_evil_fail_low_adjustment));
 
     if borg_spell_okay_fail(st, PROTECTION_FROM_EVIL, fail_allowed) {
         pfe_spell = true;
@@ -1066,7 +1068,7 @@ fn borg_defend_aux_prot_evil(st: &mut BorgState, mut p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7)
+    if improves(st, p1, p2, param(Param::defend_prot_evil_improvement_divisor))
         || (st.core.cfg[BORG_MONEY_SCUM_AMOUNT as usize] >= 1 && tr(st, BI_CDEPTH) == 0)
     {
         /* Simulation */
@@ -1082,7 +1084,7 @@ fn borg_defend_aux_prot_evil(st: &mut BorgState, mut p1: i32) -> i32 {
             || borg_read_scroll(st, st.item_val.sv_scroll_protection_from_evil)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = tr(st, BI_CLEVEL) * 1000;
+            st.borg.no_rest_prep = tr(st, BI_CLEVEL) * param(Param::defend_resist_all_no_rest_per_level);
         }
 
         /* Value */
@@ -1118,12 +1120,12 @@ fn borg_defend_aux_shield(st: &mut BorgState, p1: i32) -> i32 {
 
     /* slightly enhance the value if fighting a unique */
     if st.borg.near.unique != 0 {
-        p2 = p2 * 7 / 10;
+        p2 = p2 * param(Param::defend_protection_evil_unique_tenths) / 10;
     }
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_shield_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -1136,7 +1138,7 @@ fn borg_defend_aux_shield(st: &mut BorgState, p1: i32) -> i32 {
             || borg_activate_item(st, st.act.shroom_stone)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 2000;
+            st.borg.no_rest_prep = param(Param::defend_shield_no_rest_duration);
             return p1 - p2;
         }
     }
@@ -1149,7 +1151,7 @@ fn borg_defend_aux_shield(st: &mut BorgState, p1: i32) -> i32 {
 /// 'mano-e-mano' with the unique. Teleport Other
 /// (`borg_defend_aux_tele_away`).
 fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
-    let mut fail_allowed = 50;
+    let mut fail_allowed = param(Param::defend_tele_away_fail);
 
     /* Cant when screwed */
     if screwed(st) {
@@ -1160,27 +1162,27 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
 
     /* Only tport monster away if scared or getting low on mana */
     if st.borg.near.unique != 0 {
-        if p1 < a * 7 / 10 && tr(st, BI_CURSP) > 30 && simulating(st) {
+        if p1 < a * param(Param::defend_shield_saving_danger_tenths) / 10 && tr(st, BI_CURSP) > param(Param::defend_shield_saving_min_sp) && simulating(st) {
             return 0;
         }
-    } else if p1 < a * 5 / 10 && tr(st, BI_CURSP) > 30 && simulating(st) {
+    } else if p1 < a * param(Param::defend_shield_low_danger_tenths) / 10 && tr(st, BI_CURSP) > param(Param::defend_shield_saving_min_sp) && simulating(st) {
         return 0;
     }
 
     /* No real Danger to speak of */
-    if p1 < a * 4 / 10 && simulating(st) {
+    if p1 < a * param(Param::defend_shield_min_danger_tenths) / 10 && simulating(st) {
         return 0;
     }
 
     /* if very scary, do not allow for much chance of fail */
-    if p1 > a * 3 {
-        fail_allowed -= 10;
-    } else if p1 > a * 2 {
+    if p1 > a * param(Param::defend_shield_high_danger_multiplier) {
+        fail_allowed -= param(Param::defend_shield_high_fail_adjustment);
+    } else if p1 > a * param(Param::defend_shield_mid_danger_multiplier) {
         /* scary */
-        fail_allowed -= 5;
-    } else if p1 > (a * 5) / 2 {
+        fail_allowed -= param(Param::defend_shield_mid_fail_adjustment);
+    } else if p1 > (a * param(Param::defend_shield_low_danger_numerator)) / param(Param::defend_shield_low_danger_divisor) {
         /* a little scary */
-        fail_allowed += 5;
+        fail_allowed += param(Param::defend_shield_low_fail_adjustment);
     }
 
     /* do I have the ability? */
@@ -1232,7 +1234,7 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::defend_tele_away_max_target_age) {
             continue;
         }
 
@@ -1288,7 +1290,7 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
         /* Reset list */
         reset_lists(st);
 
-        if p2 != 0 && p2 > avoid(st) / 2 {
+        if p2 != 0 && p2 > avoid(st) / param(Param::defend_shield_remnant_danger_divisor) {
             /* Simulation */
             return p2;
         } else {
@@ -1333,7 +1335,7 @@ fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32 {
 
 /// Hero to prepare for battle, +12 tohit (`borg_defend_aux_hero`).
 fn borg_defend_aux_hero(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 15;
+    let fail_allowed = param(Param::defend_hero_fail);
 
     /* already hero */
     if st.borg.temp.hero {
@@ -1371,7 +1373,7 @@ fn borg_defend_aux_hero(st: &mut BorgState, p1: i32) -> i32 {
             || borg_quaff_potion(st, st.item_val.sv_potion_heroism)
         {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 10000;
+            st.borg.no_rest_prep = param(Param::defend_hero_no_rest_duration);
             return 1;
         }
     }
@@ -1381,7 +1383,7 @@ fn borg_defend_aux_hero(st: &mut BorgState, p1: i32) -> i32 {
 
 /// Rapid Regen to prepare for battle (`borg_defend_aux_regen`).
 fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 15;
+    let fail_allowed = param(Param::defend_regen_fail);
 
     /* already regenerating */
     if st.borg.temp.regen {
@@ -1394,7 +1396,7 @@ fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* don't bother if not much to regenerate */
-    if tr(st, BI_MAXHP) < 100 {
+    if tr(st, BI_MAXHP) < param(Param::defend_berserk_min_max_hp) {
         return 0;
     }
 
@@ -1413,7 +1415,7 @@ fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32 {
         /* do it! */
         if borg_spell(st, RAPID_REGENERATION) {
             /* No resting to recoup mana */
-            st.borg.no_rest_prep = 10000;
+            st.borg.no_rest_prep = param(Param::defend_regen_no_rest_duration);
             return 1;
         }
     }
@@ -1424,7 +1426,7 @@ fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32 {
 /// Berserk to prepare for battle, +24 tohit, -10 AC
 /// (`borg_defend_aux_berserk`).
 fn borg_defend_aux_berserk(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 15;
+    let fail_allowed = param(Param::defend_berserk_fail);
 
     /* already berserk */
     if st.borg.temp.berserk {
@@ -1450,7 +1452,7 @@ fn borg_defend_aux_berserk(st: &mut BorgState, p1: i32) -> i32 {
         /* Simulation */
         /* berserk is a low priority */
         if simulating(st) {
-            return 5;
+            return param(Param::defend_hero_value);
         }
 
         /* do it! */
@@ -1460,7 +1462,7 @@ fn borg_defend_aux_berserk(st: &mut BorgState, p1: i32) -> i32 {
             || borg_activate_item(st, st.act.shero)
             || borg_quaff_potion(st, st.item_val.sv_potion_berserk)
         {
-            return 5;
+            return param(Param::defend_hero_value);
         }
     }
 
@@ -1485,7 +1487,7 @@ fn near_evil(st: &BorgState) -> bool {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::defend_near_evil_max_target_age) {
             continue;
         }
 
@@ -1498,7 +1500,7 @@ fn near_evil(st: &BorgState) -> bool {
         }
 
         /* Check the distance XXX XXX XXX */
-        if engine::distance(st.borg.c, kill.pos) > 3 {
+        if engine::distance(st.borg.c, kill.pos) > param(Param::defend_regeneration_near_distance) {
             continue;
         }
 
@@ -1513,7 +1515,7 @@ fn near_evil(st: &BorgState) -> bool {
 
 /// Smite Evil to prepare for battle (`borg_defend_aux_smite_evil`).
 fn borg_defend_aux_smite_evil(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 15;
+    let fail_allowed = param(Param::defend_smite_evil_fail);
 
     /* already smiting evil */
     if st.borg.temp.smite_evil || tr(st, BI_WS_EVIL) != 0 {
@@ -1539,12 +1541,12 @@ fn borg_defend_aux_smite_evil(st: &mut BorgState, p1: i32) -> i32 {
         /* Simulation */
         /* smite evil is a low priority */
         if simulating(st) {
-            return 5;
+            return param(Param::defend_regeneration_value);
         }
 
         /* do it! */
         if borg_spell(st, SMITE_EVIL) {
-            return 5;
+            return param(Param::defend_regeneration_value);
         }
     }
 
@@ -1584,7 +1586,7 @@ fn borg_defend_aux_glyph(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 5, 20);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_glyph_fail_base), param(Param::defend_glyph_fail_mid_adjustment), param(Param::defend_glyph_fail_low_adjustment));
 
     if borg_spell_okay_fail(st, GLYPH_OF_WARDING, fail_allowed) {
         glyph_spell = true;
@@ -1619,7 +1621,7 @@ fn borg_defend_aux_glyph(st: &mut BorgState, p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_glyph_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -1669,7 +1671,7 @@ fn borg_defend_aux_create_door(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 30, 5, 20);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_create_door_fail_base), param(Param::defend_create_door_fail_mid_adjustment), param(Param::defend_create_door_fail_low_adjustment));
 
     if !borg_spell_okay_fail(st, DOOR_CREATION, fail_allowed) {
         return 0;
@@ -1710,7 +1712,7 @@ fn borg_defend_aux_create_door(st: &mut BorgState, p1: i32) -> i32 {
 
     /* Track it */
     /* lets make sure that we going to be benifited */
-    if door_bad >= 6 {
+    if door_bad >= param(Param::defend_create_doors_max_bad_grids) {
         /* not really worth it.  Only 2 spaces protected */
         return 0;
     }
@@ -1722,7 +1724,7 @@ fn borg_defend_aux_create_door(st: &mut BorgState, p1: i32) -> i32 {
 
     /* if this is an improvement and we may not avoid monster now and */
     /* we may have before */
-    if improves(st, p1, p2, 7) {
+    if improves(st, p1, p2, param(Param::defend_create_door_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -1757,7 +1759,7 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* see if prayer is legal */
-    if !borg_spell_okay_fail(st, MASS_BANISHMENT, 40)
+    if !borg_spell_okay_fail(st, MASS_BANISHMENT, param(Param::defend_mass_banish_fail))
         && !borg_equips_item(st, st.act.banishment, true)
         && tr(st, BI_AMASSBAN) == 0
     {
@@ -1766,7 +1768,7 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* See if he is in real danger */
-    if p1 < avoid(st) * 12 / 10 && simulating(st) {
+    if p1 < avoid(st) * param(Param::defend_mass_banish_min_danger_tenths) / 10 && simulating(st) {
         return 0;
     }
 
@@ -1786,7 +1788,7 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
         }
 
         /* Check the distance */
-        if engine::distance(st.borg.c, kill.pos) > 20 {
+        if engine::distance(st.borg.c, kill.pos) > param(Param::defend_mass_banish_distance) {
             continue;
         }
 
@@ -1812,7 +1814,7 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
     /* if strain (plus a pad in case we did not know about some monsters)
      * is greater than hp, don't cast it
      */
-    if (hit * 12 / 10) >= tr(st, BI_CURHP) {
+    if (hit * param(Param::defend_mass_banish_self_harm_tenths) / 10) >= tr(st, BI_CURHP) {
         return 0;
     }
 
@@ -1820,8 +1822,8 @@ fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32 {
     p2 += hit;
 
     /* Be more likely to use this if fighting Morgoth */
-    if st.borg.near.unique >= 10 && (hit / 3 > 8) {
-        p2 = p2 * 6 / 10;
+    if st.borg.near.unique >= 10 && (hit / 3 > param(Param::defend_mass_banish_morgoth_min_count)) {
+        p2 = p2 * param(Param::defend_mass_banish_morgoth_tenths) / 10;
     }
 
     /* if this is an improvement and we may not avoid monster now and */
@@ -1898,7 +1900,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
     let mut tmp_genocide_target: i8 = 0;
 
     /* if very scary, do not allow for much chance of fail */
-    let fail_allowed = scaled_fail(st, p1, 25, 10, 10);
+    let fail_allowed = scaled_fail(st, p1, param(Param::defend_genocide_fail_base), param(Param::defend_genocide_fail_mid_adjustment), param(Param::defend_genocide_fail_low_adjustment));
 
     /* Cant when screwed */
     if screwed(st) {
@@ -1930,7 +1932,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* Don't try it if really weak */
-    if tr(st, BI_CURHP) <= 75 {
+    if tr(st, BI_CURHP) <= param(Param::defend_banish_min_hp) {
         return 0;
     }
 
@@ -2042,29 +2044,29 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
      * for the level */
     if biggest_threat != 0 {
         /* Not if I am weak (should have 400 HP really in case of a Pit) */
-        if tr(st, BI_CURHP) < 375 {
+        if tr(st, BI_CURHP) < param(Param::defend_banish_threat_min_hp) {
             biggest_threat = 0;
         }
 
         /* The threat must be real */
-        if b_threat[usize::from(biggest_threat)] < tr(st, BI_MAXHP) * 3 {
+        if b_threat[usize::from(biggest_threat)] < tr(st, BI_MAXHP) * param(Param::defend_banish_threat_hp_multiplier) {
             biggest_threat = 0;
         }
 
         /* Too painful to cast it (padded to be safe in case of unknown monsters)
          */
-        if (b_kill_count[usize::from(biggest_threat)] * 4) * 12 / 10 >= tr(st, BI_CURHP) {
+        if (b_kill_count[usize::from(biggest_threat)] * 4) * param(Param::defend_banish_threat_self_harm_tenths) / 10 >= tr(st, BI_CURHP) {
             biggest_threat = 0;
         }
 
         /* Loads of monsters might be a pit, in which case, try not to nuke them
          */
-        if b_kill_count[usize::from(biggest_threat)] >= 75 {
+        if b_kill_count[usize::from(biggest_threat)] >= param(Param::defend_banish_threat_min_count) {
             biggest_threat = 0;
         }
 
         /* Do not perform in Danger */
-        if p1 > avoid(st) / 5 {
+        if p1 > avoid(st) / param(Param::defend_banish_threat_danger_divisor) {
             biggest_threat = 0;
         }
 
@@ -2091,7 +2093,7 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
     if biggest_danger != 0 {
         /* Too painful to cast it (padded to be safe in case of unknown monsters)
          */
-        if (b_kill_count[usize::from(biggest_danger)] * 4) * 12 / 10 >= tr(st, BI_CURHP) {
+        if (b_kill_count[usize::from(biggest_danger)] * 4) * param(Param::defend_banish_danger_self_harm_tenths) / 10 >= tr(st, BI_CURHP) {
             biggest_danger = 0;
         }
 
@@ -2099,12 +2101,12 @@ fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32 {
          * or deeper in the dungeon, conservatively,
          */
         let a = avoid(st);
-        if p1 < a * 7 / 10 || (tr(st, BI_CDEPTH) > 75 && p1 < a * 6 / 10) {
+        if p1 < a * param(Param::defend_banish_min_danger_tenths) / 10 || (tr(st, BI_CDEPTH) > param(Param::defend_banish_deep_depth) && p1 < a * param(Param::defend_banish_deep_danger_tenths) / 10) {
             biggest_danger = 0;
         }
 
         /* Did this help improve my situation? */
-        if p_without_kill <= (a / 2) {
+        if p_without_kill <= (a / param(Param::defend_banish_remnant_divisor)) {
             biggest_danger = 0;
         }
 
@@ -2207,12 +2209,12 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
     let mut b_i: i32 = -1;
 
     /* Not if I am weak */
-    if tr(st, BI_CURHP) < (tr(st, BI_MAXHP) * 7 / 10) || tr(st, BI_CURHP) < 250 {
+    if tr(st, BI_CURHP) < (tr(st, BI_MAXHP) * param(Param::defend_banish_nasties_min_hp_tenths) / 10) || tr(st, BI_CURHP) < param(Param::defend_banish_nasties_min_hp) {
         return 0;
     }
 
     /* only do it when Hounds start to show up, */
-    if tr(st, BI_CDEPTH) < 25 {
+    if tr(st, BI_CDEPTH) < param(Param::defend_banish_nasties_min_depth) {
         return 0;
     }
 
@@ -2222,11 +2224,11 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* Do not perform in Danger */
-    if p1 > avoid(st) / 4 {
+    if p1 > avoid(st) / param(Param::defend_banish_nasties_danger_divisor) {
         return 0;
     }
 
-    let genocide_spell = borg_spell_okay_fail(st, BANISHMENT, 35)
+    let genocide_spell = borg_spell_okay_fail(st, BANISHMENT, param(Param::defend_banish_nasties_fail))
         || borg_equips_item(st, st.act.banishment, true)
         || borg_equips_staff_fail(st, st.item_val.sv_staff_banishment);
 
@@ -2247,7 +2249,7 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     if simulating(st) {
-        return 10;
+        return param(Param::defend_banish_nasties_value);
     }
 
     let b = b_i as usize;
@@ -2284,7 +2286,7 @@ fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32 {
             borg_delete_kill(st, i);
         }
 
-        return 10;
+        return param(Param::defend_banish_nasties_value);
     }
 
     /* default to can't do it. */
@@ -2320,16 +2322,16 @@ fn borg_defend_aux_earthquake(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* Can I cast the spell? */
-    if !borg_spell_okay_fail(st, TREMOR, 35)
-        && !borg_spell_okay_fail(st, QUAKE, 35)
-        && !borg_spell_okay_fail(st, GRONDS_BLOW, 35)
+    if !borg_spell_okay_fail(st, TREMOR, param(Param::defend_quake_fail))
+        && !borg_spell_okay_fail(st, QUAKE, param(Param::defend_quake_fail))
+        && !borg_spell_okay_fail(st, GRONDS_BLOW, param(Param::defend_quake_fail))
         && !borg_equips_item(st, st.act.earthquakes, true)
     {
         return 0;
     }
 
     /* See if he is in real danger or fighting summoner*/
-    if p1 < avoid(st) * 6 / 10 && !st.borg.near.summoner {
+    if p1 < avoid(st) * param(Param::defend_quake_min_danger_tenths) / 10 && !st.borg.near.summoner {
         return 0;
     }
 
@@ -2340,7 +2342,7 @@ fn borg_defend_aux_earthquake(st: &mut BorgState, p1: i32) -> i32 {
         /* Look for threats */
         if borg_los(st, st.borg.c.y, st.borg.c.x, kill.pos.y, kill.pos.x)
             && kill.ranged_attack != 0
-            && engine::distance(kill.pos, st.borg.c) >= 2
+            && engine::distance(kill.pos, st.borg.c) >= param(Param::defend_quake_min_monster_distance)
         {
             /* They can hit me */
             threat_count += 1;
@@ -2349,14 +2351,14 @@ fn borg_defend_aux_earthquake(st: &mut BorgState, p1: i32) -> i32 {
 
     /* Real danger? */
     let a = avoid(st);
-    if threat_count >= 4 && p1 > a * 7 / 10 {
-        p2 = p1 / 3;
+    if threat_count >= param(Param::defend_quake_high_threat_count) && p1 > a * param(Param::defend_quake_high_danger_tenths) / 10 {
+        p2 = p1 / param(Param::defend_quake_high_reduction_divisor);
     }
-    if threat_count == 3 && p1 > a * 7 / 10 {
-        p2 = p1 * 6 / 10;
+    if threat_count == param(Param::defend_quake_mid_threat_count) && p1 > a * param(Param::defend_quake_mid_danger_tenths) / 10 {
+        p2 = p1 * param(Param::defend_quake_mid_reduction_tenths) / 10;
     }
 
-    if improves(st, p1, p2, 5) {
+    if improves(st, p1, p2, param(Param::defend_earthquake_improvement_divisor)) {
         /* Simulation */
         if simulating(st) {
             return p1 - p2;
@@ -2390,7 +2392,7 @@ fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32 {
              */
         }
 
-        return 500;
+        return param(Param::defend_destruction_value);
     }
 
     /* Not if in a sea of runes */
@@ -2403,7 +2405,7 @@ fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32 {
     if p1 > a {
         real_danger = true;
     }
-    if p1 > a * 8 / 10 && tr(st, BI_CDEPTH) >= 90 && tr(st, BI_CURHP) <= 300 {
+    if p1 > a * param(Param::defend_destruction_min_danger_tenths) / 10 && tr(st, BI_CDEPTH) >= param(Param::defend_destruction_low_hp_min_depth) && tr(st, BI_CURHP) <= param(Param::defend_destruction_deep_low_hp) {
         real_danger = true;
     }
 
@@ -2424,20 +2426,20 @@ fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32 {
     if (tr(st, BI_ATELEPORT) != 0 || tr(st, BI_ATELEPORTLVL) != 0)
         && tr(st, BI_ISBLIND) == 0
         && tr(st, BI_ISCONFUSED) == 0
-        && st.borg.near.unique <= 4
-        && tr(st, BI_CURHP) >= 275
-        && borg_caution_teleport(st, 75, 2)
+        && i32::from(st.borg.near.unique) <= param(Param::defend_destruction_unique_max_count)
+        && tr(st, BI_CURHP) >= param(Param::defend_destruction_teleport_min_hp)
+        && borg_caution_teleport(st, param(Param::defend_destruction_teleport_chance), param(Param::defend_destruction_teleport_horizon))
     {
         return 0;
     }
 
     /* Examine Landing zones from teleport staff instead of WoD */
-    if tr(st, BI_AESCAPE) >= 2 && tr(st, BI_CURHP) >= 275 && borg_caution_teleport(st, 75, 2) {
+    if tr(st, BI_AESCAPE) >= param(Param::defend_destruction_teleport_min_escapes) && tr(st, BI_CURHP) >= param(Param::defend_destruction_teleport_min_hp) && borg_caution_teleport(st, param(Param::defend_destruction_teleport_chance), param(Param::defend_destruction_teleport_horizon)) {
         return 0;
     }
 
     /* capable of casting the spell */
-    if borg_spell_okay_fail(st, WORD_OF_DESTRUCTION, 55)
+    if borg_spell_okay_fail(st, WORD_OF_DESTRUCTION, param(Param::defend_destruction_fail))
         || borg_equips_staff_fail(st, st.item_val.sv_staff_destruction)
         || borg_equips_item(st, st.act.destruction2, true)
     {
@@ -2445,7 +2447,7 @@ fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* Special check for super danger--no fail check */
-    if (p1 > (a * 4) || (p1 > a && tr(st, BI_CURHP) <= 150))
+    if (p1 > (a * param(Param::defend_destruction_emergency_danger_multiplier)) || (p1 > a && tr(st, BI_CURHP) <= param(Param::defend_destruction_emergency_hp)))
         && borg_equips_staff_fail(st, st.item_val.sv_staff_destruction)
     {
         spell = true;
@@ -2462,7 +2464,7 @@ fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32 {
     let mut d = p1 - p2;
 
     /* Try not to cast this against uniques */
-    if st.borg.near.unique <= 2 && p1 < a * 2 {
+    if i32::from(st.borg.near.unique) <= param(Param::defend_destruction_few_unique_count) && p1 < a * param(Param::defend_destruction_few_unique_danger_multiplier) {
         d = 0;
     }
     if st.borg.near.unique >= 10 {
@@ -2484,7 +2486,7 @@ fn borg_defend_aux_teleportlevel(st: &mut BorgState, p1: i32) -> i32 {
     if !simulating(st) && borg_spell(st, TELEPORT_LEVEL) {
         /* Must make a new Sea too */
         st.glyph.needs_new_sea = true;
-        return 500;
+        return param(Param::defend_destruction_value);
     }
 
     /* Cant when screwed */
@@ -2493,7 +2495,7 @@ fn borg_defend_aux_teleportlevel(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* See if he is in real danger */
-    if p1 < avoid(st) * 2 {
+    if p1 < avoid(st) * param(Param::defend_teleport_level_danger_multiplier) {
         return 0;
     }
 
@@ -2510,18 +2512,18 @@ fn borg_defend_aux_teleportlevel(st: &mut BorgState, p1: i32) -> i32 {
     if (tr(st, BI_ATELEPORT) != 0 || tr(st, BI_ATELEPORTLVL) != 0)
         && tr(st, BI_ISBLIND) == 0
         && tr(st, BI_ISCONFUSED) == 0
-        && borg_caution_teleport(st, 65, 2)
+        && borg_caution_teleport(st, param(Param::defend_teleport_level_safe_chance), param(Param::defend_teleport_level_safe_horizon))
     {
         return 0;
     }
 
     /* Use teleport staff instead if safe to land */
-    if tr(st, BI_AESCAPE) >= 2 && borg_caution_teleport(st, 65, 2) {
+    if tr(st, BI_AESCAPE) >= param(Param::defend_teleport_level_min_escapes) && borg_caution_teleport(st, param(Param::defend_teleport_level_safe_chance), param(Param::defend_teleport_level_safe_horizon)) {
         return 0;
     }
 
     /* capable of casting the spell */
-    if !borg_spell_okay_fail(st, TELEPORT_LEVEL, 55) {
+    if !borg_spell_okay_fail(st, TELEPORT_LEVEL, param(Param::defend_teleport_level_fail)) {
         return 0;
     }
 
@@ -2554,19 +2556,19 @@ fn banish_note(st: &mut BorgState, kill_idx: i32, full_damage: bool, what: &str)
 /// Remove Evil guys within LOS.  The Priest Spell
 /// (`borg_defend_aux_banishment`).
 fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32 {
-    let mut fail_allowed = 15;
+    let mut fail_allowed = param(Param::defend_banishment_fail);
     let mut banished_monsters = 0;
 
     let a = avoid(st);
 
     /* Only tell away if scared */
-    if p1 < a / 10 {
+    if p1 < a / param(Param::defend_banish_evil_min_danger_divisor) {
         return 0;
     }
 
     /* if very scary, do not allow for much chance of fail */
-    if p1 > a * 4 {
-        fail_allowed -= 10;
+    if p1 > a * param(Param::defend_banish_evil_high_danger_multiplier) {
+        fail_allowed -= param(Param::defend_banish_evil_fail_adjustment);
     }
 
     /* Cant when screwed */
@@ -2574,7 +2576,7 @@ fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32 {
         return 0;
     }
 
-    let using_artifact = borg_equips_item(st, st.act.loskill, true) && st.borg.tr(BI_CURHP) > 100;
+    let using_artifact = borg_equips_item(st, st.act.loskill, true) && st.borg.tr(BI_CURHP) > param(Param::defend_banish_evil_artifact_min_hp);
 
     if !using_artifact && !borg_spell_okay_fail(st, BANISH_EVIL, fail_allowed) {
         return 0;
@@ -2646,7 +2648,7 @@ fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32 {
         }
 
         /* Unique Monster in good health*/
-        if engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE) && kill.injury > 60 {
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE) && i32::from(kill.injury) > param(Param::defend_banish_evil_unique_injury) {
             /* Note who gets to stay */
             if !simulating(st) {
                 let what = format!("Unique not considered: Injury {}.", kill.injury);
@@ -2700,10 +2702,10 @@ fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32 {
     }
 
     /* Try not to cast this against Morgy/Sauron */
-    if st.borg.near.unique >= 10 && tr(st, BI_CURHP) > 250 && tr(st, BI_CDEPTH) == 99 {
+    if st.borg.near.unique >= 10 && tr(st, BI_CURHP) > param(Param::defend_banish_evil_sauron_hp) && tr(st, BI_CDEPTH) == 99 {
         p2 = 9999;
     }
-    if st.borg.near.unique >= 10 && tr(st, BI_CURHP) > 350 && tr(st, BI_CDEPTH) == 100 {
+    if st.borg.near.unique >= 10 && tr(st, BI_CURHP) > param(Param::defend_banish_evil_morgoth_hp) && tr(st, BI_CDEPTH) == 100 {
         p2 = 9999;
     }
 
@@ -2720,7 +2722,7 @@ fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32 {
 /// Detect Inviso/Monsters (`borg_defend_aux_inviso`). Used only if I am hit
 /// by an unseen guy. Casts detect invis.
 fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
-    let fail_allowed = 25;
+    let fail_allowed = param(Param::defend_inviso_fail);
 
     /* no need */
     if tr(st, BI_ISFORGET) != 0
@@ -2732,12 +2734,12 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* not recent */
-    if borg_timer(st, st.borg.need_see_invis) > 45 {
+    if borg_timer(st, st.borg.need_see_invis) > param(Param::defend_see_invis_max_age) {
         return 0;
     }
 
     /* too dangerous to cast */
-    if p1 > avoid(st) * 2 {
+    if p1 > avoid(st) * param(Param::defend_see_invis_max_danger_multiplier) {
         return 0;
     }
 
@@ -2764,7 +2766,7 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
 
     /* No real value known, but lets cast it to find the bad guys. */
     if simulating(st) {
-        return 10;
+        return param(Param::defend_see_invis_value);
     }
 
     /* smoke em if you got em */
@@ -2781,19 +2783,19 @@ fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32 {
         || borg_activate_item(st, st.act.detect_evil)
     {
         /* hack, actually a snap shot, no ignition message */
-        st.borg.see_inv = 3000;
-        return 10;
+        st.borg.see_inv = param(Param::defend_see_invis_short_duration) as i16;
+        return param(Param::defend_see_invis_value);
     }
     if borg_quaff_potion(st, st.item_val.sv_potion_detect_invis) {
-        st.borg.see_inv = 18000;
-        st.borg.no_rest_prep = 18000;
-        return 10;
+        st.borg.see_inv = param(Param::defend_see_invis_spell_duration) as i16;
+        st.borg.no_rest_prep = param(Param::defend_inviso_no_rest_duration);
+        return param(Param::defend_see_invis_value);
     }
     /* long time */
     if borg_spell_fail(st, SENSE_INVISIBLE, fail_allowed) {
-        st.borg.see_inv = 30000;
-        st.borg.no_rest_prep = 16000;
-        return 10;
+        st.borg.see_inv = param(Param::defend_see_invis_potion_duration) as i16;
+        st.borg.no_rest_prep = param(Param::defend_inviso_potion_no_rest_duration);
+        return param(Param::defend_see_invis_value);
     }
 
     /* ah crap, I guess I won't be able to see them */
@@ -2814,7 +2816,7 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
 
     /* Light Beam section to spot non seen guys */
     /* not recent, don't bother */
-    if borg_timer(st, st.borg.need_see_invis) < 48 {
+    if borg_timer(st, st.borg.need_see_invis) < param(Param::defend_light_beam_max_invis_age) {
         return 0;
     }
 
@@ -2867,7 +2869,7 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
     }
 
     /* Make sure I am not in too much danger */
-    if simulating(st) && p1 > (avoid(st) * 3) / 4 {
+    if simulating(st) && p1 > (avoid(st) * param(Param::defend_light_beam_danger_numerator)) / param(Param::defend_light_beam_danger_divisor) {
         return 0;
     }
 
@@ -2878,12 +2880,12 @@ fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32 {
 
     /* return some value */
     if simulating(st) {
-        return 10;
+        return param(Param::defend_light_beam_value);
     }
 
     /* if in a hallway call the Light Beam routine */
     if borg_light_beam(st, false) {
-        return 10;
+        return param(Param::defend_light_beam_value);
     }
     0
 }
@@ -2914,7 +2916,7 @@ fn borg_defend_panel_shift(st: &mut BorgState) -> bool {
     let pos_on_panel_y = st.borg.c.y - term.offset_y;
 
     /* no need */
-    if !st.borg.need_shift_panel && tr(st, BI_CDEPTH) < 70 {
+    if !st.borg.need_shift_panel && tr(st, BI_CDEPTH) < param(Param::defend_panel_shift_min_depth) {
         return false;
     }
 
@@ -2937,19 +2939,19 @@ fn borg_defend_panel_shift(st: &mut BorgState) -> bool {
     /* Shift if within 5 spaces of the edge */
     /* Which direction do we need to move? */
     /* Shift panel to the right */
-    if (borg_panel_wid() - pos_on_panel_x) < 5 && panel_num_x < st.borg.panels.x {
+    if (borg_panel_wid() - pos_on_panel_x) < param(Param::defend_panel_shift_edge_distance) && panel_num_x < st.borg.panels.x {
         dir = 6;
     }
     /* Shift panel to the left */
-    if pos_on_panel_x < 5 && panel_num_x > 1 {
+    if pos_on_panel_x < param(Param::defend_panel_shift_edge_distance) && panel_num_x > 1 {
         dir = 4;
     }
     /* Shift panel to the down */
-    if (borg_panel_hgt() - pos_on_panel_y) < 5 && panel_num_y < st.borg.panels.y {
+    if (borg_panel_hgt() - pos_on_panel_y) < param(Param::defend_panel_shift_edge_distance) && panel_num_y < st.borg.panels.y {
         dir = 2;
     }
     /* Shift panel to the up */
-    if pos_on_panel_y < 5 && panel_num_y > 1 {
+    if pos_on_panel_y < param(Param::defend_panel_shift_edge_distance) && panel_num_y > 1 {
         dir = 8;
     }
 
@@ -2974,8 +2976,8 @@ fn borg_defend_panel_shift(st: &mut BorgState) -> bool {
     /* check to make sure its appropriate */
     /* Not if I just did one */
     if st.borg.when_shift_panel != 0
-        && (borg_timer(st, st.borg.when_shift_panel) <= 10
-            || borg_timer(st, st.borg.time.morgoth) <= 10)
+        && (borg_timer(st, st.borg.when_shift_panel) <= param(Param::defend_panel_shift_max_age)
+            || borg_timer(st, st.borg.time.morgoth) <= param(Param::defend_panel_shift_morgoth_max_age))
     {
         /* do nothing */
         return false;
@@ -3017,14 +3019,14 @@ fn borg_defend_panel_shift(st: &mut BorgState) -> bool {
 /// Only borgs with teleport away and a good attack spell do this routine.
 fn borg_defend_aux_rest(st: &mut BorgState) -> i32 {
     if !st.borg.morgoth_position
-        && (!st.borg.status.anti_summon || borg_timer(st, st.borg.time.antisummon) >= 50)
+        && (!st.borg.status.anti_summon || borg_timer(st, st.borg.time.antisummon) >= param(Param::defend_panel_shift_antisummon_min_age))
     {
         return 0;
     }
 
     /* Not if Morgoth is not on this level */
     if !st.borg.near.morgoth
-        && (!st.borg.status.anti_summon || borg_timer(st, st.borg.time.antisummon) >= 50)
+        && (!st.borg.status.anti_summon || borg_timer(st, st.borg.time.antisummon) >= param(Param::defend_panel_shift_antisummon_min_age))
     {
         return 0;
     }
@@ -3035,7 +3037,7 @@ fn borg_defend_aux_rest(st: &mut BorgState) -> i32 {
     }
 
     /* Not if I can not teleport others away */
-    if borg_spell_okay_fail(st, TELEPORT_OTHER, 30) {
+    if borg_spell_okay_fail(st, TELEPORT_OTHER, param(Param::defend_panel_shift_teleport_fail)) {
         return 0;
     }
 
@@ -3079,7 +3081,7 @@ fn borg_defend_aux_rest(st: &mut BorgState) -> i32 {
 
     /* Return some value for this rest */
     if simulating(st) {
-        return 200;
+        return param(Param::defend_panel_shift_value);
     }
 
     /* Rest */
@@ -3088,13 +3090,13 @@ fn borg_defend_aux_rest(st: &mut BorgState) -> i32 {
     borg_note(st, &format!("# Resting on grid ({}, {}), waiting for Morgoth.", cy, cx));
 
     /* All done */
-    200
+    param(Param::defend_panel_shift_value)
 }
 
 /// Try to get rid of all of the monsters while I build my Sea of Runes
 /// (`borg_defend_aux_tele_away_morgoth`).
 fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
-    let fail_allowed = 40;
+    let fail_allowed = param(Param::defend_tele_away_morgoth_fail);
 
     /* Only if on level 100 */
     if tr(st, BI_CDEPTH) != 100 {
@@ -3118,7 +3120,7 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
 
     /* Do I have the Glyph spell? No good to use TO if I cant build the sea of
      * runes */
-    if tr(st, BI_AGLYPH) < 10 {
+    if tr(st, BI_AGLYPH) < param(Param::defend_teleport_morgoth_min_glyphs) {
         return 0;
     }
 
@@ -3148,7 +3150,7 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::defend_tele_away_morgoth_max_target_age) {
             continue;
         }
 
@@ -3196,8 +3198,8 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
         borg_launch_bolt(st, 0, 50, BORG_ATTACK_AWAY_ALL_MORGOTH as i32, max_range(), 0);
 
     /* Normalize the value a bit */
-    if p2 > 1000 {
-        p2 = 1000;
+    if p2 > param(Param::defend_teleport_morgoth_value_cap) {
+        p2 = param(Param::defend_teleport_morgoth_value_cap);
     }
 
     /* Reset list */
@@ -3244,7 +3246,7 @@ fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32 {
 /// Try to get rid of all of the monsters while I build my Sea of Runes
 /// (`borg_defend_aux_banishment_morgoth`).
 fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
-    let fail_allowed = 50;
+    let fail_allowed = param(Param::defend_banishment_morgoth_fail);
 
     /* Not if Morgoth is not on this level */
     if !st.borg.near.morgoth {
@@ -3288,7 +3290,7 @@ fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::defend_banishment_morgoth_max_target_age) {
             continue;
         }
 
@@ -3310,7 +3312,7 @@ fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
         }
 
         /* Count the number of monsters too close double*/
-        if engine::distance(st.borg.c, kill.pos) <= 7 {
+        if engine::distance(st.borg.c, kill.pos) <= param(Param::defend_teleport_distance) {
             count += 1;
         }
 
@@ -3319,13 +3321,13 @@ fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
     }
 
     /* No destinations */
-    if count <= 7 && simulating(st) {
+    if count <= param(Param::defend_teleport_min_count) && simulating(st) {
         return 0;
     }
 
     /* Return a good score to make him do it */
     if simulating(st) {
-        return 1500;
+        return param(Param::defend_teleport_simulated_value);
     }
 
     borg_note(
@@ -3355,7 +3357,7 @@ fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
         }
 
         /* Value */
-        return 1000;
+        return param(Param::defend_teleport_value);
     }
 
     0
@@ -3365,7 +3367,7 @@ fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32 {
 /// tunneling through rock (`borg_defend_aux_light_morgoth`).  The borg
 /// still remembers and assumes that the rock is unknown grid.
 fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32 {
-    let fail_allowed = 50;
+    let fail_allowed = param(Param::defend_light_morgoth_fail);
     /* C leaves `best` uninitialised; it is only read after a simulation of
      * the same state found Morgoth (count > 0), which sets it */
     let mut best = loc { x: 0, y: 0 };
@@ -3415,7 +3417,7 @@ fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32 {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::defend_light_morgoth_max_target_age) {
             continue;
         }
 
@@ -3427,7 +3429,7 @@ fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32 {
         if engine::distance(st.borg.c, kill.pos) > max_range() {
             continue;
         }
-        if engine::distance(st.borg.c, kill.pos) <= 5 {
+        if engine::distance(st.borg.c, kill.pos) <= param(Param::defend_smite_max_distance) {
             continue;
         }
 
@@ -3449,7 +3451,7 @@ fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32 {
 
     /* Return a good score to make him do it */
     if simulating(st) {
-        return 500;
+        return param(Param::defend_smite_simulated_value);
     }
 
     borg_note(st, &format!("# Attempting to Illuminate a Pathway to ({}, {})", best.y, best.x));
@@ -3466,7 +3468,7 @@ fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32 {
         borg_keypress(st, key(b'5'));
 
         /* Value */
-        return 200;
+        return param(Param::defend_smite_value);
     }
 
     0
@@ -3529,7 +3531,7 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
     /* if you have Resist All and it is about to drop, */
     /* refresh it (if you can) */
     let ratio = i32::from(st.traits.game_ratio);
-    if st.borg.resistance != 0 && i32::from(st.borg.resistance) < ratio * 2 {
+    if st.borg.resistance != 0 && i32::from(st.borg.resistance) < ratio * param(Param::defend_refresh_resistance_horizon) {
         /* check 'true' danger. This will make sure we do not */
         /* refresh our Resistance if no-one is around */
         st.traits.attacking = true;
@@ -3550,7 +3552,7 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
                 ),
             );
             st.fight_defend.attempting_refresh_resist = true;
-            st.borg.resistance = 25000;
+            st.borg.resistance = param(Param::defend_refresh_resistance_duration) as i16;
             return true;
         }
     }

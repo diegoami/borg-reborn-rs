@@ -40,7 +40,7 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
-    'Cargo.toml', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
+    'Cargo.toml', 'src/borg_fight_defend.rs', 'src/borg_fight_attack.rs', 'src/borg_caution.rs', 'src/borg_danger.rs', 'src/borg_escape.rs', 'src/borg_recover.rs', 'src/borg_io.rs', 'src/borg_commands.rs', 'src/borg_init.rs', 'src/borg_messages.rs', 'src/borg_think.rs',
     'src/borg_think_dungeon.rs', 'src/borg_think_dungeon_util.rs', 'src/engine.rs', 'src/lib.rs',
 }
 
