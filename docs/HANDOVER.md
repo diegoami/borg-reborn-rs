@@ -13,9 +13,14 @@
   moving reference 727ccff, **three ported functions changed** (aggregate,
   physical and spell estimates). This positive source warning is not runtime
   parity evidence and does not adopt v13. Core PIN remains v12 e6d13fc.
-- Smoke off/check/switch is 3/3 identical in keys/messages/state with zero
-  danger and monster mismatches. Full validation and constructed controls
-  are recorded in R2-DANGER-VALIDATION.md before task merge.
+- Smoke is 3/3 identical across all modes. Full check and switch each have
+  45/45 v12 play-log parity and zero mismatches over 66,900,787 whole-danger
+  and 111,865 standalone-monster comparisons per mode. D2377–D2384 preserve
+  all eight natural cases; switch repeats them. CI controls are D2387/D2388.
+- Marked diagnostic offset controls produce 79,314 check / 92,252 switch
+  mismatches; re-porting produces zero and matches changed native play.
+  Exact identities, logs hashes, patches and limits are in the R2-DANGER
+  evidence files. Runtime hash 3ee287178562 remains unchanged.
 - Count every operational failure: an exploratory build refused to write
   BUILD_ID because sources changed while it compiled; no game launched.
   The first off smoke played three capped survivors but suite aggregation

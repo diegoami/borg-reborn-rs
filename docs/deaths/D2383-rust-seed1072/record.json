@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2383-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 8475,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "menu",
+    "git_rev": "137a5a3709aa355a5b4e8bd17fda01cf68f27d66",
+    "git_dirty": "yes",
+    "source_sha256": "3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851",
+    "binary_sha256": "a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d",
+    "borg_txt_sha256": "ec59d6265d460488c0acbc482dd16c531396b359915ecc5434547cb06a00bcc3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 875
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/borg-reborn-rs/harness/out/r2-danger-full-check/full-7-ranger-2",
+      "result_sha256": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+      "raw_sha256": {
+        "keys.log": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+        "messages.log": "8d16c4f6c115675938c78b745f74cd299155138006c68c236a65b93e80271ca5",
+        "state.log": "55ab81d341bf5eee54be4063d9752e1f07ee52f8d7a4114c84e4450a28a0a471"
+      },
+      "source_commit": "137a5a3709aa355a5b4e8bd17fda01cf68f27d66",
+      "binary_sha256": "a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d"
+    }
+  ],
+  "encounter_family": "start-7535f4e41b3a2cccf096d16c358f23cde05cb7be9bd428c06fd5976642f07528",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "020e87254cbf046dcf0e688d7c42b706069a4a114db99ffd965481997cbb4110",
+    "config.txt": "2fd2fd3493c4201be7d9e5b2e85ba8ab1d1ef2d224ef9748dd6b5ee23b4e5621",
+    "depths.json": "c4372679c923c4799adb86ac85075caa256d0d24cc36298ea57ebd829b18405a",
+    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "summary.json": "2bb9025c0fb1bb74f5d3b3da4b0e4503c7809efcf762d212cf341827d0ac8344",
+    "trace-core-tail.jsonl": "ebe265409be2589c27bfa251d2d4573b81c4b7fb241e2a630ba93085ebe98a8f"
+  },
+  "investigation": null,
+  "issue": null
+}

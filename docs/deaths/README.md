@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2359; distinct starting conditions: 2356; retained process attempts: 2359 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2366; distinct starting conditions: 2363; retained process attempts: 2366 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2365,6 +2365,13 @@ Dossiers: 2359; distinct starting conditions: 2356; retained process attempts: 2
 | [D2377-rust-seed1011](D2377-rust-seed1011/report.md) | unassigned | `137a5a3709aa` | 1011 | a cave spider | 18903 | unassessed |
 | [D2378-rust-seed1020](D2378-rust-seed1020/report.md) | unassigned | `137a5a3709aa` | 1020 | a small kobold | 9547 | unassessed |
 | [D2379-rust-seed1021](D2379-rust-seed1021/report.md) | unassigned | `137a5a3709aa` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2380-rust-seed1043](D2380-rust-seed1043/report.md) | unassigned | `137a5a3709aa` | 1043 | a wild cat | 23423 | unassessed |
+| [D2381-rust-seed1050](D2381-rust-seed1050/report.md) | unassigned | `137a5a3709aa` | 1050 | a grey mold | 24096 | unassessed |
+| [D2382-rust-seed1062](D2382-rust-seed1062/report.md) | unassigned | `137a5a3709aa` | 1062 | a soldier | 49147 | unassessed |
+| [D2383-rust-seed1072](D2383-rust-seed1072/report.md) | unassigned | `137a5a3709aa` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2384-rust-seed1084](D2384-rust-seed1084/report.md) | unassigned | `137a5a3709aa` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2387-rust-seed102](D2387-rust-seed102/report.md) | unassigned | `437f2e1034a1` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2388-rust-seed1020](D2388-rust-seed1020/report.md) | unassigned | `437f2e1034a1` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 

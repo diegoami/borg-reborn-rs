@@ -1,0 +1,2416 @@
+{
+  "core_pin": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+  "native_build_identity": {
+    "impl": "rust",
+    "git_rev": "137a5a3709aa355a5b4e8bd17fda01cf68f27d66",
+    "git_dirty": "yes",
+    "inputs_dirty": "yes",
+    "source_sha256": "3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851",
+    "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+    "binary": "/workspace/borg-reborn-rs/build/rust/game/angband",
+    "binary_sha256": "a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d",
+    "cc": "cc (Debian 14.2.0-19) 14.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "built_utc": "2026-11-15T11:17:30Z"
+  },
+  "v12_reference": "independent borg-rs e6d13fc9baff0ef7f06de6333fbda436c961e0bf; exact build retained in R1.2-V12-COMPARISON.json",
+  "modes": {
+    "check": {
+      "v12_play_log_equal": 45,
+      "runs": [
+        {
+          "name": "full-0-warrior-0",
+          "hashes": {
+            "keys.log": "50938135474b7544a96f7aa21c013338b1291fe97526a79b544a965bd2b2c9fe",
+            "messages.log": "38136e606ec9298d9c0fa2aba21f3d0695ff7a06c82ea471093ccb0c251efb09",
+            "state.log": "7f761867c611b3ef648a45aaccc564d1b57ab2d81a9130c8957619e53fa75d71"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 15,
+            "caution_calls": 436,
+            "comparisons": 263263,
+            "danger_calls": 128984,
+            "danger_comparisons": 128984,
+            "mismatches": 0,
+            "monster_comparisons": 1600,
+            "thinks": 13913,
+            "wall_comparisons": 132679
+          }
+        },
+        {
+          "name": "full-0-warrior-1",
+          "hashes": {
+            "keys.log": "cd2afac79fc047acd53c33bd12b4db2ee6815b30b6fa0aec767d339703f6a29e",
+            "messages.log": "b7c6bc387b91a5980dd507b7bf17cb3ab93404ec37bec2819124db623a9f35ef",
+            "state.log": "3163fbc31a0afe0b5e542bd3a65c0715645234416172cab3ed9d39db8a4fb881"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 13,
+            "caution_calls": 401,
+            "comparisons": 264363,
+            "danger_calls": 159711,
+            "danger_comparisons": 159711,
+            "mismatches": 0,
+            "monster_comparisons": 3671,
+            "thinks": 12162,
+            "wall_comparisons": 100981
+          }
+        },
+        {
+          "name": "full-0-warrior-2",
+          "hashes": {
+            "keys.log": "3c02ae1e7ead0373aef2a4cff15b99b07d1ee2768549fe686c69bbe7204978c0",
+            "messages.log": "1ab72b01cf82e18969fccf1db327bd64037d0b76af9691f4e433fe252825ad42",
+            "state.log": "e4256650f402cd371f69b90fe2b97e607adf94f1ffa767c4151507b6d1df70ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 38,
+            "caution_calls": 413,
+            "comparisons": 354982,
+            "danger_calls": 198580,
+            "danger_comparisons": 198580,
+            "mismatches": 0,
+            "monster_comparisons": 940,
+            "thinks": 11228,
+            "wall_comparisons": 155462
+          }
+        },
+        {
+          "name": "full-0-warrior-3",
+          "hashes": {
+            "keys.log": "b0a52ca412def041073d465ee1e418f030e276357b9096413ddd2b6e5382c208",
+            "messages.log": "41d9a304c74d94ad39039958c49953991f9adccba9a2d0dd5d4f46a28bb19e13",
+            "state.log": "702d3f44b0bc5f5aa96bc5725bed132e7d64053db37739874ec37c65f6f7a737"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 105,
+            "caution_calls": 1082,
+            "comparisons": 1200321,
+            "danger_calls": 513710,
+            "danger_comparisons": 513710,
+            "mismatches": 0,
+            "monster_comparisons": 1253,
+            "thinks": 12378,
+            "wall_comparisons": 685358
+          }
+        },
+        {
+          "name": "full-0-warrior-4",
+          "hashes": {
+            "keys.log": "973386392466d5045dbd1d2d7b3f022cf1c8c9b8364940c878258b6e0f51f708",
+            "messages.log": "5efea5e059d2a475cd087b476e9582a1defe1e24a0408845938c7ed5cbbd3282",
+            "state.log": "0002fe369b61dcb8ef3ae2b7e7d0da0cb1a49b45026a75da138a4ffa38f93802"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 9,
+            "caution_calls": 226,
+            "comparisons": 196618,
+            "danger_calls": 79688,
+            "danger_comparisons": 79688,
+            "mismatches": 0,
+            "monster_comparisons": 327,
+            "thinks": 12056,
+            "wall_comparisons": 116603
+          }
+        },
+        {
+          "name": "full-1-mage-0",
+          "hashes": {
+            "keys.log": "8a9a5e0c7c33e6f6d92729037ba4e5f21202dcf9cfca9298db5d6257c057730c",
+            "messages.log": "a04d3fa0b8aa907ff15212db7739e7ebf94eaf3ffdeff7d2ad4c694dcf402fda",
+            "state.log": "d431237c0274cbf0c400d591b727fa267270cceb5dca4e906bf303149b4519ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 340,
+            "caution_calls": 3809,
+            "comparisons": 1359577,
+            "danger_calls": 546199,
+            "danger_comparisons": 546199,
+            "mismatches": 0,
+            "monster_comparisons": 7556,
+            "thinks": 3862,
+            "wall_comparisons": 805822
+          }
+        },
+        {
+          "name": "full-1-mage-1",
+          "hashes": {
+            "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+            "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+            "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 104,
+            "caution_calls": 1133,
+            "comparisons": 8503778,
+            "danger_calls": 769421,
+            "danger_comparisons": 769421,
+            "mismatches": 0,
+            "monster_comparisons": 1031,
+            "thinks": 1155,
+            "wall_comparisons": 7733326
+          }
+        },
+        {
+          "name": "full-1-mage-2",
+          "hashes": {
+            "keys.log": "33a9e1b9efef4e1fd1060fab66665a4fc904c613fa2d496ebd87ea1e87da686b",
+            "messages.log": "964b0d92630002474a3b4c3938317b48588be63a37b075a93ff04bf8f1736752",
+            "state.log": "83ce4dcc87efd93c94b595fffa41c4caf766172fa540c6d079cef075c261710f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 310,
+            "caution_calls": 4348,
+            "comparisons": 3127173,
+            "danger_calls": 920847,
+            "danger_comparisons": 920847,
+            "mismatches": 0,
+            "monster_comparisons": 4654,
+            "thinks": 4435,
+            "wall_comparisons": 2201672
+          }
+        },
+        {
+          "name": "full-1-mage-3",
+          "hashes": {
+            "keys.log": "8180b0901103cd96fde8bedcff6887c0d0fce4d873af9ae27be97efecbbf4f61",
+            "messages.log": "4f998f74caaa6043d012f775c448f3e6c0d632a32cb73876b3651f658cfa35b5",
+            "state.log": "aacf7e4770d8d01af084f0acdb5f5a438b46b649b4ed4dc0eedce7952d42499e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 331,
+            "caution_calls": 3718,
+            "comparisons": 2916511,
+            "danger_calls": 557514,
+            "danger_comparisons": 557514,
+            "mismatches": 0,
+            "monster_comparisons": 6486,
+            "thinks": 3786,
+            "wall_comparisons": 2352511
+          }
+        },
+        {
+          "name": "full-1-mage-4",
+          "hashes": {
+            "keys.log": "ea3cbe1895c1b1d993899da62d0050cc6eaf0e8e457e8b45624e2ba051cfb7bb",
+            "messages.log": "828f394cb3e3f0b8e722e9c338ec1e3a165af5e2fb61f5f6355627e319034fbf",
+            "state.log": "6ddc05337c22d1fe679c389983af5e03e5c5d56423b03dd2cc52e9311c1c423a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 392,
+            "caution_calls": 4327,
+            "comparisons": 19648100,
+            "danger_calls": 4638897,
+            "danger_comparisons": 4638897,
+            "mismatches": 0,
+            "monster_comparisons": 8870,
+            "thinks": 4376,
+            "wall_comparisons": 15000333
+          }
+        },
+        {
+          "name": "full-2-druid-0",
+          "hashes": {
+            "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+            "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+            "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 110,
+            "caution_calls": 1002,
+            "comparisons": 520640,
+            "danger_calls": 253998,
+            "danger_comparisons": 253998,
+            "mismatches": 0,
+            "monster_comparisons": 46,
+            "thinks": 1027,
+            "wall_comparisons": 266596
+          }
+        },
+        {
+          "name": "full-2-druid-1",
+          "hashes": {
+            "keys.log": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+            "messages.log": "d74ec5bd8acb04981bcbce756a680d8a62262ca11c42e634874dd260bd4f42a3",
+            "state.log": "82127e32d5ceede3b4ae7fade7faead94b869118b1f4d6f164cea6f8d0f12d69"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 16,
+            "caution_calls": 237,
+            "comparisons": 130629,
+            "danger_calls": 68026,
+            "danger_comparisons": 68026,
+            "mismatches": 0,
+            "monster_comparisons": 102,
+            "thinks": 908,
+            "wall_comparisons": 62501
+          }
+        },
+        {
+          "name": "full-2-druid-2",
+          "hashes": {
+            "keys.log": "7438defb71e8e7eccbb29497f1d2a5ac9a9dac863b4c3e9c423118b5fd1c5f28",
+            "messages.log": "8562d2db19adffed0f6c9ce8c51072fc6b86ffabcd8ec8be03cc51cb52103f33",
+            "state.log": "731d3eee730e9f2d31ad71c9f7f187f123ddd295987903ccf9d626e8f6e99e4b"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 7,
+            "caution_calls": 937,
+            "comparisons": 455074,
+            "danger_calls": 115439,
+            "danger_comparisons": 115439,
+            "mismatches": 0,
+            "monster_comparisons": 15162,
+            "thinks": 7051,
+            "wall_comparisons": 324473
+          }
+        },
+        {
+          "name": "full-2-druid-3",
+          "hashes": {
+            "keys.log": "0e621f2830fe1041cdd327ddb6af1d99a3e276462a3c2c958ec74b623530e0b0",
+            "messages.log": "dec38121aade30a81a502cc049c26767e60b384d88cebe15547905661b48bdb0",
+            "state.log": "7fc259062b24a8ca6d1b549b61ecc16977d506a229df7772d3c45573691bab04"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 107,
+            "caution_calls": 1032,
+            "comparisons": 2126973,
+            "danger_calls": 410551,
+            "danger_comparisons": 410551,
+            "mismatches": 0,
+            "monster_comparisons": 24197,
+            "thinks": 8105,
+            "wall_comparisons": 1692225
+          }
+        },
+        {
+          "name": "full-2-druid-4",
+          "hashes": {
+            "keys.log": "1b353537d61f93d903db94a66e52756daf70ca43d8e620de0a6e8fed5f0f9d1f",
+            "messages.log": "053f73dfc54b8d704bd6c81dca9411d6651350ac8f28763452ffbe2e52d5f387",
+            "state.log": "57535ef527c2fdded75f7879eb4e100add7986a58e5a46859f0c2b23d21b72b2"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 72,
+            "caution_calls": 1230,
+            "comparisons": 2067394,
+            "danger_calls": 652140,
+            "danger_comparisons": 652140,
+            "mismatches": 0,
+            "monster_comparisons": 4688,
+            "thinks": 11333,
+            "wall_comparisons": 1410566
+          }
+        },
+        {
+          "name": "full-3-priest-0",
+          "hashes": {
+            "keys.log": "379d35933ed6502d47253207ad58503b35fe4482c3cead7ee7d8c5c2ca23f253",
+            "messages.log": "25bc6f4196c74f9dcb850b8fbdc6ad995c8a3316001f3b1ef38de86a563ca5fd",
+            "state.log": "ae9c7e1e715236bbda374ca5ddc36be4516d1b4dc6b312c80c0ba0c028449bf2"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 613,
+            "caution_calls": 5424,
+            "comparisons": 4212501,
+            "danger_calls": 2603314,
+            "danger_comparisons": 2603314,
+            "mismatches": 0,
+            "monster_comparisons": 445,
+            "thinks": 5552,
+            "wall_comparisons": 1608742
+          }
+        },
+        {
+          "name": "full-3-priest-1",
+          "hashes": {
+            "keys.log": "a48f1c9145414dbe4386e508e5ca5679c10dd1e309942a41af7e4e4474a84e2d",
+            "messages.log": "0c66cad66082cae4772fe825ef3208d4387394737a756d4f49ef8790878f5431",
+            "state.log": "0a47490f632e0b3ad4ee29c388e334c966fcf4ac0a357f036f68b08e2eb59f19"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 482,
+            "caution_calls": 5347,
+            "comparisons": 3815788,
+            "danger_calls": 1734311,
+            "danger_comparisons": 1734311,
+            "mismatches": 0,
+            "monster_comparisons": 501,
+            "thinks": 5428,
+            "wall_comparisons": 2080976
+          }
+        },
+        {
+          "name": "full-3-priest-2",
+          "hashes": {
+            "keys.log": "31d2b0b746281d62f23727b14975bac45e967bb0665ecc808d63255993c23502",
+            "messages.log": "4bce9f97aaeb3d798b90a065d40bd25928db92e10e6e28e7a2842983e13f0ade",
+            "state.log": "fd7b19c1205390a8c8ae8e2885de3badf715108e56d9578fe22b3d5129e7b05f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 385,
+            "caution_calls": 4231,
+            "comparisons": 3110033,
+            "danger_calls": 2016523,
+            "danger_comparisons": 2016523,
+            "mismatches": 0,
+            "monster_comparisons": 648,
+            "thinks": 4334,
+            "wall_comparisons": 1092862
+          }
+        },
+        {
+          "name": "full-3-priest-3",
+          "hashes": {
+            "keys.log": "0f66110cc0687ee27ef1edecc931a3eb9029008513f9f78041d90a5fb7163550",
+            "messages.log": "fc5efcdeaa5b858833af36b4eff6e4f900a1ab40f2867babf4d033968bf378fc",
+            "state.log": "cf0cbe9ee65186f5524118d8c3660342e97591030769e03ab6031dbb6e5bb87f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 343,
+            "caution_calls": 4040,
+            "comparisons": 8820887,
+            "danger_calls": 2244214,
+            "danger_comparisons": 2244214,
+            "mismatches": 0,
+            "monster_comparisons": 911,
+            "thinks": 4092,
+            "wall_comparisons": 6575762
+          }
+        },
+        {
+          "name": "full-3-priest-4",
+          "hashes": {
+            "keys.log": "6bc1c203323a6e53818e863e575517336bc7bb502abfda4fdc2b8bcbbf05cea9",
+            "messages.log": "467ac761e4b57f86cdf763c47f494855e507d0826ca5f84114bb826d97379d49",
+            "state.log": "308fb9b3d03e1c93b3114208483cb9310f26f5a7ca5ebc3bc6d70b655cb2a35e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 493,
+            "caution_calls": 5558,
+            "comparisons": 3242914,
+            "danger_calls": 2837889,
+            "danger_comparisons": 2837889,
+            "mismatches": 0,
+            "monster_comparisons": 542,
+            "thinks": 5634,
+            "wall_comparisons": 404483
+          }
+        },
+        {
+          "name": "full-4-necro-0",
+          "hashes": {
+            "keys.log": "d09cb01382534138c337e986c581b703cd5617f01292108fe861076c8f4463b4",
+            "messages.log": "c9a707ed23c0e6aec4ba470a0d1502a8f24aa449e78faa32b6216c21173c3b89",
+            "state.log": "c03b17037094048c731f565c09065ce55b12e90d9665d7e8f946892493b154b6"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 249,
+            "caution_calls": 2917,
+            "comparisons": 2225686,
+            "danger_calls": 888222,
+            "danger_comparisons": 888222,
+            "mismatches": 0,
+            "monster_comparisons": 1329,
+            "thinks": 2953,
+            "wall_comparisons": 1336135
+          }
+        },
+        {
+          "name": "full-4-necro-1",
+          "hashes": {
+            "keys.log": "f70d13b48c2a133e2bef86cd8bca8b70626147e1d48a0601d28e217e6b054b8d",
+            "messages.log": "3faddc157ff568e2799cb68aa6f059dbbee897e3df0e2931b620edb23eb32a72",
+            "state.log": "3b20266f04281a510ab7dee2533360e9f8c860d57596be634228490225904c13"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 204,
+            "caution_calls": 3524,
+            "comparisons": 3885867,
+            "danger_calls": 1330440,
+            "danger_comparisons": 1330440,
+            "mismatches": 0,
+            "monster_comparisons": 1700,
+            "thinks": 3581,
+            "wall_comparisons": 2553727
+          }
+        },
+        {
+          "name": "full-4-necro-2",
+          "hashes": {
+            "keys.log": "7d08e9bb59d8a1043789e2cf9be2cf913c5612294bdb39b27aa8e2f0cbdf1ed3",
+            "messages.log": "e69678c927f121ca1e73d20a772e4689a34f6703e7e7a364457418da43470644",
+            "state.log": "eb7fdbb4896cd099a9cd75e625accf1974f4706ad3fe05b598964fa092356316"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 266,
+            "caution_calls": 2523,
+            "comparisons": 1527394,
+            "danger_calls": 770208,
+            "danger_comparisons": 770208,
+            "mismatches": 0,
+            "monster_comparisons": 1177,
+            "thinks": 2564,
+            "wall_comparisons": 756009
+          }
+        },
+        {
+          "name": "full-4-necro-3",
+          "hashes": {
+            "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+            "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+            "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 136,
+            "caution_calls": 2021,
+            "comparisons": 1462459,
+            "danger_calls": 679041,
+            "danger_comparisons": 679041,
+            "mismatches": 0,
+            "monster_comparisons": 391,
+            "thinks": 2065,
+            "wall_comparisons": 783027
+          }
+        },
+        {
+          "name": "full-4-necro-4",
+          "hashes": {
+            "keys.log": "4f42afb3f0b4c4a1b915328c79e696d9b8b3881ebd31d9ba3dc52a60162664fa",
+            "messages.log": "c8f4e27afe382a2dcd8ecd8727da26a2d86dc470935f4d9c11b920978a073bc6",
+            "state.log": "d7cbbcdbff08ffea4a679b13849ab9f6c5c61ca802b67eb328107599664b9a65"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 156,
+            "caution_calls": 1977,
+            "comparisons": 1222465,
+            "danger_calls": 630088,
+            "danger_comparisons": 630088,
+            "mismatches": 0,
+            "monster_comparisons": 489,
+            "thinks": 2012,
+            "wall_comparisons": 591888
+          }
+        },
+        {
+          "name": "full-5-paladin-0",
+          "hashes": {
+            "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+            "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+            "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 148,
+            "caution_calls": 1764,
+            "comparisons": 4320683,
+            "danger_calls": 1626737,
+            "danger_comparisons": 1626737,
+            "mismatches": 0,
+            "monster_comparisons": 418,
+            "thinks": 1806,
+            "wall_comparisons": 2693528
+          }
+        },
+        {
+          "name": "full-5-paladin-1",
+          "hashes": {
+            "keys.log": "ebbf9fe2b681a82fa756a8783c01330be3e931b53bf012f3cf1b46a58ac3ece2",
+            "messages.log": "6b8e45d0e27a79dfede8918121c2023e9f3d8b9321f29695b1b40e943ac107f8",
+            "state.log": "b23f9156d95d4c5e45e849a102ce1ee72cc58a99ad2c25bb71257982715d1d56"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 382,
+            "caution_calls": 3758,
+            "comparisons": 7275733,
+            "danger_calls": 4185014,
+            "danger_comparisons": 4185014,
+            "mismatches": 0,
+            "monster_comparisons": 427,
+            "thinks": 3815,
+            "wall_comparisons": 3090292
+          }
+        },
+        {
+          "name": "full-5-paladin-2",
+          "hashes": {
+            "keys.log": "997f1246e50bc57b5aa594ae224fcb827120e7cdaa0dc79f10e2087610b16d73",
+            "messages.log": "70825d60ef62a60fa0405269abcf153cc83018881740b4895f69389796e9db02",
+            "state.log": "81fb40d9e12103296ac87b61d9efdf26be1d400b8e771ae2e01d739c26f9390c"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 538,
+            "caution_calls": 5721,
+            "comparisons": 4857018,
+            "danger_calls": 1697058,
+            "danger_comparisons": 1697058,
+            "mismatches": 0,
+            "monster_comparisons": 534,
+            "thinks": 5819,
+            "wall_comparisons": 3159426
+          }
+        },
+        {
+          "name": "full-5-paladin-3",
+          "hashes": {
+            "keys.log": "bf0daf8b3f3ece7898eb7dc0008259617d1392929557363602c326353458d394",
+            "messages.log": "bf6a39c339367fae629a2e692b148081c997273d0d368148ef3407af92b79184",
+            "state.log": "94a8f4592924c2939a240d35487bb6702d62f8d8b546fcd6cac92b4b357f33c6"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 382,
+            "caution_calls": 3663,
+            "comparisons": 3850760,
+            "danger_calls": 1661359,
+            "danger_comparisons": 1661359,
+            "mismatches": 0,
+            "monster_comparisons": 684,
+            "thinks": 3713,
+            "wall_comparisons": 2188717
+          }
+        },
+        {
+          "name": "full-5-paladin-4",
+          "hashes": {
+            "keys.log": "cbd953a8cad775db0178cd50d2a8b0d6792e031920f9eb464e557ec6db2cd1d6",
+            "messages.log": "a9a5cd6c6c8bcdeb80ec9a5801dccd4d46049393b5e6daa2cc465a2facbaa01f",
+            "state.log": "5ac04d453dfbdbf9f29cf0dc116e4e34185970ee9c90b4bfb8c99c4b5783f6ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 258,
+            "caution_calls": 4549,
+            "comparisons": 3514277,
+            "danger_calls": 1818330,
+            "danger_comparisons": 1818330,
+            "mismatches": 0,
+            "monster_comparisons": 721,
+            "thinks": 4618,
+            "wall_comparisons": 1695226
+          }
+        },
+        {
+          "name": "full-6-rogue-0",
+          "hashes": {
+            "keys.log": "36cc40b02fe7059f30515584bf22aea2e8a4549546a98fedf2b3f4eb733d8366",
+            "messages.log": "e5bb2a7dd524e5c32e0fdcd0780cb76f350113a2009aaf29b30d2ce519fc6a28",
+            "state.log": "0d9faabf75e92b21ec4388a6e19564e7719e2316a38f057537102ad57ee2666d"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 550,
+            "caution_calls": 9896,
+            "comparisons": 3411125,
+            "danger_calls": 2343099,
+            "danger_comparisons": 2343099,
+            "mismatches": 0,
+            "monster_comparisons": 804,
+            "thinks": 10122,
+            "wall_comparisons": 1067222
+          }
+        },
+        {
+          "name": "full-6-rogue-1",
+          "hashes": {
+            "keys.log": "923c7a5c2c057481e6ef98e72a23909d3100faa610caeda7b472a465332d5208",
+            "messages.log": "7d467c62b2fdf8826b1c9dd6d572d39e1d87d4c6a6c51e3c96ced8cde042574e",
+            "state.log": "e7360a19a90116ef6fe65be3c28c3d95752d7a9651c3b020a430731776ae266a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 438,
+            "caution_calls": 9881,
+            "comparisons": 8406661,
+            "danger_calls": 3105736,
+            "danger_comparisons": 3105736,
+            "mismatches": 0,
+            "monster_comparisons": 626,
+            "thinks": 10018,
+            "wall_comparisons": 5300299
+          }
+        },
+        {
+          "name": "full-6-rogue-2",
+          "hashes": {
+            "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+            "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+            "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 299,
+            "caution_calls": 4951,
+            "comparisons": 5040281,
+            "danger_calls": 3469684,
+            "danger_comparisons": 3469684,
+            "mismatches": 0,
+            "monster_comparisons": 426,
+            "thinks": 5008,
+            "wall_comparisons": 1570171
+          }
+        },
+        {
+          "name": "full-6-rogue-3",
+          "hashes": {
+            "keys.log": "b2170800341971ecb6655d8ca836bb7385ff42908b446be2c66d6bb3dc62d874",
+            "messages.log": "a399d7770344a6095001565cf81e2b794553554166a03fbe3e3dce9e7113a355",
+            "state.log": "34461e617e7e5097a5dc8a5d99d95bd3febbac1352a3c64ecf6bd4d4b275cc19"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 454,
+            "caution_calls": 9791,
+            "comparisons": 6867107,
+            "danger_calls": 3730792,
+            "danger_comparisons": 3730792,
+            "mismatches": 0,
+            "monster_comparisons": 1652,
+            "thinks": 9955,
+            "wall_comparisons": 3134663
+          }
+        },
+        {
+          "name": "full-6-rogue-4",
+          "hashes": {
+            "keys.log": "2ac121ac643f450d621f869e55e8ef315decfc5594ffcb206c648e5173d7f24d",
+            "messages.log": "e8d210f31e547de34ba644b7ac23a66af502a99ddab0b796a3daf0205f6345d6",
+            "state.log": "f50ecb73a20e4cb6c3f230633e26b4ac6b3ed85b79f8e22e48cf02d487fa721a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 618,
+            "caution_calls": 10167,
+            "comparisons": 8524607,
+            "danger_calls": 4215806,
+            "danger_comparisons": 4215806,
+            "mismatches": 0,
+            "monster_comparisons": 657,
+            "thinks": 10362,
+            "wall_comparisons": 4308144
+          }
+        },
+        {
+          "name": "full-7-ranger-0",
+          "hashes": {
+            "keys.log": "7af8bc703b9170583ad8d9c604d12144a2b52c375444b3f82006bfd7362e53b3",
+            "messages.log": "7ff9aaa0315461c5bb747b619fc9df1b557e97b3d903c78eeb086c855aedd42b",
+            "state.log": "a101facbd8baa594c2744360a37e07138cf5f76517db522c5321b5dbb3ba14da"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 60,
+            "caution_calls": 921,
+            "comparisons": 939628,
+            "danger_calls": 528228,
+            "danger_comparisons": 528228,
+            "mismatches": 0,
+            "monster_comparisons": 1514,
+            "thinks": 12906,
+            "wall_comparisons": 409886
+          }
+        },
+        {
+          "name": "full-7-ranger-1",
+          "hashes": {
+            "keys.log": "fd2b57b899ae4ab99e755ab00eb33f96df243218bac5b2a5af85323ec5a47ff7",
+            "messages.log": "7c8ea454f0d6a2b002f40abfab1b485100ebc172604078f67ea44491c5ca507e",
+            "state.log": "90c7e74522e83f2f19ecbef745bd8ff95f6ba0a05abc400ae2d6788599e99035"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 52,
+            "caution_calls": 744,
+            "comparisons": 372490,
+            "danger_calls": 212484,
+            "danger_comparisons": 212484,
+            "mismatches": 0,
+            "monster_comparisons": 935,
+            "thinks": 14146,
+            "wall_comparisons": 159071
+          }
+        },
+        {
+          "name": "full-7-ranger-2",
+          "hashes": {
+            "keys.log": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+            "messages.log": "8d16c4f6c115675938c78b745f74cd299155138006c68c236a65b93e80271ca5",
+            "state.log": "55ab81d341bf5eee54be4063d9752e1f07ee52f8d7a4114c84e4450a28a0a471"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 20,
+            "caution_calls": 666,
+            "comparisons": 2742538,
+            "danger_calls": 710069,
+            "danger_comparisons": 710069,
+            "mismatches": 0,
+            "monster_comparisons": 594,
+            "thinks": 875,
+            "wall_comparisons": 2031875
+          }
+        },
+        {
+          "name": "full-7-ranger-3",
+          "hashes": {
+            "keys.log": "1523b41ce35edca3c78d2a5318baf23cb1d7de1d1da151172b672ac6c6c0b1f2",
+            "messages.log": "1656be3ff46e619f18ba6cc19bda24d9e71c7035a7d726c399e95ac2ad783af2",
+            "state.log": "46264ed9c59ee2be4c5799cf5c9d8c1ffd4ec64edaf247b2ebad07f8075b9f53"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 42,
+            "caution_calls": 1437,
+            "comparisons": 721800,
+            "danger_calls": 297214,
+            "danger_comparisons": 297214,
+            "mismatches": 0,
+            "monster_comparisons": 3753,
+            "thinks": 14065,
+            "wall_comparisons": 420833
+          }
+        },
+        {
+          "name": "full-7-ranger-4",
+          "hashes": {
+            "keys.log": "0a78915e0caced04f5e5dfa98104c309d90d291dd68e12f0c5511a39662bca16",
+            "messages.log": "89574b9ceba4b5c0c5f42025fa3b1d815cf624889108effe8280d8c2c86850f4",
+            "state.log": "b241a7c963ffbafa9cec9c7ebac35f2f1193c2147ec0d4194672cb7da0e64112"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 78,
+            "caution_calls": 2423,
+            "comparisons": 2166105,
+            "danger_calls": 1463922,
+            "danger_comparisons": 1463922,
+            "mismatches": 0,
+            "monster_comparisons": 6766,
+            "thinks": 19372,
+            "wall_comparisons": 695417
+          }
+        },
+        {
+          "name": "full-8-blackguard-0",
+          "hashes": {
+            "keys.log": "a868a5d5380789ee625b6e0e8aaeb2cf171ec800080c89310d750d52c14f37b6",
+            "messages.log": "701b82bcc4f99903bae4f0cd20698a97df03efb3b220625b0a7939f239e274f5",
+            "state.log": "46bba4f265cad6da18743fb74f287eb975b650b9f9813ea01c379db396c8c845"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 259,
+            "caution_calls": 2904,
+            "comparisons": 2728899,
+            "danger_calls": 1011794,
+            "danger_comparisons": 1011794,
+            "mismatches": 0,
+            "monster_comparisons": 292,
+            "thinks": 2930,
+            "wall_comparisons": 1716813
+          }
+        },
+        {
+          "name": "full-8-blackguard-1",
+          "hashes": {
+            "keys.log": "f6cb9fcf6f7640618c49d7207273d83cffe063fff4c17170908df623f8f43986",
+            "messages.log": "8dc94806a5be535a07a5f1fb34917c83927c834e18470d98317e0802f1ac4f78",
+            "state.log": "78d7e065e7fe11ef778cdd4c699959ed6c520054ad9e4faf278a88e82906d60b"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 285,
+            "caution_calls": 5099,
+            "comparisons": 23910270,
+            "danger_calls": 3065659,
+            "danger_comparisons": 3065659,
+            "mismatches": 0,
+            "monster_comparisons": 1174,
+            "thinks": 5156,
+            "wall_comparisons": 20843437
+          }
+        },
+        {
+          "name": "full-8-blackguard-2",
+          "hashes": {
+            "keys.log": "c14ea78392461c37dc33b85e6e05d5b80f6fe4afe43d8640ea6eb3baed6195fa",
+            "messages.log": "72219fb2c90f0c6413cb0c62d943ea494c537a742910d6f5094bbb6a3e02c988",
+            "state.log": "498c65acf8f4d1ce908e65b952c932ed14bc4440b13391a7524f75a9bc802c9c"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 519,
+            "caution_calls": 8203,
+            "comparisons": 5816146,
+            "danger_calls": 3525073,
+            "danger_comparisons": 3525073,
+            "mismatches": 0,
+            "monster_comparisons": 704,
+            "thinks": 8301,
+            "wall_comparisons": 2290369
+          }
+        },
+        {
+          "name": "full-8-blackguard-3",
+          "hashes": {
+            "keys.log": "28833d1f3b203b9b47eaed191adb259caa12180327c85d8b9a98aeea2cdb2991",
+            "messages.log": "cd4433609fd02d39b55d0708f9cdd49b1e89d797aeca1e8dbf0170a43ad26102",
+            "state.log": "f4488cc27cf54c35197b4e7eba1887b5a26b6da84c77e70c81f761343c75f2d5"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 501,
+            "caution_calls": 4476,
+            "comparisons": 3829901,
+            "danger_calls": 1721215,
+            "danger_comparisons": 1721215,
+            "mismatches": 0,
+            "monster_comparisons": 304,
+            "thinks": 4540,
+            "wall_comparisons": 2108382
+          }
+        },
+        {
+          "name": "full-8-blackguard-4",
+          "hashes": {
+            "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+            "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+            "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 108,
+            "caution_calls": 1914,
+            "comparisons": 2002832,
+            "danger_calls": 763559,
+            "danger_comparisons": 763559,
+            "mismatches": 0,
+            "monster_comparisons": 164,
+            "thinks": 1947,
+            "wall_comparisons": 1239109
+          }
+        }
+      ],
+      "totals": {
+        "caution_actions": 11287,
+        "caution_calls": 154821,
+        "comparisons": 177960251,
+        "danger_calls": 66900787,
+        "danger_comparisons": 66900787,
+        "mismatches": 0,
+        "monster_comparisons": 111865,
+        "thinks": 295464,
+        "wall_comparisons": 110947599
+      },
+      "shared_summary_difference_counts": {
+        "borg_decisions": 45,
+        "borg_rng": 45,
+        "effective_settings": 45,
+        "wall_seconds": 45
+      },
+      "manifest": "suite=full\nsuite_file=/workspace/borg-reborn-rs/harness/suites/full\nsuite_sha256=7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed\nborg_txt_sha256=7ad02003818ab72596bd164381f47775f39c0414b9a29aa1f07d167024c0dab6\nborg_impl_env=rust\nbinary=/workspace/borg-reborn-rs/build/rust/game/angband\nbinary_sha256=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nbinary_impl=rust\nbinary_elf_impl=rust\nbinary_cmake_borg_impl=unknown\nbuild_id_impl=rust\nbuild_id_git_rev=137a5a3709aa355a5b4e8bd17fda01cf68f27d66\nbuild_id_git_dirty=yes\nbuild_id_inputs_dirty=yes\nbuild_id_source_sha256=3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851\nbuild_id_engine_upstream=42cd156ac9f95ddf4311e88dd7ad462292d6d1d6\nbuild_id_binary_sha256=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nbuild_id_cc=cc (Debian 14.2.0-19) 14.2.0\nbuild_id_rustc=rustc 1.100.0 (0ef1bc386 2026-11-09)\nbuild_id_built_utc=2026-11-15T11:17:30Z\ncheckout_source_sha256=3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851\nimpl_check=ok\nbuild_check=ok\noverrides=none\ngit_rev=137a5a3709aa355a5b4e8bd17fda01cf68f27d66\ngit_dirty=yes\njobs=5\ncheckpoint_every=0\nrun_timeout_seconds=0\nsave_root=/workspace/borg-reborn-rs/harness/saves\nstarted_utc=2026-11-15T11:19:30Z\nrun_config.full-0-warrior-0=menu 766d4b11ce03827df119b911aa898d3efdb38a74c69b237e1ed93ed43284f3ee\nrun_config.full-0-warrior-1=menu 495f3461c997126198d69caa14a21cf58cf79fbccb223dfb5e1bf09a4f397610\nrun_config.full-0-warrior-2=menu d2dfcde1a5e5c00f991b2d45b2d0ab3b38695bf9afa81032859f753fe85d6614\nrun_config.full-0-warrior-3=menu 7adaefb08a33968c589870fc80daf2f2776ca20f0d6bf9dde6aff7c24302288d\nrun_config.full-0-warrior-4=menu 61d0e1e3886c53520501de414b72542293386e5ad26106cf55e6a0a527542545\nrun_config.full-1-mage-0=menu cfe4510f93a0d362922a88903efb019829e49074b28dbc785838df9c5eb2fb6f\nrun_config.full-1-mage-1=menu d60d27905fe3a3259937f2fcd71c049179d523d2065f1c2bbaee55a29e65bb11\nrun_config.full-1-mage-2=menu a1a735ea25d0d6748995d4dab4e75328a75fb1d187480b2d062b33efbdd5f105\nrun_config.full-1-mage-3=menu 1dca71e4c1cf1a5b53843981011da3c2941a55e902d0934f2cdde7c0f4c628e4\nrun_config.full-1-mage-4=menu b14911250df5495cb8060f1496095546d3f0c7f73225661b64bed70f775c4dfd\nrun_config.full-2-druid-0=menu 94f240dca22046ee4c2b35bcd6625c563dcb594bfeb12bb865937d6f2a33589a\nrun_config.full-2-druid-1=menu 22f26b18b131354886de8f90b14c79bb98f839609094abd4f50213900fd416b4\nrun_config.full-2-druid-2=menu 2aee5a565a0b09037b9740ed4a64bffeec3d39c54ec64d131c465f100c327f23\nrun_config.full-2-druid-3=menu f5b3195d6bb0f3d80077eedab891244a3f9c12ae77e3def26cb09c2b7c8ceae7\nrun_config.full-2-druid-4=menu 8b4854592916d77b18ec3e19c1d84b1dd060778e2234b3df1b1018951545a22b\nrun_config.full-3-priest-0=menu 7179037f87b3f44ac34480c1911816916ef2c2b034dfea2fef05eb8aaa73cbd7\nrun_config.full-3-priest-1=menu 710860556a3e5b1a3814aa47d791941fd75f69e8c7adab11cb502fc37cdb60a8\nrun_config.full-3-priest-2=menu 86c1295633033d2783d802782bf7d8aaede3dcb9340fdd42ec3a51fa97e59414\nrun_config.full-3-priest-3=menu b3fba54f77d0fb932a824d3e305e0697ca5170915772bb0d52d7276042d30e5b\nrun_config.full-3-priest-4=menu b994b99efeccba1aa72fcccbfb2b594010b558dde3dc91a1916e5b8bead9020e\nrun_config.full-4-necro-0=menu 2d799e4ab6f0448ceec16194d0fcc06bfc1a2a9792e9054a94a0d67b732fbefe\nrun_config.full-4-necro-1=menu 825fb1ef2419e3c2bb30229edd14d95a4356b695dadc2b7303e9e2c034efe5a7\nrun_config.full-4-necro-2=menu d56e1fe212b46267323e07cfb42b3a062616517b18d96a3537a82ea8d5d83faf\nrun_config.full-4-necro-3=menu 509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c\nrun_config.full-4-necro-4=menu 5862cb040622746e4fafd2198b15480a3a18dd640133260a251ecfd068aaf2db\nrun_config.full-5-paladin-0=menu 188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933\nrun_config.full-5-paladin-1=menu ccdf2801bcd4c9e7520008f52b12f23d4b07d74d4ba0a997bd150f743cf011a4\nrun_config.full-5-paladin-2=menu 3684d62e4cae778762336baa0b5c783e1eddd688f96fb8f0d57486f2ac0a0ae5\nrun_config.full-5-paladin-3=menu ed4f74dbbd4dfeef6bfb07fe25b344c129c4150e871b9c4897ce0a85476acd5b\nrun_config.full-5-paladin-4=menu 5402f6fe7bde7d15c27f1b45e4c5ac52686c81eaa7bc4c0305b1e3245591097a\nrun_config.full-6-rogue-0=menu 9740be01bde113fd4708752d34d4c6511a4f70316a7c8d598a1a44ac274b8413\nrun_config.full-6-rogue-1=menu 9dafd6b4a1b110523af9987198876fb2899e2c8ade0f045fbbdd45f6b4ace48b\nrun_config.full-6-rogue-2=menu 3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62\nrun_config.full-6-rogue-3=menu 253a0af1d5f14b7c3279f284d2acb89f224e3f43561b38a0a5389b66ade30d87\nrun_config.full-6-rogue-4=menu 9fe533349067a891562ceba7a31aa5918636fb0cf1209e2894c9288f0aa131e8\nrun_config.full-7-ranger-0=menu d7cdd275e88d8d7f9905731de4cedd269705dffd717d9c8287ed5cf6cb76d094\nrun_config.full-7-ranger-1=menu 435634e0c6906ca2698cfe31b388f564fdf089ef01b3b40351cad61bed366f51\nrun_config.full-7-ranger-2=menu ec59d6265d460488c0acbc482dd16c531396b359915ecc5434547cb06a00bcc3\nrun_config.full-7-ranger-3=menu a6e186ac0902b7cb63872e4af3b9cc08c7924b3e091495a75fae02d637005d67\nrun_config.full-7-ranger-4=menu c8d5f464f92d413e156e7f09d9a3d22e3564fd8dade85277e83a871bc16f7c20\nrun_config.full-8-blackguard-0=menu b880401d638d2abc0fd157c8c7381e27e4551d96aa9893eeeeb2148720e789f9\nrun_config.full-8-blackguard-1=menu bf30c6ba3a34ee61a4f95a4c9b5a282a5d1de3f405a060fc9d280e8358bae17d\nrun_config.full-8-blackguard-2=menu 5f671ec41ef5d0ce4bb6e69ec3c30170e6b371d04eda53ec6e1d9b05abe6b849\nrun_config.full-8-blackguard-3=menu 55b874d008a1219a348438e39cd32d770a77bd4011fae500598760d604d93b2a\nrun_config.full-8-blackguard-4=menu 488eec53ca3f58c9634d0b7f5b23560cf50aa35e20e7a1478af039c1cb03c762\nbinary_sha256_end=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nfinished_utc=2026-11-15T11:24:13Z result=OK\n"
+    },
+    "switch": {
+      "v12_play_log_equal": 45,
+      "runs": [
+        {
+          "name": "full-0-warrior-0",
+          "hashes": {
+            "keys.log": "50938135474b7544a96f7aa21c013338b1291fe97526a79b544a965bd2b2c9fe",
+            "messages.log": "38136e606ec9298d9c0fa2aba21f3d0695ff7a06c82ea471093ccb0c251efb09",
+            "state.log": "7f761867c611b3ef648a45aaccc564d1b57ab2d81a9130c8957619e53fa75d71"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 15,
+            "caution_calls": 436,
+            "comparisons": 263263,
+            "danger_calls": 128984,
+            "danger_comparisons": 128984,
+            "mismatches": 0,
+            "monster_comparisons": 1600,
+            "thinks": 13913,
+            "wall_comparisons": 132679
+          }
+        },
+        {
+          "name": "full-0-warrior-1",
+          "hashes": {
+            "keys.log": "cd2afac79fc047acd53c33bd12b4db2ee6815b30b6fa0aec767d339703f6a29e",
+            "messages.log": "b7c6bc387b91a5980dd507b7bf17cb3ab93404ec37bec2819124db623a9f35ef",
+            "state.log": "3163fbc31a0afe0b5e542bd3a65c0715645234416172cab3ed9d39db8a4fb881"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 13,
+            "caution_calls": 401,
+            "comparisons": 264363,
+            "danger_calls": 159711,
+            "danger_comparisons": 159711,
+            "mismatches": 0,
+            "monster_comparisons": 3671,
+            "thinks": 12162,
+            "wall_comparisons": 100981
+          }
+        },
+        {
+          "name": "full-0-warrior-2",
+          "hashes": {
+            "keys.log": "3c02ae1e7ead0373aef2a4cff15b99b07d1ee2768549fe686c69bbe7204978c0",
+            "messages.log": "1ab72b01cf82e18969fccf1db327bd64037d0b76af9691f4e433fe252825ad42",
+            "state.log": "e4256650f402cd371f69b90fe2b97e607adf94f1ffa767c4151507b6d1df70ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 38,
+            "caution_calls": 413,
+            "comparisons": 354982,
+            "danger_calls": 198580,
+            "danger_comparisons": 198580,
+            "mismatches": 0,
+            "monster_comparisons": 940,
+            "thinks": 11228,
+            "wall_comparisons": 155462
+          }
+        },
+        {
+          "name": "full-0-warrior-3",
+          "hashes": {
+            "keys.log": "b0a52ca412def041073d465ee1e418f030e276357b9096413ddd2b6e5382c208",
+            "messages.log": "41d9a304c74d94ad39039958c49953991f9adccba9a2d0dd5d4f46a28bb19e13",
+            "state.log": "702d3f44b0bc5f5aa96bc5725bed132e7d64053db37739874ec37c65f6f7a737"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 105,
+            "caution_calls": 1082,
+            "comparisons": 1200321,
+            "danger_calls": 513710,
+            "danger_comparisons": 513710,
+            "mismatches": 0,
+            "monster_comparisons": 1253,
+            "thinks": 12378,
+            "wall_comparisons": 685358
+          }
+        },
+        {
+          "name": "full-0-warrior-4",
+          "hashes": {
+            "keys.log": "973386392466d5045dbd1d2d7b3f022cf1c8c9b8364940c878258b6e0f51f708",
+            "messages.log": "5efea5e059d2a475cd087b476e9582a1defe1e24a0408845938c7ed5cbbd3282",
+            "state.log": "0002fe369b61dcb8ef3ae2b7e7d0da0cb1a49b45026a75da138a4ffa38f93802"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 9,
+            "caution_calls": 226,
+            "comparisons": 196618,
+            "danger_calls": 79688,
+            "danger_comparisons": 79688,
+            "mismatches": 0,
+            "monster_comparisons": 327,
+            "thinks": 12056,
+            "wall_comparisons": 116603
+          }
+        },
+        {
+          "name": "full-1-mage-0",
+          "hashes": {
+            "keys.log": "8a9a5e0c7c33e6f6d92729037ba4e5f21202dcf9cfca9298db5d6257c057730c",
+            "messages.log": "a04d3fa0b8aa907ff15212db7739e7ebf94eaf3ffdeff7d2ad4c694dcf402fda",
+            "state.log": "d431237c0274cbf0c400d591b727fa267270cceb5dca4e906bf303149b4519ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 340,
+            "caution_calls": 3809,
+            "comparisons": 1359577,
+            "danger_calls": 546199,
+            "danger_comparisons": 546199,
+            "mismatches": 0,
+            "monster_comparisons": 7556,
+            "thinks": 3862,
+            "wall_comparisons": 805822
+          }
+        },
+        {
+          "name": "full-1-mage-1",
+          "hashes": {
+            "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+            "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+            "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 104,
+            "caution_calls": 1133,
+            "comparisons": 8503778,
+            "danger_calls": 769421,
+            "danger_comparisons": 769421,
+            "mismatches": 0,
+            "monster_comparisons": 1031,
+            "thinks": 1155,
+            "wall_comparisons": 7733326
+          }
+        },
+        {
+          "name": "full-1-mage-2",
+          "hashes": {
+            "keys.log": "33a9e1b9efef4e1fd1060fab66665a4fc904c613fa2d496ebd87ea1e87da686b",
+            "messages.log": "964b0d92630002474a3b4c3938317b48588be63a37b075a93ff04bf8f1736752",
+            "state.log": "83ce4dcc87efd93c94b595fffa41c4caf766172fa540c6d079cef075c261710f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 310,
+            "caution_calls": 4348,
+            "comparisons": 3127173,
+            "danger_calls": 920847,
+            "danger_comparisons": 920847,
+            "mismatches": 0,
+            "monster_comparisons": 4654,
+            "thinks": 4435,
+            "wall_comparisons": 2201672
+          }
+        },
+        {
+          "name": "full-1-mage-3",
+          "hashes": {
+            "keys.log": "8180b0901103cd96fde8bedcff6887c0d0fce4d873af9ae27be97efecbbf4f61",
+            "messages.log": "4f998f74caaa6043d012f775c448f3e6c0d632a32cb73876b3651f658cfa35b5",
+            "state.log": "aacf7e4770d8d01af084f0acdb5f5a438b46b649b4ed4dc0eedce7952d42499e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 331,
+            "caution_calls": 3718,
+            "comparisons": 2916511,
+            "danger_calls": 557514,
+            "danger_comparisons": 557514,
+            "mismatches": 0,
+            "monster_comparisons": 6486,
+            "thinks": 3786,
+            "wall_comparisons": 2352511
+          }
+        },
+        {
+          "name": "full-1-mage-4",
+          "hashes": {
+            "keys.log": "ea3cbe1895c1b1d993899da62d0050cc6eaf0e8e457e8b45624e2ba051cfb7bb",
+            "messages.log": "828f394cb3e3f0b8e722e9c338ec1e3a165af5e2fb61f5f6355627e319034fbf",
+            "state.log": "6ddc05337c22d1fe679c389983af5e03e5c5d56423b03dd2cc52e9311c1c423a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 392,
+            "caution_calls": 4327,
+            "comparisons": 19648100,
+            "danger_calls": 4638897,
+            "danger_comparisons": 4638897,
+            "mismatches": 0,
+            "monster_comparisons": 8870,
+            "thinks": 4376,
+            "wall_comparisons": 15000333
+          }
+        },
+        {
+          "name": "full-2-druid-0",
+          "hashes": {
+            "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+            "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+            "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 110,
+            "caution_calls": 1002,
+            "comparisons": 520640,
+            "danger_calls": 253998,
+            "danger_comparisons": 253998,
+            "mismatches": 0,
+            "monster_comparisons": 46,
+            "thinks": 1027,
+            "wall_comparisons": 266596
+          }
+        },
+        {
+          "name": "full-2-druid-1",
+          "hashes": {
+            "keys.log": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+            "messages.log": "d74ec5bd8acb04981bcbce756a680d8a62262ca11c42e634874dd260bd4f42a3",
+            "state.log": "82127e32d5ceede3b4ae7fade7faead94b869118b1f4d6f164cea6f8d0f12d69"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 16,
+            "caution_calls": 237,
+            "comparisons": 130629,
+            "danger_calls": 68026,
+            "danger_comparisons": 68026,
+            "mismatches": 0,
+            "monster_comparisons": 102,
+            "thinks": 908,
+            "wall_comparisons": 62501
+          }
+        },
+        {
+          "name": "full-2-druid-2",
+          "hashes": {
+            "keys.log": "7438defb71e8e7eccbb29497f1d2a5ac9a9dac863b4c3e9c423118b5fd1c5f28",
+            "messages.log": "8562d2db19adffed0f6c9ce8c51072fc6b86ffabcd8ec8be03cc51cb52103f33",
+            "state.log": "731d3eee730e9f2d31ad71c9f7f187f123ddd295987903ccf9d626e8f6e99e4b"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 7,
+            "caution_calls": 937,
+            "comparisons": 455074,
+            "danger_calls": 115439,
+            "danger_comparisons": 115439,
+            "mismatches": 0,
+            "monster_comparisons": 15162,
+            "thinks": 7051,
+            "wall_comparisons": 324473
+          }
+        },
+        {
+          "name": "full-2-druid-3",
+          "hashes": {
+            "keys.log": "0e621f2830fe1041cdd327ddb6af1d99a3e276462a3c2c958ec74b623530e0b0",
+            "messages.log": "dec38121aade30a81a502cc049c26767e60b384d88cebe15547905661b48bdb0",
+            "state.log": "7fc259062b24a8ca6d1b549b61ecc16977d506a229df7772d3c45573691bab04"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 107,
+            "caution_calls": 1032,
+            "comparisons": 2126973,
+            "danger_calls": 410551,
+            "danger_comparisons": 410551,
+            "mismatches": 0,
+            "monster_comparisons": 24197,
+            "thinks": 8105,
+            "wall_comparisons": 1692225
+          }
+        },
+        {
+          "name": "full-2-druid-4",
+          "hashes": {
+            "keys.log": "1b353537d61f93d903db94a66e52756daf70ca43d8e620de0a6e8fed5f0f9d1f",
+            "messages.log": "053f73dfc54b8d704bd6c81dca9411d6651350ac8f28763452ffbe2e52d5f387",
+            "state.log": "57535ef527c2fdded75f7879eb4e100add7986a58e5a46859f0c2b23d21b72b2"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 72,
+            "caution_calls": 1230,
+            "comparisons": 2067394,
+            "danger_calls": 652140,
+            "danger_comparisons": 652140,
+            "mismatches": 0,
+            "monster_comparisons": 4688,
+            "thinks": 11333,
+            "wall_comparisons": 1410566
+          }
+        },
+        {
+          "name": "full-3-priest-0",
+          "hashes": {
+            "keys.log": "379d35933ed6502d47253207ad58503b35fe4482c3cead7ee7d8c5c2ca23f253",
+            "messages.log": "25bc6f4196c74f9dcb850b8fbdc6ad995c8a3316001f3b1ef38de86a563ca5fd",
+            "state.log": "ae9c7e1e715236bbda374ca5ddc36be4516d1b4dc6b312c80c0ba0c028449bf2"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 613,
+            "caution_calls": 5424,
+            "comparisons": 4212501,
+            "danger_calls": 2603314,
+            "danger_comparisons": 2603314,
+            "mismatches": 0,
+            "monster_comparisons": 445,
+            "thinks": 5552,
+            "wall_comparisons": 1608742
+          }
+        },
+        {
+          "name": "full-3-priest-1",
+          "hashes": {
+            "keys.log": "a48f1c9145414dbe4386e508e5ca5679c10dd1e309942a41af7e4e4474a84e2d",
+            "messages.log": "0c66cad66082cae4772fe825ef3208d4387394737a756d4f49ef8790878f5431",
+            "state.log": "0a47490f632e0b3ad4ee29c388e334c966fcf4ac0a357f036f68b08e2eb59f19"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 482,
+            "caution_calls": 5347,
+            "comparisons": 3815788,
+            "danger_calls": 1734311,
+            "danger_comparisons": 1734311,
+            "mismatches": 0,
+            "monster_comparisons": 501,
+            "thinks": 5428,
+            "wall_comparisons": 2080976
+          }
+        },
+        {
+          "name": "full-3-priest-2",
+          "hashes": {
+            "keys.log": "31d2b0b746281d62f23727b14975bac45e967bb0665ecc808d63255993c23502",
+            "messages.log": "4bce9f97aaeb3d798b90a065d40bd25928db92e10e6e28e7a2842983e13f0ade",
+            "state.log": "fd7b19c1205390a8c8ae8e2885de3badf715108e56d9578fe22b3d5129e7b05f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 385,
+            "caution_calls": 4231,
+            "comparisons": 3110033,
+            "danger_calls": 2016523,
+            "danger_comparisons": 2016523,
+            "mismatches": 0,
+            "monster_comparisons": 648,
+            "thinks": 4334,
+            "wall_comparisons": 1092862
+          }
+        },
+        {
+          "name": "full-3-priest-3",
+          "hashes": {
+            "keys.log": "0f66110cc0687ee27ef1edecc931a3eb9029008513f9f78041d90a5fb7163550",
+            "messages.log": "fc5efcdeaa5b858833af36b4eff6e4f900a1ab40f2867babf4d033968bf378fc",
+            "state.log": "cf0cbe9ee65186f5524118d8c3660342e97591030769e03ab6031dbb6e5bb87f"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 343,
+            "caution_calls": 4040,
+            "comparisons": 8820887,
+            "danger_calls": 2244214,
+            "danger_comparisons": 2244214,
+            "mismatches": 0,
+            "monster_comparisons": 911,
+            "thinks": 4092,
+            "wall_comparisons": 6575762
+          }
+        },
+        {
+          "name": "full-3-priest-4",
+          "hashes": {
+            "keys.log": "6bc1c203323a6e53818e863e575517336bc7bb502abfda4fdc2b8bcbbf05cea9",
+            "messages.log": "467ac761e4b57f86cdf763c47f494855e507d0826ca5f84114bb826d97379d49",
+            "state.log": "308fb9b3d03e1c93b3114208483cb9310f26f5a7ca5ebc3bc6d70b655cb2a35e"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 493,
+            "caution_calls": 5558,
+            "comparisons": 3242914,
+            "danger_calls": 2837889,
+            "danger_comparisons": 2837889,
+            "mismatches": 0,
+            "monster_comparisons": 542,
+            "thinks": 5634,
+            "wall_comparisons": 404483
+          }
+        },
+        {
+          "name": "full-4-necro-0",
+          "hashes": {
+            "keys.log": "d09cb01382534138c337e986c581b703cd5617f01292108fe861076c8f4463b4",
+            "messages.log": "c9a707ed23c0e6aec4ba470a0d1502a8f24aa449e78faa32b6216c21173c3b89",
+            "state.log": "c03b17037094048c731f565c09065ce55b12e90d9665d7e8f946892493b154b6"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 249,
+            "caution_calls": 2917,
+            "comparisons": 2225686,
+            "danger_calls": 888222,
+            "danger_comparisons": 888222,
+            "mismatches": 0,
+            "monster_comparisons": 1329,
+            "thinks": 2953,
+            "wall_comparisons": 1336135
+          }
+        },
+        {
+          "name": "full-4-necro-1",
+          "hashes": {
+            "keys.log": "f70d13b48c2a133e2bef86cd8bca8b70626147e1d48a0601d28e217e6b054b8d",
+            "messages.log": "3faddc157ff568e2799cb68aa6f059dbbee897e3df0e2931b620edb23eb32a72",
+            "state.log": "3b20266f04281a510ab7dee2533360e9f8c860d57596be634228490225904c13"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 204,
+            "caution_calls": 3524,
+            "comparisons": 3885867,
+            "danger_calls": 1330440,
+            "danger_comparisons": 1330440,
+            "mismatches": 0,
+            "monster_comparisons": 1700,
+            "thinks": 3581,
+            "wall_comparisons": 2553727
+          }
+        },
+        {
+          "name": "full-4-necro-2",
+          "hashes": {
+            "keys.log": "7d08e9bb59d8a1043789e2cf9be2cf913c5612294bdb39b27aa8e2f0cbdf1ed3",
+            "messages.log": "e69678c927f121ca1e73d20a772e4689a34f6703e7e7a364457418da43470644",
+            "state.log": "eb7fdbb4896cd099a9cd75e625accf1974f4706ad3fe05b598964fa092356316"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 266,
+            "caution_calls": 2523,
+            "comparisons": 1527394,
+            "danger_calls": 770208,
+            "danger_comparisons": 770208,
+            "mismatches": 0,
+            "monster_comparisons": 1177,
+            "thinks": 2564,
+            "wall_comparisons": 756009
+          }
+        },
+        {
+          "name": "full-4-necro-3",
+          "hashes": {
+            "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+            "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+            "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 136,
+            "caution_calls": 2021,
+            "comparisons": 1462459,
+            "danger_calls": 679041,
+            "danger_comparisons": 679041,
+            "mismatches": 0,
+            "monster_comparisons": 391,
+            "thinks": 2065,
+            "wall_comparisons": 783027
+          }
+        },
+        {
+          "name": "full-4-necro-4",
+          "hashes": {
+            "keys.log": "4f42afb3f0b4c4a1b915328c79e696d9b8b3881ebd31d9ba3dc52a60162664fa",
+            "messages.log": "c8f4e27afe382a2dcd8ecd8727da26a2d86dc470935f4d9c11b920978a073bc6",
+            "state.log": "d7cbbcdbff08ffea4a679b13849ab9f6c5c61ca802b67eb328107599664b9a65"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 156,
+            "caution_calls": 1977,
+            "comparisons": 1222465,
+            "danger_calls": 630088,
+            "danger_comparisons": 630088,
+            "mismatches": 0,
+            "monster_comparisons": 489,
+            "thinks": 2012,
+            "wall_comparisons": 591888
+          }
+        },
+        {
+          "name": "full-5-paladin-0",
+          "hashes": {
+            "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+            "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+            "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 148,
+            "caution_calls": 1764,
+            "comparisons": 4320683,
+            "danger_calls": 1626737,
+            "danger_comparisons": 1626737,
+            "mismatches": 0,
+            "monster_comparisons": 418,
+            "thinks": 1806,
+            "wall_comparisons": 2693528
+          }
+        },
+        {
+          "name": "full-5-paladin-1",
+          "hashes": {
+            "keys.log": "ebbf9fe2b681a82fa756a8783c01330be3e931b53bf012f3cf1b46a58ac3ece2",
+            "messages.log": "6b8e45d0e27a79dfede8918121c2023e9f3d8b9321f29695b1b40e943ac107f8",
+            "state.log": "b23f9156d95d4c5e45e849a102ce1ee72cc58a99ad2c25bb71257982715d1d56"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 382,
+            "caution_calls": 3758,
+            "comparisons": 7275733,
+            "danger_calls": 4185014,
+            "danger_comparisons": 4185014,
+            "mismatches": 0,
+            "monster_comparisons": 427,
+            "thinks": 3815,
+            "wall_comparisons": 3090292
+          }
+        },
+        {
+          "name": "full-5-paladin-2",
+          "hashes": {
+            "keys.log": "997f1246e50bc57b5aa594ae224fcb827120e7cdaa0dc79f10e2087610b16d73",
+            "messages.log": "70825d60ef62a60fa0405269abcf153cc83018881740b4895f69389796e9db02",
+            "state.log": "81fb40d9e12103296ac87b61d9efdf26be1d400b8e771ae2e01d739c26f9390c"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 538,
+            "caution_calls": 5721,
+            "comparisons": 4857018,
+            "danger_calls": 1697058,
+            "danger_comparisons": 1697058,
+            "mismatches": 0,
+            "monster_comparisons": 534,
+            "thinks": 5819,
+            "wall_comparisons": 3159426
+          }
+        },
+        {
+          "name": "full-5-paladin-3",
+          "hashes": {
+            "keys.log": "bf0daf8b3f3ece7898eb7dc0008259617d1392929557363602c326353458d394",
+            "messages.log": "bf6a39c339367fae629a2e692b148081c997273d0d368148ef3407af92b79184",
+            "state.log": "94a8f4592924c2939a240d35487bb6702d62f8d8b546fcd6cac92b4b357f33c6"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 382,
+            "caution_calls": 3663,
+            "comparisons": 3850760,
+            "danger_calls": 1661359,
+            "danger_comparisons": 1661359,
+            "mismatches": 0,
+            "monster_comparisons": 684,
+            "thinks": 3713,
+            "wall_comparisons": 2188717
+          }
+        },
+        {
+          "name": "full-5-paladin-4",
+          "hashes": {
+            "keys.log": "cbd953a8cad775db0178cd50d2a8b0d6792e031920f9eb464e557ec6db2cd1d6",
+            "messages.log": "a9a5cd6c6c8bcdeb80ec9a5801dccd4d46049393b5e6daa2cc465a2facbaa01f",
+            "state.log": "5ac04d453dfbdbf9f29cf0dc116e4e34185970ee9c90b4bfb8c99c4b5783f6ec"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 258,
+            "caution_calls": 4549,
+            "comparisons": 3514277,
+            "danger_calls": 1818330,
+            "danger_comparisons": 1818330,
+            "mismatches": 0,
+            "monster_comparisons": 721,
+            "thinks": 4618,
+            "wall_comparisons": 1695226
+          }
+        },
+        {
+          "name": "full-6-rogue-0",
+          "hashes": {
+            "keys.log": "36cc40b02fe7059f30515584bf22aea2e8a4549546a98fedf2b3f4eb733d8366",
+            "messages.log": "e5bb2a7dd524e5c32e0fdcd0780cb76f350113a2009aaf29b30d2ce519fc6a28",
+            "state.log": "0d9faabf75e92b21ec4388a6e19564e7719e2316a38f057537102ad57ee2666d"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 550,
+            "caution_calls": 9896,
+            "comparisons": 3411125,
+            "danger_calls": 2343099,
+            "danger_comparisons": 2343099,
+            "mismatches": 0,
+            "monster_comparisons": 804,
+            "thinks": 10122,
+            "wall_comparisons": 1067222
+          }
+        },
+        {
+          "name": "full-6-rogue-1",
+          "hashes": {
+            "keys.log": "923c7a5c2c057481e6ef98e72a23909d3100faa610caeda7b472a465332d5208",
+            "messages.log": "7d467c62b2fdf8826b1c9dd6d572d39e1d87d4c6a6c51e3c96ced8cde042574e",
+            "state.log": "e7360a19a90116ef6fe65be3c28c3d95752d7a9651c3b020a430731776ae266a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 438,
+            "caution_calls": 9881,
+            "comparisons": 8406661,
+            "danger_calls": 3105736,
+            "danger_comparisons": 3105736,
+            "mismatches": 0,
+            "monster_comparisons": 626,
+            "thinks": 10018,
+            "wall_comparisons": 5300299
+          }
+        },
+        {
+          "name": "full-6-rogue-2",
+          "hashes": {
+            "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+            "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+            "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 299,
+            "caution_calls": 4951,
+            "comparisons": 5040281,
+            "danger_calls": 3469684,
+            "danger_comparisons": 3469684,
+            "mismatches": 0,
+            "monster_comparisons": 426,
+            "thinks": 5008,
+            "wall_comparisons": 1570171
+          }
+        },
+        {
+          "name": "full-6-rogue-3",
+          "hashes": {
+            "keys.log": "b2170800341971ecb6655d8ca836bb7385ff42908b446be2c66d6bb3dc62d874",
+            "messages.log": "a399d7770344a6095001565cf81e2b794553554166a03fbe3e3dce9e7113a355",
+            "state.log": "34461e617e7e5097a5dc8a5d99d95bd3febbac1352a3c64ecf6bd4d4b275cc19"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 454,
+            "caution_calls": 9791,
+            "comparisons": 6867107,
+            "danger_calls": 3730792,
+            "danger_comparisons": 3730792,
+            "mismatches": 0,
+            "monster_comparisons": 1652,
+            "thinks": 9955,
+            "wall_comparisons": 3134663
+          }
+        },
+        {
+          "name": "full-6-rogue-4",
+          "hashes": {
+            "keys.log": "2ac121ac643f450d621f869e55e8ef315decfc5594ffcb206c648e5173d7f24d",
+            "messages.log": "e8d210f31e547de34ba644b7ac23a66af502a99ddab0b796a3daf0205f6345d6",
+            "state.log": "f50ecb73a20e4cb6c3f230633e26b4ac6b3ed85b79f8e22e48cf02d487fa721a"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 618,
+            "caution_calls": 10167,
+            "comparisons": 8524607,
+            "danger_calls": 4215806,
+            "danger_comparisons": 4215806,
+            "mismatches": 0,
+            "monster_comparisons": 657,
+            "thinks": 10362,
+            "wall_comparisons": 4308144
+          }
+        },
+        {
+          "name": "full-7-ranger-0",
+          "hashes": {
+            "keys.log": "7af8bc703b9170583ad8d9c604d12144a2b52c375444b3f82006bfd7362e53b3",
+            "messages.log": "7ff9aaa0315461c5bb747b619fc9df1b557e97b3d903c78eeb086c855aedd42b",
+            "state.log": "a101facbd8baa594c2744360a37e07138cf5f76517db522c5321b5dbb3ba14da"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 60,
+            "caution_calls": 921,
+            "comparisons": 939628,
+            "danger_calls": 528228,
+            "danger_comparisons": 528228,
+            "mismatches": 0,
+            "monster_comparisons": 1514,
+            "thinks": 12906,
+            "wall_comparisons": 409886
+          }
+        },
+        {
+          "name": "full-7-ranger-1",
+          "hashes": {
+            "keys.log": "fd2b57b899ae4ab99e755ab00eb33f96df243218bac5b2a5af85323ec5a47ff7",
+            "messages.log": "7c8ea454f0d6a2b002f40abfab1b485100ebc172604078f67ea44491c5ca507e",
+            "state.log": "90c7e74522e83f2f19ecbef745bd8ff95f6ba0a05abc400ae2d6788599e99035"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 52,
+            "caution_calls": 744,
+            "comparisons": 372490,
+            "danger_calls": 212484,
+            "danger_comparisons": 212484,
+            "mismatches": 0,
+            "monster_comparisons": 935,
+            "thinks": 14146,
+            "wall_comparisons": 159071
+          }
+        },
+        {
+          "name": "full-7-ranger-2",
+          "hashes": {
+            "keys.log": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+            "messages.log": "8d16c4f6c115675938c78b745f74cd299155138006c68c236a65b93e80271ca5",
+            "state.log": "55ab81d341bf5eee54be4063d9752e1f07ee52f8d7a4114c84e4450a28a0a471"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 20,
+            "caution_calls": 666,
+            "comparisons": 2742538,
+            "danger_calls": 710069,
+            "danger_comparisons": 710069,
+            "mismatches": 0,
+            "monster_comparisons": 594,
+            "thinks": 875,
+            "wall_comparisons": 2031875
+          }
+        },
+        {
+          "name": "full-7-ranger-3",
+          "hashes": {
+            "keys.log": "1523b41ce35edca3c78d2a5318baf23cb1d7de1d1da151172b672ac6c6c0b1f2",
+            "messages.log": "1656be3ff46e619f18ba6cc19bda24d9e71c7035a7d726c399e95ac2ad783af2",
+            "state.log": "46264ed9c59ee2be4c5799cf5c9d8c1ffd4ec64edaf247b2ebad07f8075b9f53"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 42,
+            "caution_calls": 1437,
+            "comparisons": 721800,
+            "danger_calls": 297214,
+            "danger_comparisons": 297214,
+            "mismatches": 0,
+            "monster_comparisons": 3753,
+            "thinks": 14065,
+            "wall_comparisons": 420833
+          }
+        },
+        {
+          "name": "full-7-ranger-4",
+          "hashes": {
+            "keys.log": "0a78915e0caced04f5e5dfa98104c309d90d291dd68e12f0c5511a39662bca16",
+            "messages.log": "89574b9ceba4b5c0c5f42025fa3b1d815cf624889108effe8280d8c2c86850f4",
+            "state.log": "b241a7c963ffbafa9cec9c7ebac35f2f1193c2147ec0d4194672cb7da0e64112"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 78,
+            "caution_calls": 2423,
+            "comparisons": 2166105,
+            "danger_calls": 1463922,
+            "danger_comparisons": 1463922,
+            "mismatches": 0,
+            "monster_comparisons": 6766,
+            "thinks": 19372,
+            "wall_comparisons": 695417
+          }
+        },
+        {
+          "name": "full-8-blackguard-0",
+          "hashes": {
+            "keys.log": "a868a5d5380789ee625b6e0e8aaeb2cf171ec800080c89310d750d52c14f37b6",
+            "messages.log": "701b82bcc4f99903bae4f0cd20698a97df03efb3b220625b0a7939f239e274f5",
+            "state.log": "46bba4f265cad6da18743fb74f287eb975b650b9f9813ea01c379db396c8c845"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 259,
+            "caution_calls": 2904,
+            "comparisons": 2728899,
+            "danger_calls": 1011794,
+            "danger_comparisons": 1011794,
+            "mismatches": 0,
+            "monster_comparisons": 292,
+            "thinks": 2930,
+            "wall_comparisons": 1716813
+          }
+        },
+        {
+          "name": "full-8-blackguard-1",
+          "hashes": {
+            "keys.log": "f6cb9fcf6f7640618c49d7207273d83cffe063fff4c17170908df623f8f43986",
+            "messages.log": "8dc94806a5be535a07a5f1fb34917c83927c834e18470d98317e0802f1ac4f78",
+            "state.log": "78d7e065e7fe11ef778cdd4c699959ed6c520054ad9e4faf278a88e82906d60b"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 285,
+            "caution_calls": 5099,
+            "comparisons": 23910270,
+            "danger_calls": 3065659,
+            "danger_comparisons": 3065659,
+            "mismatches": 0,
+            "monster_comparisons": 1174,
+            "thinks": 5156,
+            "wall_comparisons": 20843437
+          }
+        },
+        {
+          "name": "full-8-blackguard-2",
+          "hashes": {
+            "keys.log": "c14ea78392461c37dc33b85e6e05d5b80f6fe4afe43d8640ea6eb3baed6195fa",
+            "messages.log": "72219fb2c90f0c6413cb0c62d943ea494c537a742910d6f5094bbb6a3e02c988",
+            "state.log": "498c65acf8f4d1ce908e65b952c932ed14bc4440b13391a7524f75a9bc802c9c"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 519,
+            "caution_calls": 8203,
+            "comparisons": 5816146,
+            "danger_calls": 3525073,
+            "danger_comparisons": 3525073,
+            "mismatches": 0,
+            "monster_comparisons": 704,
+            "thinks": 8301,
+            "wall_comparisons": 2290369
+          }
+        },
+        {
+          "name": "full-8-blackguard-3",
+          "hashes": {
+            "keys.log": "28833d1f3b203b9b47eaed191adb259caa12180327c85d8b9a98aeea2cdb2991",
+            "messages.log": "cd4433609fd02d39b55d0708f9cdd49b1e89d797aeca1e8dbf0170a43ad26102",
+            "state.log": "f4488cc27cf54c35197b4e7eba1887b5a26b6da84c77e70c81f761343c75f2d5"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": false,
+          "coverage": {
+            "caution_actions": 501,
+            "caution_calls": 4476,
+            "comparisons": 3829901,
+            "danger_calls": 1721215,
+            "danger_comparisons": 1721215,
+            "mismatches": 0,
+            "monster_comparisons": 304,
+            "thinks": 4540,
+            "wall_comparisons": 2108382
+          }
+        },
+        {
+          "name": "full-8-blackguard-4",
+          "hashes": {
+            "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+            "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+            "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+          },
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "dead": true,
+          "coverage": {
+            "caution_actions": 108,
+            "caution_calls": 1914,
+            "comparisons": 2002832,
+            "danger_calls": 763559,
+            "danger_comparisons": 763559,
+            "mismatches": 0,
+            "monster_comparisons": 164,
+            "thinks": 1947,
+            "wall_comparisons": 1239109
+          }
+        }
+      ],
+      "totals": {
+        "caution_actions": 11287,
+        "caution_calls": 154821,
+        "comparisons": 177960251,
+        "danger_calls": 66900787,
+        "danger_comparisons": 66900787,
+        "mismatches": 0,
+        "monster_comparisons": 111865,
+        "thinks": 295464,
+        "wall_comparisons": 110947599
+      },
+      "shared_summary_difference_counts": {
+        "borg_decisions": 45,
+        "borg_rng": 45,
+        "effective_settings": 45,
+        "wall_seconds": 45
+      },
+      "manifest": "suite=full\nsuite_file=/workspace/borg-reborn-rs/harness/suites/full\nsuite_sha256=7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed\nborg_txt_sha256=7ad02003818ab72596bd164381f47775f39c0414b9a29aa1f07d167024c0dab6\nborg_impl_env=rust\nbinary=/workspace/borg-reborn-rs/build/rust/game/angband\nbinary_sha256=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nbinary_impl=rust\nbinary_elf_impl=rust\nbinary_cmake_borg_impl=unknown\nbuild_id_impl=rust\nbuild_id_git_rev=137a5a3709aa355a5b4e8bd17fda01cf68f27d66\nbuild_id_git_dirty=yes\nbuild_id_inputs_dirty=yes\nbuild_id_source_sha256=3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851\nbuild_id_engine_upstream=42cd156ac9f95ddf4311e88dd7ad462292d6d1d6\nbuild_id_binary_sha256=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nbuild_id_cc=cc (Debian 14.2.0-19) 14.2.0\nbuild_id_rustc=rustc 1.100.0 (0ef1bc386 2026-11-09)\nbuild_id_built_utc=2026-11-15T11:17:30Z\ncheckout_source_sha256=3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851\nimpl_check=ok\nbuild_check=ok\noverrides=none\ngit_rev=49d67da450da6ac8e7e482febfd7a93cc5149114\ngit_dirty=yes\njobs=5\ncheckpoint_every=0\nrun_timeout_seconds=0\nsave_root=/workspace/borg-reborn-rs/harness/saves\nstarted_utc=2026-11-15T11:24:14Z\nrun_config.full-0-warrior-0=menu 766d4b11ce03827df119b911aa898d3efdb38a74c69b237e1ed93ed43284f3ee\nrun_config.full-0-warrior-1=menu 495f3461c997126198d69caa14a21cf58cf79fbccb223dfb5e1bf09a4f397610\nrun_config.full-0-warrior-2=menu d2dfcde1a5e5c00f991b2d45b2d0ab3b38695bf9afa81032859f753fe85d6614\nrun_config.full-0-warrior-3=menu 7adaefb08a33968c589870fc80daf2f2776ca20f0d6bf9dde6aff7c24302288d\nrun_config.full-0-warrior-4=menu 61d0e1e3886c53520501de414b72542293386e5ad26106cf55e6a0a527542545\nrun_config.full-1-mage-0=menu cfe4510f93a0d362922a88903efb019829e49074b28dbc785838df9c5eb2fb6f\nrun_config.full-1-mage-1=menu d60d27905fe3a3259937f2fcd71c049179d523d2065f1c2bbaee55a29e65bb11\nrun_config.full-1-mage-2=menu a1a735ea25d0d6748995d4dab4e75328a75fb1d187480b2d062b33efbdd5f105\nrun_config.full-1-mage-3=menu 1dca71e4c1cf1a5b53843981011da3c2941a55e902d0934f2cdde7c0f4c628e4\nrun_config.full-1-mage-4=menu b14911250df5495cb8060f1496095546d3f0c7f73225661b64bed70f775c4dfd\nrun_config.full-2-druid-0=menu 94f240dca22046ee4c2b35bcd6625c563dcb594bfeb12bb865937d6f2a33589a\nrun_config.full-2-druid-1=menu 22f26b18b131354886de8f90b14c79bb98f839609094abd4f50213900fd416b4\nrun_config.full-2-druid-2=menu 2aee5a565a0b09037b9740ed4a64bffeec3d39c54ec64d131c465f100c327f23\nrun_config.full-2-druid-3=menu f5b3195d6bb0f3d80077eedab891244a3f9c12ae77e3def26cb09c2b7c8ceae7\nrun_config.full-2-druid-4=menu 8b4854592916d77b18ec3e19c1d84b1dd060778e2234b3df1b1018951545a22b\nrun_config.full-3-priest-0=menu 7179037f87b3f44ac34480c1911816916ef2c2b034dfea2fef05eb8aaa73cbd7\nrun_config.full-3-priest-1=menu 710860556a3e5b1a3814aa47d791941fd75f69e8c7adab11cb502fc37cdb60a8\nrun_config.full-3-priest-2=menu 86c1295633033d2783d802782bf7d8aaede3dcb9340fdd42ec3a51fa97e59414\nrun_config.full-3-priest-3=menu b3fba54f77d0fb932a824d3e305e0697ca5170915772bb0d52d7276042d30e5b\nrun_config.full-3-priest-4=menu b994b99efeccba1aa72fcccbfb2b594010b558dde3dc91a1916e5b8bead9020e\nrun_config.full-4-necro-0=menu 2d799e4ab6f0448ceec16194d0fcc06bfc1a2a9792e9054a94a0d67b732fbefe\nrun_config.full-4-necro-1=menu 825fb1ef2419e3c2bb30229edd14d95a4356b695dadc2b7303e9e2c034efe5a7\nrun_config.full-4-necro-2=menu d56e1fe212b46267323e07cfb42b3a062616517b18d96a3537a82ea8d5d83faf\nrun_config.full-4-necro-3=menu 509d922935b9d3aaf66c4caafc8cdbaa160c9f94cf2626b4c6b7f05e39e2883c\nrun_config.full-4-necro-4=menu 5862cb040622746e4fafd2198b15480a3a18dd640133260a251ecfd068aaf2db\nrun_config.full-5-paladin-0=menu 188af23a667118f3a59723b1aa5efac280ecc7f566e016ae36cfb0086fe98933\nrun_config.full-5-paladin-1=menu ccdf2801bcd4c9e7520008f52b12f23d4b07d74d4ba0a997bd150f743cf011a4\nrun_config.full-5-paladin-2=menu 3684d62e4cae778762336baa0b5c783e1eddd688f96fb8f0d57486f2ac0a0ae5\nrun_config.full-5-paladin-3=menu ed4f74dbbd4dfeef6bfb07fe25b344c129c4150e871b9c4897ce0a85476acd5b\nrun_config.full-5-paladin-4=menu 5402f6fe7bde7d15c27f1b45e4c5ac52686c81eaa7bc4c0305b1e3245591097a\nrun_config.full-6-rogue-0=menu 9740be01bde113fd4708752d34d4c6511a4f70316a7c8d598a1a44ac274b8413\nrun_config.full-6-rogue-1=menu 9dafd6b4a1b110523af9987198876fb2899e2c8ade0f045fbbdd45f6b4ace48b\nrun_config.full-6-rogue-2=menu 3a63cd7d7ebb016711045e4e75b44139a3f105d21bb232ba202f6cb8dd9eec62\nrun_config.full-6-rogue-3=menu 253a0af1d5f14b7c3279f284d2acb89f224e3f43561b38a0a5389b66ade30d87\nrun_config.full-6-rogue-4=menu 9fe533349067a891562ceba7a31aa5918636fb0cf1209e2894c9288f0aa131e8\nrun_config.full-7-ranger-0=menu d7cdd275e88d8d7f9905731de4cedd269705dffd717d9c8287ed5cf6cb76d094\nrun_config.full-7-ranger-1=menu 435634e0c6906ca2698cfe31b388f564fdf089ef01b3b40351cad61bed366f51\nrun_config.full-7-ranger-2=menu ec59d6265d460488c0acbc482dd16c531396b359915ecc5434547cb06a00bcc3\nrun_config.full-7-ranger-3=menu a6e186ac0902b7cb63872e4af3b9cc08c7924b3e091495a75fae02d637005d67\nrun_config.full-7-ranger-4=menu c8d5f464f92d413e156e7f09d9a3d22e3564fd8dade85277e83a871bc16f7c20\nrun_config.full-8-blackguard-0=menu b880401d638d2abc0fd157c8c7381e27e4551d96aa9893eeeeb2148720e789f9\nrun_config.full-8-blackguard-1=menu bf30c6ba3a34ee61a4f95a4c9b5a282a5d1de3f405a060fc9d280e8358bae17d\nrun_config.full-8-blackguard-2=menu 5f671ec41ef5d0ce4bb6e69ec3c30170e6b371d04eda53ec6e1d9b05abe6b849\nrun_config.full-8-blackguard-3=menu 55b874d008a1219a348438e39cd32d770a77bd4011fae500598760d604d93b2a\nrun_config.full-8-blackguard-4=menu 488eec53ca3f58c9634d0b7f5b23560cf50aa35e20e7a1478af039c1cb03c762\nbinary_sha256_end=a63e20674e7324d5ff8102e0e1ea150217eadbdbf3353de62a4820e098502e7d\nfinished_utc=2026-11-15T11:29:03Z result=OK\n"
+    }
+  },
+  "ported_source_lines": 2532,
+  "operational_failures": [
+    {
+      "stage": "first exploratory build",
+      "result": "input-change identity refusal; no game launched"
+    },
+    {
+      "stage": "first off smoke suite",
+      "result": "three capped survivors played; suite aggregation failed: bc missing on PATH; fresh-directory repeat passed"
+    }
+  ]
+}
