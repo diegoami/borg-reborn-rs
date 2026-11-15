@@ -35,7 +35,7 @@ impl Assessment<'_> {
         self.view
             .cave
             .grid(x, y)
-            .expect("native danger grid must be allocated and in bounds")
+            .unwrap_or_else(|| crate::shadow::invalid_danger_grid(self.view, x, y))
     }
 }
 fn rf(kill: &BorgKill, flag: u32) -> bool {
@@ -2529,4 +2529,75 @@ pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot
         input.average,
         input.full,
     )
+}
+
+#[cfg(test)]
+mod grid_failure_tests {
+    use super::*;
+
+    #[test]
+    fn invalid_grid_records_before_controlled_exit() {
+        const CHILD: &str = "BORG_TEST_INVALID_DANGER_GRID";
+        if let Ok(coordinates) = std::env::var(CHILD) {
+            let mut state = borg_rs::memory::BorgState::default();
+            state.borg.trait_ = vec![0; borg_rs::memory::traits::BI_MAX as usize];
+            state.borg.time.now = 37;
+            let view = View::new(&state);
+            let assessment = Assessment {
+                view: &view,
+                facts: Facts::new(&state),
+            };
+            let (x, y) = coordinates.split_once(',').unwrap();
+            assessment.grid(x.parse().unwrap(), y.parse().unwrap());
+            panic!("invalid grid returned a reference");
+        }
+        let root = std::env::temp_dir().join(format!(
+            "borg-danger-grid-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        for mode in ["check", "switch"] {
+            for (index, (x, y)) in [(-1, 0), (borg_rs::memory::AUTO_MAX_X, 1), (0, 0)]
+                .into_iter()
+                .enumerate()
+            {
+                let dir = root.join(format!("{mode}-{index}"));
+                std::fs::create_dir_all(&dir).unwrap();
+                let log = dir.join("shadow.jsonl");
+                std::fs::write(&log, "").unwrap();
+                let output = std::process::Command::new(std::env::current_exe().unwrap())
+                    .args([
+                        "--exact",
+                        "danger::grid_failure_tests::invalid_grid_records_before_controlled_exit",
+                        "--nocapture",
+                    ])
+                    .env(CHILD, format!("{x},{y}"))
+                    .env("BORG_RUN_DIR", &dir)
+                    .env("BORG_SHADOW", mode)
+                    .output()
+                    .unwrap();
+                assert_eq!(
+                    output.status.code(),
+                    Some(2),
+                    "{}",
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                let contents = std::fs::read_to_string(log).unwrap();
+                assert_eq!(contents.lines().count(), 1);
+                let row: serde_json::Value = serde_json::from_str(&contents).unwrap();
+                assert_eq!(row["schema"], "borg-reborn-rs/shadow@1");
+                assert_eq!(row["mode"], mode);
+                assert_eq!(row["point"], "danger.grid");
+                assert_eq!(row["inputs"], serde_json::json!({"x":x,"y":y}));
+                assert_eq!(row["borg_turn"], 37);
+                assert_eq!(row["validation_stopped"], true);
+                assert!(row["original"].is_null() && row["ported"].is_null());
+                assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
+            }
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }

@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: durable danger-grid failures (#315)
+
+- Replace the port's aborting grid expect with a diagnostic containing the
+  invalid coordinates, Borg clock, mode and validation_stopped=true, flushed
+  to shadow.jsonl before exit 2. Both scalar values and unknown game turn
+  are null; no engine query, fabricated scalar or recorder lock is involved.
+- Six subprocess cases exercise the actual Assessment.grid failure path in
+  check/switch for negative/out-of-bounds coordinates and unallocated memory.
+  These are deliberate operational failures, not measured game deaths.
+- Only the invalid-memory path changes. Accepted R2 evidence retains its
+  historical cd66 input identity; native validation below records the new
+  build separately. #321/#322 supply gate/count fixes; #323 independently
+  supplies the strict entry fixture and CI gate. All integrate on feature R.
+
 ## 2026-11-15: corrected R2 event-count wording (#313)
 
 - Per mode, R2 records 15,032,802 tape events, including 700,980 policy-entry
