@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R2 stateful ports (#286), validation in progress
+
+- Owner authorized continuing after accepted R1. Source refresh #279 and
+  complete danger #283 have merged green into feature/track-r. This branch
+  task/R2.1-stateful adds caution, escape and recovery behind typed requests,
+  named View reads and a closed 68-function dependency surface.
+- Check drives native policy; switch drives the port. The alternate program
+  replays recorded dependencies on owned Rust state; effects/RNG run once.
+  Input state is compared before any post-state replacement, and final state,
+  all requests and return values must agree. Nested transactions preserve
+  their suspended parent tape. STATEFUL-SHADOW.md records the contract.
+- Smoke off/check/switch is 3/3 byte-identical in keys/messages/state.
+  Each enabled suite has zero mismatches across 8,707 root stateful
+  comparisons and 927,169 dependency requests, with positive caution,
+  escape and recovery entry coverage. A 3,000-turn check also passed.
+- Snapshot/effect-once, divergence and nested-entry tests pass; 142 core
+  tests pass (one existing ignored), 73 tools and 22 source-tool tests pass.
+  Full native/reference check/switch, marked fault/re-port and real carry
+  measurements are in progress; their evidence precedes merge.
+- The manifest now names 60 port functions. Source watcher: **five changed
+  ported functions** at moving reference 727ccff (healing, whole danger,
+  physical danger, spell danger, recovery). This is a positive warning,
+  not adopted v13 policy. Core PIN remains e6d13fc; #264 stays the future
+  production carry gate. R3 does not start before R2 milestone review.
+
 ## 2026-11-15: R2 danger slice (#281), stateful parent #209 stays open
 
 - Branch task/R2.1-danger is initially stacked on #279, targets feature/track-r.

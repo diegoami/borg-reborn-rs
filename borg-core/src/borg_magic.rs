@@ -58,6 +58,7 @@ const CLASS_BLACKGUARD: i32 = 8;
 
 /// A spell/prayer in a book (`struct borg_magic`), with the C field names.
 #[derive(Clone, Copy, Debug)]
+#[derive(PartialEq)]
 pub struct BorgMagic {
     /// Textual name (C: `const char *`, from the rating table; an entry
     /// whose name did not match the game's is left blank, NULL in C)
@@ -104,6 +105,7 @@ impl Default for BorgMagic {
 
 /// A spell's name, rating and enum (`struct borg_spell_rating`).
 #[derive(Clone, Copy, Debug)]
+#[derive(PartialEq)]
 pub struct SpellRating {
     pub name: &'static CStr,
     pub rating: u8,
@@ -116,6 +118,7 @@ const fn rating(name: &'static CStr, rating: u8, spell_enum: borg_spells) -> Spe
 
 /// The module's globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct MagicState {
     /// `borg_magics`: spell info, indexed by spell number. Empty stands for
     /// the C NULL (before `borg_prepare_book_info`, or for a class without

@@ -35,6 +35,7 @@ const COLOUR_WHITE: i32 = 1;
 
 /// borg-io.c globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct IoState {
     /// The keys to send (circular queue, `borg_key_queue`).
     key_queue: Vec<keycode_t>,

@@ -287,3 +287,10 @@ per-monster combination and whole-square aggregation with named trait fields
 and Track P parameters. No state or engine clone is needed for this pure
 subsystem; stateful decisions must use an effect-aware adapter before they
 can be claimed ported. See SHADOW.md and R2-DANGER-VALIDATION.md.
+
+R2 #286 supplies the stateful adapter and independent caution, escape and
+recovery programs. Check drives the native program; switch drives the port.
+The alternate program receives recorded dependency results on an owned Rust
+policy snapshot. Engine effects and RNG draws execute once. Every request,
+input state, final state and return must agree; nested dependencies preserve
+the active tape. STATEFUL-SHADOW.md gives the contract and failure behavior.

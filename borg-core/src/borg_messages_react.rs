@@ -35,6 +35,7 @@ use crate::engine;
 /// and the C limits (`siz`, `max`) are checked against the counters, not
 /// against the `Vec` lengths (an empty `Vec` is the C NULL).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct MsgState {
     /// `borg_msg_len`: bytes of `buf` in use
     pub len: i16,

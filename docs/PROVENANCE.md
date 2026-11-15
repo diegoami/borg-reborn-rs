@@ -52,3 +52,15 @@ surface beyond the reads the original danger code already makes. None of
 these services exposes RNG, key emission, mutation or original danger
 results. The projection query's unnecessarily mutable signature is narrowed
 to a shared borrow without changing its logic.
+
+### Track R stateful ports (#286, R2)
+
+`borg-next/src/stateful/{caution,escape,recovery}.rs` adapts borg-rs v12
+`e6d13fc9baff`'s borg_caution.rs, borg_escape.rs and borg_recover.rs, retaining
+copyright/license notices and the already adopted Track P named parameters.
+Native trait reads are re-expressed as named View fields; the port owns the
+policy branches, priorities, goal mutations and action selection. Existing
+unported operations are behind the shared closed dependency API, not copied
+as a second engine. STATEFUL-SHADOW.md describes effect-once record/replay,
+full state equality, nested entry, panic=abort handling and the source gate.
+The 68 exact dependency signatures are R2-STATEFUL-DEPENDENCIES.json.

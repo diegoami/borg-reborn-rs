@@ -1,0 +1,1001 @@
+[
+  {
+    "module": "borg_cave_util",
+    "name": "borg_cave_floor_bold",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "y",
+        "i32"
+      ],
+      [
+        "x",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_cave_util",
+    "name": "borg_cave_floor_grid",
+    "args": [
+      [
+        "ag",
+        "&BorgGrid"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_cave_util",
+    "name": "borg_panel_hgt",
+    "args": [],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_cave_util",
+    "name": "borg_panel_wid",
+    "args": [],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_danger",
+    "name": "borg_danger",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "y",
+        "i32"
+      ],
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "c",
+        "i32"
+      ],
+      [
+        "average",
+        "bool"
+      ],
+      [
+        "full_damage",
+        "bool"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_fight_attack",
+    "name": "borg_thrust_damage_one",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "i",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_fight_defend",
+    "name": "borg_defend",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "p1",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_kill",
+    "name": "borg_shoot_scoot_safe",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "emergency",
+        "i32"
+      ],
+      [
+        "turns",
+        "i32"
+      ],
+      [
+        "b_p",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_misc",
+    "name": "borg_check_rest",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "y",
+        "i32"
+      ],
+      [
+        "x",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_misc",
+    "name": "borg_goto_dir",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "y1",
+        "i32"
+      ],
+      [
+        "x1",
+        "i32"
+      ],
+      [
+        "y2",
+        "i32"
+      ],
+      [
+        "x2",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_flow_misc",
+    "name": "borg_happy_grid_bold",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "y",
+        "i32"
+      ],
+      [
+        "x",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_stairs",
+    "name": "borg_flow_stair_less",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "why",
+        "i32"
+      ],
+      [
+        "sneak",
+        "bool"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_stairs",
+    "name": "borg_flow_stair_more",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "why",
+        "i32"
+      ],
+      [
+        "sneak",
+        "bool"
+      ],
+      [
+        "brave",
+        "bool"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_flow_stairs",
+    "name": "borg_prep_leave_level_spells",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_inventory",
+    "name": "borg_slot",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "tval",
+        "i32"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_io",
+    "name": "borg_keypress",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "k",
+        "keycode_t"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_io",
+    "name": "borg_note",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "what",
+        "&str"
+      ]
+    ],
+    "ret": ""
+  },
+  {
+    "module": "borg_io",
+    "name": "borg_note_bytes",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "what",
+        "&[u8]"
+      ]
+    ],
+    "ret": ""
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_activate_failure",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "tval",
+        "i32"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_activate_item",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "activation",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_eat",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "tval",
+        "i32"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_eat_food_any",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_eat_unknown",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_equips_staff_fail",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_quaff_crit",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "no_check",
+        "bool"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_quaff_potion",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_quaff_unknown",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_read_scroll",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_read_unknown",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_use_staff",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_use_staff_fail",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_use_unknown",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_zap_rod",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_item_val",
+    "name": "borg_lookup_kind",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "tval",
+        "i32"
+      ],
+      [
+        "sval",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_item_wear",
+    "name": "borg_backup_swap",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "p",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_light",
+    "name": "borg_check_light_only",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_light",
+    "name": "borg_maintain_light",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> BorgNeed"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "spell",
+        "borg_spells"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell_fail",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "spell",
+        "borg_spells"
+      ],
+      [
+        "allow_fail",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell_legal",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "spell",
+        "borg_spells"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell_okay",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "spell",
+        "borg_spells"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell_okay_fail",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "spell",
+        "borg_spells"
+      ],
+      [
+        "allow_fail",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_prepared",
+    "name": "borg_prepared_c",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "depth",
+        "i32"
+      ]
+    ],
+    "ret": "-> Option<Vec<u8>>"
+  },
+  {
+    "module": "borg_prepared",
+    "name": "borg_restock_c",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "depth",
+        "i32"
+      ]
+    ],
+    "ret": "-> Option<Vec<u8>>"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_distance",
+    "args": [
+      [
+        "y",
+        "i32"
+      ],
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "y2",
+        "i32"
+      ],
+      [
+        "x2",
+        "i32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_los",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ],
+      [
+        "y1",
+        "i32"
+      ],
+      [
+        "x1",
+        "i32"
+      ],
+      [
+        "y2",
+        "i32"
+      ],
+      [
+        "x2",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_target",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ],
+      [
+        "t",
+        "loc"
+      ],
+      [
+        "require_monster",
+        "bool"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "borg_store_sell",
+    "name": "borg_count_sell",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "borg_trait",
+    "name": "borg_uses_swaps",
+    "args": [
+      [
+        "st",
+        "&BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "ddd",
+    "args": [
+      [
+        "i",
+        "usize"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "ddx",
+    "args": [
+      [
+        "dir",
+        "usize"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "ddx_ddd",
+    "args": [
+      [
+        "i",
+        "usize"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "ddy",
+    "args": [
+      [
+        "dir",
+        "usize"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "ddy_ddd",
+    "args": [
+      [
+        "i",
+        "usize"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "distance",
+    "args": [
+      [
+        "grid1",
+        "loc"
+      ],
+      [
+        "grid2",
+        "loc"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "engine",
+    "name": "feat_is_shop",
+    "args": [
+      [
+        "feat",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "player_arena_level",
+    "args": [],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "player_opt",
+    "args": [
+      [
+        "opt",
+        "u32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "player_timed",
+    "args": [
+      [
+        "idx",
+        "u32"
+      ]
+    ],
+    "ret": "-> i16"
+  },
+  {
+    "module": "engine",
+    "name": "r_max",
+    "args": [],
+    "ret": "-> usize"
+  },
+  {
+    "module": "engine",
+    "name": "race_flag_has",
+    "args": [
+      [
+        "r_idx",
+        "usize"
+      ],
+      [
+        "flag",
+        "u32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "randint0",
+    "args": [
+      [
+        "m",
+        "u32"
+      ]
+    ],
+    "ret": "-> i32"
+  },
+  {
+    "module": "engine",
+    "name": "square_in_bounds",
+    "args": [
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "y",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "square_in_bounds_fully",
+    "args": [
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "y",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "square_isno_teleport",
+    "args": [
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "y",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "square_isvault",
+    "args": [
+      [
+        "x",
+        "i32"
+      ],
+      [
+        "y",
+        "i32"
+      ]
+    ],
+    "ret": "-> bool"
+  },
+  {
+    "module": "engine",
+    "name": "z_info",
+    "args": [],
+    "ret": "-> &'static headers::init_h::angband_constants"
+  },
+  {
+    "module": "shell",
+    "name": "shopping_departure",
+    "args": [
+      [
+        "st",
+        "&mut BorgState"
+      ]
+    ],
+    "ret": "-> bool"
+  }
+]

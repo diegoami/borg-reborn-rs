@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2368; distinct starting conditions: 2365; retained process attempts: 2368 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2375; distinct starting conditions: 2372; retained process attempts: 2375 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2374,6 +2374,13 @@ Dossiers: 2368; distinct starting conditions: 2365; retained process attempts: 2
 | [D2386-rust-seed1020](D2386-rust-seed1020/report.md) | unassigned | `64cd39a8a63f` | 1020 | a giant white mouse | 8922 | unassessed |
 | [D2387-rust-seed102](D2387-rust-seed102/report.md) | unassigned | `437f2e1034a1` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2388-rust-seed1020](D2388-rust-seed1020/report.md) | unassigned | `437f2e1034a1` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2389-rust-seed1011](D2389-rust-seed1011/report.md) | unassigned | `b6d3a07a3ac4` | 1011 | a cave spider | 18903 | unassessed |
+| [D2390-rust-seed1020](D2390-rust-seed1020/report.md) | unassigned | `b6d3a07a3ac4` | 1020 | a small kobold | 9547 | unassessed |
+| [D2391-rust-seed1021](D2391-rust-seed1021/report.md) | unassigned | `b6d3a07a3ac4` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2392-rust-seed1043](D2392-rust-seed1043/report.md) | unassigned | `b6d3a07a3ac4` | 1043 | a wild cat | 23423 | unassessed |
+| [D2393-rust-seed1050](D2393-rust-seed1050/report.md) | unassigned | `b6d3a07a3ac4` | 1050 | a grey mold | 24096 | unassessed |
+| [D2394-rust-seed1062](D2394-rust-seed1062/report.md) | unassigned | `b6d3a07a3ac4` | 1062 | a soldier | 49147 | unassessed |
+| [D2395-rust-seed1072](D2395-rust-seed1072/report.md) | unassigned | `b6d3a07a3ac4` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
 
 ## Aggregated actions
 

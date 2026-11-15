@@ -586,3 +586,5 @@ mod tests {
         assert_eq!(View::new(&state).character.curhp, 19);
     }
 }
+
+pub mod stateful;

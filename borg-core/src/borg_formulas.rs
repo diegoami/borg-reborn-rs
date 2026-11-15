@@ -69,6 +69,7 @@ pub struct RangeSec {
 /// `struct borg_power_line`. `reward` is always there; `value` is there
 /// whenever `range` is.
 #[derive(Clone, Copy, Debug)]
+#[derive(PartialEq)]
 pub struct PowerLine {
     pub range: Option<RangeSec>,
     pub reward: MathSection,
@@ -78,6 +79,7 @@ pub struct PowerLine {
 
 /// `struct borg_depth_line`
 #[derive(Clone, Debug)]
+#[derive(PartialEq)]
 pub struct DepthLine {
     pub dlevel: i32,
     /// The condition section as read, without its closing ')'
@@ -88,6 +90,7 @@ pub struct DepthLine {
 
 /// borg-formulas.c globals (`borg_formulas`).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct FormulasState {
     /// power formulas
     pub power: Vec<PowerLine>,
@@ -1474,6 +1477,7 @@ pub(crate) mod tests {
 
     /// A fake environment: notes are collected, and the engine lookups
     /// know a few names (the same stubs as the C differential test).
+    #[derive(Clone, PartialEq)]
     pub(crate) struct TestEnv {
         pub st: BorgState,
         pub notes: Vec<String>,

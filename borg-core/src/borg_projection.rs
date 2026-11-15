@@ -26,6 +26,7 @@ use crate::engine;
 
 /// The module's globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct ProjectionState {
     /// `borg_target_loc`: current targetted location
     pub target_loc: loc,

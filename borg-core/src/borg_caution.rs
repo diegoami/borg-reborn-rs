@@ -17,13 +17,13 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
-use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
-use crate::borg_danger::borg_danger;
+use crate::decision_api::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
+use crate::decision_api::borg_danger::borg_danger;
 use crate::borg_escape::{
     borg_caution_phase, borg_escape, borg_freedom, borg_recall, borg_surrounded,
 };
-use crate::borg_fight_defend::borg_defend;
-use crate::borg_flow_stairs::{
+use crate::decision_api::borg_fight_defend::borg_defend;
+use crate::decision_api::borg_flow_stairs::{
     borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
@@ -38,20 +38,20 @@ use crate::borg_headers::borg_trait_h::{
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
     BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_SPEED,
 };
-use crate::borg_inventory::borg_slot;
-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
-use crate::borg_item_use::{
+use crate::decision_api::borg_inventory::borg_slot;
+use crate::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
+use crate::decision_api::borg_item_use::{
     borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_eat_unknown,
     borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_quaff_unknown,
     borg_read_scroll, borg_read_unknown, borg_use_staff, borg_use_staff_fail, borg_use_unknown,
     borg_zap_rod,
 };
-use crate::borg_item_val::borg_lookup_kind;
-use crate::borg_item_wear::borg_backup_swap;
-use crate::borg_light::{borg_maintain_light, BorgNeed};
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
-use crate::borg_store_sell::borg_count_sell;
-use crate::engine;
+use crate::decision_api::borg_item_val::borg_lookup_kind;
+use crate::decision_api::borg_item_wear::borg_backup_swap;
+use crate::decision_api::borg_light::{borg_maintain_light, BorgNeed};
+use crate::decision_api::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
+use crate::decision_api::borg_store_sell::borg_count_sell;
+use crate::decision_api::engine;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::TMD_OPP_ACID;
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
@@ -1027,7 +1027,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         }
 
         // Require "happy" grids (most of the time)
-        if !crate::borg_flow_misc::borg_happy_grid_bold(st, y2, x2) {
+        if !crate::decision_api::borg_flow_misc::borg_happy_grid_bold(st, y2, x2) {
             continue;
         }
 
@@ -1048,7 +1048,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
         // Simulate movement
         loop {
             // Obtain direction
-            let d = crate::borg_flow_misc::borg_goto_dir(st, y1, x1, y2, x2);
+            let d = crate::decision_api::borg_flow_misc::borg_goto_dir(st, y1, x1, y2, x2);
 
             // Verify direction
             if d == 0 || d == 5 {
@@ -1182,7 +1182,7 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     // Retreat
     if b_r >= 0 {
         // Save direction
-        let b_d = crate::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, b_y, b_x);
+        let b_d = crate::decision_api::borg_flow_misc::borg_goto_dir(st, st.borg.c.y, st.borg.c.x, b_y, b_x);
 
         // Set goal
         st.borg.goal.g.x = st.borg.c.x + i32::from(engine::ddx(b_d as usize));
@@ -1456,7 +1456,7 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
         }
 
         adjacent += 1;
-        if crate::borg_fight_attack::borg_thrust_damage_one(st, i) >= kill.power as i32 {
+        if crate::decision_api::borg_fight_attack::borg_thrust_damage_one(st, i) >= kill.power as i32 {
             killable += 1;
         }
     }
@@ -1502,20 +1502,8 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// could die in two rounds.
 ///
 /// (See borg-caution.c for the full commentary.)
-pub fn borg_caution(st: &mut BorgState) -> bool {
-    // borg-reborn-rs (#224): observe before evaluation and all early returns
-    // without evaluating any policy expression or consuming any key twice.
-    if !crate::shadow::enabled() { return borg_caution_original(st); }
-    crate::shadow::before_caution(st);
-    let keys_before = st.io.queued_keys();
-    let acted = borg_caution_original(st);
-    crate::shadow::caution(st, &crate::shadow::CautionResult {
-        acted, keys_before, keys_after: st.io.queued_keys(),
-    });
-    acted
-}
-
-fn borg_caution_original(st: &mut BorgState) -> bool {
+pub(crate) fn borg_caution_native(st: &mut BorgState) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::caution.borg_caution",format!("{:?}",())); }
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
@@ -1719,7 +1707,7 @@ fn borg_caution_original(st: &mut BorgState) -> bool {
     }
 
     // do some swapping before running away!
-    if crate::borg_trait::borg_uses_swaps(st)
+    if crate::decision_api::borg_trait::borg_uses_swaps(st)
         && pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_swap_danger_divisor)
         && borg_backup_swap(st, pos_danger)
     {
@@ -1728,7 +1716,7 @@ fn borg_caution_original(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall,  & safe, then stay put.
     if st.borg.goal.recalling != 0
-        && crate::borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
+        && crate::decision_api::borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && st.borg.tr(BI_CDEPTH) != 0
         && st.borg.tr(BI_ISHUNGRY) == 0
     {
@@ -1764,12 +1752,12 @@ fn borg_caution_original(st: &mut BorgState) -> bool {
     // if you have just left town.
     if st.borg.near.unique == 0
         && borg_timer(st, st.borg.time.town) > p(Param::caution_restock_town_delay)
-        && crate::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH)).is_some()
+        && crate::decision_api::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH)).is_some()
     {
         // Start leaving
         if !st.borg.goal.leaving {
             // Note
-            let r = crate::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH));
+            let r = crate::decision_api::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH));
             note_with_reason(st, b"# Leaving (restock) ", r);
 
             // Start leaving
@@ -1783,7 +1771,7 @@ fn borg_caution_original(st: &mut BorgState) -> bool {
             && borg_timer(st, st.borg.time.level) > p(Param::caution_restock_level_delay)
         {
             // Flee
-            let r = crate::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH));
+            let r = crate::decision_api::borg_prepared::borg_restock_c(st, st.borg.tr(BI_CDEPTH));
             note_with_reason(st, b"# Fleeing (restock) ", r);
 
             // Start fleeing
@@ -1853,7 +1841,7 @@ fn borg_caution_original(st: &mut BorgState) -> bool {
     if st.borg.stair_more && st.borg.goal.recalling == 0 {
         // borg-reborn-rs (#208): /shopping is town-only, even if caution
         // chooses a direct descent before the ordinary town-leave hook.
-        if crate::shell::shopping_departure(st) {
+        if crate::decision_api::shell::shopping_departure(st) {
             return true;
         }
         // Usable stairs
@@ -2150,7 +2138,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         st.borg.stair_more = true;
     }
 
-    if crate::borg_prepared::borg_prepared_c(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
+    if crate::decision_api::borg_prepared::borg_prepared_c(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
         st.borg.stair_more = true;
     }
 
@@ -2236,4 +2224,9 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+// borg-reborn-rs (#286): the root chooses one effect-driving policy.
+pub fn borg_caution(st:&mut BorgState)->bool {
+match crate::shadow::decision(st,crate::decisions::Decision::Caution) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }

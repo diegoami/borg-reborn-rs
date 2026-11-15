@@ -1,10 +1,12 @@
 //! Comparison harness for complete danger assessment and the wall helper.
 //! Caution remains native; no native function is run twice.
 use crate::View;
+use borg_rs::decisions::{Decision, Value};
 use borg_rs::memory::terrain::*;
 use borg_rs::memory::BorgState;
-use borg_rs::shadow::{CautionResult, DangerInput, Shadow};
+use borg_rs::shadow::{DangerInput, Shadow};
 use serde::Serialize;
+use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -49,6 +51,12 @@ struct Counts {
     monster_comparisons: u64,
     wall_comparisons: u64,
     caution_calls: u64,
+    escape_calls: u64,
+    recovery_calls: u64,
+    stateful_comparisons: u64,
+    dependency_requests: u64,
+    root_points: BTreeMap<&'static str, u64>,
+    stateful_points: BTreeMap<&'static str, u64>,
     caution_actions: u64,
     comparisons: u64,
     mismatches: u64,
@@ -144,8 +152,8 @@ impl<W: Write> Recorder<W> {
         let row = serde_json::json!({
             "schema": "borg-reborn-rs/shadow-stats@1", "mode": mode,
             "borg_turn": borg_turn,
-            "ported_points": ["danger.wall_like", "danger", "danger.one_monster"],
-            "unported_points": ["caution", "escape", "recovery"],
+            "ported_points": ["danger.wall_like", "danger", "danger.one_monster", "caution", "escape", "recovery"],
+            "unported_points": [],
             "counts": self.counts,
         });
         serde_json::to_writer(&mut self.stats, &row)?;
@@ -199,25 +207,59 @@ impl Shadow for Next {
             .unwrap_or_else(|e| failure(e))
     }
 
-    fn before_caution(&self, state: &BorgState) {
-        // This is before the native decision mutates goals or queues keys.
-        let _view = View::new(state);
-        self.recorder
-            .lock()
-            .expect("shadow recorder")
-            .counts
-            .caution_calls += 1;
-    }
-
-    fn caution(&self, _state: &BorgState, original: &CautionResult) {
-        if original.acted {
-            self.recorder
-                .lock()
-                .expect("shadow recorder")
-                .counts
-                .caution_actions += 1;
+    fn decision(&self, state: &mut BorgState, request: Decision) -> Value {
+        let mode = self.mode;
+        let context = serde_json::json!({"mode":mode,"point":request.name(),"inputs":request,
+            "turn":borg_rs::threat_facts::game_turn(),"borg_turn":state.borg.time.now,
+            "original":null,"ported":null});
+        let (chosen, replayed, agreement, events, visits) = match mode {
+            Mode::Check => borg_rs::decision_tape::compare(
+                state,
+                context,
+                |s| request.native(s),
+                |s| crate::stateful::decide(s, request),
+            ),
+            Mode::Switch => borg_rs::decision_tape::compare(
+                state,
+                context,
+                |s| crate::stateful::decide(s, request),
+                |s| request.native(s),
+            ),
+            Mode::Off => return request.native(state),
+        };
+        let mut r = self.recorder.lock().expect("shadow recorder");
+        r.counts.comparisons += 1;
+        r.counts.stateful_comparisons += 1;
+        r.counts.dependency_requests += events as u64;
+        *r.counts.root_points.entry(request.name()).or_default() += 1;
+        for (name, count) in visits {
+            *r.counts.stateful_points.entry(name).or_default() += count;
+            if name.starts_with("caution.") {
+                r.counts.caution_calls += count;
+            } else if name.starts_with("recovery.") {
+                r.counts.recovery_calls += count;
+            } else {
+                r.counts.escape_calls += count;
+            }
         }
-        // No caution port: its state, acted result and queue remain native.
+        if matches!(request, Decision::Caution) && chosen == Value::Acted(true) {
+            r.counts.caution_actions += 1;
+        }
+        if let Err(error) = agreement {
+            r.counts.mismatches += 1;
+            let (original, ported) = if mode == Mode::Check {
+                (Some(chosen), replayed)
+            } else {
+                (replayed, Some(chosen))
+            };
+            let row = serde_json::json!({"schema":"borg-reborn-rs/shadow@1","mode":mode,
+                "turn":borg_rs::threat_facts::game_turn(),"borg_turn":state.borg.time.now,
+                "point":request.name(),"inputs":request,"original":original,"ported":ported,
+                "replay_error":error,"dependency_requests":events});
+            serde_json::to_writer(&mut r.mismatches, &row).unwrap_or_else(|e| failure(e));
+            r.mismatches.write_all(b"\n").unwrap_or_else(|e| failure(e));
+        }
+        chosen
     }
 
     fn wall_like(&self, turn: i32, borg_turn: i32, feature: u32, original: bool) -> bool {

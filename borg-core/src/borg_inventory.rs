@@ -25,6 +25,7 @@ use crate::state::BorgState;
 
 /// borg-inventory.c globals.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct InventoryState {
     /// `borg_do_crush_junk`: the pack changed, look for junk to crush.
     pub do_crush_junk: bool,

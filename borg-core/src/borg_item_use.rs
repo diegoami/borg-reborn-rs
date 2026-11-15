@@ -42,6 +42,7 @@ use crate::state::BorgState;
 
 /// borg-item-use.c function statics.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct ItemUseState {
     /// `when_last_quaff` (static in `borg_quaff_crit`).
     pub when_last_quaff: BorgTime,

@@ -31,6 +31,7 @@ pub const BORG_XTRA: u16 = 0x80;
 /// The set of grids marked as `BORG_VIEW` (`borg_view_n`, `borg_view_x`,
 /// `borg_view_y`). The player grid is always entry 0 after
 /// `borg_update_view()`.
+#[derive(Clone, PartialEq)]
 pub struct ViewState {
     /// `borg_view_n`
     pub view_n: i16,

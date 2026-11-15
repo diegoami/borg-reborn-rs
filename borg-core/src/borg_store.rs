@@ -33,6 +33,7 @@ pub const SHOP_MENU_ITEMS: &[u8] = b"acfhjmnoqruvyzABDFGHJKLMNOPQRSTUVWXYZ\0";
 ///
 /// The `Vec` is only (re)allocated by `borg_init_store` / `borg_free_store`.
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct BorgShop {
     /// `z_info->store_inven_max` wares.
     pub ware: Vec<borg_item>,
@@ -41,6 +42,7 @@ pub struct BorgShop {
 /// The stores (`borg_shops`) and the copy taken after each read
 /// (`borg_safe_shops`). Empty = NULL (not allocated).
 #[derive(Default)]
+#[derive(Clone, PartialEq)]
 pub struct StoreState {
     pub shops: Vec<BorgShop>,
     pub safe_shops: Vec<BorgShop>,

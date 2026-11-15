@@ -178,6 +178,7 @@ impl Default for BorgKill {
 
 /// borg-flow-kill.c globals.
 #[derive(Clone)]
+#[derive(PartialEq)]
 pub struct KillState {
     /// `borg_kills`: the monster list (256 entries, empty = NULL). Only
     /// `borg_init_flow_kill` / `borg_free_flow_kill` (re)allocate it.

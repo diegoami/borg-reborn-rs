@@ -66,6 +66,7 @@ pub const FEAR_MONSTERS_HGT: usize = (AUTO_MAX_Y + 1) as usize;
 pub const FEAR_MONSTERS_WID: usize = (AUTO_MAX_X + 1) as usize;
 
 /// borg-danger.c globals.
+#[derive(Clone, PartialEq)]
 pub struct DangerState {
     /// `borg_fear_region`: extra fear per "region" (11x11 grids)
     pub fear_region: [[u16; FEAR_REGION_WID]; FEAR_REGION_HGT],

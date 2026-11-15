@@ -110,3 +110,10 @@ pub mod shadow;
 
 // borg-reborn-rs (#281): immutable dependencies of the danger port.
 pub mod threat_facts;
+// borg-reborn-rs (#286): owned policy snapshots do not clone the engine.
+mod decision_snapshot;
+pub mod decision_tape;
+
+pub mod decision_api;
+
+pub mod decisions;

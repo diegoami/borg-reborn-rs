@@ -37,6 +37,7 @@ const BORG_TIME_MAX: BorgTime = i32::MAX;
 pub const SAVEFILE_LEN: usize = 1024;
 
 /// The globals of borg-think.c.
+#[derive(Clone, PartialEq)]
 pub struct ThinkState {
     /// `shop_num`: the current shop index, or -1.
     pub shop_num: i16,
