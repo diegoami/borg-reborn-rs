@@ -279,6 +279,34 @@ impl Shadow for Next {
     }
 }
 
+/// Invalid remembered memory is a validation failure, never a made-up scalar.
+/// Called before taking the recorder mutex, including from nested transactions.
+/// It uses no engine query: the game turn is deliberately unknown here.
+pub(crate) fn invalid_danger_grid(view: &View<'_>, x: i32, y: i32) -> ! {
+    let row = serde_json::json!({
+        "schema": "borg-reborn-rs/shadow@1",
+        "mode": std::env::var("BORG_SHADOW").unwrap_or_else(|_| "off".into()),
+        "point": "danger.grid", "inputs": {"x":x,"y":y},
+        "turn": null, "borg_turn": view.threat.clock.now,
+        "original": null, "ported": null, "validation_stopped": true,
+        "danger_grid_error": "remembered grid is unallocated or out of bounds",
+    });
+    let saved = std::env::var_os("BORG_RUN_DIR")
+        .ok_or_else(|| std::io::Error::other("missing shadow run directory"))
+        .and_then(|dir| {
+            let mut file = std::fs::OpenOptions::new()
+                .append(true)
+                .open(PathBuf::from(dir).join("shadow.jsonl"))?;
+            serde_json::to_writer(&mut file, &row)?;
+            file.write_all(b"\n")?;
+            file.flush()
+        });
+    if let Err(error) = saved {
+        eprintln!("cannot persist invalid danger grid: {error}");
+    }
+    failure(format!("invalid remembered danger grid ({x}, {y})"))
+}
+
 fn failure(error: impl std::fmt::Display) -> ! {
     eprintln!("borg-next: shadow: {error}");
     std::process::exit(2)

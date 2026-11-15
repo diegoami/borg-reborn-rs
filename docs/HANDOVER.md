@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: durable danger-grid failures (#315)
+
+- Replace the port's aborting grid expect with a diagnostic containing the
+  invalid coordinates, Borg clock, mode and validation_stopped=true, flushed
+  to shadow.jsonl before exit 2. Both scalar values and unknown game turn
+  are null; no engine query, fabricated scalar or recorder lock is involved.
+- Six subprocess cases exercise the actual Assessment.grid failure path in
+  check/switch for negative/out-of-bounds coordinates and unallocated memory.
+  These are deliberate operational failures, not measured game deaths.
+- Only the invalid-memory path changes. Accepted R2 evidence retains its
+  historical cd66 input identity; native validation below records the new
+  build separately in R2-GRID-VALIDATION.json. Smoke off/check/switch is
+  3/3 identical and each focused mode hits all 11 entries with zero mismatch;
+  play logs also match accepted R2. All 16 measured games reconcile three
+  natural deaths D2449–D2451. No new full v12 campaign is claimed.
+  #321/#322 supply gate/count fixes; #323 independently
+  supplies the strict entry fixture and CI gate. All integrate on feature R.
+
+
 ## 2026-11-15: R3 accessor and ownership plan (#316)
 
 - R3-PLAN.md closes the roadmap follow-up from accepted R2 review: cheap

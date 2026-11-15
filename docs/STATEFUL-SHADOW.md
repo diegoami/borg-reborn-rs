@@ -62,6 +62,15 @@ different return/final state logs the mismatch and retains the driving
 policy's result. Diagnostic request-divergence runs count as controlled
 operational failures, never deaths or successful games.
 
+Invalid danger-grid memory uses the same controlled-stop principle: append a
+`danger.grid` diagnostic with coordinates and Borg clock, flush it, then exit
+2. No scalar is invented. The engine game turn is explicitly null because
+this path queries no engine state; it never takes the recorder mutex. Missing
+run directories or write errors are reported on stderr before exit. A six-case
+subprocess fixture exercises the actual grid failure path for both modes,
+covering out-of-bounds and unallocated memory. It is an operational diagnostic,
+not a natural game death or a successful shadow comparison.
+
 The syntactic source gate in scripts/decision_surface.py checks the three
 native policies and every Rust file recursively under stateful/, including
 the dispatcher and newly added modules. It rejects known core/module aliases,
