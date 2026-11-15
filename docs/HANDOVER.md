@@ -2,6 +2,103 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: #308 re-review accepted; integration conflicts tracked
+
+- Re-review at exact 0030b101 accepts the POC in isolation and confirms CI.
+  Report: https://github.com/diegoami/borg-reborn-rs/pull/308#issuecomment-6901041092.
+- All six POC evidence packages are now content-qualified, with original
+  record and payload bytes preserved. PR308-DOSSIER-MAP.json retains both
+  the earlier numeric rename history and the full source-qualified import
+  map. The numeric reservation was insufficient for concurrent task branches.
+  No other branch's evidence is replaced. #335 tracks the recovery.
+- Owner main-first sequencing remains. #331's second-merge synchronization
+  must consolidate the two strict config readers with lazy environment
+  precedence and run both native configuration suites. It must also import
+  newly accepted #332 evidence before enabling its legacy-inventory gate.
+  #317/#318 are closed on track-p, awaiting accepted #331 promotion; their
+  code is not silently imported here. See PR308-REVIEW-FIXES.md.
+- Accepted main 70b48cc1 (#332 M13) is synchronized; all its dossier
+  bytes remain unchanged. Combined native source 49daaed675fa was built
+  clean at 7ee2c80b; four new-source natural deaths are also qualified and
+  reconciled. The full map retains the supplementary race variant too.
+  Formatting/Clippy/vendor pass, workspace 156+4+5 and release core 325
+  (four ignores) pass; engine 63 (one skip), scripts/tools 19/78 pass.
+  Original smoke matches all three references in keys/messages/states.
+- Draft remains for owner testing; no engine/recorder or gameplay changes
+  are made for the evidence recovery, and the guided game remains untouched.
+
+## 2026-11-15: #308 returned-review fixes (reviewed head 19f2025b)
+
+- Owner chose main-first delivery for the independent POC; P/R synchronize
+  through their own later PRs. Accepted main (including #307) was merged;
+  no unreviewed R implementation was imported or rewritten.
+- POC D2446–D2448 are renamed to D2476–D2478. PR308-DOSSIER-MAP.json
+  records the exact mapping; source/build/family/attempt identities and
+  evidence hashes are preserved. D2476–D2481 were reserved on #318 for
+  this delivery's old and revised-source controls. The re-review found that
+  concurrent unintegrated task branches had already used those numbers;
+  the qualified recovery above supersedes this reservation.
+- The shipped file is tested by Plan::parse(include_str!(...)) for every
+  class/default and level 1–50. The Python grammar approximation is removed;
+  native checks load the real file. Canonical lowercase loop-levels is
+  enforced; reversed endpoints are documented.
+- Class availability is checked at Borg initialization/reinitialization,
+  before acknowledging the plan. Strict POC settings reads diagnose I/O
+  and UTF-8 failures, with absent-file defaults; native startup tests prove
+  no silent fallback. The wider legacy-reader/re-entry work remains #317.
+- BOM/CRLF are supported; oversized input reports size before UTF-8 errors.
+  Budget values match accepted main's unbounded zero/none semantics, including
+  signed/leading-zero spellings but excluding whitespace. Our new
+  module is formatted for readability; shared donor code was not reformatted.
+  Plan examples moved to harness/plans to separate them from BORG_PROFILE.
+- Initialization errors still exit 2; live unsaved-game recovery is not
+  claimed. The POC stays diagnostic-only and the guided game is untouched.
+- PR308-REVIEW-FIXES.md records all finding dispositions and limits.
+  Revised source 8b9642d658f1 was built at e900d670; no-plan CI controls
+  are D2479–D2481 within the reservation. Local engine checks pass 62
+  tests (one environment skip), focused POC checks 7/7, and no-plan
+  3,000-turn keys/messages/states match. Required CI is rerun on the new head.
+
+## 2026-11-15: working class-specific errand-plan POC (#305, PR #308)
+
+- Owner requested all-class candidate plans to level 50. The example now
+  explicitly covers all nine classes plus a default, exactly once per level
+  1–49, and hands back at 50. Early gates follow legacy class groups; later
+  shared intervals are labelled hypotheses. They are not calibrated or a
+  claim that any character will reach 50. Core readiness still overrides them.
+- A new data test checks all classes/levels and the 50 handover; all five
+  POC engine/data tests pass, and the real mage loaded the complete new file
+  through the relative borg.txt setting. Native source hash stays 3b5503a881fe.
+- Follow-up #320 covers post-50 stats/resists/equipment/readiness, town visit
+  frequency, equipment policy and longer-run design. Zoo #114 already owns
+  checkpoint/resume storage; linked it and added the plan/controller state
+  required to resume a continued life without double-counting samples.
+
+- Owner rescoped the draft to a POC in a separate errands_plan.txt. The
+  implementation accepts [default] and class sections such as [mage],
+  non-overlapping level ranges and only loop-levels. Ladder/trips aliases
+  are not accepted in the new file; legacy slash paths remain outside the
+  opt-in POC until migration/removal is agreed after trying it.
+- BORG_ERRANDS_PLAN selects a file; alternatively borg_plan in user/borg.txt
+  resolves a relative path under that user directory. Wrong core, bad or
+  missing files, unsupported commands and automatic-errand conflicts fail
+  visibly. File bytes are frozen/preserved; no reload or live parameters.
+- Runtime replaces a phase once on level change, including an active loop,
+  and defers during stores/Recall. Gaps stop; manual errand/stop cancels it.
+  Four parser/controller tests and four native checks cover class/default
+  selection, a real mage level-up changing loops, bad input/gap handover
+  and refusing untracked plan inputs in the normal measured harness.
+- tools/try-errands-plan.py is the bounded diagnostic driver and preserves
+  exact file/binary/command provenance. Standard harness plan runs are
+  intentionally refused until cemetery family/death-replay integration
+  handles the extra input/state; do not call POC runs baseline measurements.
+- No engine/recorder changes; the original guided game stays untouched.
+- Local checks pass: formatting/Clippy, workspace and release-core tests,
+  19 scripts and 78 tools tests, vendoring, and native POC tests. Disabled
+  POC keys/messages/states match the control for 3,000 turns. Standard CI
+  controls (no plan selected) were reproduced at source 3b5503a881fe and
+  retained as D2446–D2448 in the explicit historical validation registry.
+
 ## 2026-11-15: M13 town/trip donor refresh (#328)
 
 - Verified tag 4.2.6-rs-town-trip-m13-v1 peels to 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea.

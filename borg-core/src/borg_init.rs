@@ -788,6 +788,8 @@ pub fn borg_prepare_race_class_info(st: &mut BorgState) {
 /// Initialize the Borg (`borg_init`).
 pub fn borg_init(st: &mut BorgState) {
     // borg-reborn-rs (#219): validate once before RNG or decisions.
+    // borg-reborn-rs (#305): opt-in separate plan file, validated before play.
+    crate::errands_plan::initialize();
     crate::params::initialize();
     // Verify system
     // Redraw everything

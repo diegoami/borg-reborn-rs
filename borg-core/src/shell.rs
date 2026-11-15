@@ -198,7 +198,7 @@ pub struct Trip {
 }
 
 /// The class names of `class.txt`, in its order (`player->class->cidx`).
-const CLASSES: [&str; 9] = [
+pub(crate) const CLASSES: [&str; 9] = [
     "warrior",
     "mage",
     "druid",
@@ -210,9 +210,34 @@ const CLASSES: [&str; 9] = [
     "blackguard",
 ];
 
+/// Strict configuration read used by the plan POC. Missing files retain
+/// absent defaults; I/O/decoding failures are not an absent plan selection.
+pub fn read_borg_txt_setting(
+    path: &std::path::Path,
+    name: &str,
+) -> Result<Option<String>, String> {
+    let text = match std::fs::read_to_string(path) {
+        Ok(text) => text,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(format!("{}: {error}", path.display())),
+    };
+    Ok(text.lines()
+        .map(str::trim)
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| l.split_once('='))
+        .find(|(n, _)| n.trim() == name)
+        .map(|(_, v)| v.trim().to_string()))
+}
+
+pub fn checked_borg_txt_setting(name: &str) -> Result<Option<String>, String> {
+    let path = engine::path_build_user(4096, b"borg.txt");
+    let path = String::from_utf8_lossy(&path);
+    read_borg_txt_setting(std::path::Path::new(path.as_ref()), name)
+}
+
 /// A setting of the run's `borg.txt` (`ANGBAND_DIR_USER/borg.txt`) that
-/// the shell reads: `borg_reborn_core`, `borg_reborn_errand`. The zoo
-/// writes a run's settings there (its profiles), not in the environment.
+/// the shell reads. Legacy callers retain their existing contract; #317
+/// tracks migrating all configuration access to strict error handling.
 pub fn borg_txt_setting(name: &str) -> Option<String> {
     let path = engine::path_build_user(1024, b"borg.txt");
     let text = std::fs::read_to_string(String::from_utf8_lossy(&path).as_ref()).ok()?;
@@ -516,6 +541,7 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
 pub fn apply(command: Command, budget: i64) -> bool {
     match command {
         Command::Errand(e) => {
+            crate::errands_plan::cancel();
             set_errand(Some(e), budget);
             active()
         }
@@ -532,6 +558,7 @@ pub fn apply(command: Command, budget: i64) -> bool {
             false
         }
         Command::Stop => {
+            crate::errands_plan::cancel();
             NEXT.lock().unwrap().clear();
             set_errand(None, 0);
             false
@@ -617,6 +644,7 @@ fn scared(st: &mut BorgState, level: i32) -> bool {
 /// End the errand with this outcome: the next queued errand starts if this
 /// one is done, otherwise control goes back to the player.
 fn finish(st: &mut BorgState, outcome: &str) {
+    crate::errands_plan::cancel();
     let turn = i64::from(engine::game_turn());
     report(st, outcome, turn);
     let budget = running().as_ref().map_or(0, |r| r.budget);
@@ -672,6 +700,9 @@ fn target(st: &mut BorgState) -> Option<i32> {
 /// next begins; the errand ends when the last is over, or at its budget.
 /// `Some(true)` means the think is over (the Borg stops).
 pub(crate) fn before_dungeon_think(st: &mut BorgState) -> Option<bool> {
+    if crate::errands_plan::tick(st) {
+        return Some(true);
+    }
     let turn = i64::from(engine::game_turn());
     // The engine's depth, read before the core's update of the think.
     let depth = engine::player_depth();
@@ -1728,4 +1759,14 @@ mod tests {
         r.trip = 2;
         assert_eq!(r.target(), None, "every trip is over");
     }
+}
+
+// Owner-requested POC (#305): internal installation does not cancel itself.
+pub(crate) fn install_plan_loop(first: i32, last: i32) {
+    NEXT.lock().unwrap().clear();
+    set_errand(Some(Errand::LoopLevels(first, last)), 0);
+}
+pub(crate) fn install_plan_stop() {
+    NEXT.lock().unwrap().clear();
+    set_errand(None, 0);
 }
