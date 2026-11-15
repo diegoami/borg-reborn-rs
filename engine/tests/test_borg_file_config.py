@@ -75,8 +75,30 @@ class BorgFileConfigTest(unittest.TestCase):
             'BORG_CORE': 'borg-rs', 'BORG_STOPSCARED': 'off', 'BORG_ERRAND': 'none',
         })
         self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('cannot read borg.txt', result.stderr)
+        plan = self.root / 'explicit-plan.txt'
+        plan.write_text('[default]\n  level <= 50\n    loop-levels 0 1\n')
+        _, result = self.launch('env-plan-parameters', content, {
+            'BORG_CORE': 'borg-rs', 'BORG_STOPSCARED': 'off', 'BORG_ERRAND': 'none',
+            'BORG_ERRANDS_PLAN': str(plan),
+        })
+        self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn('core parameters:', result.stderr)
         self.assertIn('cannot read borg.txt', result.stderr)
+
+    def test_plan_core_isolation_preserves_lazy_environment_priority(self):
+        content = b'borg_reborn_core=0\nborg_plan=missing-plan.txt\n'
+        _, result = self.launch('file-original-plan', content)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('plans require BORG_CORE=borg-rs', result.stderr)
+        out, result = self.launch('env-original-file-plan', content, {'BORG_CORE': 'reborn'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((out / 'params.json').is_file())
+        _, result = self.launch('env-original-explicit-plan', b'# \xff', {
+            'BORG_CORE': 'reborn', 'BORG_ERRANDS_PLAN': 'missing-plan.txt',
+        })
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('plans require BORG_CORE=borg-rs', result.stderr)
 
     @unittest.skipUnless(os.name == 'posix', 'OS-byte paths require POSIX')
     def test_valid_config_in_a_non_utf8_user_directory(self):

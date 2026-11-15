@@ -305,10 +305,21 @@ pub fn core_is_borg_rs() -> bool {
         } else {
             parse_core_selector(file.as_deref(), "borg.txt borg_reborn_core")
         };
-        selected.unwrap_or_else(|error| {
+        let selected = selected.unwrap_or_else(|error| {
             eprintln!("borg-reborn-rs: {error}");
             std::process::exit(2);
-        })
+        });
+        // An explicit core environment override keeps file access lazy. A
+        // file-selected original core still rejects a requested file plan.
+        let plan_requested = std::env::var_os("BORG_ERRANDS_PLAN").is_some()
+            || (!selected
+                && environment.is_none()
+                && borg_rs::shell::borg_txt_setting("borg_plan").is_some());
+        if !selected && plan_requested {
+            eprintln!("borg-reborn-rs: errands plans require BORG_CORE=borg-rs");
+            std::process::exit(2);
+        }
+        selected
     })
 }
 
