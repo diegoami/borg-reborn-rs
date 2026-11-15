@@ -4,6 +4,10 @@
 
 ## 2026-11-15: tactical LLM adviser proposal (#306, PR #309)
 
+- #308 is now an opt-in class-specific errands_plan.txt runtime POC, not
+  an inline borg.txt language. It supports only loop-levels and is kept
+  out of measured arms until plan/death-replay provenance is integrated.
+
 - Separate opt-in adviser/host design, extending Q/#153/#212. No network
   or runtime implementation; the measured Borg stays model-free.
 - #308 now uses the owner's plain level-phase block in borg.txt, not YAML

@@ -4,9 +4,9 @@ Status: owner-requested design proposal, 2026-11-15. No model connection,
 controller, new observation read or default-policy change is implemented by
 this document. Implementation and any amendments to SPEC/RULES/GOALS require
 owner review. This proposal extends [QUERY-SURFACE.md](QUERY-SURFACE.md),
-issues #153/#212, and the simple profile/errand-plan proposal in issue #305 (PR #308): a plain level-phase plan embedded directly in borg.txt. The owner rejected
-both the full scripting language and YAML; Borg profiles remain ordinary
-borg.txt configurations with their own level schedules.
+issues #153/#212, and the class-specific errands-plan POC in issue #305 (PR #308). That POC reads
+a separate errands_plan.txt and supports only loop-levels under level guards;
+it has no scripting DSL, live parameter setter or LLM integration.
 
 ## What the player can request
 
