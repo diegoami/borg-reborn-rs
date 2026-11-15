@@ -93,6 +93,8 @@ pub mod regress;
 pub mod shell;
 // borg-reborn-rs (#219): calibration registry.
 pub(crate) mod params;
+// borg-reborn-rs (#222): observational decision tracing.
+pub(crate) mod core_trace;
 
 /// The `^Z` command of this core (borg-reborn-rs #207): the shell's
 /// `do_cmd_borg` calls it when `BORG_CORE=borg-rs` selects this core.

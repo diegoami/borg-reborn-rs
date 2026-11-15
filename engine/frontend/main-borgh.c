@@ -873,6 +873,23 @@ errr init_borgh(int argc, char *argv[])
 		}
 	}
 
+	/* P3 (#244): native zoo runs have -summary but no run.sh environment.
+	 * Put optional parameter/decision diagnostics beside that summary.
+	 * Explicit callers keep their chosen BORG_RUN_DIR. No game state/RNG. */
+	if (opt_summary && !getenv("BORG_RUN_DIR")) {
+		char *dir = string_make(opt_summary);
+		char *slash = strrchr(dir, '/');
+		if (slash == dir) slash[1] = '\0';
+		else if (slash) *slash = '\0';
+		else {
+			string_free(dir);
+			dir = string_make(".");
+		}
+		if (setenv("BORG_RUN_DIR", dir, 0) != 0)
+			quit("borgh: cannot configure run diagnostics directory");
+		string_free(dir);
+	}
+
 	if (!borgh_seed_set)
 		quit("borgh: a seed is required (-seed N or $ANGBAND_SEED)");
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)

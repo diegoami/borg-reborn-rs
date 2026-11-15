@@ -3,6 +3,119 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: Track R stays on its feature branch (owner)
+
+- The owner requires the unfinished redesign to stay out of `main`.
+  Created `feature/track-r` from main `8351f0a3`; PR #248 now targets it.
+  Future R task branches start from and merge into `feature/track-r`.
+- Green task CI authorizes integration into that feature branch only.
+  Milestone completion does not authorize promotion to `main` or `reviewed`.
+  The owner explicitly approves a ready redesign before any such promotion.
+- Main's completed Track P work was merged into the R1.1 task branch;
+  conflicts in handover, provenance and vendoring declarations preserve
+  both tracks. No R implementation has been merged into main.
+
+## 2026-11-15: P3.2 sweep handoff (#245)
+
+- CORE-SWEEP.md is an exact-commit-pinned prompt for the owner’s zoo
+  session, with sample catalogue/profile/experiment fragments. It specifies
+  128-seed exploration, fixed candidate selection and900 fresh matched
+  confirmation pairs, prespecified success/failure accounting and exact
+  analysis. No population experiment or sealed-set inspection occurred.
+- The actual pinned catalogue validates384 exploratory cells and the two
+  draft suites’ disjoint assignments. The sizing script reproduces the
+  exact boundary-model power. P3.2-VALIDATION.md records the checks.
+- Build inputs are identical to P3.1; its45/45 play parity, profile contract,
+  named trace and eleven preserved deaths apply. Task PRs merge only after
+  green CI. All P1–P3 deliverables are implemented when this task merges;
+  milestone review snapshots remain for the owner's chosen reviewer.
+- P1 review #251 pins main33ebdc1e. That real merge is verified by its
+  parents, although GitHub left #246 open after a502; the stale PR and
+  issue were closed manually after verification. No source was reverted.
+  P2/P3 review snapshots are opened when their final task merges.
+
+## 2026-11-15: P3.1 validation complete
+
+- The real pinned zoo profile contract passes3 cells with no BORG_* policy
+  environment: numeric core1, resolved parameter values/origins, invalid
+  rejection and original core0. Native diagnostics accompany the summary.
+- Full45/45,295,464 named rows, current-shell ladder, original-core smoke
+  and death fixture pass. Required checks and36 engine tests pass (two
+  environment skips). D2345–D2355 preserve eleven natural deaths, reconciled.
+- P3.1-VALIDATION.md and ZOO-INTERFACE.md document the remaining adapter
+  record limitation: its config_checked field still names the written file;
+  native parameter/trace files must be preserved and hashed for analysis.
+- Owner sweep handoff #245 is next; no population run has been launched.
+
+## 2026-11-15: P3.1 native zoo profile contract
+
+- Numeric borg_reborn_core=1 selects the vendored core;0 retains the
+  original core. This fits the pinned zoo's bool/int-only profile writer.
+- Native borgh calls without BORG_RUN_DIR place diagnostics beside their
+  existing -summary file, preserving explicit caller paths. No policy or
+  RNG behavior changes; the upstream engine and zoo pin remain untouched.
+- Three actual pinned-adapter contract cells pass with no BORG_* policy
+  environment: parsed profile values/origins, invalid-value exit2 and the
+  original-core selector. Example control/rest-SP7/8 profiles are provided.
+  Full/harness validation is retained in the final task report.
+## 2026-11-15: P2.4 power valuation complete
+
+- 727 parameters (1734 total) cover activation values, equipment scores,
+  speed/armour tiers, inventory quantities/weights and readiness rewards.
+  Retained mechanics and the unchanged dynamic-formula switch are declared.
+- Full45/45,295,464 named rows, current-shell ladder, original-core smoke
+  and death fixture pass. A zero unidentified-weapon bonus changes queued
+  keys at5656 on Human Warrior seed1000; no improvement claim.
+- Default expansion reproduces original bytes with only necessary i64
+  parameter promotions removed.137 core tests, required Rust checks,
+  17 scripts/70 tools tests and vendoring pass. D2334–D2344 retain eleven
+  natural deaths, fully reconciled (P2.4-VALIDATION.md).
+- P1 review snapshot is #251, unmerged. P3 #244 tests integer zoo profiles
+  and native diagnostics; #245 provides the owner's sweep prompt. Owner
+  authorized continuation; no reviewer or population experiment launched.
+
+## 2026-11-15: P2.3 item-use validation complete
+
+- 19 parameters/20 sites,1007 total; default expansion restores original
+  bytes. Full45/45,295,464 named rows, current-shell ladder, original-core
+  smoke/death and required checks pass on both source identities.
+- CCW-stock trial has no change; the rod-failure trial changes queued keys
+  at90378 on Half-Elf Warrior seed1001, on both builds. No improvement claim.
+- D2311–D2322 retain original evidence; D2323–D2333 preserve eleven new
+  natural deaths. Both registries reconcile. P2.3-VALIDATION.md has details.
+
+## 2026-11-15: P2.2 integrated validation complete
+
+- Defence retains 45/45, named traces and current-shell ladder parity
+  after the parent integration. The actual diagnostic character is Hobbit
+  Priest (race index3 with menu letters); the report now states it correctly.
+- Required checks pass again. D2289–D2299 retain original evidence and
+  D2300–D2310 preserve eleven integrated-build deaths, reconciled.
+
+## 2026-11-15: P2.1 integrated validation complete
+
+- Attack parameters retain 45/45 default parity and the same diagnostic
+  divergence after receiving current main through P1.4. Current-shell
+  ladder, named trace, original-core smoke/death and required checks pass.
+- D2265–D2276 retain original evidence; D2277–D2288 add the integrated
+  build's twelve natural deaths. Both registries reconcile. CI reruns on
+  the updated task head; downstream task branches receive these records.
+
+## 2026-11-15: track P integration with the option-C fixes
+
+- P1.4's first head passed CI, but its merge was rejected after main's
+  option-C fixes landed (#238). The premature merged-status comment was
+  corrected immediately. Integrated main e514e8b1, preserving its shell
+  changes; the only conflicts were independently allocated dossier IDs.
+- Our original P1.4 cases are now D2242–D2253; D2254–D2264 preserve the
+  integrated build's eleven new deaths. Identities and evidence remain
+  intact, indexes/hashes regenerated. Both registries reconcile.
+- Integrated full **45/45**, 295,464 named trace rows, current-shell ladder
+  trace on/off, original-core smoke **3/3**, death fixture and all required
+  checks pass. P1.4-VALIDATION.md identifies both builds. CI reruns before
+  merging; downstream P2 branches will receive the integrated parent and
+  rerun game validation. No review PR has been merged or reviewer launched.
+
 ## 2026-11-15: the option-C review and re-review fixed (#227)
 
 - **Review #227** (Kimi K3.1 Pro): 13 findings, fixed in #230, #231 and
@@ -64,6 +177,78 @@
   experiment belongs to #225. The view uses the current vendored v12
   source, including track P's merged parameter changes.
 
+## 2026-11-15: track P, P2.4 (#243), power extraction in progress
+
+- Audited and extracted 727 equipment/inventory/activation valuation
+  parameters (1734 total). Numeric game encodings and mechanics are retained;
+  default expansion restores the original source bytes after removing the
+  import and necessary i64 parameter promotions. No vendored formatting.
+- Release unit tests and Clippy pass; game validation follows integration
+  of the concurrent main errand-shell fixes through the parent stack.
+  A boundary test rejects zero divisors and out-of-storage-range timers.
+
+## 2026-11-15: track P, P2.3 (#242), item-use extraction in progress
+
+- Extracted 19 parameters at 20 sites (1007 entries total). Default full
+  45/45 and ladder parity pass on the pre-integration branch; default
+  expansion reproduces the original source bytes. Rust/Python checks pass.
+- The CCW-stock diagnostic on seed1011 causes no change; the rod-failure
+  diagnostic is pending. Every measured death is retained.
+- Another session's errand-shell fixes landed on main while P1.4 CI ran.
+  Integrating them through the stack and rerunning before final PR gates;
+  the older reports remain evidence for their actual source identities.
+
+## 2026-11-15: track P, P2.2 (#241), defence parameters
+
+- Added 218 defence settings at 242 sites (988 total): danger/failure
+  windows, scoring, timers, banishment/destruction/teleport decisions,
+  visibility and panel-shift budgets. CALIBRATION.md lists retained data.
+- Full **45/45**, named traces and ladder parity hold. Suppressing Bless
+  changes the priest's selected check at turn36902 from borg_caution to
+  borg_attack. See P2.2-VALIDATION.md; no improvement claim.
+- All required Rust/Python/vendor checks and default-expansion audit pass.
+  D2289–D2299 preserve eleven natural deaths, reconciled without omissions.
+- Initially stacked on #247; pending CI gates will merge in task order.
+  Remaining P work: item use #242, power #243, profile contract #244 and
+  owner sweep prompt #245. Review PRs stay unmerged for the owner.
+
+## 2026-11-15: track P, P2.1 (#240), attack parameters
+
+- Added 167 attack settings at 188 sites (770 total): scoring, mana
+  reserves, danger horizons, failure/paranoia limits and resource costs.
+  Retained damage/geometry/interface data is declared in CALIBRATION.md.
+- Full **45/45**, 295,464 named trace rows and ladder parity hold. A
+  zero overkill multiplier changes borg_attack to borg_flow_old at turn
+  141 and dies later; the earlier hit-threshold trial has no change.
+  Both are retained without an improvement claim (P2.1-VALIDATION.md).
+- Required Rust/Python/vendor checks pass. Defaults restore original
+  source bytes apart from import and three comparison promotions.
+  D2265–D2276 preserve twelve natural deaths; none are missing.
+- Stacked on P1.4 #246 while its engine CI finishes. Remaining track P:
+  defence #241, item use #242, power #243, zoo profiles #244, sweep #245.
+  Owner authorized this continuation across milestone handoffs; review
+  PRs remain unmerged and reviewers remain the owner's choice.
+
+## 2026-11-15: track P, P1.4 (#222), named core decisions
+
+- Added the independent `trace-core.jsonl` stream, successful root-check
+  hooks, core state/danger/goals/errand/queued keys and immediate line writes.
+  Nested thinks retain separate selection frames. CORE-TRACE.md specifies
+  the sampling point, composite-root names and schema limitations.
+- Full **45/45** matches P1.3 and pinned v12 play logs. All 295,464 rows
+  parse with contiguous sequences and no unclassified decisions. Tracing
+  off preserves play; default-profile ladder remains identical.
+- The recovery override changes the named check at turn 561, from
+  borg_flow_take to borg_recover, and retains the known negative outcome.
+- Death dossiers retain the last 200 core rows and their hashes/counts.
+  D2242–D2253 preserve all twelve measured natural deaths, reconciled.
+  Rust/Python/format/vendor checks pass; P1.4-VALIDATION.md has evidence.
+- P1.1–P1.3 merged (#234, #235, #237) after green CI. The owner explicitly
+  authorized all remaining P tasks on 2026-11-15, including continuation
+  beyond milestone review handoffs. Task PRs merge after CI; review PRs
+  stay unmerged for the owner's chosen reviewer. P2 tasks #240–#243 and
+  P3 tasks #244–#245 implement the remaining PLAN scope. No reviewer or
+  population experiment is launched by this session.
 
 ## 2026-11-15: track P, P1.3 (#221), recovery parameters
 

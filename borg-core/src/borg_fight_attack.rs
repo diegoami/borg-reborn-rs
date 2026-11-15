@@ -20,6 +20,8 @@
 //! which scores bolts, beams, balls and "dispels" at every target (and the
 //! grids next to it), or `borg_launch_arc` for arcs and cones.
 
+// borg-reborn-rs (#240): named attack policy; default operations unchanged.
+use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::{BorgGrid, DUNGEON_HGT, DUNGEON_WID};
 use crate::borg_cave_util::{borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
@@ -377,7 +379,7 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     let mut chance = tr(st, BI_THN) + ((tr(st, BI_TOHIT) + i32::from(item.to_h)) * 3);
 
     /* Chance of hitting the monsters AC */
-    if chance < (r_ptr.ac * 3 / 4) * 8 / 10 {
+    if chance < (r_ptr.ac * 3 / 4) * param(Param::attack_melee_min_hit_tenths) / 10 {
         dam = 0;
     }
 
@@ -385,15 +387,15 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     chance = chance.clamp(5, 95);
 
     /* add 10% to chance to give a bit more weight to weapons */
-    if tr(st, BI_CLEVEL) > 15 {
-        chance += 10;
+    if tr(st, BI_CLEVEL) > param(Param::attack_melee_bonus_min_level) {
+        chance += param(Param::attack_melee_hit_bonus);
     }
 
     /* Mages with Mana do not get that bonus, they should cast */
     if (tr(st, BI_CLASS) == CLASS_MAGE || tr(st, BI_CLASS) == CLASS_NECROMANCER)
-        && tr(st, BI_CURSP) > 1
+        && tr(st, BI_CURSP) > param(Param::attack_mage_melee_min_sp)
     {
-        chance -= 10;
+        chance -= param(Param::attack_mage_hit_penalty);
     }
 
     /* reduce damage by the % chance to hit */
@@ -405,18 +407,18 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     }
 
     /* Limit damage to twice maximal hitpoints */
-    if dam > i32::from(kill.power) * 2 && !rf(r, RF_UNIQUE) {
-        dam = i32::from(kill.power) * 2;
+    if dam > i32::from(kill.power) * param(Param::attack_melee_overkill_multiplier) && !rf(r, RF_UNIQUE) {
+        dam = i32::from(kill.power) * param(Param::attack_melee_overkill_multiplier);
     }
 
     /*
      * Reduce the damage if a mage, they should not melee if they can avoid it
      */
     if (tr(st, BI_CLASS) == CLASS_MAGE || tr(st, BI_CLASS) == CLASS_NECROMANCER)
-        && tr(st, BI_MAXCLEVEL) < 40
-        && tr(st, BI_CURSP) > 1
+        && tr(st, BI_MAXCLEVEL) < param(Param::attack_mage_melee_max_level)
+        && tr(st, BI_CURSP) > param(Param::attack_mage_melee_min_sp)
     {
-        dam = (dam * 8 / 10) + 1;
+        dam = (dam * param(Param::attack_mage_melee_damage_tenths) / 10) + 1;
     }
 
     /*
@@ -427,7 +429,7 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
      * the town uniques (maggot does no damage)
      */
     if rf(r, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
-        dam += dam * 5;
+        dam += dam * param(Param::attack_melee_unique_bonus);
     }
 
     /* Ignore Maggot until later.  Player will chase Maggot
@@ -435,24 +437,24 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
      * he is stuck in a compromised situation.
      */
     if rf(r, RF_UNIQUE) && tr(st, BI_CDEPTH) == 0 {
-        dam = dam * 2 / 3;
+        dam = dam * param(Param::attack_melee_town_unique_numerator) / param(Param::attack_melee_town_unique_divisor);
 
         /* Dont hunt maggot until later */
-        if tr(st, BI_CLEVEL) < 5 {
+        if tr(st, BI_CLEVEL) < param(Param::attack_town_unique_min_level) {
             dam = 0;
         }
     }
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
-        dam = dam * 3 / 2;
+        dam = dam * param(Param::attack_melee_breeder_numerator) / param(Param::attack_melee_breeder_divisor);
     }
 
     /* Enhance the perceived damage to summoner in order to influence the
      * choice of targets.
      */
     if is_summoner(r, false) {
-        dam += (dam * 3) / 2;
+        dam += (dam * param(Param::attack_melee_summoner_numerator)) / param(Param::attack_melee_summoner_divisor);
     }
 
     /*
@@ -460,7 +462,7 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
      * encourage borg to strike them.
      */
     if rf(r, RF_QUESTOR) {
-        dam += dam * 5;
+        dam += dam * param(Param::attack_melee_questor_bonus);
     }
 
     /* Damage */
@@ -475,9 +477,9 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
     /* Avoid waking most "hard" sleeping monsters */
     if !st.kills.kills[k as usize].awake && d <= power(st, k as usize) && !st.borg.munchkin_mode {
         /* Calculate danger */
-        let p = borg_danger_one_kill(st, y, x, 1, k, true, true);
+        let p = borg_danger_one_kill(st, y, x, param(Param::attack_melee_sleep_danger_horizon), k, true, true);
 
-        if p > avoid(st) * 2 {
+        if p > avoid(st) * param(Param::attack_melee_sleep_danger_multiplier) {
             return None;
         }
     }
@@ -488,11 +490,11 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
     }
 
     /* Calculate "danger" to player */
-    let mut p = danger_one_here(st, 2, k, true);
+    let mut p = danger_one_here(st, param(Param::attack_melee_danger_horizon), k, true);
 
     /* Reduce "bonus" of partial kills when higher level */
-    if d <= power(st, k as usize) && tr(st, BI_MAXCLEVEL) > 15 {
-        p /= 10;
+    if d <= power(st, k as usize) && tr(st, BI_MAXCLEVEL) > param(Param::attack_melee_partial_min_level) {
+        p /= param(Param::attack_melee_partial_danger_divisor);
     }
 
     /* Add the danger-bonus to the damage */
@@ -657,7 +659,7 @@ fn strchr_egv(d_char: i32) -> bool {
 /// test shared by all of them.
 fn too_high_level(st: &BorgState, level: i16) -> bool {
     let cl = tr(st, BI_CLEVEL);
-    i32::from(level) > if cl < 13 { 10 } else { (((cl - 10) / 4) * 3) + 10 }
+    i32::from(level) > if cl < param(Param::attack_status_low_level_cutoff) { param(Param::attack_status_low_level_limit) } else { (((cl - param(Param::attack_status_level_offset)) / param(Param::attack_status_level_divisor)) * param(Param::attack_status_level_numerator)) + param(Param::attack_status_level_base) }
 }
 
 /// Which borg-trait.c spell flag a "put out of commission" simulation sets.
@@ -688,14 +690,14 @@ fn set_flag(st: &mut BorgState, f: SpellFlag, v: bool) {
 /// flag = false; dam = p1 - p2`.
 fn commission_value(st: &mut BorgState, i: i32, f: SpellFlag, afraid_bonus: bool) -> i32 {
     set_flag(st, f, false);
-    let mut p1 = danger_one_here(st, 1, i, true);
+    let mut p1 = danger_one_here(st, param(Param::attack_status_danger_horizon), i, true);
     /* Make certain monsters appear to have more danger so the borg is more
      * likely to use this attack */
-    if afraid_bonus && st.kills.kills[i as usize].afraid && tr(st, BI_CLEVEL) <= 10 {
-        p1 += 20;
+    if afraid_bonus && st.kills.kills[i as usize].afraid && tr(st, BI_CLEVEL) <= param(Param::attack_fear_bonus_max_level) {
+        p1 += param(Param::attack_fear_danger_bonus);
     }
     set_flag(st, f, true);
-    let p2 = danger_one_here(st, 1, i, true);
+    let p2 = danger_one_here(st, param(Param::attack_status_danger_horizon), i, true);
     set_flag(st, f, false);
     p1 - p2
 }
@@ -763,10 +765,10 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam *= mult;
             /* don't point blank non-uniques */
             if cur_dis == 1 && !rf(r, RF_UNIQUE) {
-                dam /= 5;
+                dam /= param(Param::attack_arrow_point_blank_divisor);
             }
             /* Do I hit regularly? (80%)*/
-            if chance < armor * 8 / 10 {
+            if chance < armor * param(Param::attack_arrow_min_hit_tenths) / 10 {
                 dam = 0;
             }
         }
@@ -774,9 +776,9 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
         /* Pure damage */
         BORG_ATTACK_MANA => {
             if st.borg.near.unique != 0
-                && st.borg.has[st.item_val.kv_potion_restore_mana as usize] > 3
+                && st.borg.has[st.item_val.kv_potion_restore_mana as usize] > param(Param::attack_mana_unique_min_potions)
             {
-                dam *= 2;
+                dam *= param(Param::attack_mana_unique_multiplier);
             }
         }
 
@@ -884,7 +886,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
         /* Drain Life */
         BORG_ATTACK_OLD_DRAIN => {
             if engine::distance(st.borg.c, kill.pos) == 1 {
-                dam /= 5;
+                dam /= param(Param::attack_nether_point_blank_divisor);
             }
             if rf(r, RF_UNDEAD) || rf(r, RF_DEMON) || strchr_egv(r_ptr.d_char) {
                 dam = 0;
@@ -992,19 +994,19 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             /* try not to teleport away uniques. These are the guys you are
              * trying to kill! */
             if rf(r, RF_UNIQUE) {
-                if kill.injury >= 60 {
+                if i32::from(kill.injury) >= param(Param::attack_teleport_unique_injury) {
                     /* This unique is low on HP, finish it off */
                     dam = -9999;
                 } else if st.borg.status.anti_summon {
                     /* I am sitting pretty in an AS-Corridor */
                     dam = -9999;
-                } else if dam > avoid(st) * 13 / 10 && tr(st, BI_CDEPTH) <= 98 {
+                } else if dam > avoid(st) * param(Param::attack_teleport_unique_danger_tenths) / 10 && tr(st, BI_CDEPTH) <= param(Param::attack_teleport_unique_max_depth) {
                     /* If this unique is causing the danger, get rid of it */
                     tp_other_add(st, i);
-                } else if st.borg.near.unique >= 2 && st.borg.near.unique <= 8 {
+                } else if i32::from(st.borg.near.unique) >= param(Param::attack_teleport_unique_min_count) && i32::from(st.borg.near.unique) <= param(Param::attack_teleport_unique_max_count) {
                     /* If fighting multiple uniques, get rid of one */
                     tp_other_add(st, i);
-                } else if tr(st, BI_CLASS) == CLASS_MAGE && engine::distance(st.borg.c, kill.pos) <= 2 {
+                } else if tr(st, BI_CLASS) == CLASS_MAGE && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_teleport_mage_unique_distance) {
                     /* Unique is adjacent to Borg */
                     tp_other_add(st, i);
                 } else if st.borg.status.vault {
@@ -1029,7 +1031,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
                     }
 
                     /* Near enough perma grids? */
-                    if vault_grids >= 2 {
+                    if vault_grids >= param(Param::attack_teleport_vault_min_walls) {
                         /* get rid of unique next to perma grids */
                         tp_other_add(st, i);
                     }
@@ -1059,7 +1061,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
                 if grid(st, x2, y2).glyph {
                     /* get rid of this one by storing his info */
                     tp_other_add(st, i);
-                    dam = 300;
+                    dam = param(Param::attack_teleport_glyph_value);
                 }
             }
 
@@ -1067,16 +1069,16 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if st.borg.near.morgoth && !st.borg.morgoth_position {
                 /* get rid of this one by storing his info */
                 tp_other_add(st, i);
-                dam = 100;
+                dam = param(Param::attack_teleport_morgoth_value);
             }
 
             /* If the borg does not have enough Mana to attack this
              * round and cast Teleport Away next round, then do it now.
              */
-            if tr(st, BI_CURSP) <= 35 {
+            if tr(st, BI_CURSP) <= param(Param::attack_teleport_low_sp) {
                 /* get rid of this unique by storing his info */
                 tp_other_add(st, i);
-                dam = 150;
+                dam = param(Param::attack_teleport_low_sp_value);
             }
         }
 
@@ -1087,7 +1089,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if rf(r, RF_UNIQUE) {
                 dam = 0;
             } else {
-                dam = danger_one_here(st, 1, i, true);
+                dam = danger_one_here(st, param(Param::attack_turn_danger_horizon), i, true);
             }
         }
 
@@ -1095,7 +1097,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam = 0;
             if !(rf(r, RF_NO_CONF)
                 || rf(r, RF_MULTIPLY)
-                || i32::from(kill.speed) < r_ptr.speed - 5
+                || i32::from(kill.speed) < r_ptr.speed - param(Param::attack_status_slow_speed_margin)
                 || kill.confused
                 || !kill.awake
                 || too_high_level(st, kill.level))
@@ -1109,7 +1111,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
 
         BORG_ATTACK_TURN_ALL => {
             dam = 0;
-            if !(i32::from(kill.speed) < r_ptr.speed - 5
+            if !(i32::from(kill.speed) < r_ptr.speed - param(Param::attack_status_slow_speed_margin)
                 || rf(r, RF_NO_FEAR)
                 || kill.confused
                 || !kill.awake
@@ -1124,7 +1126,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
 
         BORG_ATTACK_OLD_SLOW => {
             dam = 0;
-            if !(i32::from(kill.speed) < r_ptr.speed - 5
+            if !(i32::from(kill.speed) < r_ptr.speed - param(Param::attack_status_slow_speed_margin)
                 || kill.confused
                 || !kill.awake
                 || too_high_level(st, kill.level))
@@ -1140,7 +1142,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam = 0;
             if !(rf(r, RF_NO_SLEEP)
                 || (!rf(r, RF_EVIL) && typ as u32 == BORG_ATTACK_SLEEP_EVIL)
-                || i32::from(kill.speed) < r_ptr.speed - 5
+                || i32::from(kill.speed) < r_ptr.speed - param(Param::attack_status_slow_speed_margin)
                 || kill.confused
                 || !kill.awake
                 || too_high_level(st, kill.level))
@@ -1157,9 +1159,9 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if !too_high_level(st, kill.level) {
                 dam = -999;
                 if !rf(r, RF_UNIQUE) {
-                    dam = danger_one_here(st, 2, i, true);
+                    dam = danger_one_here(st, param(Param::attack_fear_danger_horizon), i, true);
                     /* don't bother unless he is a scary monster */
-                    if dam < avoid(st) * 2 && !kill.afraid {
+                    if dam < avoid(st) * param(Param::attack_fear_danger_multiplier) && !kill.afraid {
                         dam = 0;
                     }
                 }
@@ -1170,9 +1172,9 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             if rf(r, RF_UNDEAD) {
                 dam = 0;
                 if !(kill.confused
-                    || i32::from(kill.speed) < r_ptr.speed - 5
+                    || i32::from(kill.speed) < r_ptr.speed - param(Param::attack_status_slow_speed_margin)
                     || !kill.awake
-                    || i32::from(kill.level) > tr(st, BI_CLEVEL) - 5)
+                    || i32::from(kill.level) > tr(st, BI_CLEVEL) - param(Param::attack_crush_monster_level_margin))
                 {
                     dam = commission_value(st, i, SpellFlag::FearMon, false);
                 }
@@ -1195,7 +1197,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
                     }
                 } else {
                     /* damage is the danger of the baddie */
-                    dam = danger_one_here(st, 1, i, true);
+                    dam = danger_one_here(st, param(Param::attack_sleep_danger_horizon), i, true);
                 }
             } else {
                 dam = 0;
@@ -1233,15 +1235,15 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
 
     /* use Missiles on certain types of monsters */
     if tr(st, BI_CDEPTH) >= 1
-        && (borg_danger_one_kill(st, kill.pos.y, kill.pos.x, 1, i, true, true) > avoid(st) * 2 / 10
+        && (borg_danger_one_kill(st, kill.pos.y, kill.pos.x, param(Param::attack_missile_danger_horizon), i, true, true) > avoid(st) * param(Param::attack_missile_danger_tenths) / 10
             || (has_friends(r) /* monster has friends*/
-                && i32::from(kill.level) >= tr(st, BI_CLEVEL) - 5/* close levels */)
+                && i32::from(kill.level) >= tr(st, BI_CLEVEL) - param(Param::attack_missile_level_margin)/* close levels */)
             || kill.ranged_attack != 0 /* monster has a ranged attack */
             || rf(r, RF_UNIQUE)
             || rf(r, RF_MULTIPLY)
             || gold_eater /* Monster can steal gold */
             || rf(r, RF_NEVER_MOVE) /* monster never moves */
-            || tr(st, BI_CLEVEL) <= 20/* stil very weak */)
+            || tr(st, BI_CLEVEL) <= param(Param::attack_missile_weak_max_level)/* stil very weak */)
     {
         borg_use_missile = true;
     }
@@ -1255,14 +1257,14 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
     }
 
     /* Limit damage to twice maximal hitpoints */
-    if dam > i32::from(kill.power) * 2 && !rf(r, RF_UNIQUE) {
-        dam = i32::from(kill.power) * 2;
+    if dam > i32::from(kill.power) * param(Param::attack_ranged_overkill_multiplier) && !rf(r, RF_UNIQUE) {
+        dam = i32::from(kill.power) * param(Param::attack_ranged_overkill_multiplier);
     }
 
     /* give a small bonus for whacking a unique */
     /* this should be just enough to give preference to whacking uniques */
     if rf(r, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
-        dam *= 3;
+        dam *= param(Param::attack_ranged_unique_multiplier);
     }
 
     /* Ignore Maggot until later.  Player will chase Maggot
@@ -1270,24 +1272,24 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
      * he is stuck in a compromised situation.
      */
     if rf(r, RF_UNIQUE) && tr(st, BI_CDEPTH) == 0 {
-        dam = dam * 2 / 3;
+        dam = dam * param(Param::attack_ranged_town_unique_numerator) / param(Param::attack_ranged_town_unique_divisor);
 
         /* Don't hunt maggot until later */
-        if tr(st, BI_CLEVEL) < 5 {
+        if tr(st, BI_CLEVEL) < param(Param::attack_town_unique_min_level) {
             dam = 0;
         }
     }
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
-        dam = dam * 3 / 2;
+        dam = dam * param(Param::attack_ranged_breeder_numerator) / param(Param::attack_ranged_breeder_divisor);
     }
 
     /* Enhance the perceived damage to summoner in order to influence the
      * choice of targets.
      */
     if is_summoner(r, true) {
-        dam += (dam * 3) / 2;
+        dam += (dam * param(Param::attack_ranged_summoner_numerator)) / param(Param::attack_ranged_summoner_divisor);
     }
 
     /*
@@ -1295,7 +1297,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
      * encourage borg to strike them.
      */
     if rf(r, RF_QUESTOR) {
-        dam += dam * 9;
+        dam += dam * param(Param::attack_ranged_questor_bonus);
     }
 
     /*  Try to conserve missiles.
@@ -1344,7 +1346,7 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     }
 
     /* Require current knowledge */
-    if borg_timer(st, kill.when) > 2 {
+    if borg_timer(st, kill.when) > param(Param::attack_bolt_max_target_age) {
         return 0;
     }
 
@@ -1385,7 +1387,7 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
             }
         }
         /* Is the ghost likely in a wall? */
-        if walls >= 2 && unknown >= 1 {
+        if walls >= param(Param::attack_bolt_unknown_min_walls) && unknown >= param(Param::attack_bolt_unknown_min_grids) {
             return 0;
         }
     }
@@ -1412,10 +1414,10 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     /* Calculate danger (at the monster's grid: `x`, `y` are still the
      * monster's position, or its last neighbour for a ghost) */
     let (dy, dx) = if rf(r, RF_PASS_WALL) { (kill.pos.y + 1, kill.pos.x + 1) } else { (y, x) };
-    let p2 = borg_danger_one_kill(st, dy, dx, 1, i, true, false);
+    let p2 = borg_danger_one_kill(st, dy, dx, param(Param::attack_bolt_sleep_danger_horizon), i, true, false);
 
     /* Avoid waking most "hard" sleeping monsters */
-    if !kill.awake && p2 > avoid(st) / 2 && d < i32::from(kill.power) && !st.borg.munchkin_mode {
+    if !kill.awake && p2 > avoid(st) / param(Param::attack_bolt_sleep_danger_divisor) && d < i32::from(kill.power) && !st.borg.munchkin_mode {
         return -999;
     }
 
@@ -1425,11 +1427,11 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     }
 
     /* Calculate "danger" to player */
-    let p1 = danger_one_here(st, 1, i, false);
+    let p1 = danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false);
 
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
-        d *= 2;
+        d *= param(Param::attack_bolt_kill_multiplier);
     }
 
     /* Add in dangers */
@@ -1447,22 +1449,22 @@ fn borg_launch_destroy_stuff(st: &BorgState, ag: &BorgGrid, typ: i32) -> i32 {
         BORG_ATTACK_ACID => {
             /* rings/boots cost extra (might be speed!) */
             if k_ptr.tval == TV_BOOTS as i32 && !k_ptr.aware {
-                return 20;
+                return param(Param::attack_destroy_unknown_boots_value);
             }
         }
         BORG_ATTACK_ELEC => {
             /* rings/boots cost extra (might be speed!) */
             if k_ptr.tval == TV_RING as i32 && !k_ptr.aware {
-                return 20;
+                return param(Param::attack_destroy_unknown_ring_value);
             }
             if k_ptr.tval == TV_RING as i32 && k_ptr.sval == iv.sv_ring_speed {
-                return 2000;
+                return param(Param::attack_destroy_speed_ring_value);
             }
         }
         BORG_ATTACK_FIRE => {
             /* rings/boots cost extra (might be speed!) */
             if k_ptr.tval == TV_BOOTS as i32 && !k_ptr.aware {
-                return 20;
+                return param(Param::attack_destroy_unknown_boots_value);
             }
         }
         BORG_ATTACK_COLD => {
@@ -1479,10 +1481,10 @@ fn borg_launch_destroy_stuff(st: &BorgState, ag: &BorgGrid, typ: i32) -> i32 {
                     || (k_ptr.sval == iv.sv_potion_inc_dex && need[STAT_DEX as usize])
                     || (k_ptr.sval == iv.sv_potion_inc_con && need[STAT_CON as usize])
                 {
-                    return 2000;
+                    return param(Param::attack_destroy_valuable_potion_value);
                 }
 
-                return 20;
+                return param(Param::attack_destroy_unknown_potion_value);
             }
         }
         /* Used against uniques, allow the stuff to burn */
@@ -1528,7 +1530,7 @@ fn not_mapped(st: &BorgState, q_x: i32, q_y: i32) -> bool {
         && !st.update.detect(Detect::Wall, q_y + 1, q_x)
         && !st.update.detect(Detect::Wall, q_y + 1, q_x + 1)
         && i32::from(st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize])
-            < avoid(st) / 20
+            < avoid(st) / param(Param::attack_unmapped_fear_divisor)
 }
 
 /// Determine the "reward" of launching a beam/bolt/ball at a location
@@ -2190,7 +2192,7 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
         /* Boost the perceived damage on unID'd ones so he can get a quick
          * pseudoID on it */
         if borg_item_note_needs_id(st, &item) {
-            d *= 99;
+            d *= param(Param::attack_ego_ammo_multiplier);
         }
 
         /* Paranoia */
@@ -2304,7 +2306,7 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
             }
 
             /* need to have seen it recently */
-            if borg_timer(st, kill.when) > 10 {
+            if borg_timer(st, kill.when) > param(Param::attack_throw_max_target_age) {
                 break 'check false;
             }
 
@@ -2314,7 +2316,7 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
             }
 
             /* Monster better not be faster than me */
-            if i32::from(kill.speed) - tr(st, BI_SPEED) >= 5 {
+            if i32::from(kill.speed) - tr(st, BI_SPEED) >= param(Param::attack_throw_fast_monster_margin) {
                 break 'check false;
             }
 
@@ -2405,7 +2407,7 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
         let d = kind.dd * (kind.ds + 1) / 2;
 
         /* Skip things that are worth money unless they do a lot of damage */
-        if item.value > 100 && d < 5 {
+        if item.value > param(Param::attack_throw_min_item_value) && d < param(Param::attack_throw_low_damage) {
             continue;
         }
 
@@ -2500,12 +2502,12 @@ fn primary_spell_for_class(st: &BorgState) -> borg_spells {
 /// class keeps (`penalty`).
 fn class_penalty(st: &BorgState) -> i32 {
     match tr(st, BI_CLASS) {
-        CLASS_MAGE => 6,
-        CLASS_RANGER => 22,
-        CLASS_ROGUE => 20,
-        CLASS_PRIEST => 8,
-        CLASS_PALADIN => 20,
-        CLASS_NECROMANCER => 10,
+        CLASS_MAGE => param(Param::attack_reserve_mage_sp),
+        CLASS_RANGER => param(Param::attack_reserve_ranger_sp),
+        CLASS_ROGUE => param(Param::attack_reserve_rogue_sp),
+        CLASS_PRIEST => param(Param::attack_reserve_priest_sp),
+        CLASS_PALADIN => param(Param::attack_reserve_paladin_sp),
+        CLASS_NECROMANCER => param(Param::attack_reserve_necromancer_sp),
         _ => 0,
     }
 }
@@ -2531,8 +2533,8 @@ pub fn borg_attack_aux_spell_bolt(
     /* Paranoia */
     if simulating(st)
         && ((tr(st, BI_CLASS) != CLASS_MAGE && tr(st, BI_CLASS) != CLASS_NECROMANCER)
-            && tr(st, BI_CLEVEL) <= 2)
-        && engine::randint0(100) < 1
+            && tr(st, BI_CLEVEL) <= param(Param::attack_spell_paranoia_max_level))
+        && engine::randint0(100) < param(Param::attack_spell_paranoia_chance)
     {
         return 0;
     }
@@ -2543,7 +2545,7 @@ pub fn borg_attack_aux_spell_bolt(
     }
 
     /* Require ability (right now) */
-    if !borg_spell_okay_fail(st, spell, if st.borg.near.unique != 0 { 40 } else { 25 }) {
+    if !borg_spell_okay_fail(st, spell, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -2559,7 +2561,7 @@ pub fn borg_attack_aux_spell_bolt(
     /* weak mages need that spell, they don't get penalized */
     /* weak == those that can't teleport reliably anyway */
     if spell == primary
-        && (!borg_spell_legal_fail(st, TELEPORT_SELF, 15) || tr(st, BI_MAXCLEVEL) <= 30)
+        && (!borg_spell_legal_fail(st, TELEPORT_SELF, param(Param::attack_primary_teleport_fail)) || tr(st, BI_MAXCLEVEL) <= param(Param::attack_primary_max_level))
         && simulating(st)
     {
         return b_n;
@@ -2572,25 +2574,25 @@ pub fn borg_attack_aux_spell_bolt(
         b_n -= spell_power;
 
         /* Extra penalty if the cost far outweighs the damage */
-        if tr(st, BI_MAXSP) < 50 && spell_power > b_n {
+        if tr(st, BI_MAXSP) < param(Param::attack_spell_low_max_sp) && spell_power > b_n {
             b_n -= spell_power;
         }
 
         /* Penalize use of reserve mana */
-        if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 2 {
-            b_n -= spell_power * 3;
+        if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_spell_reserve_divisor) {
+            b_n -= spell_power * param(Param::attack_spell_reserve_penalty);
         }
 
         /* Penalize use of deep reserve mana */
-        if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 3 {
-            b_n -= spell_power * 5;
+        if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_spell_deep_reserve_divisor) {
+            b_n -= spell_power * param(Param::attack_spell_deep_reserve_penalty);
         }
     }
 
     /* Really penalize use of mana needed for final teleport */
     let penalty = class_penalty(st);
-    if tr(st, BI_MAXSP) > 30 && tr(st, BI_CURSP) - spell_power < penalty {
-        b_n -= spell_power * 750;
+    if tr(st, BI_MAXSP) > param(Param::attack_escape_reserve_min_max_sp) && tr(st, BI_CURSP) - spell_power < penalty {
+        b_n -= spell_power * param(Param::attack_escape_reserve_penalty);
     }
 
     /* Simulation */
@@ -2628,7 +2630,7 @@ fn borg_attack_aux_spell_bolt_reserve(
     let sv_mana = tr(st, BI_CURSP);
 
     /* Only Weak guys should try this */
-    if tr(st, BI_CLEVEL) >= 15 {
+    if tr(st, BI_CLEVEL) >= param(Param::attack_reserve_spell_max_level) {
         return 0;
     }
 
@@ -2643,12 +2645,12 @@ fn borg_attack_aux_spell_bolt_reserve(
     }
 
     /* Must not have enough mana right now */
-    if borg_spell_okay_fail(st, spell, 25) {
+    if borg_spell_okay_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
         return 0;
     }
 
     /* Must be dangerous */
-    if danger_here(st, 1, true) < avoid(st) * 2 {
+    if danger_here(st, param(Param::attack_reserve_spell_danger_horizon), true) < avoid(st) * param(Param::attack_reserve_spell_danger_multiplier) {
         return 0;
     }
 
@@ -2676,14 +2678,14 @@ fn borg_attack_aux_spell_bolt_reserve(
          * There should only be one close monster.
          * We do not want to risk fainting.
          */
-        if d < 7 {
+        if d < param(Param::attack_reserve_spell_near_distance) {
             near_monsters += 1;
 
             /* If it has too many hp to be taken out with this */
             /* spell, don't bother trying */
             /* NOTE: the +4 is because the damage is toned down
             as an 'average damage' */
-            if i32::from(kill.power) > dam + 4 {
+            if i32::from(kill.power) > dam + param(Param::attack_reserve_spell_damage_margin) {
                 return 0;
             }
 
@@ -2701,7 +2703,7 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Require ability (with faked mana) */
     st.borg.trait_[BI_CURSP as usize] = tr(st, BI_MAXSP);
-    if !borg_spell_okay_fail(st, spell, 25) {
+    if !borg_spell_okay_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
         /* Restore Mana */
         st.borg.trait_[BI_CURSP as usize] = sv_mana;
         return 0;
@@ -2719,7 +2721,7 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Cast the spell with fake mana */
     st.borg.trait_[BI_CURSP as usize] = tr(st, BI_MAXSP);
-    if borg_spell_fail(st, spell, 25) {
+    if borg_spell_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
         /* Note the use of the emergency spell */
         borg_note(st, "# Emergency use of an Attack Spell.");
 
@@ -2754,12 +2756,12 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_dispel_paranoia_chance)) {
         return 0;
     }
 
     /* Require ability */
-    if !borg_spell_okay_fail(st, spell, 25) {
+    if !borg_spell_okay_fail(st, spell, param(Param::attack_dispel_fail)) {
         return 0;
     }
 
@@ -2772,19 +2774,19 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
     b_n -= spell_power;
 
     /* Penalize use of reserve mana */
-    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 2 {
-        b_n -= spell_power * 3;
+    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_dispel_reserve_divisor) {
+        b_n -= spell_power * param(Param::attack_dispel_reserve_penalty);
     }
 
     /* Penalize use of deep reserve mana */
-    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 3 {
-        b_n -= spell_power * 5;
+    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_dispel_deep_reserve_divisor) {
+        b_n -= spell_power * param(Param::attack_dispel_deep_reserve_penalty);
     }
 
     /* Really penalize use of mana needed for final teleport */
     let penalty = class_penalty(st);
-    if tr(st, BI_MAXSP) > 30 && tr(st, BI_CURSP) - spell_power < penalty {
-        b_n -= spell_power * 750;
+    if tr(st, BI_MAXSP) > param(Param::attack_dispel_escape_min_max_sp) && tr(st, BI_CURSP) - spell_power < penalty {
+        b_n -= spell_power * param(Param::attack_dispel_escape_penalty);
     }
 
     /* never tap if we previously missed a tap */
@@ -2815,7 +2817,7 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_wand_paranoia_chance)) {
         return 0;
     }
 
@@ -2828,7 +2830,7 @@ fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i3
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
 
     /* Big Penalize charge usage */
-    b_n -= 50;
+    b_n -= param(Param::attack_wand_charge_penalty);
 
     /* Simulation */
     if simulating(st) {
@@ -2851,12 +2853,12 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_rod_paranoia_chance)) {
         return 0;
     }
 
     /* Not likely to be successful in the activation */
-    if 500 < borg_activate_failure(st, TV_ROD as i32, sval) {
+    if param(Param::attack_rod_max_failure) < borg_activate_failure(st, TV_ROD as i32, sval) {
         return 0;
     }
 
@@ -2908,7 +2910,7 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_unknown_device_paranoia_chance)) {
         return 0;
     }
 
@@ -2926,7 +2928,7 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Not likely to be successful in the activation */
-    if 500 < borg_activate_failure(st, TV_WAND as i32, sval) {
+    if param(Param::attack_unknown_wand_max_failure) < borg_activate_failure(st, TV_WAND as i32, sval) {
         return 0;
     }
 
@@ -2934,8 +2936,8 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
 
     /* Penalize charge usage */
-    if tr(st, BI_CLEVEL) > 5 {
-        b_n -= 5;
+    if tr(st, BI_CLEVEL) > param(Param::attack_unknown_wand_penalty_min_level) {
+        b_n -= param(Param::attack_unknown_wand_penalty);
     }
 
     /* Wands of wonder are used in last ditch efforts.  They behave
@@ -2946,9 +2948,9 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
      */
     if sval == st.item_val.sv_wand_wonder && !st.borg.munchkin_mode {
         /* check the danger */
-        if b_n > 0 && danger_here(st, 1, true) >= (avoid(st) * 7 / 10) {
+        if b_n > 0 && danger_here(st, param(Param::attack_unknown_wand_danger_horizon), true) >= (avoid(st) * param(Param::attack_unknown_wand_danger_tenths) / 10) {
             /* make the wand appear deadly */
-            b_n = 999;
+            b_n = param(Param::attack_unknown_wand_emergency_value);
 
             /* note the use of the wand in the emergency */
             borg_note(st, "# Emergency use of a Wand of Wonder.");
@@ -2991,7 +2993,7 @@ fn borg_attack_aux_bolt_unknown(st: &mut BorgState, dam: i32, typ: i32, rod: boo
     }
 
     /* Paranoia */
-    if paranoia(st, 5) {
+    if paranoia(st, param(Param::attack_staff_paranoia_chance)) {
         return 0;
     }
 
@@ -3085,7 +3087,7 @@ fn borg_attack_aux_activation(
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_activation_paranoia_chance)) {
         return 0;
     }
 
@@ -3129,7 +3131,7 @@ fn borg_attack_aux_ring(st: &mut BorgState, ring_name: i32, rad: i32, dam: i32, 
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_ring_paranoia_chance)) {
         return 0;
     }
 
@@ -3168,7 +3170,7 @@ fn borg_attack_aux_dragon(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ
     }
 
     /* Paranoia */
-    if paranoia(st, 2) {
+    if paranoia(st, param(Param::attack_dragon_paranoia_chance)) {
         return 0;
     }
 
@@ -3211,7 +3213,7 @@ fn borg_attack_aux_whirlwind_attack(st: &mut BorgState) -> i32 {
     let mut total_d = 0;
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, WHIRLWIND_ATTACK, if st.borg.near.unique != 0 { 40 } else { 25 }) {
+    if !borg_spell_okay_fail(st, WHIRLWIND_ATTACK, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3272,7 +3274,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
     let mut b_d: i32 = -1;
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, LEAP_INTO_BATTLE, if st.borg.near.unique != 0 { 40 } else { 25 }) {
+    if !borg_spell_okay_fail(st, LEAP_INTO_BATTLE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3281,7 +3283,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         return 0;
     }
 
-    if st.fight_attack.target_closest < 10 {
+    if st.fight_attack.target_closest < param(Param::attack_leap_min_target_score) {
         return 0;
     }
 
@@ -3293,7 +3295,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
 
         /* Require up to distance 4 */
         let m_dist = dist_to(st, x, y);
-        if m_dist > 4 {
+        if m_dist > param(Param::attack_leap_max_distance) {
             continue;
         }
 
@@ -3402,7 +3404,7 @@ fn borg_attack_aux_maim_foe(st: &mut BorgState) -> i32 {
     }
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, MAIM_FOE, if st.borg.near.unique != 0 { 40 } else { 25 }) {
+    if !borg_spell_okay_fail(st, MAIM_FOE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3486,7 +3488,7 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     let mut best_dist = max_range();
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, VAMPIRE_STRIKE, if st.borg.near.unique != 0 { 40 } else { 25 }) {
+    if !borg_spell_okay_fail(st, VAMPIRE_STRIKE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3510,7 +3512,7 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     }
 
     /* Nothing to attack, require relatively close */
-    if best_dist >= 20 {
+    if best_dist >= param(Param::attack_vampire_max_distance) {
         return 0;
     }
 
@@ -3574,19 +3576,19 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     /* Avoid waking most "hard" sleeping monsters */
     if !kill.awake && d <= i32::from(kill.power) && !st.borg.munchkin_mode {
         /* Calculate danger */
-        let p = borg_danger_one_kill(st, y, x, 1, k, true, true);
+        let p = borg_danger_one_kill(st, y, x, param(Param::attack_vampire_sleep_danger_horizon), k, true, true);
 
-        if p > avoid(st) * 2 {
+        if p > avoid(st) * param(Param::attack_vampire_sleep_danger_multiplier) {
             return 0;
         }
     }
 
     /* Calculate "danger" to player */
-    let mut p = danger_one_here(st, 2, k, true);
+    let mut p = danger_one_here(st, param(Param::attack_vampire_danger_horizon), k, true);
 
     /* Reduce "bonus" of partial kills when higher level */
-    if d <= i32::from(kill.power) && tr(st, BI_MAXCLEVEL) > 15 {
-        p /= 10;
+    if d <= i32::from(kill.power) && tr(st, BI_MAXCLEVEL) > param(Param::attack_vampire_partial_min_level) {
+        p /= param(Param::attack_vampire_partial_danger_divisor);
     }
 
     /* Add the danger-bonus to the damage */
@@ -3615,11 +3617,11 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
 fn danger_with_flag(st: &mut BorgState, f: SpellFlag) -> (i32, i32) {
     /* Obtain initial danger */
     set_flag(st, f, false);
-    let p1 = danger_here(st, 4, true);
+    let p1 = danger_here(st, param(Param::attack_flag_danger_horizon), true);
 
     /* What effect is there? */
     set_flag(st, f, true);
-    let p2 = danger_here(st, 4, true);
+    let p2 = danger_here(st, param(Param::attack_flag_danger_horizon), true);
     set_flag(st, f, false);
     (p1, p2)
 }
@@ -3633,7 +3635,7 @@ fn borg_attack_aux_crush(st: &mut BorgState) -> i32 {
     }
 
     /* don't kill yourself or leave less than 10hp */
-    if (tr(st, BI_CURHP) + 10) < (tr(st, BI_CLEVEL) * 4) {
+    if (tr(st, BI_CURHP) + param(Param::attack_crush_hp_margin)) < (tr(st, BI_CLEVEL) * param(Param::attack_crush_hp_level_multiplier)) {
         return 0;
     }
 
@@ -3645,7 +3647,7 @@ fn borg_attack_aux_crush(st: &mut BorgState) -> i32 {
     /* if there is still danger afterward, make sure the reductioning in HP */
     /* doesn't make this put us in danger */
     let new_hp = tr(st, BI_CURHP) - (tr(st, BI_CLEVEL) * 2);
-    if simulating(st) && (p2 >= (new_hp * 2) || new_hp <= 50) {
+    if simulating(st) && (p2 >= (new_hp * param(Param::attack_crush_post_danger_multiplier)) || new_hp <= param(Param::attack_crush_min_post_hp)) {
         return 0;
     }
 
@@ -3655,8 +3657,8 @@ fn borg_attack_aux_crush(st: &mut BorgState) -> i32 {
     d -= spell_power;
 
     /* Penalize use of reserve mana */
-    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 2 {
-        d -= spell_power * 10;
+    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_crush_reserve_divisor) {
+        d -= spell_power * param(Param::attack_crush_reserve_penalty);
     }
 
     /* Simulation */
@@ -3701,8 +3703,8 @@ fn borg_attack_aux_trance(st: &mut BorgState) -> i32 {
     d -= spell_power;
 
     /* Penalize use of reserve mana */
-    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / 2 {
-        d -= spell_power * 10;
+    if tr(st, BI_CURSP) - spell_power < tr(st, BI_MAXSP) / param(Param::attack_trance_reserve_divisor) {
+        d -= spell_power * param(Param::attack_trance_reserve_penalty);
     }
 
     /* Simulation */
@@ -3914,7 +3916,7 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
         /* Prayer -- Holy Word also has heal effect and is considered in
          * borg_heal */
         BF_PRAYER_HOLY_WORD => {
-            if tr(st, BI_MAXHP) - tr(st, BI_CURHP) >= 300 {
+            if tr(st, BI_MAXHP) - tr(st, BI_CURHP) >= param(Param::attack_holy_word_min_loss) {
                 /* force him to think the spell is more deadly to get him to
                  * cast it.  This will provide some healing for him.
                  */
@@ -4027,7 +4029,7 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
         /* Spell - Curse */
         BF_SPELL_CURSE => {
             /* costs 100hp to cast.  Don't kill yourself doing it */
-            if tr(st, BI_CURHP) < 120 {
+            if tr(st, BI_CURHP) < param(Param::attack_curse_min_hp) {
                 return 0;
             }
             bolt(st, CURSE, 0, -1, BORG_ATTACK_CURSE, mr)
@@ -4082,10 +4084,10 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
         BF_ROD_FIRE_BALL => rod(st, iv.sv_rod_fire_ball, 2, 144, BORG_ATTACK_FIRE),
 
         /* Rod -- unid'd rod */
-        BF_ROD_UNKNOWN => borg_attack_aux_bolt_unknown(st, 75, BORG_ATTACK_MISSILE as i32, true),
+        BF_ROD_UNKNOWN => borg_attack_aux_bolt_unknown(st, param(Param::attack_unknown_rod_damage), BORG_ATTACK_MISSILE as i32, true),
 
         /* Wand -- unid'd wand */
-        BF_WAND_UNKNOWN => borg_attack_aux_bolt_unknown(st, 75, BORG_ATTACK_MISSILE as i32, false),
+        BF_WAND_UNKNOWN => borg_attack_aux_bolt_unknown(st, param(Param::attack_unknown_wand_damage), BORG_ATTACK_MISSILE as i32, false),
 
         /* Wand -- magic missile */
         BF_WAND_MAGIC_MISSILE => wand(st, iv.sv_wand_magic_missile, 0, 3 * (4 + 1) / 2, BORG_ATTACK_MISSILE),
@@ -4161,7 +4163,7 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
 
         /* Staff -- holiness */
         BF_STAFF_HOLINESS => {
-            let dam = if tr(st, BI_CURHP) < tr(st, BI_MAXHP) / 2 { 500 } else { 120 };
+            let dam = if tr(st, BI_CURHP) < tr(st, BI_MAXHP) / param(Param::attack_holy_staff_hp_divisor) { param(Param::attack_holy_staff_hurt_value) } else { param(Param::attack_holy_staff_value) };
             staff(st, iv.sv_staff_holiness, dam, BORG_ATTACK_DISP_EVIL)
         }
 
@@ -4280,7 +4282,7 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
         BF_ACT_WONDER => activation(st, act.wonder, 0, 5 + ((5 + 1) / 2), BORG_ATTACK_MISSILE, true),
 
         BF_ACT_STAFF_HOLY => {
-            let dam = if tr(st, BI_CURHP) < tr(st, BI_MAXHP) / 2 { 500 } else { 120 };
+            let dam = if tr(st, BI_CURHP) < tr(st, BI_MAXHP) / param(Param::attack_holy_activation_hp_divisor) { param(Param::attack_holy_activation_hurt_value) } else { param(Param::attack_holy_activation_value) };
             /* The effect floods the area with goodness: an area-of-sight
              * dispel, not a single-target bolt. */
             activation(st, act.staff_holy, 10, dam, BORG_ATTACK_DISP_EVIL, false)
@@ -4441,7 +4443,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         }
 
         /* Require current knowledge */
-        if borg_timer(st, kill.when) > 2 {
+        if borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
             continue;
         }
 
@@ -4454,7 +4456,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
          * don't fight back */
         let name = engine::race_name(usize::from(r));
         if tr(st, BI_CLASS) == CLASS_MAGE
-            && tr(st, BI_MAXCLEVEL) < 10
+            && tr(st, BI_MAXCLEVEL) < param(Param::attack_town_mage_max_level)
             && tr(st, BI_CDEPTH) == 0
             && contains(name, b"Farmer")
         {
@@ -4463,7 +4465,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
         /* Check if there is a monster adjacent to me or he's close and
          * fast. */
-        if (i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= 2)
+        if (i32::from(kill.speed) > tr(st, BI_SPEED) && engine::distance(st.borg.c, kill.pos) <= param(Param::attack_fast_monster_distance))
             || engine::distance(st.borg.c, kill.pos) <= 1
         {
             adjacent_monster = true;
@@ -4473,9 +4475,9 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         if st.borg.mon.scary {
             if contains(name, b"Grip") || contains(name, b"Fang") {
                 /* probably Grip or Fang. Try to fight Grip and Fang. */
-            } else if tr(st, BI_CDEPTH) <= 5 && tr(st, BI_CDEPTH) != 0 && rf(r, RF_MULTIPLY) {
+            } else if tr(st, BI_CDEPTH) <= param(Param::attack_scary_breeder_max_depth) && tr(st, BI_CDEPTH) != 0 && rf(r, RF_MULTIPLY) {
                 /* Try to fight single worms and mice. */
-            } else if borg_timer(st, st.borg.time.level) >= 2000 || borg_timer(st, st.borg.time.town) >= 3000 {
+            } else if borg_timer(st, st.borg.time.level) >= param(Param::attack_scary_max_level_time) || borg_timer(st, st.borg.time.town) >= param(Param::attack_scary_max_town_time) {
                 /* Try to fight been there too long. */
             } else if boosted_bravery
                 || st.borg.no_retreat >= 1
@@ -4484,7 +4486,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
             {
                 /* Try to fight if being Boosted or recall engaged. */
                 borg_note(st, "# Bored, or recalling and fighting a monster on Scaryguy Level.");
-            } else if tr(st, BI_CDEPTH) * 4 <= tr(st, BI_CLEVEL) && tr(st, BI_CLEVEL) > 10 {
+            } else if tr(st, BI_CDEPTH) * param(Param::attack_scary_depth_multiplier) <= tr(st, BI_CLEVEL) && tr(st, BI_CLEVEL) > param(Param::attack_scary_min_level) {
                 /* Try to fight anyway. */
                 borg_note(st, "# High clevel fighting monster on Scaryguy Level.");
             } else if adjacent_monster {

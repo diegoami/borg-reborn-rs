@@ -287,14 +287,14 @@ pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 
 /// Whether the decision core is borg-rs's (#207), read once at the first
 /// `^Z`: `BORG_CORE` in the environment, else `borg_reborn_core` in the
-/// run's borg.txt (the zoo's profiles set it there).
+/// run's borg.txt. The zoo's integer profiles use 1 for borg-rs, 0 for reborn.
 pub fn core_is_borg_rs() -> bool {
     static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CORE.get_or_init(|| {
         std::env::var("BORG_CORE")
             .ok()
             .or_else(|| borg_rs::shell::borg_txt_setting("borg_reborn_core"))
-            .is_some_and(|v| v == "borg-rs")
+            .is_some_and(|v| matches!(v.as_str(), "borg-rs" | "1"))
     })
 }
 

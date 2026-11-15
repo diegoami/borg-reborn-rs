@@ -10,7 +10,10 @@ is wrong.*
 
 We work in spurts. A **milestone** is a named set of tasks. Inside a
 milestone a session works normally: one task per branch and PR, and it
-**merges its own PR into `main` once CI is green** (RULES 1).
+**merges its own PR once CI is green** (RULES 1): into `main` normally,
+into `feature/track-r` for Track R. Track R milestone reviews stay on the
+feature branch, pinned to an exact commit for the owner's chosen reviewer;
+they do not advance `main` or `reviewed`.
 
 **When the last task of a milestone is merged, the session stops.** It does
 not start the next milestone. It opens the **review PR** instead:
@@ -66,11 +69,18 @@ v12).
 
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
-| **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | **in progress** |
-| **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | not started |
-| **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | not started |
+| **P1. Fight-or-flee parameters and the trace** | `P1` | the parameter table (#219); caution (#219), danger and escape (#220), recovery (#221) as parameters; the decision trace (#222) | every threshold of those four files a parameter or listed as game data; full 45/45 at the defaults; a changed parameter changes play and the trace shows it; the trace in run outputs and death dossiers | **in review**: snapshot #251 |
+| **P2. Attack, defence and items** | `P2` | the thresholds of `borg_fight_attack.rs`, `borg_fight_defend.rs`, `borg_item_use.rs`, `borg_power.rs` as parameters | as P1 | tasks implemented in #247, #249, #250, #252; review handoff after green-CI merges (owner authorized continuation) |
+| **P3. Sweeps** | `P3` | the parameters as zoo profile settings (docs/ZOO-INTERFACE.md); a sweep prompt for the owner | the zoo adapter sets a parameter through a profile, checked by the zoo contract test | delivery complete after #245 merges; owner review remains (continuation authorized 2026-11-15) |
 
 ### Track R: the redesign epic (epic #217)
+
+**Integration branch: `feature/track-r`** (owner, 2026-11-15). Every R task
+branch starts from it and every R task PR targets it. The unfinished
+redesign stays there across milestones. CI parity and milestone completion
+are validation gates, not permission to merge R into `main`. A ready
+redesign is promoted only with the owner's explicit approval. Main can be
+merged into this branch to inherit Track P's parameters and fixes.
 
 borg-rs's decisions re-expressed subsystem by subsystem in our domain, in a
 new crate `borg-next/`. Each port runs beside the original every think

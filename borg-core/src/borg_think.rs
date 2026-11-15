@@ -21,6 +21,8 @@
 //! `borg_do_spell` and the statics of `borg_check_save` live in
 //! `ThinkState`. C bugs kept are listed in `docs/c-bugs.md` (section 51).
 use crate::borg::BorgTime;
+// borg-reborn-rs (#222): root trace frame and non-dungeon decisions.
+use crate::core_trace::choice;
 use crate::borg_io::{borg_flush, borg_keypress, borg_note, borg_warning, borg_what_text, ESCAPE};
 use crate::cctype::{c_isalpha, c_iscntrl, c_isdigit};
 use crate::engine;
@@ -156,6 +158,14 @@ fn cstr(buf: &[u8]) -> &[u8] {
 /// Check inventory/equipment/spells/panel once per "turn"; process the
 /// store and the dungeon when necessary.
 pub fn borg_think(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#222): includes early saves, stores and errand handoffs.
+    let tracing = crate::core_trace::begin();
+    let done = borg_think_inner(st);
+    crate::core_trace::finish(st, tracing, done);
+    done
+}
+
+fn borg_think_inner(st: &mut BorgState) -> bool {
     let mut t_a: u8 = 0;
     let mut buf = [0u8; 128];
 
@@ -164,7 +174,7 @@ pub fn borg_think(st: &mut BorgState) -> bool {
 
     /* check to see if we should save */
     if borg_check_save(st) {
-        return true;
+        return choice!("borg_check_save");
     }
 
     /*** Process books/spells ***/
@@ -179,7 +189,7 @@ pub fn borg_think(st: &mut BorgState) -> bool {
         /* your form without a prerequisite check */
         borg_keypress(st, 'v' as u32);
         borg_keypress(st, 'r' as u32);
-        return true;
+        return choice!("revert_shapechange");
     }
 
     /* Examine the equipment/inventory */
@@ -195,7 +205,9 @@ pub fn borg_think(st: &mut BorgState) -> bool {
 
     /* Check for being in a store */
     if 0 == borg_what_text(1, 3, 4, &mut t_a, &mut buf) && matches!(cstr(&buf), b"Stor" | b"Home") {
-        return crate::borg_think_store::borg_think_store(st);
+        let done = crate::borg_think_store::borg_think_store(st);
+        crate::core_trace::selected("borg_think_store", concat!(file!(), ":", line!()));
+        return done;
     }
 
     /* Check spells again later */
@@ -226,11 +238,12 @@ pub fn borg_think(st: &mut BorgState) -> bool {
 
     /* Allow user abort */
     if st.borg.status.cancel {
-        return true;
+        return choice!("cancel");
     }
 
     // borg-reborn-rs (#208): an errand that is done stops the Borg here.
     if let Some(done) = crate::shell::before_dungeon_think(st) {
+        crate::core_trace::selected("errand_handoff", concat!(file!(), ":", line!()));
         return done;
     }
 

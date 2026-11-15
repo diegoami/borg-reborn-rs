@@ -106,6 +106,13 @@ no `in progress` label. A Needs issue may belong to the other track: track R
 ports a subsystem only after track P has named its thresholds. Add the
 `in progress` label and comment with your branch name before you start.
 
+**Track R branch rule (owner, 2026-11-15).** Start R task branches from
+`feature/track-r` and target every R task PR at `feature/track-r`.
+Merge green task PRs there. Keep the unfinished redesign out of `main` and
+`reviewed`; only the owner's explicit approval of a ready redesign permits
+promotion. Milestone completion alone does not permit it. Synchronize main
+into the integration branch to inherit Track P work, then update task branches.
+
 Two sessions on different tracks share `borg-core/`. Keep each change to
 the files its task names, merge `main` into your branch before the PR, and
 never rewrite the other track's work to make yours fit; say so in the PR
@@ -120,7 +127,8 @@ At the end of a task:
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;
-4. **you merge it yourself** once CI is green (RULES 1).
+4. **you merge it yourself** once CI is green, into `feature/track-r`
+   for Track R and `main` otherwise (RULES 1).
 
 When your track's milestone has its last task merged, **stop** and open the
 review PR (PLAN.md). Do not start the track's next milestone, and do not

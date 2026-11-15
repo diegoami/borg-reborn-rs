@@ -49,6 +49,35 @@ pub struct IoState {
     pub confirm_target: bool,
 }
 
+// borg-reborn-rs (#222): observing the queue never consumes a key.
+impl IoState {
+    pub(crate) fn queued_keys(&self) -> Vec<keycode_t> {
+        let mut keys = Vec::new();
+        if self.key_queue.is_empty() { return keys; }
+        let mut i = self.key_tail as usize;
+        while i != self.key_head as usize {
+            keys.push(self.key_queue[i]);
+            i = (i + 1) % self.key_queue.len();
+        }
+        keys
+    }
+}
+
+#[cfg(test)]
+mod core_trace_queue_tests {
+    use super::*;
+    #[test]
+    fn queued_keys_preserve_wrap_order_and_do_not_consume() {
+        let mut io = IoState { key_queue: vec![0; KEY_SIZE], key_head: 1, key_tail: (KEY_SIZE - 1) as i16, ..IoState::default() };
+        io.key_queue[KEY_SIZE - 1] = 27;
+        io.key_queue[0] = 82;
+        assert_eq!(io.queued_keys(), vec![27, 82]);
+        assert_eq!((io.key_head, io.key_tail), (1, (KEY_SIZE - 1) as i16));
+        io.key_tail = io.key_head;
+        assert!(io.queued_keys().is_empty());
+    }
+}
+
 /// Read `n` characters of screen text at (x, y) (`borg_what_text`).
 ///
 /// Reading stops at the first character whose attribute differs from the

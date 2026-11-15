@@ -180,3 +180,9 @@ asked for. With the flag, those 20 runs play their requested characters,
 and their keys, messages and states change; the other 25, smoke and
 smoke-exact are unchanged. Each `REFERENCE` now takes its provenance from
 the suite's manifest (finding 8).
+
+P3 (#244) adds an optional diagnostic directory default in the borgh
+frontend: when BORG_RUN_DIR is absent and -summary names a file, its parent
+is used for parameter/decision artifacts. Explicit caller paths win. The
+profile contract tests the pinned zoo adapter with no policy environment;
+no game/RNG read or upstream engine edit is involved.

@@ -371,6 +371,13 @@ fn running() -> std::sync::MutexGuard<'static, Option<Running>> {
     ERRAND.lock().unwrap_or_else(|e| e.into_inner())
 }
 
+/// borg-reborn-rs (#222): read-only trace context. A nested think must not
+/// block on an outer errand operation; its trace frame can inherit context.
+pub(crate) fn trace_errand() -> Result<Option<(String, Option<i32>)>, ()> {
+    let guard = ERRAND.try_lock().map_err(|_| ())?;
+    Ok(guard.as_ref().map(|r| (r.name.clone(), r.target())))
+}
+
 /// Set (or clear) the errand, with a budget in game turns (0: none).
 pub fn set_errand(errand: Option<Errand>, budget: i64) {
     let errand = match errand {

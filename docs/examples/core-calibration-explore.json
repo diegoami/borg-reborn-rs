@@ -1,0 +1,19 @@
+{
+  "schema": "borg-zoo/experiment@1",
+  "name": "core-mage-rest-explore-v1",
+  "description": "Exploratory calibration of rest-SP6(default),7,8; no improvement claim. Owner dispatch only.",
+  "specimens": [
+    "reborn-p-core-801e1fc1"
+  ],
+  "profiles": [
+    "core-calibration-default",
+    "core-recover-rest-7",
+    "core-recover-rest-8"
+  ],
+  "suites": [
+    "core-mage-rest-dev-128-v1"
+  ],
+  "control": "reborn-p-core-801e1fc1",
+  "control_profile": "core-calibration-default",
+  "prespecified": "Before play: successful survival to100000 exact engine turns, all planned cells included; every process failure is primary-outcome0 with actual classification retained. Rank7/8 by paired mean difference on128 shared seeds; ties choose7. If no positive difference, stop. Freeze one positive winner before900 fresh confirmation pairs. One exact two-sided McNemar test alpha0.05; no interim tuning/selection from confirmation. See borg-reborn-rs docs/CORE-SWEEP.md at the pinned P3.2 handoff for evidence and full protocol."
+}

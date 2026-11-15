@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2283-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 8475,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "menu",
+    "git_rev": "3075dae917583b86aad04dfeceab61b91e0e7735",
+    "git_dirty": "yes",
+    "source_sha256": "66eca6d7ecb8bbe1d6b0cd75fd32ad1d9a018aafa6c0263250ab8b0c19fb0901",
+    "binary_sha256": "c3d7147aed0549ac6a70ad7acdb1ea89e1377a1c0abc984af7c2966154d527a7",
+    "borg_txt_sha256": "ec59d6265d460488c0acbc482dd16c531396b359915ecc5434547cb06a00bcc3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "d77669361c6739af5cce757a10fa63197e4c13c6f6f76d5c528fb7bb8b328b0b"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 875
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p21-integrated-full/full-7-ranger-2",
+      "result_sha256": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+      "raw_sha256": {
+        "keys.log": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+        "messages.log": "8d16c4f6c115675938c78b745f74cd299155138006c68c236a65b93e80271ca5",
+        "state.log": "55ab81d341bf5eee54be4063d9752e1f07ee52f8d7a4114c84e4450a28a0a471"
+      },
+      "source_commit": "3075dae917583b86aad04dfeceab61b91e0e7735",
+      "binary_sha256": "c3d7147aed0549ac6a70ad7acdb1ea89e1377a1c0abc984af7c2966154d527a7"
+    }
+  ],
+  "encounter_family": "start-fb79a0326904398af589facdd66a4719460d27f4d81cce8f9f15037c66c9412a",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "ef3d155bd2c6f9f76e874c130b224d972c13c1974cad6c18ea57067063982a8b",
+    "config.txt": "4f87e95afcae4b130d3b95affeffcaf6a73a02108e36e20722bb7004b03f4071",
+    "depths.json": "c4372679c923c4799adb86ac85075caa256d0d24cc36298ea57ebd829b18405a",
+    "params-core.json": "d77669361c6739af5cce757a10fa63197e4c13c6f6f76d5c528fb7bb8b328b0b",
+    "summary.json": "a032b5d6f99f69a40678dba80218b0fba1ec34ff5934281e35760ea8c4bf69b2",
+    "trace-core-tail.jsonl": "ebe265409be2589c27bfa251d2d4573b81c4b7fb241e2a630ba93085ebe98a8f"
+  },
+  "investigation": null,
+  "issue": null
+}

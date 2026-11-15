@@ -1,0 +1,40 @@
+{
+  "schema": "borg-zoo/profiles@1",
+  "profiles": {
+    "core-calibration-default": {
+      "description": "Default core parameters, explicit ordinary play and static valuation. No errand; pinned harness base.",
+      "settings": {
+        "borg_reborn_core": 1,
+        "borg_munchkin_start": false,
+        "borg_munchkin_by_class": false,
+        "borg_self_lunal": false,
+        "borg_lunal_mode": false,
+        "borg_uses_dynamic_calcs": false
+      }
+    },
+    "core-recover-rest-7": {
+      "description": "Exploratory rest-SP threshold 7/10; no improvement claim.",
+      "settings": {
+        "borg_reborn_core": 1,
+        "borg_munchkin_start": false,
+        "borg_munchkin_by_class": false,
+        "borg_self_lunal": false,
+        "borg_lunal_mode": false,
+        "borg_uses_dynamic_calcs": false,
+        "borg_param_recover_rest_sp_tenths": 7
+      }
+    },
+    "core-recover-rest-8": {
+      "description": "Exploratory rest-SP threshold 8/10; no improvement claim.",
+      "settings": {
+        "borg_reborn_core": 1,
+        "borg_munchkin_start": false,
+        "borg_munchkin_by_class": false,
+        "borg_self_lunal": false,
+        "borg_lunal_mode": false,
+        "borg_uses_dynamic_calcs": false,
+        "borg_param_recover_rest_sp_tenths": 8
+      }
+    }
+  }
+}
