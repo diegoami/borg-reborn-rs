@@ -9,7 +9,7 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > validation evidence. See [POINTER.md](POINTER.md) for the seam
 > (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2667; distinct starting conditions: 2621; retained process attempts: 2624 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2669; distinct starting conditions: 2623; retained process attempts: 2626 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -46,6 +46,7 @@ Dossiers: 2667; distinct starting conditions: 2621; retained process attempts: 2
 | [D0000-q21b571403eab42cd32088d6205527f906e176c2dddd38af28710fa28db3b23c9](D0000-q21b571403eab42cd32088d6205527f906e176c2dddd38af28710fa28db3b23c9/report.md) | unassigned | `437f2e1034a1` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D0000-q23a309cd4bd9014b7926411262c1aad9712873235d33bcda3f59fb85c10f0c71](D0000-q23a309cd4bd9014b7926411262c1aad9712873235d33bcda3f59fb85c10f0c71/report.md) | unassigned | `b58e7b445159` | 1084 | a gallant | 94134 | unassessed |
 | [D0000-q23a8c3cd11d7892f786ed3c2cd03dfaab828efb736a29f67b107f6822c96936e](D0000-q23a8c3cd11d7892f786ed3c2cd03dfaab828efb736a29f67b107f6822c96936e/report.md) | unassigned | `7ee2c80b580a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q26d969c92e191d1aea3e2c519af367b26b8d5e5ed21aea4baf8a62c677f23556](D0000-q26d969c92e191d1aea3e2c519af367b26b8d5e5ed21aea4baf8a62c677f23556/report.md) | unassigned | `b3eff0b0d4f0` | 1020 | a giant white mouse | 8922 | unassessed |
 | [D0000-q28ddc3854e374ab92131446570646d905d98a4f53b65f2bd4a05e09fd59c0a5f](D0000-q28ddc3854e374ab92131446570646d905d98a4f53b65f2bd4a05e09fd59c0a5f/report.md) | unassigned | `b58e7b445159` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D0000-q29d200b5fff2cf197cd31ceb4614471fa80133c4fd9e30915c798b2463dd71b1](D0000-q29d200b5fff2cf197cd31ceb4614471fa80133c4fd9e30915c798b2463dd71b1/report.md) | unassigned | `137a5a3709aa` | 1020 | a small kobold | 9547 | unassessed |
 | [D0000-q2a39d2d7c7cc0ac123ad89d9c37694cdee77c85185b7036e3b0837a4c80945d9](D0000-q2a39d2d7c7cc0ac123ad89d9c37694cdee77c85185b7036e3b0837a4c80945d9/report.md) | unassigned | `69fa6a920d4b` | 1072 | a giant white mouse | 40785 | unassessed |
@@ -210,6 +211,7 @@ Dossiers: 2667; distinct starting conditions: 2621; retained process attempts: 2
 | [D0000-qe527d65394d4d01bab4ef8c3fdc16660d25403c2e0f5beefddac84dadfb7ba10](D0000-qe527d65394d4d01bab4ef8c3fdc16660d25403c2e0f5beefddac84dadfb7ba10/report.md) | unassigned | `2545f8416dad` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D0000-qe74626d84c90f44caf7a8145164a00d5f6377d366a30778312340ef1e50ce20b](D0000-qe74626d84c90f44caf7a8145164a00d5f6377d366a30778312340ef1e50ce20b/report.md) | unassigned | `1443c2d1b97d` | 1050 | a grey mold | 24096 | unassessed |
 | [D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc](D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc/report.md) | unassigned | `b58e7b445159` | 1063 | a green naga | 73529 | unassessed |
+| [D0000-qebdc24724305e38a8451ba21ef81c06be85d87eeac1546c81c4332267c16a604](D0000-qebdc24724305e38a8451ba21ef81c06be85d87eeac1546c81c4332267c16a604/report.md) | unassigned | `b3eff0b0d4f0` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D0000-qecc81e78d76fe54c32ef97fefd8afeee7f18a224a3a71600645dad2651ade5cc](D0000-qecc81e78d76fe54c32ef97fefd8afeee7f18a224a3a71600645dad2651ade5cc/report.md) | unassigned | `66aff7999c28` | 1050 | an apprentice | 48288 | unassessed |
 | [D0000-qed9c8ec48574a65fc027af1d8d0393a35c9854f96d46234f67c124b870cfc690](D0000-qed9c8ec48574a65fc027af1d8d0393a35c9854f96d46234f67c124b870cfc690/report.md) | unassigned | `66aff7999c28` | 1074 | a soldier | 21652 | unassessed |
 | [D0000-qedc6fe8d834438d0ee275b5000b9145e80b5ffa2c6081f72a763764770679613](D0000-qedc6fe8d834438d0ee275b5000b9145e80b5ffa2c6081f72a763764770679613/report.md) | unassigned | `437f2e1034a1` | 1020 | a giant white mouse | 8922 | unassessed |

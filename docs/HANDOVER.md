@@ -2,35 +2,41 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: R3 M13 carry #343 (validation in progress)
+## 2026-11-15: R3 M13 carry #343 (local gates passed, final CI pending)
 
-- Recovery #353 passed all CI and merged into feature/track-r at a68959c5;
-  #334 is closed. Main/global reviewed have received no R promotion.
-- This task merges accepted main 2f74e1c5, including M13 donor 1443c2d1
-  and accepted P named parameters, strict dossier importer and errands plan.
-  The restored frozen legacy inventory and both tracks' qualified packets
-  verify: 2,643 packages. All historical R1/R2 measurements stay immutable.
-- Owned danger/caution/escape/recovery bodies carry the M13 policy changes.
-  Five named projection fields add stun protection and elemental weaknesses.
-  All trait groups get generated native-value mapping checks. Town/trip
-  values gain only Clone/PartialEq; nested/effect-once snapshot tests pass.
-  Existing source and invalid-grid gates remain in place.
-- Local normal checks: 175 workspace tests; 335 core tests, four upstream
-  ignored; 92 tooling and 33 source-tool tests; Clippy/fmt/vendor pass.
-  Added explicit test-m13-danger synthetic branch fixture; it must run and
-  pass before completion, along with feature Clippy and final CI.
-- Fresh clean exact-tag donor is /workspace/work/r3-donor-m13-exact;
-  input hash d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c.
-  Local shared clone was incomplete because promisor blobs were unavailable;
-  direct depth-one exact-tag clone fixes it. Donor head/input are clean.
-  Terminal frontend needs locally extracted Debian ncurses headers; no donor
-  source edits. Failed setup/build attempts remain in work/r343-* logs.
-- Still required: fresh donor/off/check/switch full play comparison, strict
-  per-entry coverage in both modes, constructed changed-branch/fault control,
-  town/trip-on plan replay, original/inactive/errand regressions, all deaths
-  exported with actual source identities then qualified imports/reconciliation.
-  No runtime success, parity or completion claim is made by this code commit.
-  Continue #343 before R3 accessor/attack/defence. Canonical ID work is #344.
+- #357 targets feature/track-r only. #334 recovery merged via #353/a68959c5.
+  Carry consumes accepted main 2f74e1c5 and exact M13 donor 1443c2d1.
+  Runtime input a698f1f6810032239b721af1fc51b48e818e53efacd345450ba29dbff2af1511,
+  built from committed code b3eff0b0 with inputs_dirty=no. Source/binary/build
+  receipts and all limits are in R343-VALIDATION.md / R343-COMPARISON.json.
+- Off/check/switch each match the fresh clean donor in all 45 play streams.
+  Each shadow mode: 261,953,840 comparisons, 445,762 transactions, zero
+  mismatches and all 11 public entries positive. Rogue 1063 retains its rare
+  teleport hit; no strict flag/seed/cap changes. Same-receiver full diffs
+  45/45; strict cross-repo complete-summary diff remains 0/45, retained.
+- Changed-branch fixture: 140 native/port matches, 41 projection faults.
+  Literal stale v12 source fails both modes (native 440 vs port 340);
+  literal re-port restores matches and identical fixture streams. Real
+  native callback nesting: four entries per mode, same streams, zero errors.
+  Town/trip opt-in: nine receiving contexts match three donor contexts;
+  all 984 plan records replay (750 planned, zero urgent purchases).
+- Native smoke all modes 3/3; original smoke 3/3 reference. Unit/core/source/
+  tool, Clippy/fmt/vendor, engine and required pinned-profile checks pass.
+  New owned town/trip memory has deep-copy/effect-once/divergence coverage.
+  Standard ABI, params/retirements, P/errands/recorder work stay preserved.
+- All natural deaths reconcile: donor 12, receiving full 36 repeats of 12
+  identities, original-core two. 26 qualified packages; archive 2,669,
+  frozen legacy inventory unchanged. No central numeric allocation/pin move.
+  Initial CI missing core evidence was fixed; latest CI reached the final
+  original-core reconciliation step, whose two new packages are now retained.
+  Push the completed evidence and wait for green CI, then ready/merge #357,
+  explicitly close #343 and #264 with the substantive carry evidence.
+- Continue stacked #363/#367 (/workspace/work/r3-borrowed-access), then
+  #364 attack (audit started in /workspace/work/r3-attack-port), #365 defence,
+  #366 combined validation and feature-only R3 milestone review. Owner picks
+  the reviewer. No R3 completion/main/global-reviewed promotion is allowed.
+  #344 central-ID handoff remains external; #339/#340 follow-ups remain open.
+
 
 ## 2026-11-15: R3 preflight evidence recovery #334
 

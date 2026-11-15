@@ -265,6 +265,28 @@
       "qualified_path": "docs/deaths/D0000-q029cdde4952dd172dab4761dca9d477b088645768fea00e11e8de23a0afee3c9",
       "original_record_sha256": "2927edac18dd04ad115335b697f4ee43ec70b6db6607b10961383097cc5585b5",
       "canonical_numeric_id": null
+    },
+    {
+      "source_registry": "extra-deaths",
+      "source_path": "/workspace/work/r343-evidence/extra-deaths/D0001-rust-seed102",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "source_commit": "b3eff0b0d4f0d907f2828c36285052bd978385b6",
+      "runtime_input_hash": "a698f1f6810032239b721af1fc51b48e818e53efacd345450ba29dbff2af1511",
+      "original_id": "D0001-rust-seed102",
+      "qualified_path": "docs/deaths/D0000-qebdc24724305e38a8451ba21ef81c06be85d87eeac1546c81c4332267c16a604",
+      "original_record_sha256": "0427126e8520b765ae0451cde290888b97e7205889473ca4feef2b54bdb54304",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_registry": "extra-deaths",
+      "source_path": "/workspace/work/r343-evidence/extra-deaths/D0002-rust-seed1020",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "source_commit": "b3eff0b0d4f0d907f2828c36285052bd978385b6",
+      "runtime_input_hash": "a698f1f6810032239b721af1fc51b48e818e53efacd345450ba29dbff2af1511",
+      "original_id": "D0002-rust-seed1020",
+      "qualified_path": "docs/deaths/D0000-q26d969c92e191d1aea3e2c519af367b26b8d5e5ed21aea4baf8a62c677f23556",
+      "original_record_sha256": "9d8a9b148c8633aa33fedde5146cb1b4398d1a37e47264e4d8124d338f97ea33",
+      "canonical_numeric_id": null
     }
   ]
 }
