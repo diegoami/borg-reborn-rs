@@ -24,7 +24,9 @@ set(BORG_FEATURES "" CACHE STRING "Extra cargo features of the Rust Borg (tests 
 
 # The patched copy of the tree, remade whenever the tree or a patch changes.
 file(GLOB PATCHES "${ENGINE}/patches/*.patch")
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PATCHES} "${ENGINE}/UPSTREAM")
+# recorder-hooks.patch is applied during configuration too; a changed adapter
+# must re-run CMake (and so re-apply it) before an incremental build.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${PATCHES} "${ENGINE}/UPSTREAM" "${ENGINE}/recorder-hooks.patch")
 file(REMOVE_RECURSE "${TREE}")
 execute_process(COMMAND "${ENGINE}/apply-patches.sh" "${TREE}" RESULT_VARIABLE PATCHED)
 if(NOT PATCHED EQUAL 0)

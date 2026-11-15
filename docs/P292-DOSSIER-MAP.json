@@ -1,0 +1,50 @@
+[
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2359-rust-seed1011",
+    "integrated_case": "D2417-rust-seed1011",
+    "source_sha256": "fd382c3af84f21d45bbadad03a790fba4bd43432499e96f409fc7d2ec445d8a6",
+    "encounter_family": "start-3866dc36b022f6ae0172d7e8c4b26c8e7ccaf205e53ec6326326476ce077761b",
+    "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794"
+  },
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2360-rust-seed102",
+    "integrated_case": "D2418-rust-seed102",
+    "source_sha256": "fd382c3af84f21d45bbadad03a790fba4bd43432499e96f409fc7d2ec445d8a6",
+    "encounter_family": "start-831f5ca1bb39b9db8c0b33a34cf0d9d316f609c00d02ed0d6f10bd1057ef9f69",
+    "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac"
+  },
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2361-rust-seed1020",
+    "integrated_case": "D2419-rust-seed1020",
+    "source_sha256": "fd382c3af84f21d45bbadad03a790fba4bd43432499e96f409fc7d2ec445d8a6",
+    "encounter_family": "start-a424b84e49f96eab0ca7e66235a94e1714e8ac81bb59cb4051fd8c4b69b3c796",
+    "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084"
+  },
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2399-rust-seed1011",
+    "integrated_case": "D2420-rust-seed1011",
+    "source_sha256": "0dadea400855b6be7f8c06892618d838d3e2ebbdd685c764501da4a450dacba6",
+    "encounter_family": "start-2f93827fcd9fee3363e8ae1fb78ac50793bfa0b8164067ffaf9ad485731526be",
+    "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794"
+  },
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2400-rust-seed102",
+    "integrated_case": "D2421-rust-seed102",
+    "source_sha256": "0dadea400855b6be7f8c06892618d838d3e2ebbdd685c764501da4a450dacba6",
+    "encounter_family": "start-b727a1af374424df3e0fe957a79d436842c78cb18d66a05f94d771e33d4d1af0",
+    "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac"
+  },
+  {
+    "incoming_commit": "352cefeb2c0e1af7c3178a0e9f01e1242477cc6c",
+    "old_case": "D2401-rust-seed1020",
+    "integrated_case": "D2422-rust-seed1020",
+    "source_sha256": "0dadea400855b6be7f8c06892618d838d3e2ebbdd685c764501da4a450dacba6",
+    "encounter_family": "start-b0edb6ea75b6ac67aea0968b1322290ac3574af46f72c8ad2f0a72c12b263444",
+    "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084"
+  }
+]
