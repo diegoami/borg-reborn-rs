@@ -359,27 +359,45 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
 mod tests {
     use super::*;
     const EXAMPLE: &str = "[default]\n  level <= 5\n    loop-levels 0 2\n  5 < level <= 10\n    loop-levels 0 4\n[mage]\n  level <= 5\n    loop-levels 0 1\n  5 < level <= 10\n    loop-levels 1 3\n";
+    const SHIPPED: &str = include_str!("../../harness/plans/errands_plan.txt");
+    // #352: the second, deeper hypothesis.
+    const AMBITIOUS: &str = include_str!("../../harness/plans/errands_plan_ambitious.txt");
     #[test]
-    fn shipped_file_is_parsed_and_covers_all_classes_until_50() {
-        let text = include_str!("../../harness/plans/errands_plan.txt");
-        let plan = Plan::parse(text).unwrap();
-        for class in shell::CLASSES.iter().copied().chain(["default"]) {
-            let phases = plan.sections.get(class).unwrap();
-            for level in 1..50 {
-                assert_eq!(
-                    phases
-                        .iter()
-                        .filter(|p| level >= p.low && level <= p.high)
-                        .count(),
-                    1,
-                    "{class} {level}"
-                );
-                assert!(plan.phase(class, level).unwrap().is_some());
+    fn shipped_files_are_parsed_and_cover_all_classes_until_50() {
+        for text in [SHIPPED, AMBITIOUS] {
+            let plan = Plan::parse(text).unwrap();
+            for class in shell::CLASSES.iter().copied().chain(["default"]) {
+                let phases = plan.sections.get(class).unwrap();
+                for level in 1..50 {
+                    assert_eq!(
+                        phases
+                            .iter()
+                            .filter(|p| level >= p.low && level <= p.high)
+                            .count(),
+                        1,
+                        "{class} {level}"
+                    );
+                    assert!(plan.phase(class, level).unwrap().is_some());
+                }
+                assert!(plan.phase(class, 50).unwrap().is_none());
             }
-            assert!(plan.phase(class, 50).unwrap().is_none());
+            assert!(Plan::parse(&text.replace('\n', "\r\n")).is_ok());
+            assert!(Plan::parse(&format!("\u{feff}{text}")).is_ok());
         }
-        assert!(Plan::parse(&text.replace('\n', "\r\n")).is_ok());
-        assert!(Plan::parse(&format!("\u{feff}{text}")).is_ok());
+    }
+    #[test]
+    fn the_ambitious_plan_is_never_shallower_than_the_shipped_one() {
+        let (shipped, ambitious) = (
+            Plan::parse(SHIPPED).unwrap(),
+            Plan::parse(AMBITIOUS).unwrap(),
+        );
+        for class in shell::CLASSES.iter().copied().chain(["default"]) {
+            for level in 1..50 {
+                let s = shipped.phase(class, level).unwrap().unwrap();
+                let a = ambitious.phase(class, level).unwrap().unwrap();
+                assert!(a.first >= s.first && a.last >= s.last, "{class} {level}");
+            }
+        }
     }
     #[test]
     fn canonical_commands_and_precise_input_errors() {

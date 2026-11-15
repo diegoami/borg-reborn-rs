@@ -23,6 +23,10 @@
 #     CHECKPOINT_EVERY=N fixed game-turn capture cadence (0 = off).
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
 #     SAVE_ROOT=DIR fixture root for save=NAME (default harness/saves).
+#     BORG_ERRANDS_PLAN=FILE an errands plan (docs/GAME-PLAN-LANGUAGE.md;
+#            needs BORG_CORE=borg-rs). It is copied to OUTDIR/user and
+#            selected in the run's borg.txt with a line naming its SHA-256,
+#            so the plan's bytes are part of borg_txt_sha256 (#352).
 #     BORG_PROFILE=FILE the reborn Borg's profile (rust arm only; default
 #            harness/profiles/reborn-default.txt). Its SHA-256 goes into
 #            config.txt; the Borg writes OUTDIR/params.json (the parameter
@@ -49,6 +53,17 @@ BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
 if [ -n "${BORG_LADDERS:-}" ]; then
     [ -f "$BORG_LADDERS" ] || { echo "run.sh: BORG_LADDERS=$BORG_LADDERS: no such file" >&2; exit 2; }
     BORG_LADDERS="$(realpath "$BORG_LADDERS")"; export BORG_LADDERS
+fi
+# An errands plan (#305, #352), resolved here like BORG_LADDERS. The game
+# reads the run's own copy through borg.txt, never this path.
+PLAN=""
+if [ -n "${BORG_ERRANDS_PLAN+set}" ]; then
+    [ -n "$BORG_ERRANDS_PLAN" ] && [ -f "$BORG_ERRANDS_PLAN" ] || {
+        echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: no such file" >&2; exit 2; }
+    [ "${BORG_CORE:-}" = borg-rs ] || {
+        echo "run.sh: BORG_ERRANDS_PLAN needs BORG_CORE=borg-rs" >&2; exit 2; }
+    PLAN="$(realpath "$BORG_ERRANDS_PLAN")"
+    unset BORG_ERRANDS_PLAN
 fi
 [ -x "$BIN" ] || { echo "missing $BIN (run harness/build.sh)" >&2; exit 2; }
 OUT="$(realpath -m "$1")"; SEED="$2"; RACE="$3"; CLASS="$4"; TURNS="$5"; shift 5
@@ -147,6 +162,21 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
+# A plan selected in the borg.txt itself would escape the identity below.
+if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
+    echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
+    exit 2
+fi
+if [ -n "$PLAN" ]; then
+    # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the
+    # cemetery's encounter family already hashes. It names no path, so the
+    # same plan under another name is the same starting game.
+    cp "$PLAN" "$OUT/user/errands_plan.txt"
+    PLAN_SHA="$(sha256sum < "$PLAN" | cut -d' ' -f1)"
+    PLAN_NAME="${PLAN#"$ROOT"/}"
+    printf '\n# harness/run.sh (#352): errands plan sha256 %s\nborg_plan = errands_plan.txt\n' \
+        "$PLAN_SHA" >> "$OUT/user/borg.txt"
+fi
 {
     echo "flags=$FLAGS"
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
@@ -169,12 +199,12 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
         if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
+    # The plan named relative to the checkout (no machine paths in dossiers).
+    if [ -n "$PLAN" ]; then
+        echo "borg_errands_plan=$PLAN_NAME"
+        echo "borg_errands_plan_sha256=$PLAN_SHA"
+    fi
 } > "$OUT/config.txt"
-# Plan POC inputs are not yet part of the measured death/replay identity.
-if [ "${BORG_ERRANDS_PLAN+x}" = x ] || grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
-    echo "run.sh: plan POC is diagnostic only; use tools/try-errands-plan.py" >&2
-    exit 2
-fi
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd
 DATA_ARGS=()
 if [ -n "${BORGH_DATA_ROOT:-}" ]; then
@@ -194,6 +224,10 @@ RC=$?
 set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
+fi
+# The game preserves the plan it parsed as BORG_RUN_DIR/errands_plan.txt.
+if [ -n "$PLAN" ] && ! cmp -s "$OUT/user/errands_plan.txt" "$OUT/errands_plan.txt"; then
+    echo "run.sh: the game did not load the plan: $OUT" >&2; exit 1
 fi
 # borg-reborn-rs (#219): environment overrides are part of the run identity.
 if [ -f "$OUT/params-core.json" ]; then

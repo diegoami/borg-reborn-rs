@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
+
+- Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:
+  `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE`. It copies the plan into
+  `user/`, selects it in the run's borg.txt with a line naming its SHA-256,
+  records `borg_errands_plan`/`_sha256` in config.txt, and fails when the
+  game did not preserve exactly that plan. The plan's bytes are now in
+  `borg_txt_sha256`, so the cemetery's encounter family distinguishes plans
+  with death-tool API 1 unchanged. Plans selected in the harness borg.txt,
+  missing files and the original core are refused.
+- Open: cemetery `rerun-death.py` does not restore `BORG_ERRANDS_PLAN` yet
+  (it restores `BORG_LADDERS` the same way); a plan death's rerun reports
+  "does not reproduce" until it does. That is a cemetery-owned change.
+- docs/ZOO-INTERFACE.md gains the `borg_plan` row (the zoo copies
+  `harness/plans/NAME`); the adapter work is borg-zoo#123.
+- New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
+  curve (ch. 12.2), fighters ~one dungeon level per character level, casters
+  slower, no town-start phases from CL3 (CL6 casters). A release-core test
+  checks it is never shallower than the first plan. A hypothesis only.
+- harness runs still cannot set borg.txt settings such as `borg_town_plan`;
+  the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
 - Main advanced through #308 to 820140e0 while M13 sync CI was running.

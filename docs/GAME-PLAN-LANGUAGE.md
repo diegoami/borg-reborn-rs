@@ -144,13 +144,36 @@ time. The driver preserves exact plan bytes, executable hash, arguments,
 settings, console/messages/keys/state, summary and process result in `poc.json`.
 No network, engine patch or recorder modification is needed.
 
-This driver is explicitly diagnostic, **not a measured zoo/harness arm**.
-The standard `harness/run.sh` refuses plan POC inputs: cemetery encounter-family
-and exact-source death reruns do not yet include this new input/controller
-state. That integration is required before enabling plans in measured arms;
-do not label a plan run as an ordinary model-free baseline or drop plan bytes
-from provenance. Diagnostic failures/deaths remain in the preserved output;
-no population experiment or survival improvement is claimed.
+The driver is for bounded diagnostics. **Measured runs** use the standard
+harness (#352): `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE harness/run.sh ...`
+(and so `harness/suite.sh`). `run.sh` copies the plan into the run's
+`user/errands_plan.txt` and selects it in the run's `user/borg.txt` with a line
+naming the plan's SHA-256, so `borg_txt_sha256`, and with it the cemetery's
+encounter family, changes with the plan's bytes (not its file name).
+`config.txt` records `borg_errands_plan` (the path relative to the checkout)
+and `borg_errands_plan_sha256`. After the run, `run.sh` fails if the game did
+not preserve exactly that plan as `errands_plan.txt`. A plan selected inside
+the harness's own borg.txt, a missing file or another core is refused.
+
+Still open: the cemetery-owned `rerun-death.py` restores the recorded
+environment settings but not yet `BORG_ERRANDS_PLAN`. Until it does, a plan
+death's rerun reports *does not reproduce* rather than replaying it; the
+dossier's `config.txt` names the plan and its hash. No population experiment
+or survival improvement is claimed.
+
+### Two shipped plans
+
+- `harness/plans/errands_plan.txt`: early gates from the class ladder groups,
+  shared later bands, many phases starting in town.
+- `harness/plans/errands_plan_ambitious.txt` (#352): the Strategy Manual's
+  depth curve (ch. 12.2: about one dungeon level per one or two character
+  levels to ~DL30, then the DL30–45 shoulder). Fighters (warrior, paladin,
+  rogue, ranger, blackguard) take about one level per character level;
+  casters and `[default]` start slower. From character level 3 (6 for
+  casters) no phase starts in town. A release-core test checks that it is
+  never shallower than the first plan at any class and level.
+
+Both are hypotheses. The core's readiness still decides each descent.
 
 ## Cleanup and next decision
 
