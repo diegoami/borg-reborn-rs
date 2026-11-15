@@ -16,7 +16,7 @@ PR that updates the pin and this table.
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
 | `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
-| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `7109a0266299f43cd8106453279e1a495a5913e5` | Specimens, profiles and suites as of that commit |
+| `zoo/DESIGN.md`, `zoo/catalogue/` | diegoami/borg-zoo | `f5043c96a1a427d7d5cb624c91a795ef3277ae9f` | Specimens, profiles and suites as of that commit |
 
 ## Not copied: evidence that needs a read of the pinned repository
 

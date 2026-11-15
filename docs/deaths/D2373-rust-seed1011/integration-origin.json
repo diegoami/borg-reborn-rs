@@ -1,0 +1,5 @@
+{
+  "source_commit": "83cf442a",
+  "original_case": "D2356-rust-seed1011",
+  "reason": "Track R registry already allocated this numeric ID; retained full main dossier separately"
+}
