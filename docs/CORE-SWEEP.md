@@ -4,8 +4,8 @@ This is a handoff, not a launched experiment or an improvement claim.
 The review-fix pin must pass validation and owner milestone acceptance
 before dispatch; see P269-VALIDATION.md.
 The owner starts population experiments and agrees confirmation suites
-(borg-zoo RULES 8 and this repository RULES 20). P1–P3 review PRs remain
-unmerged for the owner's chosen reviewer. No sealed suite is opened here.
+(borg-zoo RULES 8 and this repository RULES 20). Owner review acceptance
+and promotion of the pinned code gate dispatch. No sealed suite is opened here.
 
 ## Exact prompt for the zoo session
 
@@ -18,7 +18,7 @@ Read **diegoami/borg-reborn-rs at
 `2ec1f2507ec81f375a7967b2876597865458aa76`** (strict core/errand fixes; validation in P269-VALIDATION.md), especially
 CALIBRATION.md, CORE-TRACE.md, ZOO-INTERFACE.md, P3.1-VALIDATION.md and the
 example profiles. Its build source hash is
-`1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9`.
+`cb48d94396894881d4ae001b2a49b994e86da5f675e8f2444a7c9979c85e5b90`.
 Require its task CI to be green and its code to be present on main before
 any owner dispatch. The compatibility contract was tested against zoo pin
 `c5f1b0429ea898c8d5484aa4f1ac0d681972aac7`. A newer zoo adapter needs the
@@ -32,6 +32,21 @@ threshold 10 lost one game; it is not a recommended value. The new sweep
 studies default 6 versus 7 and 8, one parameter only:
 `borg_param_recover_rest_sp_tenths`. All three are within the declared 0..10
 range. The high-depth threshold and every other core parameter stay default.
+
+Use the three example files adjacent to this handoff at the **same reviewed
+documentation revision**. Record that handoff commit separately from the
+specimen commit above, which pins runtime/build inputs only:
+
+1. `docs/examples/core-calibration-catalogue.json` supplies the specimen
+   and suite definitions to merge into the existing zoo catalogue.
+2. `docs/examples/core-calibration-profiles.json` supplies the three profile
+   definitions to merge into that catalogue too.
+3. `docs/examples/core-calibration-explore.json` is the experiment manifest
+   to load against the assembled catalogue after both fragments are installed.
+
+Validate all specimen/profile references and existing-suite collisions in
+that assembled catalogue before freezing the experiment. The example
+manifest alone does not supply its profile definitions.
 
 Copy the three entries from `docs/examples/core-calibration-profiles.json`:
 `core-calibration-default`, `core-recover-rest-7`, `core-recover-rest-8`.

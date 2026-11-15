@@ -1,5 +1,5 @@
 {
-  "note": "Catalogue fragments for an owner PR; no suite or experiment has run. Merge with existing catalogue so collision checks cover all existing seeds.",
+  "note": "Owner handoff: merge this specimen/suite fragment and core-calibration-profiles.json into the existing zoo catalogue, then load core-calibration-explore.json as the experiment manifest. Use all three files from the same reviewed handoff revision; the specimen ref separately pins runtime inputs. Preserve global seed/profile collision checks. No suite or experiment has run.",
   "specimens": {
     "reborn-p-core-2ec1f250": {
       "kind": "borg-rs",
