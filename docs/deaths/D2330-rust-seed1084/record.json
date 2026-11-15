@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2330-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Blackguard",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 3,
+    "level": 2,
+    "turn": 22908,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "menu",
+    "git_rev": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+    "git_dirty": "yes",
+    "source_sha256": "c9f0bed483d6ad8dcef3f813684271dd7b844d525d57441b1862a615e728ff16",
+    "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb",
+    "borg_txt_sha256": "488eec53ca3f58c9634d0b7f5b23560cf50aa35e20e7a1478af039c1cb03c762",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1947
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p23-integrated-full/full-8-blackguard-4",
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "source_commit": "99278776cdcb58b85c48cf177c9ca74f78df95f5",
+      "binary_sha256": "fe7f3a18d2a114ab4fc6171e464b39f075cc149f40448b55eacccef270d0eeeb"
+    }
+  ],
+  "encounter_family": "start-a8081ac39d02760b376a2a822f5eff70f4433972aed2513297d9c31d6a304e76",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "eec2d46b599694b09ffe30612a5fe3dbd57fd7ba137315d72882486e75333c57",
+    "config.txt": "8cdeeb01465e9717f57f4c728602ff98c314f3e3d88b3d0d0dddf7210bb9aad2",
+    "depths.json": "b94aa168600bb956fb76da2be5a06f736ddeaee48db5da389a844adb1b420680",
+    "params-core.json": "c381c857d7342b07f9298e486a088719ab40c08075eb13e4ad88b489e63c6040",
+    "summary.json": "327876eb6e6264171e268d34e3148adce94476db0da279c3445f3ca61a07e042",
+    "trace-core-tail.jsonl": "2b6297fc8c108f687536473c0e7f108e42f2332e34d1355c455fa8974ff43201"
+  },
+  "investigation": null,
+  "issue": null
+}
