@@ -19,10 +19,20 @@
   `harness/plans/NAME`); the adapter work is borg-zoo#123.
 - New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
   curve (ch. 12.2), fighters ~one dungeon level per character level, casters
-  slower, no town-start phases from CL3 (CL6 casters). A release-core test
+  slower, no town-start phases from CL3 (CL6 casters). An engine test
   checks it is never shallower than the first plan. A hypothesis only.
 - harness runs still cannot set borg.txt settings such as `borg_town_plan`;
   the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+- Pilot finding (72 cells, PR #354 comment): the ambitious plan's requests
+  are capped by the core's readiness ("not prepared for DL2; town overrides
+  the loop"), so it bounces to town instead of diving. In one cell
+  (Warrior seed 501, ambitious + shopping) the M13 town planner looped
+  buy oil at the General Store / drop it at Home about 4,000 times over
+  ~35k game turns: a vendored-core (borg-rs town planner) defect to report
+  upstream, not a plan defect.
+- The plan-file checks are engine tests (strict reader + native load), not
+  release-core tests, so borg-core and the build's source hash are
+  unchanged and the existing CI death controls still apply.
 
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 

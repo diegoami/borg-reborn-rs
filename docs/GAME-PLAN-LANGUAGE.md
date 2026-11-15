@@ -170,7 +170,7 @@ or survival improvement is claimed.
   levels to ~DL30, then the DL30–45 shoulder). Fighters (warrior, paladin,
   rogue, ranger, blackguard) take about one level per character level;
   casters and `[default]` start slower. From character level 3 (6 for
-  casters) no phase starts in town. A release-core test checks that it is
+  casters) no phase starts in town. An engine test checks that it is
   never shallower than the first plan at any class and level.
 
 Both are hypotheses. The core's readiness still decides each descent.

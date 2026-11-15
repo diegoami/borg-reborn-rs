@@ -8,6 +8,49 @@ import unittest
 ROOT=Path(__file__).resolve().parents[2]
 GAME=ROOT/'build/rust/game/angband'
 PLAN='[default]\n  level <= 5\n    loop-levels 0 2\n[mage]\n  level == 1\n    loop-levels 0 1\n  level > 1\n    loop-levels 0 2\n'
+CLASSES=['warrior','mage','druid','priest','necromancer','paladin','rogue','ranger','blackguard']
+
+
+def shipped_phases(name):
+    """{section: [(low, high, first, last)]} of a shipped plan. Strict on the
+    forms the shipped files use; anything else fails, and the native parser
+    loads both files in ErrandsPlanTest (#352)."""
+    import re
+    sections,section,pending={},None,None
+    for raw in (ROOT/'harness/plans'/name).read_text().splitlines():
+        if not raw.strip() or raw.lstrip().startswith('#'):continue
+        if re.fullmatch(r'\[(\w+)\]',raw):
+            section=raw[1:-1];sections[section]=[];continue
+        m=re.fullmatch(r'  (?:level <= (\d+)|(\d+) < level <= (\d+)|level == (\d+))',raw)
+        if m:
+            a,b,c,d=m.groups()
+            pending=(1,int(a)) if a else (int(b)+1,int(c)) if b else (int(d),int(d));continue
+        m=re.fullmatch(r'    loop-levels (\d+) (\d+)',raw)
+        if not (m and pending and section):raise ValueError(f'{name}: unexpected line {raw!r}')
+        sections[section].append((*pending,int(m[1]),int(m[2])));pending=None
+    return sections
+
+
+class ShippedPlansTest(unittest.TestCase):
+    def phase(self,phases,level):
+        hits=[p for p in phases if p[0]<=level<=p[1]]
+        self.assertLessEqual(len(hits),1,level)
+        return hits[0] if hits else None
+    def test_every_class_has_one_phase_per_level_and_none_at_50(self):
+        for name in ['errands_plan.txt','errands_plan_ambitious.txt']:
+            plan=shipped_phases(name)
+            self.assertEqual(set(plan),set(CLASSES)|{'default'},name)
+            for section,phases in plan.items():
+                for level in range(1,50):self.assertIsNotNone(self.phase(phases,level),(name,section,level))
+                self.assertIsNone(self.phase(phases,50),(name,section))
+    def test_the_ambitious_plan_is_never_shallower(self):
+        shipped,ambitious=shipped_phases('errands_plan.txt'),shipped_phases('errands_plan_ambitious.txt')
+        for section in shipped:
+            for level in range(1,50):
+                s,a=self.phase(shipped[section],level),self.phase(ambitious[section],level)
+                self.assertTrue(a[2]>=s[2] and a[3]>=s[3],(section,level,s,a))
+
+
 @unittest.skipUnless(GAME.is_file(),'harness/build.sh required')
 class ErrandsPlanTest(unittest.TestCase):
     def setUp(self):
