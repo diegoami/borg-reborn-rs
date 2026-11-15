@@ -3,6 +3,21 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1.1 evidence reconciled before integration
+
+- Local checks on main's completed Track P baseline: 138 core tests (one
+  existing ignored), 165 workspace tests, Clippy, formatting, scripts and
+  independence checks pass. Vendoring declarations preserve both tracks.
+- Preserved all four earlier CI runs' natural death evidence as D2356–D2360,
+  deduplicating repeated encounter/key identities. Each imported case keeps
+  its original source/build identity and records the originating CI run.
+  The current build's cave-spider case resolves the engine CI failure.
+- A native build has source hash `90900e6253cc`; smoke is 3/3 identical to
+  the checked-in reference. D2361–D2362 preserve its natural deaths; the
+  short seed-102/race-1/class-1 run survived its 3,000-turn cap.
+- All task PRs continue into `feature/track-r`. The owner authorized
+  continuing the tasks there, with milestone review to follow.
+
 ## 2026-11-15: Track R stays on its feature branch (owner)
 
 - The owner requires the unfinished redesign to stay out of `main`.
