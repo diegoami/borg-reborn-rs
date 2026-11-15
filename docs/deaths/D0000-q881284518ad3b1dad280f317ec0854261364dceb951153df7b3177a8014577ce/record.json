@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "6dec57974f31cf40908127ca4483ba2931242d623401fa01852056cc85c15603",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r2-danger-guard/harness/out/grid-core-ci-death",
+      "raw_sha256": {
+        "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+        "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+        "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+      },
+      "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+      "role": "original",
+      "source_commit": "36d873f39cd7aea768106f7d24a7d3cc6a2a9b7d"
+    }
+  ],
+  "character": "Elf Mage",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1155
+  },
+  "decision_trace": null,
+  "encounter_family": "start-18987bd2e57bdd1246c6299a347df2518aacb40455537c1b3d5b1cf2d28bcdbd",
+  "files_sha256": {
+    "build.json": "b3d0397c2179d6c81bacf421832668c0531c5c76108ae03597d52a64d48bb1ee",
+    "config.txt": "f0cfa26c789597280b33ebb1520a4870307eabcd52965ba1959c3632b5b15da5",
+    "depths.json": "632e580f00819b59f15ec19cf1b4f3afb7bdfb581041538edd624d18e5435ae3",
+    "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "summary.json": "bd052d4db9ba9f7d031449a11ce0c3e5d069dc8ca07c4501b23b1c7061b1c849",
+    "trace-core-tail.jsonl": "af84711acdf8e5f624ce548cfcda42142e496ca94e9ef2df8a8d7f3e12ecb311"
+  },
+  "id": "D0000-q881284518ad3b1dad280f317ec0854261364dceb951153df7b3177a8014577ce",
+  "identity": {
+    "binary_sha256": "6dec57974f31cf40908127ca4483ba2931242d623401fa01852056cc85c15603",
+    "borg_txt_sha256": "d60d27905fe3a3259937f2fcd71c049179d523d2065f1c2bbaee55a29e65bb11",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "36d873f39cd7aea768106f7d24a7d3cc6a2a9b7d",
+    "impl": "rust",
+    "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1011,
+    "source_sha256": "5c10fe872caf4510cf700022bc5aae66c7a52d494b47562c9f14b33fa19e9429"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a cave spider",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a cave spider",
+    "class_idx": 1,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 2,
+    "turn": 18903
+  }
+}

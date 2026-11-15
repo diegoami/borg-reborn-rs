@@ -38,3 +38,12 @@ folder/record disagreement; it does not allocate IDs, publish, deduplicate
 statistical samples or mutate records. The existing native toolkit remains
 cemetery-owned. Canonical publication protocol implementation/confirmation
 is a separate owner handoff; this policy does not claim it is already changed.
+
+
+Historical validation can use the accepted deterministic importer described in
+[DOSSIER-IMPORT.md](DOSSIER-IMPORT.md). Its full `D0000-q` plus 64 hex digest
+is a content-qualified storage ID, never canonical numeric ID zero. Always
+use the full ID/path. Both CI checks are required: the numeric collision check
+recognizes this storage namespace, while `tools/import-deaths.py --check`
+verifies its original record, complete payload fingerprint and frozen legacy
+inventory. Canonical numeric allocation remains cemetery-owned (#344).

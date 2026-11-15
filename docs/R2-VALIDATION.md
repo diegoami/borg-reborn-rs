@@ -1,5 +1,11 @@
 # R2: fight-or-flee port and measured handoff
 
+> Historical R dossier numbers in this report are scoped to registry commit
+> `fbd0f691de655c6db61565b1e3d2b5aea92184cd`, not the restored legacy slots.
+> See [R334-RECOVERY.md](R334-RECOVERY.md) and R334-DOSSIER-MAP.json for
+> full qualified paths. Raw measurements/build identities remain historical.
+
+
 R2 exit evidence is complete. Task PR #291 remains subject to its final CI
 merge gate, followed by the feature-only milestone review. R3 is not started.
 

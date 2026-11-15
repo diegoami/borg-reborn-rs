@@ -126,8 +126,8 @@ promoted to `main`.
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
 | **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225); the separate moving-reference refresh (#262) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **done**: accepted and merged in #266; feature-only tag `r1` |
-| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted review #302, feature-only tag `r2`; non-blocking follow-ups #312–#316 |
-| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | not started |
+| **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted #302/#329; feature-only tags `r2`/`r2.1`; follow-ups retained in R3 preflight |
+| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **in progress**: evidence recovery #334, M13 carry #343, then accessor and attack/defence ports |
 | **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |
 | **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |

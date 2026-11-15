@@ -1,8 +1,8 @@
 # R3 preparation after accepted R2
 
-R2 review #302 (Claude Opus 5.5) accepted the verified migration with
+R2 reviews #302/#329 (Claude Opus 5.5) accepted the verified migration with
 non-blocking follow-ups. The owner accepted and delegated its merge and
-continued Track R. Tag r2 points at the feature-only review ledger; the
+continued Track R. Tags r2/r2.1 point at the feature-only review ledger; the
 reviewed feature snapshot cee4c94 remains immutable. All tasks still target
 feature/track-r. This plan implements review follow-up #316; it does not
 claim that attack/defence or an accessor optimization is implemented.
@@ -57,11 +57,17 @@ gate narrowly for the new accessor path and keep manual dependency review.
 
 ## Ordered R3 implementation slices
 
-1. Refresh moving references in a dedicated PR. Read changed helpers and
-   new evidence; keep the v12 runtime pin unless a separately authorized
-   production carry satisfies #264. P2 parameter prerequisites are already
-   in the reviewed main baseline carried by R2. Synchronize newer main work
-   when required, through a tested task PR preserving concurrent work.
+1. Complete evidence recovery #334 before any main/R integration. Preserve
+   every differing R packet through the accepted qualified importer, restore
+   accepted legacy originals and keep the frozen inventory unchanged.
+   Then execute the concrete M13 carry #343 from accepted main: exact donor
+   tag 4.2.6-rs-town-trip-m13-v1 at 1443c2d1, typed-view additions, snapshot/
+   replay ownership and deliberate re-porting. #264 is not complete merely
+   because a PIN changes. Establish fresh M13 donor parity in off/check/switch,
+   retain historical v12 evidence, changed-branch fixtures and all deaths.
+   Keep default-off town/trip behavior and the receiving native ABI adapter.
+   Moving reference pins remain a separate refresh PR, with changed helpers
+   and evidence read before carries. Consume only owner-reviewed P promotion.
 2. Introduce the cheap named accessor and migrate existing stateful reads
    without moving expressions across effects or changing policy. Retain
    accepted R2 evidence as historical; validate the exact new runtime inputs
@@ -79,7 +85,7 @@ gate narrowly for the new accessor path and keep manual dependency review.
    scope and named-parameter audit. State item/spell lifetimes and shared
    dependencies in the report. Preserve native simulation restoration.
 5. Validate the combined exact build: off/check/switch smoke; check full
-   with zero disagreements; switch full 45/45 v12 keys/messages/states;
+   with zero disagreements; switch full 45/45 exact M13 donor keys/messages/states;
    per-entry and rare-path fixtures; durable non-vacuity controls and matching
    re-ports. Repeat native nesting where adapters change. Keep engine/RNG
    effect-once guarantees and explicit telemetry/branch-coverage limits.

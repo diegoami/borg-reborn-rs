@@ -119,6 +119,10 @@ not undo other-track work already authorized before the gate.
     published evidence and mappings; reject numeric collisions on import,
     even when directory suffixes differ. See docs/DEATH-ID-POLICY.md. Local
     exports do not by themselves establish canonical publication acceptance.
+    All tracks import new historical validation packets through
+    tools/import-deaths.py and pass its --check, preserving original bytes,
+    full qualified IDs and source maps. The accepted legacy inventory must
+    not be rebaselined to hide replaced evidence.
 
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a

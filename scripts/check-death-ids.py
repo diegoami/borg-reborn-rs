@@ -6,6 +6,9 @@ from pathlib import Path
 import re
 
 
+QUALIFIED = re.compile(r'D0000-q[0-9a-f]{64}')
+
+
 def number(label):
     if not isinstance(label, str):
         raise ValueError(f'invalid dossier label type: {type(label).__name__}')
@@ -25,8 +28,14 @@ def check(registry):
         raise ValueError(f'no dossier records: {registry}')
     for path in records:
         label = path.parent.name
-        numeric = number(label)
         record = json.loads(path.read_text())
+        # Content-qualified historical storage is not numeric ID zero.
+        # The companion importer gate verifies its complete payload receipt.
+        if label.startswith('D0000-q'):
+            if not QUALIFIED.fullmatch(label) or record.get('id') != label:
+                raise ValueError(f'{path}: invalid qualified storage ID')
+            continue
+        numeric = number(label)
         # Legacy D0526-recorded has record id D0526. Compare numeric IDs,
         # retaining that original record rather than rewriting history.
         if number(record.get('id', '')) != numeric:
@@ -46,7 +55,7 @@ def main():
         count = check(args.registry)
     except (ValueError, OSError) as error:
         parser.exit(1, f'dossier-ID check failed: {error}\n')
-    print(f'{count} local dossier records have unique numeric IDs; '
+    print(f'{count} local dossiers have unique numeric or full content-qualified storage IDs; '
           'cross-branch references still require an exact registry commit')
 
 

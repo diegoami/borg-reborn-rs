@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-4-necro-4",
+      "raw_sha256": {
+        "keys.log": "2f4f6fac72769ff3891c52862c20af69c4b9bdbfe4ba4e7f30ce11c4079a0af0",
+        "messages.log": "a4ff7af6f885681c55f0775fa2ff2e514dc54b78e29ec9f143fb8c6ce57b8569",
+        "state.log": "79da6bdfc165dd3c1d4c39b74b40bdd1462887edb5cfb9f0f4e5051cf8f57aa6"
+      },
+      "result_sha256": "2f4f6fac72769ff3891c52862c20af69c4b9bdbfe4ba4e7f30ce11c4079a0af0",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Dunadan Necromancer",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 427
+  },
+  "encounter_family": "start-80c56f0c9b84969aaf01c51967bc2dc9754af6c75d09b6e078ae887e40a6ca4b",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "d701b7fc577b67c020d5dd21bc56929dbf3a0ea46f7046ceb24623726ff97066",
+    "depths.json": "450f2697b809f5fb30498620065118da1e4748634c86103333df935c6061a506",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "c184dded8e52b8a2808391dd6e7cf875f1d4e6a63d2c466e5bac61bd670aa362",
+    "trace-tail.jsonl": "8dfe0e785d7acf67e34b818d01828b02d0fb37d6f03a5b60516b95ef9e615422"
+  },
+  "id": "D0000-q885b28a9119b8da5cbe07c1b56c5e16a709856f27aa1a52cfcbd4bb9ecf5df0d",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "282f4041ee4d29a331eab6e51c97b539f43e66f7b4d289a6d8b0f36933400de3",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1044,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a small kobold",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a small kobold",
+    "class_idx": 4,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 8,
+    "turn": 4427
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "a6a3bfad0ebe80c15c00284f341fd145b9aea8df51433bf7e0d0eb6260b0aee3",
+      "outcome": "death",
+      "raw_directory": "/home/runner/work/borg-reborn-rs/borg-reborn-rs/harness/out/core-trace-death",
+      "raw_sha256": {
+        "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+        "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+        "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+      },
+      "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+      "role": "original",
+      "source_commit": "959474a594fcd04a46550629591a12a8a3b64fb7"
+    }
+  ],
+  "character": "Elf Mage",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1155
+  },
+  "decision_trace": null,
+  "encounter_family": "start-7f0c12b2443c605afc1693bfc60b27e88afaca89a6f2b62153f2cfdf7cc2fe1e",
+  "files_sha256": {
+    "build.json": "9004a115407cc23e108205256d75a291a49cd2a2221923d95c1d8500bdf8cc1e",
+    "config.txt": "e580b9f3527e00745a558e00194f1b1725b52c851614d31f2fd85d8bd4beccf7",
+    "depths.json": "632e580f00819b59f15ec19cf1b4f3afb7bdfb581041538edd624d18e5435ae3",
+    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "summary.json": "21b38da4dfed00795c9b35e51bea4d043ba6a26bafe1ab3db645ae2ea6152b51",
+    "trace-core-tail.jsonl": "ccb0dbfa16b73b940de15cb118e3137e6550088c61088afa09232d3eea9b4778"
+  },
+  "id": "D0000-qbb85162fa966dbe9f9e465415ab468b9c4c56a1357e10bdcc57ab1ec246070d7",
+  "identity": {
+    "binary_sha256": "a6a3bfad0ebe80c15c00284f341fd145b9aea8df51433bf7e0d0eb6260b0aee3",
+    "borg_txt_sha256": "d60d27905fe3a3259937f2fcd71c049179d523d2065f1c2bbaee55a29e65bb11",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "959474a594fcd04a46550629591a12a8a3b64fb7",
+    "impl": "rust",
+    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1011,
+    "source_sha256": "15aa2132a836a42c2c4b00c2c84de8852737f03b3b6ceffdee7b6e6bd5756433"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a cave spider",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a cave spider",
+    "class_idx": 1,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 2,
+    "turn": 18903
+  }
+}

@@ -2192,7 +2192,7 @@
     "name": "caution_recall_rest_turns",
     "default": 500,
     "unit": "turns",
-    "min": 1,
+    "min": 2,
     "max": 9999,
     "source": "borg_caution.rs:1630",
     "description": "Number of rest turns queued while waiting safely for recall.",
@@ -4094,11 +4094,11 @@
   {
     "name": "danger_melee_hit_power_scale",
     "default": 3,
-    "unit": "divisor",
+    "unit": "denominator multiplier",
     "min": 1,
     "max": 1000,
     "source": "borg_danger.rs:657",
-    "description": "Sets melee hit power scale, measured in divisor, in the existing danger rule.",
+    "description": "Positive multiplier inside the melee hit-chance denominator; zero would divide by zero.",
     "value": 3,
     "origin": "default"
   },
@@ -4912,7 +4912,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1685",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_KIN.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_KIN.",
     "value": 1,
     "origin": "default"
   },
@@ -4923,7 +4923,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1703",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_HI_DEMON.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_DEMON.",
     "value": 1,
     "origin": "default"
   },
@@ -4934,7 +4934,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1759",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_HYDRA.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HYDRA.",
     "value": 1,
     "origin": "default"
   },
@@ -4945,7 +4945,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1777",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_AINU.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_AINU.",
     "value": 1,
     "origin": "default"
   },
@@ -4956,7 +4956,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1795",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_DEMON.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_DEMON.",
     "value": 1,
     "origin": "default"
   },
@@ -4967,7 +4967,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1813",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_HI_UNDEAD.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_UNDEAD.",
     "value": 1,
     "origin": "default"
   },
@@ -4978,7 +4978,7 @@
     "min": 0,
     "max": 50,
     "source": "borg_danger.rs:1849",
-    "description": "Protected-summon spell-power risk multiplier for RSF_S_UNIQUE.",
+    "description": "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_UNIQUE.",
     "value": 1,
     "origin": "default"
   },
@@ -6625,7 +6625,7 @@
     "name": "recover_rod_rest_turns",
     "default": 100,
     "unit": "turns",
-    "min": 1,
+    "min": 2,
     "max": 9999,
     "source": "borg_recover.rs:404",
     "description": "Number of rest turns queued while waiting for a healing/recall rod to recharge.",

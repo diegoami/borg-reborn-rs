@@ -2,7 +2,7 @@
 
 Elf Druid, character level 2, depth 1 (max 1), seed 1020, implementation `rust`, flags `menu`.
 
-Build `53006188548eebba9389a09dfdb2f77fdc9723c5` (dirty: no), binary `3d77ebff2fd9`. Keys `c542b7d80373`; raw logs stay in `/home/runner/work/borg-reborn-rs/borg-reborn-rs/harness/out/rerun-source` (not committed).
+Build `8fe1d1c5353f4e04c309262670732bfb31848cbe` (dirty: no), binary `fcf81d6f4dff`. Keys `c542b7d80373`; raw logs stay in `/tmp/borg-shopping-ci-rerun-source-20261115` (not committed).
 
 Decision trace: the last 200 of 751 thinks in `trace-tail.jsonl`; parameters in `params.json` (profile `372785a3dfab`).
 

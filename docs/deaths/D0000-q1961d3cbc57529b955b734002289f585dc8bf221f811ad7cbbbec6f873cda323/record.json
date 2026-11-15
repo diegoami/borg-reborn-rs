@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-2-druid-1",
+      "raw_sha256": {
+        "keys.log": "18c6b3412cb31d89c4589f57935ad63962fbabef96fad8ef87cb4f25129db8cb",
+        "messages.log": "e1a752b1475349ce059795ace7f18c91d21fbc302295e12ee4f176b38bfd37a5",
+        "state.log": "54a99e0b74a441fdb3356595f5b921280f204169675c9f0a4f0fa035a7ab2882"
+      },
+      "result_sha256": "18c6b3412cb31d89c4589f57935ad63962fbabef96fad8ef87cb4f25129db8cb",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Hobbit Druid",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 403
+  },
+  "encounter_family": "start-a91e0222ebc8c21e08cf0fb042b67844c42b07ddb1dbd5c626ccc7ad23d853fd",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "4d17d7616694aeb8d04dfd23411d2ad837202a3d6912edbac318d0064bcc9653",
+    "depths.json": "dae4b5fd0bc6b03731d4d8e7480e18dc64f48822054f0268c4de2fa4eb8f31ff",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "f018c30a446098fdd36b501ccc1645bdecd7bd1fb34f6151ac10f420ef80ff8e",
+    "trace-tail.jsonl": "a7017680896b79962bccebc91fd347a94df7566790a3e73cd1b41c17b41bf4c1"
+  },
+  "id": "D0000-q1961d3cbc57529b955b734002289f585dc8bf221f811ad7cbbbec6f873cda323",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "e1e06127f018e991f8897b3a742ab8e0c2d888a7ea7b44d6225cbdd8deea1958",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1021,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a fatal wound",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a fatal wound",
+    "class_idx": 2,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 3,
+    "turn": 3950
+  }
+}

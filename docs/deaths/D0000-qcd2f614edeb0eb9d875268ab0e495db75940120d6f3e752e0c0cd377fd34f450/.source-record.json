@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2395-rust-seed1072",
+  "run_kind": "harness",
+  "character": "High-Elf Ranger",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 2,
+    "level": 2,
+    "turn": 8475,
+    "race_idx": 9,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1072,
+    "flags": "menu",
+    "git_rev": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
+    "git_dirty": "yes",
+    "source_sha256": "2b59c452bbf17f30150043ac6eda03ded1d457cc231fe4b6adcda0a666a39f87",
+    "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a",
+    "borg_txt_sha256": "ec59d6265d460488c0acbc482dd16c531396b359915ecc5434547cb06a00bcc3",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 875
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r2-stateful/harness/out/r2-stateful-full-check/full-7-ranger-2",
+      "result_sha256": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+      "raw_sha256": {
+        "keys.log": "5c8813a8b1795abc4b6250ef543fca6827e432ea1c3d979c87e82d51f86b3f7f",
+        "messages.log": "8d16c4f6c115675938c78b745f74cd299155138006c68c236a65b93e80271ca5",
+        "state.log": "55ab81d341bf5eee54be4063d9752e1f07ee52f8d7a4114c84e4450a28a0a471"
+      },
+      "source_commit": "b6d3a07a3ac4f23aeac1053b318e0dc4a987020d",
+      "binary_sha256": "f7f226febc316a2e648e10ebf28f2a560281525975fd5c735e6ee917b117db8a"
+    }
+  ],
+  "encounter_family": "start-1b077429e742c578c4af880297985960f120beec33edfa3ccf5754144c1ca4c4",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a63ddfd2288e456cd1e37432371152a3639f0c1a296e4f291db5929b383978a4",
+    "config.txt": "2fd2fd3493c4201be7d9e5b2e85ba8ab1d1ef2d224ef9748dd6b5ee23b4e5621",
+    "depths.json": "c4372679c923c4799adb86ac85075caa256d0d24cc36298ea57ebd829b18405a",
+    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
+    "summary.json": "3e06966d53d31ef201a80daedd1235b5ff7a20c9a241ec31e61a741178c83c98",
+    "trace-core-tail.jsonl": "06578bee1d31e1089ac9f11b7219304922f4e1616a547fd93781b7dc324f2daf"
+  },
+  "investigation": null,
+  "issue": null
+}

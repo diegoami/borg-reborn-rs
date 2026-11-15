@@ -3,14 +3,14 @@
   "id": "D2365-rust-seed1021",
   "run_kind": "harness",
   "character": "Hobbit Druid",
-  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "raw_cause": "a fatal wound",
   "terminal": {
-    "cause": "Fang, Farmer Maggot's Dog",
+    "cause": "a fatal wound",
     "dead": true,
-    "depth": 3,
-    "max_depth": 4,
+    "depth": 1,
+    "max_depth": 1,
     "level": 1,
-    "turn": 3608,
+    "turn": 3950,
     "race_idx": 3,
     "class_idx": 2
   },
@@ -18,44 +18,44 @@
     "impl": "rust",
     "seed": 1021,
     "flags": "menu",
-    "git_rev": "2545f8416dad1b0eaa2e8d34c69745473a37a08c",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
     "git_dirty": "yes",
-    "source_sha256": "aabe60c9cdbc6b6be3db847620412e3e3df484dbfb684d6b8e73f6b4859b0c70",
-    "binary_sha256": "224957d1d39b367ad3890bfd40e0c756d81fce7ab90021ae2a75f741928baa96",
-    "borg_txt_sha256": "22f26b18b131354886de8f90b14c79bb98f839609094abd4f50213900fd416b4",
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9",
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "e1e06127f018e991f8897b3a742ab8e0c2d888a7ea7b44d6225cbdd8deea1958",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
-    "params_core_sha256": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12"
+    "params_core_sha256": null
   },
-  "decision_trace": null,
-  "core_decision_trace": {
-    "file": "trace-core-tail.jsonl",
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
     "lines": 200,
-    "of": 908
+    "of": 403
   },
+  "core_decision_trace": null,
   "attempts": [
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/workspace/borg-reborn-rs/harness/out/r12-off-full/full-2-druid-1",
-      "result_sha256": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+      "raw_directory": "/workspace/work/p-review-old-full/full-2-druid-1",
+      "result_sha256": "18c6b3412cb31d89c4589f57935ad63962fbabef96fad8ef87cb4f25129db8cb",
       "raw_sha256": {
-        "keys.log": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
-        "messages.log": "d74ec5bd8acb04981bcbce756a680d8a62262ca11c42e634874dd260bd4f42a3",
-        "state.log": "82127e32d5ceede3b4ae7fade7faead94b869118b1f4d6f164cea6f8d0f12d69"
+        "keys.log": "18c6b3412cb31d89c4589f57935ad63962fbabef96fad8ef87cb4f25129db8cb",
+        "messages.log": "e1a752b1475349ce059795ace7f18c91d21fbc302295e12ee4f176b38bfd37a5",
+        "state.log": "54a99e0b74a441fdb3356595f5b921280f204169675c9f0a4f0fa035a7ab2882"
       },
-      "source_commit": "2545f8416dad1b0eaa2e8d34c69745473a37a08c",
-      "binary_sha256": "224957d1d39b367ad3890bfd40e0c756d81fce7ab90021ae2a75f741928baa96"
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66"
     }
   ],
-  "encounter_family": "start-c67483aa29fc4aefc46bd10f634d445bda263efbff186030f6e5fc39bfad4518",
+  "encounter_family": "start-a91e0222ebc8c21e08cf0fb042b67844c42b07ddb1dbd5c626ccc7ad23d853fd",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "32457c04e91b1cb8030aee1eac291569d80ec2e692f909a0d41af75d0af41e58",
-    "config.txt": "1b7fb2d94473a71c8d80874a2f2fa1e091dd726e4c9aa26583077bd19d2a005c",
-    "depths.json": "0ec48811f6295bb45727bff06812bec4d81e8aba0c1d001f08da08fca8c1ff4a",
-    "params-core.json": "e6b4b3482a90ee4f37801510a6eba4468dd2377acfb50fdd73b0d8e68e1c6b12",
-    "summary.json": "93f6eebd0133c2ac2e634c861a94203e6fff0b7eed4f1e00949a63e3f14fce39",
-    "trace-core-tail.jsonl": "429dd3528de83596d8dc788334033d5931f806f15258df77310dc75a184b139d"
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "4d17d7616694aeb8d04dfd23411d2ad837202a3d6912edbac318d0064bcc9653",
+    "depths.json": "dae4b5fd0bc6b03731d4d8e7480e18dc64f48822054f0268c4de2fa4eb8f31ff",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "f018c30a446098fdd36b501ccc1645bdecd7bd1fb34f6151ac10f420ef80ff8e",
+    "trace-tail.jsonl": "a7017680896b79962bccebc91fd347a94df7566790a3e73cd1b41c17b41bf4c1"
   },
   "investigation": null,
   "issue": null

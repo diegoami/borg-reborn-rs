@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R3 preflight evidence recovery #334
+
+- Owner accepted/delegated #329; it merged only into the feature review
+  ledger, annotated r2.1. R3 is open, starting with #334 before M13 carry #343.
+  Source gate #337 and ID policy #345 are already green on feature/track-r.
+- Pinned R fbd0f691 and accepted main 2f74e1c5. The actual source tree has
+  83 additional and 13 changed legacy packets: 96 complete, not the review's
+  estimated 97. Every differing packet is imported/byte-verified before
+  restoring originals. No incomplete directory is tracked or present locally.
+- All 2,455 accepted legacy packet inventories/bytes are restored exactly,
+  including 107 missing dossiers; frozen inventory SHA remains unchanged.
+  All original R bytes survive at unchanged legacy paths or qualified IDs.
+  Map and reader context: R334-DOSSIER-MAP.json / R334-RECOVERY.md.
+- Archive: 2,551 packets; exact union of encounter/result keys, 2,508 death
+  attempts and 2,505 distinct starts. Storage counts are not independent lives.
+  Old R1/R2 JSON remains unchanged; Markdown notes qualify its old numeric IDs.
+- Accepted importer/tests are taken from main without runtime changes.
+  Numeric-ID CI recognizes full qualified storage IDs, never numeric zero;
+  companion importer gate checks complete receipts and legacy integrity.
+  92 tool / 33 source-tool tests pass. Original full/grid runs reconcile
+  all 35 natural deaths with actual manifests/build IDs. No new games played.
+- Main's qualified packages and runtime M13 code remain for the separate
+  #343 sync. R3-PLAN records this dependency and a fresh exact M13 comparator;
+  v12 evidence stays historical. Canonical allocation work remains #344.
+
 ## 2026-11-15: owner-selected dossier ID policy (#338)
 
 - Owner chose final numeric allocation centrally at cemetery acceptance;
