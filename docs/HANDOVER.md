@@ -3,6 +3,23 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.2 integrated validation complete
+
+- Defence retains 45/45, named traces and current-shell ladder parity
+  after the parent integration. The actual diagnostic character is Hobbit
+  Priest (race index3 with menu letters); the report now states it correctly.
+- Required checks pass again. D2289–D2299 retain original evidence and
+  D2300–D2310 preserve eleven integrated-build deaths, reconciled.
+
+## 2026-11-15: P2.1 integrated validation complete
+
+- Attack parameters retain 45/45 default parity and the same diagnostic
+  divergence after receiving current main through P1.4. Current-shell
+  ladder, named trace, original-core smoke/death and required checks pass.
+- D2265–D2276 retain original evidence; D2277–D2288 add the integrated
+  build's twelve natural deaths. Both registries reconcile. CI reruns on
+  the updated task head; downstream task branches receive these records.
+
 ## 2026-11-15: track P integration with the option-C fixes
 
 - P1.4's first head passed CI, but its merge was rejected after main's
@@ -57,7 +74,7 @@
   changes the priest's selected check at turn36902 from borg_caution to
   borg_attack. See P2.2-VALIDATION.md; no improvement claim.
 - All required Rust/Python/vendor checks and default-expansion audit pass.
-  D2277–D2287 preserve eleven natural deaths, reconciled without omissions.
+  D2289–D2299 preserve eleven natural deaths, reconciled without omissions.
 - Initially stacked on #247; pending CI gates will merge in task order.
   Remaining P work: item use #242, power #243, profile contract #244 and
   owner sweep prompt #245. Review PRs stay unmerged for the owner.
