@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: R2 danger slice (#281), stateful parent #209 stays open
+
+- Branch task/R2.1-danger is initially stacked on #279, targets feature/track-r.
+  The complete danger evaluator is now borg-next code: named BI fields,
+  borrowed native danger memory, immutable facts and shared unported queries.
+  Both full danger and standalone-monster boundaries compare scalars after
+  exactly one native execution. No native RNG or side effect is duplicated.
+- Expanded the watcher from the wall helper to the danger functions. Against
+  moving reference 727ccff, **three ported functions changed** (aggregate,
+  physical and spell estimates). This positive source warning is not runtime
+  parity evidence and does not adopt v13. Core PIN remains v12 e6d13fc.
+- Smoke off/check/switch is 3/3 identical in keys/messages/state with zero
+  danger and monster mismatches. Full validation and constructed controls
+  are recorded in R2-DANGER-VALIDATION.md before task merge.
+- Count every operational failure: an exploratory build refused to write
+  BUILD_ID because sources changed while it compiled; no game launched.
+  The first off smoke played three capped survivors but suite aggregation
+  failed because this shell lacked bc on PATH. A fresh-directory repeat
+  with the workspace tool path passed. Neither failure is a death.
+- #209 remains in progress: caution, escape and recovery are NOT ported;
+  their stateful action/goals/RNG adapter is next. No milestone exit, R3
+  start, population experiment or promotion to main is implied by this slice.
+
 ## 2026-11-15: R1 accepted, R2 opened (#278)
 
 - Owner explicitly authorized merging #266 and continuing Track R. Review

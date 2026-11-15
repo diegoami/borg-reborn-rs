@@ -107,3 +107,6 @@ pub mod memory;
 
 // borg-reborn-rs (#224): optional Track R shadow boundaries.
 pub mod shadow;
+
+// borg-reborn-rs (#281): immutable dependencies of the danger port.
+pub mod threat_facts;

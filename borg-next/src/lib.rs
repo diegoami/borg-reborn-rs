@@ -363,6 +363,7 @@ pub struct View<'a> {
     pub y: i32,
     /// Source: `BorgState.cave`.
     pub cave: Cave<'a>,
+    pub threat: ThreatMemory<'a>,
     state: &'a BorgState,
 }
 
@@ -388,6 +389,7 @@ impl<'a> View<'a> {
             x: state.borg.c.x,
             y: state.borg.c.y,
             cave: Cave(&state.cave),
+            threat: ThreatMemory::read(state),
             state,
         }
     }
@@ -433,6 +435,72 @@ impl Cave<'_> {
     }
 }
 
+/// Native danger context, borrowed through the same lifetime as the view.
+/// Reads memory only; all engine/table queries are in `threat_facts::Facts`.
+pub struct ThreatMemory<'a> {
+    state: &'a BorgState,
+    /// Native temporary buffs, not engine timed effects.
+    pub temporary: &'a borg_rs::memory::BorgTemp,
+    pub clock: &'a borg_rs::memory::BorgTimes,
+    pub antibounce_count: i16,
+    pub nearby_unique: i16,
+    pub morgoth_position: bool,
+    pub simulation: Simulation,
+}
+/// Native attack simulation modifiers (may be hypothetical during defence).
+#[derive(Clone, Copy)]
+pub struct Simulation {
+    pub attacking: bool,
+    pub on_glyph: bool,
+    pub create_door: bool,
+    pub sleep_spell: bool,
+    pub sleep_spell_ii: bool,
+    pub crush_spell: bool,
+    pub slow_spell: bool,
+    pub confuse_spell: bool,
+    pub fear_mon_spell: bool,
+}
+impl<'a> ThreatMemory<'a> {
+    fn read(state: &'a BorgState) -> Self {
+        let t = &state.traits;
+        Self {
+            state,
+            temporary: &state.borg.temp,
+            clock: &state.borg.time,
+            antibounce_count: state.borg.antibounce_count,
+            nearby_unique: state.borg.near.unique,
+            morgoth_position: state.borg.morgoth_position,
+            simulation: Simulation {
+                attacking: t.attacking,
+                on_glyph: t.on_glyph,
+                create_door: t.create_door,
+                sleep_spell: t.sleep_spell,
+                sleep_spell_ii: t.sleep_spell_ii,
+                crush_spell: t.crush_spell,
+                slow_spell: t.slow_spell,
+                confuse_spell: t.confuse_spell,
+                fear_mon_spell: t.fear_mon_spell,
+            },
+        }
+    }
+    pub fn regional_fear(&self, y: i32, x: i32) -> u16 {
+        self.state.danger.fear_region[(y / 11) as usize][(x / 11) as usize]
+    }
+    pub fn monster_fear(&self, y: i32, x: i32) -> u16 {
+        self.state.danger.fear_monsters[y as usize][x as usize]
+    }
+    pub fn teleport_ignored(&self) -> &[i32] {
+        &self.state.fight_attack.tp_other_index[..self.state.fight_attack.tp_other_n as usize]
+    }
+    pub fn glyphs(&self) -> impl Iterator<Item = (i32, i32)> + '_ {
+        (0..self.state.glyph.track.num as usize).map(|i| self.state.glyph.track.at(i))
+    }
+    /// Preserve native slot order and the `nxt` bound, including holes.
+    pub fn monster_slots(&self) -> &[BorgKill] {
+        &self.state.kills.kills[..self.state.kills.nxt as usize]
+    }
+}
+pub mod danger;
 pub mod shadow;
 pub use shadow::register;
 

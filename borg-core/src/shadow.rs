@@ -25,6 +25,7 @@ pub struct CautionResult {
 /// the pure wall_like helper; R2 supplies stateful decision adapters.
 pub trait Shadow: Send + Sync {
     fn danger(&self, _state: &BorgState, _input: DangerInput, original: i32) -> i32 { original }
+    fn monster_danger(&self, _state: &BorgState, _input: DangerInput, _slot: i32, original: i32) -> i32 { original }
     fn before_caution(&self, _state: &BorgState) {}
     fn caution(&self, _state: &BorgState, _original: &CautionResult) {}
     fn wall_like(&self, _turn: i32, _borg_turn: i32, _feat: u32, original: bool) -> bool { original }
@@ -57,4 +58,9 @@ pub(crate) fn wall_like(borg_turn: i32, feat: u32, original: bool) -> bool {
 
 pub(crate) fn after_think(state: &BorgState) {
     if let Some(s) = SHADOW.get() { s.after_think(state); }
+}
+
+// borg-reborn-rs (#281): standalone monster estimates share the complete port.
+pub(crate) fn monster_danger(state: &BorgState, input: DangerInput, slot: i32, original: i32) -> i32 {
+    SHADOW.get().map_or(original, |s| s.monster_danger(state,input,slot,original))
 }

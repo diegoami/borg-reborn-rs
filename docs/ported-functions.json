@@ -7,6 +7,76 @@
       "native_function": "wall_like",
       "port_path": "borg-next/src/shadow.rs",
       "port_function": "wall_like"
+    },
+    {
+      "point": "danger.borg_danger",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "aggregate"
+    },
+    {
+      "point": "danger.borg_danger_physical",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_physical",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "physical_estimate"
+    },
+    {
+      "point": "danger.borg_danger_spell",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_spell",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "spell_estimate"
+    },
+    {
+      "point": "danger.borg_danger_one_kill",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "borg_danger_one_kill",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "estimate_monster"
+    },
+    {
+      "point": "danger.pfe_applies",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "pfe_applies",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "pfe_applies"
+    },
+    {
+      "point": "danger.rf",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "rf",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "rf"
+    },
+    {
+      "point": "danger.count_safe_spots",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "count_safe_spots",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "count_safe_spots"
+    },
+    {
+      "point": "danger.sleepable",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "sleepable",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "sleepable"
+    },
+    {
+      "point": "danger.crushable",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "crushable",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "crushable"
+    },
+    {
+      "point": "danger.monster_estimate",
+      "native_path": "borg-rs/src/borg_danger.rs",
+      "native_function": "danger_one_kill",
+      "port_path": "borg-next/src/danger.rs",
+      "port_function": "estimate_monster"
     }
   ]
 }

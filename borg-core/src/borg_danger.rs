@@ -2002,7 +2002,11 @@ pub fn borg_danger_one_kill(
     full_damage: bool,
 ) -> i32 {
     let kill = st.kills.kills[i as usize];
-    danger_one_kill(st, &kill, y, x, c, i, average, full_damage)
+    // borg-reborn-rs (#281): exactly one native evaluation, immutable port.
+    let original = danger_one_kill(st, &kill, y, x, c, i, average, full_damage);
+    crate::shadow::monster_danger(st, crate::shadow::DangerInput {
+        y, x, turns:c, average, full:full_damage,
+    }, i, original)
 }
 
 /// `borg_danger_one_kill()` on a copy of `borg_kills[i]`.
