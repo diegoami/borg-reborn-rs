@@ -27,7 +27,7 @@ This is a task-level experimental POC review, not milestone acceptance.
   regression check, not a population improvement claim.
 - Revised native source: `8b9642d658f1ae059fa9de1049cff1a6fa9480ded5b77fff65b0d5717799e0e8`,
   built at `e900d67013b863d32ddfde8802adb23d622b624f`. Standard no-plan CI
-  controls are retained as D2479–D2481; raw output directories are recorded
+  controls were originally retained as D2479–D2481 (now qualified; see map); raw output directories are recorded
   in their attempts. No missing-death guard was weakened.
 - No new GUI drive, long cohort, recorder change or exact plan-checkpoint
   qualification. Configuration errors still terminate with exit 2; use the
@@ -76,3 +76,27 @@ was performed, and the disabled-plan comparison was not repeated by review.
 The rereview requires reconciliation before the second PR merges, not an
 unreviewed Track P import into this main-targeted POC. The PR remains draft
 for owner testing; no new reviewer is launched and no automatic merge occurs.
+
+
+### Checks after accepted-main synchronization
+
+Accepted main 70b48cc1 (#332 M13) is merged at 7ee2c80b. Only documentation
+and generated archive indexes conflicted; both lineages are retained. Every
+accepted-main dossier remains byte-identical. All six 0030b101 packages and
+four new-source natural-death packages verify through the pinned importer;
+all original records and payloads are retained. The earlier 2455-case legacy
+inventory is unchanged. The 44 new bare-numbered #332 cases are still exactly
+as accepted on main; #331 must qualify them in its own synchronization, not
+expand its frozen inventory or silently overwrite them.
+
+The combined native source is
+49daaed675fabc79b856d01951081ae906ae33bb3b5e0972ca4162d36260c7bb,
+built clean at 7ee2c80b580a. Formatting, Clippy and vendoring pass; workspace
+checks pass 156+4+5, release core passes 325 with four existing ignores.
+All 63 engine checks pass with one environment skip, including seven plan
+checks. Scripts/tools pass 19/78. Original-core smoke matches all three
+references in keys/messages/states. Core and original fixtures plus one
+supplementary race variant retain four natural deaths, reconciled with zero
+missing dossiers. Full qualified paths and raw runs are in the dossier map.
+No new GUI drive, population run, full default-play donor comparison or
+3,000-turn disabled-plan comparison against the M13 core was performed here.

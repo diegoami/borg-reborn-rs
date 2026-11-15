@@ -17,6 +17,13 @@
   newly accepted #332 evidence before enabling its legacy-inventory gate.
   #317/#318 are closed on track-p, awaiting accepted #331 promotion; their
   code is not silently imported here. See PR308-REVIEW-FIXES.md.
+- Accepted main 70b48cc1 (#332 M13) is synchronized; all its dossier
+  bytes remain unchanged. Combined native source 49daaed675fa was built
+  clean at 7ee2c80b; four new-source natural deaths are also qualified and
+  reconciled. The full map retains the supplementary race variant too.
+  Formatting/Clippy/vendor pass, workspace 156+4+5 and release core 325
+  (four ignores) pass; engine 63 (one skip), scripts/tools 19/78 pass.
+  Original smoke matches all three references in keys/messages/states.
 - Draft remains for owner testing; no engine/recorder or gameplay changes
   are made for the evidence recovery, and the guided game remains untouched.
 
@@ -30,7 +37,7 @@
   evidence hashes are preserved. D2476–D2481 were reserved on #318 for
   this delivery's old and revised-source controls. The re-review found that
   concurrent unintegrated task branches had already used those numbers;
-  the later qualified recovery below supersedes this reservation.
+  the qualified recovery above supersedes this reservation.
 - The shipped file is tested by Plan::parse(include_str!(...)) for every
   class/default and level 1–50. The Python grammar approximation is removed;
   native checks load the real file. Canonical lowercase loop-levels is
