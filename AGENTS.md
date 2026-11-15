@@ -106,6 +106,13 @@ reviewed or rewrite/revert main to simulate pre-merge review. The combined
 review and handover identify that historical exception. All new P tasks
 and review fixes follow the gate above.
 
+Pre-rule dependency exception: P1–P3 were already on `main` at `8351f0a3`.
+For those milestones, owner acceptance of the retrospective review #259
+satisfies the P review dependency; a second runtime promotion is unnecessary.
+A reviewer recommendation alone is not owner acceptance. New P work still
+requires the reviewed `track-p` → `main` promotion. This clarification does
+not undo other-track work already authorized before the gate.
+
 ## Choosing the work
 
 **Work happens in tracks** (owner, 2026-11-14). PLAN.md lists them:
