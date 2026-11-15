@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2210-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2600,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "menu",
+    "git_rev": "9f854b458b901ecebffd67bbb04ed34f1f101d14",
+    "git_dirty": "yes",
+    "source_sha256": "13c800b3c890afce7a0b0c48f6f8b5467d1fe756c46acfd4942ddb512e04f591",
+    "binary_sha256": "1c4db59391c621f5bc39f21f7630c8f1081281d9d345c2cc05360e99cdf01872",
+    "borg_txt_sha256": "cfe4510f93a0d362922a88903efb019829e49074b28dbc785838df9c5eb2fb6f",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "9d23adc599744577394f6ecbc0931ea97ca088365a21d4cd85a6c1aff30f50c8"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p13-override",
+      "result_sha256": "5ca46153f25bc3eb0e6554560075d4a478f9f89e9b4fce3b4699d55d1827d10c",
+      "raw_sha256": {
+        "keys.log": "5ca46153f25bc3eb0e6554560075d4a478f9f89e9b4fce3b4699d55d1827d10c",
+        "messages.log": "48e25ffe8fec82b186fb90525f61a787a4f8335742951e63d58eeb79e89afd82",
+        "state.log": "3129474e748a6674db8316806a7de9ec56aefb5e215dbfd5a2473e3f1cf216b5"
+      },
+      "source_commit": "9f854b458b901ecebffd67bbb04ed34f1f101d14",
+      "binary_sha256": "1c4db59391c621f5bc39f21f7630c8f1081281d9d345c2cc05360e99cdf01872"
+    }
+  ],
+  "encounter_family": "start-de1189f89fa89d372c99051656efa0ea8d893f91bbf8198ceee9b15ab2288e5e",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "367143f01be44cb47380e4ef4c0383b0881893aaab7a1c957f882632ae5258f0",
+    "config.txt": "7d85e0412beb1ec3686d0c20b4e55cd7caf770d5ed46c277fb2bf3dfde721784",
+    "depths.json": "fabefbd50e46bcedbf240ad5cac5e6cfc4f06e24f07b14c96e1c33d0f92c2fe7",
+    "params-core.json": "9d23adc599744577394f6ecbc0931ea97ca088365a21d4cd85a6c1aff30f50c8",
+    "summary.json": "73d91b0c45bb52609423a88763285a0631040b56ccd653df8c5bb6b22b43216c"
+  },
+  "investigation": null,
+  "issue": null
+}

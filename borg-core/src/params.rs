@@ -1,6 +1,6 @@
 //! borg-reborn-rs (#219): calibration of the vendored core.
 //!
-//! Source locations: caution at 726e04fa; danger/escape at 30ab9d66 (before hooks).
+//! Source locations: caution at 726e04fa; danger/escape/recovery at 30ab9d66 (before hooks).
 //! Defaults retain the original integer operations and RNG calls.
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -232,7 +232,7 @@ parameters! {
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1223", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1514", "Number of Borg turns of danger evaluated at the current grid."),
     caution_recall_rest_turns => (500, "turns", 1, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
-    // borg-reborn-rs (#220): source lines in danger/escape at 30ab9d66.
+    // borg-reborn-rs (#220): source lines in danger/escape/recovery at 30ab9d66.
     danger_monblow_hurt_fear => (400, "danger", 0, 5000, "borg_danger.rs:208", "Additional melee danger for MONBLOW_HURT (n += 400;)."),
     danger_monblow_hurt_hit_power => (60, "hit_power", 0, 1000, "borg_danger.rs:210", "Legacy hit-power estimate used for MONBLOW_HURT in partial melee danger."),
     danger_monblow_poison_hit_power => (5, "hit_power", 0, 1000, "borg_danger.rs:218", "Legacy hit-power estimate used for MONBLOW_POISON in partial melee danger."),
@@ -599,6 +599,44 @@ parameters! {
     danger_rsf_lash_damage => (100, "danger", 0, 5000, "borg_danger.rs:800", "Fixed danger estimate for a lash in reach."),
     danger_rsf_spit_damage => (100, "danger", 0, 5000, "borg_danger.rs:806", "Fixed danger estimate for spit in reach."),
     danger_pfe_melee_divisor => (2, "divisor", 1, 1000, "borg_danger.rs:212", "Divides melee damage plus fear when the legacy protection-from-evil approximation applies."),
+    // borg-reborn-rs (#221): recovery source lines at 30ab9d66.
+    recover_danger_horizon => (1, "turns", 1, 10, "borg_recover.rs:98", "Sets danger horizon, in turns, in the existing recovery rule."),
+    recover_danger_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:101", "Sets danger divisor, in divisor, in the existing recovery rule."),
+    recover_hurt_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:111", "Sets hurt hp divisor, in divisor, in the existing recovery rule."),
+    recover_hurt_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:112", "Sets hurt chance bonus, in percent, in the existing recovery rule."),
+    recover_critical_hp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:116", "Sets critical hp divisor, in divisor, in the existing recovery rule."),
+    recover_critical_chance_bonus => (10, "percent", 0, 100, "borg_recover.rs:117", "Sets critical chance bonus, in percent, in the existing recovery rule."),
+    recover_cheap_stun_chance => (75, "percent", 0, 100, "borg_recover.rs:124", "Sets cheap stun chance, in percent, in the existing recovery rule."),
+    recover_cheap_cut_chance => (75, "percent", 0, 100, "borg_recover.rs:160", "Sets cheap cut chance, in percent, in the existing recovery rule."),
+    recover_cheap_poison_chance => (75, "percent", 0, 100, "borg_recover.rs:173", "Sets cheap poison chance, in percent, in the existing recovery rule."),
+    recover_cheap_fear_chance => (75, "percent", 0, 100, "borg_recover.rs:186", "Sets cheap fear chance, in percent, in the existing recovery rule."),
+    recover_cheap_hunger_chance => (75, "percent", 0, 100, "borg_recover.rs:199", "Sets cheap hunger chance, in percent, in the existing recovery rule."),
+    recover_cheap_image_chance => (75, "percent", 0, 100, "borg_recover.rs:207", "Sets cheap image chance, in percent, in the existing recovery rule."),
+    recover_cheap_heal_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:214", "Sets cheap heal hp divisor, in divisor, in the existing recovery rule."),
+    recover_cheap_heal_chance => (75, "percent", 0, 100, "borg_recover.rs:215", "Sets cheap heal chance, in percent, in the existing recovery rule."),
+    recover_cheap_heal_sp_divisor => (4, "divisor", 1, 1000, "borg_recover.rs:217", "Sets cheap heal sp divisor, in divisor, in the existing recovery rule."),
+    recover_unholy_min_hp => (90, "hp", 0, 10000, "borg_recover.rs:237", "Sets unholy min hp, in hp, in the existing recovery rule."),
+    recover_costly_stun_chance => (25, "percent", 0, 100, "borg_recover.rs:266", "Sets costly stun chance, in percent, in the existing recovery rule."),
+    recover_costly_heavy_stun_chance => (95, "percent", 0, 100, "borg_recover.rs:279", "Sets costly heavy stun chance, in percent, in the existing recovery rule."),
+    recover_costly_cut_chance => (25, "percent", 0, 100, "borg_recover.rs:292", "Sets costly cut chance, in percent, in the existing recovery rule."),
+    recover_critical_ccw_hp => (10, "hp", 0, 10000, "borg_recover.rs:298", "Sets critical ccw hp, in hp, in the existing recovery rule."),
+    recover_costly_poison_chance => (25, "percent", 0, 100, "borg_recover.rs:305", "Sets costly poison chance, in percent, in the existing recovery rule."),
+    recover_costly_blind_chance => (25, "percent", 0, 100, "borg_recover.rs:321", "Sets costly blind chance, in percent, in the existing recovery rule."),
+    recover_costly_confusion_chance => (25, "percent", 0, 100, "borg_recover.rs:336", "Sets costly confusion chance, in percent, in the existing recovery rule."),
+    recover_costly_fear_chance => (25, "percent", 0, 100, "borg_recover.rs:350", "Sets costly fear chance, in percent, in the existing recovery rule."),
+    recover_costly_hunger_chance => (25, "percent", 0, 100, "borg_recover.rs:362", "Sets costly hunger chance, in percent, in the existing recovery rule."),
+    recover_costly_heal_hp_divisor => (2, "divisor", 1, 1000, "borg_recover.rs:370", "Sets costly heal hp divisor, in divisor, in the existing recovery rule."),
+    recover_costly_heal_chance => (25, "percent", 0, 100, "borg_recover.rs:371", "Sets costly heal chance, in percent, in the existing recovery rule."),
+    recover_rest_high_depth => (85, "depth", 0, 127, "borg_recover.rs:418", "Sets rest high depth, in depth, in the existing recovery rule."),
+    recover_rest_high_sp_tenths => (7, "tenths", 0, 10, "borg_recover.rs:418", "Sets rest high sp tenths, in tenths, in the existing recovery rule."),
+    recover_rest_sp_tenths => (6, "tenths", 0, 10, "borg_recover.rs:418", "Sets rest sp tenths, in tenths, in the existing recovery rule."),
+    recover_mana_rest_max_level => (40, "level", 1, 51, "borg_recover.rs:461", "Sets mana rest max level, in level, in the existing recovery rule."),
+    recover_mana_rest_deep_depth => (85, "depth", 0, 127, "borg_recover.rs:461", "Sets mana rest deep depth, in depth, in the existing recovery rule."),
+    recover_mana_rest_sp_tenths => (8, "tenths", 0, 10, "borg_recover.rs:462", "Sets mana rest sp tenths, in tenths, in the existing recovery rule."),
+    recover_mana_rest_danger_divisor => (10, "divisor", 1, 1000, "borg_recover.rs:463", "Sets mana rest danger divisor, in divisor, in the existing recovery rule."),
+    recover_mana_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:469", "Sets mana rest min food, in count, in the existing recovery rule."),
+    recover_munchkin_rest_min_food => (2, "count", 0, 1000, "borg_recover.rs:492", "Sets munchkin rest min food, in count, in the existing recovery rule."),
+    recover_rod_rest_turns => (100, "turns", 1, 9999, "borg_recover.rs:404", "Number of rest turns queued while waiting for a healing/recall rod to recharge."),
 }
 
 #[derive(Serialize)]
@@ -768,6 +806,23 @@ mod tests {
         assert_eq!((cap.value, cap.origin), (1, "environment"));
         let phase = &settings[Param::escape_phase_tolerance as usize];
         assert_eq!((phase.value, phase.origin), (12, "borg.txt"));
+    }
+
+    #[test]
+    fn recovery_configuration_bounds_and_precedence() {
+        for text in [
+            "borg_param_recover_danger_divisor = 0",
+            "borg_param_recover_danger_horizon = 0",
+            "borg_param_recover_rod_rest_turns = 0",
+            "borg_param_recover_cheap_poison_chance = 101",
+            "borg_param_recover_rest_sp_tenths = 11",
+        ] {
+            assert!(parse(text, &BTreeMap::new(), SPECS).is_err(), "{text}");
+        }
+        let env = BTreeMap::from([("RECOVER_DANGER_DIVISOR".into(), "8".into())]);
+        let values = parse("borg_param_recover_danger_divisor = 2", &env, SPECS).unwrap();
+        let setting = &values[Param::recover_danger_divisor as usize];
+        assert_eq!((setting.value, setting.origin), (8, "environment"));
     }
 
     #[test]
