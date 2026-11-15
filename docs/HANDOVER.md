@@ -36,7 +36,8 @@
 ## 2026-11-15: track R started, R1.1 (#223)
 
 - Branch `task/R1.1-typed-view` starts from main `6a2b30cf`, independently
-  of track P's open P1.4 PR. R1 is the active milestone; #224 is next.
+  of track P's open P1.4 PR. Main's errand fixes through `e514e8b1`
+  were subsequently merged cleanly. R1 is active; #224 is next.
 - Added `borg-next`, with all 265 native traits named and grouped, plus
   borrowed goals, status, entity records and checked cave access. Each
   trait field cites its `BI_*` index. Entity IDs, holes, coordinates and
