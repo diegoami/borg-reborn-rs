@@ -3,6 +3,18 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1 moving-reference refresh (#262)
+
+- Separate source-only PR on `task/R1-source-refresh`, stacked on #261;
+  target `feature/track-r`. Updates four reference pins and read dates,
+  copied documentation/catalogues, eleven unassessed better-borg-c death
+  dossiers, and the generated death index. KNOWLEDGE.md records what was
+  read and the limits of those death reports.
+- Engine pin, borg-core/PIN and runtime inputs are unchanged. Runtime hash
+  remains `aabe60c9cdbc`; this does not adopt borg-rs v13 policy.
+- Refresh tooling tests pass. Three real native contract cells pass against
+  the new zoo pin `7109a026`, with no population run. CI is the merge gate.
+
 ## 2026-11-15: R1.2 shadow harness (#224), native validation complete
 
 - Stacked on #248; target is `feature/track-r`. No redesign merges to main.
