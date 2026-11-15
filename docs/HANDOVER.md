@@ -4,6 +4,17 @@
 
 
 
+## 2026-11-15: track P, P2.3 (#242), item-use extraction in progress
+
+- Extracted 19 parameters at 20 sites (1007 entries total). Default full
+  45/45 and ladder parity pass on the pre-integration branch; default
+  expansion reproduces the original source bytes. Rust/Python checks pass.
+- The CCW-stock diagnostic on seed1011 causes no change; the rod-failure
+  diagnostic is pending. Every measured death is retained.
+- Another session's errand-shell fixes landed on main while P1.4 CI ran.
+  Integrating them through the stack and rerunning before final PR gates;
+  the older reports remain evidence for their actual source identities.
+
 ## 2026-11-15: track P, P2.2 (#241), defence parameters
 
 - Added 218 defence settings at 242 sites (988 total): danger/failure
