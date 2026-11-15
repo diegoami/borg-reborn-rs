@@ -2,6 +2,14 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested game-plan language design (#305)
+
+- [GAME-PLAN-LANGUAGE.md](GAME-PLAN-LANGUAGE.md): The owner requested a complete errand-based planning language. The proposal covers syntax/types, yielding execution, priorities/events, scoped atomic runtime settings, stock/loadout and unique tactics, checkpoints and acceptance gates. Track-R capabilities must be accepted; the owner's track-B reference is explicitly unresolved. This is a design-only review, not runtime implementation or acceptance of new contracts.
+- Validation is document/link review and `git diff --check`; examples and
+  schemas are proposed, not executable or tested runtime features. The
+  owner chooses the reviewer and accepts the design. Keep the draft PR
+  open for that review; no implementation milestone is being started.
+
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
 - Combined source15289917 passes full45/45 v12 play parity,295,464 named
