@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: final #292 synchronization validation complete (#298)
+
+- Combined source15289917 passes full45/45 v12 play parity,295,464 named
+  trace rows, original smoke3/3,50 engine tests (one local environment
+  skip), required Rust checks (154+4+5 original/143 core),19/78 Python
+  tests and vendoring. P292-SYNC-VALIDATION.md records exact builds/limits.
+- D2436–D2445 retain the final ten natural deaths; earlier sourcec4a38683
+  deathsD2423–D2432 also reconcile. Nine imported recorder/loop dossiers
+  retain exact source/attempt identities under the explicit ID map.
+- Required CI must pass before integration, then complete the owner-
+  authorized #292 main promotion. #295/#296/#299 remain separate later
+  work on track-p; no experiment or new reviewer is launched.
+
 ## 2026-11-15: complete loop-levels integration in #298
 
 - Main advanced to2bb9b72f (#297) during validation. Preserve its loop-levels
