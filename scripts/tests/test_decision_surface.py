@@ -38,6 +38,16 @@ class DecisionSurfaceTest(unittest.TestCase):
                 self.assertTrue(surface.inspect(code, port=True), code)
         self.assertFalse(surface.inspect('use borg_rs::threat_facts::{param as p, Param};', port=True))
 
+    def test_stateful_reads_use_only_the_borrowed_named_projection(self):
+        self.assertFalse(surface.inspect(
+            'let hp = crate::Read::new(st).character().curhp();', port=True))
+        self.assertTrue(surface.inspect(
+            'let hp = crate::View::new(st).character.curhp;', port=True))
+        for code in ['crate::Read::new(st).0.borg.trait_[0]',
+                     'crate::Read::new(st).0.borg.tr(0)',
+                     'crate::engine::game_turn()']:
+            self.assertTrue(surface.inspect(code, port=True), code)
+
     def test_dispatch_exception_is_narrow(self):
         root = Path(__file__).resolve().parents[2]
         text = (root / 'borg-next/src/stateful/mod.rs').read_text()

@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: borrowed stateful access #363 (stacked, runtime pending)
+
+- Stacked on #357/#343; do not merge this task before the M13 carry baseline
+  passes and merges. Work targets feature/track-r only.
+- One declaration now generates immutable trait snapshots and borrowed Read
+  groups/scalar methods. Read and every group contain one &BorgState; their
+  constructors only wrap that pointer and perform no trait reads/traversal.
+  Danger keeps its one-assessment immutable View. Stateful policy replaces
+  373 constructors in place, retaining deliberate scalar temporaries and
+  the existing mana-write adapter. No expression crosses an effect.
+- Mechanical source audit R363-SOURCE-AUDIT.json verifies exact policy-code
+  token/ordering equality after only normalizing projection syntax. All
+  native values and new lazy values are tested from the same declarations;
+  freshness, empty-memory construction, one-pointer size and compile-fail
+  borrow-across-mutation checks pass. The stateful source gate permits Read
+  and now rejects eager View access, alongside existing bypass restrictions.
+- Local checks: 177 workspace tests and one compile-fail doctest; feature
+  Clippy; 34 source-tool tests. Native/core/vendor and runtime checks follow.
+  No speed, runtime parity, or completed-task claim yet.
+- Still required after #343 baseline: exact new native build and donor
+  off/check/switch smoke/full comparisons, per-entry gates, nested/effect-once
+  checks and archive import/reconciliation of every natural death. Carry
+  future #343 validation docs/coverage fixture changes before freezing this
+  build. Then green CI and merge into feature/track-r. Next #364/#365; final
+  combined R3 review checkpoint #366, owner-selected reviewer only.
+
 ## 2026-11-15: R3 M13 carry #343 (validation in progress)
 
 - Recovery #353 passed all CI and merged into feature/track-r at a68959c5;
