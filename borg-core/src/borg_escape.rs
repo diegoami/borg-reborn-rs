@@ -656,7 +656,7 @@ fn near_unique_1_8(st: &BorgState) -> bool {
 /// usable short escape when walking is trapped or the next round is lethal.
 /// The caller supplies the existing danger/surrounding assessment.
 pub(crate) fn borg_escape_trapped(st: &mut BorgState) -> bool {
-    if st.borg.tr(BI_CDEPTH) == 0 || !st.borg.goal.fleeing {
+    if st.borg.tr(BI_CDEPTH) == 0 || !st.borg.goal.fleeing || st.borg.morgoth_position {
         return false;
     }
     if borg_escape_stair(st) {

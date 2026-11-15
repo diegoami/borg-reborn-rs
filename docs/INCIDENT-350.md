@@ -13,8 +13,8 @@ and [issue350](https://github.com/diegoami/borg-reborn-rs/issues/350).
   helper path. It must not spend turns collecting copper before caution.
 - GOAL_FLEE rejects a known occupied next step and selects an available
   detour. It never implicitly authorizes a bump attack through that square.
-- Known CLW/CSW/CCW are considered deterministically at useful wound sizes
-  and lethal danger, including while fleeing. The heal's benefit is capped
+- While fleeing or facing lethal danger, known CLW/CSW/CCW are considered
+  deterministically at useful wound sizes. The heal's benefit is capped
   at missing HP before testing whether it buys a survivable next round.
 - APHASE's conservative preparation count is not a complete escape
   capability test. In this case Phase Door was legal/affordable at5% fail,
@@ -23,6 +23,7 @@ and [issue350](https://github.com/diegoami/borg-reborn-rs/issues/350).
   next-round danger may try a short escape before further combat. Unknown
   landing squares alone cannot forbid this fallback. It uses the existing
   emergency spell-failure bound and honors arena/anti-teleport restrictions.
+  It does not override the existing Morgoth-position hold policy.
 
 The last rule is a targeted policy hypothesis supported by the recorded
 case, not a calibrated survival guarantee or a population improvement.

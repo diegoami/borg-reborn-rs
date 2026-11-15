@@ -449,6 +449,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // including while fleeing. At useful wound sizes do not randomly skip
     // them, and cap their benefit at max HP when checking the next round.
     if danger > 0
+        && (st.borg.goal.fleeing || danger >= st.borg.tr(BI_CURHP))
         && (pct_down >= p(Param::caution_clw_min_loss)
             || danger >= st.borg.tr(BI_CURHP))
     {
