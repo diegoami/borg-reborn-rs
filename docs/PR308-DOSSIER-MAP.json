@@ -1,0 +1,107 @@
+{
+  "reason": "Historical numeric rename followed by content-qualified preservation after concurrent branches reused the provisional IDs",
+  "reservation": "D2476-D2481",
+  "cases": [
+    {
+      "old": "D2446-rust-seed1011",
+      "new": "D2476-rust-seed1011",
+      "encounter_family": "start-a0f33277d34246669ab59ffba798d5f4f0496bb65935f9f8e5fe24385950cf80",
+      "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    },
+    {
+      "old": "D2447-rust-seed102",
+      "new": "D2477-rust-seed102",
+      "encounter_family": "start-59fa4d0349b5c76410bfe7cfbab9b60df641238fc4770b75d4be39eb6ca87e8d",
+      "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    },
+    {
+      "old": "D2448-rust-seed1020",
+      "new": "D2478-rust-seed1020",
+      "encounter_family": "start-0c6eff1289da249946cc58e1ad740276c57afbaa3142ef70304b7722878cbe96",
+      "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
+      "source_sha256": "3b5503a881fec40e8a3ca0812063f1822935a613d9a2a53898d8adf2d6be3c81"
+    }
+  ],
+  "reviewed_head": "19f2025bb7e2f0a41481e20bc3a072897170ca28",
+  "scope": "Only POC cases added at the reviewed head; never rewrite other branches by numeric ID alone.",
+  "reservation_status": "Historical only: numeric reservation did not cover concurrent unintegrated task branches and is not a global uniqueness guarantee.",
+  "qualified_import": {
+    "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+    "tool_revision": "69b99484e1e264ada53a0d7d4cfe7b1f73dc9576",
+    "tool_path": "tools/import-deaths.py",
+    "implementation_imported": false,
+    "cases": [
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2476-rust-seed1011",
+        "qualified_path": "docs/deaths/D0000-q2ea4f3968d874a9c14a7b715951dd07b1d4b93a7d5e367d38a35cc9eebea28f2",
+        "original_record_sha256": "0f1acfca9c59b96bc6abfdc4655ff62a92d66ecbf94efbf45ad1ab95fae87790"
+      },
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2477-rust-seed102",
+        "qualified_path": "docs/deaths/D0000-q17843b5e373eb409b40a632fb81a0ca10b48d3f083a6514d41cb02e0f9bf3f2a",
+        "original_record_sha256": "650ec5757b5f7ed765f13cb5113dcb3cbdd1172b93fdfa43fae4fc19a5944bcf"
+      },
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2478-rust-seed1020",
+        "qualified_path": "docs/deaths/D0000-q8ea82d189dd172f3345dbc5c7d6cfdd9676dcdce52343ebbf107269cea0e582b",
+        "original_record_sha256": "adec1cb5830ba88a1dd18f34c9dcb5bc1b885e378e00047c4b39d4e5db9465e3"
+      },
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2479-rust-seed1011",
+        "qualified_path": "docs/deaths/D0000-qf1b43578f011db8c91f4700522a7b3cf15bb711b50d0bdb821450ef8f5ecd786",
+        "original_record_sha256": "3954a3d09e16db6b1159507622833806f3e86dcf72640662b7f588ef2b6bd263"
+      },
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2480-rust-seed102",
+        "qualified_path": "docs/deaths/D0000-q4f80bd2a240883ff4dad6eba966a98b89eabef4bee138ea06496fa1e6644fa92",
+        "original_record_sha256": "a2f2b5387636cb4747c1c14b7439d1459fbefd004c1ce657dd54438dc1551f8c"
+      },
+      {
+        "source_revision": "0030b1013ad70446f23db12feac361852f5850dd",
+        "source_path": "docs/deaths/D2481-rust-seed1020",
+        "qualified_path": "docs/deaths/D0000-q644c690c4ff80c21846523da19fbea21e3024a5113948fccab7c6e8a436d8acf",
+        "original_record_sha256": "864aa6e4e44495f6a66a8418949a369ed7af270a7270fb4749e8133e5cd25e04"
+      }
+    ]
+  },
+  "post_main_sync_controls": {
+    "build_revision": "7ee2c80b580a71af4b99808333f791baabd7795f",
+    "source_sha256": "49daaed675fabc79b856d01951081ae906ae33bb3b5e0972ca4162d36260c7bb",
+    "cases": [
+      {
+        "source_directory": "/tmp/pr308-rereview-control-deaths/D0001-rust-seed1011",
+        "qualified_path": "docs/deaths/D0000-q3e5b709b10740364f868ed7824cf7b8714fbc27d244e086ce13f5c7cee5076d5",
+        "original_record_sha256": "55e1e5ec619711aafa914100c013dc57a6e276e1b5c345ffbaea3eb70f56e8cb"
+      },
+      {
+        "source_directory": "/tmp/pr308-rereview-control-deaths/D0002-rust-seed102",
+        "qualified_path": "docs/deaths/D0000-q8965cc41cac23a16329c8611848994affba9e8f88621225af47f5aa26b80b574",
+        "original_record_sha256": "8c7bd45e98d8e3b1ef42a9efeade03ac54ea965702f2a01e8a2f8096be99255b"
+      },
+      {
+        "source_directory": "/tmp/pr308-rereview-control-deaths/D0003-rust-seed1020",
+        "qualified_path": "docs/deaths/D0000-q23a8c3cd11d7892f786ed3c2cd03dfaab828efb736a29f67b107f6822c96936e",
+        "original_record_sha256": "3b523e40bfa238c3a612d0a69e79874dc574595b4b85438e844ef15e81709d06"
+      },
+      {
+        "source_directory": "/tmp/pr308-rereview-control-deaths/D0004-rust-seed102",
+        "qualified_path": "docs/deaths/D0000-q02898bea397aa479910474700ad8716dae2861c09380b208492cc75d6805384c",
+        "original_record_sha256": "85334ca77277ae67b32b6fc8821f31a3fd68cd1ef0cc308c680e679085a84ede"
+      }
+    ],
+    "runs": [
+      "/tmp/pr308-rereview-control-core",
+      "/tmp/pr308-rereview-control-smoke",
+      "/tmp/pr308-rereview-control-rerun",
+      "/tmp/pr308-rereview-smoke"
+    ],
+    "note": "Core CI death fixture, original rerun-source fixture, full original smoke suite; the earlier supplementary seed102/race1/class1 control is also retained rather than discarded."
+  }
+}

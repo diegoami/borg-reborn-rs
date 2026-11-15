@@ -75,6 +75,14 @@ class BorgFileConfigTest(unittest.TestCase):
             'BORG_CORE': 'borg-rs', 'BORG_STOPSCARED': 'off', 'BORG_ERRAND': 'none',
         })
         self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('cannot read borg.txt', result.stderr)
+        plan = self.root / 'explicit-plan.txt'
+        plan.write_text('[default]\n  level <= 50\n    loop-levels 0 1\n')
+        _, result = self.launch('env-plan-parameters', content, {
+            'BORG_CORE': 'borg-rs', 'BORG_STOPSCARED': 'off', 'BORG_ERRAND': 'none',
+            'BORG_ERRANDS_PLAN': str(plan),
+        })
+        self.assertEqual(result.returncode, 2, result.stderr)
         self.assertIn('core parameters:', result.stderr)
         self.assertIn('cannot read borg.txt', result.stderr)
 
