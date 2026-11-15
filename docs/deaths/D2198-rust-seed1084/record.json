@@ -1,0 +1,56 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2198-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Blackguard",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 3,
+    "level": 2,
+    "turn": 22908,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "menu",
+    "git_rev": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+    "git_dirty": "yes",
+    "source_sha256": "8583fd5fe58f23bdf79b15eb7f0af6229275c51c225c9c9e6dd110dc9d0ea052",
+    "binary_sha256": "144a8f883559c71fa89f673f401b274917ff1153d3a33bd714c3910ab6b6cdac",
+    "borg_txt_sha256": "488eec53ca3f58c9634d0b7f5b23560cf50aa35e20e7a1478af039c1cb03c762",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "50830f8954577bbf12ca7fbf6437bcd08b37f52b1ddd9aa07e2e4f88ca55b639"
+  },
+  "decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p12-final-full/full-8-blackguard-4",
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "source_commit": "30ab9d664403ecf4b9e43317c2aacd33f979d946",
+      "binary_sha256": "144a8f883559c71fa89f673f401b274917ff1153d3a33bd714c3910ab6b6cdac"
+    }
+  ],
+  "encounter_family": "start-21aaf3cb4502598f8cda7345797c85d982923c9cfbe20c79603517a8d8c523c5",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "ce02ea67cb477d4632c953b12443c5ffb54f1e13518fc45642de58fc6a69687b",
+    "config.txt": "444eb3a918df20e772af0bc5cc71386a1462a0f8c518024553b56cb9bcd7bd34",
+    "depths.json": "b94aa168600bb956fb76da2be5a06f736ddeaee48db5da389a844adb1b420680",
+    "params-core.json": "50830f8954577bbf12ca7fbf6437bcd08b37f52b1ddd9aa07e2e4f88ca55b639",
+    "summary.json": "088f5f8b7166ffd2a989b3f5db30644a72ce78b5ccb3c9ba843782debdfc8108"
+  },
+  "investigation": null,
+  "issue": null
+}
