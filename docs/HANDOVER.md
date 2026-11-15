@@ -25,6 +25,8 @@
   D2407–D2416 preserve ten corrected-build deaths. Both temporary
   registries reconcile. Explicit historical/CI export destinations retain
   the existing missing-death guard; no canonical migration/write occurs.
+- Sweep handoff/examples now pin2ec1f250 (same corrected sourcecb48d943),
+  with pinned catalogue validation and no population dispatch.
 - Required CI remains the task integration gate. The owner authorized
   #260's earlier scope; this later task stays on track-p for its separate
   review/promotion decision. No population experiment was launched.

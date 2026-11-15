@@ -66,3 +66,9 @@ Vendoring check passes. Required GitHub CI remains the integration gate.
 No population experiment was launched; no improvement claim is made.
 This is post-#260 work: it integrates into track-p after CI and remains
 subject to a separate owner milestone/promotion decision.
+
+The owner sweep handoff/examples now pin `2ec1f2507ec81f375a7967b2876597865458aa76`,
+which contains the corrected implementation and this validation evidence.
+The pinned zoo catalogue validates the unchanged exploratory/confirmation
+protocol and updated specimen references; owner review/dispatch still gates
+any population run. Historical P3.2 evidence retains its original pin.
