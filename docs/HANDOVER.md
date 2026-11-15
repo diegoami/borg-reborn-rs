@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: budget validation complete (#296)
+
+- Combined sourceaed27276 passes full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3/fixture,55 engine tests (one skip),156+4+5
+  original/143 core tests (one ignored), Clippy/formatting and19/78 Python
+  tests. Six paired valid-budget cases match #295 byte for byte.
+- Preserve ten natural deaths atD2466–D2475; reconciliation passes with
+  actual build identity. P296-VALIDATION.md records intentional invalid-
+  input changes, finite-budget semantics and infrastructure/test retries.
+- Integrate into track-p after required CI, then stop for separate owner
+  review/promotion with #295/#299. The #292 authorization excludes this.
+
+## 2026-11-15: strict errand budgets (#296), validation pending
+
+- Stacked on #295. Invalid configured budgets now exit2 with source/value
+  diagnostics instead of silently becoming unbounded. Accept integer
+  0..i64::MAX; absent/0/exact none mean no bound. Negative, empty,
+  non-integer, overflowing and non-UTF-8 budgets are rejected.
+- Preserve positive budgets and original-core/inactive-errand isolation.
+  Actual native tests exercise finite stopping, invalid values and the
+  ignored inactive contexts. Interactive shell parsing is unchanged.
+- The first native finite-budget assertion used the wrong zoo outcome:
+  the pinned adapter maps runner borg_stopped to stalled. The actual
+  budget stopped at turn11. Assert both layers and the native stop reason;
+  no product or adapter change is needed.
+- This task is excluded from the already-authorized #292 promotion.
+  Required checks/gameplay/evidence validation and task CI are pending.
+  No experiment or external repository write is authorized here.
+
 ## 2026-11-15: stopscared validation complete (#295)
 
 - Source27d7f453 passes full45/45 v12 play parity,295,464 classified rows,
