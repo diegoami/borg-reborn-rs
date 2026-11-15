@@ -89,15 +89,14 @@ not undo other-track work already authorized before the gate.
     reads. Every engine read goes through the engine boundary and is listed
     there.
 12. **Every natural death of a measured run is recorded** as a dossier
-    under `docs/deaths/` (borg-rs format; the decision trace from M3), with
-    the actual source, build, implementation, profile and seed. The
-    canonical registry lives in **[borg-cemetery](https://github.com/diegoami/borg-cemetery)**;
-    this repository writes and reconciles it through the
-    `BORG_DEATH_RECORDS_DIR` seam (`docs/deaths/POINTER.md`), and the rule
-    binds in both homes. A measured
+    in `borg-cemetery/deaths/` by default (native dossier format; the decision trace from M3), with
+    the actual source, build, implementation, profile and seed. A measured
     run is one played through `harness/run.sh`: a suite, a single run, CI
     or the zoo's cells. This applies from the first game played (T1.2, #5),
-    whichever arm died. Games watched with `watch-borg.sh` are not measured
+    whichever arm died. The toolkit is owned by borg-cemetery; local command
+    paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
+    isolated validation or historical registries. Existing `docs/deaths/` stays
+    retained as the historical validation baseline. Games watched with `watch-borg.sh` are not measured
     runs and are not recorded (owner, 2026-11-10, E review finding 3): they
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays

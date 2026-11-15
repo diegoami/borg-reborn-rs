@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -45,6 +46,7 @@ jobs:
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
@@ -175,6 +177,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev
       - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
