@@ -60,6 +60,8 @@ constant   = "const", identifier, ":", type, "=", expr, ";" ;
 plan       = "plan", identifier, block ;
 block      = "{", { statement }, "}" ;
 statement  = "let", identifier, ":", type, "=", expr, ";"
+           | "var", identifier, ":", type, "=", expr, ";"
+           | "update", identifier, "=", expr, ";"
            | "set", parameter, "=", expr, ";"
            | "unset", parameter, ";"
            | "run", call, [ "within", expr ], [ "as", identifier ], ";"
@@ -91,6 +93,11 @@ quantities use catalogue constructors such as `game_turns(5000)`, `count(3)`
 and `hp_fraction(0.5)`. Arithmetic overflow/division by zero is an error. Unary
 operators bind before multiply/divide, then add/subtract, comparisons, `and`,
 `or`; boolean operations short-circuit. Comparison chaining is rejected.
+`let` bindings are immutable snapshots; `var` declares typed mutable plan state
+and `update` changes that binding at a safe control transition. Such updates
+are serialized with frames, are visible in the recorded event order, and cannot
+write engine state. Pending local updates roll back with a rejected parameter
+transaction. Event data remains immutable; lexical variable lookup is explicit.
 Functions are pure, catalogue-defined queries; no user recursion or unbounded
 collections. Unknown knowledge is `Unknown`, not false or zero: comparisons
 propagate it, and only a known true condition fires. `known(x)` and explicit
