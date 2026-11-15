@@ -3,6 +3,22 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.4 power valuation complete
+
+- 727 parameters (1734 total) cover activation values, equipment scores,
+  speed/armour tiers, inventory quantities/weights and readiness rewards.
+  Retained mechanics and the unchanged dynamic-formula switch are declared.
+- Full45/45,295,464 named rows, current-shell ladder, original-core smoke
+  and death fixture pass. A zero unidentified-weapon bonus changes queued
+  keys at5656 on Human Warrior seed1000; no improvement claim.
+- Default expansion reproduces original bytes with only necessary i64
+  parameter promotions removed.137 core tests, required Rust checks,
+  17 scripts/70 tools tests and vendoring pass. D2334–D2344 retain eleven
+  natural deaths, fully reconciled (P2.4-VALIDATION.md).
+- P1 review snapshot is #251, unmerged. P3 #244 tests integer zoo profiles
+  and native diagnostics; #245 provides the owner's sweep prompt. Owner
+  authorized continuation; no reviewer or population experiment launched.
+
 ## 2026-11-15: P2.3 item-use validation complete
 
 - 19 parameters/20 sites,1007 total; default expansion restores original
@@ -74,6 +90,16 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track P, P2.4 (#243), power extraction in progress
+
+- Audited and extracted 727 equipment/inventory/activation valuation
+  parameters (1734 total). Numeric game encodings and mechanics are retained;
+  default expansion restores the original source bytes after removing the
+  import and necessary i64 parameter promotions. No vendored formatting.
+- Release unit tests and Clippy pass; game validation follows integration
+  of the concurrent main errand-shell fixes through the parent stack.
+  A boundary test rejects zero divisors and out-of-storage-range timers.
 
 ## 2026-11-15: track P, P2.3 (#242), item-use extraction in progress
 
