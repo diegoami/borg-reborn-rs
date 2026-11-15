@@ -18,10 +18,10 @@
     "impl": "rust",
     "seed": 1020,
     "flags": "menu",
-    "git_rev": "e159298f49d21cecf42eeae77d143c2dd6ccd749",
+    "git_rev": "a1515c47c20dea74f011796d2c303eb684ce5884",
     "git_dirty": "no",
-    "source_sha256": "8f45f46bc108d9a84e32ffe60b123d635edb2992fd908adf52e37c447b0f517d",
-    "binary_sha256": "ed3a8fa3a961c9c92bc2217b37f8b8f413aa2bc16ca320db908f55e37ccdf4bd",
+    "source_sha256": "15289917658b91656e6bb91993ad8efa29eeff1874fce2ffe9cbe05ce3b2a47f",
+    "binary_sha256": "791ce71d9869dfb56188b8e4bc2f73298b868f2886127a2e1819013cd59bdc7d",
     "borg_txt_sha256": "69f4b6e150d88953f699f42c2c2f87d165952968033e473af739c87706b8795b",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
     "params_core_sha256": null
@@ -36,25 +36,25 @@
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/workspace/work/p295-death-retry",
+      "raw_directory": "/workspace/work/p292-sync-final-death",
       "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
       "raw_sha256": {
         "keys.log": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
         "messages.log": "770bf5c38f86bfd8e484c607be5bf5414a51717034bb475746b249affb7a7386",
         "state.log": "eeb130bc50c09f07e13aaf263ad63812d0217650f86db369e7ade09633c58bce"
       },
-      "source_commit": "e159298f49d21cecf42eeae77d143c2dd6ccd749",
-      "binary_sha256": "ed3a8fa3a961c9c92bc2217b37f8b8f413aa2bc16ca320db908f55e37ccdf4bd"
+      "source_commit": "a1515c47c20dea74f011796d2c303eb684ce5884",
+      "binary_sha256": "791ce71d9869dfb56188b8e4bc2f73298b868f2886127a2e1819013cd59bdc7d"
     }
   ],
-  "encounter_family": "start-453e2379a5c5488240f7aacac9469be8453db90f7868948058f350a4e86f9679",
+  "encounter_family": "start-319fad351bcf6400c392aaaeaff42ab9a114a50ea5d5bbbd50dbc97703e184cc",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "eef164f3b08980a3b58359586a0080b68b26cb59f81b6af20c3c2ee111e373a3",
+    "build.json": "42ca18fa78df237718f993d15d1866a2d025b7292da2f8934c60b00632811736",
     "config.txt": "1fa37ffc3c658ebe4e9eecc8d46130ad55bb330bdef74c306533538ff597d563",
     "depths.json": "5286600f4634a72e92eef1e8151835a442833ba75c828b05da84aa173486b860",
     "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
-    "summary.json": "41f520acf1ec1d680e35f158a18bc8754e019c5e9f4c35d714c69bf870ff2562",
+    "summary.json": "003b5041c0bbf7113bf824fbad22e9a4fe19f85434b35f10e5a586af7bac5fca",
     "trace-tail.jsonl": "2bd09b377f55b5a4622a8908a0c4540197d36477db2169ad26eecca44740692d"
   },
   "investigation": null,

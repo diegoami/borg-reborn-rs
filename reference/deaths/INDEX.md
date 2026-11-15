@@ -2447,5 +2447,15 @@ family start from the same state, so they are not independent.*
 | borg-reborn-rs | [D2433-rust-seed1011](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2433-rust-seed1011) | Elf Mage | a cave spider | 18903 | 1 | 2 | — | unassessed | D2433-rust-seed1011: a cave spider at turn 18903 |
 | borg-reborn-rs | [D2434-rust-seed102](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2434-rust-seed102) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2434-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
 | borg-reborn-rs | [D2435-rust-seed1020](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2435-rust-seed1020) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2435-rust-seed1020: a giant white mouse at turn 8922 |
+| borg-reborn-rs | [D2436-rust-seed1011](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2436-rust-seed1011) | Elf Mage | a cave spider | 18903 | 1 | 2 | — | unassessed | D2436-rust-seed1011: a cave spider at turn 18903 |
+| borg-reborn-rs | [D2437-rust-seed1020](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2437-rust-seed1020) | Elf Druid | a small kobold | 9547 | 1 | 1 | — | unassessed | D2437-rust-seed1020: a small kobold at turn 9547 |
+| borg-reborn-rs | [D2438-rust-seed1021](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2438-rust-seed1021) | Hobbit Druid | Fang, Farmer Maggot's Dog | 3608 | 3 | 1 | — | unassessed | D2438-rust-seed1021: Fang, Farmer Maggot's Dog at turn 3608 |
+| borg-reborn-rs | [D2439-rust-seed1043](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2439-rust-seed1043) | Half-Troll Necromancer | a wild cat | 23423 | 1 | 2 | — | unassessed | D2439-rust-seed1043: a wild cat at turn 23423 |
+| borg-reborn-rs | [D2440-rust-seed1050](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2440-rust-seed1050) | Dwarf Paladin | a grey mold | 24096 | 1 | 2 | — | unassessed | D2440-rust-seed1050: a grey mold at turn 24096 |
+| borg-reborn-rs | [D2441-rust-seed1062](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2441-rust-seed1062) | Dunadan Rogue | a soldier | 49147 | 2 | 3 | — | unassessed | D2441-rust-seed1062: a soldier at turn 49147 |
+| borg-reborn-rs | [D2442-rust-seed1072](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2442-rust-seed1072) | High-Elf Ranger | Fang, Farmer Maggot's Dog | 8475 | 1 | 2 | — | unassessed | D2442-rust-seed1072: Fang, Farmer Maggot's Dog at turn 8475 |
+| borg-reborn-rs | [D2443-rust-seed1084](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2443-rust-seed1084) | Half-Elf Blackguard | a grey mushroom patch | 22908 | 1 | 2 | — | unassessed | D2443-rust-seed1084: a grey mushroom patch at turn 22908 |
+| borg-reborn-rs | [D2444-rust-seed102](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2444-rust-seed102) | Elf Mage | Fang, Farmer Maggot's Dog | 3640 | 1 | 1 | — | unassessed | D2444-rust-seed102: Fang, Farmer Maggot's Dog at turn 3640 |
+| borg-reborn-rs | [D2445-rust-seed1020](https://github.com/diegoami/borg-cemetery/tree/main/deaths/D2445-rust-seed1020) | Elf Druid | a giant white mouse | 8922 | 1 | 2 | — | unassessed | D2445-rust-seed1020: a giant white mouse at turn 8922 |
 
-2440 cases.
+2450 cases.
