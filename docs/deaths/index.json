@@ -1,8 +1,8 @@
 {
   "actions": [],
-  "cases": 2382,
+  "cases": 2384,
   "causes_by_distinct_start": {
-    "Fang, Farmer Maggot's Dog": 131,
+    "Fang, Farmer Maggot's Dog": 132,
     "Grip, Farmer Maggot's Dog": 155,
     "a baby white dragon": 1,
     "a battle-scarred veteran": 28,
@@ -23,7 +23,7 @@
     "a giant white ant": 1,
     "a giant white centipede": 54,
     "a giant white louse": 12,
-    "a giant white mouse": 133,
+    "a giant white mouse": 134,
     "a giant yellow centipede": 24,
     "a green naga": 3,
     "a green worm mass": 2,
@@ -63,8 +63,8 @@
     "poison": 85,
     "starvation": 211
   },
-  "death_process_attempts": 2382,
-  "distinct_starting_conditions": 2379,
+  "death_process_attempts": 2384,
+  "distinct_starting_conditions": 2381,
   "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
   "schema": "borg-rs/death-index@1",
   "versions": {
@@ -116,6 +116,7 @@
     "7913bc84e160e4cb71f746768b6197f11354454d": 4,
     "795a3bfb1c5c9d09ee579fb4ef528a8e747333de": 45,
     "798239ad4644c15efb4309550cd0d8e793002f87": 15,
+    "7ff4b5bee5e4ebb4aafea1b6dc50004382b3cc31": 2,
     "809b8bda3a7e403001a06264c4d5aaecf257a6a7": 32,
     "83f6799f794383f31e57a9f7d7617187020554ef": 46,
     "851a1e23990a41a167598cfc6d6cdd49245e4506": 46,

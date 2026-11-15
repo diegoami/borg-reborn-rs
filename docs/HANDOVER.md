@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested completion of recorder dependency PR #268
+
+- The F17 fix remains consumer CMake integration, with the recorder pin,
+  adapter contents and upstream game unchanged. The owner requested its
+  delivery after confirming this boundary.
+- The latest engine CI had passed the suites and stopped at missing
+  historical validation dossiers. At exact source `0dadea400855`, core
+  seed 1011 repeats D2399; the smoke and rerun-source cases are retained
+  as D2400 (seed 102) and D2401 (seed 1020). The explicit historical
+  registry override preserves the existing CI guard; it was not weakened.
+
 ## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
 
 - The owner explicitly instructed: "ok then merge it and continue with other
