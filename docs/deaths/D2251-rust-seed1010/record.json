@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2251-rust-seed1010",
+  "run_kind": "harness",
+  "character": "Half-Elf Mage",
+  "raw_cause": "poison",
+  "terminal": {
+    "cause": "poison",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 2600,
+    "race_idx": 1,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1010,
+    "flags": "menu",
+    "git_rev": "a45b434e4427100e5695715b7e74d822ac9428b2",
+    "git_dirty": "yes",
+    "source_sha256": "3c52ed347d7711b2ddf22a7b778ba2de847b046e631d248cb4232269b3eee8dc",
+    "binary_sha256": "4af981aeba3c8aec9fd3a52bf573eb4e6e89c1c88daecd6e255a2b5eb1b9ce43",
+    "borg_txt_sha256": "cfe4510f93a0d362922a88903efb019829e49074b28dbc785838df9c5eb2fb6f",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "9d23adc599744577394f6ecbc0931ea97ca088365a21d4cd85a6c1aff30f50c8"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 227
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p14-override",
+      "result_sha256": "5ca46153f25bc3eb0e6554560075d4a478f9f89e9b4fce3b4699d55d1827d10c",
+      "raw_sha256": {
+        "keys.log": "5ca46153f25bc3eb0e6554560075d4a478f9f89e9b4fce3b4699d55d1827d10c",
+        "messages.log": "48e25ffe8fec82b186fb90525f61a787a4f8335742951e63d58eeb79e89afd82",
+        "state.log": "3129474e748a6674db8316806a7de9ec56aefb5e215dbfd5a2473e3f1cf216b5"
+      },
+      "source_commit": "a45b434e4427100e5695715b7e74d822ac9428b2",
+      "binary_sha256": "4af981aeba3c8aec9fd3a52bf573eb4e6e89c1c88daecd6e255a2b5eb1b9ce43"
+    }
+  ],
+  "encounter_family": "start-ca16597101b438df2941f28392786a5634c8820755de76483c9e210e3047f4a3",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7b41b95f4bd7085b5b2470b2516cc78d4f0ea31fb014bb3a6247af16c0116393",
+    "config.txt": "7d85e0412beb1ec3686d0c20b4e55cd7caf770d5ed46c277fb2bf3dfde721784",
+    "depths.json": "fabefbd50e46bcedbf240ad5cac5e6cfc4f06e24f07b14c96e1c33d0f92c2fe7",
+    "params-core.json": "9d23adc599744577394f6ecbc0931ea97ca088365a21d4cd85a6c1aff30f50c8",
+    "summary.json": "4e37333a71799cba1d2042448412013f494f3f5fdf50833804ea98d3b655114c",
+    "trace-core-tail.jsonl": "43ee71f53c7b8870546025b8e64d03021eb1c1f1e92f6179a8968bc33adb6a4e"
+  },
+  "investigation": null,
+  "issue": null
+}

@@ -44,7 +44,7 @@ core's own stop) when it is done.
 | `/trips 1*/1,2,1*@3/...` | trips: `/` between trips, `,` between levels, `*` repeats until the core is prepared for the next trip (or `@N`, from character level N) | never |
 | `/stopscared off\|flee\|N` | setting: stop and hand control back when the one-turn danger where the Borg stands reaches N% of its hit points; `flee` is 100 | |
 | `/explored N\|off` | setting: a level counts as explored at N% of its floor seen (default 90), or, off, only when the core is done with it | |
-| `/stall N\|off` | setting: a level is given up after N game turns with nothing new seen (default 10,000) | |
+| `/stall N\|off` | setting: a level is given up after N game turns with nothing new seen (default 10,000). It also bounds how long the errand tries to move on from one level, at least 10,000 game turns: then a command stops ("no way on") and a ladder lets the core play on until the level changes | |
 | `/stop` | clear the errand | |
 
 Several commands can go on one line, separated by `;`
@@ -60,17 +60,22 @@ ending (scared, aborted, the budget) drops the rest.
   depth, restocking, selling, fixed level or experience) and none holds;
   or `/explored` or `/stall` says so. Between levels the errand walks the
   stairs, after the core's caution.
-- **No level is forced.** A ladder skips a level the core is not prepared
-  for. When the core climbs back up off the plan inside the dungeon (below
-  character level 10 it leaves a level it is not prepared for), a ladder
-  trip goes home and a command stops: "the core rose from DL2, not fit for
-  DL3". The commands do not skip levels, so `/dive 3` with a level-1
-  character stops at the first such rise.
-- **Fear overrides the plan.** If the core wants town, the trip ends and
-  goes home. If it flees a level, it leaves its own way. A level of the
-  plan that it leaves for another dungeon level counts as explored. A trip
-  to town is not fear: the core went to shop or restock, and the errand
-  takes it back.
+- **No level is forced.** The errand never takes the stairs down to a
+  level the core is not prepared for (`borg_prepared` for the level below):
+  a ladder trip goes home instead, a command stops ("the core is not
+  prepared for DL3"). A ladder also skips a planned level the core is not
+  prepared for. When the core climbs back up off the plan inside the
+  dungeon by itself (below character level 10 it leaves a level it is not
+  prepared for), a ladder trip goes home and a command stops ("the core
+  rose from DL2, not fit for DL3"). The commands do not skip levels.
+- **Fear overrides the plan.** If the core flees to town, or climbs out of
+  a depth it is not prepared for, the trip ends and goes home, or a
+  command stops. If it flees a level, it leaves its own way, and a level
+  of the plan it leaves for another dungeon level counts as explored.
+- **A trip to town of the core's own is not fear.** When it goes home to
+  restock, sell, fix its level or experience, or because it misses home,
+  it goes its own way and the plan waits: after town the errand takes it
+  back to the level it was on.
 - **With no errand set and `/stopscared` off, nothing changes.** Every hook
   returns at once.
 
