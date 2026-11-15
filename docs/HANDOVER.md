@@ -28,6 +28,11 @@
   binary, no-errand keys/messages/states match over 3,000 turns each at
   seeds 1010 (warrior), 1001 (mage), 1002 (rogue); all survived. This is
   bounded regression evidence, not a population improvement claim.
+- Standard CI natural-death controls were reproduced at the final native
+  source hash `50de000425b6` and retained in the explicitly selected
+  historical validation registry: D2402 (vendored core, seed 1011), D2403
+  (reborn smoke, seed 102), D2404 (reborn rerun-source, seed 1020). No
+  loop was active in those controls; no missing-death guard was weakened.
 - #206 was closed as superseded; its three evaluation documents are
   preserved by exact-source links in the closing comment and local archive
   `/tmp/pr206-preserved-85429a831316`. #268's consumer dependency fix is a
