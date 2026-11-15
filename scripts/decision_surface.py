@@ -27,6 +27,7 @@ def inspect(text, port=False, dispatch=False):
     fields, methods, macros and every carried dependency.
     """
     code = re.sub(r'\s*::\s*', '::', mask_non_code(text))
+    code = re.sub(r'\buse\s*::', 'use ', code)
     if port and dispatch:
         # Normalize whitespace only for matching the exact adapter/import.
         # Remove just these snippets, then inspect all remaining code.
@@ -36,6 +37,8 @@ def inspect(text, port=False, dispatch=False):
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
+        if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):
+            errors.append('policy must not hide local/core paths in a grouped root import')
         # A parent may expose private root imports and Decision::native.
         # Remove only the audited local escape import and setter call prefix.
         def local_escape(match):
