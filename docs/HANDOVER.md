@@ -2,13 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: owner-requested game-plan language design (#305)
+## 2026-11-15: simplified profile/errand-plan proposal (#305, PR #308)
 
-- [GAME-PLAN-LANGUAGE.md](GAME-PLAN-LANGUAGE.md): The owner requested a complete errand-based planning language. The proposal covers syntax/types, yielding execution, priorities/events, scoped atomic runtime settings, stock/loadout and unique tactics, checkpoints and acceptance gates. Track-R capabilities must be accepted; the owner's track-B reference is explicitly unresolved. This is a design-only review, not runtime implementation or acceptance of new contracts.
-- Validation is document/link review and `git diff --check`; examples and
-  schemas are proposed, not executable or tested runtime features. The
-  owner chooses the reviewer and accepts the design. Keep the draft PR
-  open for that review; no implementation milestone is being started.
+- Owner rejected the full language as overkill. GAME-PLAN-LANGUAGE.md now
+  specifies only errand sequences, bounded chunks, simple repeat-until
+  guards, a town resume policy and town-only named profile changes.
+- A proposed single TOML profile holds parameters and named plans, with
+  optional class overrides. Shared files live in harness/profiles/borg-rs;
+  private files in the game's user/profiles directory. The new README
+  distinguishes these proposed paths from current startup borg.txt and
+  original-core BORG_PROFILE support.
+- Owner requested moving ladder/trips/progression policy into profiles.
+  Keep /ladder as an alias and migrate through a compatibility adapter,
+  preserving class semantics before removing the old executor. Unique
+  tactics and active LLM advice stay separate later work, not a DSL in v1.
+- No imports, mutable variables, general expressions, nested handlers or
+  type-system implementation. Track B remains unresolved. This remains
+  an open design draft; no loader or live switching has been implemented.
+- Validation: document/link/whitespace checks; no gameplay change or tests.
 
 ## 2026-11-15: final #292 synchronization validation complete (#298)
 
