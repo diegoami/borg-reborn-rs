@@ -433,15 +433,8 @@ impl Cave<'_> {
     }
 }
 
-struct Next;
-impl borg_rs::memory::Shadow for Next {}
-
-/// Register the Track R implementation at startup. The trait has no
-/// decision methods in R1.1; R1.2 adds the comparison hooks and modes.
-/// Repeated entry through the engine's command menu is harmless.
-pub fn register() {
-    borg_rs::memory::register_shadow(Box::new(Next));
-}
+pub mod shadow;
+pub use shadow::register;
 
 #[cfg(test)]
 mod tests {

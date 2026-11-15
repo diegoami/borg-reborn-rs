@@ -93,6 +93,16 @@ jobs:
           name: ci-core-death-registry
           path: ${{ runner.temp }}/core-deaths
           if-no-files-found: ignore
+      # R1.2: zero mismatches must include real comparisons, not empty logs.
+      # The pure helper is the only port; unported danger/caution stay native.
+      - run: |
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
+          harness/check-shadow.py harness/out/shadow-check harness/out/shadow-switch
+          harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
+          harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
+          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
           zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")

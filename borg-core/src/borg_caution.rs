@@ -1503,6 +1503,19 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 ///
 /// (See borg-caution.c for the full commentary.)
 pub fn borg_caution(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#224): observe before evaluation and all early returns
+    // without evaluating any policy expression or consuming any key twice.
+    if !crate::shadow::enabled() { return borg_caution_original(st); }
+    crate::shadow::before_caution(st);
+    let keys_before = st.io.queued_keys();
+    let acted = borg_caution_original(st);
+    crate::shadow::caution(st, &crate::shadow::CautionResult {
+        acted, keys_before, keys_after: st.io.queued_keys(),
+    });
+    acted
+}
+
+fn borg_caution_original(st: &mut BorgState) -> bool {
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/
