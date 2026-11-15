@@ -2,6 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: individual stateful entry coverage (#314)
+
+- `check-shadow.py --require-all-entries` requires all 11 public entries and
+  consistent subsystem/entry counts. A regression test shows aggregate
+  coverage can pass while the strict gate rejects a missing teleport entry.
+- The full R2 evidence passes this stricter gate in each mode. Focused
+  stateful-entries High-Elf Rogue 1063, 100k turns, repeats check/switch with
+  all 11 entries, zero mismatches and byte-identical keys/messages/states.
+  No natural deaths. Rare caution_teleport occurs once; freedom five times.
+  Exact hashes/counts/manifests are in R2-ENTRY-COVERAGE.json.
+- CI now runs this fixture and strict gate separately in each mode. These
+  are entry counts, not branch coverage or successful-action counts. Real
+  recovery-carry branch fixtures remain #264, and no sealed/population work
+  is authorized. Runtime code/source identity cd66d935 is unchanged.
+- Stacked on #322/#321. 83 tool tests pass. #315 separately hardens the
+  danger-grid failure diagnostic; #316 records R3 accessor/redesign planning.
+
 ## 2026-11-15: corrected R2 event-count wording (#313)
 
 - Per mode, R2 records 15,032,802 tape events, including 700,980 policy-entry
