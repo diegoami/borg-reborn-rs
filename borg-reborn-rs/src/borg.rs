@@ -291,6 +291,12 @@ pub const GAME_OPTIONS: &[(&core::ffi::CStr, bool)] = &[(c"auto_more", true)];
 pub fn core_is_borg_rs() -> bool {
     static CORE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
     *CORE.get_or_init(|| {
+        // POC selection must not vanish when borg.txt cannot be decoded/read.
+        let plan_file =
+            borg_rs::shell::checked_borg_txt_setting("borg_plan").unwrap_or_else(|error| {
+                eprintln!("borg-reborn-rs: {error}");
+                std::process::exit(2);
+            });
         let environment = std::env::var_os("BORG_CORE");
         let file = if environment.is_none() {
             borg_rs::shell::borg_txt_setting("borg_reborn_core")
@@ -310,10 +316,7 @@ pub fn core_is_borg_rs() -> bool {
             std::process::exit(2);
         });
         // Owner-requested POC (#305): never ignore a plan on the wrong core.
-        if !selected
-            && (std::env::var_os("BORG_ERRANDS_PLAN").is_some()
-                || borg_rs::shell::borg_txt_setting("borg_plan").is_some())
-        {
+        if !selected && (std::env::var_os("BORG_ERRANDS_PLAN").is_some() || plan_file.is_some()) {
             eprintln!("borg-reborn-rs: errands plans require BORG_CORE=borg-rs");
             std::process::exit(2);
         }

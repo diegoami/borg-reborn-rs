@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: #308 returned-review fixes (reviewed head 19f2025b)
+
+- Owner chose main-first delivery for the independent POC; P/R synchronize
+  through their own later PRs. Accepted main (including #307) was merged;
+  no unreviewed R implementation was imported or rewritten.
+- POC D2446–D2448 are renamed to D2476–D2478. PR308-DOSSIER-MAP.json
+  records the exact mapping; source/build/family/attempt identities and
+  evidence hashes are preserved. D2476–D2481 were reserved on #318 for
+  this delivery's old and revised-source controls, above all three branch
+  maxima. The global cemetery allocator policy remains #318 follow-up.
+- The shipped file is tested by Plan::parse(include_str!(...)) for every
+  class/default and level 1–50. The Python grammar approximation is removed;
+  native checks load the real file. Canonical lowercase loop-levels is
+  enforced; reversed endpoints are documented.
+- Class availability is checked at Borg initialization/reinitialization,
+  before acknowledging the plan. Strict POC settings reads diagnose I/O
+  and UTF-8 failures, with absent-file defaults; native startup tests prove
+  no silent fallback. The wider legacy-reader/re-entry work remains #317.
+- BOM/CRLF are supported; oversized input reports size before UTF-8 errors.
+  Budget values match accepted main's exact unset/0/none semantics. Our new
+  module is formatted for readability; shared donor code was not reformatted.
+  Plan examples moved to harness/plans to separate them from BORG_PROFILE.
+- Initialization errors still exit 2; live unsaved-game recovery is not
+  claimed. The POC stays diagnostic-only and the guided game is untouched.
+
 ## 2026-11-15: working class-specific errand-plan POC (#305, PR #308)
 
 - Owner requested all-class candidate plans to level 50. The example now

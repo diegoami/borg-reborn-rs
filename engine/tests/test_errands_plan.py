@@ -20,25 +20,34 @@ class ErrandsPlanTest(unittest.TestCase):
         env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
         r=subprocess.run(['python3',str(ROOT/'tools/try-errands-plan.py'),'--plan',str(source),'--out',str(out),'--class',str(cls),'--seed',str(seed),'--turns',str(turns)]+(['--via-borg-txt'] if via else []),env=env,capture_output=True,text=True,timeout=40)
         return r,out
-    def test_shipped_plans_cover_all_classes_and_stop_at_50(self):
-        lines=(ROOT/'harness/profiles/borg-rs/errands_plan.txt').read_text().splitlines()
-        sections={};name=None
-        for line in lines:
-            if line.startswith('['): name=line[1:-1];sections[name]=[]
-            elif line.startswith('  ') and not line.startswith('    '):
-                sections[name].append(line.strip())
-        classes={'warrior','mage','druid','priest','necromancer','paladin','rogue','ranger','blackguard'}
-        self.assertEqual(set(sections),classes|{'default'})
-        def matches(condition,level):
-            tokens=condition.split()
-            if tokens[0]=='level':
-                value=int(tokens[2]);return level<=value if tokens[1]=='<=' else level==value
-            return int(tokens[0])<level<=int(tokens[-1])
-        for name,guards in sections.items():
-            for level in range(1,50):
-                self.assertEqual(sum(matches(g,level) for g in guards),1,(name,level))
-            self.assertFalse(any(matches(g,50) for g in guards),name)
-        self.assertNotEqual(sections['warrior'],sections['mage'])
+    def test_shipped_file_loads_with_the_native_parser(self):
+        text=(ROOT/'harness/plans/errands_plan.txt').read_text()
+        r,out=self.run_poc('shipped',text,cls=1,seed=1001)
+        self.assertEqual(r.returncode,0,r.stderr)
+        self.assertEqual((out/'errands_plan.txt').read_text(),text)
+        self.assertIn('class=mage',(out/'messages.log').read_text())
+
+    def test_missing_class_is_rejected_before_core_initialization(self):
+        r,out=self.run_poc('missing','[mage]\n  level <= 5\n    loop-levels 0 1\n')
+        self.assertEqual(r.returncode,2)
+        self.assertIn('no [warrior] or [default] plan',(out/'console.log').read_text())
+        self.assertFalse((out/'errands_plan.txt').exists(), 'configuration acknowledged too early')
+        self.assertEqual((out/'keys.log').stat().st_size,0)
+
+    def test_bad_borg_txt_does_not_silently_disable_the_plan(self):
+        for name,kind in [('bytes','invalid-utf8'),('directory','unreadable')]:
+            out=self.root/name;out.mkdir()
+            for directory in ['user','save','archive','panic','scores']:(out/directory).mkdir()
+            config=out/'user/borg.txt'
+            if kind=='invalid-utf8':config.write_bytes(b'borg_reborn_core = borg-rs\nborg_plan = errands_plan.txt\n\xff')
+            else:config.mkdir()
+            env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
+            command=[str(GAME),'-mborgh','-n']+[f'-d{k}={out/k}' for k in ['user','save','archive','panic','scores']]
+            command+=['-uBadConfig','--','-seed','1010','-race','0','-class','0','-menu-letters','-turns','100','-keylog',str(out/'keys.log')]
+            r=subprocess.run(command,cwd=GAME.parent,env=env,capture_output=True,text=True,timeout=10)
+            self.assertEqual(r.returncode,2,(kind,r.stderr))
+            self.assertIn('borg.txt',r.stderr)
+            self.assertEqual((out/'keys.log').stat().st_size,0)
 
     def test_default_and_class_override(self):
         for name,cls,seed,route in [('warrior',0,1010,'loop-levels 0 2'),('mage',1,1001,'loop-levels 0 1')]:

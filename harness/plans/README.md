@@ -7,7 +7,7 @@ intervals are shared, unvalidated hypotheses pending evaluation.
 It is plain text: class sections, level ranges, and exactly one supported
 errand, `loop-levels`. No ladder/trips aliases or general scripting language.
 
-See [the POC guide](../../../docs/GAME-PLAN-LANGUAGE.md) for actual launch,
+See [the POC guide](../../docs/GAME-PLAN-LANGUAGE.md) for actual launch,
 validation and boundaries. Select a file using `BORG_ERRANDS_PLAN` or
 `borg_plan = errands_plan.txt` in the run's borg.txt (relative to its user
 directory). It is read once on the borg-rs backend; no selection is inert.
