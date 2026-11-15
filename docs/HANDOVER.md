@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-15: owner-requested /shopping (#208)
+
+- Added `/shopping`: a town-only round of the vendored core's buying,
+  selling and home decisions. It hands over outside the store UI when no
+  useful transaction remains; it does not force purchases or change the
+  game's no-selling birth option. `/town; /shopping` returns first.
+- Shopping runs after caution and before generic exploration/departure.
+  Caution's direct town descent aborts instead. Dungeon calls, an
+  unreachable shop, the errand budget or the stall cap also abort/stop;
+  failures drop the queued errands, normal completion advances them.
+- Fixed-start engine tests cover purchases/home storage, two queued
+  rounds, town danger cancelling the queue, a one-turn budget and a
+  dungeon call that stops without advancing a turn. Mage seed 1001
+  completed at turn 591; rogue seed 1002 aborted safely in town at turn 1.
+- No-errand keys/messages/states match `8351f0a3` byte for byte for 3,000
+  turns at seeds 1010 (warrior), 1001 (mage), 1002 (rogue); all survived.
+  This is regression evidence, not a ranking of the errands' reliability.
+- CI's standard natural-death runs are retained as D2356 (vendored core,
+  seed 1011) and D2357 (reborn core, seed 1020), reproduced locally at
+  source hash `bcd9f0a9404e`. D2356 reconciles with the downloaded CI
+  registry; neither run used shopping. No death guard was weakened.
+- Rust formatting, Clippy, workspace tests (excluding borg-core), release
+  borg-core tests and the vendor check pass. The corner freeze remains
+  undiagnosed; no population experiment or GUI shopping session was run.
+
+
 
 ## 2026-11-15: R1.3 carry procedure (#225), frame ready for review
 
