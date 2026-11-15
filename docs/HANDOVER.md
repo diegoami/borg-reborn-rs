@@ -3,6 +3,15 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: P2.1 integrated validation complete
+
+- Attack parameters retain 45/45 default parity and the same diagnostic
+  divergence after receiving current main through P1.4. Current-shell
+  ladder, named trace, original-core smoke/death and required checks pass.
+- D2265–D2276 retain original evidence; D2277–D2288 add the integrated
+  build's twelve natural deaths. Both registries reconcile. CI reruns on
+  the updated task head; downstream task branches receive these records.
+
 ## 2026-11-15: track P integration with the option-C fixes
 
 - P1.4's first head passed CI, but its merge was rejected after main's
@@ -47,6 +56,23 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track P, P2.1 (#240), attack parameters
+
+- Added 167 attack settings at 188 sites (770 total): scoring, mana
+  reserves, danger horizons, failure/paranoia limits and resource costs.
+  Retained damage/geometry/interface data is declared in CALIBRATION.md.
+- Full **45/45**, 295,464 named trace rows and ladder parity hold. A
+  zero overkill multiplier changes borg_attack to borg_flow_old at turn
+  141 and dies later; the earlier hit-threshold trial has no change.
+  Both are retained without an improvement claim (P2.1-VALIDATION.md).
+- Required Rust/Python/vendor checks pass. Defaults restore original
+  source bytes apart from import and three comparison promotions.
+  D2265–D2276 preserve twelve natural deaths; none are missing.
+- Stacked on P1.4 #246 while its engine CI finishes. Remaining track P:
+  defence #241, item use #242, power #243, zoo profiles #244, sweep #245.
+  Owner authorized this continuation across milestone handoffs; review
+  PRs remain unmerged and reviewers remain the owner's choice.
 
 ## 2026-11-15: track P, P1.4 (#222), named core decisions
 
