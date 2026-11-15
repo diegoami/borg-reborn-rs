@@ -96,7 +96,10 @@ not undo other-track work already authorized before the gate.
     whichever arm died. The toolkit is owned by borg-cemetery; local command
     paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
     isolated validation or historical registries. Existing `docs/deaths/` stays
-    retained as the historical validation baseline. Games watched with `watch-borg.sh` are not measured
+    retained as the historical validation baseline. New historical imports use
+    `tools/import-deaths.py` to qualify provisional IDs and preserve source
+    packages; its CI check protects the accepted baseline and new imports
+    (docs/DOSSIER-IMPORT.md). Games watched with `watch-borg.sh` are not measured
     runs and are not recorded (owner, 2026-11-10, E review finding 3): they
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
