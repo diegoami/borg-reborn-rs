@@ -7,6 +7,36 @@ described in [docs/SOURCES.md](../SOURCES.md); live state (open bugs,
 carries, experiments) stays on the issue boards, which this file only
 indexes.*
 
+
+## 2026-11-15: Track R reference refresh (#262)
+
+New deaths were read first: better-borg-c D0020–D0030, their reports,
+record identities, causes and assessments. All eleven collected cases
+remain **unassessed**. Three are poison deaths, one a fatal wound, one
+starvation, and six other monsters/attacks. They are leads for later
+analysis, not diagnoses, thresholds or improvement evidence. Their source
+is `5cd2258d` with recorded saves/seeds and binary identity; copied records
+remain unchanged.
+
+References now name borg-rs `727ccff7`, better-borg-c `ab7890bf`,
+neo-angband-tracker `0c00e776` and zoo `7109a026`. The game remains
+upstream `42cd156ac`; borg-runner is unchanged at `e55ac6f`. **The runtime
+core stays at `e6d13fc` in borg-core/PIN**; moving reference pins does not
+carry v13 decisions or new trait indices into the build.
+
+Read the borg-rs FORK-CORRECTIONS clarification (the official engine pin
+advanced with v12), its adoption-status additions, and the C Borg spec's
+scope wording. Read the zoo catalogue/profile/suite additions. None
+changes this repository's policy. The actual new pinned adapter's three
+native contract cells pass: profile selects the core and parameters,
+invalid parameters fail, and core zero retains the original core.
+No population experiment or sealed seed inspection was started.
+
+The R1.3 carry watcher separately reports named native Rust changes since
+**the core pin**, even when this reference pin advances. A real v13 carry
+still needs a dedicated vendor/policy PR and its own parity evidence.
+
+
 ## The loop
 
 Every session starts with `python3 scripts/refresh-sources.py` (RULES 21).

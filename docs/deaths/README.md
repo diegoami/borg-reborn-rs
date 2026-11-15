@@ -2,7 +2,7 @@
 
 Every confirmed natural death gets an immutable source/build/input identity, original observations, an assessment and linked actions. Full raw runs/saves/builds stay outside Git. Death alone does not establish a bug.
 
-Dossiers: 2335; distinct starting conditions: 2332; retained process attempts: 2335 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2352; distinct starting conditions: 2349; retained process attempts: 2352 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2341,6 +2341,23 @@ Dossiers: 2335; distinct starting conditions: 2332; retained process attempts: 2
 | [D2353-rust-seed101](D2353-rust-seed101/report.md) | unassigned | `66aff7999c28` | 101 | a snaga | 12007 | unassessed |
 | [D2354-rust-seed102](D2354-rust-seed102/report.md) | unassigned | `66aff7999c28` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2355-rust-seed1020](D2355-rust-seed1020/report.md) | unassigned | `66aff7999c28` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2356-rust-seed102](D2356-rust-seed102/report.md) | unassigned | `53006188548e` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2357-rust-seed1020](D2357-rust-seed1020/report.md) | unassigned | `53006188548e` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2358-rust-seed102](D2358-rust-seed102/report.md) | unassigned | `35ab27fd11fb` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2359-rust-seed1020](D2359-rust-seed1020/report.md) | unassigned | `35ab27fd11fb` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2360-rust-seed1011](D2360-rust-seed1011/report.md) | unassigned | `46b687ccdd72` | 1011 | a cave spider | 18903 | unassessed |
+| [D2361-rust-seed1020](D2361-rust-seed1020/report.md) | unassigned | `5fbc0e60848a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2362-rust-seed102](D2362-rust-seed102/report.md) | unassigned | `5fbc0e60848a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2363-rust-seed1011](D2363-rust-seed1011/report.md) | unassigned | `2545f8416dad` | 1011 | a cave spider | 18903 | unassessed |
+| [D2364-rust-seed1020](D2364-rust-seed1020/report.md) | unassigned | `2545f8416dad` | 1020 | a small kobold | 9547 | unassessed |
+| [D2365-rust-seed1021](D2365-rust-seed1021/report.md) | unassigned | `2545f8416dad` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2366-rust-seed1043](D2366-rust-seed1043/report.md) | unassigned | `2545f8416dad` | 1043 | a wild cat | 23423 | unassessed |
+| [D2367-rust-seed1050](D2367-rust-seed1050/report.md) | unassigned | `2545f8416dad` | 1050 | a grey mold | 24096 | unassessed |
+| [D2368-rust-seed1062](D2368-rust-seed1062/report.md) | unassigned | `2545f8416dad` | 1062 | a soldier | 49147 | unassessed |
+| [D2369-rust-seed1072](D2369-rust-seed1072/report.md) | unassigned | `2545f8416dad` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2370-rust-seed1084](D2370-rust-seed1084/report.md) | unassigned | `2545f8416dad` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2371-rust-seed102](D2371-rust-seed102/report.md) | unassigned | `2545f8416dad` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2372-rust-seed1020](D2372-rust-seed1020/report.md) | unassigned | `2545f8416dad` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 

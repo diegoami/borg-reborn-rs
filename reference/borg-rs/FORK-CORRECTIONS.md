@@ -84,7 +84,10 @@ undefined bytes or known failures as milestone requirements. Broader
 changes follow a verified milestone and an owner-created tag.
 
 This supersedes older absolute no-C-changes/no-behavior-changes wording
-for these corrections. Pinned upstream stays e473720ed. Original references
+for these corrections. The upstream pin followed the same path: it was
+`e473720ed` when this text was written and moved to the official import
+`42cd156ac` with v12R (owner-accepted, 2026-11-13) - the pin described
+the situation at each time; it is not a constraint. Original references
 remain separate; new corrected-C references require two identical C runs.
 No official Angband issue/PR/comment or automatic main/tag move is authorized.
 The owner subsequently requested main integration and explicitly delegated

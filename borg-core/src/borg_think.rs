@@ -162,6 +162,8 @@ pub fn borg_think(st: &mut BorgState) -> bool {
     let tracing = crate::core_trace::begin();
     let done = borg_think_inner(st);
     crate::core_trace::finish(st, tracing, done);
+    // borg-reborn-rs (#224): flush shadow coverage after this think.
+    crate::shadow::after_think(st);
     done
 }
 

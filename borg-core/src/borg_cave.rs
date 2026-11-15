@@ -46,6 +46,15 @@ pub struct CaveState {
 }
 
 impl CaveState {
+    // borg-reborn-rs (#223): checked, read-only access for Track R, also
+    // valid before allocation. The existing core accessors are unchanged.
+    pub fn remembered_grid(&self, x: i32, y: i32) -> Option<&BorgGrid> {
+        if !(0..AUTO_MAX_X).contains(&x) || !(0..AUTO_MAX_Y).contains(&y) {
+            return None;
+        }
+        self.grids.get((y * AUTO_MAX_X + x) as usize)
+    }
+
     fn index(x: i32, y: i32) -> usize {
         assert!((0..AUTO_MAX_X).contains(&x) && (0..AUTO_MAX_Y).contains(&y));
         (y * AUTO_MAX_X + x) as usize
@@ -82,4 +91,22 @@ pub fn borg_init_cave(st: &mut BorgState) {
 /// Free the map (`borg_free_cave`).
 pub fn borg_free_cave(st: &mut BorgState) {
     st.cave.grids = Vec::new();
+}
+
+// borg-reborn-rs (#223): engine-free memory access regression.
+#[cfg(test)]
+mod memory_tests {
+    use super::*;
+
+    #[test]
+    fn checked_memory_keeps_coordinates_and_unknown_grids() {
+        let mut cave = CaveState { grids: vec![BorgGrid::default(); (AUTO_MAX_X * AUTO_MAX_Y) as usize] };
+        cave.grid_mut(17, 9).kill = 3;
+        cave.grid_mut(17, 9).take = 7;
+        assert_eq!(cave.remembered_grid(17, 9).unwrap().kill, 3);
+        assert_eq!(cave.remembered_grid(17, 9).unwrap().take, 7);
+        assert_eq!(*cave.remembered_grid(9, 17).unwrap(), BorgGrid::default());
+        assert!(cave.remembered_grid(-1, 0).is_none());
+        assert!(CaveState::default().remembered_grid(0, 0).is_none());
+    }
 }

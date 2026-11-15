@@ -3,6 +3,93 @@
 *Where the work stands, for the next session. Update it in every PR.*
 
 
+## 2026-11-15: R1.3 carry procedure (#225), frame ready for review
+
+- `scripts/ported-changes.py` and the refresh report now identify changed
+  native Rust functions by name from borg-core/PIN, independently of the
+  reference pin, and intersect them with docs/ported-functions.json.
+  The real v13 comparison reports 25 changed functions, zero ported ones.
+- A full isolated refresh to dc790dc resolved three conflicted files while
+  retaining named parameters. It builds, passes vendoring check and makes
+  291,865 helper comparisons without mismatch. A separate focused healing
+  unit and constructed native-change/re-port controls test both negative
+  and positive paths. All diagnostic builds are marked test-track-r-carry.
+- CARRY.md, exact build identities, measured timing limits and reapplicable
+  patches preserve the procedure. Four refused repeats used existing
+  output directories; no games launched, and fresh-directory repeats
+  provide the verified evidence. No failure is counted as a death.
+- Production runtime hash is unchanged at aabe60c9cdbc; native core remains
+  v12. The five new v13 trait fields, parameter-provenance review and future
+  baseline choice are follow-up #264, not silently adopted policy.
+- Formatting, Clippy, 168 workspace tests, 138 core tests (one existing
+  ignored), 20 scripts tests, 72 tools tests and vendoring check pass.
+  R1.1 #248, R1.2 #261 and source refresh #263 are already merged into
+  feature/track-r. This final R1 task merges there only after CI is green.
+- R1 is the milestone review checkpoint. The review will use a pinned
+  feature snapshot into review/track-r-baseline; the owner chooses and runs
+  the reviewer. Main/global reviewed are not promotion targets.
+
+## 2026-11-15: R1 moving-reference refresh (#262)
+
+- Separate source-only PR on `task/R1-source-refresh`, stacked on #261;
+  target `feature/track-r`. Updates four reference pins and read dates,
+  copied documentation/catalogues, eleven unassessed better-borg-c death
+  dossiers, and the generated death index. KNOWLEDGE.md records what was
+  read and the limits of those death reports.
+- Engine pin, borg-core/PIN and runtime inputs are unchanged. Runtime hash
+  remains `aabe60c9cdbc`; this does not adopt borg-rs v13 policy.
+- Refresh tooling tests pass. Three real native contract cells pass against
+  the new zoo pin `7109a026`, with no population run. CI is the merge gate.
+
+## 2026-11-15: R1.2 shadow harness (#224), native validation complete
+
+- Stacked on #248; target is `feature/track-r`. No redesign merges to main.
+- Added dependency-inverted danger/caution boundaries and after-think
+  coverage. The only port is the pure danger `wall_like` helper. Off
+  registers nothing; check retains native results; switch uses the port
+  at ported points. Stateful danger/caution remain native and explicit.
+- Native smoke is 3/3 identical across all three modes, with 6,609,916
+  comparisons and zero mismatches in enabled runs. Missing or zero-coverage
+  evidence fails the CI gate. Unit tests exercise an injected mismatch.
+- The 45-game off suite completed; D2363–D2370 retain its eight deaths.
+  Independent pinned v12 at e6d13fc has 45/45 byte-identical keys, messages
+  and states. Its eight deaths repeat existing donor dossiers. The standard
+  diff still differs on three existing frontend telemetry fields (plus raw
+  wall times); no new game-summary difference. Exact identities and the
+  limitation are in R1.2-VALIDATION.md / R1.2-V12-COMPARISON.json.
+- Original-core smoke remains 3/3 identical; D2371–D2372 retain its deaths.
+  CI remains the final merge gate into the feature branch.
+- The harness records shadow mode and death replay restores it, excluding
+  inherited values. Formatting, Clippy, 168 workspace tests, 138 core tests
+  (one ignored), 72 tools tests, scripts and vendoring checks pass.
+
+## 2026-11-15: R1.1 evidence reconciled before integration
+
+- Local checks on main's completed Track P baseline: 138 core tests (one
+  existing ignored), 165 workspace tests, Clippy, formatting, scripts and
+  independence checks pass. Vendoring declarations preserve both tracks.
+- Preserved all four earlier CI runs' natural death evidence as D2356–D2360,
+  deduplicating repeated encounter/key identities. Each imported case keeps
+  its original source/build identity and records the originating CI run.
+  The current build's cave-spider case resolves the engine CI failure.
+- A native build has source hash `90900e6253cc`; smoke is 3/3 identical to
+  the checked-in reference. D2361–D2362 preserve its natural deaths; the
+  short seed-102/race-1/class-1 run survived its 3,000-turn cap.
+- All task PRs continue into `feature/track-r`. The owner authorized
+  continuing the tasks there, with milestone review to follow.
+
+## 2026-11-15: Track R stays on its feature branch (owner)
+
+- The owner requires the unfinished redesign to stay out of `main`.
+  Created `feature/track-r` from main `8351f0a3`; PR #248 now targets it.
+  Future R task branches start from and merge into `feature/track-r`.
+- Green task CI authorizes integration into that feature branch only.
+  Milestone completion does not authorize promotion to `main` or `reviewed`.
+  The owner explicitly approves a ready redesign before any such promotion.
+- Main's completed Track P work was merged into the R1.1 task branch;
+  conflicts in handover, provenance and vendoring declarations preserve
+  both tracks. No R implementation has been merged into main.
+
 ## 2026-11-15: P3.2 sweep handoff (#245)
 
 - CORE-SWEEP.md is an exact-commit-pinned prompt for the owner’s zoo
@@ -133,6 +220,37 @@
   (blackguards do not regain mana by resting), for track P or an issue
   upstream; RULES 4 (no AI trailers) was broken by this session's earlier
   commits and PR bodies, which cannot be amended.
+
+## 2026-11-15: track R started, R1.1 (#223)
+
+- Branch `task/R1.1-typed-view` starts from main `6a2b30cf`, independently
+  of track P's open P1.4 PR. Main's errand fixes through `e514e8b1`
+  were subsequently merged cleanly. R1 is active; #224 is next.
+- Added `borg-next`, with all 265 native traits named and grouped, plus
+  borrowed goals, status, entity records and checked cave access. Each
+  trait field cites its `BI_*` index. Entity IDs, holes, coordinates and
+  integer values are preserved. No engine is read by the view.
+- `borg-core::memory` exposes source types and an empty `Shadow` trait;
+  startup registers borg-next once. No think calls it or constructs the
+  view yet. #224 adds the actual hooks, modes and comparison. The core
+  has no dependency on borg-next.
+- Workspace, independence checks, CI formatting, vendoring declarations,
+  provenance and architecture now include the new crate. The source hash
+  includes borg-next, so its later changes cannot reuse a build identity.
+- Checks: fmt for our two crates, workspace Clippy with warnings denied,
+  workspace tests excluding core (165 passed), release core tests (134
+  passed, one existing ignored), 16 scripts tests, 69 tools tests, two
+  independence tests, vendoring check and diff whitespace check pass.
+  All 265 trait indices were checked to occur exactly once in the view.
+- No measured games were run locally for this frame-only task; no full
+  45/45 or shadow parity claim is made. The view has four engine-free
+  tests; checked allocated-grid access has a core regression test.
+- Read-only source refresh reports 46 borg-rs commits since its reference
+  pin, five touching the vendored core after v12, and 44 added better-borg-c
+  death files. No policy correction or pin move is mixed into this task.
+  A milestone source refresh remains separate under RULES 21; the carry
+  experiment belongs to #225. The view uses the current vendored v12
+  source, including track P's merged parameter changes.
 
 ## 2026-11-15: track P, P2.4 (#243), power extraction in progress
 

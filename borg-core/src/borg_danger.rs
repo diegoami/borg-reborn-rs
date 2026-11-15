@@ -2261,7 +2261,8 @@ fn danger_one_kill(
             }
 
             // Cannot occupy a wall/seam grid (unless pass_wall or kill_wall)
-            if wall_like(feat) {
+            // borg-reborn-rs (#224): first pure shadow port.
+            if crate::shadow::wall_like(st.borg.time.now, feat, wall_like(feat)) {
                 // legally on a wall of some sort, check for closeness
                 if rf(kill, RF_PASS_WALL) && borg_distance(y_temp, x_temp, y, x) == 1 {
                     b_v1 = v1;
@@ -2376,7 +2377,8 @@ fn danger_one_kill(
             }
 
             // Cannot occupy a wall/seam grid (unless pass_wall or kill_wall)
-            if wall_like(feat) {
+            // borg-reborn-rs (#224): first pure shadow port.
+            if crate::shadow::wall_like(st.borg.time.now, feat, wall_like(feat)) {
                 // legally on a wall of some sort, check for LOS
                 if rf(kill, RF_PASS_WALL) && borg_projectable(st, y_temp, x_temp, y, x) {
                     b_v2 = v2 * b_q / 10;
@@ -2534,6 +2536,18 @@ pub fn borg_danger(
     c: i32,
     average: bool,
     full_damage: bool,
+) -> i32 {
+    // borg-reborn-rs (#224): the native evaluation runs once, then the
+    // optional port compares the same request. Off has no registered hook.
+    let original = borg_danger_original(st, y, x, c, average, full_damage);
+    crate::shadow::danger(st, crate::shadow::DangerInput {
+        y, x, turns: c, average, full: full_damage,
+    }, original)
+}
+
+fn borg_danger_original(
+    st: &mut BorgState, y: i32, x: i32, c: i32,
+    average: bool, full_damage: bool,
 ) -> i32 {
     let mut p: i32 = 0;
 

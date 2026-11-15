@@ -40,7 +40,7 @@ def read_kv(path):
 
 # The settings harness/run.sh records when the environment gives them
 # (review #227, finding 8): the core, the errand and its options.
-SETTINGS = ('BORG_CORE', 'BORG_CORE_OVERRIDES', 'BORG_ERRAND', 'BORG_STOPSCARED', 'BORG_ERRAND_BUDGET',
+SETTINGS = ('BORG_SHADOW', 'BORG_CORE', 'BORG_CORE_OVERRIDES', 'BORG_ERRAND', 'BORG_STOPSCARED', 'BORG_ERRAND_BUDGET',
             'BORG_LADDERS')
 
 

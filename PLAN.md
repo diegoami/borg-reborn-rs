@@ -10,7 +10,10 @@ is wrong.*
 
 We work in spurts. A **milestone** is a named set of tasks. Inside a
 milestone a session works normally: one task per branch and PR, and it
-**merges its own PR into `main` once CI is green** (RULES 1).
+**merges its own PR once CI is green** (RULES 1): into `main` normally,
+into `feature/track-r` for Track R. Track R milestone reviews stay on the
+feature branch, pinned to an exact commit for the owner's chosen reviewer;
+they do not advance `main` or `reviewed`.
 
 **When the last task of a milestone is merged, the session stops.** It does
 not start the next milestone. It opens the **review PR** instead:
@@ -72,6 +75,22 @@ v12).
 
 ### Track R: the redesign epic (epic #217)
 
+**Integration branch: `feature/track-r`** (owner, 2026-11-15). Every R task
+branch starts from it and every R task PR targets it. The unfinished
+redesign stays there across milestones. CI parity and milestone completion
+are validation gates, not permission to merge R into `main`. A ready
+redesign is promoted only with the owner's explicit approval. Main can be
+merged into this branch to inherit Track P's parameters and fixes.
+
+R milestone reviews use a separate feature-only review ledger:
+`review/track-r-baseline`, initially at `8351f0a3` (the integration branch's
+main baseline). Open each review PR from an immutable `review/Rn-SHA`
+snapshot of `feature/track-r` into that ledger. Pin the review prompt to
+that exact snapshot. The owner chooses the reviewer and merges review
+PRs; a ledger merge does not promote code to `main` or global `reviewed`.
+Stop at the milestone checkpoint under RULES 6.
+
+
 borg-rs's decisions re-expressed subsystem by subsystem in our domain, in a
 new crate `borg-next/`. Each port runs beside the original every think
 (**shadow check**) and switches over only when the full suite's keys stay
@@ -81,7 +100,7 @@ named its thresholds.
 
 | Milestone | Label | What it delivers | Exit (all must hold) | State |
 | --- | --- | --- | --- | --- |
-| **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **in progress** |
+| **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225); the separate moving-reference refresh (#262) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **in review** |
 | **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | not started |
 | **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | not started |
 | **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |

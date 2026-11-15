@@ -436,26 +436,31 @@
       "summary": "Observe attack-before-pickup order ignoring an adjacent dropped escape item while out of escapes"
     }
   ],
-  "cases": 19,
+  "cases": 30,
   "causes_by_distinct_start": {
     "Fang, Farmer Maggot's Dog": 1,
+    "Grip, Farmer Maggot's Dog": 1,
     "a blood falcon": 1,
+    "a clear icky thing": 1,
     "a crow": 1,
     "a cutpurse": 1,
+    "a fatal wound": 1,
     "a gallant": 1,
+    "a giant white ant": 1,
     "a grey mold": 1,
     "a griffon": 1,
     "a killer brown beetle": 1,
     "a kobold": 1,
     "a small kobold": 1,
-    "a soldier": 1,
+    "a soldier": 2,
     "a stegocentipede": 1,
-    "a wild cat": 1,
-    "poison": 2,
-    "starvation": 1
+    "a wild cat": 2,
+    "an ironfist priest": 1,
+    "poison": 5,
+    "starvation": 2
   },
-  "death_process_attempts": 27,
-  "distinct_starting_conditions": 16,
+  "death_process_attempts": 38,
+  "distinct_starting_conditions": 27,
   "limit": "Selected death cases, not a mortality-rate cohort. Repeats/reference variants/windows are not new independent starting conditions.",
   "schema": "better-borg-c/death-index@1",
   "versions": {
@@ -468,7 +473,7 @@
     "3638b690525cd8a381cb106b4c5ee40652babde2": 2,
     "45eac63bd9f7cabe3c4ef1607703324ca8dae0fc": 2,
     "5c23742ced30ad76ab9778cfa8bf23f04fc0eb1f": 1,
-    "5cd2258dd78d9fed83c11f5df6a3afe88889337a": 4,
+    "5cd2258dd78d9fed83c11f5df6a3afe88889337a": 15,
     "867c777845fd7453f175da4692a8468c734f6380": 5,
     "e473720ed88a0f0c7ca66815cef3000eb4a38bc3": 2
   }

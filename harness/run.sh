@@ -165,7 +165,7 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     # them again (review #227, finding 8). Only those set, empty ones too
     # (an empty BORG_ERRAND turns off the borg.txt fallback; re-review 6):
     # a run without any keeps the record it always had.
-    for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
+    for v in BORG_SHADOW BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
         if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
