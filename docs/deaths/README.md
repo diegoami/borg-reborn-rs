@@ -5,11 +5,11 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > **The canonical registry lives in
 > [borg-cemetery](https://github.com/diegoami/borg-cemetery)** — recorded
 > Borg runs, written death investigations and playable saved scenarios.
-> This copy is the one this repository's tools write and reconcile
-> against; see [POINTER.md](POINTER.md) for the seam
-> (`BORG_DEATH_RECORDS_DIR`) and where the cases now live.
+> Historical copies can remain local; temporary registries are isolated
+> validation evidence. See [POINTER.md](POINTER.md) for the seam
+> (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2378; distinct starting conditions: 2375; retained process attempts: 2378 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2396; distinct starting conditions: 2393; retained process attempts: 2396 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -2391,6 +2391,24 @@ Dossiers: 2378; distinct starting conditions: 2375; retained process attempts: 2
 | [D2396-rust-seed1084](D2396-rust-seed1084/report.md) | unassigned | `132aeb26a54a` | 1084 | a grey mushroom patch | 22908 | unassessed |
 | [D2397-rust-seed102](D2397-rust-seed102/report.md) | unassigned | `132aeb26a54a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2398-rust-seed1020](D2398-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2399-rust-seed1011](D2399-rust-seed1011/report.md) | unassigned | `014e64a4bfac` | 1011 | a cave spider | 18903 | unassessed |
+| [D2400-rust-seed1020](D2400-rust-seed1020/report.md) | unassigned | `014e64a4bfac` | 1020 | a small kobold | 9547 | unassessed |
+| [D2401-rust-seed1021](D2401-rust-seed1021/report.md) | unassigned | `014e64a4bfac` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2402-rust-seed1043](D2402-rust-seed1043/report.md) | unassigned | `014e64a4bfac` | 1043 | a wild cat | 23423 | unassessed |
+| [D2403-rust-seed1050](D2403-rust-seed1050/report.md) | unassigned | `014e64a4bfac` | 1050 | a grey mold | 24096 | unassessed |
+| [D2404-rust-seed1062](D2404-rust-seed1062/report.md) | unassigned | `014e64a4bfac` | 1062 | a soldier | 49147 | unassessed |
+| [D2405-rust-seed1072](D2405-rust-seed1072/report.md) | unassigned | `014e64a4bfac` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2406-rust-seed1084](D2406-rust-seed1084/report.md) | unassigned | `014e64a4bfac` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2407-rust-seed102](D2407-rust-seed102/report.md) | unassigned | `c259f69c44f8` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2408-rust-seed1020](D2408-rust-seed1020/report.md) | unassigned | `c259f69c44f8` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2409-rust-seed1011](D2409-rust-seed1011/report.md) | unassigned | `c259f69c44f8` | 1011 | a cave spider | 18903 | unassessed |
+| [D2410-rust-seed1020](D2410-rust-seed1020/report.md) | unassigned | `c259f69c44f8` | 1020 | a small kobold | 9547 | unassessed |
+| [D2411-rust-seed1021](D2411-rust-seed1021/report.md) | unassigned | `c259f69c44f8` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2412-rust-seed1043](D2412-rust-seed1043/report.md) | unassigned | `c259f69c44f8` | 1043 | a wild cat | 23423 | unassessed |
+| [D2413-rust-seed1050](D2413-rust-seed1050/report.md) | unassigned | `c259f69c44f8` | 1050 | a grey mold | 24096 | unassessed |
+| [D2414-rust-seed1062](D2414-rust-seed1062/report.md) | unassigned | `c259f69c44f8` | 1062 | a soldier | 49147 | unassessed |
+| [D2415-rust-seed1072](D2415-rust-seed1072/report.md) | unassigned | `c259f69c44f8` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2416-rust-seed1084](D2416-rust-seed1084/report.md) | unassigned | `c259f69c44f8` | 1084 | a grey mushroom patch | 22908 | unassessed |
 
 ## Aggregated actions
 

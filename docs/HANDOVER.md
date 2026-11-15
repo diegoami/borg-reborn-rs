@@ -2,7 +2,7 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-15: strict configured errands (#269), validation in progress
+## 2026-11-15: strict configured errands (#269), validation complete
 
 - Stacked on #289; targets track-p after the owner-authorized #260
   promotion. Valid commands, environment precedence, absent/empty/none disabling
@@ -17,8 +17,17 @@
   cases but failed the pre-existing shopping fixture, which uses an empty
   string to disable errands. Preserve that legacy empty alias; the test
   itself is unchanged. Its full-suite evidence remains with its own build.
-- Required checks/gameplay validation and evidence retention are pending;
-  no population experiment or main promotion for this task is authorized.
+- Corrected sourcecb48d943 atc259f69c passes full45/45 v12 play parity,
+  295,464 named rows, trace on/off, original smoke3/3, all45 engine tests
+  (one local environment skip), required Rust checks and19/78 Python tests.
+  P269-VALIDATION.md records both candidates and the compatibility limits.
+- D2399–D2406 preserve the first candidate's eight full-suite deaths;
+  D2407–D2416 preserve ten corrected-build deaths. Both temporary
+  registries reconcile. Explicit historical/CI export destinations retain
+  the existing missing-death guard; no canonical migration/write occurs.
+- Required CI remains the task integration gate. The owner authorized
+  #260's earlier scope; this later task stays on track-p for its separate
+  review/promotion decision. No population experiment was launched.
 
 ## 2026-11-15: owner accepts promotion #260; current main synchronization (#287)
 
