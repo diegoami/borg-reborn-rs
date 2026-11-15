@@ -21,7 +21,7 @@
   includes borg-next, so its later changes cannot reuse a build identity.
 - Checks: fmt for our two crates, workspace Clippy with warnings denied,
   workspace tests excluding core (165 passed), release core tests (134
-  passed, one existing ignored), 16 scripts tests, 70 tools tests, two
+  passed, one existing ignored), 16 scripts tests, 69 tools tests, two
   independence tests, vendoring check and diff whitespace check pass.
   All 265 trait indices were checked to occur exactly once in the view.
 - No measured games were run locally for this frame-only task; no full
