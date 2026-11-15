@@ -46,5 +46,29 @@
     "source_sha256": "0dadea400855b6be7f8c06892618d838d3e2ebbdd685c764501da4a450dacba6",
     "encounter_family": "start-b0edb6ea75b6ac67aea0968b1322290ac3574af46f72c8ad2f0a72c12b263444",
     "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084"
+  },
+  {
+    "incoming_commit": "2bb9b72f53b06a0cd0ebcdb65471fb4b09fc9a49",
+    "old_case": "D2402-rust-seed1011",
+    "integrated_case": "D2433-rust-seed1011",
+    "source_sha256": "50de000425b6739935e3e794a64882f1bd6d68d99ceb00231c0fa9f15c58f51f",
+    "encounter_family": "start-7794ea807ef0b9518befee45dbc93febe47d365b2d467759eb4d61c5aa7b0065",
+    "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794"
+  },
+  {
+    "incoming_commit": "2bb9b72f53b06a0cd0ebcdb65471fb4b09fc9a49",
+    "old_case": "D2403-rust-seed102",
+    "integrated_case": "D2434-rust-seed102",
+    "source_sha256": "50de000425b6739935e3e794a64882f1bd6d68d99ceb00231c0fa9f15c58f51f",
+    "encounter_family": "start-9ef40708fd0f67331884d56e82d704ab349ea09383661a4ba9a55925989db1dd",
+    "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac"
+  },
+  {
+    "incoming_commit": "2bb9b72f53b06a0cd0ebcdb65471fb4b09fc9a49",
+    "old_case": "D2404-rust-seed1020",
+    "integrated_case": "D2435-rust-seed1020",
+    "source_sha256": "50de000425b6739935e3e794a64882f1bd6d68d99ceb00231c0fa9f15c58f51f",
+    "encounter_family": "start-c4d4e70aef952fd2eb2f2dba198d8b9c5aecaaf9ec244cf9f3d40316850292a5",
+    "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084"
   }
 ]

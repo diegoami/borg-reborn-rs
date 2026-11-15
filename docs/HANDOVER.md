@@ -13,6 +13,20 @@
 - Wrap the ERRANDS.md paragraph noted by review292 F4. Required validation,
   evidence retention and task CI are pending. No experiment is launched.
 
+## 2026-11-15: complete loop-levels integration in #298
+
+- Main advanced to2bb9b72f (#297) during validation. Preserve its loop-levels
+  implementation, docs and tests, with no P change to that policy.
+- Its three additional independently allocated dossiers are imported as
+  D2433–D2435 with unchanged source/attempt identities. The same explicit
+  mapping now covers all nine imported recorder/loop cases.
+- Pre-loop sourcec4a38683 passed full45/45 v12 play parity,295,464 named
+  rows, original smoke3/3 and47 engine tests (one skip); ten deaths are
+  D2423–D2432. Disk exhaustion prevented the first fixture launch, then a
+  fresh retry passed. Only regenerable caches were cleared.
+- Validate the combined source before #292's authorized promotion. Later
+  strict fear/budget work stays excluded. No experiment is launched.
+
 ## 2026-11-15: owner authorizes #292 promotion; synchronize main (#298)
 
 - The owner explicitly instructed "you can merge 292 and continue" after
@@ -61,6 +75,43 @@
 - Required CI remains the task integration gate. The owner authorized
   #260's earlier scope; this later task stays on track-p for its separate
   review/promotion decision. No population experiment was launched.
+
+## 2026-11-15: owner-requested repeating level interval (#294)
+
+- `/loop-levels A B` explores every intermediate level in both directions:
+  `3 5` means 3,4,5,4,3,...; 0 is town. Two distinct engine depths 0–127
+  are accepted. The route never completes on its own; budget/stopscared
+  and explicit stop retain their existing semantics.
+- Town intent suspends the route until actual town arrival, then restarts
+  the first endpoint. Unprepared descent returns home rather than forcing
+  a level or cancelling the loop. Town endpoints include the core's town
+  work. Existing inventory management (#293) is not replaced here.
+- Return travel can Recall; deep departures use the core's usual town
+  Recall/readiness/supply policy. Actual arrival is observed before travel
+  to the first waypoint; an adjacent DL1 target uses stairs. Pending Recall
+  is not reissued, and absent Recall falls back to stair travel.
+- Pure planner tests cover intermediate/reverse cycles, planned/unplanned
+  town, waiting for town despite cleared flags, unexpected rises and Recall
+  landing outside the interval. Three fixed-start engine tests cover
+  Recall plus restart/queue cancellation at budget, stairs-only repeated
+  visits and town override without aborting the loop. The original guided
+  session and frozen binary remain intact.
+- Formatting, Clippy, 162 workspace tests and 143 release-core tests pass
+  (one pre-existing core ignore); engine checks pass 47 tests with one
+  environment skip. The vendoring check passes. Against the #268 control
+  binary, no-errand keys/messages/states match over 3,000 turns each at
+  seeds 1010 (warrior), 1001 (mage), 1002 (rogue); all survived. This is
+  bounded regression evidence, not a population improvement claim.
+- Standard CI natural-death controls were reproduced at the final native
+  source hash `50de000425b6` and retained in the explicitly selected
+  historical validation registry: D2402 (vendored core, seed 1011), D2403
+  (reborn smoke, seed 102), D2404 (reborn rerun-source, seed 1020). No
+  loop was active in those controls; no missing-death guard was weakened.
+- #206 was closed as superseded; its three evaluation documents are
+  preserved by exact-source links in the closing comment and local archive
+  `/tmp/pr206-preserved-85429a831316`. #268's consumer dependency fix is a
+  prerequisite here; no recorder implementation or engine gameplay changes
+  are part of this errand.
 
 ## 2026-11-15: owner-requested completion of recorder dependency PR #268
 
