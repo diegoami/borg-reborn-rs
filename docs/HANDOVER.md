@@ -4,6 +4,27 @@
 
 
 
+## 2026-11-15: track P, P1.4 (#222), named core decisions
+
+- Added the independent `trace-core.jsonl` stream, successful root-check
+  hooks, core state/danger/goals/errand/queued keys and immediate line writes.
+  Nested thinks retain separate selection frames. CORE-TRACE.md specifies
+  the sampling point, composite-root names and schema limitations.
+- Full **45/45** matches P1.3 and pinned v12 play logs. All 295,464 rows
+  parse with contiguous sequences and no unclassified decisions. Tracing
+  off preserves play; default-profile ladder remains identical.
+- The recovery override changes the named check at turn 561, from
+  borg_flow_take to borg_recover, and retains the known negative outcome.
+- Death dossiers retain the last 200 core rows and their hashes/counts.
+  D2214–D2225 preserve all twelve measured natural deaths, reconciled.
+  Rust/Python/format/vendor checks pass; P1.4-VALIDATION.md has evidence.
+- P1.1–P1.3 merged (#234, #235, #237) after green CI. The owner explicitly
+  authorized all remaining P tasks on 2026-11-15, including continuation
+  beyond milestone review handoffs. Task PRs merge after CI; review PRs
+  stay unmerged for the owner's chosen reviewer. P2 tasks #240–#243 and
+  P3 tasks #244–#245 implement the remaining PLAN scope. No reviewer or
+  population experiment is launched by this session.
+
 ## 2026-11-15: track P, P1.3 (#221), recovery parameters
 
 - Added 37 recovery parameters (603 total): cure chances, HP/SP gates,

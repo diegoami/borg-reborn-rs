@@ -809,3 +809,10 @@ item preference, random roll or effect was changed.
 | `recover_mana_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:469` |
 | `recover_munchkin_rest_min_food` | 2 | count | 0–1000 | `borg_recover.rs:492` |
 | `recover_rod_rest_turns` | 100 | turns | 1–9999 | `borg_recover.rs:404` |
+
+## Named decision trace (P1.4)
+
+The vendored core writes `trace-core.jsonl` and death dossiers retain its
+last 200 rows. See [CORE-TRACE.md](CORE-TRACE.md) for the schema, sampling
+point and opt-out, and [P1.4-VALIDATION.md](P1.4-VALIDATION.md) for default
+parity and the recovery override's named divergence.

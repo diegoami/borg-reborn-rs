@@ -102,6 +102,12 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
         lines = (run_dir / 'trace.jsonl').read_bytes().splitlines(keepends=True)
         trace_lines = len(lines)
         files['trace-tail.jsonl'] = b''.join(lines[-TRACE_TAIL:])
+    # P1.4 (#222): the vendored core has its own named decision stream.
+    core_trace_lines = 0
+    if (run_dir / 'trace-core.jsonl').exists():
+        lines = (run_dir / 'trace-core.jsonl').read_bytes().splitlines(keepends=True)
+        core_trace_lines = len(lines)
+        files['trace-core-tail.jsonl'] = b''.join(lines[-TRACE_TAIL:])
     files['build.json'] = (json.dumps(build, indent=2, sort_keys=True) + '\n').encode()
     raw = {n: sha256_file(run_dir / n) for n in ('keys.log', 'messages.log', 'state.log')
            if (run_dir / n).exists()}
@@ -131,6 +137,8 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
         },
         'decision_trace': ({'file': 'trace-tail.jsonl', 'lines': min(trace_lines, TRACE_TAIL), 'of': trace_lines}
                            if 'trace-tail.jsonl' in files else None),
+        'core_decision_trace': ({'file': 'trace-core-tail.jsonl', 'lines': min(core_trace_lines, TRACE_TAIL), 'of': core_trace_lines}
+                                if 'trace-core-tail.jsonl' in files else None),
         'attempts': [{
             'role': 'original', 'outcome': 'death', 'raw_directory': final_dir,
             'result_sha256': keys_sha, 'raw_sha256': raw,
@@ -157,6 +165,9 @@ def dossier(case, run_dir, final_dir, impl, flags, summary, build, config, keys_
         + (f"Decision trace: the last {min(trace_lines, TRACE_TAIL)} of {trace_lines} thinks in "
            f"`trace-tail.jsonl`; parameters in `params.json` (profile "
            f"`{(config.get('profile_sha256') or 'unknown')[:12]}`).\n\n" if 'trace-tail.jsonl' in files else '')
+        + (f"Core decision trace: the last {min(core_trace_lines, TRACE_TAIL)} of {core_trace_lines} thinks in "
+           f"`trace-core-tail.jsonl`, with selected check, queued keys and `params-core.json`.\n\n"
+           if 'trace-core-tail.jsonl' in files else '')
         + "**Unassessed.** Basic dossier written by `tools/export-death.py` at the end of the run "
         "(RULES 12). Upgrade it with the full death tooling (T1.6) before investigating.\n").encode()
     return files
