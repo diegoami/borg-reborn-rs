@@ -1,0 +1,25 @@
+{
+  "actions": [],
+  "cases": 12,
+  "causes_by_distinct_start": {
+    "a cave spider": 1,
+    "a fruit bat": 1,
+    "a gallant": 1,
+    "a giant white mouse": 1,
+    "a giant yellow centipede": 1,
+    "a grey mold": 1,
+    "a grey mushroom patch": 1,
+    "a metallic red centipede": 1,
+    "a small kobold": 1,
+    "a soldier": 1,
+    "a wild cat": 1,
+    "poison": 1
+  },
+  "death_process_attempts": 12,
+  "distinct_starting_conditions": 12,
+  "limit": "Selected cases; repeats/reference variants and backup branches are not independent lives or a mortality-rate estimate",
+  "schema": "borg-rs/death-index@1",
+  "versions": {
+    "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea": 12
+  }
+}

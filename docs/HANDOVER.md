@@ -5,24 +5,36 @@
 ## 2026-11-15: M13 town/trip donor refresh (#328)
 
 - Verified tag 4.2.6-rs-town-trip-m13-v1 peels to 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea.
-  Refreshed with the three-way vendor workflow. See M13-INTEGRATION.md for
-  all nine conflict resolutions, five retired parameters and corrected
-  potion-healing defaults. Vendor check passes; OURS/HOOKED work is retained.
-- Keep the receiving engine/layout and standard store UI. Three guarded,
-  read-only native queries supply exact sale quotes and stack room. The
-  donor-only option returns false before accessing player memory. C/Rust
-  regressions independently check the receiving option ABI.
+  Refreshed with the three-way vendor workflow. M13-INTEGRATION.md records
+  all nine conflicts, five retired parameters, corrected potion-healing
+  defaults, read-only native queries and the receiving option ABI adapter.
+  Vendor check passes. Errands/parameters/trace and recorder pins are retained.
+- Exact-tag donor full and receiving no-errand full: 45/45 byte-identical
+  keys/messages/states and effective configs; 12 natural deaths per side.
+  Complete cross-repository summary equality fails because the existing
+  telemetry schemas differ; the checker and its failed output are retained.
+  Original-core smoke3/3 and full45/45 strictly match stored references.
+- Three policy-on class pairs match play logs; 656 schema11 plans replay
+  (500 with a plan). Unit tests preserve old mappings; the external historical
+  replay corpus is not rerun. No urgent-purchase branch coverage is claimed.
 - 318 core release tests pass (four existing ignored), 165 workspace tests,
-  Clippy, formatting, generated bindings, 19 source-tool and 78 tool tests
-  pass. Executed engine checks pass; fixture-dependent tests are identified
-  in the final validation receipt. Fresh donor and receiving builds succeeded.
-- Exact-tag native full parity and small opt-in validation are in progress;
-  the PR remains draft until those receipts are attached. Raw attempts are
-  retained under /workspace/work/m13-validation. One earlier smoke suite
-  completed its games but reporting failed because bc was absent; its partial
-  output is retained and a corrected rerun is queued.
-- Both policies default off. No Zoo repin, population experiment, Track R
-  promotion or additional Track P promotion. #293 remains separate.
+  Clippy, formatting, generated bindings, 19 source-tool and 78 tool tests.
+  Native C/Rust option ABI checks and all 13 profile/isolation tests pass.
+  Final engine/CI results are attached to PR #332 and M13-VALIDATION.json.
+- M13-VALIDATION.json retains exact source/build/config/log identities for
+  all150 validation attempt summaries, including the earlier smoke reporting
+  failure (missing bc) and its separate successful rerun. Failed initial
+  build/tool setup attempts remain in the raw work logs. Source hash a585062c
+  matches committed runtime inputs f67966a5; receipts retain the actual dirty
+  precommit build identity rather than rewriting it as a later clean build.
+- All44 receiving natural deaths are retained as D2476–D2519 in the local
+  validation archive, with zero missing dossiers. Twelve donor control
+  dossiers are retained separately under docs/validation/m13/donor-deaths.
+  Repeated/paired attempts do not inflate independent counts. Raw logs are
+  at /workspace/work/m13-validation. Canonical cemetery contents/pins are unchanged.
+- Both policies default off. No Zoo repin, population study, Track R
+  promotion or additional Track P promotion. #293 remains separate; this
+  integration alone does not establish that its shopping report is fixed.
 
 
 ## 2026-11-15: sweep provenance and catalogue assembly (#299)

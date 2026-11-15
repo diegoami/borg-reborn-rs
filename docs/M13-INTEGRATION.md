@@ -81,3 +81,34 @@ This is a default-off integration, with no survival or performance claim.
 Fresh exact-tag donor comparisons replace v12 references for this acceptance.
 Issue #293 remains separate: a pin refresh alone does not establish that its
 reported shopping behavior is fixed.
+
+## Validation interpretation
+
+The exact-tag donor and receiver full suites match all 45 key/message/state
+streams byte for byte, with the same terminal gameplay fields. Their full
+summary schemas differ: receiver-only loaded/exact-turn/game-option fields
+are absent in the donor summary; wall times differ, and the receiver's existing Borg counters/settings fields
+report its original core's telemetry (zero/empty when the vendored core drives),
+whereas the donor reports borg-rs telemetry. The strict harness/diff consequently
+reports 0/45 complete records identical. That failure is retained, not suppressed
+or relabelled as a strict pass. M13-VALIDATION.json checks the three actual
+play streams, effective input configs and identities independently.
+
+Three opt-in class contexts (Warrior, Mage, Rogue; race0/seed1001; 20,000
+turns each) use the pinned donor harness for both executables so its existing
+NAME=VALUE mechanism supplies the exact same policy-on config. This does not
+replace the receiving harness: default-off full/smoke and errand regressions
+run through the receiver. The effective config files and their hashes are
+retained, with BORG_CORE=borg-rs, BORG_ERRAND=none and BORG_STOPSCARED=off.
+All three paired play streams match. All 656 captured schema11 town plans
+replay in the receiving core (500 have a plan; no urgent purchase is covered).
+Older schema mapping is covered by the donor's retained Rust tests; the large
+external historical replay corpus was not rerun here.
+
+The source/config change creates new death identities. Native receiving
+dossiers are imported into the retained docs/deaths validation archive so CI
+can reconcile them; canonical cemetery contents and pins remain unchanged.
+The first CI failure was the missing new-build cave-spider dossier, with no
+trace disagreement. The first smoke reporting failure (missing bc) and the
+initial engine-test attempt during an unfinished build are retained as failed
+operational attempts; successful reruns are separate.
