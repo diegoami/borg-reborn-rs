@@ -36,6 +36,25 @@ Owner: the scroll should have value, be carried, and be used before any food.
 - `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
   notes count as use, so torches are not reported as unused.
 
+
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
 ## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
 
 - New parameters `caution_heal_when_outmatched` (0/1, default 0) and
