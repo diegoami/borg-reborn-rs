@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: attack preference review follow-up (#424)
+
+- #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
+  review of 3f744ddb found no correctness bugs or blocking findings.
+- Owner requested the suggested small follow-up (findings 1 and 6). Retain
+  the winning simulation's raw utility for the diagnostic note. When it
+  differs from the weighted utility, label both; otherwise preserve the
+  existing note exactly, including at all default weights. No helper is
+  rerun, and ranking, execution, RNG and parameter values are unchanged.
+- Correct PLAN.md's stale task status. Other minor review observations
+  remain nonblocking; invocation-family weighting includes emergency and
+  control actions as documented. Any non-neutral tuning needs that scope
+  considered explicitly; no default tuning is proposed here.
+- Required Rust checks and task CI gate integration into track-p. Preserve
+  the original review pin; update #407 to the integrated follow-up pin after
+  green CI. Main promotion still requires owner acceptance and delegation;
+  R carry #406 remains gated on accepted promotion.
+- Read-only source refresh ran; missing moving-source clones and unresolved
+  origin/HEAD refs prevent a complete upstream report. No source pins move.
+
 ## 2026-11-16: preference task synchronization with recorder review (#403)
 
 - Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference

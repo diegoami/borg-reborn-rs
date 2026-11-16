@@ -4569,6 +4569,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     };
 
     let mut attack_trace = crate::core_trace::attack_ranking();
+    let mut winning_raw = 0;
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
@@ -4579,6 +4580,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let class = tr(st, BI_CLASS);
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
+        if changed { winning_raw = raw; }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4592,7 +4594,11 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     let b_n = ranking.utility;
 
     /* Note */
-    borg_note(st, &format!("# Performing attack type {} with value {}.", b_g, b_n));
+    if winning_raw == b_n {
+        borg_note(st, &format!("# Performing attack type {} with value {}.", b_g, b_n));
+    } else {
+        borg_note(st, &format!("# Performing attack type {} with raw utility {} and weighted utility {}.", b_g, winning_raw, b_n));
+    }
 
     /* Instantiate */
     st.traits.simulate = false;
