@@ -2,6 +2,15 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: synthetic-death exclusion dependency (#371)
+
+Pin cemetery tools to `0216eb3346887ddc1087b16051bb14fb22b71422`
+(cemetery PR #6). Direct export and reconciliation reject synthetic
+summary/config/start-depth markers before touching the natural registry.
+The cemetery change passes 37 native-tool tests and its CI. This dedicated
+pin PR is a dependency of generated-depth startup; it introduces no runtime
+change. Leave for owner-selected review with #371.
+
 ## 2026-11-15: reviewed P349 synchronization (#360)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
