@@ -386,6 +386,11 @@ borg_town_support_turns = 1000
 # forecast actions per shot. Demand follows trip duration, not a fixed quota.
 borg_town_w_ranger_missiles = 250
 borg_town_ranger_missile_turns = 50
+# borg-reborn-rs (#452), Rust-only: Potion of Speed as a last resort.
+# 0 = off (default); 1 = when the Borg would heal, phase, teleport or escape
+# but has no means to (no potion, scroll, spell or device it can use), and is
+# not already fast, it drinks a carried Potion of Speed.
+borg_speed_last_resort = 0
 
 
 

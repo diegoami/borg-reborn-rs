@@ -29,7 +29,7 @@ pub const BORG_TOWN_RISK: C2RustUnnamedH_9 = 55;
 pub const BORG_TOWN_HOME_DISCOUNT: C2RustUnnamedH_9 = 56;
 pub const BORG_TOWN_W_SPACE: C2RustUnnamedH_9 = 57;
 pub const BORG_TOWN_POWER_SCALE: C2RustUnnamedH_9 = 58;
-pub const BORG_MAX_SETTINGS: C2RustUnnamedH_9 = 72;
+pub const BORG_MAX_SETTINGS: C2RustUnnamedH_9 = 73;
 pub const BORG_TRIP_RETURN_GOLD: C2RustUnnamedH_9 = 63;
 pub const BORG_TRIP_UNKNOWN_STACKS: C2RustUnnamedH_9 = 62;
 pub const BORG_TRIP_PACK_SLACK: C2RustUnnamedH_9 = 61;
@@ -93,3 +93,6 @@ pub const BORG_TOWN_SUPPORT_TURNS: C2RustUnnamedH_9 = 69;
 
 pub const BORG_TOWN_W_RANGER_MISSILES: C2RustUnnamedH_9 = 70;
 pub const BORG_TOWN_RANGER_MISSILE_TURNS: C2RustUnnamedH_9 = 71;
+// borg-reborn-rs (#452): Rust-only; 0 = off (today's behaviour), 1 = drink a carried
+// Potion of Speed when heal, phase and teleport are all unavailable.
+pub const BORG_SPEED_LAST_RESORT: C2RustUnnamedH_9 = 72;

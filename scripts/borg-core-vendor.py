@@ -44,6 +44,8 @@ HOOKED = {
     'src/borg_town_usefulness.rs',  # #444: wine is not food, worthless kinds
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
+    'src/borg_headers/borg_h.rs',  # #452: borg_speed_last_resort index (Rust-only setting)
+    'borg.txt', 'c-reference/borg.txt', 'c-reference/borg-init.c',  # #452: the same setting in the borg.txt copies and the C table
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 
