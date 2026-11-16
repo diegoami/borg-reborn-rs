@@ -297,6 +297,42 @@ fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     out
 }
 
+/// borg-reborn-rs (#443, owner 2026-11-16): consumables the core never uses
+/// on purpose, from a source audit of every kind in object.txt against the
+/// core's use sites (not bookkeeping: counting, home notice, buy lists).
+/// Excluded: foods (any known food is eaten, borg_eat_food_any) and potions
+/// whose use-up is their benefit (stat gain, Experience, Infravision,
+/// borg_junk). Harmful kinds are here too. Remove a kind when the core
+/// learns to use it.
+const WORTHLESS: &[(u32, &str)] = &[
+    (TV_SCROLL, "Monster Confusion"), (TV_SCROLL, "Door Destruction"), (TV_SCROLL, "Dispel Undead"),
+    (TV_SCROLL, "Treasure Detection"), (TV_SCROLL, "Summon Monster"), (TV_SCROLL, "Summon Undead"),
+    (TV_SCROLL, "*Destruction*"), (TV_SCROLL, "Aggravate Monster"), (TV_SCROLL, "Curse Weapon"),
+    (TV_SCROLL, "Curse Armour"), (TV_SCROLL, "Darkness"), (TV_SCROLL, "Trap Creation"),
+    (TV_MUSHROOM, "Second Sight"), (TV_MUSHROOM, "Emergency"), (TV_MUSHROOM, "Terror"),
+    (TV_MUSHROOM, "Debility"), (TV_MUSHROOM, "Sprinting"), (TV_MUSHROOM, "Turbulence"),
+    (TV_MUSHROOM, "Shadows"),
+    (TV_POTION, "Poison"), (TV_POTION, "*Enlightenment*"), (TV_POTION, "Surprise"),
+    (TV_POTION, "Salt Water"), (TV_POTION, "Dragon Breath"),
+    (TV_WAND, "Stone to Mud"), (TV_WAND, "Stun Monster"), (TV_WAND, "Polymorph"), (TV_WAND, "Darkness"),
+    (TV_WAND, "Clone Monster"), (TV_WAND, "Disable Traps"), (TV_WAND, "Dragon's Breath"),
+    (TV_WAND, "Heal Monster"), (TV_WAND, "Haste Monster"),
+    (TV_STAFF, "Summoning"), (TV_STAFF, "Haste Monsters"), (TV_STAFF, "Darkness"),
+    (TV_STAFF, "Earthquakes"), (TV_STAFF, "Confuse Monsters"), (TV_STAFF, "Cure Light Wounds"),
+    (TV_STAFF, "Starlight"),
+    (TV_ROD, "Treasure Location"), (TV_ROD, "Probing"), (TV_ROD, "Restoration"),
+    (TV_ROD, "Polymorph"), (TV_ROD, "Disable Traps"),
+];
+
+fn worthless(tval: u32, sval: i32) -> bool {
+    use std::sync::OnceLock;
+    static KINDS: OnceLock<Vec<(u32, i32)>> = OnceLock::new();
+    KINDS.get_or_init(|| WORTHLESS.iter()
+        .map(|&(t, name)| (t, engine::lookup_sval(t as i32, name)))
+        .filter(|&(_, s)| s >= 0).collect())
+        .contains(&(tval, sval))
+}
+
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
@@ -348,11 +384,9 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return Vec::new();
     }
     if !matches!(tval, TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_WAND | TV_ROD | TV_STAFF) { return Vec::new(); }
-    // borg-reborn-rs: an item the core has no code to use. A Scroll of
-    // Monster Confusion is only bought (borg_buy_strategy) or used up as junk
-    // (borg_junk); nothing reads it before a fight. In 270 local games the
-    // planner bought 201 and the core used none.
-    if tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_monster_confusion {
+    // borg-reborn-rs (#443): the core has no code to use these on purpose,
+    // so they are worth nothing to the planner until it does.
+    if worthless(tval, i32::from(item.sval)) {
         return Vec::new();
     }
     // borg-reborn-rs (food counting): only food and mushrooms feed the core
