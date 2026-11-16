@@ -17,6 +17,7 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
+use crate::borg_cave::BorgGrid;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
@@ -32,7 +33,7 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_ACLW, BI_ACSW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES,
+    BI_ACCW, BI_ACSW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES,
     BI_APHASE, BI_ATELEPORT, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
@@ -197,6 +198,52 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
         n += p(Param::caution_mage_stat_fix_votes);
     }
     n
+}
+
+/// borg-reborn-rs (#457): the outmatched-healing test, apart from the
+/// engine so it can be unit tested. True when the flag is on, the Borg is
+/// hurt by at least `min_loss` percent of its maximum HP, and the danger
+/// estimate reaches its current HP (so the ordinary `borg_heal` tiers, which
+/// need `danger < curhp + heal`, cannot have fired).
+fn outmatched_heal_applies(
+    enabled: i32,
+    curhp: i32,
+    maxhp: i32,
+    danger: i32,
+    min_loss: i32,
+) -> bool {
+    enabled != 0
+        && maxhp > 0
+        && curhp < maxhp
+        && (maxhp - curhp) * 100 / maxhp >= min_loss
+        && danger >= curhp
+}
+
+/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
+/// at the end of `borg_caution`, after every escape, stair, retreat and
+/// back-away option declined, a hurt Borg whose danger estimate reaches its
+/// HP drinks the weakest cure potion it holds (CLW, CSW, CCW) instead of
+/// attacking, even if the potion cannot "cover" the danger. The danger
+/// estimate is a pessimistic worst case; the potion buys a turn.
+/// Off (`caution_heal_when_outmatched` = 0) it does nothing.
+fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if !outmatched_heal_applies(
+        p(Param::caution_heal_when_outmatched),
+        st.borg.tr(BI_CURHP),
+        st.borg.tr(BI_MAXHP),
+        danger,
+        p(Param::caution_heal_outmatched_min_loss),
+    ) {
+        return false;
+    }
+    if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+    {
+        borg_note(st, "# Healing (outmatched).");
+        return true;
+    }
+    false
 }
 
 /// Try healing.
@@ -1209,6 +1256,12 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
+/// Lava burns for 100+1d100 fire damage a turn: a Borg that is not immune to
+/// fire must never choose it as a step (borg-reborn-rs#458).
+fn lava_forbids_step(st: &BorgState, ag: &BorgGrid) -> bool {
+    u32::from(ag.feat) == FEAT_LAVA && st.borg.tr(BI_IFIRE) == 0
+}
+
 /// Back away from danger to an adjacent grid (the "Back away" block of
 /// `borg_caution`).
 fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
@@ -1243,6 +1296,12 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
         // Skip walls/doors
         if !borg_cave_floor_grid(&ag) {
+            continue;
+        }
+
+        // Skip lava grids unless immune to fire (it does 100+1d100 fire
+        // damage per turn: borg-reborn-rs#458)
+        if lava_forbids_step(st, &ag) {
             continue;
         }
 
@@ -1507,11 +1566,15 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// borg-reborn-rs (#452, `borg_speed_last_resort`): what the Borg lacks when
 /// it is in danger enough to escape, is not fast, carries a Potion of Speed
 /// and has no way left to heal, phase or teleport; `None` when the setting
-/// is off or any of the three is available. Heal is any cure potion, a
-/// Healing, *Healing* or Life potion, a staff, rod or activation that heals,
-/// or a heal spell; phase a scroll, spell or activation; teleport a scroll,
-/// staff, spell or activation. `borg_trait` counts exactly these (spells only
-/// when their failure rate allows a cast, devices only with charges).
+/// is off or any of the three is available. Heal is a Cure Serious or
+/// Critical Wounds, Healing, *Healing* or Life potion, a staff, rod or
+/// activation that heals, or a heal spell; phase a scroll, spell or
+/// activation; teleport a scroll, staff, spell or activation. `borg_trait`
+/// counts exactly these (spells only when their failure rate allows a cast,
+/// devices only with charges). Cure Light Wounds does not count (owner,
+/// 2026-11-17): its 20 HP (object.txt) cannot answer a danger above the
+/// Borg's hit points, and the 180-start trial found a death with CLW
+/// carried and Speed unused, so Speed takes precedence over it.
 fn speed_last_resort_lacks(st: &BorgState, pos_danger: i32, has_speed_potion: bool) -> Option<String> {
     if st.cfg(BORG_SPEED_LAST_RESORT) == 0 || !has_speed_potion {
         return None;
@@ -1528,17 +1591,17 @@ fn speed_last_resort_lacks(st: &BorgState, pos_danger: i32, has_speed_potion: bo
         return None;
     }
     let tr = |t| st.borg.tr(t).max(0);
-    let heal = tr(BI_ACLW) + tr(BI_ACSW) + tr(BI_ACCW) + tr(BI_AHEAL) + tr(BI_AEZHEAL) + tr(BI_ALIFE);
+    let heal = tr(BI_ACSW) + tr(BI_ACCW) + tr(BI_AHEAL) + tr(BI_AEZHEAL) + tr(BI_ALIFE);
     let phase = tr(BI_APHASE);
     let teleport = tr(BI_ATELEPORT) + tr(BI_AESCAPE);
     if heal > 0 || phase > 0 || teleport > 0 {
         return None;
     }
-    Some(format!("no heal, phase or teleport; danger {} of avoidance {}", pos_danger, st.borg.avoidance))
+    Some(format!("no heal beyond Cure Light Wounds, phase or teleport; danger {} of avoidance {}", pos_danger, st.borg.avoidance))
 }
 
-/// borg-reborn-rs (#452): called when `borg_escape` found nothing to use.
-/// Drinks a carried Potion of Speed (+10 speed for 20+2d10 turns,
+/// borg-reborn-rs (#452): called before the Borg heals, defends or escapes,
+/// so it precedes a Cure Light Wounds potion. Drinks a carried Potion of Speed (+10 speed for 20+2d10 turns,
 /// object.txt) as the last resort, if `borg_speed_last_resort` is on.
 fn speed_last_resort(st: &mut BorgState, pos_danger: i32) -> bool {
     let has = borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_speed) >= 0;
@@ -1712,6 +1775,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
+
+    // borg-reborn-rs (#452): with nothing beyond Cure Light Wounds to heal and
+    // no phase or teleport, Speed comes before the CLW potion borg_heal would
+    // drink below (owner, 2026-11-17).
+    if speed_last_resort(st, pos_danger) {
+        return true;
+    }
 
     if !st.borg.goal.fleeing {
         // Start being cautious and trying to not die
@@ -1993,10 +2063,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // borg-reborn-rs (#452): the Borg would escape but nothing worked.
-    if speed_last_resort(st, pos_danger) {
-        return true;
-    }
 
     /*** Back away ***/
     // Do not back up if
@@ -2144,6 +2210,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#457): outmatched, nothing above took a turn. Heal
+    // rather than fall through to borg_attack.
+    if borg_heal_outmatched(st, pos_danger) {
+        return true;
+    }
+
     // Nothing
     false
 }
@@ -2277,6 +2349,7 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod speed_last_resort_tests {
     use super::*;
+    use crate::borg_headers::borg_trait_h::BI_ACLW;
     use crate::borg_headers::borg_trait_h::BI_MAX;
 
     fn state(flag: i32) -> BorgState {
@@ -2293,12 +2366,20 @@ mod speed_last_resort_tests {
     fn drinks_when_heal_phase_and_teleport_are_all_unavailable() {
         let st = state(1);
         let lacked = speed_last_resort_lacks(&st, 200, true).expect("fires");
-        assert!(lacked.starts_with("no heal, phase or teleport"), "{lacked}");
+        assert!(lacked.starts_with("no heal beyond Cure Light Wounds, phase or teleport"), "{lacked}");
+    }
+
+    #[test]
+    fn cure_light_wounds_does_not_hold_speed_back() {
+        // owner, 2026-11-17: Speed takes precedence over Cure Light Wounds
+        let mut st = state(1);
+        st.borg.trait_[BI_ACLW as usize] = 8;
+        assert!(speed_last_resort_lacks(&st, 200, true).is_some());
     }
 
     #[test]
     fn does_not_drink_when_one_of_heal_phase_or_teleport_is_available() {
-        for t in [BI_ACLW, BI_ACSW, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE, BI_APHASE, BI_ATELEPORT, BI_AESCAPE] {
+        for t in [BI_ACSW, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE, BI_APHASE, BI_ATELEPORT, BI_AESCAPE] {
             let mut st = state(1);
             st.borg.trait_[t as usize] = 1;
             assert_eq!(speed_last_resort_lacks(&st, 200, true), None, "trait {t}");
@@ -2325,5 +2406,67 @@ mod speed_last_resort_tests {
         // 10 tenths of an avoidance of 100: danger at or under 100 is not scary
         assert_eq!(speed_last_resort_lacks(&st, 100, true), None);
         assert!(speed_last_resort_lacks(&st, 101, true).is_some());
+    }
+}
+
+#[cfg(test)]
+mod outmatched_tests {
+    use super::*;
+
+    #[test]
+    fn outmatched_heal_needs_the_flag() {
+        // 29 max HP, 10 HP left, danger 40: the Gnome Druid of #457.
+        assert!(!outmatched_heal_applies(0, 10, 29, 40, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 40, 50));
+    }
+
+    #[test]
+    fn outmatched_heal_needs_a_hurt_borg_in_lethal_danger() {
+        // not hurt enough: 15/29 is 48% down, below the 50% threshold
+        assert!(!outmatched_heal_applies(1, 15, 29, 40, 50));
+        // 14/29 is 51% down
+        assert!(outmatched_heal_applies(1, 14, 29, 40, 50));
+        // danger below current HP: the ordinary tiers decide
+        assert!(!outmatched_heal_applies(1, 10, 29, 9, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 10, 50));
+        // unhurt (even with a zero threshold) and a degenerate maximum
+        assert!(!outmatched_heal_applies(1, 29, 29, 40, 0));
+        assert!(!outmatched_heal_applies(1, 0, 0, 40, 0));
+    }
+
+    #[test]
+    fn outmatched_heal_is_off_by_default() {
+        let spec = |name| crate::params::SPECS.iter().find(|s| s.name == name).unwrap();
+        let flag = spec("caution_heal_when_outmatched");
+        assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
+        assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    fn grid_of(feat: u32) -> BorgGrid {
+        BorgGrid {
+            feat: feat as u8,
+            ..BorgGrid::default()
+        }
+    }
+
+    // borg-reborn-rs#458: lava does 100+1d100 fire damage a turn, so
+    // backing away onto it killed full-HP low-level Borgs. (`back_away`
+    // itself needs the engine, so the test is on its lava rule.)
+    #[test]
+    fn lava_is_a_forbidden_step_without_fire_immunity() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        assert!(lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_FLOOR)));
+        // an immune Borg may step on it
+        st.borg.trait_[BI_IFIRE as usize] = 1;
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
     }
 }

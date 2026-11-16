@@ -46,6 +46,59 @@ when heal, phase and teleport are all unavailable. Stacked on #455.
   a measurement. The planner now also buys Speed (9 potions in 180 games,
   one never used). Gameplay evidence is not written here (borg-cemetery).
 
+## 2026-11-16: no knowledge-only purchases (#460)
+
+- Owner: "turn off the buying of useless unknown objects". Cause of the
+  Scroll of Monster Confusion buys (replay 1285833235, game turn 13116,
+  shop 4 slot 10): not a supply path. `WORTHLESS` does blank
+  `capability::supplies()` for it, and the plan entry's value was exactly
+  25000 = `borg_town_w_knowledge` x UNIT, the first-copy "learn" bonus of a
+  ware whose `serves` carries the knowledge bit. #444 zeroed that weight
+  under `borg_trip_policy = 1` in `Weights::of`, but `step()` rebuilds its
+  settings from the 24 recorded town params (`state_of`), and the trip policy
+  is not one of them, so the zero never reached the plan: the weight was 25 in
+  every arm.
+- Change: `borg_town_shadow::effective_params` zeroes `borg_town_w_knowledge`
+  in the params the step runs on and records (`configured_params` still holds
+  the configured value). Off in every arm, trip 0 and 1; no schema, parameter
+  or default change; replays of new records reproduce the plan. The IDENTIFY
+  capability (Identify Rune scrolls, only with unknown runes carried) still
+  reads the configured weight. `borg_town_shadow.rs` is declared HOOKED.
+  Tests: the effective params, and a knowledge-only ware is planned at the
+  configured weight and not at the effective one (both planner modes).
+- Local replays (before = main build, after = this change; flavour-unknown
+  buys counted from messages.log): 1285833235 trip 1: 6 buys 155 gold with
+  one Monster Confusion, died of poison at clvl 4 -> 4 buys 58 gold (CLW,
+  Phase Door, Boldness, Detect Invisible), alive at the 100000-turn cap;
+  2109297965 trip 0: 7 buys 210 gold, killed by a wild dog at clvl 1 -> 5
+  buys 185 gold, alive at the cap (clvl 7); sanity cell 501/0/0 ambitious:
+  main keys a80b9ac6... -> ba6181b9..., 9 buys 238 gold, died to Lagduf at
+  clvl 8 -> 4 buys 113 gold, alive at the cap. Play diverges from the first
+  changed purchase, so end states are not evidence of improvement (RULES 14).
+  What remains unknown-flavour was bought for its kind: CLW, Phase Door,
+  Magic Mapping, Cure Serious Wounds, Boldness, Detect Invisible.
+- A `WORTHLESS` check cannot cover a flavour-unknown ware by itself: in a
+  store the ware carries its real kind, and `supplies()` prices it by that
+  (so a known-worthless kind in stock has no supply on any path), but the
+  knowledge bonus does not look at the kind. With the weight zero no
+  worthless kind has value on any planner path.
+- Question for the owner: should trip 0 keep buy-to-identify behind
+  `borg_town_w_knowledge`? The issue said to ask; this change turns it off
+  there too, as the owner's words ask. To restore the knob, read the
+  configured weight again in `effective_params` (one line). The historical
+  chooser (`borg_town_plan = 0`) has its own `borg_buy_identify` (default 0 in
+  harness/borg.txt, #27 learning list including Monster Confusion and Remove
+  Hunger, `borg_buy_strategy.rs:142`); not touched.
+- Low-value kinds still bought for their capability (use sites in the core):
+  Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
+  Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
+  Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
+  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  not count it as food). The planner prices them through `timed_cap`
+  (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
+  FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
+  with the ordinary weight (`:492`, `:502-507`); the owner decides whether
+  those curves are too generous.
 ## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
 
 Owner: the scroll should have value, be carried, and be used before any food.
@@ -79,6 +132,71 @@ Owner: the scroll should have value, be carried, and be used before any food.
   from #444 and earlier; not declared here, not part of CI).
 - `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
   notes count as use, so torches are not reported as unused.
+
+
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
+## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
+
+- New parameters `caution_heal_when_outmatched` (0/1, default 0) and
+  `caution_heal_outmatched_min_loss` (50 percent); registry 1783 to 1785.
+  `borg_heal_outmatched` runs at the very end of `borg_caution` (after stairs,
+  retreat, escape, back-away and the reserve/recall/unknown-item steps all
+  declined, so escapes keep precedence) and, when hurt by the threshold with
+  danger at least current HP, quaffs CLW, else CSW, else CCW instead of
+  letting `borg_attack` run. Note: "# Healing (outmatched)." The potion order
+  is weakest first (conserves stronger cures); the owner may prefer strongest
+  first for the study.
+- Flag 0 is byte-identical on this build: seed 1516096046 (race 4 class 2,
+  errands_plan.txt, town 1, trip 0, 100000 turns) still dies at CL3 with keys
+  `4c2ea4baf255`; seed 501 (race 0 class 0, ambitious plan) keys `a80b9ac6185c`.
+- Flag 1, same cells: 1516096046 quaffs CLW twice in the acolyte fight and
+  survives to the turn limit (CL4, max DL2); 979002123 (race 8 class 6,
+  trip 1) drinks 17 times and survives to the turn limit (CL10, max DL13)
+  where flag 0 dies (CL8, DL12). One cell each, not a measurement (RULES 14):
+  the zoo control (flag 0 against 1 on the #147 arms) is the next step.
+- Unit tests cover the pure decision; the potion path needs the engine's
+  `z_info` and is exercised by the replays above.
+
+## 2026-11-16: back-away no longer steps onto lava (#458)
+
+- `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
+  `borg_cave_floor_grid`, which includes `FEAT_LAVA`. Lava burns 100+1d100
+  per turn (engine player-util.c:918), so low-level Borgs died at full HP in
+  town (borg-zoo#147: 15 of 212 death cells). It now skips lava unless the
+  Borg is fire-immune, the rule already used in borg_caution's
+  flee-grid check, flow_dark, flow and rest. Plain fix, no flag.
+- Audit of the other `borg_cave_floor_grid` callers: none else chooses a
+  step. The rest are projection and ray paths (borg_projection, fight_attack,
+  fight_defend), monster tracking (flow_kill), light and surround counts,
+  trap assumption (update), and a search-target scan (flow_misc) whose cost
+  map already blocks lava. Dimension door excludes lava already. Flow
+  spreading blocks lava for a non-immune Borg. Phase door lands wherever the
+  game puts the Borg; that is not a Borg choice. `borg_cave_floor_grid` is
+  unchanged (map/view code depends on lava being a floor).
+- Replays (errands_plan, town 1, trip 0, 100000 turns): 1356248624 race 2
+  class 0 now survives to the turn limit (CL5); 584077430 race 1 class 3 now
+  dies at turn 73713 to a battle-scarred veteran, not lava. Sanity cell 501
+  with the ambitious plan keeps its keys sha256 (a80b9ac6...).
+- The unit test covers the lava rule; `back_away` itself links only with the
+  engine, so the replays are the integration check.
+
 ## 2026-11-16: reviewed preference promotion synchronization (#453)
 
 - Owner asks to merge after #407's review at50c92ba0 reports no blockers.
