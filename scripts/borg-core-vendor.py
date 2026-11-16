@@ -41,6 +41,7 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
     'src/borg_prepared.rs',  # #447: read the independent live plan-cap overlay
+    'src/borg_town_usefulness.rs',  # #444: receiving town item-value correction
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
