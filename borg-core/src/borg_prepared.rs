@@ -726,6 +726,13 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return None;
     }
 
+    // Not if No_Deeper is set
+    // borg-reborn-rs (#447): combine the current cfg with a plan overlay.
+    let no_deeper = crate::errands_plan::effective_no_deeper(st.cfg(crate::borg_headers::borg_h::BORG_NO_DEEPER));
+    if depth >= no_deeper {
+        return Some(Reason::Formatted(format!("No deeper {no_deeper}.").into_bytes()));
+    }
+
     if st.cfg(BORG_USES_DYNAMIC_CALCS) != 0 {
         // use the base restock so special checks can be done
         if let Some(reason) = borg_restock(st, depth) {
@@ -752,13 +759,6 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
             if let Some(reason) = borg_prepared_aux(st, depth) {
                 return Some(Reason::Text(reason));
             }
-        }
-
-        // Not if No_Deeper is set
-        // borg-reborn-rs (#447): combine the current cfg with a plan overlay.
-        let no_deeper = crate::errands_plan::effective_no_deeper(st.cfg(crate::borg_headers::borg_h::BORG_NO_DEEPER));
-        if depth >= no_deeper {
-            return Some(Reason::Formatted(format!("No deeper {no_deeper}.").into_bytes()));
         }
     }
 

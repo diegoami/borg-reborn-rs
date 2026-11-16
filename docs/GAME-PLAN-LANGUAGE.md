@@ -128,8 +128,7 @@ phase. Pending Recall is allowed to finish before selecting a new phase;
 store transactions and partially queued commands are not interrupted.
 
 The core owns every move, town trip and recovery; the cap only refuses
-levels below it. Phase selection clears old path intent, not the core's
-safety flags. No match stops with a reason.
+levels below it. Phase selection preserves path intent, errands, core goals and safety flags. No match stops with a reason.
 `/stop`, a manually selected errand, or an errand's terminating outcome cancels
 the plan controller. A different character/older loaded game resets selection.
 An ordinary key pause retains existing Borg state; restarting the Borg resumes

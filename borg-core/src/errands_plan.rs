@@ -224,14 +224,24 @@ impl Runtime {
             }
         }
     }
+    fn reinitialize(&mut self, me: (u32, u64, i64), class: &str, level: i32) -> Result<(), String> {
+        if self.owner.is_some_and(|(c, b, t)| (c, b) != (me.0, me.1) || me.2 < t) {
+            self.phase = None;
+            self.cancelled = false;
+        }
+        self.owner = Some(me);
+        self.plan_cap = if self.cancelled { None } else {
+            self.plan.phase(class, level)?.map(|p| match p.command { Command::MaxDepth(n) => n + 1 })
+        };
+        Ok(())
+    }
     fn cancel(&mut self) {
         self.cancelled = true;
         self.plan_cap = None;
     }
 
     fn effective_no_deeper(&self, configured: i32) -> i32 {
-        if self.cancelled { configured }
-        else { self.plan_cap.map_or(configured, |cap| configured.min(cap)) }
+        self.plan_cap.map_or(configured, |cap| configured.min(cap))
     }
 
 }
@@ -328,8 +338,10 @@ pub(crate) fn initialize() {
     let class = shell::CLASSES
         .get(class_id as usize)
         .unwrap_or_else(|| fatal("unknown player class"));
-    if let Some(r) = RUNTIME.get().unwrap().lock().unwrap().as_ref() {
+    if let Some(r) = RUNTIME.get().unwrap().lock().unwrap().as_mut() {
         r.plan.validate_class(class).unwrap_or_else(|e| fatal(e));
+        r.reinitialize((class_id, engine::player_birth_key(), i64::from(engine::game_turn())),
+            class, i32::from(engine::player_notice().lev)).unwrap_or_else(|e| fatal(e));
     }
 }
 pub(crate) fn cancel() {
@@ -529,6 +541,22 @@ mod tests {
         assert_eq!(r.effective_no_deeper(40), 40);
     }
     #[test]
+    fn initialization_refreshes_cap_before_store_or_recall_tick() {
+        let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+            owner: None, phase: None, plan_cap: None, cancelled: false };
+        r.select((1, 10, 100), "mage", 8).unwrap();
+        assert_eq!(r.effective_no_deeper(127), 4);
+        r.reinitialize((1, 10, 50), "mage", 2).unwrap(); // older save
+        assert_eq!(r.effective_no_deeper(127), 2);
+        r.reinitialize((0, 11, 1), "warrior", 1).unwrap(); // new character
+        assert_eq!(r.effective_no_deeper(127), 3);
+        r.cancel();
+        r.reinitialize((0, 11, 1), "warrior", 1).unwrap(); // same run retains cancellation
+        assert_eq!(r.effective_no_deeper(20), 20);
+        r.reinitialize((1, 12, 1), "mage", 1).unwrap();
+        assert_eq!(r.effective_no_deeper(20), 2);
+    }
+    #[test]
     fn manual_cancel_releases_overlay_without_waiting_for_tick() {
         const CHILD: &str = "BORG_PLAN_CAP_CANCEL_CHILD";
         if std::env::var_os(CHILD).is_some() {
@@ -537,6 +565,15 @@ mod tests {
             r.select((1, 1, 1), "mage", 5).unwrap();
             assert!(RUNTIME.set(Mutex::new(Some(r))).is_ok());
             assert_eq!(effective_no_deeper(20), 2);
+            // The production preparedness entry must reject before either
+            // calculation mode can bypass the active phase.
+            let mut state = BorgState::default();
+            for dynamic in [0, 1] {
+                state.core.cfg[crate::borg_headers::borg_h::BORG_USES_DYNAMIC_CALCS as usize] = dynamic;
+                state.core.cfg[crate::borg_headers::borg_h::BORG_NO_DEEPER as usize] = 127;
+                let reason = crate::borg_prepared::borg_prepared(&mut state, 2);
+                assert!(matches!(reason, Some(crate::borg_prepared::Reason::Formatted(_))));
+            }
             // Manual cancellation is visible to preparedness immediately;
             // no tick/phase installation or Recall completion is needed.
             cancel();
@@ -547,7 +584,9 @@ mod tests {
         let result = std::process::Command::new(std::env::current_exe().unwrap())
             .args(["--exact", "errands_plan::tests::manual_cancel_releases_overlay_without_waiting_for_tick"])
             .env(CHILD, "1").output().unwrap();
-        assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stdout));
+        let output = String::from_utf8_lossy(&result.stdout);
+        assert!(result.status.success(), "{output}");
+        assert!(output.contains("1 passed;"), "child must run exactly one test: {output}");
     }
     #[test]
     fn max_depth_phases_parse_and_reject_bad_levels() {

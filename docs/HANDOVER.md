@@ -4937,3 +4937,14 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   canonical CI control deaths. The source fixture pins that evidence commit.
   Lifecycle reload/cancel behavior has unit coverage; an interactive GUI
   reload/Recall session is not claimed. Follow-up stays unmerged for review.
+
+## #449 re-review fixes
+
+- Apply the effective depth limit before dynamic/static preparedness selection.
+- Initialization refreshes the cap from the loaded character and level before
+  store/Recall ticks; same-run cancellation remains cancelled.
+- Require the child cancellation test to report one executed test. Remove
+  the redundant cancellation branch and correct the remaining path-intent text.
+- Add initialization lifecycle and production preparedness regressions in both
+  calculation modes.
+  Validation and refreshed evidence pins will be recorded on #449.
