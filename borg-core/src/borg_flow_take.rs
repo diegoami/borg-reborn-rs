@@ -632,6 +632,91 @@ fn take_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     true
 }
 
+/// Prepare to "flow" towards special objects to "take"
+/// (`borg_flow_take_scum`).
+pub fn borg_flow_take_scum(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
+    if !scum_select(st, viewable) {
+        return false;
+    }
+    scum_flow(st, viewable, nearness)
+}
+
+/// The object selection of `borg_flow_take_scum`: fills `borg_temp_*`; false when
+/// there is nothing to take.
+fn scum_select(st: &mut BorgState, viewable: bool) -> bool {
+    /* Efficiency -- Nothing to take */
+    if st.takes.cnt == 0 {
+        return false;
+    }
+
+    /* Require one empty slot */
+    if st.items.items[(pack_slots(st) - 1) as usize].iqty != 0 {
+        return false;
+    }
+
+    /* Nothing yet */
+    st.flow.temp_n = 0;
+
+    /* Check for an existing "up stairs" */
+    let (b_stair, _) = nearest_up_stair(st);
+
+    /* Scan the object list -- set filter*/
+    let mut i: i32 = 1;
+    while i < i32::from(st.takes.nxt) {
+        let take = st.takes.takes[i as usize];
+        i += 1;
+
+        /* Skip dead objects */
+        if take.kidx == 0 {
+            continue;
+        }
+
+        /* Access the location */
+        let x = i32::from(take.x);
+        let y = i32::from(take.y);
+
+        /* skip worthless items */
+        if take.value <= 0 {
+            continue;
+        }
+
+        /* Require line of sight if requested */
+        if viewable && st.cave.grid(x, y).info & BORG_VIEW == 0 {
+            continue;
+        }
+
+        /* don't go too far from the stairs */
+        if borg_flow_misc::borg_flow_far_from_stairs(st, x, y, b_stair) {
+            continue;
+        }
+
+        /* Careful -- Remember it */
+        st.flow.temp_push(y, x);
+    }
+
+    /* Nothing to take */
+    st.flow.temp_n != 0
+}
+
+/// The flow part of `borg_flow_take_scum`, after `scum_select`.
+fn scum_flow(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
+    spread_to_temp(st, nearness, true, viewable, true);
+
+    /* Attempt to Commit the flow */
+    if !borg_flow::borg_flow_commit(st, c"Scum item", i32::from(GOAL_TAKE)) {
+        return false;
+    }
+
+    /* Take one step */
+    if !borg_flow::borg_flow_old(st, i32::from(GOAL_TAKE)) {
+        return false;
+    }
+
+    /* Success */
+    true
+}
+
+/// Allocate the object list (`borg_init_flow_take`).
 pub fn borg_init_flow_take(st: &mut BorgState) {
     borg_free_flow_take(st);
 
