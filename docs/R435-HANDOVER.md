@@ -135,3 +135,19 @@ Actual normal build records git_rev469ae3bc and inputs_dirty=no, with runtime
 input2efde248c719cdcaa31b28078af461823aee47d06fa283642cee6f6f7d5d7ff8.
 Keep that build identity unchanged even when the public containing source SHA
 has different commit metadata. No full45 or milestone acceptance is implied.
+
+Native @5 at private613bcaa5 (public5933ba43) passes55 constructed cases in
+both modes, all3 smoke cases off/check/switch with zero disagreements and
+identical keys/messages/state, and smoke reconciliation (zero natural deaths).
+The readonly map is correctly separate from mutable roots. This source's
+input is04fbdaaedfea75cc5458658b3035a551a002a11486f3738934066c0bc6475244;
+original normal/feature binaries and BUILD_ID are preserved. No speed claim.
+CI43895543704 retained two real gates: the grid diagnostic unit still expected
+historical schema@3 (now requires@5 with its other assertions unchanged), and
+core-trace-off's seed1011 natural death was absent from canonical custody.
+Its original11-file registry artifact14239302694 is downloaded byte-for-byte
+(SHA25698f9f0bcc3e09faa3ea2e4cafe63df06b5cb80fa04158dfa5d4cf1cab7b3321b).
+Do not skip its archive gate or relabel the death. The previous prototype CI
+artifact is also retained separately. The diagnostic expectation is test-only,
+but the whole-file input hash changes; rebuild and name subsequent evidence
+honestly rather than rewrite old BUILD_ID or reuse its hash as the new build.
