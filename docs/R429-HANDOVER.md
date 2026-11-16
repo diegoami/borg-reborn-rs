@@ -40,3 +40,14 @@ a supported authenticated Git path. Existing tags are unchanged.
 No game was played locally for this reference-only task. Required CI must
 pass before integration; its final result and merge are recorded on the PR.
 This scoped handover supplements the unchanged historical global handover.
+
+CI43878856785 (and the stacked audit run43880734693) passed all runtime
+shadow/entry/perception gates, but15 environment-contract assertions failed
+when the newly pinned zoo adapter deliberately scrubbed ambient BORG_*.
+The native environment probes now inject only at the actual executable
+boundary, verifying exactly one launch; the unchanged adapter remains free
+to scrub ambient variables. A separate actual adapter cell supplies invalid
+ambient core/errand/fear/budget/parameter values and requires default profile
+success. Existing invalid-value, precedence, inactive-core and stop/cap
+assertions are unchanged. No runtime or adapter bytes are altered. These
+failed workflows remain retained; final CI is required before merge.
