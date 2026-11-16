@@ -2,6 +2,14 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: let existing healing run during lethal flight (#369)
+
+- Remove only the outer `danger < current HP` exclusion for fleeing
+  characters. Existing healing tiers, level/loss limits, chance gates and
+  `borg_quaff_crit` remain in force; escape and attack policy are untouched.
+- Stacked on rollback #379; leave unmerged for owner inspection. Trial
+  results belong in borg-cemetery's PlanMage case. Zoo comparison stays paused.
+
 ## 2026-11-16: Cemetery evidence ownership (#376)
 
 - AGENTS/RULES now require gameplay reports, scenarios and trials in
