@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-full/full-4-necro-1",
+      "raw_sha256": {
+        "keys.log": "f59e2629ce96c49da1a2eed39626ece6d114fc5a7c997ad3fea4460da9579e4c",
+        "messages.log": "22768b3e35466f9ac19811b26d138d8c74c460ed84cc50b7c6b9679c172cefa8",
+        "state.log": "2eee6735dcfa00b0df10279f5bfe41ee4a0d37666318e2018f909753dc6e7409"
+      },
+      "result_sha256": "f59e2629ce96c49da1a2eed39626ece6d114fc5a7c997ad3fea4460da9579e4c",
+      "role": "original",
+      "source_commit": "c310d01859904895adaafda39f81535fe8c26ee8"
+    }
+  ],
+  "character": "Dwarf Necromancer",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 473
+  },
+  "decision_trace": null,
+  "encounter_family": "start-330398bc79520fe6c9e80dd0ad201ddc5b2f763584473b7d3b8f266e7fec80b0",
+  "files_sha256": {
+    "build.json": "da5e81c3dc4f7a830ad8729c6716a05f590af93ec53ddf43e5e56c70a6a031ed",
+    "config.txt": "b91a7a4bd76b0312bfc79543adf6cf5b87285c9d45a9bfdd8d7bdea96f2e330a",
+    "depths.json": "36bb499fb25e33a0b1767c665d8d6b71bf279387d4d46e36afa55abcf63f0a1b",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "f5b4a96762f8616159aae08e193548e4b0272e1f1fbc150d311a97b9dc0fa0c1",
+    "trace-core-tail.jsonl": "7a064528e63e7d277d7c8614c3233fe2031b347c9dcc4b12c5dcc718f2d152ae"
+  },
+  "id": "D0000-q67409177c84d814bf3573342e4c5b1e172b5a3f3da459de9116c465e2f082c96",
+  "identity": {
+    "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+    "borg_txt_sha256": "9db3f988e55024b0085099c2a5938ec030421cbc4ea480f447639d56df395c5e",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "c310d01859904895adaafda39f81535fe8c26ee8",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1041,
+    "source_sha256": "b2532940e9de215ed159991db3219d30d9736716bd661209fc8fde1865d303b3"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a giant white centipede",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a giant white centipede",
+    "class_idx": 4,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 5,
+    "turn": 5559
+  }
+}

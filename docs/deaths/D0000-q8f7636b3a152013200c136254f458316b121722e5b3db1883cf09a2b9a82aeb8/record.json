@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-baseline-full/full-1-mage-1",
+      "raw_sha256": {
+        "keys.log": "8c6e691c53b42d9a14e0a9f6219d392efb0e41fe9e15aaf7b5f8173ce3a04883",
+        "messages.log": "d83f74673c9582ac5c6aea834f22a1493fd90f5316ac5006df05db3b2e3beae0",
+        "state.log": "920a92b6527eee3939296013b06ce0ebcba65d163d5c2b2e0c6ffd65f59ef236"
+      },
+      "result_sha256": "8c6e691c53b42d9a14e0a9f6219d392efb0e41fe9e15aaf7b5f8173ce3a04883",
+      "role": "original",
+      "source_commit": "cf687bb24de8e0715854ca1b7a0f827b7e71be82"
+    }
+  ],
+  "character": "Elf Mage",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1084
+  },
+  "decision_trace": null,
+  "encounter_family": "start-a5586a78008bcc841e71a0ec1b9a9f0498fba5761c96dce892a4834f15efde4d",
+  "files_sha256": {
+    "build.json": "c82a20e0b49e3c5efb37afb5a6c692751bba80f5d9329e23a0362e68f4bef0f4",
+    "config.txt": "26167d4e2e6447e654ad5ce8c2df53758496a940f2333cbcdc661f9dec7c463b",
+    "depths.json": "23015664f186104613131a8c1513eed43d79f44950b5f5fde3592769b9e2379c",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "c4ff2e7fa096b4a7a40a9dc3234d3c7eb1f65bbc959333c8b875e584d7b9e05b",
+    "trace-core-tail.jsonl": "eb26a25eedb306168e942ef117d32223c17b14acfdf75f9200bd770674d5349c"
+  },
+  "id": "D0000-q8f7636b3a152013200c136254f458316b121722e5b3db1883cf09a2b9a82aeb8",
+  "identity": {
+    "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+    "borg_txt_sha256": "9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "cf687bb24de8e0715854ca1b7a0f827b7e71be82",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1011,
+    "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a wild dog",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a wild dog",
+    "class_idx": 1,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 1,
+    "race_idx": 2,
+    "turn": 17759
+  }
+}

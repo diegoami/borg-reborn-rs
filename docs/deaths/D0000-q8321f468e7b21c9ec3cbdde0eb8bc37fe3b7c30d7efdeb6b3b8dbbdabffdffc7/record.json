@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-full/full-6-rogue-4",
+      "raw_sha256": {
+        "keys.log": "8defd50eb9f7096a96fa49de1f6d441cd8b9f4ba0e7bd69b863863db63ae51d1",
+        "messages.log": "2616e120cbd6a933e7a0d56bf2ee403f6d7c9f1593671f993356dd9774edbdbd",
+        "state.log": "33abd63899068d9a2d88e40e8775605701d6071f560d9f01394c8cb0f28a97fe"
+      },
+      "result_sha256": "8defd50eb9f7096a96fa49de1f6d441cd8b9f4ba0e7bd69b863863db63ae51d1",
+      "role": "original",
+      "source_commit": "c310d01859904895adaafda39f81535fe8c26ee8"
+    }
+  ],
+  "character": "Kobold Rogue",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1233
+  },
+  "decision_trace": null,
+  "encounter_family": "start-085690acfb3ff0b762fedf4b81a28a423044ef595b6ae3ed7946f27091d522cf",
+  "files_sha256": {
+    "build.json": "da5e81c3dc4f7a830ad8729c6716a05f590af93ec53ddf43e5e56c70a6a031ed",
+    "config.txt": "a18c1c5e3ccfb70b136151c77855b0ef992ef8da12bc86fde209593f40aa92a3",
+    "depths.json": "d09e46e204b899f3ef900e282da9c6080d9e701a5f2bd2d71f89ede8654648e3",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "9f0b28f95c7b3b5fa493f5fa8af99ec31ad1c646e820676c75f5d9f47d4eefdb",
+    "trace-core-tail.jsonl": "bb967b28c021b1ef28edba6726e7ce1f91b580e97b6ac2a5901317d981a829d7"
+  },
+  "id": "D0000-q8321f468e7b21c9ec3cbdde0eb8bc37fe3b7c30d7efdeb6b3b8dbbdabffdffc7",
+  "identity": {
+    "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+    "borg_txt_sha256": "1163eb281e5bdcdacf6ac75ebbdf2a06f3347a8bf9b3d9afada20e32542f6d26",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "c310d01859904895adaafda39f81535fe8c26ee8",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1064,
+    "source_sha256": "b2532940e9de215ed159991db3219d30d9736716bd661209fc8fde1865d303b3"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a grey mushroom patch",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 10,
+    "turn": 12296
+  }
+}

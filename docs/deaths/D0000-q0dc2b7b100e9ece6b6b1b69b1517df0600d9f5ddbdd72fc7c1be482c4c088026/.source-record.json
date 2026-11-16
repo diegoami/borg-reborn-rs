@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0007-rust-seed1031",
+  "run_kind": "harness",
+  "character": "Gnome Priest",
+  "raw_cause": "a moaning spirit",
+  "terminal": {
+    "cause": "a moaning spirit",
+    "dead": true,
+    "depth": 13,
+    "max_depth": 14,
+    "level": 3,
+    "turn": 57217,
+    "race_idx": 4,
+    "class_idx": 3
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1031,
+    "flags": "menu",
+    "git_rev": "cf687bb24de8e0715854ca1b7a0f827b7e71be82",
+    "git_dirty": "no",
+    "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58",
+    "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+    "borg_txt_sha256": "e45505e5ddd3bf88a17ccb61f34d291f4df624303ae6f2ca366df7dddc7856cc",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 3524
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-baseline-full/full-3-priest-1",
+      "result_sha256": "3e9eee557f3b64b3982a5a22a7253705d3e9bbc4d01bc11054922b0bf3da56c8",
+      "raw_sha256": {
+        "keys.log": "3e9eee557f3b64b3982a5a22a7253705d3e9bbc4d01bc11054922b0bf3da56c8",
+        "messages.log": "3917822f1af5f00dad045e85dc6f2db99c11c67c5fe5fd8cd1fa62853faf691e",
+        "state.log": "6dccbb1e06acbfeacfe0f1fcea50ff8c2b46d32e131518a3c47307c43c2fdcd2"
+      },
+      "source_commit": "cf687bb24de8e0715854ca1b7a0f827b7e71be82",
+      "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4"
+    }
+  ],
+  "encounter_family": "start-17f0250cfe4e56b01d76f305cd3050fe4f3da17f21c3a93782acaf56412f3f56",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "c82a20e0b49e3c5efb37afb5a6c692751bba80f5d9329e23a0362e68f4bef0f4",
+    "config.txt": "310df2d1566e30e66c0df01dcfb8d640faf9d707736c09060058b0422ee1eb64",
+    "depths.json": "62b9fa9803aad60d6d3cdb406dcc5a41d8d95be2dd917a930002a76c69d34b56",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "dd544bfc84fcb1edb6bb2207dbbc178f3592a41babd4ac30861537f24c905be5",
+    "trace-core-tail.jsonl": "50602b46decd1cbfc6bc8f3324739b7e2775de23f81cd12903081f1e150898d7"
+  },
+  "investigation": null,
+  "issue": null
+}

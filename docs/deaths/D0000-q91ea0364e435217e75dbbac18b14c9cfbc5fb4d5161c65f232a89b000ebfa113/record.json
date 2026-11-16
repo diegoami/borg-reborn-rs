@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-full/full-3-priest-1",
+      "raw_sha256": {
+        "keys.log": "3e9eee557f3b64b3982a5a22a7253705d3e9bbc4d01bc11054922b0bf3da56c8",
+        "messages.log": "3917822f1af5f00dad045e85dc6f2db99c11c67c5fe5fd8cd1fa62853faf691e",
+        "state.log": "6dccbb1e06acbfeacfe0f1fcea50ff8c2b46d32e131518a3c47307c43c2fdcd2"
+      },
+      "result_sha256": "3e9eee557f3b64b3982a5a22a7253705d3e9bbc4d01bc11054922b0bf3da56c8",
+      "role": "original",
+      "source_commit": "c310d01859904895adaafda39f81535fe8c26ee8"
+    }
+  ],
+  "character": "Gnome Priest",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 3524
+  },
+  "decision_trace": null,
+  "encounter_family": "start-3a12e1f3b6b36992b9a2fa4434e1d1cd12ff1871ace3bda156f87a7cb2a0de6b",
+  "files_sha256": {
+    "build.json": "da5e81c3dc4f7a830ad8729c6716a05f590af93ec53ddf43e5e56c70a6a031ed",
+    "config.txt": "310df2d1566e30e66c0df01dcfb8d640faf9d707736c09060058b0422ee1eb64",
+    "depths.json": "62b9fa9803aad60d6d3cdb406dcc5a41d8d95be2dd917a930002a76c69d34b56",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "bc753ab35980bde7748f01f6ac5d04a7fbc228c83fdfa73dea22e6a6121284ed",
+    "trace-core-tail.jsonl": "50602b46decd1cbfc6bc8f3324739b7e2775de23f81cd12903081f1e150898d7"
+  },
+  "id": "D0000-q91ea0364e435217e75dbbac18b14c9cfbc5fb4d5161c65f232a89b000ebfa113",
+  "identity": {
+    "binary_sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+    "borg_txt_sha256": "e45505e5ddd3bf88a17ccb61f34d291f4df624303ae6f2ca366df7dddc7856cc",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "c310d01859904895adaafda39f81535fe8c26ee8",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1031,
+    "source_sha256": "b2532940e9de215ed159991db3219d30d9736716bd661209fc8fde1865d303b3"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a moaning spirit",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a moaning spirit",
+    "class_idx": 3,
+    "dead": true,
+    "depth": 13,
+    "level": 3,
+    "max_depth": 14,
+    "race_idx": 4,
+    "turn": 57217
+  }
+}

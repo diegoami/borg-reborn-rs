@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p351-baseline-full/full-6-rogue-2",
+      "raw_sha256": {
+        "keys.log": "127c0e1fb84ec38f569136cc16b78ac09c53e173faabc1b97b51300366fe9b7f",
+        "messages.log": "0cf7431fe3fb209a3df6a39c3206ab517c4212b020c052503a65d34e626219f5",
+        "state.log": "6df192f3b9bd7c5a2bcd266ac4831fe95787827477a10c849d3e2465da2f3816"
+      },
+      "result_sha256": "127c0e1fb84ec38f569136cc16b78ac09c53e173faabc1b97b51300366fe9b7f",
+      "role": "original",
+      "source_commit": "cf687bb24de8e0715854ca1b7a0f827b7e71be82"
+    }
+  ],
+  "character": "Dunadan Rogue",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 721
+  },
+  "decision_trace": null,
+  "encounter_family": "start-8730f1be2837b3571729c5055cf141595b6fe739c4a938ba8bdf4dcb07076c93",
+  "files_sha256": {
+    "build.json": "c82a20e0b49e3c5efb37afb5a6c692751bba80f5d9329e23a0362e68f4bef0f4",
+    "config.txt": "da5f2026e2e1ec0bbca19f01cdcfa086f12033c1fdd79a5d1af511cf36b252f7",
+    "depths.json": "c4e01aced0a8189d64edef30453c865e8e950ce1c46db2ab11515eb754b9b445",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "6d170e0bb0165b7150243e0e7ab7bdb7f4585253045d2e01036b4fd35bc783aa",
+    "trace-core-tail.jsonl": "4c33d964a3b92b01d1a2d501e41e0d64cb2e544a5213ced394376f534f07e06b"
+  },
+  "id": "D0000-qa22f379c0ae352dfdb3622abfa3f199c4264e858106fd4bef33b644690c7cd3c",
+  "identity": {
+    "binary_sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+    "borg_txt_sha256": "d44a0b4a9347cfa39ed07059950f2961cf03d4038ca2b315318cde941b9ecd6d",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "cf687bb24de8e0715854ca1b7a0f827b7e71be82",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1062,
+    "source_sha256": "0f2e003f988fba56929f259f6098d356ec12c0ec024419750937a13a7dce5d58"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a kobold",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a kobold",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 2,
+    "race_idx": 8,
+    "turn": 6720
+  }
+}

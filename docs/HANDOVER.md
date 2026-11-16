@@ -14,9 +14,15 @@
   Add captured-load replay/final-save coverage alongside fresh-game capture,
   forked checkpoints, bot streams and v2 CLI verification. GUI/branch-menu
   and migration coverage are not claimed.
-- Source/build and death identities change; dedicated before/after vanilla
-  play comparisons, native recorder checks, required checks and CI are pending.
-  This task PR targets track-p, then a new owner-selected milestone review.
+- Local validation passes: full 45/45 recorder-off play parity and 241,403
+  classified rows, original smoke/death controls, fresh/loaded native v2
+  replay/final saves/checkpoints, 18 recorder Rust checks and required Rust
+  checks. Native 69-test run had two local skips; the pinned incident test
+  rerun passes all four positions, leaving local binding regeneration for CI.
+- Preserve 28 new provenance packets with exact original bytes; both
+  registries reconcile and all 2,606 archive packages verify. Build/log/hash
+  receipts and limitations are in P351-VALIDATION.md/.json and the map.
+  Required CI gates track-p; a separate owner-selected review gates main.
 
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
