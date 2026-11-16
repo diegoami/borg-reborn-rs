@@ -1,5 +1,36 @@
 # R4 item-use implementation (#435), validation in progress
 
+Current branch refinement: the availability predicate takes only &BorgState
+in both programs. Its typed ReadDecision uses ordered read-only replay on the
+same immutable memory, with no caller-state clone. Mutable entries retain the
+original full-state fork/comparison. The surrounding predicate dependency is
+now a query: complete input-state replay checking remains, and the unchanged
+post-state copy is unnecessary. Only audited immutable facts are called; the
+compiler rejects writes or mutable services through this interface.
+
+The current protocol is shadow/shadow-stats@5, surface r4-item-use-readonly.
+readonly_comparisons/readonly_points count immutable roots; root_points counts
+mutable roots. The historical stateful_points field contains all policy-entry
+markers, including immutable ones. Total comparisons include both partitions;
+item_use_calls still counts every item marker. --r4-item-use requires @5;
+--legacy-r4-item-use explicitly verifies unchanged @4 prototype evidence.
+Neither historical reader can satisfy the current gate. No metric is silently
+reinterpreted. The constructed list now has55 cases, adding charged-item and
+ignore-charge checks at the immutable public boundary.
+
+Six tape unit tests pass, including ordered read/query replay once, wrong
+return/order rejection, and restoration of an opaque parent transaction with
+complete mutable-state equality. Source correspondence still covers all37
+bodies, and47 source tests plus12 shadow gate tests pass. Current native
+@5 validation is pending. The measured @4 smoke below identified2.58million
+immutable calls among2.78million item calls; that count motivated the narrower
+type. This is not a controlled performance claim. Historical @4 smoke/fault/
+constructed results below remain with source2efde248 and do not validate the
+new runtime by themselves.
+
+## Historical @4 prototype and retained attempts
+
+
 Current local checkpoint: normal and test native builds succeed. Native
 off/check smoke has all3 gameplay streams equal; switch smoke is still
 running. The controlled unknown-item flag fault is rejected with a full-state

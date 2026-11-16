@@ -71,7 +71,7 @@ jobs:
           import json, pathlib
           for mode in ('check', 'switch'):
               rows = [json.loads(line) for line in pathlib.Path(f'harness/out/item-use-fixture-{mode}/r4-item-use-fixtures.jsonl').read_text().splitlines()]
-              assert len(rows) == 53 and len({r['case'] for r in rows}) == 53
+              assert len(rows) == 55 and len({r['case'] for r in rows}) == 55
               assert all(r['schema'] == 'borg-reborn-rs/r4-item-use-constructed@1'
                          and r['synthetic'] is True and r['engine_consumption'] is False
                          and r['stubbed_dependencies'] == ['borg_io::borg_note_bytes']

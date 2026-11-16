@@ -350,7 +350,7 @@
     },
     "src/borg_item_use.rs": {
       "donor_blob": "fbf2fe365b54a5d0b60c9053b55b40b4d128d354",
-      "receiving_sha256": "cf51124728b8bc8701d759af2373cfd97089221b848055b5235e9fb5e66a2936"
+      "receiving_sha256": "5cb9c23b13ee3789f96f317580ae5ef4dc68192518b0888ae44f0ba1bdeb0b2a"
     },
     "src/borg_item_val.rs": {
       "donor_blob": "72af6c594984434f6bf40f138e1121e7fb67a465",

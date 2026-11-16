@@ -1,5 +1,5 @@
 {
-  "schema": "borg-reborn-rs/r435-api-delta@1",
+  "schema": "borg-reborn-rs/r435-api-delta@2",
   "new_dependencies": [
     {
       "module": "borg_item_analyze",
@@ -261,6 +261,16 @@
       "variant": "ItemRecharging",
       "args": [],
       "value": "Acted"
+    }
+  ],
+  "reclassified_existing": [
+    {
+      "module": "borg_item_use",
+      "name": "borg_equips_item",
+      "old_kind": "effect",
+      "new_kind": "query",
+      "state_signature": "&BorgState",
+      "reason": "Immutable activation presence/charge predicate; before-state replay check retained. Typed readonly root compares ordered queries without cloning caller memory."
     }
   ]
 }

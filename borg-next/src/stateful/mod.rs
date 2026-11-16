@@ -1,7 +1,7 @@
 //! Stateful R2 policies. All external queries/effects use decision_api;
 //! every BI read uses the named native-memory view. No direct engine API.
 use borg_rs::{
-    decisions::{Decision, Value},
+    decisions::{Decision, ReadDecision, Value},
     memory::BorgState,
 };
 pub mod attack;
@@ -122,4 +122,14 @@ fn set_confusion_resistance(st: &mut BorgState, value: i32) {
 
 fn set_free_action(st: &mut BorgState, value: i32) {
     st.borg.trait_[borg_rs::memory::traits::BI_FRACT as usize] = value;
+}
+
+/// Compiler-enforced read-only entry dispatch, with no caller state clone.
+pub fn read_decide(st: &BorgState, request: ReadDecision) -> Value {
+    match request {
+        ReadDecision::ItemEquipsItem {
+            activation,
+            check_charge,
+        } => Value::Acted(item_use::borg_equips_item(st, activation, check_charge)),
+    }
 }

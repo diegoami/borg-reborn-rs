@@ -142,3 +142,14 @@ Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(
 
 } }
 }
+
+/// Audited immutable policy requests; implementations cannot write caller memory.
+#[derive(Clone,Copy,Debug,PartialEq,Serialize)]
+#[serde(tag="kind")]
+pub enum ReadDecision { ItemEquipsItem {activation:i32,check_charge:bool} }
+impl ReadDecision {
+    pub fn name(self)->&'static str { match self { Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
+    pub fn native(self,state:&BorgState)->Value { match self {
+        Self::ItemEquipsItem {activation,check_charge}=>Value::Acted(crate::borg_item_use::borg_equips_item_native(state,activation,check_charge)),
+    } }
+}

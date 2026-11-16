@@ -496,6 +496,43 @@ pub(crate) fn run(
                 );
                 rows += 1;
             }
+            let mut charge_gate = base.clone();
+            charge_gate.borg.activation[activation as usize] = 1;
+            let item = &mut charge_gate.items.items[pack + 2];
+            *item = blank_item();
+            item.iqty = 1;
+            item.tval = TV_RING as u8;
+            item.sval = 1;
+            item.activ_idx = activation;
+            item.timeout = 10;
+            check(
+                &mut out,
+                &charge_gate,
+                mode,
+                "equips-item-charging",
+                Decision::ItemEquipsItem {
+                    activation,
+                    check_charge: true,
+                },
+                Value::Acted(false),
+                false,
+                &mut dispatch,
+            );
+            rows += 1;
+            check(
+                &mut out,
+                &charge_gate,
+                mode,
+                "equips-item-ignore-charge",
+                Decision::ItemEquipsItem {
+                    activation,
+                    check_charge: false,
+                },
+                Value::Acted(true),
+                false,
+                &mut dispatch,
+            );
+            rows += 1;
             out.flush().unwrap();
             eprintln!(
             "R4 item-use constructed fixture: {rows} cases; queued actions on owned copies only"

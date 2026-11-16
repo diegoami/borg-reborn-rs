@@ -15,7 +15,7 @@ PORT_NAMESPACES = {'decision_api', 'decision_tape', 'memory', 'threat_facts'}
 
 # Exact audited code exceptions, never a file-wide exemption. Changing these
 # requires reviewing the dispatch types / sole native BI write explicitly.
-DISPATCH_IMPORT = 'use borg_rs::{decisions::{Decision,Value},memory::BorgState,};'
+DISPATCH_IMPORT = 'use borg_rs::{decisions::{Decision,ReadDecision,Value},memory::BorgState,};'
 MANA_ADAPTER = ('fn set_mana(st:&mut BorgState,value:i32){'
                 'st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize]=value;}')
 
@@ -79,7 +79,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
         for match in re.finditer(r'\bborg_rs\s*::\s*(memory|threat_facts|decisions)\s*::\s*(\w+)', code):
             allowed_names = {'memory': {'BorgState'},
                              'threat_facts': {'param', 'Param'},
-                             'decisions': {'Decision', 'Value'} if dispatch else set()}
+                             'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()}
             if match[2] not in allowed_names[match[1]]:
                 errors.append(f'unrecorded path borg_rs::{match[1]}::{match[2]}')
         if re.search(r'\buse\s+borg_rs\s*::\s*(?:memory|threat_facts|decision_tape|decisions)\s*;', code):
@@ -101,7 +101,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
         if m[1] not in ('active', 'mark'):
             errors.append(f'policy may not drive the tape through {m[1]}')
     exact_imports = {'threat_facts': {'param','Param'}, 'memory': {'BorgState'},
-                     'decisions': {'Decision', 'Value'} if dispatch else set()} if port else {
+                     'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime'},
         'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y','BorgGrid','DUNGEON_HGT','DUNGEON_WID'}, 'borg_update': {'Detect'},
         'state': {'BorgState'}}

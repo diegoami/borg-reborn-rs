@@ -991,7 +991,7 @@ if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub(crate) fn borg_equips_item_native(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub(crate) fn borg_equips_item_native(st: &BorgState, activation: i32, check_charge: bool) -> bool {
 if crate::decision_tape::active() { crate::decision_tape::mark("policy::item_use.borg_equips_item",format!("{:?}",(activation,check_charge,))); }
     /* a quick check of the array */
     if st.borg.activation[activation as usize] == 0 {
@@ -1387,9 +1387,9 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32)->bool {
 if crate::decision_tape::active() { return borg_activate_item_native(st,activation); }
 match crate::shadow::decision(st,crate::decisions::Decision::ItemActivateItem { activation }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool)->bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool)->bool {
 if crate::decision_tape::active() { return borg_equips_item_native(st,activation,check_charge); }
-match crate::shadow::decision(st,crate::decisions::Decision::ItemEquipsItem { activation,check_charge }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::ItemEquipsItem { activation,check_charge }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }
 pub fn borg_activate_failure(st: &mut BorgState, tval: i32, sval: i32)->i32 {
 if crate::decision_tape::active() { return borg_activate_failure_native(st,tval,sval); }

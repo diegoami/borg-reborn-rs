@@ -1072,7 +1072,7 @@ pub fn borg_activate_item(st: &mut BorgState, activation: i32) -> bool {
 }
 
 /// Check and see if borg is wielding an item with this activation.
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
     if borg_rs::decision_tape::active() {
         borg_rs::decision_tape::mark(
             "policy::item_use.borg_equips_item",

@@ -298,9 +298,9 @@ pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_dragon(st,drag_sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_equips_dragon",format!("{:?}",(drag_sval,)),|st| crate::borg_item_use::borg_equips_dragon(st,drag_sval))
 }
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_item(st,activation,check_charge); }
-crate::decision_tape::effect(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|st| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
+crate::decision_tape::query(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
 }
 pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_ring(st,ring_sval); }

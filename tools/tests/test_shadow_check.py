@@ -33,7 +33,7 @@ class ShadowCheckTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)
             with self.assertRaisesRegex(ValueError, 'wrong schema'):
-                module.check([root], r4_item_use=True)
+                module.check([root], legacy_item_use=True)
             row.update(schema='borg-reborn-rs/shadow-stats@4', surface='r4-item-use',
                        ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use'])
             counts = row['counts']
@@ -42,7 +42,7 @@ class ShadowCheckTest(unittest.TestCase):
             counts['policy_markers'] += len(module.ITEM_USE_ENTRY_POINTS)
             counts['tape_events'] += len(module.ITEM_USE_ENTRY_POINTS)
             self.write(root, row)
-            module.check([root], require_all_entries=True, expected_mode='check', r4_item_use=True)
+            module.check([root], require_all_entries=True, expected_mode='check', legacy_item_use=True)
             with self.assertRaisesRegex(ValueError, 'wrong schema'):
                 module.check([root])
             counts['stateful_points'][module.ITEM_USE_ENTRY_POINTS[0]] = 0
@@ -51,7 +51,33 @@ class ShadowCheckTest(unittest.TestCase):
             counts['tape_events'] -= 1
             self.write(root, row)
             with self.assertRaisesRegex(ValueError, 'missing individual entry'):
-                module.check([root], require_all_entries=True, r4_item_use=True)
+                module.check([root], require_all_entries=True, legacy_item_use=True)
+
+    def test_readonly_root_partition_and_legacy_separation(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row()
+            row.update(schema='borg-reborn-rs/shadow-stats@5', surface='r4-item-use-readonly',
+                       ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use'])
+            counts=row['counts']; counts['item_use_calls']=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+            counts['policy_markers']+=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['tape_events']+=len(module.ITEM_USE_ENTRY_POINTS)
+            counts['readonly_comparisons']=1
+            counts['readonly_points']={'item_use.borg_equips_item':1}
+            counts['comparisons']+=1
+            self.write(root,row)
+            module.check([root], require_all_entries=True, r4_item_use=True)
+            with self.assertRaisesRegex(ValueError,'wrong schema'):
+                module.check([root], legacy_item_use=True)
+            for field, value, error in [
+                ('readonly_comparisons',2,'read-only root counts'),
+                ('readonly_points',{'item_use.borg_activate_item':1},'entry coverage'),
+                ('root_points',{'item_use.borg_equips_item':1},'entry coverage'),
+                ('comparisons',6,'comparison counts'),
+            ]:
+                changed=copy.deepcopy(row);changed['counts'][field]=value;self.write(root,changed)
+                with self.assertRaisesRegex(ValueError,error):
+                    module.check([root], r4_item_use=True)
 
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
