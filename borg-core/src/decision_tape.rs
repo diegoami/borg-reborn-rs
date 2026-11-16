@@ -31,7 +31,11 @@ fn abort(message:String) -> ! {
         // dependency or pretend the remainder of the replay is meaningful.
         use std::io::Write;
         let mut row=CONTEXT.with(|c|c.borrow().clone());
-        row["schema"]=serde_json::json!("borg-reborn-rs/shadow@1");
+        // The provider owns the versioned diagnostic contract. Historical
+        // direct tape callers without a version retain their original schema.
+        if row.get("schema").is_none() {
+            row["schema"]=serde_json::json!("borg-reborn-rs/shadow@1");
+        }
         row["replay_error"]=serde_json::json!(message);
         row["replay_stopped"]=serde_json::json!(true);
         let saved=std::env::var_os("BORG_RUN_DIR").ok_or_else(||std::io::Error::other("missing shadow run directory"))

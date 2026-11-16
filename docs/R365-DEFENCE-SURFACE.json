@@ -1,0 +1,385 @@
+{
+  "schema": "borg-reborn-rs/r365-defence-surface@1",
+  "core_pin": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "source_sha256": "5e68e8345ee07140cb5728ccb18df3a3c9fb4ee7f9da4e1e4dc233ed5be99bf2",
+  "functions": [
+    {
+      "name": "key",
+      "signature": "fn key(c: u8) -> keycode_t",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "i2d",
+      "signature": "fn i2d(dir: i32) -> keycode_t",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_timer",
+      "signature": "fn borg_timer(st: &BorgState, t: BorgTime) -> BorgTime",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "tr",
+      "signature": "fn tr(st: &BorgState, i: u32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "avoid",
+      "signature": "fn avoid(st: &BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "simulating",
+      "signature": "fn simulating(st: &mut BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "grid",
+      "signature": "fn grid(st: &BorgState, x: i32, y: i32) -> BorgGrid",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "screwed",
+      "signature": "fn screwed(st: &BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "scaled_fail",
+      "signature": "fn scaled_fail(st: &BorgState, p1: i32, base: i32, mid: i32, low: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "limit",
+      "signature": "fn limit(st: &BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "improves",
+      "signature": "fn improves(st: &BorgState, p1: i32, p2: i32, div: i32) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "some_danger",
+      "signature": "fn some_danger(st: &BorgState, p1: i32) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "dark_here",
+      "signature": "fn dark_here(st: &BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "is_ghost",
+      "signature": "fn is_ghost(r_idx: u16) -> bool",
+      "public": false,
+      "engine_calls": [
+        "z_info"
+      ]
+    },
+    {
+      "name": "max_range",
+      "signature": "fn max_range() -> i32",
+      "public": false,
+      "engine_calls": [
+        "z_info"
+      ]
+    },
+    {
+      "name": "danger_here",
+      "signature": "fn danger_here(st: &mut BorgState, average: bool) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "danger_one_here",
+      "signature": "fn danger_one_here(st: &mut BorgState, i: i32, full_damage: bool) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "unique_is",
+      "signature": "fn unique_is(st: &BorgState, name: &[u8]) -> bool",
+      "public": false,
+      "engine_calls": [
+        "race_name"
+      ]
+    },
+    {
+      "name": "reset_lists",
+      "signature": "fn reset_lists(st: &mut BorgState)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_log_spellpath",
+      "signature": "fn borg_log_spellpath(st: &mut BorgState)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_bless",
+      "signature": "fn borg_defend_aux_bless(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_speed",
+      "signature": "fn borg_defend_aux_speed(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_grim_purpose",
+      "signature": "fn borg_defend_aux_grim_purpose(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_fecap",
+      "signature": "fn borg_defend_aux_resist_fecap(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_f",
+      "signature": "fn borg_defend_aux_resist_f(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_c",
+      "signature": "fn borg_defend_aux_resist_c(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_a",
+      "signature": "fn borg_defend_aux_resist_a(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_e",
+      "signature": "fn borg_defend_aux_resist_e(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_resist_p",
+      "signature": "fn borg_defend_aux_resist_p(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_prot_evil",
+      "signature": "fn borg_defend_aux_prot_evil(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_shield",
+      "signature": "fn borg_defend_aux_shield(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_tele_away",
+      "signature": "fn borg_defend_aux_tele_away(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_hero",
+      "signature": "fn borg_defend_aux_hero(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_regen",
+      "signature": "fn borg_defend_aux_regen(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_berserk",
+      "signature": "fn borg_defend_aux_berserk(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "near_evil",
+      "signature": "fn near_evil(st: &BorgState) -> bool",
+      "public": false,
+      "engine_calls": [
+        "distance",
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_smite_evil",
+      "signature": "fn borg_defend_aux_smite_evil(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_glyph",
+      "signature": "fn borg_defend_aux_glyph(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_create_door",
+      "signature": "fn borg_defend_aux_create_door(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_mass_genocide",
+      "signature": "fn borg_defend_aux_mass_genocide(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance",
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_genocide",
+      "signature": "fn borg_defend_aux_genocide(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "race",
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_genocide_nasties",
+      "signature": "fn borg_defend_aux_genocide_nasties(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "race"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_earthquake",
+      "signature": "fn borg_defend_aux_earthquake(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_destruction",
+      "signature": "fn borg_defend_aux_destruction(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_teleportlevel",
+      "signature": "fn borg_defend_aux_teleportlevel(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "banish_note",
+      "signature": "fn banish_note(st: &mut BorgState, kill_idx: i32, full_damage: bool, what: &str)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_banishment",
+      "signature": "fn borg_defend_aux_banishment(st: &mut BorgState, mut p1: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_inviso",
+      "signature": "fn borg_defend_aux_inviso(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_lbeam",
+      "signature": "fn borg_defend_aux_lbeam(st: &mut BorgState, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "shift_as_precaution",
+      "signature": "fn shift_as_precaution(st: &mut BorgState, dir: i32)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_panel_shift",
+      "signature": "fn borg_defend_panel_shift(st: &mut BorgState) -> bool",
+      "public": false,
+      "engine_calls": [
+        "term_geometry"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_rest",
+      "signature": "fn borg_defend_aux_rest(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend_aux_tele_away_morgoth",
+      "signature": "fn borg_defend_aux_tele_away_morgoth(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_banishment_morgoth",
+      "signature": "fn borg_defend_aux_banishment_morgoth(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance",
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "borg_defend_aux_light_morgoth",
+      "signature": "fn borg_defend_aux_light_morgoth(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_calculate_defense_effectiveness",
+      "signature": "fn borg_calculate_defense_effectiveness(st: &mut BorgState, what: i32, p1: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_defend",
+      "signature": "pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool",
+      "public": true,
+      "engine_calls": [
+        "player_timed"
+      ]
+    }
+  ]
+}

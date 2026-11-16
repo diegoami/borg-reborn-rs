@@ -10,7 +10,20 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 9)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 11)
+
+    def test_defence_mutation_adapters_are_exact_and_policy_cannot_delegate(self):
+        for adapter in surface.DEFENCE_ADAPTERS:
+            self.assertFalse(surface.inspect(adapter, port=True, dispatch=True))
+            self.assertTrue(surface.inspect(adapter.replace('=value;', '=value+1;'),
+                                            port=True, dispatch=True))
+            self.assertTrue(surface.inspect(adapter, port=True, dispatch=False))
+        self.assertTrue(surface.inspect(
+            'borg_rs::decision_api::borg_fight_defend::borg_defend(st,p1);',
+            port=True, policy='defence'))
+        self.assertFalse(surface.inspect(
+            'borg_rs::decision_api::borg_fight_attack::borg_launch_bolt(st,0,1,2,3,0);',
+            port=True, policy='defence'))
 
     def test_direct_core_engine_and_tape_bypasses_are_refused(self):
         for code, port in [('use crate::engine;', False),
@@ -80,7 +93,7 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 10)
+            self.assertEqual(surface.check(fixture), 12)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):

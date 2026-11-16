@@ -54,6 +54,7 @@ struct Counts {
     escape_calls: u64,
     recovery_calls: u64,
     attack_calls: u64,
+    defence_calls: u64,
     pure_attack_comparisons: u64,
     pure_points: BTreeMap<&'static str, u64>,
     stateful_comparisons: u64,
@@ -82,6 +83,7 @@ impl Counts {
                 Some("escape") => self.escape_calls += count,
                 Some("recovery") => self.recovery_calls += count,
                 Some("attack") => self.attack_calls += count,
+                Some("defence") => self.defence_calls += count,
                 _ => panic!("unknown policy marker namespace: {name}"),
             }
         }
@@ -120,7 +122,7 @@ impl<W: Write> Recorder<W> {
         if original != ported {
             self.counts.mismatches += 1;
             let row = serde_json::json!({
-                "schema": "borg-reborn-rs/shadow@2", "mode": mode,
+                "schema": "borg-reborn-rs/shadow@3", "mode": mode,
                 "turn": turn, "borg_turn": borg_turn,
                 "point": "danger.wall_like", "inputs": {"feature": feature},
                 "original": original, "ported": ported,
@@ -158,7 +160,7 @@ impl<W: Write> Recorder<W> {
         if original != ported {
             self.counts.mismatches += 1;
             let row = serde_json::json!({
-                "schema":"borg-reborn-rs/shadow@2", "mode":mode,
+                "schema":"borg-reborn-rs/shadow@3", "mode":mode,
                 "turn":turn, "borg_turn":borg_turn,
                 "point":if slot.is_some() { "danger.one_monster" } else { "danger" },
                 "inputs":input, "slot":slot, "original":original,"ported":ported,
@@ -193,7 +195,7 @@ impl<W: Write> Recorder<W> {
         *self.counts.pure_points.entry(point).or_default() += 1;
         if original != ported {
             self.counts.mismatches += 1;
-            let row = serde_json::json!({"schema":"borg-reborn-rs/shadow@2","mode":mode,
+            let row = serde_json::json!({"schema":"borg-reborn-rs/shadow@3","mode":mode,
                 "turn":turn,"borg_turn":borg_turn,"point":point,"inputs":input(),
                 "original":original,"ported":ported});
             serde_json::to_writer(&mut self.mismatches, &row)?;
@@ -209,10 +211,10 @@ impl<W: Write> Recorder<W> {
     fn think(&mut self, mode: Mode, borg_turn: i32) -> std::io::Result<()> {
         self.counts.thinks += 1;
         let row = serde_json::json!({
-            "schema": "borg-reborn-rs/shadow-stats@2", "mode": mode,
+            "schema": "borg-reborn-rs/shadow-stats@3", "mode": mode,
             "borg_turn": borg_turn,
-            "surface": "r3-attack",
-            "ported_points": ["danger.wall_like", "danger", "danger.one_monster", "caution", "escape", "recovery", "attack"],
+            "surface": "r3-attack-defence",
+            "ported_points": ["danger.wall_like", "danger", "danger.one_monster", "caution", "escape", "recovery", "attack", "defence"],
             "unported_points": [],
             "counts": self.counts,
         });
@@ -306,7 +308,7 @@ impl Shadow for Next {
 
     fn decision(&self, state: &mut BorgState, request: Decision) -> Value {
         let mode = self.mode;
-        let context = serde_json::json!({"mode":mode,"point":request.name(),"inputs":request,
+        let context = serde_json::json!({"schema":"borg-reborn-rs/shadow@3","mode":mode,"point":request.name(),"inputs":request,
             "turn":borg_rs::threat_facts::game_turn(),"borg_turn":state.borg.time.now,
             "original":null,"ported":null});
         let (chosen, replayed, agreement, events, visits) = match mode {
@@ -339,7 +341,7 @@ impl Shadow for Next {
             } else {
                 (replayed, Some(chosen))
             };
-            let row = serde_json::json!({"schema":"borg-reborn-rs/shadow@2","mode":mode,
+            let row = serde_json::json!({"schema":"borg-reborn-rs/shadow@3","mode":mode,
                 "turn":borg_rs::threat_facts::game_turn(),"borg_turn":state.borg.time.now,
                 "point":request.name(),"inputs":request,"original":original,"ported":ported,
                 "replay_error":error,"tape_events":events,"policy_markers":visits.values().sum::<u64>(),
@@ -359,6 +361,8 @@ impl Shadow for Next {
     }
 
     fn after_think(&self, state: &BorgState) {
+        #[cfg(feature = "test-r3-defence")]
+        crate::defence_fixture::run(state, self.mode);
         #[cfg(feature = "test-m13-danger")]
         crate::m13_fixture::run(state, self.mode);
         self.recorder
@@ -374,7 +378,7 @@ impl Shadow for Next {
 /// It uses no engine query: the game turn is deliberately unknown here.
 pub(crate) fn invalid_danger_grid(mode: Mode, view: &View<'_>, x: i32, y: i32) -> ! {
     let row = serde_json::json!({
-        "schema": "borg-reborn-rs/shadow@2",
+        "schema": "borg-reborn-rs/shadow@3",
         "mode": mode,
         "point": "danger.grid", "inputs": {"x":x,"y":y},
         "turn": null, "borg_turn": view.threat.clock.now,
@@ -428,6 +432,50 @@ pub fn register() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn replay_stop_preserves_the_versioned_context_and_flushes_before_exit() {
+        const CHILD: &str = "BORG_TEST_REPLAY_SCHEMA_MODE";
+        if let Ok(value) = std::env::var(CHILD) {
+            let mode = Mode::parse(&value).unwrap();
+            let mut state = BorgState::default();
+            let _ = borg_rs::decision_tape::compare(
+                &mut state,
+                serde_json::json!({"schema":"borg-reborn-rs/shadow@3", "mode":mode,
+                    "point":"defence.replay-schema-control", "turn":null}),
+                |_| borg_rs::decision_tape::engine("expected", String::new(), || 1_i32),
+                |_| borg_rs::decision_tape::engine("changed", String::new(), || 2_i32),
+            );
+            panic!("divergent replay continued");
+        }
+        let root = std::env::temp_dir().join(format!("borg-replay-schema-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        for mode in ["check", "switch"] {
+            let dir = root.join(mode);
+            std::fs::create_dir_all(&dir).unwrap();
+            std::fs::write(dir.join("shadow.jsonl"), "").unwrap();
+            let output = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--nocapture", "--exact", "shadow::tests::replay_stop_preserves_the_versioned_context_and_flushes_before_exit"])
+                .env(CHILD, mode)
+                .env("BORG_RUN_DIR", &dir)
+                .env("BORG_SHADOW", "changed-after-provider-parse")
+                .output().unwrap();
+            assert_eq!(output.status.code(), Some(2));
+            assert!(String::from_utf8_lossy(&output.stderr).contains("replay stopped"));
+            let text = std::fs::read_to_string(dir.join("shadow.jsonl")).unwrap();
+            assert_eq!(text.lines().count(), 1);
+            let row: serde_json::Value = serde_json::from_str(&text).unwrap();
+            assert_eq!(row["schema"], "borg-reborn-rs/shadow@3");
+            assert_eq!(row["mode"], mode);
+            assert_eq!(row["point"], "defence.replay-schema-control");
+            assert_eq!(row["replay_stopped"], true);
+            assert!(row["replay_error"]
+                .as_str()
+                .unwrap()
+                .contains("requested changed"));
+        }
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn mixed_markers_requests_and_total_events_have_explicit_meanings() {
@@ -498,7 +546,7 @@ mod tests {
                 continue;
             }
             let row: serde_json::Value = serde_json::from_slice(&r.mismatches).unwrap();
-            assert_eq!(row["schema"], "borg-reborn-rs/shadow@2");
+            assert_eq!(row["schema"], "borg-reborn-rs/shadow@3");
             assert_eq!(row["inputs"]["slot"], 2);
             assert_eq!(row["original"], 3);
             assert_eq!(row["ported"], 4);

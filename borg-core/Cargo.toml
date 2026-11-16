@@ -12,6 +12,7 @@ path = "src/lib.rs"
 crate-type = ["rlib"]
 
 [features]
+test-r3-defence = []
 # Declared synthetic M13 branch fixture; never a measured arm.
 test-m13-danger = []
 # Test only (harness/regress/nested): every 500th think step shows two long

@@ -6,6 +6,7 @@ use borg_rs::{
 };
 pub mod attack;
 pub mod caution;
+pub mod defence;
 pub mod escape;
 pub mod recovery;
 pub fn decide(st: &mut BorgState, request: Decision) -> Value {
@@ -29,6 +30,7 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         }
         Decision::Escape { b_q } => Value::Acted(escape::borg_escape(st, b_q)),
         Decision::Recover => Value::Acted(recovery::borg_recover(st)),
+        Decision::Defend { p1 } => Value::Acted(defence::borg_defend(st, p1)),
         Decision::AttackLaunchBolt {
             rad,
             dam,
@@ -65,4 +67,12 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
 
 fn set_mana(st: &mut BorgState, value: i32) {
     st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize] = value;
+}
+
+fn set_confusion_resistance(st: &mut BorgState, value: i32) {
+    st.borg.trait_[borg_rs::memory::traits::BI_RCONF as usize] = value;
+}
+
+fn set_free_action(st: &mut BorgState, value: i32) {
+    st.borg.trait_[borg_rs::memory::traits::BI_FRACT as usize] = value;
 }

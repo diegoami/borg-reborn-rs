@@ -717,3 +717,6 @@ pub mod stateful;
 
 #[cfg(feature = "test-m13-danger")]
 mod m13_fixture;
+
+#[cfg(feature = "test-r3-defence")]
+mod defence_fixture;

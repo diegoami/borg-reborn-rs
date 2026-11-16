@@ -1,9 +1,10 @@
-# Stateful Track R comparisons (#286, #364)
+# Stateful Track R comparisons (#286, #364, #365)
 
 The dependency direction stays shell → next → core. The core owns a typed
 request enum for caution, recovery, all nine public escape entry points,
 and five mutating attack entries. Two additional attack entries compare
 scalar results without a stateful transaction.
+The defence extension adds its single public borg_defend transaction.
 With shadow off, each wrapper immediately calls its original implementation;
 no state is copied, no arguments are formatted and no tape/files are created.
 
@@ -29,8 +30,9 @@ An engine access token copied into a snapshot does not grant access:
 engine::check_access still requires the actual root state's field address.
 Stateful BI reads use borrowed named Read accessors; danger uses an immutable
 View. Temporary policy mutations stay
-explicit on the driving state or replay snapshot. The only direct BI write
-is the named mana adapter, matching the native temporary-mana simulation.
+explicit on the driving state or replay snapshot. Exact named adapters write
+mana, confusion resistance and Free Action for the original temporary
+simulations. Their bodies are the source gate's only direct BI exceptions.
 
 An opaque native dependency runs with recording paused. If it re-enters a
 ported policy or a nested Borg think, that inner transaction saves the
@@ -83,7 +85,7 @@ and `pure_points` count the two standalone scalar entries; they do not add
 tape markers. When a scalar entry executes inside a stateful transaction,
 its marker and recorded queries belong to that transaction instead.
 
-The default consumer requires the R3 surface and all 18 public entries when
+The attack-only @2 consumer requires its R3 surface and all 18 public entries when
 `--require-all-entries` is set, including both standalone scalar entries.
 `--legacy-r2` explicitly reads historical @1 evidence, derives the split
 from its legacy counters, and requires the original 11 entries. It never
@@ -112,16 +114,16 @@ environment value after parsing and require the original mode in the record.
 It is an operational diagnostic,
 not a natural game death or a successful shadow comparison.
 
-The syntactic source gate in scripts/decision_surface.py checks the four
+The syntactic source gate in scripts/decision_surface.py checks the five
 native policies and every Rust file recursively under stateful/, including
 the dispatcher and newly added modules. It rejects known core/module aliases,
 unsupported memory/local paths, raw trait indexing/reads, unsafe/extern and
 direct dependency bypasses. Only the exact existing dispatcher type import
-and named mana-write adapter are exempted, never the entire file. Regression
+and three exact named mutation adapters are exempted, never the entire file. Regression
 fixtures cover the #302 bypasses and #329's compiled parent-path probe,
 trait methods/borrows, native delegation, external includes/path attributes
 and non-exact decisions imports. Parent paths permit only the explicit local
-escape import names and the named mana setter call. The raw trait_ identifier
+escape import names and the three named setter calls. The raw trait_ identifier
 is forbidden everywhere else, not merely its indexing spelling.
 
 This is not Rust semantic analysis and does not prove arbitrary code cannot
@@ -135,3 +137,20 @@ be hidden by post-state replacement, changed requests/returns/final states
 fail, and nested transactions do not duplicate effects. Actual native
 smoke/full and marked fault/re-port controls remain the behavior gates.
 No survival or performance improvement follows from agreeing programs.
+
+The defence extension uses shadow-stats@3 and shadow@3 diagnostics, with
+surface r3-attack-defence and defence in ported_points. Counter meanings
+from @2 remain unchanged; defence_calls counts its policy entries. The
+current default gate requires all 19 public entries with the strict flag.
+--legacy-r3-attack explicitly reads the historical @2 attack surface;
+--legacy-r2 retains @1. Neither legacy reader supplies defence acceptance.
+Complete final-state equality includes defence's simulation restoration;
+source correspondence and public-entry counts alone do not prove rare
+branches or successful defensive effects. R365 fixtures must name those
+coverage limits and preserve deliberate fault outcomes separately.
+
+The @3 provider includes its schema in the replay context. A controlled
+request stop retains that version and cached mode when it flushes the
+diagnostic and exits 2; direct historical tape callers without a schema
+retain the @1 fallback. Both modes have a subprocess control that changes
+the environment after parsing and checks the actual durable record.
