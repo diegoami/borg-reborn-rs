@@ -17,6 +17,14 @@
   explicit retreat and town-ended routes retain their behavior. The bounded
   native regression must fail against the preserved baseline binary and
   pass against the candidate. Trial/source identities stay separate.
+- Candidate native regression passes after failing on the preserved
+  baseline; existing loop/recall/retreat tests pass. The current Half-Troll
+  reproduction loses both threshold bursts (peak1098 ->248); the constructed
+  case drops1409 ->39. Current Warrior/Orc baselines already had no such
+  bursts. Four bounded reported-settings candidate runs finish alive at cap.
+  Rust/clippy,339 native-core tests,91 tool/19 script checks pass.
+  Canonical14-trial receipts and three new CI death controls are retained in
+  Cemetery PR22 atf6b80027; historical source archive bytes are unchanged.
 - Target task PR at track-p. Green CI allows task integration there; no
   unreviewed preference or stair-fix promotion to main is implied.
 

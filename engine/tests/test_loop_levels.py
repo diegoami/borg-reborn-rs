@@ -44,7 +44,7 @@ class LevelLoopTest(unittest.TestCase):
         command += [f'-d{name}={out / name}'
                     for name in ['user', 'save', 'archive', 'panic', 'scores']]
         command += ['-uStair421', '--', '-seed', '1019921749', '-race', '1',
-                    '-class', '0', '-exact-turns', '-turns', '5000',
+                    '-class', '0', '-menu-letters', '-exact-turns', '-turns', '5000',
                     '-keylog', str(out / 'keys.log'),
                     '-msglog', str(out / 'messages.log'),
                     '-statelog', str(out / 'state.log'),
@@ -52,6 +52,7 @@ class LevelLoopTest(unittest.TestCase):
         subprocess.run(command, cwd=GAME.parent, env=env, check=True,
                        capture_output=True, text=True, timeout=40)
         summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual((summary['race'], summary['class']), ('Half-Elf', 'Warrior'))
         self.assertFalse(summary['dead'], summary)
         self.assertEqual(summary['game_turns'], 5000)
         bursts = Counter(int(line.split()[0]) for line in
