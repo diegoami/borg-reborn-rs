@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: #354 synchronized with main 72a21620, without #355
+
+- Owner decision: the zoo's five-arm specimen carries current main's game,
+  not #355. #355 (7022017e) was reverted on main by #379 (#373), so the
+  game inputs are the pre-355 ones again (source hash 87717140, as at
+  2f74e1c5) and this branch adds only plan files, harness plan runs and
+  the zoo contract. Plan hashes unchanged: errands_plan.txt 922372ba,
+  errands_plan_ambitious.txt 9d7d8a39. The 72-game local pilot still
+  applies to this game. borg-rs#90 (oil store/take loop) is in the
+  vendored core and still present.
+
 ## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
 
 - #395 review at 79ec0591 reports no blockers. Its remaining engine CI
@@ -191,6 +202,38 @@
   87717140, so its Rust/native/play evidence applies. Required CI is pending.
   Prepared separately from #331/#346; integrate only after that promotion,
   then open a separate pinned milestone review before main.
+
+## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
+
+- Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:
+  `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE`. It copies the plan into
+  `user/`, selects it in the run's borg.txt with a line naming its SHA-256,
+  records `borg_errands_plan`/`_sha256` in config.txt, and fails when the
+  game did not preserve exactly that plan. The plan's bytes are now in
+  `borg_txt_sha256`, so the cemetery's encounter family distinguishes plans
+  with death-tool API 1 unchanged. Plans selected in the harness borg.txt,
+  missing files and the original core are refused.
+- Open: cemetery `rerun-death.py` does not restore `BORG_ERRANDS_PLAN` yet
+  (it restores `BORG_LADDERS` the same way); a plan death's rerun reports
+  "does not reproduce" until it does. That is a cemetery-owned change.
+- docs/ZOO-INTERFACE.md gains the `borg_plan` row (the zoo copies
+  `harness/plans/NAME`); the adapter work is borg-zoo#123.
+- New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
+  curve (ch. 12.2), fighters ~one dungeon level per character level, casters
+  slower, no town-start phases from CL3 (CL6 casters). An engine test
+  checks it is never shallower than the first plan. A hypothesis only.
+- harness runs still cannot set borg.txt settings such as `borg_town_plan`;
+  the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+- Pilot finding (72 cells, PR #354 comment): the ambitious plan's requests
+  are capped by the core's readiness ("not prepared for DL2; town overrides
+  the loop"), so it bounces to town instead of diving. In one cell
+  (Warrior seed 501, ambitious + shopping) the M13 town planner looped
+  buy oil at the General Store / drop it at Home about 4,000 times over
+  ~35k game turns: a vendored-core (borg-rs town planner) defect to report
+  upstream, not a plan defect.
+- The plan-file checks are engine tests (strict reader + native load), not
+  release-core tests, so borg-core and the build's source hash are
+  unchanged and the existing CI death controls still apply.
 
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
