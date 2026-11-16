@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: attack #364 implementation, runtime acceptance pending
+
+- Working branch task/T364-attack-port; all integration targets remain
+  feature/track-r. M13 #357 is merged. Accessor #367 has completed local
+  validation; its final evidence is being published through the connected
+  GitHub app because local CLI credentials expired. Wait for green CI before
+  merging #367, then incorporate its accepted head here.
+- All seven public attack entries have owned policy implementations:
+  five stateful transactions and two scalar comparisons. Seventy-one owned
+  functions are registered in the carry watcher. Dependency adapters use
+  pointer-free race/kind metadata, replay both motion output parameters,
+  and record the mutating journey forecast as an effect.
+- #339 telemetry uses schema @2 with explicit tape_events, policy_markers
+  and actual dependency_requests. The default consumer checks the R3 attack
+  surface; --legacy-r2 is an explicit historical reader. #340 diagnostics
+  retain the provider's parsed mode across direct/nested/replay contexts.
+- Clippy passes; workspace and compile-fail lifetime tests pass; core 336
+  pass/four ignored; source tools 35 and tools 96 pass; vendor gate passes.
+  The six diagnostic subprocess controls and motion output replay test pass.
+  No game has yet validated this attack build; no parity/coverage claim.
+- Next: synchronize accepted accessor, freeze clean runtime identity, build
+  under the shared lock, run smoke/full/strict entries in all modes and
+  retain every attempted run and natural-death package. Then task CI/merge;
+  defence #365 and combined R3 milestone review #366 remain. Owner chooses
+  reviewer; no promotion to main/global reviewed.
+
 ## 2026-11-16: borrowed stateful access #363 (local gates pass, CI pending)
 
 - #357/#343 merged green into feature/track-r at a4e7ae3d; #343/#264 closed.

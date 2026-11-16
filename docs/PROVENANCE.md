@@ -91,3 +91,28 @@ The fixture performs no live-state writes, RNG draws or game effects; its
 input-projection fault control deliberately clears the five carried fields
 on a private port snapshot. It is a branch validation, never population
 or survival evidence. Normal policies never call the native accessor.
+
+## Track R attack port (#364, R3)
+
+`borg-next/src/stateful/attack.rs` adapts `src/borg_fight_attack.rs` from
+borg-rs M13 `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, retaining its
+copyright and license. R364-ATTACK-SURFACE.json records the original
+function inventory and source digest; ported-functions.json registers the
+owned policy functions for subsequent source-change watching. Seven public
+entries comprise five stateful transactions and two scalar comparisons.
+The native Default implementation remains in owned memory; the indexed
+trait helper is replaced by borrowed named Read accessors.
+
+The port owns attack scoring, ordering, mana-reserve arithmetic and action
+selection. Shared dependency adapters supply engine metadata, existing
+unported services and recorded effects. AttackRace and AttackKind contain
+values only; race friendship is represented by a boolean. Static names and
+tables retain immutable process-lifetime borrows. Motion captures both
+output parameters and checks their initial values on replay. The existing
+town journey forecast is an effect because it mutates memory; its adapter
+returns only the turn count used by the owned reserve calculation.
+
+R364-ADDED-DEPENDENCIES.json inventories the added signatures. The source
+gate rejects an attack port delegating its own policy to the native attack
+API. Runtime parity and entry coverage remain acceptance gates; registering
+the source does not establish them or imply a gameplay improvement.

@@ -420,6 +420,503 @@
       "native_function": "borg_recover",
       "port_path": "borg-next/src/stateful/recovery.rs",
       "port_function": "borg_recover"
+    },
+    {
+      "point": "attack.key",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "attack.i2d",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "i2d",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "i2d"
+    },
+    {
+      "point": "attack.avoid",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "avoid",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "avoid"
+    },
+    {
+      "point": "attack.borg_timer",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_timer",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_timer"
+    },
+    {
+      "point": "attack.simulating",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "simulating",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "simulating"
+    },
+    {
+      "point": "attack.grid",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "grid",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "grid"
+    },
+    {
+      "point": "attack.max_range",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "max_range",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "max_range"
+    },
+    {
+      "point": "attack.is_ghost",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "is_ghost",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "is_ghost"
+    },
+    {
+      "point": "attack.rf",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "rf",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "rf"
+    },
+    {
+      "point": "attack.rsf",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "rsf",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "rsf"
+    },
+    {
+      "point": "attack.has_friends",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "has_friends",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "has_friends"
+    },
+    {
+      "point": "attack.contains",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "contains",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "contains"
+    },
+    {
+      "point": "attack.desc",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "desc",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "desc"
+    },
+    {
+      "point": "attack.cant_aim",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "cant_aim",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "cant_aim"
+    },
+    {
+      "point": "attack.paranoia",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "paranoia",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "paranoia"
+    },
+    {
+      "point": "attack.low_on_food",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "low_on_food",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "low_on_food"
+    },
+    {
+      "point": "attack.danger_one_here",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "danger_one_here",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "danger_one_here"
+    },
+    {
+      "point": "attack.danger_here",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "danger_here",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "danger_here"
+    },
+    {
+      "point": "attack.dist_to",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "dist_to",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "dist_to"
+    },
+    {
+      "point": "attack.power",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "power",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "power"
+    },
+    {
+      "point": "attack.tp_other_add",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "tp_other_add",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "tp_other_add"
+    },
+    {
+      "point": "attack.is_summoner",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "is_summoner",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "is_summoner"
+    },
+    {
+      "point": "attack.borg_mon_blow_effect",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_mon_blow_effect",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_mon_blow_effect"
+    },
+    {
+      "point": "attack.borg_thrust_damage_one",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_thrust_damage_one",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_thrust_damage_one"
+    },
+    {
+      "point": "attack.melee_score",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "melee_score",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "melee_score"
+    },
+    {
+      "point": "attack.borg_attack_aux_thrust",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_thrust",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_thrust"
+    },
+    {
+      "point": "attack.borg_best_mult",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_best_mult",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_best_mult"
+    },
+    {
+      "point": "attack.strchr_egv",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "strchr_egv",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "strchr_egv"
+    },
+    {
+      "point": "attack.too_high_level",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "too_high_level",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "too_high_level"
+    },
+    {
+      "point": "attack.set_flag",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "set_flag",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "set_flag"
+    },
+    {
+      "point": "attack.commission_value",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "commission_value",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "commission_value"
+    },
+    {
+      "point": "attack.borg_launch_damage_one",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_damage_one",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_damage_one"
+    },
+    {
+      "point": "attack.breath_third",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "breath_third",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "breath_third"
+    },
+    {
+      "point": "attack.blow_effect_name",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "blow_effect_name",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "blow_effect_name"
+    },
+    {
+      "point": "attack.borg_launch_bolt_aux_hack",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_bolt_aux_hack",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_bolt_aux_hack"
+    },
+    {
+      "point": "attack.borg_launch_destroy_stuff",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_destroy_stuff",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_destroy_stuff"
+    },
+    {
+      "point": "attack.path_stop",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "path_stop",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "path_stop"
+    },
+    {
+      "point": "attack.missed_before",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "missed_before",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "missed_before"
+    },
+    {
+      "point": "attack.not_mapped",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "not_mapped",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "not_mapped"
+    },
+    {
+      "point": "attack.borg_launch_bolt_at_location",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_bolt_at_location",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_bolt_at_location"
+    },
+    {
+      "point": "attack.borg_launch_bolt",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_bolt",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_bolt"
+    },
+    {
+      "point": "attack.borg_launch_arc_at_location",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_arc_at_location",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_arc_at_location"
+    },
+    {
+      "point": "attack.borg_launch_arc",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_launch_arc",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_launch_arc"
+    },
+    {
+      "point": "attack.borg_attack_aux_launch",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_launch",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_launch"
+    },
+    {
+      "point": "attack.borg_attack_aux_rest",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_rest",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_rest"
+    },
+    {
+      "point": "attack.borg_attack_aux_object",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_object",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_object"
+    },
+    {
+      "point": "attack.oil_reserved",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "oil_reserved",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "oil_reserved"
+    },
+    {
+      "point": "attack.primary_spell_for_class",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "primary_spell_for_class",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "primary_spell_for_class"
+    },
+    {
+      "point": "attack.class_penalty",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "class_penalty",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "class_penalty"
+    },
+    {
+      "point": "attack.borg_attack_aux_spell_bolt",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_spell_bolt",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_spell_bolt"
+    },
+    {
+      "point": "attack.borg_attack_aux_spell_bolt_reserve",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_spell_bolt_reserve",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_spell_bolt_reserve"
+    },
+    {
+      "point": "attack.borg_attack_aux_spell_dispel",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_spell_dispel",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_spell_dispel"
+    },
+    {
+      "point": "attack.borg_attack_aux_staff_dispel",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_staff_dispel",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_staff_dispel"
+    },
+    {
+      "point": "attack.borg_attack_aux_rod_bolt",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_rod_bolt",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_rod_bolt"
+    },
+    {
+      "point": "attack.select_effect",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "select_effect",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "select_effect"
+    },
+    {
+      "point": "attack.borg_attack_aux_wand_bolt",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_wand_bolt",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_wand_bolt"
+    },
+    {
+      "point": "attack.borg_attack_aux_bolt_unknown",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_bolt_unknown",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_bolt_unknown"
+    },
+    {
+      "point": "attack.borg_attack_aux_activation",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_activation",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_activation"
+    },
+    {
+      "point": "attack.borg_attack_aux_ring",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_ring",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_ring"
+    },
+    {
+      "point": "attack.borg_attack_aux_dragon",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_dragon",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_dragon"
+    },
+    {
+      "point": "attack.borg_attack_aux_whirlwind_attack",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_whirlwind_attack",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_whirlwind_attack"
+    },
+    {
+      "point": "attack.borg_attack_aux_leap_into_battle",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_leap_into_battle",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_leap_into_battle"
+    },
+    {
+      "point": "attack.borg_attack_aux_maim_foe",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_maim_foe",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_maim_foe"
+    },
+    {
+      "point": "attack.borg_attack_aux_vampire_strike",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_vampire_strike",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_vampire_strike"
+    },
+    {
+      "point": "attack.danger_with_flag",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "danger_with_flag",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "danger_with_flag"
+    },
+    {
+      "point": "attack.borg_attack_aux_crush",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_crush",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_crush"
+    },
+    {
+      "point": "attack.borg_attack_aux_trance",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_trance",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_trance"
+    },
+    {
+      "point": "attack.borg_attack_aux_artifact_holcolleth",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack_aux_artifact_holcolleth",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack_aux_artifact_holcolleth"
+    },
+    {
+      "point": "attack.best_of",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "best_of",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "best_of"
+    },
+    {
+      "point": "attack.borg_calculate_attack_effectiveness",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_calculate_attack_effectiveness",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_calculate_attack_effectiveness"
+    },
+    {
+      "point": "attack.borg_attack",
+      "native_path": "borg-rs/src/borg_fight_attack.rs",
+      "native_function": "borg_attack",
+      "port_path": "borg-next/src/stateful/attack.rs",
+      "port_function": "borg_attack"
     }
   ]
 }

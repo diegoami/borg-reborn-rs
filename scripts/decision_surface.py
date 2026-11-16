@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover')
-PORTS = ('caution', 'escape', 'recovery')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack')
+PORTS = ('caution', 'escape', 'recovery', 'attack')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', *NATIVE}
@@ -20,7 +20,7 @@ MANA_ADAPTER = ('fn set_mana(st:&mut BorgState,value:i32){'
                 'st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize]=value;}')
 
 
-def inspect(text, port=False, dispatch=False):
+def inspect(text, port=False, dispatch=False, policy=None):
     """Catch known import/path bypasses, not arbitrary Rust semantics.
 
     Compilation checks API names/types; manual review must still inspect
@@ -39,6 +39,8 @@ def inspect(text, port=False, dispatch=False):
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
+        if policy == 'attack' and re.search(r'\bborg_rs::decision_api::borg_fight_attack::', code):
+            errors.append('attack may not delegate its own policy through a shared native result')
         if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):
             errors.append('policy must not hide local/core paths in a grouped root import')
         # A parent may expose private root imports and Decision::native.
@@ -91,7 +93,7 @@ def inspect(text, port=False, dispatch=False):
     exact_imports = {'threat_facts': {'param','Param'}, 'memory': {'BorgState'},
                      'decisions': {'Decision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime'},
-        'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y'}, 'borg_update': {'Detect'},
+        'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y','BorgGrid','DUNGEON_HGT','DUNGEON_WID'}, 'borg_update': {'Detect'},
         'state': {'BorgState'}}
     for m in re.finditer(r'\buse\s+'+prefix+r'::(\w+)::([^;]+);',code,re.S):
         namespace,tail=m.groups()
@@ -128,7 +130,9 @@ def check(root):
     paths += [(path, True) for path in sorted(directory.rglob('*.rs'))]
     for path, port in paths:
         errors = inspect(path.read_text(), port,
-                         dispatch=port and path == directory / 'mod.rs')
+                         dispatch=port and path == directory / 'mod.rs',
+                         policy='attack' if port and (path.stem == 'attack' or
+                                 'attack' in path.relative_to(directory).parts[:-1]) else None)
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))
     return len(paths)

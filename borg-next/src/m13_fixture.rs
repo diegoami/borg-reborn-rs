@@ -4,7 +4,7 @@ use borg_rs::memory::{traits::*, BorgKill, BorgState};
 use borg_rs::threat_facts::{self as facts, constants::*};
 use std::{fs::File, io::Write, sync::Once};
 
-pub(crate) fn run(live: &BorgState) {
+pub(crate) fn run(live: &BorgState, mode: crate::shadow::Mode) {
     static ONCE: Once = Once::new();
     ONCE.call_once(|| {
         let dir = std::env::var_os("BORG_RUN_DIR").expect("fixture output");
@@ -42,10 +42,10 @@ pub(crate) fn run(live: &BorgState) {
                     for spell in spells.into_iter().chain((element == "electricity").then_some(RSF_BE_ELEC)) {
                         let mut kill = BorgKill { r_idx: race as u16, power: 900, awake: true, ranged_attack: 1, ..Default::default() };
                         kill.spell[0] = spell as u8;
-                        check(&mut output, &state, &kill, false, element, temporary, &mut rows, &mut faults);
+                        check(&mut output, &state, &kill, false, element, temporary, mode, &mut rows, &mut faults);
                     }
                     let kill = BorgKill { r_idx: melee_race as u16, power: 900, awake: true, ..Default::default() };
-                    check(&mut output, &state, &kill, true, element, temporary, &mut rows, &mut faults);
+                    check(&mut output, &state, &kill, true, element, temporary, mode, &mut rows, &mut faults);
                 }
             }
             assert!(faults > initial_faults, "vulnerability projection fault must be detected: {element}");
@@ -62,7 +62,7 @@ pub(crate) fn run(live: &BorgState) {
                         state.borg.trait_[BI_ISSTUN as usize] = stun;
                         let mut kill = BorgKill { r_idx: race as u16, power: 900, awake: true, ranged_attack: 1, ..Default::default() };
                         kill.spell[0] = spell as u8;
-                        check(&mut output, &state, &kill, false, "stun", false, &mut rows, &mut faults);
+                        check(&mut output, &state, &kill, false, "stun", false, mode, &mut rows, &mut faults);
                     }
                 }
             }
@@ -82,13 +82,14 @@ fn check(
     physical: bool,
     branch: &str,
     temporary: bool,
+    mode: crate::shadow::Mode,
     rows: &mut usize,
     faults: &mut usize,
 ) {
     let mut native_state = state.clone();
     let native = facts::fixture_estimate(&mut native_state, kill, physical);
     assert!(native_state == *state, "native estimator mutated fixture");
-    let port = crate::danger::fixture_estimate(state, kill, physical);
+    let port = crate::danger::fixture_estimate(state, kill, physical, mode);
     assert_eq!(
         native, port,
         "M13 {branch} physical={physical} spell={}",
@@ -100,7 +101,7 @@ fn check(
     for index in [BI_VACID, BI_VELEC, BI_VFIRE, BI_VCOLD, BI_PSTUN] {
         broken.borg.trait_[index as usize] = 0;
     }
-    let fault = crate::danger::fixture_estimate(&broken, kill, physical);
+    let fault = crate::danger::fixture_estimate(&broken, kill, physical, mode);
     *faults += usize::from(fault != native);
     let row = serde_json::json!({"schema":"borg-reborn-rs/m13-constructed@1", "synthetic":true,
         "branch":branch,"physical":physical,"race":kill.r_idx,

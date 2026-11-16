@@ -10,7 +10,7 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 7)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 9)
 
     def test_direct_core_engine_and_tape_bypasses_are_refused(self):
         for code, port in [('use crate::engine;', False),
@@ -48,6 +48,12 @@ class DecisionSurfaceTest(unittest.TestCase):
                      'crate::engine::game_turn()']:
             self.assertTrue(surface.inspect(code, port=True), code)
 
+    def test_attack_cannot_use_its_own_shared_native_score(self):
+        code = 'borg_rs::decision_api::borg_fight_attack::borg_thrust_damage_one(st, 1);'
+        self.assertTrue(surface.inspect(code, port=True, policy='attack'))
+        # Existing R2 callers still use a separately compared opaque dependency.
+        self.assertFalse(surface.inspect(code, port=True, policy='caution'))
+
     def test_dispatch_exception_is_narrow(self):
         root = Path(__file__).resolve().parents[2]
         text = (root / 'borg-next/src/stateful/mod.rs').read_text()
@@ -74,7 +80,7 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 8)
+            self.assertEqual(surface.check(fixture), 10)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):
