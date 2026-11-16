@@ -131,6 +131,13 @@ def import_packages(sources, destination):
                 continue
             stage = Path(tempfile.mkdtemp(prefix='.import-', dir=destination))
             try:
+                # Let mkdir apply the process umask without reading/changing that
+                # process-global setting. The empty probe remains inside private
+                # staging and is removed before publication.
+                access = stage / '.directory-access'
+                access.mkdir(mode=0o777)
+                directory_access = access.stat().st_mode & 0o777
+                access.rmdir()
                 for name, data in files.items():
                     asset = stage / name
                     asset.write_bytes(data)
@@ -139,9 +146,9 @@ def import_packages(sources, destination):
                         original = source / 'record.json'  # generated receipt/original metadata
                     # A shared directory must not expose a private source file.
                     asset.chmod(asset.stat().st_mode & original.stat().st_mode & 0o777)
-                # Keep staging private while incomplete, then preserve source access.
-                # Special permission bits are not part of an evidence package.
-                stage.chmod(source.stat().st_mode & 0o777)
+                # Bound published access by both source and creation permissions;
+                # special permission bits are not part of an evidence package.
+                stage.chmod(source.stat().st_mode & directory_access & 0o777)
                 stage.rename(final)
             finally:
                 if stage.exists():

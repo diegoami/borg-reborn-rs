@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: published import directory access (#358)
+
+- Owner accepted #372 and delegated its merge; the unchanged reviewed pin
+  cf687bb2 is promoted as b7d45f17. Review follow-ups #374 (exact invocation
+  receipts) and #375 (reference-receipt assessment) remain separate. The
+  reported missing log hashes already exist for all 45 pairs in the pin.
+- Bound newly published directory modes by source access and directory
+  creation under the importing process's umask. Obtain creation permissions
+  with an empty directory inside private staging, without changing the
+  process-global umask; remove the probe before publishing. Drop special
+  bits. Source0777/umask022 now gives0755; source0755/umask077 gives0700.
+  An intentionally permissive umask000 still permits a source0777 directory.
+- The mode matrix covers four umasks and five source modes (including
+  special bits), private staging during every write, file/generated-metadata
+  access, unchanged source modes, exact package bytes/IDs and re-import modes.
+  #359 still owns failed-publication cleanup for read-only staging.
+- No runtime, default, pin, immutable package or index changes. Source-refresh
+  report ran read-only; this isolated worktree lacks six moving-source clones,
+  so it cannot report their new commits. This narrow historical-import review
+  follow-up neither updates pins nor claims a refreshed gameplay baseline.
+- Local/CI validation is recorded in the task PR. Task targets track-p;
+  a fresh pinned owner-selected review must precede promotion to main.
+
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
 - #349 was owner-reviewed, synchronized through green #362 and promoted as

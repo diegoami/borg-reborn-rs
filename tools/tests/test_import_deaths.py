@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from test_export_death import ed, make_run
 
@@ -78,6 +79,54 @@ class QualifiedImportTest(unittest.TestCase):
             self.assertEqual(imp.package(target)[0], identifier)
             self.assertEqual((target / imp.ORIGINAL).read_bytes(),
                              (source / 'record.json').read_bytes())
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_directory_and_file_modes_are_bounded_without_changing_evidence(self):
+        for source_mode in [0o777, 0o755, 0o750, 0o700, 0o3777]:
+            for mask in [0o000, 0o022, 0o027, 0o077]:
+                with self.subTest(source_mode=oct(source_mode), umask=oct(mask)):
+                    source = self.exported(f'modes-{source_mode}-{mask}')
+                    source.chmod(source_mode)
+                    for name in ['record.json', 'report.md']:
+                        (source / name).chmod(0o600)
+                    (source / 'summary.json').chmod(0o664)
+                    expected_id, expected_files = imp.package(source)
+                    real_write = Path.write_bytes
+
+                    def check_private(asset, data):
+                        if asset.parent.name.startswith('.import-'):
+                            self.assertEqual(asset.parent.stat().st_mode & 0o777, 0o700)
+                        return real_write(asset, data)
+
+                    previous = os.umask(mask)
+                    try:
+                        with mock.patch.object(Path, 'write_bytes', check_private):
+                            identifier, _ = imp.import_packages([source], self.dest)[0]
+                    finally:
+                        os.umask(previous)
+                    target = self.dest / identifier
+                    self.assertEqual(identifier, expected_id)
+                    self.assertEqual(target.stat().st_mode & 0o7777,
+                                     source_mode & ~mask & 0o777)
+                    self.assertEqual(source.stat().st_mode & 0o7777, source_mode)
+                    for name, data in expected_files.items():
+                        self.assertEqual((target / name).read_bytes(), data)
+                        original = source / name
+                        if not original.exists():
+                            original = source / 'record.json'
+                        self.assertEqual((target / name).stat().st_mode & 0o7777,
+                                         original.stat().st_mode & ~mask & 0o666)
+                    modes = {p.name: p.stat().st_mode for p in target.iterdir()}
+                    directory_mode = target.stat().st_mode
+                    previous = os.umask(mask ^ 0o077)
+                    try:
+                        self.assertEqual(imp.import_packages([source], self.dest),
+                                         [(identifier, 'already retained')])
+                    finally:
+                        os.umask(previous)
+                    self.assertEqual(target.stat().st_mode, directory_mode)
+                    self.assertEqual({p.name: p.stat().st_mode for p in target.iterdir()}, modes)
+                    self.assertEqual(list(self.dest.glob('.import-*')), [])
 
     def test_identical_import_and_reimport_are_idempotent(self):
         source = self.exported('one')
