@@ -325,6 +325,36 @@ pub fn borg_eat(st: &mut BorgState, tval: i32, sval: i32) -> bool {
     true
 }
 
+/// Whether a Remove Hunger scroll may be tried ahead of food: only under the
+/// town plan, and only when the Borg can read (`borg_read_scroll` also
+/// checks the light). A Borg that cannot read goes on to eat.
+///
+/// borg-reborn-rs (#451).
+pub(crate) fn may_read_hunger_scroll_first(capability_mode: bool, blind: bool, confused: bool, forgetful: bool) -> bool {
+    capability_mode && !blind && !confused && !forgetful
+}
+
+/// Relieve hunger before any food is eaten: the hunger spells, then a Remove
+/// Hunger scroll (50% of a full stomach, `NOURISH:INC_TO` 50 in object.txt:
+/// more than a ration's `INC_BY` 30 when read hungry, at 5 against 8 weight).
+/// Only under the town plan, where the planner carries the scroll.
+///
+/// borg-reborn-rs (#451).
+pub fn borg_satisfy_hunger_before_food(st: &mut BorgState) -> bool {
+    let capability_mode = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
+    if !may_read_hunger_scroll_first(
+        capability_mode,
+        st.borg.tr(BI_ISBLIND) != 0,
+        st.borg.tr(BI_ISCONFUSED) != 0,
+        st.borg.tr(BI_ISFORGET) != 0,
+    ) {
+        return false;
+    }
+    borg_spell(st, REMOVE_HUNGER)
+        || borg_spell(st, HERBAL_CURING)
+        || borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
+}
+
 /// Attempt to eat an unknown food/mushroom. This is done in emergencies.
 pub fn borg_eat_unknown(st: &mut BorgState) -> bool {
     let n = last_unaware(st, |t| t == TV_FOOD || t == TV_MUSHROOM);
@@ -1159,7 +1189,9 @@ pub fn borg_use_things(st: &mut BorgState) -> bool {
     if st.borg.tr(BI_ISHUNGRY) != 0 {
         let food = TV_FOOD as i32;
         /* Attempt to satisfy hunger */
-        if borg_spell(st, REMOVE_HUNGER)
+        // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
+        if borg_satisfy_hunger_before_food(st)
+            || borg_spell(st, REMOVE_HUNGER)
             || borg_spell(st, HERBAL_CURING)
             || borg_quaff_potion(st, st.item_val.sv_potion_slime_mold)
             || borg_eat(st, food, st.item_val.sv_food_slime_mold)
@@ -1279,4 +1311,21 @@ pub fn borg_recharging(st: &mut BorgState) -> bool {
 
     /* Nope */
     false
+}
+
+// borg-reborn-rs (#451)
+#[cfg(test)]
+mod tests {
+    use super::may_read_hunger_scroll_first;
+
+    #[test]
+    fn the_hunger_scroll_goes_before_food_only_under_the_plan_and_when_it_can_be_read() {
+        assert!(may_read_hunger_scroll_first(true, false, false, false));
+        // without the town plan the C Borg's order stands (spells, then food)
+        assert!(!may_read_hunger_scroll_first(false, false, false, false));
+        // blind, confused or forgetful: no scroll, the Borg goes on to eat
+        assert!(!may_read_hunger_scroll_first(true, true, false, false));
+        assert!(!may_read_hunger_scroll_first(true, false, true, false));
+        assert!(!may_read_hunger_scroll_first(true, false, false, true));
+    }
 }

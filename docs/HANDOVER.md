@@ -2,6 +2,41 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
+
+Owner: the scroll should have value, be carried, and be used before any food.
+- **Value** (`borg_town_capability.rs`): the scroll supplies FOOD again (#444
+  had stripped it from every non-food kind). `NOURISH:INC_TO` fills to N
+  percent (`effect_handler_NOURISH`, subtype 3; units: `food_value` 100 per
+  percent, object.txt Remove Hunger 50), so read hungry (grade 15, 
+  player_timed.txt) it adds 35: more than a Ration's `INC_BY` 30, not 50
+  and not a flat ration. Applies to every INC_TO food (Honey-cake, Draught
+  60 -> 45, Waybread 75 -> 60).
+- **Food floor stays coherent**: under the town plan `borg_trait` now counts
+  every scroll in `BI_FOOD` beside the rations (before: only with no other
+  food), so planner and core count the same (`with_remove_hunger`). No
+  store-sold food supplies more than 35, so the planner's floor (200
+  nutrition) is never met with fewer than the core's five items. Not under
+  the plan: unchanged.
+- **Use first** (`borg_item_use.rs`, `borg_caution.rs`): under the plan a
+  hungry or weak Borg tries the hunger spells, then reads the scroll, then
+  eats. Blind, confused, forgetful or in the dark it cannot read and eats.
+- Local, 180 starts, ambitious arm (4,2): Remove Hunger read 0 -> 47 notes,
+  sold 33 -> 4, stored 130 -> 103 (89 games), rations eaten 65 -> 56,
+  "You are getting hungry" 651 -> 512; deaths 32 -> 28, mean CL 4.73 -> 4.83,
+  mean max depth 2.33 -> 2.46; restock-food loops 0 / 0; no stalls.
+- **Left open:** the scroll is still bought once per game (155) as a
+  flavour-learning purchase (the planner values unknown flavours, like Resist
+  Heat/Cold) and stored when the food floor is already met by cheap Hard
+  Biscuits (eleven carried in the sampled game). That is the planner doing
+  its job on a spare scroll; fewer learning buys is #445's question.
+- `scripts/borg-core-vendor.py`: `borg_trait.rs` is declared hooked (it
+  already reported `borg_town_usefulness.rs` and `borg_town_utility.rs`
+  from #444 and earlier; not declared here, not part of CI).
+- `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
+  notes count as use, so torches are not reported as unused.
+
+
 ## 2026-11-16: an unchanged control game needs no new record (#464)
 
 - Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the

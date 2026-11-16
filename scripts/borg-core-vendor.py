@@ -42,6 +42,8 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 HOOKED = {
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
+    'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 
