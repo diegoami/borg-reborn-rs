@@ -55,6 +55,23 @@ The Borg's knowledge of the game has three inputs, in this order:
    lead, not a rule: nothing is a claim until borg-zoo measures it (RULES 14),
    and a rule or threshold no measurement supports is declared a hypothesis.
 
+## Gameplay reports and scenarios (owner, 2026-11-16)
+
+**Write gameplay evidence in borg-cemetery.** Incident/death investigations,
+reusable saved or constructed scenarios, behavioral trial reports and
+counterfactual comparisons belong there, including validation incidents.
+This source repository keeps implementation, tests, immutable fixture references
+and short validation summaries linking to the canonical case. Do not create
+new gameplay reports under docs/ or add new validation dossiers to docs/deaths/
+to satisfy CI. The existing historical archive is retained unchanged until an
+explicitly reviewed migration; its existence is not a precedent for new reports.
+
+Player-cemetery may retain original player/mixed recordings and working saves;
+link those inputs from the Cemetery case. Case-specific alternative plays and
+scenario trials are Cemetery evidence. Do not duplicate canonical analysis in
+player-cemetery. Preserve published raw hashes/history while replacing misplaced
+current report pages with pointers. All P/R tracks follow this ownership rule.
+
 ## Starting
 
 ```sh
