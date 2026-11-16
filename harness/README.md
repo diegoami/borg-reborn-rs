@@ -192,3 +192,12 @@ stall; the six P1 cells do not exercise that state. Cap survival is not proof
 that this policy handles long-horizon one-way play. #386's rule-aware policy
 changes and starvation fixture are a separate follow-up, not part of this
 startup/build contract.
+
+`BORG_ENCOUNTER_LOG=FILE` optionally writes the versioned
+`borg-reborn-rs/encounter-observation@1` projection of each already-read
+observation: turn, status, equipment, inventory/quiver, spells, visible monsters
+and messages. It omits panel/store/object payloads and is not a full observation
+replay format. It performs no extra engine reads, does not alter decisions/RNG,
+and a write failure disables only the diagnostic. Full `BORG_OBSERVATION_LOG`
+remains unchanged. This supports bounded Cemetery incident harvesting; it is
+not required to reproduce a death from seed/build/configuration.

@@ -1,5 +1,17 @@
 # Handover
 
+
+## Owner-directed thousand-incident preparation (#467)
+
+Optional BORG_ENCOUNTER_LOG projects already-read observations without map/store
+payloads. No new engine reads, game rules, decisions, RNG or default settings.
+This is preparation telemetry for Cemetery's owner-requested mixed-class
+thousand-case bank; accepted source6d1bca10 remains the execution baseline.
+The projection has an explicit schema and omitted-field contract. Gameplay
+parity/native controls and corpus evidence belong Cemetery; this source keeps
+code/tests and pointers only. No milestone acceptance/main promotion is implied.
+
+
 *Where the work stands, for the next session. Update it in every PR.*
 
 ## 2026-11-16: town planner item values (#400, #443, food)

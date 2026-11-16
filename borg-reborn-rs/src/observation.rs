@@ -330,6 +330,35 @@ pub fn parse_messages(line: &str) -> Vec<String> {
 }
 
 impl Observation {
+    /// Read-only incident projection. It omits map/store payloads and is not a
+    /// complete observation replay format. No engine reads or RNG calls occur.
+    pub fn encounter_line(&self) -> String {
+        #[derive(Serialize)]
+        struct Encounter<'a> {
+            schema: &'static str,
+            turn: i64,
+            status: &'a Status,
+            equipment: &'a [Slot],
+            inventory: &'a [Item],
+            quiver: &'a [Item],
+            spells: &'a [Spell],
+            monsters: &'a [MonsterSeen],
+            messages: &'a [String],
+        }
+        serde_json::to_string(&Encounter {
+            schema: "borg-reborn-rs/encounter-observation@1",
+            turn: self.turn,
+            status: &self.status,
+            equipment: &self.equipment,
+            inventory: &self.inventory,
+            quiver: &self.quiver,
+            spells: &self.spells,
+            monsters: &self.monsters,
+            messages: &self.messages,
+        })
+        .expect("an encounter observation is plain data")
+    }
+
     /// One line of an observation log (JSON, no newline).
     pub fn to_line(&self) -> String {
         serde_json::to_string(self).expect("an observation is plain data")
@@ -344,6 +373,31 @@ impl Observation {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
+
+    #[test]
+    fn encounter_projection_preserves_observed_incident_fields_without_full_map() {
+        let observation = sample();
+        let full: serde_json::Value = serde_json::from_str(&observation.to_line()).unwrap();
+        let compact: serde_json::Value =
+            serde_json::from_str(&observation.encounter_line()).unwrap();
+        for field in [
+            "turn",
+            "status",
+            "equipment",
+            "inventory",
+            "quiver",
+            "spells",
+            "monsters",
+            "messages",
+        ] {
+            assert_eq!(compact[field], full[field], "{field}");
+        }
+        for omitted in ["panel", "stores", "objects", "store_header", "message_line"] {
+            assert!(compact.get(omitted).is_none(), "{omitted}");
+        }
+        assert_eq!(compact["schema"], "borg-reborn-rs/encounter-observation@1");
+        assert_eq!(observation, sample());
+    }
 
     pub(crate) fn sample() -> Observation {
         let item = Item {

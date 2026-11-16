@@ -213,6 +213,8 @@ struct Borg {
     /// The observation log (`BORG_OBSERVATION_LOG=FILE`): one JSON line per
     /// think (T2.1). Off by default.
     observations: Option<std::io::BufWriter<std::fs::File>>,
+    /// Optional small incident projection of the same already-read observation.
+    encounters: Option<std::io::BufWriter<std::fs::File>>,
     /// L2: what the Borg remembers, updated once per think (T2.2).
     world: crate::world::World,
     /// The world log (`BORG_WORLD_LOG=FILE`): the world's digest after each
@@ -464,6 +466,7 @@ pub fn command() {
             engine_rng: Rng::SEED as u32,
             mem: Memory::default(),
             observations: open_log("BORG_OBSERVATION_LOG"),
+            encounters: open_log("BORG_ENCOUNTER_LOG"),
             world: crate::world::World::new(),
             worlds: open_log("BORG_WORLD_LOG"),
             #[cfg(feature = "test-perception")]
@@ -670,6 +673,14 @@ fn think(b: &mut Borg, view: &PlayerView) -> Decision {
         }
         b.world.update(o);
         // A failed write loses the log, never the game.
+        if let Some(log) = b.encounters.as_mut() {
+            if writeln!(log, "{}", o.encounter_line())
+                .and_then(|_| log.flush())
+                .is_err()
+            {
+                b.encounters = None;
+            }
+        }
         if let Some(log) = b.observations.as_mut() {
             if writeln!(log, "{}", o.to_line())
                 .and_then(|_| log.flush())
