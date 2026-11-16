@@ -1,7 +1,7 @@
 {
   "schema": "borg-reborn-rs/attack-preference-validation@1",
   "repository": "diegoami/borg-cemetery",
-  "commit": "f2e4b38c3879915a7f93b012568d63db0854d758",
+  "commit": "d1ab040605b3b3045943271809fd73b7a907b8ff",
   "path": "validation/borg-reborn-rs/class-attack-preferences",
   "implementation_commit": "76d05952bc4004e0e662d26a41082d31d12205bf",
   "source_sha256": "3c0df6b9e0da84576d669fdcc48b0d350d995b9d5269b78cb050b1ea5337e276",
@@ -14,5 +14,11 @@
     "revision": "cce8ccfc320bff92cf2a17a54cadbd12af08cdb8",
     "source_sha256": "d012f3af1441c69dbdd4c7dcf8200d4eda55bb8c82b6c4bafa8dec784f390226",
     "receipt": "validation/borg-reborn-rs/class-attack-preferences/P421-SOURCE-SYNC.json"
+  },
+  "previous_evidence_checkout": "f2e4b38c3879915a7f93b012568d63db0854d758",
+  "receiving_source_refresh": {
+    "revision": "9289dbc5b4aa78ca46897945ee8e0dbc5a9fff03",
+    "source_sha256": "69f3c87267336a9037dd345dc8d733e6a072eb01cb13335378a3b45673b06c7b",
+    "receipt": "validation/borg-reborn-rs/stair-livelock-421/TRACK-P-SYNC.json"
   }
 }

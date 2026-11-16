@@ -19,7 +19,7 @@ Current Warrior/Orc baseline cases already had no threshold bursts after
 other accepted fixes; no reduction is claimed for those cases. The original
 Warrior hash5d6b065592fb was separately reproduced on its preserved source.
 
-Candidate runtime source: d012f3af1441c69dbdd4c7dcf8200d4eda55bb8c82b6c4bafa8dec784f390226.
+Earlier candidate runtime source: d012f3af1441c69dbdd4c7dcf8200d4eda55bb8c82b6c4bafa8dec784f390226.
 Clippy/formatting/workspace checks,339 release core tests (4 ignored),91 tool
 and19 script tests pass. Three new natural CI deaths reconcile against the
 pinned independent canonical registry. Required CI gates track-p integration.
@@ -34,3 +34,15 @@ record. [Canonical supplement](https://github.com/diegoami/borg-cemetery/blob/fc
 retains that fourth control. The preference evidence checkout pin advances
 without changing its policy or historical source receipts. Reconciliation
 remains against that independent archive.
+
+Final synchronization with track-p50c92ba0 preserves #426 attack diagnostics.
+The final build9289dbc5/source69f3c87267336a9037dd345dc8d733e6a072eb01cb13335378a3b45673b06c7b
+clears only stale GOAL_FLEE flows when yielding; other native flow goals
+remain intact. [Final source-qualified receipts](https://github.com/diegoami/borg-cemetery/blob/d1ab040605b3b3045943271809fd73b7a907b8ff/validation/borg-reborn-rs/stair-livelock-421/TRACK-P-SYNC.md)
+retain both intermediate and final epochs without rewriting earlier trials.
+Final reported-character controls have zero threshold bursts (Warrior
+peak138 for both trip variants, Half-Troll345, Half-Orc78); the constructed
+regression peak remains39. All finish alive at cap. Both ordinary and
+weighted CI controls for every measured source are retained independently.
+Final76 engine tests (two environment skips) and required Rust checks pass;
+CI on the final head still gates track-p integration.

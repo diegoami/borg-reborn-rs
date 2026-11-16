@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: final stair-loop source and evidence (#421)
+
+- Preserve target50c92ba0/#426 diagnostic follow-up. Final code clears
+  only stale GOAL_FLEE flow when deferring an unprepared positive-loop
+  descent, retaining other native flows and all native retreat choices.
+- Final clean build9289dbc5/source69f3c872 passes constructed peak39 and
+  all reported-character checks with zero threshold bursts (Warrior138 for
+  both trip modes, Half-Troll345, Half-Orc78); all finish alive at cap.
+- Keep all earlier source epochs untouched. Canonical TRACK-P-SYNC receipts
+  and eight intermediate/final natural controls are pinned at Cemetery
+  d1ab0406 for both ordinary and separate weighted reconciliation.
+  The earlier source's three ordinary plus weighted control remain retained.
+- Final76 engine tests pass (two local environment skips); required fmt,
+  clippy/workspace and339 release-core tests pass. Run CI on the final
+  merged task head before integrating #430 into track-p; keep main gated.
+
 ## 2026-11-16: synchronize concurrent Track P diagnostic follow-up (#421)
 
 - Track-p advanced to50c92ba0 through #426 while #430 was validating.
