@@ -1,4 +1,4 @@
-"""Native counterfactuals from source-qualified player-cemetery saves.
+"""Native counterfactuals from source-qualified Borg Cemetery saves.
 
 A save restores the engine, not Borg memory. Original-source fresh-Borg
 branches from all four fixtures die; the full original replay also verifies.
@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / 'build/rust/game/angband'
 FIXTURE = json.loads((ROOT / 'harness/fixtures/planmage-wild-cat.json').read_text())
 ARCHIVE = Path(os.environ.get('BORG_SURVIVAL_FIXTURE_ZIP',
-    str(ROOT / 'vendor/player-cemetery/recordings' / FIXTURE['archive'])))
+    str(ROOT / 'vendor/cemetery-evidence' / FIXTURE['archive_path'])))
 
 
 @unittest.skipUnless(GAME.is_file(), 'native build required')
