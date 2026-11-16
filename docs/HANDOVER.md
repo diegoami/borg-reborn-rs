@@ -2,6 +2,59 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: no knowledge-only purchases (#460)
+
+- Owner: "turn off the buying of useless unknown objects". Cause of the
+  Scroll of Monster Confusion buys (replay 1285833235, game turn 13116,
+  shop 4 slot 10): not a supply path. `WORTHLESS` does blank
+  `capability::supplies()` for it, and the plan entry's value was exactly
+  25000 = `borg_town_w_knowledge` x UNIT, the first-copy "learn" bonus of a
+  ware whose `serves` carries the knowledge bit. #444 zeroed that weight
+  under `borg_trip_policy = 1` in `Weights::of`, but `step()` rebuilds its
+  settings from the 24 recorded town params (`state_of`), and the trip policy
+  is not one of them, so the zero never reached the plan: the weight was 25 in
+  every arm.
+- Change: `borg_town_shadow::effective_params` zeroes `borg_town_w_knowledge`
+  in the params the step runs on and records (`configured_params` still holds
+  the configured value). Off in every arm, trip 0 and 1; no schema, parameter
+  or default change; replays of new records reproduce the plan. The IDENTIFY
+  capability (Identify Rune scrolls, only with unknown runes carried) still
+  reads the configured weight. `borg_town_shadow.rs` is declared HOOKED.
+  Tests: the effective params, and a knowledge-only ware is planned at the
+  configured weight and not at the effective one (both planner modes).
+- Local replays (before = main build, after = this change; flavour-unknown
+  buys counted from messages.log): 1285833235 trip 1: 6 buys 155 gold with
+  one Monster Confusion, died of poison at clvl 4 -> 4 buys 58 gold (CLW,
+  Phase Door, Boldness, Detect Invisible), alive at the 100000-turn cap;
+  2109297965 trip 0: 7 buys 210 gold, killed by a wild dog at clvl 1 -> 5
+  buys 185 gold, alive at the cap (clvl 7); sanity cell 501/0/0 ambitious:
+  main keys a80b9ac6... -> ba6181b9..., 9 buys 238 gold, died to Lagduf at
+  clvl 8 -> 4 buys 113 gold, alive at the cap. Play diverges from the first
+  changed purchase, so end states are not evidence of improvement (RULES 14).
+  What remains unknown-flavour was bought for its kind: CLW, Phase Door,
+  Magic Mapping, Cure Serious Wounds, Boldness, Detect Invisible.
+- A `WORTHLESS` check cannot cover a flavour-unknown ware by itself: in a
+  store the ware carries its real kind, and `supplies()` prices it by that
+  (so a known-worthless kind in stock has no supply on any path), but the
+  knowledge bonus does not look at the kind. With the weight zero no
+  worthless kind has value on any planner path.
+- Question for the owner: should trip 0 keep buy-to-identify behind
+  `borg_town_w_knowledge`? The issue said to ask; this change turns it off
+  there too, as the owner's words ask. To restore the knob, read the
+  configured weight again in `effective_params` (one line). The historical
+  chooser (`borg_town_plan = 0`) has its own `borg_buy_identify` (default 0 in
+  harness/borg.txt, #27 learning list including Monster Confusion and Remove
+  Hunger, `borg_buy_strategy.rs:142`); not touched.
+- Low-value kinds still bought for their capability (use sites in the core):
+  Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
+  Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
+  Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
+  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  not count it as food). The planner prices them through `timed_cap`
+  (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
+  FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
+  with the ordinary weight (`:492`, `:502-507`); the owner decides whether
+  those curves are too generous.
 ## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
 
 Owner: the scroll should have value, be carried, and be used before any food.

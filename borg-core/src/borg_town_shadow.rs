@@ -24,7 +24,7 @@
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use crate::borg_headers::borg_h::BORG_TOWN_PLAN;
+use crate::borg_headers::borg_h::{BORG_TOWN_PLAN, BORG_TOWN_W_KNOWLEDGE};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::borg_item::inven_wield;
@@ -37,6 +37,21 @@ use crate::borg_town_stock::{needs_served, Stock};
 use crate::borg_town_usefulness::{Need, Trip};
 use crate::engine;
 use crate::state::BorgState;
+
+/// The 24 town settings the plan step actually runs on (borg-reborn-rs, #460;
+/// owner 2026-11-16: "turn off the buying of useless unknown objects").
+/// Buy-to-identify is off in every arm: a flavour-unknown ware's kind is
+/// hidden (supplies() prices only aware kinds), so the knowledge weight is the
+/// only value it can have, and it bought one of each flavour (Monster
+/// Confusion, Resist Heat, ...) for 25 points each. The recorded `params` are
+/// these, so a replay reproduces the plan; `configured_params` keeps
+/// borg_town_w_knowledge as configured. The same zero under borg_trip_policy = 1
+/// (#444, Weights::of) never took effect in the step: it rebuilds its settings
+/// from these 24 values, and the trip policy is not one of them.
+pub fn effective_params(mut params: [i64; PARAMS]) -> [i64; PARAMS] {
+    params[(BORG_TOWN_W_KNOWLEDGE - BORG_TOWN_PLAN) as usize] = 0;
+    params
+}
 
 /// The index of a need in [`Need::ALL`].
 fn need_index(need: Need) -> i8 {
@@ -432,6 +447,7 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
         *p = i64::from(st.cfg(BORG_TOWN_PLAN + i as u32));
     }
     let configured_params = params;
+    let params = effective_params(params);
     // The pack and the equipment, as v2 writes them: the light need
     // counts the light sources among them.
     let carried: Vec<(u8, i32)> = st
@@ -609,5 +625,55 @@ mod missile_and_light_tests {
         assert!(!super::unusable_torch(false, TV_LIGHT as u8, 1, 1));
         assert!(!super::unusable_torch(true, TV_LIGHT as u8, 2, 1));
         assert!(!super::unusable_torch(true, TV_FLASK as u8, 1, 1));
+    }
+}
+
+#[cfg(test)]
+mod knowledge_only_purchase_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+    use crate::borg_town_solve::Limits;
+    use crate::borg_town_stock::Candidate;
+
+    fn configured() -> [i64; PARAMS] {
+        let mut p = [0; PARAMS];
+        for (i, v) in p.iter_mut().enumerate() {
+            *v = i64::from(crate::borg_init::BORG_SETTINGS[BORG_TOWN_PLAN as usize + i].default_value);
+        }
+        p
+    }
+
+    /// The copies planned of one flavour-unknown ware that serves nothing but
+    /// knowledge (a scroll of Monster Confusion before it is known, #460).
+    fn copies_bought(params: [i64; PARAMS], utility: bool) -> i32 {
+        let candidates = vec![Candidate { shop: 4, slot: 10, kind: 216, tval: 0, sval: 0, price: 30, qty: 1,
+            weight: 5, slots_cost: 1, stack_count: 0, class: 48 }];
+        let wares = [WareFact { shop: 4, slot: 10, kind: 216, class: 48, slots_cost: 1, weight: 5, need: -1, reduction: 0,
+            serves: 1 << need_index(Need::Knowledge) }];
+        let mut traits = vec![0; BI_MAX as usize];
+        traits[crate::borg_headers::borg_trait_h::BI_CARRY as usize] = 2000;
+        let out = step(&StepInput {
+            revision: crate::borg_town_record::PLAN_SCHEMA, capability: None, utility, candidates, facts: &wares,
+            tryon: &[], limits: Limits { gold: 500, pack_slots: 10, weight: 1000 }, urgent: Vec::new(), params,
+            traits: &traits, power: 1000, carried: &[], cure_spell: false, kit: &[], home_slots: 10 });
+        out.plan.iter().map(|e| e.copies).sum()
+    }
+
+    #[test]
+    fn effective_params_zero_only_the_knowledge_weight() {
+        let configured = configured();
+        let effective = effective_params(configured);
+        let at = (BORG_TOWN_W_KNOWLEDGE - BORG_TOWN_PLAN) as usize;
+        assert_eq!(configured[at], 25);
+        assert_eq!(effective[at], 0);
+        for i in (0..PARAMS).filter(|&i| i != at) { assert_eq!(effective[i], configured[i]); }
+    }
+
+    #[test]
+    fn a_flavour_unknown_ware_serving_only_knowledge_is_not_bought() {
+        for utility in [false, true] {
+            assert_eq!(copies_bought(configured(), utility), 1, "the configured weight would buy it (utility {utility})");
+            assert_eq!(copies_bought(effective_params(configured()), utility), 0, "utility {utility}");
+        }
     }
 }
