@@ -53,6 +53,14 @@
   historical M13 parity from #355's intentional later policy changes.
 
 
+## 2026-11-16: owner-requested rollback of #355 behavior (#373)
+
+- Restore the six native-core files to accepted pre-#355 main 2f74e1c5.
+  This rollback contains no dossier/report payloads; preserved evidence and
+  canonical Cemetery migration are separate. The saved-position tests now
+  identify the restored death control honestly. Narrow replacements will be
+  separate owner-reviewed changes before any zoo dispatch.
+
 ## 2026-11-15: owner-directed wild-cat survival fix (#350)
 
 - The original PlanMage GUI recording was replayed with its frozen binary;

@@ -27,7 +27,7 @@ use crate::borg_io::{borg_keypress, borg_note, ESCAPE};
 use crate::borg_item_use::{
     borg_activate_item, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
-use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay, borg_spell_okay_fail};
+use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
 use crate::borg_projection::{borg_distance, borg_los, borg_target};
 use crate::borg_update::Detect;
 use crate::engine;
@@ -441,10 +441,7 @@ fn count_scary(
 /// Help determine if PHASE_DOOR seems like a good idea
 pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
     // must have the ability
-    // borg-reborn-rs (#350): APHASE counts spells only at <=3% failure
-    // for preparedness. Emergency callers accept other failure rates and
-    // must still evaluate an actually castable Phase Door (5% in the case).
-    if st.borg.tr(BI_APHASE) == 0 && !borg_spell_okay(st, PHASE_DOOR) {
+    if st.borg.tr(BI_APHASE) == 0 {
         return false;
     }
 
@@ -649,34 +646,6 @@ fn avoid(st: &BorgState, tenths: i32, risky_boost: i32) -> i32 {
 /// `borg.near.unique >= 1 && borg.near.unique <= 8`
 fn near_unique_1_8(st: &BorgState) -> bool {
     st.borg.near.unique >= 1 && i32::from(st.borg.near.unique) <= param(Param::escape_near_unique_max_count)
-}
-
-/// borg-reborn-rs (#350): a surrounded retreat cannot rely on walking to
-/// stairs. Unknown landing squares alone must not prohibit an otherwise
-/// usable short escape when walking is trapped or the next round is lethal.
-/// The caller supplies the existing danger/surrounding assessment.
-pub(crate) fn borg_escape_trapped(st: &mut BorgState) -> bool {
-    if st.borg.tr(BI_CDEPTH) == 0 || !st.borg.goal.fleeing || st.borg.morgoth_position {
-        return false;
-    }
-    if borg_escape_stair(st) {
-        return true;
-    }
-    // Phase works on NO_TELEPORT terrain, but not in the arena or under
-    // the anti-teleport curse (engine effect_handler_TELEPORT).
-    if engine::player_arena_level() || st.borg.tr(BI_CRSNOTEL) != 0 {
-        return false;
-    }
-    if borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-        || borg_activate_item(st, st.act.tele_phase)
-        || borg_spell_fail(st, PHASE_DOOR, param(Param::escape_emergency_fail))
-    {
-        borg_note(st, "# Escaping a trapped or lethal retreat before further combat.");
-        reset_antisummon(st);
-        st.borg.goal.type_0 = 0;
-        return true;
-    }
-    false
 }
 
 /// Try to phase door or teleport
