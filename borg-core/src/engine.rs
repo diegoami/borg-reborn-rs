@@ -3367,6 +3367,12 @@ pub fn py_food_levels() -> (i32, i32, i32, i32) {
     unsafe { (t::PY_FOOD_WEAK, t::PY_FOOD_HUNGRY, t::PY_FOOD_FULL, t::PY_FOOD_MAX) }
 }
 
+#[cfg(feature = "test-town-review")]
+#[no_mangle]
+pub extern "C" fn borg_rs_test_home_attempt(stored: bool, success: bool, kind: u32) -> u32 {
+    enter(|st| crate::borg_town_live::test_home_attempt(st, stored, success, kind))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

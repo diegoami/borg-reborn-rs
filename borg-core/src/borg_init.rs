@@ -206,7 +206,7 @@ pub const RETIRED_SETTINGS: &[RetiredSetting] = &[
     retired(c"borg_munchkin_level", b'i', RetiredInert::Any,
         "a parameter of the removed munchkin start; delete the line"),
     retired(c"borg_munchkin_depth", b'i', RetiredInert::Any,
-        "a parameter of the removed munchkin start; to bound the trip depth use borg_trip_depth_margin or borg_no_deeper"),
+        "a parameter of the removed munchkin start; to bound depth use borg_no_deeper"),
     retired(c"borg_lunal_mode", b'b', RetiredInert::Value(0),
         "the lunal mode was removed; delete the line"),
     retired(c"borg_self_lunal", b'b', RetiredInert::Value(0),

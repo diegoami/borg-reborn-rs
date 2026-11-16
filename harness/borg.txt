@@ -354,11 +354,12 @@ borg_town_power_scale = 40000
 # mode. Rust-only; the C parser reads these fields and ignores them. The
 # values are provisional, not accepted (docs/TRIP-POLICY.md).
 #
-# borg_trip_policy          0 = today's behaviour; 1 = the policy decides
+# borg_trip_policy          0 = inherited returns; 1 = add return requests
+#                           without changing depth, shopping or combat.
 #                           (with BORG_TRIP_RECORD=<file> set, every decision
 #                           and its inputs are written there in either case).
-# borg_trip_depth_margin    levels: plan this many levels above the deepest
-#                           level the Borg is prepared for.
+# borg_trip_depth_margin    diagnostic depth margin only; does not change
+#                           movement, shopping or combat.
 # borg_trip_pack_slack      pack slots (per distinct stack): go back when
 #                           this many or fewer are free.
 # borg_trip_unknown_stacks  all carried item types: go back when this many

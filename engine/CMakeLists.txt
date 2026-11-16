@@ -107,6 +107,6 @@ if(SUPPORT_BORG_RECORDING)
     target_include_directories(angband PRIVATE "${REPO}/vendor/angband-recorder/include"
         "${REPO}/vendor/angband-recorder/host")
     target_compile_definitions(angband PRIVATE BORG_RECORDING
-        ANGBAND_RECORDER_BUILD="borg-reborn-recorder-v0.1.0")
+        ANGBAND_RECORDER_BUILD="borg-reborn-recorder-v0.2.0")
     set_property(TARGET angband APPEND_STRING PROPERTY LINK_FLAGS " -Wl,--wrap=time")
 endif()
