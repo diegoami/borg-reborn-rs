@@ -2184,3 +2184,21 @@ not rewritten or repinned. Both optional town/trip policies default off.
 | `attack_preference_blackguard_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
 | `attack_preference_blackguard_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
 | `attack_preference_blackguard_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+
+## Speed for a dangerous fight (#469)
+
+Owner, 2026-11-17: when the danger is very high and the Borg fights rather
+than retreats, drink a Potion of Speed. `borg_defend_aux_speed` drinks only
+when being fast would bring the danger under a fraction of avoidance, so it
+skips exactly the fights speed cannot make safe. In `borg_attack`, once a
+positive best attack other than waiting is chosen (the Borg has committed to
+fighting this turn: `borg_caution` took no action), the Borg drinks a carried
+Potion of Speed first when it is in the dungeon, not already fast, and the
+danger where it stands (`borg_danger`, `defend_danger_horizon`) is above
+avoidance x value / 10. The note is `# Speed for a dangerous fight (danger X of
+avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
+20+2d10 turns, +10 speed (`object.txt`, Potion of Speed).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4637` |

@@ -855,7 +855,7 @@ parameters! {
     attack_holy_activation_hp_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:4283", "Attack holy activation hp divisor: existing policy divisor."),
     attack_holy_activation_hurt_value => (500, "score", 0, 100000, "borg_fight_attack.rs:4283", "Attack holy activation hurt value: existing policy score."),
     attack_holy_activation_value => (120, "score", 0, 100000, "borg_fight_attack.rs:4283", "Attack holy activation value: existing policy score."),
-    attack_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:4444", "Attack max target age: existing policy turns."),
+    attack_max_target_age => (2, "turns", 1, 10, "borg_fight_attack.rs:4637", "Attack max target age: existing policy turns."),
     attack_town_mage_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:4457", "Attack town mage max level: existing policy level."),
     attack_fast_monster_distance => (2, "grids", 1, 20, "borg_fight_attack.rs:4466", "Attack fast monster distance: existing policy grids."),
     attack_scary_breeder_max_depth => (5, "depth", 0, 127, "borg_fight_attack.rs:4476", "Attack scary breeder max depth: existing policy depth."),
@@ -863,6 +863,7 @@ parameters! {
     attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4478", "Attack scary max town time: existing policy turns."),
     attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4487", "Attack scary depth multiplier: existing policy multiplier."),
     attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4487", "Attack scary min level: existing policy level."),
+    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:4637", "Danger, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
 
     // borg-reborn-rs (#241): defend source at 5d9abb8f.
     defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:291", "Defend bless fail: existing policy percent."),

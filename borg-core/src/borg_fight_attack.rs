@@ -35,7 +35,7 @@ use crate::borg_item_id::borg_item_note_needs_id;
 use crate::borg_item_use::{
     borg_activate_dragon, borg_activate_failure, borg_activate_item, borg_activate_ring,
     borg_aim_wand, borg_equips_dragon, borg_equips_item, borg_equips_ring, borg_equips_rod,
-    borg_equips_staff_fail, borg_use_staff, borg_zap_rod,
+    borg_equips_staff_fail, borg_quaff_potion, borg_use_staff, borg_zap_rod,
 };
 use crate::borg_magic::{
     borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal, borg_spell_legal_fail,
@@ -4592,6 +4592,16 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     };
     let b_n = ranking.utility;
 
+    // borg-reborn-rs (#469): committed to this fight (not waiting); when the
+    // danger is very high, drink Speed first and attack next turn.
+    if b_g != BF_REST as i32 {
+        st.traits.simulate = false;
+        if borg_fight_speed(st) {
+            st.traits.attacking = false;
+            return true;
+        }
+    }
+
     /* Note */
     if winning_raw == b_n {
         borg_note(st, &format!("# Performing attack type {} with value {}.", b_g, b_n));
@@ -4609,6 +4619,55 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#469): whether to drink Speed before a fight the Borg has
+/// committed to (owner, 2026-11-17: when the danger is very high and it fights
+/// rather than retreats). `borg_defend_aux_speed` drinks only when being fast
+/// would make the fight safe; this covers the fights speed cannot make safe.
+/// Off (threshold 0) it never applies.
+fn fight_speed_wanted(threshold_tenths: i32, fast: bool, depth: i32, has_speed: bool, danger: i32, avoidance: i32) -> bool {
+    threshold_tenths > 0 && !fast && depth > 0 && has_speed
+        && i64::from(danger) > i64::from(avoidance) * i64::from(threshold_tenths) / 10
+}
+
+/// borg-reborn-rs (#469): drink a carried Potion of Speed (+10 speed for
+/// 20+2d10 turns, object.txt TIMED_INC:FAST) before a very dangerous fight.
+fn borg_fight_speed(st: &mut BorgState) -> bool {
+    let threshold = param(Param::attack_speed_fight_danger_tenths);
+    if threshold == 0 {
+        return false;
+    }
+    let has_speed = borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_speed) >= 0;
+    if st.borg.temp.fast || tr(st, BI_CDEPTH) == 0 || !has_speed {
+        return false;
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let danger = borg_danger(st, y, x, param(Param::defend_danger_horizon), true, false);
+    if !fight_speed_wanted(threshold, false, tr(st, BI_CDEPTH), true, danger, avoid(st)) {
+        return false;
+    }
+    if borg_quaff_potion(st, st.item_val.sv_potion_speed) {
+        borg_note(st, &format!("# Speed for a dangerous fight (danger {} of avoidance {})", danger, avoid(st)));
+        return true;
+    }
+    false
+}
+
+#[cfg(test)]
+mod fight_speed_tests {
+    use super::fight_speed_wanted;
+
+    #[test]
+    fn speed_before_a_very_dangerous_fight() {
+        // threshold 20 tenths: danger above twice the avoidance
+        assert!(fight_speed_wanted(20, false, 5, true, 201, 100));
+        assert!(!fight_speed_wanted(20, false, 5, true, 200, 100));
+        assert!(!fight_speed_wanted(0, false, 5, true, 10_000, 100), "0 is off");
+        assert!(!fight_speed_wanted(20, true, 5, true, 1000, 100), "already fast");
+        assert!(!fight_speed_wanted(20, false, 0, true, 1000, 100), "town");
+        assert!(!fight_speed_wanted(20, false, 5, false, 1000, 100), "no potion");
+    }
 }
 
 #[cfg(test)]
