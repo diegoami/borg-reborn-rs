@@ -15,6 +15,13 @@
   remain nonblocking; invocation-family weighting includes emergency and
   control actions as documented. Any non-neutral tuning needs that scope
   considered explicitly; no default tuning is proposed here.
+- Local formatting/Clippy,165 workspace tests,336 core tests/four ignores and
+  vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
+  weighted logging and trace-on/off equality pass; original Fang keys match.
+  Source-qualified controls and the initial CI reconciliation failure are
+  retained in Cemetery2cae6023, class-attack-preferences/review-followup-424.
+  Pin that independently retained archive before fresh CI; never weaken the
+  reconciliation check or relabel earlier source identities.
 - Required Rust checks and task CI gate integration into track-p. Preserve
   the original review pin; update #407 to the integrated follow-up pin after
   green CI. Main promotion still requires owner acceptance and delegation;
