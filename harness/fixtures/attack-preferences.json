@@ -1,0 +1,13 @@
+{
+  "schema": "borg-reborn-rs/attack-preference-validation@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "0f9f7cf79cc4c9e07ac44c019035496288c6995a",
+  "path": "validation/borg-reborn-rs/class-attack-preferences",
+  "implementation_commit": "8e007cddc1b0c0fb9f97319f8a8128b88680bf97",
+  "source_sha256": "290fd89ed58c536dd59835d259d85dc1a40cd5dd8b71d1e16f765a268abf71b3",
+  "baseline_commit": "6d1bca10bc67d02150a1a717f111891976e98069",
+  "purpose": "Immutable combined-main preference promotion controls, independently retained before fresh CI. Original source-qualified records are preserved.",
+  "policy_implementation_commit": "cac37f5901c90562715e47e7bcd4f9ff91ea4f9f",
+  "historical_evidence_commit": "e6a3698c113e9b6bf7ebec87bed8a5d30196a62a",
+  "previous_fixture_commit": "62039b2750d3b106062d5246e77fa3a84d60d1d8"
+}
