@@ -212,8 +212,8 @@
 - Local, 90 classes-1800-small starts, town planner on, trip off:
   deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
   old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
-- CI deaths for source 231c2cc5 are retained on borg-cemetery
-  `evidence/borg-reborn-rs-max-depth-ci-controls` (e0e95bbe, PR #27).
+- CI deaths for source 2d8693c8 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-max-depth-ci-controls-v2` (fed32a18).
 
 ## 2026-11-16: level-loop stair livelock (#421)
 
