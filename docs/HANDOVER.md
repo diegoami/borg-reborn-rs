@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: coordinated M2 review boundary fix (#378 / Cemetery #7)
+
+- Owner requested coordination with the Cemetery session. Work is isolated on
+  `task/371-m2-forwarder-review`, stacked on reviewed #378 head `34cec1fc`.
+  No direct pushes to the shared #378/Cemetery branches and no native-tool pin
+  change. Ownership proposal is on Cemetery #7 comment 6913007931 and reborn
+  #378 comment 6913031259; Cemetery owns merge/index regeneration, retained
+  stream checks, process cleanup and packet disclosure. Acknowledgement and a
+  fixed new Cemetery head are still needed before paired integration updates.
+- Reborn review finding 3: all native tool execution now requires file bytes
+  matching death-tools-pin.txt, including outside CI. Docs/evidence-only heads
+  with identical native code work; stale API-1 guards, changed/missing files,
+  missing pin objects and added source fail before executing tool code.
+- Seven pointer tests and all 94 tool tests pass. The reviewer's stale Cemetery
+  main `5abfdbe` is refused before executing export against a real retained
+  synthetic death; pinned `1afd9423` correctly rejects it as synthetic. No
+  scratch natural-registry directory is created. No new game was run.
+  Source/script tests: 19 pass. Engine input digest remains the reviewed
+  `bf9a451c46a07142b59525a9c9c581287930e3b333baa4a81dda4816ed2a025a`;
+  there is no new runtime/bank identity. Fix tracking is #410; low-priority
+  per-kind charge validation is explicitly tracked in #411, without altering
+  the reviewed observed tier.
+- Finding 2 is explicitly disclosed in harness/README.md: the P1 birth kit is
+  an ordinary kit created before one-way options, retaining the option-
+  conditional Recall scroll that a native one-way Warrior birth omits. The
+  existing bank's ineffective consumption is disclosed, not a valid escape.
+  Runtime/capture/catalog/bank bytes remain unchanged; no new gameplay report
+  belongs in this repository. This is a review response, not acceptance.
+
 ## 2026-11-16: synthetic P1 evidence ownership synchronization
 
 - Preserve current main's accepted ownership/CI changes. All six unmerged

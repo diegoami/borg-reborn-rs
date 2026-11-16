@@ -17,6 +17,17 @@ character with its ordinary starting kit, then completes the native dungeon tran
 profile keep their existing meanings; `menu` is recommended for explicit indices.
 `-- -start-depth N` is also supported and normalized into recorded flags.
 
+**P1 birth-kit normalization:** the kit is handed out under the ordinary birth
+options before the frontend enables one-way options. This is not the engine's
+native kit for a character born with no-recall already enabled. In particular,
+Warrior `class.txt` conditionally omits its Word of Recall scroll under native
+`birth_no_recall`; P1 birth cells retain that ordinary-kit scroll. The reviewed
+bank consumes it ineffectively at turn 3 (one refusal per birth cell). This
+existing difference is declared for P1 so the independently repeated streams
+remain valid; it is not an effective escape. Changing to a native one-way birth
+kit requires a versioned contract and a fresh bank/evidence comparison. The
+observed-tier projection has its separately declared inventory/knowledge rules.
+
 Depth is a positive decimal integer below the engine's `max_depth` (the shell
 also bounds its input to 1..999). Zero, malformed/overflowing values, duplicates,
 loaded saves and random birth are refused. Unsupported build/kit options are
