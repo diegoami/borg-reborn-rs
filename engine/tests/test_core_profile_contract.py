@@ -88,10 +88,12 @@ class CoreProfileContractTest(unittest.TestCase):
         examples = json.loads((ROOT / 'docs/examples/core-calibration-profiles.json').read_text())
         settings = dict(examples['profiles']['core-recover-rest-8']['settings'])
         settings['borg_param_power_equipment_unidentified_weapon_bonus'] = 0
+        settings['borg_param_attack_preference_mage_spell_permille'] = 1600
         out, record = self.cell('core-trial', settings)
         self.assertEqual(record['outcome'], 'turn_cap', record)
         settings = {s['name']: s for s in json.loads((out / 'params-core.json').read_text())}
-        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0)]:
+        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0),
+                            ('attack_preference_mage_spell_permille', 1600)]:
             self.assertEqual((settings[name]['value'], settings[name]['origin']), (value, 'borg.txt'))
         self.assertTrue((out / 'trace-core.jsonl').stat().st_size)
         self.assertEqual(record['binary_sha256'], self.binary_sha)

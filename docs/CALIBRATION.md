@@ -6,6 +6,15 @@ Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
 
+## Class/family attack preference extension (#403)
+
+The historical P1–P3 counts above describe the original extraction. #403 adds
+54 neutral-default parameters to the current M13 registry. The full arithmetic,
+family inventory, configuration and trace@2 contract is in
+[ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md). `utility_permille` means a
+multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
+from the existing device-failure `permille` unit. No existing default changes.
+
 ## Configuration and records
 
 At core initialization, values are loaded once for the process, including
@@ -2094,3 +2103,62 @@ CLW/CSW/CCW and removes five parameters whose branches no longer exist.
 See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
 The live registry remains borg-core/src/params.rs; historical profiles are
 not rewritten or repinned. Both optional town/trip policies default off.
+
+## Class/family preference catalogue (#403)
+
+| Name | Default | Unit | Range | Source |
+| --- | ---: | --- | --- | --- |
+| `attack_preference_warrior_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_warrior_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_warrior_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_warrior_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_warrior_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_warrior_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_mage_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_druid_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_priest_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_necromancer_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_paladin_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_rogue_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_ranger_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_melee_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_projectile_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_thrown_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+| `attack_preference_blackguard_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |

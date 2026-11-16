@@ -2,6 +2,34 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: class/family attack preferences (#403, design #396)
+
+- Owner authorized native P implementation after the proposal discussion. Branch
+  task/T403-class-attack-preferences starts from track-p cd411e55; task PR targets
+  track-p only. Main promotion and the later R carry need their normal gates.
+- Add 54 named neutral-default parameters (nine classes, six invocation families),
+  explicit symbolic mapping of all170 BF entries, widened floor arithmetic and
+  one final-ranking seam. Hybrids/controls retain invocation family; emergency
+  eligibility and all helper internals remain unchanged. No danger correction.
+- core-trace@2 adds every evaluated candidate's raw/adjusted score, parameter and
+  provenance plus per-invocation winner. Nonpositive results carry no invented
+  rejection cause. Nested frames/repeated attempts remain separate; tracing
+  does not rerun simulation or feed decisions. Historical @1 evidence is intact.
+- Native arithmetic/mapping/config/ranking/nesting tests, workspace tests,
+  formatting, Clippy, vendor audit and Python tools/scripts pass locally.
+  A bounded real Mage regression changes the selected attack under a non-neutral
+  profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
+  for other classes are not claimed as native replay coverage.
+- Full neutral comparison and engine/profile contracts are being completed on
+  exact retained baseline/candidate build identities before integration. Initial
+  baseline/candidate full attempts played all45 games but could not finalize the
+  suite marker because bc was absent; preserve those attempts. Install tools
+  locally and repeat unchanged suites, never forge completion or discard deaths.
+- Local evidence is under /workspace/work/403-*; reports/scenarios and retained
+  natural-death packages belong in Borg Cemetery, not this source tree. R must
+  independently consume the accepted promoted contract with neutral/non-neutral
+  check/switch, ordered requests/effects/RNG and restoration (#364/#366).
+
 ## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
 
 - #395 review at 79ec0591 reports no blockers. Its remaining engine CI
