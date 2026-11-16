@@ -103,3 +103,21 @@ date or coding rate. The now-counted 8,175 policy lines exclude the accessor,
 wrappers, facts, validation and reporting. Re-estimate after dependency audit.
 No sealed suite, population run, hybrid/model arm, perception replacement or
 promotion to main/global reviewed is authorized by this plan.
+
+## Measured scope correction after implementation
+
+The exact accepted M13 commit `1443c2d1` contains 4,619 physical lines in
+attack and 3,586 in defence: 8,205 total. The shared permanent-buff file is
+767 lines. The earlier 4,583/3,592/8,175/775 counts above were preparation
+estimates and are superseded by these exact counts. Production owned
+files contain 5,305 attack and 3,899 defence lines, including imports,
+comments and formatting; the 127 function bodies total 8,517 lines.
+There are 200 new borrowed-read construction sites and 112 explicit public
+production dependency signatures (68 existing plus 35 attack and nine
+defence). See R3-DEPENDENCIES.json and R3-DEPENDENCY-OWNERSHIP.md.
+
+The provisional 1.5–2× R2 estimate described migration effort; it was not
+a delivery promise and is not a measured implementation ratio. The broad
+attack surface, nested defence cross-calls, exact restoration fixtures,
+versioned telemetry and retained validation are material carry costs.
+No survival or speed improvement follows from source counts or parity.

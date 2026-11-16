@@ -7,6 +7,8 @@ session, a local one, any model, or a person. It is the only entry point;
 1. [RULES.md](RULES.md);
 2. [docs/HANDOVER.md](docs/HANDOVER.md): where the work stands and what the
    last session left;
+   Track R also reads [docs/R366-HANDOVER.md](docs/R366-HANDOVER.md) for the
+   current scoped state; the global file retains historical session material.
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the design direction;

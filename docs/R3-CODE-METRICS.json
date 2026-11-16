@@ -1,0 +1,24 @@
+{
+  "schema": "borg-reborn-rs/r3-code-metrics@1",
+  "core_pin": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "modules": [
+    {
+      "module": "attack",
+      "donor_physical_lines": 4619,
+      "owned_production_file_lines": 5305,
+      "owned_function_count": 71,
+      "owned_function_body_lines": 4894,
+      "borrowed_read_sites": 134
+    },
+    {
+      "module": "defence",
+      "donor_physical_lines": 3586,
+      "owned_production_file_lines": 3899,
+      "owned_function_count": 56,
+      "owned_function_body_lines": 3623,
+      "borrowed_read_sites": 66
+    }
+  ],
+  "typed_api_functions": 112,
+  "notes": "Physical source counts include comments/imports and differ with rustfmt. Function bodies exclude the explicit test-only defence wrapper. Counts are scope/carry observations, not performance or branch coverage."
+}
