@@ -200,3 +200,14 @@ PRs #1 and #2; tag `m0`.
 - A "fair-play" information profile (screen only), measured separately (D3).
 - Learned components for narrow decisions, from the decision trace.
 - Neo Angband, through Mandos's adapters.
+
+## Owner-authorized class/family preferences (#396 / #403, 2026-11-16)
+
+The owner authorized the native P implementation after the design discussion.
+#403 is in progress on task/T403-class-attack-preferences from track-p. Scope:
+54 neutral-default class/family utility multipliers, explicit BF mapping, final
+ranking seam, trace@2 and targeted validation. See docs/ATTACK-PREFERENCES.md.
+No danger correction, R implementation, population dispatch or default change.
+Task PR targets track-p; no integration may move an active reviewed head.
+Owner-accepted pinned P review precedes main promotion. R carries the accepted
+contract separately after promotion and #364/#366 coordination.

@@ -2,6 +2,70 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: preference task synchronization with recorder review (#403)
+
+- Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference
+  validation ran. Preserve the complete recorder v0.2.0 adoption and both
+  handover histories; only this document conflicted. No recorder code or pin
+  is edited by the preference task beyond inheriting that integration commit.
+- #407 now freezes track-p for the recorder milestone review. #405 remains
+  unmerged while that review is active; owner authorization to implement
+  preferences does not authorize moving its reviewed head or promotion to main.
+- Fresh clean25e89494 versus clean46d5f2ae passes strict full45/45 native
+  key/message/state parity.336 native tests (four existing ignored),165 workspace
+  tests, formatting/Clippy and70 engine checks (two local skips, required pinned
+  zoo and incident fixtures present) pass. The real weighted choice and tracing
+  checks still pass; original-core Fang replay reproduces50491fa13924 exactly.
+- Current Cemetery evidence pin:62039b2750d3b106062d5246e77fa3a84d60d1d8, recorder-sync/ under
+  validation/borg-reborn-rs/class-attack-preferences. All73 qualified packages
+  verify, including27 new exact-build records;12 current native neutral deaths,
+  the weighted case and two original-core deaths reconcile. The new fixture
+  reference supplies CI's known archive without weakening any check. Earlier
+  cac37f59/cd411e55 evidence below remains historical, not relabeled.
+- R carry remains separately blocked in #406. Native calibration replay tooling
+  is Cemetery#13; #407's reviewed track-p head remains unchanged.
+
+## 2026-11-16: class/family attack preferences (#403, design #396)
+
+- Owner authorized native P implementation after the proposal discussion. Branch
+  task/T403-class-attack-preferences starts from track-p cd411e55; task PR targets
+  track-p only. Main promotion and the later R carry need their normal gates.
+- Add 54 named neutral-default parameters (nine classes, six invocation families),
+  explicit symbolic mapping of all170 BF entries, widened floor arithmetic and
+  one final-ranking seam. Hybrids/controls retain invocation family; emergency
+  eligibility and all helper internals remain unchanged. No danger correction.
+- core-trace@2 adds every evaluated candidate's raw/adjusted score, parameter and
+  provenance plus per-invocation winner. Nonpositive results carry no invented
+  rejection cause. Nested frames/repeated attempts remain separate; tracing
+  does not rerun simulation or feed decisions. Historical @1 evidence is intact.
+- Native arithmetic/mapping/config/ranking/nesting tests, workspace tests,
+  formatting, Clippy, vendor audit and Python tools/scripts pass locally.
+  A bounded real Mage regression changes the selected attack under a non-neutral
+  profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
+  for other classes are not claimed as native replay coverage.
+- Clean cac37f59 versus clean cd411e55 passes strict full45/45 key/message/state
+  parity.336 native tests (four existing ignored),165 workspace tests,70 engine
+  tests (three skipped),13 mandatory pinned zoo-profile contracts and the existing
+  four-save incident regression pass. Other checks above remain green. Initial
+  baseline/candidate full attempts played all45 games but could not finalize the
+  suite marker because bc was absent; preserve those attempts. Install tools
+  locally and repeat unchanged suites, never forge completion or discard deaths.
+- Cemetery evidence is pinned ate6a3698c113e9b6bf7ebec87bed8a5d30196a62a under
+  validation/borg-reborn-rs/class-attack-preferences. It retains46 qualified
+  packages, original records, the initial CI artifact, all failure receipts and
+  full comparison hashes. The second CI passed all gameplay comparisons but
+  needed the reference-identical seed102 Fang smoke dossier under its new source
+  identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
+  reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
+  known registry; the original fixture/tool pins and historical archive stay fixed.
+  Native preference test deaths use a separate uploaded/reconciled registry, so
+  the existing original-core observation replay continues to select its own
+  core's case. Shared rerun-death lacks calibration-override restoration; that
+  pre-existing tooling limit is not silently treated as a native replay check.
+  Local raw evidence is under /workspace/work/403-*. R must
+  independently consume the accepted promoted contract with neutral/non-neutral
+  check/switch, ordered requests/effects/RNG and restoration (#364/#366).
+
 ## 2026-11-16: recorder integration after accepted importer review (#351)
 
 - #395 is merged. Sync current track-p cd411e55, retaining both histories

@@ -4430,8 +4430,7 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
 /// we should "expect" certain results, and take note of failure to observe
 /// those effects.  XXX XXX XXX
 pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
-    let mut b_n = 0;
-    let mut b_g: i32 = -1;
+    let mut ranking = crate::attack_preference::Ranking::default();
     let mut adjacent_monster = false;
 
     /* Nobody around */
@@ -4569,26 +4568,28 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         BF_ACT_STARLIGHT as i32
     };
 
+    let mut attack_trace = crate::core_trace::attack_ranking();
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
-        let n = borg_calculate_attack_effectiveness(st, g);
+        let raw = borg_calculate_attack_effectiveness(st, g);
 
-        /* Track "best" attack  <= */
-        if n <= b_n {
-            continue;
+        // borg-reborn-rs (#403): apply preference once, only during ranking.
+        // Helpers keep eligibility, RNG, costs and internal target selection.
+        let class = tr(st, BI_CLASS);
+        let candidate = crate::attack_preference::evaluate(class, g, raw);
+        let changed = ranking.consider(g, &candidate);
+        if let Some(trace) = attack_trace.as_mut() {
+            trace.candidate(class, g, raw, &candidate, changed);
         }
-
-        /* Track best */
-        b_g = g;
-        b_n = n;
     }
 
-    /* Nothing good */
-    if b_n <= 0 {
+    crate::core_trace::record_attack_ranking(attack_trace, ranking.winner);
+    let Some(b_g) = ranking.winner else {
         st.traits.attacking = false;
         return false;
-    }
+    };
+    let b_n = ranking.utility;
 
     /* Note */
     borg_note(st, &format!("# Performing attack type {} with value {}.", b_g, b_n));
