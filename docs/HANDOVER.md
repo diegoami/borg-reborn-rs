@@ -215,7 +215,7 @@
   deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
   old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
 - CI deaths for source 2d8693c8 are retained on borg-cemetery
-  `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 61d157e5 also
+  `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
   adds `checkpoints-max-depth.zip`, the wild-cat archive with the plan
   capped (saves and borg.txt unchanged; the original stays as evidence).
 
