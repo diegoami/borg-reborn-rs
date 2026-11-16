@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: learned spells no longer zero item value (#400)
+
+- Owner: fix all of #400 in one PR, the way #380 fixed Phase Door.
+  borg_town_capability.rs no longer sets a capability's demand to 0 when
+  the character has a reliable spell for it (TRAPS, MONSTERS, INVISIBLE,
+  MAP, ILLUMINATE, DIG, RECALL, FOOD). Mana is finite, spells fail or are
+  unusable, and the broad classes conflate effects (treasure sensing is
+  not mapping). The demand drives buying and keeping, so this also stops
+  casters selling those items.
+- `effect_supply` is test-only now; `engine::spell_effect_values` keeps an
+  `#[allow(dead_code)]` hook (donor code, no caller).
+- test_phase_stock: on the Mage town fixture TRAPS, MONSTERS and
+  ILLUMINATE were 0 (Find Traps, Detect Monsters, Light Room); now every
+  service keeps its demand. The assertion fails on 4ecb93d7.
+
 ## 2026-11-16: owner-authorized synthetic P1 landing (#378)
 
 - Owner explicitly requested merging #378 after the independent milestone

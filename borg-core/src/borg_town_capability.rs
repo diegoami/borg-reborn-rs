@@ -167,6 +167,7 @@ fn timed_cap(timed: u32) -> Option<usize> {
 
 /// RANDOM/SELECT alternatives are mutually exclusive. Use the guaranteed
 /// component-wise service rather than adding incompatible branches.
+#[cfg(test)] // borg-reborn-rs (#400): only the effect-table tests use it.
 fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Vec<(usize, i64)> {
     effect_supply_for_consumer(effects, hp, service_turns, false)
 }
@@ -470,22 +471,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     if engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32) || t(BI_LIGHT) > 0 && light.iqty == 0 {
         model.curves[LIGHT][1] = 0;
     }
-    // Reliable renewable spells cover a capability without pretending they
-    // are 1000 physical potions. Books and mana must actually be available.
-    for (si, spell) in st.magic.magics.iter().enumerate() {
-        if spell.status < crate::borg_magic::BORG_MAGIC_TEST || spell.rating == 0
-            || !crate::borg_magic::borg_spell_legal_fail(st, spell.spell_enum, 20) { continue; }
-        let effects = engine::spell_effect_values(si as i32, journey.level as i32);
-        // Only information/access services suppress duplicate purchases.
-        // Mana-free attacks and healing remain valuable alongside spells.
-        // borg-reborn-rs (#380): emergency scrolls retain their physical
-        // supply value; knowing Phase Door does not reserve mana to cast it.
-        for (cap, _) in effect_supply(&effects, journey.hp, cfg(BORG_TOWN_SUPPORT_TURNS).max(1)) {
-            if matches!(cap, TRAPS | MONSTERS | INVISIBLE | MAP | ILLUMINATE | DIG | RECALL | FOOD) {
-                model.curves[cap][1] = 0;
-            }
-        }
-    }
+    // borg-reborn-rs (#380, #400): a learned spell never zeroes a physical
+    // item's value. Mana is finite and shared, a spell can fail or be
+    // unusable (blind, confused, out of mana), and broad capability classes
+    // conflate different effects (treasure sensing is not mapping, Detect
+    // Monsters misses invisible races). Scrolls, devices and potions keep
+    // their supply value next to the spells.
     debug_assert!(model.valid());
     model
 }

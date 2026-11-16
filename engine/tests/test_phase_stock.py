@@ -17,7 +17,7 @@ ARCHIVE = Path(os.environ.get('BORG_PHASE_STOCK_FIXTURE_ZIP',
 
 @unittest.skipUnless(GAME.is_file(), 'native build required')
 class PhaseStockTest(unittest.TestCase):
-    def test_learned_phase_door_does_not_remove_scroll_backups(self):
+    def test_learned_spells_do_not_remove_item_value(self):
         if not ARCHIVE.is_file():
             if os.environ.get('BORG_PHASE_STOCK_FIXTURE_REQUIRED') == '1':
                 self.fail(f'missing mandatory shopping fixture: {ARCHIVE}')
@@ -54,6 +54,12 @@ class PhaseStockTest(unittest.TestCase):
             self.assertIn('You bought a Scroll of Phase Door for 15 gold.',
                           (out / 'messages.log').read_text())
             plans = [json.loads(line) for line in (out / 'town-plan.jsonl').read_text().splitlines()]
+            # #400: learned spells (this Mage has Find Traps, Detect Monsters
+            # and Light Room) no longer zero any item's demand; before, TRAPS,
+            # MONSTERS and ILLUMINATE were 0 here.
+            curves = {c[0]: c for c in plans[-1]['capability_curves']}
+            for cap in [1, 4, 5, 10, 11, 12, 13, 14, 15]:
+                self.assertGreater(curves[cap][1], 0, cap)
             phase = next(c for c in plans[-1]['capability_curves'] if c[0] == 4)
             self.assertGreater(phase[1], 0)
             self.assertEqual(phase[3], 1000)  # One physical scroll remains in the final kit.
