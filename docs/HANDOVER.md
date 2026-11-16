@@ -13,6 +13,11 @@
   fixture archive bytes/hashes are unchanged. Revalidate this combined tree.
 - Original recorder implementation and vendor bytes remain exactly46d5f2ae.
   Its review provenance and nonblocking follow-ups (#409) remain intact.
+- Clean combined build71978c7b/source1573e6ca: native1011, smoke102 and
+  original-core1020 controls match accepted-main retained key hashes and
+  terminal facts. Pin canonical sync receipts at Cemetery8d63abf5. Local
+  91 tool/19 script checks and all2572 historical package checks pass.
+  Combined CI gates the delegated recorder-only merge.
 
 ## 2026-11-16: recorder integration after accepted importer review (#351)
 

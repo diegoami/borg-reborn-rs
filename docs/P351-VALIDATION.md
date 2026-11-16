@@ -26,3 +26,11 @@ No strategy or population-performance improvement is claimed.
 Schema v2 is incompatible with v1. Preserve old sessions and their matching
 executables; no migration or GUI/save-menu coverage is claimed. This task
 integrates into `track-p`; owner-selected milestone review gates `main`.
+
+Owner-approved recorder-only promotion synchronization: accepted main8a0b57c8
+is preserved; reviewed recorder files equal46d5f2ae. The clean combined build
+source is1573e6cad8bf9dc39f31324edc0d0e6fe9f37dfcefaa3625eb9c04de665ecfa7.
+Three new CI controls match retained accepted-main key hashes and terminal
+facts. [Canonical sync receipts](https://github.com/diegoami/borg-cemetery/blob/8d63abf524903b78958ba35abe7731d7db71deb0/validation/borg-reborn-rs/recorder-v020/promotion-main-sync.md)
+retain their actual identities; earlier45-case receipts keep their original
+source epoch. Combined CI is required before the delegated merge.
