@@ -79,3 +79,25 @@ R334-RECOVERY.md. It retains every packet from the actual R registry pin,
 restores the accepted legacy packets and does not broaden/rebaseline the
 accepted legacy inventory. Read the source-qualified map for old R numeric
 references; do not resolve them against newly restored legacy slots.
+
+## Track R current evidence in borg-cemetery (owner, 2026-11-16)
+
+New Track R validation reports and original dossiers belong in borg-cemetery.
+Keep already published historical packets unchanged. A namespaced validation
+bundle preserves the original qualified packages, provenance and manifests;
+its containing cemetery commit is the registry qualifier. No guessed final
+numeric ID or central acceptance is implied while #344 remains open.
+
+The source keeps short validation summaries and R*-CEMETERY-RECEIPT.json
+references. The validation-evidence action checks out the exact pinned cemetery
+commit. tools/prepare-validation-evidence.py verifies its complete manifest,
+every file hash and original qualified-package identity, then combines the
+verified packages with the unchanged local archive in a disposable directory.
+CI passes that directory to the existing cemetery-owned reconciler; its
+encounter-family/key checks and no-unexported-natural-death requirement remain
+unchanged. The frozen legacy inventory is still checked before and after
+materialization. A missing, damaged or wrong-commit bundle fails the job.
+
+This is an evidence-location change for current Track R, not a bulk migration
+or deletion of the historical source archive. Private working runs, executable
+binaries and unrelated session history are not part of these bundles.

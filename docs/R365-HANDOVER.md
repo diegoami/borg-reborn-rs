@@ -1,36 +1,57 @@
 # Track R defence handover (#365)
 
-## 2026-11-16: defence #365 implemented, runtime validation pending
+Local acceptance is complete for the unchanged combined runtime input
+562aedf968831885c32b4f56271a2f7bd0245432aff9159dd629f59601ff4fe1,
+production build c8e5ca8d. Attack #401 and defence #402 remain draft until
+evidence publication and final exact-head CI. Feature is still ca7ab365
+after accessor #367. No main/global-reviewed promotion is authorized.
 
-- task/T365-defence-port is stacked on attack draft #401/60db393e.
-  Accessor #367 merged feature-only at ca7ab365; #363 is closed. Carry
-  accepted feature and final attack evidence before this task integrates.
-- All 56 defence policy functions are owned, with the single public
-  borg_defend transaction. Native policy order and restoration are retained.
-  Exact named adapters cover temporary confusion resistance/Free Action;
-  source audit compares all bodies, quoted strings and module constants.
-- Nine additional typed dependencies include plain-value terminal geometry;
-  attack/escape remain independently shadowed cross-calls. Permanent-buff,
-  preparation and flow policy remain explicitly shared, including fight_perm.
-- @3 complete-surface telemetry adds defence_calls and requires all 19
-  public entries. Explicit --legacy-r3-attack/@2 and --legacy-r2/@1 readers
-  preserve old evidence without satisfying the new defence gate. Consumer
-  integrity and exact source-adapter/delegation regressions pass.
-- Clippy and vendor pass; 181 workspace tests plus one compile-fail doc
-  test, core 336 (four ignored), source tools 36 and tools 97 pass.
-  Replay-stop subprocess controls retain the caller's @3 schema/cached mode,
-  flush one diagnostic and exit 2 in both modes. Test-r3-defence declares
-  43 constructed selector/restoration cases, compiled/Clippy checked but
-  not yet run natively. CI now runs both native fixture modes before the
-  archive gates and retains their separate test artifacts. No defence games
-  have run locally. Freeze identity/build
-  under the shared lock after attack's current campaign, then complete native donor/off/check/
-  switch, strict entry, restoration/rare-path and literal fault/re-port
-  controls, all death imports/reconciliation and CI before task merge.
-- Attack's full off suite matches M13 45/45, smoke all modes 3/3; check/
-  switch full campaigns remain active/pending in the retained attack validation artifacts.
-  Its first CI found only a missing new-build death package; the actual CI
-  artifact plus 12 local packets are retained on the attack branch. Import
-  its final evidence before defence integration. #366 is the combined R3
-  review gate; owner selects reviewer. No main/global-reviewed promotion.
+All 56 defence functions and the single public borg_defend transaction are
+owned. The 112-function combined API inventory and state/effect/item/spell
+lifetime rules are in R3-DEPENDENCIES.json and R3-DEPENDENCY-OWNERSHIP.md.
+Permanent-buff, preparation and flow remain explicitly shared.
 
+- Full off/check/switch each matches 45 exact M13 donor play streams,
+  effective settings and common gameplay fields. Both shadow modes have
+  zero mismatches, 340,627,182 comparisons and all 19 required entries.
+  Rare caution teleport occurs once in each mode with unchanged assertions.
+- Native smoke all modes passes; original-core smoke matches three accepted
+  references. Four actual nested callbacks per mode preserve equal streams.
+- All 43 constructed cases pass both modes, including nonbinary Grim Purpose
+  restoration and positive simulated Morgoth rest. Literal restore +1 is
+  rejected with a durable witness; exact source re-port passes all cases
+  and preserves production-off live streams. CI independently passed both
+  constructed modes. These are not natural endgame progression.
+- Nine opt-in town/trip contexts match exact donor streams; all 984 town-plan
+  records replay, 750 containing a plan. One failed preflight command used
+  unsupported config flags and started no game; it is retained separately.
+  The corrected ABI comparison uses the unchanged donor config harness and
+  receiving binary, as in accepted #343. No branch-coverage claim follows.
+- Every local natural death reconciles: 36 full-suite outcomes/12 native
+  packets plus two original-core packets; no town-context natural deaths.
+  One actual CI packet retains its exact artifact namespace. The combined
+  historical/cemetery mirror verifies 2,715 packages; repeated outcomes and
+  storage counts do not imply independent lives. Legacy inventory unchanged.
+- Prior fmt, feature Clippy, vendor, workspace 181/doc1, core 336/four ignored,
+  source 38 and tools 97 gates pass. New cemetery verifier tests must also
+  pass on this final task head. Engine tests68/two optional local skips.
+
+The owner explicitly approved canonical report/dossier publication in
+borg-cemetery. The 15-package defence and 17-package attack bundles are
+published at cbb23b5c42ff126e5aa22fe7a8464daa1c1fb2e0.
+Both source receipts pin that containing registry and their full manifests;
+all original bytes and provenance are unchanged. The source retains existing public archive entries,
+implementation/source audits, short summaries and pinned cemetery receipts.
+No new private report or dossier should be uploaded into this source tree.
+
+The validation-evidence action verifies the exact cemetery commit, manifest,
+all file bytes and qualified identities before creating a disposable mirror
+for the unchanged cemetery-owned reconciler. Final numeric allocation #344
+remains external; no canonical D-number is guessed. Final CI must use the
+published complete evidence head before task readiness and feature merge.
+
+#339/#340 remain open until their versioned telemetry/cached-mode diagnostic
+fixes and final evidence integrate. Finish #366's combined report and immutable
+feature-only review, hand the prompt to the owner's chosen reviewer and stop
+before R4. Scoped handovers supplement the unchanged historical global file
+without retransmitting private session material.
