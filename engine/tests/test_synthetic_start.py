@@ -57,9 +57,11 @@ class SyntheticStartTest(unittest.TestCase):
                 summary = json.loads((out / 'summary.json').read_text())
                 self.assertIs(summary['synthetic'], True)
                 self.assertIs(summary['loaded'], False)
-                self.assertEqual(summary['synthetic_contract'], 'borg-reborn-rs/synthetic-start@1')
+                self.assertEqual(summary['synthetic_contract'], 'borg-reborn-rs/synthetic-start@2')
                 self.assertEqual(summary['start_depth'], depth)
                 self.assertEqual(summary['initial_depth'], depth)
+                self.assertEqual(summary['initial_cave_depth'], depth)
+                self.assertIs(summary['initial_generation_pending'], False)
                 self.assertEqual(summary['start_build'], 'birth')
                 self.assertEqual(summary['dungeon_mode'], 'one_way')
                 for option in ('birth_force_descend', 'birth_no_recall'):
@@ -125,8 +127,8 @@ class SyntheticStartTest(unittest.TestCase):
         fake.chmod(0o755)
         self.env['ANGBAND_BIN'] = str(fake)
         receipt = dict(synthetic=True, loaded=False,
-                       synthetic_contract='borg-reborn-rs/synthetic-start@1', start_depth=10,
-                       initial_depth=10, start_build='birth', dungeon_mode='one_way',
+                       synthetic_contract='borg-reborn-rs/synthetic-start@2', start_depth=10,
+                       initial_depth=10, initial_cave_depth=10, initial_generation_pending=False, start_build='birth', dungeon_mode='one_way',
                        game_options=dict(birth_force_descend=True, birth_no_recall=True))
         for index, changes in enumerate(({'synthetic': False}, {'initial_depth': 0},
                                          {'start_depth': 20}, {'loaded': True},

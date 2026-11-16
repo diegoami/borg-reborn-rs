@@ -1,0 +1,14 @@
+{
+  "schema": "borg-reborn-rs/harness-capabilities@1",
+  "contracts": ["borg-reborn-rs/synthetic-start@2"],
+  "cores": ["reborn", "borg-rs"],
+  "character_build_schema": "borg-reborn-rs/character-build@1",
+  "character_build_support": {
+    "race_idx": 0,
+    "class_idx": 0,
+    "maximum_level": 15,
+    "maximum_bytes": 16384,
+    "items": "mundane base-kind properties with combat bonuses, charges, fuel and awareness",
+    "unsupported": ["artifacts", "egos", "curses", "brands", "slays", "nonzero item stat modifiers", "nondefault kind flags or elements"]
+  }
+}

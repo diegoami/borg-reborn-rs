@@ -52,11 +52,15 @@ list(TRANSFORM ANGBAND_CORE_SOURCES PREPEND "${TREE}/")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/game")
 add_compile_options(-Wall -Wextra -pedantic -Wno-unused-parameter)
 
-set(FRONTENDS "${TREE}/src/main.c" "${ENGINE}/frontend/main-borgh.c")
+find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+set(FRONTENDS "${TREE}/src/main.c" "${ENGINE}/frontend/main-borgh.c" "${ENGINE}/frontend/synthetic-build.c")
 if(SUPPORT_X11)
     list(APPEND FRONTENDS "${TREE}/src/main-x11.c")
 endif()
 add_executable(angband ${ANGBAND_CORE_SOURCES} ${FRONTENDS})
+file(STRINGS "${ENGINE}/UPSTREAM" SYNTHETIC_PIN_LINE REGEX "^commit=")
+string(REPLACE "commit=" "" SYNTHETIC_PIN "${SYNTHETIC_PIN_LINE}")
+target_compile_definitions(angband PRIVATE SYNTHETIC_ENGINE_PIN="${SYNTHETIC_PIN}")
 set_target_properties(angband PROPERTIES C_STANDARD 99 C_EXTENSIONS ON)
 target_include_directories(angband PRIVATE "${TREE}/src" "${ENGINE}/frontend")
 # As upstream's self-contained build (SC_INSTALL): data in ./lib/ next to the
@@ -89,7 +93,7 @@ add_custom_target(rust_borg ALL
     WORKING_DIRECTORY "${REPO}"
     USES_TERMINAL)
 add_dependencies(angband rust_borg)
-target_link_libraries(angband PRIVATE "${BORG_LIB}" pthread dl m)
+target_link_libraries(angband PRIVATE "${BORG_LIB}" OpenSSL::Crypto pthread dl m)
 
 # The game data, next to the executable, as upstream's build copies it.
 add_custom_target(game_lib ALL

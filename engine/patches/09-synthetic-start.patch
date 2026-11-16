@@ -1,0 +1,22 @@
+Synthetic starts complete the native level transition before Borg activation.
+Guarded by BORG_HARNESS; no game changes with the guard disabled.
+
+--- a/src/game-world.c
++++ b/src/game-world.c
+@@ -1008,6 +1008,16 @@
+ 	event_signal(EVENT_MESSAGE_FLUSH);
+ }
+ 
++#ifdef BORG_HARNESS
++void borgh_generate_start(void)
++{
++	on_leave_level();
++	prepare_next_level(player);
++	on_new_level();
++	player->upkeep->generate_level = false;
++}
++#endif
++
+ 
+ /**
+  * The main game loop.

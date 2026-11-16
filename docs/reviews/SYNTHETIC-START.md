@@ -1,4 +1,8 @@
-# Synthetic start: first-slice review
+# Synthetic start: superseded first-slice checkpoint
+
+The owner review exposed incomplete cave-generation verification. The @1
+checkpoint and its results are superseded; use the synthetic P1 milestone
+packet and contract @2 for accepted generated-cave evidence.
 
 Owner-directed execution prerequisite for borg-reborn-rs #371 and
 borg-cemetery #5. Initial task base: `92404c7e72de4c438ecf1028b17d38b57833d5a6`.

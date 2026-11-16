@@ -52,3 +52,14 @@ The additional donor deviations in borg_flow.rs and borg_flow_take.rs are
 explicitly declared in the vendor checker. These intentionally change vendored
 core play; the recorded M13 parity evidence retains its original source.
 No engine or recorder implementation is copied or patched for this fix.
+
+## Synthetic P1 startup review fixes (#371 / #378)
+
+The owner-supplied #378 review identified the vendored core's two native birth
+option rejections. The narrow `borgh`-feature authorization follows the approach
+also present in competing PR #386 at `72dbcbaa5c43499dc094d6ab36d3bc832743bc04`:
+only the validated headless synthetic request permits force-descend/no-recall;
+other birth checks and non-harness behavior remain in force. The guarded native level-transition wrapper also follows that PR; it calls
+the ordinary leave/generate/arrival lifecycle before Borg activation. No Borg
+strategy/tactical policy code is copied from that PR. Its competing primitive
+must not be merged on top of this implementation without explicit reconciliation.

@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev libssl-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
       # Track P (#219): exercise the vendored core's real initialization,
@@ -191,7 +191,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev libssl-dev
       - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build/recorder -j4
       - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"

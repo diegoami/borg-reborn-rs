@@ -638,5 +638,7 @@
       "keys_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
       "synthetic": false
     }
-  ]
+  ],
+  "qualification_status": "superseded_unqualified_start",
+  "superseded_reason": "The later direct cave check exposed that the requested player depth could be logged before the cave transition completed. These original logs/results are retained as development evidence, not accepted generated-cave suite results. Synthetic P1 uses verified cave generation before Borg activation under contract @2."
 }

@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: continued synthetic P1 milestone (#371 / cemetery #5)
+
+- Owner instructed continued implementation with review at the milestone;
+  the original generated-depth PR is an integration checkpoint, not a task
+  review stop. Cemetery PLAN.md selects M2 / synthetic P1 independently of M1.
+- Added a restricted declarative Human Warrior tier: real measured capture,
+  engine SHA256, explicit native item/state validation, full-health normalization,
+  and verified initial level/max HP/SP. Capture preserves the ordinary key/state/
+  message streams; no save or Borg memory becomes a synthetic input.
+- OpenSSL crypto is a build dependency for the native file digest. Verified generated-cave starts use contract @2 for both variants; @1 is
+  superseded because requested player depth did not prove cave generation. The pinned capability declaration
+  explicitly limits supported native state; no unsupported item is dropped.
+- The #378 owner-supplied review led to a direct cave/pending-generation
+  check and exposed the initial startup bug. Complete the native transition
+  before either Borg activates; retain old results as superseded, not valid
+  generated-cave evidence. Both cores receive repeated real startup checks.
+- Narrow core birth-option authorization and the guarded lifecycle wrapper
+  follow #386 at its recorded provenance pin; no strategy/tactics are copied.
+  These are competing primitive implementations: do not merge both blindly.
+- Synthetic one-way save reload is refused. Cemetery additionally excludes
+  unmarked one-way native options from natural exports. Generic refusal-message
+  counts are reported separately from terminal outcomes and hazard qualification.
+- Source snapshots and exploratory attempts remain outside Git. The final P1
+  catalog/suite must use a clean, pinned build, with source/binary/config/log
+  hashes, declared normalization and a single-observation sampling limitation.
+- Cemetery owns generation, isolated adapter execution, independent terminal and
+  validity outcomes, provisional low-HP screens and reports. Qualified null-move
+  counts remain unavailable in P1; wider catalogs/qualification are P2.
+
 ## 2026-11-16: synthetic-start prerequisite (#371, owner-directed first slice)
 
 - Branch `task/371-synthetic-start` starts at main `92404c7e`; this is an

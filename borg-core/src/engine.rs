@@ -3533,3 +3533,20 @@ mod receiving_options_tests {
         assert!(!super::player_opt(crate::headers::list_options_h::OPT_store_buy_direct));
     }
 }
+
+// borg-reborn-rs (#371): read-only authorization from the validated frontend.
+// Non-harness builds retain all ordinary birth-option restrictions.
+pub fn synthetic_start() -> bool {
+    #[cfg(feature = "borgh")]
+    {
+        extern "C" {
+            fn borgh_synthetic_start() -> bool;
+        }
+        // SAFETY: the linked headless frontend returns one immutable mode bit.
+        unsafe { borgh_synthetic_start() }
+    }
+    #[cfg(not(feature = "borgh"))]
+    {
+        false
+    }
+}

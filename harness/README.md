@@ -6,15 +6,14 @@ no part reads borg-rs. Everything runs the Rust Borg, the only
 implementation built here (SPEC §6). Heavy runs take
 `flock /tmp/angband-validation.lock` (RULES 17).*
 
-## Synthetic generated-depth start (issue #371, first slice)
+## Synthetic generated-depth start (issue #371, synthetic P1)
 
 ```sh
 RUN_TIMEOUT_SECONDS=30 harness/run.sh /tmp/synthetic-d10 101 0 0 5000 menu,start-depth=10
 ```
 
-Contract `borg-reborn-rs/synthetic-start@1` creates a normal level-1 birth
-character with its ordinary starting kit, then generates the requested dungeon
-depth before the first Borg key. No input run or save is needed. Race/class and
+Contract `borg-reborn-rs/synthetic-start@2` creates a normal level-1 birth
+character with its ordinary starting kit, then completes the native dungeon transition before either Borg activates. No input run or save is needed. Race/class and
 profile keep their existing meanings; `menu` is recommended for explicit indices.
 `-- -start-depth N` is also supported and normalized into recorded flags.
 
@@ -104,3 +103,64 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 A change that alters the Borg's keys makes the references differ. A PR that
 means to change play says so and regenerates them with `make-reference.sh`. A
 PR that does not must reproduce them.
+
+## Run-derived P1 character tier
+
+Build dependencies include OpenSSL's crypto headers/library (`libssl-dev` on
+Debian/Ubuntu). `harness/capabilities.json` declares supported contracts; it is
+bound to the exact checkout used by the suite adapter, not a moving branch.
+
+`-- -start-build FILE` with `start-depth=N` reads a bounded declarative native
+record (`borg-reborn-rs/character-build@1`, at most 16 KiB). The harness copies
+it into the private run directory and hashes it; the engine independently hashes
+and validates the bytes it applies. Summary/config use
+`borg-reborn-rs/synthetic-start@2`, `start_build=record` and
+`start_build_sha256`. Both birth and record starts use @2. The earlier @1 checkpoint is superseded: it did not prove the cave transition had completed before activation.
+
+The P1 native adapter is intentionally restricted to Human Warriors, levels
+1..15, and mundane base-kind items with their observed quantities, combat
+bonuses, charges/fuel, equipped slots and kind awareness. It rejects artifacts,
+egos, curses, brands/slays, nonzero item modifiers, changed kind flags/elements,
+invalid slots/counts, inconsistent experience and HP progression, or a native
+HP/SP calculation that differs from the declared record. It never drops an
+unsupported item or silently substitutes a birth kit. No save-format payload
+or private Borg state is accepted.
+
+The record contains the source's natural stats, full rolled HP progression,
+level/experience, gold, maximum HP/SP and physical kit. It preserves observed
+combat-rune knowledge and carried-kind awareness; other historical knowledge is
+not restored. The synthetic character starts at full HP/SP without timed effects
+and with a fresh Borg. This is a declared tier projection, not continuation or
+an exact copy of the source game's state. The engine records initial level and
+maximum HP/SP so the suite can check the actual application.
+
+Capture a tier from ordinary measured play with:
+
+```sh
+RUN_TIMEOUT_SECONDS=30 harness/run.sh /tmp/tier-source 101 0 0 20000 menu \
+  -- -capture-build /tmp/warrior-level5.build -capture-build-level 5
+```
+
+Capture runs only at the first logged key at the requested level. It does not
+advance play, consume game RNG, or load a save. The summary records capture
+turn/level and the engine-computed SHA256. If the level is not reached, no
+record is advertised. Existing capture files are never overwritten; unsupported
+native properties fail explicitly. Normal run/death policy still applies to
+this **ordinary source run**. The cemetery catalog builder verifies its clean
+source/binary/process identity and capture digest before retaining provenance.
+A one-observation P1 tier must not be described as a population-average kit.
+
+Real checks are in `engine/tests/test_character_build.py`: capture on/off log
+parity, independent file digest, observed tier application, repeated determinism,
+invalid/unsupported requests and the absence of natural synthetic dossiers.
+
+The milestone startup completes `on_leave_level`, native generation and
+`on_new_level` under a harness-only wrapper. It verifies both `cave->depth`
+and the absence of a pending generation, before activation and at the first
+key. Both cores are covered by real repeated runs. The vendored core permits
+only these two birth-option exceptions when the validated frontend authorizes
+them; all other startup checks remain. Source @1 results are retained only as
+superseded development evidence. New reports include generic refusal-message
+counts and native progress; a refused Recall scroll is not evidence of a
+qualified near-death or a survival improvement. One-way synthetic saves cannot
+be loaded as unmarked ordinary games.

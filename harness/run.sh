@@ -60,6 +60,8 @@ SAVE_NAME=""
 BIRTH_ARGS=(-n)
 BORGH_FLAGS=()
 START_DEPTH=""
+START_BUILD=""
+START_BUILD_SHA=""
 set_start_depth() {
     [ -z "$START_DEPTH" ] || { echo 'run.sh: duplicate start-depth' >&2; exit 2; }
     [[ "$1" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: start-depth must be 1..999 (and below engine max_depth)' >&2; exit 2; }
@@ -118,8 +120,16 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
             if [ "$FLAGS" = '-' ]; then FLAGS="start-depth=$START_DEPTH"
             else FLAGS="$FLAGS,start-depth=$START_DEPTH"; fi
             i=$((i + 1));;
+        -start-build)
+            [ -z "$START_BUILD" ] || { echo 'run.sh: duplicate start-build' >&2; exit 2; }
+            START_BUILD="${EXTRA[$((i + 1))]:-}"
+            [ -f "$START_BUILD" ] && [ ! -L "$START_BUILD" ] || { echo 'run.sh: start-build requires a regular record file' >&2; exit 2; }
+            [ "$(wc -c < "$START_BUILD")" -le 16384 ] || { echo 'run.sh: start-build record too large' >&2; exit 2; }
+            EXTRA[$((i + 1))]="$OUT/start.build"
+            i=$((i + 1));;
     esac
 done
+[ -z "$START_BUILD" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-build requires start-depth' >&2; exit 2; }
 if [ -n "$START_DEPTH" ]; then
     [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
     for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
@@ -127,6 +137,11 @@ if [ -n "$START_DEPTH" ]; then
     done
 fi
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
+if [ -n "$START_BUILD" ]; then
+    cp "$START_BUILD" "$OUT/start.build"
+    chmod 400 "$OUT/start.build"
+    START_BUILD_SHA=$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)
+fi
 # The reborn Borg's profile and outputs (T2.4); the C Borgs ignore both.
 if [ "$IMPL" = rust ]; then
     PROFILE="$(realpath "${BORG_PROFILE:-$ROOT/harness/profiles/reborn-default.txt}")"
@@ -173,9 +188,12 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     if [ -n "$START_DEPTH" ]; then
         echo 'synthetic=1'
         echo "start_depth=$START_DEPTH"
-        echo 'start_build=birth'
+        if [ -n "$START_BUILD_SHA" ]; then
+            echo 'start_build=record'
+            echo "start_build_sha256=$START_BUILD_SHA"
+        else echo 'start_build=birth'; fi
         echo 'dungeon_mode=one_way'
-        echo 'synthetic_contract=borg-reborn-rs/synthetic-start@1'
+        echo 'synthetic_contract=borg-reborn-rs/synthetic-start@2'
     fi
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
@@ -225,16 +243,20 @@ if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
 fi
 # Check the engine's receipt before accepting or exporting the run. A binary
 # without this capability, or an actual town start, is a harness failure.
-python3 - "$OUT/summary.json" "$START_DEPTH" <<'PYSYNTHETIC'
+python3 - "$OUT/summary.json" "$START_DEPTH" "$START_BUILD_SHA" <<'PYSYNTHETIC'
 import json, sys
 summary = json.load(open(sys.argv[1]))
 requested = sys.argv[2]
+build_hash = sys.argv[3]
 if requested:
     valid = (summary.get('synthetic') is True and summary.get('loaded') is False
-             and summary.get('synthetic_contract') == 'borg-reborn-rs/synthetic-start@1'
+             and summary.get('synthetic_contract') == 'borg-reborn-rs/synthetic-start@2'
              and summary.get('start_depth') == int(requested)
              and summary.get('initial_depth') == int(requested)
-             and summary.get('start_build') == 'birth'
+             and summary.get('initial_cave_depth') == int(requested)
+             and summary.get('initial_generation_pending') is False
+             and summary.get('start_build') == ('record' if build_hash else 'birth')
+             and (summary.get('start_build_sha256') == build_hash if build_hash else not summary.get('start_build_sha256'))
              and summary.get('dungeon_mode') == 'one_way'
              and summary.get('game_options', {}).get('birth_force_descend') is True
              and summary.get('game_options', {}).get('birth_no_recall') is True)
@@ -243,6 +265,9 @@ if requested:
 elif summary.get('synthetic') or summary.get('start_depth'):
     raise SystemExit('run.sh: unexpected synthetic start')
 PYSYNTHETIC
+if [ -n "$START_BUILD_SHA" ]; then
+    [ "$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)" = "$START_BUILD_SHA" ] || { echo 'run.sh: start-build changed during execution' >&2; exit 1; }
+fi
 # borg-reborn-rs (#219): environment overrides are part of the run identity.
 if [ -f "$OUT/params-core.json" ]; then
     echo "params_core_sha256=$(sha256sum < "$OUT/params-core.json" | cut -d' ' -f1)" >> "$OUT/config.txt"
