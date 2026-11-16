@@ -27,14 +27,13 @@ use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
     borg_flow_stair_less, borg_flow_stair_more, borg_prep_leave_level_spells,
 };
-use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY, BORG_SPEED_LAST_RESORT};
+use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
     BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_ACSW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_ALIFE, BI_AMISSILES,
-    BI_APHASE, BI_ATELEPORT, BI_CDEPTH,
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -1563,58 +1562,6 @@ fn borg_adjacent_kill_in_one_blow(st: &BorgState) -> bool {
 /// could die in two rounds.
 ///
 /// (See borg-caution.c for the full commentary.)
-/// borg-reborn-rs (#452, `borg_speed_last_resort`): what the Borg lacks when
-/// it is in danger enough to escape, is not fast, carries a Potion of Speed
-/// and has no way left to heal, phase or teleport; `None` when the setting
-/// is off or any of the three is available. Heal is a Cure Serious or
-/// Critical Wounds, Healing, *Healing* or Life potion, a staff, rod or
-/// activation that heals, or a heal spell; phase a scroll, spell or
-/// activation; teleport a scroll, staff, spell or activation. `borg_trait`
-/// counts exactly these (spells only when their failure rate allows a cast,
-/// devices only with charges). Cure Light Wounds does not count (owner,
-/// 2026-11-17): its 20 HP (object.txt) cannot answer a danger above the
-/// Borg's hit points, and the 180-start trial found a death with CLW
-/// carried and Speed unused, so Speed takes precedence over it.
-fn speed_last_resort_lacks(st: &BorgState, pos_danger: i32, has_speed_potion: bool) -> Option<String> {
-    if st.cfg(BORG_SPEED_LAST_RESORT) == 0 || !has_speed_potion {
-        return None;
-    }
-    // Already fast (the potion's +10 would not stack, object.txt
-    // Potion of Speed: TIMED_INC:FAST), or in town where nothing hunts us.
-    if st.borg.temp.fast || st.borg.tr(BI_CDEPTH) == 0 {
-        return None;
-    }
-    // The danger at which borg_escape starts to phase (avoidance is the
-    // current hit points): one more round could kill us.
-    let danger_floor = i32::from(st.borg.avoidance) * p(Param::caution_speed_last_resort_danger_tenths) / 10;
-    if pos_danger <= danger_floor {
-        return None;
-    }
-    let tr = |t| st.borg.tr(t).max(0);
-    let heal = tr(BI_ACSW) + tr(BI_ACCW) + tr(BI_AHEAL) + tr(BI_AEZHEAL) + tr(BI_ALIFE);
-    let phase = tr(BI_APHASE);
-    let teleport = tr(BI_ATELEPORT) + tr(BI_AESCAPE);
-    if heal > 0 || phase > 0 || teleport > 0 {
-        return None;
-    }
-    Some(format!("no heal beyond Cure Light Wounds, phase or teleport; danger {} of avoidance {}", pos_danger, st.borg.avoidance))
-}
-
-/// borg-reborn-rs (#452): called before the Borg heals, defends or escapes,
-/// so it precedes a Cure Light Wounds potion. Drinks a carried Potion of Speed (+10 speed for 20+2d10 turns,
-/// object.txt) as the last resort, if `borg_speed_last_resort` is on.
-fn speed_last_resort(st: &mut BorgState, pos_danger: i32) -> bool {
-    let has = borg_slot(st, TV_POTION as i32, st.item_val.sv_potion_speed) >= 0;
-    let Some(lacked) = speed_last_resort_lacks(st, pos_danger, has) else {
-        return false;
-    };
-    if borg_quaff_potion(st, st.item_val.sv_potion_speed) {
-        borg_note(st, &format!("# Speed as last resort ({lacked})"));
-        return true;
-    }
-    false
-}
-
 pub fn borg_caution(st: &mut BorgState) -> bool {
     let mut nasty = false;
 
@@ -1775,13 +1722,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
-
-    // borg-reborn-rs (#452): with nothing beyond Cure Light Wounds to heal and
-    // no phase or teleport, Speed comes before the CLW potion borg_heal would
-    // drink below (owner, 2026-11-17).
-    if speed_last_resort(st, pos_danger) {
-        return true;
-    }
 
     if !st.borg.goal.fleeing {
         // Start being cautious and trying to not die
@@ -2063,7 +2003,6 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-
     /*** Back away ***/
     // Do not back up if
     // 1) we are nasty (poisoned, blind, confused etc
@@ -2342,71 +2281,6 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
-}
-
-/// borg-reborn-rs (#452): the last-resort Speed decision. The potion and
-/// the key presses need the engine, so the tests cover the decision.
-#[cfg(test)]
-mod speed_last_resort_tests {
-    use super::*;
-    use crate::borg_headers::borg_trait_h::BI_ACLW;
-    use crate::borg_headers::borg_trait_h::BI_MAX;
-
-    fn state(flag: i32) -> BorgState {
-        let mut st = BorgState::default();
-        st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
-        st.core.cfg[BORG_SPEED_LAST_RESORT as usize] = flag;
-        st.borg.trait_ = vec![0; BI_MAX as usize];
-        st.borg.trait_[BI_CDEPTH as usize] = 12;
-        st.borg.avoidance = 100;
-        st
-    }
-
-    #[test]
-    fn drinks_when_heal_phase_and_teleport_are_all_unavailable() {
-        let st = state(1);
-        let lacked = speed_last_resort_lacks(&st, 200, true).expect("fires");
-        assert!(lacked.starts_with("no heal beyond Cure Light Wounds, phase or teleport"), "{lacked}");
-    }
-
-    #[test]
-    fn cure_light_wounds_does_not_hold_speed_back() {
-        // owner, 2026-11-17: Speed takes precedence over Cure Light Wounds
-        let mut st = state(1);
-        st.borg.trait_[BI_ACLW as usize] = 8;
-        assert!(speed_last_resort_lacks(&st, 200, true).is_some());
-    }
-
-    #[test]
-    fn does_not_drink_when_one_of_heal_phase_or_teleport_is_available() {
-        for t in [BI_ACSW, BI_ACCW, BI_AHEAL, BI_AEZHEAL, BI_ALIFE, BI_APHASE, BI_ATELEPORT, BI_AESCAPE] {
-            let mut st = state(1);
-            st.borg.trait_[t as usize] = 1;
-            assert_eq!(speed_last_resort_lacks(&st, 200, true), None, "trait {t}");
-        }
-    }
-
-    #[test]
-    fn does_not_drink_when_already_fast_or_without_the_potion() {
-        let mut st = state(1);
-        st.borg.temp.fast = true;
-        assert_eq!(speed_last_resort_lacks(&st, 200, true), None);
-        let st = state(1);
-        assert_eq!(speed_last_resort_lacks(&st, 200, false), None);
-    }
-
-    #[test]
-    fn does_not_drink_with_the_flag_off_in_town_or_when_not_scared() {
-        let st = state(0);
-        assert_eq!(speed_last_resort_lacks(&st, 200, true), None, "flag 0 is today's behaviour");
-        let mut st = state(1);
-        st.borg.trait_[BI_CDEPTH as usize] = 0;
-        assert_eq!(speed_last_resort_lacks(&st, 200, true), None);
-        let st = state(1);
-        // 10 tenths of an avoidance of 100: danger at or under 100 is not scary
-        assert_eq!(speed_last_resort_lacks(&st, 100, true), None);
-        assert!(speed_last_resort_lacks(&st, 101, true).is_some());
-    }
 }
 
 #[cfg(test)]

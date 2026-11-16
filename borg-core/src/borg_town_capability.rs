@@ -253,8 +253,8 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
             // borg-reborn-rs (#452): a speed effect is one emergency use, not
             // `amount` turns of buff. The potion's +10 speed (object.txt,
             // Potion of Speed: TIMED_INC:FAST, 20+2d10 turns) is a reserve
-            // for the moment escape and healing have run out, priced like
-            // the escapes (exposure), per potion. Counted in turns against
+            // the core drinks in a dangerous fight (borg_defend_aux_speed),
+            // priced like the escapes (exposure), per potion. Counted in turns against
             // the whole trip it was one percent of the demand and was sold.
             EF_TIMED_INC | EF_TIMED_INC_NO_RES | EF_TIMED_SET => timed_cap(subtype as u32)
                 .map(|cap| (cap, if cap == SPEED { UNIT } else { n })),

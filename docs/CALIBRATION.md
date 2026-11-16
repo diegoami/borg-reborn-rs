@@ -2126,30 +2126,6 @@ See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
 The live registry remains borg-core/src/params.rs; historical profiles are
 not rewritten or repinned. Both optional town/trip policies default off.
 
-## Speed as a last resort (#452)
-
-`borg_speed_last_resort` (borg.txt, Rust-only, not a named parameter: it is a
-mode switch) is 0 by default, today's behaviour; 1 enables the fallback. With
-it on, `borg_caution` drinks a carried Potion of Speed before it heals, defends
-or escapes, when the danger is above the threshold below, the Borg is not
-already fast (`temp.fast`), and it has no way to heal beyond Cure Light Wounds,
-phase or teleport (`BI_ACSW`, `BI_ACCW`, `BI_AHEAL`, `BI_AEZHEAL`, `BI_ALIFE`,
-`BI_APHASE`, `BI_ATELEPORT`, `BI_AESCAPE` all zero; spells count only when
-their failure rate allows a cast). Cure Light Wounds potions do not hold it
-back: Speed takes precedence over them (owner, 2026-11-17). The note is
-`# Speed as last resort (no heal beyond Cure Light Wounds, phase or teleport;
-...)`. The potion is `TIMED_INC:FAST`, 20+2d10 turns, +10 speed (`object.txt`, Potion of Speed).
-
-| parameter | default | unit | source line |
-|---|---|---|---|
-| `caution_speed_last_resort_danger_tenths` | 10 | tenths | 1589 |
-
-The default is `escape_phase_ordinary_danger_tenths`: the danger, in tenths
-of avoidance (the current hit points), at which `borg_escape` starts to
-phase. The planner's valuation of Speed (an escape-like reserve per potion,
-priced by exposure with `borg_town_w_escape`, not turns of buff against the
-trip) adds no parameter.
-
 ## Class/family preference catalogue (#403)
 
 | Name | Default | Unit | Range | Source |
