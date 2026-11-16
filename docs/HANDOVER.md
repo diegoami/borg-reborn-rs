@@ -13,6 +13,9 @@
 - Review findings1/2: document core-trace@2 and the attacks array; explain
   fixed-neutral waiting against downweighted attacks. Confirm the documented
   invocation-family semantics without changing weights or mapping.
+- The vendor audit exposes an existing accepted-main ownership omission:
+  #400/#443 changed borg_town_usefulness.rs without declaring it HOOKED.
+  Declare that receiving file; retain its accepted bytes without edits.
 - Validate the exact combined runtime and retain new source-qualified
   controls in Cemetery. Earlier exact-build evidence remains historical;
   green old task CI does not validate this combined build. Repin #407 only
