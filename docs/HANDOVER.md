@@ -35,6 +35,29 @@ Owner: the scroll should have value, be carried, and be used before any food.
   from #444 and earlier; not declared here, not part of CI).
 - `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
   notes count as use, so torches are not reported as unused.
+
+## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
+
+- New parameters `caution_heal_when_outmatched` (0/1, default 0) and
+  `caution_heal_outmatched_min_loss` (50 percent); registry 1783 to 1785.
+  `borg_heal_outmatched` runs at the very end of `borg_caution` (after stairs,
+  retreat, escape, back-away and the reserve/recall/unknown-item steps all
+  declined, so escapes keep precedence) and, when hurt by the threshold with
+  danger at least current HP, quaffs CLW, else CSW, else CCW instead of
+  letting `borg_attack` run. Note: "# Healing (outmatched)." The potion order
+  is weakest first (conserves stronger cures); the owner may prefer strongest
+  first for the study.
+- Flag 0 is byte-identical on this build: seed 1516096046 (race 4 class 2,
+  errands_plan.txt, town 1, trip 0, 100000 turns) still dies at CL3 with keys
+  `4c2ea4baf255`; seed 501 (race 0 class 0, ambitious plan) keys `a80b9ac6185c`.
+- Flag 1, same cells: 1516096046 quaffs CLW twice in the acolyte fight and
+  survives to the turn limit (CL4, max DL2); 979002123 (race 8 class 6,
+  trip 1) drinks 17 times and survives to the turn limit (CL10, max DL13)
+  where flag 0 dies (CL8, DL12). One cell each, not a measurement (RULES 14):
+  the zoo control (flag 0 against 1 on the #147 arms) is the next step.
+- Unit tests cover the pure decision; the potion path needs the engine's
+  `z_info` and is exercised by the replays above.
+
 ## 2026-11-16: back-away no longer steps onto lava (#458)
 
 - `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
