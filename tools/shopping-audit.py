@@ -9,7 +9,7 @@ summary.json). Read only; nothing about play changes. Sources:
 * bought: "You bought (a|an|N) NAME for G gold." followed by the pack line
   "You have ... NAME (x)", which names a flavour the purchase identifies;
 * used: the Borg's own notes "# Quaffing/Reading/Eating/Aiming/Zapping/
-  Using/Activating ...", "Throwing painful object '...'", "Firing missile";
+  Using/Activating/Wearing/Wielding ...", "Throwing painful object '...'", "Firing missile";
 * the town plan's actions (borg_town_record::action), noted as
   "# Town plan executing action N at shop S slot K": 3 sell from the pack,
   4 sell from the Home, 5 store in the Home, 2 take from the Home; the next
@@ -37,7 +37,7 @@ HAVE = re.compile(r'^You have (an? |\d+ )?(.+?) \([a-z]\)\.?$')
 HAD = re.compile(r'^You had (an? |\d+ |no more )?(.+?) \([a-z]\)\.?$')
 DROP = re.compile(r'^You drop (an? |\d+ )?(.+?) \([a-z]\)\.?$')
 ACTION = re.compile(r'^# Town plan executing action (\d) at shop (\d+) slot (\d+)')
-USE = re.compile(r"^# (?:(?:Reading|Quaffing|Eating|Aiming|Zapping|Using|Activating) (.+?)\.?$"
+USE = re.compile(r"^# (?:(?:Reading|Quaffing|Eating|Aiming|Zapping|Using|Activating|Wearing|Wielding) (.+?)\.?$"
                  r"|Throwing painful object '(.+?)'|Firing missile '(.+?)')")
 STATE = re.compile(r'^(\d+) \S+ d(\d+)/(\d+) .* au(\d+) ')
 

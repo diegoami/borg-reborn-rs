@@ -67,6 +67,12 @@ const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
 /// prepared for any level (`borg_prepared`: "5 Food").
 const READY_FOOD: i64 = 5;
+/// borg-reborn-rs (#451): the "Hungry" grade of the FOOD timer is 15 percent
+/// (player_timed.txt, `grade:y:15:Hungry`); `BI_ISHUNGRY` is food below
+/// `PY_FOOD_HUNGRY`, and the core reads a Remove Hunger scroll then. A
+/// `NOURISH:INC_TO` food (Remove Hunger 50, Honey-cake and Draught 60,
+/// Waybread 75: object.txt) is worth what it adds from there.
+const HUNGRY_PERCENT: i64 = 15;
 
 pub const NAMES: [&str; 58] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
@@ -233,6 +239,10 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
         let n = amount.max(1) * UNIT;
         let service = service_turns.max(1) * UNIT;
         let role = match u32::from(effect) {
+            // borg-reborn-rs (#451): INC_TO (subtype 3) fills to `amount` percent of a full stomach
+            // (effect_handler_NOURISH). Read when hungry (HUNGRY_PERCENT) it gives the difference.
+            EF_NOURISH if subtype == 3 && amount > HUNGRY_PERCENT => Some((FOOD, (amount - HUNGRY_PERCENT) * UNIT)),
+            EF_NOURISH if subtype == 3 => None,
             EF_NOURISH if subtype != 1 && amount > 0 => Some((FOOD, n)), // A decreasing food effect is not nourishment.
             EF_HEAL_HP => Some((HEAL, amount.max(1).min(hp) * UNIT)),
             EF_CURE => reduction_cap(subtype as u32).map(|cap| (cap, n)),
@@ -389,12 +399,18 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
     if worthless(tval, i32::from(item.sval)) {
         return Vec::new();
     }
-    // borg-reborn-rs (food counting): only food and mushrooms feed the core
-    // (borg_trait counts them in BI_FOOD, which its readiness checks). A
-    // Remove Hunger scroll counted as food let the planner sell the rations
-    // the core then missed ("restock food < 3"); the core seldom reads it
-    // (6 of 253 bought).
-    if !matches!(tval, TV_FOOD | TV_MUSHROOM) {
+    // borg-reborn-rs (food counting): only what borg_trait counts in BI_FOOD
+    // feeds the core (its readiness checks). A Remove Hunger scroll counted
+    // as food let the planner sell the rations the core then missed
+    // ("restock food < 3"); the core seldom read it (6 of 253 bought).
+    // borg-reborn-rs (#451): now borg_trait counts the scroll beside the
+    // rations under this plan (with_remove_hunger) and the core reads it
+    // before any food (borg_satisfy_hunger_before_food), so the scroll
+    // supplies nutrition, as much as it adds to a hungry stomach. No other
+    // non-food kind does: a potion's nourishment (Cure Light Wounds and the
+    // like, 1) is not a meal.
+    let hunger_scroll = tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_satisfy_hunger;
+    if !matches!(tval, TV_FOOD | TV_MUSHROOM) && !hunger_scroll {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
     }
     // Drinks that nourish almost nothing (wine, whisky, liquor, miruvor:
@@ -459,7 +475,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // copy whitelist. One ration's 40 nutrition supports food_turns actions.
     // borg-reborn-rs (food floor): never plan for fewer rations than the
     // core needs to be prepared for any level (borg_prepared "5 Food",
-    // restock "food < 3"). Sized to the trip alone, a short early trip
+    // restock "food < 3"). borg-reborn-rs (#451): the core counts each
+    // Remove Hunger scroll as one of the five (with_remove_hunger) and no
+    // food the stores sell supplies more than the scroll's 35 nutrition (a
+    // ration 30), so the planner's floor of 200 is never met with fewer
+    // than six of them, the core's five.
+    // Sized to the trip alone, a short early trip
     // asked for about one ration, so the planner sold the starting rations
     // and the core then bounced between DL1 and town for "restock food".
     // Below the floor, food is a requirement (negative demand: worth its
@@ -747,6 +768,21 @@ mod tests {
         assert_eq!(effect_supply(&[(EF_NOURISH as u16, 0, 40)], 20, 1000), [(FOOD, 40 * UNIT)]);
         assert!(effect_supply(&[(EF_NOURISH as u16, 1, 40)], 20, 1000).is_empty());
         assert!(effect_supply(&[(EF_NOURISH as u16, 2, 0)], 20, 1000).is_empty());
+    }
+    /// borg-reborn-rs (#451): NOURISH:INC_TO fills to a percentage of a full
+    /// stomach (effect_handler_NOURISH, subtype 3). Read hungry (15 percent,
+    /// player_timed.txt) the Remove Hunger scroll (50) adds 35, more than a
+    /// ration's INC_BY 30, and worth neither nothing nor a flat ration.
+    #[test]
+    fn remove_hunger_is_worth_what_it_adds_to_a_hungry_stomach() {
+        let scroll = effect_supply(&[(EF_NOURISH as u16, 3, 50)], 20, 1000);
+        assert_eq!(scroll, [(FOOD, 35 * UNIT)]);
+        let ration = effect_supply(&[(EF_NOURISH as u16, 0, 30)], 20, 1000);
+        assert_eq!(ration, [(FOOD, 30 * UNIT)]);
+        assert!(scroll[0].1 > ration[0].1 && scroll[0].1 < 50 * UNIT);
+        // a fill-to level at or under the hungry grade adds nothing
+        assert!(effect_supply(&[(EF_NOURISH as u16, 3, 15)], 20, 1000).is_empty());
+        assert!(effect_supply(&[(EF_NOURISH as u16, 3, 10)], 20, 1000).is_empty());
     }
     #[test]
     fn replenishment_competes_with_existing_and_substitute_stock() {

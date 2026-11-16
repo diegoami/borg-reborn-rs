@@ -2498,6 +2498,8 @@ fn borg_notice_inventory(st: &mut BorgState) {
         }
     }
 
+    // borg-reborn-rs (#451): see with_remove_hunger
+    let capability_mode = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
     let mut t = tr(st);
 
     /* No need for experience repair */
@@ -2510,13 +2512,29 @@ fn borg_notice_inventory(st: &mut BorgState) {
     t[BI_FOOD] += t[BI_FOOD_LO];
 
     /* With no other food, Remove Hunger scrolls are the food supply */
-    if t[BI_FOOD] == 0 {
-        t[BI_FOOD] = remove_hunger;
-    }
+    t[BI_FOOD] = with_remove_hunger(t[BI_FOOD], remove_hunger, capability_mode);
 
     /* If weak, do not count food spells */
     if t[BI_ISWEAK] != 0 && t[BI_FOOD] >= 1000 {
         t[BI_FOOD] -= 1000;
+    }
+}
+
+/// `BI_FOOD` with the Remove Hunger scrolls (`remove_hunger` of them) in it.
+///
+/// borg-reborn-rs (#451): under the town plan every scroll counts, one each
+/// like a ration, because the planner values it as food (it supplies
+/// nutrition, `borg_town_capability`) and the core reads it before any food
+/// (`borg_item_use`). Counted only without other food, the planner sold the
+/// rations the core then missed ("restock food < 3"). Without the plan, the
+/// scrolls are the food supply only when there is no other food.
+fn with_remove_hunger(food: i32, remove_hunger: i32, capability_mode: bool) -> i32 {
+    if capability_mode {
+        food + remove_hunger
+    } else if food == 0 {
+        remove_hunger
+    } else {
+        food
     }
 }
 
@@ -2882,6 +2900,16 @@ pub fn borg_trait_free(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn remove_hunger_scrolls_are_food_beside_rations_under_the_plan() {
+        // the plan: each scroll counts with the rations, like a ration
+        assert_eq!(with_remove_hunger(3, 2, true), 5);
+        assert_eq!(with_remove_hunger(0, 4, true), 4);
+        // without the plan: only when there is no other food (C Borg)
+        assert_eq!(with_remove_hunger(3, 2, false), 3);
+        assert_eq!(with_remove_hunger(0, 4, false), 4);
+    }
 
     #[test]
     fn prefix_pref_matches_the_enum() {
