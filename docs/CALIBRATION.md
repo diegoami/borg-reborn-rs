@@ -15,6 +15,26 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## Outmatched healing flag (#457)
+
+The registry now holds **1785** parameters (1783 before; two added). Two
+parameters control one study branch, off by default:
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_heal_when_outmatched` | 0 | flag | 0-1 | `borg_caution.rs:226` |
+| `caution_heal_outmatched_min_loss` | 50 | percent | 0-100 | `borg_caution.rs:226` |
+
+`borg_heal` drinks a cure potion only when `danger < curhp + heal`, so when
+the danger estimate reaches the Borg's maximum HP no potion qualifies, and
+with no escape left the Borg falls through to `borg_attack` holding potions.
+With the flag at 1, at the very end of `borg_caution` (after every stair,
+retreat, escape and back-away option declined, so escapes keep precedence), a
+Borg that has lost at least `caution_heal_outmatched_min_loss` percent of its
+maximum HP and whose danger is at least its current HP drinks Cure Light, else
+Serious, else Critical Wounds ("# Healing (outmatched).") instead of attacking.
+With the flag at 0 the code path is not entered and play is byte-identical.
+
 ## Configuration and records
 
 At core initialization, values are loaded once for the process, including
@@ -320,6 +340,8 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1223` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1514` |
 | `caution_recall_rest_turns` | 500 | turns | 2–9999 | `borg_caution.rs:1630` |
+| `caution_heal_when_outmatched` | 0 | flag | 0–1 | `borg_caution.rs:226` |
+| `caution_heal_outmatched_min_loss` | 50 | percent | 0–100 | `borg_caution.rs:226` |
 
 
 ## P1.2: danger and escape (#220)
