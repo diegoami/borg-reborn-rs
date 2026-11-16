@@ -1,0 +1,49 @@
+{
+  "runtime_commit": "401597cafd16f8330590763aa9bc15c10e40e5be",
+  "runtime_source_sha256": "8a61938aa14162168a6b669b8b5b7ca40ff21ff04890665c5e533984f85fb076",
+  "runtime_binary_sha256": "f039fa852ff368cff59187e5260fa3e13f91bb01dfd8b7b46cf9b44d79e73a20",
+  "contracts": [
+    "borg-reborn-rs/synthetic-start@2",
+    "borg-reborn-rs/character-build@1"
+  ],
+  "real_suite_counts": {
+    "death": 4,
+    "survived_to_cap": 2
+  },
+  "repeated_scenarios": 6,
+  "identical_repeat_logs": [
+    "keys.log",
+    "state.log",
+    "messages.log"
+  ],
+  "natural_synthetic_dossiers": 0,
+  "ordinary_smoke_reference_matches": 3,
+  "exact_smoke_reference_matches": 3,
+  "native_tests": {
+    "total": 80,
+    "skipped": 16,
+    "failed": 0
+  },
+  "rust_validation": {
+    "format": "pass",
+    "clippy": "pass",
+    "workspace_passed": 165,
+    "core_release_passed": 328,
+    "core_ignored": 4
+  },
+  "tool_tests": 88,
+  "script_tests": 19,
+  "vendor_audit": "pass",
+  "control_imports": [
+    "D0000-q13b3026dbd645caf2a5ad4f980da8fa6751d3c8c54d8a1fbde500c545876f2a5: imported",
+    "D0000-qe45c290097903ef1c4ccec6de26dc7a897e10b1047228be1caabd773027dcbd7: imported",
+    "D0000-q8837763fb1a7bf39bf4eec2d96aa7afde9e92896cb27c4456e43b8dbfb9a621a: imported"
+  ],
+  "archive_check": "2584 historical/qualified dossiers verified",
+  "review_findings": {
+    "core_startup": "both cores tested on real generated caves",
+    "actual_cave": "native transition before activation plus direct cave/pending checks",
+    "generic_refusals": "reported independently; @1 results superseded",
+    "lineage": "one-way save reload refused; independent exporter guard"
+  }
+}

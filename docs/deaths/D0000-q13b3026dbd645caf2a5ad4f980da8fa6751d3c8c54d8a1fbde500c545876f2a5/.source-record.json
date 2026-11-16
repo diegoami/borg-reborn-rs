@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0001-rust-seed102",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 1,
+    "turn": 3640,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 102,
+    "flags": "menu",
+    "git_rev": "401597cafd16f8330590763aa9bc15c10e40e5be",
+    "git_dirty": "no",
+    "source_sha256": "8a61938aa14162168a6b669b8b5b7ca40ff21ff04890665c5e533984f85fb076",
+    "binary_sha256": "f039fa852ff368cff59187e5260fa3e13f91bb01dfd8b7b46cf9b44d79e73a20",
+    "borg_txt_sha256": "dc25b7c1078f8a1d6f2caf5ffb6f52311a217d9d172446d1464ab5389578ca81",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": null
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 373
+  },
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p1-ordinary-smoke/smoke-mage-2",
+      "result_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac",
+      "raw_sha256": {
+        "keys.log": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac",
+        "messages.log": "8a7a8c4dfd5303863802060057369eae88a2f05649b656eb517e2428d55724fa",
+        "state.log": "b1b82d28736d7546e7234f268c10fe6d7ca7da59b99034f164e2ef3fd65276b7"
+      },
+      "source_commit": "401597cafd16f8330590763aa9bc15c10e40e5be",
+      "binary_sha256": "f039fa852ff368cff59187e5260fa3e13f91bb01dfd8b7b46cf9b44d79e73a20"
+    }
+  ],
+  "encounter_family": "start-520112c05cd9dd0a9db35ad2f8c66a496bf0ace13a33ffcc2327f171d07f9b27",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "5de3cacfd3ac16756c91e36a9200fec508f7977e6cc29d2a88b4a6f2efaedf53",
+    "config.txt": "bac0f3bfd489eba3d4423c25f7b7ab387fc92b3cab33633a35ca089f9a86bb02",
+    "depths.json": "3c2fb80795af4d37deebfa6a94a572613cbb8f2c21fa4d69e2f6a3c4a8816898",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "7f7e5eed5712df736e3a1a0a641068b7757fd5be99493898a3b2e0c50c3c9594",
+    "trace-tail.jsonl": "13f26a0e8b09314dc4a2b83dcd66db9d7a07209d17414f904344d32d3b5fceeb"
+  },
+  "investigation": null,
+  "issue": null
+}
