@@ -8,6 +8,31 @@ carries, experiments) stays on the issue boards, which this file only
 indexes.*
 
 
+## 2026-11-16: R4 reference refresh (#429)
+
+Owner accepted R3 review #427 and opened R4 on feature/track-r. The
+read-only refresh reported no new or changed copied death packages; the
+historical death index and accepted legacy inventory remain unchanged.
+Reference pins move to borg-rs `8c5d000a`, better-borg-c `b0bacee0`,
+neo-angband-tracker `d6499695` and zoo `b7d86465`; Angband `42cd156ac` and
+borg-runner `e55ac6f` are unchanged. No runtime source or donor pin moves.
+
+Read the changed FORK-CORRECTIONS sections: the direct-buy engine option
+is a proposed fork feature, not accepted here; empty-light Recall and
+attack-object corrections are upstream context, not a carry in this PR.
+The watcher also names changed trip-return and home-move helpers since
+runtime donor `1443c2d1`. They need a separate explicit reviewed carry.
+Zoo changes add specimens, M13 town/plan profiles, additive-return studies,
+and development/diagnostic suites. They do not certify these profiles for
+this older runtime; the exact R3 compatibility audit remains pinned to
+`f5043c96`, with #419 retaining the later admission gate. No seeds were
+opened and no population experiment or gameplay comparison was started.
+
+R4 must inventory item/activation/store ownership and confirm accepted P
+parameter coverage before porting. The #406 class/family carry remains
+separate and depends on owner-accepted P promotion. #293 records the
+requested shopping redesign; migration parity is not its completion.
+
 ## 2026-11-15: Track R reference refresh (#262)
 
 New deaths were read first: better-borg-c D0020–D0030, their reports,

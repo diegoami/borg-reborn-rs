@@ -8,7 +8,8 @@ session, a local one, any model, or a person. It is the only entry point;
 2. [docs/HANDOVER.md](docs/HANDOVER.md): where the work stands and what the
    last session left;
    Track R also reads [docs/R366-HANDOVER.md](docs/R366-HANDOVER.md) for the
-   current scoped state; [docs/R417-HANDOVER.md](docs/R417-HANDOVER.md) records
+   historical R3 state; [docs/R429-HANDOVER.md](docs/R429-HANDOVER.md) is the
+   current R4 entry. [docs/R417-HANDOVER.md](docs/R417-HANDOVER.md) records
    its review corrections. The global file retains historical session material.
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
