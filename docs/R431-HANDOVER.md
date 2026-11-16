@@ -10,8 +10,9 @@ Counts include tests/methods; lexical spellings are not transitive coverage.
 Run python3 scripts/r4-surface.py to verify hashes/counts. Explicit --write
 is only for a reviewed source change; no automatic blessing or external Git.
 
-#434 power and #435 item-use/activation execution have accepted P parameter
-contracts. The exact power count is726, superseding the historical727 count
+#435 item-use/activation execution has its accepted P parameter contract.
+Power #434 has726 existing names but still literal M13 book reward15000 and
+encumbrance weight1000; its complete policy migration also depends on #433. The exact power count is726, superseding the historical727 count
 at this baseline. #436 wearing/maintenance and #437 store/home depend on
 #433: owner-scheduled Track P parameter extraction, review and promotion,
 then a separate exact R carry. A closed issue alone is not that gate. Do not
@@ -31,6 +32,6 @@ integration. Task PR records final CI/merge. Preserve R3 evidence, #344 and
 #418/#419. New original gameplay evidence goes to borg-cemetery. Keep global
 historical docs/HANDOVER.md unchanged; current entry is this scoped handover.
 
-After the two preflight tasks merge, start lowest ready #434 from the actual
+After the two preflight tasks merge, start lowest ready #435 from the actual
 feature head. Stop only at the R4 milestone owner-review gate or a concrete
 unresolved dependency. Main/global reviewed are not promotion targets.

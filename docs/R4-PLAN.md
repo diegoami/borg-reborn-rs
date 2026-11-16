@@ -42,7 +42,11 @@ ID mana50, ring timers1000/2000 and anti-bounce300; home duplication weight
 P-before-R handoff: classify policy versus engine/mechanics/UI data, name
 and validate the policy controls, then obtain owner-reviewed P promotion.
 Do not implement that P work in this R session or treat a closed task as
-acceptance. Power/use can proceed; wearing/store ports stay blocked until
+acceptance. Item use can proceed. Detailed power inspection also finds the M13
+dungeon-book reward15000 and encumbrance weight1000 still literal: these
+are policy magnitudes, not book iteration bounds or engine damage formulas.
+#433 includes their accepted P extraction. Power boundary design can proceed,
+but complete power-policy migration and wearing/store ports stay blocked until
 their exact accepted contract can be carried in its own PR. #406 remains a
 separate class/family carry with its own accepted-P dependency.
 
@@ -106,8 +110,11 @@ this audit does not claim those future R4 wrappers are implemented.
 ## Ordered tasks and shopping direction
 
 1. #429 reference refresh; #431 this inventory/ownership audit.
-2. #434 power and #435 complete item use/activation execution under already
-   accepted parameters. Select the lowest dependency-ready unclaimed task.
+2. #435 complete item use/activation execution under accepted parameters.
+   #434 power boundary design can proceed, but complete inventory policy
+   depends on the M13 magnitude gaps in #433. Select the lowest fully
+   dependency-ready unclaimed task; do not confuse existing names with
+   exhaustive policy classification.
 3. #433 accepted P threshold contract and a separate exact source carry;
    then #436 wearing/maintenance and #437 store/home ownership.
 4. #438 combined evidence, metrics, R5 forecast and immutable owner review.
