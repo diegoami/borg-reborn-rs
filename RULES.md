@@ -135,7 +135,8 @@ not undo other-track work already authorized before the gate.
     lock: `flock /tmp/angband-validation.lock <command>`. Watch and log long
     runs, and never kill another session's job.
 18. Build output, saves, raw run directories and large logs are not
-    committed. Curated evidence (dossier files, reports) is.
+    committed here. Publish curated gameplay reports/dossiers in
+    borg-cemetery; source commits keep their pinned references (RULES12).
 19. No secrets in the repository or in run records.
 20. Population experiments run through borg-zoo and are started by the
     owner (they hold the account's Actions capacity for hours).
