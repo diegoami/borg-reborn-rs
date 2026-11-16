@@ -63,3 +63,12 @@ pub mod defence_fixture {
     pub use crate::engine::class_total_spells;
     pub use crate::borg_fight_defend::fixture_choice;
 }
+
+// #435: key-queue witness for constructed test states only; no engine effect.
+#[cfg(feature="test-r4-item-use")]
+pub mod item_use_fixture {
+    pub fn blank_item()->crate::borg_headers::borg_item_h::borg_item { crate::borg_item::blank_item() }
+    pub fn queued_keys(state:&crate::state::BorgState)->Vec<crate::headers::ui_event_h::keycode_t> {
+        state.io.queued_keys()
+    }
+}

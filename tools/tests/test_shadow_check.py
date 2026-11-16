@@ -29,6 +29,30 @@ class ShadowCheckTest(unittest.TestCase):
         (root / 'shadow-stats.jsonl').write_text(json.dumps(row) + '\n')
         (root / 'shadow.jsonl').write_text('')
 
+    def test_r4_requires_its_exact_surface_and_all_item_entries(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row(); self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r4_item_use=True)
+            row.update(schema='borg-reborn-rs/shadow-stats@4', surface='r4-item-use',
+                       ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use'])
+            counts = row['counts']
+            counts['item_use_calls'] = len(module.ITEM_USE_ENTRY_POINTS)
+            counts['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+            counts['policy_markers'] += len(module.ITEM_USE_ENTRY_POINTS)
+            counts['tape_events'] += len(module.ITEM_USE_ENTRY_POINTS)
+            self.write(root, row)
+            module.check([root], require_all_entries=True, expected_mode='check', r4_item_use=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root])
+            counts['stateful_points'][module.ITEM_USE_ENTRY_POINTS[0]] = 0
+            counts['item_use_calls'] -= 1
+            counts['policy_markers'] -= 1
+            counts['tape_events'] -= 1
+            self.write(root, row)
+            with self.assertRaisesRegex(ValueError, 'missing individual entry'):
+                module.check([root], require_all_entries=True, r4_item_use=True)
+
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)

@@ -1,0 +1,13 @@
+diff --git a/borg-next/src/stateful/item_use.rs b/borg-next/src/stateful/item_use.rs
+index 7e061a0b..1cff0011 100644
+--- a/borg-next/src/stateful/item_use.rs
++++ b/borg-next/src/stateful/item_use.rs
+@@ -222,7 +222,7 @@ pub fn borg_quaff_unknown(st: &mut BorgState) -> bool {
+     /* Clear "shop" goals. Inventory changed so goals need to be redone. */
+     clear_shop_goals(st);
+ 
+-    st.borg.trying_unknown = true;
++    st.borg.trying_unknown = false;
+ 
+     /* Success */
+     true

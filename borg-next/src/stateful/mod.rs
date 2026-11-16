@@ -8,9 +8,56 @@ pub mod attack;
 pub mod caution;
 pub mod defence;
 pub mod escape;
+pub mod item_use;
 pub mod recovery;
 pub fn decide(st: &mut BorgState, request: Decision) -> Value {
     match request {
+        Decision::ItemQuaffCrit { no_check } => {
+            Value::Acted(item_use::borg_quaff_crit(st, no_check))
+        }
+        Decision::ItemQuaffPotion { sval } => Value::Acted(item_use::borg_quaff_potion(st, sval)),
+        Decision::ItemQuaffUnknown => Value::Acted(item_use::borg_quaff_unknown(st)),
+        Decision::ItemReadScroll { sval } => Value::Acted(item_use::borg_read_scroll(st, sval)),
+        Decision::ItemReadUnknown => Value::Acted(item_use::borg_read_unknown(st)),
+        Decision::ItemEat { tval, sval } => Value::Acted(item_use::borg_eat(st, tval, sval)),
+        Decision::ItemEatUnknown => Value::Acted(item_use::borg_eat_unknown(st)),
+        Decision::ItemEatFoodAny => Value::Acted(item_use::borg_eat_food_any(st)),
+        Decision::ItemEquipsRod { sval } => Value::Acted(item_use::borg_equips_rod(st, sval)),
+        Decision::ItemZapRod { sval } => Value::Acted(item_use::borg_zap_rod(st, sval)),
+        Decision::ItemUseStaff { sval } => Value::Acted(item_use::borg_use_staff(st, sval)),
+        Decision::ItemUseUnknown => Value::Acted(item_use::borg_use_unknown(st)),
+        Decision::ItemUseStaffFail { sval } => {
+            Value::Acted(item_use::borg_use_staff_fail(st, sval))
+        }
+        Decision::ItemEquipsStaffFail { sval } => {
+            Value::Acted(item_use::borg_equips_staff_fail(st, sval))
+        }
+        Decision::ItemAimWand { sval } => Value::Acted(item_use::borg_aim_wand(st, sval)),
+        Decision::ItemEquipsRing { ring_sval } => {
+            Value::Acted(item_use::borg_equips_ring(st, ring_sval))
+        }
+        Decision::ItemActivateRing { ring_sval } => {
+            Value::Acted(item_use::borg_activate_ring(st, ring_sval))
+        }
+        Decision::ItemEquipsDragon { drag_sval } => {
+            Value::Acted(item_use::borg_equips_dragon(st, drag_sval))
+        }
+        Decision::ItemActivateDragon { drag_sval } => {
+            Value::Acted(item_use::borg_activate_dragon(st, drag_sval))
+        }
+        Decision::ItemActivateItem { activation } => {
+            Value::Acted(item_use::borg_activate_item(st, activation))
+        }
+        Decision::ItemEquipsItem {
+            activation,
+            check_charge,
+        } => Value::Acted(item_use::borg_equips_item(st, activation, check_charge)),
+        Decision::ItemActivateFailure { tval, sval } => {
+            Value::Score(item_use::borg_activate_failure(st, tval, sval))
+        }
+        Decision::ItemUseThings => Value::Acted(item_use::borg_use_things(st)),
+        Decision::ItemRecharging => Value::Acted(item_use::borg_recharging(st)),
+
         Decision::Caution => Value::Acted(caution::borg_caution(st)),
         Decision::Recall => Value::Acted(escape::borg_recall(st)),
         Decision::Surrounded => Value::Acted(escape::borg_surrounded(st)),

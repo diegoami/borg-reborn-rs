@@ -720,3 +720,6 @@ mod m13_fixture;
 
 #[cfg(feature = "test-r3-defence")]
 mod defence_fixture;
+
+#[cfg(feature = "test-r4-item-use")]
+mod item_use_fixture;

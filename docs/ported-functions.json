@@ -1309,6 +1309,265 @@
       "native_function": "borg_defend",
       "port_path": "borg-next/src/stateful/defence.rs",
       "port_function": "borg_defend"
+    },
+    {
+      "point": "item_use.borg_activate_dragon",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_activate_dragon",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_activate_dragon"
+    },
+    {
+      "point": "item_use.borg_activate_failure",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_activate_failure",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_activate_failure"
+    },
+    {
+      "point": "item_use.borg_activate_item",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_activate_item",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_activate_item"
+    },
+    {
+      "point": "item_use.borg_activate_ring",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_activate_ring",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_activate_ring"
+    },
+    {
+      "point": "item_use.borg_aim_wand",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_aim_wand",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_aim_wand"
+    },
+    {
+      "point": "item_use.borg_eat",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_eat",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_eat"
+    },
+    {
+      "point": "item_use.borg_eat_food_any",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_eat_food_any",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_eat_food_any"
+    },
+    {
+      "point": "item_use.borg_eat_unknown",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_eat_unknown",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_eat_unknown"
+    },
+    {
+      "point": "item_use.borg_equips_dragon",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_equips_dragon",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_equips_dragon"
+    },
+    {
+      "point": "item_use.borg_equips_item",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_equips_item",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_equips_item"
+    },
+    {
+      "point": "item_use.borg_equips_ring",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_equips_ring",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_equips_ring"
+    },
+    {
+      "point": "item_use.borg_equips_rod",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_equips_rod",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_equips_rod"
+    },
+    {
+      "point": "item_use.borg_equips_staff_fail",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_equips_staff_fail",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_equips_staff_fail"
+    },
+    {
+      "point": "item_use.borg_quaff_crit",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_quaff_crit",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_quaff_crit"
+    },
+    {
+      "point": "item_use.borg_quaff_potion",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_quaff_potion",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_quaff_potion"
+    },
+    {
+      "point": "item_use.borg_quaff_unknown",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_quaff_unknown",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_quaff_unknown"
+    },
+    {
+      "point": "item_use.borg_read_scroll",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_read_scroll",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_read_scroll"
+    },
+    {
+      "point": "item_use.borg_read_unknown",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_read_unknown",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_read_unknown"
+    },
+    {
+      "point": "item_use.borg_recharging",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_recharging",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_recharging"
+    },
+    {
+      "point": "item_use.borg_use_staff",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_use_staff",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_use_staff"
+    },
+    {
+      "point": "item_use.borg_use_staff_fail",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_use_staff_fail",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_use_staff_fail"
+    },
+    {
+      "point": "item_use.borg_use_things",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_use_things",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_use_things"
+    },
+    {
+      "point": "item_use.borg_use_unknown",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_use_unknown",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_use_unknown"
+    },
+    {
+      "point": "item_use.borg_zap_rod",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "borg_zap_rod",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "borg_zap_rod"
+    },
+    {
+      "point": "item_use.clear_shop_goals",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "clear_shop_goals",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "clear_shop_goals"
+    },
+    {
+      "point": "item_use.desc",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "desc",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "desc"
+    },
+    {
+      "point": "item_use.device_fail",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "device_fail",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "device_fail"
+    },
+    {
+      "point": "item_use.device_skill",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "device_skill",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "device_skill"
+    },
+    {
+      "point": "item_use.dragon_ready",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "dragon_ready",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "dragon_ready"
+    },
+    {
+      "point": "item_use.inven_body",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "inven_body",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "inven_body"
+    },
+    {
+      "point": "item_use.inven_left",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "inven_left",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "inven_left"
+    },
+    {
+      "point": "item_use.inven_right",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "inven_right",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "inven_right"
+    },
+    {
+      "point": "item_use.inven_total",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "inven_total",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "inven_total"
+    },
+    {
+      "point": "item_use.key",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "item_use.last_unaware",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "last_unaware",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "last_unaware"
+    },
+    {
+      "point": "item_use.letter",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "letter",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "letter"
+    },
+    {
+      "point": "item_use.note_desc",
+      "native_path": "borg-rs/src/borg_item_use.rs",
+      "native_function": "note_desc",
+      "port_path": "borg-next/src/stateful/item_use.rs",
+      "port_function": "note_desc"
     }
   ]
 }
