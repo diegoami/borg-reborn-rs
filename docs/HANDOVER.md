@@ -24,6 +24,35 @@
   null-move diagnostics are follow-up slices; cemetery #5's suite remains
   outside this change. No population/improvement claim is made.
 
+## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
+
+- #349 was owner-reviewed, synchronized through green #362 and promoted as
+  92404c7e. Track P's M13 source adoption was already integrated by #331;
+  this task supplies its remaining fresh donor build/run evidence.
+- Rebuilt exact donor 1443c2d1 and accepted combined-P adoption 2f74e1c5 from
+  clean separate worktrees. Actual source/binary/build/config receipts are
+  retained, without relabelling older dirty measurements. Full 45/45 play
+  triples and effective configs match, with 242,641 contiguous classified
+  trace rows and no unclassified rows. All calibration params are default.
+- Historical adoption parity is not claimed for later #355 policy source
+  0f2e003f. Current production code remains unchanged; its intentional six-
+  file safety delta and existing scenario evidence are explicitly separated.
+  See P341-FRESH-DONOR-VALIDATION.md/.json.
+- Three policy-on pairs match; 656 schema11 plans replay (500 with a plan).
+  328 core tests (four existing ignored), 13 isolation, 4 shopping, 3 loop tests
+  and original smoke 3/3 pass. Initial fixture harness failures from missing
+  discoverable cemetery tools are retained; unchanged reruns pass after
+  adding the ignored pointer to the exact tooling pin. No assertion changed.
+- All 25 fresh natural-death packages are qualified in P341-DOSSIER-MAP.json;
+  original records/payloads remain exact. All 2,578 archive packages verify,
+  and both receiving 13 and donor 12 deaths reconcile with none missing.
+  Repeated/paired controls are not additional independent population lives.
+- No game, configuration/default, source pin, Zoo specimen/run or canonical
+  cemetery content changes. Raw builds/attempts remain under the named
+  /workspace/work/p341-* paths. Task PR targets track-p and requires green
+  CI; a new pinned owner-selected milestone review precedes promotion.
+  #358/#359 remain separate permission/cleanup follow-ups.
+
 ## 2026-11-15: reviewed P349 synchronization (#360)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
