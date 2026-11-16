@@ -1,6 +1,7 @@
 //! Execute the town plan through the existing store UI, refreshing after
 //! every transaction. Default-off: the historical chooser remains control.
 use crate::borg_headers::borg_h::{BORG_TOWN_NO_STORES, BORG_TOWN_PLAN};
+use crate::borg_store::BORG_HOME;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::borg_io::{borg_keypress, borg_keypresses, borg_note, KC_ENTER};
 use crate::borg_town_record::action;
@@ -45,6 +46,27 @@ struct BuyAttempt {
     keep: bool,
 }
 
+struct HomeMove {
+    kind: u32,
+    stored: bool,
+    carried: u32,
+}
+
+fn carried_kind(st: &BorgState, kind: u32) -> u32 {
+    st.items.items.iter().filter(|i| i.kind == kind).map(|i| u32::from(i.iqty)).sum()
+}
+
+impl HomeMove {
+    fn pending(st: &BorgState, a: TownAction) -> Option<Self> {
+        let (item, stored) = match a.code {
+            action::STORE => (st.items.items.get(a.at[1] as usize)?, true),
+            action::TAKE_HOME => (st.store.shops[BORG_HOME].ware.get(a.at[1] as usize)?, false),
+            _ => return None,
+        };
+        Some(Self { kind: item.kind, stored, carried: carried_kind(st, item.kind) })
+    }
+}
+
 #[derive(Default)]
 pub struct LiveState {
     clock: Option<i32>,
@@ -52,6 +74,29 @@ pub struct LiveState {
     rejected_sales: Vec<SaleStamp>,
     pending_buy: Option<BuyAttempt>,
     rejected_buys: Vec<BuyAttempt>,
+    pending_home: Option<HomeMove>,
+    /// Home transactions confirmed this visit: (item kind, true = stored,
+    /// false = taken out). The planner re-solves after every action and one
+    /// unit can look better on each side in turn; the reverse of a confirmed
+    /// Home move is not offered again within the visit (borg-rs#90).
+    home_moves: Vec<(u32, bool)>,
+}
+
+/// Consume one queued Home attempt after refreshing inventory. Count the kind
+/// across all slots, so stack merging/reordering cannot confirm a canceled move.
+fn settle_home(st: &mut BorgState) {
+    if let Some(attempt) = st.think.town_live.pending_home.take() {
+        let carried = carried_kind(st, attempt.kind);
+        let confirmed = if attempt.stored { carried < attempt.carried } else { carried > attempt.carried };
+        if confirmed {
+            st.think.town_live.home_moves.push((attempt.kind, attempt.stored));
+        }
+    }
+}
+
+/// Whether this visit already moved `kind` into (`stored`) or out of the Home.
+pub fn home_moved(st: &BorgState, kind: u32, stored: bool) -> bool {
+    st.think.town_live.home_moves.iter().any(|&(k, s)| k == kind && s == stored)
 }
 
 /// The native store may reject an otherwise plausible offer (for example,
@@ -60,6 +105,7 @@ fn settle_sale(st: &mut BorgState) {
     if st.think.town_live.clock != Some(st.borg.time.level) {
         st.think.town_live = LiveState { clock: Some(st.borg.time.level), ..LiveState::default() };
     }
+    settle_home(st);
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
@@ -162,6 +208,7 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         st.think.town_live.pending_buy = Some(attempt);
     }
     borg_note(st, &format!("# Town plan executing action {} at shop {} slot {}", a.code, st.think.shop_num, a.at[1]));
+    let moved = HomeMove::pending(st, a);
     let executed = match a.code {
         action::BUY | action::TAKE_HOME => crate::borg_store_buy::borg_think_shop_buy(st),
         action::SELL_HOME => crate::borg_store_buy::take_selected_for_sale(st),
@@ -173,7 +220,10 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         }
         _ => false,
     };
-    if executed { st.think.town_action = None; }
+    if executed {
+        st.think.town_live.pending_home = moved;
+        st.think.town_action = None;
+    }
     else { st.think.town_live.pending_buy = None; }
     executed
 }
@@ -201,6 +251,50 @@ pub fn execute_outside(st: &mut BorgState) -> bool {
     }
     clear(st);
     true
+}
+
+/// Controlled refreshed-inventory observations for the native regression fixture.
+/// UI commands are queued by production code, then discarded by the fixture.
+#[cfg(feature = "test-town-review")]
+pub(crate) fn test_home_attempt(st: &mut BorgState, stored: bool, success: bool, kind: u32) -> u32 {
+    *st = BorgState::default();
+    st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+    st.core.cfg[BORG_TOWN_PLAN as usize] = 1;
+    st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+    st.borg.time.level = 100;
+    st.think.town_live.clock = Some(100);
+    let mut item = crate::borg_item::blank_item();
+    item.kind = kind;
+    item.tval = crate::headers::list_tvals_h::TV_FLASK as u8;
+    item.iqty = 2;
+    st.items.items = vec![if stored { item } else { crate::borg_item::blank_item() }];
+    st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop::default()).collect();
+    st.store.shops[BORG_HOME].ware = vec![item];
+    st.borg.goal.shop = 7;
+    st.borg.goal.ware = if stored { -1 } else { 0 };
+    st.borg.goal.item = if stored { 0 } else { -1 };
+    st.think.shop_num = 7;
+    st.borg.in_shop = true;
+    st.think.town_action = Some(TownAction {
+        code: if stored { action::STORE } else { action::TAKE_HOME }, at: [7, 0, 1, 0],
+    });
+    crate::borg_io::borg_init_io(st);
+    let queued = execute_store(st);
+    let before = home_moved(st, kind, stored);
+    if success {
+        item.iqty = 1;
+        st.items.items[0] = item;
+    }
+    settle_sale(st);
+    let after = home_moved(st, kind, stored);
+    let rejected = !stored && buy_rejected(st, 7, 0);
+    // The new visit must clear both confirmed and pending history.
+    st.borg.time.level += 1;
+    settle_sale(st);
+    let reset = !home_moved(st, kind, stored) && st.think.town_live.pending_home.is_none();
+    crate::borg_io::borg_free_io(st);
+    u32::from(queued) | (u32::from(before) << 1) | (u32::from(after) << 2)
+        | (u32::from(rejected) << 3) | (u32::from(reset) << 4)
 }
 
 #[cfg(test)]
@@ -258,6 +352,60 @@ mod tests {
         assert_eq!(goal(a(action::BUY, 99, 2)), None);
         assert_eq!(goal(a(action::SELL, 1, -1)), None);
     }
+    #[test]
+    fn home_moves_are_remembered_per_direction() {
+        let mut st = state();
+        st.think.town_live.home_moves.push((42, true));
+        assert!(home_moved(&st, 42, true));
+        assert!(!home_moved(&st, 42, false), "only the executed direction is recorded");
+        assert!(!home_moved(&st, 43, true));
+        // A new visit rebuilds LiveState (settle_sale), dropping the moves.
+        st.think.town_live = LiveState::default();
+        assert!(!home_moved(&st, 42, true));
+    }
+    fn home_state() -> BorgState {
+        let mut st = state();
+        let mut item = crate::borg_item::blank_item();
+        item.kind = 42;
+        item.iqty = 3;
+        st.items.items = vec![item, crate::borg_item::blank_item()];
+        st.store.shops = (0..8).map(|_| crate::borg_store::BorgShop::default()).collect();
+        st.store.shops[BORG_HOME].ware = vec![item];
+        st
+    }
+    #[test]
+    fn home_history_waits_for_successful_store_and_take() {
+        for (code, stored, after) in [(action::STORE, true, 2), (action::TAKE_HOME, false, 4)] {
+            let mut st = home_state();
+            st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code, at: [7, 0, 1, 0] });
+            assert!(!home_moved(&st, 42, stored), "queuing is not confirmation");
+            st.items.items[0].iqty = after;
+            // A refreshed inventory may put the stack in another slot.
+            st.items.items.swap(0, 1);
+            settle_home(&mut st);
+            assert!(home_moved(&st, 42, stored));
+            assert!(!home_moved(&st, 42, !stored));
+            assert!(st.think.town_live.pending_home.is_none());
+            settle_home(&mut st);
+            assert_eq!(st.think.town_live.home_moves.len(), 1);
+        }
+    }
+    #[test]
+    fn canceled_home_moves_do_not_constrain_the_visit() {
+        for code in [action::STORE, action::TAKE_HOME] {
+            let mut st = home_state();
+            st.think.town_live.pending_home = HomeMove::pending(&st, TownAction { code, at: [7, 0, 1, 0] });
+            st.items.items.swap(0, 1);
+            settle_home(&mut st);
+            assert!(st.think.town_live.home_moves.is_empty());
+            assert!(st.think.town_live.pending_home.is_none());
+            // Later unrelated progress cannot resurrect a rejected attempt.
+            st.items.items[1].iqty = 2;
+            settle_home(&mut st);
+            assert!(st.think.town_live.home_moves.is_empty());
+        }
+    }
+
     #[test]
     fn rejected_buys_are_scoped_to_the_offer_and_carrying_context() {
         let mut st=state();st.items.items=vec![crate::borg_item::blank_item()];

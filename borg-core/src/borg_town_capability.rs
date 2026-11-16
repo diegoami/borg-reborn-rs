@@ -64,6 +64,9 @@ const CONTROL: usize = 56;
 const RANGER_MISSILES: usize = 57;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
+/// borg-reborn-rs (food floor): the food items the core requires to be
+/// prepared for any level (`borg_prepared`: "5 Food").
+const READY_FOOD: i64 = 5;
 
 pub const NAMES: [&str; 58] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
@@ -167,6 +170,7 @@ fn timed_cap(timed: u32) -> Option<usize> {
 
 /// RANDOM/SELECT alternatives are mutually exclusive. Use the guaranteed
 /// component-wise service rather than adding incompatible branches.
+#[cfg(test)] // borg-reborn-rs (#400): only the effect-table tests use it.
 fn effect_supply(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64) -> Vec<(usize, i64)> {
     effect_supply_for_consumer(effects, hp, service_turns, false)
 }
@@ -293,6 +297,42 @@ fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     out
 }
 
+/// borg-reborn-rs (#443, owner 2026-11-16): consumables the core never uses
+/// on purpose, from a source audit of every kind in object.txt against the
+/// core's use sites (not bookkeeping: counting, home notice, buy lists).
+/// Excluded: foods (any known food is eaten, borg_eat_food_any) and potions
+/// whose use-up is their benefit (stat gain, Experience, Infravision,
+/// borg_junk). Harmful kinds are here too. Remove a kind when the core
+/// learns to use it.
+const WORTHLESS: &[(u32, &str)] = &[
+    (TV_SCROLL, "Monster Confusion"), (TV_SCROLL, "Door Destruction"), (TV_SCROLL, "Dispel Undead"),
+    (TV_SCROLL, "Treasure Detection"), (TV_SCROLL, "Summon Monster"), (TV_SCROLL, "Summon Undead"),
+    (TV_SCROLL, "*Destruction*"), (TV_SCROLL, "Aggravate Monster"), (TV_SCROLL, "Curse Weapon"),
+    (TV_SCROLL, "Curse Armour"), (TV_SCROLL, "Darkness"), (TV_SCROLL, "Trap Creation"),
+    (TV_MUSHROOM, "Second Sight"), (TV_MUSHROOM, "Emergency"), (TV_MUSHROOM, "Terror"),
+    (TV_MUSHROOM, "Debility"), (TV_MUSHROOM, "Sprinting"), (TV_MUSHROOM, "Turbulence"),
+    (TV_MUSHROOM, "Shadows"),
+    (TV_POTION, "Poison"), (TV_POTION, "*Enlightenment*"), (TV_POTION, "Surprise"),
+    (TV_POTION, "Salt Water"), (TV_POTION, "Dragon Breath"),
+    (TV_WAND, "Stone to Mud"), (TV_WAND, "Stun Monster"), (TV_WAND, "Polymorph"), (TV_WAND, "Darkness"),
+    (TV_WAND, "Clone Monster"), (TV_WAND, "Disable Traps"), (TV_WAND, "Dragon's Breath"),
+    (TV_WAND, "Heal Monster"), (TV_WAND, "Haste Monster"),
+    (TV_STAFF, "Summoning"), (TV_STAFF, "Haste Monsters"), (TV_STAFF, "Darkness"),
+    (TV_STAFF, "Earthquakes"), (TV_STAFF, "Confuse Monsters"), (TV_STAFF, "Cure Light Wounds"),
+    (TV_STAFF, "Starlight"),
+    (TV_ROD, "Treasure Location"), (TV_ROD, "Probing"), (TV_ROD, "Restoration"),
+    (TV_ROD, "Polymorph"), (TV_ROD, "Disable Traps"),
+];
+
+fn worthless(tval: u32, sval: i32) -> bool {
+    use std::sync::OnceLock;
+    static KINDS: OnceLock<Vec<(u32, i32)>> = OnceLock::new();
+    KINDS.get_or_init(|| WORTHLESS.iter()
+        .map(|&(t, name)| (t, engine::lookup_sval(t as i32, name)))
+        .filter(|&(_, s)| s >= 0).collect())
+        .contains(&(tval, sval))
+}
+
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {
     if item.iqty == 0 || item.kind == 0 { return Vec::new(); }
     let tval = u32::from(item.tval);
@@ -344,6 +384,24 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return Vec::new();
     }
     if !matches!(tval, TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_WAND | TV_ROD | TV_STAFF) { return Vec::new(); }
+    // borg-reborn-rs (#443): the core has no code to use these on purpose,
+    // so they are worth nothing to the planner until it does.
+    if worthless(tval, i32::from(item.sval)) {
+        return Vec::new();
+    }
+    // borg-reborn-rs (food counting): only food and mushrooms feed the core
+    // (borg_trait counts them in BI_FOOD, which its readiness checks). A
+    // Remove Hunger scroll counted as food let the planner sell the rations
+    // the core then missed ("restock food < 3"); the core seldom reads it
+    // (6 of 253 bought).
+    if !matches!(tval, TV_FOOD | TV_MUSHROOM) {
+        effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
+    }
+    // Drinks that nourish almost nothing (wine, whisky, liquor, miruvor:
+    // 3-5 nutrition, object.txt) are not food to the planner. Counted, the
+    // food floor bought a pint of wine for its few nutrition points, then
+    // stored it at the Home as not worth its pack slot, every visit.
+    effects.retain(|&(e, sub, amount)| u32::from(e) != EF_NOURISH || sub == 1 || amount >= 10);
     // Poisonous/hallucinatory nourishment must not be sold as safe food.
     if effects.iter().any(|&(e, sub, _)| matches!(u32::from(e), EF_TIMED_INC | EF_TIMED_INC_NO_RES) && matches!(sub as u32, TMD_POISONED | TMD_CONFUSED | TMD_IMAGE | TMD_PARALYZED)) {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
@@ -399,8 +457,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(LIGHT, cfg(BORG_TOWN_W_LIGHT) * UNIT, journey.turns * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
     // copy whitelist. One ration's 40 nutrition supports food_turns actions.
-    curve(FOOD, cfg(BORG_TOWN_W_FOOD) * journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1),
-          journey.turns * 40 * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1));
+    // borg-reborn-rs (food floor): never plan for fewer rations than the
+    // core needs to be prepared for any level (borg_prepared "5 Food",
+    // restock "food < 3"). Sized to the trip alone, a short early trip
+    // asked for about one ration, so the planner sold the starting rations
+    // and the core then bounced between DL1 and town for "restock food".
+    // Below the floor, food is a requirement (negative demand: worth its
+    // weight linearly up to five rations, nothing past them), so it is
+    // bought up to the floor and never sold below it, but not hoarded.
+    let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
+    if rations < READY_FOOD * UNIT {
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(40 * READY_FOOD * UNIT));
+    } else {
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, 40 * rations);
+    }
     curve(HEAL, risk(BORG_TOWN_W_BLEEDING), journey.hp * exposure);
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
@@ -470,21 +540,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     if engine::player_has(crate::headers::list_player_flags_h::PF_UNLIGHT) || light.iqty > 0 && engine::flag_has(&light.flags, OF_NO_FUEL as i32) || t(BI_LIGHT) > 0 && light.iqty == 0 {
         model.curves[LIGHT][1] = 0;
     }
-    // Reliable renewable spells cover a capability without pretending they
-    // are 1000 physical potions. Books and mana must actually be available.
-    for (si, spell) in st.magic.magics.iter().enumerate() {
-        if spell.status < crate::borg_magic::BORG_MAGIC_TEST || spell.rating == 0
-            || !crate::borg_magic::borg_spell_legal_fail(st, spell.spell_enum, 20) { continue; }
-        let effects = engine::spell_effect_values(si as i32, journey.level as i32);
-        // Only information/access services suppress duplicate purchases.
-        // Mana-free attacks and healing remain valuable alongside spells.
-        if effects.iter().any(|&(e, _, amount)| u32::from(e) == EF_TELEPORT && amount <= 10) { model.curves[PHASE][1] = 0; }
-        for (cap, _) in effect_supply(&effects, journey.hp, cfg(BORG_TOWN_SUPPORT_TURNS).max(1)) {
-            if matches!(cap, TRAPS | MONSTERS | INVISIBLE | MAP | ILLUMINATE | DIG | RECALL | FOOD) {
-                model.curves[cap][1] = 0;
-            }
-        }
-    }
+    // borg-reborn-rs (#380, #400): a learned spell never zeroes a physical
+    // item's value. Mana is finite and shared, a spell can fail or be
+    // unusable (blind, confused, out of mana), and broad capability classes
+    // conflate different effects (treasure sensing is not mapping, Detect
+    // Monsters misses invisible races). Scrolls, devices and potions keep
+    // their supply value next to the spells.
     debug_assert!(model.valid());
     model
 }

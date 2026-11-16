@@ -1693,11 +1693,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
                 return true;
             }
         }
-    } else if pos_danger < st.borg.tr(BI_CURHP) {
-        // Fleeing, but this grid is survivable this round: still tend to
-        // wounds, poison and cuts instead of staying untreated for the
-        // rest of the level. The flee goal itself is untouched, and
-        // borg_heal()'s own danger gates still apply.
+    } else {
+        // borg-reborn-rs (#369): fleeing must not exclude healing merely
+        // because the current HP cannot absorb another round. borg_heal()
+        // checks whether the chosen cure makes that round survivable and
+        // retains the configured wound, level and resource limits.
         //
         // (Consumer improvement unit I-002, better-borg-c `4.2.6-impact-v10`.)
         if borg_heal(st, pos_danger) {

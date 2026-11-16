@@ -992,23 +992,11 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
     }
 
-    /* The trip policy, acting: a return sets the rising goal (the route is
-     * the code below: Recall from depth 5, else the stairs); the planned
-     * depth stops a descent past it. Survival (borg_caution) ran before. */
+    /* The added return policy can request town, but cannot replace the
+     * inherited depth or return decisions. */
     if let Some(d) = &trip {
-        use crate::borg_trip::Action;
         let before = (g, st.borg.goal.rising);
-        match d.action {
-            Action::Return => {
-                st.borg.goal.rising = true;
-                if g >= 0 {
-                    g = -1;
-                }
-            }
-            Action::Ascend => g = -1,
-            Action::Continue if g > 0 => g = if bored { -1 } else { 0 },
-            Action::Continue | Action::Descend => {}
-        }
+        (g, st.borg.goal.rising) = crate::borg_trip::apply_return(d.action, before);
         crate::borg_trip::record_application(st, d, before, (g, st.borg.goal.rising));
     }
 
