@@ -17,7 +17,26 @@ runs `engine/tests/test_zoo_contract.py`.*
 | copies `build/<impl>/game/` | `game/angband` and its data `game/lib/`, self-contained (the game finds `./lib/` from its working directory) |
 | reads `build/<impl>/BUILD_ID` (`key=value` lines) | at least `binary_sha256` (equal to the copied binary's SHA-256) and `rustc` |
 | copies `harness/borg.txt` and writes it, with its profile's settings, as the run's `user/borg.txt` | the file exists. It is borg-rs's `borg.txt` (the vendored core reads it) with no stair-scumming and no town scumming, plus three keys this repository's Borg reads (#207, #208; docs/ERRANDS.md): `borg_reborn_core` (`reborn`/`0`, the default, or `borg-rs`/`1`), `borg_reborn_errand` (`none`, or a command line such as `/ladder`) and `borg_reborn_stopscared` (`off`, `flee` or a percentage). A zoo profile selects an arm by setting them. This repository's own core reads nothing else of the file: its parameters come from its profile (`BORG_PROFILE`), with the defaults when none is given |
-| copies `harness/plans/NAME` into the run's `user/` directory when a profile sets `borg_plan = NAME` (proposed in borg-zoo#123; the zoo's adapter does not do this yet) | the file exists at the specimen's ref. `borg_plan` is a fourth key the shell reads (#305, #352; docs/GAME-PLAN-LANGUAGE.md); a relative name is resolved under the run's user directory. It needs `borg_reborn_core = borg-rs`, no automatic errand and no nonzero `BORG_ERRAND_BUDGET`. With `borg_plan` set the Borg either loads and validates the file or exits 2 before play (missing, unreadable or invalid file, a class without a section, the wrong core): a plan is never silently ignored. Two plans ship: `errands_plan.txt` and `errands_plan_ambitious.txt`. The zoo records the file's SHA-256 with the cell, and keeps it with the death evidence: a plan death reruns only with the same bytes |
+| copies `harness/plans/NAME` into the run's `user/` directory, as `user/NAME`, when a profile sets `borg_plan = NAME`, after checking the file against the specimen's pinned hash (`"plans": {NAME: sha256}` in the zoo catalogue; borg-zoo#123, adapter since borg-zoo `26d1044`, PR #125) | the file exists at the specimen's ref. `borg_plan` is a fourth key the shell reads (#305, #352; docs/GAME-PLAN-LANGUAGE.md); a relative name is resolved under the run's user directory. It needs `borg_reborn_core = borg-rs`, no automatic errand and no nonzero `BORG_ERRAND_BUDGET`. With `borg_plan` set the Borg either loads and validates the file or exits 2 before play (missing, unreadable or invalid file, a class without a section, the wrong core): a plan is never silently ignored. Two plans ship: `errands_plan.txt` and `errands_plan_ambitious.txt`. The zoo records the file's SHA-256 with the cell, and keeps it with the death evidence: a plan death reruns only with the same bytes |
+
+## Plan specimens (borg-zoo#123)
+
+- A specimen pins every plan it ships in the catalogue, `"plans": {NAME:
+  sha256}`. The zoo build refuses a `harness/plans/NAME` whose SHA-256
+  differs, and gives a profile with `borg_plan = NAME` that file as the
+  cell's `user/NAME`.
+- An invalid, missing or misconfigured plan exits with status 2 before
+  play and writes no `summary.json`. The zoo records such a cell as
+  `config_error`, never as a game.
+- `borg_stopped` (the Borg gave control back and the game waits for a
+  real key: `engine/frontend/main-borgh.c`) is its own outcome for plan
+  specimens, not a death or a turn-cap stop.
+- The zoo clears the ambient `BORG_RUN_DIR`, `BORG_CORE`, `BORG_ERRAND`,
+  `BORG_ERRAND_BUDGET`, `BORG_PROFILE`, `BORG_PLAN` and `BORG_PARAM_*`, so
+  a cell's arm comes from its `borg.txt` and plan file alone.
+- The plans' bytes are not build inputs: `harness/identity.sh source-hash
+  rust` does not change with them. A plan arm is told apart by the plan's
+  SHA-256 and the `borg.txt` the zoo writes.
 
 ## Run
 
