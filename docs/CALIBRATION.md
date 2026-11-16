@@ -2119,7 +2119,7 @@ only when their failure rate allows a cast). The note is
 
 | parameter | default | unit | source line |
 |---|---|---|---|
-| `caution_speed_last_resort_danger_tenths` | 10 | tenths | 1996 |
+| `caution_speed_last_resort_danger_tenths` | 10 | tenths | 1997 |
 
 The default is `escape_phase_ordinary_danger_tenths`: the danger, in tenths
 of avoidance (the current hit points), at which `borg_escape` starts to

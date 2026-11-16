@@ -264,7 +264,7 @@ parameters! {
     caution_reserve_critical_hp_divisor => (10, "divisor", 1, 100, "borg_caution.rs:1934", "Controls reserve critical hp divisor."),
     caution_reserve_escape_count => (2, "count", 0, 1000, "borg_caution.rs:1936", "Controls reserve escape count."),
     // #452: Speed as a last resort (borg_speed_last_resort = 1). Default 10: the danger at which borg_escape starts to phase (escape_phase_ordinary_danger_tenths).
-    caution_speed_last_resort_danger_tenths => (10, "tenths", 0, 100, "borg_caution.rs:1996", "Danger, in tenths of avoidance, above which a carried Potion of Speed is drunk when heal, phase and teleport are all unavailable."),
+    caution_speed_last_resort_danger_tenths => (10, "tenths", 0, 100, "borg_caution.rs:1997", "Danger, in tenths of avoidance, above which a carried Potion of Speed is drunk when heal, phase and teleport are all unavailable."),
     caution_reserve_danger_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:1937", "Controls reserve danger hp divisor."),
     caution_reserve_heal_count => (5, "count", 0, 1000, "borg_caution.rs:1939", "Controls reserve heal count."),
     caution_reserve_surplus_hp_divisor => (4, "divisor", 1, 100, "borg_caution.rs:1939", "Controls reserve surplus hp divisor."),
