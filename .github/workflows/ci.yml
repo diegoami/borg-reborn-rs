@@ -69,12 +69,31 @@ jobs:
           sparse-checkout: |
             scenarios/planmage-wild-cat-fixtures
             validation/borg-reborn-rs/native-controls
+      # #403: new parameter provenance changes the encounter identity even
+      # when neutral play is identical. Reconcile against retained, immutable
+      # Cemetery evidence, never against the registry produced by this run.
+      - id: attack-evidence
+        run: |
+          python3 - <<'PYATTACK'
+          import json, os, pathlib
+          f = json.loads(pathlib.Path('harness/fixtures/attack-preferences.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('commit=' + f['commit'] + '\n')
+          PYATTACK
+      - uses: actions/checkout@v4
+        with:
+          repository: diegoami/borg-cemetery
+          ref: ${{ steps.attack-evidence.outputs.commit }}
+          path: vendor/attack-preference-evidence
+          persist-credentials: false
+          sparse-checkout: |
+            validation/borg-reborn-rs/class-attack-preferences/deaths
       - run: |
           python3 - <<'PYREGISTRY'
           import os, pathlib
           known = pathlib.Path(os.environ['RUNNER_TEMP']) / 'known-deaths'
           known.mkdir()
-          for root in [pathlib.Path('docs/deaths'), pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths')]:
+          for root in [pathlib.Path('docs/deaths'), pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths'), pathlib.Path('vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths')]:
               for case in sorted(root.glob('D*')):
                   if case.is_dir() and (case / 'record.json').is_file():
                       (known / case.name).symlink_to(case.resolve(), target_is_directory=True)

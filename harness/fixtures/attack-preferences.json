@@ -1,0 +1,10 @@
+{
+  "schema": "borg-reborn-rs/attack-preference-validation@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "2422bdb5951d4dc7523e61b563a1ac3478e9db82",
+  "path": "validation/borg-reborn-rs/class-attack-preferences",
+  "implementation_commit": "cac37f5901c90562715e47e7bcd4f9ff91ea4f9f",
+  "source_sha256": "8c1fd6f44cf80a05ae9b9c0c5d9529e532d086eb75e11110939b0f13a3444cdc",
+  "baseline_commit": "cd411e551fa8d84b00d1db12e28c8f7cbcf36376",
+  "purpose": "Immutable new-parameter/configuration identities for unchanged neutral play; retain original CI/local records."
+}

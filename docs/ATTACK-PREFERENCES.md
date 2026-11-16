@@ -280,3 +280,14 @@ the original loop remains `0..BF_ACT_STARLIGHT` (129 exclusive), unchanged.
 | `BF_ACT_DRAGON_BALANCE` | activation |
 | `BF_ACT_DRAGON_SHINING` | activation |
 | `BF_ACT_DRAGON_POWER` | activation |
+
+## Native validation pin
+
+Clean implementation cac37f59 reproduces45/45 full baseline cd411e55 gameplay
+streams, and the real Mage selection/trace parity regression passes. Canonical
+[receipts and limits](https://github.com/diegoami/borg-cemetery/tree/2422bdb5951d4dc7523e61b563a1ac3478e9db82/validation/borg-reborn-rs/class-attack-preferences)
+retain source/build/config identities, original CI/local records and all failed
+attempts. harness/fixtures/attack-preferences.json pins the new evidence independently
+of the old incident fixture; CI includes both retained archives in its known
+registry. No runtime input is changed by this evidence-only follow-up. R parity
+and native saved-position scenarios for every other class remain later coverage.

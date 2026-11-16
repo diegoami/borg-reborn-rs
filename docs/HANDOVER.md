@@ -20,13 +20,20 @@
   A bounded real Mage regression changes the selected attack under a non-neutral
   profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
   for other classes are not claimed as native replay coverage.
-- Full neutral comparison and engine/profile contracts are being completed on
-  exact retained baseline/candidate build identities before integration. Initial
+- Clean cac37f59 versus clean cd411e55 passes strict full45/45 key/message/state
+  parity.336 native tests (four existing ignored),165 workspace tests,70 engine
+  tests (three skipped),13 mandatory pinned zoo-profile contracts and the existing
+  four-save incident regression pass. Other checks above remain green. Initial
   baseline/candidate full attempts played all45 games but could not finalize the
   suite marker because bc was absent; preserve those attempts. Install tools
   locally and repeat unchanged suites, never forge completion or discard deaths.
-- Local evidence is under /workspace/work/403-*; reports/scenarios and retained
-  natural-death packages belong in Borg Cemetery, not this source tree. R must
+- Cemetery evidence is pinned at2422bdb5951d4dc7523e61b563a1ac3478e9db82 under
+  validation/borg-reborn-rs/class-attack-preferences. It retains42 qualified
+  packages, original records, the initial CI artifact, all failure receipts and
+  full comparison hashes.12 final neutral deaths and the paired non-neutral case
+  reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
+  known registry; the original fixture/tool pins and historical archive stay fixed.
+  Local raw evidence is under /workspace/work/403-*. R must
   independently consume the accepted promoted contract with neutral/non-neutral
   check/switch, ordered requests/effects/RNG and restoration (#364/#366).
 
