@@ -6,34 +6,34 @@
       "repository": "angband/angband",
       "commit": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
       "role": "The game and the original C Borg (src/borg/). The engine every Borg in the family plays; engine/angband/ is its tree byte for byte (docs/SPEC.md §3). Its src/borg/ was the source of the c-pristine control built here until milestone E (T1.3); the zoo builds the controls now (SPEC §6).",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "borg_dir": "src/borg"
     },
     "borg-rs": {
       "repository": "diegoami/borg-rs",
-      "commit": "727ccff75cfc731f953a296c14ef3071a57c28fb",
+      "commit": "8c5d000a58e9ddca1f1954ab9552e505856b313f",
       "role": "Reference repository and source of our vendored borg-core. This reference pin updates copied documentation; borg-core/PIN is the separate runtime vendor pin. Builds use our vendored copy, never this reference checkout.",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "issues": true,
       "watch_tags": "m*"
     },
     "better-borg-c": {
       "repository": "diegoami/better-borg-c",
-      "commit": "ab7890bf722bd74f78d201e7a10a78164719361e",
+      "commit": "b0bacee0697b5ca5ca2706d9335e24454bbdb4e9",
       "baseline": {
         "tag": "4.2.6-impact-v7",
         "commit": "3573d741e6dc3cafa4099fcef8b38fdb32952977",
         "carries": 76
       },
       "role": "C Borg with verified fixes; native measurement runner, death dossiers (copied in reference/deaths/better-borg-c/).",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "issues": true,
       "watch_tags": "4.2.6-impact-v*",
       "borg_dir": "src/borg"
     },
     "neo-angband-tracker": {
       "repository": "diegoami/neo-angband-tracker",
-      "commit": "0c00e7761fce968de861b7f05583d3d3749e42dd",
+      "commit": "d649969591c9b9cd3ad423a49f44c142a05339dc",
       "paths": [
         "docs/c-borg/BORG_SPEC.md",
         "docs/c-borg/TUNABLE-BORG-PLAN.md",
@@ -41,21 +41,21 @@
         "docs/c-manual/"
       ],
       "role": "The C Borg specification and the Tunable Borg Plan (copied in reference/c-borg/); the issue board for C Borg defects. Also the Angband Strategy Manual (docs/c-manual/ on the default branch, the complete version of S12's draft): copied in reference/c-manual/, with its copy of the official user manual.",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "issues": true
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "f5043c96a1a427d7d5cb624c91a795ef3277ae9f",
+      "commit": "b7d86465f4c5e5a9d5af73714299c4134463e952",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "issues": true
     },
     "borg-runner": {
       "repository": "diegoami/borg-runner",
       "commit": "e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83",
       "role": "Language-model agents play upstream 4.2.6 (e473720, our engine until #215) from the screen, one key at a time; every key is recorded and each run is written up. What the agent players learned accumulates in manuals/INSTRUCTIONS.md (the page they read, each found line traced to run#ask; volume 2, INSTRUCTIONS_2.md, covers depth 5-20 and is untested), with each run's notebook (knowledge/) and report (records/): a source of game knowledge (S15, owner 2026-11-10), never a dependency.",
-      "read_on": "2026-11-15",
+      "read_on": "2026-11-16",
       "issues": true
     }
   },

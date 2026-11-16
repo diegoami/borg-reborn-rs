@@ -6,7 +6,7 @@
 differ, the goals win. Say so in your PR and propose a fix to whichever
 is wrong.*
 
-Track R current state: [scoped handover](docs/R366-HANDOVER.md) and
+Track R current state: [R4 handover](docs/R429-HANDOVER.md); historical R3 [scoped handover](docs/R366-HANDOVER.md) and
 [combined local validation report](docs/R3-EXIT-REPORT.md). New canonical
 validation evidence belongs in borg-cemetery; source receipts pin its bytes.
 
@@ -131,8 +131,8 @@ promoted to `main`.
 | --- | --- | --- | --- | --- |
 | **R1. The frame** | `R1` | `borg-next` and the typed view (#223); the shadow-check harness (#224); the carry procedure tried on one borg-rs change (#225); the separate moving-reference refresh (#262) | `BORG_SHADOW=off` 45/45; a trivial port with zero mismatches in CI; the carry cost written down | **done**: accepted and merged in #266; feature-only tag `r1` |
 | **R2. Fight or flee** | `R2` | danger, caution, escape, recovery ported (#209, 6,500 lines) | `check`: zero mismatches on the full suite; `switch`: 45/45; the measured report (lines, time, mismatches, carry cost); R3–R5 re-estimated from it | **done**: accepted #302/#329; feature-only tags `r2`/`r2.1`; follow-ups retained in R3 preflight |
-| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **review fixes**: #413 recommends code acceptance; #417 finalizes canonical custody, mechanical-port wording and vendor integrity before an updated immutable owner review |
-| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | not started |
+| **R3. Attack and defence** | `R3` | `borg_fight_attack.rs`, `borg_fight_defend.rs` (8,200 lines) | as R2 | **done**: owner accepted #427 (2026-11-16); feature-only review ledger `17992dfc`; exact accepted snapshot `02c273db`; #418/#419 remain declared follow-ups |
+| **R4. Items** | `R4` | power, wearing, item use, activations, shopping (9,000 lines) | as R2 | **in progress**: owner opened R4 after accepting R3; reference refresh #429, then item/parameter dependency audit |
 | **R5. Paths and the think** | `R5` | flows, and `borg_think_dungeon`'s priority list into modes and goals (7,000 lines) | as R2, and the errands run on the modes frame | not started |
 | **R6. Our perception** (optional) | `R6` | engine reads in place of borg-rs's screen reading | breaks parity on purpose; judged by the zoo | not started |
 

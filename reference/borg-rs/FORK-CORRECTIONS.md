@@ -87,7 +87,9 @@ This supersedes older absolute no-C-changes/no-behavior-changes wording
 for these corrections. The upstream pin followed the same path: it was
 `e473720ed` when this text was written and moved to the official import
 `42cd156ac` with v12R (owner-accepted, 2026-11-13) - the pin described
-the situation at each time; it is not a constraint. Original references
+the situation at each time; it is not a constraint. See
+[ENGINE-UPGRADE.md](ENGINE-UPGRADE.md) for the earlier prospective procedure.
+Original references
 remain separate; new corrected-C references require two identical C runs.
 No official Angband issue/PR/comment or automatic main/tag move is authorized.
 The owner subsequently requested main integration and explicitly delegated
@@ -223,3 +225,75 @@ prelaid ring changes normal gameplay keys/messages/state/final-save bytes when
 not independently prove recognition; their discriminating evidence is the
 observer's map/tracking state and its verified noninterference. This clarifies
 the evidence channel without rewriting the original source-qualified receipts.
+
+## Proposed: the store's direct buy (awaiting the owner's decision)
+
+**This is a new game feature in the C engine, so it is a fork decision. It is
+not accepted, and it is off by default.** The owner has been told and the
+decision is theirs.
+
+The change: the store screen gives every ware a letter; pressing the letter
+selects the row and opens that ware's menu (*Examine*, *Buy*, *Buy one*), and
+*Buy* then asks how many (the default is one) and asks to confirm. The new
+interface option `store_buy_direct` makes the letter buy the item straight
+away: one of it - the same amount the old flow bought by default - with no
+question asked.
+
+- `angband/src/ui-store.c`: the store's `struct store_context` carries the
+  menu's command keys; the option appends the list's letters to them, so the
+  menu framework hands the key to the store's handler instead of turning it
+  into a cursor move. The purchase path takes a `direct` flag, which skips
+  the quantity prompt and the confirmation; the amount is the one the old
+  flow bought by default, so the option changes the keys and not the
+  purchases. The knowledge (inspect-only) menu is not touched.
+- `angband/src/list-options.h`: the option itself, at the end of the list,
+  so no other option's index moves.
+- `angband/src/borg/borg-store-buy.c` and `borg-rs/src/borg_store_buy.rs`:
+  with the option on, the Borg presses only the list key. C and Rust do the
+  same, so their keypress streams stay equal with the option on and off.
+
+What was checked: the option is off by default, and the smoke suite's
+parity is byte-identical between the C and the Rust build with it off and
+with it on; on the smoke suite's warrior run the Borg made the same 16
+purchases with the option on and off (one Wooden Torch each, 3 keys fewer per
+purchase). An earlier live session under a virtual X server showed one
+keypress buying with no prompt ("Accepted! You bought 40 Rations of Food for
+120 gold."), but that was the version before the direct buy was limited to
+one item; the one-item version has not been captured live.
+
+Two consequences: the letter also takes one item back in the home, with no
+question; and the player loses the confirmation too, so a stray letter in a
+store is a purchase.
+
+What was not checked: the option's own keypress stream against the stored
+reference runs (those are the option-off runs, and the option-off stream is
+unchanged); the direct buy in the other seven shops; the option in the
+knowledge menu (it is not wired there on purpose).
+
+If the owner wants this in the fork, the tracker issue for the engine's own
+process would be
+[neo-angband-tracker](https://github.com/diegoami/neo-angband-tracker) with
+the `upstream-c` label, in the conventions of that repository. Nothing has
+been filed there yet.
+
+## Empty light slot during Recall (town/trip review, 2026-11-15)
+
+Owner-authorized class investigation of run 43667787016 confirmed that the
+light emergency helper treats an empty slot's timeout zero as an expiring lamp.
+Necromancers with `PF_UNLIGHT` consequently rest through Recall before caution
+can heal or escape. Require a real light item before testing expiry in both
+`borg-think-dungeon-util.c` and `borg_think_dungeon_util.rs`. An actually unlit
+character still enters the existing light emergency path. Original evidence and
+isolated same-seed probes are in [the investigation](TOWN-CLASS-INVESTIGATION-43667787016.md);
+corrected C/Rust repeated controls and smoke checks are in
+[validation](validation/2026-11-15-town-pr83-fixes/README.md).
+This is a local play-blocker correction, without an invented issue identifier
+or an upstream post.
+
+The opt-in town model also adds read-only engine affordance queries:
+`inven_merge_num`, `inven_quiver_stack_room` and `store_sale_quote`. They reuse
+native stacking, charge redistribution and store-price rules. They do not
+perform a trade, alter inventory/knowledge or advance RNG. Native fixture
+checks cover joins, capacity boundaries, sale quantities, owner caps and the
+no-selling option. The test-only Rust learning-key bridge is feature-gated and
+absent from ordinary builds.
