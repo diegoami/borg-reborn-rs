@@ -804,8 +804,8 @@ mod tests {
         let floor = 5 * UNIT;
         let model = |units: i64| {
             let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
-            // the food floor: a requirement linear up to 200 nutrition
-            curves[1] = [1, 100 * floor, -(40 * floor), units, 0];
+            // the food floor: a requirement linear up to five rations' nutrition
+            curves[1] = [1, 100 * floor, -(crate::borg_town_capability::RATION_NUTRITION * floor), units, 0];
             Model { available: Vec::new(), packing: None, curves,
                 supplies: if units > 0 { vec![[PACK, 0, 1, units]] } else { Vec::new() } }
         };

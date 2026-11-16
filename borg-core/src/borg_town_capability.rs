@@ -67,6 +67,9 @@ const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
 /// prepared for any level (`borg_prepared`: "5 Food").
 const READY_FOOD: i64 = 5;
+/// borg-reborn-rs (#455 review): one Ration of Food's nutrition in the
+/// food floor's unit (object.txt: Ration of Food, NOURISH:INC_BY 30).
+pub(crate) const RATION_NUTRITION: i64 = 30;
 /// borg-reborn-rs (#451): the "Hungry" grade of the FOOD timer is 15 percent
 /// (player_timed.txt, `grade:y:15:Hungry`); `BI_ISHUNGRY` is food below
 /// `PY_FOOD_HUNGRY`, and the core reads a Remove Hunger scroll then. A
@@ -472,14 +475,15 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     let mut curve = |id: usize, weight: i64, demand: i64| { model.curves[id][1] = weight; model.curves[id][2] = demand; };
     curve(LIGHT, cfg(BORG_TOWN_W_LIGHT) * UNIT, journey.turns * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
-    // copy whitelist. One ration's 40 nutrition supports food_turns actions.
+    // copy whitelist. One ration's nutrition (RATION_NUTRITION, 30) supports
+    // food_turns actions.
     // borg-reborn-rs (food floor): never plan for fewer rations than the
     // core needs to be prepared for any level (borg_prepared "5 Food",
     // restock "food < 3"). borg-reborn-rs (#451): the core counts each
     // Remove Hunger scroll as one of the five (with_remove_hunger) and no
     // food the stores sell supplies more than the scroll's 35 nutrition (a
-    // ration 30), so the planner's floor of 200 is never met with fewer
-    // than six of them, the core's five.
+    // ration 30), so the planner's floor of 150 (five rations) is never met
+    // with fewer than five of them, the core's five.
     // Sized to the trip alone, a short early trip
     // asked for about one ration, so the planner sold the starting rations
     // and the core then bounced between DL1 and town for "restock food".
@@ -488,9 +492,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // bought up to the floor and never sold below it, but not hoarded.
     let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
     if rations < READY_FOOD * UNIT {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(40 * READY_FOOD * UNIT));
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(RATION_NUTRITION * READY_FOOD * UNIT));
     } else {
-        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, 40 * rations);
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, RATION_NUTRITION * rations);
     }
     curve(HEAL, risk(BORG_TOWN_W_BLEEDING), journey.hp * exposure);
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
