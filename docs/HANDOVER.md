@@ -2,6 +2,50 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: hoard Potions of Speed; Speed as a last resort (#452)
+
+Owner: keep Speed potions as an emergency reserve; behind a flag, drink one
+when heal, phase and teleport are all unavailable. Stacked on #455.
+- **Hoard** (`borg_town_capability.rs`): a speed effect (`TIMED_INC:FAST`,
+  20+2d10 turns, +10 speed, object.txt Potion of Speed) supplies one use,
+  and the SPEED curve is escape-like (`borg_town_w_escape` x exposure, like
+  PHASE/TELEPORT). It was `amount` turns against the whole trip, about 1% of
+  the demand, under a slot's burden: sold or stored. Unknown flavours are
+  still sold (unchanged, #445's question). Unit test: a level-25 character
+  on a 100000-turn trip keeps a stack of four; the old curve does not.
+- **Flag** `borg_speed_last_resort` (0 default = off): `borg_init.rs`,
+  `borg_h.rs`, harness/borg.txt, borg-core/borg.txt and the C reference
+  copies (all declared hooked), parser test. In `borg_caution`, after
+  `borg_escape` found nothing: flag on, in the dungeon, not `temp.fast`, a
+  Speed potion carried, danger above `caution_speed_last_resort_danger_tenths`
+  (10 = the danger at which borg_escape starts to phase) and no heal (any
+  cure or healing potion, device or spell trait), phase or teleport trait:
+  quaff, note `# Speed as last resort (...)`. `borg_defend_aux_speed` unchanged.
+- **Measured** (180 classes-1800 starts, ambitious arm (4,2), 100k turns;
+  descriptive, RULES 14; Speed sold-known and "bought" from tools/shopping-audit.py):
+
+  | | BEFORE (#455 head 88276ffa) | AFTER flag 0 | AFTER flag 1 |
+  |---|---:|---:|---:|
+  | Speed sold, known / unknown | 57 / 94 | 0 / 94 | 0 / 94 |
+  | Speed stored | 13 | 0 | 0 |
+  | Speed bought | 0 | 9 | 9 |
+  | Speed quaffs (all `defend_aux_speed`) | 43 | 58 | 58 |
+  | quaffs "last resort" | 0 | 0 | 0 |
+  | deaths | 33 | 29 | 29 |
+  | deaths, Speed still in pack (approx.) | 4 | 1 | 1 |
+  | CL median / mean | 5 / 4.84 | 5 / 4.84 | 5 / 4.84 |
+  | max depth / mean | 14 / 2.68 | 14 / 2.58 | 14 / 2.58 |
+  | games with 10+ "restock food" / frozen-turn stalls | 0 / 0 | 0 / 0 | 0 / 0 |
+
+  Flag 1 is byte-identical to flag 0 on all 180 games (keys.log): the
+  fallback never fired. The one death with Speed in the pack (g-1112777834,
+  Necromancer CL2, apprentice) carried Cure Light Wounds potions, so heal
+  counted as available, though CLW could not help against that danger.
+- **Left open:** the "any heal means" test is conservative (a CLW potion
+  blocks the fallback); a rule on heal adequacy would be a new threshold and
+  a measurement. The planner now also buys Speed (9 potions in 180 games,
+  one never used). Gameplay evidence is not written here (borg-cemetery).
+
 ## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
 
 Owner: the scroll should have value, be carried, and be used before any food.
