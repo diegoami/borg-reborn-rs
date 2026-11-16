@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: synthetic-start prerequisite (#371, owner-directed first slice)
+
+- Branch `task/371-synthetic-start` starts at main `92404c7e`; this is an
+  execution/harness task, not a P calibration or R port milestone.
+- `start-depth=N` / `-start-depth N` generates a birth-kit start without a
+  save, rejects bad/conflicting requests, verifies the first logged depth,
+  and records `borg-reborn-rs/synthetic-start@1` in summary/config.
+- Semantics are native one-way descent: no ascent/recall, further descent
+  allowed. This deliberately resolves the epic's conflicting single-level
+  wording; it must be assessed in the owner's review.
+- Harness skips synthetic death export; the exact cemetery toolkit pin
+  supplies an independent direct-export and reconciliation guard.
+- Review scope and runnable checks: `docs/reviews/SYNTHETIC-START.md`.
+  Leave the implementation unmerged for the owner-requested review.
+- #371 remains open: run-derived build application and independent
+  null-move diagnostics are follow-up slices; cemetery #5's suite remains
+  outside this change. No population/improvement claim is made.
+
 ## 2026-11-15: reviewed P349 synchronization (#360)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.

@@ -15,6 +15,7 @@
 #     keep-load-rng  passes -keep-load-rng (with save=NAME or -load)
 #     key-limit=N  stops after N keys (-keys N)
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
+#     start-depth=N  synthetic birth at depth N; no ascent/recall, descent allowed
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
@@ -58,6 +59,12 @@ if [ $# -gt 0 ] && [ "$1" != "--" ]; then FLAGS="$1"; shift; fi
 SAVE_NAME=""
 BIRTH_ARGS=(-n)
 BORGH_FLAGS=()
+START_DEPTH=""
+set_start_depth() {
+    [ -z "$START_DEPTH" ] || { echo 'run.sh: duplicate start-depth' >&2; exit 2; }
+    [[ "$1" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: start-depth must be 1..999 (and below engine max_depth)' >&2; exit 2; }
+    START_DEPTH="$1"
+}
 if [ "$FLAGS" != "-" ]; then
     IFS=, read -r -a FL <<< "$FLAGS"
     for fl in "${FL[@]}"; do
@@ -69,6 +76,9 @@ if [ "$FLAGS" != "-" ]; then
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
             terminal-save) BORGH_FLAGS+=(-save-final-state "$OUT/final.save");;
             keep-load-rng) BORGH_FLAGS+=(-keep-load-rng);;
+            start-depth=*)
+                set_start_depth "${fl#start-depth=}"
+                BORGH_FLAGS+=(-start-depth "$START_DEPTH");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }
@@ -103,8 +113,19 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
                EXTRA[$((i + 1))]="$OUT/save/input.save"
                i=$((i + 1));;
         -keep-load-rng) EXTRA_KEEP_RNG=1;;
+        -start-depth)
+            set_start_depth "${EXTRA[$((i + 1))]:-}"
+            if [ "$FLAGS" = '-' ]; then FLAGS="start-depth=$START_DEPTH"
+            else FLAGS="$FLAGS,start-depth=$START_DEPTH"; fi
+            i=$((i + 1));;
     esac
 done
+if [ -n "$START_DEPTH" ]; then
+    [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
+    for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
+        [ "$option" != '-random-birth' ] || { echo 'run.sh: start-depth cannot use random birth' >&2; exit 2; }
+    done
+fi
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
 # The reborn Borg's profile and outputs (T2.4); the C Borgs ignore both.
 if [ "$IMPL" = rust ]; then
@@ -149,6 +170,13 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
 {
     echo "flags=$FLAGS"
+    if [ -n "$START_DEPTH" ]; then
+        echo 'synthetic=1'
+        echo "start_depth=$START_DEPTH"
+        echo 'start_build=birth'
+        echo 'dungeon_mode=one_way'
+        echo 'synthetic_contract=borg-reborn-rs/synthetic-start@1'
+    fi
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
         # The loaded save's hash is part of a death's encounter family.
@@ -195,6 +223,26 @@ set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
 fi
+# Check the engine's receipt before accepting or exporting the run. A binary
+# without this capability, or an actual town start, is a harness failure.
+python3 - "$OUT/summary.json" "$START_DEPTH" <<'PYSYNTHETIC'
+import json, sys
+summary = json.load(open(sys.argv[1]))
+requested = sys.argv[2]
+if requested:
+    valid = (summary.get('synthetic') is True and summary.get('loaded') is False
+             and summary.get('synthetic_contract') == 'borg-reborn-rs/synthetic-start@1'
+             and summary.get('start_depth') == int(requested)
+             and summary.get('initial_depth') == int(requested)
+             and summary.get('start_build') == 'birth'
+             and summary.get('dungeon_mode') == 'one_way'
+             and summary.get('game_options', {}).get('birth_force_descend') is True
+             and summary.get('game_options', {}).get('birth_no_recall') is True)
+    if not valid:
+        raise SystemExit('run.sh: synthetic start identity mismatch')
+elif summary.get('synthetic') or summary.get('start_depth'):
+    raise SystemExit('run.sh: unexpected synthetic start')
+PYSYNTHETIC
 # borg-reborn-rs (#219): environment overrides are part of the run identity.
 if [ -f "$OUT/params-core.json" ]; then
     echo "params_core_sha256=$(sha256sum < "$OUT/params-core.json" | cut -d' ' -f1)" >> "$OUT/config.txt"
@@ -204,7 +252,7 @@ fi
 if [ -f "$ROOT/tools/depth-stream.py" ]; then
     python3 "$ROOT/tools/depth-stream.py" "$OUT" --cap "$TURNS"
 fi
-if [ -f "$ROOT/tools/export-death.py" ]; then
+if [ -z "$START_DEPTH" ] && [ -f "$ROOT/tools/export-death.py" ]; then
     python3 "$ROOT/tools/export-death.py" "$OUT" --impl "$IMPL" \
         --build-id "$(dirname "$(dirname "$BIN")")/BUILD_ID" --flags "$FLAGS"
 fi

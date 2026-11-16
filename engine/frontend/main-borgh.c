@@ -48,6 +48,8 @@
  *   -random-birth choose race and class using the seeded birth menu's *
  *   -clev N       stop when the character level reaches N (0 = no limit)
  *   -depth N      stop when the max depth reaches N (0 = no limit)
+ *   -start-depth N  synthetic birth at dungeon level N (no load/random birth)
+ *                 one-way: no ascent or recall; further descent is allowed
  *   -keylog FILE  keypress log (default: none)
  *   -msglog FILE  message log: every message_add() call, Borg notes
  *                 included (default: none)
@@ -127,6 +129,8 @@ static long opt_turns = 0;
 static long opt_keys = 0;
 static int opt_clev = 0;
 static int opt_depth = 0;
+static int opt_start_depth = 0;
+static int initial_depth = 0;
 static const char *opt_keylog = NULL;
 static const char *opt_msglog = NULL;
 static const char *opt_statelog = NULL;
@@ -220,6 +224,8 @@ static void borgh_finish(const char *reason)
     memcpy(stop_rng, STATE, sizeof(stop_rng));
 
 	if (finished) return;
+	if (opt_start_depth && !initial_depth)
+		quit("borgh: synthetic start was not verified before stop");
 	finished = true;
 
 	gettimeofday(&now, NULL);
@@ -257,6 +263,14 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, "  \"seed\": %lu,\n", (unsigned long)borgh_seed);
 	/* Every summary says whether a save was loaded (docs/SPEC.md §3.5). */
 	fprintf(fp, "  \"loaded\": %s,\n", opt_load ? "true" : "false");
+	if (opt_start_depth) {
+		fprintf(fp, "  \"synthetic\": true,\n");
+		fprintf(fp, "  \"synthetic_contract\": \"borg-reborn-rs/synthetic-start@1\",\n");
+		fprintf(fp, "  \"start_depth\": %d,\n", opt_start_depth);
+		fprintf(fp, "  \"initial_depth\": %d,\n", initial_depth);
+		fprintf(fp, "  \"start_build\": \"birth\",\n");
+		fprintf(fp, "  \"dungeon_mode\": \"one_way\",\n");
+	}
 	if (opt_load)
 		fprintf(fp, "  \"loaded_turn\": %ld,\n", loaded_turn);
 	fprintf(fp, "  \"race\": ");
@@ -539,6 +553,18 @@ static void borgh_state(void)
  */
 static void borgh_key(struct keypress k)
 {
+	if (opt_start_depth && !initial_depth) {
+		/* This is after generation, before the first Borg key is played.
+		 * Reject a town fallback or overwritten birth options as a failure. */
+		if (!player || player->depth != opt_start_depth ||
+			player->max_depth != opt_start_depth ||
+			!player->race || !player->class ||
+			player->race->ridx != (unsigned)opt_race ||
+			player->class->cidx != (unsigned)opt_class ||
+			!OPT(player, birth_force_descend) || !OPT(player, birth_no_recall))
+			quit("borgh: synthetic start identity mismatch");
+		initial_depth = player->depth;
+	}
 	keys_logged++;
 	if (keylog_fp) {
 		fprintf(keylog_fp, "%ld %d %lx %x\n", (long)turn, (int)k.type,
@@ -636,6 +662,18 @@ static void borgh_checkpoint(void)
 
 static void prepare_borg_start(void)
 {
+	if (opt_start_depth) {
+		if (opt_start_depth >= z_info->max_depth)
+			quit("borgh: -start-depth must be between 1 and max_depth-1");
+		/* Same level-change/energy boundary as the spike and wizard jump.
+		 * cmd-cave.c:do_cmd_go_up/down and effect-handler-general.c:RECALL
+		 * implement the native one-way rules; no engine rules are patched. */
+		player->max_depth = player->recall_depth = opt_start_depth;
+		option_set("birth_force_descend", true);
+		option_set("birth_no_recall", true);
+		dungeon_change_level(player, opt_start_depth);
+		player->upkeep->energy_use = z_info->move_energy;
+	}
 	if (opt_load) {
 		/* A missing/dead save must never silently become a birth run. */
 		if (!player || player->is_dead || !player->race || !player->class ||
@@ -825,6 +863,22 @@ errr init_borgh(int argc, char *argv[])
 			opt_clev = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-depth")) {
 			opt_depth = (int)arg_long(argc, argv, &i);
+		} else if (streq(argv[i], "-start-depth")) {
+			const char *value;
+			unsigned long depth = 0;
+			if (opt_start_depth) quit("borgh: duplicate -start-depth");
+			if (++i >= argc) quit("borgh: missing value for -start-depth");
+			value = argv[i];
+			if (!*value) quit("borgh: -start-depth requires a positive decimal integer");
+			/* Bound before multiplication: no strtol truncation/overflow or
+			 * zero sentinel silently turning a bad request into town birth. */
+			for (; *value; ++value) {
+				if (*value < '0' || *value > '9' || depth > 999)
+					quit("borgh: invalid -start-depth");
+				depth = depth * 10 + (*value - '0');
+			}
+			if (!depth || depth > 999) quit("borgh: invalid -start-depth");
+			opt_start_depth = (int)depth;
 		} else if (streq(argv[i], "-keylog")) {
 			if (++i >= argc) quit("borgh: missing value for -keylog");
 			opt_keylog = argv[i];
@@ -895,6 +949,8 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)
 		quit("borgh: -race and -class must be explicit indices");
 	if (opt_random_birth && opt_load) quit("borgh: random birth cannot load a save");
+	if (opt_start_depth && (opt_load || opt_random_birth))
+		quit("borgh: -start-depth cannot load a save or use random birth");
 	if (opt_exact_turns && opt_turns <= 0) quit("borgh: exact turns requires a positive turn limit");
 	if (!!opt_checkpoint_every != !!opt_checkpoint_dir)
 		quit("borgh: checkpoint interval and directory are both required");

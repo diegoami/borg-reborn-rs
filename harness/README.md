@@ -6,6 +6,61 @@ no part reads borg-rs. Everything runs the Rust Borg, the only
 implementation built here (SPEC §6). Heavy runs take
 `flock /tmp/angband-validation.lock` (RULES 17).*
 
+## Synthetic generated-depth start (issue #371, first slice)
+
+```sh
+RUN_TIMEOUT_SECONDS=30 harness/run.sh /tmp/synthetic-d10 101 0 0 5000 menu,start-depth=10
+```
+
+Contract `borg-reborn-rs/synthetic-start@1` creates a normal level-1 birth
+character with its ordinary starting kit, then generates the requested dungeon
+depth before the first Borg key. No input run or save is needed. Race/class and
+profile keep their existing meanings; `menu` is recommended for explicit indices.
+`-- -start-depth N` is also supported and normalized into recorded flags.
+
+Depth is a positive decimal integer below the engine's `max_depth` (the shell
+also bounds its input to 1..999). Zero, malformed/overflowing values, duplicates,
+loaded saves and random birth are refused. Unsupported build/kit options are
+refused by the frontend; this slice supports only the normal `birth` kit.
+
+The dungeon is **one-way**, not confined to a single level. Native
+`birth_force_descend` blocks upstairs; `birth_no_recall` blocks recall for these
+non-winning birth characters. Downstairs and other native downward transitions
+remain legal. The requested depth is the starting depth, not a promise about
+the final depth. No game rules or Borg decision rules are patched. A Borg may
+still attempt an unavailable escape or stop; that is observable play, not a
+successful escape or a harness failure to be relabelled as survival.
+
+The engine summary adds `synthetic: true`, `synthetic_contract`, `start_depth`,
+`initial_depth` (verified at the first Borg key), `start_build: "birth"`, and
+`dungeon_mode: "one_way"`. The first `state.log` row must show `dN/N`.
+`config.txt` records the same contract/request with `synthetic=1`; the full
+native options remain in `summary.json.game_options`. Ordinary runs retain
+their existing summary format. Build/source/binary identity remains in
+`build/rust/BUILD_ID`; pin that build, the profile/configuration and seed for
+repeatable execution. The horizon is the existing absolute engine-turn cap,
+including startup; use `exact` only when that existing stop contract is wanted.
+
+Generation/start mismatch, failure before start verification, unsupported
+capability, nonzero child exit and timeout fail visibly. The launcher checks the
+engine receipt before postprocessing. Keep `process.json`, stderr and any
+partial logs; a failed receipt or partial summary is not a gameplay outcome.
+The suite runner must still check launcher/process status and terminal evidence.
+
+Synthetic runs skip automatic death export. The pinned cemetery toolkit also
+rejects synthetic markers in summaries, configuration or flags on direct export,
+and excludes those deaths from natural reconciliation. They remain experimental
+results; no synthetic death is implicitly promoted to a natural dossier.
+
+Bounded checks: `flock /tmp/angband-validation.lock python3 -m unittest discover
+-s engine/tests -p test_synthetic_start.py -v`. They run two 5,000-turn attempts
+at each of depths 5/10/20 with a 20-second child wall limit, compare all three
+logs, exercise a real death, and test invalid requests and rejected receipts.
+These tests are included in the existing engine CI job. Raw outputs stay outside
+Git. Run-derived character builds, null-move exposure diagnostics, suite
+generation/classification and build-impact reports are later slices of
+#371 / cemetery #5, not capabilities of this contract.
+
 ```sh
 BORG_IMPL=rust flock /tmp/angband-validation.lock harness/build.sh
 flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
