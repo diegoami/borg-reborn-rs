@@ -565,14 +565,12 @@ mod tests {
             r.select((1, 1, 1), "mage", 5).unwrap();
             assert!(RUNTIME.set(Mutex::new(Some(r))).is_ok());
             assert_eq!(effective_no_deeper(20), 2);
-            // The production preparedness entry must reject before either
-            // calculation mode can bypass the active phase.
-            let mut state = BorgState::default();
-            for dynamic in [0, 1] {
-                state.core.cfg[crate::borg_headers::borg_h::BORG_USES_DYNAMIC_CALCS as usize] = dynamic;
-                state.core.cfg[crate::borg_headers::borg_h::BORG_NO_DEEPER as usize] = 127;
-                let reason = crate::borg_prepared::borg_prepared(&mut state, 2);
+            // The production guard runs before dispatch to either mode.
+            for mode in ["static", "dynamic"] {
+                let reason = crate::borg_prepared::prepared_with_limit(2, effective_no_deeper(127),
+                    || panic!("{mode} calculations must not bypass the cap"));
                 assert!(matches!(reason, Some(crate::borg_prepared::Reason::Formatted(_))));
+                assert!(crate::borg_prepared::prepared_with_limit(1, effective_no_deeper(127), || None).is_none());
             }
             // Manual cancellation is visible to preparedness immediately;
             // no tick/phase installation or Recall completion is needed.

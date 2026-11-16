@@ -4945,6 +4945,5 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   store/Recall ticks; same-run cancellation remains cancelled.
 - Require the child cancellation test to report one executed test. Remove
   the redundant cancellation branch and correct the remaining path-intent text.
-- Add initialization lifecycle and production preparedness regressions in both
-  calculation modes.
+- Add initialization lifecycle and production preparedness-guard regression before calculation dispatch.
   Validation and refreshed evidence pins will be recorded on #449.
