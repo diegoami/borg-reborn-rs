@@ -7,7 +7,7 @@ import tempfile
 import unittest
 ROOT=Path(__file__).resolve().parents[2]
 GAME=ROOT/'build/rust/game/angband'
-PLAN='[default]\n  level <= 5\n    loop-levels 0 2\n[mage]\n  level == 1\n    loop-levels 0 1\n  level > 1\n    loop-levels 0 2\n'
+PLAN='[default]\n  level <= 5\n    max-depth 2\n[mage]\n  level == 1\n    max-depth 1\n  level > 1\n    max-depth 2\n'
 CLASSES=['warrior','mage','druid','priest','necromancer','paladin','rogue','ranger','blackguard']
 
 
@@ -72,7 +72,7 @@ class ErrandsPlanTest(unittest.TestCase):
             self.assertIn('class=mage',(out/'messages.log').read_text())
 
     def test_missing_class_is_rejected_before_core_initialization(self):
-        r,out=self.run_poc('missing','[mage]\n  level <= 5\n    loop-levels 0 1\n')
+        r,out=self.run_poc('missing','[mage]\n  level <= 5\n    max-depth 1\n')
         self.assertEqual(r.returncode,2)
         self.assertIn('no [warrior] or [default] plan',(out/'console.log').read_text())
         self.assertFalse((out/'errands_plan.txt').exists(), 'configuration acknowledged too early')
@@ -94,7 +94,7 @@ class ErrandsPlanTest(unittest.TestCase):
             self.assertEqual((out/'keys.log').stat().st_size,0)
 
     def test_default_and_class_override(self):
-        for name,cls,seed,route in [('warrior',0,1010,'loop-levels 0 2'),('mage',1,1001,'loop-levels 0 1')]:
+        for name,cls,seed,route in [('warrior',0,1010,'max-depth 2'),('mage',1,1001,'max-depth 1')]:
             r,out=self.run_poc(name,cls=cls,seed=seed,via=(name=='mage'))
             self.assertEqual(r.returncode,0,r.stderr)
             notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
@@ -102,21 +102,21 @@ class ErrandsPlanTest(unittest.TestCase):
             self.assertIn('class='+name,notes[0]);self.assertIn(route,notes[0])
             self.assertEqual((out/'errands_plan.txt').read_text(),PLAN)
             self.assertFalse(json.loads((out/'summary.json').read_text())['dead'])
-    def test_active_loop_is_replaced_when_level_changes(self):
+    def test_active_cap_is_replaced_when_level_changes(self):
         r,out=self.run_poc('growth',cls=1,seed=1001,turns=20000)
         self.assertEqual(r.returncode,0,r.stderr)
         notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
-        self.assertTrue(any('level=1 ' in l and 'loop-levels 0 1' in l for l in notes),notes)
-        self.assertTrue(any('level=2 ' in l and 'loop-levels 0 2' in l for l in notes),notes)
+        self.assertTrue(any('level=1 ' in l and 'max-depth 1' in l for l in notes),notes)
+        self.assertTrue(any('level=2 ' in l and 'max-depth 2' in l for l in notes),notes)
         self.assertFalse(json.loads((out/'summary.json').read_text())['dead'])
     def test_gap_hands_back_and_invalid_plan_fails(self):
-        r,out=self.run_poc('gap','[default]\n  level > 5\n    loop-levels 0 1\n')
+        r,out=self.run_poc('gap','[default]\n  level > 5\n    max-depth 1\n')
         self.assertEqual(r.returncode,0,r.stderr)
         self.assertEqual(json.loads((out/'summary.json').read_text())['stop_reason'],'borg_stopped')
         self.assertIn('no phase for warrior level 1',(out/'messages.log').read_text())
         r,out=self.run_poc('invalid','[mage]\n  level <= 5\n    ladder\n',cls=1)
         self.assertEqual(r.returncode,2)
-        self.assertIn('a phase is max-depth N or loop-levels A B',(out/'console.log').read_text())
+        self.assertIn('a phase is max-depth N',(out/'console.log').read_text())
     def test_max_depth_caps_the_core_without_an_errand(self):
         # A max-depth phase installs no errand: the core plays as itself,
         # and borg_prepared refuses every level below the cap.
@@ -149,7 +149,7 @@ class ErrandsPlanTest(unittest.TestCase):
         import hashlib
         plan=self.root/'plan.txt';plan.write_text(PLAN)
         same=self.root/'same-bytes-other-name.txt';same.write_text(PLAN)
-        other=self.root/'other.txt';other.write_text(PLAN.replace('loop-levels 0 2','loop-levels 0 3',1))
+        other=self.root/'other.txt';other.write_text(PLAN.replace('max-depth 2','max-depth 3',1))
         r,out=self.run_measured('plan',plan)
         self.assertEqual(r.returncode,0,r.stderr)
         sha=hashlib.sha256(PLAN.encode()).hexdigest()

@@ -7,13 +7,12 @@ use std::collections::BTreeMap;
 use std::io::Read;
 use std::sync::{Mutex, OnceLock};
 
-/// What a phase asks of the core.
+/// What a phase asks of the core (owner, 2026-11-16: an additional check,
+/// not a forced behaviour).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Command {
-    /// `loop-levels A B`: the errand walks a back-and-forth interval.
-    LoopLevels(i32, i32),
-    /// `max-depth N` (borg-reborn-rs): no errand; the core plays as itself
-    /// and is not prepared for any level below N (`borg_no_deeper`).
+    /// `max-depth N`: no errand; the core plays as itself and is not
+    /// prepared for any level below N (`borg_no_deeper`).
     MaxDepth(i32),
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,19 +119,13 @@ impl Plan {
                     }
                     ["max-depth", ..] => return Err(error("max-depth takes one level".into())),
                     ["loop-levels", ..] => {
-                        let command = shell::Command::parse(s)
-                            .ok_or_else(|| error("invalid errand".into()))?;
-                        let shell::Command::Errand(shell::Errand::LoopLevels(first, last)) = command
-                        else {
-                            return Err(error(
-                                "POC supports only loop-levels A B; no ladder/trips aliases".into(),
-                            ));
-                        };
-                        Command::LoopLevels(first, last)
+                        return Err(error(
+                            "loop-levels was removed (owner, 2026-11-16); use max-depth N".into(),
+                        ))
                     }
                     _ => {
                         return Err(error(
-                            "a phase is max-depth N or loop-levels A B; no aliases".into(),
+                            "a phase is max-depth N; no aliases".into(),
                         ))
                     }
                 };
@@ -367,11 +360,6 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
         (Transition::Install(p), path, configured) => {
             let configured = configured.unwrap_or_else(|| st.cfg(BORG_NO_DEEPER));
             let what = match p.command {
-                Command::LoopLevels(first, last) => {
-                    st.core.cfg[BORG_NO_DEEPER as usize] = configured;
-                    shell::install_plan_loop(first, last);
-                    format!("loop-levels {first} {last}")
-                }
                 Command::MaxDepth(n) => {
                     // No errand: the core plays as itself, never prepared
                     // for a level below N (borg_prepared, "No deeper").
@@ -402,7 +390,7 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const EXAMPLE: &str = "[default]\n  level <= 5\n    loop-levels 0 2\n  5 < level <= 10\n    loop-levels 0 4\n[mage]\n  level <= 5\n    loop-levels 0 1\n  5 < level <= 10\n    loop-levels 1 3\n";
+    const EXAMPLE: &str = "[default]\n  level <= 5\n    max-depth 2\n  5 < level <= 10\n    max-depth 4\n[mage]\n  level <= 5\n    max-depth 1\n  5 < level <= 10\n    max-depth 3\n";
     #[test]
     fn shipped_file_is_parsed_and_covers_all_classes_until_50() {
         let text = include_str!("../../harness/plans/errands_plan.txt");
@@ -427,10 +415,12 @@ mod tests {
     }
     #[test]
     fn canonical_commands_and_precise_input_errors() {
-        for command in ["/loop-levels 0 2", "LOOP-LEVELS 0 2", "loop-levels:0 2"] {
+        for command in ["/max-depth 2", "MAX-DEPTH 2", "max-depth:2", "loop-levels 0 2"] {
             assert!(Plan::parse(&format!("[default]\n  level <= 5\n    {command}")).is_err());
         }
-        assert!(Plan::parse("[default]\n  level <= 5\n    loop-levels 5 3").is_ok());
+        assert!(Plan::parse("[default]\n  level <= 5\n    loop-levels 5 3")
+            .unwrap_err()
+            .contains("loop-levels was removed"));
         let mut large = vec![b'a'; 65536];
         large.push(0xff);
         assert_eq!(decode_plan(&large).unwrap_err(), "plan exceeds 64 KiB");
@@ -487,29 +477,29 @@ mod tests {
         };
         assert!(matches!(
             r.select((1, 1, 1), "mage", 5).unwrap(),
-            Transition::Install(Phase { command: Command::LoopLevels(_, 1), .. })
+            Transition::Install(Phase { command: Command::MaxDepth(1), .. })
         ));
         assert_eq!(r.select((1, 1, 2), "mage", 5).unwrap(), Transition::Keep);
         assert!(matches!(
             r.select((1, 1, 3), "mage", 6).unwrap(),
-            Transition::Install(Phase { command: Command::LoopLevels(_, 3), .. })
+            Transition::Install(Phase { command: Command::MaxDepth(3), .. })
         ));
         assert!(matches!(
             r.select((1, 1, 4), "mage", 5).unwrap(),
-            Transition::Install(Phase { command: Command::LoopLevels(_, 1), .. })
+            Transition::Install(Phase { command: Command::MaxDepth(1), .. })
         ));
         assert_eq!(r.select((1, 1, 5), "mage", 11).unwrap(), Transition::Stop);
         assert_eq!(r.select((1, 1, 6), "mage", 5).unwrap(), Transition::Keep);
         assert!(matches!(
             r.select((0, 2, 1), "warrior", 5).unwrap(),
-            Transition::Install(Phase { command: Command::LoopLevels(_, 2), .. })
+            Transition::Install(Phase { command: Command::MaxDepth(2), .. })
         ));
     }
     #[test]
     fn max_depth_phases_parse_and_mix_with_loops() {
-        let p = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n  level > 5\n    loop-levels 1 3\n").unwrap();
+        let p = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n  level > 5\n    max-depth 3\n").unwrap();
         assert_eq!(p.phase("mage", 3).unwrap().unwrap().command, Command::MaxDepth(2));
-        assert_eq!(p.phase("mage", 6).unwrap().unwrap().command, Command::LoopLevels(1, 3));
+        assert_eq!(p.phase("mage", 6).unwrap().unwrap().command, Command::MaxDepth(3));
         for bad in ["max-depth", "max-depth 0", "max-depth -1", "max-depth 127", "max-depth 2 3", "max-depth x", "MAX-DEPTH 2", "/max-depth 2"] {
             assert!(Plan::parse(&format!("[default]\n  level <= 5\n    {bad}\n")).is_err(), "{bad}");
         }
@@ -518,33 +508,33 @@ mod tests {
     #[test]
     fn selects_class_and_boundaries_including_drain() {
         let p = Plan::parse(EXAMPLE).unwrap();
-        for (level, first, last) in [(1, 0, 1), (5, 0, 1), (6, 1, 3), (10, 1, 3), (5, 0, 1)] {
-            assert_eq!(p.phase("mage", level).unwrap().unwrap().command, Command::LoopLevels(first, last));
+        for (level, last) in [(1, 1), (5, 1), (6, 3), (10, 3), (5, 1)] {
+            assert_eq!(p.phase("mage", level).unwrap().unwrap().command, Command::MaxDepth(last));
         }
-        assert_eq!(p.phase("warrior", 5).unwrap().unwrap().command, Command::LoopLevels(0, 2));
+        assert_eq!(p.phase("warrior", 5).unwrap().unwrap().command, Command::MaxDepth(2));
         assert!(p.phase("mage", 11).unwrap().is_none());
     }
     #[test]
     fn rejects_overlaps_aliases_and_malformed_files() {
         for text in [
             "",
-            "[wizzard]\n  level <= 5\n    loop-levels 0 1",
+            "[wizzard]\n  level <= 5\n    max-depth 1",
             "[mage]\n",
             "[default]\n  level <= 5",
             "[default]\n  level <= 5\n    ladder",
             "[default]\n  level <= 5\n    loop-level 0 1",
-            "[default]\n  level <= 5\n    loop-levels 0 0",
-            "[default]\n  level <= 5\n    loop-levels 0 1\n  5 <= level <= 10\n    loop-levels 0 2",
-            "[default]\n\tlevel <= 5\n    loop-levels 0 1",
+            "[default]\n  level <= 5\n    max-depth 0",
+            "[default]\n  level <= 5\n    max-depth 1\n  5 <= level <= 10\n    max-depth 2",
+            "[default]\n\tlevel <= 5\n    max-depth 1",
         ] {
             assert!(Plan::parse(text).is_err(), "{text}");
         }
     }
     #[test]
     fn class_gaps_do_not_fall_back_and_missing_class_is_an_error() {
-        let p = Plan::parse("[default]\n  level > 1\n    loop-levels 0 2\n[mage]\n  level == 1\n    loop-levels 0 1").unwrap();
+        let p = Plan::parse("[default]\n  level > 1\n    max-depth 2\n[mage]\n  level == 1\n    max-depth 1").unwrap();
         assert!(p.phase("mage", 2).unwrap().is_none());
-        let p = Plan::parse("[mage]\n  level == 1\n    loop-levels 0 1").unwrap();
+        let p = Plan::parse("[mage]\n  level == 1\n    max-depth 1").unwrap();
         assert!(p.phase("warrior", 1).is_err());
     }
 }

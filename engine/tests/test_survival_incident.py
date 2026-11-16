@@ -5,6 +5,7 @@ branches from all four fixtures die; the full original replay also verifies.
 """
 import hashlib
 import json
+import re
 import os
 from pathlib import Path
 import subprocess
@@ -44,8 +45,12 @@ class SurvivalIncidentTest(unittest.TestCase):
                     data = source.read(name)
                     self.assertEqual(hashlib.sha256(data).hexdigest(), point['sha256'])
                     (out / 'starting.save').write_bytes(data)
-                    for config in ['borg.txt', 'errands_plan.txt']:
-                        (out / 'user' / config).write_bytes(source.read(config))
+                    (out / 'user/borg.txt').write_bytes(source.read('borg.txt'))
+                    # The recording's plan used loop-levels, removed on
+                    # 2026-11-16: run its caps (loop-levels A B -> max-depth B).
+                    plan = re.sub(r'(?m)^    loop-levels \d+ (\d+)$', r'    max-depth \1',
+                                  source.read('errands_plan.txt').decode())
+                    (out / 'user/errands_plan.txt').write_text(plan)
                     if disable_tiers:
                         with (out / 'user/borg.txt').open('a') as config:
                             config.write('\nborg_param_caution_clw_max_level = 1\n'

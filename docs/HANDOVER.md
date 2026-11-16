@@ -199,11 +199,14 @@
 - Owner: a phase should be an additional check, not forced behaviour.
   New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
   errand; the core plays as itself and is not prepared below DL N (the
-  phase sets `borg_no_deeper` to N+1, never above the configured value; a
-  `loop-levels` phase restores it). `loop-levels` remains for old files.
+  phase sets `borg_no_deeper` to N+1, never above the configured value).
+- Owner: remove the loop errand entirely. `/loop-levels` and the plan
+  command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
+  was removed; use max-depth N"), with the level-loop code in shell.rs,
+  including #421's hold, test_loop_levels.py and test_loop_livelock.py.
+  #421 cannot recur: nothing forces a route any more.
 - Both shipped plans rewritten: `loop-levels A B` -> `max-depth B` (new
-  hashes). The old ambitious loop file is kept as a test fixture for the
-  #421 regression.
+  hashes).
 - The core's own cap lets a "spent too long, leaving" move step onto the
   level below for one move and climb straight back; owner: not an issue.
 - Local, 90 classes-1800-small starts, town planner on, trip off:
