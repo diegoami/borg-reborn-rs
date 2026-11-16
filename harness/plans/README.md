@@ -5,7 +5,10 @@ default. They cover levels 1–49 and hand back on reaching 50; they do not
 promise reaching it. Early class gates follow the old ladder groups; later
 intervals are shared, unvalidated hypotheses pending evaluation.
 It is plain text: class sections, level ranges, and exactly one supported
-errand, `loop-levels`. No ladder/trips aliases or general scripting language.
+command per phase: `max-depth N`, a depth cap (the core plays as itself).
+Since 2026-11-16 (owner) the shipped plans' `loop-levels A B` phases are
+`max-depth B`, and `loop-levels` is no longer accepted. No ladder/trips
+aliases or general scripting language.
 
 See [the POC guide](../../docs/GAME-PLAN-LANGUAGE.md) for actual launch,
 validation and boundaries. Select a file using `BORG_ERRANDS_PLAN` or

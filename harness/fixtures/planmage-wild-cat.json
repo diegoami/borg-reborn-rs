@@ -39,10 +39,15 @@
     }
   },
   "issue": "https://github.com/diegoami/borg-reborn-rs/issues/350",
-  "archive": "20261115T212321Z-PlanMage-checkpoints.zip",
-  "archive_sha256": "2b95d6d018872af3bf8a0b8ae1d7cc41b29b5c22a21ba0dc3616616901a90634",
-  "archive_bytes": 53052,
+  "archive": "20261116-PlanMage-checkpoints-max-depth.zip",
+  "archive_sha256": "8b1ad20508492af4bc991c760a6aa55aee2992f791ebb7e1bbd21fe5fc337615",
+  "archive_bytes": 53318,
   "repository": "diegoami/borg-cemetery",
-  "commit": "9e8b38c5a0964c45433ebe23b9334d9343a9a70a",
-  "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints.zip"
+  "commit": "77dd467ebd10422202a03cd5e646338e127faad3",
+  "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints-max-depth.zip",
+  "derived_from": {
+    "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints.zip",
+    "archive_sha256": "2b95d6d018872af3bf8a0b8ae1d7cc41b29b5c22a21ba0dc3616616901a90634",
+    "change": "errands_plan.txt loop-levels A B -> max-depth B (#440); saves and borg.txt unchanged"
+  }
 }
