@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: owner-requested stair-livelock investigation (#421)
+
+- Start from track-p0edee14b and preserve its pending preference work.
+  Synchronize accepted main4ecb93d7 including #368 and #369/#380 fixes;
+  resolve only this handover by retaining both histories. #422 stays fixed.
+- Reproduce the ambitious-plan/live-town-planner frozen-turn stair loop with
+  the named seed and exact settings before changing policy. Publish gameplay
+  evidence in Cemetery; source retains implementation/tests and brief links.
+- Target task PR at track-p. Green CI allows task integration there; no
+  unreviewed preference or stair-fix promotion to main is implied.
+
 ## 2026-11-16: preference task synchronization with recorder review (#403)
 
 - Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference
@@ -65,6 +76,22 @@
   Local raw evidence is under /workspace/work/403-*. R must
   independently consume the accepted promoted contract with neutral/non-neutral
   check/switch, ordered requests/effects/RNG and restoration (#364/#366).
+## 2026-11-16: owner-approved recorder-only promotion
+
+- Owner accepts the recorder review at46d5f2ae and explicitly requests merge.
+  Concurrent #405 integration expanded track-p/#407 beyond that review.
+  Promote the preserved recorder snapshot separately; leave attack preferences
+  on track-p for their combined review. No preference policy is included here.
+- Preserve accepted main8a0b57c8, including #354 harness work and #368 core
+  refresh. Retain both handover histories and main's canonical evidence pin;
+  fixture archive bytes/hashes are unchanged. Revalidate this combined tree.
+- Original recorder implementation and vendor bytes remain exactly46d5f2ae.
+  Its review provenance and nonblocking follow-ups (#409) remain intact.
+- Clean combined build71978c7b/source1573e6ca: native1011, smoke102 and
+  original-core1020 controls match accepted-main retained key hashes and
+  terminal facts. Pin canonical sync receipts at Cemetery8d63abf5. Local
+  91 tool/19 script checks and all2572 historical package checks pass.
+  Combined CI gates the delegated recorder-only merge.
 
 ## 2026-11-16: recorder integration after accepted importer review (#351)
 
@@ -119,6 +146,61 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: narrow survival fixes together on main (#369, #380)
+
+- Owner: both narrow proposals have the highest priority, in one PR for
+  review. Carries #392's flee-healing change (borg_caution.rs: fleeing no
+  longer skips borg_heal() merely because HP cannot absorb another round;
+  borg_heal keeps its own wound/level/resource gates) and #390's Phase
+  Door stock change (borg_town_capability.rs: a learned Phase Door no
+  longer zeroes the scroll's supply value; HOOKED). Both rebased onto
+  main 8837ece2 (borg-rs 8c5d000, recorder v0.2.0) without other changes.
+- Source hash 9a4ea375 → 2317021c. Wild-cat saved-position tests: heals
+  through the fight; with CLW/CSW tiers disabled still dies (control).
+  Phase stock: Mage fixture buys a Scroll of Phase Door.
+- CI deaths for the new source (core 1011, smoke 102, reborn 1020; the
+  fixes do not save them) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-369-380-ci-controls` (2f9d823); the wild-cat
+  fixture points CI at that commit. The owner merges that cemetery PR.
+- Supersedes #392 and #390 (close them on merge). The zoo needs a new ref.
+
+## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
+
+- Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
+  store/take livelock) and borg-rs#88 (additive trip policy). Three-way
+  refresh from 1443c2d, 0 conflicts; vendor check passes. harness/borg.txt
+  gets #88's trip comments only (settings unchanged).
+- Source hash 87717140 → 9a4ea375; harness/borg.txt 88296dd1.
+- Donor parity: 12/12 cells (seeds 501–506, classes 0–5, 30k turns,
+  town/trip off and on) byte-identical keys against a fresh borg-rs build
+  at 8c5d000.
+- Off arms unchanged: with borg_town_plan = 0 and borg_trip_policy = 0,
+  12/12 cells (no plan and errands_plan.txt) are byte-identical to main
+  1c4b351b; smoke 3/3 identical to the reference. All shop cells change,
+  as #88 intends.
+- Oil case (Warrior seed 501, ambitious plan + shop, 100k): keys 69,838 →
+  15,209, Home takes 3,994 → 0, worst burst 719 → 12 actions at one turn;
+  keys sha256 f32abbde21da.
+- CI death controls for the new source (core seed 1011 Mage, smoke seed
+  102 Mage, reborn seed
+  1020 Druid; same keys as before) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-368-ci-controls` (696065b, PR borg-cemetery#16);
+  harness/fixtures/planmage-wild-cat.json points CI at that commit.
+  The owner merges borg-cemetery#16.
+- Left: a store/take across visits is still possible (costs game time);
+  no no-progress detector. The zoo needs the new ref (borg-zoo#123).
+
+## 2026-11-16: #354 synchronized with main 72a21620, without #355
+
+- Owner decision: the zoo's five-arm specimen carries current main's game,
+  not #355. #355 (7022017e) was reverted on main by #379 (#373), so the
+  game inputs are the pre-355 ones again (source hash 87717140, as at
+  2f74e1c5) and this branch adds only plan files, harness plan runs and
+  the zoo contract. Plan hashes unchanged: errands_plan.txt 922372ba,
+  errands_plan_ambitious.txt 9d7d8a39. The 72-game local pilot still
+  applies to this game. borg-rs#90 (oil store/take loop) is in the
+  vendored core and still present.
+
 ## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
 
 - #395 review at 79ec0591 reports no blockers. Its remaining engine CI
@@ -308,6 +390,38 @@
   87717140, so its Rust/native/play evidence applies. Required CI is pending.
   Prepared separately from #331/#346; integrate only after that promotion,
   then open a separate pinned milestone review before main.
+
+## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
+
+- Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:
+  `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE`. It copies the plan into
+  `user/`, selects it in the run's borg.txt with a line naming its SHA-256,
+  records `borg_errands_plan`/`_sha256` in config.txt, and fails when the
+  game did not preserve exactly that plan. The plan's bytes are now in
+  `borg_txt_sha256`, so the cemetery's encounter family distinguishes plans
+  with death-tool API 1 unchanged. Plans selected in the harness borg.txt,
+  missing files and the original core are refused.
+- Open: cemetery `rerun-death.py` does not restore `BORG_ERRANDS_PLAN` yet
+  (it restores `BORG_LADDERS` the same way); a plan death's rerun reports
+  "does not reproduce" until it does. That is a cemetery-owned change.
+- docs/ZOO-INTERFACE.md gains the `borg_plan` row (the zoo copies
+  `harness/plans/NAME`); the adapter work is borg-zoo#123.
+- New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
+  curve (ch. 12.2), fighters ~one dungeon level per character level, casters
+  slower, no town-start phases from CL3 (CL6 casters). An engine test
+  checks it is never shallower than the first plan. A hypothesis only.
+- harness runs still cannot set borg.txt settings such as `borg_town_plan`;
+  the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+- Pilot finding (72 cells, PR #354 comment): the ambitious plan's requests
+  are capped by the core's readiness ("not prepared for DL2; town overrides
+  the loop"), so it bounces to town instead of diving. In one cell
+  (Warrior seed 501, ambitious + shopping) the M13 town planner looped
+  buy oil at the General Store / drop it at Home about 4,000 times over
+  ~35k game turns: a vendored-core (borg-rs town planner) defect to report
+  upstream, not a plan defect.
+- The plan-file checks are engine tests (strict reader + native load), not
+  release-core tests, so borg-core and the build's source hash are
+  unchanged and the existing CI death controls still apply.
 
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 

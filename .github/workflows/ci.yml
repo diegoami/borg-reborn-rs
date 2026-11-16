@@ -68,6 +68,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             scenarios/planmage-wild-cat-fixtures
+            scenarios/planmage-town-phase-407718
             validation/borg-reborn-rs/native-controls
       # #403: new parameter provenance changes the encounter identity even
       # when neutral play is identical. Reconcile against retained, immutable
@@ -167,6 +168,15 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
           PYFIXTURE
+      - run: |
+          python3 - <<'PYPHASE'
+          import json, os, pathlib, shutil
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-town-phase.json').read_text())
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'phase-stock.zip'
+          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_PHASE_STOCK_FIXTURE_ZIP=' + str(target) + '\nBORG_PHASE_STOCK_FIXTURE_REQUIRED=1\n')
+          PYPHASE
       - run: python3 -m unittest discover -s engine/tests
       - uses: actions/upload-artifact@v4
         if: always()
