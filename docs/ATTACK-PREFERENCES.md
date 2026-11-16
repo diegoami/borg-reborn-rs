@@ -285,7 +285,7 @@ the original loop remains `0..BF_ACT_STARLIGHT` (129 exclusive), unchanged.
 
 Clean implementation cac37f59 reproduces45/45 full baseline cd411e55 gameplay
 streams, and the real Mage selection/trace parity regression passes. Canonical
-[receipts and limits](https://github.com/diegoami/borg-cemetery/tree/2422bdb5951d4dc7523e61b563a1ac3478e9db82/validation/borg-reborn-rs/class-attack-preferences)
+[receipts and limits](https://github.com/diegoami/borg-cemetery/tree/e6a3698c113e9b6bf7ebec87bed8a5d30196a62a/validation/borg-reborn-rs/class-attack-preferences)
 retain source/build/config identities, original CI/local records and all failed
 attempts. harness/fixtures/attack-preferences.json pins the new evidence independently
 of the old incident fixture; CI includes both retained archives in its known

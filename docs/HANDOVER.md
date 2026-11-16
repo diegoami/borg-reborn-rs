@@ -27,10 +27,12 @@
   baseline/candidate full attempts played all45 games but could not finalize the
   suite marker because bc was absent; preserve those attempts. Install tools
   locally and repeat unchanged suites, never forge completion or discard deaths.
-- Cemetery evidence is pinned at2422bdb5951d4dc7523e61b563a1ac3478e9db82 under
-  validation/borg-reborn-rs/class-attack-preferences. It retains42 qualified
+- Cemetery evidence is pinned ate6a3698c113e9b6bf7ebec87bed8a5d30196a62a under
+  validation/borg-reborn-rs/class-attack-preferences. It retains46 qualified
   packages, original records, the initial CI artifact, all failure receipts and
-  full comparison hashes.12 final neutral deaths and the paired non-neutral case
+  full comparison hashes. The second CI passed all gameplay comparisons but
+  needed the reference-identical seed102 Fang smoke dossier under its new source
+  identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
   reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
   known registry; the original fixture/tool pins and historical archive stay fixed.
   Local raw evidence is under /workspace/work/403-*. R must
