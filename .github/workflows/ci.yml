@@ -50,6 +50,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
+      # Canonical gameplay evidence is separate from the death-tool pin and
+      # from the temporary registry produced by this CI run.
+      - id: incident-evidence
+        run: |
+          python3 - <<'PYEVIDENCE'
+          import json, os, pathlib
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('commit=' + f['commit'] + '\n')
+          PYEVIDENCE
+      - uses: actions/checkout@v4
+        with:
+          repository: diegoami/borg-cemetery
+          ref: ${{ steps.incident-evidence.outputs.commit }}
+          path: vendor/cemetery-evidence
+          persist-credentials: false
+          sparse-checkout: |
+            scenarios/planmage-wild-cat-fixtures
+            validation/borg-reborn-rs/native-controls
+      - run: |
+          python3 - <<'PYREGISTRY'
+          import os, pathlib
+          known = pathlib.Path(os.environ['RUNNER_TEMP']) / 'known-deaths'
+          known.mkdir()
+          for root in [pathlib.Path('docs/deaths'), pathlib.Path('vendor/cemetery-evidence/validation/borg-reborn-rs/native-controls/deaths')]:
+              for case in sorted(root.glob('D*')):
+                  if case.is_dir() and (case / 'record.json').is_file():
+                      (known / case.name).symlink_to(case.resolve(), target_is_directory=True)
+          PYREGISTRY
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev libssl-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
@@ -81,7 +110,7 @@ jobs:
           for f in keys.log messages.log state.log; do cmp "harness/out/core-params/$f" "harness/out/core-trace-off/$f"; done
           test ! -e harness/out/core-trace-off/trace-core.jsonl
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1011 2 1 100000 menu
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
+          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
           python3 - "$RUNNER_TEMP/core-deaths" <<'PYCORE'
           import json, pathlib, sys
           cases = list(pathlib.Path(sys.argv[1]).glob('D*-rust-*'))
@@ -108,10 +137,10 @@ jobs:
       # #350: immutable, source-qualified saves from the recorded wild-cat incident.
       - run: |
           python3 - <<'PYFIXTURE'
-          import json, os, pathlib, urllib.request
+          import json, os, pathlib, shutil
           f = json.loads(pathlib.Path('harness/fixtures/planmage-wild-cat.json').read_text())
           target = pathlib.Path(os.environ['RUNNER_TEMP']) / f['archive']
-          urllib.request.urlretrieve('https://raw.githubusercontent.com/' + f['repository'] + '/' + f['commit'] + '/recordings/' + f['archive'], target)
+          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
           PYFIXTURE
@@ -174,7 +203,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       # nullglob: runs with no natural death leave no dossier, and an
       # unmatched pattern must not be checked as if it were one (#125: the

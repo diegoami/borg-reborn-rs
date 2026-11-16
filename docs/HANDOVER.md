@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: synthetic P1 evidence ownership synchronization
+
+- Preserve current main's accepted ownership/CI changes. All six unmerged
+  task-control packages and the two gameplay evidence packets are now in
+  borg-cemetery, byte-for-byte verified in its M2 ownership receipt. No
+  accepted historical source record or published Git history is rewritten.
+- Source gameplay packet paths are immutable Cemetery references. The
+  fixture/evidence checkout pin includes canonical controls and the unchanged
+  incident save bundle, so CI checks against retained evidence rather than
+  itself. Source-input hash remains 8a61938a; the runtime code did not change.
+- Canonical milestone packet: borg-cemetery docs/reviews/M2/README.md;
+  exact paired heads and cloud checks are in the PR descriptions. M1 and P/R
+  acceptance gates remain independent; no milestone is marked accepted here.
+
 ## 2026-11-16: continued synthetic P1 milestone (#371 / cemetery #5)
 
 - Owner instructed continued implementation with review at the milestone;
@@ -52,6 +66,85 @@
 - #371 remains open: run-derived build application and independent
   null-move diagnostics are follow-up slices; cemetery #5's suite remains
   outside this change. No population/improvement claim is made.
+
+## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
+
+- #395 review at 79ec0591 reports no blockers. Its remaining engine CI
+  condition is satisfied by green run 43783576729. Nonblocking mode,
+  fault-injection, Python-minimum and formatting observations are tracked
+  in #397; none is implemented in this synchronization.
+- Main advanced to 6c89d9a2 through #394. Preserve the accepted Cemetery
+  ownership migration, six mapped package removals and pinned CI evidence.
+  Resolve only the handover conflict by retaining both histories.
+- Reviewed importer, importer tests and DOSSIER-IMPORT.md stay byte-identical
+  to 79ec0591. Runtime, source pins and archive contents match accepted main.
+  Required CI on this combined tree must pass before track-p integration.
+- Update #395 with the new pin and exact scope/tree proof; retain the
+  original review's provenance. Promotion remains pending owner acceptance
+  and explicit delegation, not merely the reviewer's recommendation.
+
+## 2026-11-16: Cemetery evidence ownership (#376)
+
+- AGENTS/RULES now require gameplay reports, scenarios and trials in
+  borg-cemetery; source PRs retain code/tests and concise validation links.
+- Cemetery PR8 retains the PlanMage incident and all66 files of the six
+  #355 control packages byte-for-byte. Remove only those mapped packages
+  here, regenerate the index and redirect the current incident pages.
+- CI reads the unchanged checkpoint archive from a separate pinned Cemetery
+  evidence checkout. Reconciliation uses retained historical plus canonical
+  cases, never the new temporary registry as its own expected baseline.
+- Original public player recordings/hashes and other sessions' historical
+  packages remain preserved. No policy change is part of this cleanup.
+
+
+## 2026-11-16: importer follow-up main sync after #379
+
+- Main advanced to58b11ff2 through owner-directed #379 while #381/#384
+  were in CI. Synchronize it through a separate task PR into track-p;
+  retain the pre-355 behavior and both handover histories without edits to
+  accepted runtime code. The merge is conflict-free.
+- Importer mode and failed-publication cleanup follow-ups remain intact;
+  runtime inputs must equal this accepted main and all2,578 archived
+  packages remain unchanged. No new gameplay or survival claim.
+- CI is required for the synchronized tree. After integration, open the
+  importer follow-up batch's pinned track-p -> main review and stop;
+  prior #372 acceptance does not cover the new changes.
+
+## 2026-11-16: failed import publication cleanup (#359)
+
+- Stacked on #358/#381. Restore0700 only on this invocation's unpublished
+  staging before removal, even if publication adopted a read-only source's
+  mode. Never scan other importers' staging or chmod an existing package.
+- Keep the original publication exception if cleanup also fails, attaching
+  the cleanup error as a diagnostic. Reproduce both paths with injected
+  rename/removal failures; assert read-only source mode, private cleanup,
+  existing package bytes, another active staging directory and no final
+  partial package. No evidence, runtime, defaults or pin changes.
+- Task PR records local/CI checks; integrate into track-p after green CI,
+  then stop for the next pinned owner-selected promotion review.
+
+## 2026-11-16: published import directory access (#358)
+
+- Owner accepted #372 and delegated its merge; the unchanged reviewed pin
+  cf687bb2 is promoted as b7d45f17. Review follow-ups #374 (exact invocation
+  receipts) and #375 (reference-receipt assessment) remain separate. The
+  reported missing log hashes already exist for all 45 pairs in the pin.
+- Bound newly published directory modes by source access and directory
+  creation under the importing process's umask. Obtain creation permissions
+  with an empty directory inside private staging, without changing the
+  process-global umask; remove the probe before publishing. Drop special
+  bits. Source0777/umask022 now gives0755; source0755/umask077 gives0700.
+  An intentionally permissive umask000 still permits a source0777 directory.
+- The mode matrix covers four umasks and five source modes (including
+  special bits), private staging during every write, file/generated-metadata
+  access, unchanged source modes, exact package bytes/IDs and re-import modes.
+  #359 still owns failed-publication cleanup for read-only staging.
+- No runtime, default, pin, immutable package or index changes. Source-refresh
+  report ran read-only; this isolated worktree lacks six moving-source clones,
+  so it cannot report their new commits. This narrow historical-import review
+  follow-up neither updates pins nor claims a refreshed gameplay baseline.
+- Local/CI validation is recorded in the task PR. Task targets track-p;
+  a fresh pinned owner-selected review must precede promotion to main.
 
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
