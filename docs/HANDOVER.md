@@ -2,6 +2,14 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: physical Phase Door backups (#380)
+
+- Remove only the M13 spell-based suppression of the physical Phase Door
+  curve. Existing weights, supply amounts and cash/pack constraints apply.
+- Stacked on rollback #379; leave unmerged for owner inspection. Recorded
+  incident and resource audit live in borg-cemetery, case
+  `deaths/recorded-planmage-20261115-wild-cat`. Zoo comparison stays paused.
+
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
 - #349 was owner-reviewed, synchronized through green #362 and promoted as
