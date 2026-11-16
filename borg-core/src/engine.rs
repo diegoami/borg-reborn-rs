@@ -2372,6 +2372,7 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
+#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
 }
@@ -3367,6 +3368,12 @@ pub fn py_food_levels() -> (i32, i32, i32, i32) {
     unsafe { (t::PY_FOOD_WEAK, t::PY_FOOD_HUNGRY, t::PY_FOOD_FULL, t::PY_FOOD_MAX) }
 }
 
+#[cfg(feature = "test-town-review")]
+#[no_mangle]
+pub extern "C" fn borg_rs_test_home_attempt(stored: bool, success: bool, kind: u32) -> u32 {
+    enter(|st| crate::borg_town_live::test_home_attempt(st, stored, success, kind))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -3531,5 +3538,22 @@ mod receiving_options_tests {
         assert_eq!(std::mem::offset_of!(player_options, hitpoint_warn), 46);
         // No player/engine exists in this test: a read would fail.
         assert!(!super::player_opt(crate::headers::list_options_h::OPT_store_buy_direct));
+    }
+}
+
+// borg-reborn-rs (#371): read-only authorization from the validated frontend.
+// Non-harness builds retain all ordinary birth-option restrictions.
+pub fn synthetic_start() -> bool {
+    #[cfg(feature = "borgh")]
+    {
+        extern "C" {
+            fn borgh_synthetic_start() -> bool;
+        }
+        // SAFETY: the linked headless frontend returns one immutable mode bit.
+        unsafe { borgh_synthetic_start() }
+    }
+    #[cfg(not(feature = "borgh"))]
+    {
+        false
     }
 }

@@ -39,6 +39,13 @@ Missile, only after its own existing checks. It is an insufficient-mana emergenc
 path, separate from ordinary reserve-mana cost penalties. Wand of Wonder's
 intentional positive emergency utility remains utility, not a rejection sentinel.
 Useful zero-direct-damage controls keep their invocation family and may compete.
+Waiting (`BF_REST`) competes in this same ranking with its weight fixed at 1000.
+Reducing an attack family's weight below 1000 can therefore make waiting for
+a monster more likely to win, as well as changing which attack family wins.
+Families follow invocation: Blackguard Whirlwind, Leap into Battle and Maim Foe
+are spells; `BF_ACT_ARROW` is an activation. Melee and thrown each contain one
+action. These are the intended semantics of this contract; non-neutral tuning
+must account for them and the emergency/control effects above.
 The final seam cannot infer an immunity/mana/charge reason from an aggregate
 integer; it never reevaluates availability or invents a rejection reason.
 

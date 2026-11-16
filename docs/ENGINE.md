@@ -54,6 +54,7 @@ the test checks the rest:
 | `06-key-log` | `ui-input.c` | `borgh_key_hook()` sees every key `inkey_hack` returns |
 | `07-command-boundary` | `ui-game.c` | `borgh_command_hook()` at each game-command boundary |
 | `08-town-queries` | `store.c/.h`, `obj-gear.c/.h` | M13 read-only exact-stack price and inventory-capacity queries, under `BORG_HARNESS` (#328) |
+| `09-synthetic-start` | `game-world.c` | Harness-only wrapper around native leave/generate/arrival before synthetic Borg activation (#371); normal game loop and generation rules unchanged |
 
 **The declared exception:** `04-fixed-date` splits
 `struct tm *date = localtime(&cur_time);` into a declaration and an

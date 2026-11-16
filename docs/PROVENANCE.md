@@ -51,6 +51,15 @@ The three-way refresh preserves declared OURS/HOOKED changes.
 read-only query patch, receiving option ABI adapter and parameter migration.
 Engine/harness, recorder and cemetery integration remain receiving-owned.
 
+## Home-oscillation and additive-trip refresh (#368)
+
+borg-core now vendors diegoami/borg-rs `8c5d000a58e9ddca1f1954ab9552e505856b313f`
+(main, the merge of borg-rs#92), refreshed three-way from `1443c2d` with no
+conflicts. It adds borg-rs#88 (the trip policy only adds return requests) and
+borg-rs#92 (the live town planner does not undo a confirmed Home move within
+one town visit, borg-rs#90). Both act only with `borg_town_plan = 1` or
+`borg_trip_policy = 1`.
+
 ## Recorded wild-cat incident fix (#350)
 
 Receiving-owned hooks remove the retired opportunistic stair-loot path from
@@ -71,3 +80,14 @@ data as core-trace@2. No donor policy or engine code is copied for this feature.
 The new module is declared OURS by scripts/borg-core-vendor.py. Native helpers,
 including their availability checks, RNG order and internal target selection,
 remain unchanged. R must independently carry the accepted contract after P review.
+
+## Synthetic P1 startup review fixes (#371 / #378)
+
+The owner-supplied #378 review identified the vendored core's two native birth
+option rejections. The narrow `borgh`-feature authorization follows the approach
+also present in competing PR #386 at `72dbcbaa5c43499dc094d6ab36d3bc832743bc04`:
+only the validated headless synthetic request permits force-descend/no-recall;
+other birth checks and non-harness behavior remain in force. The guarded native level-transition wrapper also follows that PR; it calls
+the ordinary leave/generate/arrival lifecycle before Borg activation. No Borg
+strategy/tactical policy code is copied from that PR. Its competing primitive
+must not be merged on top of this implementation without explicit reconciliation.

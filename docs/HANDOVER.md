@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: reviewed preference promotion synchronization (#453)
+
+- Owner asks to merge after #407's review at50c92ba0 reports no blockers.
+  Prepare the combined build through a track-p task PR before promotion.
+- Merge accepted main6d1bca10 into track-p50c92ba0. Preserve both branches'
+  handover/provenance additions; those are the only conflicts. Main's newer
+  throwable supply helper and all accepted donor/planner/survival/startup
+  changes remain intact. The reviewed final-ranking seam merges unchanged.
+- Review findings1/2: document core-trace@2 and the attacks array; explain
+  fixed-neutral waiting against downweighted attacks. Confirm the documented
+  invocation-family semantics without changing weights or mapping.
+- Validate the exact combined runtime and retain new source-qualified
+  controls in Cemetery. Earlier exact-build evidence remains historical;
+  green old task CI does not validate this combined build. Repin #407 only
+  after task CI/integration; promotion must preserve accepted main work.
+
 ## 2026-11-16: attack preference review follow-up (#424)
 
 - #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
@@ -96,6 +112,190 @@
   independently consume the accepted promoted contract with neutral/non-neutral
   check/switch, ordered requests/effects/RNG and restoration (#364/#366).
 
+## 2026-11-16: town planner item values (#400, #443, food)
+
+One PR, owner's request (supersedes #441):
+- **#400** learned spells no longer zero an item's demand (all services,
+  not only Phase Door).
+- **Food counted like the core**: only food and mushrooms supply FOOD
+  (`BI_FOOD`, which the core's readiness counts). A Remove Hunger scroll
+  counted as food let the planner sell the starting rations; the core
+  then bounced DL1/town on "restock food < 3" in 27-31 of 90 town-arm
+  games. The core seldom reads the scroll (6 of 253 bought).
+- **Food floor**: below five rations' nutrition the FOOD curve is a capped
+  requirement (borg_prepared "5 Food"). Without it the loop stays in 17 of
+  90 games. Nutrition, not items: a Mage may buy cheap Hard Biscuits.
+- **#443 worthless kinds**: 45 consumables the core never uses on purpose
+  (source audit; foods and use-up-is-benefit potions excluded) get no
+  planner value until the core learns to use them.
+- **Flavour learning** (`borg_town_w_knowledge`) is 0 with the trip policy,
+  which returns to town to sell unknown items.
+- **Wine churn fixed**: drinks with under 10 nutrition (wine, whisky,
+  liquor, miruvor) are not food to the planner; counted, the floor bought
+  wine then stored it at the Home every visit (1,532 stores in 180 games
+  -> 42).
+- **Sell less** moved to branch `task/sell-policy` (owner): a parameter
+  `town_sell_without_gold`, still under investigation (town arm without a
+  plan: deaths 30 -> 44, deeper dives). Next study: 2x2 of depth caps
+  (errands_plan / ambitious, max-depth) x returns (trip policy 0/1).
+- Local, town arm, 180 starts (classes-1800 1-180): deaths main 34 /
+  this 30; caster deaths 19 / 19; restock-food loops 58 / 0. Starts 1-90
+  alone showed caster deaths 5 -> 12, starts 91-180 14 -> 7: noise.
+
+## 2026-11-16: learned spells no longer zero item value (#400)
+
+- Owner: fix all of #400 in one PR, the way #380 fixed Phase Door.
+  borg_town_capability.rs no longer sets a capability's demand to 0 when
+  the character has a reliable spell for it (TRAPS, MONSTERS, INVISIBLE,
+  MAP, ILLUMINATE, DIG, RECALL, FOOD). Mana is finite, spells fail or are
+  unusable, and the broad classes conflate effects (treasure sensing is
+  not mapping). The demand drives buying and keeping, so this also stops
+  casters selling those items.
+- `effect_supply` is test-only now; `engine::spell_effect_values` keeps an
+  `#[allow(dead_code)]` hook (donor code, no caller).
+- test_phase_stock: on the Mage town fixture TRAPS, MONSTERS and
+  ILLUMINATE were 0 (Find Traps, Detect Monsters, Light Room); now every
+  service keeps its demand. The assertion fails on 4ecb93d7.
+
+## 2026-11-16: owner-authorized synthetic P1 landing (#378)
+
+- Owner explicitly requested merging #378 after the independent milestone
+  review/re-review and coordinated fixes. Cemetery #7 landed first at
+  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+- Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
+  handover histories, native recorder v0.2.0 and accepted #369/#380 survival
+  changes. Harness conflict resolution retains BOTH synthetic receipt/build
+  checks and the accepted errands-plan copy/load identity check.
+- The canonical fixture/evidence checkout points to Cemetery `ec332c6`, which
+  includes the unchanged incident save bundle and both parent control sets.
+  The native-tool pin remains `1afd9423`; its byte verification stays enabled.
+- Integrated clean runtime is `88a9437a7cbc96ceb7de16c1eecd9cc49c8b4bfb`,
+  source `2d1420b704fa8faa4a1972fe9548fdd2ebaa2a5fde98c9ff7ce9f4ba51d2ecef`.
+  Formatting, Clippy, workspace/core tests, 94 tools and 19 scripts pass;
+  86 local engine tests pass with 18 existing fixture/dependency skips.
+  Initial native checks rejected a stale API-1 sibling checkout as designed;
+  after checking out the landed Cemetery code, rerun passes without test edits.
+  Ordinary/exact smoke match stored references 3/3 across all streams.
+- Three natural controls for the integrated source are retained immutably in
+  Cemetery PR #20 at `9283d07c77724326970e18759d886cd15efd7d29`; all 82 scoped
+  packages verify and all 869 prior package blobs remain intact. The source
+  fixture now points to that canonical evidence, keeping the original save
+  bundle/hash unchanged. No new validation dossier is added to this source
+  repository. Final integrated-head CI must pass before #378 merges. Reviewed P1 runtime/bank
+  evidence remains pinned to its original runtime; no new survival or
+  population claim follows from integration. Per-kind charges (#411) and
+  optional one-way policy (#404) remain separate follow-ups.
+
+## 2026-11-16: coordinated M2 review boundary fix (#378 / Cemetery #7)
+
+- Owner requested coordination with the Cemetery session. Work is isolated on
+  `task/371-m2-forwarder-review`, stacked on reviewed #378 head `34cec1fc`.
+  No direct pushes to the shared #378/Cemetery branches and no native-tool pin
+  change. Ownership proposal is on Cemetery #7 comment 6913007931 and reborn
+  #378 comment 6913031259; Cemetery owns merge/index regeneration, retained
+  stream checks, process cleanup and packet disclosure. Acknowledgement and a
+  fixed new Cemetery head are still needed before paired integration updates.
+- Reborn review finding 3: all native tool execution now requires file bytes
+  matching death-tools-pin.txt, including outside CI. Docs/evidence-only heads
+  with identical native code work; stale API-1 guards, changed/missing files,
+  missing pin objects and added source fail before executing tool code.
+- Seven pointer tests and all 94 tool tests pass. The reviewer's stale Cemetery
+  main `5abfdbe` is refused before executing export against a real retained
+  synthetic death; pinned `1afd9423` correctly rejects it as synthetic. No
+  scratch natural-registry directory is created. No new game was run.
+  Source/script tests: 19 pass. Engine input digest remains the reviewed
+  `bf9a451c46a07142b59525a9c9c581287930e3b333baa4a81dda4816ed2a025a`;
+  there is no new runtime/bank identity. Fix tracking is #410; low-priority
+  per-kind charge validation is explicitly tracked in #411, without altering
+  the reviewed observed tier.
+- Finding 2 is explicitly disclosed in harness/README.md: the P1 birth kit is
+  an ordinary kit created before one-way options, retaining the option-
+  conditional Recall scroll that a native one-way Warrior birth omits. The
+  existing bank's ineffective consumption is disclosed, not a valid escape.
+  Runtime/capture/catalog/bank bytes remain unchanged; no new gameplay report
+  belongs in this repository. This is a review response, not acceptance.
+
+## 2026-11-16: synthetic P1 evidence ownership synchronization
+
+- Preserve current main's accepted ownership/CI changes. All six unmerged
+  task-control packages and the two gameplay evidence packets are now in
+  borg-cemetery, byte-for-byte verified in its M2 ownership receipt. No
+  accepted historical source record or published Git history is rewritten.
+- Source gameplay packet paths are immutable Cemetery references. The
+  fixture/evidence checkout pin includes canonical controls and the unchanged
+  incident save bundle, so CI checks against retained evidence rather than
+  itself. Source-input hash remains 8a61938a; the runtime code did not change.
+- Canonical milestone packet: borg-cemetery docs/reviews/M2/README.md;
+  exact paired heads and cloud checks are in the PR descriptions. M1 and P/R
+  acceptance gates remain independent; no milestone is marked accepted here.
+
+## 2026-11-16: continued synthetic P1 milestone (#371 / cemetery #5)
+
+- Owner instructed continued implementation with review at the milestone;
+  the original generated-depth PR is an integration checkpoint, not a task
+  review stop. Cemetery PLAN.md selects M2 / synthetic P1 independently of M1.
+- Added a restricted declarative Human Warrior tier: real measured capture,
+  engine SHA256, explicit native item/state validation, full-health normalization,
+  and verified initial level/max HP/SP. Capture preserves the ordinary key/state/
+  message streams; no save or Borg memory becomes a synthetic input.
+- OpenSSL crypto is a build dependency for the native file digest. Verified generated-cave starts use contract @2 for both variants; @1 is
+  superseded because requested player depth did not prove cave generation. The pinned capability declaration
+  explicitly limits supported native state; no unsupported item is dropped.
+- The #378 owner-supplied review led to a direct cave/pending-generation
+  check and exposed the initial startup bug. Complete the native transition
+  before either Borg activates; retain old results as superseded, not valid
+  generated-cave evidence. Both cores receive repeated real startup checks.
+- Narrow core birth-option authorization and the guarded lifecycle wrapper
+  follow #386 at its recorded provenance pin; no strategy/tactics are copied.
+  These are competing primitive implementations: do not merge both blindly.
+- Synthetic one-way save reload is refused. Cemetery additionally excludes
+  unmarked one-way native options from natural exports. Generic refusal-message
+  counts are reported separately from terminal outcomes and hazard qualification.
+- Source snapshots and exploratory attempts remain outside Git. The final P1
+  catalog/suite must use a clean, pinned build, with source/binary/config/log
+  hashes, declared normalization and a single-observation sampling limitation.
+- Cemetery owns generation, isolated adapter execution, independent terminal and
+  validity outcomes, provisional low-HP screens and reports. Qualified null-move
+  counts remain unavailable in P1; wider catalogs/qualification are P2.
+
+## 2026-11-16: synthetic-start prerequisite (#371, owner-directed first slice)
+
+- Branch `task/371-synthetic-start` starts at main `92404c7e`; this is an
+  execution/harness task, not a P calibration or R port milestone.
+- `start-depth=N` / `-start-depth N` generates a birth-kit start without a
+  save, rejects bad/conflicting requests, verifies the first logged depth,
+  and records `borg-reborn-rs/synthetic-start@1` in summary/config.
+- Semantics are native one-way descent: no ascent/recall, further descent
+  allowed. This deliberately resolves the epic's conflicting single-level
+  wording; it must be assessed in the owner's review.
+- Harness skips synthetic death export; the exact cemetery toolkit pin
+  supplies an independent direct-export and reconciliation guard.
+- Review scope and runnable checks: `docs/reviews/SYNTHETIC-START.md`.
+  Leave the implementation unmerged for the owner-requested review.
+- Initial CI exposed missing source-specific ordinary control dossiers,
+  not a synthetic-start failure. Retained three immutable natural validation
+  packages using `tools/import-deaths.py`; 2,556 packages verify and both
+  ordinary/core controls reconcile. No synthetic dossier was imported.
+- #371 remains open: run-derived build application and independent
+  null-move diagnostics are follow-up slices; cemetery #5's suite remains
+  outside this change. No population/improvement claim is made.
+## 2026-11-16: owner-approved recorder-only promotion
+
+- Owner accepts the recorder review at46d5f2ae and explicitly requests merge.
+  Concurrent #405 integration expanded track-p/#407 beyond that review.
+  Promote the preserved recorder snapshot separately; leave attack preferences
+  on track-p for their combined review. No preference policy is included here.
+- Preserve accepted main8a0b57c8, including #354 harness work and #368 core
+  refresh. Retain both handover histories and main's canonical evidence pin;
+  fixture archive bytes/hashes are unchanged. Revalidate this combined tree.
+- Original recorder implementation and vendor bytes remain exactly46d5f2ae.
+  Its review provenance and nonblocking follow-ups (#409) remain intact.
+- Clean combined build71978c7b/source1573e6ca: native1011, smoke102 and
+  original-core1020 controls match accepted-main retained key hashes and
+  terminal facts. Pin canonical sync receipts at Cemetery8d63abf5. Local
+  91 tool/19 script checks and all2572 historical package checks pass.
+  Combined CI gates the delegated recorder-only merge.
+
 ## 2026-11-16: recorder integration after accepted importer review (#351)
 
 - #395 is merged. Sync current track-p cd411e55, retaining both histories
@@ -149,6 +349,111 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: plan phases become depth caps (`max-depth N`)
+
+- Owner: a phase should be an additional check, not forced behaviour.
+  New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
+  errand; the core plays as itself and is not prepared below DL N (the
+  phase sets `borg_no_deeper` to N+1, never above the configured value).
+  Review of #440: hand-back at a gap and cancel now restore the configured
+  value (the last cap used to persist after level 50).
+- Owner: remove the loop errand entirely. `/loop-levels` and the plan
+  command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
+  was removed; use max-depth N"), with the level-loop code in shell.rs,
+  including #421's hold, test_loop_levels.py and test_loop_livelock.py.
+  #421 cannot recur: nothing forces a route any more.
+- Both shipped plans rewritten: `loop-levels A B` -> `max-depth B` (new
+  hashes).
+- The core's own cap lets a "spent too long, leaving" move step onto the
+  level below for one move and climb straight back; owner: not an issue.
+- Local, 90 classes-1800-small starts, town planner on, trip off:
+  deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
+  old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
+- CI deaths for source 2d8693c8 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
+  adds `checkpoints-max-depth.zip`, the wild-cat archive with the plan
+  capped (saves and borg.txt unchanged; the original stays as evidence).
+
+## 2026-11-16: level-loop stair livelock (#421)
+
+- borg-zoo's 3x3 pilot and small tier found frozen-turn bursts with the
+  ambitious plan and the live town planner: on DL1 the core refuses DL2
+  for a reason town cannot change (e.g. "30 hp"), the loop goes home, and
+  in town it restarts and takes the stairs straight down, with no game
+  time passing. Still on main 4ecb93d7 (Half-Troll Rogue 926210318: 1,098
+  keys at one game turn).
+- Fix (borg-core/src/shell.rs, ours): the loop remembers the refusal that
+  sent it home (level, reason, max character level). The same refusal
+  again, with no descent in between, holds the loop: the core plays the
+  level it is prepared for, and leaves a used-up level its own way. A
+  descent clears it. The note now names the core's reason.
+- Checks: engine/tests/test_loop_livelock.py (fails on main with 1,098
+  keys at turn 48483, passes here). 90 small-tier starts, ambitious-town:
+  stalls 1 -> 0, deaths 23 -> 17, max burst 725 (one-unit arrow buying).
+  No-plan arms (control, town) byte-identical on 8 cells.
+- Synchronized with main 83da6679 (#378; play unchanged on checked cells).
+  CI deaths for source 6b3b9e99 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-421-ci-controls-v2` (da51ee44, based on
+  9283d07); the wild-cat fixture points CI at that commit.
+- Found while auditing (next PR): every phase change starts with a town
+  trip (`loop-levels 0 N`), arrival in town restarts the loop, and any
+  upward move sets "home" (46 such overrides in one Warrior game).
+
+## 2026-11-16: narrow survival fixes together on main (#369, #380)
+
+- Owner: both narrow proposals have the highest priority, in one PR for
+  review. Carries #392's flee-healing change (borg_caution.rs: fleeing no
+  longer skips borg_heal() merely because HP cannot absorb another round;
+  borg_heal keeps its own wound/level/resource gates) and #390's Phase
+  Door stock change (borg_town_capability.rs: a learned Phase Door no
+  longer zeroes the scroll's supply value; HOOKED). Both rebased onto
+  main 8837ece2 (borg-rs 8c5d000, recorder v0.2.0) without other changes.
+- Source hash 9a4ea375 → 2317021c. Wild-cat saved-position tests: heals
+  through the fight; with CLW/CSW tiers disabled still dies (control).
+  Phase stock: Mage fixture buys a Scroll of Phase Door.
+- CI deaths for the new source (core 1011, smoke 102, reborn 1020; the
+  fixes do not save them) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-369-380-ci-controls` (2f9d823); the wild-cat
+  fixture points CI at that commit. The owner merges that cemetery PR.
+- Supersedes #392 and #390 (close them on merge). The zoo needs a new ref.
+
+## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
+
+- Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
+  store/take livelock) and borg-rs#88 (additive trip policy). Three-way
+  refresh from 1443c2d, 0 conflicts; vendor check passes. harness/borg.txt
+  gets #88's trip comments only (settings unchanged).
+- Source hash 87717140 → 9a4ea375; harness/borg.txt 88296dd1.
+- Donor parity: 12/12 cells (seeds 501–506, classes 0–5, 30k turns,
+  town/trip off and on) byte-identical keys against a fresh borg-rs build
+  at 8c5d000.
+- Off arms unchanged: with borg_town_plan = 0 and borg_trip_policy = 0,
+  12/12 cells (no plan and errands_plan.txt) are byte-identical to main
+  1c4b351b; smoke 3/3 identical to the reference. All shop cells change,
+  as #88 intends.
+- Oil case (Warrior seed 501, ambitious plan + shop, 100k): keys 69,838 →
+  15,209, Home takes 3,994 → 0, worst burst 719 → 12 actions at one turn;
+  keys sha256 f32abbde21da.
+- CI death controls for the new source (core seed 1011 Mage, smoke seed
+  102 Mage, reborn seed
+  1020 Druid; same keys as before) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-368-ci-controls` (696065b, PR borg-cemetery#16);
+  harness/fixtures/planmage-wild-cat.json points CI at that commit.
+  The owner merges borg-cemetery#16.
+- Left: a store/take across visits is still possible (costs game time);
+  no no-progress detector. The zoo needs the new ref (borg-zoo#123).
+
+## 2026-11-16: #354 synchronized with main 72a21620, without #355
+
+- Owner decision: the zoo's five-arm specimen carries current main's game,
+  not #355. #355 (7022017e) was reverted on main by #379 (#373), so the
+  game inputs are the pre-355 ones again (source hash 87717140, as at
+  2f74e1c5) and this branch adds only plan files, harness plan runs and
+  the zoo contract. Plan hashes unchanged: errands_plan.txt 922372ba,
+  errands_plan_ambitious.txt 9d7d8a39. The 72-game local pilot still
+  applies to this game. borg-rs#90 (oil store/take loop) is in the
+  vendored core and still present.
+
 ## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
 
 - #395 review at 79ec0591 reports no blockers. Its remaining engine CI
@@ -338,6 +643,38 @@
   87717140, so its Rust/native/play evidence applies. Required CI is pending.
   Prepared separately from #331/#346; integrate only after that promotion,
   then open a separate pinned milestone review before main.
+
+## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
+
+- Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:
+  `BORG_CORE=borg-rs BORG_ERRANDS_PLAN=FILE`. It copies the plan into
+  `user/`, selects it in the run's borg.txt with a line naming its SHA-256,
+  records `borg_errands_plan`/`_sha256` in config.txt, and fails when the
+  game did not preserve exactly that plan. The plan's bytes are now in
+  `borg_txt_sha256`, so the cemetery's encounter family distinguishes plans
+  with death-tool API 1 unchanged. Plans selected in the harness borg.txt,
+  missing files and the original core are refused.
+- Open: cemetery `rerun-death.py` does not restore `BORG_ERRANDS_PLAN` yet
+  (it restores `BORG_LADDERS` the same way); a plan death's rerun reports
+  "does not reproduce" until it does. That is a cemetery-owned change.
+- docs/ZOO-INTERFACE.md gains the `borg_plan` row (the zoo copies
+  `harness/plans/NAME`); the adapter work is borg-zoo#123.
+- New `harness/plans/errands_plan_ambitious.txt`: the Strategy Manual's depth
+  curve (ch. 12.2), fighters ~one dungeon level per character level, casters
+  slower, no town-start phases from CL3 (CL6 casters). An engine test
+  checks it is never shallower than the first plan. A hypothesis only.
+- harness runs still cannot set borg.txt settings such as `borg_town_plan`;
+  the local plan × shopping pilot in the PR used a zoo-like scratch driver.
+- Pilot finding (72 cells, PR #354 comment): the ambitious plan's requests
+  are capped by the core's readiness ("not prepared for DL2; town overrides
+  the loop"), so it bounces to town instead of diving. In one cell
+  (Warrior seed 501, ambitious + shopping) the M13 town planner looped
+  buy oil at the General Store / drop it at Home about 4,000 times over
+  ~35k game turns: a vendored-core (borg-rs town planner) defect to report
+  upstream, not a plan defect.
+- The plan-file checks are engine tests (strict reader + native load), not
+  release-core tests, so borg-core and the build's source hash are
+  unchanged and the existing CI death controls still apply.
 
 ## 2026-11-15: second main sync, errands-plan reader consolidation (#342)
 
@@ -4465,3 +4802,16 @@ new build-identity death dossiers. D2093/D2094 reproduce CI controls 102/1020;
 keys, messages and state channels match the CI artifact, whose original record
 and build identities are retained in ci-evidence.json. Both remain unassessed
 validation controls, not a strategy/performance claim. No death check is waived.
+
+## Synthetic P1 review follow-ups (2026-11-16)
+
+Owner-supplied reviews of #378 d406d2c9 and Cemetery #7 e750549 are input, not
+acceptance. Every requested capture now reports captured/absent and its requested
+level; an unreached/skipped level no longer leaves an ambiguous successful run.
+A parity regression covers the absence path. The startup wrapper mirrors the
+native character_dungeon leave guard and names lifecycle/arena pin-bump checks.
+Cemetery fixes malformed-option reconciliation, normalizes marker flags and
+prints exclusions; this source pins its reviewed-follow-up guard revision.
+Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
+OpenSSL remains an intentional documented runtime dependency. Full responses
+and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.

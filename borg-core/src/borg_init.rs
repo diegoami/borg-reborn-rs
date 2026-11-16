@@ -206,7 +206,7 @@ pub const RETIRED_SETTINGS: &[RetiredSetting] = &[
     retired(c"borg_munchkin_level", b'i', RetiredInert::Any,
         "a parameter of the removed munchkin start; delete the line"),
     retired(c"borg_munchkin_depth", b'i', RetiredInert::Any,
-        "a parameter of the removed munchkin start; to bound the trip depth use borg_trip_depth_margin or borg_no_deeper"),
+        "a parameter of the removed munchkin start; to bound depth use borg_no_deeper"),
     retired(c"borg_lunal_mode", b'b', RetiredInert::Value(0),
         "the lunal mode was removed; delete the line"),
     retired(c"borg_self_lunal", b'b', RetiredInert::Value(0),
@@ -924,7 +924,7 @@ pub fn borg_init(st: &mut BorgState) {
             st.init.init_failure = true;
         }
 
-        if engine::player_opt(OPT_birth_force_descend) {
+        if engine::player_opt(OPT_birth_force_descend) && !engine::synthetic_start() {
             birth_option_failure(st, "**STARTUP FAILURE** must allow up stairs");
         }
 
@@ -932,7 +932,7 @@ pub fn borg_init(st: &mut BorgState) {
             birth_option_failure(st, "**STARTUP FAILURE** must connect stairs");
         }
 
-        if engine::player_opt(OPT_birth_no_recall) {
+        if engine::player_opt(OPT_birth_no_recall) && !engine::synthetic_start() {
             birth_option_failure(st, "**STARTUP FAILURE** must allow recall");
         }
 

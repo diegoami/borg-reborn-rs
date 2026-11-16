@@ -2381,8 +2381,9 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
-    // The shared forecast is needed only for a throwable flask while a
-    // fuel-burning lantern is worn. Reuse it within this evaluation.
+    // The shopping supply estimate is needed only for a throwable flask
+    // while a fuel-burning lantern is worn. It is independent of the return
+    // policy and reused within this evaluation.
     let mut supply_journey: Option<crate::borg_town_utility::Journey> = None;
     let mut b_k: i32 = -1;
     let mut b_d: i32 = -1;
@@ -2433,10 +2434,8 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
                 && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
             let policy = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
             let reserve = if policy && lantern {
-                let journey = supply_journey.get_or_insert_with(|| {
-                    let forecast = crate::borg_trip::forecast(st);
-                    crate::borg_town_utility::Journey::for_trip(st, forecast)
-                });
+                let journey = supply_journey.get_or_insert_with(||
+                    crate::borg_town_utility::Journey::of(st));
                 ((journey.turns - i64::from(light.timeout)).max(0) as u64)
                     .div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
