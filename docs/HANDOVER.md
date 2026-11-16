@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: town planner item values (#400, #443, food)
+
+One PR, owner's request (supersedes #441):
+- **#400** learned spells no longer zero an item's demand (all services,
+  not only Phase Door).
+- **Food counted like the core**: only food and mushrooms supply FOOD
+  (`BI_FOOD`, which the core's readiness counts). A Remove Hunger scroll
+  counted as food let the planner sell the starting rations; the core
+  then bounced DL1/town on "restock food < 3" in 27-31 of 90 town-arm
+  games. The core seldom reads the scroll (6 of 253 bought).
+- **Food floor**: below five rations' nutrition the FOOD curve is a capped
+  requirement (borg_prepared "5 Food"). Without it the loop stays in 17 of
+  90 games. Nutrition, not items: a Mage may buy cheap Hard Biscuits.
+- **#443 worthless kinds**: 45 consumables the core never uses on purpose
+  (source audit; foods and use-up-is-benefit potions excluded) get no
+  planner value until the core learns to use them.
+- **Flavour learning** (`borg_town_w_knowledge`) is 0 with the trip policy,
+  which returns to town to sell unknown items.
+- Local, town arm, 180 starts (classes-1800 1-180): deaths main 34 /
+  this 30; caster deaths 19 / 19; restock-food loops 58 / 0. Starts 1-90
+  alone showed caster deaths 5 -> 12, starts 91-180 14 -> 7: noise.
+
 ## 2026-11-16: learned spells no longer zero item value (#400)
 
 - Owner: fix all of #400 in one PR, the way #380 fixed Phase Door.
