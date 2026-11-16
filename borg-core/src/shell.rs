@@ -1442,6 +1442,18 @@ fn walk(st: &mut BorgState, depth: i32, t: i32) -> bool {
         // No level is forced (docs/ERRANDS.md): never down to a level the
         // core is not prepared for.
         if !prepared_below(st, depth) {
+            // #421: a dungeon-only loop may start below the deepest safe
+            // level. Returning to town here restarts the same unreachable
+            // route, and connected stairs can repeat it without game time.
+            // Keep the waypoint and let the core play this level instead.
+            // Its own fear/restock retreat still overrides the loop above.
+            let wait = running().as_ref().and_then(|r| r.level_loop.as_ref())
+                .is_some_and(|plan| plan.first > 0 && plan.last > 0);
+            if wait {
+                st.borg.goal.type_0 = 0;
+                borg_note(st, &format!("# Errand: loop waits for DL{} preparedness; the core plays this level.", depth + 1));
+                return false;
+            }
             return refuse_descent(st, depth + 1) || stairs_up(st);
         }
         stairs_down(st)

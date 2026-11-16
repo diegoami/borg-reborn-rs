@@ -96,6 +96,14 @@ Several commands can go on one line, separated by `;`
 run in turn, each one starting when the one before it is done. Any other
 ending (scared, aborted, the budget) drops the rest.
 
+A loop whose endpoints are both in the dungeon may start deeper than the
+core is currently prepared to reach. If the next descent is blocked, the
+loop keeps its waypoint and lets the core play the current level. It does
+not repeatedly send the character to town and restart the same blocked
+route (#421). The core's own fear, restocking and retreat decisions still
+take priority. Loops that include town, one-shot commands and ladder trips
+retain their existing readiness/refusal behavior.
+
 `/shopping` uses the core's existing choices about what is worth buying,
 selling, storing at home or taking from home. It does not force a purchase
 or a visit to a store with nothing useful to do. The game's selling option

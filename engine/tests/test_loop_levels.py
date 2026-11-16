@@ -3,6 +3,7 @@
 Run after harness/build.sh under /tmp/angband-validation.lock. Fixture
 creation uses normal birth/play, not edited character or engine state.
 """
+from collections import Counter
 import json
 import os
 from pathlib import Path
@@ -20,6 +21,47 @@ class LevelLoopTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix='level-loop-test-')
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+
+    def test_dungeon_only_loop_waits_on_a_safe_level_when_descent_is_blocked(self):
+        # #421: a constructed positive interval isolates the reported
+        # ambitious-plan failure without waiting for character growth.
+        # Before the fix this seed produces 1,409 keys at game turn 2,092,
+        # repeatedly returning to town because it cannot yet enter DL2.
+        out = self.root / 'blocked-descent'
+        for name in ['user', 'save', 'archive', 'panic', 'scores']:
+            (out / name).mkdir(parents=True)
+        config = (ROOT / 'harness/borg.txt').read_text()
+        config = config.replace('borg_town_plan = 0', 'borg_town_plan = 1')
+        config += '\nborg_plan = errands_plan.txt\n'
+        (out / 'user/borg.txt').write_text(config)
+        (out / 'user/errands_plan.txt').write_text(
+            '[default]\n  level <= 49\n    loop-levels 3 9\n')
+        env = {k: v for k, v in os.environ.items()
+               if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
+        env.update(BORG_CORE='borg-rs', BORG_ERRAND='none',
+                   BORG_RUN_DIR=str(out), LANG='C.UTF-8', LC_ALL='C.UTF-8', TZ='UTC')
+        command = [str(GAME), '-mborgh', '-n']
+        command += [f'-d{name}={out / name}'
+                    for name in ['user', 'save', 'archive', 'panic', 'scores']]
+        command += ['-uStair421', '--', '-seed', '1019921749', '-race', '1',
+                    '-class', '0', '-exact-turns', '-turns', '5000',
+                    '-keylog', str(out / 'keys.log'),
+                    '-msglog', str(out / 'messages.log'),
+                    '-statelog', str(out / 'state.log'),
+                    '-summary', str(out / 'summary.json')]
+        subprocess.run(command, cwd=GAME.parent, env=env, check=True,
+                       capture_output=True, text=True, timeout=40)
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertFalse(summary['dead'], summary)
+        self.assertEqual(summary['game_turns'], 5000)
+        bursts = Counter(int(line.split()[0]) for line in
+                         (out / 'state.log').read_text().splitlines())
+        self.assertLess(max(bursts.values()), 1000, 'frozen-turn stair loop')
+        frames = [json.loads(line) for line in
+                  (out / 'trace-core.jsonl').read_text().splitlines()]
+        self.assertTrue(any(r['depth'] == 1 and r['errand']['target'] == 3
+                            and r['keys'] and r['keys'] != [60] for r in frames),
+                        'the blocked waypoint should remain while the core plays DL1')
 
     def run_game(self, name, errand, seed=1010, cls=0, budget=0, extra=()):
         out = self.root / name

@@ -10,6 +10,13 @@
 - Reproduce the ambitious-plan/live-town-planner frozen-turn stair loop with
   the named seed and exact settings before changing policy. Publish gameplay
   evidence in Cemetery; source retains implementation/tests and brief links.
+- The original-source reproduction matches seed1019921749 exactly: keys
+  5d6b065592fb,79,397 keys and22 frozen-turn bursts. A short constructed
+  positive loop on the synchronized source produces1,409 keys at turn2092.
+  The fix yields only the blocked positive-loop descent to native play;
+  explicit retreat and town-ended routes retain their behavior. The bounded
+  native regression must fail against the preserved baseline binary and
+  pass against the candidate. Trial/source identities stay separate.
 - Target task PR at track-p. Green CI allows task integration there; no
   unreviewed preference or stair-fix promotion to main is implied.
 
