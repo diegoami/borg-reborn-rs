@@ -1,4 +1,4 @@
-use angband_recorder::verify;
+use angband_recorder::{validate_recording, verify};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::env;
@@ -17,6 +17,31 @@ struct Launch {
 fn digest(path: &Path) -> io::Result<String> {
     Ok(format!("{:x}", Sha256::digest(fs::read(path)?)))
 }
+fn replay_arguments(arguments: &[String], profile_root: &Path) -> io::Result<Vec<String>> {
+    // Vanilla resolves -u against the save directory that is current while
+    // arguments are parsed, so the private directories must precede every
+    // remaining engine argument; appended overrides would leave a -u before
+    // them frozen onto the original or default save path. Original overrides
+    // of the same directories are removed wherever they appear.
+    let split = arguments
+        .iter()
+        .position(|a| a == "--")
+        .unwrap_or(arguments.len());
+    let mut body: Vec<String> = arguments[..split].to_vec();
+    let tail: Vec<String> = arguments[split..].to_vec();
+    let mut directories = Vec::new();
+    for key in ["user", "save", "panic", "archive", "scores"] {
+        let directory = profile_root.join(key);
+        fs::create_dir_all(&directory)?;
+        directories.push(format!("-d{key}={}", directory.display()));
+        body.retain(|arg| !arg.starts_with(&format!("-d{key}=")));
+    }
+    let mut result = directories;
+    result.extend(body);
+    result.extend(tail);
+    Ok(result)
+}
+
 fn run(
     launch: &Launch,
     output: &Path,
@@ -38,9 +63,16 @@ fn run(
     ] {
         command.env_remove(name);
     }
+    let mut arguments = launch.arguments.clone();
+    if let Some(original) = original {
+        validate_recording(original)?;
+        // Replays read frozen file bytes, but all game writes use a new private
+        // profile. Never overwrite the profile named by the original recipe.
+        arguments = replay_arguments(&arguments, &output.join("profile"))?;
+    }
     command
         .current_dir(&launch.cwd)
-        .args(&launch.arguments)
+        .args(&arguments)
         .env("ANGBAND_RECORD_DIR", output);
     if let Some(original) = original {
         command.env("ANGBAND_REPLAY_DIR", original);
@@ -148,5 +180,56 @@ fn main() -> ExitCode {
             eprintln!("{e}");
             ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn review_f20_private_directories_precede_every_engine_argument() {
+        let root = std::env::temp_dir().join("recorder-f20-test");
+        let profile = &root;
+        // The escape shape: -u is parsed while ANGBAND_DIR_SAVE still holds
+        // the default, so private directories must come first.
+        let args = [
+            "/game/angband".into(),
+            "-dsave=/original".into(),
+            "-uRecorderTest".into(),
+            "--".into(),
+            "-x".into(),
+        ];
+        let result = replay_arguments(&args, profile).unwrap();
+        let expected_prefix: Vec<String> = ["user", "save", "panic", "archive", "scores"]
+            .iter()
+            .map(|key| format!("-d{key}={}", profile.join(key).display()))
+            .collect();
+        assert_eq!(&result[..5], &expected_prefix);
+        assert_eq!(
+            &result[5..],
+            &["/game/angband", "-uRecorderTest", "--", "-x"]
+        );
+        assert!(result.iter().all(|arg| !arg.contains("/original")));
+    }
+
+    #[test]
+    fn review_f20_original_directory_overrides_are_removed_before_the_tail() {
+        let profile = std::env::temp_dir().join("recorder-f20-tail");
+        let args = [
+            "-uName".into(),
+            "-duser=/old".into(),
+            "--".into(),
+            "-dsave=/after".into(),
+        ];
+        let result = replay_arguments(&args, &profile).unwrap();
+        // The private directories lead; original overrides in the parsed body
+        // are stripped; the unparsed tail after "--" is passed through
+        // verbatim (the engine never interprets options there).
+        assert_eq!(&result[5..], &["-uName", "--", "-dsave=/after"]);
+        assert!(result.iter().take(5).enumerate().all(|(i, arg)| {
+            let keys = ["user", "save", "panic", "archive", "scores"];
+            arg == &format!("-d{}={}", keys[i], profile.join(keys[i]).display())
+        }));
     }
 }

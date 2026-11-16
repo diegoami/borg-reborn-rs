@@ -32,7 +32,15 @@ crate and `harness/measurement/`.
 
 ## Angband Recorder (owner integration, 2026-11-14)
 
-Optional recorder crate/host adapter v0.1.0 at c4986b26b9fd1c14852df4f1b7393d9030cf812a. See recorder-pin.json and docs/ANGBAND-RECORDER.md. Donor credits are retained in the vendored CREDITS.md; engine/Borg policy is unchanged.
+Optional recorder crate/host adapter v0.2.0 at
+`ee8b133ad22f66e7dad6e1b63a2d3e40b9a41ebd`, adopted in #351. All 41
+release files remain verbatim and sealed in recorder-pin.json. The receiving
+hook patch derives from the release adapter, preserving our harness hooks
+and applying only to the generated upstream-42cd156ac copy. Donor licences
+and credits remain in the vendor. The earlier v0.1.0 pin was
+`c4986b26b9fd1c14852df4f1b7393d9030cf812a`; its sessions retain their
+original identity and are not migrated. See ANGBAND-RECORDER.md for the
+schema boundary and consumer validation.
 
 ## M13 refresh (#328)
 
@@ -42,6 +50,15 @@ The three-way refresh preserves declared OURS/HOOKED changes.
 [Integration decisions](M13-INTEGRATION.md) enumerate conflicts, the native
 read-only query patch, receiving option ABI adapter and parameter migration.
 Engine/harness, recorder and cemetery integration remain receiving-owned.
+
+## Home-oscillation and additive-trip refresh (#368)
+
+borg-core now vendors diegoami/borg-rs `8c5d000a58e9ddca1f1954ab9552e505856b313f`
+(main, the merge of borg-rs#92), refreshed three-way from `1443c2d` with no
+conflicts. It adds borg-rs#88 (the trip policy only adds return requests) and
+borg-rs#92 (the live town planner does not undo a confirmed Home move within
+one town visit, borg-rs#90). Both act only with `borg_town_plan = 1` or
+`borg_trip_policy = 1`.
 
 ## Recorded wild-cat incident fix (#350)
 
