@@ -1,6 +1,6 @@
 /* Synthetic P1 build projection. Native mechanics are in player.c,
  * player-calcs.c:calc_hitpoints and obj-make.c:object_prep at engine/UPSTREAM.
- * Deliberately supports only Human Warriors and mundane base-kind items.
+ * @1 supports Human Warriors; @2 adds the four pure casters and spell state.
  * Unsupported properties fail, never silently become weaker invented gear. */
 #include "angband.h"
 #include "init.h"
@@ -11,14 +11,18 @@
 #include "obj-make.h"
 #include "obj-pile.h"
 #include "obj-util.h"
+#include "obj-tval.h"
 #include "player.h"
 #include "player-calcs.h"
+#include "player-timed.h"
+#include "player-util.h"
 #include "synthetic-build.h"
 #include <errno.h>
 #include <openssl/sha.h>
 
 #define BUILD_LIMIT 16384
 #define ITEMS_LIMIT 48
+#define SPELLS_LIMIT 64
 #define ENGINE_PIN SYNTHETIC_ENGINE_PIN
 
 static void fail(void) { quit("borgh: invalid or unsupported synthetic character build"); }
@@ -58,23 +62,67 @@ static bool plain(const struct object *obj)
     return equal;
 }
 
+/* Native spell semantics: player-spell.c:spell_learn and
+ * player-calcs.c:calc_spells at ENGINE_PIN. Preserve the entire indexed
+ * arrays, including first-cast XP flags and learning order, not just names. */
+static void validate_spells(long spells[SPELLS_LIMIT][2], int count)
+{
+    bool seen[SPELLS_LIMIT] = {false}, ended = false;
+    int i;
+    for (i = 0; i < count; ++i) {
+        long flags = spells[i][0], order = spells[i][1];
+        if (flags < 0 || flags > 7 ||
+            ((flags & PY_SPELL_LEARNED) && (flags & PY_SPELL_FORGOTTEN)) ||
+            ((flags & PY_SPELL_WORKED) && !(flags & (PY_SPELL_LEARNED | PY_SPELL_FORGOTTEN)))) fail();
+        if (order == 99) { ended = true; continue; }
+        if (ended || order < 0 || order >= count || seen[order]) fail();
+        seen[order] = true;
+    }
+    for (i = 0; i < count; ++i)
+        if (seen[i] != !!(spells[i][0] & (PY_SPELL_LEARNED | PY_SPELL_FORGOTTEN))) fail();
+}
+
+/* Charged devices need per-kind charge/knowledge support (#411); @2 refuses
+ * them rather than exposing an arbitrary pooled pval as a caster loadout. */
+static bool caster_item(const struct object *obj)
+{
+    if (tval_is_wand(obj) || tval_is_staff(obj) || tval_is_rod(obj) || obj->pval) return false;
+    if (tval_is_light(obj)) {
+        if (of_has(obj->flags, OF_BURNS_OUT)) return obj->timeout <= z_info->fuel_torch;
+        if (of_has(obj->flags, OF_TAKES_FUEL)) return obj->timeout <= z_info->fuel_lamp;
+    }
+    return obj->timeout == 0;
+}
+
 void synthetic_build_capture(const char *path)
 {
     struct object *obj;
-    int i, count = 0, pack_count = 0;
+    int i, count = 0, pack_count = 0, version = player->class->cidx == 0 ? 1 : 2;
+    int spell_count = player->class->magic.total_spells;
+    long spells[SPELLS_LIMIT][2];
     FILE *fp;
-    if (player->race->ridx != 0 || player->class->cidx != 0 ||
-        player->lev > 15 || player->lev != player->max_lev || player->msp != 0)
+    if (player->lev < 1 || player->lev > 15 || player->lev != player->max_lev ||
+        (version == 1 && (player->race->ridx != 0 || player->msp != 0)) ||
+        (version == 2 && (player->class->cidx < 1 || player->class->cidx > 4 ||
+                         player->race->ridx > 10 || spell_count < 1 || spell_count > SPELLS_LIMIT)))
         fail();
+    if (version == 2) {
+        if (player->is_dead || player->chp < 0 || player->shape != lookup_player_shape("normal")) fail();
+        for (i = 0; i < TMD_MAX; ++i) if (i != TMD_FOOD && player->timed[i]) fail();
+        for (i = 0; i < spell_count; ++i) {
+            spells[i][0] = player->spell_flags[i]; spells[i][1] = player->spell_order[i];
+        }
+        validate_spells(spells, spell_count);
+    }
     for (i = 0; i < STAT_MAX; ++i)
         if (player->stat_cur[i] != player->stat_max[i]) fail();
     for (obj = player->gear; obj; obj = obj->next)
-        if (!plain(obj) || ++count > ITEMS_LIMIT || obj->number < 1 || obj->number > 40 ||
+        if (!plain(obj) || (version == 2 && !caster_item(obj)) || ++count > ITEMS_LIMIT || obj->number < 1 || obj->number > 40 ||
             abs(obj->to_h) > 20 || abs(obj->to_d) > 20 || abs(obj->to_a) > 20 || obj->pval < 0 || obj->timeout < 0 ||
             (!object_is_equipped(player->body, obj) && ++pack_count > z_info->pack_size)) fail();
     fp = fopen(path, "wx");
     if (!fp) quit("borgh: cannot create synthetic build capture (preserve existing file)");
-    fprintf(fp, "schema:borg-reborn-rs/character-build@1\nengine:%s\n", ENGINE_PIN);
+    fprintf(fp, "schema:borg-reborn-rs/character-build@%d\nengine:%s\n", version, ENGINE_PIN);
     fprintf(fp, "identity:%d:%d:%d\n", player->race->ridx, player->class->cidx, player->lev);
     fprintf(fp, "observed:%ld:%d:%d\n", (long)turn, player->chp, player->csp);
     fprintf(fp, "vitals:%ld:%ld:%d:%d\n", (long)player->exp, (long)player->au, player->mhp, player->msp);
@@ -83,6 +131,10 @@ void synthetic_build_capture(const char *path)
     fprintf(fp, "\nhp-rolls");
     for (i = 0; i < PY_MAX_LEVEL; ++i) fprintf(fp, ":%d", player->player_hp[i]);
     fprintf(fp, "\nknowledge:%d:%d:%d\n", player->obj_k->to_h, player->obj_k->to_d, player->obj_k->to_a);
+    if (version == 2) {
+        fprintf(fp, "spells:%d:%d\n", spell_count, player->upkeep->new_spells);
+        for (i = 0; i < spell_count; ++i) fprintf(fp, "spell:%ld:%ld\n", spells[i][0], spells[i][1]);
+    }
     for (obj = player->gear; obj; obj = obj->next)
         fprintf(fp, "item:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d\n", obj->tval, obj->sval,
             obj->number, object_is_equipped(player->body, obj) ? object_slot(player->body, obj) : -1, obj->to_h, obj->to_d, obj->to_a,
@@ -110,12 +162,13 @@ static void numbers(char *line, const char *label, int count, long *values)
     }
 }
 
-void synthetic_build_apply(const char *path, char digest[65])
+void synthetic_build_apply(const char *path, char digest[65], int *version)
 {
     char bytes[BUILD_LIMIT + 1], *line, *context;
     unsigned char hash[SHA256_DIGEST_LENGTH];
     long identity[3], observed[3], vitals[4], stats[STAT_MAX], hp[PY_MAX_LEVEL], knowledge[3];
     long items[ITEMS_LIMIT][10];
+    long spell_info[2] = {0}, spells[SPELLS_LIMIT][2];
     struct object *prepared[ITEMS_LIMIT];
     bool slots[64] = {false};
     size_t size;
@@ -131,7 +184,10 @@ void synthetic_build_apply(const char *path, char digest[65])
     digest[64] = '\0';
     bytes[size] = '\0';
     line = strtok_r(bytes, "\n", &context);
-    if (!line || !streq(line, "schema:borg-reborn-rs/character-build@1")) fail();
+    if (!line) fail();
+    if (streq(line, "schema:borg-reborn-rs/character-build@1")) *version = 1;
+    else if (streq(line, "schema:borg-reborn-rs/character-build@2")) *version = 2;
+    else fail();
     line = strtok_r(NULL, "\n", &context);
     if (!line || !streq(line, "engine:" ENGINE_PIN)) fail();
     numbers(strtok_r(NULL, "\n", &context), "identity", 3, identity);
@@ -140,11 +196,23 @@ void synthetic_build_apply(const char *path, char digest[65])
     numbers(strtok_r(NULL, "\n", &context), "stats", STAT_MAX, stats);
     numbers(strtok_r(NULL, "\n", &context), "hp-rolls", PY_MAX_LEVEL, hp);
     numbers(strtok_r(NULL, "\n", &context), "knowledge", 3, knowledge);
-    if (identity[0] != 0 || identity[1] != 0 || identity[2] < 1 || identity[2] > 15 ||
-        player->race->ridx != 0 || player->class->cidx != 0 || player->body.count > 64 ||
+    if ((*version == 1 && (identity[0] != 0 || identity[1] != 0)) ||
+        (*version == 2 && (identity[0] < 0 || identity[0] > 10 || identity[1] < 1 || identity[1] > 4)) ||
+        identity[2] < 1 || identity[2] > 15 ||
+        player->race->ridx != identity[0] || player->class->cidx != identity[1] || player->body.count > 64 ||
         vitals[0] < 0 || vitals[0] > 100000000 || vitals[1] < 0 || vitals[1] > 100000000 ||
-        vitals[2] < 1 || vitals[2] > 10000 || vitals[3] != 0 || observed[0] < 0 ||
-        observed[1] < 0 || observed[1] > vitals[2] || observed[2] != 0) fail();
+        vitals[2] < 1 || vitals[2] > 10000 || vitals[3] < 0 || vitals[3] > 10000 ||
+        (*version == 1 && vitals[3] != 0) || observed[0] < 0 ||
+        observed[1] < 0 || observed[1] > vitals[2] || observed[2] < 0 || observed[2] > vitals[3]) fail();
+    if (*version == 2) {
+        numbers(strtok_r(NULL, "\n", &context), "spells", 2, spell_info);
+        if (spell_info[0] < 1 || spell_info[0] > SPELLS_LIMIT ||
+            spell_info[0] != player->class->magic.total_spells ||
+            spell_info[1] < 0 || spell_info[1] > spell_info[0]) fail();
+        for (i = 0; i < spell_info[0]; ++i)
+            numbers(strtok_r(NULL, "\n", &context), "spell", 2, spells[i]);
+        validate_spells(spells, spell_info[0]);
+    }
     if ((identity[2] > 1 && vitals[0] < player_exp[identity[2]-2] * player->expfact / 100L) ||
         vitals[0] >= player_exp[identity[2]-1] * player->expfact / 100L) fail();
     for (i = 0; i < STAT_MAX; ++i) if (stats[i] < 3 || stats[i] > 118) fail();
@@ -174,6 +242,7 @@ void synthetic_build_apply(const char *path, char digest[65])
         obj->pval = items[count][7]; obj->timeout = items[count][8];
         /* Bound the supported ordinary tier rather than expose wizard kits. */
         if (abs(obj->to_h) > 20 || abs(obj->to_d) > 20 || abs(obj->to_a) > 20 || obj->pval < 0) fail();
+        if (*version == 2 && !caster_item(obj)) fail();
         slot = items[count][3];
         if (slot >= 0) {
             int natural = wield_slot(obj);
@@ -201,6 +270,9 @@ void synthetic_build_apply(const char *path, char digest[65])
     for (i = 0; i < STAT_MAX; ++i)
         player->stat_max[i] = player->stat_cur[i] = player->stat_birth[i] = stats[i];
     for (i = 0; i < PY_MAX_LEVEL; ++i) player->player_hp[i] = hp[i];
+    for (i = 0; i < spell_info[0]; ++i) {
+        player->spell_flags[i] = spells[i][0]; player->spell_order[i] = spells[i][1];
+    }
     player->obj_k->to_h = knowledge[0]; player->obj_k->to_d = knowledge[1]; player->obj_k->to_a = knowledge[2];
     for (j = 0; j < count; ++j) {
         struct object *obj = prepared[j];
@@ -220,8 +292,15 @@ void synthetic_build_apply(const char *path, char digest[65])
     }
     update_player_object_knowledge(player);
     player->upkeep->update |= PU_BONUS | PU_INVEN | PU_HP | PU_MANA | PU_TORCH;
+    if (*version == 2) player->upkeep->update |= PU_SPELLS;
     update_stuff(player);
     if (player->mhp != vitals[2] || player->msp != vitals[3] || pack_is_overfull()) fail();
-    player->chp = player->mhp; player->csp = player->msp;
+    if (*version == 2) {
+        if (player->upkeep->new_spells != spell_info[1]) fail();
+        for (i = 0; i < spell_info[0]; ++i)
+            if (player->spell_flags[i] != spells[i][0] || player->spell_order[i] != spells[i][1]) fail();
+    }
+    player->chp = *version == 2 ? observed[1] : player->mhp;
+    player->csp = *version == 2 ? observed[2] : player->msp;
     player->chp_frac = player->csp_frac = 0;
 }

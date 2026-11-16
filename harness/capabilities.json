@@ -1,7 +1,12 @@
 {
   "schema": "borg-reborn-rs/harness-capabilities@1",
-  "contracts": ["borg-reborn-rs/synthetic-start@2"],
-  "cores": ["reborn", "borg-rs"],
+  "contracts": [
+    "borg-reborn-rs/synthetic-start@2"
+  ],
+  "cores": [
+    "reborn",
+    "borg-rs"
+  ],
   "character_build_schema": "borg-reborn-rs/character-build@1",
   "character_build_support": {
     "race_idx": 0,
@@ -9,6 +14,56 @@
     "maximum_level": 15,
     "maximum_bytes": 16384,
     "items": "mundane base-kind properties with combat bonuses, charges, fuel and awareness",
-    "unsupported": ["artifacts", "egos", "curses", "brands", "slays", "nonzero item stat modifiers", "nondefault kind flags or elements"]
+    "unsupported": [
+      "artifacts",
+      "egos",
+      "curses",
+      "brands",
+      "slays",
+      "nonzero item stat modifiers",
+      "nondefault kind flags or elements"
+    ]
+  },
+  "character_build_schemas": [
+    "borg-reborn-rs/character-build@1",
+    "borg-reborn-rs/character-build@2"
+  ],
+  "caster_build_support": {
+    "schema": "borg-reborn-rs/character-build@2",
+    "race_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "class_indices": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "maximum_level": 15,
+    "maximum_bytes": 16384,
+    "spell_state": "complete indexed flags and learning order, native recalculation verified",
+    "resources": "observed integral HP/SP; fractional resources reset",
+    "unsupported": [
+      "charged devices",
+      "item stat modifiers",
+      "active timed effects except nutrition",
+      "shapechange",
+      "stat or experience drain",
+      "artifacts",
+      "egos",
+      "curses",
+      "brands",
+      "slays"
+    ]
   }
 }
