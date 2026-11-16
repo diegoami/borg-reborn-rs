@@ -17,6 +17,71 @@ struct Selection {
     name: Option<&'static str>,
     source: Option<&'static str>,
     errand: Option<(String, Option<i32>)>,
+    attacks: Vec<AttackRanking>,
+}
+
+/// One native attack-selector invocation. Multiple attempts in one think are
+/// retained; nested thinks use their own Selection frames. Data never feeds policy.
+#[derive(Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub(crate) struct AttackRanking {
+    candidates: Vec<AttackCandidate>,
+    winner: Option<i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+struct AttackCandidate {
+    attack_id: i32,
+    attack_name: Option<String>,
+    family: Option<String>,
+    class_id: i32,
+    class_name: Option<String>,
+    // Only the aggregate result is available here. Do not claim a nonpositive
+    // return identifies a specific immunity, mana or charge rejection.
+    eligibility: String,
+    raw_utility: i32,
+    parameter_name: Option<String>,
+    effective_weight: i32,
+    parameter_origin: String,
+    adjusted_utility: i32,
+    incumbent_changed: bool,
+}
+
+impl AttackRanking {
+    pub(crate) fn candidate(&mut self, class: i32, id: i32, raw: i32,
+        result: &crate::attack_preference::Candidate, changed: bool) {
+        self.candidates.push(AttackCandidate {
+            attack_id: id,
+            attack_name: result.attack.map(|a| a.name.into()),
+            family: result.attack.map(|a| a.family.name().into()),
+            class_id: class,
+            class_name: crate::attack_preference::class_name(class).map(str::to_owned),
+            eligibility: if result.attack.is_none() { "unknown_attack" }
+                else if raw <= 0 { "nonpositive_return" } else { "positive_return" }.into(),
+            raw_utility: raw,
+            parameter_name: result.parameter.map(|p| crate::params::SPECS[p as usize].name.into()),
+            effective_weight: result.weight,
+            parameter_origin: result.origin.into(),
+            adjusted_utility: result.adjusted,
+            incumbent_changed: changed,
+        });
+    }
+}
+
+/// Allocate candidate records only when a trace frame is active. No frame borrow
+/// survives simulation (which may reenter thinking); no engine reads or RNG.
+pub(crate) fn attack_ranking() -> Option<AttackRanking> {
+    FRAMES.with(|frames| (!frames.borrow().is_empty()).then(AttackRanking::default))
+}
+
+pub(crate) fn record_attack_ranking(trace: Option<AttackRanking>, winner: Option<i32>) {
+    if let Some(mut trace) = trace {
+        trace.winner = winner;
+        FRAMES.with(|frames| {
+            if let Some(frame) = frames.borrow_mut().last_mut() {
+                frame.attacks.push(trace);
+            }
+        });
+    }
 }
 
 thread_local! {
@@ -66,6 +131,8 @@ struct Line {
     errand: Option<Errand>,
     keys: Vec<u32>,
     acted: bool,
+    #[serde(default)]
+    attacks: Vec<AttackRanking>,
 }
 
 fn failure(error: impl std::fmt::Display) -> ! {
@@ -146,7 +213,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
     }
     .map(|(name, target)| Errand { name, target });
     let mut line = Line {
-        schema: "borg-reborn-rs/core-trace@1".into(),
+        schema: "borg-reborn-rs/core-trace@2".into(),
         think: 0,
         turn: crate::engine::game_turn(),
         borg_turn: st.borg.time.now,
@@ -169,6 +236,7 @@ pub(crate) fn finish(st: &mut BorgState, active: bool, acted: bool) {
         errand,
         keys: st.io.queued_keys(),
         acted,
+        attacks: frame.attacks,
     };
     let writer = WRITER.get_or_init(|| {
         let path = PATH
@@ -207,9 +275,40 @@ mod tests {
     }
 
     #[test]
+    fn attack_attempts_are_retained_and_nested_frames_are_isolated() {
+        use crate::borg_headers::borg_fight_attack_h::*;
+        FRAMES.with(|f| f.borrow_mut().push(Selection::default()));
+        let mut outer = attack_ranking().unwrap();
+        let result = crate::attack_preference::evaluate(1, BF_THRUST as i32, 25);
+        outer.candidate(1, BF_THRUST as i32, 25, &result, true);
+        FRAMES.with(|f| f.borrow_mut().push(Selection::default()));
+        let mut inner = attack_ranking().unwrap();
+        let invalid = crate::attack_preference::evaluate(1, BF_WAND_MAGIC_MISSILE as i32, 0);
+        inner.candidate(1, BF_WAND_MAGIC_MISSILE as i32, 0, &invalid, false);
+        record_attack_ranking(Some(inner), None);
+        let nested = FRAMES.with(|f| f.borrow_mut().pop().unwrap());
+        assert_eq!(nested.attacks.len(), 1);
+        assert_eq!(nested.attacks[0].winner, None);
+        assert_eq!(nested.attacks[0].candidates[0].eligibility, "nonpositive_return");
+        record_attack_ranking(Some(outer), Some(BF_THRUST as i32));
+        record_attack_ranking(attack_ranking(), None);
+        let frame = FRAMES.with(|f| f.borrow_mut().pop().unwrap());
+        assert_eq!(frame.attacks.len(), 2);
+        let trace = &frame.attacks[0];
+        assert_eq!(trace.winner, Some(BF_THRUST as i32));
+        assert_eq!(trace.candidates[0].raw_utility, 25);
+        assert_eq!(trace.candidates[0].adjusted_utility, 25);
+        assert_eq!(trace.candidates[0].parameter_origin, "default");
+        assert_eq!(trace.candidates[0].parameter_name.as_deref(), Some("attack_preference_mage_melee_permille"));
+        let json = serde_json::to_string(trace).unwrap();
+        assert_eq!(serde_json::from_str::<AttackRanking>(&json).unwrap(), *trace);
+        assert!(attack_ranking().is_none());
+    }
+
+    #[test]
     fn line_round_trips_with_keys_and_errand() {
         let line = Line {
-            schema: "borg-reborn-rs/core-trace@1".into(),
+            schema: "borg-reborn-rs/core-trace@2".into(),
             think: 9,
             turn: 1234,
             borg_turn: 120,
@@ -235,6 +334,7 @@ mod tests {
             }),
             keys: vec![27, 82, 49, 48, 48, 13, 0x80],
             acted: true,
+            attacks: vec![],
         };
         let text = serde_json::to_string(&line).unwrap();
         assert!(!text.contains('\n'));

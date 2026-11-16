@@ -7,7 +7,8 @@ of `-summary FILE` when BORG_RUN_DIR is absent (P3). Set
 directory or frontend summary destination it is disabled. This stream is separate from the original
 reborn core's `trace.jsonl`.
 
-Schema `borg-reborn-rs/core-trace@1` records:
+New output uses schema `borg-reborn-rs/core-trace@2`. Historical `@1` evidence
+remains valid; consumers retain support for it. Schema `@2` records:
 
 - `think`: monotonically increasing output sequence, starting at 1;
 - `turn`: engine turn; `borg_turn`: the core's clock;
@@ -20,7 +21,20 @@ Schema `borg-reborn-rs/core-trace@1` records:
 - `goals`: leaving, fleeing, fleeing_to_town and rising;
 - `errand`: its name and optional target, or null;
 - `keys`: queued numeric keycodes in consumption order; `acted`: the
-  think's original boolean return.
+  think's original boolean return;
+- `attacks`: each attack-ranking invocation completed in this think, with
+  ordered `candidates` and a `winner` BF ID (or null). Candidates record
+  attack ID/name, invocation family, class ID/name, `raw_utility`,
+  `adjusted_utility`, `parameter_name`, `effective_weight`,
+  `parameter_origin`, `eligibility` and `incumbent_changed`. Eligibility is
+  `positive_return`, `nonpositive_return` or `unknown_attack`, not an
+  inferred immunity, mana or charge diagnosis. An empty array means no
+  ranking invocation was recorded. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md).
+
+Attack rankings capture original simulation returns without rerunning helpers.
+Repeated attempts append separate rankings; nested thinks keep their own
+rankings. Tracing does not affect selection or execution. The `attacks` field
+is absent from historical `@1` rows; it must not be inferred from them.
 
 State is sampled after the decision and before queued keys are consumed.
 Keys describe the whole pending queue, including any already queued by an

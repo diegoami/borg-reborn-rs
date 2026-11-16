@@ -109,6 +109,8 @@ pub mod shell;
 pub(crate) mod params;
 // borg-reborn-rs (#222): observational decision tracing.
 pub(crate) mod core_trace;
+// borg-reborn-rs (#403): pure class/family attack ranking.
+pub(crate) mod attack_preference;
 
 /// The `^Z` command of this core (borg-reborn-rs #207): the shell's
 /// `do_cmd_borg` calls it when `BORG_CORE=borg-rs` selects this core.
