@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-1-mage-3",
+      "raw_sha256": {
+        "keys.log": "576982de6590d55775a7d86f95a4bdaba84cc6e29342ca925189c2931afda604",
+        "messages.log": "ef9c078f8fffa1b990c2d58f3daec9d7c483d1e582d38701aa9347b5d50ed757",
+        "state.log": "d0477af2e30432f4310cb4c39b8b0023da90ebbd997c86477c39c802b084dc73"
+      },
+      "result_sha256": "576982de6590d55775a7d86f95a4bdaba84cc6e29342ca925189c2931afda604",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "Gnome Mage",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 2248
+  },
+  "encounter_family": "start-daa6676688e3f9d3fc4b8bc3dc4f1ab8d33c07ab9900e7e283e4c5f507eeffc8",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "4068e38cc60d1501ca2e4d283c058d4ff37c9854fd29cc520fb8ab93323685fd",
+    "depths.json": "f4a66d12d152414cc263f497705f61363125efdc84cdc792d884378f3a963ae6",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "ec457eb77dbc6468c6609e46f646b5bb537917fcb956a2eaf6fa63c206d548a8",
+    "trace-tail.jsonl": "46fb1987be77efc60a5627b41da2ac05ab8bd77708bfc077379c98e1d5a74e6b"
+  },
+  "id": "D0000-qbd724d6ecbbe7f5d4d37077607072db769b0eaf1b3e7b4a1e76ea142625a4d27",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "7dd8c4af6fd904edb4e8cd9cf8a62c042c16853260398b3bdd532811d275f0aa",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1013,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a battle-scarred veteran",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a battle-scarred veteran",
+    "class_idx": 1,
+    "dead": true,
+    "depth": 0,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 4,
+    "turn": 22980
+  }
+}

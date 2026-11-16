@@ -1,0 +1,55 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0001-rust-seed1011",
+  "run_kind": "harness",
+  "character": "Elf Mage",
+  "raw_cause": "a cave spider",
+  "terminal": {
+    "cause": "a cave spider",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 18903,
+    "race_idx": 2,
+    "class_idx": 1
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1011,
+    "flags": "menu",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "git_dirty": "no",
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c",
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "borg_txt_sha256": "9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/donor-full/full-1-mage-1",
+      "result_sha256": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+      "raw_sha256": {
+        "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+        "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+        "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+      },
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+      "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde"
+    }
+  ],
+  "encounter_family": "start-fdcfed69ea50e396878e0a856a81f9a2faa6936493d71e6fb22fc4a4ce8bf799",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "7f7b355f3e1a4ff06f212b40d1b9415dc8d11154359fbc20b65535f9e7265a97",
+    "config.txt": "a091b1a38b0c3eccfc044ed0e50c09ef0cd4a235af103152083108d38947084b",
+    "summary.json": "18c112215deb0b9e4b59846ddcc06c9b3354eaeb96c7b8bab0816dcad084611a"
+  },
+  "investigation": null,
+  "issue": null
+}

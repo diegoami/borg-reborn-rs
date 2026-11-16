@@ -1,0 +1,2 @@
+flags=menu
+borg_txt_sha256=bdf974aeb5d0b808057ada9ab76f74d8798ce1e8fd53e6cc5754631dc94e4d75

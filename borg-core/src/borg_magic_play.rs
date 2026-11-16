@@ -18,8 +18,8 @@ use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes};
 use crate::borg_magic::{borg_spell, BorgMagic, BORG_MAGIC_OKAY, BORG_MAGIC_TEST};
 use crate::engine;
 use crate::borg_headers::borg_magic_h::{
-    BLESS, COMMAND, CURSE, DECOY, FORCEFUL_BLOW, GLYPH_OF_WARDING, GRONDS_BLOW, LIGHTNING_STRIKE,
-    MAGIC_MISSILE, MAIM_FOE, REMOVE_CURSE, SINGLE_COMBAT, TAP_MAGICAL_ENERGY, TAP_UNLIFE, TREMOR,
+    COMMAND, CURSE, DECOY, FORCEFUL_BLOW, GLYPH_OF_WARDING, GRONDS_BLOW, LIGHTNING_STRIKE,
+    MAIM_FOE, REMOVE_CURSE, SINGLE_COMBAT, TAP_MAGICAL_ENERGY, TAP_UNLIFE, TREMOR,
     VAMPIRE_STRIKE, WORD_OF_DESTRUCTION,
 };
 use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_ISBLIND, BI_ISCONFUSED, BI_ISSTUDY, BI_LIGHT};
@@ -197,7 +197,7 @@ pub fn borg_play_magic(st: &mut BorgState, bored: bool) -> bool {
     }
 
     // Only in town
-    if st.borg.tr(BI_CDEPTH) != 0 && !st.borg.munchkin_mode {
+    if st.borg.tr(BI_CDEPTH) != 0 {
         return false;
     }
 
@@ -223,19 +223,6 @@ pub fn borg_play_magic(st: &mut BorgState, bored: bool) -> bool {
         // some spells can't be "played with" in town
         if !borg_can_play_spell(&as_) {
             continue;
-        }
-
-        // Some spells should not be tested in munchkin mode
-        if st.borg.munchkin_mode {
-            // Mage types
-            if engine::player_has(PF_CHOOSE_SPELLS) && as_.spell_enum == MAGIC_MISSILE {
-                continue;
-            }
-
-            // Priest type
-            if !engine::player_has(PF_CHOOSE_SPELLS) && as_.spell_enum == BLESS {
-                continue;
-            }
         }
 
         // Note

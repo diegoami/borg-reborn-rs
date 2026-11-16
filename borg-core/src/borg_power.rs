@@ -31,7 +31,7 @@ use crate::borg_item_activation::ActivationIds;
 use crate::borg_item_analyze::borg_ego_has_random_power;
 use crate::borg_magic::{borg_get_spell_entry, borg_spell_stat};
 use crate::borg_headers::borg_h::{
-    BORG_MUNCHKIN_LEVEL, BORG_MUNCHKIN_START, BORG_USES_DYNAMIC_CALCS, BORG_WORSHIPS_AC,
+    BORG_USES_DYNAMIC_CALCS, BORG_WORSHIPS_AC,
     BORG_WORSHIPS_DAMAGE, BORG_WORSHIPS_HP, BORG_WORSHIPS_MANA, BORG_WORSHIPS_SPEED,
 };
 use crate::borg_headers::borg_trait_h::*;
@@ -300,7 +300,7 @@ fn activation_bonus(a: &ActivationIds, class: i32, clevel: i32, act: i32) -> i32
 }
 
 /// Helper function -- calculate "power" of equipment
-fn borg_power_equipment(st: &BorgState) -> i32 {
+pub(crate) fn borg_power_equipment(st: &BorgState) -> i32 {
     let tr = |i: u32| st.borg.tr(i);
     let cfg = |i: u32| st.cfg(i) != 0;
     let items = &st.items.items;
@@ -1130,13 +1130,7 @@ fn borg_power_equipment(st: &BorgState) -> i32 {
 fn borg_power_inventory(st: &BorgState) -> i32 {
     let tr = |i: u32| st.borg.tr(i);
     let has = |kv: i32| st.borg.has[kv as usize];
-    let cfg = |i: u32| st.cfg(i);
     let iv = &st.item_val;
-
-    // `borg_cfg[BORG_MUNCHKIN_START] && borg.trait[BI_MAXCLEVEL] <
-    // borg_cfg[BORG_MUNCHKIN_LEVEL]`: "Do not carry these until later"
-    let munchkin_wait =
-        || cfg(BORG_MUNCHKIN_START) != 0 && tr(BI_MAXCLEVEL) < cfg(BORG_MUNCHKIN_LEVEL);
 
     let mut value: i32 = 0;
     let v = &mut value;
@@ -1192,7 +1186,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     }
 
     // collect Resistance pots if not immune -- All Classes
-    if tr(BI_IPOIS) == 0 && tr(BI_ACUREPOIS) <= param(Param::power_inventory_acurepois_threshold) && !munchkin_wait() {
+    if tr(BI_IPOIS) == 0 && tr(BI_ACUREPOIS) <= param(Param::power_inventory_acurepois_threshold) {
         k = 0;
         count_up(v, &mut k, param(Param::power_inventory_arespois_limit), tr(BI_ARESPOIS), i64::from(param(Param::power_inventory_arespois_weight)));
     }
@@ -1200,7 +1194,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward Resistance Potions for Warriors
     if tr(BI_CLASS) == CLASS_WARRIOR && tr(BI_MAXDEPTH) > param(Param::power_inventory_maxdepth_threshold) {
         k = 0;
-        if !munchkin_wait() {
+        {
             // collect pots if not immune
             if tr(BI_IFIRE) == 0 {
                 count_up(v, &mut k, param(Param::power_inventory_aresheat_limit), tr(BI_ARESHEAT), i64::from(param(Param::power_inventory_aresheat_weight)));
@@ -1237,7 +1231,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     //  Reward PFE carry lots of these
     k = 0;
-    if !munchkin_wait() {
+    {
         count_up(v, &mut k, param(Param::power_inventory_apfe_limit), tr(BI_APFE), i64::from(param(Param::power_inventory_apfe_weight)));
         count_up(v, &mut k, param(Param::power_inventory_apfe_limit_2), tr(BI_APFE), i64::from(param(Param::power_inventory_apfe_weight_2)));
     }
@@ -1259,7 +1253,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // Reward recall
     k = 0;
-    if tr(BI_CLEVEL) > param(Param::power_inventory_clevel_threshold_3) && !munchkin_wait() {
+    if tr(BI_CLEVEL) > param(Param::power_inventory_clevel_threshold_3) {
         count_up(v, &mut k, param(Param::power_inventory_recall_limit), tr(BI_RECALL), i64::from(param(Param::power_inventory_recall_weight)));
         if tr(BI_STR) >= param(Param::power_inventory_str_threshold_4) {
             count_up(v, &mut k, param(Param::power_inventory_recall_limit_2), tr(BI_RECALL), i64::from(param(Param::power_inventory_recall_weight_2)));
@@ -1276,7 +1270,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     if tr(BI_APHASE) != 0 {
         *v = addi(*v, 50000);
     }
-    if !munchkin_wait() {
+    {
         count_up(v, &mut k, param(Param::power_inventory_aphase_limit), tr(BI_APHASE), i64::from(param(Param::power_inventory_aphase_weight)));
         if tr(BI_STR) >= param(Param::power_inventory_str_threshold_5) {
             count_up(v, &mut k, param(Param::power_inventory_aphase_limit_2), tr(BI_APHASE), i64::from(param(Param::power_inventory_aphase_weight_2)));
@@ -1285,7 +1279,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // Reward escape (staff of teleport or artifact)
     k = 0;
-    if !munchkin_wait() {
+    {
         count_up(v, &mut k, param(Param::power_inventory_aescape_limit), tr(BI_AESCAPE), i64::from(param(Param::power_inventory_aescape_weight)));
         if tr(BI_MAXDEPTH) > param(Param::power_inventory_maxdepth_threshold_5) {
             k = 0;
@@ -1434,22 +1428,20 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // Reward Cures
     if tr(BI_RCONF) == 0 {
-        if cfg(BORG_MUNCHKIN_START) != 0 && tr(BI_MAXCLEVEL) < param(Param::power_inventory_maxclevel_threshold_2) {
-            // Do not carry these until later
-        } else {
+        {
             k = 0;
             count_up(v, &mut k, param(Param::power_inventory_food_cure_conf_limit), tr(BI_FOOD_CURE_CONF), i64::from(param(Param::power_inventory_food_cure_conf_weight)));
         }
     }
     if tr(BI_RBLIND) == 0 {
         k = 0;
-        if !munchkin_wait() {
+        {
             count_up(v, &mut k, param(Param::power_inventory_food_cure_blind_limit), tr(BI_FOOD_CURE_BLIND), i64::from(param(Param::power_inventory_food_cure_blind_weight)));
         }
     }
     if tr(BI_RPOIS) == 0 {
         k = 0;
-        if !munchkin_wait() {
+        {
             count_up(v, &mut k, param(Param::power_inventory_acurepois_limit), tr(BI_ACUREPOIS), i64::from(param(Param::power_inventory_acurepois_weight)));
         }
     }
@@ -1489,7 +1481,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // Reward speed potions/rods/staves (but no staves deeper than depth 95)
     k = 0;
-    if !munchkin_wait() {
+    {
         count_up(v, &mut k, param(Param::power_inventory_aspeed_limit_2), tr(BI_ASPEED), i64::from(param(Param::power_inventory_aspeed_weight_2)));
     }
 

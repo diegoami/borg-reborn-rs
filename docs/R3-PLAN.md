@@ -68,23 +68,23 @@ gate narrowly for the new accessor path and keep manual dependency review.
    Keep default-off town/trip behavior and the receiving native ABI adapter.
    Moving reference pins remain a separate refresh PR, with changed helpers
    and evidence read before carries. Consume only owner-reviewed P promotion.
-2. Introduce the cheap named accessor and migrate existing stateful reads
+2. #363: introduce the cheap named accessor and migrate existing stateful reads
    without moving expressions across effects or changing policy. Retain
    accepted R2 evidence as historical; validate the exact new runtime inputs
    and record every natural death. Include scalar-mapping/freshness/lifetime
    checks plus native smoke and full parity before declaring migration done.
-3. Port attack's complete native public surface and internal policy into
+3. #364: port attack's complete native public surface and internal policy into
    borg-next. The pinned attack file is 4,583 physical lines. Audit every
    engine/RNG call, returned borrowed fact and mutable simulation state.
    Extend typed query/effect requests and scalar comparison hooks as needed;
    never pass shared native policy results off as independently ported logic.
-4. Port defence (3,592 physical lines) including all public helpers and
+4. #365: port defence (3,592 physical lines) including all public helpers and
    attack/escape cross-calls. Attack plus defence is 8,175 physical lines at
    this baseline. borg_fight_perm is a separate 775-line shared dependency,
    not silently included in that estimate; porting it requires an explicit
    scope and named-parameter audit. State item/spell lifetimes and shared
    dependencies in the report. Preserve native simulation restoration.
-5. Validate the combined exact build: off/check/switch smoke; check full
+5. #366: validate the combined exact build: off/check/switch smoke; check full
    with zero disagreements; switch full 45/45 exact M13 donor keys/messages/states;
    per-entry and rare-path fixtures; durable non-vacuity controls and matching
    re-ports. Repeat native nesting where adapters change. Keep engine/RNG

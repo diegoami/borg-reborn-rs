@@ -16,6 +16,7 @@ gave is covered by determinism and the Borg's own logs.*
 | `reconcile-deaths.py` | CI: every death of a CI run is in the registry; with `--runs DIR …`, every natural death in those run outputs has a dossier of the same encounter family and key stream (E review finding 3, M2 review finding 7). The comparison baseline is `--registry` (default the retained `docs/deaths/`) |
 | `check-perception.py` | T2.5: over runs of a `test-perception` build, fails on any think whose observation or world disagrees with the engine (map memory, visible monsters, gear list, pack count) or whose status is in no `state.log` line of its turn; counts what the Borg does not see by design (off the map panel). Every run of a suite directory needs a truth log with one line per Borg decision (M2 review, finding 4) |
 | `depth-stream.py` | Run by `harness/run.sh`: `depths.json`, the first turn at each depth |
+| `import-deaths.py` | Qualifies immutable native evidence packages for historical/CI integration; preserves original records and all payload bytes; `--check` verifies the retained archive (docs/DOSSIER-IMPORT.md) |
 | `tests/` | Unit tests of the above (`python3 -m unittest discover -s tools/tests`) |
 
 To watch the Borg play: `./watch-borg.sh` at the repository's root.
@@ -24,14 +25,16 @@ To watch the Borg play: `./watch-borg.sh` at the repository's root.
 
 1. Check out the dossier's `git_rev` (in `record.json`) if the current
    build is another source, and run `BORG_IMPL=rust harness/build.sh`.
-2. `tools/rerun-death.py docs/deaths/DXXXX-... OUT --checkpoint-every 500`
-   (the dossier's directory is `$BORG_DEATH_RECORDS_DIR`, default
-   `docs/deaths/`; the canonical copy lives in
-   [borg-cemetery](https://github.com/diegoami/borg-cemetery)).
+2. `tools/rerun-death.py /path/to/borg-cemetery/deaths/DXXXX-... OUT --checkpoint-every 500`.
+   Use the actual dossier directory: new exports default to
+   [borg-cemetery](https://github.com/diegoami/borg-cemetery)'s `deaths/`,
+   or the explicit `BORG_DEATH_RECORDS_DIR` override. Historical
+   `docs/deaths/DXXXX-...` dossiers remain usable at their existing paths.
 3. Read the rerun's trace and observations up to the death, or load a
    checkpoint before it.
-4. Write the findings into the dossier's `assessment.json` and `report.md`,
-   then regenerate the index.
+4. Write findings in the cemetery-owned dossier and regenerate its index.
+   Qualified historical packages are immutable evidence snapshots; keep new
+   analysis in the cemetery rather than editing the imported package.
 
 ## Cemetery-owned death tools
 

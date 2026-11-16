@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D2515-rust-seed1073",
+  "run_kind": "harness",
+  "character": "Kobold Ranger",
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 3,
+    "turn": 65568,
+    "race_idx": 10,
+    "class_idx": 7
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1073,
+    "flags": "menu",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "git_dirty": "yes",
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc",
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "42d1d3b257919573c17fa10b2751ff42fa05c741b8d5e675dd22f01fae1fc629",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": null
+  },
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 6301
+  },
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-7-ranger-3",
+      "result_sha256": "3e57a8ab9f6658b1589fe9b04c01775f8a7257e5c75f7580d4d8cc07cfdc6bc7",
+      "raw_sha256": {
+        "keys.log": "3e57a8ab9f6658b1589fe9b04c01775f8a7257e5c75f7580d4d8cc07cfdc6bc7",
+        "messages.log": "a7e9abdf9cf85de233c6be34c770d110048c2b1180d1d067536105aca2d1fae8",
+        "state.log": "104d8d29be60b0a13ec12c5dae9f27ec3f716eb7bb63799124a908b92403e8ba"
+      },
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077"
+    }
+  ],
+  "encounter_family": "start-64fe89b8e2e273c82ac5471a6e2866d830ae6cebf491260efa4015ec29e6b3f0",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "c02e03fae859874769a1a646807d8b35bbc2cae1ff94cdd969ae80735501e0fa",
+    "depths.json": "2e14ddf5b31f950c38a1442f4210a7601c00f70c8ebebcc7a8a02165e05717e5",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "cb8fd88ecd873ab9c6d80221f9911f8cdc7027750c2dd6d9a510070dbb0ef23c",
+    "trace-tail.jsonl": "960cbe9b81c2d7dfd6da7ddfee0f8b9e578bd7e11cfdc217161cc0e1a4dcabc3"
+  },
+  "investigation": null,
+  "issue": null
+}

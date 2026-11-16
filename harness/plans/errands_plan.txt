@@ -1,0 +1,266 @@
+# POC candidate schedules, NOT calibrated recommendations.
+# Early level gates follow the existing owner-tuned class ladder groups;
+# later depth intervals are hypotheses, shared across classes pending evaluation.
+# Native readiness/emergency/town policy always overrides the requested loop.
+# Deliberately no phase at level 50: hand back for the next capability-based policy.
+# Town at 0 is a planned visit; later intervals rely on core-requested town recovery.
+
+[default]
+  level <= 3
+    loop-levels 0 1
+  3 < level <= 6
+    loop-levels 0 2
+  6 < level <= 8
+    loop-levels 0 3
+  level == 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[warrior]
+  level <= 2
+    loop-levels 0 1
+  2 < level <= 4
+    loop-levels 0 2
+  4 < level <= 6
+    loop-levels 0 3
+  6 < level <= 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[mage]
+  level <= 3
+    loop-levels 0 1
+  3 < level <= 6
+    loop-levels 0 2
+  6 < level <= 8
+    loop-levels 0 3
+  level == 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[druid]
+  level <= 3
+    loop-levels 0 1
+  3 < level <= 6
+    loop-levels 0 2
+  6 < level <= 8
+    loop-levels 0 3
+  level == 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[priest]
+  level <= 3
+    loop-levels 0 1
+  3 < level <= 6
+    loop-levels 0 2
+  6 < level <= 8
+    loop-levels 0 3
+  level == 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[necromancer]
+  level <= 3
+    loop-levels 0 1
+  3 < level <= 6
+    loop-levels 0 2
+  6 < level <= 8
+    loop-levels 0 3
+  level == 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[paladin]
+  level <= 2
+    loop-levels 0 1
+  2 < level <= 4
+    loop-levels 0 2
+  4 < level <= 6
+    loop-levels 0 3
+  6 < level <= 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[rogue]
+  level <= 2
+    loop-levels 0 1
+  2 < level <= 4
+    loop-levels 0 2
+  4 < level <= 6
+    loop-levels 0 3
+  6 < level <= 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[ranger]
+  level <= 2
+    loop-levels 0 1
+  2 < level <= 4
+    loop-levels 0 2
+  4 < level <= 6
+    loop-levels 0 3
+  6 < level <= 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45
+
+[blackguard]
+  level <= 2
+    loop-levels 0 1
+  2 < level <= 4
+    loop-levels 0 2
+  4 < level <= 6
+    loop-levels 0 3
+  6 < level <= 9
+    loop-levels 0 4
+  9 < level <= 14
+    loop-levels 0 8
+  14 < level <= 19
+    loop-levels 3 12
+  19 < level <= 24
+    loop-levels 8 20
+  24 < level <= 29
+    loop-levels 12 25
+  29 < level <= 34
+    loop-levels 20 30
+  34 < level <= 39
+    loop-levels 25 35
+  39 < level <= 44
+    loop-levels 30 40
+  44 < level <= 49
+    loop-levels 35 45

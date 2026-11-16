@@ -1,0 +1,231 @@
+{
+  "source_repository": "diegoami/borg-rs",
+  "source_ref": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "runs": [
+    {
+      "run": "full-0-warrior-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-0-warrior-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-0-warrior-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-0-warrior-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-0-warrior-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-1-mage-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-1-mage-1",
+      "case": "D0001-rust-seed1011",
+      "status": "exported"
+    },
+    {
+      "run": "full-1-mage-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-1-mage-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-1-mage-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-2-druid-0",
+      "case": "D0002-rust-seed1020",
+      "status": "exported"
+    },
+    {
+      "run": "full-2-druid-1",
+      "case": "D0003-rust-seed1021",
+      "status": "exported"
+    },
+    {
+      "run": "full-2-druid-2",
+      "case": "D0004-rust-seed1022",
+      "status": "exported"
+    },
+    {
+      "run": "full-2-druid-3",
+      "case": "D0005-rust-seed1023",
+      "status": "exported"
+    },
+    {
+      "run": "full-2-druid-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-3-priest-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-3-priest-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-3-priest-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-3-priest-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-3-priest-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-4-necro-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-4-necro-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-4-necro-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-4-necro-3",
+      "case": "D0006-rust-seed1043",
+      "status": "exported"
+    },
+    {
+      "run": "full-4-necro-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-5-paladin-0",
+      "case": "D0007-rust-seed1050",
+      "status": "exported"
+    },
+    {
+      "run": "full-5-paladin-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-5-paladin-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-5-paladin-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-5-paladin-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-6-rogue-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-6-rogue-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-6-rogue-2",
+      "case": "D0008-rust-seed1062",
+      "status": "exported"
+    },
+    {
+      "run": "full-6-rogue-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-6-rogue-4",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-7-ranger-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-7-ranger-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-7-ranger-2",
+      "case": "D0009-rust-seed1072",
+      "status": "exported"
+    },
+    {
+      "run": "full-7-ranger-3",
+      "case": "D0010-rust-seed1073",
+      "status": "exported"
+    },
+    {
+      "run": "full-7-ranger-4",
+      "case": "D0011-rust-seed1074",
+      "status": "exported"
+    },
+    {
+      "run": "full-8-blackguard-0",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-8-blackguard-1",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-8-blackguard-2",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-8-blackguard-3",
+      "case": null,
+      "status": "not dead"
+    },
+    {
+      "run": "full-8-blackguard-4",
+      "case": "D0012-rust-seed1084",
+      "status": "exported"
+    }
+  ]
+}

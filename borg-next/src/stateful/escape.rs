@@ -118,10 +118,6 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
                         // Do reset Depth
                         borg_note(st, "# Resetting recall depth.");
                         borg_keypress(st, key(b'y'));
-                    } else if st.borg.goal.fleeing_munchkin {
-                        // Do reset Depth
-                        borg_note(st, "# Resetting recall depth during munchkin mode.");
-                        borg_keypress(st, key(b'y'));
                     } else if crate::View::new(st).character.cdepth >= 100
                         && crate::View::new(st).status.king == 0
                     {

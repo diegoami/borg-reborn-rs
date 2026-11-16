@@ -8,6 +8,11 @@ pub use crate::state::BorgState;
 
 /// Trait indices at the vendored pin; meanings belong to borg-rs.
 pub mod traits {
+    pub use crate::borg_headers::borg_trait_h::BI_PSTUN;
+    pub use crate::borg_headers::borg_trait_h::BI_VACID;
+    pub use crate::borg_headers::borg_trait_h::BI_VCOLD;
+    pub use crate::borg_headers::borg_trait_h::BI_VELEC;
+    pub use crate::borg_headers::borg_trait_h::BI_VFIRE;
     pub use crate::borg_headers::borg_trait_h::BI_MAX;
     pub use crate::borg_headers::borg_trait_h::BI_PREP_BIG_FIGHT;
     pub use crate::borg_headers::borg_trait_h::BI_SAURON_DEAD;

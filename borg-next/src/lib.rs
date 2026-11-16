@@ -21,6 +21,11 @@ macro_rules! trait_group {
             fn read(state: &BorgState) -> Self {
                 Self { $($field: state.borg.tr($source),)* }
             }
+            #[cfg(test)]
+            fn check_sources(state: &BorgState) {
+                let group = Self::read(state);
+                $(assert_eq!(group.$field, state.borg.tr($source), stringify!($source));)*
+            }
         }
     };
 }
@@ -104,6 +109,11 @@ trait_group!(Abilities {
 });
 
 trait_group!(Resistances {
+    pstun => BI_PSTUN,
+    vacid => BI_VACID,
+    vcold => BI_VCOLD,
+    velec => BI_VELEC,
+    vfire => BI_VFIRE,
     ifire => BI_IFIRE,
     iacid => BI_IACID,
     icold => BI_ICOLD,
@@ -515,6 +525,23 @@ mod tests {
     }
 
     #[test]
+    fn every_named_trait_matches_its_native_source() {
+        let state = state();
+        Attributes::check_sources(&state);
+        Character::check_sources(&state);
+        Food::check_sources(&state);
+        Abilities::check_sources(&state);
+        Resistances::check_sources(&state);
+        Status::check_sources(&state);
+        Combat::check_sources(&state);
+        Ammo::check_sources(&state);
+        Curses::check_sources(&state);
+        Weapon::check_sources(&state);
+        Supplies::check_sources(&state);
+        Inventory::check_sources(&state);
+    }
+
+    #[test]
     fn named_traits_keep_native_values() {
         let state = state();
         let view = View::new(&state);
@@ -588,3 +615,6 @@ mod tests {
 }
 
 pub mod stateful;
+
+#[cfg(feature = "test-m13-danger")]
+mod m13_fixture;

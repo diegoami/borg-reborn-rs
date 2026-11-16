@@ -1,0 +1,62 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0011-rust-seed1084",
+  "run_kind": "harness",
+  "character": "Half-Elf Blackguard",
+  "raw_cause": "a grey mushroom patch",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 3,
+    "level": 2,
+    "turn": 22908,
+    "race_idx": 1,
+    "class_idx": 8
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1084,
+    "flags": "menu",
+    "git_rev": "b3eff0b0d4f0d907f2828c36285052bd978385b6",
+    "git_dirty": "yes",
+    "source_sha256": "a698f1f6810032239b721af1fc51b48e818e53efacd345450ba29dbff2af1511",
+    "binary_sha256": "7249ac1fa7ce5d349def065581747ae46b37daae039aebdca27395110e6d8074",
+    "borg_txt_sha256": "70add1785ebc8dba1f637a9a3db13a37b1570e15d4b5083749bb1f23fe9aa45c",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb"
+  },
+  "decision_trace": null,
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1947
+  },
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/receiver-full-off/full-8-blackguard-4",
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "source_commit": "b3eff0b0d4f0d907f2828c36285052bd978385b6",
+      "binary_sha256": "7249ac1fa7ce5d349def065581747ae46b37daae039aebdca27395110e6d8074"
+    }
+  ],
+  "encounter_family": "start-a244f4daf13f2fb95937f56dbc6d82d4d0cd58be00ec166f58e28eef7522fc52",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "33bf05d25a64061be699ad0846b0ebf5589ff649d576e30d7a87103cfe5e4bf6",
+    "config.txt": "c2c2dde6d0562451e2c38c1c130c17013dab91d7ac21303d8661b50f644fa121",
+    "depths.json": "b94aa168600bb956fb76da2be5a06f736ddeaee48db5da389a844adb1b420680",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "057508a2ddc33b5dbf40edfa378cbf0b436320e48baa77be7c3fa0531ec6d2be",
+    "trace-core-tail.jsonl": "f61c561b5b7d8c4294a95d8d8b9f7987a00d2ff9c0a3af1c4651e66bd6716152"
+  },
+  "investigation": null,
+  "issue": null
+}

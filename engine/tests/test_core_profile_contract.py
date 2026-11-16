@@ -136,3 +136,118 @@ class CoreProfileContractTest(unittest.TestCase):
                                 {'BORG_CORE': 'borg-rs'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params-core.json').exists())
+
+    def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
+        for value in [2, True]:
+            with self.subTest(value=value):
+                out, record = self.cell(f'invalid-errand-{value}', {
+                    'borg_reborn_core': 1, 'borg_reborn_errand': value,
+                })
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('borg.txt borg_reborn_errand: invalid errand selector',
+                              (out / 'stderr.log').read_text())
+                self.assertFalse((out / 'trace-core.jsonl').exists())
+
+    def test_errand_environment_precedence_and_invalid_command_lines(self):
+        for value in ['; ;', 'true', 'dvie 2', '/town; typo']:
+            with self.subTest(value=value):
+                out, record = self.cell('invalid-errand-env-' + str(len(value)),
+                                       {'borg_reborn_core': 1}, {'BORG_ERRAND': value})
+                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn('exit code 2', record['error'])
+                self.assertIn('BORG_ERRAND: invalid errand selector',
+                              (out / 'stderr.log').read_text())
+        for name, value in [('none', 'none'), ('empty', ''), ('command', '/dive 2')]:
+            out, record = self.cell('valid-errand-env-' + name,
+                                   {'borg_reborn_core': 1, 'borg_reborn_errand': 7},
+                                   {'BORG_ERRAND': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+            self.assertTrue((out / 'params-core.json').exists())
+
+    def test_original_core_ignores_vendored_errand_configuration(self):
+        out, record = self.cell('original-ignores-errand',
+                               {'borg_reborn_core': 0, 'borg_reborn_errand': 7},
+                               {'BORG_ERRAND': 'dvie 2'})
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertTrue((out / 'params.json').exists())
+        self.assertFalse((out / 'params-core.json').exists())
+
+    def test_invalid_stopscared_settings_fail_with_source_and_value(self):
+        for value in [0, -1, 1001]:
+            out, record = self.cell(f'invalid-fear-file-{value}', {
+                'borg_reborn_core': 1, 'borg_reborn_stopscared': value,
+            })
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('borg.txt borg_reborn_stopscared: invalid stopscared value',
+                          (out / 'stderr.log').read_text())
+        for value in ['bogus', '0', '1001', 'off; /dive 2']:
+            out, record = self.cell('invalid-fear-env-' + str(len(value)),
+                                   {'borg_reborn_core': 1}, {'BORG_STOPSCARED': value})
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('BORG_STOPSCARED: invalid stopscared value',
+                          (out / 'stderr.log').read_text())
+
+    def test_valid_fear_overrides_and_original_core_isolation(self):
+        for name, value in [('off', 'off'), ('none', 'none'), ('empty', '')]:
+            out, record = self.cell('valid-fear-' + name,
+                                   {'borg_reborn_core': 1, 'borg_reborn_stopscared': 1001},
+                                   {'BORG_STOPSCARED': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+            self.assertTrue((out / 'params-core.json').exists())
+        _, record = self.cell('valid-fear-file-false', {
+            'borg_reborn_core': 1, 'borg_reborn_stopscared': False,
+        })
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        out, record = self.cell('original-ignores-fear',
+                               {'borg_reborn_core': 0, 'borg_reborn_stopscared': 1001},
+                               {'BORG_STOPSCARED': 'bogus'})
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        self.assertTrue((out / 'params.json').exists())
+
+    def test_non_utf8_fear_environment_is_not_silently_ignored(self):
+        out, record = self.cell('invalid-fear-bytes', {'borg_reborn_core': 1},
+                               {'BORG_STOPSCARED': os.fsdecode(b'\xff')})
+        self.assertEqual(record['outcome'], 'harness_failure', record)
+        self.assertIn('exit code 2', record['error'])
+        self.assertIn('BORG_STOPSCARED: invalid non-UTF-8 stopscared value',
+                      (out / 'stderr.log').read_text())
+
+    def test_invalid_errand_budget_cannot_become_unbounded(self):
+        values = ['bogus', '', '-1', '9223372036854775808', '1.5']
+        for i, value in enumerate(values):
+            out, record = self.cell(f'invalid-budget-{i}', {'borg_reborn_core': 1},
+                                   {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
+            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn('exit code 2', record['error'])
+            self.assertIn('BORG_ERRAND_BUDGET: invalid budget',
+                          (out / 'stderr.log').read_text())
+        out, record = self.cell('invalid-budget-bytes', {'borg_reborn_core': 1},
+                               {'BORG_ERRAND': '/dive 2',
+                                'BORG_ERRAND_BUDGET': os.fsdecode(b'\xff')})
+        self.assertEqual(record['outcome'], 'harness_failure', record)
+        self.assertIn('BORG_ERRAND_BUDGET: invalid non-UTF-8 budget',
+                      (out / 'stderr.log').read_text())
+
+    def test_valid_budget_and_inactive_core_isolation(self):
+        for value in ['0', 'none', '9223372036854775807']:
+            _, record = self.cell('valid-budget-' + value, {'borg_reborn_core': 1},
+                                  {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
+            self.assertEqual(record['outcome'], 'turn_cap', record)
+        out, record = self.cell('finite-budget', {'borg_reborn_core': 1},
+                               {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': '1'})
+        # The pinned adapter classifies an intentional Borg stop as stalled.
+        self.assertEqual(record['outcome'], 'stalled', record)
+        self.assertEqual(record['runner_outcome'], 'borg_stopped', record)
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertEqual(summary['stop_reason'], 'borg_stopped')
+        self.assertLess(summary['game_turns'], 300)
+        for name, settings, errand in [
+            ('original', {'borg_reborn_core': 0}, '/dive 2'),
+            ('inactive', {'borg_reborn_core': 1}, 'none'),
+        ]:
+            _, record = self.cell('ignored-budget-' + name, settings,
+                                  {'BORG_ERRAND': errand, 'BORG_ERRAND_BUDGET': 'bogus'})
+            self.assertEqual(record['outcome'], 'turn_cap', record)

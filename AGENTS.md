@@ -86,7 +86,10 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 **Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
 RULES.md before P work. Start P task branches from `origin/track-p`, target
 P task PRs at `track-p`, and merge them there only after required CI passes.
-Close the task issue explicitly with its integration PR/commit. Never send
+Close the task issue explicitly with its integration PR/commit.
+For retained validation evidence, import provisional native dossiers using
+`tools/import-deaths.py`; run its `--check` before committing. See
+[docs/DOSSIER-IMPORT.md](docs/DOSSIER-IMPORT.md). Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review

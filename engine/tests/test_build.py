@@ -13,11 +13,14 @@ import os
 import re
 import subprocess
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 BIN = ROOT / 'build/rust/game/angband'
+RECORDER_PATCH = ROOT / 'engine/recorder-hooks.patch'
+VENDOR_RECORDER = ROOT / 'vendor/angband-recorder'
 
 
 def listed(cmake_text, start):
@@ -39,6 +42,42 @@ class SourceListTest(unittest.TestCase):
         self.assertTrue(any(p.startswith('engine/patches/') for p in inputs))
         for p in inputs:
             self.assertFalse(p.startswith(('angband/', 'borg-rs/', 'harness/measurement/')), p)
+
+
+class RecorderAdapterDependencyTest(unittest.TestCase):
+    """The opt-in recorder adapter is applied during configuration, not by a
+    build rule. A changed engine/recorder-hooks.patch must therefore re-run
+    CMake before an incremental build, or the generated tree keeps stale
+    hooks (M1 review F17, diegoami/angband-recorder#2)."""
+
+    def test_the_adapter_is_declared_as_a_configure_dependency(self):
+        text = (ROOT / 'engine/CMakeLists.txt').read_text()
+        self.assertRegex(text, r'CONFIGURE_DEPENDS\b.*recorder-hooks\.patch',
+                         'a changed recorder adapter must re-run CMake')
+
+    @unittest.skipUnless(VENDOR_RECORDER.is_dir(), 'no vendored recorder (vendor/angband-recorder)')
+    def test_a_changed_adapter_reapplies_during_an_incremental_build(self):
+        with tempfile.TemporaryDirectory(prefix='reborn-adapter-deps-') as folder:
+            build = Path(folder) / 'build'
+            configure = subprocess.run(['cmake', '-S', str(ROOT / 'engine'), '-B', str(build),
+                                        '-DSUPPORT_BORG_RECORDING=ON'],
+                                       capture_output=True, text=True, timeout=600)
+            self.assertEqual(configure.returncode, 0, configure.stderr[-2000:])
+            generated = build / 'tree/src/z-rand.c'
+            self.assertTrue(generated.is_file(), 'the patched tree was not generated')
+            stamp = lambda: generated.stat().st_mtime_ns
+            original = RECORDER_PATCH.stat().st_atime_ns, RECORDER_PATCH.stat().st_mtime_ns
+            try:
+                before = stamp()
+                os.utime(RECORDER_PATCH)  # the adapter changed
+                time.sleep(1.2)  # the build system compares whole-second mtimes
+                check = subprocess.run(['make', '-C', str(build), 'cmake_check_build_system'],
+                                       capture_output=True, text=True, timeout=600)
+                self.assertEqual(check.returncode, 0, check.stderr[-2000:])
+                self.assertNotEqual(stamp(), before,
+                                    'a changed recorder adapter did not re-apply to the generated tree')
+            finally:
+                os.utime(RECORDER_PATCH, ns=original)
 
 
 @unittest.skipUnless(BIN.exists(), 'no build (harness/build.sh)')

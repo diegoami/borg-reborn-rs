@@ -102,7 +102,10 @@ not undo other-track work already authorized before the gate.
     whichever arm died. The toolkit is owned by borg-cemetery; local command
     paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
     isolated validation or historical registries. Existing `docs/deaths/` stays
-    retained as the historical validation baseline. Games watched with `watch-borg.sh` are not measured
+    retained as the historical validation baseline. New historical imports use
+    `tools/import-deaths.py` to qualify provisional IDs and preserve source
+    packages; its CI check protects the accepted baseline and new imports
+    (docs/DOSSIER-IMPORT.md). Games watched with `watch-borg.sh` are not measured
     runs and are not recorded (owner, 2026-11-10, E review finding 3): they
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
@@ -204,3 +207,29 @@ guard list for the optional recorder only; engine/angband remains pristine,
 and the normal harness explicitly disables the recorder. The dependency is
 sealed in recorder-pin.json and linked through our existing Rust library.
 No strategy, default frontend flags or measured baseline changes are implied.
+
+## Guided debugging sessions (owner, 2026-11-15)
+
+26. **Debug reported play from preserved runtime evidence.** For an
+    owner-requested guided session, the agent prepares and starts a
+    recorder-enabled game with a named character, private session files,
+    the exact executable/settings/starting save preserved, a core decision
+    trace and errand outcomes. Follow
+    [docs/GUIDED-DEBUGGING.md](docs/GUIDED-DEBUGGING.md). The owner reports
+    the unexpected behaviour and saves if the game responds; the agent
+    finds and verifies the save, preserves the incident, and attempts
+    reproduction itself. A save alone does not preserve the Borg's
+    in-memory state or the actions leading to the problem. Keep the
+    recording and original evidence intact, reproduce in a separate
+    directory with the original build first, and state whether replay
+    actually verified. If saving fails or the game hangs, capture the live
+    evidence before closing it; do not require a successful save to begin
+    diagnosis. Never claim a character was recovered or a cause established
+    from a filename, an old save, or static code inspection alone. Fixes
+    get a bounded reproduction/regression check. Recorder defects are
+    fixed through PRs in `diegoami/angband-recorder`, not by silently
+    patching the vendored recorder or adding consumer engine workarounds;
+    adopting a recorder update here is a separate pin-update change.
+    Watched sessions retain rule 12's distinction from measured runs;
+    publishing recordings is a
+    separate owner request.

@@ -1,0 +1,55 @@
+{
+  "schema": "borg-reborn-rs/death-record@1",
+  "id": "D0006-rust-seed1043",
+  "run_kind": "harness",
+  "character": "Half-Troll Necromancer",
+  "raw_cause": "a wild cat",
+  "terminal": {
+    "cause": "a wild cat",
+    "dead": true,
+    "depth": 1,
+    "max_depth": 1,
+    "level": 2,
+    "turn": 23423,
+    "race_idx": 7,
+    "class_idx": 4
+  },
+  "identity": {
+    "impl": "rust",
+    "seed": 1043,
+    "flags": "menu",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "git_dirty": "no",
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c",
+    "binary_sha256": "75c36dbfdd4a586f2ddead7ab9958d6bc3c05c6f28afc7aa083ec11d81afaeea",
+    "borg_txt_sha256": "f76f524bcc83bd20c23f45c53610e0a24abce78f90aac3cde9cb05cac0807910",
+    "profile_sha256": null,
+    "params_core_sha256": null
+  },
+  "decision_trace": null,
+  "core_decision_trace": null,
+  "attempts": [
+    {
+      "role": "original",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/donor-full/full-4-necro-3",
+      "result_sha256": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+      "raw_sha256": {
+        "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+        "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+        "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+      },
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+      "binary_sha256": "75c36dbfdd4a586f2ddead7ab9958d6bc3c05c6f28afc7aa083ec11d81afaeea"
+    }
+  ],
+  "encounter_family": "start-16302580ff7d6f09ae8ebfb1afb8a6fe80ca5827162089f16448fd3c8ae8f734",
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "files_sha256": {
+    "build.json": "d1213c522a4a51cb19a2bd49ddcbbdf53871455fe667f8417b548d6d2e407ad0",
+    "config.txt": "497ee840a1846d9fe917c82c5de1893c9e0b21c252638fc50bd9d7e652fe810d",
+    "summary.json": "f9d56951ecbcfa12246346463478d756f724a97a0e120a1ba78acbb3c016bc73"
+  },
+  "investigation": null,
+  "issue": null
+}

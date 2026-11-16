@@ -702,14 +702,14 @@ pub fn borg_write_map(st: &mut BorgState, ask: bool) {
     }
 
     // Dump the borg.trait[] information
-    for itemm in 0..BI_MAX as usize {
+    for (itemm, value) in st.borg.trait_[..BI_MAX as usize].iter().enumerate() {
         let name = crate::borg_trait::trait_name(itemm);
         putf(
             f,
             &cat(&[
                 format!("skill {} (", itemm).as_bytes(),
                 name,
-                format!(") value= {}.\n", st.borg.trait_[itemm]).as_bytes(),
+                format!(") value= {}.\n", value).as_bytes(),
             ]),
         );
     }

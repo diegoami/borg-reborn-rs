@@ -195,6 +195,16 @@ fn borg_cmd_help(st: &mut BorgState) {
         line += 1;
     }
 
+    // The shop selector is not in the table (it is a set of keys, not one
+    // key), so it gets its own line.
+    engine::term_putstr(
+        2,
+        line + 1,
+        -1,
+        i32::from(COLOUR_WHITE),
+        b"Commands '1'-'9', '+', '-', '>': the shop the Borg visits",
+    );
+
     do_cmd_borg(st);
 
     // Refresh the screen
@@ -1396,6 +1406,92 @@ fn borg_cmd_map(st: &mut BorgState) {
     }
 }
 
+/// What a shop-selector key means.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShopChoice {
+    /// Visit the store with this index (0-based, the Borg's own order:
+    /// the general store first, the home last).
+    Shop(i16),
+    /// Drop the override: the strategy chooses the shop again.
+    Clear,
+}
+
+/// Interpret a shop-selector key.
+///
+/// The keys are the ones the Borg's command menu leaves free: a digit
+/// picks a store by the Borg's own numbering (`1` is the first store),
+/// `+` and `-` step through the stores and `>` drops the override.
+/// `base` is the store the relative keys step from; the stores wrap
+/// around. Engine-free, so a test binary can link it.
+pub fn shop_choice(key: u8, base: i16, count: i16) -> Option<ShopChoice> {
+    if count <= 0 {
+        return None;
+    }
+    match key {
+        b'1'..=b'9' => {
+            let n = i16::from(key - b'1');
+            if n < count {
+                Some(ShopChoice::Shop(n))
+            } else {
+                None
+            }
+        }
+        b'+' => Some(ShopChoice::Shop((base + 1).rem_euclid(count))),
+        b'-' => Some(ShopChoice::Shop((base - 1).rem_euclid(count))),
+        b'>' => Some(ShopChoice::Clear),
+        _ => None,
+    }
+}
+
+/// The shop selector (`1` .. `9`, `+`, `-`, `>`).
+///
+/// The keys are the ones the Borg's own command menu leaves free: a digit
+/// picks a store by the Borg's own numbering (`1` is the first store),
+/// `+` and `-` step through the stores and `>` drops the override. The
+/// choice overrides the strategy's own: the Borg walks to that store,
+/// opens it and buys there as it normally would; `>` gives the choice
+/// back to the strategy.
+fn borg_cmd_shop(st: &mut BorgState, key: u8) {
+    let count = engine::store_max() as i16;
+    if count <= 0 {
+        msg(st, "There are no shops to visit.");
+        return;
+    }
+
+    // The relative keys step from the override, else from the store the
+    // Borg is heading for, else from the first store.
+    let base = st
+        .borg
+        .shop_override
+        .or(if st.borg.goal.shop >= 0 {
+            Some(st.borg.goal.shop)
+        } else {
+            None
+        })
+        .unwrap_or(0);
+
+    match shop_choice(key, base, count) {
+        Some(ShopChoice::Shop(shop)) => {
+            st.borg.shop_override = Some(shop);
+            // The goal follows the override, so the Borg walks there now
+            // instead of to the store the strategy had picked.
+            st.borg.goal.shop = shop;
+            st.borg.goal.ware = -1;
+            st.borg.goal.item = -1;
+            let name = engine::store_feat_name(shop as usize);
+            msg(
+                st,
+                format!("The Borg will visit the {}.", String::from_utf8_lossy(&name)).as_bytes(),
+            );
+        }
+        Some(ShopChoice::Clear) => {
+            st.borg.shop_override = None;
+            msg(st, "The Borg chooses the shop itself again.");
+        }
+        None => msg(st, "That is not a legal shop."),
+    }
+}
+
 /// Interact with the Borg (`do_cmd_borg`).
 pub fn do_cmd_borg(st: &mut BorgState) {
     // Set the Borg's player location from the game: the screen has not
@@ -1407,6 +1503,14 @@ pub fn do_cmd_borg(st: &mut BorgState) {
     if !ok {
         // Restore the screen
         engine::term_load();
+        return;
+    }
+
+    // The shop selector: "1" .. "9", "+", "-", ">". The Borg's menu leaves
+    // the digits (but "0", the stats) and those three free; in the game
+    // the digits are the movement keys, and this menu is the Borg's.
+    if matches!(cmd, b'1'..=b'9' | b'+' | b'-' | b'>') {
+        borg_cmd_shop(st, cmd);
         return;
     }
 
@@ -1436,4 +1540,52 @@ pub fn do_cmd_borg(st: &mut BorgState) {
 
     // Message
     msg(st, "That is not a legal Borg command.");
+}
+
+#[cfg(test)]
+mod shop_tests {
+    use super::{shop_choice, ShopChoice};
+
+    /// The eight stores of the town, in the Borg's own order.
+    const STORES: i16 = 8;
+
+    #[test]
+    fn a_digit_picks_a_store_by_the_borg_numbering() {
+        assert_eq!(shop_choice(b'1', 0, STORES), Some(ShopChoice::Shop(0)));
+        assert_eq!(shop_choice(b'5', 0, STORES), Some(ShopChoice::Shop(4)));
+        assert_eq!(shop_choice(b'8', 0, STORES), Some(ShopChoice::Shop(7)));
+    }
+
+    #[test]
+    fn a_digit_past_the_last_store_is_not_a_shop() {
+        assert_eq!(shop_choice(b'9', 0, STORES), None);
+        assert_eq!(shop_choice(b'0', 0, STORES), None);
+    }
+
+    #[test]
+    fn the_relative_keys_step_and_wrap() {
+        assert_eq!(shop_choice(b'+', 0, STORES), Some(ShopChoice::Shop(1)));
+        assert_eq!(shop_choice(b'+', 7, STORES), Some(ShopChoice::Shop(0)));
+        assert_eq!(shop_choice(b'-', 0, STORES), Some(ShopChoice::Shop(7)));
+        assert_eq!(shop_choice(b'-', 3, STORES), Some(ShopChoice::Shop(2)));
+    }
+
+    #[test]
+    fn the_greater_than_key_drops_the_override() {
+        assert_eq!(shop_choice(b'>', 3, STORES), Some(ShopChoice::Clear));
+    }
+
+    #[test]
+    fn other_keys_are_not_shops() {
+        assert_eq!(shop_choice(b'x', 0, STORES), None);
+        assert_eq!(shop_choice(b' ', 0, STORES), None);
+        assert_eq!(shop_choice(b'/', 0, STORES), None);
+    }
+
+    #[test]
+    fn a_town_without_stores_has_no_shop() {
+        assert_eq!(shop_choice(b'1', 0, 0), None);
+        assert_eq!(shop_choice(b'+', 0, 0), None);
+        assert_eq!(shop_choice(b'>', 0, 0), None);
+    }
 }
