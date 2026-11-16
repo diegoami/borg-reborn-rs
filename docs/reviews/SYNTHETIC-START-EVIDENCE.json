@@ -587,6 +587,50 @@
       "identical_keys_messages_states": true,
       "overrides": []
     },
-    "initial_ordinary_smoke_attempt": "Games completed; wrapper exited 127 because bc was absent. Raw partial directory retained; installed Debian bc in task-local toolchain, reran without overrides, and obtained complete 3/3 reference match."
-  }
+    "initial_ordinary_smoke_attempt": "Games completed; wrapper exited 127 because bc was absent. Raw partial directory retained; installed Debian bc in task-local toolchain, reran without overrides, and obtained complete 3/3 reference match.",
+    "ordinary_exact_smoke": {
+      "runs": 3,
+      "reference": "harness/reference/smoke-exact-rust",
+      "identical_keys_messages_states": true,
+      "overrides": []
+    },
+    "extra_save_load_check": "passed",
+    "historical_archive_check": {
+      "packages_verified": 2556,
+      "new_natural_control_packages": 3,
+      "synthetic_packages": 0
+    },
+    "initial_ci": {
+      "run": 43780692042,
+      "rust": "passed",
+      "recorder": "passed",
+      "engine": "failed: ordinary source-specific core control dossier missing from historical archive; reproduced locally and retained with immutable importer"
+    }
+  },
+  "historical_control_packages": [
+    {
+      "path": "docs/deaths/D0000-q3e075ac0f61c14f6a5b547b2f95d0f948d62eef18383616cb848642426846b71",
+      "seed": 1011,
+      "source_sha256": "68cd15ffd1e03f118309f216544c06fcd92db84a290fd32df9bd66546fea9def",
+      "encounter_family": "start-7d64e63525236dd0af4621951dcec6c7657b06671dbac6ce615ecbeb358c507c",
+      "keys_sha256": "8c6e691c53b42d9a14e0a9f6219d392efb0e41fe9e15aaf7b5f8173ce3a04883",
+      "synthetic": false
+    },
+    {
+      "path": "docs/deaths/D0000-qadb15ce2fdd2f04cd82291e609aaa7a092010a5d2ea439d136111605b40b5672",
+      "seed": 102,
+      "source_sha256": "68cd15ffd1e03f118309f216544c06fcd92db84a290fd32df9bd66546fea9def",
+      "encounter_family": "start-0552c444db32295f712885225da0385e589d460c61566aec6b9ff092bde5bb2e",
+      "keys_sha256": "50491fa139246c688f04bb21dd925a97efdc5c7a4e4a44fee52dd2a00417e5ac",
+      "synthetic": false
+    },
+    {
+      "path": "docs/deaths/D0000-qd0efc7aae6d531ae51d64bdba0de02ef166fe2a8dfe48788997ff3c6985df292",
+      "seed": 1020,
+      "source_sha256": "68cd15ffd1e03f118309f216544c06fcd92db84a290fd32df9bd66546fea9def",
+      "encounter_family": "start-8bc0c8d90cd66f5054ab6578061e3a8b38dfee580e6e2d06b9f550b63a7d164d",
+      "keys_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
+      "synthetic": false
+    }
+  ]
 }

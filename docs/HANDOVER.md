@@ -16,6 +16,10 @@
   supplies an independent direct-export and reconciliation guard.
 - Review scope and runnable checks: `docs/reviews/SYNTHETIC-START.md`.
   Leave the implementation unmerged for the owner-requested review.
+- Initial CI exposed missing source-specific ordinary control dossiers,
+  not a synthetic-start failure. Retained three immutable natural validation
+  packages using `tools/import-deaths.py`; 2,556 packages verify and both
+  ordinary/core controls reconcile. No synthetic dossier was imported.
 - #371 remains open: run-derived build application and independent
   null-move diagnostics are follow-up slices; cemetery #5's suite remains
   outside this change. No population/improvement claim is made.
