@@ -21,7 +21,9 @@
   Replay-stop subprocess controls retain the caller's @3 schema/cached mode,
   flush one diagnostic and exit 2 in both modes. Test-r3-defence declares
   43 constructed selector/restoration cases, compiled/Clippy checked but
-  not yet run natively. No defence games have run. Freeze identity/build
+  not yet run natively. CI now runs both native fixture modes before the
+  archive gates and retains their separate test artifacts. No defence games
+  have run locally. Freeze identity/build
   under the shared lock after attack's current campaign, then complete native donor/off/check/
   switch, strict entry, restoration/rare-path and literal fault/re-port
   controls, all death imports/reconciliation and CI before task merge.
