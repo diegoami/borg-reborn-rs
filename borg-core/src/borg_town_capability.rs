@@ -64,6 +64,9 @@ const CONTROL: usize = 56;
 const RANGER_MISSILES: usize = 57;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
+/// borg-reborn-rs (food floor): the food items the core requires to be
+/// prepared for any level (`borg_prepared`: "5 Food").
+const READY_FOOD: i64 = 5;
 
 pub const NAMES: [&str; 58] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
@@ -344,6 +347,24 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return Vec::new();
     }
     if !matches!(tval, TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_WAND | TV_ROD | TV_STAFF) { return Vec::new(); }
+    // borg-reborn-rs: items the core does not use. In 270 local games
+    // (classes-1800-small, town planner on) the planner bought 201 Scrolls of
+    // Monster Confusion, 11 of Recharging, 60 Mushrooms of Purging and 53 of
+    // Stoneskin, and the core used none of them.
+    let v = &st.item_val;
+    let sval = i32::from(item.sval);
+    if (tval == TV_SCROLL && (sval == v.sv_scroll_monster_confusion || sval == v.sv_scroll_recharging))
+        || (tval == TV_MUSHROOM && (sval == v.sv_mush_purging || sval == v.sv_mush_stoneskin)) {
+        return Vec::new();
+    }
+    // borg-reborn-rs (food counting): only food and mushrooms feed the core
+    // (borg_trait counts them in BI_FOOD, which its readiness checks). A
+    // Remove Hunger scroll counted as food let the planner sell the rations
+    // the core then missed ("restock food < 3"); the core seldom reads it
+    // (6 of 253 bought).
+    if !matches!(tval, TV_FOOD | TV_MUSHROOM) {
+        effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
+    }
     // Poisonous/hallucinatory nourishment must not be sold as safe food.
     if effects.iter().any(|&(e, sub, _)| matches!(u32::from(e), EF_TIMED_INC | EF_TIMED_INC_NO_RES) && matches!(sub as u32, TMD_POISONED | TMD_CONFUSED | TMD_IMAGE | TMD_PARALYZED)) {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
@@ -399,8 +420,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(LIGHT, cfg(BORG_TOWN_W_LIGHT) * UNIT, journey.turns * UNIT);
     // Nutrition is the game's food-value unit (food_value=100), not an equal
     // copy whitelist. One ration's 40 nutrition supports food_turns actions.
-    curve(FOOD, cfg(BORG_TOWN_W_FOOD) * journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1),
-          journey.turns * 40 * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1));
+    // borg-reborn-rs (food floor): never plan for fewer rations than the
+    // core needs to be prepared for any level (borg_prepared "5 Food",
+    // restock "food < 3"). Sized to the trip alone, a short early trip
+    // asked for about one ration, so the planner sold the starting rations
+    // and the core then bounced between DL1 and town for "restock food".
+    // Below the floor, food is a requirement (negative demand: worth its
+    // weight linearly up to five rations, nothing past them), so it is
+    // bought up to the floor and never sold below it, but not hoarded.
+    let rations = journey.turns * UNIT / cfg(BORG_TOWN_FOOD_TURNS).max(1);
+    if rations < READY_FOOD * UNIT {
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * READY_FOOD * UNIT, -(40 * READY_FOOD * UNIT));
+    } else {
+        curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, 40 * rations);
+    }
     curve(HEAL, risk(BORG_TOWN_W_BLEEDING), journey.hp * exposure);
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
