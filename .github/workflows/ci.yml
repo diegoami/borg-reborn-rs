@@ -68,6 +68,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             scenarios/planmage-wild-cat-fixtures
+            scenarios/planmage-town-phase-407718
             validation/borg-reborn-rs/native-controls
       - run: |
           python3 - <<'PYREGISTRY'
@@ -144,6 +145,15 @@ jobs:
           with open(os.environ['GITHUB_ENV'], 'a') as env:
               env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
           PYFIXTURE
+      - run: |
+          python3 - <<'PYPHASE'
+          import json, os, pathlib, shutil
+          f = json.loads(pathlib.Path('harness/fixtures/planmage-town-phase.json').read_text())
+          target = pathlib.Path(os.environ['RUNNER_TEMP']) / 'phase-stock.zip'
+          shutil.copyfile(pathlib.Path('vendor/cemetery-evidence') / f['archive_path'], target)
+          with open(os.environ['GITHUB_ENV'], 'a') as env:
+              env.write('BORG_PHASE_STOCK_FIXTURE_ZIP=' + str(target) + '\nBORG_PHASE_STOCK_FIXTURE_REQUIRED=1\n')
+          PYPHASE
       - run: python3 -m unittest discover -s engine/tests
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1

@@ -478,7 +478,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
         let effects = engine::spell_effect_values(si as i32, journey.level as i32);
         // Only information/access services suppress duplicate purchases.
         // Mana-free attacks and healing remain valuable alongside spells.
-        if effects.iter().any(|&(e, _, amount)| u32::from(e) == EF_TELEPORT && amount <= 10) { model.curves[PHASE][1] = 0; }
+        // borg-reborn-rs (#380): emergency scrolls retain their physical
+        // supply value; knowing Phase Door does not reserve mana to cast it.
         for (cap, _) in effect_supply(&effects, journey.hp, cfg(BORG_TOWN_SUPPORT_TURNS).max(1)) {
             if matches!(cap, TRAPS | MONSTERS | INVISIBLE | MAP | ILLUMINATE | DIG | RECALL | FOOD) {
                 model.curves[cap][1] = 0;
