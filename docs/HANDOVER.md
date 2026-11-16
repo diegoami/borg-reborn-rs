@@ -20,8 +20,13 @@
   Finding 5: vendor audit passes; provenance is already declared. Findings
   3/6 need no code change (native enforcement; engine-authoritative bounds).
 - Workspace tests (157+4+5), 90 tool tests, Clippy and vendor audit pass.
-  Rebuild, real synthetic smoke and new-source natural control evidence follow
-  in an evidence commit; keep the review open and do not merge on CI alone.
+  Engine tests pass (75 total, two existing dependency skips); ordinary and
+  exact smoke match 3/3, synthetic repeat/both-core tests pass and direct export
+  rejects synthetic death. New-source natural controls reconcile and all 2,559
+  historical packages verify. Runtime fix pin: `85021606646168799e9e121fc5b4f04c931385bd`;
+  source hash: `3556b1a68e721330faa02909fe0e5012c3d0a58db115600e86da8950400c0d58`.
+  Review response/evidence: docs/reviews/386-REVIEW-FIXES.md and its JSON.
+  Keep the review open and do not merge on CI alone.
 
 ## 2026-11-16: generated-depth synthetic startup (#371)
 
