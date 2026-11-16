@@ -18,7 +18,8 @@ required. The syntactic source gate cannot prove arbitrary Rust semantics.
 | Mutable services | Record complete input memory, result and post-state. Replay checks input before applying post-state. A prior wrong port mutation cannot be hidden. |
 | Read-only state queries | Record the result and compare complete input memory before replay. Their engine reads happen only in the driving program. |
 | Engine facts and RNG | Record ordered name/arguments/results. Replay consumes values without executing the engine or drawing RNG. Reordered pure requests still disagree. |
-| Metadata results | AttackRace and AttackKind contain values only. Terminal geometry is a plain-value record. Static names/constants borrow immutable data for the process lifetime. No engine object token is exposed to policy. |
+| Metadata results | AttackRace and AttackKind contain values only. AttackKind.aware is captured
+  at query time and may change in the engine; it is not immutable knowledge. Terminal geometry is a plain-value record. Static names/constants borrow immutable data for the process lifetime. No engine object token is exposed to policy. |
 | Items and spells | Items and spell tables remain native owned memory. Deliberate native local values stay at the same expression points. Borrowed named reads are reacquired after mutable services. Item argument diagnostics include the complete owned item and its note-origin descriptor. |
 | Motion output parameters | Record initial caller coordinates plus target arguments, then replay both resulting coordinates. The regression control rejects changed initial coordinates. |
 | Town journey forecast | Treat forecast as an effect because it mutates trip memory. Return only the required turn count; attack retains the original reserve arithmetic and per-evaluation cache. |

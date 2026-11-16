@@ -1,0 +1,440 @@
+{
+  "schema": "borg-reborn-rs/vendor-hooks@1",
+  "donor_pin": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "donor_files": {
+    "Cargo.toml": "f09222f2f0d69ce9f0089bf40f177ddde6a07139",
+    "borg.txt": "2af377ab12fea90c333e915e17040063ffef2acc",
+    "build.rs": "9d24439107a218ec33578cabbf1215f38e986805",
+    "c-reference/borg-init.c": "605b53b3658567e03e22b86d2515aab0ae250d68",
+    "c-reference/borg.txt": "2af377ab12fea90c333e915e17040063ffef2acc",
+    "check-recorder-pin.py": "be4a3342900ea188c832124d4b9a039321eeb067",
+    "examples/note_alias.rs": "a3ab6705e7c0807faf94ce81d2b0994bc2096c93",
+    "src/borg.rs": "00aeb6c489c9924516f3e171263b99bc51bb9931",
+    "src/borg_buy_strategy.rs": "b765222a1d647fb742f0e1d03b84e67520c5f93d",
+    "src/borg_caution.rs": "20aa04db4795b242c9b920db0de095c8aa239afc",
+    "src/borg_cave.rs": "4aef06d02592767bd52e2f5dbaac0181c181a909",
+    "src/borg_cave_light.rs": "1c43eab216b467ee7db65cdccb6413af41d7b272",
+    "src/borg_cave_util.rs": "a2adc27c678a66242ecbd8b1bedd42e1b9a186dd",
+    "src/borg_cave_view.rs": "7d2ab4e6ba0765e4e06501cdb3912deecae07de1",
+    "src/borg_commands.rs": "784a6beeb1d90e309fd0f800bb932b7d96cceb95",
+    "src/borg_danger.rs": "5b903d1359583ab5ebb5d1bb2a3703b5f2618a34",
+    "src/borg_escape.rs": "71a54a61ac37bf4185e18f1bb13ad69f82765c99",
+    "src/borg_fight_attack.rs": "5d0dea7ac0fed5334b19a76fbf30aab99fa600df",
+    "src/borg_fight_defend.rs": "ab3dca51197940808e0f2b5e1c6b8060b037966e",
+    "src/borg_fight_perm.rs": "a58bfd7beb78caf85f7b375c8c228a78453dfe4b",
+    "src/borg_flow.rs": "087ab0e6123857e818c00c3d77287c922c013817",
+    "src/borg_flow_dark.rs": "4bf2de5066fc35660107f2a5910b577e4d7a0b2e",
+    "src/borg_flow_glyph.rs": "496ad56366a4a7adb17fb10f35435a9b65ab942f",
+    "src/borg_flow_kill.rs": "f49f195454ce1825777d4e86840b329e671f299b",
+    "src/borg_flow_misc.rs": "84577c3fc1bf1c288cfd2adfec2855ae38b99bf7",
+    "src/borg_flow_stairs.rs": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
+    "src/borg_flow_take.rs": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",
+    "src/borg_formulas.rs": "aa7ffe13ec8cd89fa705788c2dd6058155890e53",
+    "src/borg_formulas_calc.rs": "44e7a778f4fedb45bc4d3ee7a2fc343c21c3f2b5",
+    "src/borg_headers/borg_caution_h.rs": "a9ecdb597343644c4e2a886ae3be4775fd370c44",
+    "src/borg_headers/borg_cave_h.rs": "de7047bb3caaf652a2b4578e53332ab4e369f94b",
+    "src/borg_headers/borg_cave_light_h.rs": "7b861ed84286312ae745749400a7ab674293f5d5",
+    "src/borg_headers/borg_cave_view_h.rs": "512d1e104484924cad0e7ba58b62cd597d1365cc",
+    "src/borg_headers/borg_danger_h.rs": "5de656c0fd3879993d97df87516a776faa901c0d",
+    "src/borg_headers/borg_escape_h.rs": "115533fef9352a03fb8cb24bec01333224f299b0",
+    "src/borg_headers/borg_fight_attack_h.rs": "c2172fb70aead713ab9d43e2d9983d6d063966f6",
+    "src/borg_headers/borg_fight_defend_h.rs": "4fc0eb2c98e9b4ebb3f9b5d43d2b0371820b4de1",
+    "src/borg_headers/borg_fight_perm_h.rs": "ccb9fd6b80d7fdc164ca2bcdfea1b7ad49235903",
+    "src/borg_headers/borg_flow_dark_h.rs": "604f4f01ff3dd6d75577db53464248962368381f",
+    "src/borg_headers/borg_flow_glyph_h.rs": "6d796f139b3a0df1792e6e13612c9916a9842b67",
+    "src/borg_headers/borg_flow_h.rs": "d7b63f06d6dd6033d313bce14698f5d9bf3f1ead",
+    "src/borg_headers/borg_flow_kill_h.rs": "30b364979130a92f878252458f983ede6c5594b0",
+    "src/borg_headers/borg_flow_misc_h.rs": "e27e1dc50d4e03ccd114dad8a04bf627d7ba347c",
+    "src/borg_headers/borg_flow_stairs_h.rs": "d63b6d9f2c8e8a7d20604fe1949c28fe6627611c",
+    "src/borg_headers/borg_flow_take_h.rs": "ecaf790a6a9e81ae425d9adf8186f26adaca46af",
+    "src/borg_headers/borg_formulas_calc_h.rs": "f4dcae378fc33ed87e63e83a864926a81a7249fd",
+    "src/borg_headers/borg_formulas_h.rs": "2b93a990582233d7ef44c1d822f939533482cb01",
+    "src/borg_headers/borg_h.rs": "8699e0fa9705c70f4241a4bd7b1cb928f0a8c895",
+    "src/borg_headers/borg_home_notice_h.rs": "9f096d3b6d1424c774070fc438e375de330f993c",
+    "src/borg_headers/borg_home_power_h.rs": "79c918f2f5d0c8240691b2b788beb49e940c8739",
+    "src/borg_headers/borg_init_h.rs": "57d55ae51de34f85539eead5976f232f79910b4e",
+    "src/borg_headers/borg_inventory_h.rs": "c26947a628eb65233cb0fd5cda3a28c18f5a1691",
+    "src/borg_headers/borg_io_h.rs": "2d31f07b7d094c599127d2d78d69d608d689e379",
+    "src/borg_headers/borg_item_activation_h.rs": "f9d5a09e17cebaf73fe42481b6b70800f4d40ddf",
+    "src/borg_headers/borg_item_analyze_h.rs": "fcda760f5a82e4d646afe3f723453c5f8c6a2a26",
+    "src/borg_headers/borg_item_decurse_h.rs": "5d898f623f3144c833647ba7d96485d83b5530f8",
+    "src/borg_headers/borg_item_enchant_h.rs": "aabd547955747d441d259dcd963530c387e4c905",
+    "src/borg_headers/borg_item_h.rs": "289a1bc47e6a81d7d3a2591cabc0b573ae1d7953",
+    "src/borg_headers/borg_item_id_h.rs": "1d64c51cf0f9a2c7f589f0a383b84fab062f20a6",
+    "src/borg_headers/borg_item_use_h.rs": "ca2ed852dabfa8e41d179ce229e1cd20f92c1857",
+    "src/borg_headers/borg_item_val_h.rs": "ac2c7668efc3a236b301b2ff1b12b83fc2792ce4",
+    "src/borg_headers/borg_item_wear_h.rs": "79925c51e7969e74f4111807ef4e96f1b25f6ab4",
+    "src/borg_headers/borg_junk_h.rs": "71615f36d60c23b90258f5e2f66f5303cff59ebb",
+    "src/borg_headers/borg_light_h.rs": "4ac5d57e42b8d59418021c87e8b6bbea34e68b27",
+    "src/borg_headers/borg_log_h.rs": "ff9888809372e4345472e747ffd966019724d699",
+    "src/borg_headers/borg_magic_h.rs": "8fcf14af75d6a2a46b7f0c39536feba4e2d672ff",
+    "src/borg_headers/borg_magic_play_h.rs": "16691937b52064fef3635841942f52c259f23ba3",
+    "src/borg_headers/borg_messages_h.rs": "24706830c7e56158ab9d97a06db4fa25e41144c6",
+    "src/borg_headers/borg_messages_react_h.rs": "b0ee42d8d1b68760c0d327417d8b2482979dea00",
+    "src/borg_headers/borg_power_h.rs": "9df7afdc328923559f697159108be1e733afef77",
+    "src/borg_headers/borg_prepared_h.rs": "bb571ed666c4480ee04f770c904e5359e32ff526",
+    "src/borg_headers/borg_projection_h.rs": "75b92889336049568a954b5fe2bc6ac5a322e750",
+    "src/borg_headers/borg_recover_h.rs": "f167f73473374771900ddf48d66bdb63f8831b60",
+    "src/borg_headers/borg_reincarnate_h.rs": "fda68b8df4ac902fc89757d4ccd39862d39f2599",
+    "src/borg_headers/borg_store_buy_h.rs": "ab4cadfa471e178c182800b6bbcd09f8d1806797",
+    "src/borg_headers/borg_store_h.rs": "f7c3acdabaf7121d30cb194fd40984231f2e845a",
+    "src/borg_headers/borg_store_sell_h.rs": "59633c6912f4240bf7916b95f7100e21db3b9e76",
+    "src/borg_headers/borg_think_dungeon_h.rs": "bb69960e2118262bd37b699145e7bbd48fb1fb8a",
+    "src/borg_headers/borg_think_dungeon_util_h.rs": "b6916a569f0516b5f3c9602fafbecef3f7e8a0fa",
+    "src/borg_headers/borg_think_h.rs": "b8165bca53c94a92f6cbda930a00f6237ff9ab0f",
+    "src/borg_headers/borg_think_store_h.rs": "2efa9db405d462a5a90f8e1aebd2b3f07d5c75a1",
+    "src/borg_headers/borg_trait_h.rs": "72779f6b83549fb37910b7d8eac45f5bfb0f0a50",
+    "src/borg_headers/borg_trait_swap_h.rs": "9741b041e24345de3dd9b57976ea484eda38d832",
+    "src/borg_headers/borg_update_h.rs": "fe9b38e7cb2698edc2e6fbae04ac51da56d45da0",
+    "src/borg_headers/mod.rs": "4d7ae52ef0caa74d31eb5da41647ba89a5b62817",
+    "src/borg_home_notice.rs": "6a7997188f17823d2b54cce538e7ba2f4debaf0a",
+    "src/borg_home_power.rs": "6f1f10f2de06864e9ad827ddbb0cea354503b515",
+    "src/borg_init.rs": "bb0582afb95341ed85f576913ebf63b01e5d1bed",
+    "src/borg_inventory.rs": "df8087169d095180cce1bd4301a3497f3a1edfc5",
+    "src/borg_io.rs": "1a65ffbbf790dbaf98c8e6e584f3d1c26a17e953",
+    "src/borg_item.rs": "9727802ea9a5480ba856801cc35b81e1abca3079",
+    "src/borg_item_activation.rs": "783cde72fc7887ba1cb3a5f62ca5d360d3fa09ba",
+    "src/borg_item_analyze.rs": "5e6cfd459ffa5613af1b20c7f454f29cd699ca90",
+    "src/borg_item_decurse.rs": "c37f4f4e5aecbdbd49adff7f302a524eb7aab42c",
+    "src/borg_item_enchant.rs": "e018ffd7a38670d171ab9c75af69e9268be6e0c0",
+    "src/borg_item_id.rs": "60257d98f672a1328226482ac39261064189cbd6",
+    "src/borg_item_use.rs": "fbf2fe365b54a5d0b60c9053b55b40b4d128d354",
+    "src/borg_item_val.rs": "72af6c594984434f6bf40f138e1121e7fb67a465",
+    "src/borg_item_wear.rs": "b5b1da963160e244af9dd99724cfa58e4e4a7f24",
+    "src/borg_junk.rs": "d8acfa7e8fdf05ef1925b0cbc6d7ee488302e2c5",
+    "src/borg_light.rs": "b0ea592709b1c4901bfa2b806f9abbf2fc720017",
+    "src/borg_log.rs": "baa1e5a90bf831891fc3a4024a439eba31b6bed4",
+    "src/borg_magic.rs": "b4ba4288f69870c71414da641c01a3dd73123c8e",
+    "src/borg_magic_play.rs": "933ecced816068047befbe6ed0d065d9338bf9ed",
+    "src/borg_messages.rs": "5d3038568af95f7a436b0f49a1238f40d651e935",
+    "src/borg_messages_react.rs": "78299250ad6a965d53bf0a75e1cfe925ab502915",
+    "src/borg_object_log.rs": "fc3bd8f759f5043880cf3156f438280caeebe727",
+    "src/borg_power.rs": "40cab96d4505ed14e8c854b72a93369500698d65",
+    "src/borg_prepared.rs": "71b530790683e1177e033c05d764aa25f902749f",
+    "src/borg_projection.rs": "b22f6606c937e840ff030520d6468e55bcf50e04",
+    "src/borg_recover.rs": "eb6243414f3338a6a7ffa017d5e6054f69b80806",
+    "src/borg_reincarnate.rs": "f4071c83c3b4549a5fc2a4ecf5411192260c5269",
+    "src/borg_store.rs": "e3471b1eda9eebfa85f4794bf1a90b57d897762d",
+    "src/borg_store_buy.rs": "0df491ec29b3cf879987f48429b0d54cbbfaf886",
+    "src/borg_store_sell.rs": "59bff90f2eed53f6cbceae3343898932d643e179",
+    "src/borg_think.rs": "845f33700f2946f30ec01aef5a081b8850865a36",
+    "src/borg_think_dungeon.rs": "c2a65f85c74c9c5423889598d5227b91ed9457fa",
+    "src/borg_think_dungeon_util.rs": "2578b3ad612e691ea9aec5da5577ad9178c1b4e6",
+    "src/borg_think_store.rs": "ba749516609811aa3519f5bd1c64246f2d945cbc",
+    "src/borg_town_budget.rs": "f86805ecb5ecee0c4245ebf8fec0e15f8004d032",
+    "src/borg_town_capability.rs": "e485c8ee1cc244f41fe8535b047f3dee2270f7b7",
+    "src/borg_town_dispose.rs": "0476638e39f06c4f776ec0e3ce962f4be2875f65",
+    "src/borg_town_dump.rs": "fa2c87847234a27f9b1b998e3238fb655a0c29b0",
+    "src/borg_town_live.rs": "20a1ac8125baebcaa32c8986cfac529c13bcd528",
+    "src/borg_town_packing.rs": "8139db529de65adccd9aa72a70c57652f88326ac",
+    "src/borg_town_record.rs": "2461c9eb01dbc55b71df03f031573bdba3f5608e",
+    "src/borg_town_shadow.rs": "a7bedac4f9af1a4fb7ac5b0a8cd82b590c5e9798",
+    "src/borg_town_solve.rs": "85cb0879f576c3a119ddcaf757ba31d22537fc3f",
+    "src/borg_town_stock.rs": "c4bd1260b50ca1e6fcc84c019c9b8a945ebdec92",
+    "src/borg_town_traits.rs": "5dc1be7b060a1863ceca19f963bb901856c664e8",
+    "src/borg_town_usefulness.rs": "048b39e8ff931a19bbe8c8ad852a56507b330655",
+    "src/borg_town_utility.rs": "87df762a6d381ed9446add1b79e94670448b283e",
+    "src/borg_trait.rs": "9e826631c3904d926878900f444202e673c7ae83",
+    "src/borg_trait_swap.rs": "ad134805fabb059c63aca7eb9f342b3a343057b5",
+    "src/borg_trip.rs": "919ba653afa1b1368f74d1efe62d34f29ba03e10",
+    "src/borg_update.rs": "84f98ce6ed3728c358dc5cb676ccd0477d1641f9",
+    "src/borg_util.rs": "a1dffe1518a04337b23841471832f532b43b3a51",
+    "src/cctype.rs": "0e864fe4217c4466e8b9ea212eca8a529b585e0f",
+    "src/engine.rs": "103fcf8529ae2209ad118876dbf3f7501f7f62d9",
+    "src/headers/__stddef_null_h.rs": "6c20bc2e507d3d60b353640b26ee106edc4beb8d",
+    "src/headers/__stddef_size_t_h.rs": "c4c3987d3bb783eb8a220c2797c5add64175527a",
+    "src/headers/__stddef_wchar_t_h.rs": "e376fa91c38c0cbb4402f280721a41d87255e324",
+    "src/headers/cave_h.rs": "87cd33848c59a04d87f0b5e3fdcf04a5cc5f2471",
+    "src/headers/cmd_core_h.rs": "d34e1ddcd21b5be0c76f18bc2c97513fec5b386a",
+    "src/headers/cmds_h.rs": "a2d743fe6e3defe6039254e894db5f0631e2b876",
+    "src/headers/ctype_h.rs": "d11e4721d55922cf6c530ce84f9808c1f7e0cbef",
+    "src/headers/effect_handler_h.rs": "071fbc8a46f84f840c1983a3a86472a467b3c2b8",
+    "src/headers/effects_h.rs": "1f232fd7dbb723c5cab7f8bf8bfa09c1dbf62124",
+    "src/headers/game_event_h.rs": "a7e63b1a0d2369bcfd32d2098804c421341e88c4",
+    "src/headers/game_input_h.rs": "044558aafdb1de5744f9e43dd7d30322476cc8b9",
+    "src/headers/game_world_h.rs": "4c4606704ef88eb6d606244f3574fc1ec0864a14",
+    "src/headers/generate_h.rs": "59b9a79bd6f1ad55f5f30cad22781a58f4bed727",
+    "src/headers/guid_h.rs": "168e964074a5638b105f2eae3b41712c6a1c5cfd",
+    "src/headers/h_basic_h.rs": "4917a9ad07693520384b24a52c1d38710a9916cf",
+    "src/headers/init_h.rs": "8b39a0a4f8f52545bc6f662743da5498977c9538",
+    "src/headers/internal.rs": "3b50752b7c934b2453237d3761b854064f7c5615",
+    "src/headers/limits_h.rs": "e5d0f8262dfc8bdefb8d4e9270a7e51545ca04d9",
+    "src/headers/list_effects_h.rs": "c7cd25a9b35e4c47b5014df5daed6a08c5455b9b",
+    "src/headers/list_elements_h.rs": "60706a39e131e5f8630ea9bdcfb1220ade7716e5",
+    "src/headers/list_ignore_types_h.rs": "8d785d4f23b8d5c7e78b946c1d5f10e656c228c5",
+    "src/headers/list_kind_flags_h.rs": "46439c3a3dc3133039b7963d3116535c9df2168b",
+    "src/headers/list_message_h.rs": "97502133182ae7b7c2c5fadc45f58dc10f7bc44b",
+    "src/headers/list_mon_message_h.rs": "1e09d876b39a5984887e4f5fd74c699a13155a74",
+    "src/headers/list_mon_race_flags_h.rs": "68facfd9728dc742bae467854f92b87ab583e647",
+    "src/headers/list_mon_spells_h.rs": "12d27df76472e3cda7a54baf8f1360d91a899d4d",
+    "src/headers/list_mon_timed_h.rs": "652d1a405ddc1ed8f12aca212ea2b7b0cbcd8490",
+    "src/headers/list_object_flags_h.rs": "e82f69ec0603b2495a195f43826eb5a6b2da9dc3",
+    "src/headers/list_object_modifiers_h.rs": "0a61785ef6b4ded0b816712ce2438ce71bd6ba19",
+    "src/headers/list_options_h.rs": "10bd1db0cf725157237c93edde6a7d72cc903328",
+    "src/headers/list_player_flags_h.rs": "8e2f5b1b7bb5f95bed255397d29e2a0aabf1d749",
+    "src/headers/list_player_timed_h.rs": "a48ef5813c509923e967f5942a1f04d55636eccc",
+    "src/headers/list_projections_h.rs": "a96efb927ee3065f9edc249faad3e308292a091c",
+    "src/headers/list_square_flags_h.rs": "b4e1ef8ddd24c320d0d3bb26b2a4f4eb3e407237",
+    "src/headers/list_stats_h.rs": "feb5a95f7f58e556ed495e65d89f625a1566ab08",
+    "src/headers/list_terrain_h.rs": "ce6b5f7987a0155b57f8fac35614b94ca5850340",
+    "src/headers/list_trap_flags_h.rs": "25438d827fc7fad402e277c77df4e437b2b5c7aa",
+    "src/headers/list_tvals_h.rs": "23f2d260f398b9759f4370bb28193998a19cb2eb",
+    "src/headers/message_h.rs": "9fb7717d4546e60dded0d3ef7767a2a8babf051d",
+    "src/headers/mod.rs": "637c92304d3991bf3179492ad47fee27e64cf4e8",
+    "src/headers/mon_blows_h.rs": "709da5920140573c69a201d62bd9703b00c6847f",
+    "src/headers/mon_msg_h.rs": "37ee1fe169f54e267f10b6ef9c6609aa642042c2",
+    "src/headers/mon_timed_h.rs": "3490955ecb8308914588e268a0869be0aba2597e",
+    "src/headers/monster_h.rs": "8dd12226121f693c8dbbfa07ed18a03b04c43e29",
+    "src/headers/obj_curse_h.rs": "030f73d564ddb926a37665778f89483ac8b8e9eb",
+    "src/headers/obj_desc_h.rs": "f885aa19426c6136ca2c13d3f1d21f244dc7bfb7",
+    "src/headers/obj_gear_h.rs": "9d633892c55a74c97c9dd09bfd47e735b79fa2d9",
+    "src/headers/obj_ignore_h.rs": "96ed4648810f9184fe91bad5272319ba7f36821f",
+    "src/headers/obj_knowledge_h.rs": "0adec6b14cef3a929c889e7ed320c5c66add6648",
+    "src/headers/obj_power_h.rs": "9f691bc3bf2f78e593f69cf4742e868220f8c696",
+    "src/headers/obj_properties_h.rs": "ab290848198e974b1efb1e93fce9aa29b1dd508f",
+    "src/headers/obj_slays_h.rs": "4d5710cd911e3f11be2950bba97d1c69822002db",
+    "src/headers/obj_tval_h.rs": "b5655e9204a5251eb0955d59523cb807bbf6cf6e",
+    "src/headers/obj_util_h.rs": "779ef3ec68e078b320584f996e89a4db90fdc857",
+    "src/headers/object_h.rs": "6f7437937f36b17de0506e5804a95232d7681a79",
+    "src/headers/option_h.rs": "79782c2fc440074c48be4c9bb78149b9ebbbf2d0",
+    "src/headers/player_calcs_h.rs": "b4d7595899b4153d06f8844ea52095ad8aec6561",
+    "src/headers/player_h.rs": "64ddea4a7ab8ef8a48d666dd20cd6c8b6dbec232",
+    "src/headers/player_spell_h.rs": "70f4cf0cd70f9b610414d167ff6a154aefdf9363",
+    "src/headers/player_timed_h.rs": "063b4a1f6f3e796ce62e8880cd3dbe4edc88ce96",
+    "src/headers/player_util_h.rs": "ddbf77df89a1db3bbff85a198c60bbc3c8dcc9bd",
+    "src/headers/project_h.rs": "70ae98089169d7aba3f99c82d88ec23c3cef8cdf",
+    "src/headers/source_h.rs": "928d8b649a852b4ae2aa8680ffea69831cd3fb36",
+    "src/headers/stdbool_h.rs": "8b452f47f30ab117279aa8a59440fe3ef1b372ed",
+    "src/headers/stdint_h.rs": "020053192c2a25e5a955913b3d85df57bc52347b",
+    "src/headers/stdint_intn_h.rs": "977bf7810bf74942d34c49687f9dfd807f92644f",
+    "src/headers/stdint_uintn_h.rs": "76731b623a659405f44d48cdee177cbfcba08f3e",
+    "src/headers/stdio_h.rs": "20f4961d23ad46d494818550c585dd531ddb567b",
+    "src/headers/stdlib_h.rs": "bd993237be3dfbbfe0f17197871ac4d80a08a4f6",
+    "src/headers/store_h.rs": "48e439d957d6b8b35fe158439041be2cc9cb7dcc",
+    "src/headers/string_h.rs": "c0ff1356607745056e8314ff068a1f8689474cfd",
+    "src/headers/struct_tm_h.rs": "afab8b47ea5898893e907b38a472605b44adb797",
+    "src/headers/target_h.rs": "36a02b6422b11451b349a0a69378e1eda648fe99",
+    "src/headers/time_h.rs": "f70c551bd55cb46cbf7bb21e9c99ddab6fadb389",
+    "src/headers/time_t_h.rs": "e103fa4d2b6039cd2b7cc96c4e4bf778968bc1f4",
+    "src/headers/trap_h.rs": "40b585465906f9292de9830b0dd282f71880f1e1",
+    "src/headers/types_h.rs": "dc374ebc616a63d2fa6ea0fec1cd4fb4b88667fc",
+    "src/headers/ui_command_h.rs": "42a67b1df397dec216856ff6fe745919bf050df3",
+    "src/headers/ui_event_h.rs": "97643d1172803455995ce25e6ec4ba96c973f13b",
+    "src/headers/ui_game_h.rs": "dd26d96bd3e645ec915e9b82d0a49b0c33d2a119",
+    "src/headers/ui_input_h.rs": "cc94fb149e929afdadf464b766947194b39275bf",
+    "src/headers/ui_keymap_h.rs": "0271235a8114bf7c95a4a7a3c87bfcb19fe0daa4",
+    "src/headers/ui_map_h.rs": "0b2c002938cd5988a8865b477624ef200dd43783",
+    "src/headers/ui_menu_h.rs": "8a727e4671b64fa01494b8ab32fbed5e71e69d94",
+    "src/headers/ui_output_h.rs": "0405b5c7704dca2366c067ae48d7f2672146a715",
+    "src/headers/ui_target_h.rs": "05c747cce9dbf9ce1d39b5d2a88e290dbadfba69",
+    "src/headers/ui_term_h.rs": "35c5ab3d49e40cdcedc92152c918d6cb67c21867",
+    "src/headers/wchar_h.rs": "183e4eb0052712fd84e7ac0bff86c2b88fe0cb7c",
+    "src/headers/z_bitflag_h.rs": "98c0913b7fe77f02c947251522f07f3883089b3a",
+    "src/headers/z_color_h.rs": "494c34cdb9cbedaeaad79c86c97aa9317a1d888c",
+    "src/headers/z_dice_h.rs": "7903efba0f0381e6f8fed26c3c1adf9b2d15a876",
+    "src/headers/z_file_h.rs": "6f35897d879e44ccb5cbff400b8ff246c089af18",
+    "src/headers/z_form_h.rs": "7f7c59ec6d8de2ea3c3f6317d916c02748a7b92f",
+    "src/headers/z_quark_h.rs": "a028b6e21ab0c3c9304105bd73e330b954e528c0",
+    "src/headers/z_rand_h.rs": "6c46919e53327834453fdc2a6672d9217a99174c",
+    "src/headers/z_type_h.rs": "eb58f1abb548350259411eea526fcdbbc2038e6a",
+    "src/headers/z_util_h.rs": "323bebbeea89b25397ea40ea4fe73d1bc06c8911",
+    "src/headers/z_virt_h.rs": "004469a3c379a2679f80690135014657793e3615",
+    "src/lib.rs": "c4ff88e8b6c8bf469f1dc11c05ad673c20b73517",
+    "src/regress.rs": "a66db9be4c5e3cc92a2d62ec888d1c78266aaef9",
+    "src/state.rs": "ff29ceb0ee96463e9d3d2aaf9f284ee98735d676",
+    "tools/count-unsafe.sh": "a7775641112e3a8a6b958b797482cb7530f464cd",
+    "tools/m3_calls.py": "831fa632642db85537703cd4e214d29d4143c212",
+    "tools/reorganize.py": "10cdfc988cf6cccb3652d290269268e45997d452",
+    "tools/transpile.sh": "720dcd7ba28b6a0f022fe4a60ef5941e127426ad"
+  },
+  "files": {
+    "Cargo.toml": {
+      "donor_blob": "f09222f2f0d69ce9f0089bf40f177ddde6a07139",
+      "receiving_sha256": "d174e4c9801702dc4fdd200fe095f5f35ecf9ecb5c28b869df67013fc881bb10"
+    },
+    "build.rs": {
+      "donor_blob": "9d24439107a218ec33578cabbf1215f38e986805",
+      "receiving_sha256": "284a36364960c973976f9d36ac168d7d458f236ba641b5ef60298d7a2196b3b1"
+    },
+    "src/borg.rs": {
+      "donor_blob": "00aeb6c489c9924516f3e171263b99bc51bb9931",
+      "receiving_sha256": "b493f2d0e6e2bfd322d1317b123442c5e98a9077d5918b8fdb8e2cce38d0ea63"
+    },
+    "src/borg_caution.rs": {
+      "donor_blob": "20aa04db4795b242c9b920db0de095c8aa239afc",
+      "receiving_sha256": "d52519644db6c62491ad0123a4211d44f8fc27bb2beeace9291c9328df775182"
+    },
+    "src/borg_cave.rs": {
+      "donor_blob": "4aef06d02592767bd52e2f5dbaac0181c181a909",
+      "receiving_sha256": "e3871fa5dd14672c3e888b25e3bff96bba191bb38e0b46206730bc3d22ce498b"
+    },
+    "src/borg_cave_light.rs": {
+      "donor_blob": "1c43eab216b467ee7db65cdccb6413af41d7b272",
+      "receiving_sha256": "827a122cd8317e352e1fcd4b637bd16ff70a12cbe52487d5e23fcdaa28c1cb38"
+    },
+    "src/borg_cave_view.rs": {
+      "donor_blob": "7d2ab4e6ba0765e4e06501cdb3912deecae07de1",
+      "receiving_sha256": "cbed5d80079c54fd6822f651a24a4534d6511be67d5b9056589b3573944d9f9a"
+    },
+    "src/borg_commands.rs": {
+      "donor_blob": "784a6beeb1d90e309fd0f800bb932b7d96cceb95",
+      "receiving_sha256": "c21f73a9d2c97eac8eb750c4c4c8d881b2c889bb3b064b14d2a32ceb6aae029b"
+    },
+    "src/borg_danger.rs": {
+      "donor_blob": "5b903d1359583ab5ebb5d1bb2a3703b5f2618a34",
+      "receiving_sha256": "81cdae6da6233b00f57a9ff0f659e7569eeb2d619e562f1f06b4d0515d024d8f"
+    },
+    "src/borg_escape.rs": {
+      "donor_blob": "71a54a61ac37bf4185e18f1bb13ad69f82765c99",
+      "receiving_sha256": "b73c132c4605391e0904e5ebc1121c639a9abc1a1e4a51d9bab193a55ba5864b"
+    },
+    "src/borg_fight_attack.rs": {
+      "donor_blob": "5d0dea7ac0fed5334b19a76fbf30aab99fa600df",
+      "receiving_sha256": "36205bb4b6ceb34e2d5e142cdaad05644e967749a8e094a93346fd6545cacf8b"
+    },
+    "src/borg_fight_defend.rs": {
+      "donor_blob": "ab3dca51197940808e0f2b5e1c6b8060b037966e",
+      "receiving_sha256": "29a0f15eda5cc5d86bac71c57face9ba047da57ab11626abced14163f69a945b"
+    },
+    "src/borg_flow.rs": {
+      "donor_blob": "087ab0e6123857e818c00c3d77287c922c013817",
+      "receiving_sha256": "4b1a247e4c6b6905dde8a197893b8b392ba90106a03b5785e4417469b1552b0d"
+    },
+    "src/borg_flow_glyph.rs": {
+      "donor_blob": "496ad56366a4a7adb17fb10f35435a9b65ab942f",
+      "receiving_sha256": "5b55e96b2a596e7038c5c3bf853addf0f777d0211efa863940a49808ecbc8f0c"
+    },
+    "src/borg_flow_kill.rs": {
+      "donor_blob": "f49f195454ce1825777d4e86840b329e671f299b",
+      "receiving_sha256": "8bd6da20d14247db7dc839ff4621c32eb161ccdcc3cbaa0ecafb2716bd16fa4d"
+    },
+    "src/borg_flow_misc.rs": {
+      "donor_blob": "84577c3fc1bf1c288cfd2adfec2855ae38b99bf7",
+      "receiving_sha256": "0f654241ba2a0ab6ae3cc0ab11a4d0fdbe5bae638e76d5e5e3eb12fc0ae7cabf"
+    },
+    "src/borg_flow_stairs.rs": {
+      "donor_blob": "cfc8b5b2e21dd2a374f7fe4e749c96754505b6bb",
+      "receiving_sha256": "66a895133b0f7381f6f783dfbfc113c911eb2eda10c7c7d98a79338a57ff1d50"
+    },
+    "src/borg_flow_take.rs": {
+      "donor_blob": "f19b4b2933fbf4ccab7476b39e6abb17a5a07a87",
+      "receiving_sha256": "608f638f11aea352c513a7505cffa6f88dd5cbdeea445ab5e04091aee3e8f47f"
+    },
+    "src/borg_formulas.rs": {
+      "donor_blob": "aa7ffe13ec8cd89fa705788c2dd6058155890e53",
+      "receiving_sha256": "7d8a3b309315f6b7a882a761a0ae3df1a5e4d2fecbbeaff8f3d178c34500c971"
+    },
+    "src/borg_formulas_calc.rs": {
+      "donor_blob": "44e7a778f4fedb45bc4d3ee7a2fc343c21c3f2b5",
+      "receiving_sha256": "f1ba477e65aff27b7df44736ffd0a53904a82f0ce3c4b0763bf946d828ddb9f6"
+    },
+    "src/borg_init.rs": {
+      "donor_blob": "bb0582afb95341ed85f576913ebf63b01e5d1bed",
+      "receiving_sha256": "dc99f1e875c34faf663b12a6296a231da4db487c8afa5b8205b44bcfd7ff1a91"
+    },
+    "src/borg_inventory.rs": {
+      "donor_blob": "df8087169d095180cce1bd4301a3497f3a1edfc5",
+      "receiving_sha256": "b9abfa06a1d400d4718c7c65b54b8a635268bb5ca53a28687870b44a1cbbb9f1"
+    },
+    "src/borg_io.rs": {
+      "donor_blob": "1a65ffbbf790dbaf98c8e6e584f3d1c26a17e953",
+      "receiving_sha256": "32e4d796487949eb459acf225410d44a5acdaa2493e1d858cfef9d68ca862108"
+    },
+    "src/borg_item.rs": {
+      "donor_blob": "9727802ea9a5480ba856801cc35b81e1abca3079",
+      "receiving_sha256": "e099e6cb5e4f2767b46b0b59cbc343c6d87ab951cccd0bf7c6838a13f2803977"
+    },
+    "src/borg_item_activation.rs": {
+      "donor_blob": "783cde72fc7887ba1cb3a5f62ca5d360d3fa09ba",
+      "receiving_sha256": "91d2f7263a4c65da1a0c71d40e5bb8a55d230631fff9fb88dbd867e3b831b48a"
+    },
+    "src/borg_item_use.rs": {
+      "donor_blob": "fbf2fe365b54a5d0b60c9053b55b40b4d128d354",
+      "receiving_sha256": "b6f7f96b2242664bc3521fa24bf713263fdc4b5365319c33d7ef020d4b465fe5"
+    },
+    "src/borg_item_val.rs": {
+      "donor_blob": "72af6c594984434f6bf40f138e1121e7fb67a465",
+      "receiving_sha256": "e710b8fb713d90e7260ae6f99967014e11c7242f97907ed065a9a3d3c71aa631"
+    },
+    "src/borg_item_wear.rs": {
+      "donor_blob": "b5b1da963160e244af9dd99724cfa58e4e4a7f24",
+      "receiving_sha256": "31dff336388076dd992fbb8a799e87b0e4adca5935d1005931d6c492b6f85cfb"
+    },
+    "src/borg_magic.rs": {
+      "donor_blob": "b4ba4288f69870c71414da641c01a3dd73123c8e",
+      "receiving_sha256": "fff3224670547a8c7de366aee00450a60b51bfe7444f5aa829af979461e2c748"
+    },
+    "src/borg_messages.rs": {
+      "donor_blob": "5d3038568af95f7a436b0f49a1238f40d651e935",
+      "receiving_sha256": "db7049fb02c5296e83f4396dab31a90300bf71f0b102321b5a9db140c3f0827c"
+    },
+    "src/borg_messages_react.rs": {
+      "donor_blob": "78299250ad6a965d53bf0a75e1cfe925ab502915",
+      "receiving_sha256": "6a6200732c252200be01a6e0c947ba16afee1380b902b9c53a31ff570e1cd441"
+    },
+    "src/borg_power.rs": {
+      "donor_blob": "40cab96d4505ed14e8c854b72a93369500698d65",
+      "receiving_sha256": "27cda0e5464dcdca6be744cc6bcb252fb7c1228dc3afb8d4317c6687acce4747"
+    },
+    "src/borg_prepared.rs": {
+      "donor_blob": "71b530790683e1177e033c05d764aa25f902749f",
+      "receiving_sha256": "eacf4b33dc35b64548357dc2ed1ec7479143bb75baf4add2fede888c4562f4aa"
+    },
+    "src/borg_projection.rs": {
+      "donor_blob": "b22f6606c937e840ff030520d6468e55bcf50e04",
+      "receiving_sha256": "aeb0787a9dbfebfd0f426326c2e49d66e43aed8142fed6f6033c6f533b07a57b"
+    },
+    "src/borg_recover.rs": {
+      "donor_blob": "eb6243414f3338a6a7ffa017d5e6054f69b80806",
+      "receiving_sha256": "73f8a51b5b0eec71f57597eddbfdf3ae5be8ae5bb6b63016395ad8fb544cda91"
+    },
+    "src/borg_store.rs": {
+      "donor_blob": "e3471b1eda9eebfa85f4794bf1a90b57d897762d",
+      "receiving_sha256": "5f20a1c4f2cdf0cdd54fc5dae0a3665face34601e146602091f898fafde1ab60"
+    },
+    "src/borg_store_sell.rs": {
+      "donor_blob": "59bff90f2eed53f6cbceae3343898932d643e179",
+      "receiving_sha256": "7dc70794a1528bea54033ea1d84c458efaa248bd8e8c6c29bbeb5d41681c9c19"
+    },
+    "src/borg_think.rs": {
+      "donor_blob": "845f33700f2946f30ec01aef5a081b8850865a36",
+      "receiving_sha256": "744aa9b67ff9cdd7bce6c809d653a1a06bb3f9f9965e17a41bed0ce1c2d20a60"
+    },
+    "src/borg_think_dungeon.rs": {
+      "donor_blob": "c2a65f85c74c9c5423889598d5227b91ed9457fa",
+      "receiving_sha256": "20f9a21b7cb6f5e3efe31d1c7ceffd252a9bda26c2074287ed4e00fecdd0c04b"
+    },
+    "src/borg_think_dungeon_util.rs": {
+      "donor_blob": "2578b3ad612e691ea9aec5da5577ad9178c1b4e6",
+      "receiving_sha256": "ce85cf0d60ea7a6c6a65de9a2ec5ef7d48b71dea8d9a68d7353d0e3d107b12cc"
+    },
+    "src/borg_town_live.rs": {
+      "donor_blob": "20a1ac8125baebcaa32c8986cfac529c13bcd528",
+      "receiving_sha256": "60cd9a5b95cecbccca67cad7cef9f4a3d21d23007b744aa2022b51a6afa8d44d"
+    },
+    "src/borg_trip.rs": {
+      "donor_blob": "919ba653afa1b1368f74d1efe62d34f29ba03e10",
+      "receiving_sha256": "1bcf4482fd69505716b1f6fec318c1baa0f2888e86561ae1416b17ed72abb3fa"
+    },
+    "src/borg_update.rs": {
+      "donor_blob": "84f98ce6ed3728c358dc5cb676ccd0477d1641f9",
+      "receiving_sha256": "015d747035dc9f1af18647fcd30aa9fe50621634f234db89ab8b9bcc724efebd"
+    },
+    "src/engine.rs": {
+      "donor_blob": "103fcf8529ae2209ad118876dbf3f7501f7f62d9",
+      "receiving_sha256": "a59de7320c004bb91091102a76e3935e276d73b085330221f2396ae9cf7d3705"
+    },
+    "src/headers/option_h.rs": {
+      "donor_blob": "79782c2fc440074c48be4c9bb78149b9ebbbf2d0",
+      "receiving_sha256": "aa7c3d3095b10ba039cfc578c5e02a47dd1654d2e738e2fa6635fb3e07df087e"
+    },
+    "src/lib.rs": {
+      "donor_blob": "c4ff88e8b6c8bf469f1dc11c05ad673c20b73517",
+      "receiving_sha256": "081b1890114b20f94ca1623cc4f83351b5c0ced6085669622cf2b5a22af07cad"
+    },
+    "src/state.rs": {
+      "donor_blob": "ff29ceb0ee96463e9d3d2aaf9f284ee98735d676",
+      "receiving_sha256": "3ecaa3be17af2a44688df0c57d2dcee081450334602bb095663e38949134a37f"
+    }
+  }
+}

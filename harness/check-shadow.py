@@ -38,7 +38,9 @@ def checked_map(value, allowed, path):
     return value
 
 
-def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False):
+def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None):
+    if expected_mode not in (None, 'check', 'switch'):
+        raise ValueError('expected mode must be check or switch')
     if legacy_r2 and legacy_attack:
         raise ValueError('select only one legacy surface')
     complete = not (legacy_r2 or legacy_attack)
@@ -52,11 +54,17 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     entries = dict.fromkeys(allowed, 0)
     pure_totals = dict.fromkeys(PURE_POINTS, 0) if not legacy_r2 else {}
     for path in files:
-        previous, last = 0, None
+        previous, last, file_mode = 0, None, None
         for line in path.read_text().splitlines():
             row = json.loads(line)
             if row.get('schema') != schema or row.get('mode') not in ('check', 'switch'):
                 raise ValueError(f'{path}: wrong schema or mode (expected {schema})')
+            mode = row['mode']
+            if expected_mode is not None and mode != expected_mode:
+                raise ValueError(f'{path}: expected {expected_mode} mode, got {mode}')
+            if file_mode is not None and mode != file_mode:
+                raise ValueError(f'{path}: mode changed within a run')
+            file_mode = mode
             if row['counts']['thinks'] != previous + 1:
                 raise ValueError(f'{path}: missing think statistics')
             previous, last = row['counts']['thinks'], row
@@ -141,9 +149,11 @@ def main():
                         help='explicit @1 reader; derive event meanings without rewriting raw evidence')
     parser.add_argument('--legacy-r3-attack', action='store_true',
                         help='explicit @2 attack reader; cannot satisfy complete defence coverage')
+    parser.add_argument('--expect-mode', choices=('check', 'switch'),
+                        help='require this mode for every record in the supplied arm')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode)
     except (ValueError, KeyError, OSError) as error:
         parser.exit(1, f'shadow check failed: {error}\n')
     print(f'{count} shadow runs (legacy_r2={args.legacy_r2}): {totals}; zero mismatches')

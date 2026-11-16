@@ -32,6 +32,28 @@ attack/escape cross-calls. Permanent-buff policy (767 donor lines),
 preparation, flow/projection and item/spell services remain shared. The
 syntactic source audit does not prove arbitrary Rust semantic equivalence.
 
+## What this parity evidence establishes
+
+R3 is a mechanical policy migration. The port deliberately preserves the
+native branches, arithmetic, ordering and constants; token/literal source
+correspondence is an explicit acceptance condition. It is separately owned
+receiving code with named accessors and recorded dependency adapters, not an
+independently designed combat strategy or a completed modes/goals redesign.
+Zero observed mismatches validates the migration's accessors, state ownership,
+tape and adapter integration on the covered inputs. It is not evidence that
+two independently designed strategies discovered the same decisions. Token
+correspondence alone cannot guarantee runtime parity across different adapter,
+engine-state and restoration semantics: the retained literal faults and
+request/state controls demonstrate non-vacuity and rejection of divergences.
+
+Defence/caution use public attack service facades rather than owning every
+nested attack call as part of the outer transaction. Those facades run their
+own independently shadowed attack boundary; the outer replay consumes the
+recorded service result and state. Full correctness therefore depends on that
+separate attack check as well as the outer policy check. Shared services and
+engine facts remain an explicit boundary, not native final policy decisions
+masquerading as independent design.
+
 ## Native acceptance
 
 | Exact combined runtime | Off | Check | Switch |
@@ -58,6 +80,10 @@ difference inventories remain in the full evidence reports.
 
 The 43 constructed defence cases per mode cover every selector entry and
 selected guarded restoration/Morgoth paths using loaded engine tables.
+The 31 generic selector states are deliberately sparse; many scores are zero.
+Event-count minima establish limited call reach, not realistic tactical
+usefulness or branch completeness. Only the Morgoth-rest fixture requires a
+positive simulated utility; stronger positive tactical cases are a follow-up.
 Grim Purpose preserves native 0/1 restoration from nonbinary inputs;
 Morgoth rest has a positive simulated result. Fixture live-play streams match
 normal production off. These are synthetic states, not natural endgame play.
@@ -104,7 +130,8 @@ independent samples. Already public historical evidence is preserved.
 
 The source keeps implementation, tests, short validation summaries and pinned
 cemetery receipts. Both receipts name exact cemetery commit
-cbb23b5c42ff126e5aa22fe7a8464daa1c1fb2e0 (cemetery PR #14). The new verifier checks the exact cemetery commit, full
+99de780bbd80086bdd8b38524ecf230c3e657573 on cemetery main (merged PR #14).
+The original cbb23b5c evidence commit and all manifest hashes are unchanged. The new verifier checks the exact cemetery commit, full
 manifest inventory, every payload hash and qualified-package identity, then
 constructs a disposable reconciliation mirror. The cemetery-owned reconciler
 still rejects unexported natural deaths and missing encounter-family/key-stream
@@ -127,3 +154,33 @@ feature/track-r only, explicitly close tasks and relevant resolved follow-ups,
 and freeze an immutable snapshot for review/track-r-baseline. The owner picks
 and runs the reviewer; implementation family is Codex/GPT-6. The review prompt
 must name the final source/evidence pins and all limits above. Stop there.
+
+## Independent review disposition
+
+Claude Code's review on #413 recommends accepting the code and holds evidence
+acceptance until cemetery #14 is merged. That PR is now merged on main at
+99de780bbd80086bdd8b38524ecf230c3e657573; both receipt manifests were verified
+unchanged there. This is canonical validation custody, not central final-ID
+allocation (#344) or owner acceptance of R3.
+
+Hooked vendor files now have an explicit donor-blob/receiving-content manifest
+in scripts/borg-core-hooks.json. The gate rejects unrecorded byte changes,
+wrong pins and inventory drift. Updating that manifest is an explicit reviewed
+operation; hashes establish exact recorded content, not semantic correctness
+of a hook. Neither check nor refresh silently blesses new bytes. CI verifies
+all receiving files against the recorded donor inventory without accessing
+a reference checkout; a separate reference audit verifies that inventory
+against the exact donor. The original build-independence test remains intact.
+
+The M13 carry includes healing, waybread, trap and retired-mode paths that the
+45-game suite does not establish branch coverage for. Preserve that limit.
+View::new deliberately snapshots danger traits; it is not the cheap stateful
+Read constructor. Scalar entry engine reads are pure but duplicated. AttackKind
+contains values at query time; aware is a mutable engine fact captured in that
+value, not immutable world knowledge. The inherited teleport-target capacity
+assumption, duplicate shadow-log open and BORG_RUN_DIR re-read remain declared
+low-priority follow-ups, without silently changing the donor-parity baseline.
+CI shadow arms now enforce their expected check/switch modes explicitly.
+
+The canonical gameplay-evidence policy is synchronized from main as a policy-only
+change. No newer Track P runtime or moving donor pin is carried by this fix.
