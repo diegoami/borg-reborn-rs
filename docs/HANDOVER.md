@@ -262,7 +262,7 @@ One PR, owner's request (supersedes #441):
 - The published #440 90-start comparison is historical, descriptive and
   not independently verified here. Raw seed/config/run custody is still
   being recovered; it is not validation of #447. See the canonical
-  [Cemetery archive](https://github.com/diegoami/borg-cemetery/tree/ca702eca54a213cae7569f8e76f4f733bd674c89/validation/borg-reborn-rs/plan-cap-review-447/);
+  [Cemetery archive](https://github.com/diegoami/borg-cemetery/tree/513d14f59a00fee6b6a5fa39c650d04eaea05650/validation/borg-reborn-rs/plan-cap-review-447/);
   missing raw custody is tracked in #448.
 - CI deaths for reviewed source ef85f725 are retained on borg-cemetery
   `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
@@ -4717,7 +4717,8 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   Recall cancellation; the cap test permits the accepted one-step N+1 move.
 - Release core checks: 329 pass, 4 ignored; workspace tests, fmt and clippy
   pass. Targeted native plan/survival checks: 13 pass; tools: 94 pass;
-  scripts: 19 pass. Vendor declaration also covers #444’s existing hook.
+  scripts: 19 pass. Full engine suite: 84 pass/checks, 2 fixture-dependent
+  skips. Vendor declaration also covers #444’s existing hook.
 - Clean implementation/source/binary are pinned in Cemetery #36, with three
   canonical CI control deaths. The source fixture pins that evidence commit.
   Lifecycle reload/cancel behavior has unit coverage; an interactive GUI
