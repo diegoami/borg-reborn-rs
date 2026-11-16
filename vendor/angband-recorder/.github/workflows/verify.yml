@@ -5,7 +5,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -14,6 +14,19 @@ jobs:
       - run: cargo fmt --check
       - run: cargo test --locked
       - run: cargo clippy --locked --all-targets --features ffi -- -D warnings
+      # Vanilla enables a graphical frontend even when only the test frontend
+      # was requested. Match its Linux build dependency without changing it.
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev xvfb xdotool xfonts-base
+      - run: python3 -m unittest discover -s tests -v
+      - run: python3 tests/abi-controls.py --output /tmp/recorder-abi
+      - run: |
+          git clone --bare --quiet https://github.com/angband/angband.git /tmp/x11-vanilla.git
+          git -C /tmp/x11-vanilla.git archive 42cd156ac9f95ddf4311e88dd7ad462292d6d1d6 -o /tmp/x11.tar
+          mkdir -p /tmp/x11 && tar -xf /tmp/x11.tar -C /tmp/x11
+          cd /tmp/x11 && patch -p1 --input "$GITHUB_WORKSPACE/patches/angband-4.2.6-42cd156.patch"
+          flock /tmp/angband-validation.lock cmake -S /tmp/x11 -B /tmp/x11/build -DSUPPORT_BORG=OFF -DSUPPORT_BORG_RECORDING=ON -DANGBAND_RECORDER_DIR="$GITHUB_WORKSPACE" -DSUPPORT_TEST_FRONTEND=ON -DSUPPORT_X11_FRONTEND=ON -DCMAKE_BUILD_TYPE=Release -DBUILD_DOC=OFF
+          flock /tmp/angband-validation.lock cmake --build /tmp/x11/build --target OurExecutable -j4
+          python3 "$GITHUB_WORKSPACE/tests/x11-controls.py" --build /tmp/x11/build --output /tmp/recorder-x11
       - run: git clone --bare https://github.com/angband/angband.git /tmp/vanilla.git
       - run: python3 tests/round-trip.py --engine /tmp/vanilla.git --output /tmp/recorder-proof
       - uses: actions/upload-artifact@v4
@@ -23,3 +36,7 @@ jobs:
           path: |
             /tmp/recorder-proof/result.json
             /tmp/recorder-proof/test.log
+            /tmp/recorder-abi/result.json
+            /tmp/recorder-abi/test.log
+            /tmp/recorder-x11/result.json
+            /tmp/recorder-x11/test.log
