@@ -1,7 +1,9 @@
-# Stateful Track R comparisons (#286)
+# Stateful Track R comparisons (#286, #364)
 
 The dependency direction stays shell → next → core. The core owns a typed
-request enum for caution, recovery and all nine public escape entry points.
+request enum for caution, recovery, all nine public escape entry points,
+and five mutating attack entries. Two additional attack entries compare
+scalar results without a stateful transaction.
 With shadow off, each wrapper immediately calls its original implementation;
 no state is copied, no arguments are formatted and no tape/files are created.
 
@@ -10,7 +12,8 @@ the port drives them. A switch disagreement is a validation failure; no
 engine rollback is claimed. The other program runs on an owned Rust policy snapshot
 and receives recorded responses. **The engine is never cloned or rewound.**
 
-The closed `decision_api` surface has 68 dependency functions. A stateful
+The R2 closed `decision_api` surface had 68 dependency functions; the attack
+extension is inventoried in R364-ADDED-DEPENDENCIES.json. A stateful
 call records its name, explicit arguments, complete input state, result and
 complete post-state. Replay validates the request and input state *before*
 applying that post-state; an earlier port mutation cannot be overwritten and
@@ -24,7 +27,8 @@ types. Field-wise equality for keypress and elemental item info lives in
 our separate snapshot module; generated engine bindings remain untouched.
 An engine access token copied into a snapshot does not grant access:
 engine::check_access still requires the actual root state's field address.
-The port's BI reads use named View fields; temporary policy mutations stay
+Stateful BI reads use borrowed named Read accessors; danger uses an immutable
+View. Temporary policy mutations stay
 explicit on the driving state or replay snapshot. The only direct BI write
 is the named mana adapter, matching the native temporary-mana simulation.
 
@@ -66,9 +70,26 @@ reviewable PR. If no seed reaches it, add a declared targeted state fixture
 that exercises real policy, not invented counters. Never drop the flag,
 weaken assertions/caps/timeouts or use sealed seeds to regain green.
 
-At the next telemetry schema change, expose policy_markers separately from
-actual dependency requests. The current @1 field remains explicitly legacy;
-no runtime counter meaning changes as part of this documentation update.
+R3 attack uses `shadow-stats@2` and `shadow-mismatch@2`, with
+`surface: r3-attack`. `tape_events` counts all recorded events,
+`policy_markers` counts the entry markers, and `dependency_requests` counts
+only actual dependency calls. The invariant is tape_events = policy_markers
++ dependency_requests. The stateful point map sums to policy_markers;
+subsystem call counts include attack; their sum is policy_markers plus
+pure_attack_comparisons because attack_calls also includes standalone
+scalar calls. Root
+transactions remain separate from nested entries. `pure_attack_comparisons`
+and `pure_points` count the two standalone scalar entries; they do not add
+tape markers. When a scalar entry executes inside a stateful transaction,
+its marker and recorded queries belong to that transaction instead.
+
+The default consumer requires the R3 surface and all 18 public entries when
+`--require-all-entries` is set, including both standalone scalar entries.
+`--legacy-r2` explicitly reads historical @1 evidence, derives the split
+from its legacy counters, and requires the original 11 entries. It never
+rewrites raw evidence. @1 cannot satisfy the current default gate. The R2
+coverage and seed instructions above describe the historical acceptance;
+the extended strict gate must pass on the actual attack build.
 
 The workspace intentionally uses panic=abort. An incompatible replay request,
 input state or result type writes a durable mismatch to shadow.jsonl, then
@@ -84,10 +105,14 @@ Invalid danger-grid memory uses the same controlled-stop principle: append a
 this path queries no engine state; it never takes the recorder mutex. Missing
 run directories or write errors are reported on stderr before exit. A six-case
 subprocess fixture exercises the actual grid failure path for both modes,
-covering out-of-bounds and unallocated memory. It is an operational diagnostic,
+covering direct, nested and replay contexts with out-of-bounds or unallocated
+memory. Assessment receives the provider's validated Mode; the diagnostic
+does not reread BORG_SHADOW. The subprocess controls deliberately change that
+environment value after parsing and require the original mode in the record.
+It is an operational diagnostic,
 not a natural game death or a successful shadow comparison.
 
-The syntactic source gate in scripts/decision_surface.py checks the three
+The syntactic source gate in scripts/decision_surface.py checks the four
 native policies and every Rust file recursively under stateful/, including
 the dispatcher and newly added modules. It rejects known core/module aliases,
 unsupported memory/local paths, raw trait indexing/reads, unsafe/extern and

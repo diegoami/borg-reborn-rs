@@ -1,0 +1,450 @@
+{
+  "schema": "borg-reborn-rs/r364-source-audit@1",
+  "native_sha256": "36205bb4b6ceb34e2d5e142cdaad05644e967749a8e094a93346fd6545cacf8b",
+  "port_sha256": "1b6f471013cb29dfeaa7a01f9b0b4bc6b099a2b88c63e1036e7aa3048949e249",
+  "scope": "All 71 policy function bodies, module constants and SpellFlag enum; imports and memory definitions require separate review.",
+  "identical_declarations": [
+    "BORG_OKAY",
+    "BORG_VIEW",
+    "BTH_PLUS_ADJ",
+    "CLASS_DRUID",
+    "CLASS_MAGE",
+    "CLASS_NECROMANCER",
+    "CLASS_PALADIN",
+    "CLASS_PRIEST",
+    "CLASS_RANGER",
+    "CLASS_ROGUE",
+    "GOAL_KILL",
+    "MONBLOW",
+    "SpellFlag"
+  ],
+  "normalization": "Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string and character sequences compared separately.",
+  "functions": [
+    {
+      "function": "key",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "i2d",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "avoid",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_timer",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "simulating",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "grid",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "max_range",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "is_ghost",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "rf",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "rsf",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "has_friends",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "contains",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "desc",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "cant_aim",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "paranoia",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "low_on_food",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "danger_one_here",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "danger_here",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "dist_to",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "power",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "tp_other_add",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "is_summoner",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_mon_blow_effect",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_thrust_damage_one",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "melee_score",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_thrust",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_best_mult",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "strchr_egv",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "too_high_level",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "set_flag",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "commission_value",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_damage_one",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "breath_third",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "blow_effect_name",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_bolt_aux_hack",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_destroy_stuff",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "path_stop",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "missed_before",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "not_mapped",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_bolt_at_location",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_bolt",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_arc_at_location",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_launch_arc",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_launch",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_rest",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_object",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "oil_reserved",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "primary_spell_for_class",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "class_penalty",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_spell_bolt",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_spell_bolt_reserve",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_spell_dispel",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_staff_dispel",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_rod_bolt",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "select_effect",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_wand_bolt",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_bolt_unknown",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_activation",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_ring",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_dragon",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_whirlwind_attack",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_leap_into_battle",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_maim_foe",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_vampire_strike",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "danger_with_flag",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_crush",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_trance",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack_aux_artifact_holcolleth",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "best_of",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_calculate_attack_effectiveness",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_attack",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    }
+  ]
+}

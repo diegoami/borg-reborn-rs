@@ -22,7 +22,8 @@ use crate::engine;
 
 /// One item as the Borg sees it (`borg_item`), with the C field names.
 #[derive(Copy, Clone)]
-#[derive(PartialEq)]
+// borg-reborn-rs (#364): exact owned item arguments in replay requests.
+#[derive(PartialEq, Debug)]
 pub struct BorgItem {
     pub desc: [core::ffi::c_char; 80],
     /// `note` (C: `char *note`, NULL = `None`): where the inscription

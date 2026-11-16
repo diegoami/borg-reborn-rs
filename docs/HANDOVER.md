@@ -2,6 +2,56 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: accessor merged; attack #401 validation underway
+
+- #367 passed all CI and merged feature-only at ca7ab365; #363 closed.
+  Primary feature/track-r is synchronized. Main/global reviewed stay gated.
+- Attack draft #401 publishes all 71 owned functions/seven public entries.
+  Clippy/fmt/vendor, workspace/core/tool checks pass. Source audit now also
+  verifies every module constant and SpellFlag declaration.
+- Initial runtime build 60d0a7a7, clean input hash 33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a,
+  matches published 9130f210 runtime inputs. Smoke off/check/switch each
+  3/3 and zero mismatches; full off matches exact M13 donor 45/45. Full
+  check/switch campaigns remain running/pending under the shared lock.
+- First #401 CI failed only because its new-build death was not yet in the
+  archive. Workflow 43788356005/artifact 14191516353 is imported with its
+  exact origin map. Twelve local native full-suite death packages are also
+  imported; archive 2,696 verifies. Repeats are not independent games.
+- Do not merge #401 yet: complete full/strict 18-entry checks, nested and
+  literal fault/re-port controls, original regression/death reconciliation,
+  all final evidence and exact-head CI. Raw runs: /workspace/work/r364-evidence.
+- Defence #365 is claimed on task/T365-defence-port, stacked on #401.
+  Initial owned body/typed dependencies compile; dispatch and @3 complete
+  surface are wired, unit/source checks in progress. No defence game claim.
+  Permanent-buff policy remains shared. Finish #365, then #366 combined
+  validation/review; the owner chooses the reviewer.
+
+## 2026-11-16: attack #364 implementation, runtime acceptance pending
+
+- Working branch task/T364-attack-port; all integration targets remain
+  feature/track-r. M13 #357 is merged. Accessor #367 has completed local
+  validation; its final evidence is being published through the connected
+  GitHub app because local CLI credentials expired. Wait for green CI before
+  merging #367, then incorporate its accepted head here.
+- All seven public attack entries have owned policy implementations:
+  five stateful transactions and two scalar comparisons. Seventy-one owned
+  functions are registered in the carry watcher. Dependency adapters use
+  pointer-free race/kind metadata, replay both motion output parameters,
+  and record the mutating journey forecast as an effect.
+- #339 telemetry uses schema @2 with explicit tape_events, policy_markers
+  and actual dependency_requests. The default consumer checks the R3 attack
+  surface; --legacy-r2 is an explicit historical reader. #340 diagnostics
+  retain the provider's parsed mode across direct/nested/replay contexts.
+- Clippy passes; workspace and compile-fail lifetime tests pass; core 336
+  pass/four ignored; source tools 35 and tools 96 pass; vendor gate passes.
+  The six diagnostic subprocess controls and motion output replay test pass.
+  No game has yet validated this attack build; no parity/coverage claim.
+- Next: synchronize accepted accessor, freeze clean runtime identity, build
+  under the shared lock, run smoke/full/strict entries in all modes and
+  retain every attempted run and natural-death package. Then task CI/merge;
+  defence #365 and combined R3 milestone review #366 remain. Owner chooses
+  reviewer; no promotion to main/global reviewed.
+
 ## 2026-11-16: borrowed stateful access #363 (local gates pass, CI pending)
 
 - #357/#343 merged green into feature/track-r at a4e7ae3d; #343/#264 closed.

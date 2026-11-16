@@ -24,29 +24,29 @@
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::{BorgGrid, DUNGEON_HGT, DUNGEON_WID};
-use crate::borg_cave_util::{borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
-use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_flow_kill::borg_race_name;
-use crate::borg_flow_misc::borg_extract_dir;
-use crate::borg_inventory::{borg_slot, borg_wield_slot};
-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, borg_queue_direction};
-use crate::borg_item::{inven_wield, quiver_end, quiver_start};
-use crate::borg_item_id::borg_item_note_needs_id;
-use crate::borg_item_use::{
+use crate::decision_api::borg_cave_util::{borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
+use crate::decision_api::borg_danger::{borg_danger, borg_danger_one_kill};
+use crate::decision_api::borg_flow_kill::borg_race_name;
+use crate::decision_api::borg_flow_misc::borg_extract_dir;
+use crate::decision_api::borg_inventory::{borg_slot, borg_wield_slot};
+use crate::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, borg_queue_direction};
+use crate::decision_api::borg_item::{inven_wield, quiver_end, quiver_start};
+use crate::decision_api::borg_item_id::borg_item_note_needs_id;
+use crate::decision_api::borg_item_use::{
     borg_activate_dragon, borg_activate_failure, borg_activate_item, borg_activate_ring,
     borg_aim_wand, borg_equips_dragon, borg_equips_item, borg_equips_ring, borg_equips_rod,
     borg_equips_staff_fail, borg_use_staff, borg_zap_rod,
 };
-use crate::borg_magic::{
+use crate::decision_api::borg_magic::{
     borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal, borg_spell_legal_fail,
     borg_spell_okay, borg_spell_okay_fail,
 };
-use crate::borg_projection::{
+use crate::decision_api::borg_projection::{
     borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
     borg_target,
 };
 use crate::borg_update::Detect;
-use crate::engine;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_danger_h::*;
 use crate::borg_headers::borg_fight_attack_h::*;
 use crate::borg_headers::borg_item_h::borg_item;
@@ -174,7 +174,7 @@ fn rsf(r_idx: u16, flag: u32) -> bool {
 /// `r_ptr->friends || r_ptr->friends_base`
 fn has_friends(r_idx: u16) -> bool {
     let r = engine::race(usize::from(r_idx));
-    !r.friends.is_null() || !r.friends_base.is_null()
+    r.has_friends
 }
 
 /// `strstr(hay, needle) != NULL` on C strings.
@@ -300,7 +300,8 @@ const MONBLOW: [(Option<&[u8]>, u32); 31] = [
 ///
 /// *HACK* must match code in mon-blows.c. The search stops before the
 /// NULL end entry, so an unknown name gives `MONBLOW_NONE`.
-pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
+pub(crate) fn borg_mon_blow_effect_native(name: &[u8]) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_mon_blow_effect",format!("{:?}",(name,))); }
     for (n, val) in &MONBLOW[..MONBLOW.len() - 1] {
         let n = n.expect("borg_mon_blow_effect: only the end entry is NULL");
         if name == n {
@@ -317,7 +318,8 @@ pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
 /// (better-borg-c `4.2.6-impact-v10`): `borg_caution()`'s
 /// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
 /// round against a tracked kill.
-pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
+pub(crate) fn borg_thrust_damage_one_native(st: &BorgState, i: i32) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_thrust_damage_one",format!("{:?}",(i,))); }
     /* Examine current weapon */
     let item = &st.items.items[inven_wield() as usize];
 
@@ -1762,7 +1764,8 @@ fn borg_launch_bolt_at_location(
 /// Note that "beams" have a "rad" of "-1", "bolts" have a "rad" of "0",
 /// and "balls" have a "rad" of "2" or "3", depending on "blast radius".
 ///  dispel spells have a rad  of 10
-pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> i32 {
+pub(crate) fn borg_launch_bolt_native(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_launch_bolt",format!("{:?}",(rad,dam,typ,max,ammo_location,))); }
     let mut b_i: i32 = -1;
     let mut b_n: i32 = -1;
     let mut b_o_y = 0;
@@ -2147,7 +2150,8 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
 ///
 /// When no missile is chosen (every `borg_launch_bolt` finds no target)
 /// `b_k` stays -1 and nothing is used.
-pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_attack_aux_launch_native(st: &mut BorgState) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_attack_aux_launch",format!("{:?}",())); }
     let mut b_n = 0;
     let mut b_k: i32 = -1;
     let mut b_v: i32 = -1;
@@ -2384,7 +2388,7 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
     // The shared forecast is needed only for a throwable flask while a
     // fuel-burning lantern is worn. Reuse it within this evaluation.
-    let mut supply_journey: Option<crate::borg_town_utility::Journey> = None;
+    let mut supply_journey: Option<i64> = None;
     let mut b_k: i32 = -1;
     let mut b_d: i32 = -1;
 
@@ -2428,17 +2432,16 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
 
         /* Save last flasks for fuel, if needed */
         if u32::from(item.tval) == TV_FLASK {
-            let light = st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
+            let light = st.items.items[(crate::decision_api::borg_item::inven_wield() + 5) as usize];
             let lantern = u32::from(light.tval) == crate::headers::list_tvals_h::TV_LIGHT
                 && i32::from(light.sval) == st.item_val.sv_light_lantern
                 && !engine::flag_has(&light.flags, crate::headers::list_object_flags_h::OF_NO_FUEL as i32);
             let policy = st.cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN) == 1;
             let reserve = if policy && lantern {
                 let journey = supply_journey.get_or_insert_with(|| {
-                    let forecast = crate::borg_trip::forecast(st);
-                    crate::borg_town_utility::Journey::for_trip(st, forecast)
+                    crate::decision_api::borg_town_utility::supply_journey_turns(st)
                 });
-                ((journey.turns - i64::from(light.timeout)).max(0) as u64)
+                ((*journey - i64::from(light.timeout)).max(0) as u64)
                     .div_ceil(i64::from(item.pval).max(1) as u64) as i32
             } else { 0 };
             if oil_reserved(policy, reserve, tr(st, BI_AFUEL), st.borg.near.unique != 0) { continue; }
@@ -2541,7 +2544,7 @@ fn class_penalty(st: &BorgState) -> i32 {
 /// (`borg_attack_aux_spell_bolt`).
 ///
 /// Take into account the failure rate of spells/objects/etc.  XXX XXX XXX
-pub fn borg_attack_aux_spell_bolt(
+pub(crate) fn borg_attack_aux_spell_bolt_native(
     st: &mut BorgState,
     spell: borg_spells,
     rad: i32,
@@ -2550,6 +2553,7 @@ pub fn borg_attack_aux_spell_bolt(
     max_range: i32,
     is_arc: bool,
 ) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_attack_aux_spell_bolt",format!("{:?}",(spell,rad,dam,typ,max_range,is_arc,))); }
     /* No firing while blind, confused, or hallucinating */
     if cant_aim(st) {
         return 0;
@@ -3804,7 +3808,8 @@ fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, 
 
 /// Simulate/Apply the optimal result of using the given "type" of attack
 /// (`borg_calculate_attack_effectiveness`).
-pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32 {
+pub(crate) fn borg_calculate_attack_effectiveness_native(st: &mut BorgState, attack_type: i32) -> i32 {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_calculate_attack_effectiveness",format!("{:?}",(attack_type,))); }
     let cl = tr(st, BI_CLEVEL);
     let mr = max_range();
     let iv = st.item_val;
@@ -4430,7 +4435,8 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
 /// again, and attack with distance attacks, which have no effect.  Perhaps
 /// we should "expect" certain results, and take note of failure to observe
 /// those effects.  XXX XXX XXX
-pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
+pub(crate) fn borg_attack_native(st: &mut BorgState, boosted_bravery: bool) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::attack.borg_attack",format!("{:?}",(boosted_bravery,))); }
     let mut b_n = 0;
     let mut b_g: i32 = -1;
     let mut adjacent_monster = false;
@@ -4604,6 +4610,44 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+
+// borg-reborn-rs (#364): independently owned attack entry boundaries.
+pub fn borg_launch_bolt(st:&mut BorgState,rad:i32,dam:i32,typ:i32,max:i32,ammo_location:i32)->i32 {
+    match crate::shadow::decision(st,crate::decisions::Decision::AttackLaunchBolt { rad,dam,typ,max,ammo_location }) {
+        crate::decisions::Value::Score(result)=>result,_=>unreachable!()
+    }
+}
+pub fn borg_attack_aux_launch(st:&mut BorgState)->i32 {
+    match crate::shadow::decision(st,crate::decisions::Decision::AttackAuxLaunch) {
+        crate::decisions::Value::Score(result)=>result,_=>unreachable!()
+    }
+}
+pub fn borg_attack_aux_spell_bolt(st:&mut BorgState,spell:u32,rad:i32,dam:i32,typ:i32,max_range:i32,is_arc:bool)->i32 {
+    match crate::shadow::decision(st,crate::decisions::Decision::AttackSpellBolt { spell,rad,dam,typ,max_range,is_arc }) {
+        crate::decisions::Value::Score(result)=>result,_=>unreachable!()
+    }
+}
+pub fn borg_calculate_attack_effectiveness(st:&mut BorgState,attack_type:i32)->i32 {
+    match crate::shadow::decision(st,crate::decisions::Decision::AttackEffectiveness { attack_type }) {
+        crate::decisions::Value::Score(result)=>result,_=>unreachable!()
+    }
+}
+pub fn borg_attack(st:&mut BorgState,boosted_bravery:bool)->bool {
+    match crate::shadow::decision(st,crate::decisions::Decision::Attack { boosted_bravery }) {
+        crate::decisions::Value::Acted(result)=>result,_=>unreachable!()
+    }
+}
+pub fn borg_mon_blow_effect(name:&[u8])->i32 {
+    let original=borg_mon_blow_effect_native(name);
+    if crate::decision_tape::active() { return original; }
+    crate::shadow::blow_effect(name,original)
+}
+pub fn borg_thrust_damage_one(st:&BorgState,i:i32)->i32 {
+    let original=borg_thrust_damage_one_native(st,i);
+    if crate::decision_tape::active() { return original; }
+    crate::shadow::thrust_damage(st,i,original)
 }
 
 #[cfg(test)]

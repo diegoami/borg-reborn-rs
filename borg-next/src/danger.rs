@@ -21,12 +21,13 @@
 //! and its race from the engine's `r_info`.
 
 // borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
-use crate::View;
+use crate::{shadow::Mode, View};
 use borg_rs::memory::{BorgGrid, BorgKill};
 use borg_rs::threat_facts::{self as facts, param, Facts, Param};
 use facts::constants::*;
 const CLASS_MAGE: i32 = 1;
 struct Assessment<'a> {
+    mode: Mode,
     view: &'a View<'a>,
     facts: Facts<'a>,
 }
@@ -35,7 +36,7 @@ impl Assessment<'_> {
         self.view
             .cave
             .grid(x, y)
-            .unwrap_or_else(|| crate::shadow::invalid_danger_grid(self.view, x, y))
+            .unwrap_or_else(|| crate::shadow::invalid_danger_grid(self.mode, self.view, x, y))
     }
 }
 fn rf(kill: &BorgKill, flag: u32) -> bool {
@@ -2550,8 +2551,9 @@ fn aggregate(st: &Assessment<'_>, y: i32, x: i32, c: i32, average: bool, full_da
     }
 }
 
-pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput) -> i32 {
+pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput, mode: Mode) -> i32 {
     let assessment = Assessment {
+        mode,
         view,
         facts: Facts::new(view.state),
     };
@@ -2565,8 +2567,14 @@ pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput) -> i32 {
     )
 }
 
-pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot: i32) -> i32 {
+pub fn assess_monster(
+    view: &View<'_>,
+    input: borg_rs::shadow::DangerInput,
+    slot: i32,
+    mode: Mode,
+) -> i32 {
     let assessment = Assessment {
+        mode,
         view,
         facts: Facts::new(view.state),
     };
@@ -2588,9 +2596,11 @@ pub(crate) fn fixture_estimate(
     state: &borg_rs::memory::BorgState,
     kill: &BorgKill,
     physical: bool,
+    mode: Mode,
 ) -> i32 {
     let view = View::new(state);
     let context = Assessment {
+        mode,
         view: &view,
         facts: Facts::new(state),
     };
@@ -2616,18 +2626,54 @@ mod grid_failure_tests {
     #[test]
     fn invalid_grid_records_before_controlled_exit() {
         const CHILD: &str = "BORG_TEST_INVALID_DANGER_GRID";
-        if let Ok(coordinates) = std::env::var(CHILD) {
+        if let Ok(spec) = std::env::var(CHILD) {
+            let (context, coordinates) = spec.split_once(':').unwrap();
+            let mode = Mode::parse(&std::env::var("BORG_TEST_PROVIDER_MODE").unwrap()).unwrap();
             let mut state = borg_rs::memory::BorgState::default();
             state.borg.trait_ = vec![0; borg_rs::memory::traits::BI_MAX as usize];
             state.borg.time.now = 37;
-            let view = View::new(&state);
-            let assessment = Assessment {
-                view: &view,
-                facts: Facts::new(&state),
-            };
             let (x, y) = coordinates.split_once(',').unwrap();
-            assessment.grid(x.parse().unwrap(), y.parse().unwrap());
-            panic!("invalid grid returned a reference");
+            let (x, y): (i32, i32) = (x.parse().unwrap(), y.parse().unwrap());
+            let fail = |state: &borg_rs::memory::BorgState| {
+                let view = View::new(state);
+                let assessment = Assessment {
+                    mode,
+                    view: &view,
+                    facts: Facts::new(state),
+                };
+                assessment.grid(x, y);
+                panic!("invalid grid returned a reference");
+            };
+            match context {
+                "direct" => fail(&state),
+                "nested" => {
+                    let _ = borg_rs::decision_tape::compare(
+                        &mut state,
+                        serde_json::json!({"point":"outer"}),
+                        |state| {
+                            borg_rs::decision_tape::effect(state, "outer", String::new(), |state| {
+                                let _ = borg_rs::decision_tape::compare(
+                                    state,
+                                    serde_json::json!({"point":"inner"}),
+                                    |state| fail(state),
+                                    |_| (),
+                                );
+                            })
+                        },
+                        |_| (),
+                    );
+                }
+                "replay" => {
+                    let _ = borg_rs::decision_tape::compare(
+                        &mut state,
+                        serde_json::json!({"point":"replay"}),
+                        |_| (),
+                        |state| fail(state),
+                    );
+                }
+                _ => panic!("unknown fixture context"),
+            }
+            panic!("invalid grid did not stop validation");
         }
         let root = std::env::temp_dir().join(format!(
             "borg-danger-grid-{}-{}",
@@ -2652,9 +2698,13 @@ mod grid_failure_tests {
                         "danger::grid_failure_tests::invalid_grid_records_before_controlled_exit",
                         "--nocapture",
                     ])
-                    .env(CHILD, format!("{x},{y}"))
+                    .env(
+                        CHILD,
+                        format!("{}:{x},{y}", ["direct", "nested", "replay"][index]),
+                    )
                     .env("BORG_RUN_DIR", &dir)
-                    .env("BORG_SHADOW", mode)
+                    .env("BORG_TEST_PROVIDER_MODE", mode)
+                    .env("BORG_SHADOW", "changed-after-provider-parse")
                     .output()
                     .unwrap();
                 assert_eq!(
@@ -2666,13 +2716,14 @@ mod grid_failure_tests {
                 let contents = std::fs::read_to_string(log).unwrap();
                 assert_eq!(contents.lines().count(), 1);
                 let row: serde_json::Value = serde_json::from_str(&contents).unwrap();
-                assert_eq!(row["schema"], "borg-reborn-rs/shadow@1");
+                assert_eq!(row["schema"], "borg-reborn-rs/shadow@2");
                 assert_eq!(row["mode"], mode);
                 assert_eq!(row["point"], "danger.grid");
                 assert_eq!(row["inputs"], serde_json::json!({"x":x,"y":y}));
                 assert_eq!(row["borg_turn"], 37);
                 assert_eq!(row["validation_stopped"], true);
                 assert!(row["original"].is_null() && row["ported"].is_null());
+                assert!(row["turn"].is_null());
                 assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
             }
         }

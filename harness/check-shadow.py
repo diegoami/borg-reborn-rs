@@ -1,74 +1,130 @@
 #!/usr/bin/env python3
-"""Require real shadow comparisons, native boundary coverage and zero mismatches.
+"""Require non-vacuous, internally consistent shadow evidence and zero mismatches.
 
-Usage: harness/check-shadow.py RUN_OR_SUITE [RUN_OR_SUITE ...]
-An empty output directory must not be mistaken for a successful shadow run.
+The current r3-attack contract is @2. --legacy-r2 explicitly reads immutable
+@1 evidence: its dependency_requests field means total tape events. Returned
+legacy totals derive the marker/request split without changing any raw file.
 """
 import argparse
 import json
 from pathlib import Path
 
-
-ENTRY_POINTS = (
+R2_ENTRY_POINTS = (
     'caution.borg_caution', 'escape.borg_recall', 'escape.borg_surrounded',
     'escape.borg_freedom', 'escape.borg_caution_phase',
     'escape.borg_caution_teleport', 'escape.borg_allow_teleport',
     'escape.borg_shadow_shift', 'escape.borg_dimension_door',
     'escape.borg_escape', 'recovery.borg_recover',
 )
+ATTACK_ENTRY_POINTS = (
+    'attack.borg_mon_blow_effect', 'attack.borg_thrust_damage_one',
+    'attack.borg_launch_bolt', 'attack.borg_attack_aux_launch',
+    'attack.borg_attack_aux_spell_bolt',
+    'attack.borg_calculate_attack_effectiveness', 'attack.borg_attack',
+)
+PURE_POINTS = ATTACK_ENTRY_POINTS[:2]
+ENTRY_POINTS = R2_ENTRY_POINTS + ATTACK_ENTRY_POINTS
+R2_PORTED = ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']
+NUMERIC = ('comparisons', 'danger_calls', 'danger_comparisons',
+           'monster_comparisons', 'wall_comparisons', 'stateful_comparisons',
+           'caution_calls', 'escape_calls', 'recovery_calls')
 
 
-def check(roots, require_all_entries=False):
+def checked_map(value, allowed, path):
+    if not isinstance(value, dict) or any(k not in allowed or type(v) is not int or v < 0
+                                          for k, v in value.items()):
+        raise ValueError(f'{path}: invalid entry coverage')
+    return value
+
+
+def check(roots, require_all_entries=False, legacy_r2=False):
     files = sorted({p for root in roots for p in Path(root).rglob('shadow-stats.jsonl')})
     if not files:
         raise ValueError('no shadow statistics found')
-    totals = {'comparisons': 0, 'danger_calls': 0, 'caution_calls': 0, 'danger_comparisons': 0, 'monster_comparisons': 0, 'wall_comparisons': 0, 'stateful_comparisons':0, 'escape_calls':0, 'recovery_calls':0}
-    entry_counts = {name: 0 for name in ENTRY_POINTS}
+    schema = 'borg-reborn-rs/shadow-stats@' + ('1' if legacy_r2 else '2')
+    allowed = R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS
+    fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons'))
+    totals = dict.fromkeys((*fields, 'tape_events', 'policy_markers', 'dependency_requests'), 0)
+    entries = dict.fromkeys(allowed, 0)
+    pure_totals = dict.fromkeys(PURE_POINTS, 0) if not legacy_r2 else {}
     for path in files:
-        previous = 0
-        last = None
+        previous, last = 0, None
         for line in path.read_text().splitlines():
             row = json.loads(line)
-            if row['schema'] != 'borg-reborn-rs/shadow-stats@1' or row['mode'] not in ('check', 'switch'):
-                raise ValueError(f'{path}: wrong schema or mode')
+            if row.get('schema') != schema or row.get('mode') not in ('check', 'switch'):
+                raise ValueError(f'{path}: wrong schema or mode (expected {schema})')
             if row['counts']['thinks'] != previous + 1:
                 raise ValueError(f'{path}: missing think statistics')
-            previous = row['counts']['thinks']
-            last = row
+            previous, last = row['counts']['thinks'], row
         if last is None:
             raise ValueError(f'{path}: empty statistics')
-        if last['ported_points'] != ['danger.wall_like', 'danger', 'danger.one_monster', 'caution', 'escape', 'recovery']:
+        if not legacy_r2 and last.get('surface') != 'r3-attack':
+            raise ValueError(f'{path}: unexpected entry surface')
+        if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack']):
             raise ValueError(f'{path}: unexpected port coverage')
-        if last['unported_points'] != []:
-            raise ValueError(f'{path}: unexpected unported points')
+        if last.get('unported_points') != []:
+            raise ValueError(f'{path}: unexpected unported boundaries')
         counts = last['counts']
+        required = (*fields, 'mismatches', 'dependency_requests') + (() if legacy_r2 else
+                    ('tape_events', 'policy_markers'))
+        if any(type(counts.get(k)) is not int or counts[k] < 0 for k in required):
+            raise ValueError(f'{path}: missing or invalid numeric counters')
         if counts['danger_comparisons'] != counts['danger_calls']:
             raise ValueError(f'{path}: danger calls were observed without comparisons')
-        if counts['stateful_comparisons'] > sum(counts[k] for k in ('caution_calls','escape_calls','recovery_calls')):
-            raise ValueError(f'{path}: stateful calls were observed without comparisons')
-        if counts['comparisons'] != sum(counts[k] for k in ('danger_comparisons', 'monster_comparisons', 'wall_comparisons', 'stateful_comparisons')):
+        stateful = checked_map(counts.get('stateful_points'), allowed, path)
+        pure = {} if legacy_r2 else checked_map(counts.get('pure_points'), PURE_POINTS, path)
+        root_allowed = set(allowed) - set(PURE_POINTS)
+        roots_ = checked_map(counts.get('root_points'), root_allowed, path)
+        if sum(roots_.values()) != counts['stateful_comparisons']:
+            raise ValueError(f'{path}: inconsistent root comparison counts')
+        # Both values come from one visits loop: this is integrity, not an
+        # independent proof of coverage or of any branch/effect executing.
+        for prefix in ('caution', 'escape', 'recovery') + (() if legacy_r2 else ('attack',)):
+            observed = sum(v for k, v in stateful.items() if k.startswith(prefix + '.'))
+            if prefix == 'attack':
+                observed += sum(pure.values())
+            if observed != counts[prefix + '_calls']:
+                raise ValueError(f'{path}: inconsistent individual entry coverage')
+        markers = sum(stateful.values())
+        tape = counts['dependency_requests'] if legacy_r2 else counts['tape_events']
+        requests = tape - markers if legacy_r2 else counts['dependency_requests']
+        if requests < 0 or (not legacy_r2 and counts['policy_markers'] != markers):
+            raise ValueError(f'{path}: inconsistent policy markers')
+        if tape != markers + requests:
+            raise ValueError(f'{path}: inconsistent tape event identity')
+        pure_count = sum(pure.values())
+        if not legacy_r2 and pure_count != counts['pure_attack_comparisons']:
+            raise ValueError(f'{path}: inconsistent pure comparison counts')
+        parts = ('danger_comparisons', 'monster_comparisons', 'wall_comparisons', 'stateful_comparisons')
+        if counts['comparisons'] != sum(counts[k] for k in parts) + pure_count:
             raise ValueError(f'{path}: inconsistent comparison counts')
-        if last['counts']['mismatches']:
+        if counts['stateful_comparisons'] > markers:
+            raise ValueError(f'{path}: stateful roots without policy entries')
+        if counts['mismatches']:
             raise ValueError(f'{path}: reported shadow mismatches')
         mismatch = path.with_name('shadow.jsonl')
         if not mismatch.exists() or mismatch.read_bytes():
             raise ValueError(f'{mismatch}: absent log or nonzero mismatches')
-        entries = counts.get('stateful_points', {})
-        for name, hits in entries.items():
-            if name not in entry_counts or type(hits) is not int or hits < 0:
-                raise ValueError(f'{path}: invalid entry coverage {name}: {hits}')
-            entry_counts[name] += hits
-        if require_all_entries and sum(entries.values()) != sum(counts[k] for k in ('caution_calls', 'escape_calls', 'recovery_calls')):
-            raise ValueError(f'{path}: inconsistent individual entry coverage')
-        for name in totals:
-            totals[name] += last['counts'][name]
-    if not all(totals.values()):
+        for name in fields:
+            totals[name] += counts[name]
+        for name, value in (('tape_events', tape), ('policy_markers', markers),
+                            ('dependency_requests', requests)):
+            totals[name] += value
+        for name, hits in stateful.items():
+            entries[name] += hits
+        for name, hits in pure.items():
+            entries[name] += hits
+            pure_totals[name] += hits
+    if not all(totals[name] for name in fields):
         raise ValueError(f'insufficient comparison/boundary coverage: {totals}')
     if require_all_entries:
-        missing = [name for name, hits in entry_counts.items() if hits == 0]
+        missing = [name for name, hits in entries.items() if hits == 0]
         if missing:
             raise ValueError(f'missing individual entry coverage: {missing}')
-    totals['stateful_points'] = entry_counts
+        if not legacy_r2 and not all(pure_totals.values()):
+            raise ValueError('missing standalone pure attack comparison coverage')
+    totals['entry_points'] = entries
+    totals['pure_points'] = pure_totals
     return len(files), totals
 
 
@@ -76,13 +132,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('roots', nargs='+', type=Path)
     parser.add_argument('--require-all-entries', action='store_true',
-                        help='require a positive hit count for all 11 public stateful entry points across these runs (not branch coverage)')
+                        help='require every public entry; entry counts do not prove branch coverage')
+    parser.add_argument('--legacy-r2', action='store_true',
+                        help='explicit @1 reader; derive event meanings without rewriting raw evidence')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2)
     except (ValueError, KeyError, OSError) as error:
         parser.exit(1, f'shadow check failed: {error}\n')
-    print(f'{count} shadow runs: {totals}; zero mismatches')
+    print(f'{count} shadow runs (legacy_r2={args.legacy_r2}): {totals}; zero mismatches')
 
 
 if __name__ == '__main__':

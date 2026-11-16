@@ -1,0 +1,188 @@
+[
+  {
+    "module": "borg_danger",
+    "name": "borg_danger_one_kill",
+    "signature": "fn borg_danger_one_kill(\n    st: &mut BorgState,\n    y: i32,\n    x: i32,\n    c: i32,\n    i: i32,\n    average: bool,\n    full_damage: bool,\n) -> i32",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_flow_kill",
+    "name": "borg_race_name",
+    "signature": "fn borg_race_name(r_idx: i32) -> &'static CStr",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_flow_misc",
+    "name": "borg_extract_dir",
+    "signature": "fn borg_extract_dir(y1: i32, x1: i32, y2: i32, x2: i32) -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_inventory",
+    "name": "borg_wield_slot",
+    "signature": "fn borg_wield_slot(item: &borg_item) -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_io",
+    "name": "borg_queue_direction",
+    "signature": "fn borg_queue_direction(st: &mut BorgState, k: keycode_t)",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item",
+    "name": "inven_wield",
+    "signature": "fn inven_wield() -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_item",
+    "name": "quiver_end",
+    "signature": "fn quiver_end() -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_item",
+    "name": "quiver_start",
+    "signature": "fn quiver_start() -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "borg_item_id",
+    "name": "borg_item_note_needs_id",
+    "signature": "fn borg_item_note_needs_id(st: &BorgState, item: &borg_item) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_activate_dragon",
+    "signature": "fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_activate_ring",
+    "signature": "fn borg_activate_ring(st: &mut BorgState, ring_sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_aim_wand",
+    "signature": "fn borg_aim_wand(st: &mut BorgState, sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_equips_dragon",
+    "signature": "fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_equips_item",
+    "signature": "fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_equips_ring",
+    "signature": "fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_item_use",
+    "name": "borg_equips_rod",
+    "signature": "fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_get_spell_power",
+    "signature": "fn borg_get_spell_power(st: &BorgState, spell: borg_spells) -> i32",
+    "kind": "query"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_spell_legal_fail",
+    "signature": "fn borg_spell_legal_fail(st: &BorgState, spell: borg_spells, allow_fail: i32) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_offset_projectable",
+    "signature": "fn borg_offset_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_projectable_pure",
+    "signature": "fn borg_projectable_pure(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "engine",
+    "name": "adj_str_blow",
+    "signature": "fn adj_str_blow(i: usize) -> i32",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "all_letters_nohjkl",
+    "signature": "fn all_letters_nohjkl(i: i32) -> u8",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "brand_resist_vuln_multiplier",
+    "signature": "fn brand_resist_vuln_multiplier(i: usize) -> (i32, i32, i32)",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "flag_has",
+    "signature": "fn flag_has(flags: &[u8], flag: i32) -> bool",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "get_angle_to_grid",
+    "signature": "fn get_angle_to_grid(y: usize, x: usize) -> u8",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "obj_kind_can_browse",
+    "signature": "fn obj_kind_can_browse(kind: usize) -> bool",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "player_has_temporary_brand",
+    "signature": "fn player_has_temporary_brand(idx: i32) -> bool",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "player_has_temporary_slay",
+    "signature": "fn player_has_temporary_slay(idx: i32) -> bool",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "race_blow_effect_name",
+    "signature": "fn race_blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]>",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "race_name",
+    "signature": "fn race_name(r_idx: usize) -> &'static [u8]",
+    "kind": "engine"
+  },
+  {
+    "module": "engine",
+    "name": "slay_race_flag_multiplier",
+    "signature": "fn slay_race_flag_multiplier(i: usize) -> (i32, i32)",
+    "kind": "engine"
+  }
+]

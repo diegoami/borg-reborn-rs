@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
+      - uses: ./.github/actions/validation-evidence
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -51,6 +52,7 @@ jobs:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
+      - uses: ./.github/actions/validation-evidence
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
@@ -83,7 +85,7 @@ jobs:
           for f in keys.log messages.log state.log; do cmp "harness/out/core-params/$f" "harness/out/core-trace-off/$f"; done
           test ! -e harness/out/core-trace-off/trace-core.jsonl
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1011 2 1 100000 menu
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
           python3 - "$RUNNER_TEMP/core-deaths" <<'PYCORE'
           import json, pathlib, sys
           cases = list(pathlib.Path(sys.argv[1]).glob('D*-rust-*'))
@@ -102,7 +104,7 @@ jobs:
           harness/check-shadow.py harness/out/shadow-check harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
       # R2 review: aggregate totals cannot substitute for every public entry.
       # The focused unsealed seed reaches rare caution_teleport; not all branches.
       - name: Stateful entry-point coverage
@@ -112,7 +114,7 @@ jobs:
           harness/check-shadow.py --require-all-entries harness/out/stateful-entries-check
           harness/check-shadow.py --require-all-entries harness/out/stateful-entries-switch
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
           zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")
@@ -180,7 +182,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       # nullglob: runs with no natural death leave no dossier, and an
       # unmatched pattern must not be checked as if it were one (#125: the

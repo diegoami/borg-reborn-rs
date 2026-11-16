@@ -4,6 +4,7 @@ use borg_rs::{
     decisions::{Decision, Value},
     memory::BorgState,
 };
+pub mod attack;
 pub mod caution;
 pub mod escape;
 pub mod recovery;
@@ -28,6 +29,37 @@ pub fn decide(st: &mut BorgState, request: Decision) -> Value {
         }
         Decision::Escape { b_q } => Value::Acted(escape::borg_escape(st, b_q)),
         Decision::Recover => Value::Acted(recovery::borg_recover(st)),
+        Decision::AttackLaunchBolt {
+            rad,
+            dam,
+            typ,
+            max,
+            ammo_location,
+        } => Value::Score(attack::borg_launch_bolt(
+            st,
+            rad,
+            dam,
+            typ,
+            max,
+            ammo_location,
+        )),
+        Decision::AttackAuxLaunch => Value::Score(attack::borg_attack_aux_launch(st)),
+        Decision::AttackSpellBolt {
+            spell,
+            rad,
+            dam,
+            typ,
+            max_range,
+            is_arc,
+        } => Value::Score(attack::borg_attack_aux_spell_bolt(
+            st, spell, rad, dam, typ, max_range, is_arc,
+        )),
+        Decision::AttackEffectiveness { attack_type } => {
+            Value::Score(attack::borg_calculate_attack_effectiveness(st, attack_type))
+        }
+        Decision::Attack { boosted_bravery } => {
+            Value::Acted(attack::borg_attack(st, boosted_bravery))
+        }
     }
 }
 
