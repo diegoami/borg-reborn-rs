@@ -19,13 +19,9 @@ jobs:
       # own formatting, and tested as borg-rs tests it (release: the unit
       # tests link without the engine only when unused engine calls are
       # optimised out).
-      - name: Verify exact vendored core and recorded hook content
-        run: |
-          core_pin=$(cat borg-core/PIN)
-          [[ "$core_pin" =~ ^[0-9a-f]{40}$ ]]
-          git init -q vendor/borg-rs
-          git -C vendor/borg-rs fetch -q --depth 1 https://github.com/diegoami/borg-rs "$core_pin"
-          python3 scripts/borg-core-vendor.py check
+      # Offline provenance attestation; builds never read an external source tree.
+      - name: Verify exact recorded vendor bytes and hooks
+        run: python3 scripts/borg-core-vendor.py check-recorded
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core

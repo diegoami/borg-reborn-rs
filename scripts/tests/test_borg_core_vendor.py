@@ -89,6 +89,28 @@ class VendorTest(unittest.TestCase):
         self.record_hooks()
         self.assertEqual(bv.check(self.repo), [])
 
+    def test_recorded_gate_uses_only_local_bytes_without_a_reference_checkout(self):
+        from unittest.mock import patch
+        with patch.object(bv, 'git', side_effect=AssertionError('external Git access forbidden')):
+            self.assertEqual(bv.check_recorded(), [])
+            (self.core / 'src/a.rs').write_text('wrong hooked policy\n')
+            self.assertTrue(bv.check_recorded())
+
+    def test_recorded_gate_checks_unhooked_bytes_and_inventory(self):
+        (self.core / 'src/b.rs').write_text('wrong donor bytes\n')
+        self.assertIn('src/b.rs: differs from recorded donor, and not declared hooked', bv.check_recorded())
+        (self.core / 'src/b.rs').unlink()
+        self.assertIn('src/b.rs: in recorded donor, missing here', bv.check_recorded())
+        (self.core / 'src/unknown.rs').write_text('extra\n')
+        self.assertIn('src/unknown.rs: not in recorded donor, and not declared ours', bv.check_recorded())
+
+    def test_reference_audit_detects_recorded_donor_inventory_changes(self):
+        lock = json.loads(bv.HOOK_LOCK.read_text())
+        lock['donor_files']['src/b.rs'] = '0' * 40
+        bv.HOOK_LOCK.write_text(json.dumps(lock))
+        self.assertIn('hook manifest: donor inventory differs from pinned reference', bv.check(self.repo))
+        self.assertTrue(bv.check_recorded())
+
     def test_check_and_delta(self):
         self.assertEqual(bv.check(self.repo), [])
         d = bv.delta(self.repo)

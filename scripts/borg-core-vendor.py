@@ -9,6 +9,9 @@ docs/SPEC.md §2 amendment). This tool keeps that copy honest and refreshable
       borg-core/ is borg-rs at the pin, plus our own files (OURS) and the
       files carrying our hooks (HOOKED), whose donor blobs and receiving bytes
       must match scripts/borg-core-hooks.json; exit 1 otherwise
+  scripts/borg-core-vendor.py check-recorded
+      verify recorded donor inventory and receiving bytes offline in CI; no
+      reference checkout, build or external code is used
   scripts/borg-core-vendor.py record-hooks [--repo vendor/borg-rs]
       explicitly record reviewed hook bytes; never run implicitly in check
       or refresh. Review source delta and manifest changes together.
@@ -25,6 +28,7 @@ against a fresh build of borg-rs at REV).
 import argparse
 import hashlib
 import json
+import re
 import difflib
 import subprocess
 import sys
@@ -168,17 +172,22 @@ def hook_manifest(repo):
     if missing:
         raise ValueError('hook declarations missing from donor: ' + ', '.join(sorted(missing)))
     return {'schema': 'borg-reborn-rs/vendor-hooks@1', 'donor_pin': pin(),
+            'donor_files': dict(sorted(base.items())),
             'files': {rel: {'donor_blob': base[rel],
                             'receiving_sha256': hashlib.sha256(mine[rel]).hexdigest()}
                       for rel in paths}}
 
 
-def verify_hooks(repo, base, mine):
+def verify_hooks(base, mine):
     try:
         lock = json.loads(HOOK_LOCK.read_text())
     except (OSError, ValueError) as error:
         return [f'hook manifest: missing or invalid ({error})']
     problems = []
+    if not isinstance(lock, dict):
+        return ['hook manifest: expected an object']
+    if lock.get('donor_files') != base:
+        problems.append('hook manifest: donor inventory differs from pinned reference')
     if lock.get('schema') != 'borg-reborn-rs/vendor-hooks@1' or lock.get('donor_pin') != pin():
         problems.append('hook manifest: schema or donor pin differs')
     expected = set(HOOKED - OURS)
@@ -196,7 +205,7 @@ def verify_hooks(repo, base, mine):
 
 def check(repo):
     base, mine = donor(repo, pin()), ours()
-    problems = verify_hooks(repo, base, mine)
+    problems = verify_hooks(base, mine)
     for rel in sorted(set(base) | set(mine)):
         if rel in OURS:
             if rel in base:
@@ -208,6 +217,40 @@ def check(repo):
             problems.append(f'{rel}: not in borg-rs at the pin, and not declared ours')
         elif blob(repo, base[rel]) != mine[rel] and rel not in HOOKED:
             problems.append(f'{rel}: differs from borg-rs at the pin, and not declared hooked')
+    return problems
+
+
+def check_recorded():
+    """Offline CI attestation: no reference checkout or external code dependency.
+
+    The reference audit/recording command proves the donor inventory separately;
+    CI checks this exact recorded inventory and all receiving bytes locally.
+    """
+    try:
+        lock = json.loads(HOOK_LOCK.read_text())
+        base = lock['donor_files']
+        if not isinstance(base, dict) or not base or any(
+                not isinstance(value, str) or not re.fullmatch('[0-9a-f]{40}', value)
+                for value in base.values()):
+            return ['hook manifest: invalid recorded donor inventory']
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        return [f'hook manifest: missing or invalid ({error})']
+    mine = ours()
+    problems = verify_hooks(base, mine)
+    for rel in sorted(set(base) | set(mine)):
+        if rel in OURS:
+            if rel in base:
+                problems.append(f'{rel}: declared ours, but recorded donor has it')
+            continue
+        if rel not in mine:
+            problems.append(f'{rel}: in recorded donor, missing here')
+        elif rel not in base:
+            problems.append(f'{rel}: not in recorded donor, and not declared ours')
+        elif rel not in HOOKED:
+            data = mine[rel]
+            oid = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
+            if oid != base[rel]:
+                problems.append(f'{rel}: differs from recorded donor, and not declared hooked')
     return problems
 
 
@@ -249,7 +292,7 @@ def refresh(repo, rev):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('command', choices=('delta', 'check', 'refresh', 'record-hooks'))
+    ap.add_argument('command', choices=('delta', 'check', 'refresh', 'record-hooks', 'check-recorded'))
     ap.add_argument('rev', nargs='?')
     ap.add_argument('--repo', type=Path, default=ROOT / 'vendor/borg-rs')
     a = ap.parse_args(argv)
@@ -260,11 +303,11 @@ def main(argv=None):
     if a.command == 'delta':
         sys.stdout.write(delta(a.repo))
         return 0
-    if a.command == 'check':
-        problems = check(a.repo)
+    if a.command in ('check', 'check-recorded'):
+        problems = check(a.repo) if a.command == 'check' else check_recorded()
         for p in problems:
             print(f'borg-core-vendor: {p}')
-        print(f"borg-core/ against borg-rs {pin()[:12]}: {'ok' if not problems else f'{len(problems)} problems'}")
+        print(f"borg-core/ {a.command} at {pin()[:12]}: {'ok' if not problems else f'{len(problems)} problems'}")
         return 1 if problems else 0
     if not a.rev:
         ap.error('refresh needs REV')

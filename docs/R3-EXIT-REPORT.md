@@ -167,7 +167,10 @@ Hooked vendor files now have an explicit donor-blob/receiving-content manifest
 in scripts/borg-core-hooks.json. The gate rejects unrecorded byte changes,
 wrong pins and inventory drift. Updating that manifest is an explicit reviewed
 operation; hashes establish exact recorded content, not semantic correctness
-of a hook. Neither check nor refresh silently blesses new bytes.
+of a hook. Neither check nor refresh silently blesses new bytes. CI verifies
+all receiving files against the recorded donor inventory without accessing
+a reference checkout; a separate reference audit verifies that inventory
+against the exact donor. The original build-independence test remains intact.
 
 The M13 carry includes healing, waybread, trap and retired-mode paths that the
 45-game suite does not establish branch coverage for. Preserve that limit.

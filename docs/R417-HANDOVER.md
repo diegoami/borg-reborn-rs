@@ -18,7 +18,8 @@ review snapshot remains fixed; R4 and main/global-reviewed promotion stay gated.
 - The vendor gate checks exact donor blob IDs and receiving SHA256 hashes for
   every hooked donor file, with the manifest outside build inputs. Check and
   refresh never regenerate it. Explicit record-hooks must be reviewed together
-  with the source delta. CI now fetches the exact donor and runs the real gate.
+  with the source delta. CI verifies the full recorded donor inventory and
+  local bytes offline; the reference audit checks that manifest against the exact donor separately.
 - CI validates expected check/switch arm modes, including every stats row;
   wrong-arm or mid-run mode changes reject. Historical explicit readers stay.
 - The gameplay-evidence policy section is copied from main without carrying
@@ -29,7 +30,7 @@ review snapshot remains fixed; R4 and main/global-reviewed promotion stay gated.
   #418 tracks stronger scenarios and low-priority boundary/diagnostic work.
   Current scope does not alter donor policy or claim complete branch coverage.
 
-Local checks pass: 8 vendor tests, 42 source tests and 105 tooling tests. The initial tool test
+Local checks pass: 11 vendor tests, 45 source tests and 105 tooling tests. The initial tool test
 attempt lacked the pinned cemetery dependency; after adding its unchanged
 33c37552 checkout all 105 pass. No measured game ran for that setup error.
 The repository source-refresh report identifies newer upstream attack/trip
@@ -41,3 +42,14 @@ Finish exact published-receipt verification and required CI, merge the task
 into feature/track-r only, then publish a new immutable review snapshot with
 a disposition reply on #413. Never move the old snapshot or treat the
 recommendation as owner acceptance. Owner selects/runs any re-review.
+
+CI attempt 43868997137 exposed an independence violation in the first proposed
+vendor workflow step: fetching the donor inside Borg CI is prohibited. The
+existing independence test stays unchanged. CI now uses check-recorded over
+local receiving bytes and a recorded full donor inventory; reference check
+continues to compare the manifest to the exact donor separately. A regression
+forbids even Git access during the offline gate. The failed attempt is retained.
+
+An initial local engine-test invocation lacked cmake on PATH; the normal
+managed tool PATH is required. The corrected invocation is recorded separately;
+the CI independence failure above was a real workflow issue and was fixed.
