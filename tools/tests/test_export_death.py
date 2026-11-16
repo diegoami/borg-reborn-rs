@@ -251,6 +251,21 @@ class ExportTest(unittest.TestCase):
                for d in self.reg.iterdir() if d.is_dir()}
         self.assertEqual(len(fam), 2, 'different seed and implementation: different start')
 
+    def test_explicit_ordinary_marker_does_not_change_encounter_identity(self):
+        old = make_run(self.base, 'ordinary-old')
+        new = make_run(self.base, 'ordinary-explicit', synthetic=False)
+        with (new / 'config.txt').open('a') as f:
+            f.write('synthetic=0\n')
+        self.assertNotEqual(ed.sha256_file(old / 'config.txt'), ed.sha256_file(new / 'config.txt'))
+        families = [ed.run_family(json.loads((run / 'summary.json').read_text()),
+                                 ed.read_kv(run / 'config.txt'), 'rust', 'cafe')
+                    for run in (old, new)]
+        self.assertEqual(*families)
+        case, _ = ed.export(old, 'rust', self.build)
+        original = (self.reg / case / 'config.txt').read_bytes()
+        self.assertEqual(ed.export(new, 'rust', self.build), (case, 'repeat'))
+        self.assertEqual((self.reg / case / 'config.txt').read_bytes(), original)
+
     def test_same_start_different_play_is_same_family(self):
         a, _ = ed.export(make_run(self.base, 'one'), 'c', self.build)
         b, what = ed.export(make_run(self.base, 'two', keys='other\n'), 'c', self.build)

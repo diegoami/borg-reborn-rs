@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: PR #386 review fixes
+
+- Process the owner-supplied review of `9f62ee60` (comment 6904596402).
+  Reproduce finding 1 in a strategy fixture: a starving, foodless one-way
+  character with reachable down stairs chooses Stuck/Hold before the fix.
+  Scope the hunger veto to states where Return is available. Regression
+  coverage requires walking toward and taking the stairs; the existing
+  ordinary-starvation test still requires Return. Target-depth gating stays.
+- Finding 2: explicit ordinary metadata changes config/summary bytes, not
+  encounter identity. A new exporter test proves the config hash changes but
+  encounter family/repeat detection do not, and existing dossier bytes are
+  preserved. Payload hashes and immutable archive package IDs intentionally
+  depend on exact bytes; no historical record/reference is rewritten.
+- Finding 4: patch 09 now names `src/game-world.c:run_game_loop` and the full
+  upstream pin, and requires lifecycle rechecking on engine-pin changes.
+  Finding 5: vendor audit passes; provenance is already declared. Findings
+  3/6 need no code change (native enforcement; engine-authoritative bounds).
+- Workspace tests (157+4+5), 90 tool tests, Clippy and vendor audit pass.
+  Rebuild, real synthetic smoke and new-source natural control evidence follow
+  in an evidence commit; keep the review open and do not merge on CI alone.
+
 ## 2026-11-16: generated-depth synthetic startup (#371)
 
 - Owner-directed capability on `task/371-synthetic-start-review` (PR #386), stacked on the

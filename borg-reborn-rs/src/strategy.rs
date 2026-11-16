@@ -1146,7 +1146,7 @@ impl FirstStrategy {
         // spends the food timer, and the level has nothing more to gain
         // (the manual's recall-and-home routine, c15 §12.12; bbc D0009,
         // rust D1420). Contact still answers first — Engage is chosen
-        // below. Descending deeper is banned the whole time (T4.6, #123).
+        // below. Descending deeper is banned while return is available (T4.6, #123).
         let starving_no_food = ctx
             .world
             .character
@@ -1154,7 +1154,10 @@ impl FirstStrategy {
             .as_ref()
             .is_some_and(|s| s.food < ctx.params.eat_below_food)
             && !Self::has_food(ctx);
-        let block_descend = starving_no_food && ctx.world.level.depth > 0;
+        // A hunger veto assumes that returning to town is an alternative.
+        // Under forced descent it must not also forbid the way forward
+        // (#386 review); the ordinary target-depth gate still applies.
+        let block_descend = starving_no_food && ctx.world.level.depth > 0 && can_return;
         // What the level has given (#201): a new grid mapped or experience
         // is progress; a new level starts the count again.
         let level_idle = {
@@ -2399,6 +2402,37 @@ mod tests {
         assert_eq!(d.mode, "return", "{d:?}");
         assert_eq!(d.goal, "return home");
         assert_ne!(d.action, Action::Descend);
+    }
+
+    #[test]
+    fn starving_one_way_character_can_reach_and_take_down_stairs() {
+        // #386 review: the route home is unavailable. Hunger must not
+        // veto the remaining legal way forward (readiness still applies).
+        for (x, expected) in [(1, Action::Walk(6)), (3, Action::Descend)] {
+            let (mut strategy, mut w, k, _, m, mut rng, params) =
+                ctx_of(&["#####", "#@.>#", "#####"], 20, 20);
+            above_target(&mut w);
+            let status = w.character.status.as_mut().unwrap();
+            status.food = 0;
+            status.force_descend = true;
+            status.no_recall = true;
+            status.x = x;
+            status.y = 1;
+            let mut paths = Paths::new(&w);
+            let d = decide_with(
+                &mut strategy,
+                &w,
+                &k,
+                &mut paths,
+                &m,
+                &mut rng,
+                &params,
+                &view(&w),
+                &[],
+            );
+            assert_eq!(d.mode, "descend", "{d:?}");
+            assert_eq!(d.action, expected, "{d:?}");
+        }
     }
 
     #[test]

@@ -115,3 +115,11 @@ It runs in the existing engine CI job after the build. Run-derived character
 build records (with exact build hashes), null-move threat diagnostics, suite
 manifests and outcome classification remain follow-up work; see #371 and
 borg-cemetery#5.
+
+PR #386 review clarification: starvation without food blocks further descent
+only while returning to town is available. Under forced descent that hunger
+veto is lifted; the ordinary target-depth gate still applies. The ordinary
+`synthetic=0` config line and `synthetic: false` summary field are explicit
+metadata. They alter payload bytes/hashes (and immutable archive package IDs),
+but the encounter family uses named starting inputs, not a hash of the whole
+config. Repeat detection and existing dossier payloads remain unchanged.
