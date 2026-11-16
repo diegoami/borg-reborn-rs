@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: recorder integration after accepted importer review (#351)
+
+- #395 is merged. Sync current track-p cd411e55, retaining both histories
+  and the accepted Cemetery ownership/fixture changes. Gameplay source remains
+  7d2af920, identical to the measured current-base recorder task build.
+- Cemetery PR11 preserves all 54 task packets and eight reports byte-for-byte
+  (602 audited files). The source archive returns to the accepted 2,572
+  historical cases; canonical native controls total64. Pin that evidence for
+  CI reconciliation and retain brief source links in P351-VALIDATION.md/.json.
+  Older entries below describe their original snapshots and paths.
+- After green final CI, merge #393 only into track-p and close #351. Open
+  the exact-pin track-p -> main recorder milestone review; the owner chooses
+  the reviewer and accepts promotion. Do not merge that promotion here.
+
 ## 2026-11-16: recorder task current-base synchronization (#351)
 
 - Track-p advanced to 79ec0591 during recorder work, including the owner-
@@ -41,6 +55,36 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
+
+- #395 review at 79ec0591 reports no blockers. Its remaining engine CI
+  condition is satisfied by green run 43783576729. Nonblocking mode,
+  fault-injection, Python-minimum and formatting observations are tracked
+  in #397; none is implemented in this synchronization.
+- Main advanced to 6c89d9a2 through #394. Preserve the accepted Cemetery
+  ownership migration, six mapped package removals and pinned CI evidence.
+  Resolve only the handover conflict by retaining both histories.
+- Reviewed importer, importer tests and DOSSIER-IMPORT.md stay byte-identical
+  to 79ec0591. Runtime, source pins and archive contents match accepted main.
+  Required CI on this combined tree must pass before track-p integration.
+- Update #395 with the new pin and exact scope/tree proof; retain the
+  original review's provenance. Promotion remains pending owner acceptance
+  and explicit delegation, not merely the reviewer's recommendation.
+
+## 2026-11-16: Cemetery evidence ownership (#376)
+
+- AGENTS/RULES now require gameplay reports, scenarios and trials in
+  borg-cemetery; source PRs retain code/tests and concise validation links.
+- Cemetery PR8 retains the PlanMage incident and all66 files of the six
+  #355 control packages byte-for-byte. Remove only those mapped packages
+  here, regenerate the index and redirect the current incident pages.
+- CI reads the unchanged checkpoint archive from a separate pinned Cemetery
+  evidence checkout. Reconciliation uses retained historical plus canonical
+  cases, never the new temporary registry as its own expected baseline.
+- Original public player recordings/hashes and other sessions' historical
+  packages remain preserved. No policy change is part of this cleanup.
+
+
 ## 2026-11-16: importer follow-up main sync after #379
 
 - Main advanced to58b11ff2 through owner-directed #379 while #381/#384

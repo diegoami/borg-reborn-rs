@@ -42,6 +42,7 @@ verifies both pairs. This bounded headless coverage does not claim GUI,
 in-game branching, hot activation or v1 migration support.
 
 The adoption changes source/build identity. Recorder-off play comparisons,
-actual new-build death retention and required CI are recorded in the task's
-validation report. Raw recording/build proof stays outside Git; no canonical
-cemetery upload or population experiment is part of this integration.
+actual new-build death retention and required CI are linked from
+[P351-VALIDATION.md](P351-VALIDATION.md). Canonical reports and packets live
+in borg-cemetery; raw recording/build proof stays outside Git. No population
+experiment is part of this integration.
