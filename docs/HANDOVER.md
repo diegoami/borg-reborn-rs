@@ -89,6 +89,8 @@
   keys at turn 48483, passes here). 90 small-tier starts, ambitious-town:
   stalls 1 -> 0, deaths 23 -> 17, max burst 725 (one-unit arrow buying).
   No-plan arms (control, town) byte-identical on 8 cells.
+- CI deaths for source d99390fe are retained in borg-cemetery#21
+  (707b4dbf); the wild-cat fixture points CI at that commit.
 - Found while auditing (next PR): every phase change starts with a town
   trip (`loop-levels 0 N`), arrival in town restarts the loop, and any
   upward move sets "home" (46 such overrides in one Warrior game).
