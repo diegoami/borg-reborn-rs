@@ -88,26 +88,28 @@ not undo other-track work already authorized before the gate.
 11. **Fair information** (GOALS D3): the Borg reads only what the C Borg
     reads. Every engine read goes through the engine boundary and is listed
     there.
-12. **Every natural death of a measured run is recorded** as a dossier
-    in `borg-cemetery/deaths/` by default (native dossier format; the decision trace from M3), with
-    the actual source, build, implementation, profile and seed. A measured
-    run is one played through `harness/run.sh`: a suite, a single run, CI
-    or the zoo's cells. This applies from the first game played (T1.2, #5),
-    whichever arm died. The toolkit is owned by borg-cemetery; local command
-    paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
-    isolated validation or historical registries. Existing `docs/deaths/` stays
-    retained as the historical validation baseline. New historical imports use
-    `tools/import-deaths.py` to qualify provisional IDs and preserve source
-    packages; its CI check protects the accepted baseline and new imports
-    (docs/DOSSIER-IMPORT.md). Games watched with `watch-borg.sh` are not measured
-    runs and are not recorded (owner, 2026-11-10, E review finding 3): they
-    have no seed, key log or summary; a death seen there that matters is
-    reproduced as a measured run and recorded then. Repeats and replays
-    never inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in the registry or
-    a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
-    deaths of test-feature builds are not natural deaths of an arm and are
-    kept apart.
+12. **Every natural death of a measured run is recorded in borg-cemetery**,
+    with the actual source, build, implementation, configuration, inputs and
+    lineage. The Cemetery owns incident/death analysis, saved or constructed
+    scenarios and behavioral/counterfactual trial reports. Source repositories
+    keep code/tests, checksum-pinned fixture references and brief validation
+    summaries with canonical links; do not publish duplicate gameplay reports
+    or new validation dossiers here. Existing docs/deaths/ is historical, not
+    a destination for new evidence. Changes to that retained archive require
+    explicit source-qualified migration and integrity checks.
+    A measured run includes harness runs, suites, CI and zoo cells. CI may use
+    temporary registries/artifacts, but retained comparisons must point to
+    canonical Cemetery evidence; never weaken missing-death checks or compare
+    a temporary registry only against itself. BORG_DEATH_RECORDS_DIR selects
+    isolated working storage, not a different owner for permanent reports.
+    Watched/recorded incidents may have unknown birth seeds; preserve their
+    recordings and saved states without inventing a measured seed identity.
+    Original player/mixed recordings and working saves may stay in
+    player-cemetery, linked by the canonical case. Case-specific alternative
+    plays and scenario trials belong to Cemetery. Replays, reloads and branches
+    of one life never inflate independent counts. Test-feature/fabricated
+    scenarios are explicitly labelled and kept apart from natural measured
+    deaths. Original published hashes and historical records are preserved.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
@@ -133,7 +135,8 @@ not undo other-track work already authorized before the gate.
     lock: `flock /tmp/angband-validation.lock <command>`. Watch and log long
     runs, and never kill another session's job.
 18. Build output, saves, raw run directories and large logs are not
-    committed. Curated evidence (dossier files, reports) is.
+    committed here. Publish curated gameplay reports/dossiers in
+    borg-cemetery; source commits keep their pinned references (RULES12).
 19. No secrets in the repository or in run records.
 20. Population experiments run through borg-zoo and are started by the
     owner (they hold the account's Actions capacity for hours).
