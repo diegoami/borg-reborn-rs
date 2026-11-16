@@ -241,10 +241,6 @@ pub(crate) fn burden(space_weight: i64, slots: i32, weight: i64, free_slots: i32
 /// Compare carrying, storing and selling on marginal utility, updating
 /// the shared supply after EVERY disposition. The Home is a free option
 /// for later trips even when the pack is not overweight.
-/// borg-reborn-rs (v12): free pack slots at or below which a stack may be
-/// sold or dropped for room even when the sale pays nothing.
-const SELL_SLACK: i32 = 2;
-
 pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<Disposition>, Freed) {
     let mut out = vec![Disposition::Keep; input.kit.len()];
     let mut freed = Freed::default();
@@ -303,24 +299,11 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
                 _ => false,
             }
         });
-        // borg-reborn-rs (v12, owner 2026-11-16: sell less, a study arm):
-        // with borg_param_town_sell_without_gold = 0, a known stack leaves the
-        // pack only when the sale pays gold or the pack needs the room (two
-        // free slots or fewer, or over the carry allowance). Under
-        // birth_no_selling a sale pays nothing, and an item past its target
-        // (a spare Cure Light Wounds potion) is worth more carried than given
-        // away.
-        let free_after = input.limits.pack_slots + freed.pack_slots;
-        let needs_room = free_after <= SELL_SLACK || input.limits.weight + freed.weight < 0;
-        let pays = it.sell_shop >= 0 && it.proceeds > 0;
-        let may_part = input.revision < 12
-            || crate::params::value(crate::params::Param::town_sell_without_gold) != 0
-            || pays || needs_room;
         let protected = it.unknown || it.just_bought || urgent_loss;
         let store = !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (future - home_cost > loss - cost ||
             input.limits.weight + freed.weight < 0 && (loss > 0 || future > 0 || protected));
         let action = if store { Disposition::Store }
-            else if !protected && may_part && loss <= cost && future <= home_cost {
+            else if !protected && loss <= cost && future <= home_cost {
                 if it.sell_shop >= 0 { Disposition::Sell } else { Disposition::Drop }
             } else { Disposition::Keep };
         out[i] = action;
