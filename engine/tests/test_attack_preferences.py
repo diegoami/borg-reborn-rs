@@ -22,9 +22,18 @@ class AttackPreferencesTest(unittest.TestCase):
             root = Path(temporary)
             env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
             # Keep tooling and evidence destinations, but no ambient policy.
-            for key in ['BORG_CEMETERY_DIR', 'BORG_DEATH_RECORDS_DIR']:
+            for key in ['BORG_CEMETERY_DIR']:
                 if key in os.environ:
                     env[key] = os.environ[key]
+            # This is the native core, whose calibration/trace contract is
+            # separate from the original core's observation-replay registry.
+            # Retain deaths outside the temporary run directories and let CI
+            # reconcile them against the independently pinned native archive.
+            storage = Path(os.environ.get('BORG_DEATH_RECORDS_DIR',
+                                          str(Path(tempfile.gettempdir()) / 'borg-tests/deaths')))
+            registry = Path(os.environ.get('BORG_ATTACK_PREFERENCE_DEATHS_DIR',
+                                           str(storage.parent / 'attack-preference-deaths')))
+            env['BORG_DEATH_RECORDS_DIR'] = str(registry.resolve())
             env.update(BORG_CORE='borg-rs', BORG_CORE_OVERRIDES='off',
                        BORG_PARAM_ATTACK_PREFERENCE_MAGE_SPELL_PERMILLE='500',
                        BORG_PARAM_ATTACK_PREFERENCE_MAGE_MELEE_PERMILLE='2000')

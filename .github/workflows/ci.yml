@@ -152,6 +152,10 @@ jobs:
           git -C vendor/borg-zoo fetch -q --depth 1 https://github.com/diegoami/borg-zoo "$zoo_pin"
           git -C vendor/borg-zoo checkout -q --detach "$zoo_pin"
           echo "BORG_ZOO_CONTRACT_REQUIRED=1" >> "$GITHUB_ENV"
+      # Native preference tests use their own death registry. The original
+      # core's observation/replay check below must continue to select one of
+      # that core's deaths, rather than a differently configured native run.
+      - run: echo "BORG_ATTACK_PREFERENCE_DEATHS_DIR=$RUNNER_TEMP/attack-preference-deaths" >> "$GITHUB_ENV"
       # The build, the source list and the frontend's contract on the binary (TE.4).
       # #350: immutable, source-qualified saves from the recorded wild-cat incident.
       - run: |
@@ -164,6 +168,13 @@ jobs:
               env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
           PYFIXTURE
       - run: python3 -m unittest discover -s engine/tests
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-attack-preference-death-registry
+          path: ${{ runner.temp }}/attack-preference-deaths
+          if-no-files-found: ignore
+      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/attack-preference-deaths" --registry vendor/attack-preference-evidence/validation/borg-reborn-rs/class-attack-preferences/deaths
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2

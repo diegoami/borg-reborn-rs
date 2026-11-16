@@ -35,6 +35,10 @@
   identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
   reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
   known registry; the original fixture/tool pins and historical archive stay fixed.
+  Native preference test deaths use a separate uploaded/reconciled registry, so
+  the existing original-core observation replay continues to select its own
+  core's case. Shared rerun-death lacks calibration-override restoration; that
+  pre-existing tooling limit is not silently treated as a native replay check.
   Local raw evidence is under /workspace/work/403-*. R must
   independently consume the accepted promoted contract with neutral/non-neutral
   check/switch, ordered requests/effects/RNG and restoration (#364/#366).
