@@ -1,4 +1,38 @@
-# R4 item-use implementation (#435), validation in progress
+# R4 item-use implementation (#435): gameplay validation complete
+
+Current runtime input is 95fb364b150ad87a8330b45441d08f252096bedc0c766754e5eb3608b3e30293.
+Actual measured local commit04520f0238cd609aa3108c5da42a3aa8c53d4a08 has
+exactly the same tree as public c7b2dd33944ddc8f00305d307dece00b848fe014.
+Private literal-fault ancestry is not published; BUILD_ID remains unchanged.
+All45 full-suite cases match the exact accepted M13 donor in off/check/switch,
+including keys/messages/state, endpoints and gameplay settings. Both shadow
+modes have zero mismatches. Normal smoke and original-core smoke complete.
+All55 constructed cases pass in check/switch, and two independent literal
+faults reject at mutable full-state and immutable-return boundaries. Exact
+repair passes. Actual nested callbacks match (four in each mode). Constructed
+coverage supplements the strict entry gate; it is not independent natural
+coverage, successful engine command consumption or live UI-note validation.
+
+Canonical evidence: borg-cemetery PR51, pinned by R435-CEMETERY-RECEIPT.json.
+It preserves16 qualified packages:12 current native deaths, one original-core
+smoke death and CI613/614/616 originals. It includes all comparisons, original
+build identities, fault controls and the prepublication archive-gate failure.
+Canonical D-<hash> sidecars and aliases are assigned by the cemetery owner
+implementation, preserving all original package bytes. The source verifier
+checks those additive identities using that exact pinned implementation,
+then imports only the unchanged qualified original into the disposable mirror.
+Old R364/R365 manifests remain byte-identical; later owner sidecars are
+validated separately. No historical inventory or reconciler is weakened.
+
+Full canonical reconciliation and exact final-head CI must pass before merge.
+Task targets feature/track-r only. Owner accepted R3, not all of R4. Complete
+power/wear/store slices remain gated on accepted P handoff433. Final R4 owner
+review is438; main/global reviewed promotion remains unauthorized.
+
+The following text records earlier source epochs, setup failures and controls.
+Statements that validation is pending below are historical, not current status.
+
+# Historical implementation and validation notes
 
 Current branch refinement: the availability predicate takes only &BorgState
 in both programs. Its typed ReadDecision uses ordered read-only replay on the
