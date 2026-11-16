@@ -1,0 +1,26 @@
+{
+  "schema": "borg-reborn-rs/r3-observed-cost@1",
+  "cases_per_mode": 45,
+  "parallel_workers": 5,
+  "modes": [
+    {
+      "mode": "off",
+      "sum_per_process_wall_seconds": 867.137,
+      "min_process_wall_seconds": 3.692,
+      "max_process_wall_seconds": 60.987
+    },
+    {
+      "mode": "check",
+      "sum_per_process_wall_seconds": 32714.08,
+      "min_process_wall_seconds": 101.759,
+      "max_process_wall_seconds": 1600.949
+    },
+    {
+      "mode": "switch",
+      "sum_per_process_wall_seconds": 32051.783,
+      "min_process_wall_seconds": 89.946,
+      "max_process_wall_seconds": 1548.019
+    }
+  ],
+  "limits": "Descriptive accumulated per-process elapsed measurements on the validation host. Jobs overlapped; these sums are not suite elapsed time, CPU time, exclusive implementation effort, a controlled speed comparison or a performance claim."
+}
