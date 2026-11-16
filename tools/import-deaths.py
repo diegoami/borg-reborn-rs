@@ -152,7 +152,16 @@ def import_packages(sources, destination):
                 stage.rename(final)
             finally:
                 if stage.exists():
-                    shutil.rmtree(stage)
+                    primary_error = sys.exc_info()[1]
+                    try:
+                        # Publication may have removed owner write access. This
+                        # invocation owns only this still-unpublished directory.
+                        stage.chmod(0o700)
+                        shutil.rmtree(stage)
+                    except OSError as cleanup_error:
+                        if primary_error is None:
+                            raise
+                        primary_error.add_note(f'Could not clean staging {stage}: {cleanup_error}')
             result.append((identifier, 'imported'))
         # Formatting belongs to the cemetery-owned implementation, not this tool.
         owner.update_index(destination)
@@ -204,7 +213,8 @@ def main():
             for identifier, status in import_packages(args.sources, args.registry):
                 print(f'{identifier}: {status}')
     except (OSError, ValueError, KeyError) as error:
-        ap.exit(2, f'import-deaths: {error}\n')
+        notes = ''.join(f'{note}\n' for note in getattr(error, '__notes__', []))
+        ap.exit(2, f'import-deaths: {error}\n{notes}')
 
 
 if __name__ == '__main__':
