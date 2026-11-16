@@ -1,0 +1,182 @@
+{
+  "schema": "borg-reborn-rs/dossier-map@1",
+  "importer_commit": "6b6362fe34641936bd5862f11a735dac1f1f68c4",
+  "cemetery_tool_pin": "33c375527a8e443cdfcda19e864e4561f0c1c9ef",
+  "packages": [
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0001-rust-seed1011",
+      "qualified_directory": "docs/deaths/D0000-q38519ad813082635ecba3d01efd3fd87140c2e9a3f3a817eeb4b0c51c2ab90fb",
+      "status": "imported",
+      "original_record_sha256": "5836a31a0ee7079a62fe25a4bfbae5da9991ff3475a3ffdd569d269f7285901c"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0002-rust-seed1020",
+      "qualified_directory": "docs/deaths/D0000-qd89bb6e3dc63971356c120d42ceea3dc975dfa2fdd23fc0f9e313d6c54df525b",
+      "status": "imported",
+      "original_record_sha256": "8a058b7d24e8155159cba130d833864018f636ae92cc918270339d85bd3a41a6"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0003-rust-seed1023",
+      "qualified_directory": "docs/deaths/D0000-qf32ecde4dee8d832530a4df0615214f5e9650134522a04a72d0694720997f351",
+      "status": "imported",
+      "original_record_sha256": "bce6be70fd31bf49619d7c3ea402d945c4bdfa468ad0e0389f01650294b9b104"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0004-rust-seed1021",
+      "qualified_directory": "docs/deaths/D0000-q96388907998885660e13bcef9d96511c7dfbf5c1457f8e5c87751a8c457ab44f",
+      "status": "imported",
+      "original_record_sha256": "9aac6faa46ea67e9f69b9e6f2277416255cd81458638c4e41e95fd5602dd43a3"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0005-rust-seed1022",
+      "qualified_directory": "docs/deaths/D0000-q719a7ccedad4ecfb94fed8935bd5bb95e02180d4b7b4b4b154ddcbadb69eee6f",
+      "status": "imported",
+      "original_record_sha256": "27991ea95612119da0cbf768f9d31c10f6ad322b9b6d480b3ab82ebc6462194b"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0006-rust-seed1043",
+      "qualified_directory": "docs/deaths/D0000-qbfb5d41c35f6a09d09776d59f7b600e00efe955190d6e9acb120b2c4313d4847",
+      "status": "imported",
+      "original_record_sha256": "78b7e6a3578f0d093e7a1e720dd6f591152e266fa06cdb4d11abc5757f68fb04"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0007-rust-seed1050",
+      "qualified_directory": "docs/deaths/D0000-q8ca59bcf428e8ab82c371ac1fe0e5944d9e933eeacfb34f4bae613a8cdbf6f9d",
+      "status": "imported",
+      "original_record_sha256": "806ab32a336e8418ebfd641def61d3ecda50c90357a1bc3f8d9f71e3cb7cafe4"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0008-rust-seed1062",
+      "qualified_directory": "docs/deaths/D0000-q4574da97819bab91d93ee8d1d17737e5c3f8674650219d01b7d789664c16a665",
+      "status": "imported",
+      "original_record_sha256": "daf1f331de73736907b8e4e9ebd4b294e314a2cc25e0a354266c30db2f41d203"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0009-rust-seed1072",
+      "qualified_directory": "docs/deaths/D0000-qc3a733eda322b9b3f0d4e2d0685e5629e6afc31b0e6731a02c5328eb28b7e50d",
+      "status": "imported",
+      "original_record_sha256": "7f760ac1d24f8bb720a7ed684f31c078d43862562aed863858b36525443e9da3"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0010-rust-seed1074",
+      "qualified_directory": "docs/deaths/D0000-q65fb1d0d6c7615344792d8d5c876e43540982212c7907172e46fa51a6f08952a",
+      "status": "imported",
+      "original_record_sha256": "fdfe8529e9c79a8061a3a8376c07138f59ad6c24c22ca625e23aacc1ee4d7a06"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0011-rust-seed1084",
+      "qualified_directory": "docs/deaths/D0000-q78f15c1edd1bddd4d08d01cc331fb5129cf640251d508bf805ece4f268d94140",
+      "status": "imported",
+      "original_record_sha256": "bc5971484133b744a48071994b47fb537ccccf5c4a8276b3fba2c26e2ae2a74b"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0012-rust-seed1073",
+      "qualified_directory": "docs/deaths/D0000-q3bb0e11ba6fe02d4512a7cb1195fbd61b27fde4128e46e390188766b2f4fe72b",
+      "status": "imported",
+      "original_record_sha256": "c6fd30df07fe273221afda48c67d4fd1c084ffcc23eea7b5261f7b57102e34a2"
+    },
+    {
+      "role": "receiving",
+      "source_directory": "/workspace/work/p341-validation/receiving-deaths/D0013-rust-seed102",
+      "qualified_directory": "docs/deaths/D0000-q4a22a9426e911a40b94827ecdbeb7811683c3dfeb4a2ab10f2cc6b4bb62c77f0",
+      "status": "imported",
+      "original_record_sha256": "f02941c83a1a7f6e2603c0c874222839fb0f5f7c6a04abe41ffa7c9403d79e3d"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0001-rust-seed1011",
+      "qualified_directory": "docs/deaths/D0000-qc22eecf36908103202d66659ab8080d24726111e3f9c1bef01cb55710587ba08",
+      "status": "imported",
+      "original_record_sha256": "ca58f93db21714f6a23f7bba207c5499dd5e956cd41cf01ff83a979c6ae235a1"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0002-rust-seed1020",
+      "qualified_directory": "docs/deaths/D0000-q57d0a993a77edab66f57fa157b116e48aef041e7c6fd40647cb1e121c2717ec4",
+      "status": "imported",
+      "original_record_sha256": "2e72a5357f4dc0dfa13a79b61ad5640e8d14470e3ac435dc95c99f6935200ffa"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0003-rust-seed1021",
+      "qualified_directory": "docs/deaths/D0000-q991ce4a28b9caff8e033c479f8dd98769103338afde254ff9096bfb4ae9c2ff0",
+      "status": "imported",
+      "original_record_sha256": "754f3a77e938782cdba1d3e9616c103f220268f2fcbd417aa81c9616adb7bbfc"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0004-rust-seed1022",
+      "qualified_directory": "docs/deaths/D0000-qf5fb0f7f7acf7a431f11dfff17f36ad5f6fa982b45e450595192a2541b13c4ca",
+      "status": "imported",
+      "original_record_sha256": "890fff620337efd3efe007364a5fc15a0ceff94602965441a601a967432579f4"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0005-rust-seed1023",
+      "qualified_directory": "docs/deaths/D0000-qe285b880edaa54914e625828afd0d843ea9bd4bad0579d7d091d493067e6b38b",
+      "status": "imported",
+      "original_record_sha256": "3d6a8668b11237feed17bffd6e3fd9f7aa4f0ac4846d3a27af2e1a9af74d9862"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0006-rust-seed1043",
+      "qualified_directory": "docs/deaths/D0000-qfefbf857091d0f940db3fa8e8e7cc801b730fbdfe32ee07f79c555c824ae78d0",
+      "status": "imported",
+      "original_record_sha256": "1663f7222ee400c122a08c197d90757973e8f78e9a0b1ec0e43df0bd5150dcf5"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0007-rust-seed1050",
+      "qualified_directory": "docs/deaths/D0000-q75b55e547f3bf52d105014edc43280b221c17f17fccc72792c540e6bf10ae491",
+      "status": "imported",
+      "original_record_sha256": "d4c40f71b0580d01f9f650575621755cd2a9a00fcbdd4b88a6ad9772b2895869"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0008-rust-seed1062",
+      "qualified_directory": "docs/deaths/D0000-q44c63b7d682dd54e9b44b1ea23d4b2359d47dbef17f078ec0ddb7356d24733d6",
+      "status": "imported",
+      "original_record_sha256": "eeab24eb57c505f4a2f8f6cc2e03258cd7d255e4526936ad493d3482b53cc749"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0009-rust-seed1072",
+      "qualified_directory": "docs/deaths/D0000-q6599fb966d02785f580ddbd2e763bc9d054ab16756bac93426ae3dbe76fe1f3a",
+      "status": "imported",
+      "original_record_sha256": "c43ddf7a80522fc89c236d204edd57c8a3f419c9bd7b747509e1eb1422a6b686"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0010-rust-seed1073",
+      "qualified_directory": "docs/deaths/D0000-q99727a7bbab8db72dd56f4c81eb589f8cd4ad072942c4b2c1cb09f1996cb2be1",
+      "status": "imported",
+      "original_record_sha256": "8632a11f6a6813b4ef9dfc3966e7b191ecf08f637136ac71ebfbf52758f43dda"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0011-rust-seed1074",
+      "qualified_directory": "docs/deaths/D0000-qf73285c727d3d8e44e7e7813b7a573967330f1e2c7b0a2e6a49888433a1f6a88",
+      "status": "imported",
+      "original_record_sha256": "84c8cc3a985c18415f350fdc8468492d8ec51fe461154c70a9b63fc81fba1a09"
+    },
+    {
+      "role": "donor",
+      "source_directory": "/workspace/work/p341-validation/donor-deaths/D0012-rust-seed1084",
+      "qualified_directory": "docs/deaths/D0000-q99e7eb2dcc031033f7b5be3b41cb644bc52e758a85af4828496d916b0ef8486e",
+      "status": "imported",
+      "original_record_sha256": "33dec877ca725dbe45dc8af99ed4efe2b0f34b410eb284d412ea0094eb7158c4"
+    }
+  ]
+}
