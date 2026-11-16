@@ -1,0 +1,121 @@
+{
+  "schema": "angband-recorder/milestone-evidence@1",
+  "qualification": "Author-collected immutable delivery evidence; not an independent verdict.",
+  "checks": [
+    {
+      "component": "recorder",
+      "checks": [
+        {
+          "name": "verify",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "8a3352d8ef01a933c1e93e43f6fa3f1d9959cc04",
+          "url": "https://github.com/diegoami/angband-recorder/actions/runs/43642490913/job/132592889776",
+          "started_at": "2026-11-14T21:22:42Z",
+          "completed_at": "2026-11-14T21:24:00Z"
+        }
+      ]
+    },
+    {
+      "component": "borg-rs",
+      "checks": [
+        {
+          "name": "recorder",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "10b5b50e792329275bd2a9a1094fbafc45998cba",
+          "url": "https://github.com/diegoami/borg-rs/actions/runs/43642860341/job/132594046343",
+          "started_at": "2026-11-14T21:26:58Z",
+          "completed_at": "2026-11-14T21:27:57Z"
+        },
+        {
+          "name": "tools",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "10b5b50e792329275bd2a9a1094fbafc45998cba",
+          "url": "https://github.com/diegoami/borg-rs/actions/runs/43642860341/job/132594046297",
+          "started_at": "2026-11-14T21:26:58Z",
+          "completed_at": "2026-11-14T21:28:13Z"
+        },
+        {
+          "name": "test",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "10b5b50e792329275bd2a9a1094fbafc45998cba",
+          "url": "https://github.com/diegoami/borg-rs/actions/runs/43642860341/job/132594045994",
+          "started_at": "2026-11-14T21:26:58Z",
+          "completed_at": "2026-11-14T21:27:33Z"
+        }
+      ]
+    },
+    {
+      "component": "reborn",
+      "checks": [
+        {
+          "name": "rust",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a794755072a14e3e0207df6c6cebf5845b400e8f",
+          "url": "https://github.com/diegoami/borg-reborn-rs/actions/runs/43629292971/job/132552094489",
+          "started_at": "2026-11-14T18:55:48Z",
+          "completed_at": "2026-11-14T18:57:27Z"
+        },
+        {
+          "name": "recorder",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a794755072a14e3e0207df6c6cebf5845b400e8f",
+          "url": "https://github.com/diegoami/borg-reborn-rs/actions/runs/43629292971/job/132552094465",
+          "started_at": "2026-11-14T18:55:49Z",
+          "completed_at": "2026-11-14T18:56:59Z"
+        },
+        {
+          "name": "engine",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "a794755072a14e3e0207df6c6cebf5845b400e8f",
+          "url": "https://github.com/diegoami/borg-reborn-rs/actions/runs/43629292971/job/132552094245",
+          "started_at": "2026-11-14T18:55:48Z",
+          "completed_at": "2026-11-14T19:09:29Z"
+        }
+      ]
+    },
+    {
+      "component": "c-removal",
+      "checks": [
+        {
+          "name": "native",
+          "status": "completed",
+          "conclusion": "success",
+          "head_sha": "4ab1fc2620137ee892e9f436ed9bf63633f39a97",
+          "url": "https://github.com/diegoami/better-borg-c/actions/runs/43616556286/job/132512772245",
+          "started_at": "2026-11-14T16:36:48Z",
+          "completed_at": "2026-11-14T16:37:54Z"
+        }
+      ]
+    }
+  ],
+  "initial_failures": [
+    {
+      "scope": "recorder CI environment",
+      "runs": [
+        43613392060,
+        43613392597
+      ],
+      "resolution": "Vanilla CMake selected X11; development dependency added in 722010a without changing recorder runtime."
+    },
+    {
+      "scope": "consumer forked checkpoints",
+      "resolution": "Saver children now enter snapshot-only mode before touching recording/replay streams; frequent checkpoint controls added."
+    },
+    {
+      "scope": "archive restore",
+      "resolution": "Executable permissions on archived runner scripts are preserved; actual archive-restored replay added to the tools gate."
+    },
+    {
+      "scope": "reborn death accounting",
+      "run": 43615843628,
+      "resolution": "D2093/D2094 reproduced matching keys/messages/state; original CI evidence preserved; corrected full run43627953894 and actual-main run43629292971 pass."
+    }
+  ]
+}

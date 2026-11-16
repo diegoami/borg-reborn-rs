@@ -17,6 +17,10 @@ typedef struct ar_observation {
     int32_t width, height;
     const ar_cell *cells;
 } ar_observation;
+void ar_early_init(const char *build);
+bool ar_newer(bool actual);
+bool ar_directory_open(bool actual);
+bool ar_directory_read(bool only_files, size_t capacity, char *buffer, bool actual);
 void ar_init(const char *build, const int64_t *geometry);
 int64_t ar_pid(void);
 bool ar_active(void);

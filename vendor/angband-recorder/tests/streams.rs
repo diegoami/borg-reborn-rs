@@ -88,14 +88,12 @@ fn cannot_complete_an_unconsumed_or_malformed_replay() {
     assert!(s.finish().is_err());
     assert!(!f.0.join("replay/complete.json").exists());
     fs::write(f.0.join("record/inputs.jsonl"), "{bad json}\n").unwrap();
-    let mut s = Session::start(
+    assert!(Session::start(
         &f.0.join("malformed"),
         Some(&f.0.join("record")),
-        Fixture::meta(),
+        Fixture::meta()
     )
-    .unwrap();
-    assert!(s.clock(1).is_err());
-    assert!(s.finish().is_err());
+    .is_err());
 }
 #[test]
 fn bot_actions_are_checked_not_supplied() {
@@ -117,16 +115,12 @@ fn corrupt_file_cannot_be_replayed() {
     let f = Fixture::new();
     f.record();
     fs::write(f.0.join("record/file-input-000001.bin"), "tamper").unwrap();
-    let mut s = Session::start(
+    assert!(Session::start(
         &f.0.join("replay"),
         Some(&f.0.join("record")),
-        Fixture::meta(),
+        Fixture::meta()
     )
-    .unwrap();
-    s.clock(0).unwrap();
-    s.poll(Fixture::poll()).unwrap();
-    assert!(s.read_path(&f.0.join("prefs")).is_err());
-    assert!(s.finish().is_err());
+    .is_err());
 }
 #[test]
 fn identity_and_output_are_guarded() {
@@ -183,4 +177,240 @@ fn host_logs_can_precede_capture_without_overwriting_a_recording() {
         b"host startup"
     );
     assert!(Session::start(&output, None, Fixture::meta()).is_err());
+}
+
+#[test]
+fn review_f1_requires_all_streams_and_typed_matching_receipts() {
+    for name in [
+        "recording.json",
+        "inputs.jsonl",
+        "frames.jsonl",
+        "messages.jsonl",
+        "events.txt",
+        "clock.txt",
+        "pid.txt",
+        "actions.txt",
+        "file-inputs.txt",
+        "geometry.json",
+        "native-messages.jsonl",
+        "combat.jsonl",
+        "record-complete.json",
+    ] {
+        let f = Fixture::new();
+        f.record();
+        fs::remove_file(f.0.join("record").join(name)).unwrap();
+        assert!(
+            Session::start(
+                &f.0.join("replay"),
+                Some(&f.0.join("record")),
+                Fixture::meta()
+            )
+            .is_err(),
+            "{name}"
+        );
+        assert!(
+            verify(&f.0.join("record"), &f.0.join("record")).is_err(),
+            "{name}"
+        );
+    }
+    for data in ["{bad json}", "null", "{}", "{\"inputs\":0,\"frames\":0}"] {
+        let f = Fixture::new();
+        f.record();
+        fs::write(f.0.join("record/complete.json"), data).unwrap();
+        assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
+    }
+    let f = Fixture::new();
+    for name in ["one", "two"] {
+        fs::create_dir(f.0.join(name)).unwrap();
+        fs::write(f.0.join(name).join("complete.json"), "{}").unwrap();
+    }
+    assert!(verify(&f.0.join("one"), &f.0.join("two")).is_err());
+}
+#[test]
+fn review_f1_rejects_extra_blobs_and_truncated_observations() {
+    let f = Fixture::new();
+    f.record();
+    fs::write(f.0.join("record/file-input-999999.bin"), "extra").unwrap();
+    assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
+    fs::remove_file(f.0.join("record/file-input-999999.bin")).unwrap();
+    fs::write(f.0.join("record/frames.jsonl"), "{}").unwrap();
+    assert!(verify(&f.0.join("record"), &f.0.join("record")).is_err());
+}
+#[test]
+fn review_f2_rejects_native_narrowing_and_invalid_queue_domains() {
+    let bad: &[(&str, i64)] = &[
+        ("head", 256),
+        ("tail", -1),
+        ("code", 4294967296),
+        ("mods", 256),
+        ("mods", 32),
+        ("event_type", 3),
+        ("event_type", 512),
+        ("result", 2),
+        ("wait", 2),
+        ("take", -1),
+        ("x", 256),
+        ("button", 256),
+        ("disconnect", 2),
+        ("mapped", -1),
+    ];
+    for (field, value) in bad {
+        let f = Fixture::new();
+        let mut session = Session::start(&f.0.join("record"), None, Fixture::meta()).unwrap();
+        let mut input = serde_json::to_value(Fixture::poll()).unwrap();
+        input[*field] = json!(value);
+        assert!(
+            session
+                .poll(serde_json::from_value(input).unwrap())
+                .is_err(),
+            "{field}={value}"
+        );
+        assert!(session.finish().is_err());
+        assert!(!f.0.join("record/complete.json").exists());
+    }
+    for geometry in [
+        [0, 24, 256, 0, 0],
+        [80, 24, 65536, 0, 0],
+        [80, 24, 256, 2, 0],
+        [256, 24, 256, 0, 0],
+    ] {
+        let f = Fixture::new();
+        let mut meta = Fixture::meta();
+        meta.geometry = geometry;
+        assert!(Session::start(&f.0.join("record"), None, meta).is_err());
+    }
+}
+#[test]
+fn review_f5_cannot_open_a_stale_or_symlinked_absent_input() {
+    use std::os::unix::fs::symlink;
+    for link in [false, true] {
+        let f = Fixture::new();
+        let mut session = Session::start(&f.0.join("record"), None, Fixture::meta()).unwrap();
+        let path = f.0.join("record/file-input-000001.bin");
+        if link {
+            symlink(f.0.join("absent-link-target"), &path).unwrap();
+        } else {
+            fs::write(&path, "stale").unwrap();
+        }
+        assert!(session.read_path(&f.0.join("absent")).is_err());
+        assert!(session.finish().is_err());
+        assert!(!f.0.join("record/complete.json").exists());
+    }
+}
+#[test]
+fn review_f6_missing_blob_after_start_and_creation_errors_poison_completion() {
+    let f = Fixture::new();
+    f.record();
+    let mut replay = Session::start(
+        &f.0.join("replay"),
+        Some(&f.0.join("record")),
+        Fixture::meta(),
+    )
+    .unwrap();
+    fs::remove_file(f.0.join("record/file-input-000001.bin")).unwrap();
+    replay.clock(0).unwrap();
+    replay.poll(Fixture::poll()).unwrap();
+    assert!(replay.read_path(&f.0.join("prefs")).is_err());
+    assert!(replay.finish().is_err());
+    assert!(!f.0.join("replay/complete.json").exists());
+    let mut capture = Session::start(&f.0.join("capture"), None, Fixture::meta()).unwrap();
+    fs::create_dir(f.0.join("capture/file-input-000001.bin")).unwrap();
+    assert!(capture.read_path(&f.0.join("prefs")).is_err());
+    assert!(capture.finish().is_err());
+}
+#[test]
+fn review_f6_sealed_streams_cannot_be_appended() {
+    let f = Fixture::new();
+    let mut session = Session::start(&f.0.join("record"), None, Fixture::meta()).unwrap();
+    session.finish().unwrap();
+    assert!(session.frame(&json!({"late":1})).is_err());
+    assert!(session.message(&json!({"late":1})).is_err());
+    assert!(session.combat(&json!({"late":1})).is_err());
+    assert!(fs::read(f.0.join("record/frames.jsonl"))
+        .unwrap()
+        .is_empty());
+    assert!(fs::read(f.0.join("record/messages.jsonl"))
+        .unwrap()
+        .is_empty());
+    verify(&f.0.join("record"), &f.0.join("record")).unwrap();
+}
+
+#[test]
+fn review_f16_host_extensions_cannot_replace_core_or_panic_on_shape() {
+    use angband_recorder::merge_host_observation;
+    let original = json!({"turn":1,"rng":"abc","cells":[],"index":1,"world":"123"});
+    for extension in [
+        json!(null),
+        json!([]),
+        json!(42),
+        json!({"turn":2}),
+        json!({"rng":"bad"}),
+        json!({"world":"bad"}),
+        json!({"cells":[]}),
+        json!({"index":2}),
+    ] {
+        let mut frame = original.clone();
+        assert!(merge_host_observation(&mut frame, extension).is_err());
+        assert_eq!(frame, original);
+    }
+    let mut frame = original.clone();
+    merge_host_observation(&mut frame, json!({"inventory":[]})).unwrap();
+    assert_eq!(frame["turn"], 1);
+}
+
+#[test]
+fn review_f3_f9_filesystem_decisions_are_ordered_inputs_not_live_state() {
+    let f = Fixture::new();
+    let mut record = Session::start(&f.0.join("record"), None, Fixture::meta()).unwrap();
+    assert!(record.newer(true).unwrap());
+    assert!(record.directory_open(true).unwrap());
+    assert_eq!(
+        record
+            .directory_read(true, 32, Some(b"second.save".to_vec()))
+            .unwrap(),
+        Some(b"second.save".to_vec())
+    );
+    assert_eq!(
+        record
+            .directory_read(true, 32, Some(b"first.save".to_vec()))
+            .unwrap(),
+        Some(b"first.save".to_vec())
+    );
+    assert_eq!(record.directory_read(true, 32, None).unwrap(), None);
+    record.finish().unwrap();
+    let mut replay = Session::start(
+        &f.0.join("replay"),
+        Some(&f.0.join("record")),
+        Fixture::meta(),
+    )
+    .unwrap();
+    assert!(replay.newer(false).unwrap());
+    assert!(replay.directory_open(false).unwrap());
+    assert_eq!(
+        replay
+            .directory_read(true, 32, Some(b"unrelated.new".to_vec()))
+            .unwrap(),
+        Some(b"second.save".to_vec())
+    );
+    assert_eq!(
+        replay.directory_read(true, 32, None).unwrap(),
+        Some(b"first.save".to_vec())
+    );
+    assert_eq!(
+        replay
+            .directory_read(true, 32, Some(b"extra".to_vec()))
+            .unwrap(),
+        None
+    );
+    replay.finish().unwrap();
+    verify(&f.0.join("record"), &f.0.join("replay")).unwrap();
+}
+#[test]
+fn directory_filter_buffer_and_entry_domains_fail_closed() {
+    let f = Fixture::new();
+    let mut record = Session::start(&f.0.join("record"), None, Fixture::meta()).unwrap();
+    assert!(record
+        .directory_read(true, 1, Some(b"long".to_vec()))
+        .is_err());
+    assert!(record.finish().is_err());
 }

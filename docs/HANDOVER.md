@@ -2,6 +2,76 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: owner-approved recorder-only promotion
+
+- Owner accepts the recorder review at46d5f2ae and explicitly requests merge.
+  Concurrent #405 integration expanded track-p/#407 beyond that review.
+  Promote the preserved recorder snapshot separately; leave attack preferences
+  on track-p for their combined review. No preference policy is included here.
+- Preserve accepted main8a0b57c8, including #354 harness work and #368 core
+  refresh. Retain both handover histories and main's canonical evidence pin;
+  fixture archive bytes/hashes are unchanged. Revalidate this combined tree.
+- Original recorder implementation and vendor bytes remain exactly46d5f2ae.
+  Its review provenance and nonblocking follow-ups (#409) remain intact.
+- Clean combined build71978c7b/source1573e6ca: native1011, smoke102 and
+  original-core1020 controls match accepted-main retained key hashes and
+  terminal facts. Pin canonical sync receipts at Cemetery8d63abf5. Local
+  91 tool/19 script checks and all2572 historical package checks pass.
+  Combined CI gates the delegated recorder-only merge.
+
+## 2026-11-16: recorder integration after accepted importer review (#351)
+
+- #395 is merged. Sync current track-p cd411e55, retaining both histories
+  and the accepted Cemetery ownership/fixture changes. Gameplay source remains
+  7d2af920, identical to the measured current-base recorder task build.
+- Cemetery PR11 preserves all 54 task packets and eight reports byte-for-byte
+  (602 audited files). The source archive returns to the accepted 2,572
+  historical cases; canonical native controls total64. Pin that evidence for
+  CI reconciliation and retain brief source links in P351-VALIDATION.md/.json.
+  Older entries below describe their original snapshots and paths.
+- After green final CI, merge #393 only into track-p and close #351. Open
+  the exact-pin track-p -> main recorder milestone review; the owner chooses
+  the reviewer and accepts promotion. Do not merge that promotion here.
+
+## 2026-11-16: recorder task current-base synchronization (#351)
+
+- Track-p advanced to 79ec0591 during recorder work, including the owner-
+  directed #373/#379 policy revert and #358/#359 importer fixes. Preserve
+  that source and both histories. Only this handover conflicts. Keep
+  #395's review head fixed; #393 remains a separate draft.
+- Preserve the first completed comparison as pre-revert proof under
+  P351-PRE-REVERT-* and freeze its actual three executable images. Do not
+  relabel its #355-era policy or overwrite recordings/build identities.
+- Refreshed current-base checks pass: all 45 play triples and deterministic
+  summaries, 242,641 classified rows, fresh/loaded v2 replay and saves, 69
+  native tests (one local binding skip), 91 tool/19 script tests and required
+  Rust checks. Actual clean build receipts are in P351-VALIDATION.md/.json.
+- Preserve 26 current-source packets as well as 28 first-epoch packets;
+  both registries reconcile and all 2,632 archive cases verify. #393 needs
+  CI and #395 disposition before integration; its V2 pin/consumer hooks
+  remain confined to the task branch while that reviewed head is fixed.
+
+## 2026-11-16: recorder v0.2.0 consumer adoption (#351)
+
+- #372 is already owner-promoted; continue on task/P351-recorder-v020.
+  Pin the exact v0.2.0 tag ee8b133a and vendor all 41 files verbatim.
+  No recorder implementation changes are made in this repository.
+- Regenerate consumer hooks from the actual patched tree: early startup,
+  file-newer, directory enumeration and live save-path existence. Keep
+  recorder-off builds off and preserve existing harness/snapshot hooks.
+- Document the v1/v2 incompatibility and retain all old sessions/identities.
+  Add captured-load replay/final-save coverage alongside fresh-game capture,
+  forked checkpoints, bot streams and v2 CLI verification. GUI/branch-menu
+  and migration coverage are not claimed.
+- Local validation passes: full 45/45 recorder-off play parity and 241,403
+  classified rows, original smoke/death controls, fresh/loaded native v2
+  replay/final saves/checkpoints, 18 recorder Rust checks and required Rust
+  checks. Native 69-test run had two local skips; the pinned incident test
+  rerun passes all four positions, leaving local binding regeneration for CI.
+- Preserve 28 new provenance packets with exact original bytes; both
+  registries reconcile and all 2,606 archive packages verify. Build/log/hash
+  receipts and limitations are in P351-VALIDATION.md/.json and the map.
+  Required CI gates track-p; a separate owner-selected review gates main.
 ## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
 
 - Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
