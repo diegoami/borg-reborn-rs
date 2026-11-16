@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
+
+- Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
+  store/take livelock) and borg-rs#88 (additive trip policy). Three-way
+  refresh from 1443c2d, 0 conflicts; vendor check passes. harness/borg.txt
+  gets #88's trip comments only (settings unchanged).
+- Source hash 87717140 → 9a4ea375; harness/borg.txt 88296dd1.
+- Donor parity: 12/12 cells (seeds 501–506, classes 0–5, 30k turns,
+  town/trip off and on) byte-identical keys against a fresh borg-rs build
+  at 8c5d000.
+- Off arms unchanged: with borg_town_plan = 0 and borg_trip_policy = 0,
+  12/12 cells (no plan and errands_plan.txt) are byte-identical to main
+  1c4b351b; smoke 3/3 identical to the reference. All shop cells change,
+  as #88 intends.
+- Oil case (Warrior seed 501, ambitious plan + shop, 100k): keys 69,838 →
+  15,209, Home takes 3,994 → 0, worst burst 719 → 12 actions at one turn;
+  keys sha256 f32abbde21da.
+- Left: a store/take across visits is still possible (costs game time);
+  no no-progress detector. The zoo needs the new ref (borg-zoo#123).
+
 ## 2026-11-16: #354 synchronized with main 72a21620, without #355
 
 - Owner decision: the zoo's five-arm specimen carries current main's game,
