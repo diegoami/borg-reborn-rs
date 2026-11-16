@@ -36,12 +36,12 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/errands_plan.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
+    'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
-    'src/borg_town_usefulness.rs',  # #444: wine is not food, worthless kinds
     'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'src/borg_headers/borg_h.rs',  # #452: borg_speed_last_resort index (Rust-only setting)

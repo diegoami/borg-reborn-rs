@@ -70,6 +70,17 @@ explicitly declared in the vendor checker. These intentionally change vendored
 core play; the recorded M13 parity evidence retains its original source.
 No engine or recorder implementation is copied or patched for this fix.
 
+## Class/family preferences (#403)
+
+Receiving-owned attack_preference.rs implements the #396 design: explicit BF
+classification, named class/family parameter selection, pure widened floor
+arithmetic and strict ranking. The only native policy hook is in borg_attack;
+params.rs retains resolved origins and core_trace.rs records candidate/winner
+data as core-trace@2. No donor policy or engine code is copied for this feature.
+The new module is declared OURS by scripts/borg-core-vendor.py. Native helpers,
+including their availability checks, RNG order and internal target selection,
+remain unchanged. R must independently carry the accepted contract after P review.
+
 ## Synthetic P1 startup review fixes (#371 / #378)
 
 The owner-supplied #378 review identified the vendored core's two native birth

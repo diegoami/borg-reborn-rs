@@ -35,6 +35,121 @@ Owner: the scroll should have value, be carried, and be used before any food.
   from #444 and earlier; not declared here, not part of CI).
 - `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
   notes count as use, so torches are not reported as unused.
+## 2026-11-16: reviewed preference promotion synchronization (#453)
+
+- Owner asks to merge after #407's review at50c92ba0 reports no blockers.
+  Prepare the combined build through a track-p task PR before promotion.
+- Merge accepted main6d1bca10 into track-p50c92ba0. Preserve both branches'
+  handover/provenance additions; those are the only conflicts. Main's newer
+  throwable supply helper and all accepted donor/planner/survival/startup
+  changes remain intact. The reviewed final-ranking seam merges unchanged.
+- Review findings1/2: document core-trace@2 and the attacks array; explain
+  fixed-neutral waiting against downweighted attacks. Confirm the documented
+  invocation-family semantics without changing weights or mapping.
+- The vendor audit exposes an existing accepted-main ownership omission:
+  #400/#443 changed borg_town_usefulness.rs without declaring it HOOKED.
+  Declare that receiving file; retain its accepted bytes without edits.
+- Local formatting/Clippy,165 workspace checks,333 native checks/four ignores
+  and the vendor audit pass. Candidate full45 and real weighted Mage/trace
+  parity checks pass. Cemetery0f9f7cf7 independently retains98 verified
+  packages, including this combined source290fd89e and initial CI failure.
+  Pin it for fresh CI. Compare the full45 with accepted main separately. Earlier exact-build evidence remains historical;
+  green old task CI does not validate this combined build. Repin #407 only
+  after task CI/integration; promotion must preserve accepted main work.
+
+## 2026-11-16: attack preference review follow-up (#424)
+
+- #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
+  review of 3f744ddb found no correctness bugs or blocking findings.
+- Owner requested the suggested small follow-up (findings 1 and 6). Retain
+  the winning simulation's raw utility for the diagnostic note. When it
+  differs from the weighted utility, label both; otherwise preserve the
+  existing note exactly, including at all default weights. No helper is
+  rerun, and ranking, execution, RNG and parameter values are unchanged.
+- Correct PLAN.md's stale task status. Other minor review observations
+  remain nonblocking; invocation-family weighting includes emergency and
+  control actions as documented. Any non-neutral tuning needs that scope
+  considered explicitly; no default tuning is proposed here.
+- Local formatting/Clippy,165 workspace tests,336 core tests/four ignores and
+  vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
+  weighted logging and trace-on/off equality pass; original Fang keys match.
+  Source-qualified controls and the initial CI reconciliation failure are
+  retained in Cemeteryf2e4b38c, class-attack-preferences/review-followup-424.
+  The second CI passed full engine behavior/reference checks; final original-
+  core reconciliation also needed the Druid seed1020 identity. Its independent
+  local control matches exactly; all86 archive packages verify before fresh CI.
+  Pin that independently retained archive before fresh CI; never weaken the
+  reconciliation check or relabel earlier source identities.
+- Required Rust checks and task CI gate integration into track-p. Preserve
+  the original review pin; update #407 to the integrated follow-up pin after
+  green CI. Main promotion still requires owner acceptance and delegation;
+  R carry #406 remains gated on accepted promotion.
+- Read-only source refresh ran; missing moving-source clones and unresolved
+  origin/HEAD refs prevent a complete upstream report. No source pins move.
+
+## 2026-11-16: preference task synchronization with recorder review (#403)
+
+- Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference
+  validation ran. Preserve the complete recorder v0.2.0 adoption and both
+  handover histories; only this document conflicted. No recorder code or pin
+  is edited by the preference task beyond inheriting that integration commit.
+- #407 now freezes track-p for the recorder milestone review. #405 remains
+  unmerged while that review is active; owner authorization to implement
+  preferences does not authorize moving its reviewed head or promotion to main.
+- Fresh clean25e89494 versus clean46d5f2ae passes strict full45/45 native
+  key/message/state parity.336 native tests (four existing ignored),165 workspace
+  tests, formatting/Clippy and70 engine checks (two local skips, required pinned
+  zoo and incident fixtures present) pass. The real weighted choice and tracing
+  checks still pass; original-core Fang replay reproduces50491fa13924 exactly.
+- Current Cemetery evidence pin:62039b2750d3b106062d5246e77fa3a84d60d1d8, recorder-sync/ under
+  validation/borg-reborn-rs/class-attack-preferences. All73 qualified packages
+  verify, including27 new exact-build records;12 current native neutral deaths,
+  the weighted case and two original-core deaths reconcile. The new fixture
+  reference supplies CI's known archive without weakening any check. Earlier
+  cac37f59/cd411e55 evidence below remains historical, not relabeled.
+- R carry remains separately blocked in #406. Native calibration replay tooling
+  is Cemetery#13; #407's reviewed track-p head remains unchanged.
+
+## 2026-11-16: class/family attack preferences (#403, design #396)
+
+- Owner authorized native P implementation after the proposal discussion. Branch
+  task/T403-class-attack-preferences starts from track-p cd411e55; task PR targets
+  track-p only. Main promotion and the later R carry need their normal gates.
+- Add 54 named neutral-default parameters (nine classes, six invocation families),
+  explicit symbolic mapping of all170 BF entries, widened floor arithmetic and
+  one final-ranking seam. Hybrids/controls retain invocation family; emergency
+  eligibility and all helper internals remain unchanged. No danger correction.
+- core-trace@2 adds every evaluated candidate's raw/adjusted score, parameter and
+  provenance plus per-invocation winner. Nonpositive results carry no invented
+  rejection cause. Nested frames/repeated attempts remain separate; tracing
+  does not rerun simulation or feed decisions. Historical @1 evidence is intact.
+- Native arithmetic/mapping/config/ranking/nesting tests, workspace tests,
+  formatting, Clippy, vendor audit and Python tools/scripts pass locally.
+  A bounded real Mage regression changes the selected attack under a non-neutral
+  profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
+  for other classes are not claimed as native replay coverage.
+- Clean cac37f59 versus clean cd411e55 passes strict full45/45 key/message/state
+  parity.336 native tests (four existing ignored),165 workspace tests,70 engine
+  tests (three skipped),13 mandatory pinned zoo-profile contracts and the existing
+  four-save incident regression pass. Other checks above remain green. Initial
+  baseline/candidate full attempts played all45 games but could not finalize the
+  suite marker because bc was absent; preserve those attempts. Install tools
+  locally and repeat unchanged suites, never forge completion or discard deaths.
+- Cemetery evidence is pinned ate6a3698c113e9b6bf7ebec87bed8a5d30196a62a under
+  validation/borg-reborn-rs/class-attack-preferences. It retains46 qualified
+  packages, original records, the initial CI artifact, all failure receipts and
+  full comparison hashes. The second CI passed all gameplay comparisons but
+  needed the reference-identical seed102 Fang smoke dossier under its new source
+  identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
+  reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
+  known registry; the original fixture/tool pins and historical archive stay fixed.
+  Native preference test deaths use a separate uploaded/reconciled registry, so
+  the existing original-core observation replay continues to select its own
+  core's case. Shared rerun-death lacks calibration-override restoration; that
+  pre-existing tooling limit is not silently treated as a native replay check.
+  Local raw evidence is under /workspace/work/403-*. R must
+  independently consume the accepted promoted contract with neutral/non-neutral
+  check/switch, ordered requests/effects/RNG and restoration (#364/#366).
 
 ## 2026-11-16: town planner item values (#400, #443, food)
 
