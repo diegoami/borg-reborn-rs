@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: importer follow-up main sync after #379
+
+- Main advanced to58b11ff2 through owner-directed #379 while #381/#384
+  were in CI. Synchronize it through a separate task PR into track-p;
+  retain the pre-355 behavior and both handover histories without edits to
+  accepted runtime code. The merge is conflict-free.
+- Importer mode and failed-publication cleanup follow-ups remain intact;
+  runtime inputs must equal this accepted main and all2,578 archived
+  packages remain unchanged. No new gameplay or survival claim.
+- CI is required for the synchronized tree. After integration, open the
+  importer follow-up batch's pinned track-p -> main review and stop;
+  prior #372 acceptance does not cover the new changes.
+
 ## 2026-11-16: failed import publication cleanup (#359)
 
 - Stacked on #358/#381. Restore0700 only on this invocation's unpublished
@@ -88,6 +101,14 @@
   #341's fresh-donor baseline audit follows this gate; it must distinguish
   historical M13 parity from #355's intentional later policy changes.
 
+
+## 2026-11-16: owner-requested rollback of #355 behavior (#373)
+
+- Restore the six native-core files to accepted pre-#355 main 2f74e1c5.
+  This rollback contains no dossier/report payloads; preserved evidence and
+  canonical Cemetery migration are separate. The saved-position tests now
+  identify the restored death control honestly. Narrow replacements will be
+  separate owner-reviewed changes before any zoo dispatch.
 
 ## 2026-11-15: owner-directed wild-cat survival fix (#350)
 
