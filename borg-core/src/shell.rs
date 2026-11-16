@@ -78,7 +78,7 @@
 //! decision: every hook returns at once, and play is borg-rs's byte for
 //! byte.
 
-use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_MAXHP};
+use crate::borg_headers::borg_trait_h::{BI_CDEPTH, BI_CLEVEL, BI_CURHP, BI_MAXCLEVEL, BI_MAXHP};
 use crate::borg_io::{borg_keypress, borg_note};
 use crate::engine;
 use crate::headers::list_terrain_h::{
@@ -358,6 +358,22 @@ struct Running {
     /// last game turn seen: another character drops the errand (review
     /// #227, finding 5 and re-review 4).
     owner: Option<(u32, u64, i64)>,
+    /// borg-reborn-rs (#421): the last refusal that sent a level loop home
+    /// (the level it could not enter, the core's reason, the maximum
+    /// character level then). The same refusal again, with no descent in
+    /// between, means town did not change it: the loop holds and the core
+    /// plays where it is. A descent clears it.
+    unprepared_home: Option<Refusal>,
+    /// The loop is holding on that refusal (noted once).
+    holding: bool,
+}
+
+/// borg-reborn-rs (#421): one `borg_prepared` refusal of a level loop.
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct Refusal {
+    below: i32,
+    reason: Vec<u8>,
+    max_clevel: i32,
 }
 
 /// The next level to explore in a back-and-forth interval. A town detour
@@ -547,6 +563,8 @@ pub fn set_errand(errand: Option<Errand>, budget: i64) {
             name,
             watch: None,
             owner: None,
+            unprepared_home: None,
+            holding: false,
         }
     });
 }
@@ -1050,6 +1068,13 @@ pub(crate) fn on_leave_choice(st: &mut BorgState, free: bool) -> Option<bool> {
     }
     if running().as_ref().is_some_and(|r| r.level_loop.is_some()) {
         advance_level_loop(st);
+        let depth = st.borg.tr(BI_CDEPTH);
+        let below = running().as_ref().and_then(|r| r.level_loop.as_ref().map(LevelLoop::target))
+            .is_some_and(|t| t > depth);
+        if below && holds(st, depth) {
+            // borg-reborn-rs (#421): the core's own way off a used-up level.
+            return None;
+        }
         return Some(travel_level_loop(st));
     }
     Some(move_on(st))
@@ -1352,21 +1377,61 @@ fn prepared_below(st: &mut BorgState, depth: i32) -> bool {
     crate::borg_prepared::borg_prepared(st, depth + 1).is_none()
 }
 
+/// borg-reborn-rs (#421): the core's refusal of the level below `depth`.
+fn refusal_below(st: &mut BorgState, depth: i32) -> Option<Refusal> {
+    let reason = crate::borg_prepared::borg_prepared(st, depth + 1)?;
+    Some(Refusal {
+        below: depth + 1,
+        reason: reason.text(st).to_vec(),
+        max_clevel: st.borg.tr(BI_MAXCLEVEL),
+    })
+}
+
+/// borg-reborn-rs (#421): a level loop already went home for exactly this
+/// refusal, and town did not change it (same level, reason and maximum
+/// character level). Going home again only repeats the visit: connected
+/// stairs can cost no game time, and the loop bounced DL0/DL1 thousands
+/// of times at one game turn. The loop holds instead; the core plays the
+/// level it is prepared for until the level or the refusal changes.
+fn holds(st: &mut BorgState, depth: i32) -> bool {
+    let Some(now) = refusal_below(st, depth) else { return false; };
+    let first = {
+        let mut guard = running();
+        let Some(r) = guard.as_mut() else { return false; };
+        if r.level_loop.is_none() || r.unprepared_home.as_ref() != Some(&now) {
+            return false;
+        }
+        !std::mem::replace(&mut r.holding, true)
+    };
+    if first {
+        borg_note(st, &format!(
+            "# Errand: loop still not prepared for DL{} after town; the core plays DL{depth}.",
+            now.below));
+    }
+    true
+}
+
 /// The errand would take the core below where it is prepared for
 /// (re-review #227, 2: "bored and unable to dive" let the errand walk
 /// down). A command stops; a ladder trip goes home. `true` when the
 /// errand stopped.
 fn refuse_descent(st: &mut BorgState, below: i32) -> bool {
+    let refusal = refusal_below(st, below - 1);
     let loop_home = {
         let mut guard = running();
-        guard.as_mut().and_then(|r| r.level_loop.as_mut()).is_some_and(|plan| {
+        guard.as_mut().is_some_and(|r| {
+            let Some(plan) = r.level_loop.as_mut() else { return false; };
             plan.home = true;
+            r.unprepared_home = refusal;
+            r.holding = false;
             true
         })
     };
     if loop_home {
         st.borg.goal.type_0 = 0;
-        borg_note(st, &format!("# Errand: loop not prepared for DL{below}; town overrides the loop."));
+        let why = running().as_ref().and_then(|r| r.unprepared_home.as_ref())
+            .map(|f| String::from_utf8_lossy(&f.reason).into_owned()).unwrap_or_default();
+        borg_note(st, &format!("# Errand: loop not prepared for DL{below} ({why}); town overrides the loop."));
         return false;
     }
     if running().as_ref().is_some_and(|r| !r.skip_unprepared) {
@@ -1442,7 +1507,16 @@ fn walk(st: &mut BorgState, depth: i32, t: i32) -> bool {
         // No level is forced (docs/ERRANDS.md): never down to a level the
         // core is not prepared for.
         if !prepared_below(st, depth) {
+            if holds(st, depth) {
+                return false;
+            }
             return refuse_descent(st, depth + 1) || stairs_up(st);
+        }
+        // borg-reborn-rs (#421): prepared again, so a later refusal is new
+        // (a supply trip that worked may be needed again).
+        if let Some(r) = running().as_mut() {
+            r.unprepared_home = None;
+            r.holding = false;
         }
         stairs_down(st)
     } else if t < depth {
@@ -1766,6 +1840,8 @@ mod tests {
             name: String::new(),
             watch: None,
             owner: None,
+            unprepared_home: None,
+            holding: false,
         };
         assert_eq!(dive.target(), Some(3));
         let mut stop = Running {
@@ -1816,6 +1892,8 @@ mod tests {
             name: String::new(),
             watch: None,
             owner: None,
+            unprepared_home: None,
+            holding: false,
         };
         assert_eq!(r.target(), Some(1));
         r.step = 1;
