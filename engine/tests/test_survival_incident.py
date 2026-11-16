@@ -21,7 +21,13 @@ ARCHIVE = Path(os.environ.get('BORG_SURVIVAL_FIXTURE_ZIP',
 
 @unittest.skipUnless(GAME.is_file(), 'native build required')
 class SurvivalIncidentTest(unittest.TestCase):
-    def test_saved_positions_reproduce_the_restored_pre355_death(self):
+    def test_saved_positions_heal_through_the_wild_cat_fight(self):
+        self.run_saved_positions()
+
+    def test_flee_healing_still_obeys_the_clw_and_csw_limits(self):
+        self.run_saved_positions(disable_tiers=True)
+
+    def run_saved_positions(self, disable_tiers=False):
         if not ARCHIVE.is_file():
             if os.environ.get('BORG_SURVIVAL_FIXTURES_REQUIRED') == '1':
                 self.fail(f'missing mandatory incident archive: {ARCHIVE}')
@@ -29,6 +35,8 @@ class SurvivalIncidentTest(unittest.TestCase):
         self.assertEqual(hashlib.sha256(ARCHIVE.read_bytes()).hexdigest(), FIXTURE['archive_sha256'])
         with tempfile.TemporaryDirectory(prefix='wild-cat-regression-') as tmp, zipfile.ZipFile(ARCHIVE) as source:
             for name, point in FIXTURE['saves'].items():
+                if disable_tiers and point['turn'] != 411668:
+                    continue
                 with self.subTest(turn=point['turn']):
                     out = Path(tmp) / str(point['turn'])
                     for part in ['user', 'save', 'archive', 'panic', 'scores', 'diagnostics']:
@@ -38,6 +46,12 @@ class SurvivalIncidentTest(unittest.TestCase):
                     (out / 'starting.save').write_bytes(data)
                     for config in ['borg.txt', 'errands_plan.txt']:
                         (out / 'user' / config).write_bytes(source.read(config))
+                    if disable_tiers:
+                        with (out / 'user/borg.txt').open('a') as config:
+                            config.write('\nborg_param_caution_clw_max_level = 1\n'
+                                         'borg_param_caution_clw_max_loss = 0\n'
+                                         'borg_param_caution_csw_max_level = 1\n'
+                                         'borg_param_caution_csw_max_loss = 0\n')
                     env = {k:v for k,v in os.environ.items()
                            if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
                     env.update(BORG_CORE='borg-rs', BORG_RUN_DIR=str(out / 'diagnostics'),
@@ -53,9 +67,18 @@ class SurvivalIncidentTest(unittest.TestCase):
                                             capture_output=True, text=True, timeout=30)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     summary = json.loads((out/'summary.json').read_text())
-                    # Owner-requested rollback: this is the reproduced control,
-                    # not a claim that the reverted policy still rescues it.
-                    self.assertTrue(summary['dead'], summary)
-                    self.assertEqual(summary['stop_reason'], 'death')
-                    self.assertEqual(summary['death_cause'], 'a wild cat')
-                    self.assertLess(summary['game_turns'], point['turn'] + 2000)
+                    self.assertEqual(summary['loaded_turn'], point['turn'])
+                    rows = [json.loads(line) for line in
+                            (out/'diagnostics/trace-core.jsonl').read_text().splitlines()]
+                    if disable_tiers:
+                        self.assertTrue(summary['dead'], summary)
+                        # The ordinary wound/level gates exclude the opening
+                        # CLW/CSW; later status cures retain their own policy.
+                        self.assertNotEqual(rows[0]['keys'], [ord('q'), ord('c')])
+                    else:
+                        self.assertFalse(summary['dead'], summary)
+                        self.assertEqual(summary['hp'], summary['max_hp'])
+                        self.assertTrue(any(r['check'] == 'borg_caution'
+                                            and r['danger'] >= r['hp']
+                                            and r['keys'] == [ord('q'), ord('c')]
+                                            for r in rows), rows[:10])
