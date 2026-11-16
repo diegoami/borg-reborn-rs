@@ -47,10 +47,14 @@ A phase has exactly one command (owner, 2026-11-16).
 **`max-depth N`** is a cap, not a route.
 The phase installs no errand: the core plays as itself, with its own dives,
 town trips, shopping and recovery, and is never prepared for a level below
-DL N. It sets the core's `borg_no_deeper` to N+1 for the phase, never above
-the configured value. When the plan hands back (a level with no phase, such
-as 50 in the shipped files) or is cancelled (`/stop`, a manual errand), the
-configured value is put back: after the plan, the core plays as itself. The core's own cap applies as usual: when it leaves a level by the
+DL N. The active phase is a separate limit: preparedness and depth correction
+read the minimum of the current configured `borg_no_deeper` and N+1. The plan
+never overwrites configuration. Reloading borg.txt or reopening the same
+character retains the phase limit while honoring the freshly loaded value.
+Hand-back at a gap (such as level 50), `/stop` or a manual errand clears the
+phase limit immediately, including while Recall is pending. Phase changes
+preserve the core's active flow and do not install or clear errands.
+The core's own cap applies as usual: when it leaves a level by the
 nearest stair it may step onto the level below and climbs back at once
 ("Needing to get back on correct depth"); it never stays there. N is 1–126.
 Town trips are the core's own, plus the M13 trip policy when it is on.

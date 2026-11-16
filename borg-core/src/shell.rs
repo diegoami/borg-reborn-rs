@@ -1414,9 +1414,126 @@ mod tests {
         }
     }
 
-}
+    #[test]
+    fn commands_parse() {
+        use Command as C;
+        assert_eq!(C::parse("/town"), Some(C::Errand(Errand::Town)));
+        assert_eq!(C::parse("/shopping"), Some(C::Errand(Errand::Shopping)));
+        assert_eq!(C::parse("/shopping 2"), None);
+        assert_eq!(C::parse("/dive 2"), Some(C::Errand(Errand::Dive(2))));
+        assert_eq!(C::parse("dive:3"), Some(C::Errand(Errand::Dive(3))));
+        assert_eq!(C::parse("/dive"), None);
+        assert_eq!(C::parse("/dive 0"), None);
+        assert_eq!(
+            C::parse("/explore-level"),
+            Some(C::Errand(Errand::ExploreLevel))
+        );
+        assert_eq!(
+            C::parse("/dive-exploring 2"),
+            Some(C::Errand(Errand::DiveExploring(2)))
+        );
+        assert_eq!(C::parse("/ladder"), Some(C::Errand(Errand::Ladder)));
+        assert_eq!(C::parse("/walk-back"), Some(C::Errand(Errand::WalkBack)));
+        assert_eq!(
+            C::parse("/explore-back"),
+            Some(C::Errand(Errand::ExploreBack))
+        );
+        assert!(matches!(
+            C::parse("/trips 1*/1,2,1*@3"),
+            Some(C::Errand(Errand::Trips(_)))
+        ));
+        assert!(matches!(
+            C::parse("trips:1*/1,2,1"),
+            Some(C::Errand(Errand::Trips(_)))
+        ));
+        assert_eq!(C::parse("/stopscared true"), Some(C::StopScared(Some(100))));
+        assert_eq!(C::parse("/stopscared flee"), Some(C::StopScared(Some(100))));
+        assert_eq!(C::parse("/stopscared 50"), Some(C::StopScared(Some(50))));
+        assert_eq!(C::parse("/stopscared off"), Some(C::StopScared(None)));
+        assert_eq!(C::parse("/stopscared 0"), None);
+        assert_eq!(C::parse("/stopscared maybe"), None);
+        assert_eq!(C::parse("/stop"), Some(C::Stop));
+        assert_eq!(C::parse("none"), Some(C::Stop));
+        assert_eq!(C::parse("/explored 80"), Some(C::Explored(Some(80))));
+        assert_eq!(C::parse("/explored off"), Some(C::Explored(None)));
+        assert_eq!(C::parse("/explored 120"), None);
+        assert_eq!(C::parse("/stall 5000"), Some(C::Stall(Some(5000))));
+        assert_eq!(C::parse("/fly"), None);
+    }
 
-pub(crate) fn install_plan_stop() {
-    NEXT.lock().unwrap().clear();
-    set_errand(None, 0);
+    #[test]
+    fn a_dive_ends_on_arrival_and_town_ends_home() {
+        let dive = Running {
+            trips: vec![Trip {
+                levels: vec![3],
+                repeat: false,
+                min_level: None,
+            }],
+            trip: 0,
+            step: 0,
+            budget: 0,
+            started: None,
+            skipped: 0,
+            end: End::Arrive,
+            skip_unprepared: false,
+            from_here: None,
+            recall: false,
+            name: String::new(),
+            watch: None,
+            owner: None,
+        };
+        assert_eq!(dive.target(), Some(3));
+        let mut stop = Running {
+            end: End::Stop,
+            ..dive.clone()
+        };
+        stop.step = 1;
+        assert_eq!(stop.target(), None, "explored: done where it is");
+        let town = Running {
+            trips: vec![Trip {
+                levels: vec![],
+                repeat: false,
+                min_level: None,
+            }],
+            end: End::Home,
+            ..dive
+        };
+        assert_eq!(town.target(), Some(0));
+    }
+
+    #[test]
+    fn a_trip_walks_its_levels_then_home_then_the_next_trip() {
+        let trip = |levels: Vec<i32>| Trip {
+            levels,
+            repeat: false,
+            min_level: None,
+        };
+        let mut r = Running {
+            trips: vec![trip(vec![1]), trip(vec![1, 2, 1])],
+            trip: 0,
+            step: 0,
+            budget: 0,
+            started: None,
+            skipped: 0,
+            end: End::Home,
+            skip_unprepared: true,
+            from_here: None,
+            recall: false,
+            name: String::new(),
+            watch: None,
+            owner: None,
+        };
+        assert_eq!(r.target(), Some(1));
+        r.step = 1;
+        assert_eq!(r.target(), Some(0), "the trip goes home");
+        r.trip = 1;
+        r.step = 0;
+        assert_eq!(r.target(), Some(1));
+        r.step = 1;
+        assert_eq!(r.target(), Some(2));
+        r.step = 3;
+        assert_eq!(r.target(), Some(0));
+        r.trip = 2;
+        assert_eq!(r.target(), None, "every trip is over");
+    }
 }

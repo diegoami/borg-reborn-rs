@@ -1,5 +1,4 @@
 //! Opt-in POC: class-specific level phases from a separate errands_plan.txt.
-use crate::borg_headers::borg_h::BORG_NO_DEEPER;
 use crate::borg_headers::borg_trait_h::BI_CLEVEL;
 use crate::state::BorgState;
 use crate::{engine, shell};
@@ -183,9 +182,8 @@ struct Runtime {
     path: String,
     owner: Option<(u32, u64, i64)>,
     phase: Option<usize>,
-    /// The `borg_no_deeper` the configuration set, before any `max-depth`
-    /// phase lowered it.
-    no_deeper: Option<i32>,
+    /// Active phase threshold, separate from the live configuration (#447).
+    plan_cap: Option<i32>,
     cancelled: bool,
 }
 #[derive(Debug, PartialEq, Eq)]
@@ -207,6 +205,7 @@ impl Runtime {
         {
             self.phase = None;
             self.cancelled = false;
+            self.plan_cap = None;
         }
         self.owner = Some(me);
         if self.cancelled {
@@ -215,21 +214,26 @@ impl Runtime {
         match self.plan.phase(class, level)?.cloned() {
             Some(p) if self.phase != Some(p.line) => {
                 self.phase = Some(p.line);
+                self.plan_cap = Some(match p.command { Command::MaxDepth(n) => n + 1 });
                 Ok(Transition::Install(p))
             }
             Some(_) => Ok(Transition::Keep),
             None => {
-                self.cancelled = true;
+                self.cancel();
                 Ok(Transition::Stop)
             }
         }
     }
-    /// The configured `borg_no_deeper` to put back once the plan is
-    /// cancelled or hands back (review of #440): after the plan, the core
-    /// plays as itself, without the last phase's cap.
-    fn release_cap(&mut self) -> Option<i32> {
-        if self.cancelled { self.no_deeper.take() } else { None }
+    fn cancel(&mut self) {
+        self.cancelled = true;
+        self.plan_cap = None;
     }
+
+    fn effective_no_deeper(&self, configured: i32) -> i32 {
+        if self.cancelled { configured }
+        else { self.plan_cap.map_or(configured, |cap| configured.min(cap)) }
+    }
+
 }
 static RUNTIME: OnceLock<Mutex<Option<Runtime>>> = OnceLock::new();
 fn fatal(error: impl std::fmt::Display) -> ! {
@@ -315,7 +319,7 @@ pub(crate) fn initialize() {
             path,
             owner: None,
             phase: None,
-            no_deeper: None,
+            plan_cap: None,
             cancelled: false,
         }))
     });
@@ -331,10 +335,18 @@ pub(crate) fn initialize() {
 pub(crate) fn cancel() {
     if let Some(runtime) = RUNTIME.get() {
         if let Some(r) = runtime.lock().unwrap().as_mut() {
-            r.cancelled = true;
+            r.cancel();
         }
     }
 }
+/// Effective depth threshold always combines the active plan with the current
+/// configuration. Reload/reinitialization never overwrites or loses either
+/// value; cancellation takes effect without waiting for tick/Recall (#447).
+pub(crate) fn effective_no_deeper(configured: i32) -> i32 {
+    RUNTIME.get().and_then(|runtime| runtime.lock().unwrap().as_ref()
+        .map(|r| r.effective_no_deeper(configured))).unwrap_or(configured)
+}
+
 pub(crate) fn tick(st: &mut BorgState) -> bool {
     let Some(runtime) = RUNTIME.get() else {
         return false;
@@ -357,23 +369,14 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
         };
         let me = (class_id, engine::player_birth_key(), turn);
         let change = r.select(me, class, level).unwrap_or_else(|e| fatal(e));
-        if matches!(change, Transition::Install(_)) {
-            r.no_deeper.get_or_insert(st.cfg(BORG_NO_DEEPER));
-        }
-        if let Some(configured) = r.release_cap() {
-            st.core.cfg[BORG_NO_DEEPER as usize] = configured;
-        }
-        (change, r.path.clone(), r.no_deeper)
+        (change, r.path.clone())
     };
     match event {
-        (Transition::Install(p), path, configured) => {
-            let configured = configured.unwrap_or_else(|| st.cfg(BORG_NO_DEEPER));
+        (Transition::Install(p), path) => {
             let what = match p.command {
                 Command::MaxDepth(n) => {
                     // No errand: the core plays as itself, never prepared
                     // for a level below N (borg_prepared, "No deeper").
-                    st.core.cfg[BORG_NO_DEEPER as usize] = configured.min(n + 1);
-                    shell::install_plan_stop();
                     format!("max-depth {n}")
                 }
             };
@@ -381,18 +384,16 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
                 st,
                 &format!("# Plan: {path} class={class} level={level} line={} {what}", p.line),
             );
-            st.borg.goal.type_0 = 0;
             false
         }
-        (Transition::Stop, _, _) => {
-            shell::install_plan_stop();
+        (Transition::Stop, _) => {
             crate::borg_think::borg_oops(
                 st,
                 &format!("plan has no phase for {class} level {level}"),
             );
             true
         }
-        (Transition::Keep, _, _) => false,
+        (Transition::Keep, _) => false,
     }
 }
 
@@ -481,7 +482,7 @@ mod tests {
             path: "test".into(),
             owner: None,
             phase: None,
-            no_deeper: None,
+            plan_cap: None,
             cancelled: false,
         };
         assert!(matches!(
@@ -505,20 +506,48 @@ mod tests {
         ));
     }
     #[test]
-    fn hand_back_and_cancel_release_the_configured_cap() {
-        let plan = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n").unwrap();
-        let mut r = Runtime { plan, path: "test".into(), owner: None, phase: None,
-            no_deeper: Some(127), cancelled: false };
-        assert!(matches!(r.select((1, 1, 1), "mage", 3).unwrap(), Transition::Install(_)));
-        assert_eq!(r.release_cap(), None, "an installed phase keeps its cap");
-        assert_eq!(r.select((1, 1, 2), "mage", 6).unwrap(), Transition::Stop);
-        assert_eq!(r.release_cap(), Some(127), "hand-back at a gap");
-        assert_eq!(r.release_cap(), None, "released once");
-        let mut r = Runtime { plan: Plan::parse("[default]\n  level <= 5\n    max-depth 2\n").unwrap(),
-            path: "test".into(), owner: None, phase: None, no_deeper: Some(40), cancelled: false };
-        r.select((1, 1, 1), "mage", 3).unwrap();
-        r.cancelled = true; // cancel(): /stop or a manual errand
-        assert_eq!(r.release_cap(), Some(40));
+    fn cap_overlay_survives_reload_and_releases_current_configuration() {
+        let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+            owner: None, phase: None, plan_cap: None, cancelled: false };
+        assert_eq!(r.effective_no_deeper(127), 127);
+        r.select((1, 1, 1), "mage", 5).unwrap();
+        assert_eq!(r.effective_no_deeper(127), 2);
+        // Reload/reinit may replace cfg, while the same phase returns Keep.
+        assert_eq!(r.select((1, 1, 2), "mage", 5).unwrap(), Transition::Keep);
+        assert_eq!(r.effective_no_deeper(20), 2);
+        assert_eq!(r.effective_no_deeper(1), 1, "respect a stricter new cfg");
+        r.select((1, 1, 3), "mage", 6).unwrap();
+        assert_eq!(r.effective_no_deeper(20), 4);
+        assert_eq!(r.select((1, 1, 4), "mage", 11).unwrap(), Transition::Stop);
+        assert_eq!(r.effective_no_deeper(20), 20, "never restore stale 127");
+        assert_eq!(r.effective_no_deeper(60), 60);
+        r.select((0, 2, 1), "warrior", 2).unwrap();
+        assert_eq!(r.effective_no_deeper(60), 3, "new character installs own cap");
+        r.cancel(); // No tick is required, including while Recall delays tick.
+        assert_eq!(r.effective_no_deeper(40), 40);
+        assert_eq!(r.select((0, 2, 2), "warrior", 2).unwrap(), Transition::Keep);
+        assert_eq!(r.effective_no_deeper(40), 40);
+    }
+    #[test]
+    fn manual_cancel_releases_overlay_without_waiting_for_tick() {
+        const CHILD: &str = "BORG_PLAN_CAP_CANCEL_CHILD";
+        if std::env::var_os(CHILD).is_some() {
+            let mut r = Runtime { plan: Plan::parse(EXAMPLE).unwrap(), path: "test".into(),
+                owner: None, phase: None, plan_cap: None, cancelled: false };
+            r.select((1, 1, 1), "mage", 5).unwrap();
+            assert!(RUNTIME.set(Mutex::new(Some(r))).is_ok());
+            assert_eq!(effective_no_deeper(20), 2);
+            // Manual cancellation is visible to preparedness immediately;
+            // no tick/phase installation or Recall completion is needed.
+            cancel();
+            assert_eq!(effective_no_deeper(20), 20);
+            assert_eq!(effective_no_deeper(1), 1);
+            return;
+        }
+        let result = std::process::Command::new(std::env::current_exe().unwrap())
+            .args(["--exact", "errands_plan::tests::manual_cancel_releases_overlay_without_waiting_for_tick"])
+            .env(CHILD, "1").output().unwrap();
+        assert!(result.status.success(), "{}", String::from_utf8_lossy(&result.stdout));
     }
     #[test]
     fn max_depth_phases_parse_and_reject_bad_levels() {

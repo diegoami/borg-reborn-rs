@@ -80,3 +80,10 @@ other birth checks and non-harness behavior remain in force. The guarded native 
 the ordinary leave/generate/arrival lifecycle before Borg activation. No Borg
 strategy/tactical policy code is copied from that PR. Its competing primitive
 must not be merged on top of this implementation without explicit reconciliation.
+
+## Plan cap lifecycle review (#447)
+
+Receiving-owned `errands_plan` state supplies an independent depth threshold.
+The declared hooks in `borg_prepared.rs` and `borg_think_dungeon_util.rs`
+combine it with the current configuration without changing the vendored cfg.
+Phase selection no longer clears errands or the core goal. No engine changes.

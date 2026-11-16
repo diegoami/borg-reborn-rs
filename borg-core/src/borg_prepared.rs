@@ -26,7 +26,7 @@ use std::ffi::CStr;
 use crate::borg_formulas::{borg_prepared_dynamic, borg_restock_dynamic, DepthLine};
 use crate::borg_magic::{borg_spell_legal_fail, borg_spell_stat};
 use crate::borg_headers::borg_h::{
-    BORG_KILLS_UNIQUES, BORG_NO_DEEPER, BORG_PLAYS_RISKY, BORG_USES_DYNAMIC_CALCS,
+    BORG_KILLS_UNIQUES, BORG_PLAYS_RISKY, BORG_USES_DYNAMIC_CALCS,
 };
 use crate::borg_headers::borg_magic_h::TELEPORT_LEVEL;
 use crate::borg_headers::borg_trait_h::{
@@ -755,8 +755,10 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         }
 
         // Not if No_Deeper is set
-        if depth >= st.cfg(BORG_NO_DEEPER) {
-            return Some(Reason::Formatted(format!("No deeper {}.", st.cfg(BORG_NO_DEEPER)).into_bytes()));
+        // borg-reborn-rs (#447): combine the current cfg with a plan overlay.
+        let no_deeper = crate::errands_plan::effective_no_deeper(st.cfg(crate::borg_headers::borg_h::BORG_NO_DEEPER));
+        if depth >= no_deeper {
+            return Some(Reason::Formatted(format!("No deeper {no_deeper}.").into_bytes()));
         }
     }
 
