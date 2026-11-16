@@ -1450,7 +1450,11 @@ fn walk(st: &mut BorgState, depth: i32, t: i32) -> bool {
             let wait = running().as_ref().and_then(|r| r.level_loop.as_ref())
                 .is_some_and(|plan| plan.first > 0 && plan.last > 0);
             if wait {
-                st.borg.goal.type_0 = 0;
+                // Discard only a stale stair route; the core's ongoing
+                // loot/combat/exploration flow still belongs to it.
+                if st.borg.goal.type_0 == GOAL_FLEE {
+                    st.borg.goal.type_0 = 0;
+                }
                 borg_note(st, &format!("# Errand: loop waits for DL{} preparedness; the core plays this level.", depth + 1));
                 return false;
             }
