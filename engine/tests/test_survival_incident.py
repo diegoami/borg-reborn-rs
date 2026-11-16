@@ -21,7 +21,7 @@ ARCHIVE = Path(os.environ.get('BORG_SURVIVAL_FIXTURE_ZIP',
 
 @unittest.skipUnless(GAME.is_file(), 'native build required')
 class SurvivalIncidentTest(unittest.TestCase):
-    def test_preserved_wild_cat_positions_survive_without_loot_detours(self):
+    def test_saved_positions_reproduce_the_restored_pre355_death(self):
         if not ARCHIVE.is_file():
             if os.environ.get('BORG_SURVIVAL_FIXTURES_REQUIRED') == '1':
                 self.fail(f'missing mandatory incident archive: {ARCHIVE}')
@@ -53,15 +53,9 @@ class SurvivalIncidentTest(unittest.TestCase):
                                             capture_output=True, text=True, timeout=30)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     summary = json.loads((out/'summary.json').read_text())
-                    self.assertFalse(summary['dead'], summary)
-                    self.assertEqual(summary['stop_reason'], 'turns')
-                    self.assertEqual(summary['hp'], summary['max_hp'])
-                    # Loading emits the save's old message history at turn0;
-                    # assertions concern decisions made after this checkpoint.
-                    messages = '\n'.join(line for line in (out/'messages.log').read_text().splitlines()
-                        if len(line.split(maxsplit=3)) == 4
-                        and int(line.split(maxsplit=3)[1]) >= point['turn'])
-                    self.assertNotIn('Flowing toward Scum item', messages)
-                    if point['turn'] in [411648,411658]:
-                        self.assertIn('Casting Phase Door', messages)
-                        self.assertIn('Escaping a trapped or lethal retreat', messages)
+                    # Owner-requested rollback: this is the reproduced control,
+                    # not a claim that the reverted policy still rescues it.
+                    self.assertTrue(summary['dead'], summary)
+                    self.assertEqual(summary['stop_reason'], 'death')
+                    self.assertEqual(summary['death_cause'], 'a wild cat')
+                    self.assertLess(summary['game_turns'], point['turn'] + 2000)
