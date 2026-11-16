@@ -2,7 +2,9 @@
 
 Small contract cells, not a population experiment. Import the zoo's
 committed tree, never its working Python files or cached modules. The run
-uses the adapter unchanged, with no BORG_* environment. The frontend derives
+uses the adapter unchanged. File/profile cells verify ambient BORG_* isolation;
+explicit native-process probes inject overrides only at subprocess launch.
+The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
 """
 import hashlib
@@ -61,7 +63,7 @@ class CoreProfileContractTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.tmp.cleanup()
 
-    def cell(self, name, settings, overrides=None):
+    def cell(self, name, settings, overrides=None, *, ambient=None):
         profile = {'description': 'core parameter contract', 'settings': settings}
         cat = {
             'profiles': {name: profile},
@@ -75,14 +77,42 @@ class CoreProfileContractTest(unittest.TestCase):
         out = self.root / 'cells' / self.catalogue.cell_key(cell)
         # No ambient core, errand or parameter override can make this pass.
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
-        env.update(overrides or {})
+        env.update(ambient or {})
+        native_run = subprocess.run
+        injected = []
+
+        def process_probe(argv, *args, **kwargs):
+            # The pinned zoo correctly clears ambient BORG_* values. These
+            # separate probes test the core's environment parser at the real
+            # executable boundary, not propagation by the zoo adapter.
+            if Path(argv[0]).resolve() != (GAME / 'angband').resolve():
+                raise AssertionError('native override probe targeted another executable')
+            if overrides is not None:
+                kwargs['env'] = dict(kwargs['env'], **overrides)
+                injected.append(dict(overrides))
+            return native_run(argv, *args, **kwargs)
+
         with patch.dict(os.environ, env, clear=True):
-            record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
+            with patch.object(self.adapter.subprocess, 'run', process_probe):
+                record = self.adapter.run_cell(cell, self.build, self.root / 'cells', cat)
+        if overrides is not None:
+            self.assertEqual(injected, [overrides], 'native overrides must reach exactly one process')
         self.assertEqual(record['profile_sha256'], self.catalogue.profile_sha256(profile))
         config = (out / 'user/borg.txt').read_text()
         self.assertEqual(record['config_sha256'], hashlib.sha256(config.encode()).hexdigest())
         self.assertIsNone(self.adapter.check_config(config, profile))
         return out, record
+
+    def test_zoo_clears_ambient_core_errand_and_parameter_overrides(self):
+        out, record = self.cell('ambient-isolation', {'borg_reborn_core': 1}, ambient={
+            'BORG_CORE': 'invalid', 'BORG_ERRAND': 'dvie 2',
+            'BORG_STOPSCARED': 'bogus', 'BORG_ERRAND_BUDGET': '-1',
+            'BORG_PARAM_RECOVER_REST_SP_TENTHS': 'invalid',
+        })
+        self.assertEqual(record['outcome'], 'turn_cap', record)
+        settings = json.loads((out / 'params-core.json').read_text())
+        self.assertTrue(settings and all(p['origin'] == 'default' for p in settings))
+        self.assertFalse((out / 'errand-outcomes.jsonl').exists())
 
     def test_integer_profile_selects_core_and_resolves_parameters(self):
         examples = json.loads((ROOT / 'docs/examples/core-calibration-profiles.json').read_text())
