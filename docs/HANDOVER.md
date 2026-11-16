@@ -16,6 +16,8 @@
 - test_phase_stock: on the Mage town fixture TRAPS, MONSTERS and
   ILLUMINATE were 0 (Find Traps, Detect Monsters, Light Room); now every
   service keeps its demand. The assertion fails on 4ecb93d7.
+- CI deaths for source f308539d are retained on borg-cemetery#30
+  (c83fb541); the wild-cat fixture points CI at that commit.
 
 ## 2026-11-16: owner-authorized synthetic P1 landing (#378)
 
