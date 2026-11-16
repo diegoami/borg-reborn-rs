@@ -2,6 +2,128 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: owner-authorized synthetic P1 landing (#378)
+
+- Owner explicitly requested merging #378 after the independent milestone
+  review/re-review and coordinated fixes. Cemetery #7 landed first at
+  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+- Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
+  handover histories, native recorder v0.2.0 and accepted #369/#380 survival
+  changes. Harness conflict resolution retains BOTH synthetic receipt/build
+  checks and the accepted errands-plan copy/load identity check.
+- The canonical fixture/evidence checkout points to Cemetery `ec332c6`, which
+  includes the unchanged incident save bundle and both parent control sets.
+  The native-tool pin remains `1afd9423`; its byte verification stays enabled.
+- Integrated clean runtime is `88a9437a7cbc96ceb7de16c1eecd9cc49c8b4bfb`,
+  source `2d1420b704fa8faa4a1972fe9548fdd2ebaa2a5fde98c9ff7ce9f4ba51d2ecef`.
+  Formatting, Clippy, workspace/core tests, 94 tools and 19 scripts pass;
+  86 local engine tests pass with 18 existing fixture/dependency skips.
+  Initial native checks rejected a stale API-1 sibling checkout as designed;
+  after checking out the landed Cemetery code, rerun passes without test edits.
+  Ordinary/exact smoke match stored references 3/3 across all streams.
+- Three natural controls for the integrated source are retained immutably in
+  Cemetery PR #20 at `9283d07c77724326970e18759d886cd15efd7d29`; all 82 scoped
+  packages verify and all 869 prior package blobs remain intact. The source
+  fixture now points to that canonical evidence, keeping the original save
+  bundle/hash unchanged. No new validation dossier is added to this source
+  repository. Final integrated-head CI must pass before #378 merges. Reviewed P1 runtime/bank
+  evidence remains pinned to its original runtime; no new survival or
+  population claim follows from integration. Per-kind charges (#411) and
+  optional one-way policy (#404) remain separate follow-ups.
+
+## 2026-11-16: coordinated M2 review boundary fix (#378 / Cemetery #7)
+
+- Owner requested coordination with the Cemetery session. Work is isolated on
+  `task/371-m2-forwarder-review`, stacked on reviewed #378 head `34cec1fc`.
+  No direct pushes to the shared #378/Cemetery branches and no native-tool pin
+  change. Ownership proposal is on Cemetery #7 comment 6913007931 and reborn
+  #378 comment 6913031259; Cemetery owns merge/index regeneration, retained
+  stream checks, process cleanup and packet disclosure. Acknowledgement and a
+  fixed new Cemetery head are still needed before paired integration updates.
+- Reborn review finding 3: all native tool execution now requires file bytes
+  matching death-tools-pin.txt, including outside CI. Docs/evidence-only heads
+  with identical native code work; stale API-1 guards, changed/missing files,
+  missing pin objects and added source fail before executing tool code.
+- Seven pointer tests and all 94 tool tests pass. The reviewer's stale Cemetery
+  main `5abfdbe` is refused before executing export against a real retained
+  synthetic death; pinned `1afd9423` correctly rejects it as synthetic. No
+  scratch natural-registry directory is created. No new game was run.
+  Source/script tests: 19 pass. Engine input digest remains the reviewed
+  `bf9a451c46a07142b59525a9c9c581287930e3b333baa4a81dda4816ed2a025a`;
+  there is no new runtime/bank identity. Fix tracking is #410; low-priority
+  per-kind charge validation is explicitly tracked in #411, without altering
+  the reviewed observed tier.
+- Finding 2 is explicitly disclosed in harness/README.md: the P1 birth kit is
+  an ordinary kit created before one-way options, retaining the option-
+  conditional Recall scroll that a native one-way Warrior birth omits. The
+  existing bank's ineffective consumption is disclosed, not a valid escape.
+  Runtime/capture/catalog/bank bytes remain unchanged; no new gameplay report
+  belongs in this repository. This is a review response, not acceptance.
+
+## 2026-11-16: synthetic P1 evidence ownership synchronization
+
+- Preserve current main's accepted ownership/CI changes. All six unmerged
+  task-control packages and the two gameplay evidence packets are now in
+  borg-cemetery, byte-for-byte verified in its M2 ownership receipt. No
+  accepted historical source record or published Git history is rewritten.
+- Source gameplay packet paths are immutable Cemetery references. The
+  fixture/evidence checkout pin includes canonical controls and the unchanged
+  incident save bundle, so CI checks against retained evidence rather than
+  itself. Source-input hash remains 8a61938a; the runtime code did not change.
+- Canonical milestone packet: borg-cemetery docs/reviews/M2/README.md;
+  exact paired heads and cloud checks are in the PR descriptions. M1 and P/R
+  acceptance gates remain independent; no milestone is marked accepted here.
+
+## 2026-11-16: continued synthetic P1 milestone (#371 / cemetery #5)
+
+- Owner instructed continued implementation with review at the milestone;
+  the original generated-depth PR is an integration checkpoint, not a task
+  review stop. Cemetery PLAN.md selects M2 / synthetic P1 independently of M1.
+- Added a restricted declarative Human Warrior tier: real measured capture,
+  engine SHA256, explicit native item/state validation, full-health normalization,
+  and verified initial level/max HP/SP. Capture preserves the ordinary key/state/
+  message streams; no save or Borg memory becomes a synthetic input.
+- OpenSSL crypto is a build dependency for the native file digest. Verified generated-cave starts use contract @2 for both variants; @1 is
+  superseded because requested player depth did not prove cave generation. The pinned capability declaration
+  explicitly limits supported native state; no unsupported item is dropped.
+- The #378 owner-supplied review led to a direct cave/pending-generation
+  check and exposed the initial startup bug. Complete the native transition
+  before either Borg activates; retain old results as superseded, not valid
+  generated-cave evidence. Both cores receive repeated real startup checks.
+- Narrow core birth-option authorization and the guarded lifecycle wrapper
+  follow #386 at its recorded provenance pin; no strategy/tactics are copied.
+  These are competing primitive implementations: do not merge both blindly.
+- Synthetic one-way save reload is refused. Cemetery additionally excludes
+  unmarked one-way native options from natural exports. Generic refusal-message
+  counts are reported separately from terminal outcomes and hazard qualification.
+- Source snapshots and exploratory attempts remain outside Git. The final P1
+  catalog/suite must use a clean, pinned build, with source/binary/config/log
+  hashes, declared normalization and a single-observation sampling limitation.
+- Cemetery owns generation, isolated adapter execution, independent terminal and
+  validity outcomes, provisional low-HP screens and reports. Qualified null-move
+  counts remain unavailable in P1; wider catalogs/qualification are P2.
+
+## 2026-11-16: synthetic-start prerequisite (#371, owner-directed first slice)
+
+- Branch `task/371-synthetic-start` starts at main `92404c7e`; this is an
+  execution/harness task, not a P calibration or R port milestone.
+- `start-depth=N` / `-start-depth N` generates a birth-kit start without a
+  save, rejects bad/conflicting requests, verifies the first logged depth,
+  and records `borg-reborn-rs/synthetic-start@1` in summary/config.
+- Semantics are native one-way descent: no ascent/recall, further descent
+  allowed. This deliberately resolves the epic's conflicting single-level
+  wording; it must be assessed in the owner's review.
+- Harness skips synthetic death export; the exact cemetery toolkit pin
+  supplies an independent direct-export and reconciliation guard.
+- Review scope and runnable checks: `docs/reviews/SYNTHETIC-START.md`.
+  Leave the implementation unmerged for the owner-requested review.
+- Initial CI exposed missing source-specific ordinary control dossiers,
+  not a synthetic-start failure. Retained three immutable natural validation
+  packages using `tools/import-deaths.py`; 2,556 packages verify and both
+  ordinary/core controls reconcile. No synthetic dossier was imported.
+- #371 remains open: run-derived build application and independent
+  null-move diagnostics are follow-up slices; cemetery #5's suite remains
+  outside this change. No population/improvement claim is made.
 ## 2026-11-16: owner-approved recorder-only promotion
 
 - Owner accepts the recorder review at46d5f2ae and explicitly requests merge.
@@ -4498,3 +4620,16 @@ new build-identity death dossiers. D2093/D2094 reproduce CI controls 102/1020;
 keys, messages and state channels match the CI artifact, whose original record
 and build identities are retained in ci-evidence.json. Both remain unassessed
 validation controls, not a strategy/performance claim. No death check is waived.
+
+## Synthetic P1 review follow-ups (2026-11-16)
+
+Owner-supplied reviews of #378 d406d2c9 and Cemetery #7 e750549 are input, not
+acceptance. Every requested capture now reports captured/absent and its requested
+level; an unreached/skipped level no longer leaves an ambiguous successful run.
+A parity regression covers the absence path. The startup wrapper mirrors the
+native character_dungeon leave guard and names lifecycle/arena pin-bump checks.
+Cemetery fixes malformed-option reconciliation, normalizes marker flags and
+prints exclusions; this source pins its reviewed-follow-up guard revision.
+Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
+OpenSSL remains an intentional documented runtime dependency. Full responses
+and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
