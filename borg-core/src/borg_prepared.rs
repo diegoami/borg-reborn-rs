@@ -26,7 +26,7 @@ use std::ffi::CStr;
 use crate::borg_formulas::{borg_prepared_dynamic, borg_restock_dynamic, DepthLine};
 use crate::borg_magic::{borg_spell_legal_fail, borg_spell_stat};
 use crate::borg_headers::borg_h::{
-    BORG_KILLS_UNIQUES, BORG_PLAYS_RISKY, BORG_USES_DYNAMIC_CALCS,
+    BORG_KILLS_UNIQUES, BORG_NO_DEEPER, BORG_PLAYS_RISKY, BORG_USES_DYNAMIC_CALCS,
 };
 use crate::borg_headers::borg_magic_h::TELEPORT_LEVEL;
 use crate::borg_headers::borg_trait_h::{
@@ -727,14 +727,14 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
     }
 
     // borg-reborn-rs (#447): cap applies before either calculation mode.
-    let limit = crate::errands_plan::effective_no_deeper(st.cfg(crate::borg_headers::borg_h::BORG_NO_DEEPER));
+    let limit = crate::errands_plan::plan_cap();
     prepared_with_limit(depth, limit, || borg_prepared_calculated(st, depth))
 }
 
 /// Keep the guard ahead of calculation dispatch, without requiring an engine
 /// link in the regression that verifies calculations cannot bypass it (#447).
-pub(crate) fn prepared_with_limit(depth: i32, limit: i32, calculate: impl FnOnce() -> Option<Reason>) -> Option<Reason> {
-    if depth >= limit {
+pub(crate) fn prepared_with_limit(depth: i32, limit: Option<i32>, calculate: impl FnOnce() -> Option<Reason>) -> Option<Reason> {
+    if let Some(limit) = limit.filter(|limit| depth >= *limit) {
         Some(Reason::Formatted(format!("No deeper {limit}.").into_bytes()))
     } else {
         calculate()
@@ -768,6 +768,11 @@ fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
             if let Some(reason) = borg_prepared_aux(st, depth) {
                 return Some(Reason::Text(reason));
             }
+        }
+
+        // Keep the configured limit in its original static-only position.
+        if depth >= st.cfg(BORG_NO_DEEPER) {
+            return Some(Reason::Formatted(format!("No deeper {}.", st.cfg(BORG_NO_DEEPER)).into_bytes()));
         }
     }
 

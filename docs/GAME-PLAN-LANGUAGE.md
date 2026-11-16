@@ -47,8 +47,9 @@ A phase has exactly one command (owner, 2026-11-16).
 **`max-depth N`** is a cap, not a route.
 The phase installs no errand: the core plays as itself, with its own dives,
 town trips, shopping and recovery, and is never prepared for a level below
-DL N. The active phase is a separate limit: preparedness and depth correction
-read the minimum of the current configured `borg_no_deeper` and N+1. The plan
+DL N. Preparedness applies the separate N+1 phase limit before either
+calculation mode. The configured `borg_no_deeper` retains its original
+static-mode checks and reason order; depth correction combines both limits. The plan
 never overwrites configuration. Reloading borg.txt or reopening the same
 character retains the phase limit while honoring the freshly loaded value.
 Hand-back at a gap (such as level 50), `/stop` or a manual errand clears the

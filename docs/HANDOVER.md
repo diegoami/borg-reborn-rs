@@ -4947,3 +4947,13 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   the redundant cancellation branch and correct the remaining path-intent text.
 - Add initialization lifecycle and production preparedness-guard regression before calculation dispatch.
   Validation and refreshed evidence pins will be recorded on #449.
+
+## #449 second re-review
+
+- Guard preparedness with only the active plan limit. Restore the configured
+  check at its original static-only location so no-plan play and reason order
+  remain unchanged. The dispatch regression covers absent-plan pass-through.
+- Completed reincarnation calls the same refresh as initialization; declare
+  the receiving hook and clarify configuration semantics in the documentation.
+- The PR runtime pin is already current; refresh it and validation after these
+  runtime changes. #448 remains open for historical raw-evidence custody.

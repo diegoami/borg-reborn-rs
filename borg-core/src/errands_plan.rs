@@ -333,16 +333,27 @@ pub(crate) fn initialize() {
             cancelled: false,
         }))
     });
-    // Reinitialization/reincarnation must validate the new class as well.
+    refresh();
+}
+
+/// Refresh at both Borg initialization and completed reincarnation, before
+/// store or Recall paths can query a previous character's cap (#447).
+pub(crate) fn refresh() {
+    let Some(runtime) = RUNTIME.get() else { return; };
+    let mut guard = runtime.lock().unwrap();
+    let Some(r) = guard.as_mut() else { return; };
     let class_id = engine::class_cidx();
-    let class = shell::CLASSES
-        .get(class_id as usize)
+    let class = shell::CLASSES.get(class_id as usize)
         .unwrap_or_else(|| fatal("unknown player class"));
-    if let Some(r) = RUNTIME.get().unwrap().lock().unwrap().as_mut() {
-        r.plan.validate_class(class).unwrap_or_else(|e| fatal(e));
-        r.reinitialize((class_id, engine::player_birth_key(), i64::from(engine::game_turn())),
-            class, i32::from(engine::player_notice().lev)).unwrap_or_else(|e| fatal(e));
-    }
+    r.plan.validate_class(class).unwrap_or_else(|e| fatal(e));
+    r.reinitialize((class_id, engine::player_birth_key(), i64::from(engine::game_turn())),
+        class, i32::from(engine::player_notice().lev)).unwrap_or_else(|e| fatal(e));
+}
+
+/// The plan alone guards preparedness before dynamic/static dispatch; the
+/// configured threshold keeps its original static-mode semantics (#447).
+pub(crate) fn plan_cap() -> Option<i32> {
+    RUNTIME.get().and_then(|runtime| runtime.lock().unwrap().as_ref().and_then(|r| r.plan_cap))
 }
 pub(crate) fn cancel() {
     if let Some(runtime) = RUNTIME.get() {
@@ -567,11 +578,17 @@ mod tests {
             assert_eq!(effective_no_deeper(20), 2);
             // The production guard runs before dispatch to either mode.
             for mode in ["static", "dynamic"] {
-                let reason = crate::borg_prepared::prepared_with_limit(2, effective_no_deeper(127),
+                let reason = crate::borg_prepared::prepared_with_limit(2, plan_cap(),
                     || panic!("{mode} calculations must not bypass the cap"));
                 assert!(matches!(reason, Some(crate::borg_prepared::Reason::Formatted(_))));
-                assert!(crate::borg_prepared::prepared_with_limit(1, effective_no_deeper(127), || None).is_none());
+                assert!(crate::borg_prepared::prepared_with_limit(1, plan_cap(), || None).is_none());
             }
+            // Without a plan, dispatch retains both a successful dynamic
+            // result and an earlier static-mode refusal unchanged.
+            assert!(crate::borg_prepared::prepared_with_limit(25, None, || None).is_none());
+            assert!(matches!(crate::borg_prepared::prepared_with_limit(25, None,
+                || Some(crate::borg_prepared::Reason::Text("restock first"))),
+                Some(crate::borg_prepared::Reason::Text("restock first"))));
             // Manual cancellation is visible to preparedness immediately;
             // no tick/phase installation or Recall completion is needed.
             cancel();
