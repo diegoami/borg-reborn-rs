@@ -57,6 +57,41 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # R3: exercise the real selector/restoration bodies on declared owned
+      # memories. Keep this test build and its artifacts separate from arms.
+      - name: Constructed defence controls
+        run: |
+          BORG_IMPL=rust BORG_TEST_FEATURES=test-r3-defence flock /tmp/angband-validation.lock harness/build.sh
+          for mode in check switch; do
+            BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=$mode BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/defence-test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband flock /tmp/angband-validation.lock harness/run.sh harness/out/defence-fixture-$mode 1001 0 1 1000 menu
+          done
+          python3 - <<'PYDEFENCE'
+          import json, pathlib
+          labels = {f'selector-{n}' for n in range(31)} | {
+              'speed-restoration', 'grim-confusion-nonbinary', 'grim-free-action-nonbinary',
+              'fire-restoration', 'cold-restoration', 'acid-restoration',
+              'electricity-restoration', 'poison-restoration', 'protection-evil-restoration',
+              'shield-restoration', 'all-resists-restoration', 'morgoth-rest-simulation'}
+          for mode in ('check', 'switch'):
+              path = pathlib.Path(f'harness/out/defence-fixture-{mode}/r3-defence-fixtures.jsonl')
+              rows = [json.loads(line) for line in path.read_text().splitlines()]
+              assert len(rows) == 43 and {r['case'] for r in rows} == labels
+              assert all(r['schema'] == 'borg-reborn-rs/r3-defence-constructed@1'
+                         and r['synthetic'] is True and r['mode'] == mode
+                         and r['agreement_error'] is None and r['temporary_buffs_restored'] is True
+                         and r['driving_value'] == r['replayed_value'] for r in rows)
+              by_case = {r['case']: r for r in rows}
+              assert by_case['grim-confusion-nonbinary']['final_confusion_free_action'] == [1, 0]
+              assert by_case['grim-free-action-nonbinary']['final_confusion_free_action'] == [0, 1]
+              assert by_case['morgoth-rest-simulation']['driving_value'] > 0
+          PYDEFENCE
+      - name: Retain constructed defence evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-defence-fixtures
+          path: harness/out/defence-fixture-*
+          if-no-files-found: ignore
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.

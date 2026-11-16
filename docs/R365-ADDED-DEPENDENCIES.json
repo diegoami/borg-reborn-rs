@@ -1,0 +1,56 @@
+[
+  {
+    "module": "borg_escape",
+    "name": "borg_caution_teleport",
+    "signature": "fn borg_caution_teleport(st:&mut BorgState,emergency:i32,turns:i32)->bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_escape",
+    "name": "borg_surrounded",
+    "signature": "fn borg_surrounded(st:&mut BorgState)->bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_fight_attack",
+    "name": "borg_launch_bolt",
+    "signature": "fn borg_launch_bolt(st:&mut BorgState,rad:i32,dam:i32,typ:i32,max:i32,ammo_location:i32)->i32",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_flow_kill",
+    "name": "borg_delete_kill",
+    "signature": "fn borg_delete_kill(st: &mut BorgState, i: i32)",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_light",
+    "name": "borg_light_beam",
+    "signature": "fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool",
+    "kind": "effect"
+  },
+  {
+    "module": "borg_magic",
+    "name": "borg_heroism_level",
+    "signature": "fn borg_heroism_level(st: &BorgState) -> i32",
+    "kind": "query"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_projectable",
+    "signature": "fn borg_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "borg_projection",
+    "name": "borg_projectable_dark",
+    "signature": "fn borg_projectable_dark(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+    "kind": "query"
+  },
+  {
+    "module": "engine",
+    "name": "term_geometry",
+    "signature": "fn term_geometry() -> TermGeometry",
+    "kind": "engine"
+  }
+]

@@ -53,3 +53,13 @@ impl<'a> Facts<'a> {
 pub use crate::borg_danger::fixture_estimate;
 #[cfg(feature = "test-m13-danger")]
 pub use crate::engine::race_name;
+
+/// Constructed-state controls only; absent from production builds.
+#[cfg(feature = "test-r3-defence")]
+pub mod defence_fixture {
+    pub use crate::borg_magic::BorgMagic;
+    pub use crate::borg_headers::borg_magic_h::{GRIM_PURPOSE, HASTE_SELF,
+        PROTECTION_FROM_EVIL, RESISTANCE, RESIST_POISON};
+    pub use crate::engine::class_total_spells;
+    pub use crate::borg_fight_defend::fixture_choice;
+}

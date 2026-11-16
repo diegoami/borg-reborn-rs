@@ -63,6 +63,14 @@ pub fn borg_thrust_damage_one(st:&BorgState,i:i32) -> i32 {
 if !crate::decision_tape::active() { return crate::borg_fight_attack::borg_thrust_damage_one(st,i); }
 crate::decision_tape::query(st,"borg_fight_attack::borg_thrust_damage_one",format!("{:?}",(i,)),|| crate::borg_fight_attack::borg_thrust_damage_one(st,i))
 }
+
+use crate::borg_headers::borg_item_h::borg_item;
+use crate::engine::TermGeometry;
+use std::ffi::CStr;
+pub fn borg_launch_bolt(st:&mut BorgState,rad:i32,dam:i32,typ:i32,max:i32,ammo_location:i32)->i32 {
+if !crate::decision_tape::active() { return crate::borg_fight_attack::borg_launch_bolt(st,rad,dam,typ,max,ammo_location); }
+crate::decision_tape::effect(st,"borg_fight_attack::borg_launch_bolt",format!("{:?}",(rad,dam,typ,max,ammo_location,)),|st| crate::borg_fight_attack::borg_launch_bolt(st,rad,dam,typ,max,ammo_location))
+}
 }
 pub mod borg_fight_defend {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -93,6 +101,12 @@ use std::ffi::CStr;
 pub fn borg_race_name(r_idx: i32) -> &'static CStr {
 if !crate::decision_tape::active() { return crate::borg_flow_kill::borg_race_name(r_idx); }
 crate::decision_tape::engine("borg_flow_kill::borg_race_name",format!("{:?}",(r_idx,)),|| crate::borg_flow_kill::borg_race_name(r_idx))
+}
+
+use crate::engine::TermGeometry;
+pub fn borg_delete_kill(st: &mut BorgState, i: i32) {
+if !crate::decision_tape::active() { return crate::borg_flow_kill::borg_delete_kill(st,i); }
+crate::decision_tape::effect(st,"borg_flow_kill::borg_delete_kill",format!("{:?}",(i,)),|st| crate::borg_flow_kill::borg_delete_kill(st,i))
 }
 }
 pub mod borg_flow_misc {
@@ -328,6 +342,14 @@ pub fn borg_maintain_light(st:&mut BorgState) -> BorgNeed {
 if !crate::decision_tape::active() { return crate::borg_light::borg_maintain_light(st); }
 crate::decision_tape::effect(st,"borg_light::borg_maintain_light",format!("{:?}",()),|st| crate::borg_light::borg_maintain_light(st))
 }
+
+use crate::borg_headers::borg_item_h::borg_item;
+use crate::engine::TermGeometry;
+use std::ffi::CStr;
+pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool {
+if !crate::decision_tape::active() { return crate::borg_light::borg_light_beam(st,simulation); }
+crate::decision_tape::effect(st,"borg_light::borg_light_beam",format!("{:?}",(simulation,)),|st| crate::borg_light::borg_light_beam(st,simulation))
+}
 }
 pub mod borg_magic {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -366,6 +388,12 @@ crate::decision_tape::query(st,"borg_magic::borg_get_spell_power",format!("{:?}"
 pub fn borg_spell_legal_fail(st: &BorgState, spell: borg_spells, allow_fail: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_magic::borg_spell_legal_fail(st,spell,allow_fail); }
 crate::decision_tape::query(st,"borg_magic::borg_spell_legal_fail",format!("{:?}",(spell,allow_fail,)),|| crate::borg_magic::borg_spell_legal_fail(st,spell,allow_fail))
+}
+
+use crate::engine::TermGeometry;
+pub fn borg_heroism_level(st: &BorgState) -> i32 {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_heroism_level(st); }
+crate::decision_tape::query(st,"borg_magic::borg_heroism_level",format!("{:?}",()),|| crate::borg_magic::borg_heroism_level(st))
 }
 }
 pub mod borg_prepared {
@@ -425,6 +453,16 @@ pub fn borg_inc_motion(py:&mut i32,px:&mut i32,y1:i32,x1:i32,y2:i32,x2:i32) {
             (y,x)
         });
     *py=after.0; *px=after.1;
+}
+
+use crate::engine::TermGeometry;
+pub fn borg_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+if !crate::decision_tape::active() { return crate::borg_projection::borg_projectable(st,y1,x1,y2,x2); }
+crate::decision_tape::query(st,"borg_projection::borg_projectable",format!("{:?}",(y1,x1,y2,x2,)),|| crate::borg_projection::borg_projectable(st,y1,x1,y2,x2))
+}
+pub fn borg_projectable_dark(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool {
+if !crate::decision_tape::active() { return crate::borg_projection::borg_projectable_dark(st,y1,x1,y2,x2); }
+crate::decision_tape::query(st,"borg_projection::borg_projectable_dark",format!("{:?}",(y1,x1,y2,x2,)),|| crate::borg_projection::borg_projectable_dark(st,y1,x1,y2,x2))
 }
 }
 pub mod borg_store_sell {
@@ -600,6 +638,12 @@ pub fn kind(index: usize) -> AttackKind {
         AttackKind {tval:k.tval,sval:k.sval,dd:k.dd,ds:k.ds,aware:k.aware}
     })
 }
+
+use crate::engine::TermGeometry;
+pub fn term_geometry() -> TermGeometry {
+if !crate::decision_tape::active() { return crate::engine::term_geometry(); }
+crate::decision_tape::engine("engine::term_geometry",format!("{:?}",()),|| crate::engine::term_geometry())
+}
 }
 pub mod shell {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -620,8 +664,10 @@ pub mod list_options_h { pub use crate::headers::list_options_h::{OPT_birth_forc
 }
 pub mod list_player_timed_h { pub use crate::headers::list_player_timed_h::{TMD_OPP_ACID}; }
 pub mod list_terrain_h { pub use crate::headers::list_terrain_h::{FEAT_LAVA,FEAT_LESS,FEAT_MORE,FEAT_NONE}; pub use crate::headers::list_terrain_h::{FEAT_BROKEN,FEAT_FLOOR,FEAT_MAGMA,FEAT_OPEN,FEAT_PASS_RUBBLE,FEAT_PERM};
+pub use crate::headers::list_terrain_h::{FEAT_CLOSED,FEAT_GRANITE,FEAT_RUBBLE};
 }
 pub mod list_tvals_h { pub use crate::headers::list_tvals_h::{TV_FOOD,TV_MUSHROOM,TV_POTION,TV_ROD,TV_STAFF}; pub use crate::headers::list_tvals_h::{TV_BOOTS,TV_FLASK,TV_LIGHT,TV_RING,TV_WAND};
+pub use crate::headers::list_tvals_h::{TV_SCROLL};
 }
 pub mod ui_event_h { pub use crate::headers::ui_event_h::{keycode_t}; }
 pub mod z_type_h { pub use crate::headers::z_type_h::{loc}; }
@@ -640,14 +686,23 @@ pub mod list_stats_h { pub use crate::headers::list_stats_h::{STAT_CON,STAT_DEX,
 
 pub mod list_object_flags_h { pub use crate::headers::list_object_flags_h::{OF_NO_FUEL};
 }
+
+pub mod ui_output_h { pub use crate::headers::ui_output_h::{region};
+}
+
+pub mod ui_term_h { pub use crate::headers::ui_term_h::{term};
+}
 }
 pub mod borg_headers {
 pub mod borg_item_h { pub use crate::borg_headers::borg_item_h::borg_item; }
 pub mod borg_h { pub use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY}; pub use crate::borg_headers::borg_h::{BORG_TOWN_PLAN};
+pub use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT};
 }
 pub mod borg_magic_h { pub use crate::borg_headers::borg_magic_h::{BERSERK_STRENGTH,CURE_POISON,DIMENSION_DOOR,HEALING,HERBAL_CURING,HEROISM,HOLY_WORD,MINOR_HEALING,PHASE_DOOR,PORTAL,RECHARGING,REMEMBRANCE,REMOVE_HUNGER,RESTORATION,REVITALIZE,SHADOW_SHIFT,TELEPORT_LEVEL,TELEPORT_SELF,UNHOLY_REPRIEVE,WORD_OF_RECALL}; pub use crate::borg_headers::borg_magic_h::{ACID_SPRAY,ANNIHILATE,BANISH_SPIRITS,CONFUSE_MONSTER,CRUSH,CURSE,DARK_SPEAR,DISENCHANT,DISPEL_EVIL,DISPEL_LIFE,DISPEL_UNDEAD,EARTH_RISING,ELECTRIC_ARC,EXPLOSION,FIRE_BALL,FRIGHTEN,FROST_BOLT,HOWL_OF_THE_DAMNED,ICE_STORM,LEAP_INTO_BATTLE,LIGHTNING_STRIKE,LIGHT_OF_VARDA,MAGIC_MISSILE,MAIM_FOE,MANA_BOLT,MANA_STORM,MASS_SLEEP,METEOR_SWARM,NETHER_BOLT,ORB_OF_DRAINING,RIFT,RIVER_OF_LIGHTNING,SHOCK_WAVE,SLEEP_EVIL,SLOW_MONSTER,SPEAR_OF_LIGHT,SPEAR_OF_OROME,STINKING_CLOUD,STORM_OF_DARKNESS,TAP_UNLIFE,THRUST_AWAY,TRANCE,TURN_STONE_TO_MUD,UNLEASH_CHAOS,VAMPIRE_STRIKE,VOLCANIC_ERUPTION,WHIRLWIND_ATTACK,borg_magic,borg_spells};
+pub use crate::borg_headers::borg_magic_h::{BANISHMENT,BANISH_EVIL,BLESS,CLAIRVOYANCE,DETECTION,DOOR_CREATION,FUME_OF_MORDOR,GLYPH_OF_WARDING,GRIM_PURPOSE,GRONDS_BLOW,HASTE_SELF,MASS_BANISHMENT,PROTECTION_FROM_EVIL,QUAKE,RAPID_REGENERATION,RESISTANCE,RESIST_POISON,REVEAL_MONSTERS,SENSE_INVISIBLE,SMITE_EVIL,TELEPORT_OTHER,TREMOR,WORD_OF_DESTRUCTION};
 }
-pub mod borg_trait_h { pub use crate::borg_headers::borg_trait_h::{BI_ACCW,BI_AESCAPE,BI_AEZHEAL,BI_AFUEL,BI_AHEAL,BI_AMISSILES,BI_APHASE,BI_ATELEPORT,BI_CDEPTH,BI_CLASS,BI_CLEVEL,BI_CRSFEAR,BI_CRSNOTEL,BI_CURHP,BI_CURSP,BI_ESP,BI_FOOD,BI_GOLD,BI_IFIRE,BI_ISAFRAID,BI_ISBLIND,BI_ISCONFUSED,BI_ISCUT,BI_ISFIXALL,BI_ISFIXCON,BI_ISFIXDEX,BI_ISFIXEXP,BI_ISFIXINT,BI_ISFIXSTR,BI_ISFIXWIS,BI_ISHEAVYSTUN,BI_ISHUNGRY,BI_ISIMAGE,BI_ISPOISONED,BI_ISSTUN,BI_ISWEAK,BI_KING,BI_LIGHT,BI_MAXCLEVEL,BI_MAXDEPTH,BI_MAXHP,BI_MAXSP,BI_SPEED}; }
+pub mod borg_trait_h { pub use crate::borg_headers::borg_trait_h::{BI_ACCW,BI_AESCAPE,BI_AEZHEAL,BI_AFUEL,BI_AHEAL,BI_AMISSILES,BI_APHASE,BI_ATELEPORT,BI_CDEPTH,BI_CLASS,BI_CLEVEL,BI_CRSFEAR,BI_CRSNOTEL,BI_CURHP,BI_CURSP,BI_ESP,BI_FOOD,BI_GOLD,BI_IFIRE,BI_ISAFRAID,BI_ISBLIND,BI_ISCONFUSED,BI_ISCUT,BI_ISFIXALL,BI_ISFIXCON,BI_ISFIXDEX,BI_ISFIXEXP,BI_ISFIXINT,BI_ISFIXSTR,BI_ISFIXWIS,BI_ISHEAVYSTUN,BI_ISHUNGRY,BI_ISIMAGE,BI_ISPOISONED,BI_ISSTUN,BI_ISWEAK,BI_KING,BI_LIGHT,BI_MAXCLEVEL,BI_MAXDEPTH,BI_MAXHP,BI_MAXSP,BI_SPEED}; pub use crate::borg_headers::borg_trait_h::{BI_FRACT,BI_RCONF};
+}
 
 pub mod borg_fight_attack_h { pub use crate::borg_headers::borg_fight_attack_h::{BF_ACT_ACID_BALL,BF_ACT_ACID_BOLT,BF_ACT_ACID_BOLT2,BF_ACT_ACID_BOLT3,BF_ACT_ARROW,BF_ACT_COLD_BALL100,BF_ACT_COLD_BALL160,BF_ACT_COLD_BALL2,BF_ACT_COLD_BALL50,BF_ACT_COLD_BOLT,BF_ACT_COLD_BOLT2,BF_ACT_CONFUSE2,BF_ACT_DISPEL_ALL,BF_ACT_DISPEL_EVIL,BF_ACT_DISPEL_EVIL60,BF_ACT_DISPEL_UNDEAD,BF_ACT_DRAGON_BALANCE,BF_ACT_DRAGON_BLUE,BF_ACT_DRAGON_CHAOS,BF_ACT_DRAGON_GOLD,BF_ACT_DRAGON_GREEN,BF_ACT_DRAGON_LAW,BF_ACT_DRAGON_MULTIHUED,BF_ACT_DRAGON_POWER,BF_ACT_DRAGON_RED,BF_ACT_DRAGON_SHINING,BF_ACT_DRAIN_LIFE1,BF_ACT_DRAIN_LIFE2,BF_ACT_DRAIN_LIFE3,BF_ACT_DRAIN_LIFE4,BF_ACT_ELEC_BALL,BF_ACT_ELEC_BALL2,BF_ACT_ELEC_BOLT,BF_ACT_FEAR_MONSTER,BF_ACT_FIRE_BALL,BF_ACT_FIRE_BALL2,BF_ACT_FIRE_BALL200,BF_ACT_FIRE_BALL72,BF_ACT_FIRE_BOLT,BF_ACT_FIRE_BOLT2,BF_ACT_FIRE_BOLT3,BF_ACT_LIGHT_BEAM,BF_ACT_LOSCONF,BF_ACT_LOSSLEEP,BF_ACT_LOSSLOW,BF_ACT_MANA_BOLT,BF_ACT_MISSILE,BF_ACT_MON_CONFUSE,BF_ACT_MON_SLOW,BF_ACT_RING_ACID,BF_ACT_RING_FIRE,BF_ACT_RING_ICE,BF_ACT_RING_LIGHTNING,BF_ACT_SLEEPII,BF_ACT_SLEEP_ALL,BF_ACT_STAFF_HOLY,BF_ACT_STARLIGHT,BF_ACT_STARLIGHT2,BF_ACT_STAR_BALL,BF_ACT_STINKING_CLOUD,BF_ACT_WONDER,BF_DRAGON_BALANCE,BF_DRAGON_BLACK,BF_DRAGON_BLUE,BF_DRAGON_CHAOS,BF_DRAGON_GOLD,BF_DRAGON_GREEN,BF_DRAGON_LAW,BF_DRAGON_MULTIHUED,BF_DRAGON_POWER,BF_DRAGON_RED,BF_DRAGON_SHINING,BF_DRAGON_WHITE,BF_LAUNCH,BF_MAX,BF_OBJECT,BF_PRAYER_DISPEL_LIFE,BF_PRAYER_DISP_EVIL,BF_PRAYER_DISP_SPIRITS,BF_PRAYER_DISP_UNDEAD,BF_PRAYER_HOLY_ORB_BALL,BF_PRAYER_HOLY_WORD,BF_REST,BF_RING_ACID,BF_RING_FIRE,BF_RING_ICE,BF_RING_LIGHTNING,BF_ROD_ACID_BALL,BF_ROD_ACID_BOLT,BF_ROD_COLD_BALL,BF_ROD_COLD_BOLT,BF_ROD_DRAIN_LIFE,BF_ROD_ELEC_BALL,BF_ROD_ELEC_BOLT,BF_ROD_FIRE_BALL,BF_ROD_FIRE_BOLT,BF_ROD_LIGHT_BEAM,BF_ROD_SLEEP_MONSTER,BF_ROD_SLOW_MONSTER,BF_ROD_UNKNOWN,BF_SPELL_ACID_SPRAY,BF_SPELL_ANNIHILATE,BF_SPELL_BLIND_CREATURE,BF_SPELL_COLD_BOLT,BF_SPELL_COLD_STORM,BF_SPELL_CONFUSE_MONSTER,BF_SPELL_CRUSH,BF_SPELL_CURSE,BF_SPELL_DARK_SPEAR,BF_SPELL_DISENCHANT,BF_SPELL_EARTH_RISING,BF_SPELL_ELECTRIC_ARC,BF_SPELL_EXPLOSION,BF_SPELL_FIRE_BALL,BF_SPELL_FRIGHTEN,BF_SPELL_HOWL_OF_THE_DAMNED,BF_SPELL_LEAP_INTO_BATTLE,BF_SPELL_LIGHTNING_STRIKE,BF_SPELL_LIGHT_BEAM,BF_SPELL_LIGHT_OF_VARDA,BF_SPELL_MAGIC_MISSILE,BF_SPELL_MAGIC_MISSILE_RESERVE,BF_SPELL_MAIM_FOE,BF_SPELL_MANA_BOLT,BF_SPELL_MANA_STORM,BF_SPELL_METEOR_SWARM,BF_SPELL_NETHER_BOLT,BF_SPELL_RIFT,BF_SPELL_RIVER_OF_LIGHTNING,BF_SPELL_SHOCK_WAVE,BF_SPELL_SLEEP_EVIL,BF_SPELL_SLEEP_III,BF_SPELL_SLOW_MONSTER,BF_SPELL_SPEAR_OF_OROME,BF_SPELL_STINK_CLOUD,BF_SPELL_STONE_TO_MUD,BF_SPELL_STORM_OF_DARKNESS,BF_SPELL_TAP_UNLIFE,BF_SPELL_THRUST_AWAY,BF_SPELL_TRANCE,BF_SPELL_UNLEASH_CHAOS,BF_SPELL_VAMPIRE_STRIKE,BF_SPELL_VOLCANIC_ERUPTION,BF_SPELL_WHIRLWIND_ATTACK,BF_STAFF_DISPEL_EVIL,BF_STAFF_HOLINESS,BF_STAFF_POWER,BF_STAFF_SLEEP_MONSTERS,BF_STAFF_SLOW_MONSTERS,BF_THRUST,BF_WAND_ACID_BALL,BF_WAND_ACID_BOLT,BF_WAND_ANNIHILATION,BF_WAND_COLD_BALL,BF_WAND_COLD_BOLT,BF_WAND_CONFUSE_MONSTER,BF_WAND_DRAGON_COLD,BF_WAND_DRAGON_FIRE,BF_WAND_DRAIN_LIFE,BF_WAND_ELEC_BALL,BF_WAND_ELEC_BOLT,BF_WAND_FEAR_MONSTER,BF_WAND_FIRE_BALL,BF_WAND_FIRE_BOLT,BF_WAND_HOLD_MONSTER,BF_WAND_LIGHT_BEAM,BF_WAND_MAGIC_MISSILE,BF_WAND_SLOW_MONSTER,BF_WAND_STINKING_CLOUD,BF_WAND_UNKNOWN,BF_WAND_WONDER,BORG_ATTACK_ACID,BORG_ATTACK_ARROW,BORG_ATTACK_AWAY_ALL,BORG_ATTACK_AWAY_ALL_MORGOTH,BORG_ATTACK_AWAY_EVIL,BORG_ATTACK_AWAY_UNDEAD,BORG_ATTACK_CHAOS,BORG_ATTACK_COLD,BORG_ATTACK_CONFU,BORG_ATTACK_CURSE,BORG_ATTACK_DARK,BORG_ATTACK_DARK_WEAK,BORG_ATTACK_DISEN,BORG_ATTACK_DISP_ALL,BORG_ATTACK_DISP_EVIL,BORG_ATTACK_DISP_SPIRITS,BORG_ATTACK_DISP_UNDEAD,BORG_ATTACK_DRAIN_LIFE,BORG_ATTACK_ELEC,BORG_ATTACK_ELEC_STRIKE,BORG_ATTACK_FIRE,BORG_ATTACK_FORCE,BORG_ATTACK_GRAVITY,BORG_ATTACK_HOLY_ORB,BORG_ATTACK_HOLY_WORD,BORG_ATTACK_ICE,BORG_ATTACK_INERTIA,BORG_ATTACK_KILL_DOOR,BORG_ATTACK_KILL_TRAP,BORG_ATTACK_KILL_WALL,BORG_ATTACK_LIGHT,BORG_ATTACK_LIGHT_WEAK,BORG_ATTACK_MAKE_DOOR,BORG_ATTACK_MAKE_TRAP,BORG_ATTACK_MAKE_WALL,BORG_ATTACK_MANA,BORG_ATTACK_METEOR,BORG_ATTACK_MISSILE,BORG_ATTACK_NETHER,BORG_ATTACK_NEXUS,BORG_ATTACK_OLD_CLONE,BORG_ATTACK_OLD_CONF,BORG_ATTACK_OLD_DRAIN,BORG_ATTACK_OLD_HEAL,BORG_ATTACK_OLD_POLY,BORG_ATTACK_OLD_SLEEP,BORG_ATTACK_OLD_SLOW,BORG_ATTACK_OLD_SPEED,BORG_ATTACK_PLASMA,BORG_ATTACK_POIS,BORG_ATTACK_SHARD,BORG_ATTACK_SLEEP_EVIL,BORG_ATTACK_SOUND,BORG_ATTACK_TAP_UNLIFE,BORG_ATTACK_TIME,BORG_ATTACK_TURN_ALL,BORG_ATTACK_TURN_EVIL,BORG_ATTACK_TURN_UNDEAD,BORG_ATTACK_WATER};
 }
@@ -734,4 +789,22 @@ mod attack_adapter_tests {
         });
         assert!(result.unwrap_err().contains("expected borg_projection::borg_inc_motion"));
     }
+}
+
+pub mod borg_escape {
+use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
+use crate::borg_headers::borg_item_h::borg_item;
+use crate::engine::TermGeometry;
+use crate::borg_update::Detect;
+use crate::memory::BorgGrid;
+use crate::headers::ui_event_h::keycode_t;
+use std::ffi::CStr;
+pub fn borg_caution_teleport(st:&mut BorgState,emergency:i32,turns:i32)->bool {
+if !crate::decision_tape::active() { return crate::borg_escape::borg_caution_teleport(st,emergency,turns); }
+crate::decision_tape::effect(st,"borg_escape::borg_caution_teleport",format!("{:?}",(emergency,turns,)),|st| crate::borg_escape::borg_caution_teleport(st,emergency,turns))
+}
+pub fn borg_surrounded(st:&mut BorgState)->bool {
+if !crate::decision_tape::active() { return crate::borg_escape::borg_surrounded(st); }
+crate::decision_tape::effect(st,"borg_escape::borg_surrounded",format!("{:?}",()),|st| crate::borg_escape::borg_surrounded(st))
+}
 }

@@ -11,14 +11,14 @@ spec.loader.exec_module(module)
 
 
 def valid_row():
-    return {'schema': 'borg-reborn-rs/shadow-stats@2', 'surface': 'r3-attack',
-            'mode': 'check', 'ported_points': module.R2_PORTED + ['attack'], 'unported_points': [],
+    return {'schema': 'borg-reborn-rs/shadow-stats@3', 'surface': 'r3-attack-defence',
+            'mode': 'check', 'ported_points': module.R2_PORTED + ['attack', 'defence'], 'unported_points': [],
             'counts': {'thinks': 1, 'mismatches': 0, 'comparisons': 6,
                        'danger_calls': 1, 'danger_comparisons': 1, 'monster_comparisons': 1,
                        'wall_comparisons': 1, 'stateful_comparisons': 1,
                        'caution_calls': 1, 'escape_calls': 9, 'recovery_calls': 1,
-                       'attack_calls': 9, 'pure_attack_comparisons': 2,
-                       'tape_events': 20, 'policy_markers': 18, 'dependency_requests': 2,
+                       'attack_calls': 9, 'pure_attack_comparisons': 2, 'defence_calls': 1,
+                       'tape_events': 21, 'policy_markers': 19, 'dependency_requests': 2,
                        'stateful_points': dict.fromkeys(module.ENTRY_POINTS, 1),
                        'pure_points': dict.fromkeys(module.PURE_POINTS, 1),
                        'root_points': {'caution.borg_caution': 1}}}
@@ -76,7 +76,7 @@ class ShadowCheckTest(unittest.TestCase):
             root = Path(name)
             for field in ['tape_events', 'policy_markers', 'dependency_requests',
                           'pure_attack_comparisons', 'attack_calls', 'comparisons',
-                          'stateful_comparisons']:
+                          'stateful_comparisons', 'defence_calls']:
                 with self.subTest(field=field):
                     row = valid_row(); row['counts'][field] += 1; self.write(root, row)
                     with self.assertRaisesRegex(ValueError, 'inconsistent'):
@@ -119,3 +119,18 @@ class ShadowCheckTest(unittest.TestCase):
                 else: row['counts']['comparisons'] = True
                 self.write(root, row)
                 with self.assertRaises(ValueError): module.check([root])
+
+    def test_attack_only_evidence_requires_explicit_legacy_reader(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row()
+            row['schema'] = 'borg-reborn-rs/shadow-stats@2'
+            row['surface'] = 'r3-attack'; row['ported_points'].remove('defence')
+            counts = row['counts']; counts.pop('defence_calls')
+            counts['stateful_points'].pop('defence.borg_defend')
+            counts['tape_events'] -= 1; counts['policy_markers'] -= 1
+            self.write(root, row)
+            before = (root / 'shadow-stats.jsonl').read_bytes()
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], True)
+            self.assertEqual(module.check([root], True, legacy_attack=True)[1]['policy_markers'], 18)
+            self.assertEqual(before, (root / 'shadow-stats.jsonl').read_bytes())

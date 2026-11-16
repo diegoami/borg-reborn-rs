@@ -116,3 +116,32 @@ R364-ADDED-DEPENDENCIES.json inventories the added signatures. The source
 gate rejects an attack port delegating its own policy to the native attack
 API. Runtime parity and entry coverage remain acceptance gates; registering
 the source does not establish them or imply a gameplay improvement.
+
+## Track R defence port (#365, R3)
+
+`borg-next/src/stateful/defence.rs` adapts M13 borg-rs
+`1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`'s `borg_fight_defend.rs`, retaining
+its copyright and license. R365-DEFENCE-SURFACE.json records all 57 native
+functions and the sole public entry, borg_defend. The owned port has all 56
+policy functions; its indexed trait helper becomes named borrowed reads.
+R365-SOURCE-AUDIT.json and scripts/audit-defence-port.py compare function
+bodies, quoted strings and every module constant after declared seam and
+formatting normalization. The carry watcher registers all owned functions.
+
+Defence owns choice ordering, scores, simulation writes and their native
+restoration sequence. Two exact named adapters write confusion resistance
+and Free Action during Grim Purpose simulation. The original boolean save
+and 0/1 restoration remain unchanged, including for a nonbinary input.
+The source gate admits only the exact adapters and forbids native defence
+delegation. Other temporary buffs, lists and goals stay owned snapshot
+fields checked by complete state equality.
+
+R365-ADDED-DEPENDENCIES.json lists nine additional typed query/effect
+adapters. Terminal geometry is an immutable plain-value record; race facts
+use the existing pointer-free metadata. Attack and escape cross-calls remain
+recorded services with their own independent shadow comparisons. Permanent
+buff/preparation/flow policy, including borg_fight_perm, remains explicitly
+shared. No new fair-information engine reads or ownership claim for those
+services is introduced. Native-equivalent games, rare-path and restoration
+fixtures, literal fault/re-port controls and death reconciliation remain
+runtime acceptance gates.

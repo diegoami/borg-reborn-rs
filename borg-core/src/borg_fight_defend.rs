@@ -25,27 +25,27 @@
 use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_cave::BorgGrid;
-use crate::borg_cave_util::{
+use crate::decision_api::borg_cave_util::{
     borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid,
 };
-use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_escape::{borg_caution_teleport, borg_surrounded};
-use crate::borg_fight_attack::borg_launch_bolt;
-use crate::borg_flow_kill::{borg_delete_kill, borg_race_name};
-use crate::borg_inventory::borg_slot;
-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE};
-use crate::borg_item_use::{
+use crate::decision_api::borg_danger::{borg_danger, borg_danger_one_kill};
+use crate::decision_api::borg_escape::{borg_caution_teleport, borg_surrounded};
+use crate::decision_api::borg_fight_attack::borg_launch_bolt;
+use crate::decision_api::borg_flow_kill::{borg_delete_kill, borg_race_name};
+use crate::decision_api::borg_inventory::borg_slot;
+use crate::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE};
+use crate::decision_api::borg_item_use::{
     borg_activate_item, borg_activate_ring, borg_aim_wand, borg_eat, borg_equips_item,
     borg_equips_ring, borg_equips_rod, borg_equips_staff_fail, borg_quaff_potion,
     borg_read_scroll, borg_use_staff, borg_zap_rod,
 };
-use crate::borg_light::borg_light_beam;
-use crate::borg_magic::{borg_heroism_level, borg_spell, borg_spell_fail, borg_spell_okay_fail};
-use crate::borg_projection::{
+use crate::decision_api::borg_light::borg_light_beam;
+use crate::decision_api::borg_magic::{borg_heroism_level, borg_spell, borg_spell_fail, borg_spell_okay_fail};
+use crate::decision_api::borg_projection::{
     borg_inc_motion, borg_los, borg_projectable, borg_projectable_dark, borg_projectable_pure,
     borg_target,
 };
-use crate::engine;
+use crate::decision_api::engine;
 use crate::borg_headers::borg_fight_attack_h::{BORG_ATTACK_AWAY_ALL, BORG_ATTACK_AWAY_ALL_MORGOTH};
 use crate::borg_headers::borg_h::BORG_MONEY_SCUM_AMOUNT;
 use crate::borg_headers::borg_magic_h::{
@@ -3514,7 +3514,8 @@ fn borg_calculate_defense_effectiveness(st: &mut BorgState, what: i32, p1: i32) 
 }
 
 /// Prepare to attack... this is setup for a battle (`borg_defend`).
-pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
+pub(crate) fn borg_defend_native(st: &mut BorgState, p1: i32) -> bool {
+    if crate::decision_tape::active() { crate::decision_tape::mark("policy::defence.borg_defend",format!("{:?}",(p1,))); }
     let mut b_n = 0;
     let mut b_g = -1;
 
@@ -3586,4 +3587,18 @@ pub fn borg_defend(st: &mut BorgState, p1: i32) -> bool {
 
     /* Success */
     true
+}
+
+// borg-reborn-rs (#365): independently owned defence entry boundary.
+pub fn borg_defend(st:&mut BorgState,p1:i32)->bool {
+    match crate::shadow::decision(st,crate::decisions::Decision::Defend { p1 }) {
+        crate::decisions::Value::Acted(result)=>result,_=>unreachable!()
+    }
+}
+
+// Test-only defence fixture entry.
+#[cfg(feature = "test-r3-defence")]
+pub fn fixture_choice(st:&mut BorgState,choice:i32,p1:i32)->i32 {
+    st.traits.simulate=true;
+    borg_calculate_defense_effectiveness(st,choice,p1)
 }

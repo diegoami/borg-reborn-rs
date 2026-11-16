@@ -917,6 +917,398 @@
       "native_function": "borg_attack",
       "port_path": "borg-next/src/stateful/attack.rs",
       "port_function": "borg_attack"
+    },
+    {
+      "point": "defence.key",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "key",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "key"
+    },
+    {
+      "point": "defence.i2d",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "i2d",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "i2d"
+    },
+    {
+      "point": "defence.borg_timer",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_timer",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_timer"
+    },
+    {
+      "point": "defence.avoid",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "avoid",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "avoid"
+    },
+    {
+      "point": "defence.simulating",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "simulating",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "simulating"
+    },
+    {
+      "point": "defence.grid",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "grid",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "grid"
+    },
+    {
+      "point": "defence.screwed",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "screwed",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "screwed"
+    },
+    {
+      "point": "defence.scaled_fail",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "scaled_fail",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "scaled_fail"
+    },
+    {
+      "point": "defence.limit",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "limit",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "limit"
+    },
+    {
+      "point": "defence.improves",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "improves",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "improves"
+    },
+    {
+      "point": "defence.some_danger",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "some_danger",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "some_danger"
+    },
+    {
+      "point": "defence.dark_here",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "dark_here",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "dark_here"
+    },
+    {
+      "point": "defence.is_ghost",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "is_ghost",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "is_ghost"
+    },
+    {
+      "point": "defence.max_range",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "max_range",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "max_range"
+    },
+    {
+      "point": "defence.danger_here",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "danger_here",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "danger_here"
+    },
+    {
+      "point": "defence.danger_one_here",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "danger_one_here",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "danger_one_here"
+    },
+    {
+      "point": "defence.unique_is",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "unique_is",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "unique_is"
+    },
+    {
+      "point": "defence.reset_lists",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "reset_lists",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "reset_lists"
+    },
+    {
+      "point": "defence.borg_log_spellpath",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_log_spellpath",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_log_spellpath"
+    },
+    {
+      "point": "defence.borg_defend_aux_bless",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_bless",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_bless"
+    },
+    {
+      "point": "defence.borg_defend_aux_speed",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_speed",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_speed"
+    },
+    {
+      "point": "defence.borg_defend_aux_grim_purpose",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_grim_purpose",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_grim_purpose"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_fecap",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_fecap",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_fecap"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_f",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_f",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_f"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_c",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_c",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_c"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_a",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_a",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_a"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_e",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_e",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_e"
+    },
+    {
+      "point": "defence.borg_defend_aux_resist_p",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_resist_p",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_resist_p"
+    },
+    {
+      "point": "defence.borg_defend_aux_prot_evil",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_prot_evil",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_prot_evil"
+    },
+    {
+      "point": "defence.borg_defend_aux_shield",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_shield",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_shield"
+    },
+    {
+      "point": "defence.borg_defend_aux_tele_away",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_tele_away",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_tele_away"
+    },
+    {
+      "point": "defence.borg_defend_aux_hero",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_hero",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_hero"
+    },
+    {
+      "point": "defence.borg_defend_aux_regen",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_regen",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_regen"
+    },
+    {
+      "point": "defence.borg_defend_aux_berserk",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_berserk",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_berserk"
+    },
+    {
+      "point": "defence.near_evil",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "near_evil",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "near_evil"
+    },
+    {
+      "point": "defence.borg_defend_aux_smite_evil",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_smite_evil",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_smite_evil"
+    },
+    {
+      "point": "defence.borg_defend_aux_glyph",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_glyph",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_glyph"
+    },
+    {
+      "point": "defence.borg_defend_aux_create_door",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_create_door",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_create_door"
+    },
+    {
+      "point": "defence.borg_defend_aux_mass_genocide",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_mass_genocide",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_mass_genocide"
+    },
+    {
+      "point": "defence.borg_defend_aux_genocide",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_genocide",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_genocide"
+    },
+    {
+      "point": "defence.borg_defend_aux_genocide_nasties",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_genocide_nasties",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_genocide_nasties"
+    },
+    {
+      "point": "defence.borg_defend_aux_earthquake",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_earthquake",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_earthquake"
+    },
+    {
+      "point": "defence.borg_defend_aux_destruction",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_destruction",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_destruction"
+    },
+    {
+      "point": "defence.borg_defend_aux_teleportlevel",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_teleportlevel",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_teleportlevel"
+    },
+    {
+      "point": "defence.banish_note",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "banish_note",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "banish_note"
+    },
+    {
+      "point": "defence.borg_defend_aux_banishment",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_banishment",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_banishment"
+    },
+    {
+      "point": "defence.borg_defend_aux_inviso",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_inviso",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_inviso"
+    },
+    {
+      "point": "defence.borg_defend_aux_lbeam",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_lbeam",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_lbeam"
+    },
+    {
+      "point": "defence.shift_as_precaution",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "shift_as_precaution",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "shift_as_precaution"
+    },
+    {
+      "point": "defence.borg_defend_panel_shift",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_panel_shift",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_panel_shift"
+    },
+    {
+      "point": "defence.borg_defend_aux_rest",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_rest",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_rest"
+    },
+    {
+      "point": "defence.borg_defend_aux_tele_away_morgoth",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_tele_away_morgoth",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_tele_away_morgoth"
+    },
+    {
+      "point": "defence.borg_defend_aux_banishment_morgoth",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_banishment_morgoth",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_banishment_morgoth"
+    },
+    {
+      "point": "defence.borg_defend_aux_light_morgoth",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend_aux_light_morgoth",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend_aux_light_morgoth"
+    },
+    {
+      "point": "defence.borg_calculate_defense_effectiveness",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_calculate_defense_effectiveness",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_calculate_defense_effectiveness"
+    },
+    {
+      "point": "defence.borg_defend",
+      "native_path": "borg-rs/src/borg_fight_defend.rs",
+      "native_function": "borg_defend",
+      "port_path": "borg-next/src/stateful/defence.rs",
+      "port_function": "borg_defend"
     }
   ]
 }

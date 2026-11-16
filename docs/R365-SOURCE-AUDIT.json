@@ -1,0 +1,383 @@
+{
+  "schema": "borg-reborn-rs/r365-source-audit@1",
+  "native_sha256": "29a0f15eda5cc5d86bac71c57face9ba047da57ab11626abced14163f69a945b",
+  "port_sha256": "66d8dde51e91c433e1bd46777717c46c1a4ad87c01cd8becd34c015cf873057b",
+  "scope": "All 56 policy function bodies and module constants; imports and memory definitions require separate review.",
+  "identical_declarations": [
+    "BD_BANISHMENT",
+    "BD_BANISHMENT_MORGOTH",
+    "BD_BERSERK",
+    "BD_BLESS",
+    "BD_CREATE_DOOR",
+    "BD_DESTRUCTION",
+    "BD_DETECT_INVISO",
+    "BD_EARTHQUAKE",
+    "BD_GENOCIDE",
+    "BD_GENOCIDE_NASTIES",
+    "BD_GLYPH",
+    "BD_GRIM_PURPOSE",
+    "BD_HERO",
+    "BD_LIGHT_BEAM",
+    "BD_LIGHT_MORGOTH",
+    "BD_MASS_GENOCIDE",
+    "BD_MAX",
+    "BD_PROT_FROM_EVIL",
+    "BD_REGEN",
+    "BD_RESIST_A",
+    "BD_RESIST_C",
+    "BD_RESIST_E",
+    "BD_RESIST_F",
+    "BD_RESIST_FECAP",
+    "BD_RESIST_P",
+    "BD_REST",
+    "BD_SHIELD",
+    "BD_SMITE_EVIL",
+    "BD_SPEED",
+    "BD_TELE_AWAY",
+    "BD_TELE_AWAY_MORGOTH",
+    "BD_TPORTLEVEL",
+    "BORG_GLOW",
+    "BORG_OKAY",
+    "BORG_VIEW",
+    "UCHAR_MAX"
+  ],
+  "normalization": "Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string and character sequences compared separately.",
+  "functions": [
+    {
+      "function": "key",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "i2d",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_timer",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "avoid",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "simulating",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "grid",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "screwed",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "scaled_fail",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "limit",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "improves",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "some_danger",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "dark_here",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "is_ghost",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "max_range",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "danger_here",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "danger_one_here",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "unique_is",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "reset_lists",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_log_spellpath",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_bless",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_speed",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_grim_purpose",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_fecap",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_f",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_c",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_a",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_e",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_resist_p",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_prot_evil",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_shield",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_tele_away",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_hero",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_regen",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_berserk",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "near_evil",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_smite_evil",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_glyph",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_create_door",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_mass_genocide",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_genocide",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_genocide_nasties",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_earthquake",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_destruction",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_teleportlevel",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "banish_note",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_banishment",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_inviso",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_lbeam",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "shift_as_precaution",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_panel_shift",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_rest",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_tele_away_morgoth",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_banishment_morgoth",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend_aux_light_morgoth",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_calculate_defense_effectiveness",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    },
+    {
+      "function": "borg_defend",
+      "normalized_tokens_equal": true,
+      "quoted_literals_equal": true,
+      "character_literals_equal": true
+    }
+  ]
+}

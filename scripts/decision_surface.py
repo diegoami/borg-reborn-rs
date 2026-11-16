@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack')
-PORTS = ('caution', 'escape', 'recovery', 'attack')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', *NATIVE}
@@ -20,6 +20,12 @@ MANA_ADAPTER = ('fn set_mana(st:&mut BorgState,value:i32){'
                 'st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize]=value;}')
 
 
+DEFENCE_ADAPTERS = tuple(
+    'fn '+name+'(st:&mut BorgState,value:i32){'
+    'st.borg.trait_[borg_rs::memory::traits::'+trait+' as usize]=value;}'
+    for trait,name in [('BI_RCONF','set_confusion_resistance'),('BI_FRACT','set_free_action')])
+
+
 def inspect(text, port=False, dispatch=False, policy=None):
     """Catch known import/path bypasses, not arbitrary Rust semantics.
 
@@ -33,14 +39,16 @@ def inspect(text, port=False, dispatch=False, policy=None):
     if port and dispatch:
         # Normalize whitespace only for matching the exact adapter/import.
         # Remove just these snippets, then inspect all remaining code.
-        for snippet in (DISPATCH_IMPORT, MANA_ADAPTER):
+        for snippet in (DISPATCH_IMPORT, MANA_ADAPTER, *DEFENCE_ADAPTERS):
             pattern = r'\s*'.join(re.escape(token) for token in
                                      re.findall(r'\w+|[^\w\s]', snippet))
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
-        if policy == 'attack' and re.search(r'\bborg_rs::decision_api::borg_fight_attack::', code):
-            errors.append('attack may not delegate its own policy through a shared native result')
+        if policy in ('attack', 'defence'):
+            module = 'borg_fight_attack' if policy == 'attack' else 'borg_fight_defend'
+            if re.search(r'\bborg_rs::decision_api::'+module+'::', code):
+                errors.append(policy+' may not delegate its own policy through a shared native result')
         if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):
             errors.append('policy must not hide local/core paths in a grouped root import')
         # A parent may expose private root imports and Decision::native.
@@ -51,7 +59,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
                 return ''
             return match[0]
         code = re.sub(r'\buse\s+super::escape::\{([^}]+)\}\s*;', local_escape, code)
-        code = re.sub(r'\bsuper::set_mana\s*(?=\()', '', code)
+        code = re.sub(r'\bsuper::(?:set_mana|set_confusion_resistance|set_free_action)\s*(?=\()', '', code)
         if re.search(r'\b(?:super|self)::', code):
             errors.append('policy bypasses the audited parent dependency paths')
         if re.search(r'\buse\s+(?:crate|super|self)\s*(?:as\b|;)', code):
@@ -131,8 +139,8 @@ def check(root):
     for path, port in paths:
         errors = inspect(path.read_text(), port,
                          dispatch=port and path == directory / 'mod.rs',
-                         policy='attack' if port and (path.stem == 'attack' or
-                                 'attack' in path.relative_to(directory).parts[:-1]) else None)
+                         policy=next((name for name in ('attack','defence') if port and
+                             (path.stem == name or name in path.relative_to(directory).parts[:-1])),None))
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))
     return len(paths)
