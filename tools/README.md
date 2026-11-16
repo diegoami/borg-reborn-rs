@@ -42,6 +42,16 @@ The export, registry, source-checked rerun and reconciliation implementations no
 live in [borg-cemetery](https://github.com/diegoami/borg-cemetery/tree/main/scripts/native),
 with their provenance and original tests. The four old command paths are thin
 API-1 pointers; there is no second implementation to maintain here.
+Before executing any native tool, the forwarder verifies every file in
+`scripts/native` against the immutable commit in `death-tools-pin.txt`. This
+applies to sibling and `BORG_CEMETERY_DIR` checkouts as well as CI. Missing,
+changed, symlinked or additional source files fail before tool code can run;
+Python bytecode caches are ignored. The selected checkout must contain the
+pinned Git object (fetch it if necessary). Later documentation/evidence-only
+heads are allowed when their native subtree bytes match the pin. Merely
+reporting API 1 is insufficient: an old API-1 exporter can lack the synthetic
+guard. An explicit checkout mismatch is an error, never a fallback to executing
+unsafe code or silently exporting a synthetic death.
 
 Clone/update borg-cemetery beside the primary checkout, or set
 `BORG_CEMETERY_DIR=/path/to/borg-cemetery`. Linked worktrees discover the sibling

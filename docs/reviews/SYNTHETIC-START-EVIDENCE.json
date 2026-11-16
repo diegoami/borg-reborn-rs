@@ -1,0 +1,8 @@
+{
+  "schema": "borg-reborn-rs/cemetery-evidence-reference@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "f03a7d97ce7cec992be10a3f0dee64b8a6b3e9c8",
+  "path": "docs/reviews/M2/checkpoints/reborn-startup-v1-evidence.json",
+  "sha256": "1746ab350999c65424bbe4799c50a6e5f3acdaad0f72d6fc2e66f62cf18ffbb6",
+  "note": "Canonical gameplay evidence is owned by Cemetery; source keeps this immutable reference. The original @1 startup packet is explicitly superseded."
+}

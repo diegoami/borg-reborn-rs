@@ -15,6 +15,7 @@
 #     keep-load-rng  passes -keep-load-rng (with save=NAME or -load)
 #     key-limit=N  stops after N keys (-keys N)
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
+#     start-depth=N  synthetic birth at depth N; no ascent/recall, descent allowed
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
 #   selflunal, NAME=VALUE rewrites of borg.txt) and the dropped frontend
 #   options (frames, rune-pattern) are gone: only the Rust Borg is built here
@@ -73,6 +74,14 @@ if [ $# -gt 0 ] && [ "$1" != "--" ]; then FLAGS="$1"; shift; fi
 SAVE_NAME=""
 BIRTH_ARGS=(-n)
 BORGH_FLAGS=()
+START_DEPTH=""
+START_BUILD=""
+START_BUILD_SHA=""
+set_start_depth() {
+    [ -z "$START_DEPTH" ] || { echo 'run.sh: duplicate start-depth' >&2; exit 2; }
+    [[ "$1" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: start-depth must be 1..999 (and below engine max_depth)' >&2; exit 2; }
+    START_DEPTH="$1"
+}
 if [ "$FLAGS" != "-" ]; then
     IFS=, read -r -a FL <<< "$FLAGS"
     for fl in "${FL[@]}"; do
@@ -84,6 +93,9 @@ if [ "$FLAGS" != "-" ]; then
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
             terminal-save) BORGH_FLAGS+=(-save-final-state "$OUT/final.save");;
             keep-load-rng) BORGH_FLAGS+=(-keep-load-rng);;
+            start-depth=*)
+                set_start_depth "${fl#start-depth=}"
+                BORGH_FLAGS+=(-start-depth "$START_DEPTH");;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }
@@ -118,9 +130,33 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
                EXTRA[$((i + 1))]="$OUT/save/input.save"
                i=$((i + 1));;
         -keep-load-rng) EXTRA_KEEP_RNG=1;;
+        -start-depth)
+            set_start_depth "${EXTRA[$((i + 1))]:-}"
+            if [ "$FLAGS" = '-' ]; then FLAGS="start-depth=$START_DEPTH"
+            else FLAGS="$FLAGS,start-depth=$START_DEPTH"; fi
+            i=$((i + 1));;
+        -start-build)
+            [ -z "$START_BUILD" ] || { echo 'run.sh: duplicate start-build' >&2; exit 2; }
+            START_BUILD="${EXTRA[$((i + 1))]:-}"
+            [ -f "$START_BUILD" ] && [ ! -L "$START_BUILD" ] || { echo 'run.sh: start-build requires a regular record file' >&2; exit 2; }
+            [ "$(wc -c < "$START_BUILD")" -le 16384 ] || { echo 'run.sh: start-build record too large' >&2; exit 2; }
+            EXTRA[$((i + 1))]="$OUT/start.build"
+            i=$((i + 1));;
     esac
 done
+[ -z "$START_BUILD" ] || [ -n "$START_DEPTH" ] || { echo 'run.sh: start-build requires start-depth' >&2; exit 2; }
+if [ -n "$START_DEPTH" ]; then
+    [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
+    for option in "${BORGH_FLAGS[@]}" "${EXTRA[@]}"; do
+        [ "$option" != '-random-birth' ] || { echo 'run.sh: start-depth cannot use random birth' >&2; exit 2; }
+    done
+fi
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
+if [ -n "$START_BUILD" ]; then
+    cp "$START_BUILD" "$OUT/start.build"
+    chmod 400 "$OUT/start.build"
+    START_BUILD_SHA=$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)
+fi
 # The reborn Borg's profile and outputs (T2.4); the C Borgs ignore both.
 if [ "$IMPL" = rust ]; then
     PROFILE="$(realpath "${BORG_PROFILE:-$ROOT/harness/profiles/reborn-default.txt}")"
@@ -179,6 +215,16 @@ if [ -n "$PLAN" ]; then
 fi
 {
     echo "flags=$FLAGS"
+    if [ -n "$START_DEPTH" ]; then
+        echo 'synthetic=1'
+        echo "start_depth=$START_DEPTH"
+        if [ -n "$START_BUILD_SHA" ]; then
+            echo 'start_build=record'
+            echo "start_build_sha256=$START_BUILD_SHA"
+        else echo 'start_build=birth'; fi
+        echo 'dungeon_mode=one_way'
+        echo 'synthetic_contract=borg-reborn-rs/synthetic-start@2'
+    fi
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
         # The loaded save's hash is part of a death's encounter family.
@@ -225,6 +271,33 @@ set -e
 if [ $RC -ne 0 ] || [ ! -s "$OUT/summary.json" ]; then
     echo "run failed (rc=$RC): $OUT" >&2; exit 1
 fi
+# Check the engine's receipt before accepting or exporting the run. A binary
+# without this capability, or an actual town start, is a harness failure.
+python3 - "$OUT/summary.json" "$START_DEPTH" "$START_BUILD_SHA" <<'PYSYNTHETIC'
+import json, sys
+summary = json.load(open(sys.argv[1]))
+requested = sys.argv[2]
+build_hash = sys.argv[3]
+if requested:
+    valid = (summary.get('synthetic') is True and summary.get('loaded') is False
+             and summary.get('synthetic_contract') == 'borg-reborn-rs/synthetic-start@2'
+             and summary.get('start_depth') == int(requested)
+             and summary.get('initial_depth') == int(requested)
+             and summary.get('initial_cave_depth') == int(requested)
+             and summary.get('initial_generation_pending') is False
+             and summary.get('start_build') == ('record' if build_hash else 'birth')
+             and (summary.get('start_build_sha256') == build_hash if build_hash else not summary.get('start_build_sha256'))
+             and summary.get('dungeon_mode') == 'one_way'
+             and summary.get('game_options', {}).get('birth_force_descend') is True
+             and summary.get('game_options', {}).get('birth_no_recall') is True)
+    if not valid:
+        raise SystemExit('run.sh: synthetic start identity mismatch')
+elif summary.get('synthetic') or summary.get('start_depth'):
+    raise SystemExit('run.sh: unexpected synthetic start')
+PYSYNTHETIC
+if [ -n "$START_BUILD_SHA" ]; then
+    [ "$(sha256sum < "$OUT/start.build" | cut -d' ' -f1)" = "$START_BUILD_SHA" ] || { echo 'run.sh: start-build changed during execution' >&2; exit 1; }
+fi
 # The game preserves the plan it parsed as BORG_RUN_DIR/errands_plan.txt.
 if [ -n "$PLAN" ] && ! cmp -s "$OUT/user/errands_plan.txt" "$OUT/errands_plan.txt"; then
     echo "run.sh: the game did not load the plan: $OUT" >&2; exit 1
@@ -238,7 +311,7 @@ fi
 if [ -f "$ROOT/tools/depth-stream.py" ]; then
     python3 "$ROOT/tools/depth-stream.py" "$OUT" --cap "$TURNS"
 fi
-if [ -f "$ROOT/tools/export-death.py" ]; then
+if [ -z "$START_DEPTH" ] && [ -f "$ROOT/tools/export-death.py" ]; then
     python3 "$ROOT/tools/export-death.py" "$OUT" --impl "$IMPL" \
         --build-id "$(dirname "$(dirname "$BIN")")/BUILD_ID" --flags "$FLAGS"
 fi
