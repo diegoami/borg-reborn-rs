@@ -204,10 +204,12 @@ PRs #1 and #2; tag `m0`.
 ## Owner-authorized class/family preferences (#396 / #403, 2026-11-16)
 
 The owner authorized the native P implementation after the design discussion.
-#403 is in progress on task/T403-class-attack-preferences from track-p. Scope:
+#403 is complete: #405 merged into track-p at 0edee14b. Scope:
 54 neutral-default class/family utility multipliers, explicit BF mapping, final
 ranking seam, trace@2 and targeted validation. See docs/ATTACK-PREFERENCES.md.
 No danger correction, R implementation, population dispatch or default change.
-Task PR targets track-p; no integration may move an active reviewed head.
+The post-merge review of task head 3f744ddb found no correctness bugs or blockers.
+Review follow-up #424 clarifies weighted attack logs and this completion status.
+Main promotion remains pending in #407; task integration is not main acceptance.
 Owner-accepted pinned P review precedes main promotion. R carries the accepted
 contract separately after promotion and #364/#366 coordination.
