@@ -72,6 +72,20 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: narrow survival fixes together on main (#369, #380)
+
+- Owner: both narrow proposals have the highest priority, in one PR for
+  review. Carries #392's flee-healing change (borg_caution.rs: fleeing no
+  longer skips borg_heal() merely because HP cannot absorb another round;
+  borg_heal keeps its own wound/level/resource gates) and #390's Phase
+  Door stock change (borg_town_capability.rs: a learned Phase Door no
+  longer zeroes the scroll's supply value; HOOKED). Both rebased onto
+  main 8a0b57c8 (borg-rs 8c5d000) without other changes.
+- Source hash 9a4ea375 → 2317021c. Wild-cat saved-position tests: heals
+  through the fight; with CLW/CSW tiers disabled still dies (control).
+  Phase stock: Mage fixture buys a Scroll of Phase Door.
+- Supersedes #392 and #390 (close them on merge). The zoo needs a new ref.
+
 ## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
 
 - Owner request: carry borg-rs#92 (fix for borg-rs#90, the Home oil
