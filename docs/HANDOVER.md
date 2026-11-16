@@ -2,6 +2,207 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: #354 synchronized with main 72a21620, without #355
+
+- Owner decision: the zoo's five-arm specimen carries current main's game,
+  not #355. #355 (7022017e) was reverted on main by #379 (#373), so the
+  game inputs are the pre-355 ones again (source hash 87717140, as at
+  2f74e1c5) and this branch adds only plan files, harness plan runs and
+  the zoo contract. Plan hashes unchanged: errands_plan.txt 922372ba,
+  errands_plan_ambitious.txt 9d7d8a39. The 72-game local pilot still
+  applies to this game. borg-rs#90 (oil store/take loop) is in the
+  vendored core and still present.
+
+## 2026-11-16: reviewed importer sync after Cemetery ownership migration (#398)
+
+- #395 review at 79ec0591 reports no blockers. Its remaining engine CI
+  condition is satisfied by green run 43783576729. Nonblocking mode,
+  fault-injection, Python-minimum and formatting observations are tracked
+  in #397; none is implemented in this synchronization.
+- Main advanced to 6c89d9a2 through #394. Preserve the accepted Cemetery
+  ownership migration, six mapped package removals and pinned CI evidence.
+  Resolve only the handover conflict by retaining both histories.
+- Reviewed importer, importer tests and DOSSIER-IMPORT.md stay byte-identical
+  to 79ec0591. Runtime, source pins and archive contents match accepted main.
+  Required CI on this combined tree must pass before track-p integration.
+- Update #395 with the new pin and exact scope/tree proof; retain the
+  original review's provenance. Promotion remains pending owner acceptance
+  and explicit delegation, not merely the reviewer's recommendation.
+
+## 2026-11-16: Cemetery evidence ownership (#376)
+
+- AGENTS/RULES now require gameplay reports, scenarios and trials in
+  borg-cemetery; source PRs retain code/tests and concise validation links.
+- Cemetery PR8 retains the PlanMage incident and all66 files of the six
+  #355 control packages byte-for-byte. Remove only those mapped packages
+  here, regenerate the index and redirect the current incident pages.
+- CI reads the unchanged checkpoint archive from a separate pinned Cemetery
+  evidence checkout. Reconciliation uses retained historical plus canonical
+  cases, never the new temporary registry as its own expected baseline.
+- Original public player recordings/hashes and other sessions' historical
+  packages remain preserved. No policy change is part of this cleanup.
+
+
+## 2026-11-16: importer follow-up main sync after #379
+
+- Main advanced to58b11ff2 through owner-directed #379 while #381/#384
+  were in CI. Synchronize it through a separate task PR into track-p;
+  retain the pre-355 behavior and both handover histories without edits to
+  accepted runtime code. The merge is conflict-free.
+- Importer mode and failed-publication cleanup follow-ups remain intact;
+  runtime inputs must equal this accepted main and all2,578 archived
+  packages remain unchanged. No new gameplay or survival claim.
+- CI is required for the synchronized tree. After integration, open the
+  importer follow-up batch's pinned track-p -> main review and stop;
+  prior #372 acceptance does not cover the new changes.
+
+## 2026-11-16: failed import publication cleanup (#359)
+
+- Stacked on #358/#381. Restore0700 only on this invocation's unpublished
+  staging before removal, even if publication adopted a read-only source's
+  mode. Never scan other importers' staging or chmod an existing package.
+- Keep the original publication exception if cleanup also fails, attaching
+  the cleanup error as a diagnostic. Reproduce both paths with injected
+  rename/removal failures; assert read-only source mode, private cleanup,
+  existing package bytes, another active staging directory and no final
+  partial package. No evidence, runtime, defaults or pin changes.
+- Task PR records local/CI checks; integrate into track-p after green CI,
+  then stop for the next pinned owner-selected promotion review.
+
+## 2026-11-16: published import directory access (#358)
+
+- Owner accepted #372 and delegated its merge; the unchanged reviewed pin
+  cf687bb2 is promoted as b7d45f17. Review follow-ups #374 (exact invocation
+  receipts) and #375 (reference-receipt assessment) remain separate. The
+  reported missing log hashes already exist for all 45 pairs in the pin.
+- Bound newly published directory modes by source access and directory
+  creation under the importing process's umask. Obtain creation permissions
+  with an empty directory inside private staging, without changing the
+  process-global umask; remove the probe before publishing. Drop special
+  bits. Source0777/umask022 now gives0755; source0755/umask077 gives0700.
+  An intentionally permissive umask000 still permits a source0777 directory.
+- The mode matrix covers four umasks and five source modes (including
+  special bits), private staging during every write, file/generated-metadata
+  access, unchanged source modes, exact package bytes/IDs and re-import modes.
+  #359 still owns failed-publication cleanup for read-only staging.
+- No runtime, default, pin, immutable package or index changes. Source-refresh
+  report ran read-only; this isolated worktree lacks six moving-source clones,
+  so it cannot report their new commits. This narrow historical-import review
+  follow-up neither updates pins nor claims a refreshed gameplay baseline.
+- Local/CI validation is recorded in the task PR. Task targets track-p;
+  a fresh pinned owner-selected review must precede promotion to main.
+
+## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
+
+- #349 was owner-reviewed, synchronized through green #362 and promoted as
+  92404c7e. Track P's M13 source adoption was already integrated by #331;
+  this task supplies its remaining fresh donor build/run evidence.
+- Rebuilt exact donor 1443c2d1 and accepted combined-P adoption 2f74e1c5 from
+  clean separate worktrees. Actual source/binary/build/config receipts are
+  retained, without relabelling older dirty measurements. Full 45/45 play
+  triples and effective configs match, with 242,641 contiguous classified
+  trace rows and no unclassified rows. All calibration params are default.
+- Historical adoption parity is not claimed for later #355 policy source
+  0f2e003f. Current production code remains unchanged; its intentional six-
+  file safety delta and existing scenario evidence are explicitly separated.
+  See P341-FRESH-DONOR-VALIDATION.md/.json.
+- Three policy-on pairs match; 656 schema11 plans replay (500 with a plan).
+  328 core tests (four existing ignored), 13 isolation, 4 shopping, 3 loop tests
+  and original smoke 3/3 pass. Initial fixture harness failures from missing
+  discoverable cemetery tools are retained; unchanged reruns pass after
+  adding the ignored pointer to the exact tooling pin. No assertion changed.
+- All 25 fresh natural-death packages are qualified in P341-DOSSIER-MAP.json;
+  original records/payloads remain exact. All 2,578 archive packages verify,
+  and both receiving 13 and donor 12 deaths reconcile with none missing.
+  Repeated/paired controls are not additional independent population lives.
+- No game, configuration/default, source pin, Zoo specimen/run or canonical
+  cemetery content changes. Raw builds/attempts remain under the named
+  /workspace/work/p341-* paths. Task PR targets track-p and requires green
+  CI; a new pinned owner-selected milestone review precedes promotion.
+  #358/#359 remain separate permission/cleanup follow-ups.
+
+## 2026-11-15: reviewed P349 synchronization (#360)
+
+- Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
+  The review reports 88 tool tests, script tests, all 2,547 archive cases
+  and real mode/umask imports. Required CI and P342 play evidence were
+  taken on trust; do not describe the later combined head as independently
+  re-reviewed. The accepted runtime changes in main remain separate evidence.
+- Merge main 7022017e (#355 safety fix) into track-p, retaining both handover
+  sections. This is the sole merge conflict. Runtime inputs and archive
+  packets remain byte-identical to that accepted main; the reviewed P
+  importer, tests, ignore rule and guidance remain intact.
+- #358 tracks source/umask bounds for published directories (including the
+  world-writable source case); #359 tracks read-only staging cleanup after
+  failed rename. Both are nonblocking follow-ups after this promotion.
+  No follow-up implementation is slipped into the reviewed pin.
+- Local checks pass: 88 tool tests, 19 source-tool tests, all 2,553
+  archive packages, vendor audit, formatting and Clippy. Required Rust
+  tests and sync CI must pass before integration and promotion.
+  #341's fresh-donor baseline audit follows this gate; it must distinguish
+  historical M13 parity from #355's intentional later policy changes.
+
+
+## 2026-11-16: owner-requested rollback of #355 behavior (#373)
+
+- Restore the six native-core files to accepted pre-#355 main 2f74e1c5.
+  This rollback contains no dossier/report payloads; preserved evidence and
+  canonical Cemetery migration are separate. The saved-position tests now
+  identify the restored death control honestly. Narrow replacements will be
+  separate owner-reviewed changes before any zoo dispatch.
+
+## 2026-11-15: owner-directed wild-cat survival fix (#350)
+
+- The original PlanMage GUI recording was replayed with its frozen binary;
+  all streams, final save and complete core trace verify. Native saves at
+  411638/648/658/668 match the recorded world fingerprints. Reloading them
+  loses Borg process memory; nevertheless all four original-source fresh
+  Borg branches die to wild cats, making them useful scenario fixtures.
+- Remove the return-to-town stair-looting path, reject known occupied flee
+  steps, use ordinary cures deterministically at useful wound sizes even
+  when fleeing at lethal HP, and consider usable Phase Door separately from
+  the conservative APHASE preparedness trait. A trapped/lethal flee can
+  try a short escape despite unknown landing grids; arena/curse restrictions
+  and the configured emergency failure bound remain enforced.
+- Diagnostic instrumentation found a 5% legal/affordable Phase Door excluded
+  by APHASE's 3% trait gate, followed by 100 unknown landing samples rejected.
+  The initial healing/path patch still lost two nearby-save starts; those
+  failed controls remain retained. With the emergency escape correction,
+  all four fixed starts survive the bounded follow-up at full HP. This is
+  one incident, not four independent lives or a population improvement.
+- Fixture archive is pinned to player-cemetery bec33f4, with SHA256 checks;
+  CI requires the real four saves. The standard native suite passes 69 tests.
+  Final Rust checks pass (156+4+5 workspace,328 core/four ignores),
+  69 engine tests,87 tools/19 scripts, formatting/Clippy/vendor. Original
+  smoke matches3/3 in keys/messages/states. Six validation-control deaths
+  across intermediate/final sources are qualified;2553 archive cases
+  verify and all final controls reconcile with zero missing deaths.
+  Final source0f2e003f988f and binary27f564611416 were built from5e8454ab
+  with clean game inputs; only retained non-runtime evidence was uncommitted.
+  Actual identities are preserved in INCIDENT-350-VALIDATION.json.
+- Recorder-owned rolling save retention and turn-based read-only viewing
+  are developed separately in angband-recorder; do not silently replace the
+  pinned vendor or claim live Borg memory is restored by a native save.
+
+
+## 2026-11-15: import guidance and staging follow-up (#333)
+
+- Generic AGENTS.md guidance now applies to every track. Clarify that the
+  legacy guarantee covers the full record and declared payload files;
+  undeclared analysis/extra files are outside it. Qualified packets remain
+  immutable in every file. No evidence or inventory is rewritten.
+- Keep staging private while incomplete; publish with the source directory's
+  ordinary access bits, respecting private sources. Files keep process-umask
+  limits as well as source-file access; generated metadata follows the source
+  record's limits. Re-import does not alter existing access. Ignore abandoned
+  historical staging directories without deleting another process's work.
+- All 88 tool tests and 19 script tests pass, including publication modes
+  0750/0700 and immutable payload verification. All 2,547 archive cases
+  verify; staging ignore is checked. Game inputs remain exactly #342 source
+  87717140, so its Rust/native/play evidence applies. Required CI is pending.
+  Prepared separately from #331/#346; integrate only after that promotion,
+  then open a separate pinned milestone review before main.
+
 ## 2026-11-15: measured plan runs, zoo contract, ambitious plan (#352)
 
 - Owner request after borg-zoo#123. `harness/run.sh` now runs errands plans:

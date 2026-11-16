@@ -115,11 +115,11 @@ def import_packages(sources, destination):
     destination = Path(destination).resolve()
     if destination == (locate(ROOT) / 'deaths').resolve():
         raise ValueError('The canonical cemetery is owned by its registrar; use that delivery workflow')
-    prepared = [package(source) for source in sources]
+    prepared = [(Path(source), package(source)) for source in sources]
     owner = registry_module()
     result = []
     with owner.registry_lock(destination):
-        for identifier, files in prepared:
+        for source, (identifier, files) in prepared:
             final = destination / identifier
             if final.exists():
                 if final.is_symlink() or {p.name for p in final.iterdir()} != set(files):
@@ -131,12 +131,37 @@ def import_packages(sources, destination):
                 continue
             stage = Path(tempfile.mkdtemp(prefix='.import-', dir=destination))
             try:
+                # Let mkdir apply the process umask without reading/changing that
+                # process-global setting. The empty probe remains inside private
+                # staging and is removed before publication.
+                access = stage / '.directory-access'
+                access.mkdir(mode=0o777)
+                directory_access = access.stat().st_mode & 0o777
+                access.rmdir()
                 for name, data in files.items():
-                    (stage / name).write_bytes(data)
+                    asset = stage / name
+                    asset.write_bytes(data)
+                    original = source / name
+                    if not original.exists():
+                        original = source / 'record.json'  # generated receipt/original metadata
+                    # A shared directory must not expose a private source file.
+                    asset.chmod(asset.stat().st_mode & original.stat().st_mode & 0o777)
+                # Bound published access by both source and creation permissions;
+                # special permission bits are not part of an evidence package.
+                stage.chmod(source.stat().st_mode & directory_access & 0o777)
                 stage.rename(final)
             finally:
                 if stage.exists():
-                    shutil.rmtree(stage)
+                    primary_error = sys.exc_info()[1]
+                    try:
+                        # Publication may have removed owner write access. This
+                        # invocation owns only this still-unpublished directory.
+                        stage.chmod(0o700)
+                        shutil.rmtree(stage)
+                    except OSError as cleanup_error:
+                        if primary_error is None:
+                            raise
+                        primary_error.add_note(f'Could not clean staging {stage}: {cleanup_error}')
             result.append((identifier, 'imported'))
         # Formatting belongs to the cemetery-owned implementation, not this tool.
         owner.update_index(destination)
@@ -188,7 +213,8 @@ def main():
             for identifier, status in import_packages(args.sources, args.registry):
                 print(f'{identifier}: {status}')
     except (OSError, ValueError, KeyError) as error:
-        ap.exit(2, f'import-deaths: {error}\n')
+        notes = ''.join(f'{note}\n' for note in getattr(error, '__notes__', []))
+        ap.exit(2, f'import-deaths: {error}\n{notes}')
 
 
 if __name__ == '__main__':

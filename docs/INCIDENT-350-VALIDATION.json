@@ -1,0 +1,8 @@
+{
+  "schema": "borg-reborn-rs/cemetery-evidence-pointer@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "c78cfe58ce0754ee11444708008d5be97cf5aa4c",
+  "case": "deaths/recorded-planmage-20261115-wild-cat",
+  "historical_validation": "deaths/recorded-planmage-20261115-wild-cat/history/source-INCIDENT-350-VALIDATION.json",
+  "migration": "validation/borg-reborn-rs/native-controls/migration-355.json"
+}

@@ -1,0 +1,48 @@
+{
+  "schema": "borg-reborn-rs/incident-save-fixtures@1",
+  "source_commit": "820140e0409b34f0ee53cabfbac2b57a39f62e7e",
+  "source_executable_sha256": "f13c46b148c6e614d21d0e525cf448df6c0376173882f1d31b069bdf97839885",
+  "capture": "ar_host_save at command boundaries in original frozen replay; complete replay still verifies",
+  "game_saves_only": "New processes restore game state, not Borg memory; suffix equality is not promised. Original-source fresh-Borg branches reproduce wild-cat deaths at all four starts.",
+  "saves": {
+    "t411638.save": {
+      "turn": 411638,
+      "frame": 26812,
+      "sha256": "cb37296ae6342734e6e1de35403f947e48a8d0b2d0da04551feb75d3e9df2cf7",
+      "world": "717d32a493721bfc",
+      "race": 4,
+      "class": 1
+    },
+    "t411648.save": {
+      "turn": 411648,
+      "frame": 26816,
+      "sha256": "3f88c20a231c7ad5de691e31aab176db7ab38fdd1d95355aa7f92fc08b26cc6b",
+      "world": "5cb76466c088dd4d",
+      "race": 4,
+      "class": 1
+    },
+    "t411658.save": {
+      "turn": 411658,
+      "frame": 26820,
+      "sha256": "261dc968621658e8c9f119449b816d715f8f3f2f157941cf36ea8595458e6e4b",
+      "world": "6d1c5c21f9d09161",
+      "race": 4,
+      "class": 1
+    },
+    "t411668.save": {
+      "turn": 411668,
+      "frame": 26824,
+      "sha256": "3b93a727a313b46e926d8a9be6dc32241f0effb61cfd9e4c0a3c10bcd0161a3e",
+      "world": "323f066fc3e2b673",
+      "race": 4,
+      "class": 1
+    }
+  },
+  "issue": "https://github.com/diegoami/borg-reborn-rs/issues/350",
+  "archive": "20261115T212321Z-PlanMage-checkpoints.zip",
+  "archive_sha256": "2b95d6d018872af3bf8a0b8ae1d7cc41b29b5c22a21ba0dc3616616901a90634",
+  "archive_bytes": 53052,
+  "repository": "diegoami/borg-cemetery",
+  "commit": "37afd3dd5338c036f2c68b1717dd38a3869ecd02",
+  "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints.zip"
+}
