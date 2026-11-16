@@ -43,6 +43,6 @@
   "archive_sha256": "2b95d6d018872af3bf8a0b8ae1d7cc41b29b5c22a21ba0dc3616616901a90634",
   "archive_bytes": 53052,
   "repository": "diegoami/borg-cemetery",
-  "commit": "37afd3dd5338c036f2c68b1717dd38a3869ecd02",
+  "commit": "8904224671cef488295f1b3dae3adcd0b6a59b5c",
   "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints.zip"
 }
