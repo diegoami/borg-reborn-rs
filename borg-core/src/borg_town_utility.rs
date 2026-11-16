@@ -790,4 +790,32 @@ mod tests {
         let explicit=Journey::for_trip(&st,Some(forecast));assert_eq!((explicit.depth,explicit.turns),(2,777));
     }
 
+
+    /// borg-reborn-rs (#451): a carried Remove Hunger scroll supplies
+    /// nutrition (35: 50 to a hungry 15 percent), so the planner keeps it
+    /// below the food floor; valued at nothing it was stored or sold in the
+    /// visit that bought it.
+    #[test]
+    fn a_carried_remove_hunger_scroll_is_kept_while_food_is_short() {
+        use crate::borg_town_capability::{Model, PACK};
+        let st = state(0, 1, 20);
+        let scroll = KitItem { joins_pack: false, need: -1, reduction: 0, weight: 5, sell_shop: 5, proceeds: 5, ..recall(Place::Pack) };
+        let kit = [scroll];
+        let floor = 5 * UNIT;
+        let model = |units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            // the food floor: a requirement linear up to five rations' nutrition
+            curves[1] = [1, 100 * floor, -(crate::borg_town_capability::RATION_NUTRITION * floor), units, 0];
+            Model { available: Vec::new(), packing: None, curves,
+                supplies: if units > 0 { vec![[PACK, 0, 1, units]] } else { Vec::new() } }
+        };
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(35 * UNIT));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Keep]);
+        // worth nothing (before #451): sold at once
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(0));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Sell]);
+    }
+
 }
