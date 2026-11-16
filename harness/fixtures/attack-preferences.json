@@ -1,7 +1,7 @@
 {
   "schema": "borg-reborn-rs/attack-preference-validation@1",
   "repository": "diegoami/borg-cemetery",
-  "commit": "2cae6023588917a2300cd1965f481ac5beac8d35",
+  "commit": "f2e4b38c3879915a7f93b012568d63db0854d758",
   "path": "validation/borg-reborn-rs/class-attack-preferences",
   "implementation_commit": "76d05952bc4004e0e662d26a41082d31d12205bf",
   "source_sha256": "3c0df6b9e0da84576d669fdcc48b0d350d995b9d5269b78cb050b1ea5337e276",

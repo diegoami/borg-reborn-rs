@@ -19,7 +19,10 @@
   vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
   weighted logging and trace-on/off equality pass; original Fang keys match.
   Source-qualified controls and the initial CI reconciliation failure are
-  retained in Cemetery2cae6023, class-attack-preferences/review-followup-424.
+  retained in Cemeteryf2e4b38c, class-attack-preferences/review-followup-424.
+  The second CI passed full engine behavior/reference checks; final original-
+  core reconciliation also needed the Druid seed1020 identity. Its independent
+  local control matches exactly; all86 archive packages verify before fresh CI.
   Pin that independently retained archive before fresh CI; never weaken the
   reconciliation check or relabel earlier source identities.
 - Required Rust checks and task CI gate integration into track-p. Preserve
