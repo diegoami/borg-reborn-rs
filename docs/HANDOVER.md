@@ -194,6 +194,22 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: plan phases become depth caps (`max-depth N`)
+
+- Owner: a phase should be an additional check, not forced behaviour.
+  New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
+  errand; the core plays as itself and is not prepared below DL N (the
+  phase sets `borg_no_deeper` to N+1, never above the configured value; a
+  `loop-levels` phase restores it). `loop-levels` remains for old files.
+- Both shipped plans rewritten: `loop-levels A B` -> `max-depth B` (new
+  hashes). The old ambitious loop file is kept as a test fixture for the
+  #421 regression.
+- The core's own cap lets a "spent too long, leaving" move step onto the
+  level below for one move and climb straight back; owner: not an issue.
+- Local, 90 classes-1800-small starts, town planner on, trip off:
+  deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
+  old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
+
 ## 2026-11-16: level-loop stair livelock (#421)
 
 - borg-zoo's 3x3 pilot and small tier found frozen-turn bursts with the

@@ -16,17 +16,17 @@ not the full candidate file:
 ```text
 [default]
   level <= 5
-    loop-levels 0 2
+    max-depth 2
   5 < level <= 10
-    loop-levels 0 4
+    max-depth 4
   10 < level <= 15
-    loop-levels 2 6
+    max-depth 6
 
 [mage]
   level <= 5
-    loop-levels 0 1
+    max-depth 1
   5 < level <= 10
-    loop-levels 0 2
+    max-depth 2
   10 < level <= 15
     loop-levels 1 3
 ```
@@ -42,7 +42,19 @@ omit compulsory town endpoints and retain core-requested town recovery;
 town frequency is an evaluation question, not an established optimum.
 These example depths are not calibrated recommendations or improvement claims.
 
-The POC has exactly **one errand: `loop-levels A B`**, reusing the existing
+A phase has one of two commands (owner, 2026-11-16).
+
+**`max-depth N`** is a cap, not a route, and the shipped plans use only it.
+The phase installs no errand: the core plays as itself, with its own dives,
+town trips, shopping and recovery, and is never prepared for a level below
+DL N. It sets the core's `borg_no_deeper` to N+1 for the phase, never above
+the configured value, and a `loop-levels` phase puts the configured value
+back. The core's own cap applies as usual: when it leaves a level by the
+nearest stair it may step onto the level below and climbs back at once
+("Needing to get back on correct depth"); it never stays there. N is 1–126.
+Town trips are the core's own, plus the M13 trip policy when it is on.
+
+**`loop-levels A B`** is the older forced route. The POC errand reuses the existing
 implementation, spelling and readiness policy. Zero is town. `ladder`, `trips`,
 `loop-level` aliases and other errands are rejected in this file. The command
 name must be exactly lowercase `loop-levels`, without a slash or colon. Both

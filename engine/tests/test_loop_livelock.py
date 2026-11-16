@@ -31,6 +31,8 @@ class LoopLivelockTest(unittest.TestCase):
         for name, value in SETTINGS.items():
             text, n = re.subn(rf'^{name} = .*$', f'{name} = {value}', text, flags=re.M)
             self.assertEqual(n, 1, name)
+        # The loop-levels form of errands_plan_ambitious.txt (sha256
+        # 9d7d8a39…, shipped until the plans became max-depth caps).
         text += '\nborg_plan = errands_plan_ambitious.txt\n'
         with tempfile.TemporaryDirectory(prefix='loop-livelock-') as tmp:
             out = Path(tmp)
@@ -38,7 +40,7 @@ class LoopLivelockTest(unittest.TestCase):
                 (out / d).mkdir()
             (out / 'user/borg.txt').write_text(text)
             (out / 'user/errands_plan_ambitious.txt').write_bytes(
-                (ROOT / 'harness/plans/errands_plan_ambitious.txt').read_bytes())
+                (ROOT / 'engine/tests/fixtures/loop-levels-ambitious-plan.txt').read_bytes())
             env = {k: v for k, v in os.environ.items()
                    if not k.startswith(('BORG_', 'BORGH_', 'ANGBAND_'))}
             env.update(TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')

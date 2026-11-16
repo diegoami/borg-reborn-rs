@@ -12,7 +12,7 @@ CLASSES=['warrior','mage','druid','priest','necromancer','paladin','rogue','rang
 
 
 def shipped_phases(name):
-    """{section: [(low, high, first, last)]} of a shipped plan. Strict on the
+    """{section: [(low, high, max_depth)]} of a shipped plan. Strict on the
     forms the shipped files use; anything else fails, and the native parser
     loads both files in ErrandsPlanTest (#352)."""
     import re
@@ -25,9 +25,9 @@ def shipped_phases(name):
         if m:
             a,b,c,d=m.groups()
             pending=(1,int(a)) if a else (int(b)+1,int(c)) if b else (int(d),int(d));continue
-        m=re.fullmatch(r'    loop-levels (\d+) (\d+)',raw)
+        m=re.fullmatch(r'    max-depth (\d+)',raw)
         if not (m and pending and section):raise ValueError(f'{name}: unexpected line {raw!r}')
-        sections[section].append((*pending,int(m[1]),int(m[2])));pending=None
+        sections[section].append((*pending,int(m[1])));pending=None
     return sections
 
 
@@ -48,7 +48,7 @@ class ShippedPlansTest(unittest.TestCase):
         for section in shipped:
             for level in range(1,50):
                 s,a=self.phase(shipped[section],level),self.phase(ambitious[section],level)
-                self.assertTrue(a[2]>=s[2] and a[3]>=s[3],(section,level,s,a))
+                self.assertGreaterEqual(a[2],s[2],(section,level,s,a))
 
 
 @unittest.skipUnless(GAME.is_file(),'harness/build.sh required')
@@ -116,7 +116,22 @@ class ErrandsPlanTest(unittest.TestCase):
         self.assertIn('no phase for warrior level 1',(out/'messages.log').read_text())
         r,out=self.run_poc('invalid','[mage]\n  level <= 5\n    ladder\n',cls=1)
         self.assertEqual(r.returncode,2)
-        self.assertIn('supports only loop-levels',(out/'console.log').read_text())
+        self.assertIn('a phase is max-depth N or loop-levels A B',(out/'console.log').read_text())
+    def test_max_depth_caps_the_core_without_an_errand(self):
+        # A max-depth phase installs no errand: the core plays as itself,
+        # and borg_prepared refuses every level below the cap.
+        r,out=self.run_poc('cap','[default]\n  level <= 50\n    max-depth 1\n',seed=1010,turns=30000)
+        self.assertEqual(r.returncode,0,r.stderr)
+        messages=(out/'messages.log').read_text()
+        self.assertIn('max-depth 1',[l for l in messages.splitlines() if '# Plan:' in l][0])
+        self.assertNotIn('# Errand:',messages)
+        # The core's own cap (borg_no_deeper): it may step onto the level
+        # below when it leaves a level by the nearest stair, and climbs back
+        # at once ("Needing to get back on correct depth"). It never stays.
+        import re
+        depths=[int(m[1]) for m in re.finditer(r' d(\d+)/',(out/'state.log').read_text())]
+        self.assertLess(sum(d>1 for d in depths),len(depths)/50,'time below the cap')
+        self.assertLessEqual(json.loads((out/'summary.json').read_text())['depth'],1)
     def run_measured(self,name,plan=None,core='borg-rs',turns=1000):
         env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
         if 'BORG_CEMETERY_DIR' in os.environ: env['BORG_CEMETERY_DIR']=os.environ['BORG_CEMETERY_DIR']
