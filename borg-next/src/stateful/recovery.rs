@@ -113,15 +113,15 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     let mut q = engine::randint0(100);
 
     // Half dead
-    if crate::View::new(st).character.curhp
-        < crate::View::new(st).character.maxhp / param(Param::recover_hurt_hp_divisor)
+    if crate::Read::new(st).character().curhp()
+        < crate::Read::new(st).character().maxhp() / param(Param::recover_hurt_hp_divisor)
     {
         q -= param(Param::recover_hurt_chance_bonus);
     }
 
     // Almost dead
-    if crate::View::new(st).character.curhp
-        < crate::View::new(st).character.maxhp / param(Param::recover_critical_hp_divisor)
+    if crate::Read::new(st).character().curhp()
+        < crate::Read::new(st).character().maxhp() / param(Param::recover_critical_hp_divisor)
     {
         q -= param(Param::recover_critical_chance_bonus);
     }
@@ -129,7 +129,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     /*** Use "cheap" cures ***/
 
     // Cure stun
-    if crate::View::new(st).status.isstun != 0
+    if crate::Read::new(st).status().isstun() != 0
         && q < param(Param::recover_cheap_stun_chance)
         && (borg_activate_item(st, st.act.cure_body)
             || borg_activate_item(st, st.act.cure_critical)
@@ -147,7 +147,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure stun
-    if crate::View::new(st).status.isheavystun != 0
+    if crate::Read::new(st).status().isheavystun() != 0
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_activate_item(st, st.act.cure_body)
             || borg_activate_item(st, st.act.cure_critical)
@@ -165,7 +165,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure cuts
-    if crate::View::new(st).status.iscut != 0
+    if crate::Read::new(st).status().iscut() != 0
         && q < param(Param::recover_cheap_cut_chance)
         && (borg_activate_item(st, st.act.cure_light)
             || borg_spell(st, MINOR_HEALING)
@@ -178,7 +178,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure poison
-    if crate::View::new(st).status.ispoisoned != 0
+    if crate::Read::new(st).status().ispoisoned() != 0
         && q < param(Param::recover_cheap_poison_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_activate_item(st, st.act.rem_fear_pois)
@@ -190,8 +190,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure fear
-    if crate::View::new(st).status.isafraid != 0
-        && crate::View::new(st).curses.crsfear == 0
+    if crate::Read::new(st).status().isafraid() != 0
+        && crate::Read::new(st).curses().crsfear() == 0
         && q < param(Param::recover_cheap_fear_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_activate_item(st, st.act.rem_fear_pois)
@@ -204,7 +204,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Satisfy hunger
-    if (crate::View::new(st).status.ishungry != 0 || crate::View::new(st).status.isweak != 0)
+    if (crate::Read::new(st).status().ishungry() != 0
+        || crate::Read::new(st).status().isweak() != 0)
         && q < param(Param::recover_cheap_hunger_chance)
         && (borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING))
     {
@@ -212,7 +213,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Hallucination
-    if crate::View::new(st).status.isimage != 0
+    if crate::Read::new(st).status().isimage() != 0
         && q < param(Param::recover_cheap_image_chance)
         && borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
     {
@@ -220,12 +221,12 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Heal damage
-    if crate::View::new(st).character.curhp
-        < crate::View::new(st).character.maxhp / param(Param::recover_cheap_heal_hp_divisor)
+    if crate::Read::new(st).character().curhp()
+        < crate::Read::new(st).character().maxhp() / param(Param::recover_cheap_heal_hp_divisor)
         && q < param(Param::recover_cheap_heal_chance)
         && p == 0
-        && crate::View::new(st).character.cursp
-            > crate::View::new(st).character.maxsp / param(Param::recover_cheap_heal_sp_divisor)
+        && crate::Read::new(st).character().cursp()
+            > crate::Read::new(st).character().maxsp() / param(Param::recover_cheap_heal_sp_divisor)
         && (borg_activate_item(st, st.act.heal1)
             || borg_activate_item(st, st.act.heal2)
             || borg_activate_item(st, st.act.heal3)
@@ -239,35 +240,35 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // cure experience loss with prayer
-    if crate::View::new(st).status.isfixexp != 0
+    if crate::Read::new(st).status().isfixexp() != 0
         && (borg_activate_item(st, st.act.restore_exp)
             || borg_activate_item(st, st.act.restore_st_lev)
             || borg_activate_item(st, st.act.restore_life)
             || borg_spell(st, REVITALIZE)
             || borg_spell(st, REMEMBRANCE)
-            || (crate::View::new(st).character.curhp > param(Param::recover_unholy_min_hp)
+            || (crate::Read::new(st).character().curhp() > param(Param::recover_unholy_min_hp)
                 && borg_spell(st, UNHOLY_REPRIEVE)))
     {
         return true;
     }
 
     // cure stat drain with prayer
-    if (crate::View::new(st).status.isfixstr != 0
-        || crate::View::new(st).status.isfixint != 0
-        || crate::View::new(st).status.isfixwis != 0
-        || crate::View::new(st).status.isfixdex != 0
-        || crate::View::new(st).status.isfixcon != 0
-        || crate::View::new(st).status.isfixall != 0)
+    if (crate::Read::new(st).status().isfixstr() != 0
+        || crate::Read::new(st).status().isfixint() != 0
+        || crate::Read::new(st).status().isfixwis() != 0
+        || crate::Read::new(st).status().isfixdex() != 0
+        || crate::Read::new(st).status().isfixcon() != 0
+        || crate::Read::new(st).status().isfixall() != 0)
         && (borg_spell(st, RESTORATION) || borg_spell(st, REVITALIZE))
     {
         return true;
     }
 
     // cure stat drain with prayer
-    if (crate::View::new(st).status.isfixstr != 0
-        || crate::View::new(st).status.isfixint != 0
-        || crate::View::new(st).status.isfixcon != 0)
-        && crate::View::new(st).character.curhp > param(Param::recover_unholy_min_hp)
+    if (crate::Read::new(st).status().isfixstr() != 0
+        || crate::Read::new(st).status().isfixint() != 0
+        || crate::Read::new(st).status().isfixcon() != 0)
+        && crate::Read::new(st).character().curhp() > param(Param::recover_unholy_min_hp)
         && borg_spell(st, UNHOLY_REPRIEVE)
     {
         return true;
@@ -277,7 +278,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure stun
     // (the HEAL1 and HEAL2 activations cure only cuts, not stun; patch 0134)
-    if crate::View::new(st).status.isstun != 0
+    if crate::Read::new(st).status().isstun() != 0
         && q < param(Param::recover_costly_stun_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
@@ -288,7 +289,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure heavy stun
-    if crate::View::new(st).status.isheavystun != 0
+    if crate::Read::new(st).status().isheavystun() != 0
         && q < param(Param::recover_costly_heavy_stun_chance)
         && (borg_quaff_crit(st, true)
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
@@ -299,7 +300,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure cuts
-    if crate::View::new(st).status.iscut != 0
+    if crate::Read::new(st).status().iscut() != 0
         && q < param(Param::recover_costly_cut_chance)
         && (borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
@@ -308,14 +309,14 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             || borg_activate_item(st, st.act.heal2)
             || borg_quaff_crit(
                 st,
-                crate::View::new(st).character.curhp < param(Param::recover_critical_ccw_hp),
+                crate::Read::new(st).character().curhp() < param(Param::recover_critical_ccw_hp),
             ))
     {
         return true;
     }
 
     // Cure poison
-    if crate::View::new(st).status.ispoisoned != 0
+    if crate::Read::new(st).status().ispoisoned() != 0
         && q < param(Param::recover_costly_poison_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_poison)
@@ -323,7 +324,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             || borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_quaff_crit(
                 st,
-                crate::View::new(st).character.curhp < param(Param::recover_critical_ccw_hp),
+                crate::Read::new(st).character().curhp() < param(Param::recover_critical_ccw_hp),
             )
             || borg_use_staff_fail(st, st.item_val.sv_staff_curing)
             || borg_zap_rod(st, st.item_val.sv_rod_curing)
@@ -335,7 +336,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Cure blindness
     // (Waybread cures only poison, so it is not tried here; patch 0134)
-    if crate::View::new(st).status.isblind != 0
+    if crate::Read::new(st).status().isblind() != 0
         && q < param(Param::recover_costly_blind_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_fast_recovery)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
@@ -348,7 +349,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure confusion
-    if crate::View::new(st).status.isconfused != 0
+    if crate::Read::new(st).status().isconfused() != 0
         && q < param(Param::recover_costly_confusion_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
@@ -361,8 +362,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Cure fear
-    if crate::View::new(st).status.isafraid != 0
-        && crate::View::new(st).curses.crsfear == 0
+    if crate::Read::new(st).status().isafraid() != 0
+        && crate::Read::new(st).curses().crsfear() == 0
         && q < param(Param::recover_costly_fear_chance)
         && (borg_eat(st, TV_MUSHROOM as i32, st.item_val.sv_mush_cure_mind)
             || borg_quaff_potion(st, st.item_val.sv_potion_boldness)
@@ -374,7 +375,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Satisfy hunger
-    if (crate::View::new(st).status.ishungry != 0 || crate::View::new(st).status.isweak != 0)
+    if (crate::Read::new(st).status().ishungry() != 0
+        || crate::Read::new(st).status().isweak() != 0)
         && q < param(Param::recover_costly_hunger_chance)
         && (borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
             || borg_activate_item(st, st.act.satisfy))
@@ -383,8 +385,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Heal damage
-    if crate::View::new(st).character.curhp
-        < crate::View::new(st).character.maxhp / param(Param::recover_costly_heal_hp_divisor)
+    if crate::Read::new(st).character().curhp()
+        < crate::Read::new(st).character().maxhp() / param(Param::recover_costly_heal_hp_divisor)
         && q < param(Param::recover_costly_heal_chance)
         && (borg_zap_rod(st, st.item_val.sv_rod_healing)
             || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
@@ -404,10 +406,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         // Mages can cast the recharge spell
 
         // Rest until at least one recharges
-        && crate::View::new(st).status.isweak == 0
-        && crate::View::new(st).status.iscut == 0
-        && crate::View::new(st).status.ishungry == 0
-        && crate::View::new(st).status.ispoisoned == 0
+        && crate::Read::new(st).status().isweak() == 0
+        && crate::Read::new(st).status().iscut() == 0
+        && crate::Read::new(st).status().ishungry() == 0
+        && crate::Read::new(st).status().ispoisoned() == 0
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
     {
@@ -432,25 +434,25 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     /*** Just Rest ***/
 
     // Rest until healed
-    let sp_tenths = if crate::View::new(st).character.cdepth > param(Param::recover_rest_high_depth)
-    {
-        param(Param::recover_rest_high_sp_tenths)
-    } else {
-        param(Param::recover_rest_sp_tenths)
-    };
-    if crate::View::new(st).status.isblind == 0
-        && crate::View::new(st).status.ispoisoned == 0
-        && crate::View::new(st).status.iscut == 0
-        && crate::View::new(st).status.isweak == 0
-        && crate::View::new(st).status.ishungry == 0
-        && (crate::View::new(st).status.isconfused != 0
-            || crate::View::new(st).status.isimage != 0
-            || crate::View::new(st).status.isafraid != 0
-            || crate::View::new(st).status.isstun != 0
-            || crate::View::new(st).status.isheavystun != 0
-            || crate::View::new(st).character.curhp < crate::View::new(st).character.maxhp
-            || crate::View::new(st).character.cursp
-                < crate::View::new(st).character.maxsp * sp_tenths / 10)
+    let sp_tenths =
+        if crate::Read::new(st).character().cdepth() > param(Param::recover_rest_high_depth) {
+            param(Param::recover_rest_high_sp_tenths)
+        } else {
+            param(Param::recover_rest_sp_tenths)
+        };
+    if crate::Read::new(st).status().isblind() == 0
+        && crate::Read::new(st).status().ispoisoned() == 0
+        && crate::Read::new(st).status().iscut() == 0
+        && crate::Read::new(st).status().isweak() == 0
+        && crate::Read::new(st).status().ishungry() == 0
+        && (crate::Read::new(st).status().isconfused() != 0
+            || crate::Read::new(st).status().isimage() != 0
+            || crate::Read::new(st).status().isafraid() != 0
+            || crate::Read::new(st).status().isstun() != 0
+            || crate::Read::new(st).status().isheavystun() != 0
+            || crate::Read::new(st).character().curhp() < crate::Read::new(st).character().maxhp()
+            || crate::Read::new(st).character().cursp()
+                < crate::Read::new(st).character().maxsp() * sp_tenths / 10)
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !st.borg.mon.scary
         && p <= i32::from(
@@ -480,18 +482,20 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // Hack to recharge mana if a low level mage or priest
-    if crate::View::new(st).character.maxsp != 0
-        && (crate::View::new(st).character.clevel <= param(Param::recover_mana_rest_max_level)
-            || crate::View::new(st).character.cdepth >= param(Param::recover_mana_rest_deep_depth))
-        && crate::View::new(st).character.cursp
-            < crate::View::new(st).character.maxsp * param(Param::recover_mana_rest_sp_tenths) / 10
+    if crate::Read::new(st).character().maxsp() != 0
+        && (crate::Read::new(st).character().clevel() <= param(Param::recover_mana_rest_max_level)
+            || crate::Read::new(st).character().cdepth()
+                >= param(Param::recover_mana_rest_deep_depth))
+        && crate::Read::new(st).character().cursp()
+            < crate::Read::new(st).character().maxsp() * param(Param::recover_mana_rest_sp_tenths)
+                / 10
         && p < i32::from(st.borg.avoidance) / param(Param::recover_mana_rest_danger_divisor)
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
-        && crate::View::new(st).status.isweak == 0
-        && crate::View::new(st).status.iscut == 0
-        && crate::View::new(st).status.ishungry == 0
-        && crate::View::new(st).status.ispoisoned == 0
-        && crate::View::new(st).food.food > param(Param::recover_mana_rest_min_food)
+        && crate::Read::new(st).status().isweak() == 0
+        && crate::Read::new(st).status().iscut() == 0
+        && crate::Read::new(st).status().ishungry() == 0
+        && crate::Read::new(st).status().ispoisoned() == 0
+        && crate::Read::new(st).food().food() > param(Param::recover_mana_rest_min_food)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 

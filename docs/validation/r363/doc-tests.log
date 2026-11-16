@@ -1,0 +1,17 @@
+   Compiling serde_core v1.0.229
+   Compiling zmij v1.0.23
+   Compiling itoa v1.0.19
+   Compiling memchr v2.8.3
+   Compiling libc v0.2.191
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.154
+   Compiling borg-core v0.1.0 (/workspace/work/r3-borrowed-access/borg-core)
+   Compiling borg-next v0.1.0 (/workspace/work/r3-borrowed-access/borg-next)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.81s
+   Doc-tests borg_next
+
+running 1 test
+test borg-next/src/lib.rs - Read (line 14) - compile fail ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+

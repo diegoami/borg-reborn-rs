@@ -75,7 +75,7 @@ def inspect(text, port=False, dispatch=False):
         if re.search(r'\buse\s+borg_rs\s*::\s*(?:memory|threat_facts|decision_tape|decisions)\s*;', code):
             errors.append('policy may not import a dependency namespace')
         for match in re.finditer(r'\bcrate\s*::\s*(\w+)', code):
-            if match[1] != 'View':
+            if match[1] != 'Read':
                 errors.append(f'unrecorded local namespace crate::{match[1]}')
     else:
         errors = []

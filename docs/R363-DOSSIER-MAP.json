@@ -1,0 +1,221 @@
+{
+  "schema": "borg-reborn-rs/r363-dossier-map@1",
+  "allocation": "Final numeric IDs belong to central borg-cemetery acceptance. Before a registry commit, provisional source IDs are scoped by the exact local artifact inventory above. Build-source commits are not containing-registry commits.",
+  "parent_registry_snapshot": {
+    "repository": "diegoami/borg-reborn-rs",
+    "commit": "45fa2abd353604040002918afdf2fdf18c75cfa7",
+    "map": "docs/R343-DOSSIER-MAP.json"
+  },
+  "packages": [
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0001-rust-seed1011",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0001-rust-seed1011",
+      "qualified_path": "docs/deaths/D0000-qdd0c77e0516bfebebb9d4b5f319a2ddb7fe943c0e4e3062554724a00a44330f6",
+      "original_record_sha256": "f3a79b6fe828f59e7dd03b10afccc81237cf4ffa2c6aaf009c88a0c8ce29109f",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0002-rust-seed1020",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0002-rust-seed1020",
+      "qualified_path": "docs/deaths/D0000-q867edfe65a21592082bddf830be6fd3acb9787f4a0df397f63163d8df3475d8a",
+      "original_record_sha256": "f9beb3a9c5c79ede5e8f820ab0d28635555f02dc89fe2b75c7b67c3751696c0b",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0003-rust-seed1021",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0003-rust-seed1021",
+      "qualified_path": "docs/deaths/D0000-q790e925ef30315c8ed9d6e00bb1c777b510f9f8eb6fd98919ec2be775642b797",
+      "original_record_sha256": "8dd7847d578ca086b51628c4e576a79c6db2ca62bc9a5829022516fa4b12223e",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0004-rust-seed1023",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0004-rust-seed1023",
+      "qualified_path": "docs/deaths/D0000-q966e142984b9261ee99284fb5f813da84399523777c29626b0a5245be80396cc",
+      "original_record_sha256": "489c7b5b37d035cc65b5762eae92d04a7a8916ff674892b67f8ca50a8217a19c",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0005-rust-seed1022",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0005-rust-seed1022",
+      "qualified_path": "docs/deaths/D0000-q35d55bd8da14733de35da95b65c9aae0777d7882a726ec952d831366ef7a2866",
+      "original_record_sha256": "6475e62b1e11192d55f27d00f131887cbdc6c4145ee2ce86276081e5f6133383",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0006-rust-seed1043",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0006-rust-seed1043",
+      "qualified_path": "docs/deaths/D0000-q2e083826fbe58ee497deae2f01c4da5ac969d550d8c12f9d97e19c3991e76b44",
+      "original_record_sha256": "d7f5d5b6b12d080a2079005e4c8f9f5ce3f10d0bf87c253ce0ff256cd3700e34",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0007-rust-seed1050",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0007-rust-seed1050",
+      "qualified_path": "docs/deaths/D0000-q86e395600fe2dc8a88978b86c818ad834cbac58570880cfb74bf4748b8d32811",
+      "original_record_sha256": "30965a5c215a90e8096f8f8257bab6049eb8896d7a7934923dcb55053e13bc65",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0008-rust-seed1062",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0008-rust-seed1062",
+      "qualified_path": "docs/deaths/D0000-q3aa158e9855899d8e7a36e5ef3423295525b45b5f1221f468eaa770efbbf7810",
+      "original_record_sha256": "8092eeb6d1661867dcf2145948ee5ef96a701e87a8226f623acc684612e7f51b",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0009-rust-seed1072",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0009-rust-seed1072",
+      "qualified_path": "docs/deaths/D0000-qa9e42d43fe5740c0d96abfedae383a97e7a64ae8b4d295503821fe7028a342c8",
+      "original_record_sha256": "f4ce88639db2ed08ef5210d37a885c69618ecdd07de2790f8be254f1bd3873a4",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0010-rust-seed1074",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0010-rust-seed1074",
+      "qualified_path": "docs/deaths/D0000-q22040ef3123dba8bff30b4f77e08c81fb293a2e482270db52fd39dc0509a2838",
+      "original_record_sha256": "7535a4ae63dc454bf2c4c7613bb373eded4cb457ee9daed57f19d451c9a81484",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0011-rust-seed1073",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0011-rust-seed1073",
+      "qualified_path": "docs/deaths/D0000-q49f66363d284ace7e4a6c9002b93476cb64bb9472f8a269318f824c7af6756a3",
+      "original_record_sha256": "ec9c24295f39fe1dd61413c4c9ab877d9500e480600272c053b150614eeca0d8",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/receiver-deaths",
+        "packet_inventory_sha256": "f227a5b27808ce980885279644451916612ef932bf30f3a65101277a71f3cce9"
+      },
+      "source_path": "/workspace/work/r363-evidence/receiver-deaths/D0012-rust-seed1084",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0012-rust-seed1084",
+      "qualified_path": "docs/deaths/D0000-qbc0fc22d5932198e0811fcc2103d4e7e38ad649cd4b59aa6c9f993d0714f0bf5",
+      "original_record_sha256": "f69efed1d44b9e85b376545fdb63f6d8bfaaff85f0c10f03beaf673bda0068ff",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/extra-deaths",
+        "packet_inventory_sha256": "966fdb89377fdb3bea0457bdcbceb10f1c8fa0c3d9de5f0d5222405261e7043d"
+      },
+      "source_path": "/workspace/work/r363-evidence/extra-deaths/D0001-rust-seed102",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0001-rust-seed102",
+      "qualified_path": "docs/deaths/D0000-q290049b41826b42e9773e2f3ae96b9eb303a75beee402c1be58bc5f2ce56b07a",
+      "original_record_sha256": "f15f4a1d9dece351d917233adae002a909cfa5758899d12ac993c6d6cd086c64",
+      "canonical_numeric_id": null
+    },
+    {
+      "source_namespace": {
+        "kind": "local-validation-artifact",
+        "root": "/workspace/work/r363-evidence/extra-deaths",
+        "packet_inventory_sha256": "966fdb89377fdb3bea0457bdcbceb10f1c8fa0c3d9de5f0d5222405261e7043d"
+      },
+      "source_path": "/workspace/work/r363-evidence/extra-deaths/D0002-rust-seed1020",
+      "source_repository": "diegoami/borg-reborn-rs",
+      "build_source_commit": "9dc8ff9cf7ff48b8806e130130c0aaeb6f80951f",
+      "runtime_input_hash": "3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829",
+      "original_provisional_id": "D0002-rust-seed1020",
+      "qualified_path": "docs/deaths/D0000-q8ec722c809ee99972ebc3c34703fdbf17ce82f9afb678555cb8563f8d1fa1f1b",
+      "original_record_sha256": "d1897ba067b96ba0645278850f99983373963461316f680b836315b772d233de",
+      "canonical_numeric_id": null
+    }
+  ]
+}

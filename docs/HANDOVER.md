@@ -2,6 +2,34 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: borrowed stateful access #363 (local gates pass, CI pending)
+
+- #357/#343 merged green into feature/track-r at a4e7ae3d; #343/#264 closed.
+  No main/global-reviewed promotion. #367 waits for final CI and merge.
+- Runtime input 3734726bb0f4dd8d3cf5717b3b86768df4debac1d9b0567403877b4a48225829,
+  code/build 9dc8ff9c, both dirty flags false. Snapshots and one-pointer Read
+  groups share one declaration. 373 reads migrate in place; full source and
+  quoted-literal audits preserve expression order/literals. Danger keeps View.
+- Off/check/switch each match all 45 M13 donor games. Each shadow mode:
+  261,953,840 comparisons, zero mismatches, all 11 public entries. Strict rare
+  teleport seed/flag/cap unchanged. Native smoke all modes 3/3; original smoke
+  reference 3/3; four real native nested callbacks per mode with equal streams.
+- 177 workspace tests, compile-fail/direct E0502 lifetime controls; 335 core
+  (four ignored), 34 source-tool, Clippy/vendor/import gates pass. Engine:
+  68 checks, two local optional skips; pinned profile contract required.
+  All 38 natural run deaths reconcile (36 full repeats of 12 identities,
+  two original); 14 qualified packages, archive 2,683. Artifact/build/registry
+  commit roles are explicit in R363-DOSSIER-MAP.json. No speed/population claim.
+- Local GH_TOKEN expired after M13 merged; connected GitHub app still works.
+  Publish final staged tree via the connected app if CLI access remains down,
+  wait for all CI, ready/merge #367 into feature/track-r and close #363.
+- Continue #364 in /workspace/work/r3-attack-port: seven public attack entries
+  wired to typed transactions/pure comparisons, pointer-free metadata and
+  output-parameter/effect adapters; @2 telemetry/consumer #339 and cached-mode
+  diagnostics #340 included. Unit/source checks in progress; no attack game
+  acceptance yet. #365 and #366 follow; owner selects the milestone reviewer.
+
+
 ## 2026-11-15: R3 M13 carry #343 (local gates passed, final CI pending)
 
 - #357 targets feature/track-r only. #334 recovery merged via #353/a68959c5.
