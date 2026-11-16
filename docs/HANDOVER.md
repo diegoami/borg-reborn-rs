@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: synchronize concurrent Track P diagnostic follow-up (#421)
+
+- Track-p advanced to50c92ba0 through #426 while #430 was validating.
+  Preserve the winning-raw/weighted diagnostic note and completed status.
+  The stair fix itself is unchanged. Retain both handover histories and
+  both fixture lineage descriptions. Earlier trials remain sourced012f3af.
+- Refresh the combined source-qualified controls and native weighted record,
+  verify representative neutral play/constructed regression and required CI
+  before integrating into track-p. No main promotion is implied.
+
 ## 2026-11-16: owner-requested stair-livelock investigation (#421)
 
 - Start from track-p0edee14b and preserve its pending preference work.
@@ -31,6 +41,35 @@
   only that independent evidence pin and rerun required CI.
 - Target task PR at track-p. Green CI allows task integration there; no
   unreviewed preference or stair-fix promotion to main is implied.
+## 2026-11-16: attack preference review follow-up (#424)
+
+- #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
+  review of 3f744ddb found no correctness bugs or blocking findings.
+- Owner requested the suggested small follow-up (findings 1 and 6). Retain
+  the winning simulation's raw utility for the diagnostic note. When it
+  differs from the weighted utility, label both; otherwise preserve the
+  existing note exactly, including at all default weights. No helper is
+  rerun, and ranking, execution, RNG and parameter values are unchanged.
+- Correct PLAN.md's stale task status. Other minor review observations
+  remain nonblocking; invocation-family weighting includes emergency and
+  control actions as documented. Any non-neutral tuning needs that scope
+  considered explicitly; no default tuning is proposed here.
+- Local formatting/Clippy,165 workspace tests,336 core tests/four ignores and
+  vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
+  weighted logging and trace-on/off equality pass; original Fang keys match.
+  Source-qualified controls and the initial CI reconciliation failure are
+  retained in Cemeteryf2e4b38c, class-attack-preferences/review-followup-424.
+  The second CI passed full engine behavior/reference checks; final original-
+  core reconciliation also needed the Druid seed1020 identity. Its independent
+  local control matches exactly; all86 archive packages verify before fresh CI.
+  Pin that independently retained archive before fresh CI; never weaken the
+  reconciliation check or relabel earlier source identities.
+- Required Rust checks and task CI gate integration into track-p. Preserve
+  the original review pin; update #407 to the integrated follow-up pin after
+  green CI. Main promotion still requires owner acceptance and delegation;
+  R carry #406 remains gated on accepted promotion.
+- Read-only source refresh ran; missing moving-source clones and unresolved
+  origin/HEAD refs prevent a complete upstream report. No source pins move.
 
 ## 2026-11-16: preference task synchronization with recorder review (#403)
 
