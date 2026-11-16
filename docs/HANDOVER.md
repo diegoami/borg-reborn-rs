@@ -4,7 +4,7 @@
 
 ## 2026-11-16: generated-depth synthetic startup (#371)
 
-- Owner-directed capability on `task/371-synthetic-start`, stacked on the
+- Owner-directed capability on `task/371-synthetic-start-review` (PR #386), stacked on the
   dedicated cemetery pin PR #377 (cemetery PR #6). Leave these changes open
   for the owner's selected review; no milestone acceptance or merge claimed.
 - `start-depth=N` / raw `-start-depth N` starts a normal birth kit in an
@@ -35,6 +35,17 @@
   option restored before activation. Tests require actual play, not exit 0.
   A first ordinary suite completed its games but failed finalization because
   local `bc` was missing; after installing it locally, the full suite/diff pass.
+- Runtime implementation/clean build: `b336a147b204daf03563dbb317326607838a239e`,
+  source `0c8eed7ed9dbe4a5767d905663f3c08f4deb0387f0acba5a56a23a547085efaf`.
+  Review packet: docs/reviews/371-SYNTHETIC-START.md and its evidence JSON.
+  Three ordinary source-specific controls are imported immutably; all 2,556
+  historical packages verify and controls reconcile. Exact smoke also matches
+  3/3; ordinary extra-load compatibility passes. Initial CI correctly flagged
+  the missing core control dossier before this evidence commit.
+- A concurrent independent implementation occupied the originally chosen remote
+  branch (PR #378). It was not overwritten. This implementation moved to
+  `task/371-synthetic-start-review`; accidental duplicate PR #385 was closed.
+  Review #386 and its pins, not the independent #378 implementation.
 - Follow-ups #382 (run-derived build records and exact hash) and #383
   (near-death facts / optional null-move diagnostics) preserve the rest of the
   owner's #371 decisions. No arbitrary wizard kit, hidden observations,
