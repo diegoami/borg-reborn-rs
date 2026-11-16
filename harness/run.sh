@@ -44,11 +44,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 IMPL="${BORG_IMPL:-rust}"
 SAVE_ROOT="${SAVE_ROOT:-$ROOT/harness/saves}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-0}"
-BORGH_STATE_LOG_MODE="${BORGH_STATE_LOG_MODE:-full}"
-case "$BORGH_STATE_LOG_MODE" in
-    full|off) ;;
-    *) echo 'run.sh: BORGH_STATE_LOG_MODE must be full or off' >&2; exit 2;;
-esac
 [[ "$CHECKPOINT_EVERY" =~ ^(0|[1-9][0-9]{0,8}|1000000000)$ ]] || {
     echo "run.sh: CHECKPOINT_EVERY must be 0..1000000000" >&2; exit 2; }
 BIN="${ANGBAND_BIN:-$ROOT/build/$IMPL/game/angband}"
@@ -241,7 +236,6 @@ fi
         echo "profile_sha256=$(sha256sum < "$PROFILE" | cut -d' ' -f1)"
     fi
     if [ "$CHECKPOINT_EVERY" != 0 ]; then echo "checkpoint_every=$CHECKPOINT_EVERY"; fi
-    if [ "$BORGH_STATE_LOG_MODE" != full ]; then echo "state_log_mode=$BORGH_STATE_LOG_MODE"; fi
     # The settings the environment gives the Borg (docs/ERRANDS.md): they
     # change play, so the record says them, and tools/rerun-death.py sets
     # them again (review #227, finding 8). Only those set, empty ones too
@@ -263,15 +257,13 @@ if [ -n "${BORGH_DATA_ROOT:-}" ]; then
     DATA_ARGS=(-dgamedata="$BORGH_DATA_ROOT/gamedata" -dpref="$BORGH_DATA_ROOT/customize" -dhelp="$BORGH_DATA_ROOT/help" -dscreens="$BORGH_DATA_ROOT/screens")
 fi
 set +e
-STATE_LOG_ARGS=()
-[ "$BORGH_STATE_LOG_MODE" != full ] || STATE_LOG_ARGS=(-statelog "$OUT/state.log")
 TZ=UTC LANG=C.UTF-8 LC_ALL=C.UTF-8 python3 "$ROOT/harness/supervise.py" \
     --receipt "$OUT/process.json" --diagnostics "$OUT" --timeout "${RUN_TIMEOUT_SECONDS:-0}" --stall-timeout "${STALL_TIMEOUT_SECONDS:-0}" -- \
     "$BIN" -mborgh "${BIRTH_ARGS[@]}" -uBorg \
     -duser="$OUT/user" -dsave="$OUT/save" -darchive="$OUT/archive" \
     -dpanic="$OUT/panic" -dscores="$OUT/scores" "${DATA_ARGS[@]}" -- \
     -seed "$SEED" -race "$RACE" -class "$CLASS" -turns "$TURNS" \
-    -keylog "$OUT/keys.log" -msglog "$OUT/messages.log" "${STATE_LOG_ARGS[@]}" \
+    -keylog "$OUT/keys.log" -msglog "$OUT/messages.log" -statelog "$OUT/state.log" \
     -summary "$OUT/summary.json" -screen "${BORGH_FLAGS[@]}" "${EXTRA[@]}" \
     2>"$OUT/stderr.log"
 RC=$?

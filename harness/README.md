@@ -201,11 +201,3 @@ replay format. It performs no extra engine reads, does not alter decisions/RNG,
 and a write failure disables only the diagnostic. Full `BORG_OBSERVATION_LOG`
 remains unchanged. This supports bounded Cemetery incident harvesting; it is
 not required to reproduce a death from seed/build/configuration.
-
-For bulk preparation, `BORGH_STATE_LOG_MODE=off` explicitly omits the expensive
-per-key state fingerprint stream; default `full` is unchanged. The run config
-records `state_log_mode=off`, and the native exporter records only the streams
-actually present. Keys/messages, native process/build/death receipts and the
-optional per-think encounter projection remain available. Do not claim
-three-stream reproduction for an off-mode run; qualify the actual retained
-streams and endpoint. This diagnostic choice does not change game decisions.
