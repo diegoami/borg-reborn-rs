@@ -197,6 +197,52 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
     n
 }
 
+/// borg-reborn-rs (#457): the outmatched-healing test, apart from the
+/// engine so it can be unit tested. True when the flag is on, the Borg is
+/// hurt by at least `min_loss` percent of its maximum HP, and the danger
+/// estimate reaches its current HP (so the ordinary `borg_heal` tiers, which
+/// need `danger < curhp + heal`, cannot have fired).
+fn outmatched_heal_applies(
+    enabled: i32,
+    curhp: i32,
+    maxhp: i32,
+    danger: i32,
+    min_loss: i32,
+) -> bool {
+    enabled != 0
+        && maxhp > 0
+        && curhp < maxhp
+        && (maxhp - curhp) * 100 / maxhp >= min_loss
+        && danger >= curhp
+}
+
+/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
+/// at the end of `borg_caution`, after every escape, stair, retreat and
+/// back-away option declined, a hurt Borg whose danger estimate reaches its
+/// HP drinks the weakest cure potion it holds (CLW, CSW, CCW) instead of
+/// attacking, even if the potion cannot "cover" the danger. The danger
+/// estimate is a pessimistic worst case; the potion buys a turn.
+/// Off (`caution_heal_when_outmatched` = 0) it does nothing.
+fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if !outmatched_heal_applies(
+        p(Param::caution_heal_when_outmatched),
+        st.borg.tr(BI_CURHP),
+        st.borg.tr(BI_MAXHP),
+        danger,
+        p(Param::caution_heal_outmatched_min_loss),
+    ) {
+        return false;
+    }
+    if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+    {
+        borg_note(st, "# Healing (outmatched).");
+        return true;
+    }
+    false
+}
+
 /// Try healing.
 ///
 /// This function tries to heal the borg before trying to flee.
@@ -2084,6 +2130,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#457): outmatched, nothing above took a turn. Heal
+    // rather than fall through to borg_attack.
+    if borg_heal_outmatched(st, pos_danger) {
+        return true;
+    }
+
     // Nothing
     false
 }
@@ -2210,4 +2262,38 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod outmatched_tests {
+    use super::*;
+
+    #[test]
+    fn outmatched_heal_needs_the_flag() {
+        // 29 max HP, 10 HP left, danger 40: the Gnome Druid of #457.
+        assert!(!outmatched_heal_applies(0, 10, 29, 40, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 40, 50));
+    }
+
+    #[test]
+    fn outmatched_heal_needs_a_hurt_borg_in_lethal_danger() {
+        // not hurt enough: 15/29 is 48% down, below the 50% threshold
+        assert!(!outmatched_heal_applies(1, 15, 29, 40, 50));
+        // 14/29 is 51% down
+        assert!(outmatched_heal_applies(1, 14, 29, 40, 50));
+        // danger below current HP: the ordinary tiers decide
+        assert!(!outmatched_heal_applies(1, 10, 29, 9, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 10, 50));
+        // unhurt (even with a zero threshold) and a degenerate maximum
+        assert!(!outmatched_heal_applies(1, 29, 29, 40, 0));
+        assert!(!outmatched_heal_applies(1, 0, 0, 40, 0));
+    }
+
+    #[test]
+    fn outmatched_heal_is_off_by_default() {
+        let spec = |name| crate::params::SPECS.iter().find(|s| s.name == name).unwrap();
+        let flag = spec("caution_heal_when_outmatched");
+        assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
+        assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
 }
