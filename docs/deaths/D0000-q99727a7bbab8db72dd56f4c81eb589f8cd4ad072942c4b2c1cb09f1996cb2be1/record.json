@@ -1,0 +1,55 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p341-validation/donor-full/full-7-ranger-3",
+      "raw_sha256": {
+        "keys.log": "6301337fe0b0b2b9c8566e425b1bd29db67809ef17688ab786151cd7c1a89555",
+        "messages.log": "85e3d7dc696f47786af5487551e1598fe900fbea194543d18fa7acc3999568db",
+        "state.log": "6949a36c95e5c39386c550a1472829e00e8eb8ea711ccc7e3977ed28a7178964"
+      },
+      "result_sha256": "6301337fe0b0b2b9c8566e425b1bd29db67809ef17688ab786151cd7c1a89555",
+      "role": "original",
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea"
+    }
+  ],
+  "character": "Kobold Ranger",
+  "core_decision_trace": null,
+  "decision_trace": null,
+  "encounter_family": "start-a8b506bb829f1e4c94adbb8bfda4e5deaef85876dcbb69235ef7e70759d449df",
+  "files_sha256": {
+    "build.json": "7bae72f640b60517c914d11487d0a5a70070f032411f9dc32505415843ed818d",
+    "config.txt": "c8783666297ef12de5e9c358be7d7b2f9c453f3681b09e3a47748d0c9226535e",
+    "summary.json": "0e16b8978efe4e72ebc982923e45fc4d6faa3a288985124f9d1e747e3118dda5"
+  },
+  "id": "D0000-q99727a7bbab8db72dd56f4c81eb589f8cd4ad072942c4b2c1cb09f1996cb2be1",
+  "identity": {
+    "binary_sha256": "ff38fcd4a687ce3ed47c69cc1cf0bfbc6ac47d00010d5a9026b7212a18065c31",
+    "borg_txt_sha256": "3d8bb2c9c3efe032ae021976fc30ebc58bad6e8e1cbb911b6d03ef91277a3fdb",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": null,
+    "seed": 1073,
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a gallant",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a gallant",
+    "class_idx": 7,
+    "dead": true,
+    "depth": 7,
+    "level": 4,
+    "max_depth": 7,
+    "race_idx": 10,
+    "turn": 94857
+  }
+}
