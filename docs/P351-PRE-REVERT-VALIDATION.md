@@ -1,3 +1,10 @@
+# Historical pre-revert comparison
+
+This receipt preserves the completed first comparison from before the
+concurrent owner-directed #373/#379 revert. It is not the final current-base
+validation. Actual binaries are frozen and mapped in
+P351-PRE-REVERT-FROZEN-BUILDS.json; original metadata and recordings remain.
+
 # Recorder v0.2.0 consumer adoption (#351)
 
 Adopt exact release tag `v0.2.0`, commit
@@ -30,7 +37,7 @@ match byte for byte in keys, messages and states. Deterministic summaries
 match with wall time excluded. Effective borg.txt files match, and the
 candidate has 241,403 contiguous classified trace rows. Original smoke
 matches all three references; the seed 1020 death control completes.
-P351-VALIDATION.json records exact suite hashes, command/environment receipts,
+P351-PRE-REVERT-VALIDATION.json records exact suite hashes, command/environment receipts,
 per-side/per-case log/config/parameter/trace hashes and original summaries.
 
 ## Native recorder and required checks
@@ -72,7 +79,7 @@ extended loaded-save check passes in a fresh output directory.
 
 Retain 28 new provenance packages: 13 baseline and 15 candidate natural
 deaths. Original record bytes and every payload byte were compared after
-qualification. P351-DOSSIER-MAP.json records both lineages and actual builds.
+qualification. P351-PRE-REVERT-DOSSIER-MAP.json records both lineages and actual builds.
 Both registries reconcile with none missing or unrecorded. All 2,606 archive
 packages verify. Distinct-start/attempt aggregates change from 2,562/2,565
 to 2,589/2,592 (+27): one baseline result was already retained. Package

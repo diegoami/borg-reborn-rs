@@ -1,0 +1,22 @@
+[
+  {
+    "side": "baseline",
+    "original_path": "/workspace/work/p351-baseline/build/rust/game/angband",
+    "frozen_path": "/workspace/work/p351-pre-revert-baseline.angband",
+    "sha256": "50f10942b807d7d6f5762e475db086f96cf5bce44ba16f279bf7a78dc323f0a4",
+    "build_id_path": "/workspace/work/p351-pre-revert-baseline.BUILD_ID"
+  },
+  {
+    "side": "candidate",
+    "original_path": "/workspace/work/p351/build/rust/game/angband",
+    "frozen_path": "/workspace/work/p351-pre-revert-candidate.angband",
+    "sha256": "95f4d61e223a91215585efbbfded9b98cb91052c59aa2fdce92c40da849db82b",
+    "build_id_path": "/workspace/work/p351-pre-revert-candidate.BUILD_ID"
+  },
+  {
+    "side": "recorder",
+    "original_path": "/workspace/work/p351/build/recorder/game/angband",
+    "frozen_path": "/workspace/work/p351-pre-revert-recorder.angband",
+    "sha256": "bfabe0efdfcbb03ea65fc9ba9a329843dd123ba604bb4591de55c754c2dd13aa"
+  }
+]

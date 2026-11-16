@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: recorder task current-base synchronization (#351)
+
+- Track-p advanced to 79ec0591 during recorder work, including the owner-
+  directed #373/#379 policy revert and #358/#359 importer fixes. Preserve
+  that source and both histories. Only this handover conflicts. Keep
+  #395's review head fixed; #393 remains a separate draft.
+- Preserve the first completed comparison as pre-revert proof under
+  P351-PRE-REVERT-* and freeze its actual three executable images. Do not
+  relabel its #355-era policy or overwrite recordings/build identities.
+- Refresh baseline and candidate on the new source. Current-base native,
+  play and archive checks are pending before a new CI pass. V2 pin/consumer
+  hook changes remain confined to the task branch during the active review.
+
 ## 2026-11-16: recorder v0.2.0 consumer adoption (#351)
 
 - #372 is already owner-promoted; continue on task/P351-recorder-v020.
@@ -23,6 +36,54 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: importer follow-up main sync after #379
+
+- Main advanced to58b11ff2 through owner-directed #379 while #381/#384
+  were in CI. Synchronize it through a separate task PR into track-p;
+  retain the pre-355 behavior and both handover histories without edits to
+  accepted runtime code. The merge is conflict-free.
+- Importer mode and failed-publication cleanup follow-ups remain intact;
+  runtime inputs must equal this accepted main and all2,578 archived
+  packages remain unchanged. No new gameplay or survival claim.
+- CI is required for the synchronized tree. After integration, open the
+  importer follow-up batch's pinned track-p -> main review and stop;
+  prior #372 acceptance does not cover the new changes.
+
+## 2026-11-16: failed import publication cleanup (#359)
+
+- Stacked on #358/#381. Restore0700 only on this invocation's unpublished
+  staging before removal, even if publication adopted a read-only source's
+  mode. Never scan other importers' staging or chmod an existing package.
+- Keep the original publication exception if cleanup also fails, attaching
+  the cleanup error as a diagnostic. Reproduce both paths with injected
+  rename/removal failures; assert read-only source mode, private cleanup,
+  existing package bytes, another active staging directory and no final
+  partial package. No evidence, runtime, defaults or pin changes.
+- Task PR records local/CI checks; integrate into track-p after green CI,
+  then stop for the next pinned owner-selected promotion review.
+
+## 2026-11-16: published import directory access (#358)
+
+- Owner accepted #372 and delegated its merge; the unchanged reviewed pin
+  cf687bb2 is promoted as b7d45f17. Review follow-ups #374 (exact invocation
+  receipts) and #375 (reference-receipt assessment) remain separate. The
+  reported missing log hashes already exist for all 45 pairs in the pin.
+- Bound newly published directory modes by source access and directory
+  creation under the importing process's umask. Obtain creation permissions
+  with an empty directory inside private staging, without changing the
+  process-global umask; remove the probe before publishing. Drop special
+  bits. Source0777/umask022 now gives0755; source0755/umask077 gives0700.
+  An intentionally permissive umask000 still permits a source0777 directory.
+- The mode matrix covers four umasks and five source modes (including
+  special bits), private staging during every write, file/generated-metadata
+  access, unchanged source modes, exact package bytes/IDs and re-import modes.
+  #359 still owns failed-publication cleanup for read-only staging.
+- No runtime, default, pin, immutable package or index changes. Source-refresh
+  report ran read-only; this isolated worktree lacks six moving-source clones,
+  so it cannot report their new commits. This narrow historical-import review
+  follow-up neither updates pins nor claims a refreshed gameplay baseline.
+- Local/CI validation is recorded in the task PR. Task targets track-p;
+  a fresh pinned owner-selected review must precede promotion to main.
 
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
@@ -74,6 +135,14 @@
   #341's fresh-donor baseline audit follows this gate; it must distinguish
   historical M13 parity from #355's intentional later policy changes.
 
+
+## 2026-11-16: owner-requested rollback of #355 behavior (#373)
+
+- Restore the six native-core files to accepted pre-#355 main 2f74e1c5.
+  This rollback contains no dossier/report payloads; preserved evidence and
+  canonical Cemetery migration are separate. The saved-position tests now
+  identify the restored death control honestly. Narrow replacements will be
+  separate owner-reviewed changes before any zoo dispatch.
 
 ## 2026-11-15: owner-directed wild-cat survival fix (#350)
 
