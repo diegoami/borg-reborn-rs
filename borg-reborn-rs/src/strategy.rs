@@ -560,7 +560,14 @@ impl FirstStrategy {
         // A scroll the engine will not let the character read is not on
         // hand this think (`player-util.c:player_can_read`; #137: Return
         // read Recall with no light thirteen times, D1668).
-        if !crate::danger::can_read(ctx.world) {
+        if ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.no_recall)
+            || !crate::danger::can_read(ctx.world)
+        {
             return None;
         }
         ctx.world
@@ -770,6 +777,16 @@ impl FirstStrategy {
     /// The mode's step, when the mode has a place to go. `None` means
     /// the mode cannot act and its goal must fail.
     fn mode_step(&mut self, ctx: &mut DecisionCtx, mode: Mode) -> Option<Action> {
+        if matches!(mode, Mode::Return)
+            && ctx
+                .world
+                .character
+                .status
+                .as_ref()
+                .is_some_and(|s| s.force_descend)
+        {
+            return None;
+        }
         // Nothing is picked up in contact: clearing the threat comes
         // first (bbc D0019 lost its Phase Door to attack-before-pickup;
         // the reverse order, pickup-under-fire, is the same mistake).
@@ -906,7 +923,15 @@ impl FirstStrategy {
                 {
                     return None;
                 }
-                if here == Some(crate::borg::feat::LESS) && threat == 0 {
+                if here == Some(crate::borg::feat::LESS)
+                    && threat == 0
+                    && !ctx
+                        .world
+                        .character
+                        .status
+                        .as_ref()
+                        .is_some_and(|s| s.force_descend)
+                {
                     self.rerolled_from = Some(ctx.world.level.generation);
                     Some(Action::Ascend)
                 } else {
@@ -1095,6 +1120,12 @@ impl FirstStrategy {
     }
 
     fn choose_mode(&mut self, ctx: &mut DecisionCtx) -> Mode {
+        let can_return = !ctx
+            .world
+            .character
+            .status
+            .as_ref()
+            .is_some_and(|s| s.force_descend);
         let turn = ctx.view.turn;
         // A stalled goal is cooled before any rule can pick its mode again
         // (#183): the urgent rules below (starving, a breeder colony, not
@@ -1151,6 +1182,7 @@ impl FirstStrategy {
         };
         if block_descend
             && Self::adjacent(ctx).is_empty()
+            && can_return
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
         {
             self.rule = "starving with no food: return home";
@@ -1166,6 +1198,7 @@ impl FirstStrategy {
         if colony
             && ctx.world.level.depth > 0
             && Self::adjacent(ctx).is_empty()
+            && can_return
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
         {
             self.rule = "a breeder colony on the level: leave it";
@@ -1243,6 +1276,7 @@ impl FirstStrategy {
         let depth = ctx.world.level.depth;
         if depth > 1
             && Self::adjacent(ctx).is_empty()
+            && can_return
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
             && !Self::ready_for(ctx, depth)
         {
@@ -1261,6 +1295,7 @@ impl FirstStrategy {
             && depth > 0
             && level_idle >= i64::from(ctx.params.level_stall_turns)
             && Self::adjacent(ctx).is_empty()
+            && can_return
             && self.cooldowns.get(&Mode::Return).is_none_or(|&t| turn >= t)
         {
             self.rule = "the level has given nothing: leave it";
@@ -1337,6 +1372,7 @@ impl FirstStrategy {
             } else if depth > 0
                 && !ready_next
                 && !block_descend
+                && can_return
                 && cooled(Mode::Return)
                 && (stairs != UNREACHED || stairs_up != UNREACHED)
             {

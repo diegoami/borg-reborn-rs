@@ -491,6 +491,8 @@ pub fn perceive() -> Option<Observation> {
             speed: pl.state.speed,
             blows: pl.state.num_blows,
             percent_damage: pl.opts.opt[b::OPT_birth_percent_damage as usize],
+            force_descend: pl.opts.opt[b::OPT_birth_force_descend as usize],
+            no_recall: pl.opts.opt[b::OPT_birth_no_recall as usize] && pl.total_winner == 0,
             known_ac: pl.known_state.ac + pl.known_state.to_a,
             timed: (0..b::TMD_MAX as usize).map(|i| *pl.timed.add(i)).collect(),
             word_recall: pl.word_recall as i32,

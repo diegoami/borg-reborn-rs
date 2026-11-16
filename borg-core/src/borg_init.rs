@@ -924,7 +924,9 @@ pub fn borg_init(st: &mut BorgState) {
             st.init.init_failure = true;
         }
 
-        if engine::player_opt(OPT_birth_force_descend) {
+        // borg-reborn-rs (#371): permit only the synthetic start
+        // options; all other birth-option checks still apply.
+        if engine::player_opt(OPT_birth_force_descend) && !engine::synthetic_start() {
             birth_option_failure(st, "**STARTUP FAILURE** must allow up stairs");
         }
 
@@ -932,7 +934,7 @@ pub fn borg_init(st: &mut BorgState) {
             birth_option_failure(st, "**STARTUP FAILURE** must connect stairs");
         }
 
-        if engine::player_opt(OPT_birth_no_recall) {
+        if engine::player_opt(OPT_birth_no_recall) && !engine::synthetic_start() {
             birth_option_failure(st, "**STARTUP FAILURE** must allow recall");
         }
 

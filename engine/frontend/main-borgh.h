@@ -23,6 +23,8 @@
  * is true, Rand_init() seeds from borgh_seed instead of time()/getpid(),
  * and get_mon_num() uses a fixed (non-holiday) date.
  */
+extern bool borgh_synthetic_start(void);
+extern void borgh_generate_start(void);
 extern bool borgh_seed_set;
 extern uint32_t borgh_seed;
 

@@ -311,6 +311,10 @@ def compare_run(name, da, db, allow_legacy=False):
         for k in keys:
             if k in MEASUREMENT_FIELDS and (sa.get("calendar") != "fixed" or sb.get("calendar") != "fixed"):
                 continue
+            # Historical ordinary summaries predate this field. Never ignore
+            # a true synthetic marker when comparing to an unmarked run (#371).
+            if k == "synthetic" and sa.get(k, False) == sb.get(k, False):
+                continue
             if k in IGNORED_FIELDS:
                 continue
             if k in RECORD_FIELDS and (k not in sa or k not in sb):

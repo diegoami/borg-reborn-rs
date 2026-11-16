@@ -3533,3 +3533,15 @@ mod receiving_options_tests {
         assert!(!super::player_opt(crate::headers::list_options_h::OPT_store_buy_direct));
     }
 }
+
+// borg-reborn-rs (#371): only the harness can authorize this birth exception.
+pub fn synthetic_start() -> bool {
+    #[cfg(feature = "borgh")]
+    {
+        extern "C" { fn borgh_synthetic_start() -> bool; }
+        // SAFETY: the frontend returns its validated start mode, with no mutation.
+        unsafe { borgh_synthetic_start() }
+    }
+    #[cfg(not(feature = "borgh"))]
+    { false }
+}

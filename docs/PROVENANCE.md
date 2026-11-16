@@ -52,3 +52,12 @@ The additional donor deviations in borg_flow.rs and borg_flow_take.rs are
 explicitly declared in the vendor checker. These intentionally change vendored
 core play; the recorded M13 parity evidence retains its original source.
 No engine or recorder implementation is copied or patched for this fix.
+
+Synthetic startup (#371) is new harness integration, informed by the owner's
+local spike `49736c1868a3d12a957f27f39643801371c29f3f`. It uses upstream
+`game-world.c` level housekeeping and `prepare_next_level()` before Borg
+activation. The guarded wrapper, strict validation, metadata and death-tool
+exclusion are new; no upstream generator or observations are changed. The
+vendored core's `borgh` feature authorizes only the two synthetic birth-option
+checks and its Recall helper respects the engine's no-recall option. These
+receiving hooks are marked #371 and covered by the vendor audit.

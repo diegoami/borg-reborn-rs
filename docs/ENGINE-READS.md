@@ -109,7 +109,7 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `player_race` | B | the race played (`ridx`); K for the static race table |
 | `player_class` | B | the class played (`cidx`, its magic, its player flags `pflags`: `UNLIGHT`, `CHOOSE_SPELLS`, #172/#127); K for the static class table |
 | `player_state` | B | computed stats, speed, blows, AC |
-| `player_options` | X | `birth_percent_damage` |
+| `player_options` | X | `birth_percent_damage`, forced descent and disabled recall |
 | `player_upkeep` | B | resting, running, the pack and quiver arrays, `new_spells` (the status bar's "Study", #127) |
 | `player_body` | B | the equipment slots |
 | `equip_slot` | B | a slot's type and object |
@@ -142,6 +142,8 @@ Reasons, from the C Borg specification (`reference/c-borg/BORG_SPEC.md`
 | `TMD_FOOD` | B | the food timer |
 | `FEAT_FLOOR` | B | the web guard: a known floor (`borg-update.c:542`) |
 | `TMD_IMAGE` | B | hallucination (the RNG-isolation test build only) |
+| `OPT_birth_force_descend` | X | public birth option: ascent unavailable (#371) |
+| `OPT_birth_no_recall` | X | public birth option: recall unavailable before victory (#371) |
 | `OPT_birth_percent_damage` | X | a birth option the blows formula needs |
 | `OBJ_NOTICE_IGNORE` | B | an ignored object is not the top object (`borg_get_top_object`) |
 | `ODESC_FULL` | B | description mode (`borg_item_analyze`) |

@@ -13,6 +13,8 @@
 #     finalsave, living-save, terminal-save  write OUTDIR/final.save at the
 #            stop (-save-on-stop, -save-living-on-stop, -save-final-state)
 #     keep-load-rng  passes -keep-load-rng (with save=NAME or -load)
+#     start-depth=N  synthetic birth at N; descent allowed, ascent/recall disabled
+#     start-build=birth  normal birth kit (requires start-depth; only build supported)
 #     key-limit=N  stops after N keys (-keys N)
 #     save=NAME  loads harness/saves/NAME (or SAVE_ROOT/NAME)
 #   The C Borgs' flags of borg-rs's run.sh (cheat, cheatlive, munchkin, lunal,
@@ -56,6 +58,10 @@ FLAGS="-"
 if [ $# -gt 0 ] && [ "$1" != "--" ]; then FLAGS="$1"; shift; fi
 [ "${1:-}" = "--" ] && shift
 SAVE_NAME=""
+START_DEPTH=""
+START_DEPTH_FLAG=0
+START_BUILD_GIVEN=0
+START_BUILD="birth"
 BIRTH_ARGS=(-n)
 BORGH_FLAGS=()
 if [ "$FLAGS" != "-" ]; then
@@ -69,6 +75,15 @@ if [ "$FLAGS" != "-" ]; then
             living-save) BORGH_FLAGS+=(-save-living-on-stop "$OUT/final.save");;
             terminal-save) BORGH_FLAGS+=(-save-final-state "$OUT/final.save");;
             keep-load-rng) BORGH_FLAGS+=(-keep-load-rng);;
+            start-depth=*)
+                [ -z "$START_DEPTH" ] || { echo 'run.sh: duplicate start-depth' >&2; exit 2; }
+                START_DEPTH="${fl#start-depth=}"
+                [[ "$START_DEPTH" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: invalid start-depth' >&2; exit 2; }
+                START_DEPTH_FLAG=1;;
+            start-build=*)
+                [ "${START_BUILD_GIVEN:-0}" = 0 ] || { echo 'run.sh: duplicate start-build' >&2; exit 2; }
+                START_BUILD_GIVEN=1
+                START_BUILD="${fl#start-build=}";;
             key-limit=*)
                 key_limit="${fl#key-limit=}"
                 [[ "$key_limit" =~ ^[1-9][0-9]{0,8}$ ]] || { echo 'run.sh: key-limit must be 1..999999999' >&2; exit 2; }
@@ -102,9 +117,32 @@ for ((i = 0; i < ${#EXTRA[@]}; i++)); do
                [ -z "$SAVE_NAME" ] || { echo "run.sh: both save=$SAVE_NAME and -load given" >&2; exit 2; }
                EXTRA[$((i + 1))]="$OUT/save/input.save"
                i=$((i + 1));;
+        -start-depth)
+               [ -z "$START_DEPTH" ] || { echo 'run.sh: duplicate start-depth' >&2; exit 2; }
+               START_DEPTH="${EXTRA[$((i + 1))]:-}"
+               [ -n "$START_DEPTH" ] || { echo 'run.sh: missing -start-depth' >&2; exit 2; }
+               i=$((i + 1));;
+        -start-build)
+               [ "${START_BUILD_GIVEN:-0}" = 0 ] || { echo 'run.sh: duplicate start-build' >&2; exit 2; }
+               START_BUILD_GIVEN=1
+               START_BUILD="${EXTRA[$((i + 1))]:-}"
+               i=$((i + 1));;
         -keep-load-rng) EXTRA_KEEP_RNG=1;;
     esac
 done
+# Validate both public flags and raw frontend arguments before creating output.
+if [ "${START_BUILD_GIVEN:-0}" = 1 ] && [ -z "$START_DEPTH" ]; then
+    echo 'run.sh: start-build requires start-depth' >&2; exit 2
+fi
+[ "$START_BUILD" = birth ] || { echo 'run.sh: start-build supports only birth' >&2; exit 2; }
+if [ -n "$START_DEPTH" ]; then
+    [[ "$START_DEPTH" =~ ^[1-9][0-9]{0,2}$ ]] || { echo 'run.sh: start-depth must be a decimal integer 1..max_depth-1' >&2; exit 2; }
+    [ -z "$SAVE_NAME$EXTRA_LOAD" ] || { echo 'run.sh: start-depth cannot load a save' >&2; exit 2; }
+    # Raw options are already in EXTRA; add only the harness flag here.
+    if [ "${START_DEPTH_FLAG:-0}" = 1 ]; then
+        BORGH_FLAGS+=(-start-depth "$START_DEPTH")
+    fi
+fi
 mkdir -p "$OUT"/{user,save,archive,panic,scores}
 # The reborn Borg's profile and outputs (T2.4); the C Borgs ignore both.
 if [ "$IMPL" = rust ]; then
@@ -149,6 +187,14 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
 {
     echo "flags=$FLAGS"
+    if [ -n "$START_DEPTH" ]; then
+        echo "synthetic=1"
+        echo "start_depth=$START_DEPTH"
+        echo "start_build=$START_BUILD"
+        echo "synthetic_rules=one-way-descent-v1"
+    else
+        echo "synthetic=0"
+    fi
     echo "borg_txt_sha256=$(sha256sum < "$OUT/user/borg.txt" | cut -d' ' -f1)"
     if [ -n "$SAVE_NAME" ] || [ -n "$EXTRA_LOAD" ]; then
         # The loaded save's hash is part of a death's encounter family.
@@ -204,7 +250,7 @@ fi
 if [ -f "$ROOT/tools/depth-stream.py" ]; then
     python3 "$ROOT/tools/depth-stream.py" "$OUT" --cap "$TURNS"
 fi
-if [ -f "$ROOT/tools/export-death.py" ]; then
+if [ -z "$START_DEPTH" ] && [ -f "$ROOT/tools/export-death.py" ]; then
     python3 "$ROOT/tools/export-death.py" "$OUT" --impl "$IMPL" \
         --build-id "$(dirname "$(dirname "$BIN")")/BUILD_ID" --flags "$FLAGS"
 fi

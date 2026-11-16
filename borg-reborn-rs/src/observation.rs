@@ -102,6 +102,10 @@ pub struct Status {
     pub blows: i32,
     /// The birth option `birth_percent_damage` (O-combat).
     pub percent_damage: bool,
+    #[serde(default)]
+    pub force_descend: bool,
+    #[serde(default)]
+    pub no_recall: bool,
     /// `player->known_state.ac + known_state.to_a`: the armour class the
     /// player is shown.
     pub known_ac: i32,
@@ -410,6 +414,8 @@ pub(crate) mod tests {
                 speed: 110,
                 blows: 105,
                 percent_damage: false,
+                force_descend: false,
+                no_recall: false,
                 known_ac: 12,
                 timed: vec![0; 53],
                 word_recall: 0,

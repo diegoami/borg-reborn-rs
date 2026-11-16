@@ -424,7 +424,9 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
                 0.0
             };
         if let Some(g) = w.level.at(x, y) {
-            if g.feat == crate::borg::feat::LESS {
+            if g.feat == crate::borg::feat::LESS
+                && !w.character.status.as_ref().is_some_and(|s| s.force_descend)
+            {
                 // Upward to town is known ground; any other arrival level
                 // carries the declared arrival risk.
                 let landing = if view.depth <= 1 {
@@ -488,7 +490,7 @@ pub fn responses(w: &World, k: &Knowledge, p: &Params, view: &PlayerView) -> Vec
             && w.character
                 .status
                 .as_ref()
-                .is_some_and(|s| s.word_recall <= 0)
+                .is_some_and(|s| s.word_recall <= 0 && !s.no_recall)
         {
             if let Some((i, _)) = pack_item(w, k, "Word of Recall").filter(|_| readable) {
                 // Recall lands in town, safely — but the word takes 15-34
@@ -1272,6 +1274,12 @@ mod tests {
             .find(|x| matches!(x.action, Action::Read { .. }))
             .expect("the idle word is offered");
         assert!(recall.why.contains("Word of Recall"), "{recall:?}");
+        w.character.status.as_mut().unwrap().no_recall = true;
+        let r = responses(&w, &k, &p, &v);
+        assert!(
+            !r.iter().any(|x| matches!(x.action, Action::Read { .. })),
+            "disabled recall must not be offered: {r:?}"
+        );
     }
 
     #[test]

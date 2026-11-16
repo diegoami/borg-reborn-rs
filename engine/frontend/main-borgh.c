@@ -48,6 +48,8 @@
  *   -random-birth choose race and class using the seeded birth menu's *
  *   -clev N       stop when the character level reaches N (0 = no limit)
  *   -depth N      stop when the max depth reaches N (0 = no limit)
+ *   -start-depth N  synthetic birth at depth N; no ascent/recall, descent allowed
+ *   -start-build birth  normal birth kit (only supported synthetic build)
  *   -keylog FILE  keypress log (default: none)
  *   -msglog FILE  message log: every message_add() call, Borg notes
  *                 included (default: none)
@@ -127,6 +129,9 @@ static long opt_turns = 0;
 static long opt_keys = 0;
 static int opt_clev = 0;
 static int opt_depth = 0;
+static int opt_start_depth = 0;
+static bool synthetic_ready = false;
+static bool opt_start_build_given = false;
 static const char *opt_keylog = NULL;
 static const char *opt_msglog = NULL;
 static const char *opt_statelog = NULL;
@@ -257,6 +262,9 @@ static void borgh_finish(const char *reason)
 	fprintf(fp, "  \"seed\": %lu,\n", (unsigned long)borgh_seed);
 	/* Every summary says whether a save was loaded (docs/SPEC.md §3.5). */
 	fprintf(fp, "  \"loaded\": %s,\n", opt_load ? "true" : "false");
+    fprintf(fp, "  \"synthetic\": %s,\n", opt_start_depth ? "true" : "false");
+    if (opt_start_depth)
+        fprintf(fp, "  \"start_depth\": %d,\n  \"start_build\": \"birth\",\n  \"synthetic_rules\": \"one-way-descent-v1\",\n", opt_start_depth);
 	if (opt_load)
 		fprintf(fp, "  \"loaded_turn\": %ld,\n", loaded_turn);
 	fprintf(fp, "  \"race\": ");
@@ -359,9 +367,23 @@ void borgh_setting(int index, const char *name, int value)
 
 void borgh_rng(uint32_t rng) { borg_rng = rng; }
 
+bool borgh_synthetic_start(void) { return opt_start_depth != 0; }
+
+static void verify_synthetic_start(void)
+{
+    if (!opt_start_depth || synthetic_ready) return;
+    if (!player || player->is_dead || !cave ||
+        player->upkeep->generate_level || cave->depth != opt_start_depth ||
+        player->depth != opt_start_depth || player->max_depth != opt_start_depth ||
+        !OPT(player, birth_force_descend) || !OPT(player, birth_no_recall))
+        quit("borgh: synthetic start did not generate the requested level");
+    synthetic_ready = true;
+}
+
 void borgh_decision(uint32_t rng)
 {
     if (!borg_started) return;
+    verify_synthetic_start();
     borg_rng = rng;
     ++decisions;
     if (decisions == 1 || turn != stall_turn) {
@@ -539,6 +561,7 @@ static void borgh_state(void)
  */
 static void borgh_key(struct keypress k)
 {
+    verify_synthetic_start();
 	keys_logged++;
 	if (keylog_fp) {
 		fprintf(keylog_fp, "%ld %d %lx %x\n", (long)turn, (int)k.type,
@@ -636,7 +659,29 @@ static void borgh_checkpoint(void)
 
 static void prepare_borg_start(void)
 {
+    if (opt_start_depth) {
+        bool auto_more = OPT(player, auto_more);
+        if (!opt_random_birth && (player->race->ridx != (unsigned)opt_race ||
+            player->class->cidx != (unsigned)opt_class))
+            quit("borgh: synthetic character does not match requested race/class (use -menu-letters)");
+        if (opt_start_depth >= z_info->max_depth)
+            quit("borgh: -start-depth must be between 1 and max_depth-1");
+        player->max_depth = player->recall_depth = opt_start_depth;
+        option_set("birth_force_descend", true);
+        option_set("birth_no_recall", true);
+        /* The engine's level-transition lifecycle (game-world.c:run_game_loop),
+         * before activating either Borg. No injected map or observations. */
+        dungeon_change_level(player, opt_start_depth);
+        option_set("auto_more", true);
+        borgh_generate_start();
+        event_signal(EVENT_MESSAGE_FLUSH);
+        option_set("auto_more", auto_more);
+        verify_synthetic_start();
+        fprintf(stderr, "borgh: synthetic start: birth kit; no ascent or recall; descent allowed.\n");
+    }
 	if (opt_load) {
+        if (OPT(player, birth_force_descend) && OPT(player, birth_no_recall))
+            quit("borgh: loading a synthetic one-way save is not supported");
 		/* A missing/dead save must never silently become a birth run. */
 		if (!player || player->is_dead || !player->race || !player->class ||
 			player->race->ridx != (unsigned)opt_race || player->class->cidx != (unsigned)opt_class)
@@ -825,6 +870,22 @@ errr init_borgh(int argc, char *argv[])
 			opt_clev = (int)arg_long(argc, argv, &i);
 		} else if (streq(argv[i], "-depth")) {
 			opt_depth = (int)arg_long(argc, argv, &i);
+        } else if (streq(argv[i], "-start-depth")) {
+            const char *value;
+            char *end;
+            long depth;
+            if (opt_start_depth) quit("borgh: duplicate -start-depth");
+            if (++i >= argc) quit("borgh: missing value for -start-depth");
+            value = argv[i];
+            depth = strtol(value, &end, 10);
+            if (!*value || *value < '1' || *value > '9' || *end || depth < 1 || depth > 999)
+                quit("borgh: -start-depth must be a decimal integer 1..max_depth-1");
+            opt_start_depth = (int)depth;
+        } else if (streq(argv[i], "-start-build")) {
+            if (opt_start_build_given) quit("borgh: duplicate -start-build");
+            opt_start_build_given = true;
+            if (++i >= argc || !streq(argv[i], "birth"))
+                quit("borgh: -start-build supports only birth");
 		} else if (streq(argv[i], "-keylog")) {
 			if (++i >= argc) quit("borgh: missing value for -keylog");
 			opt_keylog = argv[i];
@@ -895,6 +956,8 @@ errr init_borgh(int argc, char *argv[])
 	if (opt_race < 0 || opt_race >= 26 || opt_class < 0 || opt_class >= 26)
 		quit("borgh: -race and -class must be explicit indices");
 	if (opt_random_birth && opt_load) quit("borgh: random birth cannot load a save");
+    if (opt_start_build_given && !opt_start_depth) quit("borgh: -start-build requires -start-depth");
+    if (opt_start_depth && opt_load) quit("borgh: -start-depth cannot be combined with -load");
 	if (opt_exact_turns && opt_turns <= 0) quit("borgh: exact turns requires a positive turn limit");
 	if (!!opt_checkpoint_every != !!opt_checkpoint_dir)
 		quit("borgh: checkpoint interval and directory are both required");

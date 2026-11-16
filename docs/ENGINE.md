@@ -53,6 +53,7 @@ the test checks the rest:
 | `05-message-log` | `message.c` | `borgh_message_hook()` sees every `message_add()`, repeats included |
 | `06-key-log` | `ui-input.c` | `borgh_key_hook()` sees every key `inkey_hack` returns |
 | `07-command-boundary` | `ui-game.c` | `borgh_command_hook()` at each game-command boundary |
+| `09-synthetic-start` | `game-world.c` | guarded wrapper for the normal level-transition lifecycle before synthetic Borg activation (#371); no generator changes |
 | `08-town-queries` | `store.c/.h`, `obj-gear.c/.h` | M13 read-only exact-stack price and inventory-capacity queries, under `BORG_HARNESS` (#328) |
 
 **The declared exception:** `04-fixed-date` splits
@@ -161,6 +162,15 @@ Walking into a closed door opens it in 4.2.6 anyway (`move_player` calls
 
 spec §1.2 warns that the options change the screen the Borg reads. Each
 difference from the C set is declared here, with its reason.
+
+Synthetic `-start-depth` runs are the owner-authorized exception to default
+birth options (#371): the frontend enables `birth_force_descend` and
+`birth_no_recall`, labels the run synthetic, and excludes its death from the
+natural registry. It temporarily enables `auto_more` while generating/flushing
+the initial level so startup messages cannot consume the activation script,
+then restores it before invoking the selected Borg. Ordinary runs never enter
+this path. See harness/README.md for `one-way-descent-v1` and its victory
+exception, build scope and replay identity.
 
 ## References
 

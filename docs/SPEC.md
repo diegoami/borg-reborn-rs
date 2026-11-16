@@ -132,6 +132,13 @@ stay.
     by the birth menu's letters);
   - `-turns T` (cap) and `-exact-turns` (stop at engine turn T itself);
   - `-depth D`, `-keys K` (caps);
+  - `-start-depth N` (owner #371: synthetic new birth at engine-generated N,
+    with one-way descent allowed and ascent/recall disabled before victory),
+    optional `-start-build birth`; cannot combine with `-load`. These are
+    diagnostic scenarios, excluded from natural-death export. The summary
+    includes `synthetic`, `start_depth`, `start_build`, `synthetic_rules`;
+    ordinary summaries say `synthetic: false`. See harness/README.md for the
+    versioned contract and run-derived build/diagnostic follow-ups #382/#383;
   - `-load FILE` (a living save; without `-n`) and `-keep-load-rng`;
   - `-keylog`, `-msglog`, `-statelog` and `-summary FILE`;
   - `-screen` (a screen dump on an unexpected end).

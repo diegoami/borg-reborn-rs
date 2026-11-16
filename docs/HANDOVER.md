@@ -2,6 +2,44 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: generated-depth synthetic startup (#371)
+
+- Owner-directed capability on `task/371-synthetic-start`, stacked on the
+  dedicated cemetery pin PR #377 (cemetery PR #6). Leave these changes open
+  for the owner's selected review; no milestone acceptance or merge claimed.
+- `start-depth=N` / raw `-start-depth N` starts a normal birth kit in an
+  engine-generated dungeon, verified before either core activates. Rule
+  `one-way-descent-v1` blocks ascent/Recall before victory while allowing
+  normal downward transitions. Both summary and config carry synthetic
+  identity. The harness skips export; the pinned shared exporter and
+  reconciler independently reject synthetic evidence.
+- Strict parsing rejects invalid/de-duplicated inputs, unsupported builds,
+  save/load conflicts, and requested/actual start mismatches. Synthetic
+  saved-character continuation is deliberately refused. The core permits
+  only the two scenario birth options, without its general strange-options
+  bypass; both policies observe normal game-option availability.
+- Local checks: 156+4+5 workspace Rust tests, 328 core tests (four existing
+  ignores), Clippy, formatting and vendor audit pass. Engine tests: 75 total,
+  two existing skips (native incident fixture unavailable locally and bindings
+  regeneration tool unavailable); 89 tool tests, 19 source-tool tests pass.
+  Cemetery dependency: 37 native-tool plus 46 other tests and CI pass.
+- Real seed-101 Human Warrior smoke starts at d10/10 and d20/20; both die
+  synthetically (turn 181 wolf; turn 359 paladin). A 300-turn vendored-core
+  scenario also plays at depth 10. Repeat tests compare all three streams,
+  both public/raw invocation and changed locale/timezone. Direct export
+  rejects the synthetic death and no natural registry is created. Ordinary
+  smoke matches all three checked-in reference streams, 3/3, without overrides.
+- Retained failed control: the initial synchronous generation emitted a
+  startup prompt that consumed activation and stopped at turn 1 with no keys.
+  Automatic prompt handling during generation/flush fixes it, with the prior
+  option restored before activation. Tests require actual play, not exit 0.
+  A first ordinary suite completed its games but failed finalization because
+  local `bc` was missing; after installing it locally, the full suite/diff pass.
+- Follow-ups #382 (run-derived build records and exact hash) and #383
+  (near-death facts / optional null-move diagnostics) preserve the rest of the
+  owner's #371 decisions. No arbitrary wizard kit, hidden observations,
+  synthetic registry, suite manifest or outcome classifier is introduced.
+
 ## 2026-11-16: synthetic-death exclusion dependency (#371)
 
 Pin cemetery tools to `0216eb3346887ddc1087b16051bb14fb22b71422`

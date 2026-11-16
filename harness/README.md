@@ -49,3 +49,69 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 A change that alters the Borg's keys makes the references differ. A PR that
 means to change play says so and regenerates them with `make-reference.sh`. A
 PR that does not must reproduce them.
+
+## Synthetic generated-depth scenarios (#371)
+
+```sh
+harness/run.sh harness/out/synthetic-d10 101 0 0 5000 menu,start-depth=10,start-build=birth
+```
+
+`start-depth=N` (frontend `-start-depth N`) starts a new character without a
+save and generates dungeon depth N using the engine's normal generator and
+level-transition lifecycle, before activating either core. N must be a decimal
+integer from 1 through `max_depth-1` (currently 127). The first `state.log`
+entry must say `dN/N`. Generation failure or an actual-start mismatch fails the
+run; it never falls back to playing a town birth. Town birth initialization
+still precedes generation internally; the Borg makes no town decisions.
+
+The versioned rule is **`one-way-descent-v1`**: normal `birth_force_descend` and
+`birth_no_recall` options are enabled. Up stairs are absent/unusable and Recall
+has no effect before victory, as in the engine. **Down stairs, trapdoors and
+other normal downward transitions remain allowed. This is not confinement to
+one level.** The engine's victory exception to no-recall remains intact.
+Startup diagnostics explicitly report unavailable ascent/recall; policy reads
+ordinary game options, not hidden scenario state. The vendored core receives
+an allowance for just these two synthetic birth options; its other startup
+checks remain enabled. Reborn excludes disabled ascent and recall responses;
+the vendored core declines Recall when the engine option disables it.
+
+Only `start-build=birth` / `-start-build birth` is supported in this increment.
+It means the engine's normal birth stats, HP/SP, inventory and equipment,
+without wizard advancement or extra items. Invalid builds, duplicate start
+options, and any combination with `save=NAME` or `-load FILE` are errors.
+`start-build` without `start-depth` is an error. Loading a one-way synthetic
+save is currently refused; synthetic save continuation needs its own contract.
+
+Both public flags and raw `-- -start-depth N` invocation write:
+
+| Field | `config.txt` | `summary.json` |
+| --- | --- | --- |
+| synthetic | `1` (`0` for ordinary runs) | `true` (`false` for ordinary runs) |
+| start_depth | requested N | requested N |
+| start_build | `birth` | `birth` |
+| synthetic_rules | `one-way-descent-v1` | `one-way-descent-v1` |
+
+`flags` retains the caller's original harness flags; raw arguments are also in
+`process.json`. Start fields are absent for ordinary runs. `game_options` in
+the summary records the actual enabled birth options. Initial public state,
+including gear fingerprint and HP/SP, is in the normal state stream.
+
+Synthetic deaths are **not natural measured deaths**. The harness skips their
+automatic exporter. The pinned cemetery exporter independently rejects their
+summary/config/start-depth markers (including raw frontend usage and the
+one-way option pair) before opening the natural registry; reconciliation uses
+the same exclusion. No separate synthetic registry is created here.
+
+Replay identity includes seed, requested depth, actual race/class, start build,
+rule version, engine/core build, game data, profile and all policy settings.
+Use the existing build ID, profile/settings hashes and config records; hold
+game data fixed. Wall time is diagnostic only and never a policy input. Turn
+caps retain the ordinary absolute engine-turn meaning. A scenario's death or
+survival is diagnostic evidence, not a population survival-improvement claim.
+
+`engine/tests/test_synthetic_start.py` runs short real depth-10/20 scenarios,
+repeat comparisons, both cores, invalid inputs and direct-export exclusion.
+It runs in the existing engine CI job after the build. Run-derived character
+build records (with exact build hashes), null-move threat diagnostics, suite
+manifests and outcome classification remain follow-up work; see #371 and
+borg-cemetery#5.

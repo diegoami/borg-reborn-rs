@@ -116,6 +116,20 @@ jobs:
               env.write('BORG_SURVIVAL_FIXTURE_ZIP=' + str(target) + '\nBORG_SURVIVAL_FIXTURES_REQUIRED=1\n')
           PYFIXTURE
       - run: python3 -m unittest discover -s engine/tests
+      # #371: retain real synthetic smoke evidence outside the natural registry.
+      - name: Synthetic depth smoke
+        run: |
+          for depth in 10 20; do
+            BORG_DEATH_RECORDS_DIR="$RUNNER_TEMP/synthetic-natural-guard" RUN_TIMEOUT_SECONDS=30 harness/run.sh "harness/out/synthetic-smoke-$depth" 101 0 0 5000 "menu,start-depth=$depth"
+          done
+          BORG_DEATH_RECORDS_DIR="$RUNNER_TEMP/synthetic-natural-guard" python3 tools/export-death.py harness/out/synthetic-smoke-20 --impl rust --build-id build/rust/BUILD_ID
+          test ! -e "$RUNNER_TEMP/synthetic-natural-guard"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: synthetic-start-smoke
+          path: harness/out/synthetic-smoke-*
+          if-no-files-found: error
       # The reborn Borg plays (T1.5): smoke twice, same keys both times.
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-1
       - run: BORG_IMPL=rust harness/suite.sh smoke harness/out/smoke-rust-2

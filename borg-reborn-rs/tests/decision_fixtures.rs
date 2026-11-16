@@ -529,6 +529,8 @@ fn build(f: &Fixture) -> Observation {
             speed: f.player.speed,
             blows: 100,
             percent_damage: false,
+            force_descend: false,
+            no_recall: false,
             known_ac: 0,
             timed,
             word_recall: 0,

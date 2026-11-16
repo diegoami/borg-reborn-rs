@@ -19,10 +19,10 @@ FRONTEND = ROOT / 'engine/frontend/main-borgh.c'
 
 # docs/SPEC.md §3.5.
 FLAGS = {'-seed', '-race', '-class', '-menu-letters', '-turns', '-exact-turns', '-depth', '-keys', '-load',
-         '-keep-load-rng', '-keylog', '-msglog', '-statelog', '-summary', '-screen'}
+         '-keep-load-rng', '-start-depth', '-start-build', '-keylog', '-msglog', '-statelog', '-summary', '-screen'}
 FIELDS = {'seed', 'race', 'race_idx', 'class', 'class_idx', 'stop_reason', 'game_turns', 'player_turns', 'depth',
           'max_depth', 'clevel', 'max_clevel', 'dead', 'death_cause', 'keys', 'exact_turns', 'loaded',
-          'effective_settings'}
+          'effective_settings', 'synthetic'}
 # Not carried from borg-rs's borgh (docs/PROVENANCE.md).
 DROPPED = {'-states', '-frames', '-make-fixture', '-near-morgoth', '-stop-rune-pattern', '-cheat-live'}
 

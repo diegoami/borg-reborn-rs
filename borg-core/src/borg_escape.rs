@@ -89,6 +89,9 @@ fn phase_not_escape(st: &mut BorgState) {
 /// Attempt to induce WORD_OF_RECALL
 /// artifact activations added throughout this code
 pub fn borg_recall(st: &mut BorgState) -> bool {
+    // borg-reborn-rs (#371): RECALL is unavailable under this normal game option.
+    if engine::player_opt(crate::headers::list_options_h::OPT_birth_no_recall)
+        && st.borg.tr(BI_KING) == 0 { return false; }
     // Multiple "recall" fails
     if st.borg.goal.recalling == 0 {
         // Try to "recall"
