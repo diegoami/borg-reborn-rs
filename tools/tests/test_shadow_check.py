@@ -29,6 +29,27 @@ class ShadowCheckTest(unittest.TestCase):
         (root / 'shadow-stats.jsonl').write_text(json.dumps(row) + '\n')
         (root / 'shadow.jsonl').write_text('')
 
+    def test_expected_arm_mode_rejects_the_other_valid_mode(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); row = valid_row(); self.write(root, row)
+            module.check([root], expected_mode='check')
+            with self.assertRaisesRegex(ValueError, 'expected switch mode'):
+                module.check([root], expected_mode='switch')
+            row['mode'] = 'switch'; self.write(root, row)
+            module.check([root], expected_mode='switch')
+            with self.assertRaisesRegex(ValueError, 'expected check mode'):
+                module.check([root], expected_mode='check')
+
+    def test_mode_cannot_change_inside_a_statistics_stream(self):
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name); first = valid_row(); second = copy.deepcopy(first)
+            second['mode'] = 'switch'; second['counts']['thinks'] = 2
+            self.write(root, first)
+            with (root / 'shadow-stats.jsonl').open('a') as out:
+                out.write(json.dumps(second) + '\n')
+            with self.assertRaisesRegex(ValueError, 'mode changed within a run'):
+                module.check([root])
+
     def test_missing_zero_and_divergent_evidence_fail(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)

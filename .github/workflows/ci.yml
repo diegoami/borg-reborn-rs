@@ -19,6 +19,13 @@ jobs:
       # own formatting, and tested as borg-rs tests it (release: the unit
       # tests link without the engine only when unused engine calls are
       # optimised out).
+      - name: Verify exact vendored core and recorded hook content
+        run: |
+          core_pin=$(cat borg-core/PIN)
+          [[ "$core_pin" =~ ^[0-9a-f]{40}$ ]]
+          git init -q vendor/borg-rs
+          git -C vendor/borg-rs fetch -q --depth 1 https://github.com/diegoami/borg-rs "$core_pin"
+          python3 scripts/borg-core-vendor.py check
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core
@@ -136,7 +143,8 @@ jobs:
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
-          harness/check-shadow.py harness/out/shadow-check harness/out/shadow-switch
+          harness/check-shadow.py --expect-mode check harness/out/shadow-check
+          harness/check-shadow.py --expect-mode switch harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
@@ -146,8 +154,8 @@ jobs:
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-check
-          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-switch
+          harness/check-shadow.py --require-all-entries --expect-mode check harness/out/stateful-entries-check
+          harness/check-shadow.py --require-all-entries --expect-mode switch harness/out/stateful-entries-switch
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.

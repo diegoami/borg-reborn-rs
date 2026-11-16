@@ -1,6 +1,7 @@
 """scripts/borg-core-vendor.py (review #227, finding 9). Run: python3 -m unittest discover -s scripts/tests"""
 
 import importlib.util
+import json
 import subprocess
 import tempfile
 import unittest
@@ -46,12 +47,47 @@ class VendorTest(unittest.TestCase):
             (core / rel).parent.mkdir(parents=True, exist_ok=True)
             (core / rel).write_text(text)
         self.core = core
-        self.saved = (bv.CORE, bv.HOOKED)
+        self.saved = (bv.CORE, bv.HOOKED, bv.HOOK_LOCK)
         bv.CORE, bv.HOOKED = core, {'src/a.rs'}
+        bv.HOOK_LOCK = t / 'hooks.json'
+        self.record_hooks()
 
     def tearDown(self):
-        bv.CORE, bv.HOOKED = self.saved
+        bv.CORE, bv.HOOKED, bv.HOOK_LOCK = self.saved
         self.tmp.cleanup()
+
+    def record_hooks(self):
+        bv.HOOK_LOCK.write_text(json.dumps(bv.hook_manifest(self.repo)))
+
+    def test_undeclared_hook_content_change_is_rejected(self):
+        (self.core / 'src/a.rs').write_text('arbitrary policy replacement\n')
+        self.assertIn('src/a.rs: hooked content differs from reviewed manifest', bv.check(self.repo))
+
+    def test_missing_manifest_and_wrong_pin_are_rejected(self):
+        bv.HOOK_LOCK.unlink()
+        self.assertTrue(any('hook manifest' in p for p in bv.check(self.repo)))
+        self.record_hooks()
+        lock = json.loads(bv.HOOK_LOCK.read_text());lock['donor_pin'] = '0' * 40
+        bv.HOOK_LOCK.write_text(json.dumps(lock))
+        self.assertIn('hook manifest: schema or donor pin differs', bv.check(self.repo))
+
+    def test_hook_inventory_and_donor_blob_are_checked(self):
+        lock = json.loads(bv.HOOK_LOCK.read_text());lock['files']['extra.rs'] = {}
+        bv.HOOK_LOCK.write_text(json.dumps(lock))
+        self.assertIn('hook manifest: declared file inventory differs', bv.check(self.repo))
+        self.record_hooks()
+        lock = json.loads(bv.HOOK_LOCK.read_text());lock['files']['src/a.rs']['donor_blob'] = '0' * 40
+        bv.HOOK_LOCK.write_text(json.dumps(lock))
+        self.assertIn('src/a.rs: hooked donor blob differs from manifest', bv.check(self.repo))
+
+    def test_refresh_does_not_implicitly_accept_new_hook_bytes(self):
+        before = bv.HOOK_LOCK.read_bytes()
+        new = commit(self.repo, {'borg-rs/src/a.rs': LINES.replace('line 6\n','line 6 new\n')}, 'new donor')
+        self.assertEqual(bv.refresh(self.repo, new), [])
+        self.assertEqual(bv.HOOK_LOCK.read_bytes(), before)
+        self.assertTrue(bv.check(self.repo))
+        self.record_hooks()
+        self.assertEqual(bv.check(self.repo), [])
 
     def test_check_and_delta(self):
         self.assertEqual(bv.check(self.repo), [])
