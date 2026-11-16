@@ -51,6 +51,15 @@ The three-way refresh preserves declared OURS/HOOKED changes.
 read-only query patch, receiving option ABI adapter and parameter migration.
 Engine/harness, recorder and cemetery integration remain receiving-owned.
 
+## Home-oscillation and additive-trip refresh (#368)
+
+borg-core now vendors diegoami/borg-rs `8c5d000a58e9ddca1f1954ab9552e505856b313f`
+(main, the merge of borg-rs#92), refreshed three-way from `1443c2d` with no
+conflicts. It adds borg-rs#88 (the trip policy only adds return requests) and
+borg-rs#92 (the live town planner does not undo a confirmed Home move within
+one town visit, borg-rs#90). Both act only with `borg_town_plan = 1` or
+`borg_trip_policy = 1`.
+
 ## Recorded wild-cat incident fix (#350)
 
 Receiving-owned hooks remove the retired opportunistic stair-loot path from
