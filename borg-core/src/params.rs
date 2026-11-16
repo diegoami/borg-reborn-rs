@@ -1771,6 +1771,7 @@ parameters! {
     power_equipment_hold_life_depth => (46, "depth", 0, 127, "borg_power.rs:864", "Power equipment hold life depth: existing policy depth."),
     power_prepared_depth_lookahead => (50, "depth", 0, 50, "borg_power.rs:1849", "Power prepared depth lookahead: existing policy depth."),
     power_equipment_spell_reliability_weight => (100, "score", 0, 200, "borg_power.rs:603", "Power equipment spell reliability weight: existing policy score."),
+    town_sell_without_gold => (1, "bool", 0, 1, "borg_town_utility.rs:317", "Town planner: 1 sells or drops a known pack stack worth less than its slot even when the sale pays nothing; 0 only when the sale pays gold or the pack needs the room (plan schema 12)."),
 
 }
 
@@ -1914,6 +1915,7 @@ mod tests {
                 "attack" => "fight_attack",
                 "defend" => "fight_defend",
                 "item" => "item_use",
+                "town" => "town_utility",
                 _ => prefix,
             };
             assert_eq!(file, format!("borg_{module}.rs"));

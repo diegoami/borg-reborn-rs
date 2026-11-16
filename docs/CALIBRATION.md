@@ -1,7 +1,8 @@
 # Calibrating borg-rs's core (track P)
 
 P1 exposes603 caution/danger/escape/recovery parameters. P2 adds167
-attack,218 defence,19 item-use and727 power values: **1734 total**.
+attack,218 defence,19 item-use and727 power values: **1734 total**,
+plus `town_sell_without_gold` (town planner selling, a study arm): **1735**.
 Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
@@ -2054,7 +2055,8 @@ existing policy; no tuning recommendation is implied.
 | `power_prepared_depth_lookahead` | 50 | depth | 1849 |
 | `power_equipment_spell_reliability_weight` | 100 | score | 603 |
 
-Power adds 727 parameters for **1734 total**. Source lines refer to
+Power adds 727 parameters for **1734 total**; `town_sell_without_gold`
+makes **1735**. Source lines refer to
 `borg_power.rs` at `5d9abb8f`; every selected literal has its own stable
 registry entry. Suffixes distinguish separate existing tiers/branches; the
 source line identifies the exact term. Activation entries with an existing

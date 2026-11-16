@@ -20,6 +20,16 @@ One PR, owner's request (supersedes #441):
   planner value until the core learns to use them.
 - **Flavour learning** (`borg_town_w_knowledge`) is 0 with the trip policy,
   which returns to town to sell unknown items.
+- **Wine churn fixed**: drinks with under 10 nutrition (wine, whisky,
+  liquor, miruvor) are not food to the planner; counted, the floor bought
+  wine then stored it at the Home every visit (1,532 stores in 180 games
+  -> 42).
+- **Sell less, as a study arm**: `borg_param_town_sell_without_gold = 0`
+  (plan schema 12) keeps a known pack stack unless the sale pays gold or
+  the pack needs the room. Default 1 = unchanged. On the town arm without
+  a plan it raised deaths 30 -> 44 and mean max DL 2.21 -> 2.95; the owner
+  wants it measured only with errands plans and the return dimension:
+  (sell 1/0) x (errands_plan / ambitious, max-depth) x (trip 0/1).
 - Local, town arm, 180 starts (classes-1800 1-180): deaths main 34 /
   this 30; caster deaths 19 / 19; restock-food loops 58 / 0. Starts 1-90
   alone showed caster deaths 5 -> 12, starts 91-180 14 -> 7: noise.
