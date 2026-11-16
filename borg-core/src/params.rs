@@ -288,6 +288,9 @@ parameters! {
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1223", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1514", "Number of Borg turns of danger evaluated at the current grid."),
     caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
+    // #457: outmatched healing, a study flag. 0 = the vendored behaviour exactly.
+    caution_heal_when_outmatched => (0, "flag", 0, 1, "borg_caution.rs:226", "1 = after every escape declined, a hurt Borg whose danger reaches its HP drinks CLW/CSW/CCW instead of attacking; 0 = off."),
+    caution_heal_outmatched_min_loss => (50, "percent", 0, 100, "borg_caution.rs:226", "Minimum percent of maximum HP lost before outmatched healing applies (only when caution_heal_when_outmatched is 1)."),
     // borg-reborn-rs (#220): source lines in danger/escape/recovery at 30ab9d66.
     danger_monblow_hurt_fear => (400, "danger", 0, 5000, "borg_danger.rs:208", "Additional melee danger for MONBLOW_HURT (n += 400;)."),
     danger_monblow_hurt_hit_power => (60, "hit_power", 0, 1000, "borg_danger.rs:210", "Legacy hit-power estimate used for MONBLOW_HURT in partial melee danger."),
