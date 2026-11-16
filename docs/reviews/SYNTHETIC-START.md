@@ -1,7 +1,9 @@
 # Synthetic start: first-slice review
 
 Owner-directed execution prerequisite for borg-reborn-rs #371 and
-borg-cemetery #5. Base: `92404c7e72de4c438ecf1028b17d38b57833d5a6`.
+borg-cemetery #5. Initial task base: `92404c7e72de4c438ecf1028b17d38b57833d5a6`.
+Synchronized review base: `b7d45f171ba7e9b001e39afcaabad84eadc433dd`; its
+concurrent validation evidence is preserved without changing runtime inputs.
 The review PR names the exact implementation head. This is not a request to
 accept a P/R milestone or to close the entire epic.
 

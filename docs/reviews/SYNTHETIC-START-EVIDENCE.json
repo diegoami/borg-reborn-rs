@@ -605,6 +605,12 @@
       "rust": "passed",
       "recorder": "passed",
       "engine": "failed: ordinary source-specific core control dossier missing from historical archive; reproduced locally and retained with immutable importer"
+    },
+    "main_synchronization": {
+      "commit": "b7d45f171ba7e9b001e39afcaabad84eadc433dd",
+      "runtime_inputs_unchanged": true,
+      "historical_packages_verified_after_sync": 2581,
+      "note": "Preserved concurrent main validation packages and regenerated archive indexes. Three new natural controls belong to this task; no synthetic dossiers."
     }
   },
   "historical_control_packages": [
