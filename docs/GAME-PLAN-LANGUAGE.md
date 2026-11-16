@@ -16,19 +16,19 @@ not the full candidate file:
 ```text
 [default]
   level <= 5
-    loop-levels 0 2
+    max-depth 2
   5 < level <= 10
-    loop-levels 0 4
+    max-depth 4
   10 < level <= 15
-    loop-levels 2 6
+    max-depth 6
 
 [mage]
   level <= 5
-    loop-levels 0 1
+    max-depth 1
   5 < level <= 10
-    loop-levels 0 2
+    max-depth 2
   10 < level <= 15
-    loop-levels 1 3
+    max-depth 3
 ```
 
 A matching class section replaces the default **completely**. Its gaps do not
@@ -37,18 +37,28 @@ neither, startup fails visibly. Supported class names are `warrior`, `mage`,
 `druid`, `priest`, `necromancer`, `paladin`, `rogue`, `ranger`, `blackguard`.
 Early gates in the full file follow the two groups in the existing
 owner-tuned ladders. Later intervals are shared hypotheses, not nine invented
-class calibrations. They do not override native preparedness. Later loops
-omit compulsory town endpoints and retain core-requested town recovery;
-town frequency is an evaluation question, not an established optimum.
+class calibrations. They do not override native preparedness. There are
+no planned town visits; town frequency is the core's own, an evaluation
+question, not an established optimum.
 These example depths are not calibrated recommendations or improvement claims.
 
-The POC has exactly **one errand: `loop-levels A B`**, reusing the existing
-implementation, spelling and readiness policy. Zero is town. `ladder`, `trips`,
-`loop-level` aliases and other errands are rejected in this file. The command
-name must be exactly lowercase `loop-levels`, without a slash or colon. Both
-endpoint orders are allowed: `loop-levels 5 3` starts at DL5, explores DL4 then DL3, and returns. This is the
-minimum needed to test the model; extra commands must earn their place later.
-A phase has one command, not an arbitrary program.
+A phase has exactly one command (owner, 2026-11-16).
+
+**`max-depth N`** is a cap, not a route.
+The phase installs no errand: the core plays as itself, with its own dives,
+town trips, shopping and recovery, and is never prepared for a level below
+DL N. It sets the core's `borg_no_deeper` to N+1 for the phase, never above
+the configured value. When the plan hands back (a level with no phase, such
+as 50 in the shipped files) or is cancelled (`/stop`, a manual errand), the
+configured value is put back: after the plan, the core plays as itself. The core's own cap applies as usual: when it leaves a level by the
+nearest stair it may step onto the level below and climbs back at once
+("Needing to get back on correct depth"); it never stays there. N is 1–126.
+Town trips are the core's own, plus the M13 trip policy when it is on.
+
+`loop-levels A B`, the earlier forced route, was removed with the
+level-loop errand: a plan that uses it fails with "loop-levels was removed;
+use max-depth N" (exit 2). `/max-depth`, `MAX-DEPTH`, `max-depth:N` and
+other errands are rejected. A phase has one command, not an arbitrary program.
 
 Headers are at column zero, level conditions have two spaces and the command
 has four. Blank lines and full-line comments are allowed; tabs, extra commands,
@@ -106,16 +116,16 @@ Existing parameters remain in borg.txt; see [CALIBRATION.md](CALIBRATION.md).
 
 ## What runs
 
-The controller selects a phase once and retains its loop state. At safe
+The controller selects a phase once and retains it. At safe
 non-store decision boundaries it checks current character level, not maximum
-level reached. Changing phase replaces the active loop once; an unchanged
+level reached. Changing phase replaces the active cap once; an unchanged
 phase does not restart every think. Experience drain can select an earlier
 phase. Pending Recall is allowed to finish before selecting a new phase;
 store transactions and partially queued commands are not interrupted.
 
-The existing loop still owns core-required town recovery and restarting its
-first endpoint. It does not force an unprepared level. Phase selection clears
-old path intent, not the core's safety flags. No match stops with a reason.
+The core owns every move, town trip and recovery; the cap only refuses
+levels below it. Phase selection clears old path intent, not the core's
+safety flags. No match stops with a reason.
 `/stop`, a manually selected errand, or an errand's terminating outcome cancels
 the plan controller. A different character/older loaded game resets selection.
 An ordinary key pause retains existing Borg state; restarting the Borg resumes
@@ -123,7 +133,7 @@ it. No in-process plan reload is implemented.
 
 Plan bytes are preserved as `BORG_RUN_DIR/errands_plan.txt` when diagnostics are
 enabled. Messages record `# Plan:` with source path, class, level, source line
-and installed loop. Existing traces expose that loop's target and decisions.
+and installed cap.
 The original file can be edited without changing the already parsed plan.
 A native save alone still does not capture Borg/plan memory; use recordings
 for exact lead-ins, not an unqualified fresh-state load claim.
