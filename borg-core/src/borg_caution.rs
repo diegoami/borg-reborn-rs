@@ -17,6 +17,7 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
+use crate::borg_cave::BorgGrid;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
@@ -1208,6 +1209,12 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
+/// Lava burns for 100+1d100 fire damage a turn: a Borg that is not immune to
+/// fire must never choose it as a step (borg-reborn-rs#458).
+fn lava_forbids_step(st: &BorgState, ag: &BorgGrid) -> bool {
+    u32::from(ag.feat) == FEAT_LAVA && st.borg.tr(BI_IFIRE) == 0
+}
+
 /// Back away from danger to an adjacent grid (the "Back away" block of
 /// `borg_caution`).
 fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
@@ -1242,6 +1249,12 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
         // Skip walls/doors
         if !borg_cave_floor_grid(&ag) {
+            continue;
+        }
+
+        // Skip lava grids unless immune to fire (it does 100+1d100 fire
+        // damage per turn: borg-reborn-rs#458)
+        if lava_forbids_step(st, &ag) {
             continue;
         }
 
@@ -2216,4 +2229,32 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    fn grid_of(feat: u32) -> BorgGrid {
+        BorgGrid {
+            feat: feat as u8,
+            ..BorgGrid::default()
+        }
+    }
+
+    // borg-reborn-rs#458: lava does 100+1d100 fire damage a turn, so
+    // backing away onto it killed full-HP low-level Borgs. (`back_away`
+    // itself needs the engine, so the test is on its lava rule.)
+    #[test]
+    fn lava_is_a_forbidden_step_without_fire_immunity() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        assert!(lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_FLOOR)));
+        // an immune Borg may step on it
+        st.borg.trait_[BI_IFIRE as usize] = 1;
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+    }
 }
