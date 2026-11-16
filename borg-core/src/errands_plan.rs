@@ -114,7 +114,7 @@ impl Plan {
                             .parse::<i32>()
                             .ok()
                             .filter(|n| (1..MAX_DEPTH).contains(n))
-                            .ok_or_else(|| error(format!("max-depth needs a level 1..{}", MAX_DEPTH - 1)))?;
+                            .ok_or_else(|| error(format!("max-depth needs a level from 1 to {}", MAX_DEPTH - 1)))?;
                         Command::MaxDepth(n)
                     }
                     ["max-depth", ..] => return Err(error("max-depth takes one level".into())),
@@ -223,6 +223,12 @@ impl Runtime {
                 Ok(Transition::Stop)
             }
         }
+    }
+    /// The configured `borg_no_deeper` to put back once the plan is
+    /// cancelled or hands back (review of #440): after the plan, the core
+    /// plays as itself, without the last phase's cap.
+    fn release_cap(&mut self) -> Option<i32> {
+        if self.cancelled { self.no_deeper.take() } else { None }
     }
 }
 static RUNTIME: OnceLock<Mutex<Option<Runtime>>> = OnceLock::new();
@@ -353,6 +359,9 @@ pub(crate) fn tick(st: &mut BorgState) -> bool {
         let change = r.select(me, class, level).unwrap_or_else(|e| fatal(e));
         if matches!(change, Transition::Install(_)) {
             r.no_deeper.get_or_insert(st.cfg(BORG_NO_DEEPER));
+        }
+        if let Some(configured) = r.release_cap() {
+            st.core.cfg[BORG_NO_DEEPER as usize] = configured;
         }
         (change, r.path.clone(), r.no_deeper)
     };
@@ -496,7 +505,23 @@ mod tests {
         ));
     }
     #[test]
-    fn max_depth_phases_parse_and_mix_with_loops() {
+    fn hand_back_and_cancel_release_the_configured_cap() {
+        let plan = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n").unwrap();
+        let mut r = Runtime { plan, path: "test".into(), owner: None, phase: None,
+            no_deeper: Some(127), cancelled: false };
+        assert!(matches!(r.select((1, 1, 1), "mage", 3).unwrap(), Transition::Install(_)));
+        assert_eq!(r.release_cap(), None, "an installed phase keeps its cap");
+        assert_eq!(r.select((1, 1, 2), "mage", 6).unwrap(), Transition::Stop);
+        assert_eq!(r.release_cap(), Some(127), "hand-back at a gap");
+        assert_eq!(r.release_cap(), None, "released once");
+        let mut r = Runtime { plan: Plan::parse("[default]\n  level <= 5\n    max-depth 2\n").unwrap(),
+            path: "test".into(), owner: None, phase: None, no_deeper: Some(40), cancelled: false };
+        r.select((1, 1, 1), "mage", 3).unwrap();
+        r.cancelled = true; // cancel(): /stop or a manual errand
+        assert_eq!(r.release_cap(), Some(40));
+    }
+    #[test]
+    fn max_depth_phases_parse_and_reject_bad_levels() {
         let p = Plan::parse("[default]\n  level <= 5\n    max-depth 2\n  level > 5\n    max-depth 3\n").unwrap();
         assert_eq!(p.phase("mage", 3).unwrap().unwrap().command, Command::MaxDepth(2));
         assert_eq!(p.phase("mage", 6).unwrap().unwrap().command, Command::MaxDepth(3));

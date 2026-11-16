@@ -200,6 +200,8 @@
   New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
   errand; the core plays as itself and is not prepared below DL N (the
   phase sets `borg_no_deeper` to N+1, never above the configured value).
+  Review of #440: hand-back at a gap and cancel now restore the configured
+  value (the last cap used to persist after level 50).
 - Owner: remove the loop errand entirely. `/loop-levels` and the plan
   command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
   was removed; use max-depth N"), with the level-loop code in shell.rs,
