@@ -1,5 +1,7 @@
 """Real exporter -> qualified import, including concurrent isolated registries."""
 import concurrent.futures
+import contextlib
+import io
 import importlib.util
 import json
 import os
@@ -127,6 +129,65 @@ class QualifiedImportTest(unittest.TestCase):
                     self.assertEqual(target.stat().st_mode, directory_mode)
                     self.assertEqual({p.name: p.stat().st_mode for p in target.iterdir()}, modes)
                     self.assertEqual(list(self.dest.glob('.import-*')), [])
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX directory access modes')
+    def test_failed_publication_cleans_own_read_only_staging(self):
+        source = self.exported('read-only')
+        source.chmod(0o500)
+        self.addCleanup(source.chmod, 0o700)
+        self.dest.mkdir()
+        other = self.dest / '.import-another-process'
+        other.mkdir()
+        (other / 'keep').write_text('active work')
+        retained_source = self.exported('retained')
+        retained_id, _ = imp.import_packages([retained_source], self.dest)[0]
+        retained = self.dest / retained_id
+        before = {p.name: p.read_bytes() for p in retained.iterdir()}
+        real_rename, real_rmtree = Path.rename, imp.shutil.rmtree
+        staged = []
+
+        def fail_publication(stage, target):
+            if stage.name.startswith('.import-'):
+                self.assertEqual(stage.stat().st_mode & 0o777, 0o500)
+                staged.append(stage)
+                raise OSError('publication failed')
+            return real_rename(stage, target)
+
+        def check_cleanup(stage, *args, **kwargs):
+            if stage in staged:
+                self.assertEqual(stage.stat().st_mode & 0o777, 0o700)
+            return real_rmtree(stage, *args, **kwargs)
+
+        with mock.patch.object(Path, 'rename', fail_publication), \
+                mock.patch.object(imp.shutil, 'rmtree', check_cleanup):
+            with self.assertRaisesRegex(OSError, '^publication failed$'):
+                imp.import_packages([source], self.dest)
+        self.assertEqual(len(staged), 1)
+        self.assertFalse(staged[0].exists())
+        self.assertEqual(list(self.dest.glob('.import-*')), [other])
+        self.assertEqual((other / 'keep').read_text(), 'active work')
+        self.assertEqual(source.stat().st_mode & 0o777, 0o500)
+        self.assertEqual({p.name: p.read_bytes() for p in retained.iterdir()}, before)
+        self.assertFalse((self.dest / imp.package(source)[0]).exists())
+
+    def test_cleanup_failure_retains_primary_publication_error(self):
+        source = self.exported('cleanup-error')
+        with mock.patch.object(Path, 'rename', side_effect=OSError('publication failed')), \
+                mock.patch.object(imp.shutil, 'rmtree', side_effect=OSError('cleanup failed')):
+            with self.assertRaisesRegex(OSError, '^publication failed$') as caught:
+                imp.import_packages([source], self.dest)
+        self.assertTrue(any('cleanup failed' in note for note in caught.exception.__notes__))
+        stderr = io.StringIO()
+        with mock.patch.object(sys, 'argv', ['import-deaths.py', str(source)]), \
+                mock.patch.object(imp, 'import_packages', side_effect=caught.exception), \
+                contextlib.redirect_stderr(stderr):
+            with self.assertRaises(SystemExit) as exited:
+                imp.main()
+        self.assertEqual(exited.exception.code, 2)
+        self.assertIn('publication failed', stderr.getvalue())
+        self.assertIn('cleanup failed', stderr.getvalue())
+        self.assertEqual(len(list(self.dest.glob('.import-*'))), 1)
+        self.assertFalse((self.dest / imp.package(source)[0]).exists())
 
     def test_identical_import_and_reimport_are_idempotent(self):
         source = self.exported('one')

@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: failed import publication cleanup (#359)
+
+- Stacked on #358/#381. Restore0700 only on this invocation's unpublished
+  staging before removal, even if publication adopted a read-only source's
+  mode. Never scan other importers' staging or chmod an existing package.
+- Keep the original publication exception if cleanup also fails, attaching
+  the cleanup error as a diagnostic. Reproduce both paths with injected
+  rename/removal failures; assert read-only source mode, private cleanup,
+  existing package bytes, another active staging directory and no final
+  partial package. No evidence, runtime, defaults or pin changes.
+- Task PR records local/CI checks; integrate into track-p after green CI,
+  then stop for the next pinned owner-selected promotion review.
+
 ## 2026-11-16: published import directory access (#358)
 
 - Owner accepted #372 and delegated its merge; the unchanged reviewed pin

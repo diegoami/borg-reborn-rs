@@ -43,7 +43,10 @@ a 0755 source publishes as 0700 under umask 077; a 0777 source under umask
 from a 0777 source. Files are also limited by source permissions and umask.
 Generated metadata uses the source record's access limits. Re-import leaves
 existing package permissions unchanged. This does not grant access to a private source.
-A killed process can leave a `.import-*` directory; Git ignores historical
+If publication fails, this importer restores owner access on its own unpublished
+staging directory before cleanup. If cleanup also fails, the original error
+remains primary with a cleanup diagnostic. Published packages and other
+processes' staging directories are untouched. A killed process can leave a `.import-*` directory; Git ignores historical
 staging paths. Do not remove another process's active staging directory.
 
 These are immutable **historical validation packages**, not a new death
