@@ -17,7 +17,17 @@
  	textui_cleanup();
  	cleanup_angband();
  #ifdef SOUND
-@@ -548,6 +554,9 @@
+@@ -345,6 +351,9 @@
+  */
+ int main(int argc, char *argv[])
+ {
++#ifdef BORG_RECORDING
++	record_early_init();
++#endif
+ 	int i;
+ 	bool new_game = false, select_game = false;
+ 	bool done = false;
+@@ -548,6 +557,9 @@
  	/* Make sure we have a display! */
  	if (!done) quit("Unable to prepare any 'display module'!");
  
@@ -36,7 +46,7 @@
  /**
   * \file ui-term.c
   * \brief A generic, efficient, terminal window package
-@@ -2683,7 +2686,11 @@
+@@ -2734,7 +2737,11 @@
   *
   * Remove the input event if "take" is true.
   */
@@ -48,7 +58,7 @@
  {
  	/* Assume no key */
  	memset(ch, 0, sizeof *ch);
-@@ -3291,3 +3298,15 @@
+@@ -3342,3 +3349,15 @@
  	}
  	return result;
  }
@@ -102,7 +112,7 @@
  #ifdef BORG_HARNESS
  	if (context == CTX_GAME && borgh_command_hook) (*borgh_command_hook)();
  #endif
-@@ -958,6 +964,9 @@
+@@ -950,6 +956,9 @@
  		 * is needed */
  		while (!player->is_dead && player->upkeep->playing) {
  			pre_turn_refresh();
@@ -152,7 +162,19 @@
  }
  
  #elif defined(WINDOWS)
-@@ -1006,7 +1013,13 @@
+@@ -949,7 +956,11 @@
+ /**
+  * Return true if first is newer than second, false otherwise.
+  */
++#ifdef BORG_RECORDING
++static bool recording_real_file_newer(const char *first, const char *second)
++#else
+ bool file_newer(const char *first, const char *second)
++#endif
+ {
+ #ifdef HAVE_STAT
+ 	struct stat stat1, stat2;
+@@ -1006,7 +1017,13 @@
  			break;
  		}
  		case MODE_READ:
@@ -167,6 +189,68 @@
  			break;
  		case MODE_APPEND:
  			f->fh = fopen(buf, "a+");
+@@ -1442,8 +1459,19 @@
+ 	DIR *d;
+ 
+ 	/* Try to open the directory */
++#ifdef BORG_RECORDING
++    if (ar_replaying()) {
++        if (!ar_directory_open(false)) return NULL;
++        d = NULL;
++    } else {
++        d = opendir(dirname);
++        if (ar_active()) ar_directory_open(d != NULL);
++        if (!d) return NULL;
++    }
++#else
+ 	d = opendir(dirname);
+ 	if (!d) return NULL;
++#endif
+ 
+ 	/* Allocate memory for the handle */
+ 	dir = mem_zalloc(sizeof(ang_dir));
+@@ -1469,7 +1497,11 @@
+ 	return oldval;
+ }
+ 
++#ifdef BORG_RECORDING
++static bool recording_real_dread(ang_dir *dir, char *fname, size_t len)
++#else
+ bool my_dread(ang_dir *dir, char *fname, size_t len)
++#endif
+ {
+ 	struct dirent *entry;
+ 	struct stat filedata;
+@@ -1502,6 +1534,17 @@
+ 	return true;
+ }
+ 
++#ifdef BORG_RECORDING
++bool my_dread(ang_dir *dir, char *fname, size_t len)
++{
++    bool present;
++    if (ar_replaying()) return ar_directory_read(dir->only_files, len, fname, false);
++    present = recording_real_dread(dir, fname, len);
++    if (ar_active()) ar_directory_read(dir->only_files, len, fname, present);
++    return present;
++}
++#endif
++
+ void my_dclose(ang_dir *dir)
+ {
+ 	/* Close directory */
+@@ -1516,3 +1559,11 @@
+ #endif /* HAVE_DIRENT_H */
+ #endif /* WINDOWS */
+ 
++
++#ifdef BORG_RECORDING
++bool file_newer(const char *first, const char *second)
++{
++    if (ar_replaying()) return ar_newer(false);
++    return ar_newer(recording_real_file_newer(first, second));
++}
++#endif
 --- a/src/z-rand.c
 +++ b/src/z-rand.c
 @@ -1,3 +1,7 @@
@@ -179,15 +263,21 @@
   * \brief A Random Number Generator for Angband
 --- a/src/savefile.c
 +++ b/src/savefile.c
-@@ -1,3 +1,6 @@
+@@ -1,3 +1,7 @@
 +#ifdef BORG_RECORDING
 +#include "native-replay.h"
++#include <sys/stat.h>
 +#endif
  /**
   * \file savefile.c
   * \brief Savefile loading and saving main routines
-@@ -390,6 +393,9 @@
+@@ -388,8 +392,14 @@
+ 	char new_savefile[1024];
+ 	char old_savefile[1024];
  	bool ok = false;
++#ifdef BORG_RECORDING
++	bool path_exists = false;
++#endif
  
  	/* Generate a CharOutput.txt, mainly for angband.live, when saving. */
 +#ifdef BORG_RECORDING
@@ -196,3 +286,23 @@
  	(void) save_charoutput();
  
  	/* New savefile */
+@@ -418,10 +428,19 @@
+ 		 * file in place.
+ 		 */
+ 		character_saved = false;
++#ifdef BORG_RECORDING
++        /* This session's save is live state; replay uses a private save path. */
++        struct stat save_st;
++        path_exists = (stat(path, &save_st) == 0);
++#endif
+ 
+ 		safe_setuid_grab();
+ 
++#ifdef BORG_RECORDING
++		if (path_exists && !file_move(path, old_savefile)) {
++#else
+ 		if (file_exists(path) && !file_move(path, old_savefile)) {
++#endif
+ 			ok = false;
+ 		} else if (!file_move(new_savefile, path)) {
+ 			ok = false;

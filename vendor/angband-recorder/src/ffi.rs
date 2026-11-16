@@ -1,7 +1,8 @@
 //! Linux engine ABI. The host calls this on its game thread. The clock wrapper
 //! may be called from other threads. Forked savers bypass the inherited lock.
-use crate::{Input, Metadata, Session, SCHEMA};
+use crate::{merge_host_observation, Input, Session};
 use serde_json::json;
+use sha2::{Digest, Sha256};
 use std::ffi::{c_char, c_long, CStr, CString, OsStr};
 use std::os::unix::ffi::OsStrExt;
 use std::path::Path;
@@ -35,6 +36,9 @@ fn with_session<T>(f: impl FnOnce(&mut Session) -> T) -> Option<T> {
     SESSION.lock().unwrap().as_mut().map(f)
 }
 unsafe fn text<'a>(value: *const c_char) -> &'a str {
+    if value.is_null() {
+        fatal("null host string");
+    }
     CStr::from_ptr(value).to_str().unwrap_or_else(|e| fatal(e))
 }
 fn env(primary: &str, legacy: &str) -> Option<std::ffi::OsString> {
@@ -42,32 +46,40 @@ fn env(primary: &str, legacy: &str) -> Option<std::ffi::OsString> {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn ar_init(build: *const c_char, geometry: *const i64) {
+pub unsafe extern "C" fn ar_early_init(build: *const c_char) {
     let Some(output) = env("ANGBAND_RECORD_DIR", "BORG_RECORD_DIR") else {
         if env("ANGBAND_REPLAY_DIR", "BORG_REPLAY_DIR").is_some() {
-            fatal("replay requires a separate recording output directory");
+            fatal("replay requires separate recording output");
         }
         return;
     };
     let original = env("ANGBAND_REPLAY_DIR", "BORG_REPLAY_DIR");
-    let geometry: [i64; 5] = std::slice::from_raw_parts(geometry, 5).try_into().unwrap();
-    let metadata = Metadata {
-        schema: SCHEMA.into(),
-        build: text(build).into(),
-        pid: getpid().into(),
-        geometry,
-    };
-    let mut state = SESSION.lock().unwrap();
-    if state.is_some() {
+    let image = checked(std::fs::read("/proc/self/exe"));
+    let identity = format!("{}:sha256:{:x}", text(build), Sha256::digest(image));
+    if SESSION.lock().unwrap().is_some() {
         fatal("recorder already initialized");
     }
-    *state = Some(checked(Session::start(
+    let value = checked(Session::start_early(
         Path::new(&output),
         original.as_deref().map(Path::new),
-        metadata,
-    )));
+        identity,
+        getpid().into(),
+    ));
+    *SESSION.lock().unwrap() = Some(value);
     if atexit(ar_finish) != 0 {
         fatal("cannot register recording finalization");
+    }
+}
+#[no_mangle]
+pub unsafe extern "C" fn ar_init(_build: *const c_char, geometry: *const i64) {
+    if geometry.is_null() {
+        fatal("missing terminal geometry");
+    }
+    let geometry: [i64; 5] = std::slice::from_raw_parts(geometry, 5).try_into().unwrap();
+    if with_session(|s| checked(s.attach_geometry(geometry))).is_none()
+        && env("ANGBAND_RECORD_DIR", "BORG_RECORD_DIR").is_some()
+    {
+        fatal("early recorder hook missing");
     }
 }
 #[no_mangle]
@@ -108,6 +120,42 @@ pub unsafe extern "C" fn ar_poll(input: *mut Input) {
 #[no_mangle]
 pub extern "C" fn ar_exists(actual: bool) -> bool {
     with_session(|s| checked(s.exists(actual))).unwrap_or(actual)
+}
+#[no_mangle]
+pub extern "C" fn ar_newer(actual: bool) -> bool {
+    with_session(|s| checked(s.newer(actual))).unwrap_or(actual)
+}
+#[no_mangle]
+pub extern "C" fn ar_directory_open(actual: bool) -> bool {
+    with_session(|s| checked(s.directory_open(actual))).unwrap_or(actual)
+}
+#[no_mangle]
+pub unsafe extern "C" fn ar_directory_read(
+    only_files: bool,
+    capacity: usize,
+    buffer: *mut c_char,
+    actual: bool,
+) -> bool {
+    if buffer.is_null() || capacity == 0 {
+        fatal("invalid directory buffer");
+    }
+    let name = if actual {
+        Some(CStr::from_ptr(buffer).to_bytes().to_vec())
+    } else {
+        None
+    };
+    let value = with_session(|s| checked(s.directory_read(only_files, capacity, name.clone())))
+        .unwrap_or(name);
+    if let Some(name) = value {
+        if name.len() >= capacity {
+            fatal("directory buffer differs");
+        }
+        std::ptr::copy_nonoverlapping(name.as_ptr(), buffer.cast(), name.len());
+        *buffer.add(name.len()) = 0;
+        true
+    } else {
+        false
+    }
 }
 #[no_mangle]
 pub unsafe extern "C" fn ar_read_path(path: *const c_char) -> *const c_char {
@@ -154,6 +202,9 @@ pub struct Observation {
 }
 #[no_mangle]
 pub unsafe extern "C" fn ar_frame(phase: *const c_char, observation: *const Observation) {
+    if observation.is_null() {
+        fatal("null host observation");
+    }
     with_session(|s| {
         let o = &*observation;
         if !(1..=255).contains(&o.width) || !(1..=255).contains(&o.height) {
@@ -201,10 +252,7 @@ pub unsafe extern "C" fn ar_frame(phase: *const c_char, observation: *const Obse
         let observation: serde_json::Value =
             serde_json::from_str(text(extra)).unwrap_or_else(|e| fatal(e));
         ar_host_free_extra(extra);
-        frame
-            .as_object_mut()
-            .unwrap()
-            .extend(observation.as_object().unwrap().clone());
+        checked(merge_host_observation(&mut frame, observation));
         checked(s.frame(&frame));
     });
 }

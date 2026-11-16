@@ -1,0 +1,9 @@
+{
+  "schema": "borg-reborn-rs/cemetery-evidence-pointer@1",
+  "repository": "diegoami/borg-cemetery",
+  "commit": "07ac44f9db3cbe280c3e802b76c7f8c29f525ce7",
+  "report": "validation/borg-reborn-rs/recorder-v020/P351-VALIDATION.md",
+  "receipts": "validation/borg-reborn-rs/recorder-v020/P351-VALIDATION.json",
+  "migration": "validation/borg-reborn-rs/recorder-v020/migration.json",
+  "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+}
