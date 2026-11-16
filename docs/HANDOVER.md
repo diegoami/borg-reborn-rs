@@ -19,9 +19,10 @@
 - Oil case (Warrior seed 501, ambitious plan + shop, 100k): keys 69,838 →
   15,209, Home takes 3,994 → 0, worst burst 719 → 12 actions at one turn;
   keys sha256 f32abbde21da.
-- CI death controls for the new source (core seed 1011 Mage, reborn seed
+- CI death controls for the new source (core seed 1011 Mage, smoke seed
+  102 Mage, reborn seed
   1020 Druid; same keys as before) are retained in borg-cemetery
-  `evidence/borg-reborn-rs-368-ci-controls` (8904224, PR borg-cemetery#16);
+  `evidence/borg-reborn-rs-368-ci-controls` (696065b, PR borg-cemetery#16);
   harness/fixtures/planmage-wild-cat.json points CI at that commit.
   The owner merges borg-cemetery#16.
 - Left: a store/take across visits is still possible (costs game time);
