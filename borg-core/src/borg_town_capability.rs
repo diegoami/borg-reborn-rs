@@ -397,6 +397,11 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
     if !matches!(tval, TV_FOOD | TV_MUSHROOM) {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
     }
+    // Drinks that nourish almost nothing (wine, whisky, liquor, miruvor:
+    // 3-5 nutrition, object.txt) are not food to the planner. Counted, the
+    // food floor bought a pint of wine for its few nutrition points, then
+    // stored it at the Home as not worth its pack slot, every visit.
+    effects.retain(|&(e, sub, amount)| u32::from(e) != EF_NOURISH || sub == 1 || amount >= 10);
     // Poisonous/hallucinatory nourishment must not be sold as safe food.
     if effects.iter().any(|&(e, sub, _)| matches!(u32::from(e), EF_TIMED_INC | EF_TIMED_INC_NO_RES) && matches!(sub as u32, TMD_POISONED | TMD_CONFUSED | TMD_IMAGE | TMD_PARALYZED)) {
         effects.retain(|&(e, _, _)| u32::from(e) != EF_NOURISH);
