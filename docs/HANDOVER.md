@@ -7,9 +7,13 @@
 - Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
   same start (implementation, seed, race, class, flags, borg.txt, save) and
   the same key stream from any build; only a changed game is UNRECORDED.
-- borg-cemetery #46 (`d291b074`) changes `reconcile-deaths.py` (and adds
-  `--exact` for the old build-qualified match); `death-tools-pin.txt` moves
-  to it. `--runs` (every CI death exported) is unchanged.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
 - Evidence: the native registry retained 22, 23 and 25 identical copies of
   the 1011, 102 and 1020 control games. On #455's merged head (source
   9fb9ad72) all four control deaths are KNOWN against main's pins before
