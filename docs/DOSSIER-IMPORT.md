@@ -10,6 +10,16 @@ be committed as new historical archive IDs: another track, task branch or CI
 runner can independently allocate the same number. Per-track ranges alone do
 not solve concurrent branches of the same track.
 
+## When a new package is needed
+
+Only when CI reports `UNRECORDED` (owner, 2026-11-16, #464). The reconcile
+step matches a death on its start (implementation, seed, race, class,
+flags, borg.txt, save) and its key stream, not on the build: a control game
+that plays the same keys under a new source hash is `KNOWN`, and needs
+neither a package nor a pin move. Another key stream, or the same keys from
+another start, is a new death and is retained as below. `reconcile-deaths.py
+--exact` restores the build-qualified match for audits.
+
 ## Retain a completed validation package
 
 Import each completed native dossier with:

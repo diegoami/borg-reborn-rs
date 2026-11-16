@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 (`d291b074`) changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match); `death-tools-pin.txt` moves
+  to it. `--runs` (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
+
 ## 2026-11-16: back-away no longer steps onto lava (#458)
 
 - `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
