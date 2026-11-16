@@ -1,0 +1,40 @@
+name: Pinned cemetery validation evidence
+description: Verify canonical evidence and prepare an unchanged reconciliation gate
+runs:
+  using: composite
+  steps:
+    - id: pin
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import json, os, re
+        from pathlib import Path
+        receipts = sorted(Path('docs').glob('R*-CEMETERY-RECEIPT.json'))
+        if not receipts:
+            raise ValueError('missing Track R cemetery receipts')
+        commits = {json.loads(p.read_text())['commit'] for p in receipts}
+        if len(commits) != 1 or not re.fullmatch('[0-9a-f]{40}', next(iter(commits))):
+            raise ValueError('all receipts must pin one exact cemetery snapshot')
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            output.write('commit=' + next(iter(commits)) + '\n')
+        PY
+    - uses: actions/checkout@v4
+      with:
+        repository: diegoami/borg-cemetery
+        ref: ${{ steps.pin.outputs.commit }}
+        path: vendor/track-r-evidence
+        persist-credentials: false
+    - shell: bash
+      run: |
+        python3 - <<'PY'
+        import os, subprocess, sys
+        from pathlib import Path
+        output = Path(os.environ['RUNNER_TEMP']) / 'complete-death-archive'
+        command = [sys.executable, 'tools/prepare-validation-evidence.py',
+                   '--cemetery', 'vendor/track-r-evidence', '--output', str(output)]
+        for path in sorted(Path('docs').glob('R*-CEMETERY-RECEIPT.json')):
+            command.extend(['--receipt', str(path)])
+        subprocess.run(command, check=True)
+        with open(os.environ['GITHUB_ENV'], 'a') as env:
+            env.write('BORG_VALIDATION_ARCHIVE=' + str(output) + '\n')
+        PY

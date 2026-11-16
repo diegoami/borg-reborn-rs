@@ -56,9 +56,11 @@ def main():
         after = after.replace('crate::decision_api::borg_headers::', 'crate::borg_headers::')
         before, after = remove_markers(before), remove_markers(after)
         literals = lambda text: re.findall(r'(?:b)?"(?:[^"\\]|\\.)*"', text)
+        characters = lambda text: re.findall(r"(?:b)?'(?:\\(?:u\{[0-9a-fA-F_]+\}|x[0-9a-fA-F]{2}|.)|[^'\\\n])'", text)
         row = dict(function=name, normalized_tokens_equal=tokens(before) == tokens(after),
-                   quoted_literals_equal=literals(before) == literals(after))
-        assert row['normalized_tokens_equal'] and row['quoted_literals_equal'], name
+                   quoted_literals_equal=literals(before) == literals(after),
+                   character_literals_equal=characters(before) == characters(after))
+        assert row['normalized_tokens_equal'] and row['quoted_literals_equal'] and row['character_literals_equal'], name
         rows.append(row)
     expected = set(native) - {'default', 'tr'} - {n + '_native' for n in port}
     expected |= {n for n in port if n + '_native' in native}
@@ -94,7 +96,7 @@ def main():
         native_sha256=sha(native_text), port_sha256=sha(port_text),
         scope='All 71 policy function bodies, module constants and SpellFlag enum; imports and memory definitions require separate review.',
         identical_declarations=sorted(native_declarations),
-        normalization='Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string sequences compared separately.',
+        normalization='Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string and character sequences compared separately.',
         functions=rows), indent=2))
 
 
