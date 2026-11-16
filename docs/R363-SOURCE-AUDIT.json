@@ -2,7 +2,7 @@
   "schema": "borg-reborn-rs/r363-source-audit@1",
   "base_commit": "2c4dc5af78e31c11a3ff38ccbdf7789a71698cbe",
   "base_runtime_input_hash": "a698f1f6810032239b721af1fc51b48e818e53efacd345450ba29dbff2af1511",
-  "normalization": "Only Read::new(st) -> View::new(st), and group().field() -> group.field on that expression or the two existing local view bindings; compare comment/string-masked code with whitespace removed.",
+  "normalization": "Only Read::new(st) -> View::new(st), and group().field() -> group.field on that expression or the two existing local view bindings; compare comment/string-masked code with whitespace removed. Also compare full text with whitespace removed (comments retained), and independently preserve every quoted string/character sequence exactly, including its whitespace.",
   "result": "All original code tokens/ordering retained after normalizing the named projection syntax. This source audit is not runtime acceptance or a speed measurement.",
   "files": [
     {
@@ -10,21 +10,27 @@
       "base_sha256": "001f56bb34d309b74b3f7cf4109d6bc65c792146a32036f21dbf66dc282ddfff",
       "new_sha256": "5f4d2dd32c8ce0c7a0b1a32c6f838ed42d02c5383c91b4c427927cc2edbe182d",
       "code_tokens_equal_after_projection_normalization": true,
-      "named_constructor_sites": 215
+      "named_constructor_sites": 215,
+      "full_text_equal_after_projection_and_whitespace_normalization": true,
+      "quoted_string_and_character_sequences_preserved_exactly": true
     },
     {
       "path": "borg-next/src/stateful/escape.rs",
       "base_sha256": "0ad26f47506edfde26fae9eb1588ddf9453da39af3075451b697ae05b331b84c",
       "new_sha256": "7fdd5e84b50bfb0b7e0fbc6b2a8bfe78423622cd81916e8f195d2fb5f2382afb",
       "code_tokens_equal_after_projection_normalization": true,
-      "named_constructor_sites": 86
+      "named_constructor_sites": 86,
+      "full_text_equal_after_projection_and_whitespace_normalization": true,
+      "quoted_string_and_character_sequences_preserved_exactly": true
     },
     {
       "path": "borg-next/src/stateful/recovery.rs",
       "base_sha256": "42b2f23ea57a2262a1735182fb9800872f53fd7dbd15fa0594f8e0f1ddebca79",
       "new_sha256": "e4ecf8a042f5da5912c6057eaa1ff38cd2d6cc0adb3a5252d0a1e05e29bc473a",
       "code_tokens_equal_after_projection_normalization": true,
-      "named_constructor_sites": 72
+      "named_constructor_sites": 72,
+      "full_text_equal_after_projection_and_whitespace_normalization": true,
+      "quoted_string_and_character_sequences_preserved_exactly": true
     }
   ]
 }
