@@ -36,10 +36,13 @@ Concurrent import processes use the cemetery-owned registry lock, publish
 complete directories atomically, and delegate index generation to that same
 owned toolkit. Existing differing data is never overwritten. Staging stays
 private until all files are written. At publication, a new directory keeps
-the source directory's ordinary access bits (not special permission bits);
-file access is limited by both source permissions and the importing process's
-umask. Generated metadata uses the source record's access limits. Re-import leaves existing
-package permissions unchanged. This does not grant access to a private source.
+only the source directory's ordinary access bits allowed by directory creation
+under the importing process's umask (no special permission bits). For example,
+a 0755 source publishes as 0700 under umask 077; a 0777 source under umask
+022 publishes as 0755. An explicitly permissive umask 000 still permits 0777
+from a 0777 source. Files are also limited by source permissions and umask.
+Generated metadata uses the source record's access limits. Re-import leaves
+existing package permissions unchanged. This does not grant access to a private source.
 A killed process can leave a `.import-*` directory; Git ignores historical
 staging paths. Do not remove another process's active staging directory.
 
