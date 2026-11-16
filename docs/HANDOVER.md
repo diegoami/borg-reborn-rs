@@ -11,10 +11,19 @@
 - #407 now freezes track-p for the recorder milestone review. #405 remains
   unmerged while that review is active; owner authorization to implement
   preferences does not authorize moving its reviewed head or promotion to main.
-- The earlier cac37f59/cd411e55 validation below remains historical exact-build
-  evidence, not proof for this synchronized tree. Fresh current-base native
-  parity, test/profile contracts and Cemetery identities are required before
-  declaring the combined task ready. R carry remains separately blocked in #406.
+- Fresh clean25e89494 versus clean46d5f2ae passes strict full45/45 native
+  key/message/state parity.336 native tests (four existing ignored),165 workspace
+  tests, formatting/Clippy and70 engine checks (two local skips, required pinned
+  zoo and incident fixtures present) pass. The real weighted choice and tracing
+  checks still pass; original-core Fang replay reproduces50491fa13924 exactly.
+- Current Cemetery evidence pin:62039b2750d3b106062d5246e77fa3a84d60d1d8, recorder-sync/ under
+  validation/borg-reborn-rs/class-attack-preferences. All73 qualified packages
+  verify, including27 new exact-build records;12 current native neutral deaths,
+  the weighted case and two original-core deaths reconcile. The new fixture
+  reference supplies CI's known archive without weakening any check. Earlier
+  cac37f59/cd411e55 evidence below remains historical, not relabeled.
+- R carry remains separately blocked in #406. Native calibration replay tooling
+  is Cemetery#13; #407's reviewed track-p head remains unchanged.
 
 ## 2026-11-16: class/family attack preferences (#403, design #396)
 

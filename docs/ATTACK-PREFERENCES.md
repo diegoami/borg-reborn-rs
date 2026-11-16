@@ -291,3 +291,22 @@ attempts. harness/fixtures/attack-preferences.json pins the new evidence indepen
 of the old incident fixture; CI includes both retained archives in its known
 registry. No runtime input is changed by this evidence-only follow-up. R parity
 and native saved-position scenarios for every other class remain later coverage.
+
+## Recorder integration synchronization
+
+Track-p advanced to46d5f2ae through #393 and froze for review #407 during this
+work. The preference branch merges that target as25e89494, preserving every
+recorder change and both handovers. It does not move the frozen integration head.
+Fresh strict full45/45 key/message/state parity against46d5f2ae passes; Rust checks
+and70 engine checks pass again (two local skips). The original-core Fang replay
+also reproduces exactly. Current source hash is
+`0d05063ed05226f0a7d1b92c7aad844f1ce73994fd9b1615dda7c44a3aaf46e4`.
+
+[Current canonical receipts](https://github.com/diegoami/borg-cemetery/tree/62039b2750d3b106062d5246e77fa3a84d60d1d8/validation/borg-reborn-rs/class-attack-preferences/recorder-sync)
+preserve the earlier exact-build evidence and qualify the new source identities.
+The candidate's recorder-off executable bytes match the earlier candidate, but
+that fact does not replace the fresh source/build receipts. Native preference
+validation has an independently reconciled registry, preserving the original-core
+observation replay check. Native calibration replay restoration is a separate
+Cemetery#13 tooling issue. #405 stays unmerged while #407's review is active;
+R carry #406 and main promotion still wait for owner acceptance.
