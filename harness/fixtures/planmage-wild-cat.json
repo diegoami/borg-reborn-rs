@@ -42,6 +42,7 @@
   "archive": "20261115T212321Z-PlanMage-checkpoints.zip",
   "archive_sha256": "2b95d6d018872af3bf8a0b8ae1d7cc41b29b5c22a21ba0dc3616616901a90634",
   "archive_bytes": 53052,
-  "repository": "diegoami/player-cemetery",
-  "commit": "bec33f401a45716f70e28b491661c1c9984bd3f6"
+  "repository": "diegoami/borg-cemetery",
+  "commit": "37afd3dd5338c036f2c68b1717dd38a3869ecd02",
+  "archive_path": "scenarios/planmage-wild-cat-fixtures/checkpoints.zip"
 }
