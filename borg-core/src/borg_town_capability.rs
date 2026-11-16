@@ -348,14 +348,11 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return Vec::new();
     }
     if !matches!(tval, TV_POTION | TV_SCROLL | TV_FOOD | TV_MUSHROOM | TV_WAND | TV_ROD | TV_STAFF) { return Vec::new(); }
-    // borg-reborn-rs: items the core does not use. In 270 local games
-    // (classes-1800-small, town planner on) the planner bought 201 Scrolls of
-    // Monster Confusion, 11 of Recharging, 60 Mushrooms of Purging and 53 of
-    // Stoneskin, and the core used none of them.
-    let v = &st.item_val;
-    let sval = i32::from(item.sval);
-    if (tval == TV_SCROLL && (sval == v.sv_scroll_monster_confusion || sval == v.sv_scroll_recharging))
-        || (tval == TV_MUSHROOM && (sval == v.sv_mush_purging || sval == v.sv_mush_stoneskin)) {
+    // borg-reborn-rs: an item the core has no code to use. A Scroll of
+    // Monster Confusion is only bought (borg_buy_strategy) or used up as junk
+    // (borg_junk); nothing reads it before a fight. In 270 local games the
+    // planner bought 201 and the core used none.
+    if tval == TV_SCROLL && i32::from(item.sval) == st.item_val.sv_scroll_monster_confusion {
         return Vec::new();
     }
     // borg-reborn-rs (food counting): only food and mushrooms feed the core
