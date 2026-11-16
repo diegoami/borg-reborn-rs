@@ -10,6 +10,19 @@
 - Stacked on rollback #379; leave unmerged for owner inspection. Trial
   results belong in borg-cemetery's PlanMage case. Zoo comparison stays paused.
 
+## 2026-11-16: Cemetery evidence ownership (#376)
+
+- AGENTS/RULES now require gameplay reports, scenarios and trials in
+  borg-cemetery; source PRs retain code/tests and concise validation links.
+- Cemetery PR8 retains the PlanMage incident and all66 files of the six
+  #355 control packages byte-for-byte. Remove only those mapped packages
+  here, regenerate the index and redirect the current incident pages.
+- CI reads the unchanged checkpoint archive from a separate pinned Cemetery
+  evidence checkout. Reconciliation uses retained historical plus canonical
+  cases, never the new temporary registry as its own expected baseline.
+- Original public player recordings/hashes and other sessions' historical
+  packages remain preserved. No policy change is part of this cleanup.
+
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
 - #349 was owner-reviewed, synchronized through green #362 and promoted as

@@ -6,6 +6,15 @@ the agent collects the evidence and tries to reproduce the problem itself.
 The owner should not have to locate files, reconstruct command lines or
 diagnose the Borg.
 
+## Evidence ownership
+
+Canonical incident/death reports, reusable scenarios and behavioral trial
+comparisons are authored and published in borg-cemetery. This repository holds
+implementation, tests and fixture/case pointers, not duplicate gameplay reports.
+Original player recordings and working saves may remain in player-cemetery;
+case-specific alternative plays and trials use Cemetery's existing tools and
+case storage. Preserve original hashes/history when relocating report pages.
+
 ## Before play
 
 The agent prepares a unique session directory outside tracked source files.
