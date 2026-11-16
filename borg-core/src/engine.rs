@@ -2372,6 +2372,7 @@ pub fn kind_effect_values(kind: usize, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(self::kind(kind).effect, level)
 }
 
+#[allow(dead_code)] // borg-reborn-rs (#400): its only caller, the learned-spell suppression, is gone.
 pub fn spell_effect_values(index: i32, level: i32) -> Vec<(u16, i32, i64)> {
     effect_values(spell_by_index_ref(index).effect, level)
 }
