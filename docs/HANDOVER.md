@@ -2,6 +2,30 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: accessor merged; attack #401 validation underway
+
+- #367 passed all CI and merged feature-only at ca7ab365; #363 closed.
+  Primary feature/track-r is synchronized. Main/global reviewed stay gated.
+- Attack draft #401 publishes all 71 owned functions/seven public entries.
+  Clippy/fmt/vendor, workspace/core/tool checks pass. Source audit now also
+  verifies every module constant and SpellFlag declaration.
+- Initial runtime build 60d0a7a7, clean input hash 33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a,
+  matches published 9130f210 runtime inputs. Smoke off/check/switch each
+  3/3 and zero mismatches; full off matches exact M13 donor 45/45. Full
+  check/switch campaigns remain running/pending under the shared lock.
+- First #401 CI failed only because its new-build death was not yet in the
+  archive. Workflow 43788356005/artifact 14191516353 is imported with its
+  exact origin map. Twelve local native full-suite death packages are also
+  imported; archive 2,696 verifies. Repeats are not independent games.
+- Do not merge #401 yet: complete full/strict 18-entry checks, nested and
+  literal fault/re-port controls, original regression/death reconciliation,
+  all final evidence and exact-head CI. Raw runs: /workspace/work/r364-evidence.
+- Defence #365 is claimed on task/T365-defence-port, stacked on #401.
+  Initial owned body/typed dependencies compile; dispatch and @3 complete
+  surface are wired, unit/source checks in progress. No defence game claim.
+  Permanent-buff policy remains shared. Finish #365, then #366 combined
+  validation/review; the owner chooses the reviewer.
+
 ## 2026-11-16: attack #364 implementation, runtime acceptance pending
 
 - Working branch task/T364-attack-port; all integration targets remain

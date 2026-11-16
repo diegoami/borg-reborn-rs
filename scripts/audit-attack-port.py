@@ -63,11 +63,37 @@ def main():
     expected = set(native) - {'default', 'tr'} - {n + '_native' for n in port}
     expected |= {n for n in port if n + '_native' in native}
     assert set(port) == expected, (set(port) - expected, expected - set(port))
+    def declarations(text):
+        code = mask_non_code(text)
+        found = {}
+        for match in re.finditer(r'^(const|enum)\s+(\w+)', code, re.M):
+            depth = 0
+            opened = False
+            for end in range(match.end(), len(code)):
+                char = code[end]
+                if char in '([{':
+                    depth += 1
+                    opened = True
+                elif char in ')]}':
+                    depth -= 1
+                if depth == 0 and (char == ';' or
+                        (match[1] == 'enum' and opened and char == '}')):
+                    found[match[2]] = text[match.start():end + 1]
+                    break
+        return found
+    native_declarations, port_declarations = declarations(native_text), declarations(port_text)
+    assert native_declarations.keys() == port_declarations.keys()
+    for name in native_declarations:
+        before, after = native_declarations[name], port_declarations[name]
+        assert tokens(before) == tokens(after), name
+        assert re.findall(r'(?:b)?"(?:[^"\\]|\\.)*"', before) == re.findall(
+            r'(?:b)?"(?:[^"\\]|\\.)*"', after), name
     sha = lambda text: hashlib.sha256(text.encode()).hexdigest()
     print(json.dumps(dict(
         schema='borg-reborn-rs/r364-source-audit@1',
         native_sha256=sha(native_text), port_sha256=sha(port_text),
-        scope='All 71 policy function bodies; imports, module constants and memory definitions require separate review.',
+        scope='All 71 policy function bodies, module constants and SpellFlag enum; imports and memory definitions require separate review.',
+        identical_declarations=sorted(native_declarations),
         normalization='Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string sequences compared separately.',
         functions=rows), indent=2))
 

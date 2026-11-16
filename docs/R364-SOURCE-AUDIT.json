@@ -2,7 +2,22 @@
   "schema": "borg-reborn-rs/r364-source-audit@1",
   "native_sha256": "36205bb4b6ceb34e2d5e142cdaad05644e967749a8e094a93346fd6545cacf8b",
   "port_sha256": "1b6f471013cb29dfeaa7a01f9b0b4bc6b099a2b88c63e1036e7aa3048949e249",
-  "scope": "All 71 policy function bodies; imports, module constants and memory definitions require separate review.",
+  "scope": "All 71 policy function bodies, module constants and SpellFlag enum; imports and memory definitions require separate review.",
+  "identical_declarations": [
+    "BORG_OKAY",
+    "BORG_VIEW",
+    "BTH_PLUS_ADJ",
+    "CLASS_DRUID",
+    "CLASS_MAGE",
+    "CLASS_NECROMANCER",
+    "CLASS_PALADIN",
+    "CLASS_PRIEST",
+    "CLASS_RANGER",
+    "CLASS_ROGUE",
+    "GOAL_KILL",
+    "MONBLOW",
+    "SpellFlag"
+  ],
   "normalization": "Named Read projections, mana adapter/local temporary, API type paths, entry markers, native suffix/visibility, rustfmt trailing commas and braces around a single match-arm expression only. Quoted string sequences compared separately.",
   "functions": [
     {

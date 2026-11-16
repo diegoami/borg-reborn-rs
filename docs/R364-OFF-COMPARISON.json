@@ -1,0 +1,1176 @@
+{
+  "schema": "borg-reborn-rs/r364-m13-comparison@1",
+  "donor_tag": "4.2.6-rs-town-trip-m13-v1",
+  "donor_build": {
+    "impl": "rust",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "git_dirty": "no",
+    "inputs_dirty": "no",
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c",
+    "binary": "/workspace/work/r3-donor-m13-exact/build/rust/game/angband",
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "cc": "cc (Debian 14.2.0-19) 14.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "built_utc": "2026-11-15T22:45:47Z"
+  },
+  "receiver_build": {
+    "impl": "rust",
+    "git_rev": "60d0a7a7857a235fb0d44c5dad194cc3acc73194",
+    "git_dirty": "yes",
+    "inputs_dirty": "no",
+    "source_sha256": "33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a",
+    "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+    "binary": "/workspace/work/r3-attack-port/build/rust/game/angband",
+    "binary_sha256": "4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3",
+    "cc": "cc (Debian 14.2.0-19) 14.2.0",
+    "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+    "built_utc": "2026-11-16T01:35:54Z"
+  },
+  "donor_manifest": "suite=full\nsuite_sha256=7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed\nborg_txt_sha256=ebaa96aad279f8112193acfca8e0e458af6bfe18addd864dc11bbd3b5928b03f\nborg_impl_env=rust\nbinary=/workspace/work/r3-donor-m13-exact/build/rust/game/angband\nbinary_sha256=7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde\nbinary_impl=rust\nbinary_elf_impl=rust\nbinary_cmake_borg_impl=rust\nbuild_id_impl=rust\nbuild_id_git_rev=1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea\nbuild_id_git_dirty=no\nbuild_id_inputs_dirty=no\nbuild_id_source_sha256=d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c\nbuild_id_binary_sha256=7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde\nbuild_id_cc=cc (Debian 14.2.0-19) 14.2.0\nbuild_id_rustc=rustc 1.100.0 (0ef1bc386 2026-11-09)\nbuild_id_built_utc=2026-11-15T22:45:47Z\ncheckout_source_sha256=d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c\nimpl_check=ok\nbuild_check=ok\noverrides=none\ngit_rev=1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea\ngit_dirty=no\njobs=5\ncheckpoint_every=0\nrun_timeout_seconds=0\nsave_root=/workspace/work/r3-donor-m13-exact/harness/saves\nstarted_utc=2026-11-15T22:47:16Z\nrun_config.full-0-warrior-0=menu b6ee42c7eb36a9b2f110fa20b54ad2067cb98458063845d32d3f39ebbc943fa7\nrun_config.full-0-warrior-1=menu b03417b94f0714de92775798f4ea930882a1387242ae7c09995c891b13fe157a\nrun_config.full-0-warrior-2=menu abeeca464d37c1cf2307b619d80c81179066b3662ccd8db1201616e81596ff59\nrun_config.full-0-warrior-3=menu 8c8a8312826b82d34a8f43127d86bc1b6662d83946a237c7453727c52654fd78\nrun_config.full-0-warrior-4=menu c985a9e63e226f5f0a61c39689c6b57d5efb59885c2ed777014334e8f8fd4859\nrun_config.full-1-mage-0=menu 3e46451e448e35c324f61730f3c6025abb03b8bc6499f662376cf71e4c5fbb4f\nrun_config.full-1-mage-1=menu 9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb\nrun_config.full-1-mage-2=menu 56a094c3c26666af0dc42e4fa13d1790c0be30e53b84185b102c9875d795db08\nrun_config.full-1-mage-3=menu 1d25e3b0cbffee06a4ef0a1b7107eee029e2bafdd2c37d948e55775ffa50f10a\nrun_config.full-1-mage-4=menu 11689704607dc5c698aefca2aa4641dbf0ec840164eb40ba32a3c3609808a8d5\nrun_config.full-2-druid-0=menu cc3d1dc524f04928dfa6fa73d8e8ef7038ec7b36929d7b9c0cf8375adc0ebeff\nrun_config.full-2-druid-1=menu 2da6fc3537b0994523e5c3a2920b95bc6b852928239d2c9d4401f15dc5a37d62\nrun_config.full-2-druid-2=menu 41baeab598a35735abbb446aa6a8b7e52442055cdd8b2a93c155a96aeedf8f56\nrun_config.full-2-druid-3=menu 1543138167cf7a1649af41edb1990bb60c0c1886b0703ed0cab4ee190bfed8a4\nrun_config.full-2-druid-4=menu 5e6b6f188bdd073e9c0db00073e1841331390c9e1d67f811452fd63d201ba005\nrun_config.full-3-priest-0=menu cd1e9fc8ef27472f139b7f5cf4aada935ca7aecc9967bc913e609471964786ce\nrun_config.full-3-priest-1=menu e45505e5ddd3bf88a17ccb61f34d291f4df624303ae6f2ca366df7dddc7856cc\nrun_config.full-3-priest-2=menu effaa4ee4f8745071c1159f27427656efc73080b00152670dc2008841a9194e1\nrun_config.full-3-priest-3=menu 1b0bfc7b39211cf5b0707e094cf1cd29f6a3f7ed4ea683917ffc30f25092a7ee\nrun_config.full-3-priest-4=menu 00cc7a1861447ad8b1ac1908cd2380d59e743e1bffb1642c9c044c6a21fd29a7\nrun_config.full-4-necro-0=menu 201eabbc4a884dd21cabb322ce0ee1f061456d6588129549b0069f449b60b091\nrun_config.full-4-necro-1=menu 9db3f988e55024b0085099c2a5938ec030421cbc4ea480f447639d56df395c5e\nrun_config.full-4-necro-2=menu d4d76acdac77beac3104b3cf72abef3de98200211d24e72ba56f2b6c81182e2d\nrun_config.full-4-necro-3=menu f76f524bcc83bd20c23f45c53610e0a24abce78f90aac3cde9cb05cac0807910\nrun_config.full-4-necro-4=menu 13e55beeea37749718cf125e2a143c9ba26f4dbd95584e2741dd310af770f24f\nrun_config.full-5-paladin-0=menu bdf974aeb5d0b808057ada9ab76f74d8798ce1e8fd53e6cc5754631dc94e4d75\nrun_config.full-5-paladin-1=menu aec28d989d683e29a25dea69bfb0f509630ef28b170154c6baf7129d47cc36f3\nrun_config.full-5-paladin-2=menu bdce9637e4934d3c0f9e903232b2f8ffbf4d58f99d7d854bdf20ee7fc4412f92\nrun_config.full-5-paladin-3=menu e65c3e0d3b885d385d69df2db5c33040faff1ef02dbb97d55cee97db1f96a43d\nrun_config.full-5-paladin-4=menu 5f051a40c0d430dc66c0ec4f7620e6cb654f76cada2594208fc12af5f6fc7a73\nrun_config.full-6-rogue-0=menu 5ed5e2688357b404ed0b6e6ecd2a356702533aa9c0e0c338af395bc7181fbdb4\nrun_config.full-6-rogue-1=menu cb9bbcd4dc0eb643ee3f35ab2a6bda776879e063c3bd8f4f8fd41a630131d02c\nrun_config.full-6-rogue-2=menu d44a0b4a9347cfa39ed07059950f2961cf03d4038ca2b315318cde941b9ecd6d\nrun_config.full-6-rogue-3=menu 4fe8fa36972c74e34228876502e19308233b0d101fa40be1aa86676e53cb2bcc\nrun_config.full-6-rogue-4=menu 1163eb281e5bdcdacf6ac75ebbdf2a06f3347a8bf9b3d9afada20e32542f6d26\nrun_config.full-7-ranger-0=menu 403a6e1f0f9bf91fd9e0cdec00bd93157cac6548f5823ec2ead7f9cfe2495e33\nrun_config.full-7-ranger-1=menu e5c6082ad987af47565edacf40d49fc0783307df3249c61c583fa285f8847dcd\nrun_config.full-7-ranger-2=menu d0af2e00a80809b0907d5c2f079e540d94eb74bb21fb61fcc58deda918546d07\nrun_config.full-7-ranger-3=menu 3d8bb2c9c3efe032ae021976fc30ebc58bad6e8e1cbb911b6d03ef91277a3fdb\nrun_config.full-7-ranger-4=menu 08be84d92d5d554b5669e456087a7a9984fcee628af35287fc28672b7a1386a0\nrun_config.full-8-blackguard-0=menu dc1e8772850bcbec1b40287fde96ab8a54b9fc0b6442cbf83bbec2646a576654\nrun_config.full-8-blackguard-1=menu 31017b266dc293a9cdb8bdc70375d33e93d3b02d936738f816c5f000cade0c19\nrun_config.full-8-blackguard-2=menu d8f973dbf1d4dcfac323a3e74ba3e6825b61aa0bd580b5db804f5e37e6729871\nrun_config.full-8-blackguard-3=menu 49faf1e4b5c45b795120fdedc9e228e4103a9b8b2cfe454ec33335dc0d2a44ea\nrun_config.full-8-blackguard-4=menu 70add1785ebc8dba1f637a9a3db13a37b1570e15d4b5083749bb1f23fe9aa45c\nbinary_sha256_end=7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde\nfinished_utc=2026-11-15T22:50:32Z result=OK\n",
+  "raw_root": "/workspace/work/r364-evidence",
+  "donor_evidence": "Fresh exact-tag donor built and run for #343 in this session; reused unchanged at /workspace/work/r343-evidence/donor-full, not counted as new games",
+  "modes": {
+    "off": {
+      "event_semantics": "shadow-stats@2 r3-attack: tape_events = policy_markers + actual dependency_requests; pure standalone attack comparisons are separate. Subsystem attack_calls includes the pure standalone calls.",
+      "donor_play_logs_equal": 45,
+      "shared_summary_difference_counts": {
+        "borg_decisions": 45,
+        "borg_rng": 45,
+        "effective_settings": 45,
+        "wall_seconds": 45
+      },
+      "totals": {},
+      "stateful_entry_points": {},
+      "pure_points": {},
+      "root_points": {},
+      "runs": [
+        {
+          "name": "full-0-warrior-0",
+          "hashes": {
+            "keys.log": "9e31ec54e01bb6aef7e54d772e15737104aac74fdc2bb0a864e3b53cf840548e",
+            "messages.log": "08e8672bd8b451f59adb031dea01f9f6f689c33d1e4fc88650a077dd3525783d",
+            "state.log": "f314fb3036be7539a415e3dcd84349eec17180b427c8482b2390c1b73d7c2384"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "9c6115e8dbb0f38910b1642ea969889f720f6bc2f680d14df721a8c82eed9c65",
+          "donor_summary_sha256": "977da57f7dbb78f07330f25e1e4e5d2566a70ec197122028d4f186aefbf4b5cc",
+          "config_sha256": "c9498475fe2afa8a8465051b52062c2e8417a97266574b25e89240bfd9779752",
+          "donor_config_sha256": "daa00ba747908683b581821452b7e85f93ff2cfbf43a41521f489c017204f86f"
+        },
+        {
+          "name": "full-0-warrior-1",
+          "hashes": {
+            "keys.log": "4c43d58b2c2575e4bb3f54bea294f94f5f12a19b3f20528ee308d3b4c4d3fb04",
+            "messages.log": "e0fca7be50a7918d3092d3ccf3488d3de69c73ab2949bf303e2964a5ca1b2ff6",
+            "state.log": "305869ea0d991c5649c2632ea2724582e1ddb3f6616660461b5fc55fa22df9b3"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "66fb173751cf965bc044b8be0a725de5c56d4e338e631af10e09713a22e9a7ca",
+          "donor_summary_sha256": "b93384daca4b55985e35d77abc3b876814654917f000d0e2716642fd9d223e63",
+          "config_sha256": "e3facfcf93a617c681ed580d6682d5d6bb88c5fe98b6aaa2ad6f824ecdae9c49",
+          "donor_config_sha256": "e9c66b6e153a15dc049f0d3def2745e113465389f505e117f52f068889ab0886"
+        },
+        {
+          "name": "full-0-warrior-2",
+          "hashes": {
+            "keys.log": "8935548fe0ee6863f77b3cef84ac1da0f668def11f2e886e96129fbd7fbbf1ef",
+            "messages.log": "2619949f699b2efc18f5619f74309b230d2abdc868ebac77e423c67acc141089",
+            "state.log": "4256511b1f7229531031e6c79b2a977f584937f48def86ea96ba5b1d5dfa1b1d"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "32d23004905e7f035a41d2ff8f0c8ba4b04e65e8ab401a2e72e17d5e40f4ef26",
+          "donor_summary_sha256": "4946b78c4403fd64ff7779c22912154ff410c3925827a59271abb3a4eb18e1ec",
+          "config_sha256": "5e22db7d800ec2eeeabda46361eeca6f004e480de3bc39c448ac6120a2604948",
+          "donor_config_sha256": "9d9f6eed0736d775566e0a4e4e1cc160dc1639c090289b7850b741e66fda3462"
+        },
+        {
+          "name": "full-0-warrior-3",
+          "hashes": {
+            "keys.log": "8c5f1180edef434b0e5b92d5733863d511846cb2179dca9df5a1bc528808d39f",
+            "messages.log": "eebb0cb893903fc70b08fcd218e96279ecaecfca7dde7fc69783a7d9af8a1489",
+            "state.log": "c4160815762214f4c486343803167687d45bf2c3e226a13381364705460bf751"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "89fe8aae7bd217944e33e95f9da30b64c0208bde423a003fa83afb015f819100",
+          "donor_summary_sha256": "a2fbc2ad9b3d9c5895f91a44d21aff71c8a2237d97183982cd276deb7a45aaad",
+          "config_sha256": "59cb1295a18b0216a61acd13903c334a28717ff49c810fe947b68f5a7fb92582",
+          "donor_config_sha256": "adbaa3650eed2442ec6a35535262553d429187768bf7e3113953701483d992eb"
+        },
+        {
+          "name": "full-0-warrior-4",
+          "hashes": {
+            "keys.log": "a542afdd5907ce05aa8cadbed8cb0b474156613a69c1a3f45b9ba1972e558319",
+            "messages.log": "f52790873f5ae09489400c825cf40da2e339297f2823c53801ef908e0da79f49",
+            "state.log": "307172b099d9a639d34f5e2d2fd4914744771b4c2b8d13b36407e0d37c564246"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "362ee3f3b740c00bc8022c3a100c16c6f6d85316cb4aeb6ad70639f7bbacdb2e",
+          "donor_summary_sha256": "0709b5e15aa1070331f011055075a2535fe4078ca9b3e8063d3dd3dd331b1028",
+          "config_sha256": "9cb2e902b8094ecc80ad6ff7d9c3fc26314156e534779b1de2bd8c022f525e3e",
+          "donor_config_sha256": "1f57551f56fbb1e8e85a174c525e93d483b4e5da2c7e70b083b2d6d53fa99646"
+        },
+        {
+          "name": "full-1-mage-0",
+          "hashes": {
+            "keys.log": "8a9a5e0c7c33e6f6d92729037ba4e5f21202dcf9cfca9298db5d6257c057730c",
+            "messages.log": "a04d3fa0b8aa907ff15212db7739e7ebf94eaf3ffdeff7d2ad4c694dcf402fda",
+            "state.log": "d431237c0274cbf0c400d591b727fa267270cceb5dca4e906bf303149b4519ec"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "c7ca61ec3db2c4b25d34f1def100b956c4679c10296fc05f2ac6ca785741d648",
+          "donor_summary_sha256": "98099f9d25cd8d3a6a0d74bc54e1bd64d89d23d596971cfa0714d20cf0a8167c",
+          "config_sha256": "31d245e9e3de3592c62f0a36bfa26933d15f89836b85fb79a91ad96218408982",
+          "donor_config_sha256": "2b815ad50987bc615a2a02ee614ed90f9403d492e5ac3d42e459267c361b28f0"
+        },
+        {
+          "name": "full-1-mage-1",
+          "hashes": {
+            "keys.log": "6c02605eeaacdc178886a85ff7e8bb10d96de559550b884ab6dc02be2e966794",
+            "messages.log": "e7e746305a86b3ed391460fb114ae90b280ae206ac8536ae21c1245d7380d180",
+            "state.log": "9932a3bfa185dc02f4956ee17a7a2dc342ebeeb2918459972ed10a82666b352a"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "4964e794b1bae5417385e152e6f0ec8e0aa6b28de7c8caaa7e39a2dc902e1831",
+          "donor_summary_sha256": "18c112215deb0b9e4b59846ddcc06c9b3354eaeb96c7b8bab0816dcad084611a",
+          "config_sha256": "050fafe9494cee1178a41bb6780b3deb923f31c6d6a19da7b5ad79049ca40ebf",
+          "donor_config_sha256": "a091b1a38b0c3eccfc044ed0e50c09ef0cd4a235af103152083108d38947084b"
+        },
+        {
+          "name": "full-1-mage-2",
+          "hashes": {
+            "keys.log": "33a9e1b9efef4e1fd1060fab66665a4fc904c613fa2d496ebd87ea1e87da686b",
+            "messages.log": "964b0d92630002474a3b4c3938317b48588be63a37b075a93ff04bf8f1736752",
+            "state.log": "83ce4dcc87efd93c94b595fffa41c4caf766172fa540c6d079cef075c261710f"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "152d507d6941163ae401161dd18d8c78465d7b25033182bbd1f44fc221925bce",
+          "donor_summary_sha256": "b10b6875c03c75a0f8e61ca7d612defbfef306213f9deafc9f7d0f35906abe6c",
+          "config_sha256": "3b415a093a67ca4e70357a020b4ab379079f3639f2866a70d63858691c17cb9e",
+          "donor_config_sha256": "e6669448bbe74abdc6a4bf398c92026e68baca890f8f15786565337660300b9f"
+        },
+        {
+          "name": "full-1-mage-3",
+          "hashes": {
+            "keys.log": "8180b0901103cd96fde8bedcff6887c0d0fce4d873af9ae27be97efecbbf4f61",
+            "messages.log": "4f998f74caaa6043d012f775c448f3e6c0d632a32cb73876b3651f658cfa35b5",
+            "state.log": "aacf7e4770d8d01af084f0acdb5f5a438b46b649b4ed4dc0eedce7952d42499e"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "31cb2134df40eaebb7e24a9b77105aecb19ad8992371ed76fc8fe561d65959e0",
+          "donor_summary_sha256": "3a5c71ec1041f216f75accf8119840922a68e7f4ddd1c6bc7c189e3822ddd02c",
+          "config_sha256": "6b71317fa74aaffcd08cc258965a9813dd78bd9ee870a0658f7d50cf5629d11a",
+          "donor_config_sha256": "10123c263cc15de464f1ef580971eca926c255272f6d10dc292edadd9968dfeb"
+        },
+        {
+          "name": "full-1-mage-4",
+          "hashes": {
+            "keys.log": "ea3cbe1895c1b1d993899da62d0050cc6eaf0e8e457e8b45624e2ba051cfb7bb",
+            "messages.log": "828f394cb3e3f0b8e722e9c338ec1e3a165af5e2fb61f5f6355627e319034fbf",
+            "state.log": "6ddc05337c22d1fe679c389983af5e03e5c5d56423b03dd2cc52e9311c1c423a"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "b3de14fe8e8c727ed247034fa580204e17b66fd1c4254b05d5098170f37b3a25",
+          "donor_summary_sha256": "cb15de927c3b40793eab2f0296ac438b879bfd329e358193674eafd2ed4cead9",
+          "config_sha256": "d9addface33df15c7c9013a2d90272ca870dd5b11c17d0c4ad37c424a0367b53",
+          "donor_config_sha256": "20dff413c4212706a1ae7b40d5151a3ff17beb0a64e616203d5beb0b78adc1f9"
+        },
+        {
+          "name": "full-2-druid-0",
+          "hashes": {
+            "keys.log": "42c17d0d67dfef1bf3ed2e883005057c182511131437b74fd62b1775ae87d077",
+            "messages.log": "51043424b5c66e32d05b5abc11f2ed5f7521cc7b37231fcb2bf73f70f13071f7",
+            "state.log": "fa5405441cb0acb0c89459f652c633dc96a4b3c756e49eec64d2144f8e11cf8e"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "761142773a1a4f14d88d4f9eaab8f3ba775aa35c3633423f63847382ab4e92a8",
+          "donor_summary_sha256": "ea248376798f2f8d672b53de760402f46d3951c13f63d9775929eadf7dfd33ef",
+          "config_sha256": "5be580ba03b9c3da5fb8d3370fe9211f2dd34c4da44e8958d5fbb78565de9f48",
+          "donor_config_sha256": "60bc59efa7468fe457eb451a65169ad696f05d393da7c18585b38a54d5151cb4"
+        },
+        {
+          "name": "full-2-druid-1",
+          "hashes": {
+            "keys.log": "7cf84ceb230ddb35da1086034817f2571c4892e573d2b7c5eb1173f797e62108",
+            "messages.log": "014f872fde7331df78cef361e6a1da21a4c4f21d03a05a6fd430ad399340e8ae",
+            "state.log": "56a1c8c0e3a065cc92297cbfa9461dc04b357d6153d0eff5d4d29dece5f308e1"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "ad664d44a844aeaea5f6229e6b5e1ce70558a900e46801ce647f6be9162bef82",
+          "donor_summary_sha256": "c42c0185fc19395b7c7872db98f290c04207b02b0412a93a4d91d29148a8cd09",
+          "config_sha256": "8671df89dc8c71c1eb181095db466b09222e797277b5a2c2114fd6b680ced178",
+          "donor_config_sha256": "0610e1de5e4e22de4d15582db8aed69ee93c3b3362762cfadb60f1719963b715"
+        },
+        {
+          "name": "full-2-druid-2",
+          "hashes": {
+            "keys.log": "5d143d91fc928bb44171ce27e2846cd22d84cce3164e91686a0481acd4ed9f94",
+            "messages.log": "aa4bf9d500633b218ab722007177f53c379e514213f8aef11ebd74a46e137590",
+            "state.log": "e8699cec479acd7785cad91a2fd411c7be494007617f4826666b138b2cb01405"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "444ec4cd8463d7d008aea9e3db6853e61fdf716076feaa48130e95014ad56b37",
+          "donor_summary_sha256": "fcd486d1df83c76c29e4767beeac36591392bfd7d8174105f612b6b6e01ad987",
+          "config_sha256": "79c9a3d4c762c17b72dcc2781c3f979ddfa01a6a0031f1b1ec29024383c13341",
+          "donor_config_sha256": "f4bfd8c4b86ff30c50bd6d9656ba58c5c45f2846c5b05ed74e11256d58597461"
+        },
+        {
+          "name": "full-2-druid-3",
+          "hashes": {
+            "keys.log": "a842a5177954184a1cf9706a0cc0c35e2c3421b830bacb05f42c9a339091220f",
+            "messages.log": "773e8d04dec1f5dec7b3c546c921bc0bf57004a6cf32ee3abe565028b5f6f306",
+            "state.log": "917208c762248a29dddc26c30de61b6bdfaf93bd95f08ff78c81c2404db7a7b2"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "5b30284279f245dca6f3f844048a38f3ac036e8844b3afd22e5fa84daabc916e",
+          "donor_summary_sha256": "ae540a424be2226d921894074a3c699ae0ab40e1ba794f59a67d9c2ca2d470c1",
+          "config_sha256": "9d0d7d65bfc78eb0a2485b72bd78e628855fd89c79acff5b9dbb7cebdeb24bc3",
+          "donor_config_sha256": "8c6863fd81dbb502f3a6b65457866acd1681fb75c0786a5bb4c6c07c1733a66b"
+        },
+        {
+          "name": "full-2-druid-4",
+          "hashes": {
+            "keys.log": "8b7201490e2e11d3cd2cf9ab81ad193229515d8f8d74fedea573194f04761a29",
+            "messages.log": "187c20e704877ab57585915e6ca8428e26d32d2f4f14ac23c2fdf56811ada9bb",
+            "state.log": "4bf2405736f78198fd7debb679a04227ead8ee183ad69111b6b25c305f71e3bc"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "03aa1070c28020d3c80e89a2b1057a73f0fd45fdb31b82bd13a01cf4640efc9b",
+          "donor_summary_sha256": "a0e4582f5c56e26ca8417b5b7abc2f18d5e7302e2750506f380562634d58a1ef",
+          "config_sha256": "7cf7a7a81528fea8350ad58731e815dd56241715f4cd7a146e54d5ae0d6f8865",
+          "donor_config_sha256": "e50ba96a31ec177947d90a3326bc1b70f5636329146ae444d61beece689679a3"
+        },
+        {
+          "name": "full-3-priest-0",
+          "hashes": {
+            "keys.log": "379d35933ed6502d47253207ad58503b35fe4482c3cead7ee7d8c5c2ca23f253",
+            "messages.log": "25bc6f4196c74f9dcb850b8fbdc6ad995c8a3316001f3b1ef38de86a563ca5fd",
+            "state.log": "ae9c7e1e715236bbda374ca5ddc36be4516d1b4dc6b312c80c0ba0c028449bf2"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "32af68691b7b167981126daad9065818391e3ad594c874768b6a8b89a60eb97c",
+          "donor_summary_sha256": "158cca788c3b8685e58181f65b3b585ea010e1d574d98bc6cbdfdec9ad8713d4",
+          "config_sha256": "a498ad2530c915ed6a90ebc83550484ada5fbd9b10db7d3c1a906f70da7a4b8b",
+          "donor_config_sha256": "4e193bd5c083de11b1e27ecfcafbab8e325432000b846181a20e4dd3055d96cb"
+        },
+        {
+          "name": "full-3-priest-1",
+          "hashes": {
+            "keys.log": "a48f1c9145414dbe4386e508e5ca5679c10dd1e309942a41af7e4e4474a84e2d",
+            "messages.log": "0c66cad66082cae4772fe825ef3208d4387394737a756d4f49ef8790878f5431",
+            "state.log": "0a47490f632e0b3ad4ee29c388e334c966fcf4ac0a357f036f68b08e2eb59f19"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "3a54a2fca0fea94b24d94723eb71e76e02722a8c37b60453b377327608f8c1b4",
+          "donor_summary_sha256": "e978180f497cbe9d2e834fa4dab1b1e4c20cc611213ac3f92fc1f6a8b2cad528",
+          "config_sha256": "d7e5ce24a9772483a0767d6733c250abd52430c52c500be64dcd081725eebbaa",
+          "donor_config_sha256": "42b52e020529701b9754bc2926cf9e877d467a866f1c74d893b73bf671678174"
+        },
+        {
+          "name": "full-3-priest-2",
+          "hashes": {
+            "keys.log": "31d2b0b746281d62f23727b14975bac45e967bb0665ecc808d63255993c23502",
+            "messages.log": "4bce9f97aaeb3d798b90a065d40bd25928db92e10e6e28e7a2842983e13f0ade",
+            "state.log": "fd7b19c1205390a8c8ae8e2885de3badf715108e56d9578fe22b3d5129e7b05f"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "6189a7f7dce90d0fa9ccdcba801360f6338c8c11e66922e70e9be856927b9b92",
+          "donor_summary_sha256": "9943c00c5e04e8551d6b6d8c3f4b3ad2457857b9c8b1c23e8086ff04b9c9992c",
+          "config_sha256": "129acbc0f919531c75cbfb951e24b474a5bbdf7cc486b7016644f261334d920d",
+          "donor_config_sha256": "f074c056db1fffb518ca6129c5dfa4ff55ec95fd4f7bb88235266c41cafdf4c3"
+        },
+        {
+          "name": "full-3-priest-3",
+          "hashes": {
+            "keys.log": "0f66110cc0687ee27ef1edecc931a3eb9029008513f9f78041d90a5fb7163550",
+            "messages.log": "fc5efcdeaa5b858833af36b4eff6e4f900a1ab40f2867babf4d033968bf378fc",
+            "state.log": "cf0cbe9ee65186f5524118d8c3660342e97591030769e03ab6031dbb6e5bb87f"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "271768ab7814ac197f9492f21f0e05bd21f898a5ab4c4443ff30673c732d8bd5",
+          "donor_summary_sha256": "2135b2777c2e0101424eb056adea20be538100fb425714680a8d71892c2306dd",
+          "config_sha256": "2a2a033974478428c690277219dfe52c2fd3710c7b202e02a5324272cc2c48bd",
+          "donor_config_sha256": "80fdc75e0972a9bfe828d43e2b6ff06995c68e9c2e4cf36cbed8a880eb0e459b"
+        },
+        {
+          "name": "full-3-priest-4",
+          "hashes": {
+            "keys.log": "6bc1c203323a6e53818e863e575517336bc7bb502abfda4fdc2b8bcbbf05cea9",
+            "messages.log": "467ac761e4b57f86cdf763c47f494855e507d0826ca5f84114bb826d97379d49",
+            "state.log": "308fb9b3d03e1c93b3114208483cb9310f26f5a7ca5ebc3bc6d70b655cb2a35e"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "81f14e471902cdd614696c1f2a5010cb697fe90ff5e97ce945592ca8d2a36ed1",
+          "donor_summary_sha256": "78647c5c1e56aa90c71387ff9679959c7fe7b93a820bd4af268dfa3c04dfa013",
+          "config_sha256": "450100a9b978f06ac91cceee8d974312e935ee8090c7960d1e6cb7b8ce14b454",
+          "donor_config_sha256": "32fef2177a565fbf2ddc1092c6e0f1c88343bb1ffcfaba2feba3a79d1a39997f"
+        },
+        {
+          "name": "full-4-necro-0",
+          "hashes": {
+            "keys.log": "86effd99e789883b4ac1b5aff052531af33fc651e63af3cf0f3dd9f6f1e83e8a",
+            "messages.log": "26e565704338f920508e978f432eb00ca95e14e7fe91dff481621a8a3f04f795",
+            "state.log": "f62fa073a7a05f7fe51af70779c3de0a7510652d7d82c59a2b16476ede3a2333"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "40551ccca25fe690e9689d9f6279bf07921bf1f34c6bb1071488a9008ac1f5f4",
+          "donor_summary_sha256": "bf00895d04f467a426e31af8582ac2f5c06b02e70a791f47bd9ab0a6a08474c2",
+          "config_sha256": "68f3b2f5036f9b0c1d8b134f21203d800b14a16041d8403cd20f06611ee5c545",
+          "donor_config_sha256": "dd131cd77ce95e636d4bd8c56680d0472cfbe10779ca660b7a36d0339e5922b0"
+        },
+        {
+          "name": "full-4-necro-1",
+          "hashes": {
+            "keys.log": "f70d13b48c2a133e2bef86cd8bca8b70626147e1d48a0601d28e217e6b054b8d",
+            "messages.log": "3faddc157ff568e2799cb68aa6f059dbbee897e3df0e2931b620edb23eb32a72",
+            "state.log": "3b20266f04281a510ab7dee2533360e9f8c860d57596be634228490225904c13"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "b91a8fc1b71379307ed4314c0184db4f53cf4460a4f9111f877ead1005088d81",
+          "donor_summary_sha256": "24aa5b26d4d18a52ae2d141e73e52618fda12bc2ae60c29a24c764bbfd24faee",
+          "config_sha256": "a4216623f8a16427f970edade1142930d7f374d1f246dd02ba72f322b7ab16f7",
+          "donor_config_sha256": "ddbfef3f50d71f5091ccb794e5d8ad031310cd794f8f904fd7ea582f910a1791"
+        },
+        {
+          "name": "full-4-necro-2",
+          "hashes": {
+            "keys.log": "7d08e9bb59d8a1043789e2cf9be2cf913c5612294bdb39b27aa8e2f0cbdf1ed3",
+            "messages.log": "e69678c927f121ca1e73d20a772e4689a34f6703e7e7a364457418da43470644",
+            "state.log": "eb7fdbb4896cd099a9cd75e625accf1974f4706ad3fe05b598964fa092356316"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "cb389f9f03f817ba6dfb8952e9b49e6579422aa40fb52880a27da7e4aa4ba903",
+          "donor_summary_sha256": "3bc4cea17569d0682a50f95e16ffbedb9e693ec49004fd7f6ecaaa42fbc1eedc",
+          "config_sha256": "bfc9d7d05c4e798a2934ce34ae81d9218f02e4cf9d50f18295006d9d1d21e39d",
+          "donor_config_sha256": "4a5d70c0806c750a00e118e14b86b2c06a0b95edd17b652784d161b5d527e905"
+        },
+        {
+          "name": "full-4-necro-3",
+          "hashes": {
+            "keys.log": "ad79b75be853b23764d9e5f9adb86fa8d76cb1ca5a648109c003fcb023bae7f8",
+            "messages.log": "cee9a64ae4e746bac275591bc0c0fbed22e26aaf2c7b63c010fc05dea0481a88",
+            "state.log": "1de72900747d7120e6ce2a2505cb8237ff78a20d6d0d7cf4f14f605b8c9258ef"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "6da39d1cee7f5de014129c118bd53dfc357a49dbab9e9d9e7a7efd19f3899967",
+          "donor_summary_sha256": "f1782f6263b55a9760884386883dfb51475a36cc2b9f67ce6820eb420c6380ef",
+          "config_sha256": "93d782fcbc2254611101113efd049019c6298661ee44cbaf365c70a5c7213250",
+          "donor_config_sha256": "497ee840a1846d9fe917c82c5de1893c9e0b21c252638fc50bd9d7e652fe810d"
+        },
+        {
+          "name": "full-4-necro-4",
+          "hashes": {
+            "keys.log": "4f42afb3f0b4c4a1b915328c79e696d9b8b3881ebd31d9ba3dc52a60162664fa",
+            "messages.log": "c8f4e27afe382a2dcd8ecd8727da26a2d86dc470935f4d9c11b920978a073bc6",
+            "state.log": "d7cbbcdbff08ffea4a679b13849ab9f6c5c61ca802b67eb328107599664b9a65"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "f9f7eab9279fefe9efcd96708fa980d3233d3a8f74ef9574d29ae27422880fec",
+          "donor_summary_sha256": "10d7bd4d1a3df8c1fd036b5401609cb094f0b6469933e2eb0859682038ffe155",
+          "config_sha256": "42a5cfcb17b5aba97f5318ca0452e7895654f337fb2486cb1e858304939d22d1",
+          "donor_config_sha256": "46d5269a8756132383d30b67900cd5a70bb26b364e7d7b5ffad6777bcea79b52"
+        },
+        {
+          "name": "full-5-paladin-0",
+          "hashes": {
+            "keys.log": "53808eda8834c18c27d59643e16d85ab9a67dc1ac821d66e4eb344f76b5e7a02",
+            "messages.log": "a647185382543b5ddb1f22191af784ab0f681c5347a56603f3ad1271c1d9e9e0",
+            "state.log": "28e28fea6096bda2a61c0da188b60c349d2af4eea410d1e818b14cb347272140"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "2f24963582c345918cb941442d8ed59255d9e3ab7f3a1b48f6183630a1a7b096",
+          "donor_summary_sha256": "6c9c2b565726b4c661ac6b426006795f6a7c2523462004d1c16052b9e2e1bb40",
+          "config_sha256": "b711b84c1575b6308407dc0d09a4787f4983f00048fcf304582e75f8cb2f167c",
+          "donor_config_sha256": "e6abf67bb9325e762630fbce7156344ec1a645bdd4fd3ff3d1c4553e6240991e"
+        },
+        {
+          "name": "full-5-paladin-1",
+          "hashes": {
+            "keys.log": "ebbf9fe2b681a82fa756a8783c01330be3e931b53bf012f3cf1b46a58ac3ece2",
+            "messages.log": "6b8e45d0e27a79dfede8918121c2023e9f3d8b9321f29695b1b40e943ac107f8",
+            "state.log": "b23f9156d95d4c5e45e849a102ce1ee72cc58a99ad2c25bb71257982715d1d56"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "f3c0e5b1ab864ac02e45d2c66731d9d84ca9385d895318c1d7dbea840a9f926d",
+          "donor_summary_sha256": "45b8c63ad78fc354be4813c89834d19c954e9fb745b3a0428d91431dfea582a6",
+          "config_sha256": "fd4822c9130c42d9cf5ffeeab8bf2a646020b567af15418c7baed2a979568b8d",
+          "donor_config_sha256": "814f595acb71745997989fb6768d63c513f382189876259759992ec3d5e153a6"
+        },
+        {
+          "name": "full-5-paladin-2",
+          "hashes": {
+            "keys.log": "997f1246e50bc57b5aa594ae224fcb827120e7cdaa0dc79f10e2087610b16d73",
+            "messages.log": "70825d60ef62a60fa0405269abcf153cc83018881740b4895f69389796e9db02",
+            "state.log": "81fb40d9e12103296ac87b61d9efdf26be1d400b8e771ae2e01d739c26f9390c"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "63946acc7f5ff6baec77683de6f51cbb00356cc35622782cbdee980b9d6115fd",
+          "donor_summary_sha256": "2fe203841a1520b2365859c6c9a44535a7c3e8a05d52a8007b3bda972dbe8211",
+          "config_sha256": "7e6b4979c7ecf6eb7a38f9c9d4c0e5a58863eb8674ab4637a97a6c7450fab815",
+          "donor_config_sha256": "2cb196205ddc490b088fd1bebb4135cd378e89108b780aa74b91e4177b03adf7"
+        },
+        {
+          "name": "full-5-paladin-3",
+          "hashes": {
+            "keys.log": "bf0daf8b3f3ece7898eb7dc0008259617d1392929557363602c326353458d394",
+            "messages.log": "bf6a39c339367fae629a2e692b148081c997273d0d368148ef3407af92b79184",
+            "state.log": "94a8f4592924c2939a240d35487bb6702d62f8d8b546fcd6cac92b4b357f33c6"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "8df5c34de41afe2b2e1575b6fbeb4ff1c8d26d3f1b33bc98f62ca854c631b184",
+          "donor_summary_sha256": "26e0a5084e669612fcb28365d06e270f172eef8c2f393952b5350f05be987d1e",
+          "config_sha256": "39479051f42e441827a474476dea518bf86a077df20ad5f2f3d3e543dee0f72d",
+          "donor_config_sha256": "dbab5bd863fa4f29c87b4dd7d277f91205ad8127fcdbb94f021a66b2fe7b5565"
+        },
+        {
+          "name": "full-5-paladin-4",
+          "hashes": {
+            "keys.log": "cbd953a8cad775db0178cd50d2a8b0d6792e031920f9eb464e557ec6db2cd1d6",
+            "messages.log": "a9a5cd6c6c8bcdeb80ec9a5801dccd4d46049393b5e6daa2cc465a2facbaa01f",
+            "state.log": "5ac04d453dfbdbf9f29cf0dc116e4e34185970ee9c90b4bfb8c99c4b5783f6ec"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "50061ce47f8854ea6b6923de1ec7e385572c1504e99e1c9f38d38d4f5acf24c1",
+          "donor_summary_sha256": "ff46a0670f449bdb3f99295a83ea16aea30e51113f67043390703019ae10f4c4",
+          "config_sha256": "64a822825235e7afcc6688df81869b43c49fc9b84780c6ee27554b3705938855",
+          "donor_config_sha256": "a3f5a6acbbeb217410ddc83e795ed55e5c198b8f547ae934865cc525094c1b71"
+        },
+        {
+          "name": "full-6-rogue-0",
+          "hashes": {
+            "keys.log": "36cc40b02fe7059f30515584bf22aea2e8a4549546a98fedf2b3f4eb733d8366",
+            "messages.log": "e5bb2a7dd524e5c32e0fdcd0780cb76f350113a2009aaf29b30d2ce519fc6a28",
+            "state.log": "0d9faabf75e92b21ec4388a6e19564e7719e2316a38f057537102ad57ee2666d"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "fc683a0c4dbf3ced559e3903f821c5ae9b80c94bc38cd13f82c761aba8e6f635",
+          "donor_summary_sha256": "6851c91a60a97ee6d887b110c2ce3e38387ffb25666085ab3511fbb8151c118b",
+          "config_sha256": "d1e1abc50f2dc18e20b5c8ec242b423a2c652bbb93db7c4873d69e3478f7e99d",
+          "donor_config_sha256": "d47bbcb1d40c36191d5cef108de85311fb0e3fab109c2c79fbcb7c17208559dc"
+        },
+        {
+          "name": "full-6-rogue-1",
+          "hashes": {
+            "keys.log": "923c7a5c2c057481e6ef98e72a23909d3100faa610caeda7b472a465332d5208",
+            "messages.log": "7d467c62b2fdf8826b1c9dd6d572d39e1d87d4c6a6c51e3c96ced8cde042574e",
+            "state.log": "e7360a19a90116ef6fe65be3c28c3d95752d7a9651c3b020a430731776ae266a"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "9a87cd21173b5a8be308567ec8442f3985c7f7d01a672f95fee3d32faffff622",
+          "donor_summary_sha256": "d1ee6cec3d780403022b9cdf9d5cec1a20fa1f60e6ab844492807eb0ae90aa65",
+          "config_sha256": "95ba321aefd4641d08fa8e6d90b23d9b5f253de3340ec0c54e1ac65f8a929d51",
+          "donor_config_sha256": "207d9a38ca85fdca24acb9016044c7f617e3ef94a4015ce62787448d36f9db78"
+        },
+        {
+          "name": "full-6-rogue-2",
+          "hashes": {
+            "keys.log": "659910d7d1496809c04e4fb8e889d67d718d156adb73db2fbbc65e290db15337",
+            "messages.log": "d446d25170aa7cfbfd379fbbadaeebb3c94c09f31899c5f41286635b99a1c96c",
+            "state.log": "09a5c7bafd60af9fc4f7966cb30962ebfb2c6dc92afc839ab61b8873e4674b36"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "08deed99c763fea6452cd15a6bb311687a9314683f716ec033dc14e081d4b1de",
+          "donor_summary_sha256": "33b0bddbb2db3e9caf097f1cee66f0f8f5c3f12b2452e9553bc4add22f3eb54e",
+          "config_sha256": "e85ad61b94a4093b6a8587be2a5afefe03a150f3ae0d27d1c97f9acbb59d1a13",
+          "donor_config_sha256": "981cdebf443b3dd2a26f1780e720700937ab0512146ccf952c20b69a311fd203"
+        },
+        {
+          "name": "full-6-rogue-3",
+          "hashes": {
+            "keys.log": "b2170800341971ecb6655d8ca836bb7385ff42908b446be2c66d6bb3dc62d874",
+            "messages.log": "a399d7770344a6095001565cf81e2b794553554166a03fbe3e3dce9e7113a355",
+            "state.log": "34461e617e7e5097a5dc8a5d99d95bd3febbac1352a3c64ecf6bd4d4b275cc19"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "ad3bb1991dfeab2869e782611431d37a10d0b7a211cd6cabddb31cedf400fcbc",
+          "donor_summary_sha256": "9806b60a0c01da75a6d63c76cf78fb2fc3e9bbbb24559ba5a9fc41d7d5dc3229",
+          "config_sha256": "5cf5d71b9f31851483390ef823d0e48f8f9fbbb6ba571b9fcbae79dd9fc86517",
+          "donor_config_sha256": "4303501fa0bc6544f700a8c2fc3ab385c3ccabc9fceb36ffc3b798c333cd0a64"
+        },
+        {
+          "name": "full-6-rogue-4",
+          "hashes": {
+            "keys.log": "2ac121ac643f450d621f869e55e8ef315decfc5594ffcb206c648e5173d7f24d",
+            "messages.log": "e8d210f31e547de34ba644b7ac23a66af502a99ddab0b796a3daf0205f6345d6",
+            "state.log": "f50ecb73a20e4cb6c3f230633e26b4ac6b3ed85b79f8e22e48cf02d487fa721a"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "390042db3f7a9f5eb98958d0a2abffb2fc4d2d2e92f011999443431490320e10",
+          "donor_summary_sha256": "3d56c667a66fab096410ec1bdc561a6a28fa3c7ed0716f87e0ef980abcc666d7",
+          "config_sha256": "08d97d0acc433f02717cedcb94789883b22b099077a904e6641d4d18ce7489e5",
+          "donor_config_sha256": "ba28dba2085f4b92026acefff3a818ffd4e12d66344fd0f0974150f5b674ee3a"
+        },
+        {
+          "name": "full-7-ranger-0",
+          "hashes": {
+            "keys.log": "8af3628dee7782f292c3943242ec91dcbe5e1012c65bd4990eb5f9a3866ca113",
+            "messages.log": "208e1df61361c66804f8a549cb8a52f166e50901fdcbc92690e0d386cac0b235",
+            "state.log": "c38854b3a85bcf32e22389458d3cee6d690e12f5a7355ff5f25321a654d7309c"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "441a171fded227c72e2c13b12bb39dfbc30bb77442a2214f9ce22afd05da82b0",
+          "donor_summary_sha256": "74b89c577d51997519a0ec893b4b18f74ed6a8d803e2e33535cd0268c8914c18",
+          "config_sha256": "d0e3a5a84fd6378be261f0821d109dd64346e48f3bae33585246ed437244c082",
+          "donor_config_sha256": "1f8c8aef4b9f03fdb54324d2124dc36151a6310d48a0af327f7e92b090d539a9"
+        },
+        {
+          "name": "full-7-ranger-1",
+          "hashes": {
+            "keys.log": "ae161e4fdc89fff29bb2c74e9652b0b62b015d9d9ba3c7bc9c5d46a59bf0aef6",
+            "messages.log": "e8610280a961094b18fb99302d46103eda7c9f2fa71395df5c0fa1c512d54446",
+            "state.log": "86a42083c8efef53bc108a6dc285cbd0c84f2b5c32906fa9ae9898cc904b5cdd"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "bf4af95e9337f143c01b85472d887d8df8fe1bd237afed7ae9637c69e24b8bf0",
+          "donor_summary_sha256": "12c281a6b6e72fea2a079944c578019f3442bb14e7e1859daf73bf211329d97d",
+          "config_sha256": "26ab99728db0af2423384c1c04144af3d356f5f3fd1c9b3024ccac26faf02c36",
+          "donor_config_sha256": "d84d75ca74f0ebc406a943d5c8d31b66bb99c6c3215e5454cdce252867ff8fbd"
+        },
+        {
+          "name": "full-7-ranger-2",
+          "hashes": {
+            "keys.log": "2bbda4cbc42ff6e313ddc4fbc2dc866d6728d470c9ae57dbe5e1890b0aa395a6",
+            "messages.log": "b89d60b88825fe925622ebcc83cb2b29f0612cd64cd9fb89d29b569321246adb",
+            "state.log": "79300448e13f2cc613b7cc51c223d3d60732203909b575c698ad6a7c9aaba3be"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "cacacc28b33ef5f6418cfba55eec2d8c6951ac90e599e831a3d6d7c0ae94d5dc",
+          "donor_summary_sha256": "fc7c69a54b180146cdf8d6cdddc772569c42c247e2d4a1c84da62cd54c019bbd",
+          "config_sha256": "9503b7356c474811ef88f830aebcf45fbe6b3fbe09d1b35bf3586a3ce2b8605d",
+          "donor_config_sha256": "221defa11de7593bd9978506cb101236b7b63ee253ff353e33cdf975569616e6"
+        },
+        {
+          "name": "full-7-ranger-3",
+          "hashes": {
+            "keys.log": "6301337fe0b0b2b9c8566e425b1bd29db67809ef17688ab786151cd7c1a89555",
+            "messages.log": "85e3d7dc696f47786af5487551e1598fe900fbea194543d18fa7acc3999568db",
+            "state.log": "6949a36c95e5c39386c550a1472829e00e8eb8ea711ccc7e3977ed28a7178964"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "c2992f96e204804fe5d3d3927aeb856f1144549115fbac93993a433cb68a971f",
+          "donor_summary_sha256": "16edd431f9e9f46dfbe796fed7fdcb09453411900cc5ee861174a9b1e6ab2568",
+          "config_sha256": "cc6170976455bd5dfafe65f07bccd71749dd6a79db1b22fc5b4343e4fc7f870d",
+          "donor_config_sha256": "c8783666297ef12de5e9c358be7d7b2f9c453f3681b09e3a47748d0c9226535e"
+        },
+        {
+          "name": "full-7-ranger-4",
+          "hashes": {
+            "keys.log": "adf910ee154722cb124c4e7b1c4e016aacc61a05d5847459eecf9058c7a172fe",
+            "messages.log": "342b55931eb619d14999ca410324a61d17333d7111e10b37fc5d6dd5f61b0bf5",
+            "state.log": "a5e3a7b7af2bb038bce9e01143105587d5850dd32031b304f1a2c44b95694b55"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "7b0f4c1bf3d8347ba7d16f5a78c3ba35f23437aa0435a58b5af7737f933a6d23",
+          "donor_summary_sha256": "a378fb019cb2a5473774b0f687c692a83c115811e7c802f52220bff9eb68358c",
+          "config_sha256": "2a0b66f311ced63a6b1aa97cd92c0829f4008e00094cefccd7461079551ff3d5",
+          "donor_config_sha256": "8d61c0e194b76fd4659956636eac6b12811ecbabecdad5d8507d8ab62902ac44"
+        },
+        {
+          "name": "full-8-blackguard-0",
+          "hashes": {
+            "keys.log": "a868a5d5380789ee625b6e0e8aaeb2cf171ec800080c89310d750d52c14f37b6",
+            "messages.log": "701b82bcc4f99903bae4f0cd20698a97df03efb3b220625b0a7939f239e274f5",
+            "state.log": "46bba4f265cad6da18743fb74f287eb975b650b9f9813ea01c379db396c8c845"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "ca880f3f935ab830a343f09e8209263649bc495d25be981219160080dd277144",
+          "donor_summary_sha256": "2227c26470c2cdffcf02c90c1a5ed7b77952ef4ca0ed34a28a9f455f2747ce8a",
+          "config_sha256": "959622afb9afb821be21b1825d4e9090edd46afcb31312323b5151f581aa73b1",
+          "donor_config_sha256": "e4820fc96aecf769d8515200b246c7b982d154a6d428632d3e0fd93f687b039a"
+        },
+        {
+          "name": "full-8-blackguard-1",
+          "hashes": {
+            "keys.log": "f6cb9fcf6f7640618c49d7207273d83cffe063fff4c17170908df623f8f43986",
+            "messages.log": "8dc94806a5be535a07a5f1fb34917c83927c834e18470d98317e0802f1ac4f78",
+            "state.log": "78d7e065e7fe11ef778cdd4c699959ed6c520054ad9e4faf278a88e82906d60b"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "b767f67e56bf0f6a15512e093489b86539b31ad84780442bc25047ba3e8d62a9",
+          "donor_summary_sha256": "b42f22d9dd8b99011ddb598043b8bc556561abd75690324bb833235f6ec64cd8",
+          "config_sha256": "70fde11d83c8203dec19b4e925cad931cfc5884c0bbb137ecf9c75c08a6673cf",
+          "donor_config_sha256": "3322b07f2bd68e24076cd88c08a3d37924b795985d58ed760d792fafa0720c9e"
+        },
+        {
+          "name": "full-8-blackguard-2",
+          "hashes": {
+            "keys.log": "c14ea78392461c37dc33b85e6e05d5b80f6fe4afe43d8640ea6eb3baed6195fa",
+            "messages.log": "72219fb2c90f0c6413cb0c62d943ea494c537a742910d6f5094bbb6a3e02c988",
+            "state.log": "498c65acf8f4d1ce908e65b952c932ed14bc4440b13391a7524f75a9bc802c9c"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "e6de1ab5395d0f45f6b107922884a29e23ec552e917bc0c957bfadd51aa492c8",
+          "donor_summary_sha256": "b1d35c427185d0e94d1c709a5a4006d983c5346b240107ad5e4559516f10482c",
+          "config_sha256": "d7c455c2a72f4368dd237087e64f29cdcac28474e56cdf5e3d430aab5e7d6d39",
+          "donor_config_sha256": "4ed1e0ec462622b7059175ab8bc547434064dce8f5c338aa330aa38039258a12"
+        },
+        {
+          "name": "full-8-blackguard-3",
+          "hashes": {
+            "keys.log": "28833d1f3b203b9b47eaed191adb259caa12180327c85d8b9a98aeea2cdb2991",
+            "messages.log": "cd4433609fd02d39b55d0708f9cdd49b1e89d797aeca1e8dbf0170a43ad26102",
+            "state.log": "f4488cc27cf54c35197b4e7eba1887b5a26b6da84c77e70c81f761343c75f2d5"
+          },
+          "dead": false,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "b177878ee4727ba1eaa96de686a330f8ffcdaabe142384d202ed46d2efd3d840",
+          "donor_summary_sha256": "c2a7b5e64e449bb3cd7ee4dd86e15b516b4ef15b9f8518d7084dbcf6fc2f2734",
+          "config_sha256": "2509201d6286f6d72ea79aadf62157cbef9c1cc12a6a26f5bca70c9c53e59b77",
+          "donor_config_sha256": "3865d0063ca0c130a47f9a40c6c711f44c4f2845cd65e5bd412af8570249f666"
+        },
+        {
+          "name": "full-8-blackguard-4",
+          "hashes": {
+            "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+            "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+            "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+          },
+          "dead": true,
+          "shared_summary_difference_fields": [
+            "borg_decisions",
+            "borg_rng",
+            "effective_settings",
+            "wall_seconds"
+          ],
+          "receiver_only_summary_fields": [
+            "exact_turns",
+            "game_options",
+            "loaded"
+          ],
+          "donor_only_summary_fields": [],
+          "summary_sha256": "895f7ccb4063c0fad6a1c66e11b2b3aca6f4b023735c5c7556aeda8eaf4493db",
+          "donor_summary_sha256": "4822bf06b171fcc974cc44416aefa50be931f4c040013cc3f71eed3ad52c0cb0",
+          "config_sha256": "c2c2dde6d0562451e2c38c1c130c17013dab91d7ac21303d8661b50f644fa121",
+          "donor_config_sha256": "d0a39d42200bd8a33df4c2b6912778b3825787e57c3cdf7223b81b7c5bd60301"
+        }
+      ],
+      "manifest": "suite=full\nsuite_file=/workspace/work/r3-attack-port/harness/suites/full\nsuite_sha256=7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed\nborg_txt_sha256=e5b291265c4a6f8dee174afb69d80ca90721b10d9e1b5b8bf9645a5671961a88\nborg_impl_env=rust\nbinary=/workspace/work/r3-attack-port/build/rust/game/angband\nbinary_sha256=4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3\nbinary_impl=rust\nbinary_elf_impl=rust\nbinary_cmake_borg_impl=unknown\nbuild_id_impl=rust\nbuild_id_git_rev=60d0a7a7857a235fb0d44c5dad194cc3acc73194\nbuild_id_git_dirty=yes\nbuild_id_inputs_dirty=no\nbuild_id_source_sha256=33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a\nbuild_id_engine_upstream=42cd156ac9f95ddf4311e88dd7ad462292d6d1d6\nbuild_id_binary_sha256=4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3\nbuild_id_cc=cc (Debian 14.2.0-19) 14.2.0\nbuild_id_rustc=rustc 1.100.0 (0ef1bc386 2026-11-09)\nbuild_id_built_utc=2026-11-16T01:35:54Z\ncheckout_source_sha256=33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a\nimpl_check=ok\nbuild_check=ok\noverrides=none\ngit_rev=921e777620fdf03ada18e32c8e71d5771fb4f1a9\ngit_dirty=yes\njobs=5\ncheckpoint_every=0\nrun_timeout_seconds=0\nsave_root=/workspace/work/r3-attack-port/harness/saves\nstarted_utc=2026-11-16T01:41:20Z\nrun_config.full-0-warrior-0=menu b6ee42c7eb36a9b2f110fa20b54ad2067cb98458063845d32d3f39ebbc943fa7\nrun_config.full-0-warrior-1=menu b03417b94f0714de92775798f4ea930882a1387242ae7c09995c891b13fe157a\nrun_config.full-0-warrior-2=menu abeeca464d37c1cf2307b619d80c81179066b3662ccd8db1201616e81596ff59\nrun_config.full-0-warrior-3=menu 8c8a8312826b82d34a8f43127d86bc1b6662d83946a237c7453727c52654fd78\nrun_config.full-0-warrior-4=menu c985a9e63e226f5f0a61c39689c6b57d5efb59885c2ed777014334e8f8fd4859\nrun_config.full-1-mage-0=menu 3e46451e448e35c324f61730f3c6025abb03b8bc6499f662376cf71e4c5fbb4f\nrun_config.full-1-mage-1=menu 9dc792e714d6650dff82a0a28ddd2c46f8930400250ae838dc2e7acab63867bb\nrun_config.full-1-mage-2=menu 56a094c3c26666af0dc42e4fa13d1790c0be30e53b84185b102c9875d795db08\nrun_config.full-1-mage-3=menu 1d25e3b0cbffee06a4ef0a1b7107eee029e2bafdd2c37d948e55775ffa50f10a\nrun_config.full-1-mage-4=menu 11689704607dc5c698aefca2aa4641dbf0ec840164eb40ba32a3c3609808a8d5\nrun_config.full-2-druid-0=menu cc3d1dc524f04928dfa6fa73d8e8ef7038ec7b36929d7b9c0cf8375adc0ebeff\nrun_config.full-2-druid-1=menu 2da6fc3537b0994523e5c3a2920b95bc6b852928239d2c9d4401f15dc5a37d62\nrun_config.full-2-druid-2=menu 41baeab598a35735abbb446aa6a8b7e52442055cdd8b2a93c155a96aeedf8f56\nrun_config.full-2-druid-3=menu 1543138167cf7a1649af41edb1990bb60c0c1886b0703ed0cab4ee190bfed8a4\nrun_config.full-2-druid-4=menu 5e6b6f188bdd073e9c0db00073e1841331390c9e1d67f811452fd63d201ba005\nrun_config.full-3-priest-0=menu cd1e9fc8ef27472f139b7f5cf4aada935ca7aecc9967bc913e609471964786ce\nrun_config.full-3-priest-1=menu e45505e5ddd3bf88a17ccb61f34d291f4df624303ae6f2ca366df7dddc7856cc\nrun_config.full-3-priest-2=menu effaa4ee4f8745071c1159f27427656efc73080b00152670dc2008841a9194e1\nrun_config.full-3-priest-3=menu 1b0bfc7b39211cf5b0707e094cf1cd29f6a3f7ed4ea683917ffc30f25092a7ee\nrun_config.full-3-priest-4=menu 00cc7a1861447ad8b1ac1908cd2380d59e743e1bffb1642c9c044c6a21fd29a7\nrun_config.full-4-necro-0=menu 201eabbc4a884dd21cabb322ce0ee1f061456d6588129549b0069f449b60b091\nrun_config.full-4-necro-1=menu 9db3f988e55024b0085099c2a5938ec030421cbc4ea480f447639d56df395c5e\nrun_config.full-4-necro-2=menu d4d76acdac77beac3104b3cf72abef3de98200211d24e72ba56f2b6c81182e2d\nrun_config.full-4-necro-3=menu f76f524bcc83bd20c23f45c53610e0a24abce78f90aac3cde9cb05cac0807910\nrun_config.full-4-necro-4=menu 13e55beeea37749718cf125e2a143c9ba26f4dbd95584e2741dd310af770f24f\nrun_config.full-5-paladin-0=menu bdf974aeb5d0b808057ada9ab76f74d8798ce1e8fd53e6cc5754631dc94e4d75\nrun_config.full-5-paladin-1=menu aec28d989d683e29a25dea69bfb0f509630ef28b170154c6baf7129d47cc36f3\nrun_config.full-5-paladin-2=menu bdce9637e4934d3c0f9e903232b2f8ffbf4d58f99d7d854bdf20ee7fc4412f92\nrun_config.full-5-paladin-3=menu e65c3e0d3b885d385d69df2db5c33040faff1ef02dbb97d55cee97db1f96a43d\nrun_config.full-5-paladin-4=menu 5f051a40c0d430dc66c0ec4f7620e6cb654f76cada2594208fc12af5f6fc7a73\nrun_config.full-6-rogue-0=menu 5ed5e2688357b404ed0b6e6ecd2a356702533aa9c0e0c338af395bc7181fbdb4\nrun_config.full-6-rogue-1=menu cb9bbcd4dc0eb643ee3f35ab2a6bda776879e063c3bd8f4f8fd41a630131d02c\nrun_config.full-6-rogue-2=menu d44a0b4a9347cfa39ed07059950f2961cf03d4038ca2b315318cde941b9ecd6d\nrun_config.full-6-rogue-3=menu 4fe8fa36972c74e34228876502e19308233b0d101fa40be1aa86676e53cb2bcc\nrun_config.full-6-rogue-4=menu 1163eb281e5bdcdacf6ac75ebbdf2a06f3347a8bf9b3d9afada20e32542f6d26\nrun_config.full-7-ranger-0=menu 403a6e1f0f9bf91fd9e0cdec00bd93157cac6548f5823ec2ead7f9cfe2495e33\nrun_config.full-7-ranger-1=menu e5c6082ad987af47565edacf40d49fc0783307df3249c61c583fa285f8847dcd\nrun_config.full-7-ranger-2=menu d0af2e00a80809b0907d5c2f079e540d94eb74bb21fb61fcc58deda918546d07\nrun_config.full-7-ranger-3=menu 3d8bb2c9c3efe032ae021976fc30ebc58bad6e8e1cbb911b6d03ef91277a3fdb\nrun_config.full-7-ranger-4=menu 08be84d92d5d554b5669e456087a7a9984fcee628af35287fc28672b7a1386a0\nrun_config.full-8-blackguard-0=menu dc1e8772850bcbec1b40287fde96ab8a54b9fc0b6442cbf83bbec2646a576654\nrun_config.full-8-blackguard-1=menu 31017b266dc293a9cdb8bdc70375d33e93d3b02d936738f816c5f000cade0c19\nrun_config.full-8-blackguard-2=menu d8f973dbf1d4dcfac323a3e74ba3e6825b61aa0bd580b5db804f5e37e6729871\nrun_config.full-8-blackguard-3=menu 49faf1e4b5c45b795120fdedc9e228e4103a9b8b2cfe454ec33335dc0d2a44ea\nrun_config.full-8-blackguard-4=menu 70add1785ebc8dba1f637a9a3db13a37b1570e15d4b5083749bb1f23fe9aa45c\nbinary_sha256_end=4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3\nfinished_utc=2026-11-16T01:44:34Z result=OK\n"
+    }
+  }
+}
