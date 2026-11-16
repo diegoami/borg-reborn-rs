@@ -96,7 +96,7 @@ only serializes booleans/integers, so arbitrary errand commands require a
 native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
 
 A profile's
-`borg_param_<name>` integer sets any of the 1734 entries in
+`borg_param_<name>` integer sets any of the 1785 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
@@ -160,3 +160,15 @@ borg.txt formula subsystem and does not apply those static weights.
 The owner-run sweep handoff is [CORE-SWEEP.md](CORE-SWEEP.md). It pins the
 validated specimen and supplies fresh-suite/candidate-selection/confirmation
 rules; it does not launch a population experiment.
+
+## Class/family preference profiles (#403)
+
+The native core accepts the 54 `borg_param_attack_preference_<class>_<family>_permille`
+integer settings through the existing serializer. All default to 1000; bounds are
+500..2000. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md) for family semantics,
+floor rounding, precedence and provenance. For example a profile can set
+`borg_param_attack_preference_mage_spell_permille` to 1600. This is an experimental
+setting, not a recommended default. Core trace output is now core-trace@2, retaining
+the old fields and adding per-invocation candidate/winner data. Historical @1 data
+and zoo profile/adapter formats remain unchanged. Freeze effective settings and
+hashes and clear ambient BORG_PARAM_* overrides in profile-only comparisons.

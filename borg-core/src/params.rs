@@ -32,6 +32,61 @@ pub(crate) struct Spec {
 }
 
 parameters! {
+    // #403: final attack ranking, neutral for every supported class/family.
+    attack_preference_warrior_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior melee; floor rounding, no eligibility changes."),
+    attack_preference_warrior_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior projectile; floor rounding, no eligibility changes."),
+    attack_preference_warrior_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior thrown; floor rounding, no eligibility changes."),
+    attack_preference_warrior_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior spell; floor rounding, no eligibility changes."),
+    attack_preference_warrior_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior device; floor rounding, no eligibility changes."),
+    attack_preference_warrior_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior activation; floor rounding, no eligibility changes."),
+    attack_preference_mage_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage melee; floor rounding, no eligibility changes."),
+    attack_preference_mage_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage projectile; floor rounding, no eligibility changes."),
+    attack_preference_mage_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage thrown; floor rounding, no eligibility changes."),
+    attack_preference_mage_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage spell; floor rounding, no eligibility changes."),
+    attack_preference_mage_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage device; floor rounding, no eligibility changes."),
+    attack_preference_mage_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage activation; floor rounding, no eligibility changes."),
+    attack_preference_druid_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid melee; floor rounding, no eligibility changes."),
+    attack_preference_druid_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid projectile; floor rounding, no eligibility changes."),
+    attack_preference_druid_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid thrown; floor rounding, no eligibility changes."),
+    attack_preference_druid_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid spell; floor rounding, no eligibility changes."),
+    attack_preference_druid_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid device; floor rounding, no eligibility changes."),
+    attack_preference_druid_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid activation; floor rounding, no eligibility changes."),
+    attack_preference_priest_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest melee; floor rounding, no eligibility changes."),
+    attack_preference_priest_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest projectile; floor rounding, no eligibility changes."),
+    attack_preference_priest_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest thrown; floor rounding, no eligibility changes."),
+    attack_preference_priest_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest spell; floor rounding, no eligibility changes."),
+    attack_preference_priest_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest device; floor rounding, no eligibility changes."),
+    attack_preference_priest_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest activation; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer melee; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer projectile; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer thrown; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer spell; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer device; floor rounding, no eligibility changes."),
+    attack_preference_necromancer_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer activation; floor rounding, no eligibility changes."),
+    attack_preference_paladin_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin melee; floor rounding, no eligibility changes."),
+    attack_preference_paladin_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin projectile; floor rounding, no eligibility changes."),
+    attack_preference_paladin_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin thrown; floor rounding, no eligibility changes."),
+    attack_preference_paladin_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin spell; floor rounding, no eligibility changes."),
+    attack_preference_paladin_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin device; floor rounding, no eligibility changes."),
+    attack_preference_paladin_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin activation; floor rounding, no eligibility changes."),
+    attack_preference_rogue_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue melee; floor rounding, no eligibility changes."),
+    attack_preference_rogue_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue projectile; floor rounding, no eligibility changes."),
+    attack_preference_rogue_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue thrown; floor rounding, no eligibility changes."),
+    attack_preference_rogue_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue spell; floor rounding, no eligibility changes."),
+    attack_preference_rogue_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue device; floor rounding, no eligibility changes."),
+    attack_preference_rogue_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue activation; floor rounding, no eligibility changes."),
+    attack_preference_ranger_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger melee; floor rounding, no eligibility changes."),
+    attack_preference_ranger_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger projectile; floor rounding, no eligibility changes."),
+    attack_preference_ranger_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger thrown; floor rounding, no eligibility changes."),
+    attack_preference_ranger_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger spell; floor rounding, no eligibility changes."),
+    attack_preference_ranger_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger device; floor rounding, no eligibility changes."),
+    attack_preference_ranger_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger activation; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard melee; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard projectile; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard thrown; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard spell; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard device; floor rounding, no eligibility changes."),
+    attack_preference_blackguard_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard activation; floor rounding, no eligibility changes."),
     caution_bounce_healthy_tenths => (7, "tenths", 0, 100, "borg_caution.rs:102", "Controls bounce healthy tenths."),
     caution_bounce_limit => (300, "turns", 0, 100000, "borg_caution.rs:108", "Controls bounce limit."),
     caution_caster_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:157", "Controls caster stat vote."),
@@ -233,6 +288,9 @@ parameters! {
     caution_back_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1223", "Number of Borg turns of danger evaluated for a back-away grid."),
     caution_danger_horizon => (1, "turns", 1, 10, "borg_caution.rs:1514", "Number of Borg turns of danger evaluated at the current grid."),
     caution_recall_rest_turns => (500, "turns", 2, 9999, "borg_caution.rs:1630", "Number of rest turns queued while waiting safely for recall."),
+    // #457: outmatched healing, a study flag. 0 = the vendored behaviour exactly.
+    caution_heal_when_outmatched => (0, "flag", 0, 1, "borg_caution.rs:226", "1 = after every escape declined, a hurt Borg whose danger reaches its HP drinks CLW/CSW/CCW instead of attacking; 0 = off."),
+    caution_heal_outmatched_min_loss => (50, "percent", 0, 100, "borg_caution.rs:226", "Minimum percent of maximum HP lost before outmatched healing applies (only when caution_heal_when_outmatched is 1)."),
     // borg-reborn-rs (#220): source lines in danger/escape/recovery at 30ab9d66.
     danger_monblow_hurt_fear => (400, "danger", 0, 5000, "borg_danger.rs:208", "Additional melee danger for MONBLOW_HURT (n += 400;)."),
     danger_monblow_hurt_hit_power => (60, "hit_power", 0, 1000, "borg_danger.rs:210", "Legacy hit-power estimate used for MONBLOW_HURT in partial melee danger."),
@@ -1782,12 +1840,23 @@ struct Setting<'a> {
     origin: &'static str,
 }
 
-static VALUES: OnceLock<Vec<i32>> = OnceLock::new();
+#[derive(Clone, Copy)]
+struct Resolved {
+    value: i32,
+    origin: &'static str,
+}
+
+static VALUES: OnceLock<Vec<Resolved>> = OnceLock::new();
+
+pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
+    let i = param as usize;
+    VALUES.get().map_or((SPECS[i].default, "default"), |values| (values[i].value, values[i].origin))
+}
 
 /// Pure lookup after init; isolated decision tests use the same defaults.
 pub(crate) fn value(param: Param) -> i32 {
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| values[i])
+    VALUES.get().map_or(SPECS[i].default, |values| values[i].value)
 }
 
 fn parse<'a>(
@@ -1852,7 +1921,7 @@ fn parse<'a>(
 /// is immutable for the process, including reincarnations and core switches.
 pub(crate) fn initialize() {
     VALUES.get_or_init(|| {
-        let result = (|| -> Result<Vec<i32>, String> {
+        let result = (|| -> Result<Vec<Resolved>, String> {
             let text = crate::shell::borg_txt_contents()?;
             let mut env = BTreeMap::new();
             for (name, value) in std::env::vars_os() {
@@ -1870,7 +1939,7 @@ pub(crate) fn initialize() {
                 json.push(b'\n');
                 std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
             }
-            Ok(settings.iter().map(|s| s.value).collect())
+            Ok(settings.iter().map(|s| Resolved { value: s.value, origin: s.origin }).collect())
         })();
         result.unwrap_or_else(|e| {
             eprintln!("borg-reborn-rs: core parameters: {e}");
@@ -1882,6 +1951,29 @@ pub(crate) fn initialize() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn attack_preferences_validate_bounds_and_record_override_provenance() {
+        let name = "attack_preference_mage_spell_permille";
+        for bad in ["499", "2001", "1.5", "no", "2147483648"] {
+            assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err());
+        }
+        let env = BTreeMap::from([("ATTACK_PREFERENCE_MAGE_SPELL_PERMILLE".into(), "1600".into())]);
+        let values = parse(&format!("borg_param_{name} = 1500"), &env, SPECS).unwrap();
+        let resolved = &values[Param::attack_preference_mage_spell_permille as usize];
+        assert_eq!((resolved.value, resolved.origin), (1600, "environment"));
+        let json = serde_json::to_value(resolved).unwrap();
+        assert_eq!(json["name"], name);
+        assert_eq!(json["unit"], "utility_permille");
+        assert_eq!(json["default"], 1000);
+        for valid in [500, 1000, 2000] {
+            let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+            let setting = &values[Param::attack_preference_mage_spell_permille as usize];
+            assert_eq!((setting.value, setting.origin), (valid, "borg.txt"));
+        }
+        assert!(parse(&format!("borg_param_{name} = 1000\nborg_param_{name} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
+    }
 
     #[test]
     fn m13_defaults_preserve_healing_fixes_and_retire_removed_branches() {

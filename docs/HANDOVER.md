@@ -2,6 +2,220 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
+
+Owner: the scroll should have value, be carried, and be used before any food.
+- **Value** (`borg_town_capability.rs`): the scroll supplies FOOD again (#444
+  had stripped it from every non-food kind). `NOURISH:INC_TO` fills to N
+  percent (`effect_handler_NOURISH`, subtype 3; units: `food_value` 100 per
+  percent, object.txt Remove Hunger 50), so read hungry (grade 15, 
+  player_timed.txt) it adds 35: more than a Ration's `INC_BY` 30, not 50
+  and not a flat ration. Applies to every INC_TO food (Honey-cake, Draught
+  60 -> 45, Waybread 75 -> 60).
+- **Food floor stays coherent**: under the town plan `borg_trait` now counts
+  every scroll in `BI_FOOD` beside the rations (before: only with no other
+  food), so planner and core count the same (`with_remove_hunger`). No
+  store-sold food supplies more than 35, so the planner's floor (200
+  nutrition) is never met with fewer than the core's five items. Not under
+  the plan: unchanged.
+- **Use first** (`borg_item_use.rs`, `borg_caution.rs`): under the plan a
+  hungry or weak Borg tries the hunger spells, then reads the scroll, then
+  eats. Blind, confused, forgetful or in the dark it cannot read and eats.
+- Local, 180 starts, ambitious arm (4,2): Remove Hunger read 0 -> 47 notes,
+  sold 33 -> 4, stored 130 -> 103 (89 games), rations eaten 65 -> 56,
+  "You are getting hungry" 651 -> 512; deaths 32 -> 28, mean CL 4.73 -> 4.83,
+  mean max depth 2.33 -> 2.46; restock-food loops 0 / 0; no stalls.
+- **Left open:** the scroll is still bought once per game (155) as a
+  flavour-learning purchase (the planner values unknown flavours, like Resist
+  Heat/Cold) and stored when the food floor is already met by cheap Hard
+  Biscuits (eleven carried in the sampled game). That is the planner doing
+  its job on a spare scroll; fewer learning buys is #445's question.
+- `scripts/borg-core-vendor.py`: `borg_trait.rs` is declared hooked (it
+  already reported `borg_town_usefulness.rs` and `borg_town_utility.rs`
+  from #444 and earlier; not declared here, not part of CI).
+- `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
+  notes count as use, so torches are not reported as unused.
+
+
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
+## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
+
+- New parameters `caution_heal_when_outmatched` (0/1, default 0) and
+  `caution_heal_outmatched_min_loss` (50 percent); registry 1783 to 1785.
+  `borg_heal_outmatched` runs at the very end of `borg_caution` (after stairs,
+  retreat, escape, back-away and the reserve/recall/unknown-item steps all
+  declined, so escapes keep precedence) and, when hurt by the threshold with
+  danger at least current HP, quaffs CLW, else CSW, else CCW instead of
+  letting `borg_attack` run. Note: "# Healing (outmatched)." The potion order
+  is weakest first (conserves stronger cures); the owner may prefer strongest
+  first for the study.
+- Flag 0 is byte-identical on this build: seed 1516096046 (race 4 class 2,
+  errands_plan.txt, town 1, trip 0, 100000 turns) still dies at CL3 with keys
+  `4c2ea4baf255`; seed 501 (race 0 class 0, ambitious plan) keys `a80b9ac6185c`.
+- Flag 1, same cells: 1516096046 quaffs CLW twice in the acolyte fight and
+  survives to the turn limit (CL4, max DL2); 979002123 (race 8 class 6,
+  trip 1) drinks 17 times and survives to the turn limit (CL10, max DL13)
+  where flag 0 dies (CL8, DL12). One cell each, not a measurement (RULES 14):
+  the zoo control (flag 0 against 1 on the #147 arms) is the next step.
+- Unit tests cover the pure decision; the potion path needs the engine's
+  `z_info` and is exercised by the replays above.
+
+## 2026-11-16: back-away no longer steps onto lava (#458)
+
+- `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
+  `borg_cave_floor_grid`, which includes `FEAT_LAVA`. Lava burns 100+1d100
+  per turn (engine player-util.c:918), so low-level Borgs died at full HP in
+  town (borg-zoo#147: 15 of 212 death cells). It now skips lava unless the
+  Borg is fire-immune, the rule already used in borg_caution's
+  flee-grid check, flow_dark, flow and rest. Plain fix, no flag.
+- Audit of the other `borg_cave_floor_grid` callers: none else chooses a
+  step. The rest are projection and ray paths (borg_projection, fight_attack,
+  fight_defend), monster tracking (flow_kill), light and surround counts,
+  trap assumption (update), and a search-target scan (flow_misc) whose cost
+  map already blocks lava. Dimension door excludes lava already. Flow
+  spreading blocks lava for a non-immune Borg. Phase door lands wherever the
+  game puts the Borg; that is not a Borg choice. `borg_cave_floor_grid` is
+  unchanged (map/view code depends on lava being a floor).
+- Replays (errands_plan, town 1, trip 0, 100000 turns): 1356248624 race 2
+  class 0 now survives to the turn limit (CL5); 584077430 race 1 class 3 now
+  dies at turn 73713 to a battle-scarred veteran, not lava. Sanity cell 501
+  with the ambitious plan keeps its keys sha256 (a80b9ac6...).
+- The unit test covers the lava rule; `back_away` itself links only with the
+  engine, so the replays are the integration check.
+
+## 2026-11-16: reviewed preference promotion synchronization (#453)
+
+- Owner asks to merge after #407's review at50c92ba0 reports no blockers.
+  Prepare the combined build through a track-p task PR before promotion.
+- Merge accepted main6d1bca10 into track-p50c92ba0. Preserve both branches'
+  handover/provenance additions; those are the only conflicts. Main's newer
+  throwable supply helper and all accepted donor/planner/survival/startup
+  changes remain intact. The reviewed final-ranking seam merges unchanged.
+- Review findings1/2: document core-trace@2 and the attacks array; explain
+  fixed-neutral waiting against downweighted attacks. Confirm the documented
+  invocation-family semantics without changing weights or mapping.
+- The vendor audit exposes an existing accepted-main ownership omission:
+  #400/#443 changed borg_town_usefulness.rs without declaring it HOOKED.
+  Declare that receiving file; retain its accepted bytes without edits.
+- Local formatting/Clippy,165 workspace checks,333 native checks/four ignores
+  and the vendor audit pass. Candidate full45 and real weighted Mage/trace
+  parity checks pass. Cemetery0f9f7cf7 independently retains98 verified
+  packages, including this combined source290fd89e and initial CI failure.
+  Pin it for fresh CI. Compare the full45 with accepted main separately. Earlier exact-build evidence remains historical;
+  green old task CI does not validate this combined build. Repin #407 only
+  after task CI/integration; promotion must preserve accepted main work.
+
+## 2026-11-16: attack preference review follow-up (#424)
+
+- #405 merged into track-p at 0edee14b; #403 is closed. Its post-merge
+  review of 3f744ddb found no correctness bugs or blocking findings.
+- Owner requested the suggested small follow-up (findings 1 and 6). Retain
+  the winning simulation's raw utility for the diagnostic note. When it
+  differs from the weighted utility, label both; otherwise preserve the
+  existing note exactly, including at all default weights. No helper is
+  rerun, and ranking, execution, RNG and parameter values are unchanged.
+- Correct PLAN.md's stale task status. Other minor review observations
+  remain nonblocking; invocation-family weighting includes emergency and
+  control actions as documented. Any non-neutral tuning needs that scope
+  considered explicitly; no default tuning is proposed here.
+- Local formatting/Clippy,165 workspace tests,336 core tests/four ignores and
+  vendor audit pass. Neutral Mage keys/messages/state exactly match pre-fix;
+  weighted logging and trace-on/off equality pass; original Fang keys match.
+  Source-qualified controls and the initial CI reconciliation failure are
+  retained in Cemeteryf2e4b38c, class-attack-preferences/review-followup-424.
+  The second CI passed full engine behavior/reference checks; final original-
+  core reconciliation also needed the Druid seed1020 identity. Its independent
+  local control matches exactly; all86 archive packages verify before fresh CI.
+  Pin that independently retained archive before fresh CI; never weaken the
+  reconciliation check or relabel earlier source identities.
+- Required Rust checks and task CI gate integration into track-p. Preserve
+  the original review pin; update #407 to the integrated follow-up pin after
+  green CI. Main promotion still requires owner acceptance and delegation;
+  R carry #406 remains gated on accepted promotion.
+- Read-only source refresh ran; missing moving-source clones and unresolved
+  origin/HEAD refs prevent a complete upstream report. No source pins move.
+
+## 2026-11-16: preference task synchronization with recorder review (#403)
+
+- Track-p advanced from cd411e55 to 46d5f2ae through #393 while preference
+  validation ran. Preserve the complete recorder v0.2.0 adoption and both
+  handover histories; only this document conflicted. No recorder code or pin
+  is edited by the preference task beyond inheriting that integration commit.
+- #407 now freezes track-p for the recorder milestone review. #405 remains
+  unmerged while that review is active; owner authorization to implement
+  preferences does not authorize moving its reviewed head or promotion to main.
+- Fresh clean25e89494 versus clean46d5f2ae passes strict full45/45 native
+  key/message/state parity.336 native tests (four existing ignored),165 workspace
+  tests, formatting/Clippy and70 engine checks (two local skips, required pinned
+  zoo and incident fixtures present) pass. The real weighted choice and tracing
+  checks still pass; original-core Fang replay reproduces50491fa13924 exactly.
+- Current Cemetery evidence pin:62039b2750d3b106062d5246e77fa3a84d60d1d8, recorder-sync/ under
+  validation/borg-reborn-rs/class-attack-preferences. All73 qualified packages
+  verify, including27 new exact-build records;12 current native neutral deaths,
+  the weighted case and two original-core deaths reconcile. The new fixture
+  reference supplies CI's known archive without weakening any check. Earlier
+  cac37f59/cd411e55 evidence below remains historical, not relabeled.
+- R carry remains separately blocked in #406. Native calibration replay tooling
+  is Cemetery#13; #407's reviewed track-p head remains unchanged.
+
+## 2026-11-16: class/family attack preferences (#403, design #396)
+
+- Owner authorized native P implementation after the proposal discussion. Branch
+  task/T403-class-attack-preferences starts from track-p cd411e55; task PR targets
+  track-p only. Main promotion and the later R carry need their normal gates.
+- Add 54 named neutral-default parameters (nine classes, six invocation families),
+  explicit symbolic mapping of all170 BF entries, widened floor arithmetic and
+  one final-ranking seam. Hybrids/controls retain invocation family; emergency
+  eligibility and all helper internals remain unchanged. No danger correction.
+- core-trace@2 adds every evaluated candidate's raw/adjusted score, parameter and
+  provenance plus per-invocation winner. Nonpositive results carry no invented
+  rejection cause. Nested frames/repeated attempts remain separate; tracing
+  does not rerun simulation or feed decisions. Historical @1 evidence is intact.
+- Native arithmetic/mapping/config/ranking/nesting tests, workspace tests,
+  formatting, Clippy, vendor audit and Python tools/scripts pass locally.
+  A bounded real Mage regression changes the selected attack under a non-neutral
+  profile and proves trace-on/off keys/messages/states equality. Its unit fixtures
+  for other classes are not claimed as native replay coverage.
+- Clean cac37f59 versus clean cd411e55 passes strict full45/45 key/message/state
+  parity.336 native tests (four existing ignored),165 workspace tests,70 engine
+  tests (three skipped),13 mandatory pinned zoo-profile contracts and the existing
+  four-save incident regression pass. Other checks above remain green. Initial
+  baseline/candidate full attempts played all45 games but could not finalize the
+  suite marker because bc was absent; preserve those attempts. Install tools
+  locally and repeat unchanged suites, never forge completion or discard deaths.
+- Cemetery evidence is pinned ate6a3698c113e9b6bf7ebec87bed8a5d30196a62a under
+  validation/borg-reborn-rs/class-attack-preferences. It retains46 qualified
+  packages, original records, the initial CI artifact, all failure receipts and
+  full comparison hashes. The second CI passed all gameplay comparisons but
+  needed the reference-identical seed102 Fang smoke dossier under its new source
+  identity; both CI artifact archives are retained.12 final neutral deaths and the paired non-neutral case
+  reconcile. The dedicated harness/fixtures/attack-preferences.json pin feeds CI's
+  known registry; the original fixture/tool pins and historical archive stay fixed.
+  Native preference test deaths use a separate uploaded/reconciled registry, so
+  the existing original-core observation replay continues to select its own
+  core's case. Shared rerun-death lacks calibration-override restoration; that
+  pre-existing tooling limit is not silently treated as a native replay check.
+  Local raw evidence is under /workspace/work/403-*. R must
+  independently consume the accepted promoted contract with neutral/non-neutral
+  check/switch, ordered requests/effects/RNG and restoration (#364/#366).
+
 ## 2026-11-16: town planner item values (#400, #443, food)
 
 One PR, owner's request (supersedes #441):

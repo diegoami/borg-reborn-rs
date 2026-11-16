@@ -36,13 +36,15 @@ MAP = [
     ('angband/src/borg/borg.txt', 'c-reference/borg.txt'),
 ]
 # Files of ours only: never in borg-rs.
-OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/errands_plan.rs'}
+OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.rs', 'src/attack_preference.rs', 'src/errands_plan.rs'}
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
-    'src/borg_prepared.rs',  # #447: read the independent live plan-cap overlay
-    'src/borg_town_usefulness.rs',  # #444: receiving town item-value correction
+    'src/borg_prepared.rs',  # #447: independent plan cap
+    'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
+    'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 
