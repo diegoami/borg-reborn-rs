@@ -1,12 +1,17 @@
 {
   "schema": "borg-reborn-rs/attack-preference-validation@1",
   "repository": "diegoami/borg-cemetery",
-  "commit": "62039b2750d3b106062d5246e77fa3a84d60d1d8",
+  "commit": "fcfe21c56156ac934590cf073b46f21ae813045a",
   "path": "validation/borg-reborn-rs/class-attack-preferences",
   "implementation_commit": "25e89494413177223935ba3dc12bbf49a7e2e380",
   "source_sha256": "0d05063ed05226f0a7d1b92c7aad844f1ce73994fd9b1615dda7c44a3aaf46e4",
   "baseline_commit": "46d5f2ae46c2af743a35ea21165191a0f1cd53f6",
   "purpose": "Immutable new-parameter/configuration identities for unchanged neutral play; retain original CI/local records.",
   "policy_implementation_commit": "cac37f5901c90562715e47e7bcd4f9ff91ea4f9f",
-  "historical_evidence_commit": "e6a3698c113e9b6bf7ebec87bed8a5d30196a62a"
+  "historical_evidence_commit": "e6a3698c113e9b6bf7ebec87bed8a5d30196a62a",
+  "receiving_source_refresh": {
+    "revision": "cce8ccfc320bff92cf2a17a54cadbd12af08cdb8",
+    "source_sha256": "d012f3af1441c69dbdd4c7dcf8200d4eda55bb8c82b6c4bafa8dec784f390226",
+    "receipt": "validation/borg-reborn-rs/class-attack-preferences/P421-SOURCE-SYNC.json"
+  }
 }

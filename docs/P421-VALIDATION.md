@@ -26,3 +26,11 @@ pinned independent canonical registry. Required CI gates track-p integration.
 No population or survival-improvement claim; trials and source epochs stay
 separate. Configuration failures and wrong-race controls are retained and
 excluded from reported-character reproduction claims.
+
+The inherited weighted native control also passed but needed a new
+source-qualified death in its separate archive. CI43878289074 recorded
+fruit bat at turn1979, keysda1c7108b7a2, exactly matching the retained local
+record. [Canonical supplement](https://github.com/diegoami/borg-cemetery/blob/fcfe21c56156ac934590cf073b46f21ae813045a/validation/borg-reborn-rs/class-attack-preferences/P421-SOURCE-SYNC.json)
+retains that fourth control. The preference evidence checkout pin advances
+without changing its policy or historical source receipts. Reconciliation
+remains against that independent archive.

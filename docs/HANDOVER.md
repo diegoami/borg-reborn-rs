@@ -25,6 +25,10 @@
   Rust/clippy,339 native-core tests,91 tool/19 script checks pass.
   Canonical14-trial receipts and three new CI death controls are retained in
   Cemetery PR22 atf6b80027; historical source archive bytes are unchanged.
+- First CI43878289074 reached the inherited weighted-control reconciliation:
+  test passed, but the separate evidence pin lacked sourced012f3af. Retain
+  the matching fruit-bat/turn1979/da1c7108 control in Cemetery PR23; advance
+  only that independent evidence pin and rerun required CI.
 - Target task PR at track-p. Green CI allows task integration there; no
   unreviewed preference or stair-fix promotion to main is implied.
 
