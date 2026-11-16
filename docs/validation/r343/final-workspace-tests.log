@@ -1,0 +1,217 @@
+   Compiling borg-core v0.1.0 (/workspace/work/r3-m13-carry/borg-core)
+   Compiling borg-reborn-rs v0.0.0 (/workspace/work/r3-m13-carry/borg-reborn-rs)
+   Compiling borg-next v0.1.0 (/workspace/work/r3-m13-carry/borg-next)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.63s
+     Running unittests src/lib.rs (/workspace/work/r3-cargo/debug/build/borg-next/eb5521ca2ec63284/out/borg_next-eb5521ca2ec63284)
+
+running 10 tests
+test shadow::tests::off_never_compares_or_writes_and_agreement_is_not_a_mismatch ... ok
+test shadow::tests::invalid_mode_is_rejected ... ok
+test shadow::tests::check_keeps_native_switch_uses_port_and_both_log_actual_mismatch ... ok
+test shadow::tests::scalar_disagreement_records_inputs_and_respects_mode ... ok
+test tests::each_think_reads_the_current_memory ... ok
+test tests::entity_slots_goals_positions_and_holes_are_preserved ... ok
+test tests::every_named_trait_matches_its_native_source ... ok
+test tests::named_traits_keep_native_values ... ok
+test tests::unallocated_and_outside_memory_are_absent ... ok
+test danger::grid_failure_tests::invalid_grid_records_before_controlled_exit ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running unittests src/lib.rs (/workspace/work/r3-cargo/debug/build/borg-reborn-rs/a090946e901e1dbc/out/borg_reborn_rs-a090946e901e1dbc)
+
+running 156 tests
+test borg::tests::configured_budget_cannot_silently_remove_its_bound ... ok
+test borg::tests::core_selector_rejects_silent_arm_changes ... ok
+test borg::tests::configured_fear_preserves_aliases_and_rejects_invalid_thresholds ... ok
+test borg::tests::configured_errands_preserve_valid_commands_and_reject_silent_fallback ... ok
+test borg::tests::free_and_level_actions_have_separate_budgets ... ok
+test borg::tests::on_a_shop_it_alters_instead_of_holding ... ok
+test borg::tests::shops_and_walls_are_not_walkable_but_unknown_grids_are ... ok
+test borg::tests::keys_open_with_escape ... ok
+test borg::tests::the_rng_is_reproducible ... ok
+test borg::tests::time_passing_resets_the_count ... ok
+test danger::tests::a_paralysing_gaze_chains_for_one_a_hit ... ok
+test danger::tests::a_forgotten_caster_adds_almost_nothing ... ok
+test danger::tests::a_poison_blow_costs_its_timer_too ... ok
+test danger::tests::a_ranged_caster_is_seen_through_clear_ground ... ok
+test danger::tests::a_shrieker_is_a_summoning_risk ... ok
+test danger::tests::a_wall_stops_the_ranged_estimate ... ok
+test danger::tests::a_wide_blow_is_a_distribution ... ok
+test danger::tests::confusion_and_stun_scale_every_term ... ok
+test danger::tests::economic_events_are_not_added_to_hp_damage ... ok
+test danger::tests::expected_and_worst_bracket_the_round ... ok
+test danger::tests::fear_refuses_the_attack ... ok
+test danger::tests::poison_and_cuts_bleed_the_hit_points_left ... ok
+test danger::tests::never_move_monsters_only_score_adjacent ... ok
+test danger::tests::sleep_and_stun_reduce_the_estimate ... ok
+test danger::tests::speed_and_distance_change_the_rounds ... ok
+test danger::tests::summoners_and_breeders_grow_the_estimate ... ok
+test danger::tests::the_risk_tolerance_is_the_only_dial ... ok
+test danger::tests::the_trace_names_each_contributing_monster ... ok
+test danger::tests::unseen_monsters_fade_with_confidence ... ok
+test equipment::tests::a_better_weapon_is_worn_by_its_damage ... ok
+test equipment::tests::a_launcher_is_not_a_weapon ... ok
+test executor::tests::an_index_past_the_letters_fails_loudly - should panic ... ok
+test equipment::tests::an_empty_light_slot_takes_the_pack_light_with_most_fuel ... ok
+test executor::tests::buy_queues_the_c_borgs_purchase ... ok
+test executor::tests::dungeon_actions_open_with_escape ... ok
+test executor::tests::effects_hold_and_fail ... ok
+test executor::tests::item_actions_use_the_pack_letter_and_check_consumption ... ok
+test equipment::tests::jewellery_must_be_known_and_goes_in_an_empty_slot ... ok
+test executor::tests::messages_and_blanks_are_not_prompts ... ok
+test executor::tests::prompt_answers_are_the_c_borgs ... ok
+test executor::tests::sell_queues_the_c_borgs_sale ... ok
+test executor::tests::stacked_purchases_and_sales_change_the_item_count_not_the_slots ... ok
+test knowledge::tests::blows_follow_calc_blows ... ok
+test executor::tests::the_executor_checks_once_and_reports_the_action ... ok
+test knowledge::tests::dice_means ... ok
+test knowledge::tests::energy_scales_with_speed ... ok
+test knowledge::tests::heavy_wield_follows_calc_bonuses ... ok
+test knowledge::tests::modify_stat_value_follows_the_engine ... ok
+test knowledge::tests::recorded_knowledge_matches_the_game_data ... ok
+test knowledge::tests::stat_index_follows_calc_bonuses ... ok
+test observation::tests::a_recorded_log_round_trips ... ok
+test observation::tests::panel_lookup_uses_level_coordinates ... ok
+test observation::tests::the_message_line_splits_into_messages ... ok
+test equipment::tests::armour_is_worn_by_its_ac_unless_it_costs_a_caster_mana ... ok
+test params::tests::a_bad_profile_is_refused ... ok
+test params::tests::defaults_come_from_the_table ... ok
+test params::tests::a_profile_sets_what_it_names ... ok
+test path::tests::a_barred_grid_closes_a_corridor ... ok
+test path::tests::a_corridor_path_follows_the_floor ... ok
+test observation::tests::an_observation_round_trips_through_its_log_line ... ok
+test path::tests::a_frontier_already_stood_on_is_not_walked_back_to ... ok
+test path::tests::a_shop_entrance_can_be_left_after_shopping ... ok
+test path::tests::a_shop_is_a_goal_but_not_a_road ... ok
+test path::tests::explicit_targets_flow_like_any_goal ... ok
+test path::tests::a_monster_in_the_way_is_walked_round ... ok
+test path::tests::doors_and_webs_cost_more_than_floor ... ok
+test path::tests::maps_are_cached_within_a_think_and_refuse_a_moved_world ... ok
+test path::tests::recorded_walks_are_strictly_downhill ... ok
+test path::tests::the_frontier_is_the_known_edge_of_the_unknown ... ok
+test path::tests::the_frontier_underfoot_is_finished_not_a_place_to_hold ... ok
+test path::tests::the_risk_tolerance_changes_the_cost ... ok
+test path::tests::walls_and_unknown_do_not_pass ... ok
+test readiness::tests::deep_descent_lands_five_below_the_deepest ... ok
+test readiness::tests::depth_one_is_always_allowed ... ok
+test path::tests::threat_is_paid_as_a_cost_not_a_wall ... ok
+test readiness::tests::the_kit_gates_follow_the_manual ... ok
+test readiness::tests::the_worst_turn_of_the_band_gates_the_depth ... ok
+test spells::tests::a_learned_missile_is_cast_at_its_letter_and_aims ... ok
+test spells::tests::remove_hunger_is_food_when_learned_with_its_book ... ok
+test spells::tests::a_chooser_studies_the_attack_first_and_a_priest_the_book ... ok
+test strategy::tests::a_breeder_colony_sends_the_borg_home ... ok
+test params::tests::a_profile_sets_every_name_without_panicking ... ok
+test strategy::tests::a_character_below_its_target_depth_goes_up ... ok
+test strategy::tests::a_character_bleeding_out_drinks_a_cure_before_resting ... ok
+test strategy::tests::a_confused_character_beside_lava_does_not_walk ... ok
+test strategy::tests::a_contact_decision_records_every_response ... ok
+test strategy::tests::a_fresh_level_explores_instead_of_rerolling ... ok
+test strategy::tests::a_favourable_exchange_is_fought ... ok
+test strategy::tests::a_harmless_monster_in_reach_is_not_a_fight ... ok
+test strategy::tests::a_losing_exchange_retreats_unless_cornered ... ok
+test strategy::tests::a_sealed_room_escalates_the_stuck_state_to_digging ... ok
+test strategy::tests::a_staircase_under_fire_is_a_scored_escape ... ok
+test spells::tests::no_cast_without_mana_light_or_the_book ... ok
+test strategy::tests::a_refused_engage_action_is_not_chosen_again ... ok
+test strategy::tests::a_stalled_goal_cools_down_and_the_next_mode_takes_over ... ok
+test strategy::tests::an_exhausted_frontier_can_reroll_but_a_fresh_one_cannot ... ok
+test strategy::tests::an_exhausted_level_rerolls_from_its_up_staircase ... ok
+test strategy::tests::an_escape_descent_still_counts_against_the_reroll_cap ... ok
+test strategy::tests::an_explored_level_at_the_target_depth_ends_the_trip ... ok
+test strategy::tests::an_unsafe_up_staircase_retreats_instead_of_holding ... ok
+test strategy::tests::an_unaware_cure_does_not_count_as_a_reserve ... ok
+test strategy::tests::executor_failures_fail_the_goal ... ok
+test strategy::tests::engage_progress_without_contact_is_not_a_dead_monster ... ok
+test strategy::tests::explores_the_frontier_toward_the_unknown ... ok
+test strategy::tests::only_known_food_is_food ... ok
+test strategy::tests::recovery_returns_to_explore_when_healed ... ok
+test strategy::tests::rerolls_are_capped_per_level_and_per_game_turn ... ok
+test strategy::tests::starving_with_no_food_returns_home_instead_of_descending ... ok
+test strategy::tests::takes_the_down_staircase_when_on_it ... ok
+test strategy::tests::rests_when_hurt_and_safe_but_not_beside_danger ... ok
+test strategy::tests::reserves_are_bought_one_at_a_time_before_town_is_left ... ok
+test strategy::tests::the_level_exhausted_falls_to_descend ... ok
+test strategy::tests::the_decision_exposes_the_threat_numbers ... ok
+test strategy::tests::the_object_underfoot_is_picked_up_when_not_in_contact ... ok
+test strategy::tests::the_trace_names_the_rule_and_the_goal_timing ... ok
+test strategy::tests::unavailable_stock_and_a_full_pack_do_not_trap_the_borg_in_town ... ok
+test strategy::tests::unknown_consumables_are_sold_for_identification_after_reserves ... ok
+test tactics::tests::a_breeder_in_reach_is_attacked_not_ignored ... ok
+test strategy::tests::travel_never_steps_onto_a_more_dangerous_grid ... ok
+test tactics::tests::a_coming_monster_takes_a_thrown_flask ... ok
+test tactics::tests::a_kill_beats_a_retreat_that_takes_a_free_hit ... ok
+test tactics::tests::a_monster_at_zero_hit_points_is_alive_and_attacked ... ok
+test tactics::tests::a_phase_door_is_spent_when_staying_is_worse ... ok
+test tactics::tests::a_phase_door_with_no_remembered_landing_is_not_offered ... ok
+test tactics::tests::a_shot_follows_the_engines_launcher_and_ammunition ... ok
+test tactics::tests::down_stairs_under_threat_carry_the_declared_arrival_risk ... ok
+test tactics::tests::every_available_response_is_scored ... ok
+test tactics::tests::fear_removes_every_attack_candidate ... ok
+test tactics::tests::scores_are_totally_ordered_and_zero_has_one_sign ... ok
+test tactics::tests::no_scroll_is_offered_when_the_engine_refuses_reading ... ok
+test tactics::tests::speed_halves_the_threat_it_is_drunk_against ... ok
+test tactics::tests::stairs_under_a_pursuer_are_taken ... ok
+test tactics::tests::the_closest_monster_coming_is_shot ... ok
+test tests::engine_pin_is_a_full_commit ... ok
+test tactics::tests::the_last_phase_door_is_not_spent_on_a_dying_monster ... ok
+0001 turn 1000 depth 0 buy one of 3 Wooden Torches at the General Store, cost 2 gold
+0002 turn 1000 depth 0 acquire a Scroll of Phase Door
+test tactics::tests::word_of_recall_is_not_read_while_active ... ok
+test town::tests::everything_is_off_by_default ... ok
+test town::tests::only_what_grew_is_acquired ... ok
+test town::tests::a_purchase_is_a_buy_not_an_acquisition ... ok
+test town::tests::the_line_format_is_borg_rs ... ok
+test town::tests::the_same_state_is_written_once ... ok
+test town::tests::the_state_record_has_borg_rs_shape ... ok
+test world::tests::a_forgotten_grid_erases_to_follow_the_player ... ok
+test world::tests::a_monster_out_of_view_is_tracked_with_falling_confidence ... ok
+test world::tests::a_reused_monster_index_is_a_new_monster ... ok
+test world::tests::blows_and_melee_come_from_the_gear ... ok
+test world::tests::an_object_seen_gone_is_forgotten ... ok
+test world::tests::gear_combines_as_the_engine_does_and_wearing_is_a_copy ... ok
+test world::tests::recorded_observations_rebuild_the_live_world ... ok
+test world::tests::recorded_blows_match_the_engine ... ok
+test world::tests::a_new_level_is_a_fresh_map ... ok
+test world::tests::the_panel_is_remembered_in_level_coordinates ... ok
+test world::tests::shops_are_found_in_town_and_visits_noted ... ok
+test world::tests::to_dam_and_stats_follow_the_engine ... ok
+test world::tests::the_stat_floor_follows_the_known_bonus ... ok
+test world::tests::the_digest_follows_the_state ... ok
+
+test result: ok. 156 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests/decision_fixtures.rs (/workspace/work/r3-cargo/debug/build/borg-reborn-rs/4b25c8f09cb01a4a/out/decision_fixtures-4b25c8f09cb01a4a)
+
+running 4 tests
+test print_current ... ok
+test every_fixture_exists_and_is_owned ... ok
+test the_knowledge_slice_matches_the_game_data ... ok
+test fixtures_replay_and_meet_their_expectation ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running tests/repository.rs (/workspace/work/r3-cargo/debug/build/borg-reborn-rs/6889a6f2a719a3eb/out/repository-6889a6f2a719a3eb)
+
+running 5 tests
+test engine_pin_matches_pins_json ... ok
+test claude_md_only_includes_agents_md ... ok
+test entry_documents_exist ... ok
+test every_pinned_commit_is_a_full_sha ... ok
+test copied_death_registries_have_no_dangling_internal_links ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+   Doc-tests borg_next
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests borg_reborn_rs
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

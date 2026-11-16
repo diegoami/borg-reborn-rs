@@ -7,3 +7,9 @@ __pycache__/
 /.angband-reborn/
 /docs/deaths/.registry.lock
 .claude/settings.local.json
+
+# A killed historical import can leave staging; never auto-delete another process.
+docs/deaths/.import-*/
+
+# Local worktrees (same convention as better-borg-c and borg-rs)
+/.worktrees/

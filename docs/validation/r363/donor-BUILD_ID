@@ -1,0 +1,10 @@
+impl=rust
+git_rev=1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea
+git_dirty=no
+inputs_dirty=no
+source_sha256=d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c
+binary=/workspace/work/r3-donor-m13-exact/build/rust/game/angband
+binary_sha256=7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde
+cc=cc (Debian 14.2.0-19) 14.2.0
+rustc=rustc 1.100.0 (0ef1bc386 2026-11-09)
+built_utc=2026-11-15T22:45:47Z

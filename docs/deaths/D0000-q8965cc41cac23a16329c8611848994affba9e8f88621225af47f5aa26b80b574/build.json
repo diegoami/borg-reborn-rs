@@ -1,0 +1,13 @@
+{
+  "binary": "/tmp/borg-game-plan-design-20261115/build/rust/game/angband",
+  "binary_sha256": "00e00780f0bffc77ac30be03235482716b8572e9b96a5bffafe153c0125978a4",
+  "built_utc": "2026-11-15T20:46:50Z",
+  "cc": "cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0",
+  "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+  "git_dirty": "no",
+  "git_rev": "7ee2c80b580a71af4b99808333f791baabd7795f",
+  "impl": "rust",
+  "inputs_dirty": "no",
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+  "source_sha256": "49daaed675fabc79b856d01951081ae906ae33bb3b5e0972ca4162d36260c7bb"
+}

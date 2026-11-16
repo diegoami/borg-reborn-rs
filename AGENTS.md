@@ -7,6 +7,9 @@ session, a local one, any model, or a person. It is the only entry point;
 1. [RULES.md](RULES.md);
 2. [docs/HANDOVER.md](docs/HANDOVER.md): where the work stands and what the
    last session left;
+   Track R also reads [docs/R366-HANDOVER.md](docs/R366-HANDOVER.md) for the
+   current scoped state; [docs/R417-HANDOVER.md](docs/R417-HANDOVER.md) records
+   its review corrections. The global file retains historical session material.
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the design direction;
@@ -55,6 +58,24 @@ The Borg's knowledge of the game has three inputs, in this order:
    lead, not a rule: nothing is a claim until borg-zoo measures it (RULES 14),
    and a rule or threshold no measurement supports is declared a hypothesis.
 
+## Gameplay reports and scenarios (owner, 2026-11-16)
+
+**Write gameplay evidence in borg-cemetery.** Incident/death investigations,
+reusable saved or constructed scenarios, behavioral trial reports and
+counterfactual comparisons belong there, including validation incidents.
+This source repository keeps implementation, tests, immutable fixture references
+and short validation summaries linking to the canonical case. Do not create
+new gameplay reports under docs/ or add new validation dossiers to docs/deaths/
+to satisfy CI. The existing historical archive is retained unchanged until an
+explicitly reviewed migration; its existence is not a precedent for new reports.
+
+Player-cemetery may retain original player/mixed recordings and working saves;
+link those inputs from the Cemetery case. Case-specific alternative plays and
+scenario trials are Cemetery evidence. Do not duplicate canonical analysis in
+player-cemetery. Preserve published raw hashes/history while replacing misplaced
+current report pages with pointers. All P/R tracks follow this ownership rule.
+
+
 ## Starting
 
 ```sh
@@ -86,7 +107,10 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 **Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
 RULES.md before P work. Start P task branches from `origin/track-p`, target
 P task PRs at `track-p`, and merge them there only after required CI passes.
-Close the task issue explicitly with its integration PR/commit. Never send
+Close the task issue explicitly with its integration PR/commit.
+For retained validation evidence, import provisional native dossiers using
+`tools/import-deaths.py`; run its `--check` before committing. See
+[docs/DOSSIER-IMPORT.md](docs/DOSSIER-IMPORT.md). Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review
@@ -200,6 +224,20 @@ milestone. Name both in the review PR.
 | `docs/ZOO-INTERFACE.md` | The contract borg-zoo's adapter calls: build, run, outputs (TE.7) |
 | `docs/QUERY-SURFACE.md` | Secondary goal Q (D12): the draft of `borg-mcp`, the MCP server through which language models query the Borg's judgement (query mode) or play a hosted game as a separate arm (play mode) |
 | `docs/deaths/` | Preserved historical validation archive; canonical new death reports/analysis live in borg-cemetery |
+
+## Dossier IDs across branches (owner, 2026-11-15)
+
+Follow [DEATH-ID-POLICY.md](docs/DEATH-ID-POLICY.md): final numeric IDs belong
+to centralized cemetery acceptance. Local IDs are provisional; qualify
+cross-branch references by exact containing registry commit. CI artifacts
+also need run/registry namespacing before commit. Preserve old evidence and
+origin mappings; run `python3 scripts/check-death-ids.py docs/deaths` before
+integration. It detects numeric collisions that git's path merge can miss.
+Canonical publication changes remain the cemetery owner's work.
+For retained validation evidence on every track, run `tools/import-deaths.py`
+and its `--check` before historical integration; see docs/DOSSIER-IMPORT.md.
+Use the full qualified storage ID, preserve origin maps, and never enlarge
+the frozen legacy inventory merely to admit an overlapping provisional ID.
 
 ## Local machine notes
 

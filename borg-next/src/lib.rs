@@ -8,24 +8,59 @@ use borg_rs::memory::{
     AUTO_MAX_Y,
 };
 
+/// Cheap named access to current native policy memory.
+///
+/// A retained borrow cannot cross mutation:
+/// ```compile_fail
+/// use borg_next::Read;
+/// use borg_rs::memory::{BorgState, traits::BI_CURHP};
+/// let mut state = BorgState::default();
+/// let read = Read::new(&state);
+/// state.borg.trait_[BI_CURHP as usize] = 17;
+/// let _ = read.character().curhp();
+/// ```
+#[derive(Clone, Copy)]
+pub struct Read<'a>(&'a BorgState);
+impl<'a> Read<'a> {
+    pub fn new(state: &'a BorgState) -> Self {
+        Self(state)
+    }
+}
+
 // Each named field cites its exact source index. Values stay i32: even
 // apparent booleans and resistance traits must retain borg-rs's semantics.
 macro_rules! trait_group {
-    ($name:ident { $($field:ident => $source:ident),* $(,)? }) => {
+    ($name:ident, $reader:ident, $group:ident { $($field:ident => $source:ident),* $(,)? }) => {
         #[derive(Clone, Copy, Debug, PartialEq, Eq)]
         pub struct $name {
             $(#[doc = concat!("Source: BorgState.borg.trait_[", stringify!($source), "].")]
             pub $field: i32,)*
         }
+        /// Borrowed native values; construction never traverses traits.
+        #[derive(Clone, Copy)]
+        pub struct $reader<'a>(&'a BorgState);
+        impl $reader<'_> {
+            $(#[doc = concat!("Source: BorgState.borg.trait_[", stringify!($source), "].")]
+            pub fn $field(&self) -> i32 { self.0.borg.tr($source) })*
+        }
+        impl<'a> Read<'a> {
+            pub fn $group(&self) -> $reader<'a> { $reader(self.0) }
+        }
         impl $name {
             fn read(state: &BorgState) -> Self {
                 Self { $($field: state.borg.tr($source),)* }
+            }
+            #[cfg(test)]
+            fn check_sources(state: &BorgState) {
+                let group = Self::read(state);
+                $(assert_eq!(group.$field, state.borg.tr($source), stringify!($source));
+                  assert_eq!(Read::new(state).$group().$field(), group.$field, stringify!($source));)*
             }
         }
     };
 }
 
-trait_group!(Attributes {
+trait_group!(Attributes, AttributesRead, attributes {
     str => BI_STR,
     int => BI_INT,
     wis => BI_WIS,
@@ -53,7 +88,7 @@ trait_group!(Attributes {
     scon => BI_SCON,
 });
 
-trait_group!(Character {
+trait_group!(Character, CharacterRead, character {
     speed => BI_SPEED,
     cdepth => BI_CDEPTH,
     maxdepth => BI_MAXDEPTH,
@@ -73,7 +108,7 @@ trait_group!(Character {
     recall => BI_RECALL,
 });
 
-trait_group!(Food {
+trait_group!(Food, FoodRead, food {
     food => BI_FOOD,
     food_hi => BI_FOOD_HI,
     food_lo => BI_FOOD_LO,
@@ -81,7 +116,7 @@ trait_group!(Food {
     food_cure_blind => BI_FOOD_CURE_BLIND,
 });
 
-trait_group!(Abilities {
+trait_group!(Abilities, AbilitiesRead, abilities {
     gold => BI_GOLD,
     mod_moves => BI_MOD_MOVES,
     dam_red => BI_DAM_RED,
@@ -103,7 +138,12 @@ trait_group!(Abilities {
     dig => BI_DIG,
 });
 
-trait_group!(Resistances {
+trait_group!(Resistances, ResistancesRead, resistances {
+    pstun => BI_PSTUN,
+    vacid => BI_VACID,
+    vcold => BI_VCOLD,
+    velec => BI_VELEC,
+    vfire => BI_VFIRE,
     ifire => BI_IFIRE,
     iacid => BI_IACID,
     icold => BI_ICOLD,
@@ -147,7 +187,7 @@ trait_group!(Resistances {
     sfract => BI_SFRACT,
 });
 
-trait_group!(Status {
+trait_group!(Status, StatusRead, status {
     king => BI_KING,
     isweak => BI_ISWEAK,
     ishungry => BI_ISHUNGRY,
@@ -176,7 +216,7 @@ trait_group!(Status {
     isfixall => BI_ISFIXALL,
 });
 
-trait_group!(Combat {
+trait_group!(Combat, CombatRead, combat {
     armor => BI_ARMOR,
     tohit => BI_TOHIT,
     todam => BI_TODAM,
@@ -197,7 +237,7 @@ trait_group!(Combat {
     heavybow => BI_HEAVYBOW,
 });
 
-trait_group!(Ammo {
+trait_group!(Ammo, AmmoRead, ammo {
     ammo_count => BI_AMMO_COUNT,
     ammo_tval => BI_AMMO_TVAL,
     ammo_sides => BI_AMMO_SIDES,
@@ -208,7 +248,7 @@ trait_group!(Ammo {
     quiver_slots => BI_QUIVER_SLOTS,
 });
 
-trait_group!(Curses {
+trait_group!(Curses, CursesRead, curses {
     first_cursed => BI_FIRST_CURSED,
     where_cursed => BI_WHERE_CURSED,
     crsenveloping => BI_CRSENVELOPING,
@@ -245,7 +285,7 @@ trait_group!(Curses {
     crsunkno => BI_CRSUNKNO,
 });
 
-trait_group!(Weapon {
+trait_group!(Weapon, WeaponRead, weapon {
     ws_animal => BI_WS_ANIMAL,
     ws_evil => BI_WS_EVIL,
     ws_undead => BI_WS_UNDEAD,
@@ -265,7 +305,7 @@ trait_group!(Weapon {
     wb_pois => BI_WB_POIS,
 });
 
-trait_group!(Supplies {
+trait_group!(Supplies, SuppliesRead, supplies {
     aphase => BI_APHASE,
     ateleport => BI_ATELEPORT,
     aescape => BI_AESCAPE,
@@ -309,7 +349,7 @@ trait_group!(Supplies {
     ashroom => BI_ASHROOM,
 });
 
-trait_group!(Inventory {
+trait_group!(Inventory, InventoryRead, inventory {
     arod1 => BI_AROD1,
     arod2 => BI_AROD2,
     worn_need_id => BI_WORN_NEED_ID,
@@ -515,6 +555,92 @@ mod tests {
     }
 
     #[test]
+    fn every_named_trait_matches_its_native_source() {
+        let state = state();
+        Attributes::check_sources(&state);
+        Character::check_sources(&state);
+        Food::check_sources(&state);
+        Abilities::check_sources(&state);
+        Resistances::check_sources(&state);
+        Status::check_sources(&state);
+        Combat::check_sources(&state);
+        Ammo::check_sources(&state);
+        Curses::check_sources(&state);
+        Weapon::check_sources(&state);
+        Supplies::check_sources(&state);
+        Inventory::check_sources(&state);
+    }
+
+    #[test]
+    fn borrowed_access_is_one_pointer_and_constructs_without_reading_traits() {
+        let empty = BorgState::default();
+        assert!(empty.borg.trait_.is_empty());
+        let read = Read::new(&empty);
+        assert_eq!(
+            std::mem::size_of_val(&read),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.attributes()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.character()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.food()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.abilities()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.resistances()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.status()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.combat()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.ammo()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.curses()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.weapon()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.supplies()),
+            std::mem::size_of::<&BorgState>()
+        );
+        assert_eq!(
+            std::mem::size_of_val(&read.inventory()),
+            std::mem::size_of::<&BorgState>()
+        );
+    }
+
+    #[test]
+    fn borrowed_access_reacquires_current_values_after_mutation() {
+        let mut state = state();
+        let previous = Read::new(&state).character().curhp();
+        state.borg.trait_[BI_CURHP as usize] = previous + 17;
+        assert_eq!(Read::new(&state).character().curhp(), previous + 17);
+        state.borg.trait_[BI_CURSP as usize] = -19;
+        assert_eq!(Read::new(&state).character().cursp(), -19);
+    }
+
+    #[test]
     fn named_traits_keep_native_values() {
         let state = state();
         let view = View::new(&state);
@@ -588,3 +714,9 @@ mod tests {
 }
 
 pub mod stateful;
+
+#[cfg(feature = "test-m13-danger")]
+mod m13_fixture;
+
+#[cfg(feature = "test-r3-defence")]
+mod defence_fixture;

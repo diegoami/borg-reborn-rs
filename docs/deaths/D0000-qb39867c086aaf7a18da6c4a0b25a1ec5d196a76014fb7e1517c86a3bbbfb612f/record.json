@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p-review-old-full/full-3-priest-3",
+      "raw_sha256": {
+        "keys.log": "2e0e9b80399b268f62431a024fc2917ac950aa0aff57b45ee5d56b4facc84648",
+        "messages.log": "16d37371a61ca804e872c2af89d0cdeaf400c9926b6419a5498357ba152a0cef",
+        "state.log": "882aa9b36a168a991802ebc5b4361b17445eadd23ab63751eab3efa79aabdb5d"
+      },
+      "result_sha256": "2e0e9b80399b268f62431a024fc2917ac950aa0aff57b45ee5d56b4facc84648",
+      "role": "original",
+      "source_commit": "66aff7999c289b86b8f21f320664f33e37d07d2f"
+    }
+  ],
+  "character": "Half-Orc Priest",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 2337
+  },
+  "encounter_family": "start-28b300491d720815ae4dc33634748d9d0dd9bcfc8704ea1e2e6a276d56d52951",
+  "files_sha256": {
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "b486498d2f1e1bdc48045992a5a3baac35ad57f680be2cb2619660876600c290",
+    "depths.json": "7ec53b517603d3dddbbaed42baf9462dd2ae5a283c9f282c52e55efe5aa8881f",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "b0e9b52855f8c1abc5ad8005c174a61e1e39ef6393a7fcde0ac20e5f88e1deab",
+    "trace-tail.jsonl": "4ea1d303028ab4acd2865a742005b0d9d6e7eadaace7baab459d120b68bec7de"
+  },
+  "id": "D0000-qb39867c086aaf7a18da6c4a0b25a1ec5d196a76014fb7e1517c86a3bbbfb612f",
+  "identity": {
+    "binary_sha256": "cfdcdaf3af68f5b06be65e6c337600bec246ea4ac7c0f22198eda05f78e9bd66",
+    "borg_txt_sha256": "840afb48067b810899e6d9bfc7b60f00f0d1d4c88159e00c87e29976cf983408",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "66aff7999c289b86b8f21f320664f33e37d07d2f",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1033,
+    "source_sha256": "1f5eb966caeb02bd8584f439961747e5fe5df89aed654bed46a7ea8b1c6ca0e9"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a giant white mouse",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a giant white mouse",
+    "class_idx": 3,
+    "dead": true,
+    "depth": 1,
+    "level": 3,
+    "max_depth": 1,
+    "race_idx": 6,
+    "turn": 24771
+  }
+}

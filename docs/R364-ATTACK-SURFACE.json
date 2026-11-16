@@ -1,0 +1,523 @@
+{
+  "schema": "borg-reborn-rs/r364-attack-surface@1",
+  "source": "borg-core/src/borg_fight_attack.rs",
+  "core_pin": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "source_sha256": "3490307b3287415b08b32c9340f74887c0626cebf8da50cffd485e3008ccb7f5",
+  "functions": [
+    {
+      "name": "default",
+      "signature": "fn default() -> Self",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "key",
+      "signature": "fn key(c: u8) -> keycode_t",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "i2d",
+      "signature": "fn i2d(dir: i32) -> keycode_t",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "tr",
+      "signature": "fn tr(st: &BorgState, i: u32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "avoid",
+      "signature": "fn avoid(st: &BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_timer",
+      "signature": "fn borg_timer(st: &BorgState, t: BorgTime) -> BorgTime",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "simulating",
+      "signature": "fn simulating(st: &mut BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "grid",
+      "signature": "fn grid(st: &BorgState, x: i32, y: i32) -> BorgGrid",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "max_range",
+      "signature": "fn max_range() -> i32",
+      "public": false,
+      "engine_calls": [
+        "z_info"
+      ]
+    },
+    {
+      "name": "is_ghost",
+      "signature": "fn is_ghost(r_idx: u16) -> bool",
+      "public": false,
+      "engine_calls": [
+        "z_info"
+      ]
+    },
+    {
+      "name": "rf",
+      "signature": "fn rf(r_idx: u16, flag: u32) -> bool",
+      "public": false,
+      "engine_calls": [
+        "race_flag_has"
+      ]
+    },
+    {
+      "name": "rsf",
+      "signature": "fn rsf(r_idx: u16, flag: u32) -> bool",
+      "public": false,
+      "engine_calls": [
+        "flag_has",
+        "race"
+      ]
+    },
+    {
+      "name": "has_friends",
+      "signature": "fn has_friends(r_idx: u16) -> bool",
+      "public": false,
+      "engine_calls": [
+        "race"
+      ]
+    },
+    {
+      "name": "contains",
+      "signature": "fn contains(hay: &[u8], needle: &[u8]) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "desc",
+      "signature": "fn desc(item: &borg_item) -> Vec<u8>",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "cant_aim",
+      "signature": "fn cant_aim(st: &BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "paranoia",
+      "signature": "fn paranoia(st: &mut BorgState, pct: i32) -> bool",
+      "public": false,
+      "engine_calls": [
+        "randint0"
+      ]
+    },
+    {
+      "name": "low_on_food",
+      "signature": "fn low_on_food(st: &BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "danger_one_here",
+      "signature": "fn danger_one_here(st: &mut BorgState, c: i32, i: i32, full_damage: bool) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "danger_here",
+      "signature": "fn danger_here(st: &mut BorgState, c: i32, average: bool) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "dist_to",
+      "signature": "fn dist_to(st: &BorgState, x: i32, y: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "power",
+      "signature": "fn power(st: &BorgState, i: usize) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "tp_other_add",
+      "signature": "fn tp_other_add(st: &mut BorgState, i: i32)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "is_summoner",
+      "signature": "fn is_summoner(r_idx: u16, hi_dragon: bool) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_mon_blow_effect",
+      "signature": "pub fn borg_mon_blow_effect(name: &[u8]) -> i32",
+      "public": true,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_thrust_damage_one",
+      "signature": "pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32",
+      "public": true,
+      "engine_calls": [
+        "race"
+      ]
+    },
+    {
+      "name": "melee_score",
+      "signature": "fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option<i32>",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_thrust",
+      "signature": "fn borg_attack_aux_thrust(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_best_mult",
+      "signature": "fn borg_best_mult(obj: &borg_item, r_idx: u16) -> i32",
+      "public": false,
+      "engine_calls": [
+        "brand_resist_vuln_multiplier",
+        "flag_has",
+        "player_has_temporary_brand",
+        "player_has_temporary_slay",
+        "race",
+        "slay_race_flag_multiplier",
+        "z_info"
+      ]
+    },
+    {
+      "name": "strchr_egv",
+      "signature": "fn strchr_egv(d_char: i32) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "too_high_level",
+      "signature": "fn too_high_level(st: &BorgState, level: i16) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "set_flag",
+      "signature": "fn set_flag(st: &mut BorgState, f: SpellFlag, v: bool)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "commission_value",
+      "signature": "fn commission_value(st: &mut BorgState, i: i32, f: SpellFlag, afraid_bonus: bool) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_launch_damage_one",
+      "signature": "fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, ammo_location: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "ddx_ddd",
+        "ddy_ddd",
+        "distance",
+        "race"
+      ]
+    },
+    {
+      "name": "breath_third",
+      "signature": "fn breath_third(dam: &mut i32, r: u16, flag: u32)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "blow_effect_name",
+      "signature": "fn blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]>",
+      "public": false,
+      "engine_calls": [
+        "race_blow_effect_name"
+      ]
+    },
+    {
+      "name": "borg_launch_bolt_aux_hack",
+      "signature": "fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, ammo_location: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_launch_destroy_stuff",
+      "signature": "fn borg_launch_destroy_stuff(st: &BorgState, ag: &BorgGrid, typ: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "kind"
+      ]
+    },
+    {
+      "name": "path_stop",
+      "signature": "fn path_stop(rad: i32, n: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "missed_before",
+      "signature": "fn missed_before(st: &mut BorgState) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "not_mapped",
+      "signature": "fn not_mapped(st: &BorgState, q_x: i32, q_y: i32) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_launch_bolt_at_location",
+      "signature": "fn borg_launch_bolt_at_location(\n    st: &mut BorgState,\n    y: i32,\n    x: i32,\n    rad: i32,\n    dam: i32,\n    typ: i32,\n    max: i32,\n    ammo_location: i32,\n) -> i32",
+      "public": false,
+      "engine_calls": [
+        "race",
+        "square_in_bounds",
+        "square_in_bounds_fully"
+      ]
+    },
+    {
+      "name": "borg_launch_bolt",
+      "signature": "pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i32, ammo_location: i32) -> i32",
+      "public": true,
+      "engine_calls": [
+        "square_in_bounds"
+      ]
+    },
+    {
+      "name": "borg_launch_arc_at_location",
+      "signature": "fn borg_launch_arc_at_location(st: &mut BorgState, y: i32, x: i32, degrees: i32, dam: i32, typ: i32, max: i32) -> i32",
+      "public": false,
+      "engine_calls": [
+        "get_angle_to_grid",
+        "race",
+        "square_in_bounds",
+        "square_in_bounds_fully"
+      ]
+    },
+    {
+      "name": "borg_launch_arc",
+      "signature": "fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_launch",
+      "signature": "pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32",
+      "public": true,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_rest",
+      "signature": "fn borg_attack_aux_rest(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "race_name"
+      ]
+    },
+    {
+      "name": "borg_attack_aux_object",
+      "signature": "fn borg_attack_aux_object(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "adj_str_blow",
+        "all_letters_nohjkl",
+        "flag_has",
+        "kind",
+        "obj_kind_can_browse",
+        "z_info"
+      ]
+    },
+    {
+      "name": "oil_reserved",
+      "signature": "fn oil_reserved(capability_policy: bool, required: i32, fuel: i32, unique: bool) -> bool",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "primary_spell_for_class",
+      "signature": "fn primary_spell_for_class(st: &BorgState) -> borg_spells",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "class_penalty",
+      "signature": "fn class_penalty(st: &BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_spell_bolt",
+      "signature": "pub fn borg_attack_aux_spell_bolt(\n    st: &mut BorgState,\n    spell: borg_spells,\n    rad: i32,\n    dam: i32,\n    typ: i32,\n    max_range: i32,\n    is_arc: bool,\n) -> i32",
+      "public": true,
+      "engine_calls": [
+        "randint0"
+      ]
+    },
+    {
+      "name": "borg_attack_aux_spell_bolt_reserve",
+      "signature": "fn borg_attack_aux_spell_bolt_reserve(\n    st: &mut BorgState,\n    spell: borg_spells,\n    rad: i32,\n    dam: i32,\n    typ: i32,\n    max_range: i32,\n) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_spell_dispel",
+      "signature": "fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32, typ: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_staff_dispel",
+      "signature": "fn borg_attack_aux_staff_dispel(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_rod_bolt",
+      "signature": "fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "select_effect",
+      "signature": "fn select_effect(st: &mut BorgState, selection: i32)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_wand_bolt",
+      "signature": "fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32, selection: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_bolt_unknown",
+      "signature": "fn borg_attack_aux_bolt_unknown(st: &mut BorgState, dam: i32, typ: i32, rod: bool) -> i32",
+      "public": false,
+      "engine_calls": [
+        "all_letters_nohjkl",
+        "z_info"
+      ]
+    },
+    {
+      "name": "borg_attack_aux_activation",
+      "signature": "fn borg_attack_aux_activation(\n    st: &mut BorgState,\n    activation: i32,\n    rad: i32,\n    dam: i32,\n    typ: i32,\n    aim: bool,\n    selection: i32,\n) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_ring",
+      "signature": "fn borg_attack_aux_ring(st: &mut BorgState, ring_name: i32, rad: i32, dam: i32, typ: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_dragon",
+      "signature": "fn borg_attack_aux_dragon(st: &mut BorgState, sval: i32, rad: i32, dam: i32, typ: i32, selection: i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_whirlwind_attack",
+      "signature": "fn borg_attack_aux_whirlwind_attack(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_leap_into_battle",
+      "signature": "fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": [
+        "distance"
+      ]
+    },
+    {
+      "name": "borg_attack_aux_maim_foe",
+      "signature": "fn borg_attack_aux_maim_foe(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_vampire_strike",
+      "signature": "fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "danger_with_flag",
+      "signature": "fn danger_with_flag(st: &mut BorgState, f: SpellFlag) -> (i32, i32)",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_crush",
+      "signature": "fn borg_attack_aux_crush(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_trance",
+      "signature": "fn borg_attack_aux_trance(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack_aux_artifact_holcolleth",
+      "signature": "fn borg_attack_aux_artifact_holcolleth(st: &mut BorgState) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "best_of",
+      "signature": "fn best_of(st: &mut BorgState, types: &[u32], mut f: impl FnMut(&mut BorgState, i32, i32) -> i32) -> i32",
+      "public": false,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_calculate_attack_effectiveness",
+      "signature": "pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32) -> i32",
+      "public": true,
+      "engine_calls": []
+    },
+    {
+      "name": "borg_attack",
+      "signature": "pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool",
+      "public": true,
+      "engine_calls": [
+        "distance",
+        "player_opt",
+        "race_name"
+      ]
+    }
+  ],
+  "unmapped_indices": [],
+  "source_lines": 4622,
+  "ownership_notes": [
+    "FightAttackState stays native owned memory; the port uses BorgState rather than defining a second state struct.",
+    "Race/kind FFI copies contain pointers; expose only owned scalar/flag metadata used by this policy. Pointer-presence friends checks become one owned boolean with identical meaning.",
+    "Race/blow names and z_info references are immutable loaded-table data valid for the process lifetime; they confer no engine-object token or mutable world access.",
+    "borg_inc_motion mutates caller-owned integer outputs: capture both outputs and replay them, not only its unit return.",
+    "Trip forecast takes &mut BorgState and may mutate owned trip memory. The shared town journey adapter is a recorded effect returning the needed i64 turns; attack still owns oil-reserve arithmetic/selection.",
+    "Five mutable public entries use typed transactions; readonly thrust and pure blow classification need scalar comparisons and matching internal entry markers.",
+    "Telemetry expansion must implement #339 with an explicit schema change and separate policy markers/actual dependency requests. Historical @1 data remains immutable.",
+    "All native BI reads map to existing named accessor fields; no dynamic trait-index argument occurs in this file. Mana simulation remains the sole audited BI write adapter."
+  ]
+}

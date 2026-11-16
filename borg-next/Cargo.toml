@@ -6,6 +6,10 @@ license = "GPL-2.0-only"
 publish = false
 description = "Track R decision code over borg-rs memory"
 
+[features]
+test-r3-defence = ["borg-core/test-r3-defence"]
+test-m13-danger = ["borg-core/test-m13-danger"]
+
 [dependencies]
 borg-core = { path = "../borg-core" }
 serde = { version = "1", features = ["derive"] }

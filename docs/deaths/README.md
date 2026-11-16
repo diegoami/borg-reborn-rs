@@ -9,10 +9,251 @@ Every confirmed natural death gets an immutable source/build/input identity, ori
 > validation evidence. See [POINTER.md](POINTER.md) for the seam
 > (`BORG_DEATH_RECORDS_DIR`) and storage ownership.
 
-Dossiers: 2431; distinct starting conditions: 2428; retained process attempts: 2431 (including repeats). This registry is not a survival-rate estimate.
+Dossiers: 2696; distinct starting conditions: 2649; retained process attempts: 2652 (including repeats). This registry is not a survival-rate estimate.
 
 | Case | Discussion | Actual source | Seed | Raw cause | Death turn | Diagnosis |
 | --- | --- | --- | --- | --- | --- | --- |
+| [D0000-q00eb979e4fc6cbcde904199155c4d4f9b38a883153e038cfc0e19ff1c83f9bab](D0000-q00eb979e4fc6cbcde904199155c4d4f9b38a883153e038cfc0e19ff1c83f9bab/report.md) | unassigned | `0a0c23a1d52a` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q013a85ecffe004a80f98fa78903daf35146ae917ff0a2392d24ccb9b5148d1eb](D0000-q013a85ecffe004a80f98fa78903daf35146ae917ff0a2392d24ccb9b5148d1eb/report.md) | unassigned | `1443c2d1b97d` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q0230047df46210c53d1d0765f934a18e7da5913a133414869a85fca732598634](D0000-q0230047df46210c53d1d0765f934a18e7da5913a133414869a85fca732598634/report.md) | unassigned | `0734559b8d6f` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-q02898bea397aa479910474700ad8716dae2861c09380b208492cc75d6805384c](D0000-q02898bea397aa479910474700ad8716dae2861c09380b208492cc75d6805384c/report.md) | unassigned | `7ee2c80b580a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q029cdde4952dd172dab4761dca9d477b088645768fea00e11e8de23a0afee3c9](D0000-q029cdde4952dd172dab4761dca9d477b088645768fea00e11e8de23a0afee3c9/report.md) | unassigned | `b3eff0b0d4f0` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-q037883e0f5a193f8cacb1f243e4b23d05d99f0a3c0e849960cfed4c58d8a17c2](D0000-q037883e0f5a193f8cacb1f243e4b23d05d99f0a3c0e849960cfed4c58d8a17c2/report.md) | unassigned | `b58e7b445159` | 1033 | a giant white mouse | 24771 | unassessed |
+| [D0000-q04468d8f7ce54422f8242db3da0633eb1c4442924e55c53b5c5b3b470b489577](D0000-q04468d8f7ce54422f8242db3da0633eb1c4442924e55c53b5c5b3b470b489577/report.md) | unassigned | `69fa6a920d4b` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q074a682ba7b91cf4689f38779de16f11a9d3ce4937b3cd8e9ecffd36f9970579](D0000-q074a682ba7b91cf4689f38779de16f11a9d3ce4937b3cd8e9ecffd36f9970579/report.md) | unassigned | `137a5a3709aa` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q08604941e20e395b568bab2efc2e8614fac0ec352c76fe2ee61dd474f0e90092](D0000-q08604941e20e395b568bab2efc2e8614fac0ec352c76fe2ee61dd474f0e90092/report.md) | unassigned | `69fa6a920d4b` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-q08f452c91ad70b49bc7d7202f853d5279a961a2ac882ab7300c79182840e4071](D0000-q08f452c91ad70b49bc7d7202f853d5279a961a2ac882ab7300c79182840e4071/report.md) | unassigned | `b58e7b445159` | 1034 | poison | 96890 | unassessed |
+| [D0000-q097e17ad73ae08b8c2e92895c796a80e066f55e4eb7f76f27a2c2834fc1be77b](D0000-q097e17ad73ae08b8c2e92895c796a80e066f55e4eb7f76f27a2c2834fc1be77b/report.md) | unassigned | `b58e7b445159` | 1044 | a small kobold | 4427 | unassessed |
+| [D0000-q09ff0b79ed6599f63f5531b1019224c9d86eb9f29d8a61ed384a43f9800339ac](D0000-q09ff0b79ed6599f63f5531b1019224c9d86eb9f29d8a61ed384a43f9800339ac/report.md) | unassigned | `b58e7b445159` | 1053 | a giant white louse | 69538 | unassessed |
+| [D0000-q0ae1b194e19d5f47881a66b06180618633f9684f644cc562255fb42e14fc5507](D0000-q0ae1b194e19d5f47881a66b06180618633f9684f644cc562255fb42e14fc5507/report.md) | unassigned | `66aff7999c28` | 1070 | a small kobold | 10213 | unassessed |
+| [D0000-q0b6f97615af71d38ee7d18ad88e09193b187c98d507480f9870029d1dcb15723](D0000-q0b6f97615af71d38ee7d18ad88e09193b187c98d507480f9870029d1dcb15723/report.md) | unassigned | `b58e7b445159` | 1062 | a soldier | 13291 | unassessed |
+| [D0000-q0dcc334a4dee5b389b23be93e20f0a9f02f903660950a62d4bc40436a65261e3](D0000-q0dcc334a4dee5b389b23be93e20f0a9f02f903660950a62d4bc40436a65261e3/report.md) | unassigned | `0734559b8d6f` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q0e328c061321143eddd89ece8535f9de3c8f07fd5b35e1d70c45e2fd74c2c25d](D0000-q0e328c061321143eddd89ece8535f9de3c8f07fd5b35e1d70c45e2fd74c2c25d/report.md) | unassigned | `b58e7b445159` | 1042 | a wild dog | 10924 | unassessed |
+| [D0000-q0f1504159c9f5b6e195b6c54339c87b057dd32142da203e05a1b254398fc47dc](D0000-q0f1504159c9f5b6e195b6c54339c87b057dd32142da203e05a1b254398fc47dc/report.md) | unassigned | `b58e7b445159` | 1004 | poison | 86960 | unassessed |
+| [D0000-q1161bef851d62bff74f662ed1bb9e99e9129b45dd4f490877341ef8090fa2815](D0000-q1161bef851d62bff74f662ed1bb9e99e9129b45dd4f490877341ef8090fa2815/report.md) | unassigned | `137a5a3709aa` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q1300e248af486f4ffc7dfff0ce7815963d68cf062df914aa23ffc0212104c0c1](D0000-q1300e248af486f4ffc7dfff0ce7815963d68cf062df914aa23ffc0212104c0c1/report.md) | unassigned | `3dda93c0628f` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q17843b5e373eb409b40a632fb81a0ca10b48d3f083a6514d41cb02e0f9bf3f2a](D0000-q17843b5e373eb409b40a632fb81a0ca10b48d3f083a6514d41cb02e0f9bf3f2a/report.md) | unassigned | `71324cd8f435` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q178a9f0b321075b55d04e49d1f9d53ce90fa96710329ec9918b1cbf00e69a3e3](D0000-q178a9f0b321075b55d04e49d1f9d53ce90fa96710329ec9918b1cbf00e69a3e3/report.md) | unassigned | `1443c2d1b97d` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q18501f46f55d3664b5110fc47fdf355cd538b78443d4e9c9deca22646047454d](D0000-q18501f46f55d3664b5110fc47fdf355cd538b78443d4e9c9deca22646047454d/report.md) | unassigned | `66aff7999c28` | 1083 | an acolyte | 33152 | unassessed |
+| [D0000-q187676759c5f0a8ed34d1b76ce037a06439110c55f4231ae1d533add6a2319c6](D0000-q187676759c5f0a8ed34d1b76ce037a06439110c55f4231ae1d533add6a2319c6/report.md) | unassigned | `132aeb26a54a` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q1961d3cbc57529b955b734002289f585dc8bf221f811ad7cbbbec6f873cda323](D0000-q1961d3cbc57529b955b734002289f585dc8bf221f811ad7cbbbec6f873cda323/report.md) | unassigned | `66aff7999c28` | 1021 | a fatal wound | 3950 | unassessed |
+| [D0000-q1a98839cb7d0270f880b802bfeaa0c94da7a80019baa8f8966894437b296ac6d](D0000-q1a98839cb7d0270f880b802bfeaa0c94da7a80019baa8f8966894437b296ac6d/report.md) | unassigned | `754593a03348` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q1b479863fcdac652703fb64138e1aa1a4a80c2b814ff2cb4865d05b3defeb33c](D0000-q1b479863fcdac652703fb64138e1aa1a4a80c2b814ff2cb4865d05b3defeb33c/report.md) | unassigned | `1443c2d1b97d` | 1074 | poison | 22250 | unassessed |
+| [D0000-q1cb2a3d4538b77ae78c3975b49019ac8d22c60e0e97f8afdf71589834d32575c](D0000-q1cb2a3d4538b77ae78c3975b49019ac8d22c60e0e97f8afdf71589834d32575c/report.md) | unassigned | `66aff7999c28` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
+| [D0000-q1eca49bdb430a704bb1ed22a1de383ca66427430ccf83db150c5ec563e6ae82f](D0000-q1eca49bdb430a704bb1ed22a1de383ca66427430ccf83db150c5ec563e6ae82f/report.md) | unassigned | `b58e7b445159` | 1073 | Fang, Farmer Maggot's Dog | 65568 | unassessed |
+| [D0000-q1fd07bd0286ba6580f63f90fa7a5befa43479ba6e938ee7e33cc1adf94fdad03](D0000-q1fd07bd0286ba6580f63f90fa7a5befa43479ba6e938ee7e33cc1adf94fdad03/report.md) | unassigned | `66aff7999c28` | 1041 | a soldier | 54489 | unassessed |
+| [D0000-q20aad7df325ba155cf2717f6aa9f362ccb7905391feb5fc245553868c0680de6](D0000-q20aad7df325ba155cf2717f6aa9f362ccb7905391feb5fc245553868c0680de6/report.md) | unassigned | `66aff7999c28` | 1034 | poison | 96890 | unassessed |
+| [D0000-q21b571403eab42cd32088d6205527f906e176c2dddd38af28710fa28db3b23c9](D0000-q21b571403eab42cd32088d6205527f906e176c2dddd38af28710fa28db3b23c9/report.md) | unassigned | `437f2e1034a1` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q22040ef3123dba8bff30b4f77e08c81fb293a2e482270db52fd39dc0509a2838](D0000-q22040ef3123dba8bff30b4f77e08c81fb293a2e482270db52fd39dc0509a2838/report.md) | unassigned | `9dc8ff9cf7ff` | 1074 | poison | 22250 | unassessed |
+| [D0000-q23a309cd4bd9014b7926411262c1aad9712873235d33bcda3f59fb85c10f0c71](D0000-q23a309cd4bd9014b7926411262c1aad9712873235d33bcda3f59fb85c10f0c71/report.md) | unassigned | `b58e7b445159` | 1084 | a gallant | 94134 | unassessed |
+| [D0000-q23a8c3cd11d7892f786ed3c2cd03dfaab828efb736a29f67b107f6822c96936e](D0000-q23a8c3cd11d7892f786ed3c2cd03dfaab828efb736a29f67b107f6822c96936e/report.md) | unassigned | `7ee2c80b580a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q26d969c92e191d1aea3e2c519af367b26b8d5e5ed21aea4baf8a62c677f23556](D0000-q26d969c92e191d1aea3e2c519af367b26b8d5e5ed21aea4baf8a62c677f23556/report.md) | unassigned | `b3eff0b0d4f0` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q28ddc3854e374ab92131446570646d905d98a4f53b65f2bd4a05e09fd59c0a5f](D0000-q28ddc3854e374ab92131446570646d905d98a4f53b65f2bd4a05e09fd59c0a5f/report.md) | unassigned | `b58e7b445159` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q290049b41826b42e9773e2f3ae96b9eb303a75beee402c1be58bc5f2ce56b07a](D0000-q290049b41826b42e9773e2f3ae96b9eb303a75beee402c1be58bc5f2ce56b07a/report.md) | unassigned | `9dc8ff9cf7ff` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q29d200b5fff2cf197cd31ceb4614471fa80133c4fd9e30915c798b2463dd71b1](D0000-q29d200b5fff2cf197cd31ceb4614471fa80133c4fd9e30915c798b2463dd71b1/report.md) | unassigned | `137a5a3709aa` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q2a39d2d7c7cc0ac123ad89d9c37694cdee77c85185b7036e3b0837a4c80945d9](D0000-q2a39d2d7c7cc0ac123ad89d9c37694cdee77c85185b7036e3b0837a4c80945d9/report.md) | unassigned | `69fa6a920d4b` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-q2a6627b6f4a6c0f39ed652525dce86eee4b6c979326d1ecb5539e6a79b84bca0](D0000-q2a6627b6f4a6c0f39ed652525dce86eee4b6c979326d1ecb5539e6a79b84bca0/report.md) | unassigned | `8fe1d1c5353f` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q2ab07a8175e1dfad896be92a78ccda72172d1fa746ffb84cb92e0f48a18b49a6](D0000-q2ab07a8175e1dfad896be92a78ccda72172d1fa746ffb84cb92e0f48a18b49a6/report.md) | unassigned | `69fa6a920d4b` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q2beede5c5945629bd0c446878ee5b0edfc66f965ba30255aa3f084af96ebbc9e](D0000-q2beede5c5945629bd0c446878ee5b0edfc66f965ba30255aa3f084af96ebbc9e/report.md) | unassigned | `60d0a7a7857a` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q2e0766bd07a76e7ac79a963c280011a675c252d294f548efd93a03863ca3c264](D0000-q2e0766bd07a76e7ac79a963c280011a675c252d294f548efd93a03863ca3c264/report.md) | unassigned | `b58e7b445159` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q2e083826fbe58ee497deae2f01c4da5ac969d550d8c12f9d97e19c3991e76b44](D0000-q2e083826fbe58ee497deae2f01c4da5ac969d550d8c12f9d97e19c3991e76b44/report.md) | unassigned | `9dc8ff9cf7ff` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q2e442c0554baed76067f407f18c8338daa393d7199eab379537b30c97f82a7de](D0000-q2e442c0554baed76067f407f18c8338daa393d7199eab379537b30c97f82a7de/report.md) | unassigned | `0a0c23a1d52a` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q2e47418bc21ba3f58e67b5f923ace110bab05a1ead95024a6a610c7d44101aea](D0000-q2e47418bc21ba3f58e67b5f923ace110bab05a1ead95024a6a610c7d44101aea/report.md) | unassigned | `53006188548e` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q2ea4f3968d874a9c14a7b715951dd07b1d4b93a7d5e367d38a35cc9eebea28f2](D0000-q2ea4f3968d874a9c14a7b715951dd07b1d4b93a7d5e367d38a35cc9eebea28f2/report.md) | unassigned | `71324cd8f435` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q2f6d75c9ad9ae71bdbbf1afa990d4fca430ead4b4afdd6b1659c0a39c725e39a](D0000-q2f6d75c9ad9ae71bdbbf1afa990d4fca430ead4b4afdd6b1659c0a39c725e39a/report.md) | unassigned | `b58e7b445159` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-q2fc8329e6d6a66b237481403e543e863a90483f0b449511f9fcfe2fcf4458ebe](D0000-q2fc8329e6d6a66b237481403e543e863a90483f0b449511f9fcfe2fcf4458ebe/report.md) | unassigned | `0734559b8d6f` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q2ff4e1a83d550d0e1d1dabdee9e1e16ab28025720ea14da80d9d4b0eabdcad94](D0000-q2ff4e1a83d550d0e1d1dabdee9e1e16ab28025720ea14da80d9d4b0eabdcad94/report.md) | unassigned | `b58e7b445159` | 1010 | a floating eye | 26921 | unassessed |
+| [D0000-q31fb6c91638e30b7c0615811f083cbb72e8e90d5e127a8ff154fcc1764725786](D0000-q31fb6c91638e30b7c0615811f083cbb72e8e90d5e127a8ff154fcc1764725786/report.md) | unassigned | `b3eff0b0d4f0` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q320dcfab5be1bd60c7e2026979b1706829e30ccb3d61c3575b2a164db3bca4ad](D0000-q320dcfab5be1bd60c7e2026979b1706829e30ccb3d61c3575b2a164db3bca4ad/report.md) | unassigned | `60d0a7a7857a` | 1074 | poison | 22250 | unassessed |
+| [D0000-q3232d9e84ff4f07ab54940f0bf2ee17074a06cd32d5d46eee789fcf68f4a2040](D0000-q3232d9e84ff4f07ab54940f0bf2ee17074a06cd32d5d46eee789fcf68f4a2040/report.md) | unassigned | `5fbc0e60848a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q326ea2e1f15abe062d305dcd56652facdb4a1c16ea19dac35d7490f66cfeeccb](D0000-q326ea2e1f15abe062d305dcd56652facdb4a1c16ea19dac35d7490f66cfeeccb/report.md) | unassigned | `2545f8416dad` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q3299475f92a73a3aa55619724f210c547547ab9bca774d2935cea6496870f98e](D0000-q3299475f92a73a3aa55619724f210c547547ab9bca774d2935cea6496870f98e/report.md) | unassigned | `66aff7999c28` | 1012 | Fang, Farmer Maggot's Dog | 31646 | unassessed |
+| [D0000-q340afb74a9865e3a7fe5bf3783d1d1d4d6c4dcf3a14167935a2bc24b67464481](D0000-q340afb74a9865e3a7fe5bf3783d1d1d4d6c4dcf3a14167935a2bc24b67464481/report.md) | unassigned | `2545f8416dad` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q34cbd527f49d678daf28dbcfa5ed22d60f806b636186caa3291dd6f11ae3707b](D0000-q34cbd527f49d678daf28dbcfa5ed22d60f806b636186caa3291dd6f11ae3707b/report.md) | unassigned | `60d0a7a7857a` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-q35581d033336760ba17b1291dd1296c9da0dedb7592d8a6b395378ae4101ddaf](D0000-q35581d033336760ba17b1291dd1296c9da0dedb7592d8a6b395378ae4101ddaf/report.md) | unassigned | `2545f8416dad` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q35d55bd8da14733de35da95b65c9aae0777d7882a726ec952d831366ef7a2866](D0000-q35d55bd8da14733de35da95b65c9aae0777d7882a726ec952d831366ef7a2866/report.md) | unassigned | `9dc8ff9cf7ff` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-q37c6fa23f7ed3d3d875da1335cd97575a27e8cd6c59a57bd27e660f6a84fbebe](D0000-q37c6fa23f7ed3d3d875da1335cd97575a27e8cd6c59a57bd27e660f6a84fbebe/report.md) | unassigned | `132aeb26a54a` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q37f40cfe291049dc676b810b808cf6c5f9f33b3d04cd495ebd612b982072498c](D0000-q37f40cfe291049dc676b810b808cf6c5f9f33b3d04cd495ebd612b982072498c/report.md) | unassigned | `66aff7999c28` | 1043 | a floating eye | 91688 | unassessed |
+| [D0000-q38379eb48db07e38c6224448467f624bb7d628a87678e99834273775e19baf50](D0000-q38379eb48db07e38c6224448467f624bb7d628a87678e99834273775e19baf50/report.md) | unassigned | `66aff7999c28` | 1040 | an acolyte | 3647 | unassessed |
+| [D0000-q38ed3569c112edfd3a21c1561fa2e4aec4c01594f1835b0795c5a69f8641e5c4](D0000-q38ed3569c112edfd3a21c1561fa2e4aec4c01594f1835b0795c5a69f8641e5c4/report.md) | unassigned | `1443c2d1b97d` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q3aa158e9855899d8e7a36e5ef3423295525b45b5f1221f468eaa770efbbf7810](D0000-q3aa158e9855899d8e7a36e5ef3423295525b45b5f1221f468eaa770efbbf7810/report.md) | unassigned | `9dc8ff9cf7ff` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q3b3d4796db3c95c95b6a46cca34c38d25ddeb5ad999cca2d9c69d95851ffe3c5](D0000-q3b3d4796db3c95c95b6a46cca34c38d25ddeb5ad999cca2d9c69d95851ffe3c5/report.md) | unassigned | `5fbc0e60848a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q3c4231ba04c385ef8f7597e83720ca89b424bdf4ea1894ae8c312d779898054d](D0000-q3c4231ba04c385ef8f7597e83720ca89b424bdf4ea1894ae8c312d779898054d/report.md) | unassigned | `69fa6a920d4b` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q3c88761445da58e827077c3f18155e83c977f047589b9565176803e5d33b3c47](D0000-q3c88761445da58e827077c3f18155e83c977f047589b9565176803e5d33b3c47/report.md) | unassigned | `b58e7b445159` | 1083 | an acolyte | 33152 | unassessed |
+| [D0000-q3e5b709b10740364f868ed7824cf7b8714fbc27d244e086ce13f5c7cee5076d5](D0000-q3e5b709b10740364f868ed7824cf7b8714fbc27d244e086ce13f5c7cee5076d5/report.md) | unassigned | `7ee2c80b580a` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q3e958312b947c080eeb15b57ffab75d35aed3d3f051b045839f3f039283f7fd9](D0000-q3e958312b947c080eeb15b57ffab75d35aed3d3f051b045839f3f039283f7fd9/report.md) | unassigned | `66aff7999c28` | 1032 | a small kobold | 20267 | unassessed |
+| [D0000-q42d70a77560c48450d7361bc53360a94baed6d078dd78593b9a9fca8d15ff7e1](D0000-q42d70a77560c48450d7361bc53360a94baed6d078dd78593b9a9fca8d15ff7e1/report.md) | unassigned | `b6d3a07a3ac4` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q42db8e886611678fda92441dd71295cf8e234238fafe782d8c4df387d5856691](D0000-q42db8e886611678fda92441dd71295cf8e234238fafe782d8c4df387d5856691/report.md) | unassigned | `69fa6a920d4b` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q439a07cf22e4c411cb5477ad43054c1f7e99ed19836403eb330a75f51b0b973b](D0000-q439a07cf22e4c411cb5477ad43054c1f7e99ed19836403eb330a75f51b0b973b/report.md) | unassigned | `d4c8ed6902c3` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q44e3afbe234ad9f5044afd76e972536df068ea6a32ec14cb48383c38a7d0337f](D0000-q44e3afbe234ad9f5044afd76e972536df068ea6a32ec14cb48383c38a7d0337f/report.md) | unassigned | `b58e7b445159` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-q454c59a361b46c59da15a4a30c8fea4511af1dfaaba14fadc757391f84b7125f](D0000-q454c59a361b46c59da15a4a30c8fea4511af1dfaaba14fadc757391f84b7125f/report.md) | unassigned | `69fa6a920d4b` | 1074 | poison | 22250 | unassessed |
+| [D0000-q4606a32a5349dae2ca2655da672baf88c98e7f4eedf0b3f94a9c35f855dc6a4f](D0000-q4606a32a5349dae2ca2655da672baf88c98e7f4eedf0b3f94a9c35f855dc6a4f/report.md) | unassigned | `69fa6a920d4b` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q48cc51a078baf4ccc318f11c874c2566f6faac37065de4c2527564eecb36c4a4](D0000-q48cc51a078baf4ccc318f11c874c2566f6faac37065de4c2527564eecb36c4a4/report.md) | unassigned | `0a0c23a1d52a` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-q48fc5486135f694e97def255d548522637cf13e82b865855d712cf43e0f96639](D0000-q48fc5486135f694e97def255d548522637cf13e82b865855d712cf43e0f96639/report.md) | unassigned | `754593a03348` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q4956a6c5ba0363f89a6a896b22e08b66b69de95c5f0e900bcc295872a84ee86b](D0000-q4956a6c5ba0363f89a6a896b22e08b66b69de95c5f0e900bcc295872a84ee86b/report.md) | unassigned | `35ab27fd11fb` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q49f66363d284ace7e4a6c9002b93476cb64bb9472f8a269318f824c7af6756a3](D0000-q49f66363d284ace7e4a6c9002b93476cb64bb9472f8a269318f824c7af6756a3/report.md) | unassigned | `9dc8ff9cf7ff` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-q4d11ef31abc784ee72a96bd2d487bdd2c65c3559df80d4e659ee9dc23d2b10d1](D0000-q4d11ef31abc784ee72a96bd2d487bdd2c65c3559df80d4e659ee9dc23d2b10d1/report.md) | unassigned | `b3eff0b0d4f0` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q4f80bd2a240883ff4dad6eba966a98b89eabef4bee138ea06496fa1e6644fa92](D0000-q4f80bd2a240883ff4dad6eba966a98b89eabef4bee138ea06496fa1e6644fa92/report.md) | unassigned | `e900d67013b8` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q4fc609746f43f798a164cd96dfcfc64991b0b597b2dd143686c8df81d218da66](D0000-q4fc609746f43f798a164cd96dfcfc64991b0b597b2dd143686c8df81d218da66/report.md) | unassigned | `0734559b8d6f` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q567246050b5fef9f902431aa554ecc8c7bb3cc230d56020f1ba8b7b5cef05d25](D0000-q567246050b5fef9f902431aa554ecc8c7bb3cc230d56020f1ba8b7b5cef05d25/report.md) | unassigned | `b58e7b445159` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-q57746615321ff0320a30e29d4b94d567fffcb7399a883f3d104a28806ada4d22](D0000-q57746615321ff0320a30e29d4b94d567fffcb7399a883f3d104a28806ada4d22/report.md) | unassigned | `b3eff0b0d4f0` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q584a05c5065d4a1566c23652ea29617bd392b5144bdb7a5074dc4666bf768697](D0000-q584a05c5065d4a1566c23652ea29617bd392b5144bdb7a5074dc4666bf768697/report.md) | unassigned | `0a0c23a1d52a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q5a1149192433f6c832828ed24686dbb3fb4acc0e803f5a882ef0888b97cd0dc5](D0000-q5a1149192433f6c832828ed24686dbb3fb4acc0e803f5a882ef0888b97cd0dc5/report.md) | unassigned | `1443c2d1b97d` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q5cd9a30838d2749e46fba3fc4658794b69e740c647cb173b553c68f9edd5b409](D0000-q5cd9a30838d2749e46fba3fc4658794b69e740c647cb173b553c68f9edd5b409/report.md) | unassigned | `132aeb26a54a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q5df0ec55c6ecc8336a7da03c59227fbd342e9b60d55eb921b151045b5415f47b](D0000-q5df0ec55c6ecc8336a7da03c59227fbd342e9b60d55eb921b151045b5415f47b/report.md) | unassigned | `b58e7b445159` | 1012 | Fang, Farmer Maggot's Dog | 31646 | unassessed |
+| [D0000-q603eefb93c1b619ffad61b8b3718499ccd9c0e83643700e8258a0fb4f5e419e6](D0000-q603eefb93c1b619ffad61b8b3718499ccd9c0e83643700e8258a0fb4f5e419e6/report.md) | unassigned | `b58e7b445159` | 1014 | a cave spider | 36276 | unassessed |
+| [D0000-q60731d64efbdeba106270f60509716bb44d1fd9315d761e5c1295bfb9d8931d2](D0000-q60731d64efbdeba106270f60509716bb44d1fd9315d761e5c1295bfb9d8931d2/report.md) | unassigned | `0a0c23a1d52a` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-q61ba8178fcabab3dd64193793fe8ee1541e9737c479ad07aafbf16d254d352c1](D0000-q61ba8178fcabab3dd64193793fe8ee1541e9737c479ad07aafbf16d254d352c1/report.md) | unassigned | `3dda93c0628f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q634c2b0a26eaa11f30eced82e9862f1b06b36694a9b6306603b9f5c5ab704cc8](D0000-q634c2b0a26eaa11f30eced82e9862f1b06b36694a9b6306603b9f5c5ab704cc8/report.md) | unassigned | `0a0c23a1d52a` | 1074 | poison | 22250 | unassessed |
+| [D0000-q644c690c4ff80c21846523da19fbea21e3024a5113948fccab7c6e8a436d8acf](D0000-q644c690c4ff80c21846523da19fbea21e3024a5113948fccab7c6e8a436d8acf/report.md) | unassigned | `e900d67013b8` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q65a3d0e52ddc014faf19713e6407adaa52455e1656d6c9cb88ab8771abfe225e](D0000-q65a3d0e52ddc014faf19713e6407adaa52455e1656d6c9cb88ab8771abfe225e/report.md) | unassigned | `132aeb26a54a` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q6663b6587956e14125ee665ba1ac3a3b66787097282668a8b22cf0500a08f8aa](D0000-q6663b6587956e14125ee665ba1ac3a3b66787097282668a8b22cf0500a08f8aa/report.md) | unassigned | `60d0a7a7857a` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q6664b878248aea67fb19c214e09aad6421a6ed62cc2f9b29bb2b393e93726937](D0000-q6664b878248aea67fb19c214e09aad6421a6ed62cc2f9b29bb2b393e93726937/report.md) | unassigned | `0734559b8d6f` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q6ae9c403f7c9335e24afac14953a1d08c2fb22efcbfb852beba25ea4fc6bc5a1](D0000-q6ae9c403f7c9335e24afac14953a1d08c2fb22efcbfb852beba25ea4fc6bc5a1/report.md) | unassigned | `b3eff0b0d4f0` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q6b3845647d733b3251d32dd7d88851d11a89a9c988c6caa10d21b50a8d82c36e](D0000-q6b3845647d733b3251d32dd7d88851d11a89a9c988c6caa10d21b50a8d82c36e/report.md) | unassigned | `46b687ccdd72` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q6c5274e3d3f9f4e0310a4609d2dfa761395263d73311882ed452c4e04dbf3a9d](D0000-q6c5274e3d3f9f4e0310a4609d2dfa761395263d73311882ed452c4e04dbf3a9d/report.md) | unassigned | `69fa6a920d4b` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-q6cb111c012c9662589ebd246e9c17f1fefcdfacab1ea7dbeb2a79335798dd915](D0000-q6cb111c012c9662589ebd246e9c17f1fefcdfacab1ea7dbeb2a79335798dd915/report.md) | unassigned | `69fa6a920d4b` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q6d7211da58918af5cb4bbfc87bb739638ab723950b49c5481d76cc4375c2f42a](D0000-q6d7211da58918af5cb4bbfc87bb739638ab723950b49c5481d76cc4375c2f42a/report.md) | unassigned | `1443c2d1b97d` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q702b8742ada77ea6445b4dc6a80603f39280d18e553c59ec3e67bb7a9faa7547](D0000-q702b8742ada77ea6445b4dc6a80603f39280d18e553c59ec3e67bb7a9faa7547/report.md) | unassigned | `137a5a3709aa` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e](D0000-q73d25c9485d23c9830a413d12720b2388758305bdc47380bef345a5ff412967e/report.md) | unassigned | `754593a03348` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q7493851f384566e3d022b536f11e956369015a309f71ffaf0b595ec0b9a60168](D0000-q7493851f384566e3d022b536f11e956369015a309f71ffaf0b595ec0b9a60168/report.md) | unassigned | `2545f8416dad` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q75098d83d74d04be6da2daf761849fe82b8b7d9170641d906ba7a11b4da32c43](D0000-q75098d83d74d04be6da2daf761849fe82b8b7d9170641d906ba7a11b4da32c43/report.md) | unassigned | `0a0c23a1d52a` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-q75ec945918987b1db88bdfe70f02489bae1bbd828fe381dc6629d4becda738ea](D0000-q75ec945918987b1db88bdfe70f02489bae1bbd828fe381dc6629d4becda738ea/report.md) | unassigned | `69fa6a920d4b` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5](D0000-q775b7de0b0289de5634a3aa4fbe7c8cd1618fc43cfba10d4e7d5e93f6a188dc5/report.md) | unassigned | `754593a03348` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-q777253e162da9191ee3e048182a32423bea811a36e34864976aedf75105d8e59](D0000-q777253e162da9191ee3e048182a32423bea811a36e34864976aedf75105d8e59/report.md) | unassigned | `0a0c23a1d52a` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q77b776cb192708b8aa1d90e73911b1ac42e527fcad9b9562dd2343ef00ead82a](D0000-q77b776cb192708b8aa1d90e73911b1ac42e527fcad9b9562dd2343ef00ead82a/report.md) | unassigned | `b58e7b445159` | 1022 | a giant white mouse | 17265 | unassessed |
+| [D0000-q78baef7fc4f83408218562118e7cbb1b36055153cac48be47f5375a42b7ba83e](D0000-q78baef7fc4f83408218562118e7cbb1b36055153cac48be47f5375a42b7ba83e/report.md) | unassigned | `2545f8416dad` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q78e6d0eeb2999420f68316b533925c2e78c14b1b338861257fb04de06cec85db](D0000-q78e6d0eeb2999420f68316b533925c2e78c14b1b338861257fb04de06cec85db/report.md) | unassigned | `0a0c23a1d52a` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q790e925ef30315c8ed9d6e00bb1c777b510f9f8eb6fd98919ec2be775642b797](D0000-q790e925ef30315c8ed9d6e00bb1c777b510f9f8eb6fd98919ec2be775642b797/report.md) | unassigned | `9dc8ff9cf7ff` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-q7998021834f45b33c92884746a626903b708bc52cdab4adbdd5b5bf551597e30](D0000-q7998021834f45b33c92884746a626903b708bc52cdab4adbdd5b5bf551597e30/report.md) | unassigned | `137a5a3709aa` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q79a20708fac8de0ff5cb261d3d3148ee44e132ddd0fb0350b54b20579d89bf0f](D0000-q79a20708fac8de0ff5cb261d3d3148ee44e132ddd0fb0350b54b20579d89bf0f/report.md) | unassigned | `b58e7b445159` | 1074 | poison | 22250 | unassessed |
+| [D0000-q7d2b25d9f5f206bb93dd627903c4e955bba7b44eded5e65ba169cacd1ce49865](D0000-q7d2b25d9f5f206bb93dd627903c4e955bba7b44eded5e65ba169cacd1ce49865/report.md) | unassigned | `754593a03348` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-q8411094ca3a9d8cce07c8277c520c889935296ee95c11ba1088012d16ebda107](D0000-q8411094ca3a9d8cce07c8277c520c889935296ee95c11ba1088012d16ebda107/report.md) | unassigned | `2545f8416dad` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-q85254424be35ddcd4f2168d4e6d2d0bd075d96c39aa31fd729965265f795b8eb](D0000-q85254424be35ddcd4f2168d4e6d2d0bd075d96c39aa31fd729965265f795b8eb/report.md) | unassigned | `132aeb26a54a` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q852d0da3d854268d8198c425c2d3921f6ba84975e51682e5797357b289c3e284](D0000-q852d0da3d854268d8198c425c2d3921f6ba84975e51682e5797357b289c3e284/report.md) | unassigned | `60d0a7a7857a` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q8616fc404a69604eb50fe24387a0914cf13a47304779726f543e477acb092d45](D0000-q8616fc404a69604eb50fe24387a0914cf13a47304779726f543e477acb092d45/report.md) | unassigned | `2545f8416dad` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q867edfe65a21592082bddf830be6fd3acb9787f4a0df397f63163d8df3475d8a](D0000-q867edfe65a21592082bddf830be6fd3acb9787f4a0df397f63163d8df3475d8a/report.md) | unassigned | `9dc8ff9cf7ff` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q86e395600fe2dc8a88978b86c818ad834cbac58570880cfb74bf4748b8d32811](D0000-q86e395600fe2dc8a88978b86c818ad834cbac58570880cfb74bf4748b8d32811/report.md) | unassigned | `9dc8ff9cf7ff` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q881284518ad3b1dad280f317ec0854261364dceb951153df7b3177a8014577ce](D0000-q881284518ad3b1dad280f317ec0854261364dceb951153df7b3177a8014577ce/report.md) | unassigned | `36d873f39cd7` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q885b28a9119b8da5cbe07c1b56c5e16a709856f27aa1a52cfcbd4bb9ecf5df0d](D0000-q885b28a9119b8da5cbe07c1b56c5e16a709856f27aa1a52cfcbd4bb9ecf5df0d/report.md) | unassigned | `66aff7999c28` | 1044 | a small kobold | 4427 | unassessed |
+| [D0000-q885bd16b9c962fb800c4ccd46a11540f912b86a1956e2f06b17b3f9511f4ff0c](D0000-q885bd16b9c962fb800c4ccd46a11540f912b86a1956e2f06b17b3f9511f4ff0c/report.md) | unassigned | `66aff7999c28` | 1014 | a cave spider | 36276 | unassessed |
+| [D0000-q88c28f15c8bc0fca5088c5b5f58f9b2e6b3d6fb7347fa0b92e360af202e04575](D0000-q88c28f15c8bc0fca5088c5b5f58f9b2e6b3d6fb7347fa0b92e360af202e04575/report.md) | unassigned | `60d0a7a7857a` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q890fe054ccce3eb685fd528f85b78e397da5f1c2bee1b676a6d2c18c1bbc8b3b](D0000-q890fe054ccce3eb685fd528f85b78e397da5f1c2bee1b676a6d2c18c1bbc8b3b/report.md) | unassigned | `132aeb26a54a` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q8965cc41cac23a16329c8611848994affba9e8f88621225af47f5aa26b80b574](D0000-q8965cc41cac23a16329c8611848994affba9e8f88621225af47f5aa26b80b574/report.md) | unassigned | `7ee2c80b580a` | 102 | an acolyte | 10941 | unassessed |
+| [D0000-q89df692ef2858e025f324496a953bbeb34f2911d10e95327402a7d0da5904924](D0000-q89df692ef2858e025f324496a953bbeb34f2911d10e95327402a7d0da5904924/report.md) | unassigned | `66aff7999c28` | 1084 | a gallant | 94134 | unassessed |
+| [D0000-q8a7d8a2804d81b06e5f35b70fcc7962dbb962943a090618c5c51d5ed0012306f](D0000-q8a7d8a2804d81b06e5f35b70fcc7962dbb962943a090618c5c51d5ed0012306f/report.md) | unassigned | `60d0a7a7857a` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-q8a8de0041e50e03410dbcdd0440bb6478804819ef66a6bd1b4ba7af59cd02bce](D0000-q8a8de0041e50e03410dbcdd0440bb6478804819ef66a6bd1b4ba7af59cd02bce/report.md) | unassigned | `b58e7b445159` | 1040 | an acolyte | 3647 | unassessed |
+| [D0000-q8d1db704167864be8187e44e9aedbaf9d719c6720d58a8a36aa577615dccb885](D0000-q8d1db704167864be8187e44e9aedbaf9d719c6720d58a8a36aa577615dccb885/report.md) | unassigned | `b58e7b445159` | 1032 | a small kobold | 20267 | unassessed |
+| [D0000-q8ea82d189dd172f3345dbc5c7d6cfdd9676dcdce52343ebbf107269cea0e582b](D0000-q8ea82d189dd172f3345dbc5c7d6cfdd9676dcdce52343ebbf107269cea0e582b/report.md) | unassigned | `71324cd8f435` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q8eb183f0ffb1e2a480ebb91085794261388a7bbb8e317d1cd3b73fce240a4ee7](D0000-q8eb183f0ffb1e2a480ebb91085794261388a7bbb8e317d1cd3b73fce240a4ee7/report.md) | unassigned | `53006188548e` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q8ec722c809ee99972ebc3c34703fdbf17ce82f9afb678555cb8563f8d1fa1f1b](D0000-q8ec722c809ee99972ebc3c34703fdbf17ce82f9afb678555cb8563f8d1fa1f1b/report.md) | unassigned | `9dc8ff9cf7ff` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-q8f01e193031e90f1cf71eab8ea5d18e9d71fc12236c77bd0a28a8f6d17c9be8e](D0000-q8f01e193031e90f1cf71eab8ea5d18e9d71fc12236c77bd0a28a8f6d17c9be8e/report.md) | unassigned | `35ab27fd11fb` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q90364933bdf39efa37599b8e57e4c15107de0a36b9277b11ddb4fefd17ff3bdc](D0000-q90364933bdf39efa37599b8e57e4c15107de0a36b9277b11ddb4fefd17ff3bdc/report.md) | unassigned | `132aeb26a54a` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q90a04aee81b0d3625f6c594d147eca1c59633f2e8774dcdf44bbfbfa6818d817](D0000-q90a04aee81b0d3625f6c594d147eca1c59633f2e8774dcdf44bbfbfa6818d817/report.md) | unassigned | `b58e7b445159` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q91ae09ae21383cb9664b00bf41ac1c781d70001db593922bca9b081e8f13bccd](D0000-q91ae09ae21383cb9664b00bf41ac1c781d70001db593922bca9b081e8f13bccd/report.md) | unassigned | `b58e7b445159` | 1050 | an apprentice | 48288 | unassessed |
+| [D0000-q93bc1564d131e93915534f38628cb5c4dfc757b08b15168a9e2233227a7f73e1](D0000-q93bc1564d131e93915534f38628cb5c4dfc757b08b15168a9e2233227a7f73e1/report.md) | unassigned | `b58e7b445159` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-q93d5af345f728f6d027052be0d7f39de8bb6f21060498abbfd1c2bcfaa2d5c55](D0000-q93d5af345f728f6d027052be0d7f39de8bb6f21060498abbfd1c2bcfaa2d5c55/report.md) | unassigned | `36d873f39cd7` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q9536ef1fe3a00fa175f9a98e48eae8958b273228df678e053b6eb9d197eabf3c](D0000-q9536ef1fe3a00fa175f9a98e48eae8958b273228df678e053b6eb9d197eabf3c/report.md) | unassigned | `b6d3a07a3ac4` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-q95580112e3e2d4a8599f83da51b5c25351260ff5fe2869d0c77d8a57d4c6d4df](D0000-q95580112e3e2d4a8599f83da51b5c25351260ff5fe2869d0c77d8a57d4c6d4df/report.md) | unassigned | `69fa6a920d4b` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q957263aeadf44430825f35215f77a90b400a5d78eae21952eaa26d0728b50715](D0000-q957263aeadf44430825f35215f77a90b400a5d78eae21952eaa26d0728b50715/report.md) | unassigned | `66aff7999c28` | 1063 | a green naga | 73529 | unassessed |
+| [D0000-q95779ebe33bb34a15cd4a29eb90e5f36869a6313c837ce1785d6ed217a47ea3f](D0000-q95779ebe33bb34a15cd4a29eb90e5f36869a6313c837ce1785d6ed217a47ea3f/report.md) | unassigned | `d4c8ed6902c3` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-q9609154babcbb45f70618bb00f0d3ebb08f0a85681d889ef23c4e84159f6b442](D0000-q9609154babcbb45f70618bb00f0d3ebb08f0a85681d889ef23c4e84159f6b442/report.md) | unassigned | `b6d3a07a3ac4` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-q9664431cf2f7b50eb9eb58472add559a5323a58f6457e0a61332bb288bb56f77](D0000-q9664431cf2f7b50eb9eb58472add559a5323a58f6457e0a61332bb288bb56f77/report.md) | unassigned | `60d0a7a7857a` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q966e142984b9261ee99284fb5f813da84399523777c29626b0a5245be80396cc](D0000-q966e142984b9261ee99284fb5f813da84399523777c29626b0a5245be80396cc/report.md) | unassigned | `9dc8ff9cf7ff` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q96b67d3320c9b359c7b689a5147632d9c549210130ab749b39adf6fb99d12531](D0000-q96b67d3320c9b359c7b689a5147632d9c549210130ab749b39adf6fb99d12531/report.md) | unassigned | `b58e7b445159` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-q9705a1d07216da5aad9de84077db64791d7dca532d84fbbac9f7112e5e7213c7](D0000-q9705a1d07216da5aad9de84077db64791d7dca532d84fbbac9f7112e5e7213c7/report.md) | unassigned | `69fa6a920d4b` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q9804224a034caae7918a62b980ad50ca478e5e3569f76f42b40e4a66b4d0ed65](D0000-q9804224a034caae7918a62b980ad50ca478e5e3569f76f42b40e4a66b4d0ed65/report.md) | unassigned | `754593a03348` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-q9a81296fb83a802dac74b64550d22149137df9212d21efbfd7fd503444b1677c](D0000-q9a81296fb83a802dac74b64550d22149137df9212d21efbfd7fd503444b1677c/report.md) | unassigned | `b58e7b445159` | 1064 | Fang, Farmer Maggot's Dog | 4601 | unassessed |
+| [D0000-q9bce10a179c02bb1c2a15056547028b3370f8b957e07c33c78b3fa574cdd805e](D0000-q9bce10a179c02bb1c2a15056547028b3370f8b957e07c33c78b3fa574cdd805e/report.md) | unassigned | `b3eff0b0d4f0` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-q9c24c1122578bfeff0d61040c6d910d55c0a17336b6d00f56a87282c4933c19c](D0000-q9c24c1122578bfeff0d61040c6d910d55c0a17336b6d00f56a87282c4933c19c/report.md) | unassigned | `66aff7999c28` | 1053 | a giant white louse | 69538 | unassessed |
+| [D0000-q9eee81b96965fc71ffdcb867510de953a479e618500c63d8b3e5220a52a1623b](D0000-q9eee81b96965fc71ffdcb867510de953a479e618500c63d8b3e5220a52a1623b/report.md) | unassigned | `66aff7999c28` | 1031 | a black naga | 36583 | unassessed |
+| [D0000-q9feca0d03ddd0f6bb43261fdfc2c4bf6423d5326f11dcc25d50be509d0525e74](D0000-q9feca0d03ddd0f6bb43261fdfc2c4bf6423d5326f11dcc25d50be509d0525e74/report.md) | unassigned | `0734559b8d6f` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-qa009bcce3f9295d0fee57717120e33f11e2b14c12ada0621519a7d83f75abdd8](D0000-qa009bcce3f9295d0fee57717120e33f11e2b14c12ada0621519a7d83f75abdd8/report.md) | unassigned | `66aff7999c28` | 1062 | a soldier | 13291 | unassessed |
+| [D0000-qa07cdebaa092881d1f6632221e6c5ce37e7ec9283467e563723dd9681b41200d](D0000-qa07cdebaa092881d1f6632221e6c5ce37e7ec9283467e563723dd9681b41200d/report.md) | unassigned | `2545f8416dad` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-qa1cd9a3da8bee4572d6e8484e64509f3c8c7a2a5520bc8ec349a71be66a27155](D0000-qa1cd9a3da8bee4572d6e8484e64509f3c8c7a2a5520bc8ec349a71be66a27155/report.md) | unassigned | `66aff7999c28` | 1064 | Fang, Farmer Maggot's Dog | 4601 | unassessed |
+| [D0000-qa2e3db676c182d564fdfb0c93ba6f4f35d6ed68e5696c547c4e0737f9aa027e7](D0000-qa2e3db676c182d564fdfb0c93ba6f4f35d6ed68e5696c547c4e0737f9aa027e7/report.md) | unassigned | `b58e7b445159` | 1011 | poison | 13790 | unassessed |
+| [D0000-qa4c6c641853b55ccc81975af1b9336cfe028287320f040cf82a856ae3e4ff6e4](D0000-qa4c6c641853b55ccc81975af1b9336cfe028287320f040cf82a856ae3e4ff6e4/report.md) | unassigned | `754593a03348` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-qa4d429834eb9e1672cef35d4bbe9f02a958d37933872cd4da3617306913fec99](D0000-qa4d429834eb9e1672cef35d4bbe9f02a958d37933872cd4da3617306913fec99/report.md) | unassigned | `66aff7999c28` | 1013 | a battle-scarred veteran | 22980 | unassessed |
+| [D0000-qa56f1a0287a725827aa205e439ea3a50cb3a1d3e84a7c2bdfaae8a9a9112d05b](D0000-qa56f1a0287a725827aa205e439ea3a50cb3a1d3e84a7c2bdfaae8a9a9112d05b/report.md) | unassigned | `66aff7999c28` | 1042 | a wild dog | 10924 | unassessed |
+| [D0000-qa5ff7969a8cb18214205b9ce78fee2552c3a3e3497397965edf0cf5643d0cf09](D0000-qa5ff7969a8cb18214205b9ce78fee2552c3a3e3497397965edf0cf5643d0cf09/report.md) | unassigned | `66aff7999c28` | 1004 | poison | 86960 | unassessed |
+| [D0000-qa67fe2c6e2edab422228eba1db94f6ce901217dcf6089163376e3500a3e3cbda](D0000-qa67fe2c6e2edab422228eba1db94f6ce901217dcf6089163376e3500a3e3cbda/report.md) | unassigned | `b58e7b445159` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qa6e52720d68e4ce7191859f239fe70c09021545bf8cd26f940321154bc181fe0](D0000-qa6e52720d68e4ce7191859f239fe70c09021545bf8cd26f940321154bc181fe0/report.md) | unassigned | `0734559b8d6f` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-qa777ca43de7df3883d17deace7ba537d6d07fd367eab66f6365d24f07f4ab66b](D0000-qa777ca43de7df3883d17deace7ba537d6d07fd367eab66f6365d24f07f4ab66b/report.md) | unassigned | `b58e7b445159` | 1074 | a soldier | 21652 | unassessed |
+| [D0000-qa9e42d43fe5740c0d96abfedae383a97e7a64ae8b4d295503821fe7028a342c8](D0000-qa9e42d43fe5740c0d96abfedae383a97e7a64ae8b4d295503821fe7028a342c8/report.md) | unassigned | `9dc8ff9cf7ff` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-qaaa7f80e007d5b79983b2105c1838fad1fb06fbbbba1a636f32eb266becc1b4d](D0000-qaaa7f80e007d5b79983b2105c1838fad1fb06fbbbba1a636f32eb266becc1b4d/report.md) | unassigned | `137a5a3709aa` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-qab24d0ee7f2e209f5bf0598c2ba42e1b5078225c1f1ab4c7783ff8e685a82f03](D0000-qab24d0ee7f2e209f5bf0598c2ba42e1b5078225c1f1ab4c7783ff8e685a82f03/report.md) | unassigned | `0a0c23a1d52a` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-qabdd6740ee8abe3d3aa8ad2834513d612f0a01005a359f6ef08a983b2b62310c](D0000-qabdd6740ee8abe3d3aa8ad2834513d612f0a01005a359f6ef08a983b2b62310c/report.md) | unassigned | `b6d3a07a3ac4` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-qac408c284552dd81b0297d68a156add0a7638676b53cfe276ad55e0ab7c58ab1](D0000-qac408c284552dd81b0297d68a156add0a7638676b53cfe276ad55e0ab7c58ab1/report.md) | unassigned | `0734559b8d6f` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-qac5cedd544883e081803da538096028b9c26c8ee8c3b5e0c850fa458c9b395c9](D0000-qac5cedd544883e081803da538096028b9c26c8ee8c3b5e0c850fa458c9b395c9/report.md) | unassigned | `2545f8416dad` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-qacfe13c86e2ecae836d3afadde1569b4c84ef2049ceb1dc6bbeae0d5c05554ac](D0000-qacfe13c86e2ecae836d3afadde1569b4c84ef2049ceb1dc6bbeae0d5c05554ac/report.md) | unassigned | `64cd39a8a63f` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qae6bafb9ce344912c2680de61ed6903a2a799fe1f998f95421884424538d479f](D0000-qae6bafb9ce344912c2680de61ed6903a2a799fe1f998f95421884424538d479f/report.md) | unassigned | `60d0a7a7857a` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-qaf5e14cc137188f532a141e792f95f34090b40f837312bae3187ec6246fa42eb](D0000-qaf5e14cc137188f532a141e792f95f34090b40f837312bae3187ec6246fa42eb/report.md) | unassigned | `60d0a7a7857a` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-qb17fbd095a1d2c6b356e4f78c57c533834aff4a83bb9d1f2c5ba7c56d1725532](D0000-qb17fbd095a1d2c6b356e4f78c57c533834aff4a83bb9d1f2c5ba7c56d1725532/report.md) | unassigned | `b3eff0b0d4f0` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-qb237aa07b661bff1b26b93b9b59ac606318b26914399d3f7fbf07578f1d93f1b](D0000-qb237aa07b661bff1b26b93b9b59ac606318b26914399d3f7fbf07578f1d93f1b/report.md) | unassigned | `b58e7b445159` | 1031 | a black naga | 36583 | unassessed |
+| [D0000-qb2d33de750a735a302a196867e906e08c7bbe46faa32e94fc21d8fd8b2d62278](D0000-qb2d33de750a735a302a196867e906e08c7bbe46faa32e94fc21d8fd8b2d62278/report.md) | unassigned | `b6d3a07a3ac4` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-qb39867c086aaf7a18da6c4a0b25a1ec5d196a76014fb7e1517c86a3bbbfb612f](D0000-qb39867c086aaf7a18da6c4a0b25a1ec5d196a76014fb7e1517c86a3bbbfb612f/report.md) | unassigned | `66aff7999c28` | 1033 | a giant white mouse | 24771 | unassessed |
+| [D0000-qb78e10df426b60bdb0c139added7db27b67711f9a1ea246ce877d897ebca048b](D0000-qb78e10df426b60bdb0c139added7db27b67711f9a1ea246ce877d897ebca048b/report.md) | unassigned | `0a0c23a1d52a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qb78f9f6da19e2b2948877d6107213a3e1340063c4ce89d4f7bc37f7edad09889](D0000-qb78f9f6da19e2b2948877d6107213a3e1340063c4ce89d4f7bc37f7edad09889/report.md) | unassigned | `1443c2d1b97d` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-qb9e127b4d918d2f6006ce7fa76a82edc2f418ec719390aa65fd68187705c8fd2](D0000-qb9e127b4d918d2f6006ce7fa76a82edc2f418ec719390aa65fd68187705c8fd2/report.md) | unassigned | `b3eff0b0d4f0` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-qb9f95a7b9235b82b3d6a827a4a557e310d901677452f1756a5cb00475eddc077](D0000-qb9f95a7b9235b82b3d6a827a4a557e310d901677452f1756a5cb00475eddc077/report.md) | unassigned | `b3eff0b0d4f0` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-qbb3f6c67ee2260ffe039c877dcde521df8e1d90a7f29124025e3696c3fa1e39f](D0000-qbb3f6c67ee2260ffe039c877dcde521df8e1d90a7f29124025e3696c3fa1e39f/report.md) | unassigned | `66aff7999c28` | 1073 | Fang, Farmer Maggot's Dog | 65568 | unassessed |
+| [D0000-qbb85162fa966dbe9f9e465415ab468b9c4c56a1357e10bdcc57ab1ec246070d7](D0000-qbb85162fa966dbe9f9e465415ab468b9c4c56a1357e10bdcc57ab1ec246070d7/report.md) | unassigned | `959474a594fc` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qbc0fc22d5932198e0811fcc2103d4e7e38ad649cd4b59aa6c9f993d0714f0bf5](D0000-qbc0fc22d5932198e0811fcc2103d4e7e38ad649cd4b59aa6c9f993d0714f0bf5/report.md) | unassigned | `9dc8ff9cf7ff` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-qbc41627ec05d9ea3ab91d0b37ee064548949777a88cd91e2546e27ba706377b5](D0000-qbc41627ec05d9ea3ab91d0b37ee064548949777a88cd91e2546e27ba706377b5/report.md) | unassigned | `36d873f39cd7` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qbd378166b343703f520eaa146fc9823399fd99fceefb67979a61a1fe8207d61c](D0000-qbd378166b343703f520eaa146fc9823399fd99fceefb67979a61a1fe8207d61c/report.md) | unassigned | `132aeb26a54a` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D0000-qbd60078f8ffa4788dcaf3806de9536a7c18de651b9ded35aa2189f1b1e44c685](D0000-qbd60078f8ffa4788dcaf3806de9536a7c18de651b9ded35aa2189f1b1e44c685/report.md) | unassigned | `60d0a7a7857a` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-qbd724d6ecbbe7f5d4d37077607072db769b0eaf1b3e7b4a1e76ea142625a4d27](D0000-qbd724d6ecbbe7f5d4d37077607072db769b0eaf1b3e7b4a1e76ea142625a4d27/report.md) | unassigned | `b58e7b445159` | 1013 | a battle-scarred veteran | 22980 | unassessed |
+| [D0000-qbe872ee1aaadca9c31c096ef29b5c674b98217be11a78fb464839bf9d3ccbcdf](D0000-qbe872ee1aaadca9c31c096ef29b5c674b98217be11a78fb464839bf9d3ccbcdf/report.md) | unassigned | `b58e7b445159` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-qbed82fb56a6de81455ff8146468b4ef31bdd70411b25f41d21faaff773658310](D0000-qbed82fb56a6de81455ff8146468b4ef31bdd70411b25f41d21faaff773658310/report.md) | unassigned | `66aff7999c28` | 1023 | a soldier | 85754 | unassessed |
+| [D0000-qc23d69ee3941a704e650bda58f3618f91212b54ff1fdfe174a8dd67140621297](D0000-qc23d69ee3941a704e650bda58f3618f91212b54ff1fdfe174a8dd67140621297/report.md) | unassigned | `1443c2d1b97d` | 1073 | a gallant | 94857 | unassessed |
+| [D0000-qc4b1d29620d204e3a7be91ef53a3380824578575c52b0f9b011b74e74fdf59aa](D0000-qc4b1d29620d204e3a7be91ef53a3380824578575c52b0f9b011b74e74fdf59aa/report.md) | unassigned | `66aff7999c28` | 1010 | a floating eye | 26921 | unassessed |
+| [D0000-qc657348815decebe7dd1b7712d46ab640983b1355a661a6ab0fb4c6c20502e99](D0000-qc657348815decebe7dd1b7712d46ab640983b1355a661a6ab0fb4c6c20502e99/report.md) | unassigned | `137a5a3709aa` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qc6ae75af05d1e013a87781a6c2efb1d30dbfbbd64cb0eb0b3035b25c57c69ad6](D0000-qc6ae75af05d1e013a87781a6c2efb1d30dbfbbd64cb0eb0b3035b25c57c69ad6/report.md) | unassigned | `754593a03348` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-qc773878688092e6044f640ce8df73235353e877cf3ef271d5f260a940af461f4](D0000-qc773878688092e6044f640ce8df73235353e877cf3ef271d5f260a940af461f4/report.md) | unassigned | `0a0c23a1d52a` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-qc9f44521e8c281a9de6ec0d9be493be1b968980d90cd7c077fa4246d8490eba0](D0000-qc9f44521e8c281a9de6ec0d9be493be1b968980d90cd7c077fa4246d8490eba0/report.md) | unassigned | `b6d3a07a3ac4` | 1043 | a wild cat | 23423 | unassessed |
+| [D0000-qca2f6f2392d63db974320fd658a83c7565af8bf338aad7c61a81ede9e913f05e](D0000-qca2f6f2392d63db974320fd658a83c7565af8bf338aad7c61a81ede9e913f05e/report.md) | unassigned | `8fe1d1c5353f` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qcab18507ac667bb0e8138817ccd3362ddca673e22acce5b7c51406c5929941bb](D0000-qcab18507ac667bb0e8138817ccd3362ddca673e22acce5b7c51406c5929941bb/report.md) | unassigned | `b58e7b445159` | 1041 | a soldier | 54489 | unassessed |
+| [D0000-qcd2f614edeb0eb9d875268ab0e495db75940120d6f3e752e0c0cd377fd34f450](D0000-qcd2f614edeb0eb9d875268ab0e495db75940120d6f3e752e0c0cd377fd34f450/report.md) | unassigned | `b6d3a07a3ac4` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D0000-qcd6ca23c72028b6f4cbdee65a58a6e79f7786c97b97dd8cad6ded09b7c68c63d](D0000-qcd6ca23c72028b6f4cbdee65a58a6e79f7786c97b97dd8cad6ded09b7c68c63d/report.md) | unassigned | `1443c2d1b97d` | 1072 | a giant white mouse | 40785 | unassessed |
+| [D0000-qceb3de0c9cc8d068fe88b07b3bd4e6f9b8f94e41a6c2ddcfe6798a10e9d98eb7](D0000-qceb3de0c9cc8d068fe88b07b3bd4e6f9b8f94e41a6c2ddcfe6798a10e9d98eb7/report.md) | unassigned | `b3eff0b0d4f0` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-qd4050c294104cb57cc529ef750fcfb823f3fd96e8c0d52e90c862f36636c6c99](D0000-qd4050c294104cb57cc529ef750fcfb823f3fd96e8c0d52e90c862f36636c6c99/report.md) | unassigned | `132aeb26a54a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-qd58c526d44a70c1f7892aed80972c3a298fbcd47f724ef636a2697036d12484e](D0000-qd58c526d44a70c1f7892aed80972c3a298fbcd47f724ef636a2697036d12484e/report.md) | unassigned | `b58e7b445159` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
+| [D0000-qd5bc56dcb295b2720061eaa17258fec0720a8e7637d91c93166c6dcc35fb36bd](D0000-qd5bc56dcb295b2720061eaa17258fec0720a8e7637d91c93166c6dcc35fb36bd/report.md) | unassigned | `b6d3a07a3ac4` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qd64d37136beb83db5e9089682a8c28ba70480e5421c5227e4ceda3daf6761f77](D0000-qd64d37136beb83db5e9089682a8c28ba70480e5421c5227e4ceda3daf6761f77/report.md) | unassigned | `b58e7b445159` | 1043 | a floating eye | 91688 | unassessed |
+| [D0000-qd6e215606053328ebc5414febede759dd5ba0869f485f675983db888f2d09df1](D0000-qd6e215606053328ebc5414febede759dd5ba0869f485f675983db888f2d09df1/report.md) | unassigned | `66aff7999c28` | 1082 | a soldier | 61969 | unassessed |
+| [D0000-qd812ef5bdb264dda7b407f876ddee84382a7cff1cab9befd553f0fce7ff62b5a](D0000-qd812ef5bdb264dda7b407f876ddee84382a7cff1cab9befd553f0fce7ff62b5a/report.md) | unassigned | `b58e7b445159` | 1062 | a soldier | 49147 | unassessed |
+| [D0000-qd9b6cef231f4502265ae245e03cb903c48729cc05752c34a7c1469b9382440bc](D0000-qd9b6cef231f4502265ae245e03cb903c48729cc05752c34a7c1469b9382440bc/report.md) | unassigned | `66aff7999c28` | 1022 | a giant white mouse | 17265 | unassessed |
+| [D0000-qd9b9f65dfe90e52df40a0322371ebef15b19f1ba6f56bcf305b37f6e55d752dd](D0000-qd9b9f65dfe90e52df40a0322371ebef15b19f1ba6f56bcf305b37f6e55d752dd/report.md) | unassigned | `1443c2d1b97d` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-qda5794261ab67b8dd6d64937bac91a5e08bb376c115bc8102a5dec09b3c3f5e4](D0000-qda5794261ab67b8dd6d64937bac91a5e08bb376c115bc8102a5dec09b3c3f5e4/report.md) | unassigned | `1443c2d1b97d` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-qdb245594480c759935c5c58594870c6d9b347451e3fcfee106403158f3b7e516](D0000-qdb245594480c759935c5c58594870c6d9b347451e3fcfee106403158f3b7e516/report.md) | unassigned | `754593a03348` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qdd0c77e0516bfebebb9d4b5f319a2ddb7fe943c0e4e3062554724a00a44330f6](D0000-qdd0c77e0516bfebebb9d4b5f319a2ddb7fe943c0e4e3062554724a00a44330f6/report.md) | unassigned | `9dc8ff9cf7ff` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qdeeac8dbbc0e25c3c4daeff5b3bd91e86f0afdccff41ce63f33bc3bd04a286af](D0000-qdeeac8dbbc0e25c3c4daeff5b3bd91e86f0afdccff41ce63f33bc3bd04a286af/report.md) | unassigned | `b3eff0b0d4f0` | 1022 | a giant yellow centipede | 14120 | unassessed |
+| [D0000-qdf5751b5e14e9de27c17468e0ca913319948da451b3a4504724650f6c5b9784f](D0000-qdf5751b5e14e9de27c17468e0ca913319948da451b3a4504724650f6c5b9784f/report.md) | unassigned | `0a0c23a1d52a` | 1023 | a metallic red centipede | 13184 | unassessed |
+| [D0000-qdfc789b0721d1b6fa647f699c636f883314d058217e8d1934e98aa09f2c15c74](D0000-qdfc789b0721d1b6fa647f699c636f883314d058217e8d1934e98aa09f2c15c74/report.md) | unassigned | `754593a03348` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D0000-qe04f36850ca7aa16fa377ebbcfd6e9b7f9c0be4e108372c440d7f1968af2dc0c](D0000-qe04f36850ca7aa16fa377ebbcfd6e9b7f9c0be4e108372c440d7f1968af2dc0c/report.md) | unassigned | `b58e7b445159` | 1082 | a soldier | 61969 | unassessed |
+| [D0000-qe29f2acafede037064fa79fad28f37a64996d74614e8a3a55f2370b1875e6d0d](D0000-qe29f2acafede037064fa79fad28f37a64996d74614e8a3a55f2370b1875e6d0d/report.md) | unassigned | `b58e7b445159` | 1023 | a soldier | 85754 | unassessed |
+| [D0000-qe3b8069af28583a352b904ad8cb3a5f5d53ac3c30418c75e1dc2f76db7572aa8](D0000-qe3b8069af28583a352b904ad8cb3a5f5d53ac3c30418c75e1dc2f76db7572aa8/report.md) | unassigned | `b58e7b445159` | 1021 | a fatal wound | 3950 | unassessed |
+| [D0000-qe527d65394d4d01bab4ef8c3fdc16660d25403c2e0f5beefddac84dadfb7ba10](D0000-qe527d65394d4d01bab4ef8c3fdc16660d25403c2e0f5beefddac84dadfb7ba10/report.md) | unassigned | `2545f8416dad` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-qe74626d84c90f44caf7a8145164a00d5f6377d366a30778312340ef1e50ce20b](D0000-qe74626d84c90f44caf7a8145164a00d5f6377d366a30778312340ef1e50ce20b/report.md) | unassigned | `1443c2d1b97d` | 1050 | a grey mold | 24096 | unassessed |
+| [D0000-qe9a2cafb4eecb9e5c67c300d69fe72ddaf10c864a26a5c7555801aa39ea0b972](D0000-qe9a2cafb4eecb9e5c67c300d69fe72ddaf10c864a26a5c7555801aa39ea0b972/report.md) | unassigned | `60d0a7a7857a` | 1020 | a small kobold | 9547 | unassessed |
+| [D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc](D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc/report.md) | unassigned | `b58e7b445159` | 1063 | a green naga | 73529 | unassessed |
+| [D0000-qebdc24724305e38a8451ba21ef81c06be85d87eeac1546c81c4332267c16a604](D0000-qebdc24724305e38a8451ba21ef81c06be85d87eeac1546c81c4332267c16a604/report.md) | unassigned | `b3eff0b0d4f0` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-qecc81e78d76fe54c32ef97fefd8afeee7f18a224a3a71600645dad2651ade5cc](D0000-qecc81e78d76fe54c32ef97fefd8afeee7f18a224a3a71600645dad2651ade5cc/report.md) | unassigned | `66aff7999c28` | 1050 | an apprentice | 48288 | unassessed |
+| [D0000-qed9c8ec48574a65fc027af1d8d0393a35c9854f96d46234f67c124b870cfc690](D0000-qed9c8ec48574a65fc027af1d8d0393a35c9854f96d46234f67c124b870cfc690/report.md) | unassigned | `66aff7999c28` | 1074 | a soldier | 21652 | unassessed |
+| [D0000-qedc6fe8d834438d0ee275b5000b9145e80b5ffa2c6081f72a763764770679613](D0000-qedc6fe8d834438d0ee275b5000b9145e80b5ffa2c6081f72a763764770679613/report.md) | unassigned | `437f2e1034a1` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qeeac49821de520297eb330d0ad3b0068719e15136236cc15b9ba78cbda7c4fa9](D0000-qeeac49821de520297eb330d0ad3b0068719e15136236cc15b9ba78cbda7c4fa9/report.md) | unassigned | `66aff7999c28` | 1011 | poison | 13790 | unassessed |
+| [D0000-qf0fdf7360c8e373df16372eef2711f37a78a830576b989d67e78023af240cc54](D0000-qf0fdf7360c8e373df16372eef2711f37a78a830576b989d67e78023af240cc54/report.md) | unassigned | `69fa6a920d4b` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-qf18d3fb41254f4d919236b4baafb490123d33dcda70119968cbfeeb46661c423](D0000-qf18d3fb41254f4d919236b4baafb490123d33dcda70119968cbfeeb46661c423/report.md) | unassigned | `b58e7b445159` | 1070 | a small kobold | 10213 | unassessed |
+| [D0000-qf1b43578f011db8c91f4700522a7b3cf15bb711b50d0bdb821450ef8f5ecd786](D0000-qf1b43578f011db8c91f4700522a7b3cf15bb711b50d0bdb821450ef8f5ecd786/report.md) | unassigned | `e900d67013b8` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qf1c056357c76c4f478c0284ab2fe84f90786632e784643bc9a1400537a438990](D0000-qf1c056357c76c4f478c0284ab2fe84f90786632e784643bc9a1400537a438990/report.md) | unassigned | `0d7048053d6f` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qf3c2d2b5021228c2a2d18e10c01b71165b6164274d7ff52ad357dbf302a48537](D0000-qf3c2d2b5021228c2a2d18e10c01b71165b6164274d7ff52ad357dbf302a48537/report.md) | unassigned | `b3eff0b0d4f0` | 1074 | poison | 22250 | unassessed |
+| [D0000-qf4d2a72764472fd4c49851fd7317a212e767163c7ba35e8d711781bb464255bd](D0000-qf4d2a72764472fd4c49851fd7317a212e767163c7ba35e8d711781bb464255bd/report.md) | unassigned | `64cd39a8a63f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-qf57c0c4a92b03e58ab28f3ea2caf096b8c94d5604e50dd3609d9f948a51e63b7](D0000-qf57c0c4a92b03e58ab28f3ea2caf096b8c94d5604e50dd3609d9f948a51e63b7/report.md) | unassigned | `b58e7b445159` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D0000-qf6bf0823f91b6a0cadb86f4edfa64294ed85526c18f9b17d5dc42baf6bae7fb2](D0000-qf6bf0823f91b6a0cadb86f4edfa64294ed85526c18f9b17d5dc42baf6bae7fb2/report.md) | unassigned | `8fe1d1c5353f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D0000-qf6de35221d1396436c4f6c036b246aa791805aa919c95e2add9431bcf6d5a8fe](D0000-qf6de35221d1396436c4f6c036b246aa791805aa919c95e2add9431bcf6d5a8fe/report.md) | unassigned | `b58e7b445159` | 1021 | a fruit bat | 30109 | unassessed |
+| [D0000-qf776932d37b9fdc2f6dcfd571c2d404cb9046adc2b3e9f1340985853abe20efa](D0000-qf776932d37b9fdc2f6dcfd571c2d404cb9046adc2b3e9f1340985853abe20efa/report.md) | unassigned | `132aeb26a54a` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qfa68a50b18c833e903bcb1ad79530960a0faeb241eb5684fdb29f4aedaa3987e](D0000-qfa68a50b18c833e903bcb1ad79530960a0faeb241eb5684fdb29f4aedaa3987e/report.md) | unassigned | `0a0c23a1d52a` | 1011 | a cave spider | 18903 | unassessed |
+| [D0000-qfd2676cc2b5c59501edee7270f1fa9bed2be6f6c8ff86a821019266f7d99e346](D0000-qfd2676cc2b5c59501edee7270f1fa9bed2be6f6c8ff86a821019266f7d99e346/report.md) | unassigned | `137a5a3709aa` | 1062 | a soldier | 49147 | unassessed |
 | [D0001-c-seed102](D0001-c-seed102/report.md) | unassigned | `321db9028fb3` | 102 | an acolyte | 7195 | unassessed |
 | [D0002-c-pristine-seed1052](D0002-c-pristine-seed1052/report.md) | unassigned | `3a3d36d5a2d1` | 1052 | a wild cat | 5021 | unassessed |
 | [D0003-c-pristine-seed1013](D0003-c-pristine-seed1013/report.md) | unassigned | `3a3d36d5a2d1` | 1013 | a fruit bat | 9782 | unassessed |
@@ -2348,102 +2589,126 @@ Dossiers: 2431; distinct starting conditions: 2428; retained process attempts: 2
 | [D2353-rust-seed101](D2353-rust-seed101/report.md) | unassigned | `66aff7999c28` | 101 | a snaga | 12007 | unassessed |
 | [D2354-rust-seed102](D2354-rust-seed102/report.md) | unassigned | `66aff7999c28` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
 | [D2355-rust-seed1020](D2355-rust-seed1020/report.md) | unassigned | `66aff7999c28` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2356-rust-seed102](D2356-rust-seed102/report.md) | unassigned | `53006188548e` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2357-rust-seed1020](D2357-rust-seed1020/report.md) | unassigned | `53006188548e` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2358-rust-seed102](D2358-rust-seed102/report.md) | unassigned | `35ab27fd11fb` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2359-rust-seed1020](D2359-rust-seed1020/report.md) | unassigned | `35ab27fd11fb` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2360-rust-seed1011](D2360-rust-seed1011/report.md) | unassigned | `46b687ccdd72` | 1011 | a cave spider | 18903 | unassessed |
-| [D2361-rust-seed1020](D2361-rust-seed1020/report.md) | unassigned | `5fbc0e60848a` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2362-rust-seed102](D2362-rust-seed102/report.md) | unassigned | `5fbc0e60848a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2363-rust-seed1011](D2363-rust-seed1011/report.md) | unassigned | `2545f8416dad` | 1011 | a cave spider | 18903 | unassessed |
-| [D2364-rust-seed1020](D2364-rust-seed1020/report.md) | unassigned | `2545f8416dad` | 1020 | a small kobold | 9547 | unassessed |
-| [D2365-rust-seed1021](D2365-rust-seed1021/report.md) | unassigned | `2545f8416dad` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2366-rust-seed1043](D2366-rust-seed1043/report.md) | unassigned | `2545f8416dad` | 1043 | a wild cat | 23423 | unassessed |
-| [D2367-rust-seed1050](D2367-rust-seed1050/report.md) | unassigned | `2545f8416dad` | 1050 | a grey mold | 24096 | unassessed |
-| [D2368-rust-seed1062](D2368-rust-seed1062/report.md) | unassigned | `2545f8416dad` | 1062 | a soldier | 49147 | unassessed |
-| [D2369-rust-seed1072](D2369-rust-seed1072/report.md) | unassigned | `2545f8416dad` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2370-rust-seed1084](D2370-rust-seed1084/report.md) | unassigned | `2545f8416dad` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2371-rust-seed102](D2371-rust-seed102/report.md) | unassigned | `2545f8416dad` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2372-rust-seed1020](D2372-rust-seed1020/report.md) | unassigned | `2545f8416dad` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2373-rust-seed1011](D2373-rust-seed1011/report.md) | unassigned | `8fe1d1c5353f` | 1011 | a cave spider | 18903 | unassessed |
-| [D2374-rust-seed1020](D2374-rust-seed1020/report.md) | unassigned | `8fe1d1c5353f` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2375-rust-seed102](D2375-rust-seed102/report.md) | unassigned | `8fe1d1c5353f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2376-rust-seed1011](D2376-rust-seed1011/report.md) | unassigned | `959474a594fc` | 1011 | a cave spider | 18903 | unassessed |
-| [D2377-rust-seed1011](D2377-rust-seed1011/report.md) | unassigned | `137a5a3709aa` | 1011 | a cave spider | 18903 | unassessed |
-| [D2378-rust-seed1020](D2378-rust-seed1020/report.md) | unassigned | `137a5a3709aa` | 1020 | a small kobold | 9547 | unassessed |
-| [D2379-rust-seed1021](D2379-rust-seed1021/report.md) | unassigned | `137a5a3709aa` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2380-rust-seed1043](D2380-rust-seed1043/report.md) | unassigned | `137a5a3709aa` | 1043 | a wild cat | 23423 | unassessed |
-| [D2381-rust-seed1050](D2381-rust-seed1050/report.md) | unassigned | `137a5a3709aa` | 1050 | a grey mold | 24096 | unassessed |
-| [D2382-rust-seed1062](D2382-rust-seed1062/report.md) | unassigned | `137a5a3709aa` | 1062 | a soldier | 49147 | unassessed |
-| [D2383-rust-seed1072](D2383-rust-seed1072/report.md) | unassigned | `137a5a3709aa` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2384-rust-seed1084](D2384-rust-seed1084/report.md) | unassigned | `137a5a3709aa` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2385-rust-seed102](D2385-rust-seed102/report.md) | unassigned | `64cd39a8a63f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2386-rust-seed1020](D2386-rust-seed1020/report.md) | unassigned | `64cd39a8a63f` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2387-rust-seed102](D2387-rust-seed102/report.md) | unassigned | `437f2e1034a1` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2388-rust-seed1020](D2388-rust-seed1020/report.md) | unassigned | `437f2e1034a1` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2389-rust-seed1011](D2389-rust-seed1011/report.md) | unassigned | `b6d3a07a3ac4` | 1011 | a cave spider | 18903 | unassessed |
-| [D2390-rust-seed1020](D2390-rust-seed1020/report.md) | unassigned | `b6d3a07a3ac4` | 1020 | a small kobold | 9547 | unassessed |
-| [D2391-rust-seed1021](D2391-rust-seed1021/report.md) | unassigned | `b6d3a07a3ac4` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2392-rust-seed1043](D2392-rust-seed1043/report.md) | unassigned | `b6d3a07a3ac4` | 1043 | a wild cat | 23423 | unassessed |
-| [D2393-rust-seed1050](D2393-rust-seed1050/report.md) | unassigned | `b6d3a07a3ac4` | 1050 | a grey mold | 24096 | unassessed |
-| [D2394-rust-seed1062](D2394-rust-seed1062/report.md) | unassigned | `b6d3a07a3ac4` | 1062 | a soldier | 49147 | unassessed |
-| [D2395-rust-seed1072](D2395-rust-seed1072/report.md) | unassigned | `b6d3a07a3ac4` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2396-rust-seed1084](D2396-rust-seed1084/report.md) | unassigned | `b6d3a07a3ac4` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2397-rust-seed102](D2397-rust-seed102/report.md) | unassigned | `3dda93c0628f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2398-rust-seed1020](D2398-rust-seed1020/report.md) | unassigned | `3dda93c0628f` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2399-rust-seed1004](D2399-rust-seed1004/report.md) | unassigned | `66aff7999c28` | 1004 | poison | 86960 | unassessed |
-| [D2400-rust-seed1010](D2400-rust-seed1010/report.md) | unassigned | `66aff7999c28` | 1010 | a floating eye | 26921 | unassessed |
-| [D2401-rust-seed1011](D2401-rust-seed1011/report.md) | unassigned | `66aff7999c28` | 1011 | poison | 13790 | unassessed |
-| [D2402-rust-seed1012](D2402-rust-seed1012/report.md) | unassigned | `66aff7999c28` | 1012 | Fang, Farmer Maggot's Dog | 31646 | unassessed |
-| [D2403-rust-seed1013](D2403-rust-seed1013/report.md) | unassigned | `66aff7999c28` | 1013 | a battle-scarred veteran | 22980 | unassessed |
-| [D2404-rust-seed1014](D2404-rust-seed1014/report.md) | unassigned | `66aff7999c28` | 1014 | a cave spider | 36276 | unassessed |
-| [D2405-rust-seed1021](D2405-rust-seed1021/report.md) | unassigned | `66aff7999c28` | 1021 | a fatal wound | 3950 | unassessed |
-| [D2406-rust-seed1022](D2406-rust-seed1022/report.md) | unassigned | `66aff7999c28` | 1022 | a giant white mouse | 17265 | unassessed |
-| [D2407-rust-seed1023](D2407-rust-seed1023/report.md) | unassigned | `66aff7999c28` | 1023 | a soldier | 85754 | unassessed |
-| [D2408-rust-seed1030](D2408-rust-seed1030/report.md) | unassigned | `66aff7999c28` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
-| [D2409-rust-seed1031](D2409-rust-seed1031/report.md) | unassigned | `66aff7999c28` | 1031 | a black naga | 36583 | unassessed |
-| [D2410-rust-seed1032](D2410-rust-seed1032/report.md) | unassigned | `66aff7999c28` | 1032 | a small kobold | 20267 | unassessed |
-| [D2411-rust-seed1033](D2411-rust-seed1033/report.md) | unassigned | `66aff7999c28` | 1033 | a giant white mouse | 24771 | unassessed |
-| [D2412-rust-seed1034](D2412-rust-seed1034/report.md) | unassigned | `66aff7999c28` | 1034 | poison | 96890 | unassessed |
-| [D2413-rust-seed1040](D2413-rust-seed1040/report.md) | unassigned | `66aff7999c28` | 1040 | an acolyte | 3647 | unassessed |
-| [D2414-rust-seed1041](D2414-rust-seed1041/report.md) | unassigned | `66aff7999c28` | 1041 | a soldier | 54489 | unassessed |
-| [D2415-rust-seed1042](D2415-rust-seed1042/report.md) | unassigned | `66aff7999c28` | 1042 | a wild dog | 10924 | unassessed |
-| [D2416-rust-seed1043](D2416-rust-seed1043/report.md) | unassigned | `66aff7999c28` | 1043 | a floating eye | 91688 | unassessed |
-| [D2417-rust-seed1044](D2417-rust-seed1044/report.md) | unassigned | `66aff7999c28` | 1044 | a small kobold | 4427 | unassessed |
-| [D2418-rust-seed1050](D2418-rust-seed1050/report.md) | unassigned | `66aff7999c28` | 1050 | an apprentice | 48288 | unassessed |
-| [D2419-rust-seed1053](D2419-rust-seed1053/report.md) | unassigned | `66aff7999c28` | 1053 | a giant white louse | 69538 | unassessed |
-| [D2420-rust-seed1062](D2420-rust-seed1062/report.md) | unassigned | `66aff7999c28` | 1062 | a soldier | 13291 | unassessed |
-| [D2421-rust-seed1063](D2421-rust-seed1063/report.md) | unassigned | `66aff7999c28` | 1063 | a green naga | 73529 | unassessed |
-| [D2422-rust-seed1064](D2422-rust-seed1064/report.md) | unassigned | `66aff7999c28` | 1064 | Fang, Farmer Maggot's Dog | 4601 | unassessed |
-| [D2423-rust-seed1070](D2423-rust-seed1070/report.md) | unassigned | `66aff7999c28` | 1070 | a small kobold | 10213 | unassessed |
-| [D2424-rust-seed1073](D2424-rust-seed1073/report.md) | unassigned | `66aff7999c28` | 1073 | Fang, Farmer Maggot's Dog | 65568 | unassessed |
-| [D2425-rust-seed1074](D2425-rust-seed1074/report.md) | unassigned | `66aff7999c28` | 1074 | a soldier | 21652 | unassessed |
-| [D2426-rust-seed1082](D2426-rust-seed1082/report.md) | unassigned | `66aff7999c28` | 1082 | a soldier | 61969 | unassessed |
-| [D2427-rust-seed1083](D2427-rust-seed1083/report.md) | unassigned | `66aff7999c28` | 1083 | an acolyte | 33152 | unassessed |
-| [D2428-rust-seed1084](D2428-rust-seed1084/report.md) | unassigned | `66aff7999c28` | 1084 | a gallant | 94134 | unassessed |
-| [D2429-rust-seed1011](D2429-rust-seed1011/report.md) | unassigned | `132aeb26a54a` | 1011 | a cave spider | 18903 | unassessed |
-| [D2430-rust-seed1020](D2430-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a small kobold | 9547 | unassessed |
-| [D2431-rust-seed1021](D2431-rust-seed1021/report.md) | unassigned | `132aeb26a54a` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2432-rust-seed1043](D2432-rust-seed1043/report.md) | unassigned | `132aeb26a54a` | 1043 | a wild cat | 23423 | unassessed |
-| [D2433-rust-seed1050](D2433-rust-seed1050/report.md) | unassigned | `132aeb26a54a` | 1050 | a grey mold | 24096 | unassessed |
-| [D2434-rust-seed1062](D2434-rust-seed1062/report.md) | unassigned | `132aeb26a54a` | 1062 | a soldier | 49147 | unassessed |
-| [D2435-rust-seed1072](D2435-rust-seed1072/report.md) | unassigned | `132aeb26a54a` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2436-rust-seed1084](D2436-rust-seed1084/report.md) | unassigned | `132aeb26a54a` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2437-rust-seed102](D2437-rust-seed102/report.md) | unassigned | `132aeb26a54a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2438-rust-seed1020](D2438-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2439-rust-seed1011](D2439-rust-seed1011/report.md) | unassigned | `0734559b8d6f` | 1011 | a cave spider | 18903 | unassessed |
-| [D2440-rust-seed1020](D2440-rust-seed1020/report.md) | unassigned | `0734559b8d6f` | 1020 | a small kobold | 9547 | unassessed |
-| [D2441-rust-seed1021](D2441-rust-seed1021/report.md) | unassigned | `0734559b8d6f` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
-| [D2442-rust-seed1043](D2442-rust-seed1043/report.md) | unassigned | `0734559b8d6f` | 1043 | a wild cat | 23423 | unassessed |
-| [D2443-rust-seed1050](D2443-rust-seed1050/report.md) | unassigned | `0734559b8d6f` | 1050 | a grey mold | 24096 | unassessed |
-| [D2444-rust-seed1062](D2444-rust-seed1062/report.md) | unassigned | `0734559b8d6f` | 1062 | a soldier | 49147 | unassessed |
-| [D2445-rust-seed1072](D2445-rust-seed1072/report.md) | unassigned | `0734559b8d6f` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
-| [D2446-rust-seed1084](D2446-rust-seed1084/report.md) | unassigned | `0734559b8d6f` | 1084 | a grey mushroom patch | 22908 | unassessed |
-| [D2447-rust-seed102](D2447-rust-seed102/report.md) | unassigned | `d4c8ed6902c3` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2448-rust-seed1020](D2448-rust-seed1020/report.md) | unassigned | `d4c8ed6902c3` | 1020 | a giant white mouse | 8922 | unassessed |
-| [D2449-rust-seed1011](D2449-rust-seed1011/report.md) | unassigned | `36d873f39cd7` | 1011 | a cave spider | 18903 | unassessed |
-| [D2450-rust-seed102](D2450-rust-seed102/report.md) | unassigned | `36d873f39cd7` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
-| [D2451-rust-seed1020](D2451-rust-seed1020/report.md) | unassigned | `36d873f39cd7` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2356-rust-seed1011](D2356-rust-seed1011/report.md) | unassigned | `8fe1d1c5353f` | 1011 | a cave spider | 18903 | unassessed |
+| [D2357-rust-seed1020](D2357-rust-seed1020/report.md) | unassigned | `8fe1d1c5353f` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2358-rust-seed102](D2358-rust-seed102/report.md) | unassigned | `8fe1d1c5353f` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2359-rust-seed1004](D2359-rust-seed1004/report.md) | unassigned | `66aff7999c28` | 1004 | poison | 86960 | unassessed |
+| [D2360-rust-seed1010](D2360-rust-seed1010/report.md) | unassigned | `66aff7999c28` | 1010 | a floating eye | 26921 | unassessed |
+| [D2361-rust-seed1011](D2361-rust-seed1011/report.md) | unassigned | `66aff7999c28` | 1011 | poison | 13790 | unassessed |
+| [D2362-rust-seed1012](D2362-rust-seed1012/report.md) | unassigned | `66aff7999c28` | 1012 | Fang, Farmer Maggot's Dog | 31646 | unassessed |
+| [D2363-rust-seed1013](D2363-rust-seed1013/report.md) | unassigned | `66aff7999c28` | 1013 | a battle-scarred veteran | 22980 | unassessed |
+| [D2364-rust-seed1014](D2364-rust-seed1014/report.md) | unassigned | `66aff7999c28` | 1014 | a cave spider | 36276 | unassessed |
+| [D2365-rust-seed1021](D2365-rust-seed1021/report.md) | unassigned | `66aff7999c28` | 1021 | a fatal wound | 3950 | unassessed |
+| [D2366-rust-seed1022](D2366-rust-seed1022/report.md) | unassigned | `66aff7999c28` | 1022 | a giant white mouse | 17265 | unassessed |
+| [D2367-rust-seed1023](D2367-rust-seed1023/report.md) | unassigned | `66aff7999c28` | 1023 | a soldier | 85754 | unassessed |
+| [D2368-rust-seed1030](D2368-rust-seed1030/report.md) | unassigned | `66aff7999c28` | 1030 | Grip, Farmer Maggot's Dog | 15420 | unassessed |
+| [D2369-rust-seed1031](D2369-rust-seed1031/report.md) | unassigned | `66aff7999c28` | 1031 | a black naga | 36583 | unassessed |
+| [D2370-rust-seed1032](D2370-rust-seed1032/report.md) | unassigned | `66aff7999c28` | 1032 | a small kobold | 20267 | unassessed |
+| [D2371-rust-seed1033](D2371-rust-seed1033/report.md) | unassigned | `66aff7999c28` | 1033 | a giant white mouse | 24771 | unassessed |
+| [D2372-rust-seed1034](D2372-rust-seed1034/report.md) | unassigned | `66aff7999c28` | 1034 | poison | 96890 | unassessed |
+| [D2373-rust-seed1040](D2373-rust-seed1040/report.md) | unassigned | `66aff7999c28` | 1040 | an acolyte | 3647 | unassessed |
+| [D2374-rust-seed1041](D2374-rust-seed1041/report.md) | unassigned | `66aff7999c28` | 1041 | a soldier | 54489 | unassessed |
+| [D2375-rust-seed1042](D2375-rust-seed1042/report.md) | unassigned | `66aff7999c28` | 1042 | a wild dog | 10924 | unassessed |
+| [D2376-rust-seed1043](D2376-rust-seed1043/report.md) | unassigned | `66aff7999c28` | 1043 | a floating eye | 91688 | unassessed |
+| [D2377-rust-seed1044](D2377-rust-seed1044/report.md) | unassigned | `66aff7999c28` | 1044 | a small kobold | 4427 | unassessed |
+| [D2378-rust-seed1050](D2378-rust-seed1050/report.md) | unassigned | `66aff7999c28` | 1050 | an apprentice | 48288 | unassessed |
+| [D2379-rust-seed1053](D2379-rust-seed1053/report.md) | unassigned | `66aff7999c28` | 1053 | a giant white louse | 69538 | unassessed |
+| [D2380-rust-seed1062](D2380-rust-seed1062/report.md) | unassigned | `66aff7999c28` | 1062 | a soldier | 13291 | unassessed |
+| [D2381-rust-seed1063](D2381-rust-seed1063/report.md) | unassigned | `66aff7999c28` | 1063 | a green naga | 73529 | unassessed |
+| [D2382-rust-seed1064](D2382-rust-seed1064/report.md) | unassigned | `66aff7999c28` | 1064 | Fang, Farmer Maggot's Dog | 4601 | unassessed |
+| [D2383-rust-seed1070](D2383-rust-seed1070/report.md) | unassigned | `66aff7999c28` | 1070 | a small kobold | 10213 | unassessed |
+| [D2384-rust-seed1073](D2384-rust-seed1073/report.md) | unassigned | `66aff7999c28` | 1073 | Fang, Farmer Maggot's Dog | 65568 | unassessed |
+| [D2385-rust-seed1074](D2385-rust-seed1074/report.md) | unassigned | `66aff7999c28` | 1074 | a soldier | 21652 | unassessed |
+| [D2386-rust-seed1082](D2386-rust-seed1082/report.md) | unassigned | `66aff7999c28` | 1082 | a soldier | 61969 | unassessed |
+| [D2387-rust-seed1083](D2387-rust-seed1083/report.md) | unassigned | `66aff7999c28` | 1083 | an acolyte | 33152 | unassessed |
+| [D2388-rust-seed1084](D2388-rust-seed1084/report.md) | unassigned | `66aff7999c28` | 1084 | a gallant | 94134 | unassessed |
+| [D2389-rust-seed1011](D2389-rust-seed1011/report.md) | unassigned | `132aeb26a54a` | 1011 | a cave spider | 18903 | unassessed |
+| [D2390-rust-seed1020](D2390-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a small kobold | 9547 | unassessed |
+| [D2391-rust-seed1021](D2391-rust-seed1021/report.md) | unassigned | `132aeb26a54a` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2392-rust-seed1043](D2392-rust-seed1043/report.md) | unassigned | `132aeb26a54a` | 1043 | a wild cat | 23423 | unassessed |
+| [D2393-rust-seed1050](D2393-rust-seed1050/report.md) | unassigned | `132aeb26a54a` | 1050 | a grey mold | 24096 | unassessed |
+| [D2394-rust-seed1062](D2394-rust-seed1062/report.md) | unassigned | `132aeb26a54a` | 1062 | a soldier | 49147 | unassessed |
+| [D2395-rust-seed1072](D2395-rust-seed1072/report.md) | unassigned | `132aeb26a54a` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2396-rust-seed1084](D2396-rust-seed1084/report.md) | unassigned | `132aeb26a54a` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2397-rust-seed102](D2397-rust-seed102/report.md) | unassigned | `132aeb26a54a` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2398-rust-seed1020](D2398-rust-seed1020/report.md) | unassigned | `132aeb26a54a` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2399-rust-seed1011](D2399-rust-seed1011/report.md) | unassigned | `014e64a4bfac` | 1011 | a cave spider | 18903 | unassessed |
+| [D2400-rust-seed1020](D2400-rust-seed1020/report.md) | unassigned | `014e64a4bfac` | 1020 | a small kobold | 9547 | unassessed |
+| [D2401-rust-seed1021](D2401-rust-seed1021/report.md) | unassigned | `014e64a4bfac` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2402-rust-seed1043](D2402-rust-seed1043/report.md) | unassigned | `014e64a4bfac` | 1043 | a wild cat | 23423 | unassessed |
+| [D2403-rust-seed1050](D2403-rust-seed1050/report.md) | unassigned | `014e64a4bfac` | 1050 | a grey mold | 24096 | unassessed |
+| [D2404-rust-seed1062](D2404-rust-seed1062/report.md) | unassigned | `014e64a4bfac` | 1062 | a soldier | 49147 | unassessed |
+| [D2405-rust-seed1072](D2405-rust-seed1072/report.md) | unassigned | `014e64a4bfac` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2406-rust-seed1084](D2406-rust-seed1084/report.md) | unassigned | `014e64a4bfac` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2407-rust-seed102](D2407-rust-seed102/report.md) | unassigned | `c259f69c44f8` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2408-rust-seed1020](D2408-rust-seed1020/report.md) | unassigned | `c259f69c44f8` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2409-rust-seed1011](D2409-rust-seed1011/report.md) | unassigned | `c259f69c44f8` | 1011 | a cave spider | 18903 | unassessed |
+| [D2410-rust-seed1020](D2410-rust-seed1020/report.md) | unassigned | `c259f69c44f8` | 1020 | a small kobold | 9547 | unassessed |
+| [D2411-rust-seed1021](D2411-rust-seed1021/report.md) | unassigned | `c259f69c44f8` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2412-rust-seed1043](D2412-rust-seed1043/report.md) | unassigned | `c259f69c44f8` | 1043 | a wild cat | 23423 | unassessed |
+| [D2413-rust-seed1050](D2413-rust-seed1050/report.md) | unassigned | `c259f69c44f8` | 1050 | a grey mold | 24096 | unassessed |
+| [D2414-rust-seed1062](D2414-rust-seed1062/report.md) | unassigned | `c259f69c44f8` | 1062 | a soldier | 49147 | unassessed |
+| [D2415-rust-seed1072](D2415-rust-seed1072/report.md) | unassigned | `c259f69c44f8` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2416-rust-seed1084](D2416-rust-seed1084/report.md) | unassigned | `c259f69c44f8` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2417-rust-seed1011](D2417-rust-seed1011/report.md) | unassigned | `63750caa6dec` | 1011 | a cave spider | 18903 | unassessed |
+| [D2418-rust-seed102](D2418-rust-seed102/report.md) | unassigned | `63750caa6dec` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2419-rust-seed1020](D2419-rust-seed1020/report.md) | unassigned | `63750caa6dec` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2420-rust-seed1011](D2420-rust-seed1011/report.md) | unassigned | `bfbc9b7409b6` | 1011 | a cave spider | 18903 | unassessed |
+| [D2421-rust-seed102](D2421-rust-seed102/report.md) | unassigned | `7ff4b5bee5e4` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2422-rust-seed1020](D2422-rust-seed1020/report.md) | unassigned | `7ff4b5bee5e4` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2423-rust-seed1011](D2423-rust-seed1011/report.md) | unassigned | `5e443a8c28a4` | 1011 | a cave spider | 18903 | unassessed |
+| [D2424-rust-seed1020](D2424-rust-seed1020/report.md) | unassigned | `5e443a8c28a4` | 1020 | a small kobold | 9547 | unassessed |
+| [D2425-rust-seed1021](D2425-rust-seed1021/report.md) | unassigned | `5e443a8c28a4` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2426-rust-seed1043](D2426-rust-seed1043/report.md) | unassigned | `5e443a8c28a4` | 1043 | a wild cat | 23423 | unassessed |
+| [D2427-rust-seed1050](D2427-rust-seed1050/report.md) | unassigned | `5e443a8c28a4` | 1050 | a grey mold | 24096 | unassessed |
+| [D2428-rust-seed1062](D2428-rust-seed1062/report.md) | unassigned | `5e443a8c28a4` | 1062 | a soldier | 49147 | unassessed |
+| [D2429-rust-seed1072](D2429-rust-seed1072/report.md) | unassigned | `5e443a8c28a4` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2430-rust-seed1084](D2430-rust-seed1084/report.md) | unassigned | `5e443a8c28a4` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2431-rust-seed102](D2431-rust-seed102/report.md) | unassigned | `5e443a8c28a4` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2432-rust-seed1020](D2432-rust-seed1020/report.md) | unassigned | `5e443a8c28a4` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2433-rust-seed1011](D2433-rust-seed1011/report.md) | unassigned | `f1b4167372db` | 1011 | a cave spider | 18903 | unassessed |
+| [D2434-rust-seed102](D2434-rust-seed102/report.md) | unassigned | `f1b4167372db` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2435-rust-seed1020](D2435-rust-seed1020/report.md) | unassigned | `f1b4167372db` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2436-rust-seed1011](D2436-rust-seed1011/report.md) | unassigned | `a1515c47c20d` | 1011 | a cave spider | 18903 | unassessed |
+| [D2437-rust-seed1020](D2437-rust-seed1020/report.md) | unassigned | `a1515c47c20d` | 1020 | a small kobold | 9547 | unassessed |
+| [D2438-rust-seed1021](D2438-rust-seed1021/report.md) | unassigned | `a1515c47c20d` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2439-rust-seed1043](D2439-rust-seed1043/report.md) | unassigned | `a1515c47c20d` | 1043 | a wild cat | 23423 | unassessed |
+| [D2440-rust-seed1050](D2440-rust-seed1050/report.md) | unassigned | `a1515c47c20d` | 1050 | a grey mold | 24096 | unassessed |
+| [D2441-rust-seed1062](D2441-rust-seed1062/report.md) | unassigned | `a1515c47c20d` | 1062 | a soldier | 49147 | unassessed |
+| [D2442-rust-seed1072](D2442-rust-seed1072/report.md) | unassigned | `a1515c47c20d` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2443-rust-seed1084](D2443-rust-seed1084/report.md) | unassigned | `a1515c47c20d` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2444-rust-seed102](D2444-rust-seed102/report.md) | unassigned | `a1515c47c20d` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2445-rust-seed1020](D2445-rust-seed1020/report.md) | unassigned | `a1515c47c20d` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2446-rust-seed1011](D2446-rust-seed1011/report.md) | unassigned | `e159298f49d2` | 1011 | a cave spider | 18903 | unassessed |
+| [D2447-rust-seed1020](D2447-rust-seed1020/report.md) | unassigned | `e159298f49d2` | 1020 | a small kobold | 9547 | unassessed |
+| [D2448-rust-seed1021](D2448-rust-seed1021/report.md) | unassigned | `e159298f49d2` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2449-rust-seed1043](D2449-rust-seed1043/report.md) | unassigned | `e159298f49d2` | 1043 | a wild cat | 23423 | unassessed |
+| [D2450-rust-seed1050](D2450-rust-seed1050/report.md) | unassigned | `e159298f49d2` | 1050 | a grey mold | 24096 | unassessed |
+| [D2451-rust-seed1062](D2451-rust-seed1062/report.md) | unassigned | `e159298f49d2` | 1062 | a soldier | 49147 | unassessed |
+| [D2452-rust-seed1072](D2452-rust-seed1072/report.md) | unassigned | `e159298f49d2` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2453-rust-seed1084](D2453-rust-seed1084/report.md) | unassigned | `e159298f49d2` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2454-rust-seed102](D2454-rust-seed102/report.md) | unassigned | `e159298f49d2` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2455-rust-seed1020](D2455-rust-seed1020/report.md) | unassigned | `e159298f49d2` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2456-rust-seed1011](D2456-rust-seed1011/report.md) | unassigned | `d265e9647562` | 1011 | a cave spider | 18903 | unassessed |
+| [D2457-rust-seed1020](D2457-rust-seed1020/report.md) | unassigned | `d265e9647562` | 1020 | a small kobold | 9547 | unassessed |
+| [D2458-rust-seed1021](D2458-rust-seed1021/report.md) | unassigned | `d265e9647562` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2459-rust-seed1043](D2459-rust-seed1043/report.md) | unassigned | `d265e9647562` | 1043 | a wild cat | 23423 | unassessed |
+| [D2460-rust-seed1050](D2460-rust-seed1050/report.md) | unassigned | `d265e9647562` | 1050 | a grey mold | 24096 | unassessed |
+| [D2461-rust-seed1062](D2461-rust-seed1062/report.md) | unassigned | `d265e9647562` | 1062 | a soldier | 49147 | unassessed |
+| [D2462-rust-seed1072](D2462-rust-seed1072/report.md) | unassigned | `d265e9647562` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2463-rust-seed1084](D2463-rust-seed1084/report.md) | unassigned | `d265e9647562` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2464-rust-seed102](D2464-rust-seed102/report.md) | unassigned | `d265e9647562` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2465-rust-seed1020](D2465-rust-seed1020/report.md) | unassigned | `d265e9647562` | 1020 | a giant white mouse | 8922 | unassessed |
+| [D2466-rust-seed1011](D2466-rust-seed1011/report.md) | unassigned | `ab0c0bb58362` | 1011 | a cave spider | 18903 | unassessed |
+| [D2467-rust-seed1020](D2467-rust-seed1020/report.md) | unassigned | `ab0c0bb58362` | 1020 | a small kobold | 9547 | unassessed |
+| [D2468-rust-seed1021](D2468-rust-seed1021/report.md) | unassigned | `ab0c0bb58362` | 1021 | Fang, Farmer Maggot's Dog | 3608 | unassessed |
+| [D2469-rust-seed1043](D2469-rust-seed1043/report.md) | unassigned | `ab0c0bb58362` | 1043 | a wild cat | 23423 | unassessed |
+| [D2470-rust-seed1050](D2470-rust-seed1050/report.md) | unassigned | `ab0c0bb58362` | 1050 | a grey mold | 24096 | unassessed |
+| [D2471-rust-seed1062](D2471-rust-seed1062/report.md) | unassigned | `ab0c0bb58362` | 1062 | a soldier | 49147 | unassessed |
+| [D2472-rust-seed1072](D2472-rust-seed1072/report.md) | unassigned | `ab0c0bb58362` | 1072 | Fang, Farmer Maggot's Dog | 8475 | unassessed |
+| [D2473-rust-seed1084](D2473-rust-seed1084/report.md) | unassigned | `ab0c0bb58362` | 1084 | a grey mushroom patch | 22908 | unassessed |
+| [D2474-rust-seed102](D2474-rust-seed102/report.md) | unassigned | `ab0c0bb58362` | 102 | Fang, Farmer Maggot's Dog | 3640 | unassessed |
+| [D2475-rust-seed1020](D2475-rust-seed1020/report.md) | unassigned | `ab0c0bb58362` | 1020 | a giant white mouse | 8922 | unassessed |
 
 ## Aggregated actions
 

@@ -1,0 +1,55 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/donor-full/full-2-druid-1",
+      "raw_sha256": {
+        "keys.log": "7cf84ceb230ddb35da1086034817f2571c4892e573d2b7c5eb1173f797e62108",
+        "messages.log": "014f872fde7331df78cef361e6a1da21a4c4f21d03a05a6fd430ad399340e8ae",
+        "state.log": "56a1c8c0e3a065cc92297cbfa9461dc04b357d6153d0eff5d4d29dece5f308e1"
+      },
+      "result_sha256": "7cf84ceb230ddb35da1086034817f2571c4892e573d2b7c5eb1173f797e62108",
+      "role": "original",
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea"
+    }
+  ],
+  "character": "Hobbit Druid",
+  "core_decision_trace": null,
+  "decision_trace": null,
+  "encounter_family": "start-a203272a250c0e48c43ca01bc3abd2f2e4a531ad3d18aa41c3d3e695dddc0cfc",
+  "files_sha256": {
+    "build.json": "7f7b355f3e1a4ff06f212b40d1b9415dc8d11154359fbc20b65535f9e7265a97",
+    "config.txt": "0610e1de5e4e22de4d15582db8aed69ee93c3b3362762cfadb60f1719963b715",
+    "summary.json": "c42c0185fc19395b7c7872db98f290c04207b02b0412a93a4d91d29148a8cd09"
+  },
+  "id": "D0000-qd9b9f65dfe90e52df40a0322371ebef15b19f1ba6f56bcf305b37f6e55d752dd",
+  "identity": {
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "borg_txt_sha256": "2da6fc3537b0994523e5c3a2920b95bc6b852928239d2c9d4401f15dc5a37d62",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": null,
+    "seed": 1021,
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a fruit bat",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a fruit bat",
+    "class_idx": 2,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 3,
+    "turn": 30109
+  }
+}

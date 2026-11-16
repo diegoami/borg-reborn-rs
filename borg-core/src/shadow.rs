@@ -17,6 +17,9 @@ pub struct DangerInput {
 /// Unported boundaries retain their native decisions. R1's only port is
 /// the pure wall_like helper; R2 supplies stateful decision adapters.
 pub trait Shadow: Send + Sync {
+    fn blow_effect(&self,name:&[u8],original:i32)->i32;
+    fn thrust_damage(&self,state:&BorgState,slot:i32,original:i32)->i32;
+
     fn decision(&self, state: &mut BorgState, request: crate::decisions::Decision) -> crate::decisions::Value { request.native(state) }
     fn danger(&self, _state: &BorgState, _input: DangerInput, original: i32) -> i32 { original }
     fn monster_danger(&self, _state: &BorgState, _input: DangerInput, _slot: i32, original: i32) -> i32 { original }
@@ -54,4 +57,12 @@ pub(crate) fn monster_danger(state: &BorgState, input: DangerInput, slot: i32, o
 pub(crate) fn decision(state:&mut BorgState,request:crate::decisions::Decision)->crate::decisions::Value {
     if crate::decision_tape::active() { return request.native(state); }
     match SHADOW.get() { Some(s)=>s.decision(state,request),None=>request.native(state) }
+}
+
+// borg-reborn-rs (#364): pure/read-only attack boundaries.
+pub(crate) fn blow_effect(name:&[u8],original:i32)->i32 {
+    SHADOW.get().map_or(original,|s|s.blow_effect(name,original))
+}
+pub(crate) fn thrust_damage(state:&BorgState,slot:i32,original:i32)->i32 {
+    SHADOW.get().map_or(original,|s|s.thrust_damage(state,slot,original))
 }

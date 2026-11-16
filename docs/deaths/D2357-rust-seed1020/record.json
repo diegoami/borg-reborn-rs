@@ -18,10 +18,10 @@
     "impl": "rust",
     "seed": 1020,
     "flags": "menu",
-    "git_rev": "53006188548eebba9389a09dfdb2f77fdc9723c5",
+    "git_rev": "8fe1d1c5353f4e04c309262670732bfb31848cbe",
     "git_dirty": "no",
-    "source_sha256": "f3e075a03de10b333282c3f20fc91d80686d6af6b311f8509c49bec7079c9ca3",
-    "binary_sha256": "3d77ebff2fd9dac8ba3ec1e66bcab824252c921f7e638d24c3ea1cc7ff052dca",
+    "source_sha256": "bcd9f0a9404e8821acba0fa88d23304a9ecd83344d1aacc7e444303b94a2d632",
+    "binary_sha256": "fcf81d6f4dff18f494db3de4528b1df0504a4af6f138ccdaf2061657bbc1abac",
     "borg_txt_sha256": "69f4b6e150d88953f699f42c2c2f87d165952968033e473af739c87706b8795b",
     "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
     "params_core_sha256": null
@@ -31,29 +31,30 @@
     "lines": 200,
     "of": 751
   },
+  "core_decision_trace": null,
   "attempts": [
     {
       "role": "original",
       "outcome": "death",
-      "raw_directory": "/home/runner/work/borg-reborn-rs/borg-reborn-rs/harness/out/rerun-source",
+      "raw_directory": "/tmp/borg-shopping-ci-rerun-source-20261115",
       "result_sha256": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
       "raw_sha256": {
         "keys.log": "c542b7d80373f4e96cd151e9df3be44dbf458719a2b1f7064b38e9e3cf56b084",
         "messages.log": "770bf5c38f86bfd8e484c607be5bf5414a51717034bb475746b249affb7a7386",
         "state.log": "eeb130bc50c09f07e13aaf263ad63812d0217650f86db369e7ade09633c58bce"
       },
-      "source_commit": "53006188548eebba9389a09dfdb2f77fdc9723c5",
-      "binary_sha256": "3d77ebff2fd9dac8ba3ec1e66bcab824252c921f7e638d24c3ea1cc7ff052dca"
+      "source_commit": "8fe1d1c5353f4e04c309262670732bfb31848cbe",
+      "binary_sha256": "fcf81d6f4dff18f494db3de4528b1df0504a4af6f138ccdaf2061657bbc1abac"
     }
   ],
-  "encounter_family": "start-9f9f0efce51ecf92e99e476c8e48bd52fda38ca868fa073a100a27c9c3457980",
+  "encounter_family": "start-2aee26f702ba560767fcf53c2726c4af8bbeb1fd94a250e9b91f5b43eeaa7fc4",
   "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
   "files_sha256": {
-    "build.json": "2fb00c85a98f9accc109bcc807aeedba7a7bf56d6d79e78b5d27a769496714e6",
+    "build.json": "5a311a3b6b8a064353bc94932838db0f14f9171605555f11aee93eb6788d3715",
     "config.txt": "79e3f836939302d3c93bfee4443b825ff5688b341e01d44351fd657784aeef5c",
     "depths.json": "5286600f4634a72e92eef1e8151835a442833ba75c828b05da84aa173486b860",
     "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
-    "summary.json": "d55409754d999f8a04cc7aa29109a382e54cd58e733c1435c5a4d6c85e7368b4",
+    "summary.json": "9af009d4f1518276024c0fd80e9babd55f7e65db3b2d6085d7bd0fa80052e8cd",
     "trace-tail.jsonl": "2bd09b377f55b5a4622a8908a0c4540197d36477db2169ad26eecca44740692d"
   },
   "investigation": null,

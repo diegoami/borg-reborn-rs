@@ -1,0 +1,55 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r343-evidence/donor-full/full-2-druid-3",
+      "raw_sha256": {
+        "keys.log": "a842a5177954184a1cf9706a0cc0c35e2c3421b830bacb05f42c9a339091220f",
+        "messages.log": "773e8d04dec1f5dec7b3c546c921bc0bf57004a6cf32ee3abe565028b5f6f306",
+        "state.log": "917208c762248a29dddc26c30de61b6bdfaf93bd95f08ff78c81c2404db7a7b2"
+      },
+      "result_sha256": "a842a5177954184a1cf9706a0cc0c35e2c3421b830bacb05f42c9a339091220f",
+      "role": "original",
+      "source_commit": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea"
+    }
+  ],
+  "character": "Dwarf Druid",
+  "core_decision_trace": null,
+  "decision_trace": null,
+  "encounter_family": "start-6dd418e2b08986d4c717e9729c206f6bf5c4771282269718beb5ed920e9dfed6",
+  "files_sha256": {
+    "build.json": "7f7b355f3e1a4ff06f212b40d1b9415dc8d11154359fbc20b65535f9e7265a97",
+    "config.txt": "8c6863fd81dbb502f3a6b65457866acd1681fb75c0786a5bb4c6c07c1733a66b",
+    "summary.json": "ae540a424be2226d921894074a3c699ae0ab40e1ba794f59a67d9c2ca2d470c1"
+  },
+  "id": "D0000-q5a1149192433f6c832828ed24686dbb3fb4acc0e803f5a882ef0888b97cd0dc5",
+  "identity": {
+    "binary_sha256": "7ac840b5d9c8ec725a814fcebacde09f1093dafbec9bffd22a9d4af55b5dbfde",
+    "borg_txt_sha256": "1543138167cf7a1649af41edb1990bb60c0c1886b0703ed0cab4ee190bfed8a4",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": null,
+    "seed": 1023,
+    "source_sha256": "d07a8547b2c273793f163afde0a2faff1ed2e61545e3d33e1ce0dcc17c8ecf4c"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a metallic red centipede",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a metallic red centipede",
+    "class_idx": 2,
+    "dead": true,
+    "depth": 1,
+    "level": 1,
+    "max_depth": 1,
+    "race_idx": 5,
+    "turn": 13184
+  }
+}

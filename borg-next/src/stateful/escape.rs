@@ -96,13 +96,14 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
             || borg_read_scroll(st, st.item_val.sv_scroll_word_of_recall)
         {
             // do we need to answer "Set recall depth to current depth? [y/n]"
-            if crate::View::new(st).character.cdepth < crate::View::new(st).character.maxdepth
-                && crate::View::new(st).character.cdepth != 0
+            if crate::Read::new(st).character().cdepth()
+                < crate::Read::new(st).character().maxdepth()
+                && crate::Read::new(st).character().cdepth() != 0
             {
                 let diff_max_from_desired_depth =
-                    crate::View::new(st).character.maxdepth - st.prepared.depth_hunted_unique;
+                    crate::Read::new(st).character().maxdepth() - st.prepared.depth_hunted_unique;
                 let diff_cur_from_desired_depth =
-                    crate::View::new(st).character.cdepth - st.prepared.depth_hunted_unique;
+                    crate::Read::new(st).character().cdepth() - st.prepared.depth_hunted_unique;
 
                 // Reset max depth when current depth is way deeper (5) than
                 // the third deepest unique.
@@ -110,25 +111,21 @@ pub fn borg_recall(st: &mut BorgState) -> bool {
                     && diff_cur_from_desired_depth <= param(Param::escape_recall_depth_window)
                     && diff_cur_from_desired_depth > -param(Param::escape_recall_depth_window)
                 {
-                    if crate::View::new(st).character.cdepth >= param(Param::escape_recall_reset_min_depth)
-                        && crate::View::new(st).character.cdepth < 100
+                    if crate::Read::new(st).character().cdepth() >= param(Param::escape_recall_reset_min_depth)
+                        && crate::Read::new(st).character().cdepth() < 100
                         // Deep, and Sauron is dead
                         && st.kills.race_death[st.borg.id.sauron as usize] != 0
                     {
                         // Do reset Depth
                         borg_note(st, "# Resetting recall depth.");
                         borg_keypress(st, key(b'y'));
-                    } else if st.borg.goal.fleeing_munchkin {
-                        // Do reset Depth
-                        borg_note(st, "# Resetting recall depth during munchkin mode.");
-                        borg_keypress(st, key(b'y'));
-                    } else if crate::View::new(st).character.cdepth >= 100
-                        && crate::View::new(st).status.king == 0
+                    } else if crate::Read::new(st).character().cdepth() >= 100
+                        && crate::Read::new(st).status().king() == 0
                     {
                         // Do not reset Depth
                         borg_note(st, "# Not Resetting recall depth.");
                         borg_keypress(st, key(b'n'));
-                    } else if crate::View::new(st).character.maxdepth == 99
+                    } else if crate::Read::new(st).character().maxdepth() == 99
                         && st.prepared.numb_live_unique
                             < param(Param::escape_recall_reset_unique_count)
                     {
@@ -323,7 +320,7 @@ pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
     let mut f = 0;
 
     // Chase down stairs in town
-    if crate::View::new(st).character.cdepth == 0 && st.stairs.more.num != 0 {
+    if crate::Read::new(st).character().cdepth() == 0 && st.stairs.more.num != 0 {
         // Love the stairs!
         let d = double_distance(y, x, st.stairs.more.y[0], st.stairs.more.x[0]);
 
@@ -338,7 +335,7 @@ pub fn borg_freedom(st: &mut BorgState, y: i32, x: i32) -> i32 {
     }
 
     // Chase Up Stairs in dungeon
-    if crate::View::new(st).character.cdepth != 0 && st.stairs.less.num != 0 {
+    if crate::Read::new(st).character().cdepth() != 0 && st.stairs.less.num != 0 {
         // Love the stairs!
         let d = double_distance(y, x, st.stairs.less.y[0], st.stairs.less.x[0]);
 
@@ -433,7 +430,8 @@ fn count_scary(
 
         // If low level, unknown squares are scary
         if u32::from(st.cave.grid(ag.0, ag.1).feat) == FEAT_NONE
-            && crate::View::new(st).character.maxhp < param(Param::escape_unknown_landing_max_hp)
+            && crate::Read::new(st).character().maxhp()
+                < param(Param::escape_unknown_landing_max_hp)
         {
             n += 1;
             continue;
@@ -452,7 +450,7 @@ fn count_scary(
         let p = borg_danger(st, y, x, turns, true, false);
 
         // if *very* scary, do not allow jumps at all
-        if p > crate::View::new(st).character.curhp {
+        if p > crate::Read::new(st).character().curhp() {
             n += 1;
         }
     }
@@ -468,7 +466,7 @@ pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> boo
         );
     }
     // must have the ability
-    if crate::View::new(st).supplies.aphase == 0 {
+    if crate::Read::new(st).supplies().aphase() == 0 {
         return false;
     }
 
@@ -503,7 +501,9 @@ pub fn borg_caution_teleport(st: &mut BorgState, emergency: i32, turns: i32) -> 
     let q_y = st.core.w_y / borg_panel_hgt();
 
     // must have the ability
-    if crate::View::new(st).supplies.ateleport == 0 || crate::View::new(st).supplies.aescape == 0 {
+    if crate::Read::new(st).supplies().ateleport() == 0
+        || crate::Read::new(st).supplies().aescape() == 0
+    {
         return false;
     }
 
@@ -571,7 +571,7 @@ pub fn borg_allow_teleport(st: &mut BorgState) -> bool {
     }
 
     // Check for a no teleport curse
-    if crate::View::new(st).curses.crsnotel != 0 {
+    if crate::Read::new(st).curses().crsnotel() != 0 {
         return false;
     }
 
@@ -587,7 +587,7 @@ pub fn borg_shadow_shift(st: &mut BorgState, allow_fail: i32) -> bool {
         );
     }
     // disallow if hp too low
-    if crate::View::new(st).character.curhp < param(Param::escape_shadow_shift_min_hp) {
+    if crate::Read::new(st).character().curhp() < param(Param::escape_shadow_shift_min_hp) {
         return false;
     }
     borg_spell_fail(st, SHADOW_SHIFT, allow_fail)
@@ -715,38 +715,39 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     let mut allow_fail = param(Param::escape_normal_fail);
 
     // if very healthy, allow extra fail
-    if crate::View::new(st).character.curhp * 100 / crate::View::new(st).character.maxhp
+    if crate::Read::new(st).character().curhp() * 100 / crate::Read::new(st).character().maxhp()
         > param(Param::escape_healthy_hp_percent)
     {
         allow_fail = param(Param::escape_healthy_fail);
     }
 
     // comprimised, get out of the fight
-    if crate::View::new(st).status.isheavystun != 0 {
+    if crate::Read::new(st).status().isheavystun() != 0 {
         allow_fail = param(Param::escape_stunned_fail);
     }
 
     // for emergencies
-    let sv_mana = crate::View::new(st).character.cursp;
+    let sv_mana = crate::Read::new(st).character().cursp();
 
     // Borgs who are bleeding to death or dying of poison may sometimes
     // phase around the last two hit points right before they enter a
     // shop.  He knows to make a bee-line for the temple but the danger
     // trips this routine.  So we must bypass this routine for some
     // particular circumstances.
-    if crate::View::new(st).character.cdepth == 0
-        && (crate::View::new(st).status.ispoisoned != 0
-            || crate::View::new(st).status.isweak != 0
-            || crate::View::new(st).status.iscut != 0)
+    if crate::Read::new(st).character().cdepth() == 0
+        && (crate::Read::new(st).status().ispoisoned() != 0
+            || crate::Read::new(st).status().isweak() != 0
+            || crate::Read::new(st).status().iscut() != 0)
     {
         return false;
     }
 
     // Borgs who are in a sea of runes or trying to build one
     // and mostly healthy stay put
-    if crate::View::new(st).character.cdepth == 100
-        && crate::View::new(st).character.curhp
-            >= crate::View::new(st).character.maxhp * param(Param::escape_morgoth_hold_hp_tenths)
+    if crate::Read::new(st).character().cdepth() == 100
+        && crate::Read::new(st).character().curhp()
+            >= crate::Read::new(st).character().maxhp()
+                * param(Param::escape_morgoth_hold_hp_tenths)
                 / 10
     {
         // In a sea of runes
@@ -774,8 +775,8 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // If the borg is weak (no food, starving) on depth 1 and he has no
     // idea where the stairs may be, run the risk of diving deeper against
     // the benefit of rising to town.
-    if crate::View::new(st).status.isweak != 0
-        && crate::View::new(st).character.cdepth == 1
+    if crate::Read::new(st).status().isweak() != 0
+        && crate::Read::new(st).character().cdepth() == 1
         && borg_teleport_off_level(st)
     {
         borg_note(st, "# Attempting to leave via teleport level/deep descent");
@@ -791,23 +792,23 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // 1. really scary, I'm about to die
     // Try an emergency teleport, or phase door as last resort
-    if crate::View::new(st).status.isheavystun != 0
+    if crate::Read::new(st).status().isheavystun() != 0
         || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb)
         || (b_q > avoid(st, param(Param::escape_morgoth_danger_tenths), rb)
             && st.borg.near.unique >= 10
-            && crate::View::new(st).character.cdepth == 100
-            && crate::View::new(st).character.curhp < param(Param::escape_morgoth_max_hp))
+            && crate::Read::new(st).character().cdepth() == 100
+            && crate::Read::new(st).character().curhp() < param(Param::escape_morgoth_max_hp))
         || (b_q > avoid(st, param(Param::escape_sauron_danger_tenths), rb)
             && st.borg.near.unique >= 10
-            && crate::View::new(st).character.cdepth == 99
-            && crate::View::new(st).character.curhp < param(Param::escape_sauron_max_hp))
+            && crate::Read::new(st).character().cdepth() == 99
+            && crate::Read::new(st).character().curhp() < param(Param::escape_sauron_max_hp))
         || (b_q > avoid(st, param(Param::escape_deep_unique_danger_tenths), rb)
             && near_unique_1_8(st)
-            && crate::View::new(st).character.cdepth >= param(Param::escape_deep_unique_depth)
-            && crate::View::new(st).character.curhp < param(Param::escape_deep_unique_max_hp))
+            && crate::Read::new(st).character().cdepth() >= param(Param::escape_deep_unique_depth)
+            && crate::Read::new(st).character().curhp() < param(Param::escape_deep_unique_max_hp))
         || (b_q > avoid(st, param(Param::escape_unique_danger_tenths), rb)
             && near_unique_1_8(st)
-            && crate::View::new(st).character.cdepth < param(Param::escape_deep_unique_depth))
+            && crate::Read::new(st).character().cdepth() < param(Param::escape_deep_unique_depth))
         || (b_q > avoid(st, param(Param::escape_ordinary_danger_tenths), rb)
             && st.borg.near.unique == 0)
     {
@@ -848,13 +849,14 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
         // Pretend to have full mana for the last-ditch casts (C bug 35:
         // not restored when one of them succeeds).
-        super::set_mana(st, crate::View::new(st).character.maxsp);
+        super::set_mana(st, crate::Read::new(st).character().maxsp());
 
         // try to teleport, get far away from here
-        if crate::View::new(st).character.cdepth != 0
-            && crate::View::new(st).character.clevel < param(Param::escape_last_ditch_max_level)
-            && crate::View::new(st).character.curhp
-                < crate::View::new(st).character.maxhp / param(Param::escape_last_ditch_hp_divisor)
+        if crate::Read::new(st).character().cdepth() != 0
+            && crate::Read::new(st).character().clevel() < param(Param::escape_last_ditch_max_level)
+            && crate::Read::new(st).character().curhp()
+                < crate::Read::new(st).character().maxhp()
+                    / param(Param::escape_last_ditch_hp_divisor)
             && borg_allow_teleport(st)
             && (borg_dimension_door(st, param(Param::escape_last_ditch_dimension_fail))
                 || borg_spell(st, TELEPORT_SELF)
@@ -867,9 +869,9 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         }
 
         // emergency phase activation no concern for safety of landing zone.
-        if crate::View::new(st).character.cdepth != 0
-            && (crate::View::new(st).character.curhp
-                < crate::View::new(st).character.maxhp
+        if crate::Read::new(st).character().cdepth() != 0
+            && (crate::Read::new(st).character().curhp()
+                < crate::Read::new(st).character().maxhp()
                     / param(Param::escape_critical_phase_hp_divisor)
                 || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb))
             && (borg_activate_item(st, st.act.tele_phase)
@@ -883,11 +885,11 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         }
 
         // emergency phase spell
-        if crate::View::new(st).character.cdepth != 0
-            && crate::View::new(st).character.clevel
+        if crate::Read::new(st).character().cdepth() != 0
+            && crate::Read::new(st).character().clevel()
                 < param(Param::escape_last_ditch_phase_max_level)
-            && crate::View::new(st).character.curhp
-                < crate::View::new(st).character.maxhp
+            && crate::Read::new(st).character().curhp()
+                < crate::Read::new(st).character().maxhp()
                     / param(Param::escape_last_ditch_phase_hp_divisor)
             && (borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail))
                 || borg_spell(st, PORTAL))
@@ -907,7 +909,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     if b_q < avoid(st, param(Param::escape_endgame_stay_danger_tenths), rb)
         && st.borg.near.unique >= 1
         && i32::from(st.borg.near.unique) <= param(Param::escape_endgame_stay_unique_count)
-        && crate::View::new(st).character.cdepth >= param(Param::escape_endgame_stay_min_depth)
+        && crate::Read::new(st).character().cdepth() >= param(Param::escape_endgame_stay_min_depth)
     {
         return false;
     }
@@ -915,14 +917,14 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     // 2 - a bit more scary/
     // Attempt to teleport (usually)
     // do not escape from uniques so quick
-    if crate::View::new(st).status.isheavystun != 0
+    if crate::Read::new(st).status().isheavystun() != 0
         || (b_q > avoid(st, param(Param::escape_mage_danger_tenths), rb)
-            && crate::View::new(st).character.class == CLASS_MAGE
-            && crate::View::new(st).character.cursp <= param(Param::escape_mage_max_sp)
-            && crate::View::new(st).character.maxclevel >= param(Param::escape_mage_min_level))
+            && crate::Read::new(st).character().class() == CLASS_MAGE
+            && crate::Read::new(st).character().cursp() <= param(Param::escape_mage_max_sp)
+            && crate::Read::new(st).character().maxclevel() >= param(Param::escape_mage_min_level))
         || (b_q > avoid(st, param(Param::escape_teleport_unique_danger_tenths), rb)
             && near_unique_1_8(st)
-            && crate::View::new(st).character.cdepth != 99)
+            && crate::Read::new(st).character().cdepth() != 99)
         || (b_q > avoid(st, param(Param::escape_teleport_ordinary_danger_tenths), rb)
             && st.borg.near.unique == 0)
     {
@@ -981,16 +983,16 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // 3- not too bad
     // also run if stunned or it is scary here
-    if crate::View::new(st).status.isheavystun != 0
+    if crate::Read::new(st).status().isheavystun() != 0
         || (b_q > avoid(st, param(Param::escape_phase_unique_danger_tenths), rb)
             && i32::from(st.borg.near.unique) >= param(Param::escape_phase_unique_min_count)
             && i32::from(st.borg.near.unique) <= param(Param::escape_near_unique_max_count))
         || (b_q > avoid(st, param(Param::escape_phase_ordinary_danger_tenths), rb)
             && st.borg.near.unique == 0)
         || (b_q > avoid(st, param(Param::escape_afraid_warrior_danger_tenths), rb)
-            && crate::View::new(st).status.isafraid != 0
-            && (crate::View::new(st).ammo.amissiles <= 0
-                && crate::View::new(st).character.class == CLASS_WARRIOR))
+            && crate::Read::new(st).status().isafraid() != 0
+            && (crate::Read::new(st).ammo().amissiles() <= 0
+                && crate::Read::new(st).character().class() == CLASS_WARRIOR))
     {
         // Phase door, if useful
         if borg_escape_stair(st)
@@ -1068,7 +1070,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // time to flee
         if !st.borg.goal.fleeing
             && (st.borg.near.unique == 0
-                || crate::View::new(st).character.clevel
+                || crate::Read::new(st).character().clevel()
                     < param(Param::escape_failed_teleport_flee_max_level))
             && !st.borg.status.vault
         {
@@ -1082,7 +1084,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // Flee now
         if !st.borg.goal.leaving
             && (st.borg.near.unique == 0
-                || crate::View::new(st).character.clevel
+                || crate::Read::new(st).character().clevel()
                     < param(Param::escape_failed_teleport_leave_max_level))
             && !st.borg.status.vault
         {
@@ -1096,9 +1098,9 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
 
     // 4- not too scary but I'm compromised
     if (b_q > avoid(st, param(Param::escape_compromised_danger_tenths), rb)
-        && (crate::View::new(st).character.clevel < param(Param::escape_compromised_max_level)
-            || crate::View::new(st).character.curhp
-                <= crate::View::new(st).character.maxhp
+        && (crate::Read::new(st).character().clevel() < param(Param::escape_compromised_max_level)
+            || crate::Read::new(st).character().curhp()
+                <= crate::Read::new(st).character().maxhp()
                     / param(Param::escape_compromised_hp_divisor)))
         || (b_q
             > avoid(
@@ -1107,10 +1109,10 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
                 rb,
             )
             && near_unique_1_8(st)
-            && (crate::View::new(st).character.clevel
+            && (crate::Read::new(st).character().clevel()
                 < param(Param::escape_compromised_unique_max_level)
-                || crate::View::new(st).character.curhp
-                    <= crate::View::new(st).character.maxhp
+                || crate::Read::new(st).character().curhp()
+                    <= crate::Read::new(st).character().maxhp()
                         / param(Param::escape_compromised_unique_hp_divisor)))
         || (b_q
             > avoid(
@@ -1118,7 +1120,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
                 param(Param::escape_compromised_ordinary_danger_tenths),
                 rb,
             )
-            && crate::View::new(st).character.clevel
+            && crate::Read::new(st).character().clevel()
                 <= param(Param::escape_compromised_ordinary_max_level)
             && st.borg.near.unique == 0)
         || (b_q
@@ -1127,7 +1129,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
                 param(Param::escape_compromised_general_danger_tenths),
                 rb,
             )
-            && crate::View::new(st).character.clevel
+            && crate::Read::new(st).character().clevel()
                 <= param(Param::escape_compromised_general_max_level))
     {
         // Phase door, if useful
@@ -1175,7 +1177,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // time to flee
         if !st.borg.goal.fleeing
             && st.borg.near.unique == 0
-            && crate::View::new(st).character.clevel
+            && crate::Read::new(st).character().clevel()
                 < param(Param::escape_failed_compromised_flee_max_level)
             && !st.borg.status.vault
         {
@@ -1195,9 +1197,10 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             st.borg.goal.leaving = true;
         }
         // Emergency Phase door if a weak mage
-        if ((crate::View::new(st).character.class == CLASS_MAGE
-            || crate::View::new(st).character.class == CLASS_NECROMANCER)
-            && crate::View::new(st).character.clevel <= param(Param::escape_weak_caster_max_level))
+        if ((crate::Read::new(st).character().class() == CLASS_MAGE
+            || crate::Read::new(st).character().class() == CLASS_NECROMANCER)
+            && crate::Read::new(st).character().clevel()
+                <= param(Param::escape_weak_caster_max_level))
             && borg_caution_phase(
                 st,
                 param(Param::escape_weak_caster_phase_tolerance),
@@ -1220,7 +1223,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     // 5- not too scary but I'm very low level
-    if crate::View::new(st).character.clevel < param(Param::escape_low_level_max_level)
+    if crate::Read::new(st).character().clevel() < param(Param::escape_low_level_max_level)
         && (b_q > avoid(st, param(Param::escape_low_level_danger_tenths), rb)
             || (b_q > avoid(st, param(Param::escape_low_level_unique_danger_tenths), rb)
                 && near_unique_1_8(st)))
@@ -1282,9 +1285,10 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
             st.borg.goal.leaving = true;
         }
         // Emergency Phase door if a weak mage
-        if ((crate::View::new(st).character.class == CLASS_MAGE
-            || crate::View::new(st).character.class == CLASS_NECROMANCER)
-            && crate::View::new(st).character.clevel <= param(Param::escape_low_caster_max_level))
+        if ((crate::Read::new(st).character().class() == CLASS_MAGE
+            || crate::Read::new(st).character().class() == CLASS_NECROMANCER)
+            && crate::Read::new(st).character().clevel()
+                <= param(Param::escape_low_caster_max_level))
             && borg_caution_phase(
                 st,
                 param(Param::escape_low_caster_phase_tolerance),
@@ -1306,15 +1310,15 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     // 6- not too scary but I'm out of mana
-    if (crate::View::new(st).character.class == CLASS_MAGE
-        || crate::View::new(st).character.class == CLASS_PRIEST
-        || crate::View::new(st).character.class == CLASS_NECROMANCER)
+    if (crate::Read::new(st).character().class() == CLASS_MAGE
+        || crate::Read::new(st).character().class() == CLASS_PRIEST
+        || crate::Read::new(st).character().class() == CLASS_NECROMANCER)
         && (b_q > avoid(st, param(Param::escape_low_mana_danger_tenths), rb)
             || (b_q > avoid(st, param(Param::escape_low_mana_unique_danger_tenths), rb)
                 && near_unique_1_8(st)))
-        && (crate::View::new(st).character.cursp
-            <= crate::View::new(st).character.maxsp / param(Param::escape_low_mana_sp_divisor)
-            && crate::View::new(st).character.maxsp >= param(Param::escape_low_mana_min_maxsp))
+        && (crate::Read::new(st).character().cursp()
+            <= crate::Read::new(st).character().maxsp() / param(Param::escape_low_mana_sp_divisor)
+            && crate::Read::new(st).character().maxsp() >= param(Param::escape_low_mana_min_maxsp))
     {
         // Phase door, if useful
         if borg_escape_stair(st)

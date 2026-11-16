@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/r364-evidence/receiver-full-off/full-8-blackguard-4",
+      "raw_sha256": {
+        "keys.log": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+        "messages.log": "95bf55c13bef96628468e42195246a33da2432d4574caea49ef040f64de3e98e",
+        "state.log": "cf1fa4c16c82329bae5ce3f59a0f1a4b2fa0f7063aee708f53fae0394c7f9640"
+      },
+      "result_sha256": "8ec5fa7333446cfe47c505c4de3ae8400388d76b7adab00c95ad51aaa959c03b",
+      "role": "original",
+      "source_commit": "60d0a7a7857a235fb0d44c5dad194cc3acc73194"
+    }
+  ],
+  "character": "Half-Elf Blackguard",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 1947
+  },
+  "decision_trace": null,
+  "encounter_family": "start-f70d9c440bd15c7a2a1ae6c29ab5f93e26aedc521d91646026fceeebcf64738e",
+  "files_sha256": {
+    "build.json": "0151cbe90cb1234fb29326af052181b2fd2fdf9f6c68cf9360ec428d248fafb1",
+    "config.txt": "c2c2dde6d0562451e2c38c1c130c17013dab91d7ac21303d8661b50f644fa121",
+    "depths.json": "b94aa168600bb956fb76da2be5a06f736ddeaee48db5da389a844adb1b420680",
+    "params-core.json": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "summary.json": "895f7ccb4063c0fad6a1c66e11b2b3aca6f4b023735c5c7556aeda8eaf4493db",
+    "trace-core-tail.jsonl": "f61c561b5b7d8c4294a95d8d8b9f7987a00d2ff9c0a3af1c4651e66bd6716152"
+  },
+  "id": "D0000-q2beede5c5945629bd0c446878ee5b0edfc66f965ba30255aa3f084af96ebbc9e",
+  "identity": {
+    "binary_sha256": "4a496e02b2c3f038b442e3a0a2e8026e40c5b7d643790746912c299121f066f3",
+    "borg_txt_sha256": "70add1785ebc8dba1f637a9a3db13a37b1570e15d4b5083749bb1f23fe9aa45c",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "60d0a7a7857a235fb0d44c5dad194cc3acc73194",
+    "impl": "rust",
+    "params_core_sha256": "95480c9b2341de4cf61e8ba351a66081772e6f887a6aff7f37beba02c82e54fb",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1084,
+    "source_sha256": "33280663dd357837a77e6fd38e84dc4b1e224a73fd415ece6de41654023f866a"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a grey mushroom patch",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a grey mushroom patch",
+    "class_idx": 8,
+    "dead": true,
+    "depth": 1,
+    "level": 2,
+    "max_depth": 3,
+    "race_idx": 1,
+    "turn": 22908
+  }
+}

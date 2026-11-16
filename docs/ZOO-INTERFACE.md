@@ -69,7 +69,13 @@ core. Native callers may use the text aliases `borg-rs` and `reborn`.
 An absent selector defaults to reborn. Every other value (including a
 boolean written as `TRUE`, an empty string, or integer 2) fails with exit
 status 2 and source/value diagnostics. `BORG_CORE` takes precedence over
-the file; clear it for profile-only measurement. A profile's
+the file; clear it for profile-only measurement. The vendored core's `borg_reborn_errand` also fails with exit status 2
+for invalid configured command lines; `none`, an empty string, or absence disables errands.
+Clear `BORG_ERRAND` for file-only profile measurement. The pinned adapter
+only serializes booleans/integers, so arbitrary errand commands require a
+native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
+
+A profile's
 `borg_param_<name>` integer sets any of the 1734 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:

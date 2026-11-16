@@ -8,3 +8,11 @@ impl PartialEq for keypress {
 impl PartialEq for element_info {
     fn eq(&self, other: &Self) -> bool { self.res_level==other.res_level && self.flags==other.flags }
 }
+
+// borg-reborn-rs (#364): value-only request diagnostics; no FFI pointers.
+impl core::fmt::Debug for element_info {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("element_info").field("res_level", &self.res_level)
+            .field("flags", &self.flags).finish()
+    }
+}

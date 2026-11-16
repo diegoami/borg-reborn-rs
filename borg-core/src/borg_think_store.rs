@@ -59,7 +59,7 @@ use crate::borg_store_sell::{
     borg_think_home_sell_useful, borg_think_shop_sell, borg_think_shop_sell_useless,
 };
 use crate::engine;
-use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM};
+use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT, BORG_SELF_SCUM, BORG_TOWN_NO_STORES};
 use crate::borg_headers::borg_trait_h::{
     BI_CDEPTH, BI_CLEVEL, BI_FOOD, BI_GOLD, BI_ISCUT, BI_ISPOISONED, BI_LIGHT,
 };
@@ -96,6 +96,8 @@ fn goal_shop_name(st: &BorgState) -> Vec<u8> {
 /// `borg_note(format(...))` from byte pieces.
 fn note(st: &mut BorgState, parts: &[&[u8]]) {
     let s = parts.concat();
+    // The town-visit dump reads this back as the reason for the decision.
+    crate::borg_town_dump::record_reason(&s);
     borg_note_bytes(st, &s);
 }
 
@@ -127,13 +129,70 @@ fn leave(st: &mut BorgState) {
     borg_keypress(st, ESCAPE);
 }
 
+/// The negative-baseline arm is on (`borg_town_no_stores`): the town
+/// inventory strategy does nothing at all and the Borg never walks into
+/// a shop, not even the one a human asked for.
+pub fn town_strategy_disabled(st: &BorgState) -> bool {
+    st.cfg(BORG_TOWN_NO_STORES) != 0
+}
+
+/// The negative-baseline arm's gate, extracted pure so a test binary can
+/// link it: `borg_choose_shop`'s call graph reaches engine FFI symbols the
+/// test binary cannot resolve. Returns true when `borg_town_no_stores`
+/// forbids the visit; the shop goal is cleared so that no TownAction is
+/// ever executed (borg-rs#36).
+fn null_arm_gate(st: &mut BorgState) -> bool {
+    if town_strategy_disabled(st) {
+        clear_shop_goal(st);
+        return true;
+    }
+    false
+}
+
 /// Choose a shop to visit (`borg_choose_shop`).
+///
+/// When the Borg takes a town decision, the town-visit dump records that
+/// decision together with the state and the shop stock. The dump is
+/// observation only, so the keypress stream is unchanged.
 pub fn borg_choose_shop(st: &mut BorgState) -> bool {
+    let live = crate::borg_town_live::active(st);
+    let decided = if live { crate::borg_town_live::choose(st) } else { borg_choose_shop_inner(st) };
+    if decided {
+        crate::borg_town_dump::dump_town_visit(st);
+        // The plan in shadow mode, on the same state: observation only.
+        if !live { crate::borg_town_shadow::shadow_visit(st); }
+    }
+    decided
+}
+
+/// The body of `borg_choose_shop`.
+fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     let mut best_home_power: i32 = 0;
 
     /* Must be in town */
     if st.borg.tr(BI_CDEPTH) != 0 {
         return false;
+    }
+
+    /* The negative-baseline arm (borg_town_no_stores): the town inventory
+     * strategy does nothing at all. The borg never buys, never sells, never
+     * uses the home as a stash, never grabs from the home, never swaps a
+     * spare weapon or armour out of the home, and never walks into a shop.
+     * Everything else is unchanged: it still recalls to town, still equips
+     * itself, still dives. The C borg reads this field and ignores it.
+     */
+    if null_arm_gate(st) {
+        return false;
+    }
+
+    /* A shop the human asked for in the Borg's command menu ("1" .. "8",
+     * "+", "-"): it overrides the strategy's own choice and holds until
+     * the Borg has been to that shop. */
+    if let Some(shop) = st.borg.shop_override {
+        st.borg.goal.shop = shop;
+        st.borg.goal.ware = -1;
+        st.borg.goal.item = -1;
+        return true;
     }
 
     /* Forbid if been sitting on level forever */
@@ -334,6 +393,12 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     /* Cheat the store number */
     st.think.shop_num = engine::player_square_shopnum() as i16;
 
+    /* The Borg is in the store the human asked for: the override has been
+     * served, so the strategy chooses the next shop itself. */
+    if st.borg.shop_override == Some(st.think.shop_num) {
+        st.borg.shop_override = None;
+    }
+
     /* Clear the goal (the goal was probably going to a shop number) */
     st.borg.goal.type_0 = 0;
 
@@ -373,6 +438,12 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     /* Choose a shop to visit.  Goal_shop indicates he is trying to sell
      * something somewhere. */
     if borg_choose_shop(st) {
+        if crate::borg_town_live::active(st) {
+            if crate::borg_town_live::execute_store(st) { return true; }
+            leave(st);
+            st.borg.in_shop = false;
+            return true;
+        }
         /* Note Pref. */
         let shop_num = st.think.shop_num;
         if shop_num != st.borg.goal.shop {
@@ -399,6 +470,7 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
     }
 
     /* No shop */
+    if crate::borg_town_live::active(st) { st.borg.in_shop = false; }
     clear_shop_goal(st);
 
     /* Leave the store */
@@ -406,4 +478,47 @@ pub fn borg_think_store(st: &mut BorgState) -> bool {
 
     /* Done */
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_init::BORG_SETTINGS;
+
+    fn state(no_stores: i32) -> BorgState {
+        let mut st = BorgState::default();
+        st.core.cfg = BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+        st.core.cfg[BORG_TOWN_NO_STORES as usize] = no_stores;
+        st
+    }
+
+    /// The null arm fires: the visit is forbidden and a standing shop goal
+    /// is cleared, so no TownAction is ever executed (borg-rs#36). The
+    /// wiring into `borg_choose_shop` is the zoo endpoint's invariant
+    /// (goal.shop stays -1 for the whole run, borg-zoo#81): calling the
+    /// wrapper from a test would drag engine FFI symbols into the test
+    /// binary, so the gate is tested here in its pure form.
+    #[test]
+    fn no_stores_fires_and_clears_the_goal() {
+        let mut st = state(1);
+        st.borg.goal.shop = 0;
+        st.borg.goal.ware = 3;
+        st.borg.goal.item = 2;
+        assert!(null_arm_gate(&mut st));
+        assert_eq!(st.borg.goal.shop, -1);
+        assert_eq!(st.borg.goal.ware, -1);
+        assert_eq!(st.borg.goal.item, -1);
+    }
+
+    #[test]
+    fn no_stores_false_is_inert() {
+        let mut st = state(0);
+        st.borg.goal.shop = 0;
+        st.borg.goal.ware = 3;
+        st.borg.goal.item = 2;
+        assert!(!null_arm_gate(&mut st));
+        assert_eq!(st.borg.goal.shop, 0);
+        assert_eq!(st.borg.goal.ware, 3);
+        assert_eq!(st.borg.goal.item, 2);
+    }
 }

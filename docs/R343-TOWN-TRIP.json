@@ -1,0 +1,393 @@
+{
+  "schema": "borg-reborn-rs/r343-town-trip@1",
+  "limit": "Three unsealed bounded contexts; repeated modes are not independent trials. Raw plan corpus remains at raw_root with hashes. No survival/population claim.",
+  "raw_root": "/workspace/work/r343-evidence",
+  "identical_play_contexts": 9,
+  "runs": [
+    {
+      "class_idx": 0,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "off",
+      "path": "/workspace/work/r343-evidence/town-receiver-off-0",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-0",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "6fb977d249740fce2a75d3f5821ddc25c4a9e6cbf85fcd3a678575809cfc5144",
+        "messages.log": "1278850162f72e4d0454b209ff3ad37c053194193d8163048dac3761c7bf8726",
+        "state.log": "2525e01f90bee9e3ed920c79756746c1d220e64c2ef2c396759354bf2b6bebb0"
+      },
+      "effective_config_sha256": "ca7c10e38f8fd0451feb4ed3950a1968ca53094b7f0b2ff703a2c65837469474",
+      "town_plan_record_sha256": "b98eb6c90fc96ec25426765c910a26a7ecd1b5b9e1b24a2aaa686733fc09d71a",
+      "plans": 84,
+      "nonempty_plans": 60,
+      "urgent_plans": 0,
+      "dead": false
+    },
+    {
+      "class_idx": 0,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "check",
+      "path": "/workspace/work/r343-evidence/town-receiver-check-0",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-0",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "6fb977d249740fce2a75d3f5821ddc25c4a9e6cbf85fcd3a678575809cfc5144",
+        "messages.log": "1278850162f72e4d0454b209ff3ad37c053194193d8163048dac3761c7bf8726",
+        "state.log": "2525e01f90bee9e3ed920c79756746c1d220e64c2ef2c396759354bf2b6bebb0"
+      },
+      "effective_config_sha256": "ca7c10e38f8fd0451feb4ed3950a1968ca53094b7f0b2ff703a2c65837469474",
+      "town_plan_record_sha256": "b98eb6c90fc96ec25426765c910a26a7ecd1b5b9e1b24a2aaa686733fc09d71a",
+      "plans": 84,
+      "nonempty_plans": 60,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 78,
+        "caution_calls": 2034,
+        "comparisons": 798274,
+        "danger_calls": 644196,
+        "danger_comparisons": 644196,
+        "dependency_requests": 249278,
+        "escape_calls": 4486,
+        "mismatches": 0,
+        "monster_comparisons": 191,
+        "recovery_calls": 1870,
+        "root_points": {
+          "caution.borg_caution": 2034,
+          "recovery.borg_recover": 1870
+        },
+        "stateful_comparisons": 3904,
+        "stateful_points": {
+          "caution.borg_caution": 2034,
+          "escape.borg_allow_teleport": 52,
+          "escape.borg_caution_phase": 57,
+          "escape.borg_dimension_door": 52,
+          "escape.borg_escape": 1978,
+          "escape.borg_freedom": 42,
+          "escape.borg_recall": 214,
+          "escape.borg_shadow_shift": 57,
+          "escape.borg_surrounded": 2034,
+          "recovery.borg_recover": 1870
+        },
+        "thinks": 2067,
+        "wall_comparisons": 149983
+      }
+    },
+    {
+      "class_idx": 0,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "switch",
+      "path": "/workspace/work/r343-evidence/town-receiver-switch-0",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-0",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "6fb977d249740fce2a75d3f5821ddc25c4a9e6cbf85fcd3a678575809cfc5144",
+        "messages.log": "1278850162f72e4d0454b209ff3ad37c053194193d8163048dac3761c7bf8726",
+        "state.log": "2525e01f90bee9e3ed920c79756746c1d220e64c2ef2c396759354bf2b6bebb0"
+      },
+      "effective_config_sha256": "ca7c10e38f8fd0451feb4ed3950a1968ca53094b7f0b2ff703a2c65837469474",
+      "town_plan_record_sha256": "b98eb6c90fc96ec25426765c910a26a7ecd1b5b9e1b24a2aaa686733fc09d71a",
+      "plans": 84,
+      "nonempty_plans": 60,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 78,
+        "caution_calls": 2034,
+        "comparisons": 798274,
+        "danger_calls": 644196,
+        "danger_comparisons": 644196,
+        "dependency_requests": 249278,
+        "escape_calls": 4486,
+        "mismatches": 0,
+        "monster_comparisons": 191,
+        "recovery_calls": 1870,
+        "root_points": {
+          "caution.borg_caution": 2034,
+          "recovery.borg_recover": 1870
+        },
+        "stateful_comparisons": 3904,
+        "stateful_points": {
+          "caution.borg_caution": 2034,
+          "escape.borg_allow_teleport": 52,
+          "escape.borg_caution_phase": 57,
+          "escape.borg_dimension_door": 52,
+          "escape.borg_escape": 1978,
+          "escape.borg_freedom": 42,
+          "escape.borg_recall": 214,
+          "escape.borg_shadow_shift": 57,
+          "escape.borg_surrounded": 2034,
+          "recovery.borg_recover": 1870
+        },
+        "thinks": 2067,
+        "wall_comparisons": 149983
+      }
+    },
+    {
+      "class_idx": 1,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "off",
+      "path": "/workspace/work/r343-evidence/town-receiver-off-1",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-1",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "134ab9c2cfb908ec3855bd7777492fa5702f037ccd5f7e5328187745ea4635cb",
+        "messages.log": "e4e9e729c3d4d903655f4661544490a27cac4ebd0eeae0bdebbf5a3a6cfc27de",
+        "state.log": "9381d6bca500ad3e04871341e8cb85385878b37533e3581d7248cfa989462557"
+      },
+      "effective_config_sha256": "7d57c6c3ceba700836a6c88b8192662bc43063c5dd0d31bc4d7efc82c1ab9cf4",
+      "town_plan_record_sha256": "b01ec43a70a8918b39911de1173205a96a27aaed272718b3df88a8129eed31ab",
+      "plans": 103,
+      "nonempty_plans": 69,
+      "urgent_plans": 0,
+      "dead": false
+    },
+    {
+      "class_idx": 1,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "check",
+      "path": "/workspace/work/r343-evidence/town-receiver-check-1",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-1",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "134ab9c2cfb908ec3855bd7777492fa5702f037ccd5f7e5328187745ea4635cb",
+        "messages.log": "e4e9e729c3d4d903655f4661544490a27cac4ebd0eeae0bdebbf5a3a6cfc27de",
+        "state.log": "9381d6bca500ad3e04871341e8cb85385878b37533e3581d7248cfa989462557"
+      },
+      "effective_config_sha256": "7d57c6c3ceba700836a6c88b8192662bc43063c5dd0d31bc4d7efc82c1ab9cf4",
+      "town_plan_record_sha256": "b01ec43a70a8918b39911de1173205a96a27aaed272718b3df88a8129eed31ab",
+      "plans": 103,
+      "nonempty_plans": 69,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 105,
+        "caution_calls": 1667,
+        "comparisons": 672247,
+        "danger_calls": 394431,
+        "danger_comparisons": 394431,
+        "dependency_requests": 299247,
+        "escape_calls": 3472,
+        "mismatches": 0,
+        "monster_comparisons": 2446,
+        "recovery_calls": 1493,
+        "root_points": {
+          "caution.borg_caution": 1667,
+          "escape.borg_allow_teleport": 1,
+          "recovery.borg_recover": 1493
+        },
+        "stateful_comparisons": 3161,
+        "stateful_points": {
+          "caution.borg_caution": 1667,
+          "escape.borg_allow_teleport": 30,
+          "escape.borg_caution_phase": 55,
+          "escape.borg_dimension_door": 36,
+          "escape.borg_escape": 1578,
+          "escape.borg_freedom": 18,
+          "escape.borg_recall": 46,
+          "escape.borg_shadow_shift": 42,
+          "escape.borg_surrounded": 1667,
+          "recovery.borg_recover": 1493
+        },
+        "thinks": 1729,
+        "wall_comparisons": 272209
+      }
+    },
+    {
+      "class_idx": 1,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "switch",
+      "path": "/workspace/work/r343-evidence/town-receiver-switch-1",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-1",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "134ab9c2cfb908ec3855bd7777492fa5702f037ccd5f7e5328187745ea4635cb",
+        "messages.log": "e4e9e729c3d4d903655f4661544490a27cac4ebd0eeae0bdebbf5a3a6cfc27de",
+        "state.log": "9381d6bca500ad3e04871341e8cb85385878b37533e3581d7248cfa989462557"
+      },
+      "effective_config_sha256": "7d57c6c3ceba700836a6c88b8192662bc43063c5dd0d31bc4d7efc82c1ab9cf4",
+      "town_plan_record_sha256": "b01ec43a70a8918b39911de1173205a96a27aaed272718b3df88a8129eed31ab",
+      "plans": 103,
+      "nonempty_plans": 69,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 105,
+        "caution_calls": 1667,
+        "comparisons": 672247,
+        "danger_calls": 394431,
+        "danger_comparisons": 394431,
+        "dependency_requests": 299247,
+        "escape_calls": 3472,
+        "mismatches": 0,
+        "monster_comparisons": 2446,
+        "recovery_calls": 1493,
+        "root_points": {
+          "caution.borg_caution": 1667,
+          "escape.borg_allow_teleport": 1,
+          "recovery.borg_recover": 1493
+        },
+        "stateful_comparisons": 3161,
+        "stateful_points": {
+          "caution.borg_caution": 1667,
+          "escape.borg_allow_teleport": 30,
+          "escape.borg_caution_phase": 55,
+          "escape.borg_dimension_door": 36,
+          "escape.borg_escape": 1578,
+          "escape.borg_freedom": 18,
+          "escape.borg_recall": 46,
+          "escape.borg_shadow_shift": 42,
+          "escape.borg_surrounded": 1667,
+          "recovery.borg_recover": 1493
+        },
+        "thinks": 1729,
+        "wall_comparisons": 272209
+      }
+    },
+    {
+      "class_idx": 6,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "off",
+      "path": "/workspace/work/r343-evidence/town-receiver-off-6",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-6",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "94e1f32c709325641303bb34393174ed4ab7adba25c0a83d914b9e09c5839a78",
+        "messages.log": "bf18472b78e055ad5f5d997f6b528ae0992d52f35cc4efa819efddd22ca46818",
+        "state.log": "cc9575226df836dc6b0265a64e4d6d9648149b9c314387fbd90498343c68369d"
+      },
+      "effective_config_sha256": "6dcbd30b4da019562962879c9617f30669f647cc747034125c1a2a1b2449901c",
+      "town_plan_record_sha256": "5213a8d42d76d4d84f0bf55c7936b988665a6efe6396d57c91e5a4bc58f575f5",
+      "plans": 141,
+      "nonempty_plans": 121,
+      "urgent_plans": 0,
+      "dead": false
+    },
+    {
+      "class_idx": 6,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "check",
+      "path": "/workspace/work/r343-evidence/town-receiver-check-6",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-6",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "94e1f32c709325641303bb34393174ed4ab7adba25c0a83d914b9e09c5839a78",
+        "messages.log": "bf18472b78e055ad5f5d997f6b528ae0992d52f35cc4efa819efddd22ca46818",
+        "state.log": "cc9575226df836dc6b0265a64e4d6d9648149b9c314387fbd90498343c68369d"
+      },
+      "effective_config_sha256": "6dcbd30b4da019562962879c9617f30669f647cc747034125c1a2a1b2449901c",
+      "town_plan_record_sha256": "5213a8d42d76d4d84f0bf55c7936b988665a6efe6396d57c91e5a4bc58f575f5",
+      "plans": 141,
+      "nonempty_plans": 121,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 138,
+        "caution_calls": 2098,
+        "comparisons": 961865,
+        "danger_calls": 570855,
+        "danger_comparisons": 570855,
+        "dependency_requests": 143845,
+        "escape_calls": 4110,
+        "mismatches": 0,
+        "monster_comparisons": 234,
+        "recovery_calls": 1907,
+        "root_points": {
+          "caution.borg_caution": 2098,
+          "recovery.borg_recover": 1907
+        },
+        "stateful_comparisons": 4005,
+        "stateful_points": {
+          "caution.borg_caution": 2098,
+          "escape.borg_allow_teleport": 3,
+          "escape.borg_caution_phase": 4,
+          "escape.borg_dimension_door": 6,
+          "escape.borg_escape": 1965,
+          "escape.borg_recall": 27,
+          "escape.borg_shadow_shift": 7,
+          "escape.borg_surrounded": 2098,
+          "recovery.borg_recover": 1907
+        },
+        "thinks": 2152,
+        "wall_comparisons": 386771
+      }
+    },
+    {
+      "class_idx": 6,
+      "race_idx": 0,
+      "seed": 1001,
+      "turn_cap": 20000,
+      "mode": "switch",
+      "path": "/workspace/work/r343-evidence/town-receiver-switch-6",
+      "donor_path": "/workspace/work/r343-evidence/town-donor-6",
+      "flags": "menu,borg_town_plan=1,borg_trip_policy=1",
+      "play_hashes": {
+        "keys.log": "94e1f32c709325641303bb34393174ed4ab7adba25c0a83d914b9e09c5839a78",
+        "messages.log": "bf18472b78e055ad5f5d997f6b528ae0992d52f35cc4efa819efddd22ca46818",
+        "state.log": "cc9575226df836dc6b0265a64e4d6d9648149b9c314387fbd90498343c68369d"
+      },
+      "effective_config_sha256": "6dcbd30b4da019562962879c9617f30669f647cc747034125c1a2a1b2449901c",
+      "town_plan_record_sha256": "5213a8d42d76d4d84f0bf55c7936b988665a6efe6396d57c91e5a4bc58f575f5",
+      "plans": 141,
+      "nonempty_plans": 121,
+      "urgent_plans": 0,
+      "dead": false,
+      "coverage": {
+        "caution_actions": 138,
+        "caution_calls": 2098,
+        "comparisons": 961865,
+        "danger_calls": 570855,
+        "danger_comparisons": 570855,
+        "dependency_requests": 143845,
+        "escape_calls": 4110,
+        "mismatches": 0,
+        "monster_comparisons": 234,
+        "recovery_calls": 1907,
+        "root_points": {
+          "caution.borg_caution": 2098,
+          "recovery.borg_recover": 1907
+        },
+        "stateful_comparisons": 4005,
+        "stateful_points": {
+          "caution.borg_caution": 2098,
+          "escape.borg_allow_teleport": 3,
+          "escape.borg_caution_phase": 4,
+          "escape.borg_dimension_door": 6,
+          "escape.borg_escape": 1965,
+          "escape.borg_recall": 27,
+          "escape.borg_shadow_shift": 7,
+          "escape.borg_surrounded": 2098,
+          "recovery.borg_recover": 1907
+        },
+        "thinks": 2152,
+        "wall_comparisons": 386771
+      }
+    }
+  ],
+  "combined_plan_records": 984,
+  "combined_plan_sha256": "b31bbb17aff5796078c9e041d395cf6c0352648c5bc3fe032ab9e6fff7e22e6e",
+  "replay": {
+    "command": "PLAN_RECORD_FILE=/workspace/work/r343-evidence/all-town-plans.jsonl cargo test --release -p borg-core a_run_s_records_all_replay -- --ignored --nocapture",
+    "passed": true,
+    "records": 984,
+    "planned": 750,
+    "urgent": 0,
+    "log_sha256": "37547827ad0467da75832ec0f6a8f2f75cdde4f1da971b252618b5636eb740e7"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-3-priest-4",
+      "raw_sha256": {
+        "keys.log": "0f625d60b23dcf1f7208991e4daf69803420d69c43e3ba9206b166a1e07e9641",
+        "messages.log": "a2337eb429472cc2db3fcdfdbc0a69447144d668d68ff3bc05fb86db0aead11f",
+        "state.log": "831f62065345baca7884cb840e9bda248a4857314cc71160b61d66b23cf10c92"
+      },
+      "result_sha256": "0f625d60b23dcf1f7208991e4daf69803420d69c43e3ba9206b166a1e07e9641",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "Half-Troll Priest",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 9278
+  },
+  "encounter_family": "start-9767154f2b5f1af2a5cc9fa39171b57824f08bd89517643168bde7c9407c9a81",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "9b78137b9fdabef27bf1362fbdcf161c9f684c56ae9b781b71781bedf1da195a",
+    "depths.json": "083a8c4761d4838e37e752635563a1e3e236359118d38a48a5c4cff0d8d0bb29",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "09a54a816e31d63d5d89f09f5c00954e699a748adc385b00ee1c5dec6c3eab31",
+    "trace-tail.jsonl": "a5b140f469b07e274b5e7cd0ef0cc068fba5f9f97f955413891f1ebc0f8a2c6b"
+  },
+  "id": "D0000-q08f452c91ad70b49bc7d7202f853d5279a961a2ac882ab7300c79182840e4071",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "2de3e0c78a819a321e3416682602548c1fa143dc770d8b34fbca4a829be557d4",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1034,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "poison",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "poison",
+    "class_idx": 3,
+    "dead": true,
+    "depth": 3,
+    "level": 6,
+    "max_depth": 3,
+    "race_idx": 7,
+    "turn": 96890
+  }
+}

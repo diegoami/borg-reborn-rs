@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/m13-validation/original-full/full-6-rogue-3",
+      "raw_sha256": {
+        "keys.log": "f166b327df259feb3052b40b04374306a0cfc15dad20a263441c2cd104e43b82",
+        "messages.log": "ee36dc42decce47e58376b89aa9e580e22d292456e5fe290fb10f8f588bbc0bd",
+        "state.log": "9504e6bf93dd8d702f81b4108cdb1e6e5b8cdaa5137fd22dc47671812c7cb657"
+      },
+      "result_sha256": "f166b327df259feb3052b40b04374306a0cfc15dad20a263441c2cd104e43b82",
+      "role": "original",
+      "source_commit": "b58e7b4451598e590e43e4aeec3a1560d48c21bf"
+    }
+  ],
+  "character": "High-Elf Rogue",
+  "core_decision_trace": null,
+  "decision_trace": {
+    "file": "trace-tail.jsonl",
+    "lines": 200,
+    "of": 7167
+  },
+  "encounter_family": "start-62b3cc49cb31ae3214fd9d133d52b89d7688daa469e449dc40ad63d6a2b100c6",
+  "files_sha256": {
+    "build.json": "a89741ef97bed010baa3539f0c9ffa39bdecb02a06b1a2b8ae25ec915c3f04b4",
+    "config.txt": "750422f8d65583e80c850b4911e491bcb76b12443a32a689363d4495a19fe6ba",
+    "depths.json": "771eac19926d712d0abf1ff158ab0a40b9af1ee8d717c43380d46d0f7fc4756d",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "summary.json": "a50cf99782efce91554595c5c9d268dad407007ef947e58a3ab4b7f73dcfcf94",
+    "trace-tail.jsonl": "757ae6e0c75fc1d51773072cdd207ad4351df10e191b41debfae94f0bce1879a"
+  },
+  "id": "D0000-qe9f9a0543f3c40a2a3e9036c6f472d35c068aefb1cae1b10032cf9cc5cfca2dc",
+  "identity": {
+    "binary_sha256": "3168ccdd5105bade779a6402e549f7c88a2b39b544e046667cf4d47361b7e077",
+    "borg_txt_sha256": "a4d30f278a5ee9bd5efc3ae4c78e789561d86ab1c3e1288c9f26bb971b217049",
+    "flags": "menu",
+    "git_dirty": "yes",
+    "git_rev": "b58e7b4451598e590e43e4aeec3a1560d48c21bf",
+    "impl": "rust",
+    "params_core_sha256": null,
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1063,
+    "source_sha256": "a585062c2e01ffa1d835de4dc617971940758eb115465cdd2960781a6b832bdc"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "a green naga",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "a green naga",
+    "class_idx": 6,
+    "dead": true,
+    "depth": 3,
+    "level": 6,
+    "max_depth": 3,
+    "race_idx": 9,
+    "turn": 73529
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "id": "D0000-qd9b6cef231f4502265ae245e03cb903c48729cc05752c34a7c1469b9382440bc",
+  "original_id": "D2406-rust-seed1022",
+  "original_record_sha256": "2355dccc88209b19dfcf3e876b168505775e3f809ede49e9b1770fae7009bcbe",
+  "payload_sha256": {
+    "assessment.json": "b4fe7eca1f0af58be44d7968ccdbaf416dca6168a7a5098ce4616518a400f2b8",
+    "build.json": "5eded96f1d7f312edb670865b568e910fbfe404dfd8234a52a1b2ed14228586a",
+    "config.txt": "93a97b1cad2bc4503516da56c156772e5607cec9f2d071364abc99901e53d242",
+    "depths.json": "f4ffd609039d8dbd58fa57906ee6709af0fab21bd16c3ecafab393e66ac36cd4",
+    "integration-origin.json": "4ea866b107dffce2c44443c3d680dd9c1bd45b1fddaec7f584c39177871cb009",
+    "integration-original-record.json": "f01d5c633d165f06c727ac3e628b1158ef068fd93190b19e4348eb77b40c411b",
+    "params.json": "f61afc24dfd2efeb782d3725890cd562bcfc61a762d8b55483fbf7f93299d76f",
+    "report.md": "1e5641b254d7f7328d3956330a53311e888a5d2d2c532d74940202b8635d7f5f",
+    "summary.json": "e34bf7cbe60e1b07b066a670bfed8809a21ea6ea6e6ba0bc5a515a4d96a55b97",
+    "trace-tail.jsonl": "85a46f30675df03da751fc267ed8f86421b26686dac11399cfe1c170255a1098"
+  },
+  "schema": "borg-reborn-rs/dossier-import@1"
+}

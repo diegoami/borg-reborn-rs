@@ -101,6 +101,54 @@ struct borg_setting borg_settings[] = {
     { "borg_buy_strategy_current_munchkin_classes", 'i', 0 },
     { "borg_buy_strategy_reserve410_munchkin_classes", 'i', 0 },
     { "borg_buy_identify", 'i', 0 },
+    /* The negative-baseline arm for the town inventory redesign (borg-rs#36):
+     * when true, the Rust borg performs no store interaction at all. The C
+     * oracle reads this field and ignores it. */
+    { "borg_town_no_stores", 'b', false },
+    /* The town inventory redesign's parameter vector (borg-rs#36): the
+     * twelve settings the phase-1 usefulness function and the trip model
+     * read. The C oracle reads these fields and ignores them. */
+    { "borg_town_plan", 'i', 0 },
+    { "borg_town_w_light", 'i', 100 },
+    { "borg_town_w_food", 'i', 100 },
+    { "borg_town_w_bleeding", 'i', 100 },
+    { "borg_town_w_poison", 'i', 100 },
+    { "borg_town_w_escape", 'i', 50 },
+    { "borg_town_w_knowledge", 'i', 25 },
+    { "borg_town_w_power", 'i', 50 },
+    { "borg_town_w_trip", 'i', 50 },
+    { "borg_town_share", 'i', 10 },
+    { "borg_town_light_depth", 'i', 15 },
+    { "borg_town_food_trip", 'i', 10 },
+    { "borg_town_target_depth", 'i', 0 },
+    { "borg_town_trip_turns", 'i', 0 },
+    { "borg_town_w_gold", 'i', 25 },
+    { "borg_town_depth_gain", 'i', 1 },
+    { "borg_town_explore_turns", 'i', 1000 },
+    { "borg_town_stair_turns", 'i', 50 },
+    { "borg_town_food_turns", 'i', 3000 },
+    { "borg_town_light_turns", 'i', 5000 },
+    { "borg_town_risk", 'i', 1000 },
+    { "borg_town_home_discount", 'i', 500 },
+    { "borg_town_w_space", 'i', 25 },
+    { "borg_town_power_scale", 'i', 40000 },
+    /* The trip policy (borg-rs#60): Rust-only, registered and ignored. The
+     * munchkin and lunal settings above are the C oracle's record of the
+     * removed modes; the Rust Borg retired them. */
+    { "borg_trip_policy", 'i', 0 },
+    { "borg_trip_depth_margin", 'i', 0 },
+    { "borg_trip_pack_slack", 'i', 2 },
+    { "borg_trip_unknown_stacks", 'i', 4 },
+    { "borg_trip_return_gold", 'i', 0 },
+    { "borg_town_w_attack", 'i', 100 },
+    { "borg_town_w_magic", 'i', 100 },
+    { "borg_town_w_support", 'i', 50 },
+    { "borg_town_w_restore", 'i', 100 },
+    { "borg_town_attack_turns", 'i', 100 },
+    { "borg_town_support_turns", 'i', 1000 },
+    { "borg_town_w_ranger_missiles", 'i', 250 },
+    { "borg_town_ranger_missile_turns", 'i', 50 },
+
     { 0, 0, 0 }};
 
 /* The munchkin start settings as borg.txt gave them, before the class rule */

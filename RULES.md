@@ -102,7 +102,10 @@ not undo other-track work already authorized before the gate.
     whichever arm died. The toolkit is owned by borg-cemetery; local command
     paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
     isolated validation or historical registries. Existing `docs/deaths/` stays
-    retained as the historical validation baseline. Games watched with `watch-borg.sh` are not measured
+    retained as the historical validation baseline. New historical imports use
+    `tools/import-deaths.py` to qualify provisional IDs and preserve source
+    packages; its CI check protects the accepted baseline and new imports
+    (docs/DOSSIER-IMPORT.md). Games watched with `watch-borg.sh` are not measured
     runs and are not recorded (owner, 2026-11-10, E review finding 3): they
     have no seed, key log or summary; a death seen there that matters is
     reproduced as a measured run and recorded then. Repeats and replays
@@ -111,6 +114,19 @@ not undo other-track work already authorized before the gate.
     a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
     deaths of test-feature builds are not natural deaths of an arm and are
     kept apart.
+
+    **Dossier allocation (owner, 2026-11-15, #338):** final numeric IDs are
+    assigned centrally on acceptance into borg-cemetery. Branch-local IDs
+    are provisional and cross-branch references require an exact containing
+    registry commit (plus CI run/registry namespace before commit). Preserve
+    published evidence and mappings; reject numeric collisions on import,
+    even when directory suffixes differ. See docs/DEATH-ID-POLICY.md. Local
+    exports do not by themselves establish canonical publication acceptance.
+    All tracks import new historical validation packets through
+    tools/import-deaths.py and pass its --check, preserving original bytes,
+    full qualified IDs and source maps. The accepted legacy inventory must
+    not be rebaselined to hide replaced evidence.
+
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
@@ -191,3 +207,29 @@ guard list for the optional recorder only; engine/angband remains pristine,
 and the normal harness explicitly disables the recorder. The dependency is
 sealed in recorder-pin.json and linked through our existing Rust library.
 No strategy, default frontend flags or measured baseline changes are implied.
+
+## Guided debugging sessions (owner, 2026-11-15)
+
+26. **Debug reported play from preserved runtime evidence.** For an
+    owner-requested guided session, the agent prepares and starts a
+    recorder-enabled game with a named character, private session files,
+    the exact executable/settings/starting save preserved, a core decision
+    trace and errand outcomes. Follow
+    [docs/GUIDED-DEBUGGING.md](docs/GUIDED-DEBUGGING.md). The owner reports
+    the unexpected behaviour and saves if the game responds; the agent
+    finds and verifies the save, preserves the incident, and attempts
+    reproduction itself. A save alone does not preserve the Borg's
+    in-memory state or the actions leading to the problem. Keep the
+    recording and original evidence intact, reproduce in a separate
+    directory with the original build first, and state whether replay
+    actually verified. If saving fails or the game hangs, capture the live
+    evidence before closing it; do not require a successful save to begin
+    diagnosis. Never claim a character was recovered or a cause established
+    from a filename, an old save, or static code inspection alone. Fixes
+    get a bounded reproduction/regression check. Recorder defects are
+    fixed through PRs in `diegoami/angband-recorder`, not by silently
+    patching the vendored recorder or adding consumer engine workarounds;
+    adopting a recorder update here is a separate pin-update change.
+    Watched sessions retain rule 12's distinction from measured runs;
+    publishing recordings is a
+    separate owner request.

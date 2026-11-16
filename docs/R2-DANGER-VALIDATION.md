@@ -1,5 +1,11 @@
 # R2 danger slice validation (#281)
 
+> Historical R dossier numbers in this report are scoped to registry commit
+> `fbd0f691de655c6db61565b1e3d2b5aea92184cd`, not the restored legacy slots.
+> See [R334-RECOVERY.md](R334-RECOVERY.md) and R334-DOSSIER-MAP.json for
+> full qualified paths. Raw measurements/build identities remain historical.
+
+
 Danger is ported; caution, escape and recovery remain #209. R2 is not complete.
 The runtime core pin stays borg-rs v12 e6d13fc. Production runtime input hash
 is `3ee2871785624dcb2b28f363f522d8942cd42946af97be817e87c660afdec851`.

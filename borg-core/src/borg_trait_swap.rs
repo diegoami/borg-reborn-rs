@@ -54,7 +54,7 @@ use crate::headers::list_mon_race_flags_h::{
 };
 use crate::headers::list_object_flags_h::{
     OF_AGGRAVATE, OF_DIG_1, OF_DIG_2, OF_DIG_3, OF_FEATHER, OF_FREE_ACT, OF_HOLD_LIFE, OF_IMPACT,
-    OF_LIGHT_2, OF_LIGHT_3, OF_PROT_BLIND, OF_PROT_CONF, OF_REGEN, OF_SEE_INVIS,
+    OF_LIGHT_2, OF_LIGHT_3, OF_PROT_BLIND, OF_PROT_CONF, OF_PROT_FEAR, OF_REGEN, OF_SEE_INVIS,
     OF_SLOW_DIGEST, OF_TELEPATHY,
 };
 use crate::headers::list_object_modifiers_h::OBJ_MOD_INFRA;
@@ -116,7 +116,8 @@ pub struct SwapFlags {
     pub resist_nexus: bool,
     pub resist_blind: bool,
     pub resist_neth: bool,
-    /// never written in C, so always false (C bug 45)
+    /// `resist_fear`: set from `OF_PROT_FEAR` since patch 0132 (C bug 45
+    /// is fixed there; before it, C never wrote this flag).
     pub resist_fear: bool,
     /// `decurse_weapon_swap` / `decurse_armour_swap`: the swap is
     /// uncursable (C: "my swap is great, except its cursed")
@@ -124,10 +125,10 @@ pub struct SwapFlags {
 }
 
 impl SwapFlags {
-    /// C's "Clear all the swap weapon flags" block: every flag but
-    /// `resist_fear`, which C never writes.
+    /// C's "Clear all the swap weapon flags" block (patch 0132 also
+    /// clears `resist_fear` there).
     fn clear(&mut self) {
-        *self = SwapFlags { resist_fear: self.resist_fear, ..SwapFlags::default() };
+        *self = SwapFlags::default();
     }
 
     /// Note the flags of `item` (the slays, brands, infravision, flags,
@@ -200,6 +201,9 @@ impl SwapFlags {
         }
         if of_has(item, OF_PROT_BLIND) {
             self.resist_blind = true;
+        }
+        if of_has(item, OF_PROT_FEAR) {
+            self.resist_fear = true;
         }
 
         /* curses */
@@ -795,7 +799,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn clear_keeps_resist_fear_only() {
+    fn clear_resets_every_flag_including_fear() {
         let mut f = SwapFlags {
             slay_evil: 3,
             see_infra: 7,
@@ -805,7 +809,25 @@ mod tests {
             ..SwapFlags::default()
         };
         f.clear();
-        assert_eq!(f, SwapFlags { resist_fear: true, ..SwapFlags::default() });
+        assert_eq!(f, SwapFlags::default());
+    }
+
+    #[test]
+    fn prot_fear_marks_the_swap_resist_fear() {
+        // Patch 0132: OF_PROT_FEAR on a swap item sets `resist_fear`
+        // (before it, C never wrote the flag and it stayed false).
+        let mut item = crate::borg_item::blank_item();
+        // flags are bit-packed from FLAG_START = 1: flag 6 is bit 5 of byte 0
+        let bit = OF_PROT_FEAR as i32 - crate::engine::FLAG_START;
+        item.flags[(bit / 8) as usize] |= 1 << (bit % 8);
+        let mut f = SwapFlags::default();
+        f.note(&item);
+        assert!(f.resist_fear);
+        assert!(!f.resist_blind);
+
+        // and clear() wipes it again (the 0132 reset blocks)
+        f.clear();
+        assert!(!f.resist_fear);
     }
 
     #[test]

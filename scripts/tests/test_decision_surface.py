@@ -10,7 +10,20 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 7)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 11)
+
+    def test_defence_mutation_adapters_are_exact_and_policy_cannot_delegate(self):
+        for adapter in surface.DEFENCE_ADAPTERS:
+            self.assertFalse(surface.inspect(adapter, port=True, dispatch=True))
+            self.assertTrue(surface.inspect(adapter.replace('=value;', '=value+1;'),
+                                            port=True, dispatch=True))
+            self.assertTrue(surface.inspect(adapter, port=True, dispatch=False))
+        self.assertTrue(surface.inspect(
+            'borg_rs::decision_api::borg_fight_defend::borg_defend(st,p1);',
+            port=True, policy='defence'))
+        self.assertFalse(surface.inspect(
+            'borg_rs::decision_api::borg_fight_attack::borg_launch_bolt(st,0,1,2,3,0);',
+            port=True, policy='defence'))
 
     def test_direct_core_engine_and_tape_bypasses_are_refused(self):
         for code, port in [('use crate::engine;', False),
@@ -38,6 +51,22 @@ class DecisionSurfaceTest(unittest.TestCase):
                 self.assertTrue(surface.inspect(code, port=True), code)
         self.assertFalse(surface.inspect('use borg_rs::threat_facts::{param as p, Param};', port=True))
 
+    def test_stateful_reads_use_only_the_borrowed_named_projection(self):
+        self.assertFalse(surface.inspect(
+            'let hp = crate::Read::new(st).character().curhp();', port=True))
+        self.assertTrue(surface.inspect(
+            'let hp = crate::View::new(st).character.curhp;', port=True))
+        for code in ['crate::Read::new(st).0.borg.trait_[0]',
+                     'crate::Read::new(st).0.borg.tr(0)',
+                     'crate::engine::game_turn()']:
+            self.assertTrue(surface.inspect(code, port=True), code)
+
+    def test_attack_cannot_use_its_own_shared_native_score(self):
+        code = 'borg_rs::decision_api::borg_fight_attack::borg_thrust_damage_one(st, 1);'
+        self.assertTrue(surface.inspect(code, port=True, policy='attack'))
+        # Existing R2 callers still use a separately compared opaque dependency.
+        self.assertFalse(surface.inspect(code, port=True, policy='caution'))
+
     def test_dispatch_exception_is_narrow(self):
         root = Path(__file__).resolve().parents[2]
         text = (root / 'borg-next/src/stateful/mod.rs').read_text()
@@ -64,8 +93,48 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 8)
+            self.assertEqual(surface.check(fixture), 12)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):
                 surface.check(fixture)
+
+    def test_parent_paths_and_native_delegation_are_refused(self):
+        probe = """pub fn zz_probe(st: &mut BorgState) -> i32 {
+            let a = st.borg.trait_.get(super::super::BI_CURSP as usize).copied().unwrap_or(0);
+            let _ = super::Decision::Caution.native(st);
+            a
+        }"""
+        for code in [probe,
+                     'super::Decision::Freedom {y,x}.native(st);',
+                     'let t = &mut st.borg.trait_; t[i] = 0;',
+                     'st.borg.trait_.get(i)',
+                     'let native = decision.native; native(st);',
+                     'Decision::native(request, st);',
+                     'Decision::Caution.r#native(st);',
+                     'use r#borg_rs as core;',
+                     'use super as parent;', 'use crate as root;',
+                     'use ::borg_rs as core;',
+                     'use {borg_rs as core};',
+                     'use crate::{stateful::Decision};',
+                     'self::parent::Decision::Caution.native(st);',
+                     'use super::escape::{borg_freedom, other};',
+                     'use super::escape::*;',
+                     'use super::escape::{borg_freedom as native};']:
+            with self.subTest(code=code):
+                self.assertTrue(surface.inspect(code, port=True), code)
+        for code in ['super::set_mana(st, value);',
+                     'use super::escape::{borg_freedom, borg_escape};']:
+            self.assertFalse(surface.inspect(code, port=True), code)
+
+    def test_outside_source_and_dispatch_imports_are_refused(self):
+        for code in ['include!("../x.rs");',
+                     '#[path = "../x.rs"] mod outside;',
+                     '#[cfg_attr(feature="bypass", path="../x.rs")] mod outside;',
+                     'use borg_rs::decisions::*;',
+                     'use borg_rs::decisions::{Decision, other};',
+                     'use borg_rs :: decisions :: {Decision, other};']:
+            with self.subTest(code=code):
+                self.assertTrue(surface.inspect(code, port=True, dispatch=True), code)
+        self.assertFalse(surface.inspect('use borg_rs::decisions::{Decision, Value};', port=True, dispatch=True))
+        self.assertFalse(surface.inspect('// trait_ include!("x"); super::Decision.native(st)\nlet text = "trait_ super::super #[path = x]";', port=True))

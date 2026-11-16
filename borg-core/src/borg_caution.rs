@@ -489,7 +489,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return false;
     }
 
-    // Cure light Wounds (2d10)
+    // Cure light Wounds (20)
     if pct_down >= p(Param::caution_clw_min_loss)
         && (pct_down <= p(Param::caution_clw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_clw_max_level))
         && danger < st.borg.tr(BI_CURHP) + clw_heal
@@ -501,7 +501,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         borg_note(st, "# Healing Level 1.");
         return true;
     }
-    // Cure Serious Wounds (4d10)
+    // Cure Serious Wounds (40)
     if pct_down >= p(Param::caution_csw_min_loss)
         && (pct_down <= p(Param::caution_csw_max_loss) || st.borg.tr(BI_CLEVEL) < p(Param::caution_csw_max_level))
         && danger < st.borg.tr(BI_CURHP) + csw_heal
@@ -513,7 +513,7 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         return true;
     }
 
-    // Cure Critical Wounds (6d10)
+    // Cure Critical Wounds (60)
     if (p(Param::caution_ccw_min_loss)..=p(Param::caution_ccw_max_loss)).contains(&pct_down)
         && danger < st.borg.tr(BI_CURHP) + ccw_heal
         && ccw_heal > danger / p(Param::caution_ccw_danger_divisor) // No rope-a-doping
@@ -1811,8 +1811,6 @@ pub(crate) fn borg_caution_native(st: &mut BorgState) -> bool {
     if st.borg.goal.leaving
         || st.borg.goal.fleeing
         || st.borg.mon.scary
-        || st.borg.goal.fleeing_lunal
-        || st.borg.goal.fleeing_munchkin
         || ((pos_danger > avoidance
             || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
                 && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
@@ -1846,11 +1844,7 @@ pub(crate) fn borg_caution_native(st: &mut BorgState) -> bool {
         }
         // Usable stairs
         if u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_MORE || on_dnstair {
-            // Do these if not lunal mode
-            if !st.borg.goal.fleeing_lunal
-                && !st.borg.goal.fleeing_munchkin
-                && borg_prep_leave_level_spells(st)
-            {
+            if borg_prep_leave_level_spells(st) {
                 return true;
             }
 
@@ -2058,7 +2052,6 @@ pub(crate) fn borg_caution_native(st: &mut BorgState) -> bool {
 
     // Use "recall" to flee if possible
     if st.borg.goal.fleeing
-        && !st.borg.goal.fleeing_munchkin
         && !st.borg.goal.fleeing_to_town
         && st.borg.tr(BI_CDEPTH) >= 1
         && borg_recall(st)
@@ -2115,12 +2108,6 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         if st.borg.mon.scary {
             borg_note(st, "# Fleeing and leaving the level. (scaryguy)");
         }
-        if st.borg.goal.fleeing_lunal {
-            borg_note(st, "# Fleeing and leaving the level. (fleeing_lunal)");
-        }
-        if st.borg.goal.fleeing_munchkin {
-            borg_note(st, "# Fleeing and leaving the level. (fleeing munchkin)");
-        }
         if pos_danger > i32::from(st.borg.avoidance)
             && st.borg.tr(BI_CLEVEL) <= p(Param::caution_stair_danger_max_level)
             && u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat) == FEAT_LESS
@@ -2134,7 +2121,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     }
 
     // Only go down if fleeing or prepared
-    if st.borg.goal.fleeing || st.borg.goal.fleeing_lunal || st.borg.goal.fleeing_munchkin {
+    if st.borg.goal.fleeing {
         st.borg.stair_more = true;
     }
 

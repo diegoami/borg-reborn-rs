@@ -64,3 +64,84 @@ unported operations are behind the shared closed dependency API, not copied
 as a second engine. STATEFUL-SHADOW.md describes effect-once record/replay,
 full state equality, nested entry, panic=abort handling and the source gate.
 The 68 exact dependency signatures are R2-STATEFUL-DEPENDENCIES.json.
+
+## M13 refresh (#328)
+
+borg-core now vendors diegoami/borg-rs tag `4.2.6-rs-town-trip-m13-v1`,
+peeled commit `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, GPL-2.0-only.
+The three-way refresh preserves declared OURS/HOOKED changes.
+[Integration decisions](M13-INTEGRATION.md) enumerate conflicts, the native
+read-only query patch, receiving option ABI adapter and parameter migration.
+Engine/harness, recorder and cemetery integration remain receiving-owned.
+
+## Track R M13 carry (#343, R3 preflight)
+
+The independently owned danger and stateful policy bodies are now carried
+from accepted main `2f74e1c5d57ce2b41ded1b5b694174b91b51f265`, whose native
+core is donor `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`. The v12 citations
+above describe the initial R2 adaptation and its immutable measurements.
+Five view fields preserve exact native BI_PSTUN/BI_VACID/BI_VELEC/BI_VFIRE/
+BI_VCOLD values. Physical cold's temporary-resistance asymmetry is retained
+exactly as in the donor. No independent gameplay improvement is claimed.
+
+The optional `test-m13-danger` build calls the actual native and owned
+estimators on declared constructed memories using loaded engine race/blow
+tables. Test-only native accessors are unavailable in production builds.
+The fixture performs no live-state writes, RNG draws or game effects; its
+input-projection fault control deliberately clears the five carried fields
+on a private port snapshot. It is a branch validation, never population
+or survival evidence. Normal policies never call the native accessor.
+
+## Track R attack port (#364, R3)
+
+`borg-next/src/stateful/attack.rs` adapts `src/borg_fight_attack.rs` from
+borg-rs M13 `1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`, retaining its
+copyright and license. R364-ATTACK-SURFACE.json records the original
+function inventory and source digest; ported-functions.json registers the
+owned policy functions for subsequent source-change watching. Seven public
+entries comprise five stateful transactions and two scalar comparisons.
+The native Default implementation remains in owned memory; the indexed
+trait helper is replaced by borrowed named Read accessors.
+
+The port owns attack scoring, ordering, mana-reserve arithmetic and action
+selection. Shared dependency adapters supply engine metadata, existing
+unported services and recorded effects. AttackRace and AttackKind contain
+values only; race friendship is represented by a boolean. Static names and
+tables retain immutable process-lifetime borrows. Motion captures both
+output parameters and checks their initial values on replay. The existing
+town journey forecast is an effect because it mutates memory; its adapter
+returns only the turn count used by the owned reserve calculation.
+
+R364-ADDED-DEPENDENCIES.json inventories the added signatures. The source
+gate rejects an attack port delegating its own policy to the native attack
+API. Runtime parity and entry coverage remain acceptance gates; registering
+the source does not establish them or imply a gameplay improvement.
+
+## Track R defence port (#365, R3)
+
+`borg-next/src/stateful/defence.rs` adapts M13 borg-rs
+`1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea`'s `borg_fight_defend.rs`, retaining
+its copyright and license. R365-DEFENCE-SURFACE.json records all 57 native
+functions and the sole public entry, borg_defend. The owned port has all 56
+policy functions; its indexed trait helper becomes named borrowed reads.
+R365-SOURCE-AUDIT.json and scripts/audit-defence-port.py compare function
+bodies, quoted strings and every module constant after declared seam and
+formatting normalization. The carry watcher registers all owned functions.
+
+Defence owns choice ordering, scores, simulation writes and their native
+restoration sequence. Two exact named adapters write confusion resistance
+and Free Action during Grim Purpose simulation. The original boolean save
+and 0/1 restoration remain unchanged, including for a nonbinary input.
+The source gate admits only the exact adapters and forbids native defence
+delegation. Other temporary buffs, lists and goals stay owned snapshot
+fields checked by complete state equality.
+
+R365-ADDED-DEPENDENCIES.json lists nine additional typed query/effect
+adapters. Terminal geometry is an immutable plain-value record; race facts
+use the existing pointer-free metadata. Attack and escape cross-calls remain
+recorded services with their own independent shadow comparisons. Permanent
+buff/preparation/flow policy, including borg_fight_perm, remains explicitly
+shared. No new fair-information engine reads or ownership claim for those
+services is introduced. Native-equivalent games, rare-path and restoration
+fixtures, literal fault/re-port controls and death reconciliation remain
+runtime acceptance gates.

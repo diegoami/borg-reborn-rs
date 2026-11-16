@@ -1,0 +1,10 @@
+{
+  "schema": "borg-reborn-rs/r363-lifetime@1",
+  "source": "use borg_next::Read;\nuse borg_rs::memory::{traits::BI_CURHP, BorgState};\npub fn retained_borrow_cannot_cross_mutation() {\n    let mut state = BorgState::default();\n    let read = Read::new(&state);\n    state.borg.trait_[BI_CURHP as usize] = 17;\n    let _ = read.character().curhp();\n}\n",
+  "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+  "compiler_exit": 1,
+  "error_codes": [
+    "E0502"
+  ],
+  "result": "The retained named borrow across mutation is rejected with E0502, not a missing dependency/type error."
+}

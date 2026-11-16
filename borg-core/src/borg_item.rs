@@ -22,7 +22,8 @@ use crate::engine;
 
 /// One item as the Borg sees it (`borg_item`), with the C field names.
 #[derive(Copy, Clone)]
-#[derive(PartialEq)]
+// borg-reborn-rs (#364): exact owned item arguments in replay requests.
+#[derive(PartialEq, Debug)]
 pub struct BorgItem {
     pub desc: [core::ffi::c_char; 80],
     /// `note` (C: `char *note`, NULL = `None`): where the inscription
@@ -33,6 +34,10 @@ pub struct BorgItem {
     pub ident: bool,
     pub needs_ident: bool,
     pub aware: bool,
+    /// The game's flavour awareness (`object_flavor_is_aware`), unlike
+    /// `aware`, which C forces true in a store. Rust-only, read by the
+    /// town plan alone: a shop's `{unseen}` ware is `!flavour_aware`.
+    pub flavour_aware: bool,
     /// `xxxx` (never read, in C either)
     #[allow(dead_code)]
     pub xxxx: bool,
@@ -112,6 +117,7 @@ pub fn blank_item() -> borg_item {
         kind: 0,
         ident: false,
         needs_ident: false,
+        flavour_aware: false,
         aware: false,
         xxxx: false,
         tval: 0,

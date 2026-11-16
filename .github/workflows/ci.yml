@@ -11,6 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
+      - uses: ./.github/actions/validation-evidence
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
@@ -18,13 +19,20 @@ jobs:
       # own formatting, and tested as borg-rs tests it (release: the unit
       # tests link without the engine only when unused engine calls are
       # optimised out).
+      # Offline provenance attestation; builds never read an external source tree.
+      - name: Verify exact recorded vendor bytes and hooks
+        run: python3 scripts/borg-core-vendor.py check-recorded
       - run: cargo fmt --check -p borg-reborn-rs -p borg-next
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --exclude borg-core
       - run: cargo test --release -p borg-core
       - run: bash -n scripts/setup.sh
       - run: python3 -m unittest discover -s scripts/tests
+      - run: python3 scripts/check-death-ids.py docs/deaths
+      - run: python3 tools/import-deaths.py --check
       - run: python3 -m unittest discover -s tools/tests
+      # Branch-local numeric IDs are provisional; new historical evidence is qualified.
+      - run: python3 tools/import-deaths.py --check
       # The generated bindings match upstream's headers (TE.3): bindgen and
       # libclang, so the D3 audit's regeneration check runs too.
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
@@ -47,10 +55,46 @@ jobs:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
+      - uses: ./.github/actions/validation-evidence
       - uses: dtolnay/rust-toolchain@stable
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # R3: exercise the real selector/restoration bodies on declared owned
+      # memories. Keep this test build and its artifacts separate from arms.
+      - name: Constructed defence controls
+        run: |
+          BORG_IMPL=rust BORG_TEST_FEATURES=test-r3-defence flock /tmp/angband-validation.lock harness/build.sh
+          for mode in check switch; do
+            BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=$mode BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/defence-test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband flock /tmp/angband-validation.lock harness/run.sh harness/out/defence-fixture-$mode 1001 0 1 1000 menu
+          done
+          python3 - <<'PYDEFENCE'
+          import json, pathlib
+          labels = {f'selector-{n}' for n in range(31)} | {
+              'speed-restoration', 'grim-confusion-nonbinary', 'grim-free-action-nonbinary',
+              'fire-restoration', 'cold-restoration', 'acid-restoration',
+              'electricity-restoration', 'poison-restoration', 'protection-evil-restoration',
+              'shield-restoration', 'all-resists-restoration', 'morgoth-rest-simulation'}
+          for mode in ('check', 'switch'):
+              path = pathlib.Path(f'harness/out/defence-fixture-{mode}/r3-defence-fixtures.jsonl')
+              rows = [json.loads(line) for line in path.read_text().splitlines()]
+              assert len(rows) == 43 and {r['case'] for r in rows} == labels
+              assert all(r['schema'] == 'borg-reborn-rs/r3-defence-constructed@1'
+                         and r['synthetic'] is True and r['mode'] == mode
+                         and r['agreement_error'] is None and r['temporary_buffs_restored'] is True
+                         and r['driving_value'] == r['replayed_value'] for r in rows)
+              by_case = {r['case']: r for r in rows}
+              assert by_case['grim-confusion-nonbinary']['final_confusion_free_action'] == [1, 0]
+              assert by_case['grim-free-action-nonbinary']['final_confusion_free_action'] == [0, 1]
+              assert by_case['morgoth-rest-simulation']['driving_value'] > 0
+          PYDEFENCE
+      - name: Retain constructed defence evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-defence-fixtures
+          path: harness/out/defence-fixture-*
+          if-no-files-found: ignore
       # Track P (#219): exercise the vendored core's real initialization,
       # not only the pure parser. Its named trace has a separate registry;
       # original-core dossiers below retain their trace.jsonl contract.
@@ -79,7 +123,7 @@ jobs:
           for f in keys.log messages.log state.log; do cmp "harness/out/core-params/$f" "harness/out/core-trace-off/$f"; done
           test ! -e harness/out/core-trace-off/trace-core.jsonl
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1011 2 1 100000 menu
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
           python3 - "$RUNNER_TEMP/core-deaths" <<'PYCORE'
           import json, pathlib, sys
           cases = list(pathlib.Path(sys.argv[1]).glob('D*-rust-*'))
@@ -95,20 +139,21 @@ jobs:
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
-          harness/check-shadow.py harness/out/shadow-check harness/out/shadow-switch
+          harness/check-shadow.py --expect-mode check harness/out/shadow-check
+          harness/check-shadow.py --expect-mode switch harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
       # R2 review: aggregate totals cannot substitute for every public entry.
       # The focused unsealed seed reaches rare caution_teleport; not all branches.
       - name: Stateful entry-point coverage
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-check
-          harness/check-shadow.py --require-all-entries harness/out/stateful-entries-switch
+          harness/check-shadow.py --require-all-entries --expect-mode check harness/out/stateful-entries-check
+          harness/check-shadow.py --require-all-entries --expect-mode switch harness/out/stateful-entries-switch
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
-          python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
+          python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
       - run: |
           zoo_pin=$(python3 -c "import json; print(json.load(open('pins.json'))['pins']['borg-zoo']['commit'])")
@@ -176,7 +221,7 @@ jobs:
           path: ${{ runner.temp }}/deaths
           if-no-files-found: ignore
       # Every natural death in the run outputs has a dossier (E review, finding 3).
-      - run: python3 tools/reconcile-deaths.py "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
+      - run: python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/deaths" --runs harness/out/smoke-rust-1 harness/out/smoke-rust-2 harness/out/observations harness/out/check-extra-load harness/out/smoke-exact-rust harness/out/rerun-source
       # ... and in the dossiers of the reborn Borg's deaths (T2.4).
       # nullglob: runs with no natural death leave no dossier, and an
       # unmatched pattern must not be checked as if it were one (#125: the

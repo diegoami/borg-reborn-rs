@@ -1,0 +1,62 @@
+{
+  "attempts": [
+    {
+      "binary_sha256": "eac6ca5bbb26517a14fe901831c84db0fe37abdaa3212ea8ca48ecde2add1f07",
+      "outcome": "death",
+      "raw_directory": "/workspace/work/p317-full/full-2-druid-1",
+      "raw_sha256": {
+        "keys.log": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+        "messages.log": "d74ec5bd8acb04981bcbce756a680d8a62262ca11c42e634874dd260bd4f42a3",
+        "state.log": "82127e32d5ceede3b4ae7fade7faead94b869118b1f4d6f164cea6f8d0f12d69"
+      },
+      "result_sha256": "2192c646391de080cee8fc37633ab9210098761f67f6a897e50707be7e0ede0b",
+      "role": "original",
+      "source_commit": "754593a033487f8f28f48ca9e90856fdffa561c3"
+    }
+  ],
+  "character": "Hobbit Druid",
+  "core_decision_trace": {
+    "file": "trace-core-tail.jsonl",
+    "lines": 200,
+    "of": 908
+  },
+  "decision_trace": null,
+  "encounter_family": "start-7ddb820cae6e6d608f134a73bbfd413a11189a07e18931785b9e82380ba551a1",
+  "files_sha256": {
+    "build.json": "64d6b18a86f0d80654faf541b6fbfb1a35c6225a648e52132852c49e4e91ba3d",
+    "config.txt": "ca688d72b74036ff602f686e6930b5330d88a3f4e8b539844edd71efbbc7fa26",
+    "depths.json": "0ec48811f6295bb45727bff06812bec4d81e8aba0c1d001f08da08fca8c1ff4a",
+    "params-core.json": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "summary.json": "4f29accf72c110e6567e3c77ef7163f3d333066e875b3928e9019f833f57c0a1",
+    "trace-core-tail.jsonl": "429dd3528de83596d8dc788334033d5931f806f15258df77310dc75a184b139d"
+  },
+  "id": "D0000-qa4c6c641853b55ccc81975af1b9336cfe028287320f040cf82a856ae3e4ff6e4",
+  "identity": {
+    "binary_sha256": "eac6ca5bbb26517a14fe901831c84db0fe37abdaa3212ea8ca48ecde2add1f07",
+    "borg_txt_sha256": "22f26b18b131354886de8f90b14c79bb98f839609094abd4f50213900fd416b4",
+    "flags": "menu",
+    "git_dirty": "no",
+    "git_rev": "754593a033487f8f28f48ca9e90856fdffa561c3",
+    "impl": "rust",
+    "params_core_sha256": "d01b76f7d2e3f1fe3152377ae39576ad199e2c8410c1ae8311154cae6319bdd4",
+    "profile_sha256": "372785a3dfab6020d2e0881a0be7a8db42d70c39ad6db40f9599d3a6d1c2fc91",
+    "seed": 1021,
+    "source_sha256": "69c447072d3822bef7dc9f9998cadfc113452ff406858f98c81bd0f44a567726"
+  },
+  "independence_note": "One independent death per encounter family; repeats of the same run are not new cases.",
+  "investigation": null,
+  "issue": null,
+  "raw_cause": "Fang, Farmer Maggot's Dog",
+  "run_kind": "harness",
+  "schema": "borg-reborn-rs/death-record@1",
+  "terminal": {
+    "cause": "Fang, Farmer Maggot's Dog",
+    "class_idx": 2,
+    "dead": true,
+    "depth": 3,
+    "level": 1,
+    "max_depth": 4,
+    "race_idx": 3,
+    "turn": 3608
+  }
+}

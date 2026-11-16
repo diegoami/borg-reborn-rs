@@ -199,7 +199,7 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
     }
 
     let light = &st.items.items[inven_light()];
-    let dying = light.timeout <= 3 && !engine::flag_has(&light.flags, OF_NO_FUEL as i32);
+    let dying = light.iqty != 0 && light.timeout <= 3 && !engine::flag_has(&light.flags, OF_NO_FUEL as i32);
     if !((st.borg.tr(BI_LIGHT) == 0 || dying) && st.borg.tr(BI_CDEPTH) >= 1) {
         /* Nothing to do */
         return false;
@@ -481,11 +481,6 @@ pub fn borg_think_stair_scum(st: &mut BorgState) -> bool {
     /* No scumming mode if starving or in town */
     if st.borg.tr(BI_CDEPTH) == 0 || st.borg.tr(BI_ISWEAK) != 0 {
         borg_note(st, "# Leaving Scumming Mode. (Town or Weak)");
-        // The lunal mode is entered and left as a pair; clearing only
-        // lunal_mode here left goal.fleeing_lunal set, and the caution
-        // phase kept behaving as if the Borg were still lunal.
-        st.borg.lunal_mode = false;
-        st.borg.goal.fleeing_lunal = false;
         return false;
     }
 
@@ -784,6 +779,10 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     /* Count sellable items */
     let sellable_item_count = borg_count_sell(st);
 
+    /* The trip policy (borg-rs#60): None unless borg_trip_policy = 1. With
+     * the policy off it only writes BORG_TRIP_RECORD, if that is set. */
+    let trip = crate::borg_trip::consult(st, sellable_item_count);
+
     /* Do not dive when "full" of items */
     if sellable_item_count >= 12 {
         try_not_to_descend = true;
@@ -872,7 +871,8 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         st.borg.goal.rising = true;
     }
 
-    /* Return to town to sell stuff -- No recall allowed.*/
+    /* Preserve the Borg's selling-pressure backstop with either policy.
+     * The trip policy may request an earlier return, never veto this one. */
     if ((st.cfg(BORG_WORSHIPS_GOLD) != 0 || st.borg.tr(BI_MAXCLEVEL) < 15)
         && st.borg.tr(BI_MAXCLEVEL) <= 25)
         && sellable_item_count >= 12
@@ -990,6 +990,26 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
                 g = if engine::randint0(100) < 50 { -1 } else { 1 };
             }
         }
+    }
+
+    /* The trip policy, acting: a return sets the rising goal (the route is
+     * the code below: Recall from depth 5, else the stairs); the planned
+     * depth stops a descent past it. Survival (borg_caution) ran before. */
+    if let Some(d) = &trip {
+        use crate::borg_trip::Action;
+        let before = (g, st.borg.goal.rising);
+        match d.action {
+            Action::Return => {
+                st.borg.goal.rising = true;
+                if g >= 0 {
+                    g = -1;
+                }
+            }
+            Action::Ascend => g = -1,
+            Action::Continue if g > 0 => g = if bored { -1 } else { 0 },
+            Action::Continue | Action::Descend => {}
+        }
+        crate::borg_trip::record_application(st, d, before, (g, st.borg.goal.rising));
     }
 
     /* Go Up */

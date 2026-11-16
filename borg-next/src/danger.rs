@@ -1,5 +1,5 @@
 //! Full danger assessment over the typed native-memory view.
-//! Adapted from borg-rs v12 e6d13fc (borg_danger.rs), with Track P named
+//! Adapted from borg-rs M13 1443c2d (borg_danger.rs), with Track P named
 //! parameters. Provenance in PROVENANCE.md.
 //! Copyright (c) 1997 Ben Harrison, James E. Wilson, Robert A. Koeneke
 //! Copyright (c) 2007-9 Andi Sidwell, Chris Carr, Ed Graham, Erik Osheim
@@ -21,12 +21,13 @@
 //! and its race from the engine's `r_info`.
 
 // borg-reborn-rs (#220): named danger/escape policy values; defaults preserve arithmetic.
-use crate::View;
+use crate::{shadow::Mode, View};
 use borg_rs::memory::{BorgGrid, BorgKill};
 use borg_rs::threat_facts::{self as facts, param, Facts, Param};
 use facts::constants::*;
 const CLASS_MAGE: i32 = 1;
 struct Assessment<'a> {
+    mode: Mode,
     view: &'a View<'a>,
     facts: Facts<'a>,
 }
@@ -35,7 +36,7 @@ impl Assessment<'_> {
         self.view
             .cave
             .grid(x, y)
-            .unwrap_or_else(|| crate::shadow::invalid_danger_grid(self.view, x, y))
+            .unwrap_or_else(|| crate::shadow::invalid_danger_grid(self.mode, self.view, x, y))
     }
 }
 fn rf(kill: &BorgKill, flag: u32) -> bool {
@@ -243,8 +244,11 @@ fn physical_estimate(
                 if st.view.resistances.racid != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_acid {
+                if st.view.threat.temporary.res_acid && st.view.resistances.vacid == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vacid != 0 && !st.view.threat.temporary.res_acid {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
@@ -262,8 +266,11 @@ fn physical_estimate(
                 if st.view.resistances.relec != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_elec {
+                if st.view.threat.temporary.res_elec && st.view.resistances.velec == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.velec != 0 && !st.view.threat.temporary.res_elec {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 z *= param(Param::danger_monblow_elec_damage_multiplier);
@@ -281,8 +288,11 @@ fn physical_estimate(
                 if st.view.resistances.rfire != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_fire {
+                if st.view.threat.temporary.res_fire && st.view.resistances.vfire == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vfire != 0 && !st.view.threat.temporary.res_fire {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 z *= param(Param::danger_monblow_fire_damage_multiplier);
@@ -302,6 +312,9 @@ fn physical_estimate(
                 }
                 if st.view.threat.temporary.res_cold {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vcold != 0 && !st.view.threat.temporary.res_cold {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 z *= param(Param::danger_monblow_cold_damage_multiplier);
@@ -753,8 +766,11 @@ fn spell_estimate(
                 if st.view.resistances.racid != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_acid {
+                if st.view.threat.temporary.res_acid && st.view.resistances.vacid == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vacid != 0 && !st.view.threat.temporary.res_acid {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_br_acid_fear);
@@ -772,8 +788,11 @@ fn spell_estimate(
                 if st.view.resistances.relec != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_elec {
+                if st.view.threat.temporary.res_elec && st.view.resistances.velec == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.velec != 0 && !st.view.threat.temporary.res_elec {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_br_elec_fear);
@@ -791,8 +810,11 @@ fn spell_estimate(
                 if st.view.resistances.rfire != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_fire {
+                if st.view.threat.temporary.res_fire && st.view.resistances.vfire == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vfire != 0 && !st.view.threat.temporary.res_fire {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_br_fire_fear);
@@ -810,8 +832,11 @@ fn spell_estimate(
                 if st.view.resistances.rcold != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_cold {
+                if st.view.threat.temporary.res_cold && st.view.resistances.vcold == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vcold != 0 && !st.view.threat.temporary.res_cold {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_br_cold_fear);
@@ -902,7 +927,7 @@ fn spell_estimate(
                 if st.view.resistances.rsnd != 0 {
                     z = (z * 5) / 9;
                 }
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.rsnd != 0 || st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -992,7 +1017,7 @@ fn spell_estimate(
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_br_grav_fear);
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1026,7 +1051,7 @@ fn spell_estimate(
                 if z > 150 {
                     z = 150;
                 }
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // Pump this up if you have goi so that the borg is sure
@@ -1047,7 +1072,7 @@ fn spell_estimate(
                 if z > 200 {
                     z = 200;
                 }
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1087,8 +1112,11 @@ fn spell_estimate(
                 if st.view.resistances.racid != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_acid {
+                if st.view.threat.temporary.res_acid && st.view.resistances.vacid == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vacid != 0 && !st.view.threat.temporary.res_acid {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_ba_acid_fear);
@@ -1102,8 +1130,11 @@ fn spell_estimate(
                 if st.view.resistances.relec != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_elec {
+                if st.view.threat.temporary.res_elec && st.view.resistances.velec == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.velec != 0 && !st.view.threat.temporary.res_elec {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_ba_elec_fear);
@@ -1117,8 +1148,11 @@ fn spell_estimate(
                 if st.view.resistances.rfire != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_fire {
+                if st.view.threat.temporary.res_fire && st.view.resistances.vfire == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vfire != 0 && !st.view.threat.temporary.res_fire {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_ba_fire_fear);
@@ -1132,8 +1166,11 @@ fn spell_estimate(
                 if st.view.resistances.rcold != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_cold {
+                if st.view.threat.temporary.res_cold && st.view.resistances.vcold == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vcold != 0 && !st.view.threat.temporary.res_cold {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_ba_cold_fear);
@@ -1183,7 +1220,7 @@ fn spell_estimate(
 
             RSF_BA_WATE => 'b: {
                 z = (spell_power * 5) / 2 + 50;
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1253,7 +1290,7 @@ fn spell_estimate(
 
             RSF_STORM => 'b: {
                 z = 70 + (spell_power * 5);
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1306,8 +1343,11 @@ fn spell_estimate(
                 if st.view.resistances.racid != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_acid {
+                if st.view.threat.temporary.res_acid && st.view.resistances.vacid == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vacid != 0 && !st.view.threat.temporary.res_acid {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_bo_acid_fear);
@@ -1322,8 +1362,11 @@ fn spell_estimate(
                 if st.view.resistances.relec != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_elec {
+                if st.view.threat.temporary.res_elec && st.view.resistances.velec == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.velec != 0 && !st.view.threat.temporary.res_elec {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_bo_elec_fear);
@@ -1338,8 +1381,11 @@ fn spell_estimate(
                 if st.view.resistances.rfire != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_fire {
+                if st.view.threat.temporary.res_fire && st.view.resistances.vfire == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vfire != 0 && !st.view.threat.temporary.res_fire {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_bo_fire_fear);
@@ -1354,8 +1400,11 @@ fn spell_estimate(
                 if st.view.resistances.rcold != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_cold {
+                if st.view.threat.temporary.res_cold && st.view.resistances.vcold == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.vcold != 0 && !st.view.threat.temporary.res_cold {
+                    z = z * 4 / 3;
                 }
                 // Add fear for the effect
                 p += param(Param::danger_rsf_bo_cold_fear);
@@ -1391,7 +1440,7 @@ fn spell_estimate(
             RSF_BO_WATE => 'b: {
                 z = (10 * 10) + spell_power;
                 bolt = true;
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1421,7 +1470,7 @@ fn spell_estimate(
             RSF_BO_PLAS => 'b: {
                 z = 10 + (8 * 7) + spell_power;
                 bolt = true;
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1438,7 +1487,7 @@ fn spell_estimate(
                 bolt = true;
                 // Add fear for the effect
                 p += param(Param::danger_rsf_bo_ice_fear);
-                if st.view.resistances.rsnd != 0 {
+                if st.view.resistances.pstun != 0 {
                     break 'b;
                 }
                 // if already stunned be REALLY nervous about this
@@ -1463,8 +1512,11 @@ fn spell_estimate(
                 if st.view.resistances.relec != 0 {
                     z = (z + 2) / 3;
                 }
-                if st.view.threat.temporary.res_elec {
+                if st.view.threat.temporary.res_elec && st.view.resistances.velec == 0 {
                     z = (z + 2) / 3;
+                }
+                if st.view.resistances.velec != 0 && !st.view.threat.temporary.res_elec {
+                    z = z * 4 / 3;
                 }
                 bolt = true;
             }
@@ -2475,7 +2527,8 @@ fn aggregate(st: &Assessment<'_>, y: i32, x: i32, c: i32, average: bool, full_da
         p += i32::from(st.view.threat.monster_fear(y, x)) * c;
     }
 
-    // C overrides the argument
+    // C overrides the argument. Grid danger always uses full (worst case)
+    // damage; reduced estimates come only from direct monster calls.
     let _ = full_damage;
     let full_damage = true;
 
@@ -2498,8 +2551,9 @@ fn aggregate(st: &Assessment<'_>, y: i32, x: i32, c: i32, average: bool, full_da
     }
 }
 
-pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput) -> i32 {
+pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput, mode: Mode) -> i32 {
     let assessment = Assessment {
+        mode,
         view,
         facts: Facts::new(view.state),
     };
@@ -2513,8 +2567,14 @@ pub fn assess(view: &View<'_>, input: borg_rs::shadow::DangerInput) -> i32 {
     )
 }
 
-pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot: i32) -> i32 {
+pub fn assess_monster(
+    view: &View<'_>,
+    input: borg_rs::shadow::DangerInput,
+    slot: i32,
+    mode: Mode,
+) -> i32 {
     let assessment = Assessment {
+        mode,
         view,
         facts: Facts::new(view.state),
     };
@@ -2531,6 +2591,34 @@ pub fn assess_monster(view: &View<'_>, input: borg_rs::shadow::DangerInput, slot
     )
 }
 
+#[cfg(feature = "test-m13-danger")]
+pub(crate) fn fixture_estimate(
+    state: &borg_rs::memory::BorgState,
+    kill: &BorgKill,
+    physical: bool,
+    mode: Mode,
+) -> i32 {
+    let view = View::new(state);
+    let context = Assessment {
+        mode,
+        view: &view,
+        facts: Facts::new(state),
+    };
+    if physical {
+        physical_estimate(&context, kill, view.threat.simulation, true)
+    } else {
+        spell_estimate(
+            &context,
+            kill,
+            view.threat.simulation,
+            state.borg.c.y,
+            state.borg.c.x,
+            1,
+            true,
+        )
+    }
+}
+
 #[cfg(test)]
 mod grid_failure_tests {
     use super::*;
@@ -2538,18 +2626,54 @@ mod grid_failure_tests {
     #[test]
     fn invalid_grid_records_before_controlled_exit() {
         const CHILD: &str = "BORG_TEST_INVALID_DANGER_GRID";
-        if let Ok(coordinates) = std::env::var(CHILD) {
+        if let Ok(spec) = std::env::var(CHILD) {
+            let (context, coordinates) = spec.split_once(':').unwrap();
+            let mode = Mode::parse(&std::env::var("BORG_TEST_PROVIDER_MODE").unwrap()).unwrap();
             let mut state = borg_rs::memory::BorgState::default();
             state.borg.trait_ = vec![0; borg_rs::memory::traits::BI_MAX as usize];
             state.borg.time.now = 37;
-            let view = View::new(&state);
-            let assessment = Assessment {
-                view: &view,
-                facts: Facts::new(&state),
-            };
             let (x, y) = coordinates.split_once(',').unwrap();
-            assessment.grid(x.parse().unwrap(), y.parse().unwrap());
-            panic!("invalid grid returned a reference");
+            let (x, y): (i32, i32) = (x.parse().unwrap(), y.parse().unwrap());
+            let fail = |state: &borg_rs::memory::BorgState| {
+                let view = View::new(state);
+                let assessment = Assessment {
+                    mode,
+                    view: &view,
+                    facts: Facts::new(state),
+                };
+                assessment.grid(x, y);
+                panic!("invalid grid returned a reference");
+            };
+            match context {
+                "direct" => fail(&state),
+                "nested" => {
+                    let _ = borg_rs::decision_tape::compare(
+                        &mut state,
+                        serde_json::json!({"point":"outer"}),
+                        |state| {
+                            borg_rs::decision_tape::effect(state, "outer", String::new(), |state| {
+                                let _ = borg_rs::decision_tape::compare(
+                                    state,
+                                    serde_json::json!({"point":"inner"}),
+                                    |state| fail(state),
+                                    |_| (),
+                                );
+                            })
+                        },
+                        |_| (),
+                    );
+                }
+                "replay" => {
+                    let _ = borg_rs::decision_tape::compare(
+                        &mut state,
+                        serde_json::json!({"point":"replay"}),
+                        |_| (),
+                        |state| fail(state),
+                    );
+                }
+                _ => panic!("unknown fixture context"),
+            }
+            panic!("invalid grid did not stop validation");
         }
         let root = std::env::temp_dir().join(format!(
             "borg-danger-grid-{}-{}",
@@ -2574,9 +2698,13 @@ mod grid_failure_tests {
                         "danger::grid_failure_tests::invalid_grid_records_before_controlled_exit",
                         "--nocapture",
                     ])
-                    .env(CHILD, format!("{x},{y}"))
+                    .env(
+                        CHILD,
+                        format!("{}:{x},{y}", ["direct", "nested", "replay"][index]),
+                    )
                     .env("BORG_RUN_DIR", &dir)
-                    .env("BORG_SHADOW", mode)
+                    .env("BORG_TEST_PROVIDER_MODE", mode)
+                    .env("BORG_SHADOW", "changed-after-provider-parse")
                     .output()
                     .unwrap();
                 assert_eq!(
@@ -2588,13 +2716,14 @@ mod grid_failure_tests {
                 let contents = std::fs::read_to_string(log).unwrap();
                 assert_eq!(contents.lines().count(), 1);
                 let row: serde_json::Value = serde_json::from_str(&contents).unwrap();
-                assert_eq!(row["schema"], "borg-reborn-rs/shadow@1");
+                assert_eq!(row["schema"], "borg-reborn-rs/shadow@3");
                 assert_eq!(row["mode"], mode);
                 assert_eq!(row["point"], "danger.grid");
                 assert_eq!(row["inputs"], serde_json::json!({"x":x,"y":y}));
                 assert_eq!(row["borg_turn"], 37);
                 assert_eq!(row["validation_stopped"], true);
                 assert!(row["original"].is_null() && row["ported"].is_null());
+                assert!(row["turn"].is_null());
                 assert!(!String::from_utf8_lossy(&output.stderr).contains("panicked"));
             }
         }

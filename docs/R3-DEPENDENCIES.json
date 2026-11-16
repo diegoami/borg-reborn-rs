@@ -1,0 +1,680 @@
+{
+  "schema": "borg-reborn-rs/r3-dependency-signatures@1",
+  "source": "borg-core/src/decision_api.rs",
+  "count": 112,
+  "scope": "Explicit public production wrappers; test modules excluded by public-module boundaries, including production modules following test modules. Header/type reexports are not dependency calls.",
+  "dependencies": [
+    {
+      "qualified_name": "borg_cave_util::borg_cave_floor_bold",
+      "signature": "pub fn borg_cave_floor_bold(st:&BorgState,y:i32,x:i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_cave_util::borg_cave_floor_grid",
+      "signature": "pub fn borg_cave_floor_grid(ag:&BorgGrid) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_cave_util::borg_panel_hgt",
+      "signature": "pub fn borg_panel_hgt() -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_cave_util::borg_panel_wid",
+      "signature": "pub fn borg_panel_wid() -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_danger::borg_danger",
+      "signature": "pub fn borg_danger(st:&mut BorgState,y:i32,x:i32,c:i32,average:bool,full_damage:bool) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_danger::borg_danger_one_kill",
+      "signature": "pub fn borg_danger_one_kill(\n    st: &mut BorgState,\n    y: i32,\n    x: i32,\n    c: i32,\n    i: i32,\n    average: bool,\n    full_damage: bool,\n) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_escape::borg_caution_teleport",
+      "signature": "pub fn borg_caution_teleport(st:&mut BorgState,emergency:i32,turns:i32)->bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_escape::borg_surrounded",
+      "signature": "pub fn borg_surrounded(st:&mut BorgState)->bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_fight_attack::borg_launch_bolt",
+      "signature": "pub fn borg_launch_bolt(st:&mut BorgState,rad:i32,dam:i32,typ:i32,max:i32,ammo_location:i32)->i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_fight_attack::borg_thrust_damage_one",
+      "signature": "pub fn borg_thrust_damage_one(st:&BorgState,i:i32) -> i32",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_fight_defend::borg_defend",
+      "signature": "pub fn borg_defend(st:&mut BorgState,p1:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_kill::borg_delete_kill",
+      "signature": "pub fn borg_delete_kill(st: &mut BorgState, i: i32)",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_kill::borg_race_name",
+      "signature": "pub fn borg_race_name(r_idx: i32) -> &'static CStr",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": true
+    },
+    {
+      "qualified_name": "borg_flow_kill::borg_shoot_scoot_safe",
+      "signature": "pub fn borg_shoot_scoot_safe(st:&mut BorgState,emergency:i32,turns:i32,b_p:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_misc::borg_check_rest",
+      "signature": "pub fn borg_check_rest(st:&mut BorgState,y:i32,x:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_misc::borg_extract_dir",
+      "signature": "pub fn borg_extract_dir(y1: i32, x1: i32, y2: i32, x2: i32) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_misc::borg_goto_dir",
+      "signature": "pub fn borg_goto_dir(st:&BorgState,y1:i32,x1:i32,y2:i32,x2:i32) -> i32",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_misc::borg_happy_grid_bold",
+      "signature": "pub fn borg_happy_grid_bold(st:&BorgState,y:i32,x:i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_stairs::borg_flow_stair_less",
+      "signature": "pub fn borg_flow_stair_less(st:&mut BorgState,why:i32,sneak:bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_stairs::borg_flow_stair_more",
+      "signature": "pub fn borg_flow_stair_more(st:&mut BorgState,why:i32,sneak:bool,brave:bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_flow_stairs::borg_prep_leave_level_spells",
+      "signature": "pub fn borg_prep_leave_level_spells(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_inventory::borg_slot",
+      "signature": "pub fn borg_slot(st:&mut BorgState,tval:i32,sval:i32) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_inventory::borg_wield_slot",
+      "signature": "pub fn borg_wield_slot(item: &borg_item) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_io::borg_keypress",
+      "signature": "pub fn borg_keypress(st:&mut BorgState,k:keycode_t) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_io::borg_note",
+      "signature": "pub fn borg_note(st:&mut BorgState,what:&str)",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_io::borg_note_bytes",
+      "signature": "pub fn borg_note_bytes(st:&mut BorgState,what:&[u8])",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_io::borg_queue_direction",
+      "signature": "pub fn borg_queue_direction(st: &mut BorgState, k: keycode_t)",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item::inven_wield",
+      "signature": "pub fn inven_wield() -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item::quiver_end",
+      "signature": "pub fn quiver_end() -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item::quiver_start",
+      "signature": "pub fn quiver_start() -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_id::borg_item_note_needs_id",
+      "signature": "pub fn borg_item_note_needs_id(st: &BorgState, item: &borg_item) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_activate_dragon",
+      "signature": "pub fn borg_activate_dragon(st: &mut BorgState, drag_sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_activate_failure",
+      "signature": "pub fn borg_activate_failure(st:&mut BorgState,tval:i32,sval:i32) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_activate_item",
+      "signature": "pub fn borg_activate_item(st:&mut BorgState,activation:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_activate_ring",
+      "signature": "pub fn borg_activate_ring(st: &mut BorgState, ring_sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_aim_wand",
+      "signature": "pub fn borg_aim_wand(st: &mut BorgState, sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_eat",
+      "signature": "pub fn borg_eat(st:&mut BorgState,tval:i32,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_eat_food_any",
+      "signature": "pub fn borg_eat_food_any(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_eat_unknown",
+      "signature": "pub fn borg_eat_unknown(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_equips_dragon",
+      "signature": "pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_equips_item",
+      "signature": "pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_equips_ring",
+      "signature": "pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_equips_rod",
+      "signature": "pub fn borg_equips_rod(st: &mut BorgState, sval: i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_equips_staff_fail",
+      "signature": "pub fn borg_equips_staff_fail(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_quaff_crit",
+      "signature": "pub fn borg_quaff_crit(st:&mut BorgState,no_check:bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_quaff_potion",
+      "signature": "pub fn borg_quaff_potion(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_quaff_unknown",
+      "signature": "pub fn borg_quaff_unknown(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_read_scroll",
+      "signature": "pub fn borg_read_scroll(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_read_unknown",
+      "signature": "pub fn borg_read_unknown(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_use_staff",
+      "signature": "pub fn borg_use_staff(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_use_staff_fail",
+      "signature": "pub fn borg_use_staff_fail(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_use_unknown",
+      "signature": "pub fn borg_use_unknown(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_use::borg_zap_rod",
+      "signature": "pub fn borg_zap_rod(st:&mut BorgState,sval:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_val::borg_lookup_kind",
+      "signature": "pub fn borg_lookup_kind(st:&mut BorgState,tval:i32,sval:i32) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_item_wear::borg_backup_swap",
+      "signature": "pub fn borg_backup_swap(st:&mut BorgState,p:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_light::borg_check_light_only",
+      "signature": "pub fn borg_check_light_only(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_light::borg_light_beam",
+      "signature": "pub fn borg_light_beam(st: &mut BorgState, simulation: bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_light::borg_maintain_light",
+      "signature": "pub fn borg_maintain_light(st:&mut BorgState) -> BorgNeed",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_get_spell_power",
+      "signature": "pub fn borg_get_spell_power(st: &BorgState, spell: borg_spells) -> i32",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_heroism_level",
+      "signature": "pub fn borg_heroism_level(st: &BorgState) -> i32",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell",
+      "signature": "pub fn borg_spell(st:&mut BorgState,spell:borg_spells) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell_fail",
+      "signature": "pub fn borg_spell_fail(st:&mut BorgState,spell:borg_spells,allow_fail:i32) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell_legal",
+      "signature": "pub fn borg_spell_legal(st:&BorgState,spell:borg_spells) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell_legal_fail",
+      "signature": "pub fn borg_spell_legal_fail(st: &BorgState, spell: borg_spells, allow_fail: i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell_okay",
+      "signature": "pub fn borg_spell_okay(st:&BorgState,spell:borg_spells) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_magic::borg_spell_okay_fail",
+      "signature": "pub fn borg_spell_okay_fail(st:&BorgState,spell:borg_spells,allow_fail:i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_prepared::borg_prepared_c",
+      "signature": "pub fn borg_prepared_c(st:&mut BorgState,depth:i32) -> Option<Vec<u8>>",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_prepared::borg_restock_c",
+      "signature": "pub fn borg_restock_c(st:&mut BorgState,depth:i32) -> Option<Vec<u8>>",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_distance",
+      "signature": "pub fn borg_distance(y:i32,x:i32,y2:i32,x2:i32) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_inc_motion",
+      "signature": "pub fn borg_inc_motion(py:&mut i32,px:&mut i32,y1:i32,x1:i32,y2:i32,x2:i32)",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_los",
+      "signature": "pub fn borg_los(st:&BorgState,y1:i32,x1:i32,y2:i32,x2:i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_offset_projectable",
+      "signature": "pub fn borg_offset_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_projectable",
+      "signature": "pub fn borg_projectable(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_projectable_dark",
+      "signature": "pub fn borg_projectable_dark(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_projectable_pure",
+      "signature": "pub fn borg_projectable_pure(st: &BorgState, y1: i32, x1: i32, y2: i32, x2: i32) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_projection::borg_target",
+      "signature": "pub fn borg_target(st:&mut BorgState,t:loc,require_monster:bool) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_store_sell::borg_count_sell",
+      "signature": "pub fn borg_count_sell(st:&mut BorgState) -> i32",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_town_utility::supply_journey_turns",
+      "signature": "pub fn supply_journey_turns(st:&mut BorgState)->i64",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "borg_trait::borg_uses_swaps",
+      "signature": "pub fn borg_uses_swaps(st:&BorgState) -> bool",
+      "replay_kind": "query",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::adj_str_blow",
+      "signature": "pub fn adj_str_blow(i: usize) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::all_letters_nohjkl",
+      "signature": "pub fn all_letters_nohjkl(i: i32) -> u8",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::brand_resist_vuln_multiplier",
+      "signature": "pub fn brand_resist_vuln_multiplier(i: usize) -> (i32, i32, i32)",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::ddd",
+      "signature": "pub fn ddd(i:usize) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::ddx",
+      "signature": "pub fn ddx(dir:usize) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::ddx_ddd",
+      "signature": "pub fn ddx_ddd(i:usize) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::ddy",
+      "signature": "pub fn ddy(dir:usize) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::ddy_ddd",
+      "signature": "pub fn ddy_ddd(i:usize) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::distance",
+      "signature": "pub fn distance(grid1:loc,grid2:loc) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::feat_is_shop",
+      "signature": "pub fn feat_is_shop(feat:i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::flag_has",
+      "signature": "pub fn flag_has(flags: &[u8], flag: i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::get_angle_to_grid",
+      "signature": "pub fn get_angle_to_grid(y: usize, x: usize) -> u8",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::kind",
+      "signature": "pub fn kind(index: usize) -> AttackKind",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::obj_kind_can_browse",
+      "signature": "pub fn obj_kind_can_browse(kind: usize) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::player_arena_level",
+      "signature": "pub fn player_arena_level() -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::player_has_temporary_brand",
+      "signature": "pub fn player_has_temporary_brand(idx: i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::player_has_temporary_slay",
+      "signature": "pub fn player_has_temporary_slay(idx: i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::player_opt",
+      "signature": "pub fn player_opt(opt:u32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::player_timed",
+      "signature": "pub fn player_timed(idx:u32) -> i16",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::r_max",
+      "signature": "pub fn r_max() -> usize",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::race",
+      "signature": "pub fn race(index: usize) -> AttackRace",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::race_blow_effect_name",
+      "signature": "pub fn race_blow_effect_name(r_idx: usize, k: usize) -> Option<&'static [u8]>",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::race_flag_has",
+      "signature": "pub fn race_flag_has(r_idx:usize,flag:u32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::race_name",
+      "signature": "pub fn race_name(r_idx: usize) -> &'static [u8]",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": true
+    },
+    {
+      "qualified_name": "engine::randint0",
+      "signature": "pub fn randint0(m:u32) -> i32",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::slay_race_flag_multiplier",
+      "signature": "pub fn slay_race_flag_multiplier(i: usize) -> (i32, i32)",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::square_in_bounds",
+      "signature": "pub fn square_in_bounds(x:i32,y:i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::square_in_bounds_fully",
+      "signature": "pub fn square_in_bounds_fully(x:i32,y:i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::square_isno_teleport",
+      "signature": "pub fn square_isno_teleport(x:i32,y:i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::square_isvault",
+      "signature": "pub fn square_isvault(x:i32,y:i32) -> bool",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::term_geometry",
+      "signature": "pub fn term_geometry() -> TermGeometry",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": false
+    },
+    {
+      "qualified_name": "engine::z_info",
+      "signature": "pub fn z_info() -> &'static headers::init_h::angband_constants",
+      "replay_kind": "engine-fact",
+      "immutable_reference_result": true
+    },
+    {
+      "qualified_name": "shell::shopping_departure",
+      "signature": "pub fn shopping_departure(st:&mut BorgState) -> bool",
+      "replay_kind": "effect",
+      "immutable_reference_result": false
+    }
+  ]
+}
