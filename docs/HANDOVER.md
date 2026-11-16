@@ -80,10 +80,14 @@
   borg_heal keeps its own wound/level/resource gates) and #390's Phase
   Door stock change (borg_town_capability.rs: a learned Phase Door no
   longer zeroes the scroll's supply value; HOOKED). Both rebased onto
-  main 8a0b57c8 (borg-rs 8c5d000) without other changes.
+  main 8837ece2 (borg-rs 8c5d000, recorder v0.2.0) without other changes.
 - Source hash 9a4ea375 → 2317021c. Wild-cat saved-position tests: heals
   through the fight; with CLW/CSW tiers disabled still dies (control).
   Phase stock: Mage fixture buys a Scroll of Phase Door.
+- CI deaths for the new source (core 1011, smoke 102, reborn 1020; the
+  fixes do not save them) are retained in borg-cemetery
+  `evidence/borg-reborn-rs-369-380-ci-controls` (2f9d823); the wild-cat
+  fixture points CI at that commit. The owner merges that cemetery PR.
 - Supersedes #392 and #390 (close them on merge). The zoo needs a new ref.
 
 ## 2026-11-16: borg-core refreshed to borg-rs 8c5d000 (#368)
