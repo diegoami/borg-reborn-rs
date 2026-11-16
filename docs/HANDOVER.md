@@ -2,6 +2,22 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-16: recorder v0.2.0 consumer adoption (#351)
+
+- #372 is already owner-promoted; continue on task/P351-recorder-v020.
+  Pin the exact v0.2.0 tag ee8b133a and vendor all 41 files verbatim.
+  No recorder implementation changes are made in this repository.
+- Regenerate consumer hooks from the actual patched tree: early startup,
+  file-newer, directory enumeration and live save-path existence. Keep
+  recorder-off builds off and preserve existing harness/snapshot hooks.
+- Document the v1/v2 incompatibility and retain all old sessions/identities.
+  Add captured-load replay/final-save coverage alongside fresh-game capture,
+  forked checkpoints, bot streams and v2 CLI verification. GUI/branch-menu
+  and migration coverage are not claimed.
+- Source/build and death identities change; dedicated before/after vanilla
+  play comparisons, native recorder checks, required checks and CI are pending.
+  This task PR targets track-p, then a new owner-selected milestone review.
+
 ## 2026-11-15: fresh exact-tag M13 adoption audit (#341)
 
 - #349 was owner-reviewed, synchronized through green #362 and promoted as

@@ -10,6 +10,7 @@
 #include <errno.h>
 static long keys;
 long record_key_count(void) { return keys; }
+void record_early_init(void) { ar_early_init(ANGBAND_RECORDER_BUILD); }
 void record_init(void)
 {
     int64_t geometry[5] = { Term->wid, Term->hgt, Term->key_size,

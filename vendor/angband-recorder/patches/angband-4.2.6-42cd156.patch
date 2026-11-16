@@ -17,7 +17,17 @@
  	textui_cleanup();
  	cleanup_angband();
  #ifdef SOUND
-@@ -545,6 +551,11 @@
+@@ -342,6 +348,9 @@
+  */
+ int main(int argc, char *argv[])
+ {
++#ifdef BORG_RECORDING
++	record_early_init();
++#endif
+ 	int i;
+ 	bool new_game = false, select_game = false;
+ 	bool done = false;
+@@ -545,6 +554,11 @@
  	/* Make sure we have a display! */
  	if (!done) quit("Unable to prepare any 'display module'!");
  
@@ -155,7 +165,19 @@
  }
  
  #elif defined(WINDOWS)
-@@ -1006,7 +1013,13 @@
+@@ -949,7 +956,11 @@
+ /**
+  * Return true if first is newer than second, false otherwise.
+  */
++#ifdef BORG_RECORDING
++static bool recording_real_file_newer(const char *first, const char *second)
++#else
+ bool file_newer(const char *first, const char *second)
++#endif
+ {
+ #ifdef HAVE_STAT
+ 	struct stat stat1, stat2;
+@@ -1006,7 +1017,13 @@
  			break;
  		}
  		case MODE_READ:
@@ -170,6 +192,70 @@
  			break;
  		case MODE_APPEND:
  			f->fh = fopen(buf, "a+");
+@@ -1442,8 +1459,19 @@
+ 	DIR *d;
+ 
+ 	/* Try to open the directory */
+-	d = opendir(dirname);
+-	if (!d) return NULL;
++	#ifdef BORG_RECORDING
++    if (ar_replaying()) {
++        if (!ar_directory_open(false)) return NULL;
++        d = NULL;
++    } else {
++        d = opendir(dirname);
++        if (ar_active()) ar_directory_open(d != NULL);
++        if (!d) return NULL;
++    }
++#else
++    d = opendir(dirname);
++    if (!d) return NULL;
++#endif
+ 
+ 	/* Allocate memory for the handle */
+ 	dir = mem_zalloc(sizeof(ang_dir));
+@@ -1469,7 +1497,11 @@
+ 	return oldval;
+ }
+ 
++#ifdef BORG_RECORDING
++static bool recording_real_dread(ang_dir *dir, char *fname, size_t len)
++#else
+ bool my_dread(ang_dir *dir, char *fname, size_t len)
++#endif
+ {
+ 	struct dirent *entry;
+ 	struct stat filedata;
+@@ -1502,6 +1534,17 @@
+ 	return true;
+ }
+ 
++#ifdef BORG_RECORDING
++bool my_dread(ang_dir *dir, char *fname, size_t len)
++{
++    bool present;
++    if (ar_replaying()) return ar_directory_read(dir->only_files, len, fname, false);
++    present = recording_real_dread(dir, fname, len);
++    if (ar_active()) ar_directory_read(dir->only_files, len, fname, present);
++    return present;
++}
++#endif
++
+ void my_dclose(ang_dir *dir)
+ {
+ 	/* Close directory */
+@@ -1516,3 +1559,11 @@
+ #endif /* HAVE_DIRENT_H */
+ #endif /* WINDOWS */
+ 
++
++#ifdef BORG_RECORDING
++bool file_newer(const char *first, const char *second)
++{
++    if (ar_replaying()) return ar_newer(false);
++    return ar_newer(recording_real_file_newer(first, second));
++}
++#endif
 --- a/src/z-rand.c
 +++ b/src/z-rand.c
 @@ -1,3 +1,7 @@
@@ -182,15 +268,19 @@
   * \brief A Random Number Generator for Angband
 --- a/src/savefile.c
 +++ b/src/savefile.c
-@@ -1,3 +1,6 @@
+@@ -1,3 +1,7 @@
 +#ifdef BORG_RECORDING
 +#include "native-replay.h"
++#include <sys/stat.h>
 +#endif
  /**
   * \file savefile.c
   * \brief Savefile loading and saving main routines
-@@ -390,6 +393,9 @@
+@@ -390,6 +393,12 @@
  	bool ok = false;
++#ifdef BORG_RECORDING
++	bool path_exists = false;
++#endif
  
  	/* Generate a CharOutput.txt, mainly for angband.live, when saving. */
 +#ifdef BORG_RECORDING
@@ -199,6 +289,34 @@
  	(void) save_charoutput();
  
  	/* New savefile */
+@@ -415,16 +415,27 @@ bool savefile_save(const char *path)
+ 	if (ok) {
+ 		/*
+ 		 * Moving the files about, if interrupted, could leave no save
+ 		 * file in place.
+ 		 */
+ 		character_saved = false;
++#ifdef BORG_RECORDING
++		/* The session's own savefile is live state, not a recorded
++		 * external input: its existence is stat()ed directly, since the
++		 * replay's private save directory differs from the recording's. */
++		struct stat save_st;
++		path_exists = (stat(path, &save_st) == 0);
++#endif
+ 
+ 		safe_setuid_grab();
+ 
++#ifdef BORG_RECORDING
++		if (path_exists && !file_move(path, old_savefile)) {
++#else
+ 		if (file_exists(path) && !file_move(path, old_savefile)) {
++#endif
+ 			ok = false;
+ 		} else if (!file_move(new_savefile, path)) {
+ 			ok = false;
+ 			(void)file_move(old_savefile, path);
+ 		} else {
+ 			(void)file_delete(old_savefile);
 --- a/src/main-test.c
 +++ b/src/main-test.c
 @@ -1,3 +1,6 @@
