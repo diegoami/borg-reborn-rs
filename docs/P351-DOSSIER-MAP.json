@@ -1,0 +1,499 @@
+{
+  "cases": [
+    {
+      "original_record_sha256": "74592e37aa436ddefeaa02bc87affe474830f654aea396de0fc0109b1b77ec61",
+      "qualified_path": "docs/deaths/D0000-q2a6cf736a2c74d5ea0f0439e0adfa081fa10a04924b0b785dd32375178e7713e",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0001-rust-seed1011"
+    },
+    {
+      "original_record_sha256": "77eef95fbb87e1a2cad10b52e8aa7be463659212613fa01f800f4cafd20f5af2",
+      "qualified_path": "docs/deaths/D0000-q99546bcf1453ec3dcde322c143e92f0bb2ff0ad09660bf8d35d979fc877f9b71",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0002-rust-seed1020"
+    },
+    {
+      "original_record_sha256": "8a3e019c4c2538de10d7bd14daf1436b84523651d7e2b4fb7a74d8b11c8b8881",
+      "qualified_path": "docs/deaths/D0000-qabdb6e73c8dede0391777a86803db91e1f99409dcc562aac625a11854d00ae85",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0003-rust-seed1021"
+    },
+    {
+      "original_record_sha256": "76a982680e14517888d641a585b3a24db125726e3007f11cdb731f2c2b3ffb07",
+      "qualified_path": "docs/deaths/D0000-qeda1f9df36e05e3b408c8b709c2644035c347de569d6f524591aaeb5ce71154b",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0004-rust-seed1023"
+    },
+    {
+      "original_record_sha256": "97d71d18bea4e4fc3f940989312fbbfa65552f6a3c49f0784e716700552acdca",
+      "qualified_path": "docs/deaths/D0000-qfe265e6ec832c636a527e8e5ab1fb9bbf32358e87b74d51de77bf1e6bf4e20fb",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0005-rust-seed1022"
+    },
+    {
+      "original_record_sha256": "6db90a364976c54b77a02af591ef05c4e712fc24a1ad8ee9707af2ce8bc0c0fc",
+      "qualified_path": "docs/deaths/D0000-q401cd525a410f024f4ca0892e3dbe02bd6c33754c16516affe7d86b0802820b1",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0006-rust-seed1043"
+    },
+    {
+      "original_record_sha256": "aa339041ee98331671eca65915173019cf51558c81a551fde0a90e73e5f4cb93",
+      "qualified_path": "docs/deaths/D0000-q13eeaebe421d34585c93b498421b554fc6c8b973281fea66a0c1f5c0cd3e8fdd",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0007-rust-seed1050"
+    },
+    {
+      "original_record_sha256": "9c94d6f7c4d542f5901e2e4c50229b2f156e23f0c117260539a051ba8d254f7b",
+      "qualified_path": "docs/deaths/D0000-qd58588bf09a332cb0c6d87e8349ca4a4c7ac90952c1243ee1a655bb9b5e1922c",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0008-rust-seed1062"
+    },
+    {
+      "original_record_sha256": "b9f57de77be02bda3c944943e8b83eb9ba6a0b961bccd0766dfd05366bbbf5d2",
+      "qualified_path": "docs/deaths/D0000-qb5619dd21067c99a0bb29a1aa1cef7f35c85aac452b517c1c3281472fbf135ec",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0009-rust-seed1072"
+    },
+    {
+      "original_record_sha256": "d77fbd1eaff5ebf03da1faba2bdacc3343f3b550bcaad46328efe4288e016cd8",
+      "qualified_path": "docs/deaths/D0000-qe607522112e2c85c825767d77f47f564031bfd37f2aaad3eec7dabda54601aeb",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0010-rust-seed1074"
+    },
+    {
+      "original_record_sha256": "ba3251d5c0526fa77fec6be77ced14b3e36a2a8e77df56868c8106008bc2a0b2",
+      "qualified_path": "docs/deaths/D0000-qdc02455328a86b518ff38f8259f7d87b47ec9996253a4f07cf8c5d92d59f7554",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0011-rust-seed1073"
+    },
+    {
+      "original_record_sha256": "720272ea35ff6144fb1733c5b9b890664ec9733188181ba1ee6aee29d10dea7c",
+      "qualified_path": "docs/deaths/D0000-q6c8060410f3fca1561de16c6f20a36be5fe74fd6cab73af31868ff681aba6214",
+      "side": "baseline",
+      "source_build": {
+        "binary": "/workspace/work/p351-baseline/build/rust/game/angband",
+        "binary_sha256": "e9b91d1ec5238712ddfec407e2cfaab578feba5ba6534a374b42ebd9d46fd0d8",
+        "built_utc": "2026-11-16T01:11:25Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "79ec0591248db68c70fdc905ebe09549aabc60fa",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "87717140e88805c99b2b8f5d036036cf21eb9b8e953b8cce25d07465a2c2a9a9"
+      },
+      "source_directory": "/workspace/work/p351-current-baseline-deaths/D0012-rust-seed1084"
+    },
+    {
+      "original_record_sha256": "4f872c266a451ab57ae76230722fe7f8e96a9cd4df3df1bad1947a88ac9f7028",
+      "qualified_path": "docs/deaths/D0000-q4ca059587f7c4504aea7686c38db84fbed067db5939505d1119d50e7d43076d2",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0001-rust-seed1011"
+    },
+    {
+      "original_record_sha256": "8a0658fa81937d2a13d2c55b2c3783579c8122173dd44c7a2d3123d9bbdd348b",
+      "qualified_path": "docs/deaths/D0000-q2a42f7d78fd24ca67bccc9836e5be252a16f07a2d7aa28a06afef6091817b97a",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0002-rust-seed1020"
+    },
+    {
+      "original_record_sha256": "dbda56111160253a8b49ca38bfe2921362c8413456877d604c629582c5deb398",
+      "qualified_path": "docs/deaths/D0000-q11c603aec73c2c485e7b1186e721e6590c7cfffe781d110d5e5733389997bb54",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0003-rust-seed1021"
+    },
+    {
+      "original_record_sha256": "b09b0ecf6573e3d879b06fca7843b5ef90a19398dabaf2a587a18cab404e76ed",
+      "qualified_path": "docs/deaths/D0000-q73bafb7c680f95c613d69a7aa68de8fb517315010b86eb57ac6181067e690704",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0004-rust-seed1023"
+    },
+    {
+      "original_record_sha256": "437b1a14428e6c6b559df2fc0bae39bfe4f48c5a5a0a4ac34ce41253d4dc7c85",
+      "qualified_path": "docs/deaths/D0000-q942b5789e5c46940429248a14f8a10c5d6d73a17273f4685497e97834d5854f2",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0005-rust-seed1022"
+    },
+    {
+      "original_record_sha256": "115185dfc3136c2903ecac6ed083dafb5c40f9b021b4801fcd4c06ec15117fee",
+      "qualified_path": "docs/deaths/D0000-q6f5d2f806985693298899ec7b26efa821d83e53ec3941eac69417332db58bad8",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0006-rust-seed1043"
+    },
+    {
+      "original_record_sha256": "289c0289f8d99f19d8b890855abbb77de5700b4be50b5e0f370d88f5990bfbb8",
+      "qualified_path": "docs/deaths/D0000-q02e753f3bfb81ef805fcc305e84beac6883209806b3afafc1ae58870d1a1185e",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0007-rust-seed1050"
+    },
+    {
+      "original_record_sha256": "32f7e13639f8afc7b7520f1477a4bc4557bbfc0426d970c1fdabe98eb01f009b",
+      "qualified_path": "docs/deaths/D0000-qdca2d455f54e6841021bab524513b9b302c2a5fc1ffe6ad36078287154e8dc2d",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0008-rust-seed1062"
+    },
+    {
+      "original_record_sha256": "0c582755768adc1f71cf719b22460f8a2fc8ea4fd9b59473a2eed4fcebfeeead",
+      "qualified_path": "docs/deaths/D0000-q913e0b695ce8636afff326e660063b0be72261f62a0d11ba624596a03e545f98",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0009-rust-seed1072"
+    },
+    {
+      "original_record_sha256": "3b2c98b4898f5048ba2ed0cd3acbc1d7af8e9d94c30e8da5d9ab45a10a9dd610",
+      "qualified_path": "docs/deaths/D0000-qee65e8edbd3bf8644d1fcfb458398ce992a214938cee66b5bb482b5e24b17fe9",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0010-rust-seed1074"
+    },
+    {
+      "original_record_sha256": "f91b9b7d44f2fd0eec5f8d9f3057dae065fd371b1c2ee6865fabd9bc15d3ce56",
+      "qualified_path": "docs/deaths/D0000-q5e0667b8a6c0ca810d412d04e17a883f9c134f0b24abe9370371e634659178c5",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0011-rust-seed1073"
+    },
+    {
+      "original_record_sha256": "347b2f5c3ab76957d0cc9fedb70839963c8e5c536539aea3217612e6c6be3118",
+      "qualified_path": "docs/deaths/D0000-q8f613b2d517385318104786d07c025479abb729d75aba39d524bd93f3a60e671",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0012-rust-seed1084"
+    },
+    {
+      "original_record_sha256": "97d6fc8bf6d2adc62633b8db4136d83cff96912e90d579d6446e344e87248941",
+      "qualified_path": "docs/deaths/D0000-qe1e9c95e811b097abd4ccf36c34993e124e4c33ebf2bdb330ebff4dc619c6658",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0013-rust-seed102"
+    },
+    {
+      "original_record_sha256": "176606b57727ee222c605caac48404581570103db165f4bb99c73668122d74e5",
+      "qualified_path": "docs/deaths/D0000-q6160c94132b417d96c8ca42465c4968d472b27a09e9b53d7240098df0e564f48",
+      "side": "candidate",
+      "source_build": {
+        "binary": "/workspace/work/p351/build/rust/game/angband",
+        "binary_sha256": "80b500e55e7a890b6b0eab55d5b0ac447f699bb30a6d5ee6960dc8a98d4e5b75",
+        "built_utc": "2026-11-16T01:11:46Z",
+        "cc": "cc (Debian 14.2.0-19) 14.2.0",
+        "engine_upstream": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+        "git_dirty": "no",
+        "git_rev": "60a506b689ffb09a3b241ac97059adb34931898b",
+        "impl": "rust",
+        "inputs_dirty": "no",
+        "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)",
+        "source_sha256": "7d2af92011c8d5fa7d73cb2df1e5460048f2dd1f0987cc0143df26406a5a94f7"
+      },
+      "source_directory": "/workspace/work/p351-current-candidate-deaths/D0014-rust-seed1020"
+    }
+  ],
+  "schema": "borg-reborn-rs/dossier-map@1"
+}

@@ -11,9 +11,14 @@
 - Preserve the first completed comparison as pre-revert proof under
   P351-PRE-REVERT-* and freeze its actual three executable images. Do not
   relabel its #355-era policy or overwrite recordings/build identities.
-- Refresh baseline and candidate on the new source. Current-base native,
-  play and archive checks are pending before a new CI pass. V2 pin/consumer
-  hook changes remain confined to the task branch during the active review.
+- Refreshed current-base checks pass: all 45 play triples and deterministic
+  summaries, 242,641 classified rows, fresh/loaded v2 replay and saves, 69
+  native tests (one local binding skip), 91 tool/19 script tests and required
+  Rust checks. Actual clean build receipts are in P351-VALIDATION.md/.json.
+- Preserve 26 current-source packets as well as 28 first-epoch packets;
+  both registries reconcile and all 2,632 archive cases verify. #393 needs
+  CI and #395 disposition before integration; its V2 pin/consumer hooks
+  remain confined to the task branch while that reviewed head is fixed.
 
 ## 2026-11-16: recorder v0.2.0 consumer adoption (#351)
 

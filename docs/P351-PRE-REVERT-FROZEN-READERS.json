@@ -1,0 +1,12 @@
+[
+  {
+    "original_path": "/workspace/work/p351-recorder-initial/reader-build/debug/angband-recorder",
+    "frozen_path": "/workspace/work/p351-recorder-initial/reader-cli",
+    "sha256": "4988cfe2fe8b284d100119d3ccb8c676b8fea8e8c976191e4aeb99c0c56946f2"
+  },
+  {
+    "original_path": "/workspace/work/p351-recorder-loaded/reader-build/debug/angband-recorder",
+    "frozen_path": "/workspace/work/p351-recorder-loaded/reader-cli",
+    "sha256": "a5ead79aa0ac3bd53eb0051e2ec63c5b0a53ac78f1462ba7e62ef00303b2af5c"
+  }
+]
