@@ -14,8 +14,19 @@
 - The canonical fixture/evidence checkout points to Cemetery `ec332c6`, which
   includes the unchanged incident save bundle and both parent control sets.
   The native-tool pin remains `1afd9423`; its byte verification stays enabled.
-- This sync needs fresh integrated-source checks and any required canonical
-  natural control evidence before #378 merges. Reviewed P1 runtime/bank
+- Integrated clean runtime is `88a9437a7cbc96ceb7de16c1eecd9cc49c8b4bfb`,
+  source `2d1420b704fa8faa4a1972fe9548fdd2ebaa2a5fde98c9ff7ce9f4ba51d2ecef`.
+  Formatting, Clippy, workspace/core tests, 94 tools and 19 scripts pass;
+  86 local engine tests pass with 18 existing fixture/dependency skips.
+  Initial native checks rejected a stale API-1 sibling checkout as designed;
+  after checking out the landed Cemetery code, rerun passes without test edits.
+  Ordinary/exact smoke match stored references 3/3 across all streams.
+- Three natural controls for the integrated source are retained immutably in
+  Cemetery PR #20 at `9283d07c77724326970e18759d886cd15efd7d29`; all 82 scoped
+  packages verify and all 869 prior package blobs remain intact. The source
+  fixture now points to that canonical evidence, keeping the original save
+  bundle/hash unchanged. No new validation dossier is added to this source
+  repository. Final integrated-head CI must pass before #378 merges. Reviewed P1 runtime/bank
   evidence remains pinned to its original runtime; no new survival or
   population claim follows from integration. Per-kind charges (#411) and
   optional one-way policy (#404) remain separate follow-ups.
