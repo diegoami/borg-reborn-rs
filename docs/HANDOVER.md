@@ -16,8 +16,11 @@
 - The vendor audit exposes an existing accepted-main ownership omission:
   #400/#443 changed borg_town_usefulness.rs without declaring it HOOKED.
   Declare that receiving file; retain its accepted bytes without edits.
-- Validate the exact combined runtime and retain new source-qualified
-  controls in Cemetery. Earlier exact-build evidence remains historical;
+- Local formatting/Clippy,165 workspace checks,333 native checks/four ignores
+  and the vendor audit pass. Candidate full45 and real weighted Mage/trace
+  parity checks pass. Cemetery0f9f7cf7 independently retains98 verified
+  packages, including this combined source290fd89e and initial CI failure.
+  Pin it for fresh CI. Compare the full45 with accepted main separately. Earlier exact-build evidence remains historical;
   green old task CI does not validate this combined build. Repin #407 only
   after task CI/integration; promotion must preserve accepted main work.
 
