@@ -107,7 +107,11 @@ PR that does not must reproduce them.
 ## Run-derived P1 character tier
 
 Build dependencies include OpenSSL's crypto headers/library (`libssl-dev` on
-Debian/Ubuntu). `harness/capabilities.json` declares supported contracts; it is
+Debian/Ubuntu). The binary intentionally links libcrypto even for ordinary runs:
+the engine attests the exact record bytes it applies with the maintained SHA-256
+implementation, independently of the harness hash. Adapter/zoo hosts need the
+matching runtime library. A custom in-tree cryptographic implementation is not
+introduced in this milestone. `harness/capabilities.json` declares supported contracts; it is
 bound to the exact checkout used by the suite adapter, not a moving branch.
 
 `-- -start-build FILE` with `start-depth=N` reads a bounded declarative native
@@ -142,10 +146,16 @@ RUN_TIMEOUT_SECONDS=30 harness/run.sh /tmp/tier-source 101 0 0 20000 menu \
 ```
 
 Capture runs only at the first logged key at the requested level. It does not
-advance play, consume game RNG, or load a save. The summary records capture
-turn/level and the engine-computed SHA256. If the level is not reached, no
-record is advertised. Existing capture files are never overwritten; unsupported
-native properties fail explicitly. Normal run/death policy still applies to
+advance play or load a save. Seed-101 level-5 capture/control streams demonstrate
+RNG neutrality for that supported kit; this is not an exhaustive proof for every
+kind. For every requested capture the summary records `build_capture_status`
+(`captured` or `absent`) and `build_capture_requested_level`. Successful captures
+also record turn/level and the engine-computed SHA256. A level not reached at a
+pre-key boundary, including one skipped by multiple level gains, reports `absent`
+and no digest. The game may still exit successfully: capture absence is separate
+from its gameplay outcome. Existing capture files are never overwritten; unsupported
+native properties fail explicitly and terminate the capture run as a harness
+failure; such a run must not be used as a successful paired control. Normal run/death policy still applies to
 this **ordinary source run**. The cemetery catalog builder verifies its clean
 source/binary/process identity and capture digest before retaining provenance.
 A one-observation P1 tier must not be described as a population-average kit.
@@ -164,3 +174,10 @@ superseded development evidence. New reports include generic refusal-message
 counts and native progress; a refused Recall scroll is not evidence of a
 qualified near-death or a survival improvement. One-way synthetic saves cannot
 be loaded as unmarked ordinary games.
+
+One-way starts retain the existing Borg decision policy. A hungry character
+without food may select return-home actions that native rules refuse and may
+stall; the six P1 cells do not exercise that state. Cap survival is not proof
+that this policy handles long-horizon one-way play. #386's rule-aware policy
+changes and starvation fixture are a separate follow-up, not part of this
+startup/build contract.

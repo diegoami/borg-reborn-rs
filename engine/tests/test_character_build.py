@@ -60,11 +60,30 @@ class CharacterBuildTest(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         summary = json.loads((measured / 'summary.json').read_text())
         self.assertEqual(summary['build_capture_level'], 5)
+        self.assertEqual(summary['build_capture_status'], 'captured')
+        self.assertEqual(summary['build_capture_requested_level'], 5)
         self.assertEqual(summary['build_capture_sha256'], hashlib.sha256(record.read_bytes()).hexdigest())
         self.assertEqual(record.read_bytes(), FIXTURE.read_bytes())
         for name in ('keys.log', 'state.log', 'messages.log'):
             self.assertEqual((measured / name).read_bytes(), (control / name).read_bytes(), name)
         self.assertNotIn('synthetic', summary)
+
+    def test_unreached_capture_is_explicit_without_changing_play(self):
+        record = self.base / 'unreached.build'
+        measured, result = self.launch('unreached', 'menu',
+            ('-capture-build', str(record), '-capture-build-level', '15'), turns=300)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((measured / 'summary.json').read_text())
+        self.assertEqual(summary['build_capture_status'], 'absent')
+        self.assertEqual(summary['build_capture_requested_level'], 15)
+        self.assertNotIn('build_capture_sha256', summary)
+        self.assertNotIn('build_capture_turn', summary)
+        self.assertFalse(record.exists())
+        control, result = self.launch('unreached-control', 'menu', turns=300)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('build_capture_status', json.loads((control / 'summary.json').read_text()))
+        for name in ('keys.log', 'state.log', 'messages.log'):
+            self.assertEqual((measured / name).read_bytes(), (control / name).read_bytes())
 
     def test_invalid_or_unsupported_records_never_fall_back_to_birth(self):
         original = FIXTURE.read_text()

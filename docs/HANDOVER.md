@@ -4383,3 +4383,16 @@ new build-identity death dossiers. D2093/D2094 reproduce CI controls 102/1020;
 keys, messages and state channels match the CI artifact, whose original record
 and build identities are retained in ci-evidence.json. Both remain unassessed
 validation controls, not a strategy/performance claim. No death check is waived.
+
+## Synthetic P1 review follow-ups (2026-11-16)
+
+Owner-supplied reviews of #378 d406d2c9 and Cemetery #7 e750549 are input, not
+acceptance. Every requested capture now reports captured/absent and its requested
+level; an unreached/skipped level no longer leaves an ambiguous successful run.
+A parity regression covers the absence path. The startup wrapper mirrors the
+native character_dungeon leave guard and names lifecycle/arena pin-bump checks.
+Cemetery fixes malformed-option reconciliation, normalizes marker flags and
+prints exclusions; this source pins its reviewed-follow-up guard revision.
+Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
+OpenSSL remains an intentional documented runtime dependency. Full responses
+and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.

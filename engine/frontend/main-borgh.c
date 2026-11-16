@@ -291,6 +291,10 @@ static void borgh_finish(const char *reason)
 	}
 	if (opt_load)
 		fprintf(fp, "  \"loaded_turn\": %ld,\n", loaded_turn);
+	if (opt_capture_build) {
+		fprintf(fp, "  \"build_capture_status\": \"%s\",\n", build_capture_turn ? "captured" : "absent");
+		fprintf(fp, "  \"build_capture_requested_level\": %d,\n", opt_capture_build_level);
+	}
 	if (build_capture_turn)
 		fprintf(fp, "  \"build_capture_turn\": %ld,\n  \"build_capture_level\": %d,\n", build_capture_turn, opt_capture_build_level);
 	if (build_capture_turn)
