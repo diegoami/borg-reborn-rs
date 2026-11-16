@@ -194,6 +194,31 @@
   registries reconcile and all 2,606 archive packages verify. Build/log/hash
   receipts and limitations are in P351-VALIDATION.md/.json and the map.
   Required CI gates track-p; a separate owner-selected review gates main.
+## 2026-11-16: level-loop stair livelock (#421)
+
+- borg-zoo's 3x3 pilot and small tier found frozen-turn bursts with the
+  ambitious plan and the live town planner: on DL1 the core refuses DL2
+  for a reason town cannot change (e.g. "30 hp"), the loop goes home, and
+  in town it restarts and takes the stairs straight down, with no game
+  time passing. Still on main 4ecb93d7 (Half-Troll Rogue 926210318: 1,098
+  keys at one game turn).
+- Fix (borg-core/src/shell.rs, ours): the loop remembers the refusal that
+  sent it home (level, reason, max character level). The same refusal
+  again, with no descent in between, holds the loop: the core plays the
+  level it is prepared for, and leaves a used-up level its own way. A
+  descent clears it. The note now names the core's reason.
+- Checks: engine/tests/test_loop_livelock.py (fails on main with 1,098
+  keys at turn 48483, passes here). 90 small-tier starts, ambitious-town:
+  stalls 1 -> 0, deaths 23 -> 17, max burst 725 (one-unit arrow buying).
+  No-plan arms (control, town) byte-identical on 8 cells.
+- Synchronized with main 83da6679 (#378; play unchanged on checked cells).
+  CI deaths for source 6b3b9e99 are retained on borg-cemetery
+  `evidence/borg-reborn-rs-421-ci-controls-v2` (da51ee44, based on
+  9283d07); the wild-cat fixture points CI at that commit.
+- Found while auditing (next PR): every phase change starts with a town
+  trip (`loop-levels 0 N`), arrival in town restarts the loop, and any
+  upward move sets "home" (46 such overrides in one Warrior game).
+
 ## 2026-11-16: narrow survival fixes together on main (#369, #380)
 
 - Owner: both narrow proposals have the highest priority, in one PR for
