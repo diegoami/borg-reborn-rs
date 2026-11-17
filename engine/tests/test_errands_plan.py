@@ -131,7 +131,8 @@ class ErrandsPlanTest(unittest.TestCase):
         import re
         depths=[int(m[1]) for m in re.finditer(r' d(\d+)/',(out/'state.log').read_text())]
         self.assertLess(sum(d>1 for d in depths),len(depths)/50,'time below the cap')
-        self.assertLessEqual(json.loads((out/'summary.json').read_text())['depth'],1)
+        self.assertLessEqual(json.loads((out/'summary.json').read_text())['depth'],2,
+                             'allow the accepted single-step N+1 excursion')
     def run_measured(self,name,plan=None,core='borg-rs',turns=1000):
         env={k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}
         if 'BORG_CEMETERY_DIR' in os.environ: env['BORG_CEMETERY_DIR']=os.environ['BORG_CEMETERY_DIR']

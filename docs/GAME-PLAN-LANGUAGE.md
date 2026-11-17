@@ -47,10 +47,15 @@ A phase has exactly one command (owner, 2026-11-16).
 **`max-depth N`** is a cap, not a route.
 The phase installs no errand: the core plays as itself, with its own dives,
 town trips, shopping and recovery, and is never prepared for a level below
-DL N. It sets the core's `borg_no_deeper` to N+1 for the phase, never above
-the configured value. When the plan hands back (a level with no phase, such
-as 50 in the shipped files) or is cancelled (`/stop`, a manual errand), the
-configured value is put back: after the plan, the core plays as itself. The core's own cap applies as usual: when it leaves a level by the
+DL N. Preparedness applies the separate N+1 phase limit before either
+calculation mode. The configured `borg_no_deeper` retains its original
+static-mode checks and reason order; depth correction combines both limits. The plan
+never overwrites configuration. Reloading borg.txt or reopening the same
+character retains the phase limit while honoring the freshly loaded value.
+Hand-back at a gap (such as level 50), `/stop` or a manual errand clears the
+phase limit immediately, including while Recall is pending. Phase changes
+preserve the core's active flow and do not install or clear errands.
+The core's own cap applies as usual: when it leaves a level by the
 nearest stair it may step onto the level below and climbs back at once
 ("Needing to get back on correct depth"); it never stays there. N is 1–126.
 Town trips are the core's own, plus the M13 trip policy when it is on.
@@ -124,8 +129,7 @@ phase. Pending Recall is allowed to finish before selecting a new phase;
 store transactions and partially queued commands are not interrupted.
 
 The core owns every move, town trip and recovery; the cap only refuses
-levels below it. Phase selection clears old path intent, not the core's
-safety flags. No match stops with a reason.
+levels below it. Phase selection preserves path intent, errands, core goals and safety flags. No match stops with a reason.
 `/stop`, a manually selected errand, or an errand's terminating outcome cancels
 the plan controller. A different character/older loaded game resets selection.
 An ordinary key pause retains existing Borg state; restarting the Borg resumes

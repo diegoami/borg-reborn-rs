@@ -591,9 +591,12 @@ One PR, owner's request (supersedes #441):
 - Owner: a phase should be an additional check, not forced behaviour.
   New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
   errand; the core plays as itself and is not prepared below DL N (the
-  phase sets `borg_no_deeper` to N+1, never above the configured value).
-  Review of #440: hand-back at a gap and cancel now restore the configured
-  value (the last cap used to persist after level 50).
+  phase supplies a separate N+1 threshold, combined with the live configured
+  value). Review follow-up #447 replaces the cfg snapshot/restore: reload
+  and same-save reinitialization retain the overlay; cancellation releases
+  it immediately, including during Recall. No stale cfg is restored.
+  Phase changes preserve errands and core goals; parser/dive/trip tests
+  removed with loop-only coverage are restored.
 - Owner: remove the loop errand entirely. `/loop-levels` and the plan
   command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
   was removed; use max-depth N"), with the level-loop code in shell.rs,
@@ -603,10 +606,12 @@ One PR, owner's request (supersedes #441):
   hashes).
 - The core's own cap lets a "spent too long, leaving" move step onto the
   level below for one move and climb straight back; owner: not an issue.
-- Local, 90 classes-1800-small starts, town planner on, trip off:
-  deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
-  old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
-- CI deaths for source 2d8693c8 are retained on borg-cemetery
+- The published #440 90-start comparison is historical, descriptive and
+  not independently verified here. Raw seed/config/run custody is still
+  being recovered; it is not validation of #447. See the canonical
+  [Cemetery archive](https://github.com/diegoami/borg-cemetery/tree/513d14f59a00fee6b6a5fa39c650d04eaea05650/validation/borg-reborn-rs/plan-cap-review-447/);
+  missing raw custody is tracked in #448.
+- CI deaths for reviewed source ef85f725 are retained on borg-cemetery
   `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
   adds `checkpoints-max-depth.zip`, the wild-cat archive with the plan
   capped (saves and borg.txt unchanged; the original stays as evidence).
@@ -5052,3 +5057,36 @@ prints exclusions; this source pins its reviewed-follow-up guard revision.
 Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
 OpenSSL remains an intentional documented runtime dependency. Full responses
 and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
+
+## 2026-11-16: #440 review follow-up (#447)
+
+- Separate cap overlay fixes reload, reinitialization, stale restoration and
+  Recall cancellation; the cap test permits the accepted one-step N+1 move.
+- Release core checks: 329 pass, 4 ignored; workspace tests, fmt and clippy
+  pass. Targeted native plan/survival checks: 13 pass; tools: 94 pass;
+  scripts: 19 pass. Full engine suite: 84 pass/checks, 2 fixture-dependent
+  skips. Vendor declaration also covers #444’s existing hook.
+- Clean implementation/source/binary are pinned in Cemetery #36, with three
+  canonical CI control deaths. The source fixture pins that evidence commit.
+  Lifecycle reload/cancel behavior has unit coverage; an interactive GUI
+  reload/Recall session is not claimed. Follow-up stays unmerged for review.
+
+## #449 re-review fixes
+
+- Apply the effective depth limit before dynamic/static preparedness selection.
+- Initialization refreshes the cap from the loaded character and level before
+  store/Recall ticks; same-run cancellation remains cancelled.
+- Require the child cancellation test to report one executed test. Remove
+  the redundant cancellation branch and correct the remaining path-intent text.
+- Add initialization lifecycle and production preparedness-guard regression before calculation dispatch.
+  Validation and refreshed evidence pins will be recorded on #449.
+
+## #449 second re-review
+
+- Guard preparedness with only the active plan limit. Restore the configured
+  check at its original static-only location so no-plan play and reason order
+  remain unchanged. The dispatch regression covers absent-plan pass-through.
+- Completed reincarnation calls the same refresh as initialization; declare
+  the receiving hook and clarify configuration semantics in the documentation.
+- The PR runtime pin is already current; refresh it and validation after these
+  runtime changes. #448 remains open for historical raw-evidence custody.

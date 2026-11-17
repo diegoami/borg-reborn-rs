@@ -726,6 +726,22 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
         return None;
     }
 
+    // borg-reborn-rs (#447): cap applies before either calculation mode.
+    let limit = crate::errands_plan::plan_cap();
+    prepared_with_limit(depth, limit, || borg_prepared_calculated(st, depth))
+}
+
+/// Keep the guard ahead of calculation dispatch, without requiring an engine
+/// link in the regression that verifies calculations cannot bypass it (#447).
+pub(crate) fn prepared_with_limit(depth: i32, limit: Option<i32>, calculate: impl FnOnce() -> Option<Reason>) -> Option<Reason> {
+    if let Some(limit) = limit.filter(|limit| depth >= *limit) {
+        Some(Reason::Formatted(format!("No deeper {limit}.").into_bytes()))
+    } else {
+        calculate()
+    }
+}
+
+fn borg_prepared_calculated(st: &mut BorgState, depth: i32) -> Option<Reason> {
     if st.cfg(BORG_USES_DYNAMIC_CALCS) != 0 {
         // use the base restock so special checks can be done
         if let Some(reason) = borg_restock(st, depth) {
@@ -754,7 +770,7 @@ pub fn borg_prepared(st: &mut BorgState, depth: i32) -> Option<Reason> {
             }
         }
 
-        // Not if No_Deeper is set
+        // Keep the configured limit in its original static-only position.
         if depth >= st.cfg(BORG_NO_DEEPER) {
             return Some(Reason::Formatted(format!("No deeper {}.", st.cfg(BORG_NO_DEEPER)).into_bytes()));
         }
