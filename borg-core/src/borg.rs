@@ -193,6 +193,12 @@ pub struct BorgInitSave {
 pub struct BorgMonInfo {
     pub breeders: u16,
     pub scary: bool,
+    /// borg-reborn-rs (#530): the scary check set `goal.leaving` /
+    /// `goal.fleeing`, so they are withdrawn when the Borg stands instead.
+    pub scary_goals: bool,
+    /// borg-reborn-rs (#530): standing against a scary monster it cannot
+    /// escape (for the note on the change).
+    pub scary_stand: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

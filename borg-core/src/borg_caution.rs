@@ -1632,6 +1632,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // Note
         borg_note(st, "# Scary guy on level.");
 
+        // borg-reborn-rs (#530): remember that the scare set the goals.
+        if !st.borg.goal.leaving || !st.borg.goal.fleeing {
+            st.borg.mon.scary_goals = true;
+        }
+
         // Start leaving
         start_leaving(st, "# Leaving (Scary guy on level)");
 
@@ -2203,14 +2208,71 @@ fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32
     if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    !easy_escape_with(st, steps, up, down)
+}
+
+/// borg-reborn-rs (#503, #530): a free staircase within `steps` (the
+/// engine's distance; -1: none known), or a Phase Door, teleport, Teleport
+/// Level, escape or Word of Recall in the pack or spells.
+fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
     let near = |d: i32| d != -1 && d <= steps;
-    !(near(up)
+    near(up)
         || near(down)
         || st.borg.tr(BI_APHASE) > 0
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || st.borg.tr(BI_RECALL) > 0)
+        || st.borg.tr(BI_RECALL) > 0
+}
+
+/// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
+/// `caution_scary_stand` 1, in the dungeon: a monster that never moves is
+/// never scary (it cannot follow), and the Borg flees a scary level only
+/// while the escape is real. Real means an easy escape (`easy_escape_with`,
+/// the breeder stand's `caution_breeder_easy_escape_steps`), or no scary
+/// monster that is awake, can move and is at least as fast as the character
+/// (the Borg outpaces every pursuer).
+pub(crate) fn scary_stand() -> bool {
+    p(Param::caution_scary_stand) != 0
+}
+
+/// borg-reborn-rs (#530): applies the decision after a scan of the known
+/// monsters. `scary`: a scary monster that can move is known; `pursuer`:
+/// one of them is awake and at least as fast as the character. Standing
+/// clears the level's scary flag and withdraws the leave and flee the scare
+/// set (other cautions set theirs again in this think).
+pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) {
+    if !scary {
+        return;
+    }
+    let escape = st.borg.tr(BI_CDEPTH) == 0
+        || easy_escape_with(
+            st,
+            p(Param::caution_breeder_easy_escape_steps),
+            nearest_free_stair(st, true),
+            nearest_free_stair(st, false),
+        );
+    let stand = stand_decision(escape, pursuer);
+    if stand {
+        st.borg.mon.scary = false;
+        if std::mem::take(&mut st.borg.mon.scary_goals) {
+            st.borg.goal.leaving = false;
+            st.borg.goal.fleeing = false;
+            st.borg.goal.fleeing_to_town = false;
+        }
+        if !st.borg.mon.scary_stand {
+            borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
+        }
+    } else {
+        st.borg.mon.scary = true;
+    }
+    st.borg.mon.scary_stand = stand;
+}
+
+/// borg-reborn-rs (#530): stand when there is no real escape: no easy
+/// escape and a pursuer the Borg cannot outpace.
+fn stand_decision(escape: bool, pursuer: bool) -> bool {
+    !escape && pursuer
 }
 
 /// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
@@ -2703,6 +2765,38 @@ mod outmatched_tests {
         let flag = spec("caution_heal_when_outmatched");
         assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
         assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod scary_stand_tests {
+    use super::*;
+
+    fn st() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st
+    }
+
+    #[test]
+    fn stand_only_without_a_real_escape() {
+        assert!(stand_decision(false, true), "no escape, a pursuer as fast: stand");
+        assert!(!stand_decision(true, true), "an easy escape: flee");
+        assert!(!stand_decision(false, false), "every scary monster slower or asleep: flee");
+    }
+
+    #[test]
+    fn an_easy_escape_is_near_stairs_or_an_escape_item() {
+        let mut s = st();
+        assert!(!easy_escape_with(&s, 5, -1, -1), "nothing");
+        assert!(easy_escape_with(&s, 5, 5, -1), "an up staircase within the steps");
+        assert!(easy_escape_with(&s, 5, -1, 3), "a down staircase");
+        assert!(!easy_escape_with(&s, 5, 6, 9), "both too far");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE, BI_RECALL] {
+            s.borg.trait_[t as usize] = 1;
+            assert!(easy_escape_with(&s, 5, -1, -1), "escape trait {t}");
+            s.borg.trait_[t as usize] = 0;
+        }
     }
 }
 

@@ -567,6 +567,12 @@ borg_param_caution_scary_named_monsters = 1
 # adds to the named list: any monster, scaled to the character (Fang is
 # scary to a 10-HP mage, not to an 80-HP warrior). Spells are not counted.
 borg_param_caution_scary_damage_percent = 60
+# A scary level is fled only while the escape is real: a free staircase within
+# caution_breeder_easy_escape_steps or an escape item, or no scary monster
+# awake and at least as fast as the character. Otherwise the Borg stands and
+# fights (the cornered mode boosts it). A monster that never moves is never
+# scary. Owner, 2026-11-17, #530. 0 = C (flee every scary level).
+borg_param_caution_scary_stand = 1
 borg_param_caution_breeder_fight = 1
 borg_param_caution_breeder_easy_escape_steps = 5
 borg_param_caution_breeder_stand_radius = 5
