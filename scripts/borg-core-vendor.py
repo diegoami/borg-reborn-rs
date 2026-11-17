@@ -40,6 +40,8 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
+    'src/borg_item_wear.rs', 'src/borg_store_buy.rs',
+    'src/borg_think_store.rs', 'src/borg_home_power.rs',  # #433 inventory parameters
     'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
     'src/borg_prepared.rs',  # #447: independent plan cap
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values

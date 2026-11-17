@@ -10,6 +10,17 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## M13 inventory gap closure (#433 / P4)
+
+The synchronized registry contains **2,191** parameters. This adds 362 neutral
+inventory parameters to the 1,829-entry accepted main registry at `a8ac685a`: 48 power,
+23 wear, 14 buy, 34 sell, 6 store-choice and 237 home-valuation entries.
+The [M13 inventory contract](M13-INVENTORY-PARAMETERS.md) records scope,
+units, bounds, retained mechanics, #293 separation and the P-before-R4 gate;
+its JSON companion lists every new default and original source location.
+The extraction changes no default decision policy. Historical counts below
+remain receipts of their own snapshots.
+
 ## Class/family attack preference extension (#403)
 
 The historical P1–P3 counts above describe the original extraction. #403 adds
