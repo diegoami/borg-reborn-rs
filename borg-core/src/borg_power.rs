@@ -1171,10 +1171,10 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward Cure Poison and Cuts
     let hurt = tr(BI_ISCUT) != 0 || tr(BI_ISPOISONED) != 0;
     if hurt && tr(BI_ACCW) != 0 {
-        *v = addi(*v, param(Param::power_inventory_poison_cure_bonus));
+        *v = addi(*v, param(Param::power_inventory_hurt_ccw_bonus));
     }
     if hurt && tr(BI_AHEAL) != 0 {
-        *v = addi(*v, param(Param::power_inventory_cut_cure_bonus));
+        *v = addi(*v, param(Param::power_inventory_hurt_heal_bonus));
     }
     if hurt && tr(BI_ACSW) != 0 {
         // usually takes more than one
@@ -1182,7 +1182,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         count_up(v, &mut k, param(Param::power_inventory_acsw_limit), tr(BI_ACSW), i64::from(param(Param::power_inventory_acsw_weight)));
     }
     if tr(BI_ISPOISONED) != 0 && tr(BI_ACUREPOIS) != 0 {
-        *v = addi(*v, param(Param::power_inventory_cure_serious_first_bonus));
+        *v = addi(*v, param(Param::power_inventory_poisoned_cure_poison_bonus));
     }
 
     // collect Resistance pots if not immune -- All Classes
