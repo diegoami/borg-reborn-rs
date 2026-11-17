@@ -163,6 +163,33 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2260` |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2250` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
+## Scary by damage (#505)
+
+The registry now holds **1803** parameters (1802 after #503; one added).
+Owner, 2026-11-17: scary is a monster that can one- or two-shot you, as a
+percentage of HP. Turning the named list off (#503) killed characters in
+borg-zoo#216 (run 44147930313): 5 and 4 deaths of 18 against 1 with the
+list, two of them at character level 1. The list stood in for this rule:
+each name had a character-level cap because Grip, Fang or a kobold is
+deadly only to a weak character.
+
+A monster on the level (`borg_near_monster_type`, every known monster, as
+the named list) makes the level scary when one character turn of its
+attacks takes at least `caution_scary_damage_percent` of max HP. The damage
+is `borg_danger_one_kill` evaluated at the monster's own grid, where the
+distance is clamped to 1, as if it stood next to the Borg: its speed (moves
+per character turn), its blows and its worst spell (`average` false), with
+hit and spell-frequency chances (`full_damage` false). Max HP, not current
+HP: a wounded character is already the danger-against-avoidance flight's
+business. The scary level then works as before (leave and flee, latched
+until a new level). The resist-based scares and the named list's switch
+stay. Compiled 0 (off); `harness/borg.txt` ships 50 (two shots), with the
+named list off.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2263` (0 = off; read in `borg_flow_kill.rs`) |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).

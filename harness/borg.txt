@@ -509,6 +509,12 @@ borg_param_town_heal_speed_percent = 66
 # once for 54,000 game turns. 0 = off (owner, 2026-11-17); the resist-based
 # scares (nether, blindness, chaos, confusion, poison) stay. 1 = C's list.
 borg_param_caution_scary_named_monsters = 0
+# A monster on the level is scary when one character turn of its attacks
+# (its speed, blows and worst spell, as the Borg's danger counts them next
+# to the Borg) can take at least this percent of max HP: 50 = it can kill in
+# two turns (owner, 2026-11-17, #505). 0 = off. It replaces the named list's
+# level caps: Fang is scary to a 10-HP mage, not to an 80-HP warrior.
+borg_param_caution_scary_damage_percent = 50
 borg_param_caution_breeder_fight = 1
 borg_param_caution_breeder_easy_escape_steps = 5
 borg_param_caution_breeder_stand_radius = 5

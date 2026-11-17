@@ -2251,6 +2251,29 @@ pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
 
+/// borg-reborn-rs (#505): a monster is scary when one of the character's
+/// turns of its attacks can take at least `caution_scary_damage_percent` of
+/// the character's max HP (owner: scary is a monster that can one- or
+/// two-shot you; 50 = two shots). The damage is `borg_danger_one_kill` as
+/// if the monster stood next to the Borg: evaluated at its own grid, where
+/// the distance is clamped to 1, so it counts its speed, its blows and its
+/// worst spell (`average` false), with hit and spell-frequency chances
+/// (`full_damage` false). Max HP, not current HP: a wounded character is
+/// the danger-against-avoidance flight's business. 0 = off.
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+    let percent = p(Param::caution_scary_damage_percent);
+    let max_hp = st.borg.tr(BI_MAXHP);
+    if percent <= 0 || max_hp <= 0 { return false; }
+    let pos = st.kills.kills[i as usize].pos;
+    let damage = crate::borg_danger::borg_danger_one_kill(st, pos.y, pos.x, 1, i, false, false);
+    scary_damage_reaches(damage, max_hp, percent)
+}
+
+/// borg-reborn-rs (#505): `damage` is at least `percent` of `max_hp`.
+pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(damage) * 100 >= i64::from(max_hp) * i64::from(percent)
+}
+
 /// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
 /// Blackguard) hunt breeders while there are at most
 /// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
@@ -2439,6 +2462,24 @@ mod outmatched_tests {
         let flag = spec("caution_heal_when_outmatched");
         assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
         assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod scary_damage_tests {
+    use super::*;
+
+    #[test]
+    fn a_monster_that_can_two_shot_you_is_scary() {
+        // 50 percent: two of its turns kill a character at full health.
+        assert!(scary_damage_reaches(5, 10, 50), "5 of 10 HP is half");
+        assert!(!scary_damage_reaches(4, 10, 50));
+        assert!(!scary_damage_reaches(12, 80, 50), "the same monster against 80 HP");
+        assert!(scary_damage_reaches(10, 10, 100), "100 = one shot only");
+        assert!(!scary_damage_reaches(9, 10, 100));
+        assert!(!scary_damage_reaches(1000, 10, 0), "0 = off");
+        assert!(scary_damage_reaches(i32::MAX, i32::MAX, 100), "no overflow");
+        assert!(!scary_damage_reaches(i32::MAX, i32::MAX, 1000));
     }
 }
 
