@@ -136,7 +136,8 @@ away from their danger, and below clevel 10 never flows to them. With
 by the engine's `distance`; a Phase Door, teleport, Teleport Level, escape or
 Word of Recall) it stands and fights: none of the three flees, and no retreat
 or back-away while a breeder is within the radius and no other known monster
-is within the danger horizon (`danger_monster_max_distance`); being surrounded
+is within the danger horizon (`danger_monster_max_distance`, on the larger axis
+distance like `borg_danger`); being surrounded
 still moves it. The generic low-HP and bleeding/poison flees stay (a Borg
 losing the fight is #504's cornered mode). With the named list on
 (`caution_scary_named_monsters = 1`) a level made scary by breeders before the
@@ -158,9 +159,9 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 |---|---|---|---|---|
 | `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2173` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2173` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2205` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2255` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2245` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2206` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2260` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2250` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## No unknown items (#470)
 

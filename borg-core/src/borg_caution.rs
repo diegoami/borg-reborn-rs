@@ -2199,7 +2199,8 @@ fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32
 /// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
 /// least one breeder within `caution_breeder_stand_radius` grids, and no
 /// other known monster within the danger horizon
-/// (`danger_monster_max_distance`, the reach of `borg_danger`): the danger
+/// (`danger_monster_max_distance` on the larger axis distance, the reach of
+/// `borg_danger`): the danger
 /// here is the breeders', so the Borg fights instead of retreating or
 /// backing away.
 pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
@@ -2212,8 +2213,12 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
         if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
             continue;
         }
+        // The radius is the engine's distance; the horizon is `borg_danger`'s
+        // reach, the larger axis distance (`danger_one_kill`).
+        let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
         known.push((
             engine::distance(st.borg.c, kill.pos),
+            reach,
             engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY),
         ));
     }
@@ -2224,12 +2229,12 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
     )
 }
 
-/// The known monsters as (distance, breeder): a breeder within `radius` and
-/// no other monster within `horizon`.
-fn only_breeders_near(known: &[(i32, bool)], radius: i32, horizon: i32) -> bool {
+/// The known monsters as (distance, danger reach, breeder): a breeder
+/// within `radius` (distance) and no other monster within `horizon` (reach).
+fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> bool {
     let mut breeders = 0;
-    for &(d, breeder) in known {
-        if !breeder && d <= horizon {
+    for &(d, reach, breeder) in known {
+        if !breeder && reach <= horizon {
             return false;
         }
         if breeder && d <= radius {
@@ -2555,13 +2560,16 @@ mod breeder_tests {
     /// breeder within the radius and no other monster within the horizon.
     #[test]
     fn standing_needs_only_breeders_within_the_danger_horizon() {
-        assert!(only_breeders_near(&[(1, true)], 5, 20));
-        assert!(only_breeders_near(&[(1, true), (5, true)], 5, 20));
+        assert!(only_breeders_near(&[(1, 1, true)], 5, 20));
+        assert!(only_breeders_near(&[(1, 1, true), (5, 4, true)], 5, 20));
         assert!(!only_breeders_near(&[], 5, 20), "no monster");
-        assert!(!only_breeders_near(&[(6, true)], 5, 20), "breeder beyond the radius");
-        assert!(!only_breeders_near(&[(1, true), (12, false)], 5, 20), "a caster within the horizon");
-        assert!(only_breeders_near(&[(1, true), (21, false)], 5, 20), "a monster beyond the horizon");
-        assert!(!only_breeders_near(&[(1, false), (2, true)], 5, 20), "a non-breeder adjacent");
+        assert!(!only_breeders_near(&[(6, 5, true)], 5, 20), "breeder beyond the radius");
+        assert!(!only_breeders_near(&[(1, 1, true), (12, 10, false)], 5, 20), "a caster within the horizon");
+        assert!(only_breeders_near(&[(1, 1, true), (21, 21, false)], 5, 20), "a monster beyond the horizon");
+        // #510 re-review: a breather at (+14,+14) is engine distance 21 but
+        // within borg_danger's reach (14): it vetoes.
+        assert!(!only_breeders_near(&[(1, 1, true), (21, 14, false)], 5, 20), "a diagonal monster within reach");
+        assert!(!only_breeders_near(&[(1, 1, false), (2, 2, true)], 5, 20), "a non-breeder adjacent");
     }
 
     /// #503: melee classes hunt while few breeders are known; casters and
