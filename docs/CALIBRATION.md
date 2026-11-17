@@ -126,6 +126,41 @@ up staircase on one level.
 | `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
+## Cornered mode (#504)
+
+The registry now holds **1809** parameters (1803 after #505's scary damage, #514; six added). Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
+danger but not much" (10–50% of avoidance), so a Borg that is losing a fight
+it cannot leave used none: a Blackguard died at 1/41 HP with its Berserk
+Strength spell unused. With `caution_cornered`, cornered means: in the
+dungeon, no Phase Door, teleport or escape (in the pack or as a spell), a
+known monster within the radius, and danger here at or above the HP x tenths /
+10. Then, before any retreat, in order and each while not active: a fear cure
+when afraid, Speed, Heroism, Berserk Strength, Blessing, and Monster Confusion
+against an adjacent unique or higher-level monster that is not immune to confusion.
+Buff spells (Haste Self for Druids and Rangers, Heroism, Berserk Strength,
+Bless) are cast only at or below `caution_cornered_spell_fail` (25) percent
+failure. A melee class (Warrior,
+Paladin, Rogue, Blackguard) neither retreats nor backs away. The ordinary heal tiers run earlier in `borg_caution`; #457's outmatched
+heal stays at the end, after retreat and back-away (tried first, it kept a
+cornered Borg drinking in place where a step away saved it). A monster that
+never moves (a mold) does not corner the Borg. Teleport Level counts as an escape; Word of Recall does not (unlike
+#503's easy escapes: 15–35 turns is too slow for a fight already lost). Monster Confusion is off the town
+planner's worthless list while the mode is on. The compiled defaults leave it
+off; `harness/borg.txt` ships 1, 10, 2 and 0. Owner: the same boosts in a
+hard breeder fight, `caution_breeder_boost_danger_tenths` (compiled 0 = off,
+shipped 5): while standing against breeders with no easy escape (#503's
+`breeder_stand`) and danger here at or above half the HP. Blessing is the
+Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2367` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2367` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2367` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2430` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2488` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2418` (0 = off; owner: the same boosts in a hard breeder fight) |
+
 ## Breeders and named scary monsters (#503)
 
 The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
@@ -157,11 +192,11 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2173` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2173` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2206` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2326` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2250` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2190` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2190` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2223` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Scary by damage (#505)
 
@@ -208,7 +243,7 @@ list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2264` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2281` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 
