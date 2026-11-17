@@ -52,6 +52,9 @@ HOOKED = {
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
     'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
+    'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
+    'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
+    'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 

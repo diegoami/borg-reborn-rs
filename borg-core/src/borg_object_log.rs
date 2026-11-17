@@ -124,18 +124,21 @@ type Kind = (u8, u8);
 
 /// The Borg bought an object: the store and the item's cost with it. In the
 /// home nothing is bought: the Borg takes the object back, at no price.
-pub fn log_buy(st: &BorgState, item: &borg_item, shop: &str, cost: i32, home: bool) {
+/// borg-reborn-rs (#507): `count` copies in one transaction, `cost` for all of them.
+pub fn log_buy(st: &BorgState, item: &borg_item, shop: &str, cost: i32, home: bool, count: u32) {
+    let count = count.max(1);
+    let what = if count > 1 { format!("{count} x {}", item_desc(item)) } else { item_desc(item) };
     if home {
         emit(
             st,
             "take",
-            &format!("{} from the {}", item_desc(item), shop),
+            &format!("{what} from the {shop}"),
         );
     } else {
         emit(
             st,
             "buy",
-            &format!("{} at the {}, cost {cost} gold", item_desc(item), shop),
+            &format!("{what} at the {shop}, cost {cost} gold"),
         );
     }
 
@@ -143,7 +146,7 @@ pub fn log_buy(st: &BorgState, item: &borg_item, shop: &str, cost: i32, home: bo
     let mut pending = pending_buys().lock().unwrap_or_else(|err| err.into_inner());
     pending.push(PendingBuy {
         kind: (item.tval, item.sval),
-        count: 1,
+        count,
         turn: st.borg.time.now,
     });
 }

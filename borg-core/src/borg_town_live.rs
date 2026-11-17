@@ -36,6 +36,9 @@ impl CarryContext {
         Self { gold: st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD),
             inventory: st.items.items.iter().map(|i| (i.desc, i.iqty)).collect() }
     }
+    /// borg-reborn-rs (#507): every slot of `st.items.items`, the quiver
+    /// included (it runs to `quiver_end()`), so an arrow purchase that
+    /// merges into the quiver still counts its copies.
     fn quantity(&self) -> u32 { self.inventory.iter().map(|i| u32::from(i.1)).sum() }
 }
 #[derive(Clone)]
@@ -44,6 +47,8 @@ struct BuyAttempt {
     context: CarryContext,
     item: crate::borg_headers::borg_item_h::borg_item,
     keep: bool,
+    /// borg-reborn-rs (#507): copies asked for at the quantity prompt; 1 outside a purchase.
+    qty: i32,
 }
 
 struct HomeMove {
@@ -109,7 +114,16 @@ fn settle_sale(st: &mut BorgState) {
     if let Some(attempt) = st.think.town_live.pending_buy.take() {
         let now = CarryContext::of(st);
         if now.quantity() > attempt.context.quantity() || now.gold < attempt.context.gold {
-            crate::borg_store_buy::confirm_purchase(st, &attempt.item, i32::from(attempt.offer.shop), attempt.keep);
+            // The copies actually bought: what the pack gained, at most the
+            // copies asked for (a stack can merge into an equipped quiver
+            // slot the pack count does not cover, so never below one).
+            let gained = now.quantity().saturating_sub(attempt.context.quantity());
+            let bought = (gained as i32).clamp(1, attempt.qty.max(1));
+            // The gold the transaction took, as the engine charged it: for
+            // a stack of charged devices, price_item's total is not N times
+            // the price of one (review of #509, F2).
+            let paid = paid_for(attempt.context.gold, now.gold, attempt.item.cost, bought);
+            crate::borg_store_buy::confirm_purchase(st, &attempt.item, i32::from(attempt.offer.shop), attempt.keep, bought, paid);
         } else {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: purchase made no progress; exclude unchanged offer/context");
@@ -135,6 +149,33 @@ pub fn buy_rejected(st: &BorgState, shop: i16, slot: usize) -> bool {
 }
 
 pub fn active(st: &BorgState) -> bool { st.cfg(BORG_TOWN_PLAN) == 1 }
+
+/// borg-reborn-rs (#507): the copies of a planned purchase to type at the quantity prompt:
+/// the plan's copies, capped by the shop's stack, the pack's room
+/// (`inven_carry_num`) and the gold at the price of one (`price_item`).
+/// Never more than store.c's `store_purchase` offers as its maximum, so a
+/// quantity of two or more always meets the prompt (it is skipped at 1).
+/// The floor of 1 is never typed and never reached when nothing is
+/// affordable: store_purchase refuses with "You do not have enough gold"
+/// before its prompt, and the settle then records no progress. Do not turn
+/// the floor into a refusal here.
+fn purchase_quantity(planned: i64, stack: u8, room: i32, price: i32, gold: i32) -> i32 {
+    let afford = if price > 0 { gold / price } else { i32::from(stack) };
+    let planned = i32::try_from(planned.clamp(1, i64::from(u8::MAX))).unwrap_or(1);
+    planned.min(i32::from(stack)).min(room).min(afford).max(1)
+}
+
+/// borg-reborn-rs (#507): the gold a purchase took, from the purse before and
+/// after it; the price of one times the copies when the purse did not fall
+/// (a Home take, which costs nothing, or no observed change).
+fn paid_for(before: i32, after: i32, unit: i32, copies: i32) -> i32 {
+    if after < before { before - after } else { unit.saturating_mul(copies) }
+}
+
+/// The copies the pending live purchase asks for; 1 when there is none.
+pub fn buy_quantity(st: &BorgState) -> i32 {
+    st.think.town_live.pending_buy.as_ref().map_or(1, |a| a.qty)
+}
 
 fn clear(st: &mut BorgState) {
     st.borg.goal.shop = -1;
@@ -195,10 +236,16 @@ pub fn execute_store(st: &mut BorgState) -> bool {
         let shop = st.think.shop_num as usize;
         let slot = a.at[1] as usize;
         let Some(item) = st.store.shops[shop].ware.get(slot).copied().filter(|i| i.iqty > 0) else { clear(st); return false; };
+        let offer = crate::engine::store_stock(&st.access, shop).get(slot)
+            .map(|o| (o.carry_capacity(), o.purchase_quote(shop)));
+        let fits = offer.is_some_and(|(room, _)| room > 0);
+        let qty = match (a.code, offer) {
+            (action::BUY, Some((room, price))) => purchase_quantity(a.at[2], item.iqty, room, price,
+                st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD)),
+            _ => 1,
+        };
         let attempt = BuyAttempt { offer: SaleStamp::of(shop as i16, slot, &item),
-            context: CarryContext::of(st), item, keep: a.code != action::SELL_HOME };
-        let fits = crate::engine::store_stock(&st.access, shop).get(slot)
-            .is_some_and(|o| o.carry_capacity() > 0);
+            context: CarryContext::of(st), item, keep: a.code != action::SELL_HOME, qty };
         if !fits {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: native carrying preflight rejected purchase");
@@ -313,6 +360,36 @@ mod tests {
         it.desc[0] = b'K' as core::ffi::c_char;
         assert!(!stamp.matches(&it), "a different item in the slot must not be rejected");
     }
+    #[test]
+    fn a_planned_purchase_types_its_copies_capped_by_the_native_offer() {
+        // 120 arrows planned, 99 in the stack, room for 80, 1 gold each, 200 gold.
+        assert_eq!(purchase_quantity(120, 99, 80, 1, 200), 80, "the pack's room caps it");
+        assert_eq!(purchase_quantity(120, 40, 80, 1, 200), 40, "the shop's stack caps it");
+        assert_eq!(purchase_quantity(120, 99, 80, 3, 200), 66, "the gold at the price of one caps it");
+        assert_eq!(purchase_quantity(5, 99, 80, 1, 200), 5, "the plan's copies when nothing binds");
+        // Never 0: the prompt is skipped at 1 and the native code refuses
+        // what cannot be paid for or carried.
+        assert_eq!(purchase_quantity(0, 99, 80, 1, 200), 1);
+        assert_eq!(purchase_quantity(5, 99, 80, 50, 20), 1);
+        assert_eq!(purchase_quantity(5, 99, 0, 1, 200), 1);
+        assert_eq!(purchase_quantity(5, 99, 80, 0, 0), 5, "a free ware is capped by the stack only");
+    }
+    #[test]
+    fn a_purchase_logs_the_gold_it_took() {
+        // 8 wands with uneven charges: one is 52 gold, not 70 (review F2).
+        assert_eq!(paid_for(500, 448, 70, 1), 52);
+        assert_eq!(paid_for(200, 178, 1, 22), 22, "22 arrows at 1 gold");
+        assert_eq!(paid_for(200, 200, 0, 3), 0, "a Home take costs nothing");
+    }
+    #[test]
+    fn the_pending_purchase_reports_its_copies() {
+        let mut st = state();
+        assert_eq!(buy_quantity(&st), 1, "no pending purchase asks for one");
+        let item = crate::borg_item::blank_item();
+        st.think.town_live.pending_buy = Some(BuyAttempt { offer: SaleStamp::of(1, 0, &item),
+            context: CarryContext::of(&st), item, keep: true, qty: 40 });
+        assert_eq!(buy_quantity(&st), 40);
+    }
     fn state() -> BorgState {
         let mut st = BorgState::default();
         st.core.cfg = crate::borg_init::BORG_SETTINGS.iter().map(|s| s.default_value).collect();
@@ -412,7 +489,7 @@ mod tests {
         st.store.shops=(0..8).map(|_|crate::borg_store::BorgShop::default()).collect();
         st.store.shops[4].ware=vec![crate::borg_item::blank_item()];st.store.shops[4].ware[0].iqty=3;
         let item=st.store.shops[4].ware[0];
-        st.think.town_live.rejected_buys.push(BuyAttempt {offer:SaleStamp::of(4,0,&item),context:CarryContext::of(&st),item,keep:true});
+        st.think.town_live.rejected_buys.push(BuyAttempt {offer:SaleStamp::of(4,0,&item),context:CarryContext::of(&st),item,keep:true,qty:1});
         assert!(buy_rejected(&st,4,0));st.items.items[0].iqty=1;assert!(!buy_rejected(&st,4,0));
         st.items.items[0].iqty=0;st.store.shops[4].ware[0].iqty=2;assert!(!buy_rejected(&st,4,0));
     }
