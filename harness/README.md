@@ -198,3 +198,24 @@ stall; the six P1 cells do not exercise that state. Cap survival is not proof
 that this policy handles long-horizon one-way play. #386's rule-aware policy
 changes and starvation fixture are a separate follow-up, not part of this
 startup/build contract.
+
+
+### Command-boundary incident capture (#506)
+
+`BORG_ENCOUNTER_LOG=FILE` enables optional native evidence on either controller.
+The first line is the full player-visible L1 observation (status, known gear,
+visible monsters and other observation channels); subsequent lines contain
+`turn`, `status` and player-visible `monsters`. The frontend samples at game
+command boundaries and retains the initial native state before the first
+played key. This is sampled evidence, not omniscient monster tracking; hidden
+threats require observable contact messages. There is no minimum character
+level. A save restores engine state/RNG, not Borg memory.
+
+`BORG_ENCOUNTER_KNOWLEDGE_LOG=FILE` writes static race/item/class knowledge once.
+On borg-rs, `BORG_OBSERVATION_LOG` and `BORG_KNOWLEDGE_LOG` also work through this
+native hook; on reborn they keep their existing per-think replay contract.
+Unset capture variables preserve the existing path. Capture uses a separate
+private RNG for diagnostic reads and restores the complete engine RNG. It
+neither sets game options nor changes controller settings. Native on/off tests
+compare complete gameplay streams and terminal engine RNG. An output file
+that cannot be written fails visibly rather than producing a qualified run.

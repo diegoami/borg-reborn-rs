@@ -1549,3 +1549,10 @@ unsafe fn spell_damage(mut effect: *mut b::effect) -> Option<crate::observation:
     }
     None
 }
+
+/// Optional Cemetery capture called only by the guarded native frontend hook.
+#[cfg(feature = "borgh")]
+#[no_mangle]
+extern "C" fn borg_capture_encounter() {
+    crate::encounter_capture::record();
+}
