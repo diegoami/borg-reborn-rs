@@ -169,7 +169,11 @@ fn timed_cap(timed: u32) -> Option<usize> {
         TMD_FAST | TMD_SPRINT => Some(SPEED),
         TMD_OPP_FIRE => Some(FIRE), TMD_OPP_COLD => Some(COLD), TMD_OPP_POIS => Some(RESPOIS),
         TMD_OPP_ACID => Some(ACID), TMD_OPP_ELEC => Some(ELEC),
-        TMD_HERO | TMD_SHERO | TMD_BOLD | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
+        // borg-reborn-rs (#486): not TMD_BOLD. No core path takes Boldness or
+        // wine as a buff (the fear cure, borg_caution, cures AFRAID; the
+        // hunger list drinks wine as food), so a buff value for it bought
+        // 14-21 Pints of Fine Wine a game that were never drunk for it.
+        TMD_HERO | TMD_SHERO | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
             | TMD_INVULN | TMD_ATT_ACID | TMD_ATT_ELEC | TMD_ATT_FIRE | TMD_ATT_COLD
             | TMD_ATT_POIS | TMD_ATT_EVIL | TMD_ATT_DEMON | TMD_ATT_VAMP | TMD_POWERSHOT => Some(BUFF),
         TMD_SINVIS => Some(INVISIBLE), TMD_TELEPATHY => Some(MONSTERS),
@@ -967,4 +971,19 @@ mod tests {
         assert!(second<first,"the final remaining reserve is more valuable");
     }
 
+}
+
+#[cfg(test)]
+mod bold_is_not_a_buff_tests {
+    use super::*;
+
+    /// #486: Boldness (wine, Potion of Boldness) is no buff supply; the
+    /// buffs the core does take stay.
+    #[test]
+    fn bold_is_not_a_buff() {
+        assert_eq!(timed_cap(TMD_BOLD), None);
+        assert_eq!(timed_cap(TMD_HERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_SHERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_BLESSED), Some(BUFF));
+    }
 }
