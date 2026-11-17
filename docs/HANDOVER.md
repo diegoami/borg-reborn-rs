@@ -12,7 +12,8 @@ HP. borg-zoo#216 saw the named list's removal (#510) kill characters (5 and
 A known monster on the level makes it scary when one character turn of its
 melee, on average, takes that percent of max HP:
 `borg_caution::scary_by_damage`.
-- The damage is the average of its blows' dice times its moves per
+- The damage is the average of its blows (`randcalc` AVERAGE: base, dice
+  and level bonus, review of #514) times its moves per
   character turn.
 - Not `borg_danger`: a first try with it rated a street urchin at 245 and
   a floating eye at 276 against 10 HP, from the penalties for stealing and

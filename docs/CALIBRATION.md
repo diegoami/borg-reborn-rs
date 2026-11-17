@@ -160,7 +160,7 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 | `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2173` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2173` |
 | `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2206` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2260` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2326` |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2250` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Scary by damage (#505)
@@ -176,7 +176,9 @@ deadly only to a weak character.
 A monster on the level (`borg_near_monster_type`, every known monster, as
 the named list) makes the level scary when one character turn of its melee
 takes at least `caution_scary_damage_percent` of max HP. The damage is the
-monster's own: the average of its blows' dice, times its moves per
+monster's own: the average of each blow's `random_value` as the engine
+rolls it (`randcalc` AVERAGE: base, dice and level bonus; no blow in
+`monster.txt` has a base or bonus today), times its moves per
 character turn (`extract_energy` of both speeds, at least one). It is not
 `borg_danger`: a first try with it at 50 rated a street urchin (it steals)
 at 245 and a floating eye (it paralyses) at 276 against a 10-HP character,
