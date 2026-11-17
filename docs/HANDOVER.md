@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
 ## 2026-11-17: Boldness is no buff to the town planner (#486)
 
 The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
@@ -25,7 +37,8 @@ mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
 
 The owner's review of #496 found no behaviour defect: the maths, "off is
 identical" and the mage's death at reserve 800 all reproduce. Fixed here:
-- **F1:** `docs/ZOO-INTERFACE.md` gives the registry as 1786, not 1783.
+- **F1:** `docs/ZOO-INTERFACE.md` gave the registry as 1783; it now says
+  1795 (1786 after #496, plus #498's nine per-class divisors).
 - **F2:** the CLW/CSW/Healing ranges in docs/CALIBRATION.md and below were
   max HP, written as if they were potion HP. Reworded, with
   `object.txt`'s figures.
