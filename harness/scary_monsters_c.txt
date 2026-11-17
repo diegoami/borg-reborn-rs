@@ -1,0 +1,46 @@
+# The C Borg's named scary monsters, exactly (borg-reborn-rs #518): the
+# compiled list of borg_near_monster_type (borg_flow_kill.rs
+# c_named_scary), as a file. A control arm for experiments with
+# scary_monsters.txt; the borg-core test
+# the_c_file_matches_the_compiled_list_on_every_race checks it against the
+# compiled list over every race in monster.txt, every class, levels 0-60
+# and the breeder cases. Format: see scary_monsters.txt. No fragility line:
+# every class at 0, and single levels are the same for every class.
+
+# C: up to clevel 5 (squint-eyed rogue: Mages and Priests up to 6)
+squint-eyed rogue | 5 | mage 6, priest 6
+Grip, Farmer Maggot's Dog | 5
+Fang, Farmer Maggot's Dog | 5
+small kobold | 5
+
+# C: up to clevel 8
+soldier | 8
+cutpurse | 8
+acolyte | 8
+apprentice | 8
+kobold | 8
+shrieker mushroom patch | 8
+Farmer Maggot | 8
+filthy street urchin | 8
+battle-scarred veteran | 8
+mean-looking mercenary | 8
+
+# C: up to clevel 15; the breeders only with breeders >= clevel
+Bullroarer the Hobbit | 15
+giant white mouse | 15 | | breeders
+white worm mass | 15 | | breeders
+green worm mass | 15 | | breeders
+
+# C: up to clevel 20
+cave spider | 20
+red naga | 20
+giant red frog | 20
+radiation eye | 20
+yellow worm mass | 20 | | breeders
+
+# C: below clevel 45
+gravity hound | 44
+inertia hound | 44
+base:ancient dragon | 44
+Beorn, the Shape-Changer | 44
+dread | 44

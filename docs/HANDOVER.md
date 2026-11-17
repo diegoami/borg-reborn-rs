@@ -2,6 +2,31 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the named scary list as data (#518)
+
+Owner: a flexible scary list, by monster, level and class.
+- **Code:** `borg-core/src/scary_list.rs` (ours, declared in the vendor
+  check). `borg_scary_list = FILE` in `borg.txt` replaces the compiled
+  block in `borg_near_monster_type`; the list loads at `borg_init`.
+- **Data:** `harness/scary_monsters.txt`. Each monster has a range
+  `tough-fragile`, each class a fragility 0-100 (owner): Fang 5-8 is 5 for
+  Warrior, Paladin and Blackguard, 6 for Ranger and Rogue, 7 for Priest and
+  Druid, 8 for Mage and Necromancer. Ranges are C's level to C's level + 3.
+  Format: `monster | tough-fragile | class exceptions | flags`.
+  C's list as a file plays byte-identical keys to the compiled one on 18
+  starts; the shipped ranges change 2 of them (Rogue, Ranger).
+- **Harness:** `BORG_SCARY_LIST=FILE harness/run.sh ...` copies and pins
+  the file.
+- **Not shipped yet:** `harness/borg.txt` doesn't name the file, so the zoo
+  plays the compiled list (identical) until its adapter copies the file.
+  The borg-zoo issue is linked from the PR.
+- **Next:** per-class edits, starting where the list costs most (Blackguard
+  and Druid lose about 7 levels, #518 evaluation), measured by zoo pilot.
+- **The latch (#515) is parked**, on branch `task/T515-scary-latch`
+  (`e5fddf0d`, no PR): with the latch re-checked every scan, the Borg still
+  reached stairs within about ten turns, so 912 of 985 scares ended by
+  leaving the level and the switch changed almost nothing.
+
 ## 2026-11-17: the named scary list is on again
 
 Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
