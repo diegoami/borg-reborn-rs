@@ -5090,3 +5090,12 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   the receiving hook and clarify configuration semantics in the documentation.
 - The PR runtime pin is already current; refresh it and validation after these
   runtime changes. #448 remains open for historical raw-evidence custody.
+
+## 2026-11-17: Track P synchronization before inventory calibration (#474)
+
+- Owner selected #433. Synchronize accepted main 68e39b7e into track-p
+  through this CI-checked integration PR; prior track-p is an ancestor.
+- Preserve all accepted runtime, recorder, death identity/matching, evidence
+  references and plan-cap fixes. No new gameplay policy is introduced.
+- Next: M13 inventory parameter audit/extraction under #433, with neutral
+  defaults, parity checks and a pinned owner-selected promotion review.
