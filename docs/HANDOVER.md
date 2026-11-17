@@ -14,7 +14,7 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
 45 stands; the setting at 0 plays main's keys. Stacked on #527.
 - **Left:** the town (unchanged), and the escape itself: the owner notes
   the Borg is not always good at escaping (e.g. leave the room and close the
-  door) — see the follow-up issue.
+  door) — #532.
 
 ## 2026-11-17: the named scary list as data (#518)
 
