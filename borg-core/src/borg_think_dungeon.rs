@@ -1040,7 +1040,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         }
 
         /* Try to find some stairs down */
-        if borg_flow_stair_more(st, GOAL_FLEE, false, false) {
+        // borg-reborn-rs (#483): not while rising, unless in real danger.
+        let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if !crate::borg_caution::rising_holds_descent(st, here)
+            && borg_flow_stair_more(st, GOAL_FLEE, false, false)
+        {
             return choice!("borg_flow_stair_more");
         }
     }

@@ -245,6 +245,8 @@ parameters! {
     town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:534", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
     town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:269", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone)."),
     town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:541", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
+    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:2163", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
+    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:2163", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),

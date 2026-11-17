@@ -4,10 +4,10 @@
 
 ## 2026-11-17: a healing reserve for the town planner (#491)
 
-Owner: "we can never have enough healing". The owner chose two
+Owner: "we can never have enough healing". The owner chose
 configurable borg.txt values instead of the issue's three proposals: a
-linear reserve as a percent of max HP (as in proposal 1), and a value for
-the diminishing curve past it, with proposed defaults.
+linear reserve as a percent of max HP (as in proposal 1), a value for the
+diminishing curve past it, and then healing speed, with proposed defaults.
 
 - **Code:** `borg_town_capability.rs`, details in docs/CALIBRATION.md.
   - `town_heal_reserve_hp_percent` (0 = off): up to this percent of max HP
@@ -15,8 +15,6 @@ the diminishing curve past it, with proposed defaults.
     on top of the curve. Bought first, never sold below.
   - `town_heal_curve_scale_percent` (100 = today): stretches the curve past
     the reserve, keeping its first HP's value.
-- **Off is identical:** at 0 and 100 the four starts of the issue play the
-  same key streams as main `4d83dd26`.
   - `town_heal_speed_percent` (0 = HP alone), owner: "budget healing speed
     as well". A potion that heals at least this percent of max HP in one
     swallow counts in full; a smaller one counts `heal x heal / (percent x
@@ -25,6 +23,8 @@ the diminishing curve past it, with proposed defaults.
     20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
     CSW (60–100 HP), then Healing (200+ HP). CCW (60 HP for 200 gold) never
     wins on healing alone.
+- **Off is identical:** at 0, 100 and 0 the four starts of the issue play
+  the same key streams as main `4d83dd26`.
 - **Shipped (owner):** reserve 400, curve 100, speed 66, in
   `harness/borg.txt`.
   - 800 was proposed first. In CI, engine test
@@ -76,6 +76,35 @@ the diminishing curve past it, with proposed defaults.
   - #494 (gold reserve, `borg_town_w_gold = 0`) and #492 (no wine) also
     change what gold is left for healing.
 
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
 ## 2026-11-17: point-blank shots keep half their damage (#485)
 
 Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its

@@ -17,7 +17,7 @@ from the existing device-failure `permille` unit. No existing default changes.
 
 ## Healing reserve (#491)
 
-The registry now holds **1784** parameters (1781 before; three added). Owner
+The registry now holds **1786** parameters (1783 after #483; three added). Owner
 (2026-11-17): "we can never have enough healing", as configurable values, and
 "budget healing speed as well". All act on the live town planner's healing curve
 (`borg_town_capability::observe`), where carrying `x` HP of healing was worth
@@ -49,6 +49,30 @@ The registry now holds **1784** parameters (1781 before; three added). Owner
 - The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
   measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
   to before.
+
+## Rising to town explores for an up staircase (#483)
+
+The registry now holds **1783** parameters (1781 before; two added). While
+the Borg is rising to town (`goal.rising`: a trip or town return), a descent
+that is not a desperate escape is held, so that it explores the level for an
+up staircase. Before, with connected stairs, it arrived on a down staircase,
+took it (the level was "scary", or no up staircase was known), climbed back
+onto another down staircase and never reached town (borg-zoo#170 run
+44054277431, Ranger 1739161339: DL2/DL3 to the end). The gate is
+`borg_caution::rising_holds_descent`, applied in `choose_stairs`, in the flee
+block's flow to a down staircase and in `borg_leave_level`'s "no up stairs
+found, going down", and since the review every descent `borg_leave_level` decides
+(its "Go Down" block: bored, "spent too long on level", the trip policy).
+
+The budget counts Borg ticks, the same clock as "Spent too long on level";
+how many game turns a tick spans depends on what the Borg does (a move, a
+rest, a search). It is per level, not per return: it bounds the search for an
+up staircase on one level.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## No unknown items (#470)
 

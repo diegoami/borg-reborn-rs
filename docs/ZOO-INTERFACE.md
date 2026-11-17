@@ -96,7 +96,7 @@ only serializes booleans/integers, so arbitrary errand commands require a
 native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
 
 A profile's
-`borg_param_<name>` integer sets any of the 1781 entries in
+`borg_param_<name>` integer sets any of the 1783 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
