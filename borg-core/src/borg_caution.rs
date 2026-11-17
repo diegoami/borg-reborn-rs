@@ -51,7 +51,7 @@ use crate::borg_light::{borg_maintain_light, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
-use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_UNIQUE};
+use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
@@ -1978,7 +1978,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
     let cornered = fight_cornered(st, pos_danger);
-    if cornered && cornered_boost(st, "Cornered") {
+    // Heal first (#457's outmatched heal, which otherwise runs at the end),
+    // then the boosts.
+    if cornered && (borg_heal_outmatched(st, pos_danger) || cornered_boost(st, "Cornered")) {
         return true;
     }
     if !cornered && breeder_fight_hard(st, pos_danger) && cornered_boost(st, "Hard breeder fight") {
@@ -2290,7 +2292,9 @@ fn melee_class(st: &BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#504): cornered. In the dungeon, with no Phase Door,
-/// teleport or escape in the pack or spells, a known monster within
+/// teleport, Teleport Level or escape in the pack or spells (unlike #503's
+/// easy escapes, Word of Recall does not count: it takes 15-35 turns, too
+/// slow for a fight already lost), a known monster within
 /// `caution_cornered_radius` grids, and danger here at or above
 /// `caution_cornered_danger_tenths` / 10 of the current HP.
 pub(crate) fn fight_cornered(st: &BorgState, pos_danger: i32) -> bool {
@@ -2314,6 +2318,7 @@ fn fight_cornered_with(st: &BorgState, pos_danger: i32, on: i32, tenths: i32, ne
         && nearest <= radius
         && st.borg.tr(BI_APHASE) <= 0
         && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_ATELEPORTLVL) <= 0
         && st.borg.tr(BI_AESCAPE) <= 0
 }
 
@@ -2348,7 +2353,8 @@ fn breeder_fight_hard_with(st: &BorgState, pos_danger: i32, tenths: i32) -> bool
 }
 
 /// An adjacent known monster that is "big": unique, or above the Borg's
-/// level by more than `caution_cornered_big_level_margin`.
+/// level by more than `caution_cornered_big_level_margin`, and not immune to
+/// confusion (`RF_NO_CONF`).
 fn big_monster_adjacent(st: &BorgState) -> bool {
     let margin = p(Param::caution_cornered_big_level_margin);
     (1..st.kills.nxt.max(0) as usize).any(|i| {
@@ -2357,56 +2363,97 @@ fn big_monster_adjacent(st: &BorgState) -> bool {
             && engine::r_max() != 0
             && (kill.r_idx as i32) < engine::r_max() as i32 - 1
             && engine::distance(st.borg.c, kill.pos) == 1
+            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NO_CONF)
             && (engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE)
                 || i32::from(kill.level) > st.borg.tr(BI_CLEVEL) + margin)
     })
 }
 
-/// borg-reborn-rs (#504): the cornered boosts, in order, each while it is
-/// not active: a fear cure when afraid, Speed, Heroism, Berserk Strength,
-/// Blessing, then Monster Confusion against an adjacent big monster. Their
-/// usual danger windows (`borg_defend`'s "some danger but not much") do not
-/// apply: the Borg is losing and cannot leave.
+/// borg-reborn-rs (#504): a cornered boost.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Boost {
+    FearCure,
+    Speed,
+    Heroism,
+    Berserk,
+    Blessing,
+    MonsterConfusion,
+}
+
+/// The boosts to try, in order, from what is active now: a fear cure when
+/// afraid, Speed, Heroism, Berserk Strength, Blessing, then Monster
+/// Confusion against an adjacent big monster. Each only while it is not
+/// active.
+fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool, confusing: bool, big: bool) -> Vec<Boost> {
+    let mut out = Vec::new();
+    if afraid {
+        out.push(Boost::FearCure);
+    }
+    if !fast {
+        out.push(Boost::Speed);
+    }
+    if !hero {
+        out.push(Boost::Heroism);
+    }
+    if !berserk {
+        out.push(Boost::Berserk);
+    }
+    if !bless {
+        out.push(Boost::Blessing);
+    }
+    if !confusing && big {
+        out.push(Boost::MonsterConfusion);
+    }
+    out
+}
+
+/// borg-reborn-rs (#504): the cornered boosts (`boost_order`), the first one
+/// carried or castable. Their usual danger windows (`borg_defend`'s "some
+/// danger but not much") do not apply: the Borg is losing and cannot leave.
+/// Spells are cast only below `caution_cornered_spell_fail` percent failure,
+/// so a failing cast is not retried turn after turn under fire.
 fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
-    if st.borg.tr(BI_ISAFRAID) != 0
-        && st.borg.tr(BI_CRSFEAR) == 0
-        && (borg_quaff_potion(st, v.sv_potion_boldness)
-            || borg_eat(st, TV_MUSHROOM as i32, v.sv_mush_cure_mind)
-            || borg_quaff_potion(st, v.sv_potion_heroism)
-            || borg_quaff_potion(st, v.sv_potion_berserk))
-    {
-        borg_note(st, &format!("# {why}: curing fear"));
-        return true;
-    }
-    if !st.borg.temp.fast && borg_quaff_potion(st, v.sv_potion_speed) {
-        borg_note(st, &format!("# {why}: Speed"));
-        return true;
-    }
-    if !st.borg.temp.hero && (borg_spell(st, HEROISM) || borg_quaff_potion(st, v.sv_potion_heroism)) {
-        borg_note(st, &format!("# {why}: Heroism"));
-        return true;
-    }
-    if !st.borg.temp.berserk
-        && (borg_spell(st, BERSERK_STRENGTH) || borg_quaff_potion(st, v.sv_potion_berserk))
-    {
-        borg_note(st, &format!("# {why}: Berserk Strength"));
-        return true;
-    }
-    if !st.borg.temp.bless
-        && (borg_spell(st, BLESS)
-            || borg_read_scroll(st, v.sv_scroll_holy_chant)
-            || borg_read_scroll(st, v.sv_scroll_blessing))
-    {
-        borg_note(st, &format!("# {why}: Blessing"));
-        return true;
-    }
-    if engine::player_timed(TMD_ATT_CONF) == 0
-        && big_monster_adjacent(st)
-        && borg_read_scroll(st, v.sv_scroll_monster_confusion)
-    {
-        borg_note(st, &format!("# {why}: Monster Confusion"));
-        return true;
+    let fail = p(Param::caution_cornered_spell_fail);
+    let order = boost_order(
+        st.borg.tr(BI_ISAFRAID) != 0 && st.borg.tr(BI_CRSFEAR) == 0,
+        st.borg.temp.fast,
+        st.borg.temp.hero,
+        st.borg.temp.berserk,
+        st.borg.temp.bless,
+        engine::player_timed(TMD_ATT_CONF) != 0,
+        big_monster_adjacent(st),
+    );
+    for boost in order {
+        let (done, what) = match boost {
+            Boost::FearCure => (
+                borg_quaff_potion(st, v.sv_potion_boldness)
+                    || borg_eat(st, TV_MUSHROOM as i32, v.sv_mush_cure_mind)
+                    || borg_quaff_potion(st, v.sv_potion_heroism)
+                    || borg_quaff_potion(st, v.sv_potion_berserk),
+                "curing fear",
+            ),
+            Boost::Speed => (borg_quaff_potion(st, v.sv_potion_speed), "Speed"),
+            Boost::Heroism => (
+                borg_spell_fail(st, HEROISM, fail) || borg_quaff_potion(st, v.sv_potion_heroism),
+                "Heroism",
+            ),
+            Boost::Berserk => (
+                borg_spell_fail(st, BERSERK_STRENGTH, fail) || borg_quaff_potion(st, v.sv_potion_berserk),
+                "Berserk Strength",
+            ),
+            Boost::Blessing => (
+                borg_spell_fail(st, BLESS, fail)
+                    || borg_read_scroll(st, v.sv_scroll_holy_chant)
+                    || borg_read_scroll(st, v.sv_scroll_blessing),
+                "Blessing",
+            ),
+            Boost::MonsterConfusion => (borg_read_scroll(st, v.sv_scroll_monster_confusion), "Monster Confusion"),
+        };
+        if done {
+            borg_note(st, &format!("# {why}: {what}"));
+            return true;
+        }
     }
     false
 }
@@ -2755,7 +2802,7 @@ mod cornered_tests {
         assert!(!fight_cornered_with(&st, 5, 0, 10, 1, 2), "switch off");
         assert!(!fight_cornered_with(&st, 5, 1, 10, -1, 2), "no monster known");
         assert!(!fight_cornered_with(&st, 5, 1, 10, 3, 2), "monster beyond the radius");
-        for t in [BI_APHASE, BI_ATELEPORT, BI_AESCAPE] {
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE] {
             let mut st = trapped();
             st.borg.trait_[t as usize] = 1;
             assert!(!fight_cornered_with(&st, 5, 1, 10, 1, 2), "escape {t}");
@@ -2774,6 +2821,19 @@ mod cornered_tests {
         assert!(!breeder_fight_hard_with(&st, 2, 5), "danger below half the HP");
         assert!(!breeder_fight_hard_with(&st, 9, 0), "off");
         assert!(!breeder_fight_hard_with(&st, 0, 5), "no danger");
+    }
+
+    /// #504 review: the boost order, each only while not active.
+    #[test]
+    fn boosts_come_in_order_and_skip_what_is_active() {
+        use Boost::*;
+        assert_eq!(
+            boost_order(true, false, false, false, false, false, true),
+            [FearCure, Speed, Heroism, Berserk, Blessing, MonsterConfusion]
+        );
+        assert_eq!(boost_order(false, false, false, false, false, false, false), [Speed, Heroism, Berserk, Blessing]);
+        assert_eq!(boost_order(false, true, true, false, true, false, false), [Berserk]);
+        assert_eq!(boost_order(false, true, true, true, true, true, true), [], "all active, hands already confusing");
     }
 
     #[test]

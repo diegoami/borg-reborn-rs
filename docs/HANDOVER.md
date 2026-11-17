@@ -22,11 +22,15 @@
   (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
   a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
 - Re-synced with main after #510 (#503) merged.
+- Review (#511): buff spells only below `caution_cornered_spell_fail` (25%)
+  failure; no Monster Confusion against `RF_NO_CONF`; when cornered the
+  outmatched heal before the boosts; Teleport Level is an escape (Recall is
+  not); the boost order is a pure `boost_order`, unit-tested.
 - Owner: in a hard breeder fight the same boosts.
   `caution_breeder_boost_danger_tenths` (compiled 0, shipped 5): standing
   against breeders with no easy escape and danger here at or above half the
   HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
-  Strength, Blessing; Holy Chant is not an object in 4.2).
+  Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
 ## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
 
 #488 (stand-and-fight) is split into #503 (A, breeders), #504 (B, the
