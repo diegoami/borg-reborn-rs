@@ -2,6 +2,13 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: no merge before the owner says the review is done (RULES 1a)
+
+Owner, after #496 was merged while it was under review: every PR waits
+for the owner to say its review is done, on every track and into any
+branch. Green CI is not enough. RULES 1a and AGENTS.md "At the end of a
+task" step 4 say so; track P's `track-p` task merges follow it too.
+
 ## 2026-11-17: a healing reserve for the town planner (#491)
 
 Owner: "we can never have enough healing". The owner chose
