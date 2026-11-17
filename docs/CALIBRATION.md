@@ -249,6 +249,52 @@ death with the list, 4 without), 1.
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
+## The named scary list as data (#518)
+
+Owner, 2026-11-17: the named list should be flexible, by monster, character
+level and class. With `borg_scary_list = FILE` in `borg.txt` (a relative name
+is resolved under the user directory), `borg_near_monster_type` reads the
+named list from that file instead of the compiled C block
+(`borg-core/src/scary_list.rs`); without the key the compiled list stays.
+`caution_scary_named_monsters` still switches named scares on and off.
+
+`harness/scary_monsters.txt` gives each monster a range, `tough-fragile`,
+and each class a fragility from 0 to 100 (owner, 2026-11-17): a class fears
+a monster while its level is at most
+`tough + (fragile - tough) x fragility / 100`, rounded. One line per
+monster: `monster | tough-fragile | class exceptions | flags`:
+- the monster's name as in `monster.txt`, or `base:` and the start of a
+  monster base name;
+- a single number is the same level for every class;
+- `class level` pairs set that class's level for this monster outright;
+- the flag `breeders`: only with at least as many known breeders as the
+  character's level, and not while standing against breeders (#503).
+
+The shipped fragilities are Warrior, Paladin, Blackguard 0; Ranger, Rogue 33;
+Priest, Druid 67; Mage, Necromancer 100. Each range is C's level to C's
+level + 3, so Fang (C: 5) is 5-8: 5, 6, 7 and 8 for those four groups. C's
+only class exception (the squint-eyed rogue scares Mages and Priests up to 6)
+lies inside its range. `harness/scary_monsters_c.txt` is C's list exactly
+(single levels plus that exception), a control arm. The borg-core test
+`the_c_file_matches_the_compiled_list_on_every_race` checks it against the
+compiled condition (`borg_flow_kill::c_named_scary`) over every race in
+`monster.txt`, every class, levels 0-60 and the breeder cases, and checks
+that the shipped ranges match it for the classes at fragility 0; it also
+plays byte-identical keys to the compiled list on the 18 classes-18 starts. With the shipped ranges, 2 of the 18 games change (the
+Rogue and the Ranger): the frail casters never passed C's levels within
+100,000 turns.
+
+A later line for the same monster replaces the earlier one, `monster | none`
+removes it, and a later `fragility:` value replaces an earlier one, so an
+experiment can append its changes to the shipped list (borg-zoo#228).
+
+An unknown monster, class or flag, a bad level or a backwards range stops
+the run before play
+with exit 2 and the line. Harness runs select a list with
+`BORG_SCARY_LIST=FILE` (`harness/run.sh` copies it and pins its SHA-256 in
+the run's `borg.txt`); the shipped `borg.txt` does not name one until the zoo
+copies the file (docs/ZOO-INTERFACE.md).
+
 ## Scary by damage (#505)
 
 The registry now holds **1803** parameters (1802 after #503; one added).

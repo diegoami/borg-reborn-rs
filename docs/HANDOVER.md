@@ -16,6 +16,31 @@ it.
 - Even with TRUE the formulas never took effect: a formula line fails to parse
   and `borg_load_formulas` switches dynamic calculations off (#526, closed as
   moot). With the section gone, TRUE warns "no formulas found" and stays off.
+## 2026-11-17: the named scary list as data (#518)
+
+Owner: a flexible scary list, by monster, level and class.
+- **Code:** `borg-core/src/scary_list.rs` (ours, declared in the vendor
+  check). `borg_scary_list = FILE` in `borg.txt` replaces the compiled
+  block in `borg_near_monster_type`; the list loads at `borg_init`.
+- **Data:** `harness/scary_monsters.txt`. Each monster has a range
+  `tough-fragile`, each class a fragility 0-100 (owner): Fang 5-8 is 5 for
+  Warrior, Paladin and Blackguard, 6 for Ranger and Rogue, 7 for Priest and
+  Druid, 8 for Mage and Necromancer. Ranges are C's level to C's level + 3.
+  Format: `monster | tough-fragile | class exceptions | flags`.
+  C's list as a file plays byte-identical keys to the compiled one on 18
+  starts; the shipped ranges change 2 of them (Rogue, Ranger).
+- **Harness:** `BORG_SCARY_LIST=FILE harness/run.sh ...` copies and pins
+  the file.
+- **Not shipped yet:** `harness/borg.txt` doesn't name the file, so the zoo
+  plays the compiled list (identical) until its adapter copies the file.
+  The borg-zoo issue is linked from the PR.
+- **Next:** per-class edits, starting where the list costs most (Blackguard
+  and Druid lose about 7 levels, #518 evaluation), measured by zoo pilot.
+- **The latch (#515) is parked**, on branch `task/T515-scary-latch`
+  (`e5fddf0d`, no PR): with the latch re-checked every scan, the Borg still
+  reached stairs within about ten turns, so 912 of 985 scares ended by
+  leaving the level and the switch changed almost nothing.
+
 ## 2026-11-17: the named scary list is on again
 
 Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
@@ -567,7 +592,7 @@ was tried with them is removed (owner, 2026-11-17).
   Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
   Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
   Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
-  `borg_recover.rs:362` (and `borg_trait.rs:1920` counts it, the planner does
+  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
   not count it as food). The planner prices them through `timed_cap`
   (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
   FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
@@ -836,7 +861,7 @@ One PR, owner's request (supersedes #441):
 
 - Owner explicitly requested merging #378 after the independent milestone
   review/re-review and coordinated fixes. Cemetery #7 landed first at
-  `0362b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
 - Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
   handover histories, native recorder v0.2.0 and accepted #369/#380 survival
   changes. Harness conflict resolution retains BOTH synthetic receipt/build
@@ -1242,7 +1267,7 @@ One PR, owner's request (supersedes #441):
   CI; a new pinned owner-selected milestone review precedes promotion.
   #358/#359 remain separate permission/cleanup follow-ups.
 
-## 2026-11-15: reviewed P349 synchronization (#362)
+## 2026-11-15: reviewed P349 synchronization (#360)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
   The review reports 88 tool tests, script tests, all 2,547 archive cases
@@ -4999,7 +5024,7 @@ After the review, as the owner decided:
   [diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30).
   docs/ZOO-CHANGE-REQUEST.md names the `m1` commit `fab71554fd32`.
   The issue's prompt is updated to that exact commit after this PR is
-  merged, because its old fallback (`4236281`, unpeeled tag) is obsolete.
+  merged, because its old fallback (`4236081`, unpeeled tag) is obsolete.
 
 Found while re-reading RULES: commits and PR bodies since M0 carried
 `Co-Authored-By` and "Generated with" lines, which RULES 4 forbids. They

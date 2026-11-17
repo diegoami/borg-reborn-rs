@@ -2586,6 +2586,86 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
     true
 }
 
+/// borg-reborn-rs (#518): the C Borg's named scary monsters
+/// (`borg_near_monster_type`), as a function of the race, its base name and
+/// the character, so the data file can be checked against it over every
+/// race (`scary_list` tests).
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn c_named_scary(
+    id: &crate::borg::BorgIdInfo,
+    ridx: u32,
+    base: &[u8],
+    clevel: i32,
+    class: i32,
+    breeder_count: i32,
+    breeder_stand: bool,
+) -> bool {
+    // run from certain scaries
+    if clevel <= 5 && ridx == id.squint_eyed_rogue {
+        return true;
+    }
+
+    // Mage and priest are extra fearful
+    if clevel <= 6
+        && (class == CLASS_MAGE || class == CLASS_PRIEST)
+        && ridx == id.squint_eyed_rogue
+    {
+        return true;
+    }
+
+    // run from certain dungeon scaries
+    if clevel <= 5 && (ridx == id.grip || ridx == id.fang || ridx == id.small_kobold) {
+        return true;
+    }
+
+    // run from certain scaries
+    if clevel <= 8
+        && (ridx == id.soldier
+            || ridx == id.cutpurse
+            || ridx == id.acolyte
+            || ridx == id.apprentice
+            || ridx == id.kobold
+            || ridx == id.shrieker_mushroom_patch
+            || ridx == id.maggot
+            || ridx == id.filthy_street_urchin
+            || ridx == id.battle_scarred_veteran
+            || ridx == id.mean_looking_mercenary)
+    {
+        return true;
+    }
+
+    if clevel <= 15
+        && (ridx == id.bullroarer
+            || ((ridx == id.giant_white_mouse
+                || ridx == id.white_worm_mass
+                || ridx == id.green_worm_mass)
+                && breeder_count >= clevel
+                && !breeder_stand))
+    {
+        return true;
+    }
+
+    if clevel <= 20
+        && (ridx == id.cave_spider
+            || ridx == id.red_naga
+            || ridx == id.giant_red_frog
+            || ridx == id.radiation_eye
+            || (ridx == id.yellow_worm_mass && breeder_count >= clevel && !breeder_stand))
+    {
+        return true;
+    }
+
+    if clevel < 45
+        && (ridx == id.gravity_hound
+            || ridx == id.inertia_hound
+            || prefix_i(base, b"ancient dragon")
+            || ridx == id.beorn
+            || ridx == id.dread)
+    {
+        return true;
+    }    false
+}
+
 /// Scan the monster lists for certain types of monster that we should be
 /// concerned over (`borg_near_monster_type`). This only works for monsters
 /// we know about. Special consideration is given to Morgoth.
@@ -2630,71 +2710,25 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // borg-reborn-rs (#503): the named monsters below (by character
         // level) make the level scary only with caution_scary_named_monsters;
         // the resist-based ones after them always do.
+        // borg-reborn-rs (#518): with borg_scary_list set, the list comes
+        // from that file instead of the compiled block below.
         if named {
-            // run from certain scaries
-            if clevel <= 5 && ridx == id.squint_eyed_rogue {
-                scary = true;
+            if let Some(list) = crate::scary_list::selected() {
+                let who = crate::scary_list::Situation {
+                    clevel,
+                    class: b.tr(BI_CLASS),
+                    breeder_count,
+                    breeder_stand,
+                };
+                if crate::scary_list::is_scary(list, usize::from(r_idx), engine::race_base_name(usize::from(r_idx)), who) {
+                    scary = true;
+                }
             }
-
-            // Mage and priest are extra fearful
-            if clevel <= 6
-                && (b.tr(BI_CLASS) == CLASS_MAGE || b.tr(BI_CLASS) == CLASS_PRIEST)
-                && ridx == id.squint_eyed_rogue
-            {
-                scary = true;
-            }
-
-            // run from certain dungeon scaries
-            if clevel <= 5 && (ridx == id.grip || ridx == id.fang || ridx == id.small_kobold) {
-                scary = true;
-            }
-
-            // run from certain scaries
-            if clevel <= 8
-                && (ridx == id.soldier
-                    || ridx == id.cutpurse
-                    || ridx == id.acolyte
-                    || ridx == id.apprentice
-                    || ridx == id.kobold
-                    || ridx == id.shrieker_mushroom_patch
-                    || ridx == id.maggot
-                    || ridx == id.filthy_street_urchin
-                    || ridx == id.battle_scarred_veteran
-                    || ridx == id.mean_looking_mercenary)
-            {
-                scary = true;
-            }
-
-            if clevel <= 15
-                && (ridx == id.bullroarer
-                    || ((ridx == id.giant_white_mouse
-                        || ridx == id.white_worm_mass
-                        || ridx == id.green_worm_mass)
-                        && breeder_count >= clevel
-                        && !breeder_stand))
-            {
-                scary = true;
-            }
-
-            if clevel <= 20
-                && (ridx == id.cave_spider
-                    || ridx == id.red_naga
-                    || ridx == id.giant_red_frog
-                    || ridx == id.radiation_eye
-                    || (ridx == id.yellow_worm_mass && breeder_count >= clevel && !breeder_stand))
-            {
-                scary = true;
-            }
-
-            if clevel < 45
-                && (ridx == id.gravity_hound
-                    || ridx == id.inertia_hound
-                    || prefix_i(engine::race_base_name(usize::from(r_idx)), b"ancient dragon")
-                    || ridx == id.beorn
-                    || ridx == id.dread)
-            {
-                scary = true;
-            }
+        }
+        if named && crate::scary_list::selected().is_none()
+            && c_named_scary(&id, ridx, engine::race_base_name(usize::from(r_idx)), clevel, b.tr(BI_CLASS), breeder_count, breeder_stand)
+        {
+            scary = true;
         }
 
         // Nether breath is bad
@@ -3052,7 +3086,7 @@ const NAMES_MAX: usize = 1024;
 
 /// Record the race indexes the Borg code refers to by name (each test
 /// sets its own field, so the C order does not matter).
-fn note_monster_id(st: &mut BorgState, name: &[u8], ridx: u32) {
+pub(crate) fn note_monster_id(st: &mut BorgState, name: &[u8], ridx: u32) {
     let id = &mut st.borg.id;
     if name == b"Morgoth, Lord of Darkness" {
         id.morgoth = ridx;
