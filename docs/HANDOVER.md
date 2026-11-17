@@ -28,6 +28,9 @@ every copy.
 - With `store_buy_direct` set the engine buys one copy with no prompt, so
   the quantity is not typed. The shipped `harness/borg.txt` does not set it.
 - TAKE_HOME and sales still move one copy per action.
+- The fix is in the vendored core (`borg-core/`), so it plays only when
+  the borg-rs core is selected: `borg_reborn_core = borg-rs` (shipped since
+  #479) or `BORG_CORE=borg-rs`. The original reborn core is unaffected.
 
 **Checked:** three Ranger starts, 100,000 turns, on main `28360152` and on
 the branch:

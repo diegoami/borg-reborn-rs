@@ -36,6 +36,9 @@ impl CarryContext {
         Self { gold: st.borg.tr(crate::borg_headers::borg_trait_h::BI_GOLD),
             inventory: st.items.items.iter().map(|i| (i.desc, i.iqty)).collect() }
     }
+    /// borg-reborn-rs (#507): every slot of `st.items.items`, the quiver
+    /// included (it runs to `quiver_end()`), so an arrow purchase that
+    /// merges into the quiver still counts its copies.
     fn quantity(&self) -> u32 { self.inventory.iter().map(|i| u32::from(i.1)).sum() }
 }
 #[derive(Clone)]
@@ -152,6 +155,10 @@ pub fn active(st: &BorgState) -> bool { st.cfg(BORG_TOWN_PLAN) == 1 }
 /// (`inven_carry_num`) and the gold at the price of one (`price_item`).
 /// Never more than store.c's `store_purchase` offers as its maximum, so a
 /// quantity of two or more always meets the prompt (it is skipped at 1).
+/// The floor of 1 is never typed and never reached when nothing is
+/// affordable: store_purchase refuses with "You do not have enough gold"
+/// before its prompt, and the settle then records no progress. Do not turn
+/// the floor into a refusal here.
 fn purchase_quantity(planned: i64, stack: u8, room: i32, price: i32, gold: i32) -> i32 {
     let afford = if price > 0 { gold / price } else { i32::from(stack) };
     let planned = i32::try_from(planned.clamp(1, i64::from(u8::MAX))).unwrap_or(1);
