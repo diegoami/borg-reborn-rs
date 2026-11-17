@@ -30,7 +30,7 @@ found, going down".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_turns` | 2000 | turns | 0–100000 | `borg_caution.rs:2162` (0 = off, C's behaviour) |
+| `caution_rising_explore_turns` | 300 | Borg ticks (about 10 game turns each) | 0–100000 | `borg_caution.rs:2162` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2162` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## No unknown items (#470)

@@ -2376,7 +2376,7 @@ mod rising_tests {
         assert!(rising_holds_descent(&rising(), 20), "danger at avoidance x 10/10 still holds");
         assert!(!rising_holds_descent(&rising(), 21), "real danger lets the descent through");
         let mut st = rising();
-        st.borg.time.now = st.borg.time.level + 2000;
+        st.borg.time.now = st.borg.time.level + 300;
         assert!(!rising_holds_descent(&st, 0), "the exploration budget is spent");
         let mut st = rising();
         st.borg.goal.rising = false;

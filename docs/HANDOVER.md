@@ -11,7 +11,7 @@ through "no up stairs found, going down") landed it on an up staircase, and
 each climb on a down staircase.
 
 - `borg_caution::rising_holds_descent`: while `goal.rising`, below DL0, within
-  `caution_rising_explore_turns` (2000) on the level and with danger here at
+  `caution_rising_explore_turns` (300 Borg ticks, about 3,000 game turns) on the level and with danger here at
   most avoidance x `caution_rising_descend_danger_tenths` (10) / 10, a
   non-desperate descent is held and the Borg explores. Applied in
   `choose_stairs`, the flee block's `borg_flow_stair_more` and
@@ -19,7 +19,9 @@ each climb on a down staircase.
   Desperate stair flows are unchanged.
 - On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
   1739161339 (unknown3) live to the turn cap (they died); the other three
-  deaths play identical keys.
+  deaths play identical keys. The default 300 is the owner's (2026-11-17),
+  between the 250 and 500 tried; at 2000 a fully explored level kept the
+  Rogue searching for secret doors for about 14,000 game turns.
 
 ## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
 
