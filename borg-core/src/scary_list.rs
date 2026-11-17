@@ -306,6 +306,65 @@ mod tests {
         assert!(!is_scary(&l, 9, b"dragon", who(1, WARRIOR)));
     }
 
+    /// The races of the game data, in `monster.txt` order: (name, base).
+    fn game_races() -> Vec<(String, String)> {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../engine/angband/lib/gamedata/monster.txt");
+        let text = std::fs::read_to_string(&path).unwrap();
+        let mut out: Vec<(String, String)> = Vec::new();
+        for line in text.lines() {
+            if let Some(name) = line.strip_prefix("name:") {
+                out.push((name.to_string(), String::new()));
+            } else if let Some(base) = line.strip_prefix("base:") {
+                out.last_mut().expect("base before a name").1 = base.to_string();
+            }
+        }
+        out
+    }
+
+    /// Review of #527: the C file reproduces the compiled C list (and the
+    /// shipped ranges do for the toughest classes) over every race of the
+    /// game data, every class, levels 0-60 and the breeder cases, not only
+    /// on a sample of games.
+    #[test]
+    fn the_c_file_matches_the_compiled_list_on_every_race() {
+        let races = game_races();
+        assert!(races.len() > 500, "monster.txt read");
+        // Race indexes as the engine numbers them would do as well; both
+        // sides only need the same numbering.
+        let index = |i: usize| i + 1;
+        let mut st = crate::state::BorgState::default();
+        for (i, (name, _)) in races.iter().enumerate() {
+            crate::borg_flow_kill::note_monster_id(&mut st, name.as_bytes(), index(i) as u32);
+        }
+        let resolve = |name: &str| races.iter().position(|(n, _)| n == name).map(index);
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
+        let c_file = parse(&std::fs::read_to_string(root.join("harness/scary_monsters_c.txt")).unwrap(), &resolve).unwrap();
+        let shipped = parse(&std::fs::read_to_string(root.join("harness/scary_monsters.txt")).unwrap(), &resolve).unwrap();
+        let tough: Vec<i32> = (0..9).filter(|&c| shipped.fragility[c as usize] == 0).collect();
+        assert_eq!(tough, vec![0, 5, 8], "warrior, paladin, blackguard");
+        let mut matched = 0;
+        for (i, (_, base)) in races.iter().enumerate() {
+            let r = index(i);
+            for class in 0..9 {
+                for clevel in 0..=60 {
+                    for (breeder_count, breeder_stand) in [(0, false), (100, false), (100, true)] {
+                        let who = Situation { clevel, class, breeder_count, breeder_stand };
+                        let c = crate::borg_flow_kill::c_named_scary(&st.borg.id, r as u32, base.as_bytes(), clevel, class, breeder_count, breeder_stand);
+                        assert_eq!(is_scary(&c_file, r, base.as_bytes(), who), c, "C file: race {} {who:?}", races[i].0);
+                        if tough.contains(&class) {
+                            assert_eq!(is_scary(&shipped, r, base.as_bytes(), who), c, "shipped, tough class: race {} {who:?}", races[i].0);
+                        }
+                        matched += usize::from(c);
+                    }
+                }
+            }
+        }
+        assert!(matched > 0, "the compiled list fires somewhere");
+        // The "ancient dragon" base: every race of that base, as C.
+        let dragons = races.iter().filter(|(_, b)| b.to_lowercase().starts_with("ancient dragon")).count();
+        assert!(dragons > 0);
+    }
+
     #[test]
     fn appended_lines_override_and_none_removes() {
         let shipped = "fragility: mage 100\nsoldier | 8-11\nFang, Farmer Maggot's Dog | 5-8\n";

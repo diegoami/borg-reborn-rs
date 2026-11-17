@@ -263,9 +263,13 @@ The shipped fragilities are Warrior, Paladin, Blackguard 0; Ranger, Rogue 33;
 Priest, Druid 67; Mage, Necromancer 100. Each range is C's level to C's
 level + 3, so Fang (C: 5) is 5-8: 5, 6, 7 and 8 for those four groups. C's
 only class exception (the squint-eyed rogue scares Mages and Priests up to 6)
-lies inside its range. C's list written as single numbers plus that
-exception plays byte-identical keys to the compiled list on the 18
-classes-18 starts. With the shipped ranges, 2 of the 18 games change (the
+lies inside its range. `harness/scary_monsters_c.txt` is C's list exactly
+(single levels plus that exception), a control arm. The borg-core test
+`the_c_file_matches_the_compiled_list_on_every_race` checks it against the
+compiled condition (`borg_flow_kill::c_named_scary`) over every race in
+`monster.txt`, every class, levels 0-60 and the breeder cases, and checks
+that the shipped ranges match it for the classes at fragility 0; it also
+plays byte-identical keys to the compiled list on the 18 classes-18 starts. With the shipped ranges, 2 of the 18 games change (the
 Rogue and the Ranger): the frail casters never passed C's levels within
 100,000 turns.
 
