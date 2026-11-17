@@ -174,21 +174,39 @@ each name had a character-level cap because Grip, Fang or a kobold is
 deadly only to a weak character.
 
 A monster on the level (`borg_near_monster_type`, every known monster, as
-the named list) makes the level scary when one character turn of its
-attacks takes at least `caution_scary_damage_percent` of max HP. The damage
-is `borg_danger_one_kill` evaluated at the monster's own grid, where the
-distance is clamped to 1, as if it stood next to the Borg: its speed (moves
-per character turn), its blows and its worst spell (`average` false), with
-hit and spell-frequency chances (`full_damage` false). Max HP, not current
-HP: a wounded character is already the danger-against-avoidance flight's
-business. The scary level then works as before (leave and flee, latched
-until a new level). The resist-based scares and the named list's switch
-stay. Compiled 0 (off); `harness/borg.txt` ships 50 (two shots), with the
-named list off.
+the named list) makes the level scary when one character turn of its melee
+takes at least `caution_scary_damage_percent` of max HP. The damage is the
+monster's own: the average of its blows' dice, times its moves per
+character turn (`extract_energy` of both speeds, at least one). It is not
+`borg_danger`: a first try with it at 50 rated a street urchin (it steals)
+at 245 and a floating eye (it paralyses) at 276 against a 10-HP character,
+and made a level scary 14,507 times in 18 games. Spells are not counted.
+Max HP, not current HP: a wounded character is already the
+danger-against-avoidance flight's business. The scary level then works as
+before (leave and flee, latched until a new level). The resist-based scares
+and the named list's switch stay. Compiled 0 (off); `harness/borg.txt`
+ships 60 (owner), with the named list off.
+
+Local check, 18 class starts (borg-zoo's classes-18), 100,000 turns, main
+`dd5f026e`:
+
+| arm | deaths | sum of CL | sum of max depth | "Scary guy" notes |
+|---|---:|---:|---:|---:|
+| list off (main) | 2 | 109 | 42 | 0 |
+| named list on | 2 | 83 | 36 | 11,739 |
+| damage 30 | 2 | 111 | 43 | 415 |
+| damage 50 | 3 | 111 | 44 | 81 |
+| damage 60 (shipped) | 3 | 108 | 43 | 4 (16 of 18 games keep list off's keys) |
+| damage 80 | 2 | 109 | 42 | 0 (keys identical to list off) |
+
+At 30 the scares come from battle-scarred veterans, mercenaries, grey molds,
+centipedes and once Grip; at 50 almost only veterans, against low-HP
+characters. 18 games cannot separate the arms' deaths (borg-zoo#216 saw the
+list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2263` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2264` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 

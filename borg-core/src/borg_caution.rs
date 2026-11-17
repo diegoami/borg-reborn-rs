@@ -2252,21 +2252,44 @@ pub(crate) fn scary_named_monsters() -> bool {
 }
 
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
-/// turns of its attacks can take at least `caution_scary_damage_percent` of
+/// turns of its melee can take at least `caution_scary_damage_percent` of
 /// the character's max HP (owner: scary is a monster that can one- or
-/// two-shot you; 50 = two shots). The damage is `borg_danger_one_kill` as
-/// if the monster stood next to the Borg: evaluated at its own grid, where
-/// the distance is clamped to 1, so it counts its speed, its blows and its
-/// worst spell (`average` false), with hit and spell-frequency chances
-/// (`full_damage` false). Max HP, not current HP: a wounded character is
-/// the danger-against-avoidance flight's business. 0 = off.
+/// two-shot you, as a percentage of HP). The damage is the monster's own:
+/// the average of its blows' dice, times its moves per character turn
+/// (`extract_energy` of both speeds, at least one). Not `borg_danger`, which
+/// adds large penalties for stealing, paralysis or confusion (a street
+/// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
+/// current HP: a wounded character is the danger-against-avoidance flight's
+/// business. 0 = off.
 pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
     let percent = p(Param::caution_scary_damage_percent);
     let max_hp = st.borg.tr(BI_MAXHP);
     if percent <= 0 || max_hp <= 0 { return false; }
-    let pos = st.kills.kills[i as usize].pos;
-    let damage = crate::borg_danger::borg_danger_one_kill(st, pos.y, pos.x, 1, i, false, false);
-    scary_damage_reaches(damage, max_hp, percent)
+    let kill = st.kills.kills[i as usize];
+    let r_idx = usize::from(kill.r_idx);
+    if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
+    let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
+    let scary = scary_damage_reaches(damage, max_hp, percent);
+    if scary && !st.borg.mon.scary {
+        let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
+        borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
+    }
+    scary
+}
+
+/// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
+/// character turn: the sum of its blows' average dice, times its moves per
+/// character turn at these speeds (game energy, at least one move).
+fn melee_damage_per_turn(r_idx: usize, monster_speed: i32, player_speed: i32) -> i32 {
+    if crate::engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW) { return 0; }
+    let mut tenths = 0i64;
+    for k in 0..usize::from(crate::engine::z_info().mon_blows_max) {
+        let Some(blow) = crate::engine::race_blow(r_idx, k) else { break };
+        tenths += i64::from(blow.dice) * i64::from(blow.sides + 1) * 5;
+    }
+    let energy = |speed: i32| i64::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize)).max(1);
+    let moves_tenths = (10 * energy(monster_speed) / energy(player_speed)).max(10);
+    i32::try_from(tenths * moves_tenths / 100).unwrap_or(i32::MAX)
 }
 
 /// borg-reborn-rs (#505): `damage` is at least `percent` of `max_hp`.
