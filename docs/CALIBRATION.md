@@ -46,7 +46,7 @@ The registry now holds **1784** parameters (1781 before; three added). Owner
   planner's best healing per gold moves from CLW (30 HP) to CSW (60–100 HP)
   to Healing (200+ HP); with HP alone it is CLW at every level. Cure
   Critical Wounds (60 HP for 200 gold) never wins on healing alone.
-- The shipped `harness/borg.txt` proposes 800, 100 and 66 (#491's
+- The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
   measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
   to before.
 

@@ -25,8 +25,20 @@ the diminishing curve past it, with proposed defaults.
     20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
     CSW (60–100 HP), then Healing (200+ HP). CCW (60 HP for 200 gold) never
     wins on healing alone.
-- **Proposed shipped values:** reserve 800, curve 100, speed 66, in
-  `harness/borg.txt`. Owner to confirm before merge.
+- **Shipped (owner):** reserve 400, curve 100, speed 66, in
+  `harness/borg.txt`.
+  - 800 was proposed first. In CI, engine test
+    `test_active_cap_is_replaced_when_level_changes` (mage, seed 1001)
+    failed with it: at 10 max HP, 800% is 8 Cure Light Wounds, about 160
+    gold, almost all the starting gold. The mage bought no oil and died at
+    level 1 to a grey mold (turn 4,084).
+  - With 400 + 66, or 66 alone, the mage reaches level 2 alive.
+  - On the four starts, 400 + 66 bought 13 / 6 / 5 / 12 healing potions
+    (main 6 / 4 / 4 / 5). The Blackguard died early (turn 15,735), as it
+    did at 400 without speed. One game each, so an anecdote.
+  - Left: a zoo arm for reserve {400, 800} x speed {0, 66}, and possibly
+    a reserve that grows with level, so early characters keep gold for
+    their attack.
 - **Speed 66 on the four starts:** off still equals main and reserve 800
   is unchanged by the new code.
   - Rogue, Blackguard: unchanged, with or without the reserve.
