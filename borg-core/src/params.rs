@@ -244,6 +244,11 @@ parameters! {
     caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
     town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:249", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
     town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:249", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
+    town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:534", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
+    town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:269", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone)."),
+    town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:541", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
+    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:2163", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
+    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:2163", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),
@@ -727,7 +732,16 @@ parameters! {
     attack_status_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:691", "Attack status danger horizon: existing policy turns."),
     attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:694", "Attack fear bonus max level: existing policy level."),
     attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:695", "Attack fear danger bonus: existing policy danger."),
-    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:766", "Attack arrow point blank divisor: existing policy divisor."),
+    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:766", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
+    attack_arrow_point_blank_divisor_warrior => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the warrior point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_mage => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the mage point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_druid => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the druid point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_priest => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the priest point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_necromancer => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the necromancer point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_paladin => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the paladin point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_rogue => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the rogue point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_ranger => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the ranger point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
+    attack_arrow_point_blank_divisor_blackguard => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the blackguard point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
     attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:769", "Attack arrow min hit tenths: existing policy tenths."),
     attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:777", "Attack mana unique min potions: existing policy count."),
     attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:779", "Attack mana unique multiplier: existing policy multiplier."),
@@ -2007,7 +2021,12 @@ mod tests {
                 "town" => "town_budget",
                 _ => prefix,
             };
-            assert_eq!(file, format!("borg_{module}.rs"));
+            if prefix == "town" {
+                // The town planner's parameters live in its borg_town_*.rs modules.
+                assert!(file.starts_with("borg_town_") && file.ends_with(".rs"), "{file}");
+            } else {
+                assert_eq!(file, format!("borg_{module}.rs"));
+            }
             assert!(line.parse::<usize>().unwrap() > 0);
         }
     }

@@ -21,7 +21,7 @@ from the existing device-failure `permille` unit. No existing default changes.
 
 ## Gold reserve (#493)
 
-The registry now holds **1783** parameters (1781 before; two added). Before,
+The registry now holds **1797** parameters (1795 after #485's follow-up; two added). Before,
 the live town planner kept gold only through the soft price
 `borg_town_w_gold` (`borg_town_solve::solve_cash`: spending `c` costs
 `w x c / (gold left + 1)`), which made the last coins nearly unspendable. The
@@ -41,6 +41,80 @@ keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
 |---|---|---|---|---|
 | `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:249` |
 | `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:249` |
+
+## Point-blank divisor by class (#485)
+
+The registry now holds **1795** parameters (1786 after #491; nine added). The
+damage of a shot or throw at an adjacent non-unique is divided by
+`attack_arrow_point_blank_divisor` (compiled 5, borg-rs's); since #485 a class
+overrides it with `attack_arrow_point_blank_divisor_<class>` (0, the default,
+means the general divisor), resolved by `borg_fight_attack::point_blank_divisor`.
+The shipped `harness/borg.txt` sets the general divisor to 5, the Ranger's to
+2 and the Rogue's to 3 (owner, 2026-11-17: 2 suits Rangers but not Rogues, the
+second missile class); #495 had shipped 2 for every class.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_arrow_point_blank_divisor_<class>` (warrior, mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard) | 0 (= `attack_arrow_point_blank_divisor`) | divisor override (0 = the general divisor) | 0–1000 | `borg_fight_attack.rs:3009` |
+
+## Healing reserve (#491)
+
+The registry now holds **1786** parameters (1783 after #483; three added). Owner
+(2026-11-17): "we can never have enough healing", as configurable values, and
+"budget healing speed as well". All act on the live town planner's healing curve
+(`borg_town_capability::observe`), where carrying `x` HP of healing was worth
+`w x x / (x + d)` with `w = borg_town_w_bleeding x exposure` and
+`d = max HP x exposure`, so each potion was worth less than the one before.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:541` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:269` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:534` |
+
+- **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
+  same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
+  each HP is worth the curve's first HP, `w / d = borg_town_w_bleeding /
+  max HP`, independent of the trip's exposure, on top of the curve. It is a
+  requirement (negative demand, like food's floor), so the planner buys it
+  first and never sells below it; past it only the curve remains.
+- **Curve scale:** multiplies `w` and `d` together. The first HP keeps its
+  value; the curve reaches half its maximum at `scale x d` instead of `d`.
+- **Healing speed:** the HP one HEAL_HP use supplies, to the curve and the
+  reserve alike, are weighted by how fast it brings the character back to
+  max HP. A use that heals at least `town_heal_speed_percent` of max HP
+  counts in full; a smaller one counts `heal x heal / (percent x max HP)`.
+  At 66, Cure Light Wounds (20 HP) counts in full up to 30 max HP. The
+  planner's best healing per gold moves from CLW (30 HP) to CSW (60–100 HP)
+  to Healing (200+ HP); with HP alone it is CLW at every level. Cure
+  Critical Wounds (60 HP for 200 gold) never wins on healing alone.
+- The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
+  measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
+  to before.
+
+## Rising to town explores for an up staircase (#483)
+
+The registry now holds **1783** parameters (1781 before; two added). While
+the Borg is rising to town (`goal.rising`: a trip or town return), a descent
+that is not a desperate escape is held, so that it explores the level for an
+up staircase. Before, with connected stairs, it arrived on a down staircase,
+took it (the level was "scary", or no up staircase was known), climbed back
+onto another down staircase and never reached town (borg-zoo#170 run
+44054277431, Ranger 1739161339: DL2/DL3 to the end). The gate is
+`borg_caution::rising_holds_descent`, applied in `choose_stairs`, in the flee
+block's flow to a down staircase and in `borg_leave_level`'s "no up stairs
+found, going down", and since the review every descent `borg_leave_level` decides
+(its "Go Down" block: bored, "spent too long on level", the trip policy).
+
+The budget counts Borg ticks, the same clock as "Spent too long on level";
+how many game turns a tick spans depends on what the Borg does (a move, a
+rest, a search). It is per level, not per return: it bounds the search for an
+up staircase on one level.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## No unknown items (#470)
 

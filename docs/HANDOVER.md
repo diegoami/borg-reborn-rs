@@ -26,6 +26,161 @@ should be 0. Before, the live town planner kept gold only through
   gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
   holds (median 138). Healing purchases moved only partly (#491 is the
   healing value).
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
+## 2026-11-17: Boldness is no buff to the town planner (#486)
+
+The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
+death starts on main's defaults), and the core never drank them for what they
+were bought for. Wine (`object.txt`: weight 10, cost 2, `NOURISH:INC_BY 3`,
+`TIMED_INC:BOLD`) has been no food to the planner since #444, but `timed_cap`
+mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
+
+- A Bold timed effect is no buff the core uses. The core takes Boldness only
+  to cure fear: a Potion of Boldness is `CURE:AFRAID`, priced through FEAR,
+  and `borg_caution` / `borg_recover` quaff it when afraid. The hunger list
+  drinks wine as food.
+- `TMD_BOLD` no longer maps to `BUFF` (`borg_town_capability::timed_cap`).
+  The rule is effect-wide on purpose: the only kind with `TIMED_INC:BOLD` in
+  `object.txt` is the Pint of Fine Wine (no activation or class spell grants
+  it), and Potions of Boldness keep their fear-cure value (tested).
+- On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
+  The freed gold isn't spent on healing; the healing value is a diminishing
+  curve (HP x exposure), which is borg-reborn-rs#491.
+## 2026-11-17: a healing reserve for the town planner (#491)
+
+Owner: "we can never have enough healing". The owner chose
+configurable borg.txt values instead of the issue's three proposals: a
+linear reserve as a percent of max HP (as in proposal 1), a value for the
+diminishing curve past it, and then healing speed, with proposed defaults.
+
+- **Code:** `borg_town_capability.rs`, details in docs/CALIBRATION.md.
+  - `town_heal_reserve_hp_percent` (0 = off): up to this percent of max HP
+    of healing, each HP is worth the curve's first HP (`w_bleeding / max HP`),
+    on top of the curve. Bought first, never sold below.
+  - `town_heal_curve_scale_percent` (100 = today): stretches the curve past
+    the reserve, keeping its first HP's value.
+  - `town_heal_speed_percent` (0 = HP alone), owner: "budget healing speed
+    as well". A potion that heals at least this percent of max HP in one
+    swallow counts in full; a smaller one counts `heal x heal / (percent x
+    max HP)`. HP per gold alone made Cure Light Wounds the best buy at every
+    level: 800% of a 300-HP character's max HP is 120 CLW, each healing
+    20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
+    CSW (60–100 HP), then Healing (200+ HP). CCW (60 HP for 200 gold) never
+    wins on healing alone.
+- **Off is identical:** at 0, 100 and 0 the four starts of the issue play
+  the same key streams as main `4d83dd26`.
+- **Shipped (owner):** reserve 400, curve 100, speed 66, in
+  `harness/borg.txt`.
+  - 800 was proposed first. In CI, engine test
+    `test_active_cap_is_replaced_when_level_changes` (mage, seed 1001)
+    failed with it: at 10 max HP, 800% is 8 Cure Light Wounds, about 160
+    gold, almost all the starting gold. The mage bought no oil and died at
+    level 1 to a grey mold (turn 4,084).
+  - With 400 + 66, or 66 alone, the mage reaches level 2 alive.
+  - On the four starts, 400 + 66 bought 13 / 6 / 5 / 12 healing potions
+    (main 6 / 4 / 4 / 5). The Blackguard died early (turn 15,735), as it
+    did at 400 without speed. One game each, so an anecdote.
+  - Left: a zoo arm for reserve {400, 800} x speed {0, 66}, and possibly
+    a reserve that grows with level, so early characters keep gold for
+    their attack.
+- **Speed 66 on the four starts:** off still equals main and reserve 800
+  is unchanged by the new code.
+  - Rogue, Blackguard: unchanged, with or without the reserve.
+  - Ranger (34 HP) with reserve 800: 21 potions bought, 570 gold (CLW and
+    CSW), alive.
+  - Druid with reserve 800: 30 potions, 650 gold, alive.
+  - No deep character is measured.
+- **Measurement:** the four starts, 100k turns, branch build. Healing
+  potions bought, gold on healing / total, outcome. One game per cell,
+  descriptive (RULES 14).
+
+| setting | Rogue | Ranger | Blackguard | Druid | deaths |
+|---|---|---|---|---|---|
+| off (= main) | 6, 270/2337 | 4, 80/899 | 4, 80/322, **died** | 5, 100/1168 | 1 |
+| reserve 200 | 2, 40/814 | 3, 60/864 | 4, 180/761 | 5, 100/596 | 0 |
+| reserve 400 | 10, 400/1432 | 11, 370/1051 | 5, 100/192, **died** | 12, 240/650 | 1 |
+| **reserve 800** | 11, 220/1517 | 17, 340/837 | 9, 180/571 | 29, 780/1928 | 0 |
+| reserve 1200 | 31, 720/2059 | 28, 560/1198 | 10, 200/215 | 14, 280/537, **died** | 1 |
+| curve 300 | 17, 390/959 | 2, 40/117, **died** | 4, 80/138, **died** | 11, 270/793 | 2 |
+| reserve 400 + curve 300 | 7, 140/1088 | 10, 300/1188 | 5, 100/192, **died** | 13, 260/593 | 1 |
+| reserve 800 + curve 200 | 10, 200/1395 | 12, 240/1122 | 10, 200/941 | 8, 160/560 | 0 |
+
+- **Reading:**
+  - Reserve 200 is at or below what these low-level characters already
+    carry, so it buys little.
+  - Reserve 800 multiplies the healing bought by 2–6 and still leaves
+    gold for arrows, oil and Phase Door. 1200 starts to crowd them out.
+  - Stretching the curve alone did nothing useful.
+  - Every game diverges early, so deaths are anecdotes.
+- **Left:**
+  - The reserve grows with max HP: 800% of 300 HP is 120 Cure Light
+    Wounds' worth. Weight, slots and gold bound it, and stronger potions
+    heal more per slot, but a deep character is not measured.
+  - A zoo arm should measure reserve {400, 800, 1200} x curve {100, 200}.
+  - #494 (gold reserve, `borg_town_w_gold = 0`) and #492 (no wine) also
+    change what gold is left for healing.
+
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
+## 2026-11-17: point-blank shots keep half their damage (#485)
+
+Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its
+bow scored 4 (8 with the Ranger preference) against melee 22–64.
+
+- **Cause:** not the launcher's damage. Bow and Main Gauche both score 4,
+  and the engine agrees (1.2 shots, 1.17 blows, about 6 each per turn).
+  The gap is the danger bonus. Melee adds the target's danger over 2 turns
+  at full damage; `borg_launch_bolt_aux_hack` adds 1 turn weighted by the
+  monster's hit chance, 0 for a monster 2 squares away (same as C). An
+  adjacent non-unique could not be shot at all: damage / 5 = 0. The engine
+  has no point-blank penalty; arrow breakage is the same at any distance.
+  Per-term numbers are in the issue.
+- **Change (owner):** shipped `harness/borg.txt` sets
+  `borg_param_attack_arrow_point_blank_divisor = 2`. The compiled default
+  stays 5. It applies to launcher ammo and thrown objects of every class.
+- **Replay:** with 2, the Ranger is alive at the 100k-turn cap (CL8, max
+  DL7) instead of dying at turn 74,797. It diverges at turn 6,573, so this is
+  one game, not evidence (RULES 14); a zoo arm should measure it.
+- **Left:** the danger-term asymmetry itself (a `full_damage` parameter for
+  the launcher's term) is not changed. Owner's call after the zoo measure.
 
 ## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
 
