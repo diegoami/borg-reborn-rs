@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: Boldness is no buff to the town planner (#486)
+
+The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
+death starts on main's defaults) and the core never drank them for what they
+were bought for. Wine (`object.txt`: weight 10, cost 2, `NOURISH:INC_BY 3`,
+`TIMED_INC:BOLD`) is no food to the planner since #444, but `timed_cap` mapped
+`TMD_BOLD` to `BUFF`, the cheapest buff on offer. No core path takes Boldness
+as a buff: the fear cure (`borg_caution`) cures AFRAID, and the hunger list
+drinks wine as food. `TMD_BOLD` no longer maps to `BUFF`
+(`borg_town_capability::timed_cap`); Potions of Boldness keep their fear-cure
+value. On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less
+carried. The freed gold is not spent on healing: the healing value is a
+diminishing curve (HP x exposure), which is borg-reborn-rs#491.
+
 ## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
 
 Owner request: the settings of borg-zoo#170's arm `reborn-bundle-plan-speed30`
