@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
+
 ## 2026-11-17: rising to town explores for an up staircase (#483)
 
 borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a

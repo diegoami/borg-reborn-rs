@@ -15,6 +15,21 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## Point-blank divisor by class (#485)
+
+The registry now holds **1792** parameters (1783 before; nine added). The
+damage of a shot or throw at an adjacent non-unique is divided by
+`attack_arrow_point_blank_divisor` (compiled 5, borg-rs's); since #485 a class
+overrides it with `attack_arrow_point_blank_divisor_<class>` (0, the default,
+means the general divisor), resolved by `borg_fight_attack::point_blank_divisor`.
+The shipped `harness/borg.txt` sets the general divisor to 5, the Ranger's to
+2 and the Rogue's to 3 (owner, 2026-11-17: 2 suits Rangers but not Rogues, the
+second missile class); #495 had shipped 2 for every class.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_arrow_point_blank_divisor_<class>` (warrior, mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard) | 0 (= `attack_arrow_point_blank_divisor`) | divisor override (0 = the general divisor) | 0–1000 | `borg_fight_attack.rs:3009` |
+
 ## Rising to town explores for an up staircase (#483)
 
 The registry now holds **1783** parameters (1781 before; two added). While
