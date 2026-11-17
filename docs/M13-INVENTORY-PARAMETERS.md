@@ -114,3 +114,25 @@ requires changed keys plus recorded parameter provenance. Full native
 natural-death custody belong in Cemetery; the source handover/PR link their
 immutable evidence. These are compatibility/scenario checks, not a population
 or survival experiment. Interactive GUI behavior is not claimed.
+
+## Pre-promotion review fixes (#481)
+
+`sell_mapping_rod_reserve_count` accepts 0..255, matching its u8 operand;
+256 and 300 are rejected during loading rather than wrapping to 0 and 44.
+The default remains 2. Other narrow P4 operands retain their previous bounds.
+
+Three unpromoted names are corrected without changing positions or defaults:
+
+| Historical name | Correct name | Guard and meaning | Default |
+|---|---|---|---:|
+| `power_inventory_poison_cure_bonus` | `power_inventory_hurt_ccw_bonus` | Cut or poisoned; BI_ACCW, Cure Critical Wounds | 100000 |
+| `power_inventory_cut_cure_bonus` | `power_inventory_hurt_heal_bonus` | Cut or poisoned; BI_AHEAL, Healing | 50000 |
+| `power_inventory_cure_serious_first_bonus` | `power_inventory_poisoned_cure_poison_bonus` | Poisoned; BI_ACUREPOIS, poison cures | 15000 |
+
+BI_ACUREPOIS counts cure-poison potions and cure-poison food in the current
+trait code; CLW is counted separately as BI_ACLW. Defaults and all first
+1,781 pre-P4 names/positions remain unchanged. No aliases retain the wrong
+new names before promotion; the loader rejects them as unknown settings.
+Cemetery #61 remains immutable historical evidence for its recorded e6446749
+source/binary and original names; use that original source for exact reruns.
+The corrected names describe the same branches and values, not a policy change.

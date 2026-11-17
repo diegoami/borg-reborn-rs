@@ -2081,9 +2081,9 @@ parameters! {
     power_inventory_annihilation_wand_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1564", "power inventory annihilation wand bonus: inherited policy; neutral default."),
     power_inventory_attack_wand_charge_weight => (50, "score", 0, 1000000, "borg_power.rs:1575", "power inventory attack wand charge weight: inherited policy; neutral default."),
     power_inventory_constitution_potion_bonus => (550000, "score", 0, 1000000, "borg_power.rs:1635", "power inventory constitution potion bonus: inherited policy; neutral default."),
-    power_inventory_cure_serious_first_bonus => (15000, "score", 0, 1000000, "borg_power.rs:1185", "power inventory cure serious first bonus: inherited policy; neutral default."),
+    power_inventory_poisoned_cure_poison_bonus => (15000, "score", 0, 1000000, "borg_power.rs:1185", "Bonus for poison cures while poisoned (BI_ACUREPOIS)."),
     power_inventory_cursed_missile_penalty => (1000, "score", 0, 1000000, "borg_power.rs:1531", "power inventory cursed missile penalty: inherited policy; neutral default."),
-    power_inventory_cut_cure_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1177", "power inventory cut cure bonus: inherited policy; neutral default."),
+    power_inventory_hurt_heal_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1177", "Bonus for Healing while cut or poisoned (BI_AHEAL)."),
     power_inventory_destruction_staff_first_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1540", "power inventory destruction staff first bonus: inherited policy; neutral default."),
     power_inventory_dexterity_potion_bonus => (550000, "score", 0, 1000000, "borg_power.rs:1632", "power inventory dexterity potion bonus: inherited policy; neutral default."),
     power_inventory_dungeon_book_spell_weight => (15000, "score", 0, 1000000, "borg_power.rs:1729", "power inventory dungeon book spell weight: inherited policy; neutral default."),
@@ -2109,7 +2109,7 @@ parameters! {
     power_inventory_max_wisdom_bonus => (20000, "score", 0, 1000000, "borg_power.rs:1600", "power inventory max wisdom bonus: inherited policy; neutral default."),
     power_inventory_other_quiver_slot_penalty => (10000, "score", 0, 1000000, "borg_power.rs:1525", "power inventory other quiver slot penalty: inherited policy; neutral default."),
     power_inventory_phase_first_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1271", "power inventory phase first bonus: inherited policy; neutral default."),
-    power_inventory_poison_cure_bonus => (100000, "score", 0, 1000000, "borg_power.rs:1174", "power inventory poison cure bonus: inherited policy; neutral default."),
+    power_inventory_hurt_ccw_bonus => (100000, "score", 0, 1000000, "borg_power.rs:1174", "Bonus for Cure Critical Wounds while cut or poisoned (BI_ACCW)."),
     power_inventory_ranged_missile_excess_penalty => (1000, "score", 0, 1000000, "borg_power.rs:1520", "power inventory ranged missile excess penalty: inherited policy; neutral default."),
     power_inventory_ranged_quiver_slot_penalty => (10000, "score", 0, 1000000, "borg_power.rs:1509", "power inventory ranged quiver slot penalty: inherited policy; neutral default."),
     power_inventory_recall_rod_bonus => (12000, "score", 0, 1000000, "borg_power.rs:1263", "power inventory recall rod bonus: inherited policy; neutral default."),
@@ -2156,7 +2156,7 @@ parameters! {
     sell_identify_max_depth => (35, "depth", 0, 127, "borg_store_sell.rs:929", "sell identify max depth: inherited policy; neutral default."),
     sell_mana_reserve_count => (99, "count", 0, 1000, "borg_store_sell.rs:920", "sell mana reserve count: inherited policy; neutral default."),
     sell_mana_reserve_min_sp => (100, "sp", 0, 10000, "borg_store_sell.rs:917", "sell mana reserve min sp: inherited policy; neutral default."),
-    sell_mapping_rod_reserve_count => (2, "count", 0, 1000, "borg_store_sell.rs:1023", "sell mapping rod reserve count: inherited policy; neutral default."),
+    sell_mapping_rod_reserve_count => (2, "count", 0, 255, "borg_store_sell.rs:1023", "sell mapping rod reserve count: inherited policy; neutral default."),
     sell_unidentified_max_level => (10, "level", 1, 50, "borg_store_sell.rs:898", "sell unidentified max level: inherited policy; neutral default."),
     sell_value_cap => (30000, "gold", 0, 1000000, "borg_store_sell.rs:131", "sell value cap: inherited policy; neutral default."),
     shopping_emergency_light_max_level => (10, "level", 1, 50, "borg_think_store.rs:235", "shopping emergency light max level: inherited policy; neutral default."),
@@ -2333,6 +2333,9 @@ mod tests {
             "borg_param_sell_ammo_batch_count = 6",
             "borg_param_sell_food_batch_count = 6",
             "borg_param_sell_home_stack_soft_limit = 91",
+            "borg_param_sell_mapping_rod_reserve_count = 256",
+            "borg_param_sell_mapping_rod_reserve_count = 300",
+            "borg_param_sell_mapping_rod_reserve_count = 1000",
             "borg_param_wear_full_ring_trial_rng_bound = 10",
             "borg_param_wear_full_ring_trial_rng_bound = 10001",
             "borg_param_wear_backup_max_bounces = 32768",
@@ -2341,6 +2344,22 @@ mod tests {
             "borg_param_home_stat_caster_low_limit = 30",
         ] {
             assert!(parse(text, &BTreeMap::new(), SPECS).is_err(), "{text}");
+        }
+        for valid in [0, 2, 255] {
+            let settings = parse(&format!("borg_param_sell_mapping_rod_reserve_count = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+            assert_eq!(settings[Param::sell_mapping_rod_reserve_count as usize].value, valid);
+        }
+        for (p, max) in [
+            (Param::sell_mapping_rod_reserve_count, i32::from(u8::MAX)),
+            (Param::sell_ammo_batch_count, i32::from(u8::MAX)),
+            (Param::sell_food_batch_count, i32::from(u8::MAX)),
+            (Param::sell_home_stack_soft_limit, i32::from(u8::MAX)),
+            (Param::sell_unidentified_ego_min_copies, i32::from(u8::MAX)),
+            (Param::wear_backup_max_bounces, i32::from(i16::MAX)),
+            (Param::wear_best_max_bounces, i32::from(i16::MAX)),
+        ] {
+            let spec = &SPECS[p as usize];
+            assert!(spec.min >= 0 && spec.max <= max, "{} exceeds its operand type", spec.name);
         }
         let env = BTreeMap::from([("SELL_GOLD_GREED_CEILING".into(), "40000".into())]);
         assert!(parse("borg_param_sell_gold_greed_floor = 30000", &env, SPECS).is_ok());
@@ -2378,7 +2397,9 @@ mod tests {
         ] {
             assert_eq!(SPECS.iter().find(|s| s.name == name).unwrap().default, expected);
         }
-        for name in ["recover_munchkin_rest_min_food", "power_inventory_maxclevel_threshold_2",
+        for name in ["power_inventory_poison_cure_bonus", "power_inventory_cut_cure_bonus",
+                     "power_inventory_cure_serious_first_bonus",
+                     "recover_munchkin_rest_min_food", "power_inventory_maxclevel_threshold_2",
                      "defend_shield_low_danger_numerator", "defend_shield_low_danger_divisor",
                      "defend_shield_low_fail_adjustment"] {
             assert!(parse(&format!("borg_param_{name} = 1"), &BTreeMap::new(), SPECS).is_err());

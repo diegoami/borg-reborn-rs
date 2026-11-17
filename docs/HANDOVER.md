@@ -5115,3 +5115,16 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Validation/evidence receipts are recorded on the task PR before merge.
   Task integration targets track-p; the subsequent milestone review and
   owner acceptance gate promotion to main. No tuning/population claim.
+
+## 2026-11-17: P4 milestone review fixes (#481)
+
+- Owner-selected review #477 at 105f7947 confirms neutral extraction and
+  independently matches all 45 native streams, with an exporter checkout
+  mismatch limiting that reviewer's harness/reconciliation status.
+- F1: cap mapping-rod reserve at 255 and test 256/300 rejection plus the
+  valid endpoints and all new u8/i16 operand bounds. Default remains 2.
+- F2: rename the three unpromoted curing bonuses for their actual CCW,
+  Healing and poison-cure guards; synchronize descriptions and JSON.
+- Preserve old parameter positions/defaults and immutable Cemetery #61
+  evidence; no aliases or policy changes. Integrate only through track-p
+  and update the exact #477 pin for owner re-review before main promotion.

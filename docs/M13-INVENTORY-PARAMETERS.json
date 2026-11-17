@@ -2034,28 +2034,12 @@
       "source": "borg_power.rs:1635"
     },
     {
-      "name": "power_inventory_cure_serious_first_bonus",
-      "default": 15000,
-      "unit": "score",
-      "min": 0,
-      "max": 1000000,
-      "source": "borg_power.rs:1185"
-    },
-    {
       "name": "power_inventory_cursed_missile_penalty",
       "default": 1000,
       "unit": "score",
       "min": 0,
       "max": 1000000,
       "source": "borg_power.rs:1531"
-    },
-    {
-      "name": "power_inventory_cut_cure_bonus",
-      "default": 50000,
-      "unit": "score",
-      "min": 0,
-      "max": 1000000,
-      "source": "borg_power.rs:1177"
     },
     {
       "name": "power_inventory_destruction_staff_first_bonus",
@@ -2178,6 +2162,24 @@
       "source": "borg_power.rs:1153"
     },
     {
+      "name": "power_inventory_hurt_ccw_bonus",
+      "default": 100000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1174",
+      "description": "Bonus for Cure Critical Wounds while cut or poisoned (BI_ACCW)."
+    },
+    {
+      "name": "power_inventory_hurt_heal_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1177",
+      "description": "Bonus for Healing while cut or poisoned (BI_AHEAL)."
+    },
+    {
       "name": "power_inventory_identify_first_bonus",
       "default": 6000,
       "unit": "score",
@@ -2258,12 +2260,13 @@
       "source": "borg_power.rs:1271"
     },
     {
-      "name": "power_inventory_poison_cure_bonus",
-      "default": 100000,
+      "name": "power_inventory_poisoned_cure_poison_bonus",
+      "default": 15000,
       "unit": "score",
       "min": 0,
       "max": 1000000,
-      "source": "borg_power.rs:1174"
+      "source": "borg_power.rs:1185",
+      "description": "Bonus for poison cures while poisoned (BI_ACUREPOIS)."
     },
     {
       "name": "power_inventory_ranged_missile_excess_penalty",
@@ -2638,7 +2641,7 @@
       "default": 2,
       "unit": "count",
       "min": 0,
-      "max": 1000,
+      "max": 255,
       "source": "borg_store_sell.rs:1023"
     },
     {
@@ -5163,23 +5166,23 @@
     {
       "file": "borg_power.rs",
       "line": 1174,
-      "name": "power_inventory_poison_cure_bonus",
+      "name": "power_inventory_hurt_ccw_bonus",
       "literal": "100000",
-      "replacement": "param(Param::power_inventory_poison_cure_bonus)"
+      "replacement": "param(Param::power_inventory_hurt_ccw_bonus)"
     },
     {
       "file": "borg_power.rs",
       "line": 1177,
-      "name": "power_inventory_cut_cure_bonus",
+      "name": "power_inventory_hurt_heal_bonus",
       "literal": "50000",
-      "replacement": "param(Param::power_inventory_cut_cure_bonus)"
+      "replacement": "param(Param::power_inventory_hurt_heal_bonus)"
     },
     {
       "file": "borg_power.rs",
       "line": 1185,
-      "name": "power_inventory_cure_serious_first_bonus",
+      "name": "power_inventory_poisoned_cure_poison_bonus",
       "literal": "15000",
-      "replacement": "param(Param::power_inventory_cure_serious_first_bonus)"
+      "replacement": "param(Param::power_inventory_poisoned_cure_poison_bonus)"
     },
     {
       "file": "borg_power.rs",
