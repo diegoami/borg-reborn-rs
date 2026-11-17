@@ -14,6 +14,7 @@ use crate::headers::list_effects_h::*;
 use crate::headers::list_player_timed_h::*;
 use crate::state::BorgState;
 use crate::engine;
+use crate::params::{value as param, Param};
 
 pub const PACK: i64 = 8;
 pub const HOME: i64 = 9;
@@ -62,6 +63,11 @@ const CUT: usize = 54;
 const STUN: usize = 55;
 const CONTROL: usize = 56;
 const RANGER_MISSILES: usize = 57;
+/// borg-reborn-rs (#491): the healing reserve. Every HP a supply heals counts
+/// here as well as in HEAL; up to `town_heal_reserve_hp_percent` of max HP
+/// it is worth the healing curve's first HP each (linear), past it nothing
+/// more than the curve. Zero weight when the parameter is 0.
+const HEAL_RESERVE: usize = 58;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -77,14 +83,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 58] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 59] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -169,7 +175,14 @@ fn timed_cap(timed: u32) -> Option<usize> {
         TMD_FAST | TMD_SPRINT => Some(SPEED),
         TMD_OPP_FIRE => Some(FIRE), TMD_OPP_COLD => Some(COLD), TMD_OPP_POIS => Some(RESPOIS),
         TMD_OPP_ACID => Some(ACID), TMD_OPP_ELEC => Some(ELEC),
-        TMD_HERO | TMD_SHERO | TMD_BOLD | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
+        // borg-reborn-rs (#486): not TMD_BOLD. A Bold timed effect is no buff
+        // the core uses: the core takes Boldness only to cure fear (a Potion of
+        // Boldness is CURE:AFRAID, priced through FEAR; borg_caution and
+        // borg_recover quaff it when afraid), and the hunger list drinks wine
+        // as food. The only kind with TIMED_INC:BOLD in object.txt is the
+        // Pint of Fine Wine (no activation or class spell grants it), whose
+        // buff value bought 14-21 pints a game that were never drunk for it.
+        TMD_HERO | TMD_SHERO | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
             | TMD_INVULN | TMD_ATT_ACID | TMD_ATT_ELEC | TMD_ATT_FIRE | TMD_ATT_COLD
             | TMD_ATT_POIS | TMD_ATT_EVIL | TMD_ATT_DEMON | TMD_ATT_VAMP | TMD_POWERSHOT => Some(BUFF),
         TMD_SINVIS => Some(INVISIBLE), TMD_TELEPATHY => Some(MONSTERS),
@@ -206,6 +219,19 @@ fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turn
         }
     }
     sum.into_iter().filter(|&(_, n)| n > 0).collect()
+}
+
+/// borg-reborn-rs (#491, owner: "budget healing speed"): the healing units of
+/// one HEAL_HP use. The HP it restores (capped at max HP), weighted by how
+/// fast it brings the character back to max HP: one that heals at least
+/// `speed_percent` of max HP in one swallow counts in full; a smaller one
+/// counts `heal x heal / (speed_percent of max HP)`, so a Cure Light Wounds
+/// (20 HP) is worth less the more HP the character has. 0 = HP alone.
+fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
+    let heal = amount.max(1).min(hp.max(1));
+    // The full-value heal in hundredths of an HP, so no rounding moves it.
+    let full = hp.max(1) * speed_percent.clamp(0, 100);
+    if full > heal * 100 { heal * heal * UNIT * 100 / full } else { heal * UNIT }
 }
 
 fn reduction_cap(subtype: u32) -> Option<usize> {
@@ -247,7 +273,7 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
             EF_NOURISH if subtype == 3 && amount > HUNGRY_PERCENT => Some((FOOD, (amount - HUNGRY_PERCENT) * UNIT)),
             EF_NOURISH if subtype == 3 => None,
             EF_NOURISH if subtype != 1 && amount > 0 => Some((FOOD, n)), // A decreasing food effect is not nourishment.
-            EF_HEAL_HP => Some((HEAL, amount.max(1).min(hp) * UNIT)),
+            EF_HEAL_HP => Some((HEAL, heal_units(amount, hp, i64::from(param(Param::town_heal_speed_percent))))),
             EF_CURE => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             EF_TIMED_DEC if amount > 0 => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             // borg-reborn-rs (#452): a speed effect is one emergency use, not
@@ -298,6 +324,8 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
         };
         if let Some((cap, units)) = role { *out.entry(cap).or_default() += units; }
     }
+    // borg-reborn-rs (#491): the same HP also fill the healing reserve.
+    if let Some(&heal) = out.get(&HEAL) { out.insert(HEAL_RESERVE, heal); }
     out.into_iter().collect()
 }
 
@@ -505,7 +533,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     } else {
         curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, RATION_NUTRITION * rations);
     }
-    curve(HEAL, risk(BORG_TOWN_W_BLEEDING), journey.hp * exposure);
+    // borg-reborn-rs (#491, owner: "we can never have enough healing").
+    // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
+    // weight and demand scale together, so its first HP is worth the same
+    // (slope weight / demand = w_bleeding / max HP) and it reaches half its
+    // value at scale x today's demand (100 = today).
+    let scale = i64::from(param(Param::town_heal_curve_scale_percent));
+    curve(HEAL, risk(BORG_TOWN_W_BLEEDING) * scale / 100, journey.hp * exposure * scale / 100);
+    // Up to `town_heal_reserve_hp_percent` of max HP of healing, each HP is
+    // also worth that first-HP value, independent of the trip's exposure, on
+    // top of the curve. A requirement (negative demand, like food's floor):
+    // linear up to the reserve, nothing more past it, so healing is bought
+    // first and never sold below it (0 = off).
+    let reserve = journey.hp * i64::from(param(Param::town_heal_reserve_hp_percent)) * UNIT / 100;
+    curve(HEAL_RESERVE, if reserve > 0 { cfg(BORG_TOWN_W_BLEEDING) * reserve / journey.hp.max(1) } else { 0 }, -reserve.max(UNIT));
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
         let timer = i64::from(engine::player_timed(timed)).max(0);
@@ -967,4 +1008,73 @@ mod tests {
         assert!(second<first,"the final remaining reserve is more valuable");
     }
 
+    /// #491: a healing supply fills the reserve too; below the reserve each
+    /// potion adds the same value on top of the diminishing curve, past it
+    /// only the curve's.
+    #[test]
+    fn healing_reserve_is_linear_up_to_its_size_then_the_curve() {
+        let hp = 40;
+        let units = effect_supply_linear(&[(EF_HEAL_HP as u16, 0, 20)], hp, 1, false);
+        assert!(units.contains(&(HEAL, 20 * UNIT)) && units.contains(&(HEAL_RESERVE, 20 * UNIT)));
+        let mut m = model();
+        // Healing curve: weight 100 per HP of demand 1000 HP; reserve of 3
+        // potions (60 HP) at the curve's first-HP slope (weight / demand).
+        m.curves[HEAL] = [HEAL as i64, 100 * UNIT, 1000 * UNIT, 0, 0];
+        let reserve = 3 * 20 * UNIT;
+        m.curves[HEAL_RESERVE] = [HEAL_RESERVE as i64, 100 * UNIT * reserve / (1000 * UNIT), -reserve, 0, 0];
+        m.supplies.push([0, 0, HEAL as i64, 20 * UNIT]);
+        m.supplies.push([0, 0, HEAL_RESERVE as i64, 20 * UNIT]);
+        let curve_only = |m: &Model| coverage(&m.curves[HEAL], m.curves[HEAL][3] + 20 * UNIT) - coverage(&m.curves[HEAL], m.curves[HEAL][3]);
+        let mut extra = Vec::new();
+        for _ in 0..4 {
+            extra.push(m.ware(0, 0, 1) - curve_only(&m));
+            m.curves[HEAL][3] += 20 * UNIT;
+            m.curves[HEAL_RESERVE][3] += 20 * UNIT;
+        }
+        assert!(extra[0] > 0 && extra[0] == extra[1] && extra[1] == extra[2], "{extra:?}");
+        assert_eq!(extra[3], 0, "nothing past the reserve");
+        // Off: zero weight adds nothing.
+        m.curves[HEAL_RESERVE][1] = 0;
+        assert_eq!(m.ware(0, 0, 1), curve_only(&m));
+    }
+
+    /// #491: healing speed. At 66%, Cure Light Wounds (20 HP) counts in full
+    /// up to 30 max HP and less above; one that heals the whole of max HP
+    /// always counts in full; 0 is HP alone.
+    #[test]
+    fn healing_units_weigh_the_share_of_max_hp_one_swallow_heals() {
+        assert_eq!(heal_units(20, 30, 66), 20 * UNIT);
+        assert!(heal_units(20, 31, 66) < 20 * UNIT);
+        assert_eq!(heal_units(20, 300, 66), 20 * 20 * UNIT * 100 / (300 * 66));
+        assert_eq!(heal_units(60, 300, 66), 60 * 60 * UNIT * 100 / (300 * 66));
+        assert_eq!(heal_units(300, 300, 66), 300 * UNIT);
+        assert_eq!(heal_units(1200, 300, 66), 300 * UNIT);
+        assert_eq!(heal_units(20, 300, 0), 20 * UNIT);
+        assert_eq!(heal_units(20, 10, 66), 10 * UNIT);
+    }
+}
+
+#[cfg(test)]
+mod bold_is_not_a_buff_tests {
+    use super::*;
+
+    /// #486: a Bold timed effect (wine's) supplies nothing, while a fear
+    /// cure (a Potion of Boldness, CURE:AFRAID) still supplies FEAR.
+    #[test]
+    fn a_bold_effect_supplies_nothing_and_a_fear_cure_still_supplies_fear() {
+        let wine = effect_supply(&[(EF_TIMED_INC as u16, TMD_BOLD as i32, 99)], 20, 1000);
+        assert!(wine.iter().all(|&(cap, _)| cap != BUFF), "{wine:?}");
+        let boldness = effect_supply(&[(EF_CURE as u16, TMD_AFRAID as i32, 0)], 20, 1000);
+        assert!(boldness.iter().any(|&(cap, units)| cap == FEAR && units > 0), "{boldness:?}");
+    }
+
+    /// #486: Boldness is no buff to the mapping; the buffs the core does
+    /// take stay.
+    #[test]
+    fn bold_is_not_a_buff() {
+        assert_eq!(timed_cap(TMD_BOLD), None);
+        assert_eq!(timed_cap(TMD_HERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_SHERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_BLESSED), Some(BUFF));
+    }
 }
