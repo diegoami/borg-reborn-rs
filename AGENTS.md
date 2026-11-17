@@ -117,7 +117,8 @@ same key stream from another build. Only a game that plays differently
 
 **Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
 RULES.md before P work. Start P task branches from `origin/track-p`, target
-P task PRs at `track-p`, and merge them there only after required CI passes.
+P task PRs at `track-p`, and merge them there only after required CI passes
+and the owner says the review is done (RULES 1a).
 Close the task issue explicitly with its integration PR/commit. Never send
 or merge a P task PR directly into `main` because CI passed.
 
@@ -186,9 +187,11 @@ At the end of a task:
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;
-4. **you merge it yourself into the authorized integration branch** once
-   CI is green (`track-p` for P; RULES 1). P promotion to `main` requires
-   the owner-accepted milestone review, not just task CI.
+4. **you merge it into the authorized integration branch** (`track-p` for
+   P) once CI is green **and the owner has said its review is done**
+   (RULES 1a, owner 2026-11-17). Green CI alone is never enough: report it
+   and ask. P promotion to `main` requires the owner-accepted milestone
+   review, not just task CI.
 
 When your track's milestone has its last task merged, **stop** and open the
 review PR (PLAN.md). Do not start the track's next milestone, and do not

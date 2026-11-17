@@ -8,7 +8,8 @@ whatever the model.
 1. **Track P integrates on `track-p`, never directly on `main`** (owner,
    2026-11-15; branch spelling confirmed as `track-p`). A session creates P
    task branches from `track-p`, targets task PRs at `track-p`, and merges
-   them there after CI is green. CI success is not review approval. At each
+   them there after CI is green and the owner says the review is done
+   (rule 1a). CI success is not review approval. At each
    milestone, stop and open the review/promotion PR **`track-p` → `main`**,
    pinned to an exact commit. The owner chooses/runs the review; findings
    are fixed through PRs into `track-p`. Only after the milestone review is
@@ -21,8 +22,16 @@ whatever the model.
    wait for the default branch). Other tracks must not use a closed P task
    to bypass its review gate by carrying unreviewed P changes onto `main`.
    **Other tracks retain their own authorized workflow**; absent a track
-   exception, a session merges task PRs into `main` after green CI, and
-   leaves milestone review PRs (`main` → `reviewed`) to the owner.
+   exception, a session merges task PRs into `main` after green CI and the
+   owner's word that the review is done (rule 1a), and leaves milestone
+   review PRs (`main` → `reviewed`) to the owner.
+1a. **No merge before the owner says the review is done** (owner,
+   2026-11-17, after #496 was merged while under review). Every PR, on
+   every track and into any branch, waits for the owner to say its review
+   is done (or to say "merge it"). Green CI, an owner's choice of values or
+   an earlier "set it in a PR" are not that. When CI is green, the session
+   says so and asks; it does not merge. A PR the owner said is under review
+   is never merged by a session.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
