@@ -250,7 +250,14 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
             EF_HEAL_HP => Some((HEAL, amount.max(1).min(hp) * UNIT)),
             EF_CURE => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             EF_TIMED_DEC if amount > 0 => reduction_cap(subtype as u32).map(|cap| (cap, n)),
-            EF_TIMED_INC | EF_TIMED_INC_NO_RES | EF_TIMED_SET => timed_cap(subtype as u32).map(|cap| (cap, n)),
+            // borg-reborn-rs (#452): a speed effect is one emergency use, not
+            // `amount` turns of buff. The potion's +10 speed (object.txt,
+            // Potion of Speed: TIMED_INC:FAST, 20+2d10 turns) is a reserve
+            // the core drinks in a dangerous fight (borg_defend_aux_speed),
+            // priced like the escapes (exposure), per potion. Counted in turns against
+            // the whole trip it was one percent of the demand and was sold.
+            EF_TIMED_INC | EF_TIMED_INC_NO_RES | EF_TIMED_SET => timed_cap(subtype as u32)
+                .map(|cap| (cap, if cap == SPEED { UNIT } else { n })),
             EF_TELEPORT => Some((TELEPORT, UNIT)), EF_TELEPORT_LEVEL => Some((LEVEL, UNIT)),
             EF_TELEPORT_TO => Some((OTHER, UNIT)), EF_RECALL => Some((RECALL, UNIT)),
             EF_RESTORE_MANA => Some((MANA, n)), EF_RESTORE_EXP => Some((EXPERIENCE, UNIT)),
@@ -515,7 +522,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // and spells supply damage but cannot replenish usable missile shots.
     curve(RANGER_MISSILES, if st.borg.tr(BI_CLASS) == CLASS_RANGER { risk(BORG_TOWN_W_RANGER_MISSILES) } else { 0 },
           (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
-    for id in [TELEPORT, LEVEL, OTHER] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
+    // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
+    // (see effect_supply_linear), not a buff against the trip's turns.
+    for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
     for cap in [TRAPS, MONSTERS, INVISIBLE, MAP, ILLUMINATE] { curve(cap, ordinary, journey.turns * UNIT); }
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
@@ -531,7 +540,8 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
         // halve its priority rather than deleting its capability.
         curve(cap, ordinary / if t(resistance) > 0 { 2 } else { 1 }, journey.turns * UNIT);
     }
-    for cap in [SPEED, BUFF] { curve(cap, ordinary, journey.turns * UNIT); }
+    // borg-reborn-rs (#452): SPEED left this loop (the escape reserve above).
+    curve(BUFF, ordinary, journey.turns * UNIT);
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
         curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { ordinary }, if t(condition) > 0 {
             let timed = match cap { CONFUSION => TMD_CONFUSED, BLIND => TMD_BLIND, _ => TMD_AFRAID };
@@ -765,7 +775,8 @@ mod tests {
         for cap in [CONFUSION, POISON, BLIND] { assert!(units.contains(&(cap, UNIT))); }
         let units = effect_supply(&[(EF_TIMED_INC as u16, TMD_FAST as i32, 30),
             (EF_TIMED_INC as u16, TMD_OPP_FIRE as i32, 20)], 25, 1000);
-        assert!(units.contains(&(SPEED, 30 * UNIT)) && units.contains(&(FIRE, 20 * UNIT)));
+        // borg-reborn-rs (#452): speed is one use per effect, not its turns.
+        assert!(units.contains(&(SPEED, UNIT)) && units.contains(&(FIRE, 20 * UNIT)));
     }
     #[test]
     fn food_uses_actual_nutrition_and_crunch_is_only_a_message() {
