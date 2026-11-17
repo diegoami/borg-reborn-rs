@@ -555,14 +555,17 @@ borg_param_town_digger_min_gold = 500
 # The C Borg's hard-coded "scary" monsters (by character level) and the
 # low-level door scares mark the level scary until a new level: the Borg
 # leaves and flees, will not hunt, and once fled from a small kobold seen
-# once for 54,000 game turns. 0 = off (owner, 2026-11-17); the resist-based
-# scares (nether, blindness, chaos, confusion, poison) stay. 1 = C's list.
-borg_param_caution_scary_named_monsters = 0
+# once for 54,000 game turns. Off since #503; on again (owner, 2026-11-17)
+# after borg-zoo#216: with the breeder stand on, 1 death with the list
+# against 4 without. 0 = off; the resist-based scares (nether, blindness,
+# chaos, confusion, poison) stay either way. #518 moves the list to a data
+# file by class and level.
+borg_param_caution_scary_named_monsters = 1
 # A monster on the level is scary when one character turn of its melee (the
 # average of its blows' damage times its moves per character turn) can take at
 # least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It
-# replaces the named list's level caps: Fang is scary to a 10-HP mage, not
-# to an 80-HP warrior. Spells are not counted.
+# adds to the named list: any monster, scaled to the character (Fang is
+# scary to a 10-HP mage, not to an 80-HP warrior). Spells are not counted.
 borg_param_caution_scary_damage_percent = 60
 borg_param_caution_breeder_fight = 1
 borg_param_caution_breeder_easy_escape_steps = 5

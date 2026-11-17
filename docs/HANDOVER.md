@@ -22,6 +22,19 @@ Owner: a flexible scary list, by monster, level and class.
   The borg-zoo issue is linked from the PR.
 - **Next:** per-class edits, starting where the list costs most (Blackguard
   and Druid lose about 7 levels, #518 evaluation), measured by zoo pilot.
+- **The latch (#515) is parked**, on branch `task/T515-scary-latch`
+  (`e5fddf0d`, no PR): with the latch re-checked every scan, the Borg still
+  reached stairs within about ten turns, so 912 of 985 scares ended by
+  leaving the level and the switch changed almost nothing.
+
+## 2026-11-17: the named scary list is on again
+
+Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
+the named list against 4 without, with or without the errands plan):
+`harness/borg.txt` ships `caution_scary_named_monsters = 1` again, alongside
+#514's scary-by-damage rule (60). The owner wants the list flexible: #518
+moves it to a data file by class and level (designed, on hold: the owner
+first evaluates a per-class layout, possibly with #520's class files).
 
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
