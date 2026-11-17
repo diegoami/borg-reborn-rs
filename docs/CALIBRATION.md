@@ -30,8 +30,8 @@ found, going down".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_turns` | 2000 | turns | 0–100000 | `borg_caution.rs` `rising_holds_descent` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs` `rising_holds_descent` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_turns` | 2000 | turns | 0–100000 | `borg_caution.rs:2162` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2162` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## No unknown items (#470)
 
