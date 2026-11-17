@@ -503,7 +503,8 @@ borg_param_town_heal_speed_percent = 66
 # borg_param_town_heal_curve_scale_percent_<class> (0 = the general one) and
 # the reserve with borg_param_town_heal_reserve_hp_percent_<class> (-1 = the
 # general one): fragile casters value healing more, warriors less (owner:
-# 150 for mages, 50 for warriors, the rest in between).
+# scale 150 for mages, 50 for warriors; reserve 300 for mages, 100 for
+# warriors; the rest in between).
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_curve_scale_percent_blackguard = 75
@@ -518,10 +519,10 @@ borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_heal_reserve_hp_percent_blackguard = 150
 borg_param_town_heal_reserve_hp_percent_rogue = 200
 borg_param_town_heal_reserve_hp_percent_ranger = 200
-borg_param_town_heal_reserve_hp_percent_priest = 200
-borg_param_town_heal_reserve_hp_percent_druid = 200
-borg_param_town_heal_reserve_hp_percent_necromancer = 250
-borg_param_town_heal_reserve_hp_percent_mage = 250
+borg_param_town_heal_reserve_hp_percent_priest = 250
+borg_param_town_heal_reserve_hp_percent_druid = 250
+borg_param_town_heal_reserve_hp_percent_necromancer = 300
+borg_param_town_heal_reserve_hp_percent_mage = 300
 # #487 (owner): a Shovel only clears rubble (the engine swaps it in; a
 # weapon digs rubble too), yet four of five first visits spent 66 of 118-292
 # gold on one. Below this much gold the planner values no digging (0 = off).
