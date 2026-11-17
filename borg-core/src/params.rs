@@ -242,6 +242,8 @@ parameters! {
     caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1685", "Controls flee danger hp multiplier."),
     caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1690", "Controls flee max level."),
     caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
+    town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:521", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
+    town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:528", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),
@@ -2004,7 +2006,12 @@ mod tests {
                 "item" => "item_use",
                 _ => prefix,
             };
-            assert_eq!(file, format!("borg_{module}.rs"));
+            if prefix == "town" {
+                // The town planner's parameters live in its borg_town_*.rs modules.
+                assert!(file.starts_with("borg_town_") && file.ends_with(".rs"), "{file}");
+            } else {
+                assert_eq!(file, format!("borg_{module}.rs"));
+            }
             assert!(line.parse::<usize>().unwrap() > 0);
         }
     }

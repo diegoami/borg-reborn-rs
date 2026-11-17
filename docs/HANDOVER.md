@@ -2,6 +2,53 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: a healing reserve for the town planner (#491)
+
+Owner: "we can never have enough healing". The owner chose two
+configurable borg.txt values instead of the issue's three proposals: a
+linear reserve as a percent of max HP (as in proposal 1), and a value for
+the diminishing curve past it, with proposed defaults.
+
+- **Code:** `borg_town_capability.rs`, details in docs/CALIBRATION.md.
+  - `town_heal_reserve_hp_percent` (0 = off): up to this percent of max HP
+    of healing, each HP is worth the curve's first HP (`w_bleeding / max HP`),
+    on top of the curve. Bought first, never sold below.
+  - `town_heal_curve_scale_percent` (100 = today): stretches the curve past
+    the reserve, keeping its first HP's value.
+- **Off is identical:** at 0 and 100 the four starts of the issue play the
+  same key streams as main `4d83dd26`.
+- **Proposed shipped values:** 800 and 100, in `harness/borg.txt`. Owner to
+  confirm before merge.
+- **Measurement:** the four starts, 100k turns, branch build. Healing
+  potions bought, gold on healing / total, outcome. One game per cell,
+  descriptive (RULES 14).
+
+| setting | Rogue | Ranger | Blackguard | Druid | deaths |
+|---|---|---|---|---|---|
+| off (= main) | 6, 270/2337 | 4, 80/899 | 4, 80/322, **died** | 5, 100/1168 | 1 |
+| reserve 200 | 2, 40/814 | 3, 60/864 | 4, 180/761 | 5, 100/596 | 0 |
+| reserve 400 | 10, 400/1432 | 11, 370/1051 | 5, 100/192, **died** | 12, 240/650 | 1 |
+| **reserve 800** | 11, 220/1517 | 17, 340/837 | 9, 180/571 | 29, 780/1928 | 0 |
+| reserve 1200 | 31, 720/2059 | 28, 560/1198 | 10, 200/215 | 14, 280/537, **died** | 1 |
+| curve 300 | 17, 390/959 | 2, 40/117, **died** | 4, 80/138, **died** | 11, 270/793 | 2 |
+| reserve 400 + curve 300 | 7, 140/1088 | 10, 300/1188 | 5, 100/192, **died** | 13, 260/593 | 1 |
+| reserve 800 + curve 200 | 10, 200/1395 | 12, 240/1122 | 10, 200/941 | 8, 160/560 | 0 |
+
+- **Reading:**
+  - Reserve 200 is at or below what these low-level characters already
+    carry, so it buys little.
+  - Reserve 800 multiplies the healing bought by 2–6 and still leaves
+    gold for arrows, oil and Phase Door. 1200 starts to crowd them out.
+  - Stretching the curve alone did nothing useful.
+  - Every game diverges early, so deaths are anecdotes.
+- **Left:**
+  - The reserve grows with max HP: 800% of 300 HP is 120 Cure Light
+    Wounds' worth. Weight, slots and gold bound it, and stronger potions
+    heal more per slot, but a deep character is not measured.
+  - A zoo arm should measure reserve {400, 800, 1200} x curve {100, 200}.
+  - #494 (gold reserve, `borg_town_w_gold = 0`) and #492 (no wine) also
+    change what gold is left for healing.
+
 ## 2026-11-17: point-blank shots keep half their damage (#485)
 
 Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its

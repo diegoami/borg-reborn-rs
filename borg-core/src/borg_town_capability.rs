@@ -14,6 +14,7 @@ use crate::headers::list_effects_h::*;
 use crate::headers::list_player_timed_h::*;
 use crate::state::BorgState;
 use crate::engine;
+use crate::params::{value as param, Param};
 
 pub const PACK: i64 = 8;
 pub const HOME: i64 = 9;
@@ -62,6 +63,11 @@ const CUT: usize = 54;
 const STUN: usize = 55;
 const CONTROL: usize = 56;
 const RANGER_MISSILES: usize = 57;
+/// borg-reborn-rs (#491): the healing reserve. Every HP a supply heals counts
+/// here as well as in HEAL; up to `town_heal_reserve_hp_percent` of max HP
+/// it is worth the healing curve's first HP each (linear), past it nothing
+/// more than the curve. Zero weight when the parameter is 0.
+const HEAL_RESERVE: usize = 58;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -77,14 +83,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 58] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 59] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -298,6 +304,8 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
         };
         if let Some((cap, units)) = role { *out.entry(cap).or_default() += units; }
     }
+    // borg-reborn-rs (#491): the same HP also fill the healing reserve.
+    if let Some(&heal) = out.get(&HEAL) { out.insert(HEAL_RESERVE, heal); }
     out.into_iter().collect()
 }
 
@@ -505,7 +513,20 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     } else {
         curve(FOOD, cfg(BORG_TOWN_W_FOOD) * rations, RATION_NUTRITION * rations);
     }
-    curve(HEAL, risk(BORG_TOWN_W_BLEEDING), journey.hp * exposure);
+    // borg-reborn-rs (#491, owner: "we can never have enough healing").
+    // `town_heal_curve_scale_percent` stretches the diminishing healing curve:
+    // weight and demand scale together, so its first HP is worth the same
+    // (slope weight / demand = w_bleeding / max HP) and it reaches half its
+    // value at scale x today's demand (100 = today).
+    let scale = i64::from(param(Param::town_heal_curve_scale_percent));
+    curve(HEAL, risk(BORG_TOWN_W_BLEEDING) * scale / 100, journey.hp * exposure * scale / 100);
+    // Up to `town_heal_reserve_hp_percent` of max HP of healing, each HP is
+    // also worth that first-HP value, independent of the trip's exposure, on
+    // top of the curve. A requirement (negative demand, like food's floor):
+    // linear up to the reserve, nothing more past it, so healing is bought
+    // first and never sold below it (0 = off).
+    let reserve = journey.hp * i64::from(param(Param::town_heal_reserve_hp_percent)) * UNIT / 100;
+    curve(HEAL_RESERVE, if reserve > 0 { cfg(BORG_TOWN_W_BLEEDING) * reserve / journey.hp.max(1) } else { 0 }, -reserve.max(UNIT));
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
         let timer = i64::from(engine::player_timed(timed)).max(0);
@@ -967,4 +988,33 @@ mod tests {
         assert!(second<first,"the final remaining reserve is more valuable");
     }
 
+    /// #491: a healing supply fills the reserve too; below the reserve each
+    /// potion adds the same value on top of the diminishing curve, past it
+    /// only the curve's.
+    #[test]
+    fn healing_reserve_is_linear_up_to_its_size_then_the_curve() {
+        let hp = 40;
+        let units = effect_supply_linear(&[(EF_HEAL_HP as u16, 0, 20)], hp, 1, false);
+        assert!(units.contains(&(HEAL, 20 * UNIT)) && units.contains(&(HEAL_RESERVE, 20 * UNIT)));
+        let mut m = model();
+        // Healing curve: weight 100 per HP of demand 1000 HP; reserve of 3
+        // potions (60 HP) at the curve's first-HP slope (weight / demand).
+        m.curves[HEAL] = [HEAL as i64, 100 * UNIT, 1000 * UNIT, 0, 0];
+        let reserve = 3 * 20 * UNIT;
+        m.curves[HEAL_RESERVE] = [HEAL_RESERVE as i64, 100 * UNIT * reserve / (1000 * UNIT), -reserve, 0, 0];
+        m.supplies.push([0, 0, HEAL as i64, 20 * UNIT]);
+        m.supplies.push([0, 0, HEAL_RESERVE as i64, 20 * UNIT]);
+        let curve_only = |m: &Model| coverage(&m.curves[HEAL], m.curves[HEAL][3] + 20 * UNIT) - coverage(&m.curves[HEAL], m.curves[HEAL][3]);
+        let mut extra = Vec::new();
+        for _ in 0..4 {
+            extra.push(m.ware(0, 0, 1) - curve_only(&m));
+            m.curves[HEAL][3] += 20 * UNIT;
+            m.curves[HEAL_RESERVE][3] += 20 * UNIT;
+        }
+        assert!(extra[0] > 0 && extra[0] == extra[1] && extra[1] == extra[2], "{extra:?}");
+        assert_eq!(extra[3], 0, "nothing past the reserve");
+        // Off: zero weight adds nothing.
+        m.curves[HEAL_RESERVE][1] = 0;
+        assert_eq!(m.ware(0, 0, 1), curve_only(&m));
+    }
 }

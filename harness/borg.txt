@@ -473,6 +473,14 @@ borg_param_attack_preference_blackguard_spell_permille = 1400
 # compete with melee point blank. Affects launcher ammo and thrown objects
 # of every class, not Magic Missile.
 borg_param_attack_arrow_point_blank_divisor = 2
+# #491 (owner, 2026-11-17: "we can never have enough healing"): the live town
+# planner (borg_town_plan = 1) values healing linearly, at the healing
+# curve's first-HP value, up to this percent of max HP (800 = eight times max
+# HP of healing; 0 = off), on top of the curve; healing is bought first and
+# never sold below it. The curve past it is stretched by the scale percent
+# (100 = the historical curve). Compiled defaults: 0 and 100.
+borg_param_town_heal_reserve_hp_percent = 800
+borg_param_town_heal_curve_scale_percent = 100
 
 
 [BEGIN FORMULA SECTION]
