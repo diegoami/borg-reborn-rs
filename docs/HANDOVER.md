@@ -2,6 +2,15 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: the rising settings written in borg.txt
+
+Owner: `caution_rising_explore_ticks` (300) and
+`caution_rising_descend_danger_tenths` (10), #483's stair-pendulum fix, are
+compiled defaults and were not in `harness/borg.txt`; they are now written
+there, at the same values, so they are visible and editable. Play is
+unchanged (the 18 classes-18 starts play identical keys); only the file's
+hash changes.
+
 ## 2026-11-17: borg.txt's formula section removed (#519)
 
 Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove

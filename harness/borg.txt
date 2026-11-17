@@ -454,6 +454,15 @@ borg_reborn_stopscared = off
 # environment overrides a line; a zoo profile rewrites it in place.
 borg_param_caution_heal_when_outmatched = 1
 borg_param_attack_speed_fight_danger_tenths = 30
+# #483 (owner, 2026-11-17): while heading back to town, a descent that is not
+# a desperate escape is held and the Borg explores for an up staircase, for
+# up to this many Borg ticks (thinks) per level: the stair pendulum fix. 0 =
+# off. borg-zoo#191: 150, 300 and 600 alike, 0 worse. While heading to town,
+# danger here above the current HP x the tenths / 10 lets a descent through
+# as a real escape. Both are the compiled defaults, written here (owner,
+# 2026-11-18) so they are visible and editable.
+borg_param_caution_rising_explore_ticks = 300
+borg_param_caution_rising_descend_danger_tenths = 10
 # #493: the live town planner's gold reserve, kept outside the urgent needs:
 # the larger of a fixed amount and a percent of the purse (owner: 0).
 borg_param_town_gold_reserve = 0
