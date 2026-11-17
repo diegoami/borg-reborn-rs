@@ -21,6 +21,21 @@ mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
 - On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
   The freed gold isn't spent on healing; the healing value is a diminishing
   curve (HP x exposure), which is borg-reborn-rs#491.
+## 2026-11-17: review of #496 (post-merge), fixes
+
+The owner's review of #496 found no behaviour defect: the maths, "off is
+identical" and the mage's death at reserve 800 all reproduce. Fixed here:
+- **F1:** `docs/ZOO-INTERFACE.md` gives the registry as 1786, not 1783.
+- **F2:** the CLW/CSW/Healing ranges in docs/CALIBRATION.md and below were
+  max HP, written as if they were potion HP. Reworded, with
+  `object.txt`'s figures.
+- **F3:** `tools/shopping-audit.py` reads `borg_town_capability::NAMES`
+  from the source instead of a hand-kept copy, which lacked "healing
+  reserve". Tested (`tools/tests/test_shopping_audit.py`).
+- **F4:** docs/CALIBRATION.md says that the curve scale also multiplies
+  healing's total value, and that the speed factor also changes the curve's
+  shape.
+
 ## 2026-11-17: a healing reserve for the town planner (#491)
 
 Owner: "we can never have enough healing". The owner chose
@@ -40,8 +55,8 @@ diminishing curve past it, and then healing speed, with proposed defaults.
     max HP)`. HP per gold alone made Cure Light Wounds the best buy at every
     level: 800% of a 300-HP character's max HP is 120 CLW, each healing
     20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
-    CSW (60–100 HP), then Healing (200+ HP). CCW (60 HP for 200 gold) never
-    wins on healing alone.
+    CSW at 60–100 max HP, then Healing from about 200 max HP. CCW (60 HP for
+    200 gold) never wins on healing alone.
 - **Off is identical:** at 0, 100 and 0 the four starts of the issue play
   the same key streams as main `4d83dd26`.
 - **Shipped (owner):** reserve 400, curve 100, speed 66, in
@@ -85,15 +100,22 @@ diminishing curve past it, and then healing speed, with proposed defaults.
     carry, so it buys little.
   - Reserve 800 multiplies the healing bought by 2–6 and still leaves
     gold for arrows, oil and Phase Door. 1200 starts to crowd them out.
-  - Stretching the curve alone did nothing useful.
+  - Stretching the curve alone (curve 300) bought more healing on two
+    starts but had two deaths against one; no sign it helps outcomes.
   - Every game diverges early, so deaths are anecdotes.
 - **Left:**
-  - The reserve grows with max HP: 800% of 300 HP is 120 Cure Light
-    Wounds' worth. Weight, slots and gold bound it, and stronger potions
-    heal more per slot, but a deep character is not measured.
-  - A zoo arm should measure reserve {400, 800, 1200} x curve {100, 200}.
-  - #494 (gold reserve, `borg_town_w_gold = 0`) and #492 (no wine) also
-    change what gold is left for healing.
+  - #496 review: the reserve's total value grows with max HP squared (its
+    weight and its size both grow with max HP). At 400%, a 300-HP character
+    can put about 3,200 gold into it (4 Healing). A reserve that grows less
+    than linearly in max HP, or with level, would keep early characters
+    cheap.
+  - No deep character is measured. With speed 66 the reserve fills with
+    Healing potions from about 200 max HP, not Cure Light Wounds.
+  - Zoo pilot requested: borg-zoo#192, reserve {0, 400, 800} x speed
+    {0, 66} on main `7e08c920`.
+  - #494 (gold reserve, `borg_town_w_gold = 0`) also changes what gold is
+    left for healing. #492 (no wine) is merged; it freed 14–21 lb and a
+    little gold.
 
 ## 2026-11-17: rising to town explores for an up staircase (#483)
 

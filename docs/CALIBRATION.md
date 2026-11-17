@@ -38,14 +38,24 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   first and never sells below it; past it only the curve remains.
 - **Curve scale:** multiplies `w` and `d` together. The first HP keeps its
   value; the curve reaches half its maximum at `scale x d` instead of `d`.
+  Its maximum, the most healing can ever be worth, is multiplied by
+  `scale / 100` too, so the scale changes the total value as well as the
+  shape (#496 review F4).
 - **Healing speed:** the HP one HEAL_HP use supplies, to the curve and the
   reserve alike, are weighted by how fast it brings the character back to
   max HP. A use that heals at least `town_heal_speed_percent` of max HP
   counts in full; a smaller one counts `heal x heal / (percent x max HP)`.
   At 66, Cure Light Wounds (20 HP) counts in full up to 30 max HP. The
-  planner's best healing per gold moves from CLW (30 HP) to CSW (60–100 HP)
-  to Healing (200+ HP); with HP alone it is CLW at every level. Cure
-  Critical Wounds (60 HP for 200 gold) never wins on healing alone.
+  planner's best healing per gold, by the character's max HP: CLW up to
+  about 30 max HP, Cure Serious Wounds (40 HP) at 60–100 max HP, Healing
+  (300 HP) from about 200 max HP. With HP alone it is CLW at every max HP.
+  Cure Critical Wounds (60 HP for 200 gold) never wins on healing alone
+  (`engine/angband/lib/gamedata/object.txt`: CLW 20 HP / 20 gold, CSW
+  40 / 70, CCW 60 / 200, Healing 300+m35 / 800).
+  The factor also shrinks each potion's HP on the curve while the curve's
+  demand stays in max-HP units: each weak potion is worth less on the curve,
+  and more of them are needed to reach half its value. So speed changes the
+  curve's shape as well as the ranking of potions (#496 review F4).
 - The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
   measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
   to before.
