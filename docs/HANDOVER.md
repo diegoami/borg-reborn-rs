@@ -11,6 +11,29 @@
 - `death-tools-pin.txt` moves to `09225018` (borg-cemetery
   `tools/relaxed-death-match-on-1afd942`; the same commit is borg-cemetery
   #54 against main). RULES 12 and docs/DOSSIER-IMPORT.md say so.
+## 2026-11-17: hoard Potions of Speed (#452)
+
+Owner: keep Speed potions as an emergency reserve. The last-resort quaff that
+was tried with them is removed (owner, 2026-11-17).
+- **Hoard** (`borg_town_capability.rs`): a speed effect (`TIMED_INC:FAST`,
+  20+2d10 turns, +10 speed, object.txt Potion of Speed) supplies one use,
+  and the SPEED curve is escape-like (`borg_town_w_escape` x exposure, like
+  PHASE/TELEPORT). It was `amount` turns against the whole trip, about 1% of
+  the demand, under a slot's burden: sold or stored. Unknown flavours are
+  still sold (unchanged, #445's question). Unit test: a level-25 character
+  on a 100000-turn trip keeps a stack of four; the old curve does not.
+  The core drinks Speed only as before (`borg_defend_aux_speed`).
+- **Measured** (180 classes-1800 starts, ambitious arm (4,2), 100k turns;
+  descriptive, RULES 14): Speed sold known 57 -> 0, stored 13 -> 0, quaffed
+  43 -> 58, deaths 33 -> 29, deaths with Speed still in the pack about 4 -> 1.
+  The planner now also buys Speed (9 potions in 180 games, one never used).
+- **Tried and removed:** `borg_speed_last_resort` (drink Speed when no heal,
+  phase or teleport is left). As first written it never fired (any Cure
+  Light Wounds potion counted as a heal). Given precedence over CLW it fired
+  in 6 of 180 games, every time at full HP against a harmless monster whose
+  danger estimate exceeded the Borg's HP (floating eye 460, giant white
+  mouse 200, scruffy looking hobbit 63): it wasted the potion and rescued
+  nothing. The danger estimate alone does not mark a real emergency.
 
 ## 2026-11-16: no knowledge-only purchases (#460)
 
