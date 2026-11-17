@@ -123,8 +123,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2169` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2169` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -157,11 +157,11 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2173` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2173` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2206` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2326` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2250` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2179` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2179` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2212` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2365` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2256` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Scary by damage (#505)
 
@@ -208,7 +208,31 @@ list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2264` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2303` (0 = off; read in `borg_flow_kill.rs`) |
+
+## The scary latch (#515)
+
+The registry now holds **1804** parameters (1803 after #505; one added).
+Owner, 2026-11-17. In C a level made scary stays scary until a new level:
+`mon.scary` is set by `borg_near_monster_type` and cleared only on a new
+level or by the "stuck" resets of `borg_think_dungeon`, and the leave and
+flee it sets (`borg_caution`, "Scary guy on level") reset only on a new
+level. One small kobold seen once kept a Blackguard fleeing for 54,000 game
+turns (#503).
+
+With `caution_scary_latch = 0` each scan re-checks the flag from the
+monsters still known (alive and not expired): `borg_caution::recheck_scary`.
+When none is scary, the goals the scare set (`goal.leaving`,
+`goal.fleeing`, `goal.fleeing_to_town`, marked by `mon.scary_goals`) are
+withdrawn with the note `# No scary guy left on level.`; a goal another
+caution check wants is set again in the same think. Door scares (a monster
+opened or burst a door, with the named list on) latch either way
+(`mon.scary_event`): no known monster stands behind them. Compiled 1 (C);
+`harness/borg.txt` ships 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2264` (read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 
@@ -494,55 +518,55 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:1475` |
 | `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:1481` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1615` |
-| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1643` |
-| `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1657` |
-| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1671` |
-| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1672` |
-| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:1673` |
-| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:1674` |
-| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1685` |
-| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1690` |
-| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1704` |
-| `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:1719` |
-| `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1719` |
-| `caution_breeder_flee_max_level` | 15 | level | 1–51 | `borg_caution.rs:1799` |
-| `caution_desperate_max_level` | 35 | level | 1–51 | `borg_caution.rs:1809` |
-| `caution_retreat_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1822` |
-| `caution_back_danger_tenths` | 4 | tenths | 0–100 | `borg_caution.rs:1851` |
-| `caution_confused_emergency_loss` | 300 | hp | 0–10000 | `borg_caution.rs:1863` |
-| `caution_fear_cure_chance` | 70 | percent | 0–100 | `borg_caution.rs:1885` |
-| `caution_fear_berserk_fail` | 25 | percent | 0–100 | `borg_caution.rs:1891` |
-| `caution_fear_hero_fail` | 25 | percent | 0–100 | `borg_caution.rs:1892` |
-| `caution_fear_holy_fail` | 25 | percent | 0–100 | `borg_caution.rs:1899` |
-| `caution_flee_low_hp_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1907` |
-| `caution_flee_moderate_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1908` |
-| `caution_flee_hp_per_level` | 3 | hp_per_level | 0–100 | `borg_caution.rs:1909` |
-| `caution_flee_ccw_count` | 3 | count | 0–1000 | `borg_caution.rs:1910` |
-| `caution_flee_heal_count` | 1 | count | 0–1000 | `borg_caution.rs:1911` |
-| `caution_flee_low_hp_chance` | 25 | percent | 0–100 | `borg_caution.rs:1914` |
-| `caution_flee_status_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1922` |
-| `caution_flee_status_chance` | 25 | percent | 0–100 | `borg_caution.rs:1925` |
-| `caution_reserve_critical_hp_divisor` | 10 | divisor | 1–100 | `borg_caution.rs:1934` |
-| `caution_reserve_escape_count` | 2 | count | 0–1000 | `borg_caution.rs:1936` |
-| `caution_reserve_danger_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:1937` |
-| `caution_reserve_heal_count` | 5 | count | 0–1000 | `borg_caution.rs:1939` |
-| `caution_reserve_surplus_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:1939` |
-| `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:1941` |
-| `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:1943` |
-| `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1970` |
-| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:2019` |
-| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:2044` |
-| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:2052` |
-| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:2053` |
-| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:2054` |
-| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:2077` |
-| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2078` |
-| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:2086` |
-| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:2086` |
-| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:2088` |
-| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:2089` |
-| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:2096` |
-| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:2105` |
+| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1648` |
+| `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1663` |
+| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1677` |
+| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1678` |
+| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:1679` |
+| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:1680` |
+| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1691` |
+| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1696` |
+| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1710` |
+| `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:1725` |
+| `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1725` |
+| `caution_breeder_flee_max_level` | 15 | level | 1–51 | `borg_caution.rs:1805` |
+| `caution_desperate_max_level` | 35 | level | 1–51 | `borg_caution.rs:1815` |
+| `caution_retreat_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1828` |
+| `caution_back_danger_tenths` | 4 | tenths | 0–100 | `borg_caution.rs:1857` |
+| `caution_confused_emergency_loss` | 300 | hp | 0–10000 | `borg_caution.rs:1869` |
+| `caution_fear_cure_chance` | 70 | percent | 0–100 | `borg_caution.rs:1891` |
+| `caution_fear_berserk_fail` | 25 | percent | 0–100 | `borg_caution.rs:1897` |
+| `caution_fear_hero_fail` | 25 | percent | 0–100 | `borg_caution.rs:1898` |
+| `caution_fear_holy_fail` | 25 | percent | 0–100 | `borg_caution.rs:1905` |
+| `caution_flee_low_hp_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1913` |
+| `caution_flee_moderate_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1914` |
+| `caution_flee_hp_per_level` | 3 | hp_per_level | 0–100 | `borg_caution.rs:1915` |
+| `caution_flee_ccw_count` | 3 | count | 0–1000 | `borg_caution.rs:1916` |
+| `caution_flee_heal_count` | 1 | count | 0–1000 | `borg_caution.rs:1917` |
+| `caution_flee_low_hp_chance` | 25 | percent | 0–100 | `borg_caution.rs:1920` |
+| `caution_flee_status_hp_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1928` |
+| `caution_flee_status_chance` | 25 | percent | 0–100 | `borg_caution.rs:1931` |
+| `caution_reserve_critical_hp_divisor` | 10 | divisor | 1–100 | `borg_caution.rs:1940` |
+| `caution_reserve_escape_count` | 2 | count | 0–1000 | `borg_caution.rs:1942` |
+| `caution_reserve_danger_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:1943` |
+| `caution_reserve_heal_count` | 5 | count | 0–1000 | `borg_caution.rs:1945` |
+| `caution_reserve_surplus_hp_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:1945` |
+| `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:1947` |
+| `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:1949` |
+| `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1976` |
+| `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:2025` |
+| `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:2050` |
+| `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:2058` |
+| `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:2059` |
+| `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:2060` |
+| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:2083` |
+| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:2084` |
+| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:2092` |
+| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:2092` |
+| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:2094` |
+| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:2095` |
+| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:2102` |
+| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:2111` |
 | `caution_retreat_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1014` |
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1223` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1514` |

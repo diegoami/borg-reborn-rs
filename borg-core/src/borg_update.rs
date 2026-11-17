@@ -1419,6 +1419,7 @@ pub fn borg_update(st: &mut BorgState) {
                     &format!("# Monster opened door at {y},{x}.  That's scary."),
                 );
                 st.borg.mon.scary = true;
+                st.borg.mon.scary_event = true; // borg-reborn-rs (#515)
             }
         }
     }
@@ -1907,6 +1908,8 @@ fn new_level(st: &mut BorgState) {
     b.status.vault = false;
     b.mon.unique = 0;
     b.mon.scary = false;
+    b.mon.scary_event = false; // borg-reborn-rs (#515)
+    b.mon.scary_goals = false;
 
     // reset our breeder flag
     b.near.breeder = false;

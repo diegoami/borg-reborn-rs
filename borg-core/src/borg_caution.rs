@@ -1632,6 +1632,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // Note
         borg_note(st, "# Scary guy on level.");
 
+        // borg-reborn-rs (#515): remember that the scare set the goals.
+        if !st.borg.goal.leaving || !st.borg.goal.fleeing {
+            st.borg.mon.scary_goals = true;
+        }
+
         // Start leaving
         start_leaving(st, "# Leaving (Scary guy on level)");
 
@@ -1641,6 +1646,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // Return to town quickly after leaving town
         if st.borg.tr(BI_CDEPTH) == 0 {
             st.borg.goal.fleeing_to_town = true;
+            st.borg.mon.scary_goals = true;
         }
     }
 
@@ -2251,6 +2257,39 @@ pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
 
+/// borg-reborn-rs (#515): 1 = a scary level stays scary until a new level
+/// (C's latch); 0 = `borg_near_monster_type` re-checks it every scan, from
+/// the monsters still known (alive, not expired), and withdraws the leave
+/// and flee the scare set once none remains. Door scares latch either way.
+pub(crate) fn scary_latch() -> bool {
+    p(Param::caution_scary_latch) != 0
+}
+
+/// borg-reborn-rs (#515): the scan's re-check, for `caution_scary_latch` 0.
+/// `scan` is whether a known monster is scary now. The level is scary while
+/// one is, or while a door scare holds. When it stops being scary, the
+/// goals the scare set are withdrawn (other reasons set them again in this
+/// think's caution checks). Returns whether goals were withdrawn.
+pub(crate) fn recheck_scary(st: &mut BorgState, scan: bool) -> bool {
+    let withdrawn = recheck_flags(&mut st.borg.mon, &mut st.borg.goal, scan);
+    if withdrawn {
+        borg_note(st, "# No scary guy left on level.");
+    }
+    withdrawn
+}
+
+/// borg-reborn-rs (#515): `recheck_scary` on the flags alone.
+fn recheck_flags(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal, scan: bool) -> bool {
+    let scary = scan || mon.scary_event;
+    mon.scary = scary;
+    if scary || !mon.scary_goals { return false; }
+    mon.scary_goals = false;
+    goal.leaving = false;
+    goal.fleeing = false;
+    goal.fleeing_to_town = false;
+    true
+}
+
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
 /// turns of its melee can take at least `caution_scary_damage_percent` of
 /// the character's max HP (owner: scary is a monster that can one- or
@@ -2523,6 +2562,47 @@ mod scary_damage_tests {
         assert!(!scary_damage_reaches(1000, 10, 0), "0 = off");
         assert!(scary_damage_reaches(i32::MAX, i32::MAX, 100), "no overflow");
         assert!(!scary_damage_reaches(i32::MAX, i32::MAX, 1000));
+    }
+
+    #[test]
+    fn a_scary_level_is_rechecked_and_its_goals_withdrawn() {
+        use crate::borg::{BorgGoal, BorgMonInfo};
+        let mut mon = BorgMonInfo::default();
+        let mut goal = BorgGoal::default();
+        // A scary monster is known: the level is scary, and the caution
+        // check sets the goals and marks them as the scare's.
+        assert!(!recheck_flags(&mut mon, &mut goal, true));
+        assert!(mon.scary);
+        goal.leaving = true;
+        goal.fleeing = true;
+        mon.scary_goals = true;
+        // Still there: nothing changes.
+        assert!(!recheck_flags(&mut mon, &mut goal, true));
+        assert!(goal.leaving && goal.fleeing);
+        // Gone: the flag clears and the scare's goals are withdrawn.
+        assert!(recheck_flags(&mut mon, &mut goal, false));
+        assert!(!mon.scary && !mon.scary_goals && !goal.leaving && !goal.fleeing);
+        // Once withdrawn, nothing more to do.
+        assert!(!recheck_flags(&mut mon, &mut goal, false));
+    }
+
+    #[test]
+    fn goals_set_for_other_reasons_stay() {
+        use crate::borg::{BorgGoal, BorgMonInfo};
+        let mut mon = BorgMonInfo::default();
+        let mut goal = BorgGoal { leaving: true, fleeing: true, ..BorgGoal::default() };
+        // No scare set them: a level that is not scary leaves them alone.
+        assert!(!recheck_flags(&mut mon, &mut goal, false));
+        assert!(goal.leaving && goal.fleeing);
+    }
+
+    #[test]
+    fn a_door_scare_latches() {
+        use crate::borg::{BorgGoal, BorgMonInfo};
+        let mut mon = BorgMonInfo { scary: true, scary_event: true, scary_goals: true, ..BorgMonInfo::default() };
+        let mut goal = BorgGoal { leaving: true, fleeing: true, ..BorgGoal::default() };
+        assert!(!recheck_flags(&mut mon, &mut goal, false), "no known monster stands behind a door scare");
+        assert!(mon.scary && goal.leaving && goal.fleeing);
     }
 
     #[test]

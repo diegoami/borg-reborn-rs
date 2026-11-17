@@ -2595,6 +2595,10 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // stands and fights them (no easy escape).
     let breeder_stand = crate::borg_caution::breeder_stand(st);
     let named = crate::borg_caution::scary_named_monsters();
+    // borg-reborn-rs (#515): without the latch, the level's scary flag is
+    // re-checked from this scan.
+    let latch = crate::borg_caution::scary_latch();
+    let mut scan_scary = false;
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2735,6 +2739,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         }
 
         if scary {
+            scan_scary = true;
+        }
+        if scary && latch {
             st.borg.mon.scary = true;
         }
 
@@ -2804,6 +2811,10 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 st.borg.near.summoner_idx = i as i16;
             }
         }
+    }
+
+    if !latch {
+        crate::borg_caution::recheck_scary(st, scan_scary);
     }
 }
 

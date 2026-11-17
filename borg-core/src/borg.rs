@@ -193,6 +193,13 @@ pub struct BorgInitSave {
 pub struct BorgMonInfo {
     pub breeders: u16,
     pub scary: bool,
+    /// borg-reborn-rs (#515): a door scare (an unseen monster opened or burst
+    /// a door) made this level scary; it latches, the scan cannot re-check it.
+    pub scary_event: bool,
+    /// borg-reborn-rs (#515): the scary check set `goal.leaving` /
+    /// `goal.fleeing` (and `fleeing_to_town`), so they may be withdrawn when
+    /// no scary monster remains.
+    pub scary_goals: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }
