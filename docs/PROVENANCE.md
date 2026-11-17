@@ -101,3 +101,13 @@ depth correction, without changing cfg. The configured preparedness check
 retains its original static-only position and refusal priority. The declared
 `borg_reincarnate.rs` hook refreshes the limit at completed reincarnation.
 Phase selection no longer clears errands or the core goal. No engine changes.
+
+## M13 inventory calibration (#433)
+
+Receiving-owned parameters append 362 entries at accepted source 68e39b7e
+(donor 8c5d000a). Declared hooks in borg_power, borg_item_wear, borg_store_buy,
+borg_store_sell, borg_think_store and borg_home_power substitute policy
+weights/thresholds without changing neutral arithmetic, quantities or RNG
+order. The source inventory and retained mechanics classification are in
+M13-INVENTORY-PARAMETERS.md/.json. No engine, recorder or donor code is
+updated. #293's explicit shopping replacement remains separate.

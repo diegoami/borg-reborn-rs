@@ -129,7 +129,7 @@ was tried with them is removed (owner, 2026-11-17).
   Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
   Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
   Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
-  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  `borg_recover.rs:362` (and `borg_trait.rs:1920` counts it, the planner does
   not count it as food). The planner prices them through `timed_cap`
   (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
   FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
@@ -398,7 +398,7 @@ One PR, owner's request (supersedes #441):
 
 - Owner explicitly requested merging #378 after the independent milestone
   review/re-review and coordinated fixes. Cemetery #7 landed first at
-  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+  `0362b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
 - Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
   handover histories, native recorder v0.2.0 and accepted #369/#380 survival
   changes. Harness conflict resolution retains BOTH synthetic receipt/build
@@ -804,7 +804,7 @@ One PR, owner's request (supersedes #441):
   CI; a new pinned owner-selected milestone review precedes promotion.
   #358/#359 remain separate permission/cleanup follow-ups.
 
-## 2026-11-15: reviewed P349 synchronization (#360)
+## 2026-11-15: reviewed P349 synchronization (#362)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
   The review reports 88 tool tests, script tests, all 2,547 archive cases
@@ -4561,7 +4561,7 @@ After the review, as the owner decided:
   [diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30).
   docs/ZOO-CHANGE-REQUEST.md names the `m1` commit `fab71554fd32`.
   The issue's prompt is updated to that exact commit after this PR is
-  merged, because its old fallback (`4236081`, unpeeled tag) is obsolete.
+  merged, because its old fallback (`4236281`, unpeeled tag) is obsolete.
 
 Found while re-reading RULES: commits and PR bodies since M0 carried
 `Co-Authored-By` and "Generated with" lines, which RULES 4 forbids. They
@@ -5099,3 +5099,19 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   references and plan-cap fixes. No new gameplay policy is introduced.
 - Next: M13 inventory parameter audit/extraction under #433, with neutral
   defaults, parity checks and a pinned owner-selected promotion review.
+
+## 2026-11-17: P4 M13 inventory parameter extraction (#433)
+
+- Owner selected #433; #475 synchronized accepted main into track-p at
+  9cf60aae after green CI. P4 is the bounded active milestone in PLAN.md.
+- Append 362 neutral parameters (2,143 total): power48, wear23, buy14,
+  sell34, shop6, home237. Existing IDs/defaults, C-long/i32 arithmetic,
+  tie/RNG order, quantities, no-selling and disabled exploit paths stay.
+- M13-INVENTORY-PARAMETERS.md/.json classifies policy versus retained
+  mechanics and gives original source references. #293 stays separate;
+  R4 #434 waits for owner-reviewed promotion of an exact P4 pin.
+- Divisors/narrow counts are bounded; invalid greed/tier/depth ordering
+  fails before play. Add a native non-neutral town-budget regression.
+- Validation/evidence receipts are recorded on the task PR before merge.
+  Task integration targets track-p; the subsequent milestone review and
+  owner acceptance gate promotion to main. No tuning/population claim.
