@@ -2,6 +2,20 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: borg.txt's formula section removed (#519)
+
+Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
+them. borg-rs's formula section (Power, Depth Requirement, Restock
+Requirement: 790 of `harness/borg.txt`'s 1,362 lines) is deleted; the file is
+now 576 lines. `borg-core/borg.txt` (borg-rs's copy, the parity check) keeps
+it.
+
+- The shipped `borg_uses_dynamic_calcs = FALSE`: the section was read but never
+  processed, and `borg_power`/`borg_prepared` use their built-in calculations.
+  Checked: the 18 classes-18 starts play identical keys to main `a8ac685a`.
+- Even with TRUE the formulas never took effect: a formula line fails to parse
+  and `borg_load_formulas` switches dynamic calculations off (#526, closed as
+  moot). With the section gone, TRUE warns "no formulas found" and stays off.
 ## 2026-11-17: the named scary list as data (#518)
 
 Owner: a flexible scary list, by monster, level and class.
