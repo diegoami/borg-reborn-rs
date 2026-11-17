@@ -12,9 +12,12 @@
 //!   purse cannot pay for, is recorded as unmet and does not block the
 //!   visit. Urgent purchases are not priced, so the caution cap does not
 //!   apply to them;
-//! * **gold** - the purse minus what the urgent needs cost. No trip reserve, no
-//!   savings. The proceeds of sales join it in the joint treatment (phase
-//!   5), not here;
+//! * **gold** - the purse minus what the urgent needs cost, minus the gold
+//!   reserve (borg-reborn-rs #493: the larger of `town_gold_reserve` and
+//!   `town_gold_reserve_percent` of the purse; the urgent needs may use it).
+//!   The reserve bounds the purse at arrival; the proceeds of this visit's
+//!   sales join the gold at the purchases stage (`borg_town_record`), on top
+//!   of it;
 //! * **pack slots** - the pack's capacity (`pack_size`, 23, less the slots
 //!   the quiver takes) minus one slot **per distinct stack** carried (S3),
 //!   minus the slots the urgent purchases open;
@@ -85,7 +88,8 @@ pub struct UrgentPurchase {
 /// What the solver may spend, after the urgent needs.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Budget {
-    /// The purse minus the urgent needs' cost.
+    /// The purse minus the urgent needs' cost and the gold reserve (#493),
+    /// never below zero.
     pub gold: i64,
     /// Free pack slots after the carried stacks and the urgent needs.
     pub pack_slots: i32,
@@ -221,25 +225,35 @@ impl Budget {
         }
     }
 
-    /// The budget of the current state over a stock built from it; the
-    /// trip carries what the urgent needs read beyond the traits (the
-    /// curing spell).
+    /// borg-reborn-rs (#493): [`Budget::build`] with the gold reserve. The
+    /// urgent needs are bought from the whole purse; everything else from what
+    /// is left above `reserve`.
+    pub fn build_with_reserve(
+        facts: &Facts,
+        stock: &Stock,
+        urgent_needs: &[Need],
+        reserve: i64,
+        serves: impl Fn(&Candidate) -> Vec<Need>,
+    ) -> Self {
+        let mut budget = Self::build(facts, stock, urgent_needs, serves);
+        budget.gold = spendable(facts.gold, facts.gold - budget.gold, reserve);
+        budget
+    }
+
+    /// The budget of the current state over a stock built from it, less the
+    /// gold reserve (#493); the trip carries what the urgent needs read
+    /// beyond the traits (the curing spell).
     pub fn of(st: &BorgState, stock: &Stock, trip: &Trip) -> Self {
         let facts = Facts::of(st);
-        let mut budget = Self::build(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), |c| {
-            let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
-            crate::borg_town_stock::needs_served(st, ware)
-        });
-        // borg-reborn-rs (#493): the explicit gold reserve. The urgent needs
-        // were bought from the whole purse; everything else is bought from
-        // what is left above the reserve.
         let reserve = gold_reserve(
             facts.gold,
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve)),
             i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
         );
-        budget.gold = spendable(facts.gold, facts.gold - budget.gold, reserve);
-        budget
+        Self::build_with_reserve(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), reserve, |c| {
+            let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
+            crate::borg_town_stock::needs_served(st, ware)
+        })
     }
 }
 
@@ -504,5 +518,21 @@ mod tests {
         assert_eq!(spendable(1000, 0, 0), 1000);
         assert_eq!(spendable(1000, 100, 250), 650);
         assert_eq!(spendable(100, 80, 50), 0, "urgent purchases dipped into the reserve");
+    }
+
+    /// #493: the budget's gold leaves the reserve unspent; the urgent needs
+    /// are bought from the whole purse and may use it.
+    #[test]
+    fn the_budget_keeps_the_reserve_and_the_urgent_needs_may_use_it() {
+        let t = general_and_alchemist();
+        let s = build(&t, &[]);
+        assert_eq!(Budget::build_with_reserve(&facts(1000), &s, &[], 0, serves).gold, 1000);
+        assert_eq!(Budget::build_with_reserve(&facts(1000), &s, &[], 250, serves).gold, 750);
+        let urgent = Budget::build(&facts(100), &s, &[Need::Light], serves);
+        let cost = 100 - urgent.gold;
+        assert!(cost > 0, "the torch is bought");
+        let b = Budget::build_with_reserve(&facts(100), &s, &[Need::Light], 100, serves);
+        assert_eq!(b.urgent, urgent.urgent, "the urgent purchase is unchanged by the reserve");
+        assert_eq!(b.gold, 0, "nothing else is bought from the reserve");
     }
 }

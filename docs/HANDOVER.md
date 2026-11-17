@@ -18,6 +18,10 @@ should be 0. Before, the live town planner kept gold only through
   (`OUR_DEFAULTS`, `NEW_SETTINGS`). The soft price came from borg-rs
   `785f5064` (2026-11-14, its docs/TOWN-UTILITY.md "Retaining gold"),
   vendored with borg-rs #87.
+- The reserve bounds the purse at arrival; the visit's sale proceeds are
+  spendable on top of it (review F1, documented rather than changed).
+- Shipping `borg_town_w_gold = 0` changes the borg-rs core's key stream, so
+  zoo deaths on a specimen with it need new Cemetery packages (RULES 12).
 - On borg-zoo run 44054277431's death starts (main's defaults): the median
   gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
   holds (median 138). Healing purchases moved only partly (#491 is the
