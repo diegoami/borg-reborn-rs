@@ -1411,12 +1411,13 @@ fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
 }
 
 /// Live mode calls this only after observing the native transaction.
-/// borg-reborn-rs (#507): `qty` is the copies the transaction bought.
-pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32) {
+/// borg-reborn-rs (#507): `qty` is the copies the transaction bought and
+/// `paid` the gold it took.
+pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
     let qty = qty.max(1);
     note_desc(st, &if qty > 1 { format!("# Buying {qty} x ") } else { "# Buying ".to_string() }, item, ".");
     let shop_name = String::from_utf8_lossy(&crate::engine::store_feat_name(shop as usize)).to_string();
-    crate::borg_object_log::log_buy(st, item, &shop_name, item.cost.saturating_mul(qty), shop == BORG_HOME as i32, qty as u32);
+    crate::borg_object_log::log_buy(st, item, &shop_name, paid, shop == BORG_HOME as i32, qty as u32);
     crate::borg_town_dump::dump_purchase(st, shop, item);
     if keep { remember_purchase(st, item, shop); }
     if crate::borg_town_live::active(st) { reset_money_scum(st, item); }
@@ -1457,7 +1458,7 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
             return false;
         }
 
-        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false, 1); }
+        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false, 1, item.cost); }
 
         /* Buy the desired item */
         borg_keypress(st, purchase_target);

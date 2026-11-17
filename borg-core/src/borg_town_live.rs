@@ -116,7 +116,11 @@ fn settle_sale(st: &mut BorgState) {
             // slot the pack count does not cover, so never below one).
             let gained = now.quantity().saturating_sub(attempt.context.quantity());
             let bought = (gained as i32).clamp(1, attempt.qty.max(1));
-            crate::borg_store_buy::confirm_purchase(st, &attempt.item, i32::from(attempt.offer.shop), attempt.keep, bought);
+            // The gold the transaction took, as the engine charged it: for
+            // a stack of charged devices, price_item's total is not N times
+            // the price of one (review of #509, F2).
+            let paid = paid_for(attempt.context.gold, now.gold, attempt.item.cost, bought);
+            crate::borg_store_buy::confirm_purchase(st, &attempt.item, i32::from(attempt.offer.shop), attempt.keep, bought, paid);
         } else {
             st.think.town_live.rejected_buys.push(attempt);
             borg_note(st, "# Town plan: purchase made no progress; exclude unchanged offer/context");
@@ -152,6 +156,13 @@ fn purchase_quantity(planned: i64, stack: u8, room: i32, price: i32, gold: i32) 
     let afford = if price > 0 { gold / price } else { i32::from(stack) };
     let planned = i32::try_from(planned.clamp(1, i64::from(u8::MAX))).unwrap_or(1);
     planned.min(i32::from(stack)).min(room).min(afford).max(1)
+}
+
+/// borg-reborn-rs (#507): the gold a purchase took, from the purse before and
+/// after it; the price of one times the copies when the purse did not fall
+/// (a Home take, which costs nothing, or no observed change).
+fn paid_for(before: i32, after: i32, unit: i32, copies: i32) -> i32 {
+    if after < before { before - after } else { unit.saturating_mul(copies) }
 }
 
 /// The copies the pending live purchase asks for; 1 when there is none.
@@ -355,6 +366,13 @@ mod tests {
         assert_eq!(purchase_quantity(5, 99, 80, 50, 20), 1);
         assert_eq!(purchase_quantity(5, 99, 0, 1, 200), 1);
         assert_eq!(purchase_quantity(5, 99, 80, 0, 0), 5, "a free ware is capped by the stack only");
+    }
+    #[test]
+    fn a_purchase_logs_the_gold_it_took() {
+        // 8 wands with uneven charges: one is 52 gold, not 70 (review F2).
+        assert_eq!(paid_for(500, 448, 70, 1), 52);
+        assert_eq!(paid_for(200, 178, 1, 22), 22, "22 arrows at 1 gold");
+        assert_eq!(paid_for(200, 200, 0, 3), 0, "a Home take costs nothing");
     }
     #[test]
     fn the_pending_purchase_reports_its_copies() {
