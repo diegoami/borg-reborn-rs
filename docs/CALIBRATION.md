@@ -128,14 +128,20 @@ up staircase on one level.
 
 ## Breeders and named scary monsters (#503)
 
-Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
+The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
 ways (the breeder flee of `borg_caution`, the breeder scary trigger of
 `borg_near_monster_type`, the "no recall" flee of `borg_check_breeders`), backs
 away from their danger, and below clevel 10 never flows to them. With
 `caution_breeder_fight` and no easy escape (a free staircase within the steps,
-a Phase Door, teleport, escape or Word of Recall) it stands and fights: none of
-the three flees, and no retreat or back-away while every known monster within
-the radius is a breeder (being surrounded still moves it). Warriors, Paladins,
+by the engine's `distance`; a Phase Door, teleport, Teleport Level, escape or
+Word of Recall) it stands and fights: none of the three flees, and no retreat
+or back-away while a breeder is within the radius and no other known monster
+is within the danger horizon (`danger_monster_max_distance`); being surrounded
+still moves it. The generic low-HP and bleeding/poison flees stay (a Borg
+losing the fight is #504's cornered mode). With the named list on
+(`caution_scary_named_monsters = 1`) a level made scary by breeders before the
+stand engaged (while the Borg still had an escape) stays scary until a new
+level: the latch is a known limit of that intermediate arm. Warriors, Paladins,
 Rogues and Blackguards hunt breeders while at most the hunt count are known.
 
 `caution_scary_named_monsters` turns off the C Borg's hard-coded scary monsters
@@ -150,11 +156,11 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2171` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2171` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2193` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2228` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2218` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2173` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2173` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2205` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2255` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2245` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## No unknown items (#470)
 

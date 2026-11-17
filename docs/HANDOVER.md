@@ -25,9 +25,14 @@ hard-coded scary monsters belongs in this PR.
   is the breeder flee / stand above.
 - Replays (run 44054277431's death starts): on 193d9076 all five die; with
   the shipped settings all five reach the turn cap (CL5–8, DL1–3). On main
-  all six starts reach the cap with or without the change; with it, CL rises
-  from 4–6 to 6–8, but the Druid 934061548 dies to a kobold shaman on DL2
-  (CL6), on a later path. Too few games to claim anything: a zoo arm is
+  all six starts reach the cap without the change; with it, five do, at
+  CL6–8 instead of CL4–6, and the Druid 934061548 dies to a kobold shaman on
+  DL2 (CL6), on a later path.
+- Review (#510): Teleport Level counts as an easy escape; the no-retreat
+  rule needs no non-breeder within the danger horizon (20 grids), not only
+  within the radius; the generic low-HP and bleeding/poison flees are left to
+  #504; with the named list on, a breeder scare latched before the stand
+  engaged stays until a new level (a known limit of that intermediate arm). Too few games to claim anything: a zoo arm is
   needed (named list off / breeder fight off / both).
 - `engine/tests/test_errands_plan.py` growth test: seed 1003 (the plan
   feature's test; the shipped default stays no plan).

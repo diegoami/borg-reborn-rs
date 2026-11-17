@@ -499,7 +499,8 @@ borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_speed_percent = 66
 # #503 (owner, 2026-11-17, #488 slice A): with breeders on the level and no
 # easy escape (no free staircase within the steps, no Phase Door, teleport,
-# escape or recall), the Borg stands and fights them at once: breeders no longer
+# Teleport Level, escape or recall), the Borg stands and fights them at once,
+# and while only breeders are near it does not retreat: breeders no longer
 # make it flee. Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt
 # breeders while at most the hunt count are known. 0 = off (the control).
 # The C Borg's hard-coded "scary" monsters (by character level) and the

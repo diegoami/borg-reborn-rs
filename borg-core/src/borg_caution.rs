@@ -33,7 +33,7 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH,
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -2163,51 +2163,78 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
 /// borg-reborn-rs (#503): breeders on the level and no easy escape: stand
 /// and fight them at once instead of fleeing while they multiply. An easy
 /// escape is a free staircase within `caution_breeder_easy_escape_steps`
-/// grids, or a Phase Door, teleport, escape or Word of Recall in the pack
-/// or spells (recall is slow, but breeders are slow and level-wide). With
-/// one, the breeder flees of the C Borg stay (the breeder flee of
-/// `borg_caution`, the breeder scary trigger of `borg_near_monster_type`,
-/// the "no recall" flee of `borg_check_breeders`).
+/// (the engine's `distance`), or a Phase Door, teleport, Teleport Level,
+/// escape or Word of Recall in the pack or spells (recall is slow, but
+/// breeders are slow and level-wide). With one, the breeder flees of the C
+/// Borg stay (the breeder flee of `borg_caution`, the breeder scary trigger
+/// of `borg_near_monster_type`, the "no recall" flee of
+/// `borg_check_breeders`). The generic low-HP and bleeding/poison flees
+/// stay too: a Borg losing the fight is #504's cornered mode.
 pub(crate) fn breeder_stand(st: &BorgState) -> bool {
-    breeder_stand_with(st, p(Param::caution_breeder_fight), p(Param::caution_breeder_easy_escape_steps))
+    breeder_stand_with(
+        st,
+        p(Param::caution_breeder_fight),
+        p(Param::caution_breeder_easy_escape_steps),
+        nearest_free_stair(st, true),
+        nearest_free_stair(st, false),
+    )
 }
 
-/// `breeder_stand` with its parameters given.
-fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32) -> bool {
+/// `breeder_stand` with its parameters and the nearest free up and down
+/// staircases' distances (-1: none known) given.
+fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32) -> bool {
     if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     let near = |d: i32| d != -1 && d <= steps;
-    !(near(nearest_free_stair(st, true))
-        || near(nearest_free_stair(st, false))
+    !(near(up)
+        || near(down)
         || st.borg.tr(BI_APHASE) > 0
         || st.borg.tr(BI_ATELEPORT) > 0
+        || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
         || st.borg.tr(BI_RECALL) > 0)
 }
 
-/// borg-reborn-rs (#503): standing against breeders (`breeder_stand`) and
-/// every known monster within `caution_breeder_stand_radius` grids is a
-/// breeder (at least one): the danger here is the breeders', so the Borg
-/// fights instead of retreating or backing away.
+/// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
+/// least one breeder within `caution_breeder_stand_radius` grids, and no
+/// other known monster within the danger horizon
+/// (`danger_monster_max_distance`, the reach of `borg_danger`): the danger
+/// here is the breeders', so the Borg fights instead of retreating or
+/// backing away.
 pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
     if !breeder_stand(st) {
         return false;
     }
-    let radius = p(Param::caution_breeder_stand_radius);
-    let mut breeders = 0;
+    let mut known = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = &st.kills.kills[i];
         if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
             continue;
         }
-        if engine::distance(st.borg.c, kill.pos) > radius {
-            continue;
-        }
-        if !engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+        known.push((
+            engine::distance(st.borg.c, kill.pos),
+            engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY),
+        ));
+    }
+    only_breeders_near(
+        &known,
+        p(Param::caution_breeder_stand_radius),
+        p(Param::danger_monster_max_distance),
+    )
+}
+
+/// The known monsters as (distance, breeder): a breeder within `radius` and
+/// no other monster within `horizon`.
+fn only_breeders_near(known: &[(i32, bool)], radius: i32, horizon: i32) -> bool {
+    let mut breeders = 0;
+    for &(d, breeder) in known {
+        if !breeder && d <= horizon {
             return false;
         }
-        breeders += 1;
+        if breeder && d <= radius {
+            breeders += 1;
+        }
     }
     breeders > 0
 }
@@ -2497,19 +2524,44 @@ mod breeder_tests {
     /// switch off: the C Borg's flees stay.
     #[test]
     fn breeders_without_an_easy_escape_make_the_borg_stand() {
-        assert!(breeder_stand_with(&cornered(), 1, 5));
-        assert!(!breeder_stand_with(&cornered(), 0, 5), "switch off");
-        for t in [BI_APHASE, BI_ATELEPORT, BI_AESCAPE, BI_RECALL] {
+        assert!(breeder_stand_with(&cornered(), 1, 5, -1, -1));
+        assert!(!breeder_stand_with(&cornered(), 0, 5, -1, -1), "switch off");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE, BI_RECALL] {
             let mut st = cornered();
             st.borg.trait_[t as usize] = 1;
-            assert!(!breeder_stand_with(&st, 1, 5), "escape {t} in the pack");
+            assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "escape {t} in the pack");
         }
         let mut st = cornered();
         st.borg.mon.breeders = 0;
-        assert!(!breeder_stand_with(&st, 1, 5), "no breeders");
+        assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "no breeders");
         let mut st = cornered();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
-        assert!(!breeder_stand_with(&st, 1, 5), "town");
+        assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "town");
+    }
+
+    /// #503 review: a free staircase within the steps is an easy escape,
+    /// up or down; one step beyond is not.
+    #[test]
+    fn a_near_staircase_is_an_easy_escape() {
+        let st = cornered();
+        assert!(!breeder_stand_with(&st, 1, 5, 5, -1), "up staircase at the boundary");
+        assert!(!breeder_stand_with(&st, 1, 5, -1, 5), "down staircase at the boundary");
+        assert!(!breeder_stand_with(&st, 1, 5, 0, -1), "standing on a staircase");
+        assert!(breeder_stand_with(&st, 1, 5, 6, 6), "both one step beyond");
+        assert!(breeder_stand_with(&st, 1, 0, 1, 1), "steps 0: only a staircase underfoot counts");
+    }
+
+    /// #503 review: no retreat only while the danger is the breeders': a
+    /// breeder within the radius and no other monster within the horizon.
+    #[test]
+    fn standing_needs_only_breeders_within_the_danger_horizon() {
+        assert!(only_breeders_near(&[(1, true)], 5, 20));
+        assert!(only_breeders_near(&[(1, true), (5, true)], 5, 20));
+        assert!(!only_breeders_near(&[], 5, 20), "no monster");
+        assert!(!only_breeders_near(&[(6, true)], 5, 20), "breeder beyond the radius");
+        assert!(!only_breeders_near(&[(1, true), (12, false)], 5, 20), "a caster within the horizon");
+        assert!(only_breeders_near(&[(1, true), (21, false)], 5, 20), "a monster beyond the horizon");
+        assert!(!only_breeders_near(&[(1, false), (2, true)], 5, 20), "a non-breeder adjacent");
     }
 
     /// #503: melee classes hunt while few breeders are known; casters and
