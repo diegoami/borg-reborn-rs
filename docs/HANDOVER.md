@@ -38,6 +38,16 @@ hard-coded scary monsters belongs in this PR.
   feature's test; the shipped default stays no plan).
 - Left: #504 (cornered mode), #505 (now: whether the resist-based scares
   and the latch need changes; to be decided with the owner).
+## 2026-11-17: CI cancels superseded pull-request runs (#499)
+
+Owner: are we doing too much on CI? The repositories are public (no paid
+minutes), but runner slots are shared with borg-zoo's experiments, and
+2026-11-17 had 43 CI runs. `.github/workflows/ci.yml` now has a concurrency
+group per pull request with `cancel-in-progress` for `pull_request` events:
+a new push to a PR cancels its older run. Each push to main or track-p has a
+group of its own (the run id), so those are never queued or cancelled. The
+session's practice from now on: batch review fixes into one push, and re-sync
+a PR with main only right before merging, when needed.
 
 ## 2026-11-17: explicit gold reserve, shipped 0 (#493)
 
