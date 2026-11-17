@@ -4595,6 +4595,9 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     // borg-reborn-rs (#469): committed to this fight (not waiting); when the
     // danger is very high, drink Speed first and attack next turn.
     if b_g != BF_REST as i32 {
+        // The ranking above ran simulated (simulate was set true before it);
+        // the quaff must act. Not restored: every path from here acts, and
+        // the attack below clears it the same way ("Instantiate").
         st.traits.simulate = false;
         if borg_fight_speed(st) {
             st.traits.attacking = false;
