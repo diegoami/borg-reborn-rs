@@ -103,7 +103,8 @@ not undo other-track work already authorized before the gate.
     a temporary registry only against itself. An unchanged game is not a new
     death (owner, 2026-11-16, #464): a death is recorded when the Cemetery
     retains one with the same start (implementation, seed, race, class,
-    flags, borg.txt, save) and the same key stream, from any build. A new
+    save; owner, 2026-11-17: not borg.txt or flags) and the same key stream,
+    from any build. A new
     package is needed only when the game changes: another key stream, or
     the same keys from another start. BORG_DEATH_RECORDS_DIR selects
     isolated working storage, not a different owner for permanent reports.

@@ -31,6 +31,15 @@ an emergency, or the known scroll as an escape).
 - Always on: no switch.
 - Not changed: Teleport Level and fleeing down stairs, the other known ways
   below a cap (#470 excludes them).
+## 2026-11-17: a game's start leaves out borg.txt and flags (#464 follow-up)
+
+- Owner-approved: a new borg.txt setting changed the file's hash and made
+  every control game UNRECORDED on #465, with identical key streams. The
+  start is now implementation, seed, race, class and save; a setting that
+  changes play changes the key stream, which must still match.
+- `death-tools-pin.txt` moves to `09225018` (borg-cemetery
+  `tools/relaxed-death-match-on-1afd942`; the same commit is borg-cemetery
+  #54 against main). RULES 12 and docs/DOSSIER-IMPORT.md say so.
 ## 2026-11-17: hoard Potions of Speed (#452)
 
 Owner: keep Speed potions as an emergency reserve. The last-resort quaff that
