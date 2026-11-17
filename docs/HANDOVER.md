@@ -2,6 +2,42 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: a planned purchase buys its copies in one transaction (#507)
+
+Found by the zoo on borg-zoo#198. Half-Troll Ranger 60792140 bought 120
+Arrows one transaction at a time: ~1,080 keys at one game turn, which the
+zoo counted as a stall (borg-zoo#205 is the zoo's half).
+
+**Cause:** live mode set every action's quantity to 1, and `buy_selected`
+accepted the prompt's default of 1. The planner then re-solved after
+every copy.
+
+**Fix:**
+- A BUY keeps the plan's copies (`borg_town_shadow::evaluate`).
+- `execute_store` caps them by the stack, the pack's room
+  (`inven_carry_num`) and the gold at the price of one (`price_item`):
+  `borg_town_live::purchase_quantity`, unit-tested. Never above store.c's
+  maximum, so 2 or more always meets the prompt.
+- `buy_selected` types the quantity.
+- The purchase note and object log name the copies bought.
+- TAKE_HOME and sales still move one copy per action.
+
+**Checked:** three Ranger starts, 100,000 turns, on main `28360152` and on
+the branch:
+- the largest key count at one game turn fell from 149–330 to 72–80;
+- arrow purchases fell from 87–237 transactions to 14;
+- no "not enough gold" or "cannot carry" message.
+
+Play changes, and more arrows are bought in all (276–302 against 87–237),
+so it needs a zoo pilot. Deaths on a specimen with it need new Cemetery
+packages (RULES 12).
+
+**Still open from #491:** the healing reserve can crowd out Phase Door for
+poor characters. A local run of 18 starts found 114 departures without
+Phase Door at reserve 400, against 38 with no reserve. The owner chooses
+the fix after borg-zoo#192's curve-scale pilot: a Phase Door floor, a cap
+on the reserve's gold, or a reserve that grows with level.
+
 ## 2026-11-17: explicit gold reserve, shipped 0 (#493)
 
 Owner: the gold reserve is a borg.txt setting, fixed and percent, and it
