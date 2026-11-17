@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: explicit gold reserve, shipped 0 (#493)
+
+Owner: the gold reserve is a borg.txt setting, fixed and percent, and it
+should be 0. Before, the live town planner kept gold only through
+`borg_town_w_gold` (25), a price in `solve_cash` (spending `c` costs
+`w x c / (gold left + 1)`) that made the last coins nearly unspendable.
+
+- New parameters `town_gold_reserve` and `town_gold_reserve_percent`
+  (default 0): `Budget::of` takes the larger from the gold left after the
+  urgent needs (which may still use the whole purse);
+  `borg_town_budget::{gold_reserve, spendable}`, unit-tested.
+- Shipped `harness/borg.txt`: both at 0 and `borg_town_w_gold = 0`. The
+  compiled `borg_town_w_gold` stays 25 (C/borg-rs settings parity).
+- On borg-zoo run 44054277431's death starts (main's defaults): the median
+  gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
+  holds (median 138). Healing purchases moved only partly (#491 is the
+  healing value).
+
 ## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
 
 Owner request: the settings of borg-zoo#170's arm `reborn-bundle-plan-speed30`
