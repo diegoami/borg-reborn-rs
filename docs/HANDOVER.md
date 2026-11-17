@@ -9,6 +9,18 @@ for the owner to say its review is done, on every track and into any
 branch. Green CI is not enough. RULES 1a and AGENTS.md "At the end of a
 task" step 4 say so; track P's `track-p` task merges follow it too.
 
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
 ## 2026-11-17: Boldness is no buff to the town planner (#486)
 
 The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
