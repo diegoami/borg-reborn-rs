@@ -1969,6 +1969,10 @@ pub struct RaceBlow {
     pub dice: i32,
     /// `dice.sides`
     pub sides: i32,
+    /// borg-reborn-rs (#505): `dice.base`, the fixed part of `randcalc`
+    pub base: i32,
+    /// borg-reborn-rs (#505): `dice.m_bonus`, the level-scaled part
+    pub m_bonus: i32,
 }
 
 /// `r_info[r_idx].blow[k]` for `k < z_info->mon_blows_max`, or `None` when
@@ -1989,7 +1993,7 @@ pub fn race_blow(r_idx: usize, k: usize) -> Option<RaceBlow> {
         assert!(!b.effect.is_null(), "race {r_idx} blow {k} has no effect");
         let name = (*b.effect).name;
         assert!(!name.is_null(), "race {r_idx} blow {k} effect has no name");
-        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides })
+        Some(RaceBlow { effect_name: CStr::from_ptr(name), dice: b.dice.dice, sides: b.dice.sides, base: b.dice.base, m_bonus: b.dice.m_bonus })
     }
 }
 

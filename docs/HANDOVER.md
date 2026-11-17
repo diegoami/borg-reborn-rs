@@ -27,6 +27,85 @@
   a green worm mass). Cure Light Wounds bought 212 -> 117, healing gold
   7190 -> 5430, Shovels 20 -> 8; Warriors' healing 590/1540 -> 130/380 gold.
   Too few games: a borg-zoo experiment follows at the merge.
+## 2026-11-17: scary by damage (#505)
+
+Owner: scary is a monster that can one- or two-shot you, as a percentage of
+HP. borg-zoo#216 saw the named list's removal (#510) kill characters (5 and
+4 deaths of 18 against 1).
+
+**Change:** `caution_scary_damage_percent` (compiled 0, shipped 60, owner).
+A known monster on the level makes it scary when one character turn of its
+melee, on average, takes that percent of max HP:
+`borg_caution::scary_by_damage`.
+- The damage is the average of its blows (`randcalc` AVERAGE: base, dice
+  and level bonus, review of #514) times its moves per
+  character turn.
+- Not `borg_danger`: a first try with it rated a street urchin at 245 and
+  a floating eye at 276 against 10 HP, from the penalties for stealing and
+  paralysis.
+- Spells are not counted.
+- A note `# Scary by damage: <monster>, <damage> of max HP <hp>` marks when
+  it first makes a level scary.
+- The named list stays shipped off; the resist-based scares and the latch
+  stay.
+
+**Local check:** 18 starts; the table is in docs/CALIBRATION.md. The rule
+keeps the levels and depth of "list off", where the named list loses about
+a quarter of them. Deaths can't be told apart at this size.
+
+**Left:**
+- a zoo pilot (list on, list off, the rule at 30/60/80) decides the value;
+- whether spells should count;
+- the latch, if the zoo shows it holds the Borg.
+
+## 2026-11-17: a planned purchase buys its copies in one transaction (#507)
+
+Found by the zoo on borg-zoo#198. Half-Troll Ranger 60792140 bought 120
+Arrows one transaction at a time: ~1,080 keys at one game turn, which the
+zoo counted as a stall. The zoo's half, borg-zoo#205, is closed: borg-zoo#207
+now flags such runs as `purchase_burst`.
+
+**Cause:** live mode set every action's quantity to 1, and `buy_selected`
+accepted the prompt's default of 1. The planner then re-solved after
+every copy.
+
+**Fix:**
+- A BUY keeps the copies the plan picked of the first ware of its chosen
+  option (`borg_town_shadow::evaluate`). Copies of the same class at a
+  second ware, and other kinds in the option, come on later re-solves.
+- `execute_store` caps them by the stack, the pack's room
+  (`inven_carry_num`) and the gold at the price of one (`price_item`):
+  `borg_town_live::purchase_quantity`, unit-tested. Never above store.c's
+  maximum, so 2 or more always meets the prompt.
+- `buy_selected` types the quantity.
+- The purchase note and object log name the copies bought, and the log's
+  cost is the gold the purse lost (for an uneven stack of wands or staves,
+  `price_item`'s total is not N times the price of one).
+- With `store_buy_direct` set the engine buys one copy with no prompt, so
+  the quantity is not typed. The shipped `harness/borg.txt` does not set it.
+- TAKE_HOME and sales still move one copy per action.
+- The fix is in the vendored core (`borg-core/`), so it plays only when
+  the borg-rs core is selected: `borg_reborn_core = borg-rs` (shipped since
+  #479) or `BORG_CORE=borg-rs`. The original reborn core is unaffected.
+
+**Checked:** three Ranger starts, 100,000 turns, on main `28360152` and on
+the branch:
+- the largest key count at one game turn fell from 149–330 to 72–80;
+- arrow purchases fell from 87–237 transactions to 14;
+- no "not enough gold" or "cannot carry" message.
+
+Play changes, and more arrows are bought in all (276–302 against 87–237),
+so it needs a zoo pilot. Deaths on a specimen with it need new Cemetery
+packages (RULES 12).
+
+**Still open from #491:** the healing reserve can crowd out Phase Door for
+poor characters. A local run of 18 starts found 114 departures without
+Phase Door at reserve 400, against 38 with no reserve. The owner chooses
+the fix after borg-zoo#192's small and medium runs: a cap on the
+reserve's gold, or a reserve that grows with level. Not a Phase Door
+floor: the owner rejected it, since Phase Door is not in the same league
+as healing. Those runs should keep the surviving games' purchase records,
+because deaths alone cannot show the crowding.
 
 ## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
 
@@ -64,6 +143,7 @@ hard-coded scary monsters belongs in this PR.
   feature's test; the shipped default stays no plan).
 - Left: #504 (cornered mode), #505 (now: whether the resist-based scares
   and the latch need changes; to be decided with the owner).
+
 ## 2026-11-17: CI cancels superseded pull-request runs (#499)
 
 Owner: are we doing too much on CI? The repositories are public (no paid

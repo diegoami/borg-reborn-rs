@@ -2728,6 +2728,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             scary = true;
         }
 
+        // borg-reborn-rs (#505): any monster that can take
+        // caution_scary_damage_percent of max HP in one turn.
+        if !scary && crate::borg_caution::scary_by_damage(st, i) {
+            scary = true;
+        }
+
         if scary {
             st.borg.mon.scary = true;
         }

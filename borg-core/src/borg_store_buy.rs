@@ -30,7 +30,7 @@ use crate::borg_buy_strategy::{
 use crate::borg_home_notice::borg_notice_home;
 use crate::borg_home_power::borg_power_home;
 use crate::borg_inventory::{borg_first_empty_inventory_slot, borg_slot, borg_wield_slot};
-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
+use crate::borg_io::{borg_keypress, borg_keypresses, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
 use crate::borg_item::inven_wield;
 use crate::borg_magic::{borg_get_book_num, borg_is_dungeon_book, borg_primarily_caster};
 use crate::borg_power::borg_power;
@@ -1411,10 +1411,13 @@ fn remember_purchase(st: &mut BorgState, item: &borg_item, shop: i32) {
 }
 
 /// Live mode calls this only after observing the native transaction.
-pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool) {
-    note_desc(st, "# Buying ", item, ".");
+/// borg-reborn-rs (#507): `qty` is the copies the transaction bought and
+/// `paid` the gold it took.
+pub fn confirm_purchase(st: &mut BorgState, item: &borg_item, shop: i32, keep: bool, qty: i32, paid: i32) {
+    let qty = qty.max(1);
+    note_desc(st, &if qty > 1 { format!("# Buying {qty} x ") } else { "# Buying ".to_string() }, item, ".");
     let shop_name = String::from_utf8_lossy(&crate::engine::store_feat_name(shop as usize)).to_string();
-    crate::borg_object_log::log_buy(st, item, &shop_name, item.cost, shop == BORG_HOME as i32);
+    crate::borg_object_log::log_buy(st, item, &shop_name, paid, shop == BORG_HOME as i32, qty as u32);
     crate::borg_town_dump::dump_purchase(st, shop, item);
     if keep { remember_purchase(st, item, shop); }
     if crate::borg_town_live::active(st) { reset_money_scum(st, item); }
@@ -1455,12 +1458,18 @@ fn buy_selected(st: &mut BorgState, keep_purchase: bool) -> bool {
             return false;
         }
 
-        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false); }
+        if !crate::borg_town_live::active(st) { confirm_purchase(st, &item, shop, false, 1, item.cost); }
 
         /* Buy the desired item */
         borg_keypress(st, purchase_target);
         if !crate::engine::player_opt(crate::headers::list_options_h::OPT_store_buy_direct) {
             borg_keypress(st, keycode_t::from(b'p'));
+
+            // A planned purchase of several copies types its quantity over
+            // the prompt's default of 1 (borg-reborn-rs (#507); ui-store.c `store_purchase`,
+            // ui-input.c `askfor_aux`: the first key replaces the default).
+            let qty = crate::borg_town_live::buy_quantity(st);
+            if qty > 1 { borg_keypresses(st, qty.to_string().as_bytes()); }
 
             /* Mega-Hack -- Accept the purchase */
             borg_keypress(st, KC_ENTER);
