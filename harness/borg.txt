@@ -329,10 +329,12 @@ borg_town_food_trip = 10
 # 0 turns estimates exploration plus walking from that destination.
 # Explicit depth/turns declare the intended journey; neither sets item quotas.
 # w_gold prices the option of leaving gold unspent (0 disables that value).
+# Shipped 0 since #493 (owner, 2026-11-17): the reserve is explicit, see
+# borg_param_town_gold_reserve(_percent) below.
 # light_depth and food_trip above remain for replay of the old v4 model.
 borg_town_target_depth = 0
 borg_town_trip_turns = 0
-borg_town_w_gold = 25
+borg_town_w_gold = 0
 # Zoo calibration: rates and priorities, not item-count targets.
 # risk and home_discount are thousandths; 1000 risk is one max-HP buffer
 # per 1000 actions at equal destination depth and character level.
@@ -452,6 +454,10 @@ borg_reborn_stopscared = off
 # environment overrides a line; a zoo profile rewrites it in place.
 borg_param_caution_heal_when_outmatched = 1
 borg_param_attack_speed_fight_danger_tenths = 30
+# #493: the live town planner's gold reserve, kept outside the urgent needs:
+# the larger of a fixed amount and a percent of the purse (owner: 0).
+borg_param_town_gold_reserve = 0
+borg_param_town_gold_reserve_percent = 0
 borg_param_attack_preference_warrior_melee_permille = 1800
 borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200

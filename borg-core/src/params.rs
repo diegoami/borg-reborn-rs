@@ -242,6 +242,8 @@ parameters! {
     caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1685", "Controls flee danger hp multiplier."),
     caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1690", "Controls flee max level."),
     caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
+    town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:263", "#493: gold of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve_percent); the visit's sale proceeds are spendable on top of it."),
+    town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:263", "#493: percent of the purse at arrival the live town planner keeps outside the urgent needs (the larger of this and town_gold_reserve); the visit's sale proceeds are spendable on top of it."),
     town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:534", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
     town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:269", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone)."),
     town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:541", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
@@ -2016,6 +2018,7 @@ mod tests {
                 "attack" => "fight_attack",
                 "defend" => "fight_defend",
                 "item" => "item_use",
+                "town" => "town_budget",
                 _ => prefix,
             };
             if prefix == "town" {

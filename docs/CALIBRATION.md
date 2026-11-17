@@ -6,6 +6,10 @@ Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
 
+
+Each section below is a snapshot: its "registry now holds N" is the count
+right after that change, so older sections show older counts.
+
 ## Class/family attack preference extension (#403)
 
 The historical P1–P3 counts above describe the original extraction. #403 adds
@@ -14,6 +18,29 @@ family inventory, configuration and trace@2 contract is in
 [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md). `utility_permille` means a
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
+
+## Gold reserve (#493)
+
+The registry now holds **1797** parameters (1795 after #485's follow-up; two added). Before,
+the live town planner kept gold only through the soft price
+`borg_town_w_gold` (`borg_town_solve::solve_cash`: spending `c` costs
+`w x c / (gold left + 1)`), which made the last coins nearly unspendable. The
+reserve is now explicit: `Budget::of` (`borg_town_budget.rs`,
+`build_with_reserve`) takes the larger of the two below from the gold left
+after the urgent needs, which may still use the whole purse. The reserve
+bounds the purse at arrival: the proceeds of the visit's sales join the gold
+at the purchases stage (`borg_town_record`, `limits.gold + freed.gold`) and
+are spendable on top of it. The shipped `harness/borg.txt` sets both to 0 and
+`borg_town_w_gold = 0` (owner, 2026-11-17), and the compiled
+`borg_town_w_gold` default is 0 too (`borg_init.rs`, a declared deviation from
+borg-rs's C table, `OUR_DEFAULTS`; borg-rs's pristine `borg-core/borg.txt`
+keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
+`docs/TOWN-UTILITY.md` "Retaining gold"), vendored with borg-rs #87.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:263` |
+| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:263` |
 
 ## Point-blank divisor by class (#485)
 
