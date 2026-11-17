@@ -6,6 +6,12 @@ ledger merge is 17992dfcfc74509b723c861b41056f45993dc37c. Reference refresh
 #429/#432 does not change runtime donor M13
 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea or its accepted gameplay evidence.
 
+Current checkpoint: item use #435 merged through #442 at ba460186, with
+all exact-head CI670 jobs green. Power #434 has a source-only boundary design
+([handover](R434-HANDOVER.md)). P task #433 integrated on track-p, but review/
+promotion #477 is still open; closure does not authorize the runtime carry.
+The dependency paragraphs below describe that required accepted contract.
+
 ## Counted scope and parameter gate
 
 Run `python3 scripts/r4-surface.py` to verify the receiving source inventory
