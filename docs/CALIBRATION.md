@@ -188,7 +188,8 @@ red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
 Dread) and the low-level door scares. A scary level stays scary until a new
 level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
 turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
-stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and,
+since #518 (owner, after borg-zoo#216), the named list back on (1).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -222,7 +223,7 @@ Max HP, not current HP: a wounded character is already the
 danger-against-avoidance flight's business. The scary level then works as
 before (leave and flee, latched until a new level). The resist-based scares
 and the named list's switch stay. Compiled 0 (off); `harness/borg.txt`
-ships 60 (owner), with the named list off.
+ships 60 (owner); since #518 the named list is shipped on again beside it.
 
 Local check, 18 class starts (borg-zoo's classes-18), 100,000 turns, main
 `dd5f026e`:

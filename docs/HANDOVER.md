@@ -2,6 +2,21 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the named scary list back on; the latch parked (#517, #515)
+
+Owner: the named list makes sense after all. The shipped `harness/borg.txt`
+sets `borg_param_caution_scary_named_monsters = 1` again.
+- **Evidence:** borg-zoo#216 had 5 and 4 deaths of 18 with it off, against
+  1 with it on. Locally it costs about a quarter of the levels, with
+  deaths unchanged at 18 starts.
+- **The damage rule (#514, 60) stays beside it.**
+- **#517:** make the list configurable in `borg.txt`, by monster, level and
+  class, like the Restock section. The format is to be agreed first.
+- **#515 (the latch) is parked**, on branch `task/T515-scary-latch`
+  (`e5fddf0d`): the Borg reaches stairs within about ten turns, so 912 of
+  985 scares ended by leaving the level with the latch off, and the switch
+  changed almost nothing.
+
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
 - `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
@@ -53,7 +68,8 @@ melee, on average, takes that percent of max HP:
 - Spells are not counted.
 - A note `# Scary by damage: <monster>, <damage> of max HP <hp>` marks when
   it first makes a level scary.
-- The named list stays shipped off; the resist-based scares and the latch
+- The named list stayed shipped off here (back on since the next entry);
+  the resist-based scares and the latch
   stay.
 
 **Local check:** 18 starts; the table is in docs/CALIBRATION.md. The rule

@@ -521,9 +521,11 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 # The C Borg's hard-coded "scary" monsters (by character level) and the
 # low-level door scares mark the level scary until a new level: the Borg
 # leaves and flees, will not hunt, and once fled from a small kobold seen
-# once for 54,000 game turns. 0 = off (owner, 2026-11-17); the resist-based
-# scares (nether, blindness, chaos, confusion, poison) stay. 1 = C's list.
-borg_param_caution_scary_named_monsters = 0
+# once for 54,000 game turns. 1 = C's list, back on (owner, 2026-11-17,
+# after borg-zoo#216: 5 and 4 deaths of 18 with it off, against 1 with it
+# on; #517 makes it configurable). 0 = off; the resist-based scares
+# (nether, blindness, chaos, confusion, poison) stay either way.
+borg_param_caution_scary_named_monsters = 1
 # A monster on the level is scary when one character turn of its melee (the
 # average of its blows' damage times its moves per character turn) can take at
 # least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It
