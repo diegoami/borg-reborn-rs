@@ -45,6 +45,22 @@ class EncounterCaptureTest(unittest.TestCase):
                 self.assertIn('inventory',frames[0]);self.assertIn('equipment',frames[0])
                 self.assertTrue(all({'turn','status','monsters'} <= row.keys() for row in frames))
                 self.assertTrue(json.loads((out/'knowledge.json').read_text())['races'])
+                if core=='borg-rs' and cls==1:
+                    full=root/(stem+'-full')
+                    current=dict(env,BORG_CORE=core,CHECKPOINT_EVERY='100',
+                                 BORG_ENCOUNTER_LOG=str(full/'encounters.jsonl'),
+                                 BORG_ENCOUNTER_KNOWLEDGE_LOG=str(full/'knowledge.json'),
+                                 BORG_OBSERVATION_LOG=str(full/'observations.jsonl'))
+                    result=subprocess.run(['bash',str(ROOT/'harness/run.sh'),str(full),str(seed),str(race),str(cls),'3000','menu,exact'],
+                                          cwd=ROOT,env=current,capture_output=True,text=True,timeout=180)
+                    self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+                    def channels(rows):
+                        return [(r['turn'],{k:r['status'][k] for k in ('hp','max_hp','sp','max_sp','level','depth')},
+                                 [(m['index'],m['race']) for m in r['monsters']]) for r in rows]
+                    full_frames=[json.loads(line) for line in (full/'encounters.jsonl').read_text().splitlines()]
+                    self.assertEqual(channels(frames),channels(full_frames))
+                    for stream in ('keys.log','state.log','messages.log'):
+                        self.assertEqual((full/stream).read_bytes(),(out/stream).read_bytes())
                 # A saved start must be observed at its original engine turn,
                 # before the first played command, with full native gear data.
                 checkpoint=json.loads((out/'checkpoints/index.jsonl').read_text().splitlines()[0])
