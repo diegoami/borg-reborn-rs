@@ -14,6 +14,15 @@ not accept P4 or authorize the R carry. Promotion/review #477 is open,
 targets `main`, and requires owner-selected review and acceptance. Do not
 merge it from an R session. After promotion, carry the exact accepted
 contract separately into `feature/track-r`, preserving R facades and hooks.
+Owner-selected Claude review on #477 at `105f7947` found two defects,
+tracked in active Track P task #481. The mapping-rod reserve allows values
+above255 before an `as u8` comparison; the correction must reject256/300.
+Three newly introduced curing parameter names misidentify their actual
+CCW/Healing/cure-poison guards. Their defaults, existing pre-P4 IDs and
+arithmetic must stay unchanged while names/descriptions/contract move together.
+Treat the names in the unaccepted105f source as provisional. #481 must first
+integrate on Track P, #477 must pin the corrected head for owner re-review,
+and acceptance/promotion plus the separate R carry must follow.
 Only then implement the complete power policy. Re-audit the receiving bytes,
 named parameters and baseline after that carry; this pre-carry inventory
 does not certify the future source or the 362 new parameter defaults.

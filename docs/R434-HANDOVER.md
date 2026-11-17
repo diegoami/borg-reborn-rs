@@ -24,3 +24,12 @@ confirms the runtime input hash is unchanged. No gameplay campaign is needed
 for this preparation; future runtime validation requirements are in the
 boundary document. Keep #434 and its PR in progress/draft until the full port
 and all gates complete. Future gameplay evidence belongs in borg-cemetery.
+
+P4 review disposition: owner-selected Claude review5935377145 on #477 found
+F1 (reserve quantity narrow-cast bound) and F2 (three misleading curing names).
+Both are confirmed at the pinned105f source and tracked in active Track P
+#481. No fixes are duplicated on R. The corrected P head needs a fresh #477
+pin and owner re-review/acceptance before promotion/carry. Notes N1–N3 do not
+request runtime changes. The native review raw streams matched45/45, but its
+harness endedFAILED because the pinned cemetery toolkit was unavailable;
+do not describe those reviewer runs as completed canonical validation.

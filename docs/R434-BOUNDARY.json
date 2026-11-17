@@ -248,5 +248,16 @@
     "borg_magic::borg_spell_stat",
     "borg_magic::borg_get_spell_entry",
     "borg_formulas::borg_power_dynamic (explicit shared mutable policy)"
-  ]
+  ],
+  "p4_review_followup": {
+    "review_url": "https://github.com/diegoami/borg-reborn-rs/pull/477#pullrequestreview-5935377145",
+    "reviewed_head_not_consumed": "105f79479df4631d7219eaa2d77c96a76e892238",
+    "track_p_fix_issue": 481,
+    "fix_status_at_inspection": "in progress; no R carry authorized",
+    "required_corrections": [
+      "Bound sell_mapping_rod_reserve_count to255 for its u8 comparison; reject256/300 before play",
+      "Rename three new curing parameters to match actual CCW/Healing/cure-poison guards, synchronizing call sites, registry descriptions, JSON and contract without moving old IDs/defaults"
+    ],
+    "carry_gate": "Corrected track-p integration, new exact #477 review pin, owner acceptance/promotion, separate R carry, then refresh this inventory"
+  }
 }
