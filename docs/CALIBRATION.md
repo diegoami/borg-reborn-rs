@@ -126,6 +126,36 @@ up staircase on one level.
 | `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
+## Breeders and named scary monsters (#503)
+
+Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
+ways (the breeder flee of `borg_caution`, the breeder scary trigger of
+`borg_near_monster_type`, the "no recall" flee of `borg_check_breeders`), backs
+away from their danger, and below clevel 10 never flows to them. With
+`caution_breeder_fight` and no easy escape (a free staircase within the steps,
+a Phase Door, teleport, escape or Word of Recall) it stands and fights: none of
+the three flees, and no retreat or back-away while every known monster within
+the radius is a breeder (being surrounded still moves it). Warriors, Paladins,
+Rogues and Blackguards hunt breeders while at most the hunt count are known.
+
+`caution_scary_named_monsters` turns off the C Borg's hard-coded scary monsters
+by character level (squint-eyed rogue; Grip, Fang, small kobold; soldier,
+cutpurse, acolyte, apprentice, kobold, shrieker, Farmer Maggot, street urchin,
+veteran, mercenary; Bullroarer and the breeders; cave spider, red naga, giant
+red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
+Dread) and the low-level door scares. A scary level stays scary until a new
+level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
+turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2171` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2171` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2193` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2228` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2218` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).

@@ -49,7 +49,8 @@ HOOKED = {
     'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
     'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
     'src/borg_junk.rs',  # #470: discard Deep Descent on sight
-    'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders
+    'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
+    'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI

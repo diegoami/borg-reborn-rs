@@ -2169,10 +2169,14 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
 /// `borg_caution`, the breeder scary trigger of `borg_near_monster_type`,
 /// the "no recall" flee of `borg_check_breeders`).
 pub(crate) fn breeder_stand(st: &BorgState) -> bool {
-    if p(Param::caution_breeder_fight) == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+    breeder_stand_with(st, p(Param::caution_breeder_fight), p(Param::caution_breeder_easy_escape_steps))
+}
+
+/// `breeder_stand` with its parameters given.
+fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32) -> bool {
+    if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
-    let steps = p(Param::caution_breeder_easy_escape_steps);
     let near = |d: i32| d != -1 && d <= steps;
     !(near(nearest_free_stair(st, true))
         || near(nearest_free_stair(st, false))
@@ -2208,6 +2212,13 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
     breeders > 0
 }
 
+/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
+/// character level (`borg_near_monster_type`) and the low-level door scares
+/// (`borg_update`, `borg_messages`) mark the level scary.
+pub(crate) fn scary_named_monsters() -> bool {
+    p(Param::caution_scary_named_monsters) != 0
+}
+
 /// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
 /// Blackguard) hunt breeders while there are at most
 /// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
@@ -2215,11 +2226,16 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
 /// `borg_flow_kill_corridor`, which already counts a breeder next to the
 /// Borg as a reason to move to a corridor.
 pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
-    p(Param::caution_breeder_fight) != 0
+    breeder_hunt_with(st, p(Param::caution_breeder_fight), p(Param::caution_breeder_hunt_max_count))
+}
+
+/// `breeder_hunt` with its parameters given.
+fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
+    fight != 0
         && st.borg.tr(BI_CDEPTH) != 0
         && matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
         && st.borg.mon.breeders > 0
-        && i32::from(st.borg.mon.breeders) <= p(Param::caution_breeder_hunt_max_count)
+        && i32::from(st.borg.mon.breeders) <= max_count
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),
@@ -2456,5 +2472,57 @@ mod rising_tests {
         let mut st = rising();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
         assert!(!rising_holds_descent(&st, 0), "in town");
+    }
+}
+
+#[cfg(test)]
+mod breeder_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A CL3 Rogue on DL1 with 3 breeders known, no stairs known and
+    /// nothing to escape with.
+    fn cornered() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_CLEVEL as usize] = 3;
+        st.borg.trait_[BI_CLASS as usize] = 6;
+        st.borg.mon.breeders = 3;
+        st
+    }
+
+    /// #503: breeders and no easy escape: stand; an escape in the pack
+    /// (Phase Door, teleport, escape, recall), no breeders, town or the
+    /// switch off: the C Borg's flees stay.
+    #[test]
+    fn breeders_without_an_easy_escape_make_the_borg_stand() {
+        assert!(breeder_stand_with(&cornered(), 1, 5));
+        assert!(!breeder_stand_with(&cornered(), 0, 5), "switch off");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_AESCAPE, BI_RECALL] {
+            let mut st = cornered();
+            st.borg.trait_[t as usize] = 1;
+            assert!(!breeder_stand_with(&st, 1, 5), "escape {t} in the pack");
+        }
+        let mut st = cornered();
+        st.borg.mon.breeders = 0;
+        assert!(!breeder_stand_with(&st, 1, 5), "no breeders");
+        let mut st = cornered();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!breeder_stand_with(&st, 1, 5), "town");
+    }
+
+    /// #503: melee classes hunt while few breeders are known; casters and
+    /// archers do not, nor anyone with the switch off.
+    #[test]
+    fn melee_classes_hunt_few_breeders() {
+        assert!(breeder_hunt_with(&cornered(), 1, 4));
+        assert!(!breeder_hunt_with(&cornered(), 0, 4), "switch off");
+        assert!(!breeder_hunt_with(&cornered(), 1, 2), "too many breeders");
+        for (class, hunts) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+            let mut st = cornered();
+            st.borg.trait_[BI_CLASS as usize] = class;
+            assert_eq!(breeder_hunt_with(&st, 1, 4), hunts, "class {class}");
+        }
     }
 }
