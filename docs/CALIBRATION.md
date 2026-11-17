@@ -128,7 +128,7 @@ up staircase on one level.
 
 ## Cornered mode (#504)
 
-The registry now holds **1808** parameters (1802 after #503; six added). Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
+The registry now holds **1809** parameters (1803 after #505's scary damage, #514; six added). Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
 danger but not much" (10–50% of avoidance), so a Borg that is losing a fight
 it cannot leave used none: a Blackguard died at 1/41 HP with its Berserk
 Strength spell unused. With `caution_cornered`, cornered means: in the
@@ -154,12 +154,12 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2300` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2300` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2300` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2358` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2415` (buff spells only at or below this failure rate) |
-| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2346` (0 = off; owner: the same boosts in a hard breeder fight) |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2367` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2367` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2367` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2430` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2488` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2418` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -192,11 +192,58 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2189` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2189` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2222` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2276` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2266` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2190` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2190` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2223` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+
+## Scary by damage (#505)
+
+The registry now holds **1803** parameters (1802 after #503; one added).
+Owner, 2026-11-17: scary is a monster that can one- or two-shot you, as a
+percentage of HP. Turning the named list off (#503) killed characters in
+borg-zoo#216 (run 44147930313): 5 and 4 deaths of 18 against 1 with the
+list, two of them at character level 1. The list stood in for this rule:
+each name had a character-level cap because Grip, Fang or a kobold is
+deadly only to a weak character.
+
+A monster on the level (`borg_near_monster_type`, every known monster, as
+the named list) makes the level scary when one character turn of its melee
+takes at least `caution_scary_damage_percent` of max HP. The damage is the
+monster's own: the average of each blow's `random_value` as the engine
+rolls it (`randcalc` AVERAGE: base, dice and level bonus; no blow in
+`monster.txt` has a base or bonus today), times its moves per
+character turn (`extract_energy` of both speeds, at least one). It is not
+`borg_danger`: a first try with it at 50 rated a street urchin (it steals)
+at 245 and a floating eye (it paralyses) at 276 against a 10-HP character,
+and made a level scary 14,507 times in 18 games. Spells are not counted.
+Max HP, not current HP: a wounded character is already the
+danger-against-avoidance flight's business. The scary level then works as
+before (leave and flee, latched until a new level). The resist-based scares
+and the named list's switch stay. Compiled 0 (off); `harness/borg.txt`
+ships 60 (owner), with the named list off.
+
+Local check, 18 class starts (borg-zoo's classes-18), 100,000 turns, main
+`dd5f026e`:
+
+| arm | deaths | sum of CL | sum of max depth | "Scary guy" notes |
+|---|---:|---:|---:|---:|
+| list off (main) | 2 | 109 | 42 | 0 |
+| named list on | 2 | 83 | 36 | 11,739 |
+| damage 30 | 2 | 111 | 43 | 415 |
+| damage 50 | 3 | 111 | 44 | 81 |
+| damage 60 (shipped) | 3 | 108 | 43 | 4 (16 of 18 games keep list off's keys) |
+| damage 80 | 2 | 109 | 42 | 0 (keys identical to list off) |
+
+At 30 the scares come from battle-scarred veterans, mercenaries, grey molds,
+centipedes and once Grip; at 50 almost only veterans, against low-HP
+characters. 18 games cannot separate the arms' deaths (borg-zoo#216 saw the
+list help: 1 death against 5); the zoo decides.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2281` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 

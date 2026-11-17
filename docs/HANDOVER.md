@@ -34,6 +34,37 @@
   against breeders with no easy escape and danger here at or above half the
   HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
   Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
+## 2026-11-17: scary by damage (#505)
+
+Owner: scary is a monster that can one- or two-shot you, as a percentage of
+HP. borg-zoo#216 saw the named list's removal (#510) kill characters (5 and
+4 deaths of 18 against 1).
+
+**Change:** `caution_scary_damage_percent` (compiled 0, shipped 60, owner).
+A known monster on the level makes it scary when one character turn of its
+melee, on average, takes that percent of max HP:
+`borg_caution::scary_by_damage`.
+- The damage is the average of its blows (`randcalc` AVERAGE: base, dice
+  and level bonus, review of #514) times its moves per
+  character turn.
+- Not `borg_danger`: a first try with it rated a street urchin at 245 and
+  a floating eye at 276 against 10 HP, from the penalties for stealing and
+  paralysis.
+- Spells are not counted.
+- A note `# Scary by damage: <monster>, <damage> of max HP <hp>` marks when
+  it first makes a level scary.
+- The named list stays shipped off; the resist-based scares and the latch
+  stay.
+
+**Local check:** 18 starts; the table is in docs/CALIBRATION.md. The rule
+keeps the levels and depth of "list off", where the named list loses about
+a quarter of them. Deaths can't be told apart at this size.
+
+**Left:**
+- a zoo pilot (list on, list off, the rule at 30/60/80) decides the value;
+- whether spells should count;
+- the latch, if the zoo shows it holds the Borg.
+
 ## 2026-11-17: a planned purchase buys its copies in one transaction (#507)
 
 Found by the zoo on borg-zoo#198. Half-Troll Ranger 60792140 bought 120

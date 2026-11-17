@@ -524,6 +524,12 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 # once for 54,000 game turns. 0 = off (owner, 2026-11-17); the resist-based
 # scares (nether, blindness, chaos, confusion, poison) stay. 1 = C's list.
 borg_param_caution_scary_named_monsters = 0
+# A monster on the level is scary when one character turn of its melee (the
+# average of its blows' damage times its moves per character turn) can take at
+# least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It
+# replaces the named list's level caps: Fang is scary to a 10-HP mage, not
+# to an 80-HP warrior. Spells are not counted.
+borg_param_caution_scary_damage_percent = 60
 borg_param_caution_breeder_fight = 1
 borg_param_caution_breeder_easy_escape_steps = 5
 borg_param_caution_breeder_stand_radius = 5
