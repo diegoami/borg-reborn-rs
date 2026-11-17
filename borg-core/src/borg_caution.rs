@@ -33,11 +33,11 @@ use crate::borg_headers::borg_magic_h::{
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_SPEED,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -51,6 +51,7 @@ use crate::borg_light::{borg_maintain_light, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
+use crate::headers::list_mon_race_flags_h::RF_MULTIPLY;
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::TMD_OPP_ACID;
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
@@ -1462,7 +1463,11 @@ fn may_move_away(
     pos_danger: i32,
     retreat: bool,
 ) -> bool {
-    ((danger_test && !nasty && st.borg.no_retreat == 0) || (borg_surround && pos_danger != 0))
+    // borg-reborn-rs (#503): standing against breeders, danger alone does
+    // not move the Borg away (it ping-ponged between two grids while worms
+    // bit it); being surrounded still does.
+    ((danger_test && !nasty && st.borg.no_retreat == 0 && !breeder_stand_here(st))
+        || (borg_surround && pos_danger != 0))
         && !st.borg.morgoth_position
         && borg_timer(st, st.borg.time.antisummon) >= p(Param::caution_move_antisummon_delay)
         && st.borg.tr(BI_ISCONFUSED) == 0
@@ -1948,7 +1953,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Prevent breeder explosions when low level
-    if st.borg.near.breeder && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level) {
+    // borg-reborn-rs (#503): not without an easy escape: stand and fight.
+    if st.borg.near.breeder
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level)
+        && !breeder_stand(st)
+    {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
 
@@ -2149,6 +2158,68 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
     let mut note = prefix.to_vec();
     note.extend_from_slice(reason.as_deref().unwrap_or(b""));
     borg_note_bytes(st, &note);
+}
+
+/// borg-reborn-rs (#503): breeders on the level and no easy escape: stand
+/// and fight them at once instead of fleeing while they multiply. An easy
+/// escape is a free staircase within `caution_breeder_easy_escape_steps`
+/// grids, or a Phase Door, teleport, escape or Word of Recall in the pack
+/// or spells (recall is slow, but breeders are slow and level-wide). With
+/// one, the breeder flees of the C Borg stay (the breeder flee of
+/// `borg_caution`, the breeder scary trigger of `borg_near_monster_type`,
+/// the "no recall" flee of `borg_check_breeders`).
+pub(crate) fn breeder_stand(st: &BorgState) -> bool {
+    if p(Param::caution_breeder_fight) == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let steps = p(Param::caution_breeder_easy_escape_steps);
+    let near = |d: i32| d != -1 && d <= steps;
+    !(near(nearest_free_stair(st, true))
+        || near(nearest_free_stair(st, false))
+        || st.borg.tr(BI_APHASE) > 0
+        || st.borg.tr(BI_ATELEPORT) > 0
+        || st.borg.tr(BI_AESCAPE) > 0
+        || st.borg.tr(BI_RECALL) > 0)
+}
+
+/// borg-reborn-rs (#503): standing against breeders (`breeder_stand`) and
+/// every known monster within `caution_breeder_stand_radius` grids is a
+/// breeder (at least one): the danger here is the breeders', so the Borg
+/// fights instead of retreating or backing away.
+pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
+    if !breeder_stand(st) {
+        return false;
+    }
+    let radius = p(Param::caution_breeder_stand_radius);
+    let mut breeders = 0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if engine::distance(st.borg.c, kill.pos) > radius {
+            continue;
+        }
+        if !engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            return false;
+        }
+        breeders += 1;
+    }
+    breeders > 0
+}
+
+/// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
+/// Blackguard) hunt breeders while there are at most
+/// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
+/// clevel 10 (`borg_flow_kill`). Being surrounded is left to
+/// `borg_flow_kill_corridor`, which already counts a breeder next to the
+/// Borg as a reason to move to a corridor.
+pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
+    p(Param::caution_breeder_fight) != 0
+        && st.borg.tr(BI_CDEPTH) != 0
+        && matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+        && st.borg.mon.breeders > 0
+        && i32::from(st.borg.mon.breeders) <= p(Param::caution_breeder_hunt_max_count)
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),

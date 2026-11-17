@@ -497,6 +497,15 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_reserve_hp_percent = 400
 borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_speed_percent = 66
+# #503 (owner, 2026-11-17, #488 slice A): with breeders on the level and no
+# easy escape (no free staircase within the steps, no Phase Door, teleport,
+# escape or recall), the Borg stands and fights them at once: breeders no longer
+# make it flee. Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt
+# breeders while at most the hunt count are known. 0 = off (the control).
+borg_param_caution_breeder_fight = 1
+borg_param_caution_breeder_easy_escape_steps = 5
+borg_param_caution_breeder_stand_radius = 5
+borg_param_caution_breeder_hunt_max_count = 4
 
 
 [BEGIN FORMULA SECTION]

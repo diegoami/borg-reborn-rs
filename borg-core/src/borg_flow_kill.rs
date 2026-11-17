@@ -1767,6 +1767,8 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     let mut borg_in_hall = false;
     let mut hall_walls = 0;
     let mut skip_monster = false;
+    // borg-reborn-rs (#503): a melee class hunting the few breeders here
+    let breeder_hunt = crate::borg_caution::breeder_hunt(st);
 
     // Efficiency -- Nothing to kill
     if st.kills.cnt == 0 {
@@ -1884,7 +1886,8 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         }
 
         // Avoid multiplying monsters when low level
-        if st.borg.tr(BI_CLEVEL) < 10 && rf_has(kill.r_idx, RF_MULTIPLY) {
+        // borg-reborn-rs (#503): unless a melee class hunts them
+        if st.borg.tr(BI_CLEVEL) < 10 && rf_has(kill.r_idx, RF_MULTIPLY) && !breeder_hunt {
             continue;
         }
 
@@ -2588,6 +2591,9 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
 /// we know about. Special consideration is given to Morgoth.
 pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let breeder_count = i32::from(st.borg.mon.breeders);
+    // borg-reborn-rs (#503): breeders make no level scary when the Borg
+    // stands and fights them (no easy escape).
+    let breeder_stand = crate::borg_caution::breeder_stand(st);
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2659,7 +2665,8 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 || ((ridx == id.giant_white_mouse
                     || ridx == id.white_worm_mass
                     || ridx == id.green_worm_mass)
-                    && breeder_count >= clevel))
+                    && breeder_count >= clevel
+                    && !breeder_stand))
         {
             scary = true;
         }
@@ -2669,7 +2676,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 || ridx == id.red_naga
                 || ridx == id.giant_red_frog
                 || ridx == id.radiation_eye
-                || (ridx == id.yellow_worm_mass && breeder_count >= clevel))
+                || (ridx == id.yellow_worm_mass && breeder_count >= clevel && !breeder_stand))
         {
             scary = true;
         }
