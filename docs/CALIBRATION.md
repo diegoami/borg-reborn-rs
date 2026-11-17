@@ -245,22 +245,30 @@ named list from that file instead of the compiled C block
 (`borg-core/src/scary_list.rs`); without the key the compiled list stays.
 `caution_scary_named_monsters` still switches named scares on and off.
 
-`harness/scary_monsters.txt` is C's list with one change: C's only class
-exception (the squint-eyed rogue scares Mages and Priests one level longer)
-also covers Necromancers and Druids, 4.2's other frail casters (owner). C's
-list as a file plays byte-identical keys to the compiled list on the 18
-classes-18 starts. One line per
-monster: `monster | take on from clevel | class exceptions | flags`:
+`harness/scary_monsters.txt` gives each monster a range, `tough-fragile`,
+and each class a fragility from 0 to 100 (owner, 2026-11-17): a class fears
+a monster while its level is at most
+`tough + (fragile - tough) x fragility / 100`, rounded. One line per
+monster: `monster | tough-fragile | class exceptions | flags`:
 - the monster's name as in `monster.txt`, or `base:` and the start of a
   monster base name;
-- scary while the character's level is below the "take on" level (C's
-  `clevel <= 8` is 9);
-- `class level` pairs replacing it for those classes (0 = never scary for
-  that class);
+- a single number is the same level for every class;
+- `class level` pairs set that class's level for this monster outright;
 - the flag `breeders`: only with at least as many known breeders as the
   character's level, and not while standing against breeders (#503).
 
-An unknown monster, class or flag, or a bad level, stops the run before play
+The shipped fragilities are Warrior, Paladin, Blackguard 0; Ranger, Rogue 33;
+Priest, Druid 67; Mage, Necromancer 100. Each range is C's level to C's
+level + 3, so Fang (C: 5) is 5-8: 5, 6, 7 and 8 for those four groups. C's
+only class exception (the squint-eyed rogue scares Mages and Priests up to 6)
+lies inside its range. C's list written as single numbers plus that
+exception plays byte-identical keys to the compiled list on the 18
+classes-18 starts. With the shipped ranges, 2 of the 18 games change (the
+Rogue and the Ranger): the frail casters never passed C's levels within
+100,000 turns.
+
+An unknown monster, class or flag, a bad level or a backwards range stops
+the run before play
 with exit 2 and the line. Harness runs select a list with
 `BORG_SCARY_LIST=FILE` (`harness/run.sh` copies it and pins its SHA-256 in
 the run's `borg.txt`); the shipped `borg.txt` does not name one until the zoo

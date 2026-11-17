@@ -8,13 +8,13 @@ Owner: a flexible scary list, by monster, level and class.
 - **Code:** `borg-core/src/scary_list.rs` (ours, declared in the vendor
   check). `borg_scary_list = FILE` in `borg.txt` replaces the compiled
   block in `borg_near_monster_type`; the list loads at `borg_init`.
-- **Data:** `harness/scary_monsters.txt`, C's list, plus Necromancers and
-  Druids in its only class exception (the squint-eyed rogue scares frail
-  casters one level longer; owner).
-  Format: `monster | take on from clevel | class exceptions | flags`.
+- **Data:** `harness/scary_monsters.txt`. Each monster has a range
+  `tough-fragile`, each class a fragility 0-100 (owner): Fang 5-8 is 5 for
+  Warrior, Paladin and Blackguard, 6 for Ranger and Rogue, 7 for Priest and
+  Druid, 8 for Mage and Necromancer. Ranges are C's level to C's level + 3.
+  Format: `monster | tough-fragile | class exceptions | flags`.
   C's list as a file plays byte-identical keys to the compiled one on 18
-  starts. A
-  misspelt monster stops the run before play (exit 2, with the line).
+  starts; the shipped ranges change 2 of them (Rogue, Ranger).
 - **Harness:** `BORG_SCARY_LIST=FILE harness/run.sh ...` copies and pins
   the file.
 - **Not shipped yet:** `harness/borg.txt` doesn't name the file, so the zoo
