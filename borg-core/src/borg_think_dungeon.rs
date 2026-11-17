@@ -603,6 +603,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         return choice!("borg_destroy_floor");
     }
 
+    // borg-reborn-rs (#470): no Scroll of Deep Descent is kept.
+    if crate::borg_junk::borg_discard_deep_descent(st) {
+        return choice!("borg_discard_deep_descent");
+    }
+
     /* add a short pause to slow the borg down for viewing */
     let delay = i32::from(engine::player_delay_factor());
     let cfg_delay = st.cfg(BORG_DELAY_FACTOR);

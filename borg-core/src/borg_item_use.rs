@@ -98,36 +98,6 @@ fn device_fail(skill: i32, lev: i32) -> i32 {
     100 * ((skill - lev) - (141 - 1)) / ((lev - skill) - (100 - 10))
 }
 
-/// Index of the last item in the pack that is not empty, has the given
-/// tval test true and is not aware (the `*_unknown` scans), or -1.
-fn last_unaware(st: &BorgState, tval_ok: impl Fn(u32) -> bool) -> i32 {
-    let mut n = -1;
-
-    /* Scan the pack */
-    for i in 0..i32::from(engine::z_info().pack_size) {
-        let item = &st.items.items[i as usize];
-
-        /* Skip empty items */
-        if item.iqty == 0 {
-            continue;
-        }
-
-        /* Require correct tval */
-        if !tval_ok(u32::from(item.tval)) {
-            continue;
-        }
-
-        /* Skip aware items */
-        if item.aware {
-            continue;
-        }
-
-        /* Save this item */
-        n = i;
-    }
-    n
-}
-
 /// Quaff a potion of cure critical wounds. This is a special case
 /// for several reasons.
 ///   1) it is usually the only healing potion we have on us
@@ -190,34 +160,6 @@ pub fn borg_quaff_potion(st: &mut BorgState, sval: i32) -> bool {
     true
 }
 
-/// Attempt to quaff an unknown potion.
-pub fn borg_quaff_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_POTION);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Quaffing unknown potion ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "quaff", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'q'));
-    borg_keypress(st, letter(n));
-
-    /* Clear "shop" goals. Inventory changed so goals need to be redone. */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
-}
-
 /// Attempt to read the given scroll (by sval).
 pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
     /* Dark */
@@ -255,47 +197,6 @@ pub fn borg_read_scroll(st: &mut BorgState, sval: i32) -> bool {
 
     /* Clear "shop" goals */
     clear_shop_goals(st);
-
-    /* Success */
-    true
-}
-
-/// Attempt to read an unknown scroll.
-pub fn borg_read_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_SCROLL);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Dark */
-    if engine::no_light() {
-        return false;
-    }
-
-    /* Blind or Confused */
-    if st.borg.tr(BI_ISBLIND) != 0 || st.borg.tr(BI_ISCONFUSED) != 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Reading unknown scroll ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "read", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'r'));
-    borg_keypress(st, letter(n));
-
-    /* In case it is ID scroll, ESCAPE out. */
-    borg_keypress(st, ESCAPE);
-
-    /* Clear "shop" goals */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
 
     /* Success */
     true
@@ -353,31 +254,6 @@ pub fn borg_satisfy_hunger_before_food(st: &mut BorgState) -> bool {
     borg_spell(st, REMOVE_HUNGER)
         || borg_spell(st, HERBAL_CURING)
         || borg_read_scroll(st, st.item_val.sv_scroll_satisfy_hunger)
-}
-
-/// Attempt to eat an unknown food/mushroom. This is done in emergencies.
-pub fn borg_eat_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_FOOD || t == TV_MUSHROOM);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Eating unknown mushroom ", n as usize, b".");
-
-    /* Perform the action */
-    borg_keypress(st, key(b'E'));
-    borg_keypress(st, letter(n));
-
-    /* Clear "shop" goals */
-    clear_shop_goals(st);
-
-    st.borg.trying_unknown = true;
-
-    /* Success */
-    true
 }
 
 /// Prevent starvation by any means possible.
@@ -577,34 +453,6 @@ pub fn borg_use_staff(st: &mut BorgState, sval: i32) -> bool {
     /* Perform the action */
     borg_keypress(st, key(b'u'));
     borg_keypress(st, letter(i));
-
-    /* Success */
-    true
-}
-
-/// Attempt to use an unknown staff. This is done in emergencies.
-pub fn borg_use_unknown(st: &mut BorgState) -> bool {
-    let n = last_unaware(st, |t| t == TV_STAFF);
-
-    /* None available */
-    if n < 0 {
-        return false;
-    }
-
-    /* Log the message */
-    note_desc(st, b"# Using unknown Staff ", n as usize, b".");
-
-    /* The session object log: what the Borg uses. */
-    crate::borg_object_log::log_use(st, "use", &st.items.items[n as usize]);
-
-    /* Perform the action */
-    borg_keypress(st, key(b'u'));
-    borg_keypress(st, letter(n));
-
-    /* In case it is ID staff, ESCAPE out. */
-    borg_keypress(st, ESCAPE);
-
-    st.borg.trying_unknown = true;
 
     /* Success */
     true

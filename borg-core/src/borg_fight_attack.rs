@@ -3003,96 +3003,6 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     b_n
 }
 
-/// Simulate/Apply the optimal result of using an un-id'd wand or rod
-/// (`borg_attack_aux_wand_bolt_unknown`, `borg_attack_aux_rod_bolt_unknown`):
-/// the same code with the tval, the "tried" test (rods), the command key
-/// and the `trying_unknown` flag (wands).
-fn borg_attack_aux_bolt_unknown(st: &mut BorgState, dam: i32, typ: i32, rod: bool) -> i32 {
-    let mut b_i: i32 = -1;
-
-    /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
-        return 0;
-    }
-
-    /* Paranoia */
-    if paranoia(st, param(Param::attack_staff_paranoia_chance)) {
-        return 0;
-    }
-
-    let tval = if rod { TV_ROD } else { TV_WAND };
-
-    /* Look for an un-id'd wand */
-    for i in 0..i32::from(engine::z_info().pack_size) {
-        let item = &st.items.items[i as usize];
-        if item.iqty == 0 {
-            continue;
-        }
-
-        if u32::from(item.tval) != tval {
-            continue;
-        }
-
-        /* known */
-        if item.aware {
-            continue;
-        }
-
-        /* No charges */
-        if item.pval == 0 {
-            continue;
-        }
-
-        /* Not an attacker */
-        if rod && contains(&desc(item), b"tried") {
-            continue;
-        }
-
-        /* Select this wand */
-        b_i = i;
-    }
-
-    /* None available */
-    if b_i < 0 {
-        return 0;
-    }
-
-    /* Choose optimal location */
-    let b_n = borg_launch_bolt(st, 0, dam, typ, max_range(), 0);
-
-    /* Simulation */
-    if simulating(st) {
-        return b_n;
-    }
-
-    /* Log the message */
-    let mut m = if rod { b"# Aiming unknown rod '".to_vec() } else { b"# Aiming unknown wand '".to_vec() };
-    m.extend_from_slice(&desc(&st.items.items[b_i as usize]));
-    m.extend_from_slice(b".'");
-    borg_note_bytes(st, &m);
-
-    /* Perform the action */
-    borg_keypress(st, key(if rod { b'z' } else { b'a' }));
-    borg_keypress(st, keycode_t::from(engine::all_letters_nohjkl(b_i)));
-
-    /* Use target */
-    borg_keypress(st, key(b'5'));
-
-    if !rod {
-        st.borg.trying_unknown = true;
-    }
-
-    /* Set our shooting flag */
-    st.fight_attack.successful_target = -1;
-
-    if rod {
-        st.borg.trying_unknown = true;
-    }
-
-    /* Value */
-    b_n
-}
-
 /// Simulate/Apply the optimal result of ACTIVATING an attack artifact
 /// (`borg_attack_aux_activation`).
 fn borg_attack_aux_activation(
@@ -4106,11 +4016,9 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
         /* Rod -- fire ball */
         BF_ROD_FIRE_BALL => rod(st, iv.sv_rod_fire_ball, 2, 144, BORG_ATTACK_FIRE),
 
-        /* Rod -- unid'd rod */
-        BF_ROD_UNKNOWN => borg_attack_aux_bolt_unknown(st, param(Param::attack_unknown_rod_damage), BORG_ATTACK_MISSILE as i32, true),
-
-        /* Wand -- unid'd wand */
-        BF_WAND_UNKNOWN => borg_attack_aux_bolt_unknown(st, param(Param::attack_unknown_wand_damage), BORG_ATTACK_MISSILE as i32, false),
+        /* Rod / wand -- unid'd: borg-reborn-rs (#470) never uses an
+         * unidentified device; town sells one to learn it. */
+        BF_ROD_UNKNOWN | BF_WAND_UNKNOWN => 0,
 
         /* Wand -- magic missile */
         BF_WAND_MAGIC_MISSILE => wand(st, iv.sv_wand_magic_missile, 0, 3 * (4 + 1) / 2, BORG_ATTACK_MISSILE),
