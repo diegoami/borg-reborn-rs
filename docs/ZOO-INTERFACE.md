@@ -171,11 +171,46 @@ The owner-run sweep handoff is [CORE-SWEEP.md](CORE-SWEEP.md). It pins the
 validated specimen and supplies fresh-suite/candidate-selection/confirmation
 rules; it does not launch a population experiment.
 
+## Class values (#520)
+
+Any `borg_param_<name>` can have a value for one class:
+
+- in `borg.txt` as `borg_param_<name>@<class> = <value>` (class names of
+  `class.txt`: warrior, mage, druid, priest, necromancer, paladin, rogue,
+  ranger, blackguard);
+- in the environment as `BORG_PARAM_<NAME>__<CLASS>`, upper case as every
+  `BORG_PARAM_*` name (shells cannot export a name with `@`);
+- through the pre-#520 per-class names of the folded families
+  (`attack_preference_<class>_<family>_permille`,
+  `attack_arrow_point_blank_divisor_<class>`,
+  `town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
+  kept as aliases. At their old "use the general value" sentinel (0, 0, -1)
+  they set no class value.
+
+Precedence: compiled default < `borg.txt` < a `borg.txt` class line <
+`BORG_PARAM_<NAME>` < `BORG_PARAM_<NAME>__<CLASS>`. The character's class picks
+its values (also after a reincarnation into another class).
+
+The repository keeps each class's settings in `harness/borg_<class>.txt`;
+`scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a
+generated "CLASS FILES" block (under the legacy names where one exists, so a
+profile naming that key still rewrites its line). A run, and the adapter, read
+only `borg.txt`, so nothing else needs copying and `borg_txt_sha256` covers
+the class values.
+
+`params-core.json` keeps one row per parameter (now 2,116) and adds
+`class_values: {"<class>": {"value", "origin"}}` where a class has its own.
+The core trace's `parameter_name` for an attack candidate is the family's
+parameter (`attack_preference_spell_permille`); the row's `class_name` gives the
+class.
+
 ## Class/family preference profiles (#403)
 
-The native core accepts the 54 `borg_param_attack_preference_<class>_<family>_permille`
-integer settings through the existing serializer. All default to 1000; bounds are
-500..2000. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md) for family semantics,
+Since #520 there is one preference per family, `borg_param_attack_preference_<family>_permille`,
+and a class's own value is a class value of it. The 54 per-class names
+`borg_param_attack_preference_<class>_<family>_permille` are still accepted, as
+aliases of the class values, so existing profiles work unchanged. All default to
+1000; bounds are 500..2000. See [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md) for family semantics,
 floor rounding, precedence and provenance. For example a profile can set
 `borg_param_attack_preference_mage_spell_permille` to 1600. The registry default is 1000; since #479
 the shipped `harness/borg.txt` sets 16 of them (the borg-zoo#170 speed30 bundle). Core trace output is now core-trace@2, retaining

@@ -51,7 +51,9 @@ class AttackPreferencesTest(unittest.TestCase):
                                  (root / 'off' / name).read_bytes(), name)
             self.assertFalse((root / 'off/trace-core.jsonl').exists())
             settings = {p['name']: p for p in json.loads((root / 'on/params-core.json').read_text())}
-            preference = settings['attack_preference_mage_spell_permille']
+            # #520: one parameter per family; the Mage value is a class value
+            # (the legacy per-class environment name is its alias).
+            preference = settings['attack_preference_spell_permille']['class_values']['mage']
             self.assertEqual((preference['value'], preference['origin']), (500, 'environment'))
             seen = changed = rejected = 0
             with (root / 'on/trace-core.jsonl').open() as trace:

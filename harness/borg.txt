@@ -452,6 +452,10 @@ borg_reborn_stopscared = off
 # registry keeps the neutral defaults (docs/CALIBRATION.md); these lines set
 # the bundle for every game that reads this file. BORG_PARAM_<NAME> in the
 # environment overrides a line; a zoo profile rewrites it in place.
+# Since #520 a class's own values (the bundle's 16 attack preferences, the
+# point-blank divisor, the healing scale and reserve) live in
+# harness/borg_<class>.txt, folded into the CLASS FILES block below.
+# BORG_PARAM_<NAME>__<CLASS> overrides one class's value.
 borg_param_caution_heal_when_outmatched = 1
 borg_param_attack_speed_fight_danger_tenths = 30
 # #483 (owner, 2026-11-17): while heading back to town, a descent that is not
@@ -467,31 +471,13 @@ borg_param_caution_rising_descend_danger_tenths = 10
 # the larger of a fixed amount and a percent of the purse (owner: 0).
 borg_param_town_gold_reserve = 0
 borg_param_town_gold_reserve_percent = 0
-borg_param_attack_preference_warrior_melee_permille = 1800
-borg_param_attack_preference_warrior_projectile_permille = 1200
-borg_param_attack_preference_warrior_thrown_permille = 1200
-borg_param_attack_preference_mage_spell_permille = 2000
-borg_param_attack_preference_mage_device_permille = 1200
-borg_param_attack_preference_druid_spell_permille = 1700
-borg_param_attack_preference_priest_spell_permille = 1700
-borg_param_attack_preference_necromancer_spell_permille = 1800
-borg_param_attack_preference_necromancer_device_permille = 1200
-borg_param_attack_preference_paladin_melee_permille = 1800
-borg_param_attack_preference_paladin_spell_permille = 1200
-borg_param_attack_preference_rogue_projectile_permille = 1300
-borg_param_attack_preference_rogue_thrown_permille = 1600
-borg_param_attack_preference_ranger_projectile_permille = 2000
-borg_param_attack_preference_blackguard_melee_permille = 1600
-borg_param_attack_preference_blackguard_spell_permille = 1400
 # #485 (owner, 2026-11-17): the damage of a shot or throw at an adjacent
 # non-unique is divided by this (launcher ammo and thrown objects, not Magic
-# Missile). The default is borg-rs's 5; a class overrides it with
-# borg_param_attack_arrow_point_blank_divisor_<class> (0 = the default).
+# Missile). The default is borg-rs's 5; a class overrides it in its class
+# file (harness/borg_<class>.txt, #520).
 # Owner: 2 for Rangers (a bow competes with melee point blank), 3 for
 # Rogues (the second missile class), the default 5 for the rest.
 borg_param_attack_arrow_point_blank_divisor = 5
-borg_param_attack_arrow_point_blank_divisor_ranger = 2
-borg_param_attack_arrow_point_blank_divisor_rogue = 3
 # #491 (owner, 2026-11-17: "we can never have enough healing"): the live town
 # planner (borg_town_plan = 1) values healing linearly, at the healing
 # curve's first-HP value, up to this percent of max HP (100 = once max HP
@@ -528,29 +514,10 @@ borg_param_town_heal_reserve_real_hp = 1
 # #487 (owner, 2026-11-17): 400% of max HP of healing was too much (a CL8
 # Warrior bought 26 Cure Light Wounds in one visit and kept 712 gold): the
 # general reserve is 100 and the general curve scale 125 (owner). A class
-# overrides the curve scale with borg_param_town_heal_curve_scale_percent_<class> (0 = the general one) and
-# the reserve with borg_param_town_heal_reserve_hp_percent_<class> (-1 = the
-# general one): fragile casters value healing more, warriors less (owner:
+# overrides both in its class file (harness/borg_<class>.txt, #520):
+# fragile casters value healing more, warriors less (owner:
 # scale 150 for mages, 50 for warriors; reserve 300 for mages, 100 for
 # warriors; the rest in between).
-borg_param_town_heal_curve_scale_percent_warrior = 50
-borg_param_town_heal_curve_scale_percent_paladin = 75
-borg_param_town_heal_curve_scale_percent_blackguard = 75
-borg_param_town_heal_curve_scale_percent_rogue = 100
-borg_param_town_heal_curve_scale_percent_ranger = 100
-borg_param_town_heal_curve_scale_percent_priest = 125
-borg_param_town_heal_curve_scale_percent_druid = 125
-borg_param_town_heal_curve_scale_percent_necromancer = 150
-borg_param_town_heal_curve_scale_percent_mage = 150
-borg_param_town_heal_reserve_hp_percent_warrior = 100
-borg_param_town_heal_reserve_hp_percent_paladin = 150
-borg_param_town_heal_reserve_hp_percent_blackguard = 150
-borg_param_town_heal_reserve_hp_percent_rogue = 200
-borg_param_town_heal_reserve_hp_percent_ranger = 200
-borg_param_town_heal_reserve_hp_percent_priest = 250
-borg_param_town_heal_reserve_hp_percent_druid = 250
-borg_param_town_heal_reserve_hp_percent_necromancer = 300
-borg_param_town_heal_reserve_hp_percent_mage = 300
 # #487 (owner): a Shovel only clears rubble (the engine swaps it in; a
 # weapon digs rubble too), yet four of five first visits spent 66 of 118-292
 # gold on one. Below this much gold the planner values no digging (0 = off).
@@ -587,3 +554,54 @@ borg_param_caution_breeder_hunt_max_count = 4
 # core's built-in calculations were always used. borg-core/borg.txt keeps
 # borg-rs's copy. Setting TRUE here now warns "no formulas found" and keeps
 # dynamic calculations off.
+
+# ---- BEGIN CLASS FILES (generated by scripts/borg-class-files.py from harness/borg_<class>.txt; do not edit) ----
+# The settings of harness/borg_<class>.txt that override the common ones
+# for one class (#520). Edit the class files and run
+# scripts/borg-class-files.py fold.
+# warrior (harness/borg_warrior.txt)
+borg_param_attack_preference_warrior_melee_permille = 1800
+borg_param_attack_preference_warrior_projectile_permille = 1200
+borg_param_attack_preference_warrior_thrown_permille = 1200
+borg_param_town_heal_curve_scale_percent_warrior = 50
+borg_param_town_heal_reserve_hp_percent_warrior = 100
+# mage (harness/borg_mage.txt)
+borg_param_attack_preference_mage_spell_permille = 2000
+borg_param_attack_preference_mage_device_permille = 1200
+borg_param_town_heal_curve_scale_percent_mage = 150
+borg_param_town_heal_reserve_hp_percent_mage = 300
+# druid (harness/borg_druid.txt)
+borg_param_attack_preference_druid_spell_permille = 1700
+borg_param_town_heal_curve_scale_percent_druid = 125
+borg_param_town_heal_reserve_hp_percent_druid = 250
+# priest (harness/borg_priest.txt)
+borg_param_attack_preference_priest_spell_permille = 1700
+borg_param_town_heal_curve_scale_percent_priest = 125
+borg_param_town_heal_reserve_hp_percent_priest = 250
+# necromancer (harness/borg_necromancer.txt)
+borg_param_attack_preference_necromancer_spell_permille = 1800
+borg_param_attack_preference_necromancer_device_permille = 1200
+borg_param_town_heal_curve_scale_percent_necromancer = 150
+borg_param_town_heal_reserve_hp_percent_necromancer = 300
+# paladin (harness/borg_paladin.txt)
+borg_param_attack_preference_paladin_melee_permille = 1800
+borg_param_attack_preference_paladin_spell_permille = 1200
+borg_param_town_heal_curve_scale_percent_paladin = 75
+borg_param_town_heal_reserve_hp_percent_paladin = 150
+# rogue (harness/borg_rogue.txt)
+borg_param_attack_preference_rogue_projectile_permille = 1300
+borg_param_attack_preference_rogue_thrown_permille = 1600
+borg_param_attack_arrow_point_blank_divisor_rogue = 3
+borg_param_town_heal_curve_scale_percent_rogue = 100
+borg_param_town_heal_reserve_hp_percent_rogue = 200
+# ranger (harness/borg_ranger.txt)
+borg_param_attack_preference_ranger_projectile_permille = 2000
+borg_param_attack_arrow_point_blank_divisor_ranger = 2
+borg_param_town_heal_curve_scale_percent_ranger = 100
+borg_param_town_heal_reserve_hp_percent_ranger = 200
+# blackguard (harness/borg_blackguard.txt)
+borg_param_attack_preference_blackguard_melee_permille = 1600
+borg_param_attack_preference_blackguard_spell_permille = 1400
+borg_param_town_heal_curve_scale_percent_blackguard = 75
+borg_param_town_heal_reserve_hp_percent_blackguard = 150
+# ---- END CLASS FILES ----
