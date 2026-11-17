@@ -6,6 +6,10 @@ Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
 
+
+Each section below is a snapshot: its "registry now holds N" is the count
+right after that change, so older sections show older counts.
+
 ## Class/family attack preference extension (#403)
 
 The historical P1–P3 counts above describe the original extraction. #403 adds
@@ -14,6 +18,44 @@ family inventory, configuration and trace@2 contract is in
 [ATTACK-PREFERENCES.md](ATTACK-PREFERENCES.md). `utility_permille` means a
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
+
+## Gold reserve (#493)
+
+The registry now holds **1797** parameters (1795 after #485's follow-up; two added). Before,
+the live town planner kept gold only through the soft price
+`borg_town_w_gold` (`borg_town_solve::solve_cash`: spending `c` costs
+`w x c / (gold left + 1)`), which made the last coins nearly unspendable. The
+reserve is now explicit: `Budget::of` (`borg_town_budget.rs`,
+`build_with_reserve`) takes the larger of the two below from the gold left
+after the urgent needs, which may still use the whole purse. The reserve
+bounds the purse at arrival: the proceeds of the visit's sales join the gold
+at the purchases stage (`borg_town_record`, `limits.gold + freed.gold`) and
+are spendable on top of it. The shipped `harness/borg.txt` sets both to 0 and
+`borg_town_w_gold = 0` (owner, 2026-11-17), and the compiled
+`borg_town_w_gold` default is 0 too (`borg_init.rs`, a declared deviation from
+borg-rs's C table, `OUR_DEFAULTS`; borg-rs's pristine `borg-core/borg.txt`
+keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
+`docs/TOWN-UTILITY.md` "Retaining gold"), vendored with borg-rs #87.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:263` |
+| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:263` |
+
+## Point-blank divisor by class (#485)
+
+The registry now holds **1795** parameters (1786 after #491; nine added). The
+damage of a shot or throw at an adjacent non-unique is divided by
+`attack_arrow_point_blank_divisor` (compiled 5, borg-rs's); since #485 a class
+overrides it with `attack_arrow_point_blank_divisor_<class>` (0, the default,
+means the general divisor), resolved by `borg_fight_attack::point_blank_divisor`.
+The shipped `harness/borg.txt` sets the general divisor to 5, the Ranger's to
+2 and the Rogue's to 3 (owner, 2026-11-17: 2 suits Rangers but not Rogues, the
+second missile class); #495 had shipped 2 for every class.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_arrow_point_blank_divisor_<class>` (warrior, mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard) | 0 (= `attack_arrow_point_blank_divisor`) | divisor override (0 = the general divisor) | 0–1000 | `borg_fight_attack.rs:3009` |
 
 ## Healing reserve (#491)
 
@@ -38,14 +80,24 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   first and never sells below it; past it only the curve remains.
 - **Curve scale:** multiplies `w` and `d` together. The first HP keeps its
   value; the curve reaches half its maximum at `scale x d` instead of `d`.
+  Its maximum, the most healing can ever be worth, is multiplied by
+  `scale / 100` too, so the scale changes the total value as well as the
+  shape (#496 review F4).
 - **Healing speed:** the HP one HEAL_HP use supplies, to the curve and the
   reserve alike, are weighted by how fast it brings the character back to
   max HP. A use that heals at least `town_heal_speed_percent` of max HP
   counts in full; a smaller one counts `heal x heal / (percent x max HP)`.
   At 66, Cure Light Wounds (20 HP) counts in full up to 30 max HP. The
-  planner's best healing per gold moves from CLW (30 HP) to CSW (60–100 HP)
-  to Healing (200+ HP); with HP alone it is CLW at every level. Cure
-  Critical Wounds (60 HP for 200 gold) never wins on healing alone.
+  planner's best healing per gold, by the character's max HP: CLW up to
+  about 30 max HP, Cure Serious Wounds (40 HP) at 60–100 max HP, Healing
+  (300 HP) from about 200 max HP. With HP alone it is CLW at every max HP.
+  Cure Critical Wounds (60 HP for 200 gold) never wins on healing alone
+  (`engine/angband/lib/gamedata/object.txt`: CLW 20 HP / 20 gold, CSW
+  40 / 70, CCW 60 / 200, Healing 300+m35 / 800).
+  The factor also shrinks each potion's HP on the curve while the curve's
+  demand stays in max-HP units: each weak potion is worth less on the curve,
+  and more of them are needed to reach half its value. So speed changes the
+  curve's shape as well as the ranking of potions (#496 review F4).
 - The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
   measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
   to before.
