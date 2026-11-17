@@ -11,7 +11,7 @@ easy escape (stairs within the breeder stand's steps, or an escape item) or
 when no scary monster awake and as fast as the character exists; otherwise
 the scare's leave and flee are withdrawn and the Borg fights (the cornered
 mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
-45 stands; the setting at 0 plays main's keys. Stacked on #527.
+45 stands; the setting at 0 plays main's keys.
 - **Left:** the town (unchanged), and the escape itself: the owner notes
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
