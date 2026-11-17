@@ -497,6 +497,22 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_reserve_hp_percent = 400
 borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_speed_percent = 66
+# #503 (owner, 2026-11-17, #488 slice A): with breeders on the level and no
+# easy escape (no free staircase within the steps, no Phase Door, teleport,
+# Teleport Level, escape or recall), the Borg stands and fights them at once,
+# and while only breeders are near it does not retreat: breeders no longer
+# make it flee. Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt
+# breeders while at most the hunt count are known. 0 = off (the control).
+# The C Borg's hard-coded "scary" monsters (by character level) and the
+# low-level door scares mark the level scary until a new level: the Borg
+# leaves and flees, will not hunt, and once fled from a small kobold seen
+# once for 54,000 game turns. 0 = off (owner, 2026-11-17); the resist-based
+# scares (nether, blindness, chaos, confusion, poison) stay. 1 = C's list.
+borg_param_caution_scary_named_monsters = 0
+borg_param_caution_breeder_fight = 1
+borg_param_caution_breeder_easy_escape_steps = 5
+borg_param_caution_breeder_stand_radius = 5
+borg_param_caution_breeder_hunt_max_count = 4
 
 
 [BEGIN FORMULA SECTION]

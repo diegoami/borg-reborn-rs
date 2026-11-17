@@ -2,6 +2,42 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
+
+#488 (stand-and-fight) is split into #503 (A, breeders), #504 (B, the
+cornered mode) and #505 (C, the scary-monster list). Owner: removing the
+hard-coded scary monsters belongs in this PR.
+
+- `caution_breeder_fight` (compiled 0, shipped 1): with breeders on the
+  level and no easy escape (a free staircase within
+  `caution_breeder_easy_escape_steps` 5, Phase Door, teleport, escape or
+  Word of Recall) the three breeder flees are skipped, and while every
+  known monster within `caution_breeder_stand_radius` 5 is a breeder the
+  Borg neither retreats nor backs away (the Rogue's death ping-ponged
+  between two grids). Warriors, Paladins, Rogues and Blackguards hunt
+  breeders below CL10 while at most `caution_breeder_hunt_max_count` 4 are
+  known.
+- `caution_scary_named_monsters` (compiled 1, shipped 0): the C Borg's
+  named scary monsters by character level and the low-level door scares.
+  The scary flag latches until a new level: a small kobold seen once kept
+  the Blackguard 888896726 fleeing for 54,000 game turns. Resist-based
+  scares stay. With it off, breeders scare through nothing; their handling
+  is the breeder flee / stand above.
+- Replays (run 44054277431's death starts): on 193d9076 all five die; with
+  the shipped settings all five reach the turn cap (CL5–8, DL1–3). On main
+  all six starts reach the cap without the change; with it, five do, at
+  CL6–8 instead of CL4–6, and the Druid 934061548 dies to a kobold shaman on
+  DL2 (CL6), on a later path.
+- Review (#510): Teleport Level counts as an easy escape; the no-retreat
+  rule needs no non-breeder within the danger horizon (20 grids), not only
+  within the radius; the generic low-HP and bleeding/poison flees are left to
+  #504; with the named list on, a breeder scare latched before the stand
+  engaged stays until a new level (a known limit of that intermediate arm). Too few games to claim anything: a zoo arm is
+  needed (named list off / breeder fight off / both).
+- `engine/tests/test_errands_plan.py` growth test: seed 1003 (the plan
+  feature's test; the shipped default stays no plan).
+- Left: #504 (cornered mode), #505 (now: whether the resist-based scares
+  and the latch need changes; to be decided with the owner).
 ## 2026-11-17: CI cancels superseded pull-request runs (#499)
 
 Owner: are we doing too much on CI? The repositories are public (no paid

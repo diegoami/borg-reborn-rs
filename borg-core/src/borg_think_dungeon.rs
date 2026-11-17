@@ -490,8 +490,10 @@ fn borg_check_breeders(st: &mut BorgState) -> bool {
     }
 
     /* Caution from breeders */
+    // borg-reborn-rs (#503): not without an easy escape: stand and fight.
     if (i32::from(st.borg.mon.breeders) >= (st.borg.tr(BI_CLEVEL) + 2).min(5))
         && (st.borg.tr(BI_RECALL) <= 0 || st.borg.tr(BI_CLEVEL) < 35)
+        && !crate::borg_caution::breeder_stand(st)
     {
         /* Ignore monsters from caution */
         if !st.borg.goal.ignoring && borg_timer(st, st.borg.time.level) >= 2500 {
