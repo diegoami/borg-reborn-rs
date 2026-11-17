@@ -42,11 +42,8 @@ use crate::borg_headers::borg_trait_h::{
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
 use crate::borg_item_use::{
-    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_eat_unknown,
-    borg_satisfy_hunger_before_food,
-    borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_quaff_unknown,
-    borg_read_scroll, borg_read_unknown, borg_use_staff, borg_use_staff_fail, borg_use_unknown,
-    borg_zap_rod,
+    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_satisfy_hunger_before_food,
+    borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
 use crate::borg_item_val::borg_lookup_kind;
 use crate::borg_item_wear::borg_backup_swap;
@@ -791,11 +788,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             return true;
         }
 
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
+        // borg-reborn-rs (#470): no unknown potion, mushroom or staff in
+        // this emergency; an unidentified item is never used.
     }
 
     // Cure wounds when bleeding, also critical check
@@ -861,11 +855,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         }
         set_cursp(st, sv_mana);
 
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
+        // borg-reborn-rs (#470): no unknown potion, mushroom or staff in
+        // this emergency; an unidentified item is never used.
     }
 
     // nothing to do
@@ -2136,18 +2127,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // if I am gonna die next round, and I have no way to escape
-    // use the unknown stuff (if I am low level).
-    if pos_danger > st.borg.tr(BI_CURHP) * p(Param::caution_unknown_danger_multiplier)
-        && st.borg.tr(BI_CLEVEL) < p(Param::caution_unknown_max_level)
-        && st.borg.tr(BI_MAXSP) == 0
-        && (borg_use_unknown(st)
-            || borg_read_unknown(st)
-            || borg_quaff_unknown(st)
-            || borg_eat_unknown(st))
-    {
-        return true;
-    }
+    // borg-reborn-rs (#470): C's last resort here used the unknown stuff
+    // (device, scroll, potion, mushroom) when the next round looked fatal.
+    // An unidentified item is never used: an unknown scroll can be Deep
+    // Descent, five levels below the deepest so far (borg-zoo#147).
 
     // borg-reborn-rs (#457): outmatched, nothing above took a turn. Heal
     // rather than fall through to borg_attack.

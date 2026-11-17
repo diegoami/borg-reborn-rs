@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: never use unidentified items; Deep Descent discarded (#470)
+
+Owner request after borg-zoo#147: 35 of 900 small-tier games ended below
+their max-depth cap, mostly through Deep Descent (an unknown scroll read in
+an emergency, or the known scroll as an escape).
+
+- **Never use an unidentified item.** The three emergency gambles in
+  `borg_caution` (poison/cure section, after the wound patch, and C's last
+  resort) no longer quaff, eat, use or read unknown items;
+  `borg_quaff_unknown`, `borg_read_unknown`, `borg_eat_unknown` and
+  `borg_use_unknown` are deleted. Combat no longer aims an unknown wand or
+  zaps an unknown rod (`BF_WAND_UNKNOWN`/`BF_ROD_UNKNOWN` score 0). Five
+  parameters went with the code (registry 1785 to 1780; docs/CALIBRATION.md).
+  `borg_test_stuff` (Identify Rune) is unchanged.
+- **Sell one of each unknown kind.** Under the town plan an unaware wand,
+  staff or rod is now sold like an unknown potion, scroll or mushroom
+  (`borg_town_shadow::kit_of`). The live planner sells one copy per action;
+  the sale reveals the kind (also under `birth_no_selling`), and the rest of
+  the stack is then valued as the known kind. The historical chooser
+  (`borg_town_plan = 0`) already sold unknown potions and scrolls one at a
+  time; `borg_good_sell` now does the same for unaware mushrooms and devices.
+- **Deep Descent.** Never read or activated (`borg_teleport_off_level`).
+  Once its flavour is known, `borg_junk::borg_discard_deep_descent` ignores
+  the kind: the engine drops every carried copy and hides floor copies, so
+  none is picked up. The planner values it 0 (`WORTHLESS`), so no shop buys
+  it. Its scoring value stays 0.
+- Always on: no switch.
+- Not changed: Teleport Level and fleeing down stairs, the other known ways
+  below a cap (#470 excludes them).
 ## 2026-11-17: Speed before a very dangerous fight (#469)
 
 - Owner: when the danger is very high and the Borg fights rather than

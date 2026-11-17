@@ -15,6 +15,16 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## No unknown items (#470)
+
+The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
+`caution_unknown_danger_multiplier` and `caution_unknown_max_level` set C's
+last-resort rule in `borg_caution` that used unknown devices, scrolls,
+potions and mushrooms; `attack_unknown_rod_damage` and
+`attack_unknown_wand_damage` priced aiming an unknown rod or wand at a
+monster, and `attack_staff_paranoia_chance` was that attack's paranoia roll. Both uses are gone (an unidentified item is never used), so the
+parameters are too.
+
 ## Outmatched healing flag (#457)
 
 The registry now holds **1785** parameters (1783 before; two added). Two
@@ -321,8 +331,6 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:1941` |
 | `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:1943` |
 | `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1970` |
-| `caution_unknown_danger_multiplier` | 4 | multiplier | 0–20 | `borg_caution.rs:1978` |
-| `caution_unknown_max_level` | 20 | level | 1–51 | `borg_caution.rs:1979` |
 | `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:2019` |
 | `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:2044` |
 | `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:2052` |
@@ -1025,7 +1033,6 @@ recommended values.
 | `attack_unknown_wand_danger_horizon` | 1 | turns | 2949 |
 | `attack_unknown_wand_danger_tenths` | 7 | tenths | 2949 |
 | `attack_unknown_wand_emergency_value` | 999 | score | 2951 |
-| `attack_staff_paranoia_chance` | 5 | percent | 2994 |
 | `attack_activation_paranoia_chance` | 2 | percent | 3088 |
 | `attack_ring_paranoia_chance` | 2 | percent | 3132 |
 | `attack_dragon_paranoia_chance` | 2 | percent | 3171 |
@@ -1048,15 +1055,13 @@ recommended values.
 | `attack_trance_reserve_penalty` | 10 | multiplier | 3705 |
 | `attack_holy_word_min_loss` | 300 | hp | 3917 |
 | `attack_curse_min_hp` | 120 | hp | 4030 |
-| `attack_unknown_rod_damage` | 75 | damage | 4085 |
-| `attack_unknown_wand_damage` | 75 | damage | 4088 |
 | `attack_holy_staff_hp_divisor` | 2 | divisor | 4164 |
 | `attack_holy_staff_hurt_value` | 500 | score | 4164 |
 | `attack_holy_staff_value` | 120 | score | 4164 |
 | `attack_holy_activation_hp_divisor` | 2 | divisor | 4283 |
 | `attack_holy_activation_hurt_value` | 500 | score | 4283 |
 | `attack_holy_activation_value` | 120 | score | 4283 |
-| `attack_max_target_age` | 2 | turns | 4444 |
+| `attack_max_target_age` | 2 | turns | 4376 |
 | `attack_town_mage_max_level` | 10 | level | 4457 |
 | `attack_fast_monster_distance` | 2 | grids | 4466 |
 | `attack_scary_breeder_max_depth` | 5 | depth | 4476 |
@@ -2204,4 +2209,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4641` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4549` |

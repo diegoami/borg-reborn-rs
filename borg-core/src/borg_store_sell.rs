@@ -857,11 +857,16 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     let mut multiple = false;
     let tval = u32::from(item.tval);
 
+    // borg-reborn-rs (#470): an unaware potion, scroll, mushroom or device
+    // is never used, so selling one is how its kind is learnt.
+    let unaware_kind = !item.aware
+        && matches!(tval, TV_POTION | TV_SCROLL | TV_MUSHROOM | TV_ROD | TV_WAND | TV_STAFF);
+
     // Never attempt to sell worthless items, shops won't buy them
     if item.value <= 0 {
         // except unidentified potions and scrolls.  Since these can't be IDd,
         // best to sell them
-        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) {
+        if !((tval == TV_POTION || tval == TV_SCROLL) && !item.ident) && !unaware_kind {
             return false;
         }
     }
@@ -869,6 +874,12 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // make sure we are in the shop that buys this
     if !borg_store_buys(&item, who) {
         return false;
+    }
+
+    // One of an unaware kind (borg_min_item_quantity sells unaware items
+    // one at a time); the rest is judged as the known kind afterwards.
+    if unaware_kind {
+        return true;
     }
 
     // Never sell valuable non-id'd items

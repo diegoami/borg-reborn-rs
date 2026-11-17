@@ -628,11 +628,8 @@ fn borg_teleport_off_level(st: &mut BorgState) -> bool {
             return true;
         }
 
-        if borg_activate_item(st, st.act.deep_descent)
-            || borg_read_scroll(st, st.item_val.sv_scroll_deep_descent)
-        {
-            return true;
-        }
+        // borg-reborn-rs (#470): never Deep Descent. It lands five levels
+        // below the deepest level so far, past any plan cap (borg-zoo#147).
     }
 
     false
@@ -714,7 +711,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         && st.borg.tr(BI_CDEPTH) == 1
         && borg_teleport_off_level(st)
     {
-        borg_note(st, "# Attempting to leave via teleport level/deep descent");
+        borg_note(st, "# Attempting to leave via teleport level");
         return true;
     }
 

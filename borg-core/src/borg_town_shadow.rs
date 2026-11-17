@@ -192,6 +192,11 @@ fn has_inventory_power(it: &borg_item) -> bool {
         && crate::borg_inventory::borg_wield_slot(it) >= 0
 }
 
+fn unaware_device(it: &borg_item) -> bool {
+    use crate::headers::list_tvals_h::{TV_ROD, TV_STAFF, TV_WAND};
+    !it.aware && matches!(u32::from(it.tval), TV_ROD | TV_STAFF | TV_WAND)
+}
+
 fn unknown_durable(it: &borg_item) -> bool {
     use crate::headers::list_tvals_h::{TV_FLASK, TV_FOOD, TV_MUSHROOM, TV_POTION, TV_SCROLL};
     (!it.ident || !it.aware || it.needs_ident)
@@ -221,7 +226,9 @@ fn kit_of(st: &mut BorgState) -> Vec<KitItem> {
     let fact = |st: &BorgState, it: &borg_item, place: Place, slot: usize, power: i64| -> KitItem {
         let (mut need, mut reduction) = ware_role(st, it);
         let consumable = crate::borg_item_id::flavour_sale_type(it.tval);
-        let unknown_flavour = !it.aware && consumable;
+        // borg-reborn-rs (#470): an unaware device is never used either; one
+        // is sold, like an unknown potion, scroll or mushroom, to learn it.
+        let unknown_flavour = !it.aware && (consumable || unaware_device(it));
         if unknown_flavour { need = -1; reduction = 0; }
         let sell_shop = (0..7i8).find(|&who| apparently_saleable(it)
             && !crate::borg_town_live::sale_rejected(st, i16::from(who), it)
@@ -675,5 +682,31 @@ mod knowledge_only_purchase_tests {
             assert_eq!(copies_bought(configured(), utility), 1, "the configured weight would buy it (utility {utility})");
             assert_eq!(copies_bought(effective_params(configured()), utility), 0, "utility {utility}");
         }
+    }
+}
+
+#[cfg(test)]
+mod unaware_device_tests {
+    use super::*;
+    use crate::headers::list_tvals_h::{TV_RING, TV_ROD, TV_SCROLL, TV_STAFF, TV_WAND};
+
+    fn item(tval: u32, aware: bool) -> borg_item {
+        let mut it = crate::borg_item::blank_item();
+        it.tval = tval as u8;
+        it.iqty = 1;
+        it.aware = aware;
+        it
+    }
+
+    /// #470: an unaware wand, staff or rod is a kind to learn by selling
+    /// one; aware devices, rings and scrolls are not devices to learn.
+    #[test]
+    fn only_unaware_devices_are_sold_to_learn() {
+        for tval in [TV_WAND, TV_STAFF, TV_ROD] {
+            assert!(unaware_device(&item(tval, false)), "unaware tval {tval}");
+            assert!(!unaware_device(&item(tval, true)), "aware tval {tval}");
+        }
+        assert!(!unaware_device(&item(TV_RING, false)));
+        assert!(!unaware_device(&item(TV_SCROLL, false)));
     }
 }

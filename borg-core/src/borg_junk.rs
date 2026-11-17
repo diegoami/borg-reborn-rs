@@ -238,6 +238,35 @@ pub fn borg_destroy_floor(st: &mut BorgState) -> bool {
     true
 }
 
+/// borg-reborn-rs (#470): a Scroll of Deep Descent is never kept. It lands
+/// five levels below the deepest level so far (`effect_handler_DEEP_DESCENT`
+/// targets `max_depth` + 5), past any plan cap. Once its flavour is known,
+/// ignore the kind ('k', the scroll, "All Scrolls of Deep Descent"): the
+/// engine then drops every carried copy (`ignore_drop`) and hides those on
+/// the floor, so none is picked up again. It takes no game time.
+pub fn borg_discard_deep_descent(st: &mut BorgState) -> bool {
+    let sv = st.item_val.sv_scroll_deep_descent;
+    if sv < 0 {
+        return false;
+    }
+    let Some(i) = (0..pack_size()).find(|&i| {
+        let item = &st.items.items[i as usize];
+        item.iqty > 0 && item.aware && u32::from(item.tval) == TV_SCROLL && i32::from(item.sval) == sv
+    }) else {
+        return false;
+    };
+    // Already ignored: the engine drops it on its own.
+    if engine::kind(st.items.items[i as usize].kind as usize).ignore != 0 {
+        return false;
+    }
+    note_desc(st, "# Discarding ", i, " (Deep Descent is never read)");
+    borg_keypress(st, key(b'k'));
+    slot_keys(st, i);
+    // The ignore menu: a) This item only, b) All Scrolls of Deep Descent.
+    borg_keypress(st, key(b'b'));
+    true
+}
+
 /// Attempt to consume an item as a method of destroying it
 /// (`borg_consume`).
 fn borg_consume(st: &mut BorgState, i: i32) -> bool {
