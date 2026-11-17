@@ -14,7 +14,7 @@ not solve concurrent branches of the same track.
 
 Only when CI reports `UNRECORDED` (owner, 2026-11-16, #464). The reconcile
 step matches a death on its start (implementation, seed, race, class,
-flags, borg.txt, save) and its key stream, not on the build: a control game
+save) and its key stream, not on the build, borg.txt or flags: a control game
 that plays the same keys under a new source hash is `KNOWN`, and needs
 neither a package nor a pin move. Another key stream, or the same keys from
 another start, is a new death and is retained as below. `reconcile-deaths.py
