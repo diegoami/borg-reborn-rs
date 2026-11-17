@@ -87,6 +87,12 @@ version numbers, and version our own additions:
   reusing a borg-rs field name with another meaning.
 - **v3** (the handover's state record): v2's shape without the decision, one
   per distinct town state, deduplicated from `"turn"` onward.
+- **`limits`** in a plan record is what that visit could spend, computed per
+  configuration: since #493 its gold (`limits[0]`) is the purse less the
+  urgent purchases **and the gold reserve** (`town_gold_reserve`,
+  `town_gold_reserve_percent`). Records made with different reserves are
+  comparable field by field only with the reserve in mind; the replay reads
+  the recorded value, so it is unaffected.
 - **v4** (the plan record): v2 plus the plan's fields (`mode` shadow/live,
   `paction`, the runner-up, `wares`), when the plan exists.
 - **objects.log**: `NNNN turn T depth D <kind> ...` lines for buy (with cost),

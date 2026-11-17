@@ -1157,7 +1157,11 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
     // Be aware and concerned of busted doors
     if prefix(msg, b"You hear a door burst open!") {
         // on level 1 and 2 be concerned.  Could be Grip or Fang
-        if st.borg.tr(BI_CDEPTH) <= 3 && st.borg.tr(BI_CLEVEL) <= 5 {
+        // borg-reborn-rs (#503): only with caution_scary_named_monsters
+        if st.borg.tr(BI_CDEPTH) <= 3
+            && st.borg.tr(BI_CLEVEL) <= 5
+            && crate::borg_caution::scary_named_monsters()
+        {
             st.borg.mon.scary = true;
         }
     }

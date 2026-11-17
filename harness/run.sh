@@ -28,6 +28,11 @@
 #            needs BORG_CORE=borg-rs). It is copied to OUTDIR/user and
 #            selected in the run's borg.txt with a line naming its SHA-256,
 #            so the plan's bytes are part of borg_txt_sha256 (#352).
+#     BORG_TXT_SET="name=value;..." rewrites existing keys of the run's
+#            borg.txt (part of borg_txt_sha256): harness/borg.txt's copy, or
+#            borg-core/borg.txt's with BORG_CORE_OVERRIDES=off, which has no
+#            borg_param_* or borg_reborn_* keys. Names and values are limited
+#            to [A-Za-z0-9_.-]; anything else fails the run.
 #     BORG_PROFILE=FILE the reborn Borg's profile (rust arm only; default
 #            harness/profiles/reborn-default.txt). Its SHA-256 goes into
 #            config.txt; the Borg writes OUTDIR/params.json (the parameter
@@ -198,6 +203,21 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
+# #479: harness/borg.txt defaults to the borg-rs core; a harness run with
+# no BORG_CORE keeps testing the reborn core its references were made with.
+[ -n "${BORG_CORE+set}" ] || sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"
+# BORG_TXT_SET="name=value;name=value": rewrite existing keys of the run's
+# borg.txt (a test pinning a setting whose shipped default moved, #479).
+if [ -n "${BORG_TXT_SET:-}" ]; then
+    IFS=';' read -ra SETS <<< "$BORG_TXT_SET"
+    for kv in "${SETS[@]}"; do
+        name="${kv%%=*}"; value="${kv#*=}"
+        [[ "$kv" == *=* && "$name" =~ ^[A-Za-z0-9_]+$ && "$value" =~ ^[A-Za-z0-9_.-]+$ ]] || {
+            echo "run.sh: BORG_TXT_SET: invalid entry '$kv' (name=value, [A-Za-z0-9_.-])" >&2; exit 2; }
+        grep -q "^$name = " "$OUT/user/borg.txt" || { echo "run.sh: BORG_TXT_SET: no key $name in borg.txt" >&2; exit 2; }
+        sed -i "s/^$name = .*/$name = $value/" "$OUT/user/borg.txt"
+    done
+fi
 # A plan selected in the borg.txt itself would escape the identity below.
 if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
     echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2

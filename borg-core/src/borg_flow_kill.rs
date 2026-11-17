@@ -1767,6 +1767,8 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     let mut borg_in_hall = false;
     let mut hall_walls = 0;
     let mut skip_monster = false;
+    // borg-reborn-rs (#503): a melee class hunting the few breeders here
+    let breeder_hunt = crate::borg_caution::breeder_hunt(st);
 
     // Efficiency -- Nothing to kill
     if st.kills.cnt == 0 {
@@ -1884,7 +1886,8 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         }
 
         // Avoid multiplying monsters when low level
-        if st.borg.tr(BI_CLEVEL) < 10 && rf_has(kill.r_idx, RF_MULTIPLY) {
+        // borg-reborn-rs (#503): unless a melee class hunts them
+        if st.borg.tr(BI_CLEVEL) < 10 && rf_has(kill.r_idx, RF_MULTIPLY) && !breeder_hunt {
             continue;
         }
 
@@ -2588,6 +2591,10 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
 /// we know about. Special consideration is given to Morgoth.
 pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let breeder_count = i32::from(st.borg.mon.breeders);
+    // borg-reborn-rs (#503): breeders make no level scary when the Borg
+    // stands and fights them (no easy escape).
+    let breeder_stand = crate::borg_caution::breeder_stand(st);
+    let named = crate::borg_caution::scary_named_monsters();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2620,68 +2627,74 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // Done before the distance checks: we are looking for scary guys on
         // the level, not scary guys near me.
 
-        // run from certain scaries
-        if clevel <= 5 && ridx == id.squint_eyed_rogue {
-            scary = true;
-        }
+        // borg-reborn-rs (#503): the named monsters below (by character
+        // level) make the level scary only with caution_scary_named_monsters;
+        // the resist-based ones after them always do.
+        if named {
+            // run from certain scaries
+            if clevel <= 5 && ridx == id.squint_eyed_rogue {
+                scary = true;
+            }
 
-        // Mage and priest are extra fearful
-        if clevel <= 6
-            && (b.tr(BI_CLASS) == CLASS_MAGE || b.tr(BI_CLASS) == CLASS_PRIEST)
-            && ridx == id.squint_eyed_rogue
-        {
-            scary = true;
-        }
+            // Mage and priest are extra fearful
+            if clevel <= 6
+                && (b.tr(BI_CLASS) == CLASS_MAGE || b.tr(BI_CLASS) == CLASS_PRIEST)
+                && ridx == id.squint_eyed_rogue
+            {
+                scary = true;
+            }
 
-        // run from certain dungeon scaries
-        if clevel <= 5 && (ridx == id.grip || ridx == id.fang || ridx == id.small_kobold) {
-            scary = true;
-        }
+            // run from certain dungeon scaries
+            if clevel <= 5 && (ridx == id.grip || ridx == id.fang || ridx == id.small_kobold) {
+                scary = true;
+            }
 
-        // run from certain scaries
-        if clevel <= 8
-            && (ridx == id.soldier
-                || ridx == id.cutpurse
-                || ridx == id.acolyte
-                || ridx == id.apprentice
-                || ridx == id.kobold
-                || ridx == id.shrieker_mushroom_patch
-                || ridx == id.maggot
-                || ridx == id.filthy_street_urchin
-                || ridx == id.battle_scarred_veteran
-                || ridx == id.mean_looking_mercenary)
-        {
-            scary = true;
-        }
+            // run from certain scaries
+            if clevel <= 8
+                && (ridx == id.soldier
+                    || ridx == id.cutpurse
+                    || ridx == id.acolyte
+                    || ridx == id.apprentice
+                    || ridx == id.kobold
+                    || ridx == id.shrieker_mushroom_patch
+                    || ridx == id.maggot
+                    || ridx == id.filthy_street_urchin
+                    || ridx == id.battle_scarred_veteran
+                    || ridx == id.mean_looking_mercenary)
+            {
+                scary = true;
+            }
 
-        if clevel <= 15
-            && (ridx == id.bullroarer
-                || ((ridx == id.giant_white_mouse
-                    || ridx == id.white_worm_mass
-                    || ridx == id.green_worm_mass)
-                    && breeder_count >= clevel))
-        {
-            scary = true;
-        }
+            if clevel <= 15
+                && (ridx == id.bullroarer
+                    || ((ridx == id.giant_white_mouse
+                        || ridx == id.white_worm_mass
+                        || ridx == id.green_worm_mass)
+                        && breeder_count >= clevel
+                        && !breeder_stand))
+            {
+                scary = true;
+            }
 
-        if clevel <= 20
-            && (ridx == id.cave_spider
-                || ridx == id.red_naga
-                || ridx == id.giant_red_frog
-                || ridx == id.radiation_eye
-                || (ridx == id.yellow_worm_mass && breeder_count >= clevel))
-        {
-            scary = true;
-        }
+            if clevel <= 20
+                && (ridx == id.cave_spider
+                    || ridx == id.red_naga
+                    || ridx == id.giant_red_frog
+                    || ridx == id.radiation_eye
+                    || (ridx == id.yellow_worm_mass && breeder_count >= clevel && !breeder_stand))
+            {
+                scary = true;
+            }
 
-        if clevel < 45
-            && (ridx == id.gravity_hound
-                || ridx == id.inertia_hound
-                || prefix_i(engine::race_base_name(usize::from(r_idx)), b"ancient dragon")
-                || ridx == id.beorn
-                || ridx == id.dread)
-        {
-            scary = true;
+            if clevel < 45
+                && (ridx == id.gravity_hound
+                    || ridx == id.inertia_hound
+                    || prefix_i(engine::race_base_name(usize::from(r_idx)), b"ancient dragon")
+                    || ridx == id.beorn
+                    || ridx == id.dread)
+            {
+                scary = true;
+            }
         }
 
         // Nether breath is bad
@@ -2712,6 +2725,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
 
         // Poison is really Bad (note the RPois not SRPois)
         if b.tr(BI_RPOIS) == 0 && ridx == id.drolem {
+            scary = true;
+        }
+
+        // borg-reborn-rs (#505): any monster that can take
+        // caution_scary_damage_percent of max HP in one turn.
+        if !scary && crate::borg_caution::scary_by_damage(st, i) {
             scary = true;
         }
 

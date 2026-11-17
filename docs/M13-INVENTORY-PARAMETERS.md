@@ -136,3 +136,21 @@ new names before promotion; the loader rejects them as unknown settings.
 Cemetery #61 remains immutable historical evidence for its recorded e6446749
 source/binary and original names; use that original source for exact reruns.
 The corrected names describe the same branches and values, not a policy change.
+
+
+## Synchronization before promotion (#522)
+
+The original extraction and reviewed `7078bb1d` retain the historical counts
+above. Synchronizing accepted main `a8ac685a` preserves all of its 1829 registry
+entries in their exact main order, with identical defaults, bounds and descriptions;
+the 362 P4 entries follow them, for 2191 total. P4 names/defaults/bounds and
+relative order stay unchanged, including the three corrected curing names and
+mapping-rod maximum 255. Absolute IDs from the earlier unpromoted P4 head are
+historical; use the new pinned registry after synchronization.
+
+The `borg_store_buy.rs` auto-merge retains main's #507 purchase-quantity UI fix
+and P4's neutral lookups. All other runtime files equal one parent exactly.
+The JSON source references and Cemetery #61 remain the original extraction
+snapshot; their earlier comparisons do not claim validation of the newly
+accepted behavior fixes on main. Re-review the synchronized source before
+promotion; no new gameplay policy is introduced by conflict resolution.

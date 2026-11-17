@@ -8,7 +8,9 @@ controls; floor rounding and existing emergency eligibility are retained.
 
 ## Contract
 
-`attack_preference_<class>_<family>_permille` has default 1000, inclusive bounds
+`attack_preference_<class>_<family>_permille` has registry default 1000 (since #479
+the shipped `harness/borg.txt` sets 16 of them, the borg-zoo#170 speed30 bundle;
+docs/HANDOVER.md), inclusive bounds
 500..2000, unit `utility_permille`. Nine classes × six families = 54 parameters.
 Classes are engine class.txt order at 42cd156ac: Warrior, Mage, Druid, Priest,
 Necromancer, Paladin, Rogue, Ranger, Blackguard. Wait is fixed at neutral; unknown
@@ -51,7 +53,8 @@ integer; it never reevaluates availability or invents a rejection reason.
 
 ## Configuration
 
-These are experimental examples, not recommended defaults:
+These are experimental examples (the shipped defaults since #479 are in
+`harness/borg.txt`):
 
 ```ini
 borg_param_attack_preference_mage_spell_permille = 1600
