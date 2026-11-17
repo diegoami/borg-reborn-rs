@@ -26,12 +26,18 @@ onto another down staircase and never reached town (borg-zoo#170 run
 44054277431, Ranger 1739161339: DL2/DL3 to the end). The gate is
 `borg_caution::rising_holds_descent`, applied in `choose_stairs`, in the flee
 block's flow to a down staircase and in `borg_leave_level`'s "no up stairs
-found, going down".
+found, going down", and since the review every descent `borg_leave_level` decides
+(its "Go Down" block: bored, "spent too long on level", the trip policy).
+
+The budget counts Borg ticks, the same clock as "Spent too long on level";
+how many game turns a tick spans depends on what the Borg does (a move, a
+rest, a search). It is per level, not per return: it bounds the search for an
+up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_turns` | 300 | Borg ticks (about 10 game turns each) | 0–100000 | `borg_caution.rs:2162` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2162` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## No unknown items (#470)
 

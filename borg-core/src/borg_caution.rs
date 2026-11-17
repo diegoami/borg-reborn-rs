@@ -2158,9 +2158,10 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
 /// climbs back onto another down staircase and repeats: it never reaches
 /// town. Held, it explores for an up staircase instead. Real danger here
 /// (`caution_rising_descend_danger_tenths` of avoidance) or more than
-/// `caution_rising_explore_turns` on the level lets the descent through.
+/// `caution_rising_explore_ticks` Borg ticks on the level (one per think,
+/// `borg_think`; restarted on each new level) lets the descent through.
 pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
-    let budget = p(Param::caution_rising_explore_turns);
+    let budget = p(Param::caution_rising_explore_ticks);
     st.borg.goal.rising
         && st.borg.tr(BI_CDEPTH) > 0
         && budget > 0

@@ -1067,7 +1067,13 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
     }
 
     /* Go Down */
-    if g > 0 {
+    // borg-reborn-rs (#483, review): every descent decided here (bored,
+    // "spent too long on level", the trip policy, the fallback above) is
+    // held while rising, unless in real danger.
+    let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if g > 0 && crate::borg_caution::rising_holds_descent(st, here) {
+        borg_note(st, "# Holding a descent while rising to town");
+    } else if g > 0 {
         /* Take next stairs */
         st.borg.stair_more = true;
 
