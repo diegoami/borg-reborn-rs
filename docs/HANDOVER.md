@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: borg.txt's formula section in its own file (#519)
+
+Owner: "Borg.txt is becoming a monster." The formula section (Power, Depth
+Requirement, Restock Requirement: 790 of its 1,362 lines) moves to
+`harness/borg_formulas.txt`; `borg.txt` (now 576 lines) names it with
+`borg_formulas = borg_formulas.txt`. `borg_init::load_formulas_file` reads it
+only when `borg_uses_dynamic_calcs = TRUE` and borg.txt has no section of its
+own; `harness/run.sh` copies it next to the run's borg.txt.
+
+- The shipped `borg_uses_dynamic_calcs = FALSE`: the section was read but never
+  processed, and `borg_power` uses its built-in calculations, so moving it
+  cannot change play. Checked: the 18 classes-18 starts play identical keys to
+  main `a8ac685a`.
+- With dynamic calculations TRUE, the file loads the same formulas as the
+  inline section (432 Power, 5 Depth) and the Rogue 1502695781 plays the same
+  keys either way.
+- Found, not fixed: with TRUE, a formula line fails to parse and
+  `borg_load_formulas` switches dynamic calculations off again
+  (`borg_formulas.rs` ~1455), inline or from the file. The formulas never take
+  effect in this repository today.
+- The zoo's adapter copies only `borg.txt` (docs/ZOO-INTERFACE.md); that is
+  enough while dynamic calculations stay off.
+
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
 - `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
