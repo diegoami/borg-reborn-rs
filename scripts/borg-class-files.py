@@ -76,7 +76,11 @@ def block():
 def folded(text):
     """borg.txt with the block replaced, or inserted before the formula section
     (else at the end) when absent."""
-    if BEGIN in text:
+    begins, ends = text.count(BEGIN), text.count(END)
+    if (begins, ends) not in ((0, 0), (1, 1)) or (begins and text.index(END) < text.index(BEGIN)):
+        raise SystemExit('harness/borg.txt: the CLASS FILES block is damaged (its BEGIN/END markers); '
+                         'delete what is left of it and run scripts/borg-class-files.py fold')
+    if begins:
         a = text.index(BEGIN)
         b = text.index(END, a) + len(END) + 1
         return text[:a] + block() + text[b:]

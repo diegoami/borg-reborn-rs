@@ -30,6 +30,12 @@ class ClassFilesTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 bcf.class_lines('mage', bad)
 
+    def test_a_damaged_block_is_refused(self):
+        for text in [bcf.BEGIN + '\nx\n', 'x\n' + bcf.END + '\n', bcf.END + '\n' + bcf.BEGIN + '\n',
+                     bcf.BEGIN + '\n' + bcf.END + '\n' + bcf.BEGIN + '\n' + bcf.END + '\n']:
+            with self.assertRaises(SystemExit):
+                bcf.folded(text)
+
     def test_every_class_has_a_file(self):
         for cls in bcf.CLASSES:
             self.assertTrue((ROOT / f'harness/borg_{cls}.txt').exists(), cls)

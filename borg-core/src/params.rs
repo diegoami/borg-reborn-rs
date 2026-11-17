@@ -2263,8 +2263,12 @@ fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>),
 
 /// The environment's name for a setting: `BORG_PARAM_<NAME>` with the class
 /// as `__<CLASS>` (shells cannot export a name with `@`); `@` and the
-/// legacy aliases are accepted too.
+/// legacy aliases are accepted too. Upper case only, as before #520: a
+/// lower-case name is an unknown parameter, not a silent match.
 fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if name != name.to_ascii_uppercase() {
+        return Err(format!("unknown parameter {name}"));
+    }
     let lower = name.to_ascii_lowercase();
     if let Some((base, class)) = lower.rsplit_once("__") {
         if CLASSES.contains(&class) {
@@ -2505,6 +2509,11 @@ mod tests {
             let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
             assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
         }
+        // #534 review: environment names stay upper case.
+        let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
+        assert!(parse("", &lower, SPECS).is_err());
+        let lower_class = BTreeMap::from([("TOWN_HEAL_RESERVE_HP_PERCENT__mage".into(), "100".into())]);
+        assert!(parse("", &lower_class, SPECS).is_err());
         // Without the alias, the sentinel is out of range.
         assert!(parse("borg_param_town_heal_reserve_hp_percent@mage = -1", &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_arrow_point_blank_divisor_ranger = 2", &BTreeMap::new(), SPECS).is_ok());

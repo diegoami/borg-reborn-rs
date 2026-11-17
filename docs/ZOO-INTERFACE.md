@@ -168,8 +168,8 @@ Any `borg_param_<name>` can have a value for one class:
 - in `borg.txt` as `borg_param_<name>@<class> = <value>` (class names of
   `class.txt`: warrior, mage, druid, priest, necromancer, paladin, rogue,
   ranger, blackguard);
-- in the environment as `BORG_PARAM_<NAME>__<CLASS>` (shells cannot export a
-  name with `@`);
+- in the environment as `BORG_PARAM_<NAME>__<CLASS>`, upper case as every
+  `BORG_PARAM_*` name (shells cannot export a name with `@`);
 - through the pre-#520 per-class names of the folded families
   (`attack_preference_<class>_<family>_permille`,
   `attack_arrow_point_blank_divisor_<class>`,
