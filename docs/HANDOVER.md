@@ -5607,3 +5607,22 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Required checks/CI and owner review precede task integration under RULES 1a.
   #477 stays unmerged; update its pin after approved track-p integration and
   re-review the synchronized result before promotion.
+
+
+## 2026-11-18: P5 kickoff after accepted P4 (#536)
+
+- Owner requested the next milestone after #477 promoted P4 at 435b07e7.
+  Define bounded P5: #374 exact validation commands/suite identities, then
+  #375's preservation/compatibility design for future reference receipts.
+- Start task/T536-p5-kickoff from track-p ac293ef7; accepted main 6101ca01
+  is a descendant, so synchronization is a clean fast-forward in this task.
+- Run scripts/refresh-sources.py --update borg-rs. The reference pin moves
+  4ed3263b→8c5d000a; read/copy the fork-correction and adoption-status deltas.
+  They document donor history (including proposed direct-buy behavior), not
+  permission to change this engine or core. Vendored core remains 8c5d000a;
+  other engine/tool/evidence pins and the death index are unchanged.
+- P4's completion replaces its stale in-progress status in PLAN. Historical
+  validation/packages stay attributed to their original source and hashes.
+- Kickoff PR must pass checks and owner review under RULES 1a before merging
+  into track-p. Then #374 goes first; #375 follows. No reviewer launched,
+  next gameplay policy, population measurement or external evidence rewrite.

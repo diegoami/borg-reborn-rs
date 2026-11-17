@@ -9,7 +9,8 @@ is wrong.*
 ## Milestones, and when we stop for a review
 
 **Track P exception (owner, 2026-11-15):** task PRs target `track-p` and
-are merged there by the session after green CI. Every milestone stops for
+are merged there after green CI and the owner says its review is done
+(RULES 1a). Every milestone stops for
 an owner-chosen review on a pinned `track-p` → `main` PR. Review fixes
 also land in `track-p`; only owner acceptance plus green CI permits
 promotion to `main`, merged by the owner or expressly delegated. Do not
@@ -217,7 +218,11 @@ contract separately after promotion and #364/#366 coordination.
 
 ## Owner-selected P4: M13 inventory calibration (#433, 2026-11-17)
 
-**In progress.** The owner selected #433 after #449 merged. Main is
+**Done: owner accepted #477 and promoted P4 to main at `435b07e7`.**
+The final reviewed integration head was `ac293ef7`, synchronized to accepted
+main `a8ac685a` through #524. The original scope follows as history.
+
+The owner selected #433 after #449 merged. Main was
 synchronized into track-p through #474/#475 at 9cf60aae. Scope: audit the
 M13 gaps in power, wear, buy/sell, store timing and home valuation; name
 policy thresholds/weights with neutral defaults and bounded overrides.
@@ -232,3 +237,41 @@ checks pass, every new natural death retained in Cemetery. Integrate task
 PR #433 only into track-p, then stop for a pinned owner-selected P4
 track-p→main review. R4 consumes the exact accepted pin in its own carry
 (#434); green task CI alone does not authorize promotion or an R port.
+
+
+## P5: validation reproducibility and evidence receipts (2026-11-18)
+
+**In progress: kickoff #536 awaits owner review before integration.** The
+owner requested the next Track P milestone after P4 promotion. No P5 was
+previously defined; this milestone closes a bounded pair of deferred review
+follow-ups rather than extending gameplay policy.
+
+1. **Kickoff/source refresh (#536):** synchronize accepted main `6101ca01`
+   into a task branch from track-p `ac293ef7`. Refresh only the borg-rs
+   reference/copies from `4ed3263b` to `8c5d000a`; the vendored core already
+   uses the latter source. Engine, runtime/tool/fixture pins and historical
+   evidence remain unchanged. Other source updates stay outside this scope.
+2. **Exact validation receipts (#374):** record copyable donor/receiving
+   build/run commands, environment selections and the explicit-menu suite's
+   SHA-256. Identify verified historical reconstruction separately from
+   contemporaneous capture. Keep the original log hashes and strict failure
+   semantics; use portable checkout roles instead of local workspace paths.
+3. **Reference-receipt design (#375), after #374:** assess whether future
+   repeated evidence can reference an existing verified qualified package
+   while retaining each attempt's source/build/config/log provenance. Deliver
+   a concrete ownership/compatibility decision; implementation is conditional
+   on that contract. An unsuitable reference-only format is a valid documented
+   conclusion. Preserve all existing packages and published identities.
+
+Exit: exact commands/suite identity are independently checkable, receipt
+status/coverage limits are explicit, and the reference-receipt decision
+preserves provenance, integrity checks and attempt-versus-life accounting.
+Source keeps tooling/contracts and short evidence links; Cemetery owns new
+canonical gameplay reports. No new gameplay measurement, population run,
+default change, bulk migration or evidence deletion is part of this milestone.
+Importer #397, recorder #409 and plan follow-ups #425 remain separate backlog.
+
+Task PRs target track-p and require green CI plus the owner's review disposition
+before integration (RULES 1a). Stop after the P5 tasks for a pinned track-p→main
+milestone review. Owner acceptance and explicit merge delegation still gate
+promotion; this kickoff does not choose or launch a reviewer.
