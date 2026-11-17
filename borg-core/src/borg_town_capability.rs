@@ -234,6 +234,12 @@ fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
     if full > heal * 100 { heal * heal * UNIT * 100 / full } else { heal * UNIT }
 }
 
+/// borg-reborn-rs (#487): what a healing use puts in the reserve: the real
+/// HP with `town_heal_reserve_real_hp`, else the speed-weighted HP.
+fn reserve_heal(speed_weighted: i64, real: i64, real_hp: bool) -> i64 {
+    if real_hp { real } else { speed_weighted }
+}
+
 fn reduction_cap(subtype: u32) -> Option<usize> {
     match subtype { TMD_POISONED => Some(POISON), TMD_CONFUSED => Some(CONFUSION),
         TMD_BLIND => Some(BLIND), TMD_AFRAID => Some(FEAR), TMD_CUT => Some(CUT),
@@ -264,7 +270,12 @@ fn rod_uses(quantity: i64, timeout: i64, cooldown: i64, horizon: i64) -> i64 {
 fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64, confusion: bool) -> Vec<(usize, i64)> {
     use crate::headers::list_projections_h::*;
     let mut out = BTreeMap::<usize, i64>::new();
+    // borg-reborn-rs (#487): the real HP restored, for the healing reserve.
+    let mut real_heal = 0;
     for &(effect, subtype, amount) in effects {
+        if u32::from(effect) == EF_HEAL_HP {
+            real_heal += heal_units(amount, hp, 0);
+        }
         let n = amount.max(1) * UNIT;
         let service = service_turns.max(1) * UNIT;
         let role = match u32::from(effect) {
@@ -325,7 +336,14 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
         if let Some((cap, units)) = role { *out.entry(cap).or_default() += units; }
     }
     // borg-reborn-rs (#491): the same HP also fill the healing reserve.
-    if let Some(&heal) = out.get(&HEAL) { out.insert(HEAL_RESERVE, heal); }
+    // borg-reborn-rs (#487, owner): with `town_heal_reserve_real_hp` the
+    // reserve counts the real HP restored; healing speed weights only the
+    // healing curve (which kind is worth more), not how many potions fill
+    // the reserve. Speed-weighted, a Cure Light Wounds counted about 5.6 HP
+    // at 108 max HP and the reserve took dozens of them.
+    if let Some(&heal) = out.get(&HEAL) {
+        out.insert(HEAL_RESERVE, reserve_heal(heal, real_heal, param(Param::town_heal_reserve_real_hp) != 0));
+    }
     out.into_iter().collect()
 }
 
@@ -1097,6 +1115,12 @@ mod tests {
         assert_eq!(heal_units(1200, 300, 66), 300 * UNIT);
         assert_eq!(heal_units(20, 300, 0), 20 * UNIT);
         assert_eq!(heal_units(20, 10, 66), 10 * UNIT);
+        // #487: at 108 max HP a Cure Light Wounds is ~5.6 HP on the curve,
+        // but fills the reserve with its 20 real HP.
+        let cure_light = heal_units(20, 108, 66);
+        assert!(cure_light < 6 * UNIT);
+        assert_eq!(reserve_heal(cure_light, heal_units(20, 108, 0), true), 20 * UNIT);
+        assert_eq!(reserve_heal(cure_light, heal_units(20, 108, 0), false), cure_light);
     }
 }
 

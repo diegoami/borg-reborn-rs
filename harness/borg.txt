@@ -485,8 +485,8 @@ borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 # #491 (owner, 2026-11-17: "we can never have enough healing"): the live town
 # planner (borg_town_plan = 1) values healing linearly, at the healing
-# curve's first-HP value, up to this percent of max HP (200 = twice max
-# HP of healing; 0 = off), on top of the curve; healing is bought first and
+# curve's first-HP value, up to this percent of max HP (100 = once max HP
+# of healing; 0 = off), on top of the curve; healing is bought first and
 # never sold below it. The curve past it is stretched by the scale percent
 # (100 = the historical curve). Healing speed (owner: "budget healing speed
 # as well"): a potion that heals at least the speed percent of max HP in one
@@ -494,13 +494,17 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 # so Cure Light Wounds loses value above 30 max HP and a deep character
 # prefers Cure Serious Wounds, then Healing (0 = HP alone). Compiled
 # defaults: 0, 100 and 0.
-borg_param_town_heal_reserve_hp_percent = 200
-borg_param_town_heal_curve_scale_percent = 100
+borg_param_town_heal_reserve_hp_percent = 100
+borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_heal_speed_percent = 66
+# #487 (owner): the reserve counts the real HP restored; healing speed only
+# weights the healing curve (prefer Cure Serious over Cure Light when both
+# sell), not how many potions fill the reserve. 0 = speed-weighted (#491).
+borg_param_town_heal_reserve_real_hp = 1
 # #487 (owner, 2026-11-17): 400% of max HP of healing was too much (a CL8
 # Warrior bought 26 Cure Light Wounds in one visit and kept 712 gold): the
-# general reserve is 200. A class overrides the curve scale with
-# borg_param_town_heal_curve_scale_percent_<class> (0 = the general one) and
+# general reserve is 100 and the general curve scale 125 (owner). A class
+# overrides the curve scale with borg_param_town_heal_curve_scale_percent_<class> (0 = the general one) and
 # the reserve with borg_param_town_heal_reserve_hp_percent_<class> (-1 = the
 # general one): fragile casters value healing more, warriors less (owner:
 # scale 150 for mages, 50 for warriors; reserve 300 for mages, 100 for

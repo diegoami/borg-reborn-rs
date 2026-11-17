@@ -14,7 +14,11 @@
 - Owner: per-class overrides of the healing curve scale and reserve
   (`town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
   shipped from 50 (Warrior) to 150 (Mage) and from 100 to 300; the general
-  reserve 200; `town_digger_min_gold` 500. Weapon saving is not done.
+  reserve 100 and curve scale 125; `town_digger_min_gold` 500. Weapon saving
+  is not done.
+- Owner: healing speed (#491) was not meant to set how many potions fill the
+  reserve. `town_heal_reserve_real_hp` (shipped 1) counts real HP in the
+  reserve; speed weights only the healing curve.
 - On main, 9 classes x 2 seeds: with the old values (reserve 400, scale 100,
   no class values, digger 0) the 18 games play identical keys to main; with
   the shipped ones 4 deaths become 2 (two lived, two others died: a Druid to
