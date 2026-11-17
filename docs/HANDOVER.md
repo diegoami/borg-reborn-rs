@@ -2,6 +2,237 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: never use unidentified items; Deep Descent discarded (#470)
+
+Owner request after borg-zoo#147: 35 of 900 small-tier games ended below
+their max-depth cap, mostly through Deep Descent (an unknown scroll read in
+an emergency, or the known scroll as an escape).
+
+- **Never use an unidentified item.** The three emergency gambles in
+  `borg_caution` (poison/cure section, after the wound patch, and C's last
+  resort) no longer quaff, eat, use or read unknown items;
+  `borg_quaff_unknown`, `borg_read_unknown`, `borg_eat_unknown` and
+  `borg_use_unknown` are deleted. Combat no longer aims an unknown wand or
+  zaps an unknown rod (`BF_WAND_UNKNOWN`/`BF_ROD_UNKNOWN` score 0). Five
+  parameters went with the code (registry 1785 to 1780; docs/CALIBRATION.md).
+  `borg_test_stuff` (Identify Rune) is unchanged.
+- **Sell one of each unknown kind.** Under the town plan an unaware wand,
+  staff or rod is now sold like an unknown potion, scroll or mushroom
+  (`borg_town_shadow::kit_of`). The live planner sells one copy per action;
+  the sale reveals the kind (also under `birth_no_selling`), and the rest of
+  the stack is then valued as the known kind. The historical chooser
+  (`borg_town_plan = 0`) already sold unknown potions and scrolls one at a
+  time; `borg_good_sell` now does the same for unaware mushrooms and devices.
+- **Deep Descent.** Never read or activated (`borg_teleport_off_level`).
+  Once its flavour is known, `borg_junk::borg_discard_deep_descent` ignores
+  the kind: the engine drops every carried copy and hides floor copies, so
+  none is picked up. The planner values it 0 (`WORTHLESS`), so no shop buys
+  it. Its scoring value stays 0.
+- Always on: no switch.
+- Not changed: Teleport Level and fleeing down stairs, the other known ways
+  below a cap (#470 excludes them).
+## 2026-11-17: Speed before a very dangerous fight (#469)
+
+- Owner: when the danger is very high and the Borg fights rather than
+  retreats, drink a Potion of Speed. `attack_speed_fight_danger_tenths`
+  (0 = off, default): once `borg_attack` has chosen a positive best attack
+  other than waiting, a Borg in the dungeon, not fast, with a Speed potion,
+  drinks it first when the danger from monsters that can move (no
+  NEVER_MOVE) is above avoidance x value / 10. This is now the only change
+  that drinks Speed: #465 merged as hoarding only (its last-resort quaff was
+  dropped). The core's own `borg_defend_aux_speed` is unchanged.
+- Found: counting every monster, grey mushroom patches (NEVER_MOVE, spore
+  danger 204) set it off at any threshold. Moving monsters only, it fires 2
+  (setting 20) and 1 (setting 50) times in 180 starts of the ambitious arm
+  (4,2), at thieves (scruffy looking hobbit, cutpurse), with no rescue or
+  new death; off is byte-identical (12 of 12). Descriptive (RULES 14).
+- Left: those games end near DL2, where Speed rarely matters; the setting
+  needs a zoo arm with deeper play. Thieves' danger is inflated by theft.
+
+## 2026-11-17: a game's start leaves out borg.txt and flags (#464 follow-up)
+
+- Owner-approved: a new borg.txt setting changed the file's hash and made
+  every control game UNRECORDED on #465, with identical key streams. The
+  start is now implementation, seed, race, class and save; a setting that
+  changes play changes the key stream, which must still match.
+- `death-tools-pin.txt` moves to `09225018` (borg-cemetery
+  `tools/relaxed-death-match-on-1afd942`; the same commit is borg-cemetery
+  #54 against main). RULES 12 and docs/DOSSIER-IMPORT.md say so.
+## 2026-11-17: hoard Potions of Speed (#452)
+
+Owner: keep Speed potions as an emergency reserve. The last-resort quaff that
+was tried with them is removed (owner, 2026-11-17).
+- **Hoard** (`borg_town_capability.rs`): a speed effect (`TIMED_INC:FAST`,
+  20+2d10 turns, +10 speed, object.txt Potion of Speed) supplies one use,
+  and the SPEED curve is escape-like (`borg_town_w_escape` x exposure, like
+  PHASE/TELEPORT). It was `amount` turns against the whole trip, about 1% of
+  the demand, under a slot's burden: sold or stored. Unknown flavours are
+  still sold (unchanged, #445's question). Unit test: a level-25 character
+  on a 100000-turn trip keeps a stack of four; the old curve does not.
+  The core drinks Speed only as before (`borg_defend_aux_speed`).
+- **Measured** (180 classes-1800 starts, ambitious arm (4,2), 100k turns;
+  descriptive, RULES 14): Speed sold known 57 -> 0, stored 13 -> 0, quaffed
+  43 -> 58, deaths 33 -> 29, deaths with Speed still in the pack about 4 -> 1.
+  The planner now also buys Speed (9 potions in 180 games, one never used).
+- **Tried and removed:** `borg_speed_last_resort` (drink Speed when no heal,
+  phase or teleport is left). As first written it never fired (any Cure
+  Light Wounds potion counted as a heal). Given precedence over CLW it fired
+  in 6 of 180 games, every time at full HP against a harmless monster whose
+  danger estimate exceeded the Borg's HP (floating eye 460, giant white
+  mouse 200, scruffy looking hobbit 63): it wasted the potion and rescued
+  nothing. The danger estimate alone does not mark a real emergency.
+
+## 2026-11-16: no knowledge-only purchases (#460)
+
+- Owner: "turn off the buying of useless unknown objects". Cause of the
+  Scroll of Monster Confusion buys (replay 1285833235, game turn 13116,
+  shop 4 slot 10): not a supply path. `WORTHLESS` does blank
+  `capability::supplies()` for it, and the plan entry's value was exactly
+  25000 = `borg_town_w_knowledge` x UNIT, the first-copy "learn" bonus of a
+  ware whose `serves` carries the knowledge bit. #444 zeroed that weight
+  under `borg_trip_policy = 1` in `Weights::of`, but `step()` rebuilds its
+  settings from the 24 recorded town params (`state_of`), and the trip policy
+  is not one of them, so the zero never reached the plan: the weight was 25 in
+  every arm.
+- Change: `borg_town_shadow::effective_params` zeroes `borg_town_w_knowledge`
+  in the params the step runs on and records (`configured_params` still holds
+  the configured value). Off in every arm, trip 0 and 1; no schema, parameter
+  or default change; replays of new records reproduce the plan. The IDENTIFY
+  capability (Identify Rune scrolls, only with unknown runes carried) still
+  reads the configured weight. `borg_town_shadow.rs` is declared HOOKED.
+  Tests: the effective params, and a knowledge-only ware is planned at the
+  configured weight and not at the effective one (both planner modes).
+- Local replays (before = main build, after = this change; flavour-unknown
+  buys counted from messages.log): 1285833235 trip 1: 6 buys 155 gold with
+  one Monster Confusion, died of poison at clvl 4 -> 4 buys 58 gold (CLW,
+  Phase Door, Boldness, Detect Invisible), alive at the 100000-turn cap;
+  2109297965 trip 0: 7 buys 210 gold, killed by a wild dog at clvl 1 -> 5
+  buys 185 gold, alive at the cap (clvl 7); sanity cell 501/0/0 ambitious:
+  main keys a80b9ac6... -> ba6181b9..., 9 buys 238 gold, died to Lagduf at
+  clvl 8 -> 4 buys 113 gold, alive at the cap. Play diverges from the first
+  changed purchase, so end states are not evidence of improvement (RULES 14).
+  What remains unknown-flavour was bought for its kind: CLW, Phase Door,
+  Magic Mapping, Cure Serious Wounds, Boldness, Detect Invisible.
+- A `WORTHLESS` check cannot cover a flavour-unknown ware by itself: in a
+  store the ware carries its real kind, and `supplies()` prices it by that
+  (so a known-worthless kind in stock has no supply on any path), but the
+  knowledge bonus does not look at the kind. With the weight zero no
+  worthless kind has value on any planner path.
+- Question for the owner: should trip 0 keep buy-to-identify behind
+  `borg_town_w_knowledge`? The issue said to ask; this change turns it off
+  there too, as the owner's words ask. To restore the knob, read the
+  configured weight again in `effective_params` (one line). The historical
+  chooser (`borg_town_plan = 0`) has its own `borg_buy_identify` (default 0 in
+  harness/borg.txt, #27 learning list including Monster Confusion and Remove
+  Hunger, `borg_buy_strategy.rs:142`); not touched.
+- Low-value kinds still bought for their capability (use sites in the core):
+  Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
+  Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
+  Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
+  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  not count it as food). The planner prices them through `timed_cap`
+  (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
+  FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
+  with the ordinary weight (`:492`, `:502-507`); the owner decides whether
+  those curves are too generous.
+## 2026-11-16: Remove Hunger scroll: value, carry, read before food (#451)
+
+Owner: the scroll should have value, be carried, and be used before any food.
+- **Value** (`borg_town_capability.rs`): the scroll supplies FOOD again (#444
+  had stripped it from every non-food kind). `NOURISH:INC_TO` fills to N
+  percent (`effect_handler_NOURISH`, subtype 3; units: `food_value` 100 per
+  percent, object.txt Remove Hunger 50), so read hungry (grade 15, 
+  player_timed.txt) it adds 35: more than a Ration's `INC_BY` 30, not 50
+  and not a flat ration. Applies to every INC_TO food (Honey-cake, Draught
+  60 -> 45, Waybread 75 -> 60).
+- **Food floor stays coherent**: under the town plan `borg_trait` now counts
+  every scroll in `BI_FOOD` beside the rations (before: only with no other
+  food), so planner and core count the same (`with_remove_hunger`). No
+  store-sold food supplies more than 35, so the planner's floor (200
+  nutrition) is never met with fewer than the core's five items. Not under
+  the plan: unchanged.
+- **Use first** (`borg_item_use.rs`, `borg_caution.rs`): under the plan a
+  hungry or weak Borg tries the hunger spells, then reads the scroll, then
+  eats. Blind, confused, forgetful or in the dark it cannot read and eats.
+- Local, 180 starts, ambitious arm (4,2): Remove Hunger read 0 -> 47 notes,
+  sold 33 -> 4, stored 130 -> 103 (89 games), rations eaten 65 -> 56,
+  "You are getting hungry" 651 -> 512; deaths 32 -> 28, mean CL 4.73 -> 4.83,
+  mean max depth 2.33 -> 2.46; restock-food loops 0 / 0; no stalls.
+- **Left open:** the scroll is still bought once per game (155) as a
+  flavour-learning purchase (the planner values unknown flavours, like Resist
+  Heat/Cold) and stored when the food floor is already met by cheap Hard
+  Biscuits (eleven carried in the sampled game). That is the planner doing
+  its job on a spare scroll; fewer learning buys is #445's question.
+- `scripts/borg-core-vendor.py`: `borg_trait.rs` is declared hooked (it
+  already reported `borg_town_usefulness.rs` and `borg_town_utility.rs`
+  from #444 and earlier; not declared here, not part of CI).
+- `tools/shopping-audit.py` (from #445, `c2799e51`): `# Wearing/# Wielding`
+  notes count as use, so torches are not reported as unused.
+
+
+## 2026-11-16: an unchanged control game needs no new record (#464)
+
+- Owner: relax RULES 12. A CI death is KNOWN when the Cemetery retains the
+  same start (implementation, seed, race, class, flags, borg.txt, save) and
+  the same key stream from any build; only a changed game is UNRECORDED.
+- borg-cemetery #46 changes `reconcile-deaths.py` (and adds
+  `--exact` for the old build-qualified match). `death-tools-pin.txt` moves
+  to `586d0c13`: the old pin `1afd9423` plus only that change (branch
+  `tools/relaxed-death-match-on-1afd942`). Cemetery main also carries
+  `9b38f76` (canonical hash death IDs), which this repository's importer and
+  engine checks do not support yet: adopting it is separate work. `--runs`
+  (every CI death exported) is unchanged.
+- Evidence: the native registry retained 22, 23 and 25 identical copies of
+  the 1011, 102 and 1020 control games. On #455's merged head (source
+  9fb9ad72) all four control deaths are KNOWN against main's pins before
+  any new record (#44/#45 would not have been needed).
+- Left: merge borg-cemetery #46 before or with this PR. The core parameter
+  table is not part of the start (it changes when a parameter is added).
+## 2026-11-16: outmatched healing flag (#457, borg-zoo#147)
+
+- New parameters `caution_heal_when_outmatched` (0/1, default 0) and
+  `caution_heal_outmatched_min_loss` (50 percent); registry 1783 to 1785.
+  `borg_heal_outmatched` runs at the very end of `borg_caution` (after stairs,
+  retreat, escape, back-away and the reserve/recall/unknown-item steps all
+  declined, so escapes keep precedence) and, when hurt by the threshold with
+  danger at least current HP, quaffs CLW, else CSW, else CCW instead of
+  letting `borg_attack` run. Note: "# Healing (outmatched)." The potion order
+  is weakest first (conserves stronger cures); the owner may prefer strongest
+  first for the study.
+- Flag 0 is byte-identical on this build: seed 1516096046 (race 4 class 2,
+  errands_plan.txt, town 1, trip 0, 100000 turns) still dies at CL3 with keys
+  `4c2ea4baf255`; seed 501 (race 0 class 0, ambitious plan) keys `a80b9ac6185c`.
+- Flag 1, same cells: 1516096046 quaffs CLW twice in the acolyte fight and
+  survives to the turn limit (CL4, max DL2); 979002123 (race 8 class 6,
+  trip 1) drinks 17 times and survives to the turn limit (CL10, max DL13)
+  where flag 0 dies (CL8, DL12). One cell each, not a measurement (RULES 14):
+  the zoo control (flag 0 against 1 on the #147 arms) is the next step.
+- Unit tests cover the pure decision; the potion path needs the engine's
+  `z_info` and is exercised by the replays above.
+
+## 2026-11-16: back-away no longer steps onto lava (#458)
+
+- `back_away` (borg_caution.rs, "# Backing up to x,y") accepted any
+  `borg_cave_floor_grid`, which includes `FEAT_LAVA`. Lava burns 100+1d100
+  per turn (engine player-util.c:918), so low-level Borgs died at full HP in
+  town (borg-zoo#147: 15 of 212 death cells). It now skips lava unless the
+  Borg is fire-immune, the rule already used in borg_caution's
+  flee-grid check, flow_dark, flow and rest. Plain fix, no flag.
+- Audit of the other `borg_cave_floor_grid` callers: none else chooses a
+  step. The rest are projection and ray paths (borg_projection, fight_attack,
+  fight_defend), monster tracking (flow_kill), light and surround counts,
+  trap assumption (update), and a search-target scan (flow_misc) whose cost
+  map already blocks lava. Dimension door excludes lava already. Flow
+  spreading blocks lava for a non-immune Borg. Phase door lands wherever the
+  game puts the Borg; that is not a Borg choice. `borg_cave_floor_grid` is
+  unchanged (map/view code depends on lava being a floor).
+- Replays (errands_plan, town 1, trip 0, 100000 turns): 1356248624 race 2
+  class 0 now survives to the turn limit (CL5); 584077430 race 1 class 3 now
+  dies at turn 73713 to a battle-scarred veteran, not lava. Sanity cell 501
+  with the ambitious plan keeps its keys sha256 (a80b9ac6...).
+- The unit test covers the lava rule; `back_away` itself links only with the
+  engine, so the replays are the integration check.
+
 ## 2026-11-16: reviewed preference promotion synchronization (#453)
 
 - Owner asks to merge after #407's review at50c92ba0 reports no blockers.
@@ -360,9 +591,12 @@ One PR, owner's request (supersedes #441):
 - Owner: a phase should be an additional check, not forced behaviour.
   New plan command `max-depth N` (borg-core/src/errands_plan.rs): no
   errand; the core plays as itself and is not prepared below DL N (the
-  phase sets `borg_no_deeper` to N+1, never above the configured value).
-  Review of #440: hand-back at a gap and cancel now restore the configured
-  value (the last cap used to persist after level 50).
+  phase supplies a separate N+1 threshold, combined with the live configured
+  value). Review follow-up #447 replaces the cfg snapshot/restore: reload
+  and same-save reinitialization retain the overlay; cancellation releases
+  it immediately, including during Recall. No stale cfg is restored.
+  Phase changes preserve errands and core goals; parser/dive/trip tests
+  removed with loop-only coverage are restored.
 - Owner: remove the loop errand entirely. `/loop-levels` and the plan
   command `loop-levels` are gone (a plan using it exits 2 with "loop-levels
   was removed; use max-depth N"), with the level-loop code in shell.rs,
@@ -372,10 +606,12 @@ One PR, owner's request (supersedes #441):
   hashes).
 - The core's own cap lets a "spent too long, leaving" move step onto the
   level below for one move and climb straight back; owner: not an issue.
-- Local, 90 classes-1800-small starts, town planner on, trip off:
-  deaths town 17, max-depth plan 15, +trip 14, max-depth ambitious 17,
-  old loop plan 20 (caster deaths 5/5/4/5/12). Descriptive only.
-- CI deaths for source 2d8693c8 are retained on borg-cemetery
+- The published #440 90-start comparison is historical, descriptive and
+  not independently verified here. Raw seed/config/run custody is still
+  being recovered; it is not validation of #447. See the canonical
+  [Cemetery archive](https://github.com/diegoami/borg-cemetery/tree/513d14f59a00fee6b6a5fa39c650d04eaea05650/validation/borg-reborn-rs/plan-cap-review-447/);
+  missing raw custody is tracked in #448.
+- CI deaths for reviewed source ef85f725 are retained on borg-cemetery
   `evidence/borg-reborn-rs-max-depth-ci-controls-v2`; its 77dd467e (after the review fix) also
   adds `checkpoints-max-depth.zip`, the wild-cat archive with the plan
   capped (saves and borg.txt unchanged; the original stays as evidence).
@@ -4821,3 +5057,45 @@ prints exclusions; this source pins its reviewed-follow-up guard revision.
 Keep the one-way policy limitation explicit; #386's strategy/tactics are separate.
 OpenSSL remains an intentional documented runtime dependency. Full responses
 and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
+
+## 2026-11-16: #440 review follow-up (#447)
+
+- Separate cap overlay fixes reload, reinitialization, stale restoration and
+  Recall cancellation; the cap test permits the accepted one-step N+1 move.
+- Release core checks: 329 pass, 4 ignored; workspace tests, fmt and clippy
+  pass. Targeted native plan/survival checks: 13 pass; tools: 94 pass;
+  scripts: 19 pass. Full engine suite: 84 pass/checks, 2 fixture-dependent
+  skips. Vendor declaration also covers #444’s existing hook.
+- Clean implementation/source/binary are pinned in Cemetery #36, with three
+  canonical CI control deaths. The source fixture pins that evidence commit.
+  Lifecycle reload/cancel behavior has unit coverage; an interactive GUI
+  reload/Recall session is not claimed. Follow-up stays unmerged for review.
+
+## #449 re-review fixes
+
+- Apply the effective depth limit before dynamic/static preparedness selection.
+- Initialization refreshes the cap from the loaded character and level before
+  store/Recall ticks; same-run cancellation remains cancelled.
+- Require the child cancellation test to report one executed test. Remove
+  the redundant cancellation branch and correct the remaining path-intent text.
+- Add initialization lifecycle and production preparedness-guard regression before calculation dispatch.
+  Validation and refreshed evidence pins will be recorded on #449.
+
+## #449 second re-review
+
+- Guard preparedness with only the active plan limit. Restore the configured
+  check at its original static-only location so no-plan play and reason order
+  remain unchanged. The dispatch regression covers absent-plan pass-through.
+- Completed reincarnation calls the same refresh as initialization; declare
+  the receiving hook and clarify configuration semantics in the documentation.
+- The PR runtime pin is already current; refresh it and validation after these
+  runtime changes. #448 remains open for historical raw-evidence custody.
+
+## 2026-11-17: Track P synchronization before inventory calibration (#474)
+
+- Owner selected #433. Synchronize accepted main 68e39b7e into track-p
+  through this CI-checked integration PR; prior track-p is an ancestor.
+- Preserve all accepted runtime, recorder, death identity/matching, evidence
+  references and plan-cap fixes. No new gameplay policy is introduced.
+- Next: M13 inventory parameter audit/extraction under #433, with neutral
+  defaults, parity checks and a pinned owner-selected promotion review.

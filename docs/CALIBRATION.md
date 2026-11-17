@@ -15,6 +15,36 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## No unknown items (#470)
+
+The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
+`caution_unknown_danger_multiplier` and `caution_unknown_max_level` set C's
+last-resort rule in `borg_caution` that used unknown devices, scrolls,
+potions and mushrooms; `attack_unknown_rod_damage` and
+`attack_unknown_wand_damage` priced aiming an unknown rod or wand at a
+monster, and `attack_staff_paranoia_chance` was that attack's paranoia roll. Both uses are gone (an unidentified item is never used), so the
+parameters are too.
+
+## Outmatched healing flag (#457)
+
+The registry now holds **1785** parameters (1783 before; two added). Two
+parameters control one study branch, off by default:
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_heal_when_outmatched` | 0 | flag | 0-1 | `borg_caution.rs:226` |
+| `caution_heal_outmatched_min_loss` | 50 | percent | 0-100 | `borg_caution.rs:226` |
+
+`borg_heal` drinks a cure potion only when `danger < curhp + heal`, so when
+the danger estimate reaches the Borg's maximum HP no potion qualifies, and
+with no escape left the Borg falls through to `borg_attack` holding potions.
+With the flag at 1, at the very end of `borg_caution` (after every stair,
+retreat, escape and back-away option declined, so escapes keep precedence), a
+Borg that has lost at least `caution_heal_outmatched_min_loss` percent of its
+maximum HP and whose danger is at least its current HP drinks Cure Light, else
+Serious, else Critical Wounds ("# Healing (outmatched).") instead of attacking.
+With the flag at 0 the code path is not entered and play is byte-identical.
+
 ## Configuration and records
 
 At core initialization, values are loaded once for the process, including
@@ -301,8 +331,6 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_reserve_unique_loss` | 600 | hp | 0–10000 | `borg_caution.rs:1941` |
 | `caution_reserve_unique_depth` | 85 | depth | 0–127 | `borg_caution.rs:1943` |
 | `caution_recall_danger_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1970` |
-| `caution_unknown_danger_multiplier` | 4 | multiplier | 0–20 | `borg_caution.rs:1978` |
-| `caution_unknown_max_level` | 20 | level | 1–51 | `borg_caution.rs:1979` |
 | `caution_stair_danger_max_level` | 49 | level | 1–51 | `borg_caution.rs:2019` |
 | `caution_stair_min_food` | 2 | count | 0–1000 | `borg_caution.rs:2044` |
 | `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:2052` |
@@ -320,6 +348,8 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1223` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1514` |
 | `caution_recall_rest_turns` | 500 | turns | 2–9999 | `borg_caution.rs:1630` |
+| `caution_heal_when_outmatched` | 0 | flag | 0–1 | `borg_caution.rs:226` |
+| `caution_heal_outmatched_min_loss` | 50 | percent | 0–100 | `borg_caution.rs:226` |
 
 
 ## P1.2: danger and escape (#220)
@@ -1003,7 +1033,6 @@ recommended values.
 | `attack_unknown_wand_danger_horizon` | 1 | turns | 2949 |
 | `attack_unknown_wand_danger_tenths` | 7 | tenths | 2949 |
 | `attack_unknown_wand_emergency_value` | 999 | score | 2951 |
-| `attack_staff_paranoia_chance` | 5 | percent | 2994 |
 | `attack_activation_paranoia_chance` | 2 | percent | 3088 |
 | `attack_ring_paranoia_chance` | 2 | percent | 3132 |
 | `attack_dragon_paranoia_chance` | 2 | percent | 3171 |
@@ -1026,15 +1055,13 @@ recommended values.
 | `attack_trance_reserve_penalty` | 10 | multiplier | 3705 |
 | `attack_holy_word_min_loss` | 300 | hp | 3917 |
 | `attack_curse_min_hp` | 120 | hp | 4030 |
-| `attack_unknown_rod_damage` | 75 | damage | 4085 |
-| `attack_unknown_wand_damage` | 75 | damage | 4088 |
 | `attack_holy_staff_hp_divisor` | 2 | divisor | 4164 |
 | `attack_holy_staff_hurt_value` | 500 | score | 4164 |
 | `attack_holy_staff_value` | 120 | score | 4164 |
 | `attack_holy_activation_hp_divisor` | 2 | divisor | 4283 |
 | `attack_holy_activation_hurt_value` | 500 | score | 4283 |
 | `attack_holy_activation_value` | 120 | score | 4283 |
-| `attack_max_target_age` | 2 | turns | 4444 |
+| `attack_max_target_age` | 2 | turns | 4376 |
 | `attack_town_mage_max_level` | 10 | level | 4457 |
 | `attack_fast_monster_distance` | 2 | grids | 4466 |
 | `attack_scary_breeder_max_depth` | 5 | depth | 4476 |
@@ -2162,3 +2189,24 @@ not rewritten or repinned. Both optional town/trip policies default off.
 | `attack_preference_blackguard_spell_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
 | `attack_preference_blackguard_device_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
 | `attack_preference_blackguard_activation_permille` | 1000 | utility_permille | 500–2000 | `borg_fight_attack.rs:4575` (#403 ranking seam) |
+
+## Speed for a dangerous fight (#469)
+
+Owner, 2026-11-17: when the danger is very high and the Borg fights rather
+than retreats, drink a Potion of Speed. `borg_defend_aux_speed` drinks only
+when being fast would bring the danger under a fraction of avoidance, so it
+skips exactly the fights speed cannot make safe. In `borg_attack`, once a
+positive best attack other than waiting is chosen (the Borg has committed to
+fighting this turn: `borg_caution` took no action), the Borg drinks a carried
+Potion of Speed first when it is in the dungeon, not already fast, and the
+danger where it stands from the monsters that can move (`borg_danger_one_kill`
+summed over every monster without NEVER_MOVE, `defend_danger_horizon`) is
+above avoidance x value / 10. Never-moving monsters (mushroom patches, floating
+eyes) are left out: the Borg can step away, and in the first 180-start trial
+their spores or gaze pushed the danger past every threshold tried. The note is `# Speed for a dangerous fight (danger X of
+avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
+20+2d10 turns, +10 speed (`object.txt`, Potion of Speed).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4549` |

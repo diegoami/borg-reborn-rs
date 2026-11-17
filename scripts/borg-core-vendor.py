@@ -40,8 +40,15 @@ OURS = {'PIN', 'ladders.txt', 'src/shell.rs', 'src/params.rs', 'src/core_trace.r
 # borg-rs files that carry our changes (marked `borg-reborn-rs (#2xx)`, or
 # the package rename and lints table in Cargo.toml).
 HOOKED = {
+    'src/borg_reincarnate.rs',  # #447: refresh plan cap after reincarnation
+    'src/borg_prepared.rs',  # #447: independent plan cap
     'src/borg_town_usefulness.rs',  # #400/#443: accepted receiving planner item values
     'src/borg_town_capability.rs',  # #380: retain physical Phase Door value
+    'src/borg_town_shadow.rs',  # #460: no knowledge-only purchases (effective_params)
+    'src/borg_town_utility.rs',  # #451: Remove Hunger disposition test
+    'src/borg_trait.rs',  # #451: Remove Hunger scrolls counted beside the rations under the town plan
+    'src/borg_junk.rs',  # #470: discard Deep Descent on sight
+    'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 

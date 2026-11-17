@@ -41,7 +41,9 @@ class AttackPreferencesTest(unittest.TestCase):
                 current = dict(env, BORG_CORE_TRACE=tracing)
                 result = subprocess.run(
                     [str(ROOT / 'harness/run.sh'), str(root / name),
-                     '1011', '2', '1', '3000', 'menu'],
+                     # #470: seed 1014; 1011's first 3000 turns no longer
+                     # meet a selection the profile changes.
+                     '1014', '2', '1', '3000', 'menu'],
                     cwd=ROOT, env=current, capture_output=True, text=True, timeout=180)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             for name in ['keys.log', 'messages.log', 'state.log']:

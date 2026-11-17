@@ -17,6 +17,7 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
+use crate::borg_cave::BorgGrid;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
@@ -41,10 +42,8 @@ use crate::borg_headers::borg_trait_h::{
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
 use crate::borg_item_use::{
-    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_eat_unknown,
-    borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_quaff_unknown,
-    borg_read_scroll, borg_read_unknown, borg_use_staff, borg_use_staff_fail, borg_use_unknown,
-    borg_zap_rod,
+    borg_activate_failure, borg_activate_item, borg_eat, borg_eat_food_any, borg_satisfy_hunger_before_food,
+    borg_equips_staff_fail, borg_quaff_crit, borg_quaff_potion, borg_read_scroll, borg_use_staff, borg_use_staff_fail, borg_zap_rod,
 };
 use crate::borg_item_val::borg_lookup_kind;
 use crate::borg_item_wear::borg_backup_swap;
@@ -195,6 +194,52 @@ fn stats_needing_fix(st: &BorgState) -> i32 {
         n += p(Param::caution_mage_stat_fix_votes);
     }
     n
+}
+
+/// borg-reborn-rs (#457): the outmatched-healing test, apart from the
+/// engine so it can be unit tested. True when the flag is on, the Borg is
+/// hurt by at least `min_loss` percent of its maximum HP, and the danger
+/// estimate reaches its current HP (so the ordinary `borg_heal` tiers, which
+/// need `danger < curhp + heal`, cannot have fired).
+fn outmatched_heal_applies(
+    enabled: i32,
+    curhp: i32,
+    maxhp: i32,
+    danger: i32,
+    min_loss: i32,
+) -> bool {
+    enabled != 0
+        && maxhp > 0
+        && curhp < maxhp
+        && (maxhp - curhp) * 100 / maxhp >= min_loss
+        && danger >= curhp
+}
+
+/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
+/// at the end of `borg_caution`, after every escape, stair, retreat and
+/// back-away option declined, a hurt Borg whose danger estimate reaches its
+/// HP drinks the weakest cure potion it holds (CLW, CSW, CCW) instead of
+/// attacking, even if the potion cannot "cover" the danger. The danger
+/// estimate is a pessimistic worst case; the potion buys a turn.
+/// Off (`caution_heal_when_outmatched` = 0) it does nothing.
+fn borg_heal_outmatched(st: &mut BorgState, danger: i32) -> bool {
+    if !outmatched_heal_applies(
+        p(Param::caution_heal_when_outmatched),
+        st.borg.tr(BI_CURHP),
+        st.borg.tr(BI_MAXHP),
+        danger,
+        p(Param::caution_heal_outmatched_min_loss),
+    ) {
+        return false;
+    }
+    if borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical)
+    {
+        borg_note(st, "# Healing (outmatched).");
+        return true;
+    }
+    false
 }
 
 /// Try healing.
@@ -743,11 +788,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
             return true;
         }
 
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
+        // borg-reborn-rs (#470): no unknown potion, mushroom or staff in
+        // this emergency; an unidentified item is never used.
     }
 
     // Cure wounds when bleeding, also critical check
@@ -813,11 +855,8 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
         }
         set_cursp(st, sv_mana);
 
-        // Quaff unknown potions / eat unknown mushrooms / use unknown
-        // staffs in this emergency.  We might get lucky.
-        if borg_quaff_unknown(st) || borg_eat_unknown(st) || borg_use_unknown(st) {
-            return true;
-        }
+        // borg-reborn-rs (#470): no unknown potion, mushroom or staff in
+        // this emergency; an unidentified item is never used.
     }
 
     // nothing to do
@@ -1207,6 +1246,12 @@ fn retreat(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
+/// Lava burns for 100+1d100 fire damage a turn: a Borg that is not immune to
+/// fire must never choose it as a step (borg-reborn-rs#458).
+fn lava_forbids_step(st: &BorgState, ag: &BorgGrid) -> bool {
+    u32::from(ag.feat) == FEAT_LAVA && st.borg.tr(BI_IFIRE) == 0
+}
+
 /// Back away from danger to an adjacent grid (the "Back away" block of
 /// `borg_caution`).
 fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
@@ -1241,6 +1286,12 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
 
         // Skip walls/doors
         if !borg_cave_floor_grid(&ag) {
+            continue;
+        }
+
+        // Skip lava grids unless immune to fire (it does 100+1d100 fire
+        // damage per turn: borg-reborn-rs#458)
+        if lava_forbids_step(st, &ag) {
             continue;
         }
 
@@ -1872,7 +1923,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Prevent starvation
     if st.borg.tr(BI_ISWEAK) != 0 {
         // Attempt to satisfy hunger
-        if borg_eat_food_any(st) || borg_spell(st, REMOVE_HUNGER) || borg_spell(st, HERBAL_CURING) {
+        // borg-reborn-rs (#451): a Remove Hunger scroll goes before any food
+        if borg_satisfy_hunger_before_food(st)
+            || borg_eat_food_any(st)
+            || borg_spell(st, REMOVE_HUNGER)
+            || borg_spell(st, HERBAL_CURING)
+        {
             // Success
             return true;
         }
@@ -2071,16 +2127,14 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
-    // if I am gonna die next round, and I have no way to escape
-    // use the unknown stuff (if I am low level).
-    if pos_danger > st.borg.tr(BI_CURHP) * p(Param::caution_unknown_danger_multiplier)
-        && st.borg.tr(BI_CLEVEL) < p(Param::caution_unknown_max_level)
-        && st.borg.tr(BI_MAXSP) == 0
-        && (borg_use_unknown(st)
-            || borg_read_unknown(st)
-            || borg_quaff_unknown(st)
-            || borg_eat_unknown(st))
-    {
+    // borg-reborn-rs (#470): C's last resort here used the unknown stuff
+    // (device, scroll, potion, mushroom) when the next round looked fatal.
+    // An unidentified item is never used: an unknown scroll can be Deep
+    // Descent, five levels below the deepest so far (borg-zoo#147).
+
+    // borg-reborn-rs (#457): outmatched, nothing above took a turn. Heal
+    // rather than fall through to borg_attack.
+    if borg_heal_outmatched(st, pos_danger) {
         return true;
     }
 
@@ -2210,4 +2264,66 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod outmatched_tests {
+    use super::*;
+
+    #[test]
+    fn outmatched_heal_needs_the_flag() {
+        // 29 max HP, 10 HP left, danger 40: the Gnome Druid of #457.
+        assert!(!outmatched_heal_applies(0, 10, 29, 40, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 40, 50));
+    }
+
+    #[test]
+    fn outmatched_heal_needs_a_hurt_borg_in_lethal_danger() {
+        // not hurt enough: 15/29 is 48% down, below the 50% threshold
+        assert!(!outmatched_heal_applies(1, 15, 29, 40, 50));
+        // 14/29 is 51% down
+        assert!(outmatched_heal_applies(1, 14, 29, 40, 50));
+        // danger below current HP: the ordinary tiers decide
+        assert!(!outmatched_heal_applies(1, 10, 29, 9, 50));
+        assert!(outmatched_heal_applies(1, 10, 29, 10, 50));
+        // unhurt (even with a zero threshold) and a degenerate maximum
+        assert!(!outmatched_heal_applies(1, 29, 29, 40, 0));
+        assert!(!outmatched_heal_applies(1, 0, 0, 40, 0));
+    }
+
+    #[test]
+    fn outmatched_heal_is_off_by_default() {
+        let spec = |name| crate::params::SPECS.iter().find(|s| s.name == name).unwrap();
+        let flag = spec("caution_heal_when_outmatched");
+        assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
+        assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+    use crate::headers::list_terrain_h::FEAT_FLOOR;
+
+    fn grid_of(feat: u32) -> BorgGrid {
+        BorgGrid {
+            feat: feat as u8,
+            ..BorgGrid::default()
+        }
+    }
+
+    // borg-reborn-rs#458: lava does 100+1d100 fire damage a turn, so
+    // backing away onto it killed full-HP low-level Borgs. (`back_away`
+    // itself needs the engine, so the test is on its lava rule.)
+    #[test]
+    fn lava_is_a_forbidden_step_without_fire_immunity() {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        assert!(lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_FLOOR)));
+        // an immune Borg may step on it
+        st.borg.trait_[BI_IFIRE as usize] = 1;
+        assert!(!lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+    }
 }

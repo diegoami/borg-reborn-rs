@@ -790,4 +790,77 @@ mod tests {
         let explicit=Journey::for_trip(&st,Some(forecast));assert_eq!((explicit.depth,explicit.turns),(2,777));
     }
 
+
+    /// borg-reborn-rs (#451): a carried Remove Hunger scroll supplies
+    /// nutrition (35: 50 to a hungry 15 percent), so the planner keeps it
+    /// below the food floor; valued at nothing it was stored or sold in the
+    /// visit that bought it.
+    #[test]
+    fn a_carried_remove_hunger_scroll_is_kept_while_food_is_short() {
+        use crate::borg_town_capability::{Model, PACK};
+        let st = state(0, 1, 20);
+        let scroll = KitItem { joins_pack: false, need: -1, reduction: 0, weight: 5, sell_shop: 5, proceeds: 5, ..recall(Place::Pack) };
+        let kit = [scroll];
+        let floor = 5 * UNIT;
+        let model = |units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            // the food floor: a requirement linear up to five rations' nutrition
+            curves[1] = [1, 100 * floor, -(crate::borg_town_capability::RATION_NUTRITION * floor), units, 0];
+            Model { available: Vec::new(), packing: None, curves,
+                supplies: if units > 0 { vec![[PACK, 0, 1, units]] } else { Vec::new() } }
+        };
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(35 * UNIT));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Keep]);
+        // worth nothing (before #451): sold at once
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model(0));
+        assert_eq!(dispositions(&input(&kit), &mut u, &st).0, [Disposition::Sell]);
+    }
+
+    /// borg-reborn-rs (#452): a known Potion of Speed is an emergency
+    /// reserve, valued per potion like the escapes (exposure), so the
+    /// planner keeps it while the pack has room. Valued as 20+2d10 turns
+    /// of buff against the whole trip (the old curve) it was about one
+    /// percent of the demand, under its slot's burden, and was sold.
+    #[test]
+    fn a_known_speed_potion_is_kept_while_the_pack_has_room() {
+        use crate::borg_town_capability::{Model, PACK};
+        use crate::borg_headers::borg_h::{BORG_TOWN_W_ESCAPE, BORG_TOWN_W_SUPPORT};
+        const SPEED: usize = 16;
+        // the measured arm's trip: 100000 turns
+        let mut st = state(5, 25, 100);
+        st.core.cfg[BORG_TOWN_TRIP_TURNS as usize] = 100_000;
+        let journey = Journey::of(&st);
+        let exposure = journey.exposure();
+        let weight = i64::from(st.cfg(BORG_TOWN_W_ESCAPE)) * exposure;
+        let potion = KitItem { joins_pack: false, need: -1, reduction: 0, weight: 4, sell_shop: 5, proceeds: 40, ..recall(Place::Pack) };
+        let kit = [potion];
+        let model = |curve: [i64; 5], units: i64| {
+            let mut curves: Vec<[i64; 5]> = (0..58).map(|i| [i as i64, 0, UNIT, 0, 0]).collect();
+            curves[SPEED] = curve;
+            Model { available: Vec::new(), packing: None, curves, supplies: vec![[PACK, 0, SPEED as i64, units]] }
+        };
+        // the pack has room (limits.pack_slots is 15): kept, not sold or stored
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model([SPEED as i64, weight, exposure, UNIT, 0], UNIT));
+        let mut inp = input(&kit);
+        inp.revision = 9;
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // several potions: the stack is kept whole
+        let stack = [KitItem { qty: 4, ..kit[0] }];
+        let mut u = Utility::of(&st, &stack, false);
+        u.capability = Some(model([SPEED as i64, weight, exposure, 4 * UNIT, 0], UNIT));
+        let mut inp = input(&stack);
+        inp.revision = 9;
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // the old valuation, 31 turns of buff against the trip: sold
+        let ordinary = i64::from(st.cfg(BORG_TOWN_W_SUPPORT)) * exposure;
+        let mut u = Utility::of(&st, &kit, false);
+        u.capability = Some(model([SPEED as i64, ordinary, journey.turns * UNIT, 31 * UNIT, 0], 31 * UNIT));
+        let mut inp = input(&kit);
+        inp.revision = 9;
+        assert_ne!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+    }
+
 }

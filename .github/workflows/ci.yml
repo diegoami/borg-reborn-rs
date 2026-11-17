@@ -125,11 +125,12 @@ jobs:
           grep -q 'caution_clw_min_loss: 101 outside 0..=100' harness/out/core-invalid/stderr.log
       # P1.4: recording leaves the game unchanged, and the final thinks of
       # a real death survive in the named core trace's dossier tail.
+      # #470: seed 1016 (seed 1011's Mage now lives to the turn cap).
       - run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_CORE_TRACE=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-off 1010 0 0 3000 menu
           for f in keys.log messages.log state.log; do cmp "harness/out/core-params/$f" "harness/out/core-trace-off/$f"; done
           test ! -e harness/out/core-trace-off/trace-core.jsonl
-          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1011 2 1 100000 menu
+          BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/run.sh harness/out/core-trace-death 1016 2 1 100000 menu
           python3 tools/reconcile-deaths.py "$RUNNER_TEMP/core-deaths" --registry "$RUNNER_TEMP/known-deaths" --runs harness/out/core-params harness/out/core-trace-off harness/out/core-trace-death
           python3 - "$RUNNER_TEMP/core-deaths" <<'PYCORE'
           import json, pathlib, sys

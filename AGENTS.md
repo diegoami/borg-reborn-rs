@@ -107,6 +107,12 @@ See [RULES.md](RULES.md) rule 12 and
 payloads from both branches when synchronizing; never rewrite the accepted
 inventory or replace a historical death to hide an ID collision.
 
+**An unchanged control game needs no new record** (owner, 2026-11-16, #464).
+CI's `reconcile-deaths.py` (borg-cemetery, through `death-tools-pin.txt`)
+accepts a death as KNOWN when the Cemetery retains the same start and the
+same key stream from another build. Only a game that plays differently
+(UNRECORDED) needs a new Cemetery package and a fixture pin move.
+
 ## Track P integration and review gate (owner, 2026-11-15)
 
 **Use `track-p`, not `p-track`.** Read this branch's current AGENTS.md and
