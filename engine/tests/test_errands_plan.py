@@ -103,7 +103,10 @@ class ErrandsPlanTest(unittest.TestCase):
             self.assertEqual((out/'errands_plan.txt').read_text(),PLAN)
             self.assertFalse(json.loads((out/'summary.json').read_text())['dead'])
     def test_active_cap_is_replaced_when_level_changes(self):
-        r,out=self.run_poc('growth',cls=1,seed=1001,turns=20000)
+        # #493: seed 1002 (seed 1001's Mage now jumps from level 1 to 3 in one
+        # kill and dies of poison before the next think, with the gold reserve
+        # off); the test is about the cap following the level, not the game.
+        r,out=self.run_poc('growth',cls=1,seed=1002,turns=20000)
         self.assertEqual(r.returncode,0,r.stderr)
         notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
         self.assertTrue(any('level=1 ' in l and 'max-depth 1' in l for l in notes),notes)
