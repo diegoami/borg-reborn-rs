@@ -16,6 +16,14 @@ it.
 - Even with TRUE the formulas never took effect: a formula line fails to parse
   and `borg_load_formulas` switches dynamic calculations off (#526, closed as
   moot). With the section gone, TRUE warns "no formulas found" and stays off.
+## 2026-11-17: the named scary list is on again
+
+Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
+the named list against 4 without, with or without the errands plan):
+`harness/borg.txt` ships `caution_scary_named_monsters = 1` again, alongside
+#514's scary-by-damage rule (60). The owner wants the list flexible: #518
+moves it to a data file by class and level (designed, on hold: the owner
+first evaluates a per-class layout, possibly with #520's class files).
 
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
@@ -559,7 +567,7 @@ was tried with them is removed (owner, 2026-11-17).
   Boldness `borg_caution.rs:1987`, `borg_recover.rs:349` (cure fear);
   Resist Heat `borg_fight_defend.rs:720`, Resist Cold `:797`; Blessing and
   Holy Chant `:366-367`; Detect Invisible scroll `:2774`; Remove Hunger scroll
-  `borg_recover.rs:360` (and `borg_trait.rs:1920` counts it, the planner does
+  `borg_recover.rs:362` (and `borg_trait.rs:1920` counts it, the planner does
   not count it as food). The planner prices them through `timed_cap`
   (`borg_town_capability.rs:161-166`: BOLD/BLESSED to BUFF, OPP_FIRE/COLD to
   FIRE/COLD, SINVIS and EF_DETECT_INVISIBLE_MONSTERS `:253` to INVISIBLE),
@@ -828,7 +836,7 @@ One PR, owner's request (supersedes #441):
 
 - Owner explicitly requested merging #378 after the independent milestone
   review/re-review and coordinated fixes. Cemetery #7 landed first at
-  `0360b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
+  `0362b72cfa93c84ab41d3192b9bad3cc38e3ccaf` from reviewed/fixed `ec332c6`.
 - Synchronize accepted main `4ecb93d7` into the #378 feature branch. Keep both
   handover histories, native recorder v0.2.0 and accepted #369/#380 survival
   changes. Harness conflict resolution retains BOTH synthetic receipt/build
@@ -1234,7 +1242,7 @@ One PR, owner's request (supersedes #441):
   CI; a new pinned owner-selected milestone review precedes promotion.
   #358/#359 remain separate permission/cleanup follow-ups.
 
-## 2026-11-15: reviewed P349 synchronization (#360)
+## 2026-11-15: reviewed P349 synchronization (#362)
 
 - Owner review at 1a95a0a6 accepts #349 with follow-ups and no blockers.
   The review reports 88 tool tests, script tests, all 2,547 archive cases
@@ -4991,7 +4999,7 @@ After the review, as the owner decided:
   [diegoami/borg-zoo#30](https://github.com/diegoami/borg-zoo/issues/30).
   docs/ZOO-CHANGE-REQUEST.md names the `m1` commit `fab71554fd32`.
   The issue's prompt is updated to that exact commit after this PR is
-  merged, because its old fallback (`4236081`, unpeeled tag) is obsolete.
+  merged, because its old fallback (`4236281`, unpeeled tag) is obsolete.
 
 Found while re-reading RULES: commits and PR bodies since M0 carried
 `Co-Authored-By` and "Generated with" lines, which RULES 4 forbids. They
@@ -5520,3 +5528,57 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   the receiving hook and clarify configuration semantics in the documentation.
 - The PR runtime pin is already current; refresh it and validation after these
   runtime changes. #448 remains open for historical raw-evidence custody.
+
+## 2026-11-17: Track P synchronization before inventory calibration (#474)
+
+- Owner selected #433. Synchronize accepted main 68e39b7e into track-p
+  through this CI-checked integration PR; prior track-p is an ancestor.
+- Preserve all accepted runtime, recorder, death identity/matching, evidence
+  references and plan-cap fixes. No new gameplay policy is introduced.
+- Next: M13 inventory parameter audit/extraction under #433, with neutral
+  defaults, parity checks and a pinned owner-selected promotion review.
+
+## 2026-11-17: P4 M13 inventory parameter extraction (#433)
+
+- Owner selected #433; #475 synchronized accepted main into track-p at
+  9cf60aae after green CI. P4 is the bounded active milestone in PLAN.md.
+- Append 362 neutral parameters (2,143 total): power48, wear23, buy14,
+  sell34, shop6, home237. Existing IDs/defaults, C-long/i32 arithmetic,
+  tie/RNG order, quantities, no-selling and disabled exploit paths stay.
+- M13-INVENTORY-PARAMETERS.md/.json classifies policy versus retained
+  mechanics and gives original source references. #293 stays separate;
+  R4 #434 waits for owner-reviewed promotion of an exact P4 pin.
+- Divisors/narrow counts are bounded; invalid greed/tier/depth ordering
+  fails before play. Add a native non-neutral town-budget regression.
+- Validation/evidence receipts are recorded on the task PR before merge.
+  Task integration targets track-p; the subsequent milestone review and
+  owner acceptance gate promotion to main. No tuning/population claim.
+
+## 2026-11-17: P4 milestone review fixes (#481)
+
+- Owner-selected review #477 at 105f7947 confirms neutral extraction and
+  independently matches all 45 native streams, with an exporter checkout
+  mismatch limiting that reviewer's harness/reconciliation status.
+- F1: cap mapping-rod reserve at 255 and test 256/300 rejection plus the
+  valid endpoints and all new u8/i16 operand bounds. Default remains 2.
+- F2: rename the three unpromoted curing bonuses for their actual CCW,
+  Healing and poison-cure guards; synchronize descriptions and JSON.
+- Preserve old parameter positions/defaults and immutable Cemetery #61
+  evidence; no aliases or policy changes. Integrate only through track-p
+  and update the exact #477 pin for owner re-review before main promotion.
+
+
+## 2026-11-17: P4 conflict resolution before promotion (#522)
+
+- Merge accepted main a8ac685a into task/T522-p4-main-sync from track-p
+  7078bb1d, preserving all main bug fixes, configuration and review rules.
+- Resolve params.rs test conflict by retaining both town and P4 source-module
+  validation; retain both calibration snapshots and correct the current count.
+- Main's 1829 specs stay byte-identical in the same order; append the same
+  362 reviewed P4 specs (2191 total). Unpromoted P4 absolute IDs move;
+  historical evidence remains pinned to its original registry and build.
+- The buying-code auto-merge keeps #507's quantity fix and neutral P4 lookups.
+  All other runtime modules equal their accepted parent versions exactly.
+- Required checks/CI and owner review precede task integration under RULES 1a.
+  #477 stays unmerged; update its pin after approved track-p integration and
+  re-review the synchronized result before promotion.

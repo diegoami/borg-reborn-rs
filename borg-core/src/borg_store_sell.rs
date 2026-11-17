@@ -21,6 +21,8 @@
 //! (struct copies: a copied item's `note` keeps pointing into the
 //! original's `desc`, as with `memcpy`).
 
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
 use crate::borg_buy_strategy::{reserve410_unmet, retain_reserve410_item};
 use crate::borg_home_notice::borg_notice_home;
 use crate::borg_home_power::borg_power_home;
@@ -128,10 +130,10 @@ fn is_charged(item: &borg_item) -> bool {
 
 /// `MIN(item->value, 30000)` (as `long`, stored in an `int32_t`).
 fn capped_value(item: &borg_item) -> i32 {
-    if item.value < 30000 {
+    if item.value < param(Param::sell_value_cap) {
         item.value
     } else {
-        30000
+        param(Param::sell_value_cap)
     }
 }
 
@@ -359,12 +361,12 @@ pub(crate) fn borg_object_similar(st: &BorgState, o_ptr: &borg_item, j_ptr: &bor
 /// it may be higher.  -- RML
 pub fn borg_min_item_quantity(st: &mut BorgState, item: &borg_item) -> i32 {
     // Only trade in bunches if sufficient cash
-    if st.borg.tr(BI_GOLD) < 250 {
+    if st.borg.tr(BI_GOLD) < param(Param::sell_batch_min_gold) {
         return 1;
     }
 
     // Don't trade expensive items in bunches
-    if item.value > 5 {
+    if item.value > param(Param::sell_batch_max_item_value) {
         return 1;
     }
 
@@ -377,16 +379,16 @@ pub fn borg_min_item_quantity(st: &mut BorgState, item: &borg_item) -> i32 {
     match u32::from(item.tval) {
         TV_SHOT | TV_ARROW | TV_BOLT => {
             // Maximum number of items
-            if item.iqty < 5 {
+            if item.iqty < (param(Param::sell_ammo_batch_count) as u8) {
                 return i32::from(item.iqty);
             }
-            5
+            param(Param::sell_ammo_batch_count)
         }
         TV_FOOD => {
-            if item.iqty < 3 {
+            if item.iqty < (param(Param::sell_food_batch_count) as u8) {
                 return i32::from(item.iqty);
             }
-            3
+            param(Param::sell_food_batch_count)
         }
         _ => 1,
     }
@@ -676,7 +678,7 @@ pub fn borg_think_home_sell_useful(st: &mut BorgState, best_home_power: &mut i32
             }
 
             // There are limted quantity per slot
-            if item2.iqty > 90 {
+            if item2.iqty > (param(Param::sell_home_stack_soft_limit) as u8) {
                 continue;
             }
 
@@ -895,7 +897,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // Worshipping gold or scumming will allow the sale
     let scum = st.cfg(BORG_MONEY_SCUM_AMOUNT);
     if item.value > 0
-        && ((st.cfg(BORG_WORSHIPS_GOLD) != 0 || st.borg.tr(BI_MAXCLEVEL) < 10)
+        && ((st.cfg(BORG_WORSHIPS_GOLD) != 0 || st.borg.tr(BI_MAXCLEVEL) < param(Param::sell_unidentified_max_level))
             || (scum < st.borg.tr(BI_GOLD) && scum != 0))
     {
         // Borg is allowed to continue in this routine to sell
@@ -914,10 +916,10 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
                 // they have tons in the house
                 if tval == TV_POTION
                     && i32::from(item.sval) == st.item_val.sv_potion_restore_mana
-                    && st.borg.tr(BI_MAXSP) > 100
+                    && st.borg.tr(BI_MAXSP) > param(Param::sell_mana_reserve_min_sp)
                     && st.borg.has[st.item_val.kv_potion_restore_mana as usize]
                         + i32::from(st.home.num_mana)
-                        > 99
+                        > param(Param::sell_mana_reserve_count)
                 {
                     return false;
                 }
@@ -926,7 +928,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
             // Never sell if not "known"
             // unless we have more than one or are deep
             TV_FOOD | TV_ROD | TV_WAND | TV_STAFF | TV_RING | TV_AMULET | TV_LIGHT
-                if borg_item_worth_id(st, &item) && st.borg.tr(BI_MAXDEPTH) < 35 && !multiple =>
+                if borg_item_worth_id(st, &item) && st.borg.tr(BI_MAXDEPTH) < param(Param::sell_identify_max_depth) && !multiple =>
             {
                 return false;
             }
@@ -953,7 +955,7 @@ fn borg_good_sell(st: &mut BorgState, i: i32, who: i32) -> bool {
     // Do not sell stuff that is not fully id'd and should be
     if !item.ident
         && item.ego_idx != 0
-        && item.iqty < 2
+        && item.iqty < (param(Param::sell_unidentified_ego_min_copies) as u8)
         && borg_ego_has_random_power(usize::from(item.ego_idx))
     {
         return false;
@@ -986,7 +988,7 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
 
     // Evaluate
     let mut b_p: i32 = st.borg.power;
-    let mut b_c: i32 = 30001;
+    let mut b_c: i32 = param(Param::sell_value_cap).wrapping_add(1);
 
     // Check each shop
     for k in 0..(i32::from(engine::z_info().store_max) - 1) {
@@ -1007,12 +1009,12 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
             }
 
             // Skip some important type items
-            if i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL) && st.borg.tr(BI_AMISSILES) < 45 {
+            if i32::from(item.tval) == st.borg.tr(BI_AMMO_TVAL) && st.borg.tr(BI_AMISSILES) < param(Param::sell_ammo_reserve_count) {
                 continue;
             }
             if tval == TV_ROD
                 && sval == st.item_val.sv_rod_healing
-                && st.borg.has[st.item_val.kv_rod_healing as usize] <= 3
+                && st.borg.has[st.item_val.kv_rod_healing as usize] <= param(Param::sell_healing_rod_reserve_count)
             {
                 continue;
             }
@@ -1020,14 +1022,14 @@ pub fn borg_think_shop_sell_useless(st: &mut BorgState) -> bool {
             if st.borg.tr(BI_CLASS) == CLASS_WARRIOR
                 && tval == TV_ROD
                 && sval == st.item_val.sv_rod_mapping
-                && item.iqty <= 2
+                && item.iqty <= (param(Param::sell_mapping_rod_reserve_count) as u8)
             {
                 continue;
             }
 
             // Do not sell our attack wands if they still have charges
             if tval == TV_WAND
-                && st.borg.tr(BI_CLEVEL) < 35
+                && st.borg.tr(BI_CLEVEL) < param(Param::sell_attack_device_min_level)
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud
                     || sval == st.item_val.sv_wand_annihilation)
@@ -1225,7 +1227,7 @@ fn sell_selected(st: &mut BorgState, one: bool) -> bool {
 
 /// `(borg.trait[BI_GOLD] / 100L) + add`, stored in an `int32_t`.
 fn gold_greed(st: &BorgState, add: i64) -> i32 {
-    (i64::from(st.borg.tr(BI_GOLD)) / 100 + add) as i32
+    (i64::from(st.borg.tr(BI_GOLD)) / i64::from(param(Param::sell_gold_greed_divisor)) + add) as i32
 }
 
 /// Count the number of items worth "selling"
@@ -1235,30 +1237,30 @@ pub fn borg_count_sell(st: &mut BorgState) -> i32 {
     let mut k: i32 = 0;
 
     // Calculate "greed" factor
-    let mut greed = gold_greed(st, 100);
+    let mut greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base)));
 
     // Minimal greed
-    greed = greed.clamp(1000, 25000);
-    if st.borg.tr(BI_MAXDEPTH) >= 50 {
-        greed = 75000;
+    greed = greed.clamp(param(Param::sell_gold_greed_floor), param(Param::sell_gold_greed_ceiling));
+    if st.borg.tr(BI_MAXDEPTH) >= param(Param::sell_gold_greed_deep_depth) {
+        greed = param(Param::sell_gold_greed_deep_value);
     }
-    if st.borg.tr(BI_CLEVEL) < 25 {
-        greed = gold_greed(st, 50);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_25) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_25)));
     }
-    if st.borg.tr(BI_CLEVEL) < 20 {
-        greed = gold_greed(st, 35);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_20) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_20)));
     }
-    if st.borg.tr(BI_CLEVEL) < 15 {
-        greed = gold_greed(st, 20);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_15) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_15)));
     }
-    if st.borg.tr(BI_CLEVEL) < 13 {
-        greed = gold_greed(st, 10);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_13) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_13)));
     }
-    if st.borg.tr(BI_CLEVEL) < 10 {
-        greed = gold_greed(st, 5);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_10) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_10)));
     }
-    if st.borg.tr(BI_CLEVEL) < 5 {
-        greed = gold_greed(st, 0);
+    if st.borg.tr(BI_CLEVEL) < param(Param::sell_gold_greed_level_5) {
+        greed = gold_greed(st, i64::from(param(Param::sell_gold_greed_base_5)));
     }
 
     // Count "sellable" items
@@ -1332,7 +1334,7 @@ pub fn borg_count_sell(st: &mut BorgState) -> i32 {
         let p = borg_power(st);
         pack_item(st, i).iqty = sv_qty;
 
-        if p.wrapping_add(50) < st.borg.power {
+        if p.wrapping_add(param(Param::sell_count_power_tolerance)) < st.borg.power {
             continue;
         }
 

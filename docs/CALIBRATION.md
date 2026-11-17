@@ -10,6 +10,17 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## M13 inventory gap closure (#433 / P4)
+
+The synchronized registry contains **2,191** parameters. This adds 362 neutral
+inventory parameters to the 1,829-entry accepted main registry at `a8ac685a`: 48 power,
+23 wear, 14 buy, 34 sell, 6 store-choice and 237 home-valuation entries.
+The [M13 inventory contract](M13-INVENTORY-PARAMETERS.md) records scope,
+units, bounds, retained mechanics, #293 separation and the P-before-R4 gate;
+its JSON companion lists every new default and original source location.
+The extraction changes no default decision policy. Historical counts below
+remain receipts of their own snapshots.
+
 ## Class/family attack preference extension (#403)
 
 The historical P1–P3 counts above describe the original extraction. #403 adds
@@ -226,7 +237,9 @@ red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
 Dread) and the low-level door scares. A scary level stays scary until a new
 level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
 turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
-stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and,
+since the owner's decision after borg-zoo#216 (with the breeder stand on: 1
+death with the list, 4 without), 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
