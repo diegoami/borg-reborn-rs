@@ -128,7 +128,7 @@ up staircase on one level.
 
 ## Cornered mode (#504)
 
-Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
+The registry now holds **1807** parameters (1802 after #503; five added). Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
 danger but not much" (10–50% of avoidance), so a Borg that is losing a fight
 it cannot leave used none: a Blackguard died at 1/41 HP with its Berserk
 Strength spell unused. With `caution_cornered`, cornered means: in the
@@ -140,14 +140,56 @@ against an adjacent unique or higher-level monster. A melee class (Warrior,
 Paladin, Rogue, Blackguard) neither retreats nor backs away. Healing comes
 first as before (#457's outmatched heal). Monster Confusion is off the town
 planner's worthless list while the mode is on. The compiled defaults leave it
-off; `harness/borg.txt` ships 1, 10, 2 and 0.
+off; `harness/borg.txt` ships 1, 10, 2 and 0. Owner: the same boosts in a
+hard breeder fight, `caution_breeder_boost_danger_tenths` (compiled 0 = off,
+shipped 5): while standing against breeders with no easy escape (#503's
+`breeder_stand`) and danger here at or above half the HP. Holy Chant is not
+an object in 4.2; Blessing (scroll or spell) is used.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2175` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2175` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2175` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2217` |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2293` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2293` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2293` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2349` |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2338` (0 = off; owner: the same boosts in a hard breeder fight) |
+
+## Breeders and named scary monsters (#503)
+
+The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
+ways (the breeder flee of `borg_caution`, the breeder scary trigger of
+`borg_near_monster_type`, the "no recall" flee of `borg_check_breeders`), backs
+away from their danger, and below clevel 10 never flows to them. With
+`caution_breeder_fight` and no easy escape (a free staircase within the steps,
+by the engine's `distance`; a Phase Door, teleport, Teleport Level, escape or
+Word of Recall) it stands and fights: none of the three flees, and no retreat
+or back-away while a breeder is within the radius and no other known monster
+is within the danger horizon (`danger_monster_max_distance`, on the larger axis
+distance like `borg_danger`); being surrounded
+still moves it. The generic low-HP and bleeding/poison flees stay (a Borg
+losing the fight is #504's cornered mode). With the named list on
+(`caution_scary_named_monsters = 1`) a level made scary by breeders before the
+stand engaged (while the Borg still had an escape) stays scary until a new
+level: the latch is a known limit of that intermediate arm. Warriors, Paladins,
+Rogues and Blackguards hunt breeders while at most the hunt count are known.
+
+`caution_scary_named_monsters` turns off the C Borg's hard-coded scary monsters
+by character level (squint-eyed rogue; Grip, Fang, small kobold; soldier,
+cutpurse, acolyte, apprentice, kobold, shrieker, Farmer Maggot, street urchin,
+veteran, mercenary; Bullroarer and the breeders; cave spider, red naga, giant
+red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
+Dread) and the low-level door scares. A scary level stays scary until a new
+level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
+turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2184` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2184` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2217` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2271` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2261` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## No unknown items (#470)
 

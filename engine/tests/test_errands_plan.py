@@ -106,7 +106,9 @@ class ErrandsPlanTest(unittest.TestCase):
         # #493: seed 1002 (seed 1001's Mage now jumps from level 1 to 3 in one
         # kill and dies of poison before the next think, with the gold reserve
         # off); the test is about the cap following the level, not the game.
-        r,out=self.run_poc('growth',cls=1,seed=1002,turns=20000)
+        # #503: seed 1003 (with breeders no longer fled and the named scary
+        # monsters off, seed 1002's Mage dies before turn 20,000).
+        r,out=self.run_poc('growth',cls=1,seed=1003,turns=20000)
         self.assertEqual(r.returncode,0,r.stderr)
         notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
         self.assertTrue(any('level=1 ' in l and 'max-depth 1' in l for l in notes),notes)
