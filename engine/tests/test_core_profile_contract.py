@@ -92,9 +92,11 @@ class CoreProfileContractTest(unittest.TestCase):
         out, record = self.cell('core-trial', settings)
         self.assertEqual(record['outcome'], 'turn_cap', record)
         settings = {s['name']: s for s in json.loads((out / 'params-core.json').read_text())}
-        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0),
-                            ('attack_preference_mage_spell_permille', 1600)]:
+        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0)]:
             self.assertEqual((settings[name]['value'], settings[name]['origin']), (value, 'borg.txt'))
+        # #520: the legacy per-class name sets the Mage's class value.
+        mage = settings['attack_preference_spell_permille']['class_values']['mage']
+        self.assertEqual((mage['value'], mage['origin']), (1600, 'borg.txt'))
         self.assertTrue((out / 'trace-core.jsonl').stat().st_size)
         self.assertEqual(record['binary_sha256'], self.binary_sha)
         self.assertEqual(json.loads((out / 'summary.json').read_text())['game_turns'], 300)
