@@ -12,7 +12,7 @@ borg-rs ("reborn is not ready yet").
   - `borg_reborn_core = borg-rs` (was reborn);
   - `borg_town_plan = 1`;
   - `borg_trip_policy = 1`, `borg_trip_unknown_stacks = 5`, `borg_trip_pack_slack = 1`;
-  - 17 `borg_param_*` lines: outmatched healing 1, speed fight 30, and the 15 class attack preferences.
+  - 18 `borg_param_*` lines: outmatched healing 1, speed fight 30, and the 16 class attack preferences.
 - **Not set:** `borg_plan` and `borg_reborn_errand` (none).
 - **Compiled defaults are unchanged.** `params.rs` and `borg_init.rs` stay neutral; unit tests pin them as the neutral and C-parity tables. The bundle comes from the shipped file, which a player's game and every zoo arm read. A zoo profile that names a key rewrites the line.
 - **`harness/run.sh`:**
