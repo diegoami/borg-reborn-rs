@@ -305,14 +305,14 @@ borg_town_no_stores = FALSE
 # reads these fields but ignores them; the Rust borg reads them when
 # borg_town_plan = 1 (live utility planner); 0 keeps the historical chooser.
 # BORG_TOWN_PLAN_RECORD optionally records either mode; it is not needed
-# for live execution. Supply purchases use the marginal trip utility and
+# for live execution (default 1 since #479). Supply purchases use the marginal trip utility and
 # gold-retention model documented in docs/TOWN-UTILITY.md.
 # borg_town_w_* are the phase-1 usefulness weights, with w_light = 100 the
 # numeraire. borg_town_share is the purse-share cap k: a single purchase may
 # cost at most purse / k (0 disables the cap). borg_town_light_depth is the
 # descent target from which a second light source is required, and
 # borg_town_food_trip the food rations carried per trip.
-borg_town_plan = 0
+borg_town_plan = 1
 borg_town_w_light = 100
 borg_town_w_food = 100
 borg_town_w_bleeding = 100
@@ -369,10 +369,11 @@ borg_town_power_scale = 40000
 # borg_trip_return_gold     gold per character level: go back when the gold
 #                           plus the pack's estimated sale value reaches it
 #                           (0 = never for this reason).
-borg_trip_policy = 0
+# Defaults since #479 (owner, 2026-11-17): the borg-zoo#170 speed30 bundle.
+borg_trip_policy = 1
 borg_trip_depth_margin = 0
-borg_trip_pack_slack = 2
-borg_trip_unknown_stacks = 4
+borg_trip_pack_slack = 1
+borg_trip_unknown_stacks = 5
 borg_trip_return_gold = 0
 
 # Capability utility priorities and forecast actions per ranged/support use.
@@ -423,9 +424,11 @@ borg_uses_dynamic_calcs = FALSE
 # overrides it. The Rust Borg of this repository reads only these two keys;
 # borg-rs's core reads the rest of this file (borg-rs's own borg.txt, with
 # borg_munchkin_by_class and borg_self_scum FALSE: no stair-scumming, no town
-# scumming, owner 2026-11-14).
+# scumming, owner 2026-11-14). The default is borg-rs (owner, 2026-11-17,
+# #479: the reborn core is not ready yet); harness/run.sh still runs the
+# reborn core when BORG_CORE is unset, for its references.
 
-borg_reborn_core = reborn
+borg_reborn_core = borg-rs
 
 # The errand over borg-rs's core (borg-core/src/shell.rs): "none", "/town",
 # "/walk-back", "/explore-back", "/dive N", "/dive-exploring N",
@@ -441,6 +444,30 @@ borg_reborn_errand = none
 # environment overrides it.
 
 borg_reborn_stopscared = off
+
+# Default parameters (#479, owner 2026-11-17): the borg-zoo#170 arm
+# reborn-bundle-plan-speed30 without its errands plan. borg-core's compiled
+# registry keeps the neutral defaults (docs/CALIBRATION.md); these lines set
+# the bundle for every game that reads this file. BORG_PARAM_<NAME> in the
+# environment overrides a line; a zoo profile rewrites it in place.
+borg_param_caution_heal_when_outmatched = 1
+borg_param_attack_speed_fight_danger_tenths = 30
+borg_param_attack_preference_warrior_melee_permille = 1800
+borg_param_attack_preference_warrior_projectile_permille = 1200
+borg_param_attack_preference_warrior_thrown_permille = 1200
+borg_param_attack_preference_mage_spell_permille = 2000
+borg_param_attack_preference_mage_device_permille = 1200
+borg_param_attack_preference_druid_spell_permille = 1700
+borg_param_attack_preference_priest_spell_permille = 1700
+borg_param_attack_preference_necromancer_spell_permille = 1800
+borg_param_attack_preference_necromancer_device_permille = 1200
+borg_param_attack_preference_paladin_melee_permille = 1800
+borg_param_attack_preference_paladin_spell_permille = 1200
+borg_param_attack_preference_rogue_projectile_permille = 1300
+borg_param_attack_preference_rogue_thrown_permille = 1600
+borg_param_attack_preference_ranger_projectile_permille = 2000
+borg_param_attack_preference_blackguard_melee_permille = 1600
+borg_param_attack_preference_blackguard_spell_permille = 1400
 
 
 [BEGIN FORMULA SECTION]

@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
+
+Owner request: the settings of borg-zoo#170's arm `reborn-bundle-plan-speed30`
+become the defaults, apart from the errands, and the default core switches to
+borg-rs ("reborn is not ready yet").
+
+- **Shipped `harness/borg.txt`:**
+  - `borg_reborn_core = borg-rs` (was reborn);
+  - `borg_town_plan = 1`;
+  - `borg_trip_policy = 1`, `borg_trip_unknown_stacks = 5`, `borg_trip_pack_slack = 1`;
+  - 18 `borg_param_*` lines: outmatched healing 1, speed fight 30, and the 16 class attack preferences.
+- **Not set:** `borg_plan` and `borg_reborn_errand` (none).
+- **Compiled defaults are unchanged.** `params.rs` and `borg_init.rs` stay neutral; unit tests pin them as the neutral and C-parity tables. The bundle comes from the shipped file, which a player's game and every zoo arm read. A zoo profile that names a key rewrites the line.
+- **`harness/run.sh`:**
+  - With no `BORG_CORE`, it rewrites the run's copy to `borg_reborn_core = reborn`, so the harness's reborn-core references (smoke, full, observations) still test the reborn core.
+  - New `BORG_TXT_SET="name=value;..."` pins an existing key.
+- **`test_shopping`'s home-storage round** pins `borg_town_plan=0`, the historical chooser it tests.
+- **Measurement:** borg-zoo#170's pilot was identical across speed 0/30/60 on 18 starts. The medium tier (run 43998795815) is the measurement of the bundle.
+
 ## 2026-11-17: never use unidentified items; Deep Descent discarded (#470)
 
 Owner request after borg-zoo#147: 35 of 900 small-tier games ended below

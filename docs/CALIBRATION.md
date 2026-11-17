@@ -28,7 +28,9 @@ parameters are too.
 ## Outmatched healing flag (#457)
 
 The registry now holds **1785** parameters (1783 before; two added). Two
-parameters control one study branch, off by default:
+parameters control one study branch, off in the compiled registry (default 0);
+since #479 the shipped `harness/borg.txt` sets `caution_heal_when_outmatched = 1`
+(docs/HANDOVER.md):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -83,7 +85,9 @@ not to the file's shifting line numbers after the hooks.
 
 The core selector accepts exactly `reborn`/`0` and `borg-rs`/`1`.
 `BORG_CORE` takes precedence over `borg_reborn_core` in borg.txt; absent
-both, the original reborn core remains the default. Invalid selectors,
+both, the compiled fallback is the original reborn core. Since #479 the shipped
+`harness/borg.txt` selects `borg-rs`, so a game reading it plays borg-rs's core;
+`harness/run.sh` still selects reborn when `BORG_CORE` is unset. Invalid selectors,
 including an empty environment value, fail with source/value diagnostics
 and exit status 2 instead of silently selecting another measured arm.
 

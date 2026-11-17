@@ -196,7 +196,8 @@ if [ $FAIL = 0 ]; then RESULT=OK; else RESULT=FAILED; fi
 } > "$WORK/timing.txt"
 # Effective config of each run: its flags and the sha256 of its borg.txt
 # (stock suites: borg_txt_sha256 differs from the manifest's stock hash
-# only in the respawn race/class lines).
+# in the respawn race/class lines and, since #479, in borg_reborn_core,
+# which harness/run.sh sets to reborn when BORG_CORE is unset).
 for d in "${NAMES[@]}"; do
     f="$WORK/$d/config.txt"
     if [ -f "$f" ]; then
