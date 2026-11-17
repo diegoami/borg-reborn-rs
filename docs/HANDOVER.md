@@ -34,6 +34,32 @@
   against breeders with no easy escape and danger here at or above half the
   HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
   Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
+
+## 2026-11-17: healing by class, no Shovel while poor (#487)
+
+- #487's analysis (on the issue): no melee class bought a weapon in five
+  games; for Warriors and Rogues the try-on rates every heavier weapon about
+  -44,500 power per lost blow, so keeping the Dagger is right; Paladins,
+  Blackguards and Rangers miss upgrades by a few gold. The gold went to
+  Cure Light Wounds for the 400% reserve (a CL8 Warrior bought 26 in one
+  visit and kept 712 gold) and to a Shovel (66 gold) at four of five first
+  visits.
+- Owner: per-class overrides of the healing curve scale and reserve
+  (`town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
+  shipped from 50 (Warrior) to 150 (Mage) and from 100 to 300; the general
+  reserve 100 and curve scale 125; `town_digger_min_gold` 500. Weapon saving
+  is not done.
+- Owner: healing speed (#491) was not meant to set how many potions fill the
+  reserve. `town_heal_reserve_real_hp` (shipped 1) counts real HP in the
+  reserve; speed weights only the healing curve.
+- On main `233ef23e`, 9 classes x 2 seeds: with the old values (reserve 400,
+  scale 100, `town_heal_reserve_real_hp` 0, no class values, digger 0) the 18
+  games play identical keys to main. With the shipped ones (real-HP reserve
+  included) 4 deaths become 2: the four that died live (Mage, Necromancer,
+  Ranger, Blackguard), and two others die (a Druid to an acolyte, a Priest to
+  a green worm mass). Cure Light Wounds bought 212 -> 117, healing gold
+  7190 -> 5430, Shovels 20 -> 8; Warriors' healing 590/1540 -> 130/380 gold.
+  Too few games: a borg-zoo experiment follows at the merge.
 ## 2026-11-17: scary by damage (#505)
 
 Owner: scary is a monster that can one- or two-shot you, as a percentage of

@@ -161,6 +161,44 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 | `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2488` (buff spells only at or below this failure rate) |
 | `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2418` (0 = off; owner: the same boosts in a hard breeder fight) |
 
+## Healing by class; no Shovel while poor (#487)
+
+The registry now holds **1829** parameters (1809 after #504; twenty added).
+Owner, 2026-11-17, from #487's analysis (no melee class bought a weapon; the
+gold went to dozens of Cure Light Wounds for #491's 400% reserve and to a
+Shovel at the first visit):
+
+- `town_heal_curve_scale_percent_<class>` (`borg_town_capability.rs:368`,
+  0 = `town_heal_curve_scale_percent`) and `town_heal_reserve_hp_percent_<class>`
+  (`borg_town_capability.rs:387`, -1 = `town_heal_reserve_hp_percent`, 0 = no
+  reserve), for warrior, mage, druid, priest, necromancer, paladin, rogue,
+  ranger and blackguard. Unit `percent_override`; compiled defaults fall back
+  to the general values.
+- `town_digger_min_gold` (`borg_town_capability.rs:635`, 0 = off): below this
+  gold the live planner values no digging. A Shovel only clears rubble (the
+  engine swaps it in, "with your swap digger", 2–6 piles a game); a weapon
+  digs rubble too.
+
+- `town_heal_reserve_real_hp` (`borg_town_capability.rs:239`, 0 = #491 as
+  first shipped): the healing reserve counts the real HP a potion restores.
+  `town_heal_speed_percent` then weights only the healing curve (which kind is
+  worth more), not how many potions fill the reserve. Speed-weighted, a Cure
+  Light Wounds counted about 5.6 HP at 108 max HP and the reserve took dozens.
+
+Shipped in `harness/borg.txt`: the general reserve 100 (was 400) and the
+general curve scale 125 (owner); the reserve counts real HP; scale
+Warrior 50, Paladin and Blackguard 75, Rogue and Ranger 100, Priest and Druid
+125, Necromancer and Mage 150; reserve Warrior 100, Paladin and Blackguard
+150, Rogue and Ranger 200, Priest and Druid 250, Necromancer and Mage 300;
+digger 500 gold.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
+| `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
+| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+
 ## Breeders and named scary monsters (#503)
 
 The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
