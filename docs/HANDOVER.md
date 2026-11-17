@@ -13,8 +13,11 @@ should be 0. Before, the live town planner kept gold only through
   (default 0): `Budget::of` takes the larger from the gold left after the
   urgent needs (which may still use the whole purse);
   `borg_town_budget::{gold_reserve, spendable}`, unit-tested.
-- Shipped `harness/borg.txt`: both at 0 and `borg_town_w_gold = 0`. The
-  compiled `borg_town_w_gold` stays 25 (C/borg-rs settings parity).
+- Shipped `harness/borg.txt`: both at 0 and `borg_town_w_gold = 0`; the
+  compiled default is 0 too (owner), declared in `borg_init.rs`
+  (`OUR_DEFAULTS`, `NEW_SETTINGS`). The soft price came from borg-rs
+  `785f5064` (2026-11-14, its docs/TOWN-UTILITY.md "Retaining gold"),
+  vendored with borg-rs #87.
 - On borg-zoo run 44054277431's death starts (main's defaults): the median
   gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
   holds (median 138). Healing purchases moved only partly (#491 is the

@@ -24,8 +24,11 @@ the live town planner kept gold only through the soft price
 reserve is now explicit: `Budget::of` (`borg_town_budget.rs`) takes the larger
 of the two below from the gold left after the urgent needs, which may still
 use the whole purse. The shipped `harness/borg.txt` sets both to 0 and
-`borg_town_w_gold = 0` (owner, 2026-11-17); the compiled `borg_town_w_gold`
-default is unchanged (25).
+`borg_town_w_gold = 0` (owner, 2026-11-17), and the compiled
+`borg_town_w_gold` default is 0 too (`borg_init.rs`, a declared deviation from
+borg-rs's C table, `OUR_DEFAULTS`; borg-rs's pristine `borg-core/borg.txt`
+keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
+`docs/TOWN-UTILITY.md` "Retaining gold"), vendored with borg-rs #87.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
