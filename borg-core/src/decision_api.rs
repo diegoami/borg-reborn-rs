@@ -193,8 +193,16 @@ if !crate::decision_tape::active() { return crate::borg_io::borg_note(st,what); 
 crate::decision_tape::effect(st,"borg_io::borg_note",format!("{:?}",(what,)),|st| crate::borg_io::borg_note(st,what))
 }
 pub fn borg_note_bytes(st:&mut BorgState,what:&[u8])  {
-if !crate::decision_tape::active() { return crate::borg_io::borg_note_bytes(st,what); }
-crate::decision_tape::effect(st,"borg_io::borg_note_bytes",format!("{:?}",(what,)),|st| crate::borg_io::borg_note_bytes(st,what))
+fn call(st:&mut BorgState,what:&[u8]) {
+    // #435: a constructed copied memory cannot lend the real engine root.
+    // Only this declared test-driver scope stubs the shared UI notification;
+    // the ordered effect and complete input/output state are still taped.
+    #[cfg(feature="test-r4-item-use")]
+    if super::item_use_fixture::messages_stubbed() { return; }
+    crate::borg_io::borg_note_bytes(st,what)
+}
+if !crate::decision_tape::active() { return call(st,what); }
+crate::decision_tape::effect(st,"borg_io::borg_note_bytes",format!("{:?}",(what,)),|st| call(st,what))
 }
 
 use crate::borg_headers::borg_item_h::borg_item;
@@ -290,9 +298,9 @@ pub fn borg_equips_dragon(st: &mut BorgState, drag_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_dragon(st,drag_sval); }
 crate::decision_tape::effect(st,"borg_item_use::borg_equips_dragon",format!("{:?}",(drag_sval,)),|st| crate::borg_item_use::borg_equips_dragon(st,drag_sval))
 }
-pub fn borg_equips_item(st: &mut BorgState, activation: i32, check_charge: bool) -> bool {
+pub fn borg_equips_item(st: &BorgState, activation: i32, check_charge: bool) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_item(st,activation,check_charge); }
-crate::decision_tape::effect(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|st| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
+crate::decision_tape::query(st,"borg_item_use::borg_equips_item",format!("{:?}",(activation,check_charge,)),|| crate::borg_item_use::borg_equips_item(st,activation,check_charge))
 }
 pub fn borg_equips_ring(st: &mut BorgState, ring_sval: i32) -> bool {
 if !crate::decision_tape::active() { return crate::borg_item_use::borg_equips_ring(st,ring_sval); }
@@ -644,6 +652,11 @@ pub fn term_geometry() -> TermGeometry {
 if !crate::decision_tape::active() { return crate::engine::term_geometry(); }
 crate::decision_tape::engine("engine::term_geometry",format!("{:?}",()),|| crate::engine::term_geometry())
 }
+
+pub fn no_light() -> bool {
+if !crate::decision_tape::active() { return crate::engine::no_light(); }
+crate::decision_tape::engine("engine::no_light",format!("{:?}",()),|| crate::engine::no_light())
+}
 }
 pub mod shell {
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -668,6 +681,7 @@ pub use crate::headers::list_terrain_h::{FEAT_CLOSED,FEAT_GRANITE,FEAT_RUBBLE};
 }
 pub mod list_tvals_h { pub use crate::headers::list_tvals_h::{TV_FOOD,TV_MUSHROOM,TV_POTION,TV_ROD,TV_STAFF}; pub use crate::headers::list_tvals_h::{TV_BOOTS,TV_FLASK,TV_LIGHT,TV_RING,TV_WAND};
 pub use crate::headers::list_tvals_h::{TV_SCROLL};
+pub use crate::headers::list_tvals_h::{TV_DRAG_ARMOR};
 }
 pub mod ui_event_h { pub use crate::headers::ui_event_h::{keycode_t}; }
 pub mod z_type_h { pub use crate::headers::z_type_h::{loc}; }
@@ -691,6 +705,8 @@ pub mod ui_output_h { pub use crate::headers::ui_output_h::{region};
 }
 
 pub mod ui_term_h { pub use crate::headers::ui_term_h::{term};
+}
+pub mod list_effects_h { pub use crate::headers::list_effects_h::{EF_NOURISH};
 }
 }
 pub mod borg_headers {
@@ -807,4 +823,36 @@ pub fn borg_surrounded(st:&mut BorgState)->bool {
 if !crate::decision_tape::active() { return crate::borg_escape::borg_surrounded(st); }
 crate::decision_tape::effect(st,"borg_escape::borg_surrounded",format!("{:?}",()),|st| crate::borg_escape::borg_surrounded(st))
 }
+}
+
+pub mod borg_item_analyze {
+use crate::state::BorgState;
+use crate::borg_headers::borg_item_h::borg_item;
+pub fn borg_obj_has_effect(kind: u32, index: i32, subtype: i32) -> bool {
+if !crate::decision_tape::active() { return crate::borg_item_analyze::borg_obj_has_effect(kind,index,subtype); }
+crate::decision_tape::engine("borg_item_analyze::borg_obj_has_effect",format!("{:?}",(kind,index,subtype,)),|| crate::borg_item_analyze::borg_obj_has_effect(kind,index,subtype))
+}
+}
+
+pub mod borg_object_log {
+use crate::state::BorgState;
+use crate::borg_headers::borg_item_h::borg_item;
+pub fn log_use(st: &BorgState, action: &str, item: &borg_item) {
+if !crate::decision_tape::active() { return crate::borg_object_log::log_use(st,action,item); }
+crate::decision_tape::query(st,"borg_object_log::log_use",format!("{:?}",(action,item,)),|| crate::borg_object_log::log_use(st,action,item))
+}
+}
+
+// #435: test-driver capability, absent from normal builds and forbidden to policy.
+#[cfg(feature="test-r4-item-use")]
+pub mod item_use_fixture {
+    use std::cell::Cell;
+    thread_local! { static STUB_MESSAGES:Cell<bool>=const {Cell::new(false)}; }
+    pub(super) fn messages_stubbed()->bool { STUB_MESSAGES.with(Cell::get) }
+    pub fn with_stubbed_messages<T>(run:impl FnOnce()->T)->T {
+        struct Reset(bool);
+        impl Drop for Reset { fn drop(&mut self) { STUB_MESSAGES.with(|v|v.set(self.0)); } }
+        let _reset=Reset(STUB_MESSAGES.with(|v|v.replace(true)));
+        run()
+    }
 }

@@ -1,0 +1,276 @@
+{
+  "schema": "borg-reborn-rs/r435-api-delta@2",
+  "new_dependencies": [
+    {
+      "module": "borg_item_analyze",
+      "name": "borg_obj_has_effect",
+      "signature": "fn borg_obj_has_effect(kind: u32, index: i32, subtype: i32) -> bool",
+      "kind": "engine"
+    },
+    {
+      "module": "borg_object_log",
+      "name": "log_use",
+      "signature": "fn log_use(st: &BorgState, action: &str, item: &borg_item)",
+      "kind": "query"
+    },
+    {
+      "module": "engine",
+      "name": "no_light",
+      "signature": "fn no_light() -> bool",
+      "kind": "engine"
+    }
+  ],
+  "entries": [
+    {
+      "name": "borg_quaff_crit",
+      "variant": "ItemQuaffCrit",
+      "args": [
+        [
+          "no_check",
+          "bool"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_quaff_potion",
+      "variant": "ItemQuaffPotion",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_quaff_unknown",
+      "variant": "ItemQuaffUnknown",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_read_scroll",
+      "variant": "ItemReadScroll",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_read_unknown",
+      "variant": "ItemReadUnknown",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_eat",
+      "variant": "ItemEat",
+      "args": [
+        [
+          "tval",
+          "i32"
+        ],
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_eat_unknown",
+      "variant": "ItemEatUnknown",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_eat_food_any",
+      "variant": "ItemEatFoodAny",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_equips_rod",
+      "variant": "ItemEquipsRod",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_zap_rod",
+      "variant": "ItemZapRod",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_use_staff",
+      "variant": "ItemUseStaff",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_use_unknown",
+      "variant": "ItemUseUnknown",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_use_staff_fail",
+      "variant": "ItemUseStaffFail",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_equips_staff_fail",
+      "variant": "ItemEquipsStaffFail",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_aim_wand",
+      "variant": "ItemAimWand",
+      "args": [
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_equips_ring",
+      "variant": "ItemEquipsRing",
+      "args": [
+        [
+          "ring_sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_activate_ring",
+      "variant": "ItemActivateRing",
+      "args": [
+        [
+          "ring_sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_equips_dragon",
+      "variant": "ItemEquipsDragon",
+      "args": [
+        [
+          "drag_sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_activate_dragon",
+      "variant": "ItemActivateDragon",
+      "args": [
+        [
+          "drag_sval",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_activate_item",
+      "variant": "ItemActivateItem",
+      "args": [
+        [
+          "activation",
+          "i32"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_equips_item",
+      "variant": "ItemEquipsItem",
+      "args": [
+        [
+          "activation",
+          "i32"
+        ],
+        [
+          "check_charge",
+          "bool"
+        ]
+      ],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_activate_failure",
+      "variant": "ItemActivateFailure",
+      "args": [
+        [
+          "tval",
+          "i32"
+        ],
+        [
+          "sval",
+          "i32"
+        ]
+      ],
+      "value": "Score"
+    },
+    {
+      "name": "borg_use_things",
+      "variant": "ItemUseThings",
+      "args": [],
+      "value": "Acted"
+    },
+    {
+      "name": "borg_recharging",
+      "variant": "ItemRecharging",
+      "args": [],
+      "value": "Acted"
+    }
+  ],
+  "reclassified_existing": [
+    {
+      "module": "borg_item_use",
+      "name": "borg_equips_item",
+      "old_kind": "effect",
+      "new_kind": "query",
+      "state_signature": "&BorgState",
+      "reason": "Immutable activation presence/charge predicate; before-state replay check retained. Typed readonly root compares ordered queries without cloning caller memory."
+    }
+  ]
+}

@@ -7,8 +7,8 @@
   "totals": {
     "primary": {
       "files": 9,
-      "physical_lines_including_tests": 9363,
-      "function_definitions_including_tests": 204
+      "physical_lines_including_tests": 9485,
+      "function_definitions_including_tests": 228
     },
     "adjacent": {
       "files": 5,
@@ -1055,10 +1055,34 @@
     {
       "path": "borg-core/src/borg_item_use.rs",
       "role": "primary",
-      "sha256": "b6f7f96b2242664bc3521fa24bf713263fdc4b5365319c33d7ef020d4b465fe5",
-      "physical_lines_including_tests": 1283,
-      "function_definitions_including_tests": 37,
+      "sha256": "5cb9c23b13ee3789f96f317580ae5ef4dc68192518b0888ae44f0ba1bdeb0b2a",
+      "physical_lines_including_tests": 1405,
+      "function_definitions_including_tests": 61,
       "public_function_spellings_including_methods": [
+        "borg_quaff_crit_native",
+        "borg_quaff_potion_native",
+        "borg_quaff_unknown_native",
+        "borg_read_scroll_native",
+        "borg_read_unknown_native",
+        "borg_eat_native",
+        "borg_eat_unknown_native",
+        "borg_eat_food_any_native",
+        "borg_equips_rod_native",
+        "borg_zap_rod_native",
+        "borg_use_staff_native",
+        "borg_use_unknown_native",
+        "borg_use_staff_fail_native",
+        "borg_equips_staff_fail_native",
+        "borg_aim_wand_native",
+        "borg_equips_ring_native",
+        "borg_activate_ring_native",
+        "borg_equips_dragon_native",
+        "borg_activate_dragon_native",
+        "borg_activate_item_native",
+        "borg_equips_item_native",
+        "borg_activate_failure_native",
+        "borg_use_things_native",
+        "borg_recharging_native",
         "borg_quaff_crit",
         "borg_quaff_potion",
         "borg_quaff_unknown",
@@ -1108,15 +1132,12 @@
       "direct_crate_namespaces": [
         "borg",
         "borg_headers",
-        "borg_inventory",
-        "borg_io",
-        "borg_item",
-        "borg_item_analyze",
-        "borg_magic",
-        "borg_object_log",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [

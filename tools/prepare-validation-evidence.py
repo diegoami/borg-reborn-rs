@@ -13,6 +13,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parent.parent
 spec = importlib.util.spec_from_file_location('qualified_import', ROOT / 'tools/import-deaths.py')
@@ -29,6 +30,27 @@ def relative(value):
     if not value or path.is_absolute() or any(p in ('', '.', '..') for p in value.split('/')) or '\\' in value:
         raise ValueError('unsafe evidence path')
     return path
+
+
+def verify_death_identity(cemetery, case):
+    """Use the exact pinned cemetery's owner implementation for additive IDs."""
+    script = cemetery / 'scripts/native/death_identity.py'
+    if any(path.is_symlink() for path in (script, script.parent, script.parent.parent)):
+        raise ValueError('cemetery identity implementation symlink is forbidden')
+    spec = importlib.util.spec_from_file_location('pinned_cemetery_identity', script)
+    owner = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(owner)
+    owner.ensure(case, check=True)
+
+
+def original_package(case):
+    """Check unchanged storage identity, apart from the owner's additive sidecar."""
+    if not (case / 'death-id.json').exists():
+        return imports.package(case)
+    with tempfile.TemporaryDirectory(prefix='qualified-original-') as temporary:
+        original = Path(temporary) / case.name
+        shutil.copytree(case, original, ignore=shutil.ignore_patterns('death-id.json'))
+        return imports.package(original)
 
 
 def verify(cemetery, receipt):
@@ -59,7 +81,11 @@ def verify(cemetery, receipt):
             raise ValueError('evidence symlinks are forbidden')
         if path.is_file() and path != manifest:
             actual_paths.add(path.relative_to(base).as_posix())
-    if actual_paths != set(inventory):
+    sidecars = {p.relative_to(base).as_posix() for p in (base / 'archive').glob('D*/death-id.json')}
+    # Older manifests predate additive canonical-ID metadata. Its exact bytes
+    # are bound by the pinned Git commit and verified by the cemetery owner.
+    # All original evidence and any newly manifested sidecar stay hash-checked.
+    if actual_paths - sidecars != set(inventory) - sidecars or set(inventory) - actual_paths:
         raise ValueError('cemetery evidence inventory differs')
     for name, expected_hash in inventory.items():
         path = base.joinpath(*relative(name).parts)
@@ -71,7 +97,9 @@ def verify(cemetery, receipt):
     for case in cases:
         if not imports.QUALIFIED.fullmatch(case.name):
             raise ValueError('external validation package is not qualified')
-        imports.package(case)
+        if (case / 'death-id.json').exists():
+            verify_death_identity(cemetery, case)
+        original_package(case)
     return cases
 
 
@@ -89,10 +117,10 @@ def prepare(cemetery, receipts, output, historical=None, legacy=None):
     for case in external:
         target = output / case.name
         if target.exists():
-            if imports.package(target)[1] != imports.package(case)[1]:
+            if imports.package(target)[1] != original_package(case)[1]:
                 raise ValueError('conflicting cemetery package')
         else:
-            shutil.copytree(case, target)
+            shutil.copytree(case, target, ignore=shutil.ignore_patterns('death-id.json'))
     count = imports.check_registry(output, legacy)
     print(f'{count} verified historical/cemetery packages in disposable reconciliation mirror')
     return count

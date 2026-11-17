@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from test_export_death import ed, make_run
 
@@ -112,4 +113,30 @@ class CemeteryEvidenceTest(unittest.TestCase):
     def test_legacy_identity_remains_mandatory(self):
         self.legacy.write_text(json.dumps({'schema':'borg-reborn-rs/legacy-dossiers@1', 'cases':{'D0001':{}}}))
         with self.assertRaisesRegex(ValueError, 'historical cases disappeared'):
+            self.prepare()
+
+    def test_additive_canonical_sidecar_is_owner_verified_and_not_reimported(self):
+        original = evidence.imports.package(self.case)
+        (self.case / 'death-id.json').write_text('{"canonical":"owner metadata"}')
+        # Historical manifest has not changed; only validated additive metadata
+        # is permitted outside it. Package identity and original bytes stay exact.
+        with patch.object(evidence, 'verify_death_identity') as owner:
+            self.assertEqual(self.prepare(), 1)
+            owner.assert_called_once_with(self.cemetery, self.case)
+        mirror = self.root / 'mirror' / self.case.name
+        self.assertFalse((mirror / 'death-id.json').exists())
+        self.assertEqual(evidence.imports.package(mirror), original)
+
+    def test_bad_canonical_identity_cannot_bypass_the_manifest(self):
+        (self.case / 'death-id.json').write_text('{}')
+        with patch.object(evidence, 'verify_death_identity', side_effect=ValueError('bad canonical identity')):
+            with self.assertRaisesRegex(ValueError, 'bad canonical identity'):
+                self.prepare()
+
+    def test_manifested_canonical_sidecar_is_also_hash_checked(self):
+        sidecar = self.case / 'death-id.json'
+        sidecar.write_text('{}')
+        self.refresh()
+        sidecar.write_text('{"changed":true}')
+        with self.assertRaisesRegex(ValueError, 'payload hash'):
             self.prepare()

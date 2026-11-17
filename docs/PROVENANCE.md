@@ -145,3 +145,26 @@ shared. No new fair-information engine reads or ownership claim for those
 services is introduced. Native-equivalent games, rare-path and restoration
 fixtures, literal fault/re-port controls and death reconciliation remain
 runtime acceptance gates.
+
+## Track R item-use port (#435, R4)
+
+borg-next/src/stateful/item_use.rs owns the item-use policy bodies adapted
+from borg-rs runtime donor1443c2d1, with receiving Track P named parameters
+at accepted source02c273db. Original GPL/Angband notices are retained.
+The24 public entries have independent typed dispatch; all BI reads use Read.
+ItemUseState and engine-derived activation/type lookup knowledge stay shared.
+New dependencies are effect/query-once adapters for object logging, kind-effect
+facts and no-light facts; existing inventory/spell/keypress APIs remain shared.
+R435-NEW-DEPENDENCIES.json records the exact delta. The test-only constructed
+fixture queues commands on copied memories; it is not actual engine consumption
+or a natural-play claim. Runtime acceptance remains pending until the task's
+exact native/check/switch validation and canonical evidence are complete.
+
+The R4 availability predicate borg_equips_item now has an immutable
+&BorgState signature on native and owned bodies, a typed ReadDecision and an
+ordered query-once comparison without a state fork. Its previous mutable
+public spelling was stronger than the body needed; all callers coerce their
+borrow without changing branch semantics. The API dependency retains complete
+input-state checking as a query. All genuinely stateful entries retain full
+fork/return/post-state comparison. @5 telemetry partitions these roots;
+previous @4 evidence is historical and explicitly readable, never upgraded.

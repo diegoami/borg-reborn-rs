@@ -21,6 +21,31 @@ AttackAuxLaunch,
 AttackSpellBolt { spell:u32,rad:i32,dam:i32,typ:i32,max_range:i32,is_arc:bool },
 AttackEffectiveness { attack_type:i32 },
 Attack { boosted_bravery:bool },
+ItemQuaffCrit { no_check:bool },
+ItemQuaffPotion { sval:i32 },
+ItemQuaffUnknown,
+ItemReadScroll { sval:i32 },
+ItemReadUnknown,
+ItemEat { tval:i32,sval:i32 },
+ItemEatUnknown,
+ItemEatFoodAny,
+ItemEquipsRod { sval:i32 },
+ItemZapRod { sval:i32 },
+ItemUseStaff { sval:i32 },
+ItemUseUnknown,
+ItemUseStaffFail { sval:i32 },
+ItemEquipsStaffFail { sval:i32 },
+ItemAimWand { sval:i32 },
+ItemEquipsRing { ring_sval:i32 },
+ItemActivateRing { ring_sval:i32 },
+ItemEquipsDragon { drag_sval:i32 },
+ItemActivateDragon { drag_sval:i32 },
+ItemActivateItem { activation:i32 },
+ItemEquipsItem { activation:i32,check_charge:bool },
+ItemActivateFailure { tval:i32,sval:i32 },
+ItemUseThings,
+ItemRecharging,
+
 
 }
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
@@ -44,6 +69,31 @@ Self::AttackAuxLaunch=>"attack.borg_attack_aux_launch",
 Self::AttackSpellBolt {..}=>"attack.borg_attack_aux_spell_bolt",
 Self::AttackEffectiveness {..}=>"attack.borg_calculate_attack_effectiveness",
 Self::Attack {..}=>"attack.borg_attack",
+Self::ItemQuaffCrit {..}=>"item_use.borg_quaff_crit",
+Self::ItemQuaffPotion {..}=>"item_use.borg_quaff_potion",
+Self::ItemQuaffUnknown=>"item_use.borg_quaff_unknown",
+Self::ItemReadScroll {..}=>"item_use.borg_read_scroll",
+Self::ItemReadUnknown=>"item_use.borg_read_unknown",
+Self::ItemEat {..}=>"item_use.borg_eat",
+Self::ItemEatUnknown=>"item_use.borg_eat_unknown",
+Self::ItemEatFoodAny=>"item_use.borg_eat_food_any",
+Self::ItemEquipsRod {..}=>"item_use.borg_equips_rod",
+Self::ItemZapRod {..}=>"item_use.borg_zap_rod",
+Self::ItemUseStaff {..}=>"item_use.borg_use_staff",
+Self::ItemUseUnknown=>"item_use.borg_use_unknown",
+Self::ItemUseStaffFail {..}=>"item_use.borg_use_staff_fail",
+Self::ItemEquipsStaffFail {..}=>"item_use.borg_equips_staff_fail",
+Self::ItemAimWand {..}=>"item_use.borg_aim_wand",
+Self::ItemEquipsRing {..}=>"item_use.borg_equips_ring",
+Self::ItemActivateRing {..}=>"item_use.borg_activate_ring",
+Self::ItemEquipsDragon {..}=>"item_use.borg_equips_dragon",
+Self::ItemActivateDragon {..}=>"item_use.borg_activate_dragon",
+Self::ItemActivateItem {..}=>"item_use.borg_activate_item",
+Self::ItemEquipsItem {..}=>"item_use.borg_equips_item",
+Self::ItemActivateFailure {..}=>"item_use.borg_activate_failure",
+Self::ItemUseThings=>"item_use.borg_use_things",
+Self::ItemRecharging=>"item_use.borg_recharging",
+
 
 } }
 pub fn native(self,st:&mut BorgState)->Value { match self {
@@ -64,6 +114,42 @@ Self::AttackAuxLaunch=>Value::Score(crate::borg_fight_attack::borg_attack_aux_la
 Self::AttackSpellBolt { spell,rad,dam,typ,max_range,is_arc }=>Value::Score(crate::borg_fight_attack::borg_attack_aux_spell_bolt_native(st ,spell,rad,dam,typ,max_range,is_arc)),
 Self::AttackEffectiveness { attack_type }=>Value::Score(crate::borg_fight_attack::borg_calculate_attack_effectiveness_native(st ,attack_type)),
 Self::Attack { boosted_bravery }=>Value::Acted(crate::borg_fight_attack::borg_attack_native(st ,boosted_bravery)),
+Self::ItemQuaffCrit { no_check }=>Value::Acted(crate::borg_item_use::borg_quaff_crit_native(st,no_check)),
+Self::ItemQuaffPotion { sval }=>Value::Acted(crate::borg_item_use::borg_quaff_potion_native(st,sval)),
+Self::ItemQuaffUnknown=>Value::Acted(crate::borg_item_use::borg_quaff_unknown_native(st)),
+Self::ItemReadScroll { sval }=>Value::Acted(crate::borg_item_use::borg_read_scroll_native(st,sval)),
+Self::ItemReadUnknown=>Value::Acted(crate::borg_item_use::borg_read_unknown_native(st)),
+Self::ItemEat { tval,sval }=>Value::Acted(crate::borg_item_use::borg_eat_native(st,tval,sval)),
+Self::ItemEatUnknown=>Value::Acted(crate::borg_item_use::borg_eat_unknown_native(st)),
+Self::ItemEatFoodAny=>Value::Acted(crate::borg_item_use::borg_eat_food_any_native(st)),
+Self::ItemEquipsRod { sval }=>Value::Acted(crate::borg_item_use::borg_equips_rod_native(st,sval)),
+Self::ItemZapRod { sval }=>Value::Acted(crate::borg_item_use::borg_zap_rod_native(st,sval)),
+Self::ItemUseStaff { sval }=>Value::Acted(crate::borg_item_use::borg_use_staff_native(st,sval)),
+Self::ItemUseUnknown=>Value::Acted(crate::borg_item_use::borg_use_unknown_native(st)),
+Self::ItemUseStaffFail { sval }=>Value::Acted(crate::borg_item_use::borg_use_staff_fail_native(st,sval)),
+Self::ItemEquipsStaffFail { sval }=>Value::Acted(crate::borg_item_use::borg_equips_staff_fail_native(st,sval)),
+Self::ItemAimWand { sval }=>Value::Acted(crate::borg_item_use::borg_aim_wand_native(st,sval)),
+Self::ItemEquipsRing { ring_sval }=>Value::Acted(crate::borg_item_use::borg_equips_ring_native(st,ring_sval)),
+Self::ItemActivateRing { ring_sval }=>Value::Acted(crate::borg_item_use::borg_activate_ring_native(st,ring_sval)),
+Self::ItemEquipsDragon { drag_sval }=>Value::Acted(crate::borg_item_use::borg_equips_dragon_native(st,drag_sval)),
+Self::ItemActivateDragon { drag_sval }=>Value::Acted(crate::borg_item_use::borg_activate_dragon_native(st,drag_sval)),
+Self::ItemActivateItem { activation }=>Value::Acted(crate::borg_item_use::borg_activate_item_native(st,activation)),
+Self::ItemEquipsItem { activation,check_charge }=>Value::Acted(crate::borg_item_use::borg_equips_item_native(st,activation,check_charge)),
+Self::ItemActivateFailure { tval,sval }=>Value::Score(crate::borg_item_use::borg_activate_failure_native(st,tval,sval)),
+Self::ItemUseThings=>Value::Acted(crate::borg_item_use::borg_use_things_native(st)),
+Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(st)),
+
 
 } }
+}
+
+/// Audited immutable policy requests; implementations cannot write caller memory.
+#[derive(Clone,Copy,Debug,PartialEq,Serialize)]
+#[serde(tag="kind")]
+pub enum ReadDecision { ItemEquipsItem {activation:i32,check_charge:bool} }
+impl ReadDecision {
+    pub fn name(self)->&'static str { match self { Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
+    pub fn native(self,state:&BorgState)->Value { match self {
+        Self::ItemEquipsItem {activation,check_charge}=>Value::Acted(crate::borg_item_use::borg_equips_item_native(state,activation,check_charge)),
+    } }
 }

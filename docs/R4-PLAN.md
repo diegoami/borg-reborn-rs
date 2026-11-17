@@ -14,6 +14,9 @@ never a check-time update. The lexical scanner includes tests, methods and
 all cfg arms. Its namespace/field/symbol spellings are a reading aid, not
 an exhaustive call graph or semantic proof. Hashes lock the actual bytes.
 
+The table is the initial accepted-R3 audit, before R4 wrappers are added.
+The reproducible JSON tracks the current receiving source as slices land.
+
 | Group | Files | Physical lines, including tests | Function definitions, including tests |
 | --- | ---: | ---: | ---: |
 | Primary power/wear/use/activation/store/home surface | 9 | 9,363 | 204 |

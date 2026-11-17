@@ -10,7 +10,7 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 11)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 13)
 
     def test_defence_mutation_adapters_are_exact_and_policy_cannot_delegate(self):
         for adapter in surface.DEFENCE_ADAPTERS:
@@ -61,6 +61,19 @@ class DecisionSurfaceTest(unittest.TestCase):
                      'crate::engine::game_turn()']:
             self.assertTrue(surface.inspect(code, port=True), code)
 
+    def test_policy_cannot_enable_the_constructed_driver(self):
+        for code, port in [('borg_rs::decision_api::item_use_fixture::with_stubbed_messages(f)', True),
+                           ('crate::decision_api::item_use_fixture::with_stubbed_messages(f)', False)]:
+            self.assertTrue(surface.inspect(code, port=port))
+
+    def test_item_use_cannot_obtain_its_own_native_action_as_a_dependency(self):
+        self.assertTrue(surface.inspect(
+            'borg_rs::decision_api::borg_item_use::borg_quaff_potion(st, 1);',
+            port=True, policy='item_use'))
+        self.assertFalse(surface.inspect(
+            'borg_rs::decision_api::borg_inventory::borg_slot(st, 1, 2);',
+            port=True, policy='item_use'))
+
     def test_attack_cannot_use_its_own_shared_native_score(self):
         code = 'borg_rs::decision_api::borg_fight_attack::borg_thrust_damage_one(st, 1);'
         self.assertTrue(surface.inspect(code, port=True, policy='attack'))
@@ -93,7 +106,7 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 12)
+            self.assertEqual(surface.check(fixture), 14)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):

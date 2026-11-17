@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend')
-PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', *NATIVE}
@@ -15,7 +15,7 @@ PORT_NAMESPACES = {'decision_api', 'decision_tape', 'memory', 'threat_facts'}
 
 # Exact audited code exceptions, never a file-wide exemption. Changing these
 # requires reviewing the dispatch types / sole native BI write explicitly.
-DISPATCH_IMPORT = 'use borg_rs::{decisions::{Decision,Value},memory::BorgState,};'
+DISPATCH_IMPORT = 'use borg_rs::{decisions::{Decision,ReadDecision,Value},memory::BorgState,};'
 MANA_ADAPTER = ('fn set_mana(st:&mut BorgState,value:i32){'
                 'st.borg.trait_[borg_rs::memory::traits::BI_CURSP as usize]=value;}')
 
@@ -45,8 +45,8 @@ def inspect(text, port=False, dispatch=False, policy=None):
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
-        if policy in ('attack', 'defence'):
-            module = 'borg_fight_attack' if policy == 'attack' else 'borg_fight_defend'
+        if policy in ('attack', 'defence', 'item_use'):
+            module = {'attack':'borg_fight_attack', 'defence':'borg_fight_defend', 'item_use':'borg_item_use'}[policy]
             if re.search(r'\bborg_rs::decision_api::'+module+'::', code):
                 errors.append(policy+' may not delegate its own policy through a shared native result')
         if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):
@@ -79,7 +79,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
         for match in re.finditer(r'\bborg_rs\s*::\s*(memory|threat_facts|decisions)\s*::\s*(\w+)', code):
             allowed_names = {'memory': {'BorgState'},
                              'threat_facts': {'param', 'Param'},
-                             'decisions': {'Decision', 'Value'} if dispatch else set()}
+                             'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()}
             if match[2] not in allowed_names[match[1]]:
                 errors.append(f'unrecorded path borg_rs::{match[1]}::{match[2]}')
         if re.search(r'\buse\s+borg_rs\s*::\s*(?:memory|threat_facts|decision_tape|decisions)\s*;', code):
@@ -89,6 +89,8 @@ def inspect(text, port=False, dispatch=False, policy=None):
                 errors.append(f'unrecorded local namespace crate::{match[1]}')
     else:
         errors = []
+    if re.search(r'\b(?:borg_rs|crate)::decision_api::item_use_fixture\b', code):
+        errors.append('policy may not invoke the constructed test driver')
     code = re.sub(r'\s*::\s*', '::', code)
     prefix = 'borg_rs' if port else 'crate'
     allowed = (PORT_NAMESPACES | ({'decisions'} if dispatch else set())) if port else NATIVE_NAMESPACES
@@ -99,7 +101,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
         if m[1] not in ('active', 'mark'):
             errors.append(f'policy may not drive the tape through {m[1]}')
     exact_imports = {'threat_facts': {'param','Param'}, 'memory': {'BorgState'},
-                     'decisions': {'Decision', 'Value'} if dispatch else set()} if port else {
+                     'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime'},
         'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y','BorgGrid','DUNGEON_HGT','DUNGEON_WID'}, 'borg_update': {'Detect'},
         'state': {'BorgState'}}
@@ -139,7 +141,7 @@ def check(root):
     for path, port in paths:
         errors = inspect(path.read_text(), port,
                          dispatch=port and path == directory / 'mod.rs',
-                         policy=next((name for name in ('attack','defence') if port and
+                         policy=next((name for name in ('attack','defence','item_use') if port and
                              (path.stem == name or name in path.relative_to(directory).parts[:-1])),None))
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))

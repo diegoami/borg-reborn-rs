@@ -60,6 +60,34 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
+      # R4: test-only copied memories. Queued commands never reach the game.
+      - name: Constructed item-use controls
+        run: |
+          BORG_IMPL=rust BORG_TEST_FEATURES=test-r4-item-use flock /tmp/angband-validation.lock harness/build.sh
+          for mode in check switch; do
+            BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=$mode BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/item-test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband flock /tmp/angband-validation.lock harness/run.sh harness/out/item-use-fixture-$mode 1001 0 1 1000 menu
+          done
+          python3 - <<'PYITEM'
+          import json, pathlib
+          for mode in ('check', 'switch'):
+              rows = [json.loads(line) for line in pathlib.Path(f'harness/out/item-use-fixture-{mode}/r4-item-use-fixtures.jsonl').read_text().splitlines()]
+              assert len(rows) == 55 and len({r['case'] for r in rows}) == 55
+              assert all(r['schema'] == 'borg-reborn-rs/r4-item-use-constructed@1'
+                         and r['synthetic'] is True and r['engine_consumption'] is False
+                         and r['stubbed_dependencies'] == ['borg_io::borg_note_bytes']
+                         and r['mode'] == mode and r['value'] == r['expected']
+                         and r['items_unchanged'] is True for r in rows)
+          PYITEM
+          if strings build/rust/game/angband | grep -q 'R4 item-use constructed fixture'; then
+            echo 'R4 constructed fixtures leaked into the normal binary'; exit 1
+          fi
+      - name: Retain constructed item-use evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-item-use-fixtures
+          path: harness/out/item-use-fixture-*
+          if-no-files-found: ignore
       # R3: exercise the real selector/restoration bodies on declared owned
       # memories. Keep this test build and its artifacts separate from arms.
       - name: Constructed defence controls
@@ -139,8 +167,8 @@ jobs:
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=off BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-off
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths harness/suite.sh smoke harness/out/shadow-switch
-          harness/check-shadow.py --expect-mode check harness/out/shadow-check
-          harness/check-shadow.py --expect-mode switch harness/out/shadow-switch
+          harness/check-shadow.py --r4-item-use --expect-mode check harness/out/shadow-check
+          harness/check-shadow.py --r4-item-use --expect-mode switch harness/out/shadow-switch
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-check
           harness/diff --suite smoke --expect-impl rust harness/out/shadow-off harness/out/shadow-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/shadow-off harness/out/shadow-check harness/out/shadow-switch
@@ -150,8 +178,8 @@ jobs:
         run: |
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=check BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-check
           BORG_CORE=borg-rs BORG_CORE_OVERRIDES=off BORG_SHADOW=switch BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/core-deaths JOBS=1 harness/suite.sh stateful-entries harness/out/stateful-entries-switch
-          harness/check-shadow.py --require-all-entries --expect-mode check harness/out/stateful-entries-check
-          harness/check-shadow.py --require-all-entries --expect-mode switch harness/out/stateful-entries-switch
+          harness/check-shadow.py --r4-item-use --require-all-entries --expect-mode check harness/out/stateful-entries-check harness/out/item-use-fixture-check
+          harness/check-shadow.py --r4-item-use --require-all-entries --expect-mode switch harness/out/stateful-entries-switch harness/out/item-use-fixture-switch
           harness/diff --suite stateful-entries --expect-impl rust harness/out/stateful-entries-check harness/out/stateful-entries-switch
           python3 tools/reconcile-deaths.py --registry "$BORG_VALIDATION_ARCHIVE" "$RUNNER_TEMP/core-deaths" --runs harness/out/stateful-entries-check harness/out/stateful-entries-switch
       # P3: exercise the actual profile serializer and run_cell at our zoo pin.
