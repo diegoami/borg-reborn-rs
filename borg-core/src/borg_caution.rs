@@ -29,7 +29,7 @@ use crate::borg_flow_stairs::{
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
-    BERSERK_STRENGTH, BLESS, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
+    BERSERK_STRENGTH, BLESS, CURE_POISON, HASTE_SELF, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
@@ -216,9 +216,10 @@ fn outmatched_heal_applies(
         && danger >= curhp
 }
 
-/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
-/// at the end of `borg_caution`, after every escape, stair, retreat and
-/// back-away option declined, a hurt Borg whose danger estimate reaches its
+/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached at the
+/// end of `borg_caution`, after every escape, stair, retreat and back-away
+/// option declined, and (#504) when cornered, before the boosts: a hurt Borg
+/// whose danger estimate reaches its
 /// HP drinks the weakest cure potion it holds (CLW, CSW, CCW) instead of
 /// attacking, even if the potion cannot "cover" the danger. The danger
 /// estimate is a pessimistic worst case; the potion buys a turn.
@@ -2410,7 +2411,8 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// borg-reborn-rs (#504): the cornered boosts (`boost_order`), the first one
 /// carried or castable. Their usual danger windows (`borg_defend`'s "some
 /// danger but not much") do not apply: the Borg is losing and cannot leave.
-/// Spells are cast only below `caution_cornered_spell_fail` percent failure,
+/// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
+/// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
 fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
@@ -2433,7 +2435,10 @@ fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
                     || borg_quaff_potion(st, v.sv_potion_berserk),
                 "curing fear",
             ),
-            Boost::Speed => (borg_quaff_potion(st, v.sv_potion_speed), "Speed"),
+            Boost::Speed => (
+                borg_spell_fail(st, HASTE_SELF, fail) || borg_quaff_potion(st, v.sv_potion_speed),
+                "Speed",
+            ),
             Boost::Heroism => (
                 borg_spell_fail(st, HEROISM, fail) || borg_quaff_potion(st, v.sv_potion_heroism),
                 "Heroism",

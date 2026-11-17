@@ -137,7 +137,8 @@ known monster within the radius, and danger here at or above the HP x tenths /
 10. Then, before any retreat, in order and each while not active: a fear cure
 when afraid, Speed, Heroism, Berserk Strength, Blessing, and Monster Confusion
 against an adjacent unique or higher-level monster that is not immune to confusion.
-Buff spells are cast only below `caution_cornered_spell_fail` (25) percent
+Buff spells (Haste Self for Druids and Rangers, Heroism, Berserk Strength,
+Bless) are cast only at or below `caution_cornered_spell_fail` (25) percent
 failure. A melee class (Warrior,
 Paladin, Rogue, Blackguard) neither retreats nor backs away. Healing comes
 first: the ordinary heal tiers run earlier in `borg_caution`, and when
@@ -157,7 +158,7 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 | `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2300` |
 | `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2300` |
 | `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2358` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2415` (buff spells only below this failure rate) |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2415` (buff spells only at or below this failure rate) |
 | `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2346` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Breeders and named scary monsters (#503)
