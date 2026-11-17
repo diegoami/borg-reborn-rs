@@ -88,16 +88,26 @@ def town_departures(path, shop_turns):
     return visits
 
 
-CAPS = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
-        "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
-        "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
-        "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
-        "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
-        "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
-        "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-        "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience",
-        "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control",
-        "Ranger usable shots"]  # borg_town_capability::NAMES
+CAPABILITY_RS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'borg-core', 'src',
+                             'borg_town_capability.rs')
+
+
+def capability_names(path=CAPABILITY_RS):
+    """borg_town_capability::NAMES, read from the source so the audit never
+    drifts from it (#496 review F3: a hand-kept copy lacked "healing
+    reserve")."""
+    with open(path, encoding='utf-8') as f:
+        text = f.read()
+    m = re.search(r'pub const NAMES: \[&str; (\d+)\] = \[(.*?)\];', text, re.S)
+    if not m:
+        raise SystemExit(f'{path}: no `pub const NAMES` found')
+    names = re.findall(r'"((?:[^"\\]|\\.)*)"', m.group(2))
+    if len(names) != int(m.group(1)):
+        raise SystemExit(f'{path}: NAMES declares {m.group(1)} entries, found {len(names)}')
+    return names
+
+
+CAPS = capability_names()
 UNIT = 1000
 W_GOLD, W_SPACE = 14, 22  # indices in the record's params (borg_h order from borg_town_plan)
 
