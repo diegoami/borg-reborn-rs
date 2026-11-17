@@ -2251,6 +2251,72 @@ pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
 
+/// borg-reborn-rs (#505): a monster is scary when one of the character's
+/// turns of its melee can take at least `caution_scary_damage_percent` of
+/// the character's max HP (owner: scary is a monster that can one- or
+/// two-shot you, as a percentage of HP). The damage is the monster's own:
+/// the average of its blows (`randcalc` AVERAGE: base, dice and level bonus), times its moves per character turn
+/// (`extract_energy` of both speeds, at least one). Not `borg_danger`, which
+/// adds large penalties for stealing, paralysis or confusion (a street
+/// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
+/// current HP: a wounded character is the danger-against-avoidance flight's
+/// business. 0 = off.
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+    let percent = p(Param::caution_scary_damage_percent);
+    let max_hp = st.borg.tr(BI_MAXHP);
+    if percent <= 0 || max_hp <= 0 { return false; }
+    let kill = st.kills.kills[i as usize];
+    let r_idx = usize::from(kill.r_idx);
+    if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
+    let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
+    let scary = scary_damage_reaches(damage, max_hp, percent);
+    if scary && !st.borg.mon.scary {
+        let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
+        borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
+    }
+    scary
+}
+
+/// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
+/// character turn, at these speeds.
+fn melee_damage_per_turn(r_idx: usize, monster_speed: i32, player_speed: i32) -> i32 {
+    let never_blow = crate::engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW);
+    let level = i32::from(crate::engine::race(r_idx).level);
+    let blows: Vec<_> = (0..usize::from(crate::engine::z_info().mon_blows_max))
+        .map_while(|k| crate::engine::race_blow(r_idx, k))
+        .map(|b| (b.base, b.dice, b.sides, b.m_bonus))
+        .collect();
+    let energy = |speed: i32| i32::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    melee_damage(&blows, level, never_blow, energy(monster_speed), energy(player_speed))
+}
+
+/// borg-reborn-rs (#505): `randcalc(dice, level, AVERAGE)` (z-rand.c) in
+/// tenths of a point: `base + dice x (sides + 1) / 2 + m_bonus x level /
+/// MAX_RAND_DEPTH`, keeping the dice average's half point that the engine's
+/// integer `damcalc` drops (1d4 is 2.5, not 2). The engine rolls the same
+/// `random_value` for a blow (mon-attack.c `make_attack_normal`).
+fn blow_average_tenths(base: i32, dice: i32, sides: i32, m_bonus: i32, level: i32) -> i64 {
+    const MAX_RAND_DEPTH: i64 = 128; // z-rand.h
+    i64::from(base) * 10 + i64::from(dice) * i64::from(sides + 1) * 5
+        + i64::from(m_bonus) * i64::from(level) * 10 / MAX_RAND_DEPTH
+}
+
+/// borg-reborn-rs (#505): the sum of the blows' averages (`(base, dice,
+/// sides, m_bonus)`), times the monster's moves per character turn (its
+/// energy over the character's, at least one move), in whole points;
+/// nothing for a race that never blows.
+fn melee_damage(blows: &[(i32, i32, i32, i32)], level: i32, never_blow: bool, monster_energy: i32, player_energy: i32) -> i32 {
+    if never_blow { return 0; }
+    let tenths: i64 = blows.iter().map(|&(b, d, s, m)| blow_average_tenths(b, d, s, m, level)).sum();
+    let moves_tenths = (10 * i64::from(monster_energy.max(1)) / i64::from(player_energy.max(1))).max(10);
+    i32::try_from(tenths * moves_tenths / 100).unwrap_or(i32::MAX)
+}
+
+/// borg-reborn-rs (#505): `damage` is at least `percent` of `max_hp`.
+pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(damage) * 100 >= i64::from(max_hp) * i64::from(percent)
+}
+
 /// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
 /// Blackguard) hunt breeders while there are at most
 /// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
@@ -2439,6 +2505,47 @@ mod outmatched_tests {
         let flag = spec("caution_heal_when_outmatched");
         assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
         assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod scary_damage_tests {
+    use super::*;
+
+    #[test]
+    fn a_monster_that_can_two_shot_you_is_scary() {
+        // 50 percent: two of its turns kill a character at full health.
+        assert!(scary_damage_reaches(5, 10, 50), "5 of 10 HP is half");
+        assert!(!scary_damage_reaches(4, 10, 50));
+        assert!(!scary_damage_reaches(12, 80, 50), "the same monster against 80 HP");
+        assert!(scary_damage_reaches(10, 10, 100), "100 = one shot only");
+        assert!(!scary_damage_reaches(9, 10, 100));
+        assert!(!scary_damage_reaches(1000, 10, 0), "0 = off");
+        assert!(scary_damage_reaches(i32::MAX, i32::MAX, 100), "no overflow");
+        assert!(!scary_damage_reaches(i32::MAX, i32::MAX, 1000));
+    }
+
+    #[test]
+    fn a_blow_averages_its_whole_random_value() {
+        assert_eq!(blow_average_tenths(0, 1, 4, 0, 10), 25, "1d4 is 2.5");
+        assert_eq!(blow_average_tenths(3, 1, 4, 0, 10), 55, "a fixed base adds");
+        // m_bonus 64 at level 64 averages 64 x 64 / 128 = 32.
+        assert_eq!(blow_average_tenths(0, 0, 0, 64, 64), 320, "the level-scaled bonus adds");
+        assert_eq!(blow_average_tenths(5, 2, 6, 64, 32), 50 + 70 + 160);
+    }
+
+    #[test]
+    fn melee_damage_sums_the_blows_times_the_moves() {
+        let bite = (0, 1, 8, 0); // 4.5
+        let claw = (0, 1, 3, 0); // 2.0
+        assert_eq!(melee_damage(&[bite], 1, false, 10, 10), 4, "one move: 4.5 rounds down");
+        assert_eq!(melee_damage(&[bite, claw], 1, false, 10, 10), 6, "several blows add");
+        // Twice the character's energy per game turn: two moves per character turn.
+        assert_eq!(melee_damage(&[bite], 1, false, 20, 10), 9, "a monster twice as fast doubles");
+        assert_eq!(melee_damage(&[bite], 1, false, 5, 10), 4, "a slower monster still gets one move");
+        assert_eq!(melee_damage(&[bite, claw], 1, true, 20, 10), 0, "RF_NEVER_BLOW");
+        assert_eq!(melee_damage(&[(4, 1, 8, 0)], 1, false, 10, 10), 8, "a base counts");
+        assert_eq!(melee_damage(&[], 1, false, 10, 10), 0);
     }
 }
 
