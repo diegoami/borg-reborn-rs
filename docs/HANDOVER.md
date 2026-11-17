@@ -21,6 +21,56 @@ mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
 - On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
   The freed gold isn't spent on healing; the healing value is a diminishing
   curve (HP x exposure), which is borg-reborn-rs#491.
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
+## 2026-11-17: point-blank shots keep half their damage (#485)
+
+Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its
+bow scored 4 (8 with the Ranger preference) against melee 22–64.
+
+- **Cause:** not the launcher's damage. Bow and Main Gauche both score 4,
+  and the engine agrees (1.2 shots, 1.17 blows, about 6 each per turn).
+  The gap is the danger bonus. Melee adds the target's danger over 2 turns
+  at full damage; `borg_launch_bolt_aux_hack` adds 1 turn weighted by the
+  monster's hit chance, 0 for a monster 2 squares away (same as C). An
+  adjacent non-unique could not be shot at all: damage / 5 = 0. The engine
+  has no point-blank penalty; arrow breakage is the same at any distance.
+  Per-term numbers are in the issue.
+- **Change (owner):** shipped `harness/borg.txt` sets
+  `borg_param_attack_arrow_point_blank_divisor = 2`. The compiled default
+  stays 5. It applies to launcher ammo and thrown objects of every class.
+- **Replay:** with 2, the Ranger is alive at the 100k-turn cap (CL8, max
+  DL7) instead of dying at turn 74,797. It diverges at turn 6,573, so this is
+  one game, not evidence (RULES 14); a zoo arm should measure it.
+- **Left:** the danger-term asymmetry itself (a `full_damage` parameter for
+  the launcher's term) is not changed. Owner's call after the zoo measure.
 
 ## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
 
