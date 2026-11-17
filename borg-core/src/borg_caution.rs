@@ -51,7 +51,7 @@ use crate::borg_light::{borg_maintain_light, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
-use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NO_CONF, RF_UNIQUE};
+use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
@@ -216,10 +216,9 @@ fn outmatched_heal_applies(
         && danger >= curhp
 }
 
-/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached at the
-/// end of `borg_caution`, after every escape, stair, retreat and back-away
-/// option declined, and (#504) when cornered, before the boosts: a hurt Borg
-/// whose danger estimate reaches its
+/// borg-reborn-rs (#457): the last stop before `borg_attack`. Reached only
+/// at the end of `borg_caution`, after every escape, stair, retreat and
+/// back-away option declined, a hurt Borg whose danger estimate reaches its
 /// HP drinks the weakest cure potion it holds (CLW, CSW, CCW) instead of
 /// attacking, even if the potion cannot "cover" the danger. The danger
 /// estimate is a pessimistic worst case; the potion buys a turn.
@@ -1979,9 +1978,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
     let cornered = fight_cornered(st, pos_danger);
-    // Heal first (#457's outmatched heal, which otherwise runs at the end),
-    // then the boosts.
-    if cornered && (borg_heal_outmatched(st, pos_danger) || cornered_boost(st, "Cornered")) {
+    // The boosts. #457's outmatched heal stays at the end of `borg_caution`,
+    // after retreat and back-away: tried first, it kept a cornered Borg
+    // drinking in place where one step away saved it (#511 replays).
+    if cornered && cornered_boost(st, "Cornered") {
         return true;
     }
     if !cornered && breeder_fight_hard(st, pos_danger) && cornered_boost(st, "Hard breeder fight") {
@@ -2323,12 +2323,17 @@ fn fight_cornered_with(st: &BorgState, pos_danger: i32, on: i32, tenths: i32, ne
         && st.borg.tr(BI_AESCAPE) <= 0
 }
 
-/// The distance to the nearest known monster, -1 when none is known.
+/// The distance to the nearest known monster that can move, -1 when none is
+/// known. A monster that never moves (a mold) does not corner the Borg: one
+/// step away leaves it.
 fn nearest_kill(st: &BorgState) -> i32 {
     let mut best = -1;
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = &st.kills.kills[i];
         if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) {
             continue;
         }
         let d = engine::distance(st.borg.c, kill.pos);

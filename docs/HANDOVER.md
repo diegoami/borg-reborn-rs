@@ -22,9 +22,12 @@
   (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
   a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
 - Re-synced with main after #510 (#503) merged.
-- Review (#511): buff spells only below `caution_cornered_spell_fail` (25%)
-  failure; no Monster Confusion against `RF_NO_CONF`; when cornered the
-  outmatched heal before the boosts; Teleport Level is an escape (Recall is
+- Review (#511): buff spells only at or below `caution_cornered_spell_fail`
+  (25%) failure, Haste Self before the Speed potion; no Monster Confusion
+  against `RF_NO_CONF`; monsters that never move do not corner the Borg;
+  the outmatched heal stays at the end (tried before the boosts, it made a
+  Rogue drink in front of a grey mold instead of stepping away, and a Ranger
+  heal in place against Bullroarer: two new deaths on main `dd5f026e`); Teleport Level is an escape (Recall is
   not); the boost order is a pure `boost_order`, unit-tested.
 - Owner: in a hard breeder fight the same boosts.
   `caution_breeder_boost_danger_tenths` (compiled 0, shipped 5): standing

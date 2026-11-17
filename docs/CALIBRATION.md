@@ -140,10 +140,10 @@ against an adjacent unique or higher-level monster that is not immune to confusi
 Buff spells (Haste Self for Druids and Rangers, Heroism, Berserk Strength,
 Bless) are cast only at or below `caution_cornered_spell_fail` (25) percent
 failure. A melee class (Warrior,
-Paladin, Rogue, Blackguard) neither retreats nor backs away. Healing comes
-first: the ordinary heal tiers run earlier in `borg_caution`, and when
-cornered #457's outmatched heal (otherwise at the end) is tried before the
-boosts. Teleport Level counts as an escape; Word of Recall does not (unlike
+Paladin, Rogue, Blackguard) neither retreats nor backs away. The ordinary heal tiers run earlier in `borg_caution`; #457's outmatched
+heal stays at the end, after retreat and back-away (tried first, it kept a
+cornered Borg drinking in place where a step away saved it). A monster that
+never moves (a mold) does not corner the Borg. Teleport Level counts as an escape; Word of Recall does not (unlike
 #503's easy escapes: 15–35 turns is too slow for a fight already lost). Monster Confusion is off the town
 planner's worthless list while the mode is on. The compiled defaults leave it
 off; `harness/borg.txt` ships 1, 10, 2 and 0. Owner: the same boosts in a
