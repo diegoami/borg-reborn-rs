@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the named scary list as data (#518)
+
+Owner: a flexible scary list, by monster, level and class.
+- **Code:** `borg-core/src/scary_list.rs` (ours, declared in the vendor
+  check). `borg_scary_list = FILE` in `borg.txt` replaces the compiled
+  block in `borg_near_monster_type`; the list loads at `borg_init`.
+- **Data:** `harness/scary_monsters.txt`, C's list, plus Necromancers and
+  Druids in its only class exception (the squint-eyed rogue scares frail
+  casters one level longer; owner).
+  Format: `monster | take on from clevel | class exceptions | flags`.
+  C's list as a file plays byte-identical keys to the compiled one on 18
+  starts. A
+  misspelt monster stops the run before play (exit 2, with the line).
+- **Harness:** `BORG_SCARY_LIST=FILE harness/run.sh ...` copies and pins
+  the file.
+- **Not shipped yet:** `harness/borg.txt` doesn't name the file, so the zoo
+  plays the compiled list (identical) until its adapter copies the file.
+  The borg-zoo issue is linked from the PR.
+- **Next:** per-class edits, starting where the list costs most (Blackguard
+  and Druid lose about 7 levels, #518 evaluation), measured by zoo pilot.
+
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
 - `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,

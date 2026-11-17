@@ -236,6 +236,36 @@ stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
+## The named scary list as data (#518)
+
+Owner, 2026-11-17: the named list should be flexible, by monster, character
+level and class. With `borg_scary_list = FILE` in `borg.txt` (a relative name
+is resolved under the user directory), `borg_near_monster_type` reads the
+named list from that file instead of the compiled C block
+(`borg-core/src/scary_list.rs`); without the key the compiled list stays.
+`caution_scary_named_monsters` still switches named scares on and off.
+
+`harness/scary_monsters.txt` is C's list with one change: C's only class
+exception (the squint-eyed rogue scares Mages and Priests one level longer)
+also covers Necromancers and Druids, 4.2's other frail casters (owner). C's
+list as a file plays byte-identical keys to the compiled list on the 18
+classes-18 starts. One line per
+monster: `monster | take on from clevel | class exceptions | flags`:
+- the monster's name as in `monster.txt`, or `base:` and the start of a
+  monster base name;
+- scary while the character's level is below the "take on" level (C's
+  `clevel <= 8` is 9);
+- `class level` pairs replacing it for those classes (0 = never scary for
+  that class);
+- the flag `breeders`: only with at least as many known breeders as the
+  character's level, and not while standing against breeders (#503).
+
+An unknown monster, class or flag, or a bad level, stops the run before play
+with exit 2 and the line. Harness runs select a list with
+`BORG_SCARY_LIST=FILE` (`harness/run.sh` copies it and pins its SHA-256 in
+the run's `borg.txt`); the shipped `borg.txt` does not name one until the zoo
+copies the file (docs/ZOO-INTERFACE.md).
+
 ## Scary by damage (#505)
 
 The registry now holds **1803** parameters (1802 after #503; one added).

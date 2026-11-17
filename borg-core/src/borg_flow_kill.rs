@@ -2630,7 +2630,22 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // borg-reborn-rs (#503): the named monsters below (by character
         // level) make the level scary only with caution_scary_named_monsters;
         // the resist-based ones after them always do.
+        // borg-reborn-rs (#518): with borg_scary_list set, the list comes
+        // from that file instead of the compiled block below.
         if named {
+            if let Some(list) = crate::scary_list::selected() {
+                let who = crate::scary_list::Situation {
+                    clevel,
+                    class: b.tr(BI_CLASS),
+                    breeder_count,
+                    breeder_stand,
+                };
+                if crate::scary_list::is_scary(list, usize::from(r_idx), engine::race_base_name(usize::from(r_idx)), who) {
+                    scary = true;
+                }
+            }
+        }
+        if named && crate::scary_list::selected().is_none() {
             // run from certain scaries
             if clevel <= 5 && ridx == id.squint_eyed_rogue {
                 scary = true;

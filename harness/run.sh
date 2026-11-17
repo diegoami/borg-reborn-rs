@@ -28,6 +28,11 @@
 #            needs BORG_CORE=borg-rs). It is copied to OUTDIR/user and
 #            selected in the run's borg.txt with a line naming its SHA-256,
 #            so the plan's bytes are part of borg_txt_sha256 (#352).
+#     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
+#            the borg-rs core with caution_scary_named_monsters = 1). Copied
+#            to OUTDIR/user/scary_monsters.txt and selected in the run's
+#            borg.txt with a line naming its SHA-256, so its bytes are part
+#            of borg_txt_sha256. Without it the compiled C list is used.
 #     BORG_TXT_SET="name=value;..." rewrites existing keys of the run's
 #            borg.txt (part of borg_txt_sha256): harness/borg.txt's copy, or
 #            borg-core/borg.txt's with BORG_CORE_OVERRIDES=off, which has no
@@ -70,6 +75,14 @@ if [ -n "${BORG_ERRANDS_PLAN+set}" ]; then
         echo "run.sh: BORG_ERRANDS_PLAN needs BORG_CORE=borg-rs" >&2; exit 2; }
     PLAN="$(realpath "$BORG_ERRANDS_PLAN")"
     unset BORG_ERRANDS_PLAN
+fi
+# The named scary monsters as data (#518), pinned like the plan.
+SCARY=""
+if [ -n "${BORG_SCARY_LIST+set}" ]; then
+    [ -n "$BORG_SCARY_LIST" ] && [ -f "$BORG_SCARY_LIST" ] || {
+        echo "run.sh: BORG_SCARY_LIST=$BORG_SCARY_LIST: no such file" >&2; exit 2; }
+    SCARY="$(realpath "$BORG_SCARY_LIST")"
+    unset BORG_SCARY_LIST
 fi
 [ -x "$BIN" ] || { echo "missing $BIN (run harness/build.sh)" >&2; exit 2; }
 OUT="$(realpath -m "$1")"; SEED="$2"; RACE="$3"; CLASS="$4"; TURNS="$5"; shift 5
@@ -222,6 +235,15 @@ fi
 if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
     echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
     exit 2
+fi
+if grep -Eq '^[[:space:]]*borg_scary_list[[:space:]]*=' "$OUT/user/borg.txt"; then
+    echo "run.sh: $BORG_TXT selects a scary list; harness runs select it with BORG_SCARY_LIST" >&2
+    exit 2
+fi
+if [ -n "$SCARY" ]; then
+    cp "$SCARY" "$OUT/user/scary_monsters.txt"
+    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = scary_monsters.txt\n' \
+        "$(sha256sum < "$SCARY" | cut -d' ' -f1)" >> "$OUT/user/borg.txt"
 fi
 if [ -n "$PLAN" ]; then
     # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the

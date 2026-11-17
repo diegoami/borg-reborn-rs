@@ -1,0 +1,65 @@
+# The named scary monsters (borg-reborn-rs #518), read when borg.txt sets
+# borg_scary_list = <this file> and caution_scary_named_monsters = 1.
+#
+# A known monster on the level makes it scary (the Borg leaves and flees)
+# while the character's level is below the monster's "take on" level.
+#
+#   monster | take on from clevel | class exceptions | flags
+#
+# - monster: the race name exactly as in monster.txt, or base:<start of a
+#   monster base name> (base:ancient dragon matches every ancient dragon).
+# - take on from clevel: scary while clevel is below it. C's "clevel <= 8"
+#   is 9 here.
+# - class exceptions: "class level" pairs, comma-separated, replacing the
+#   level for that class (warrior, mage, druid, priest, necromancer,
+#   paladin, rogue, ranger, blackguard). A level of 0 means never scary for
+#   that class; a high one keeps a frail class away longer.
+# - flags: "breeders" = only while at least as many breeders as the
+#   character's level are known, and not while the Borg stands and fights
+#   breeders (#503).
+#
+# An unknown monster, class or flag, or a bad level, stops the run before
+# play. To remove a monster, delete or comment out its line.
+#
+# The C Borg's hard-coded list (borg_near_monster_type, borg_flow_kill.rs),
+# with one change: C's only class exception (Mages and Priests) predates
+# 4.2's other frail casters, so Necromancers and Druids get it too (owner,
+# 2026-11-17). Without that change the file plays key-identical to C's list.
+
+# C: up to clevel 5; frail casters up to 6 (C: Mage and Priest)
+squint-eyed rogue | 6 | mage 7, priest 7, necromancer 7, druid 7
+Grip, Farmer Maggot's Dog | 6
+Fang, Farmer Maggot's Dog | 6
+small kobold | 6
+
+# C: up to clevel 8
+soldier | 9
+cutpurse | 9
+acolyte | 9
+apprentice | 9
+kobold | 9
+shrieker mushroom patch | 9
+Farmer Maggot | 9
+filthy street urchin | 9
+battle-scarred veteran | 9
+mean-looking mercenary | 9
+
+# C: up to clevel 15; the breeders only with breeders >= clevel
+Bullroarer the Hobbit | 16
+giant white mouse | 16 | | breeders
+white worm mass | 16 | | breeders
+green worm mass | 16 | | breeders
+
+# C: up to clevel 20
+cave spider | 21
+red naga | 21
+giant red frog | 21
+radiation eye | 21
+yellow worm mass | 21 | | breeders
+
+# C: below clevel 45
+gravity hound | 45
+inertia hound | 45
+base:ancient dragon | 45
+Beorn, the Shape-Changer | 45
+dread | 45
