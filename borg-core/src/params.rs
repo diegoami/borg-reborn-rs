@@ -242,6 +242,8 @@ parameters! {
     caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1685", "Controls flee danger hp multiplier."),
     caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1690", "Controls flee max level."),
     caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
+    town_gold_reserve => (0, "gold", 0, 10_000_000, "borg_town_budget.rs:249", "#493: gold the live town planner never spends outside the urgent needs (the larger of this and town_gold_reserve_percent)."),
+    town_gold_reserve_percent => (0, "percent", 0, 100, "borg_town_budget.rs:249", "#493: percent of the purse the live town planner never spends outside the urgent needs (the larger of this and town_gold_reserve)."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),
@@ -2002,6 +2004,7 @@ mod tests {
                 "attack" => "fight_attack",
                 "defend" => "fight_defend",
                 "item" => "item_use",
+                "town" => "town_budget",
                 _ => prefix,
             };
             assert_eq!(file, format!("borg_{module}.rs"));

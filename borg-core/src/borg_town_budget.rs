@@ -225,11 +225,35 @@ impl Budget {
     /// trip carries what the urgent needs read beyond the traits (the
     /// curing spell).
     pub fn of(st: &BorgState, stock: &Stock, trip: &Trip) -> Self {
-        Self::build(&Facts::of(st), stock, &crate::borg_town_utility::urgent_needs(st, trip), |c| {
+        let facts = Facts::of(st);
+        let mut budget = Self::build(&facts, stock, &crate::borg_town_utility::urgent_needs(st, trip), |c| {
             let ware = &st.store.shops[usize::from(c.shop)].ware[usize::from(c.slot)];
             crate::borg_town_stock::needs_served(st, ware)
-        })
+        });
+        // borg-reborn-rs (#493): the explicit gold reserve. The urgent needs
+        // were bought from the whole purse; everything else is bought from
+        // what is left above the reserve.
+        let reserve = gold_reserve(
+            facts.gold,
+            i64::from(crate::params::value(crate::params::Param::town_gold_reserve)),
+            i64::from(crate::params::value(crate::params::Param::town_gold_reserve_percent)),
+        );
+        budget.gold = spendable(facts.gold, facts.gold - budget.gold, reserve);
+        budget
     }
+}
+
+/// borg-reborn-rs (#493): the gold never spent outside the urgent needs: the
+/// larger of `town_gold_reserve` and `town_gold_reserve_percent` of the purse,
+/// at most the purse.
+pub fn gold_reserve(purse: i64, fixed: i64, percent: i64) -> i64 {
+    fixed.max(purse.max(0) * percent / 100).clamp(0, purse.max(0))
+}
+
+/// The budget's gold: the purse less the urgent purchases' cost and the
+/// reserve, never below zero (the urgent purchases may dip into the reserve).
+pub fn spendable(purse: i64, urgent_cost: i64, reserve: i64) -> i64 {
+    (purse - urgent_cost - reserve).max(0)
 }
 
 #[cfg(test)]
@@ -466,4 +490,19 @@ mod tests {
         assert_eq!(s.candidates[b.urgent[0].candidate].shop,7);
     }
 
+
+    /// #493: the reserve is the larger of the fixed amount and the percent of
+    /// the purse, never more than the purse; urgent purchases may use it.
+    #[test]
+    fn gold_reserve_is_the_larger_form_and_urgent_purchases_may_use_it() {
+        assert_eq!(gold_reserve(1000, 0, 0), 0);
+        assert_eq!(gold_reserve(1000, 100, 0), 100);
+        assert_eq!(gold_reserve(1000, 0, 25), 250);
+        assert_eq!(gold_reserve(1000, 100, 25), 250);
+        assert_eq!(gold_reserve(1000, 300, 25), 300);
+        assert_eq!(gold_reserve(50, 300, 0), 50, "never more than the purse");
+        assert_eq!(spendable(1000, 0, 0), 1000);
+        assert_eq!(spendable(1000, 100, 250), 650);
+        assert_eq!(spendable(100, 80, 50), 0, "urgent purchases dipped into the reserve");
+    }
 }

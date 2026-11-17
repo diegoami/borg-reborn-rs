@@ -15,6 +15,23 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## Gold reserve (#493)
+
+The registry now holds **1783** parameters (1781 before; two added). Before,
+the live town planner kept gold only through the soft price
+`borg_town_w_gold` (`borg_town_solve::solve_cash`: spending `c` costs
+`w x c / (gold left + 1)`), which made the last coins nearly unspendable. The
+reserve is now explicit: `Budget::of` (`borg_town_budget.rs`) takes the larger
+of the two below from the gold left after the urgent needs, which may still
+use the whole purse. The shipped `harness/borg.txt` sets both to 0 and
+`borg_town_w_gold = 0` (owner, 2026-11-17); the compiled `borg_town_w_gold`
+default is unchanged (25).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:249` |
+| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:249` |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
