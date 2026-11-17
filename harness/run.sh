@@ -203,10 +203,6 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
-# #519: the formula section lives in borg_formulas.txt next to borg.txt; it is
-# read only with borg_uses_dynamic_calcs = TRUE (shipped FALSE).
-FORMULAS="$(dirname "$BORG_TXT")/borg_formulas.txt"
-[ -f "$FORMULAS" ] && cp "$FORMULAS" "$OUT/user/borg_formulas.txt"
 # #479: harness/borg.txt defaults to the borg-rs core; a harness run with
 # no BORG_CORE keeps testing the reborn core its references were made with.
 [ -n "${BORG_CORE+set}" ] || sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"

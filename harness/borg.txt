@@ -569,8 +569,9 @@ borg_param_caution_breeder_easy_escape_steps = 5
 borg_param_caution_breeder_stand_radius = 5
 borg_param_caution_breeder_hunt_max_count = 4
 
-# The formula section (Power, Depth Requirement, Restock Requirement) is in
-# borg_formulas.txt (#519). It is read only with borg_uses_dynamic_calcs =
-# TRUE (shipped FALSE: the core's built-in calculations are used) and only
-# when this file has no [BEGIN FORMULA SECTION] of its own.
-borg_formulas = borg_formulas.txt
+# #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
+# Requirement, Restock Requirement; 790 lines) is removed. It was read only
+# with borg_uses_dynamic_calcs = TRUE, which this file sets FALSE, so the
+# core's built-in calculations were always used. borg-core/borg.txt keeps
+# borg-rs's copy. Setting TRUE here now warns "no formulas found" and keeps
+# dynamic calculations off.

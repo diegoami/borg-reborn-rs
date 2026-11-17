@@ -643,46 +643,7 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
         fp.close();
     }
 
-    // borg-reborn-rs (#519): the formula section in its own file
-    let formulas_found = formulas_found || load_formulas_file(file.st);
-
     finish_txt_settings(&mut file, formulas_found, old_formulas_found)
-}
-
-/// borg-reborn-rs (#519): with dynamic calculations on and no formula
-/// section in borg.txt, read it from the file `borg_formulas` names
-/// (relative to the user directory): its lines up to and including
-/// `[BEGIN FORMULA SECTION]` are skipped, then the loader reads the section
-/// as from borg.txt. Returns whether a section was loaded. With dynamic
-/// calculations off (the shipped borg.txt) nothing is read.
-fn load_formulas_file(st: &mut BorgState) -> bool {
-    if st.cfg(BORG_USES_DYNAMIC_CALCS) == 0 {
-        return false;
-    }
-    let Some(name) = crate::shell::borg_txt_setting("borg_formulas").filter(|n| !n.trim().is_empty()) else {
-        return false;
-    };
-    let path = engine::path_build_user(1024, name.trim().as_bytes());
-    let Some(mut fp) = engine::file_open_read(&path) else {
-        borg_warning(st, &format!("** borg_formulas: cannot read {}", name.trim()));
-        return false;
-    };
-    let mut buf = [0u8; TXT_BUF];
-    let mut found = false;
-    while fp.getl(&mut buf, TXT_BUF - 1) {
-        let len = buf.iter().position(|&c| c == 0).unwrap_or(TXT_BUF);
-        if prefix_i(&buf[..len], b"[BEGIN FORMULA SECTION]") {
-            found = true;
-            break;
-        }
-    }
-    if found {
-        crate::borg_formulas::borg_load_formulas_from(st, |buf, len| fp.getl(buf, len));
-    } else {
-        borg_warning(st, &format!("** borg_formulas: no [BEGIN FORMULA SECTION] in {}", name.trim()));
-    }
-    fp.close();
-    found
 }
 
 /// Restore the player's ignore settings saved by `borg_reinit_options()`
