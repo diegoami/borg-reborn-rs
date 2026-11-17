@@ -17,17 +17,18 @@ from the existing device-failure `permille` unit. No existing default changes.
 
 ## Healing reserve (#491)
 
-The registry now holds **1783** parameters (1781 before; two added). Owner
-(2026-11-17): "we can never have enough healing", as two configurable values.
-Both act on the live town planner's healing curve
+The registry now holds **1784** parameters (1781 before; three added). Owner
+(2026-11-17): "we can never have enough healing", as configurable values, and
+"budget healing speed as well". All act on the live town planner's healing curve
 (`borg_town_capability::observe`), where carrying `x` HP of healing was worth
 `w x x / (x + d)` with `w = borg_town_w_bleeding x exposure` and
 `d = max HP x exposure`, so each potion was worth less than the one before.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:528` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:521` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:541` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:269` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:534` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -37,8 +38,17 @@ Both act on the live town planner's healing curve
   first and never sells below it; past it only the curve remains.
 - **Curve scale:** multiplies `w` and `d` together. The first HP keeps its
   value; the curve reaches half its maximum at `scale x d` instead of `d`.
-- The shipped `harness/borg.txt` proposes 800 and 100 (#491's measurement in
-  docs/HANDOVER.md). At 0 and 100 play is byte-identical to before.
+- **Healing speed:** the HP one HEAL_HP use supplies, to the curve and the
+  reserve alike, are weighted by how fast it brings the character back to
+  max HP. A use that heals at least `town_heal_speed_percent` of max HP
+  counts in full; a smaller one counts `heal x heal / (percent x max HP)`.
+  At 66, Cure Light Wounds (20 HP) counts in full up to 30 max HP. The
+  planner's best healing per gold moves from CLW (30 HP) to CSW (60–100 HP)
+  to Healing (200+ HP); with HP alone it is CLW at every level. Cure
+  Critical Wounds (60 HP for 200 gold) never wins on healing alone.
+- The shipped `harness/borg.txt` proposes 800, 100 and 66 (#491's
+  measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
+  to before.
 
 ## No unknown items (#470)
 

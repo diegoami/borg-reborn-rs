@@ -17,8 +17,23 @@ the diminishing curve past it, with proposed defaults.
     the reserve, keeping its first HP's value.
 - **Off is identical:** at 0 and 100 the four starts of the issue play the
   same key streams as main `4d83dd26`.
-- **Proposed shipped values:** 800 and 100, in `harness/borg.txt`. Owner to
-  confirm before merge.
+  - `town_heal_speed_percent` (0 = HP alone), owner: "budget healing speed
+    as well". A potion that heals at least this percent of max HP in one
+    swallow counts in full; a smaller one counts `heal x heal / (percent x
+    max HP)`. HP per gold alone made Cure Light Wounds the best buy at every
+    level: 800% of a 300-HP character's max HP is 120 CLW, each healing
+    20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
+    CSW (60–100 HP), then Healing (200+ HP). CCW (60 HP for 200 gold) never
+    wins on healing alone.
+- **Proposed shipped values:** reserve 800, curve 100, speed 66, in
+  `harness/borg.txt`. Owner to confirm before merge.
+- **Speed 66 on the four starts:** off still equals main and reserve 800
+  is unchanged by the new code.
+  - Rogue, Blackguard: unchanged, with or without the reserve.
+  - Ranger (34 HP) with reserve 800: 21 potions bought, 570 gold (CLW and
+    CSW), alive.
+  - Druid with reserve 800: 30 potions, 650 gold, alive.
+  - No deep character is measured.
 - **Measurement:** the four starts, 100k turns, branch build. Healing
   potions bought, gold on healing / total, outcome. One game per cell,
   descriptive (RULES 14).

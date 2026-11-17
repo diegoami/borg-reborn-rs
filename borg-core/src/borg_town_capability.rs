@@ -214,6 +214,19 @@ fn effect_supply_for_consumer(effects: &[(u16, i32, i64)], hp: i64, service_turn
     sum.into_iter().filter(|&(_, n)| n > 0).collect()
 }
 
+/// borg-reborn-rs (#491, owner: "budget healing speed"): the healing units of
+/// one HEAL_HP use. The HP it restores (capped at max HP), weighted by how
+/// fast it brings the character back to max HP: one that heals at least
+/// `speed_percent` of max HP in one swallow counts in full; a smaller one
+/// counts `heal x heal / (speed_percent of max HP)`, so a Cure Light Wounds
+/// (20 HP) is worth less the more HP the character has. 0 = HP alone.
+fn heal_units(amount: i64, hp: i64, speed_percent: i64) -> i64 {
+    let heal = amount.max(1).min(hp.max(1));
+    // The full-value heal in hundredths of an HP, so no rounding moves it.
+    let full = hp.max(1) * speed_percent.clamp(0, 100);
+    if full > heal * 100 { heal * heal * UNIT * 100 / full } else { heal * UNIT }
+}
+
 fn reduction_cap(subtype: u32) -> Option<usize> {
     match subtype { TMD_POISONED => Some(POISON), TMD_CONFUSED => Some(CONFUSION),
         TMD_BLIND => Some(BLIND), TMD_AFRAID => Some(FEAR), TMD_CUT => Some(CUT),
@@ -253,7 +266,7 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
             EF_NOURISH if subtype == 3 && amount > HUNGRY_PERCENT => Some((FOOD, (amount - HUNGRY_PERCENT) * UNIT)),
             EF_NOURISH if subtype == 3 => None,
             EF_NOURISH if subtype != 1 && amount > 0 => Some((FOOD, n)), // A decreasing food effect is not nourishment.
-            EF_HEAL_HP => Some((HEAL, amount.max(1).min(hp) * UNIT)),
+            EF_HEAL_HP => Some((HEAL, heal_units(amount, hp, i64::from(param(Param::town_heal_speed_percent))))),
             EF_CURE => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             EF_TIMED_DEC if amount > 0 => reduction_cap(subtype as u32).map(|cap| (cap, n)),
             // borg-reborn-rs (#452): a speed effect is one emergency use, not
@@ -1016,5 +1029,20 @@ mod tests {
         // Off: zero weight adds nothing.
         m.curves[HEAL_RESERVE][1] = 0;
         assert_eq!(m.ware(0, 0, 1), curve_only(&m));
+    }
+
+    /// #491: healing speed. At 66%, Cure Light Wounds (20 HP) counts in full
+    /// up to 30 max HP and less above; one that heals the whole of max HP
+    /// always counts in full; 0 is HP alone.
+    #[test]
+    fn healing_units_weigh_the_share_of_max_hp_one_swallow_heals() {
+        assert_eq!(heal_units(20, 30, 66), 20 * UNIT);
+        assert!(heal_units(20, 31, 66) < 20 * UNIT);
+        assert_eq!(heal_units(20, 300, 66), 20 * 20 * UNIT * 100 / (300 * 66));
+        assert_eq!(heal_units(60, 300, 66), 60 * 60 * UNIT * 100 / (300 * 66));
+        assert_eq!(heal_units(300, 300, 66), 300 * UNIT);
+        assert_eq!(heal_units(1200, 300, 66), 300 * UNIT);
+        assert_eq!(heal_units(20, 300, 0), 20 * UNIT);
+        assert_eq!(heal_units(20, 10, 66), 10 * UNIT);
     }
 }
