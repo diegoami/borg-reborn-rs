@@ -4632,7 +4632,8 @@ fn fight_speed_wanted(threshold_tenths: i32, fast: bool, depth: i32, has_speed: 
 }
 
 /// borg-reborn-rs (#469): drink a carried Potion of Speed (+10 speed for
-/// 20+2d10 turns, object.txt TIMED_INC:FAST) before a very dangerous fight.
+/// 20+2d10 turns, object.txt TIMED_INC:FAST) before a very dangerous fight,
+/// the danger summed over the monsters that can move.
 fn borg_fight_speed(st: &mut BorgState) -> bool {
     let threshold = param(Param::attack_speed_fight_danger_tenths);
     if threshold == 0 {
@@ -4642,8 +4643,19 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
     if st.borg.temp.fast || tr(st, BI_CDEPTH) == 0 || !has_speed {
         return false;
     }
+    // Only monsters that can move count (owner, 2026-11-17): a never-moving
+    // one (mushroom patch, floating eye; monster.txt NEVER_MOVE) can simply
+    // be left, and its spores or gaze inflated the danger past any threshold.
     let (y, x) = (st.borg.c.y, st.borg.c.x);
-    let danger = borg_danger(st, y, x, param(Param::defend_danger_horizon), true, false);
+    let horizon = param(Param::defend_danger_horizon);
+    let mut danger = 0i32;
+    for i in 1..i32::from(st.kills.nxt) {
+        let r_idx = st.kills.kills[i as usize].r_idx;
+        if r_idx == 0 || engine::race_flag_has(usize::from(r_idx), RF_NEVER_MOVE) {
+            continue;
+        }
+        danger = danger.saturating_add(borg_danger_one_kill(st, y, x, horizon, i, true, true));
+    }
     if !fight_speed_wanted(threshold, false, tr(st, BI_CDEPTH), true, danger, avoid(st)) {
         return false;
     }
