@@ -29,10 +29,12 @@
 #            selected in the run's borg.txt with a line naming its SHA-256,
 #            so the plan's bytes are part of borg_txt_sha256 (#352).
 #     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
-#            the borg-rs core with caution_scary_named_monsters = 1). Copied
-#            to OUTDIR/user/scary_monsters.txt and selected in the run's
-#            borg.txt with a line naming its SHA-256, so its bytes are part
-#            of borg_txt_sha256. Without it the compiled C list is used.
+#            the borg-rs core with caution_scary_named_monsters = 1),
+#            replacing the list the borg.txt names (harness/NAME, shipped:
+#            scary_monsters.txt). Either one is copied to OUTDIR/user and
+#            selected in the run's borg.txt with a line naming its SHA-256,
+#            so its bytes are part of borg_txt_sha256. borg_scary_list = none
+#            keeps the compiled C list.
 #     BORG_TXT_SET="name=value;..." rewrites existing keys of the run's
 #            borg.txt (part of borg_txt_sha256): harness/borg.txt's copy, or
 #            borg-core/borg.txt's with BORG_CORE_OVERRIDES=off, which has no
@@ -236,14 +238,26 @@ if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
     echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
     exit 2
 fi
-if grep -Eq '^[[:space:]]*borg_scary_list[[:space:]]*=' "$OUT/user/borg.txt"; then
-    echo "run.sh: $BORG_TXT selects a scary list; harness runs select it with BORG_SCARY_LIST" >&2
-    exit 2
-fi
+# The scary list (#518): the one the borg.txt names (harness/NAME), or
+# BORG_SCARY_LIST's file; "none" keeps the compiled C list. The list is
+# copied next to the run's borg.txt and its selecting line rewritten with the
+# list's SHA-256, so the list's bytes are part of borg_txt_sha256.
+SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
+SCARY_SRC=""
 if [ -n "$SCARY" ]; then
-    cp "$SCARY" "$OUT/user/scary_monsters.txt"
-    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = scary_monsters.txt\n' \
-        "$(sha256sum < "$SCARY" | cut -d' ' -f1)" >> "$OUT/user/borg.txt"
+    SCARY_SRC="$SCARY"
+    case "$SCARY_NAME" in ''|none) SCARY_NAME=scary_monsters.txt ;; esac
+elif [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
+    SCARY_SRC="$ROOT/harness/$SCARY_NAME"
+fi
+if [ -n "$SCARY_SRC" ]; then
+    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || {
+        echo "run.sh: borg_scary_list = $SCARY_NAME: a file name in harness/ is expected" >&2; exit 2; }
+    [ -f "$SCARY_SRC" ] || { echo "run.sh: scary list $SCARY_SRC: no such file" >&2; exit 2; }
+    cp "$SCARY_SRC" "$OUT/user/$SCARY_NAME"
+    sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$OUT/user/borg.txt"
+    printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
+        "$(sha256sum < "$SCARY_SRC" | cut -d' ' -f1)" "$SCARY_NAME" >> "$OUT/user/borg.txt"
 fi
 if [ -n "$PLAN" ]; then
     # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the
