@@ -95,15 +95,17 @@ Clear `BORG_ERRAND` for file-only profile measurement. The pinned adapter
 only serializes booleans/integers, so arbitrary errand commands require a
 native caller; an integer/boolean is not a valid errand. See ERRANDS.md.
 
-**The scary list (#518).** `borg_scary_list = NAME` in the run's `borg.txt`
-makes the borg-rs core read the named scary monsters from `user/NAME`
-(docs/CALIBRATION.md). The shipped `harness/borg.txt` does not set it, so a
-zoo run uses the compiled list. To run a list, the adapter has to copy the
-file into `user/` and pin its hash, as it does for `borg_plan`. Without the
-copy, the core stops before play with exit 2 (the file is missing). An arm
-varies the list by appending lines to the specimen's file: a later line for
-the same monster replaces the earlier one, `monster | none` removes it, and a
-later `fragility:` value replaces the earlier one (borg-zoo#228).
+**The scary list (#518).** The shipped `harness/borg.txt` sets
+`borg_scary_list = scary_monsters.txt`: the borg-rs core reads the named
+scary monsters from `user/scary_monsters.txt` (docs/CALIBRATION.md) and stops
+before play with exit 2 when the file is missing or invalid. The adapter
+copies the file named by the arm's profile or, without one, by the written
+`borg.txt`, from the specimen's `harness/`; pins its hash in the specimen
+(`"scary_lists"`); appends an arm's `borg_scary_list_lines`; and records the
+written file's hash with the cell (borg-zoo#228, #230). An arm returns to the
+compiled C list with `borg_scary_list = none`. A later line for the same
+monster replaces the earlier one, `monster | none` removes it, and a later
+`fragility:` value replaces the earlier one.
 
 A profile's
 `borg_param_<name>` integer sets any of the 1803 entries in
