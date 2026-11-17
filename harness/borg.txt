@@ -485,7 +485,7 @@ borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 # #491 (owner, 2026-11-17: "we can never have enough healing"): the live town
 # planner (borg_town_plan = 1) values healing linearly, at the healing
-# curve's first-HP value, up to this percent of max HP (400 = four times max
+# curve's first-HP value, up to this percent of max HP (200 = twice max
 # HP of healing; 0 = off), on top of the curve; healing is bought first and
 # never sold below it. The curve past it is stretched by the scale percent
 # (100 = the historical curve). Healing speed (owner: "budget healing speed
@@ -494,9 +494,38 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 # so Cure Light Wounds loses value above 30 max HP and a deep character
 # prefers Cure Serious Wounds, then Healing (0 = HP alone). Compiled
 # defaults: 0, 100 and 0.
-borg_param_town_heal_reserve_hp_percent = 400
+borg_param_town_heal_reserve_hp_percent = 200
 borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_speed_percent = 66
+# #487 (owner, 2026-11-17): 400% of max HP of healing was too much (a CL8
+# Warrior bought 26 Cure Light Wounds in one visit and kept 712 gold): the
+# general reserve is 200. A class overrides the curve scale with
+# borg_param_town_heal_curve_scale_percent_<class> (0 = the general one) and
+# the reserve with borg_param_town_heal_reserve_hp_percent_<class> (-1 = the
+# general one): fragile casters value healing more, warriors less (owner:
+# 150 for mages, 50 for warriors, the rest in between).
+borg_param_town_heal_curve_scale_percent_warrior = 50
+borg_param_town_heal_curve_scale_percent_paladin = 75
+borg_param_town_heal_curve_scale_percent_blackguard = 75
+borg_param_town_heal_curve_scale_percent_rogue = 100
+borg_param_town_heal_curve_scale_percent_ranger = 100
+borg_param_town_heal_curve_scale_percent_priest = 125
+borg_param_town_heal_curve_scale_percent_druid = 125
+borg_param_town_heal_curve_scale_percent_necromancer = 150
+borg_param_town_heal_curve_scale_percent_mage = 150
+borg_param_town_heal_reserve_hp_percent_warrior = 100
+borg_param_town_heal_reserve_hp_percent_paladin = 150
+borg_param_town_heal_reserve_hp_percent_blackguard = 150
+borg_param_town_heal_reserve_hp_percent_rogue = 200
+borg_param_town_heal_reserve_hp_percent_ranger = 200
+borg_param_town_heal_reserve_hp_percent_priest = 200
+borg_param_town_heal_reserve_hp_percent_druid = 200
+borg_param_town_heal_reserve_hp_percent_necromancer = 250
+borg_param_town_heal_reserve_hp_percent_mage = 250
+# #487 (owner): a Shovel only clears rubble (the engine swaps it in; a
+# weapon digs rubble too), yet four of five first visits spent 66 of 118-292
+# gold on one. Below this much gold the planner values no digging (0 = off).
+borg_param_town_digger_min_gold = 500
 # #503 (owner, 2026-11-17, #488 slice A): with breeders on the level and no
 # easy escape (no free staircase within the steps, no Phase Door, teleport,
 # Teleport Level, escape or recall), the Borg stands and fights them at once,

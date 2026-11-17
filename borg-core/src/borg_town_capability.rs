@@ -345,6 +345,43 @@ fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     out
 }
 
+/// borg-reborn-rs (#487, owner): the healing curve's scale for a class:
+/// `town_heal_curve_scale_percent_<class>`, 0 = `town_heal_curve_scale_percent`.
+pub(crate) fn heal_curve_scale_percent(class: i32) -> i32 {
+    let by_class = match class {
+        0 => param(Param::town_heal_curve_scale_percent_warrior),
+        1 => param(Param::town_heal_curve_scale_percent_mage),
+        2 => param(Param::town_heal_curve_scale_percent_druid),
+        3 => param(Param::town_heal_curve_scale_percent_priest),
+        4 => param(Param::town_heal_curve_scale_percent_necromancer),
+        5 => param(Param::town_heal_curve_scale_percent_paladin),
+        6 => param(Param::town_heal_curve_scale_percent_rogue),
+        7 => param(Param::town_heal_curve_scale_percent_ranger),
+        8 => param(Param::town_heal_curve_scale_percent_blackguard),
+        _ => 0,
+    };
+    if by_class > 0 { by_class } else { param(Param::town_heal_curve_scale_percent) }
+}
+
+/// borg-reborn-rs (#487, owner): the healing reserve for a class:
+/// `town_heal_reserve_hp_percent_<class>`, -1 = `town_heal_reserve_hp_percent`
+/// (0 is a reserve of none).
+pub(crate) fn heal_reserve_hp_percent(class: i32) -> i32 {
+    let by_class = match class {
+        0 => param(Param::town_heal_reserve_hp_percent_warrior),
+        1 => param(Param::town_heal_reserve_hp_percent_mage),
+        2 => param(Param::town_heal_reserve_hp_percent_druid),
+        3 => param(Param::town_heal_reserve_hp_percent_priest),
+        4 => param(Param::town_heal_reserve_hp_percent_necromancer),
+        5 => param(Param::town_heal_reserve_hp_percent_paladin),
+        6 => param(Param::town_heal_reserve_hp_percent_rogue),
+        7 => param(Param::town_heal_reserve_hp_percent_ranger),
+        8 => param(Param::town_heal_reserve_hp_percent_blackguard),
+        _ => -1,
+    };
+    if by_class >= 0 { by_class } else { param(Param::town_heal_reserve_hp_percent) }
+}
+
 /// borg-reborn-rs (#443, owner 2026-11-16): consumables the core never uses
 /// on purpose, from a source audit of every kind in object.txt against the
 /// core's use sites (not bookkeeping: counting, home notice, buy lists).
@@ -538,14 +575,16 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // weight and demand scale together, so its first HP is worth the same
     // (slope weight / demand = w_bleeding / max HP) and it reaches half its
     // value at scale x today's demand (100 = today).
-    let scale = i64::from(param(Param::town_heal_curve_scale_percent));
+    // #487 (owner): a class may override the scale and the reserve.
+    let class = st.borg.tr(BI_CLASS);
+    let scale = i64::from(heal_curve_scale_percent(class));
     curve(HEAL, risk(BORG_TOWN_W_BLEEDING) * scale / 100, journey.hp * exposure * scale / 100);
     // Up to `town_heal_reserve_hp_percent` of max HP of healing, each HP is
     // also worth that first-HP value, independent of the trip's exposure, on
     // top of the curve. A requirement (negative demand, like food's floor):
     // linear up to the reserve, nothing more past it, so healing is bought
     // first and never sold below it (0 = off).
-    let reserve = journey.hp * i64::from(param(Param::town_heal_reserve_hp_percent)) * UNIT / 100;
+    let reserve = journey.hp * i64::from(heal_reserve_hp_percent(class)) * UNIT / 100;
     curve(HEAL_RESERVE, if reserve > 0 { cfg(BORG_TOWN_W_BLEEDING) * reserve / journey.hp.max(1) } else { 0 }, -reserve.max(UNIT));
     curve(WOUNDS, 0, UNIT); // historical combined status ID is retained for replay
     for (cap, timed) in [(CUT, TMD_CUT), (STUN, TMD_STUN)] {
@@ -571,6 +610,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
     curve(ACQUIRE, cfg(BORG_TOWN_W_POWER) * exposure, journey.advancement * UNIT);
+    // borg-reborn-rs (#487, owner): a digger only clears rubble (the engine
+    // swaps it in; a weapon digs rubble too, slower). Below
+    // `town_digger_min_gold` gold no digging is valued, so the first visits
+    // do not spend a third to half of the purse on a Shovel (0 = off).
+    if i64::from(st.borg.tr(BI_GOLD)) < i64::from(param(Param::town_digger_min_gold)) {
+        curve(DIG, 0, support_demand);
+    }
     curve(EXPERIENCE, if t(BI_ISFIXEXP) > 0 || t(BI_ISFIXLEV) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(CURSE, if t(BI_FIRST_CURSED) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { 0 }, -UNIT);
     curve(ENCHANT, if t(BI_NEED_ENCHANT_TO_A) + t(BI_NEED_ENCHANT_TO_H) + t(BI_NEED_ENCHANT_TO_D) > 0 { cfg(BORG_TOWN_W_SUPPORT) * UNIT } else { 0 }, UNIT);
@@ -1076,5 +1122,22 @@ mod bold_is_not_a_buff_tests {
         assert_eq!(timed_cap(TMD_HERO), Some(BUFF));
         assert_eq!(timed_cap(TMD_SHERO), Some(BUFF));
         assert_eq!(timed_cap(TMD_BLESSED), Some(BUFF));
+    }
+}
+
+#[cfg(test)]
+mod class_heal_tests {
+    use super::*;
+
+    /// #487: with no class override (the compiled defaults) every class
+    /// reads the general scale and reserve.
+    #[test]
+    fn class_overrides_fall_back_to_the_general_values() {
+        for class in 0..9 {
+            assert_eq!(heal_curve_scale_percent(class), param(Param::town_heal_curve_scale_percent));
+            assert_eq!(heal_reserve_hp_percent(class), param(Param::town_heal_reserve_hp_percent));
+        }
+        assert_eq!(heal_curve_scale_percent(99), param(Param::town_heal_curve_scale_percent));
+        assert_eq!(heal_reserve_hp_percent(99), param(Param::town_heal_reserve_hp_percent));
     }
 }
