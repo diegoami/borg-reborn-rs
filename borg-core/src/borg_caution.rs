@@ -2151,6 +2151,23 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
     borg_note_bytes(st, &note);
 }
 
+/// borg-reborn-rs (#483): while rising to town (a trip or town return),
+/// hold a descent that is not a desperate escape. With connected stairs a
+/// Borg that arrives on a down staircase and takes it because the level is
+/// "scary" (or because no up staircase is known) lands on an up staircase,
+/// climbs back onto another down staircase and repeats: it never reaches
+/// town. Held, it explores for an up staircase instead. Real danger here
+/// (`caution_rising_descend_danger_tenths` of avoidance) or more than
+/// `caution_rising_explore_turns` on the level lets the descent through.
+pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
+    let budget = p(Param::caution_rising_explore_turns);
+    st.borg.goal.rising
+        && st.borg.tr(BI_CDEPTH) > 0
+        && budget > 0
+        && borg_timer(st, st.borg.time.level) < budget
+        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
@@ -2210,6 +2227,11 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     // if fleeing town, then dive
     if st.borg.tr(BI_CDEPTH) == 0 {
         st.borg.stair_more = true;
+    }
+
+    // borg-reborn-rs (#483): not while rising, unless in real danger.
+    if rising_holds_descent(st, pos_danger) {
+        st.borg.stair_more = false;
     }
 }
 
@@ -2325,5 +2347,42 @@ mod tests {
         // an immune Borg may step on it
         st.borg.trait_[BI_IFIRE as usize] = 1;
         assert!(!lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+    }
+}
+
+#[cfg(test)]
+mod rising_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A Borg rising to town on DL2, 100 turns into the level, 20 avoidance.
+    fn rising() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 2;
+        st.borg.goal.rising = true;
+        st.borg.avoidance = 20;
+        st.borg.time.now = 1100;
+        st.borg.time.level = 1000;
+        st
+    }
+
+    /// #483: while rising, a descent is held in low danger and early on the
+    /// level, and released by real danger, the exploration budget, town or
+    /// not rising.
+    #[test]
+    fn rising_holds_a_descent_until_danger_or_budget() {
+        assert!(rising_holds_descent(&rising(), 0));
+        assert!(rising_holds_descent(&rising(), 20), "danger at avoidance x 10/10 still holds");
+        assert!(!rising_holds_descent(&rising(), 21), "real danger lets the descent through");
+        let mut st = rising();
+        st.borg.time.now = st.borg.time.level + 2000;
+        assert!(!rising_holds_descent(&st, 0), "the exploration budget is spent");
+        let mut st = rising();
+        st.borg.goal.rising = false;
+        assert!(!rising_holds_descent(&st, 0), "not rising");
+        let mut st = rising();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!rising_holds_descent(&st, 0), "in town");
     }
 }

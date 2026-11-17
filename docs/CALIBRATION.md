@@ -15,6 +15,24 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## Rising to town explores for an up staircase (#483)
+
+The registry now holds **1783** parameters (1781 before; two added). While
+the Borg is rising to town (`goal.rising`: a trip or town return), a descent
+that is not a desperate escape is held, so that it explores the level for an
+up staircase. Before, with connected stairs, it arrived on a down staircase,
+took it (the level was "scary", or no up staircase was known), climbed back
+onto another down staircase and never reached town (borg-zoo#170 run
+44054277431, Ranger 1739161339: DL2/DL3 to the end). The gate is
+`borg_caution::rising_holds_descent`, applied in `choose_stairs`, in the flee
+block's flow to a down staircase and in `borg_leave_level`'s "no up stairs
+found, going down".
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_rising_explore_turns` | 2000 | turns | 0–100000 | `borg_caution.rs` `rising_holds_descent` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs` `rising_holds_descent` (danger here above avoidance x value / 10 lets the descent through) |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
