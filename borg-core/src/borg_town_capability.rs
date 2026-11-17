@@ -175,7 +175,14 @@ fn timed_cap(timed: u32) -> Option<usize> {
         TMD_FAST | TMD_SPRINT => Some(SPEED),
         TMD_OPP_FIRE => Some(FIRE), TMD_OPP_COLD => Some(COLD), TMD_OPP_POIS => Some(RESPOIS),
         TMD_OPP_ACID => Some(ACID), TMD_OPP_ELEC => Some(ELEC),
-        TMD_HERO | TMD_SHERO | TMD_BOLD | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
+        // borg-reborn-rs (#486): not TMD_BOLD. A Bold timed effect is no buff
+        // the core uses: the core takes Boldness only to cure fear (a Potion of
+        // Boldness is CURE:AFRAID, priced through FEAR; borg_caution and
+        // borg_recover quaff it when afraid), and the hunger list drinks wine
+        // as food. The only kind with TIMED_INC:BOLD in object.txt is the
+        // Pint of Fine Wine (no activation or class spell grants it), whose
+        // buff value bought 14-21 pints a game that were never drunk for it.
+        TMD_HERO | TMD_SHERO | TMD_BLESSED | TMD_SHIELD | TMD_STONESKIN | TMD_PROTEVIL
             | TMD_INVULN | TMD_ATT_ACID | TMD_ATT_ELEC | TMD_ATT_FIRE | TMD_ATT_COLD
             | TMD_ATT_POIS | TMD_ATT_EVIL | TMD_ATT_DEMON | TMD_ATT_VAMP | TMD_POWERSHOT => Some(BUFF),
         TMD_SINVIS => Some(INVISIBLE), TMD_TELEPATHY => Some(MONSTERS),
@@ -1044,5 +1051,30 @@ mod tests {
         assert_eq!(heal_units(1200, 300, 66), 300 * UNIT);
         assert_eq!(heal_units(20, 300, 0), 20 * UNIT);
         assert_eq!(heal_units(20, 10, 66), 10 * UNIT);
+    }
+}
+
+#[cfg(test)]
+mod bold_is_not_a_buff_tests {
+    use super::*;
+
+    /// #486: a Bold timed effect (wine's) supplies nothing, while a fear
+    /// cure (a Potion of Boldness, CURE:AFRAID) still supplies FEAR.
+    #[test]
+    fn a_bold_effect_supplies_nothing_and_a_fear_cure_still_supplies_fear() {
+        let wine = effect_supply(&[(EF_TIMED_INC as u16, TMD_BOLD as i32, 99)], 20, 1000);
+        assert!(wine.iter().all(|&(cap, _)| cap != BUFF), "{wine:?}");
+        let boldness = effect_supply(&[(EF_CURE as u16, TMD_AFRAID as i32, 0)], 20, 1000);
+        assert!(boldness.iter().any(|&(cap, units)| cap == FEAR && units > 0), "{boldness:?}");
+    }
+
+    /// #486: Boldness is no buff to the mapping; the buffs the core does
+    /// take stay.
+    #[test]
+    fn bold_is_not_a_buff() {
+        assert_eq!(timed_cap(TMD_BOLD), None);
+        assert_eq!(timed_cap(TMD_HERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_SHERO), Some(BUFF));
+        assert_eq!(timed_cap(TMD_BLESSED), Some(BUFF));
     }
 }

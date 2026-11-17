@@ -2,6 +2,25 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: Boldness is no buff to the town planner (#486)
+
+The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
+death starts on main's defaults), and the core never drank them for what they
+were bought for. Wine (`object.txt`: weight 10, cost 2, `NOURISH:INC_BY 3`,
+`TIMED_INC:BOLD`) has been no food to the planner since #444, but `timed_cap`
+mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
+
+- A Bold timed effect is no buff the core uses. The core takes Boldness only
+  to cure fear: a Potion of Boldness is `CURE:AFRAID`, priced through FEAR,
+  and `borg_caution` / `borg_recover` quaff it when afraid. The hunger list
+  drinks wine as food.
+- `TMD_BOLD` no longer maps to `BUFF` (`borg_town_capability::timed_cap`).
+  The rule is effect-wide on purpose: the only kind with `TIMED_INC:BOLD` in
+  `object.txt` is the Pint of Fine Wine (no activation or class spell grants
+  it), and Potions of Boldness keep their fear-cure value (tested).
+- On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
+  The freed gold isn't spent on healing; the healing value is a diminishing
+  curve (HP x exposure), which is borg-reborn-rs#491.
 ## 2026-11-17: a healing reserve for the town planner (#491)
 
 Owner: "we can never have enough healing". The owner chose
