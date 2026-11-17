@@ -13,9 +13,14 @@ repair passes. Actual nested callbacks match (four in each mode). Constructed
 coverage supplements the strict entry gate; it is not independent natural
 coverage, successful engine command consumption or live UI-note validation.
 
-Canonical evidence: borg-cemetery PR51, pinned by R435-CEMETERY-RECEIPT.json.
-It preserves16 qualified packages:12 current native deaths, one original-core
-smoke death and CI613/614/616 originals. It includes all comparisons, original
+Canonical evidence: borg-cemetery PR51 plus CI653 supplement PR60,
+pinned by R435-CEMETERY-RECEIPT.json.
+It preserves19 qualified packages:12 current native deaths, one original-core
+smoke death, CI613/614/616 originals and three CI653 original packages.
+CI653 passed gameplay/shadow/stateful-entry checks but its late archive gate
+found an additional original-arm seed1020 death (giant white mouse, turn8922).
+The supplement preserves it and the other two CI653 registry originals with
+explicit run/artifact namespaces and ZIP hashes. No runtime bytes changed. It includes all comparisons, original
 build identities, fault controls and the prepublication archive-gate failure.
 Canonical D-<hash> sidecars and aliases are assigned by the cemetery owner
 implementation, preserving all original package bytes. The source verifier

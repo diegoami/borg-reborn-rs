@@ -1,9 +1,10 @@
 {
   "schema": "borg-reborn-rs/cemetery-validation-receipt@1",
   "repository": "diegoami/borg-cemetery",
-  "commit": "3092aecaecf7ea58d01d0490fdbdc9e51b3a6f5c",
+  "commit": "35b8a24d6db4f9c3a624799cdc1db86f5542fe32",
   "root": "runs/validation/track-r/r4-item-use-95fb364b",
-  "manifest_sha256": "0d1ae31efcc963437a2e8e588179aa323cf09dd10cedddcf3251ec8652393221",
-  "publication_pr": "https://github.com/diegoami/borg-cemetery/pull/51",
-  "canonical_numeric_ids_assigned": false
+  "manifest_sha256": "781d15e7ea7067aea46bc899c7061eec07abb4d7ced3a5ad4f51b1f523489949",
+  "publication_pr": "https://github.com/diegoami/borg-cemetery/pull/60",
+  "canonical_numeric_ids_assigned": false,
+  "original_publication_pr": "https://github.com/diegoami/borg-cemetery/pull/51"
 }
