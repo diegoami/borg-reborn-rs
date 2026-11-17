@@ -29,11 +29,11 @@ use crate::borg_flow_stairs::{
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
-    BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
+    BERSERK_STRENGTH, BLESS, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
@@ -52,7 +52,8 @@ use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
 use crate::headers::list_options_h::OPT_birth_force_descend;
-use crate::headers::list_player_timed_h::TMD_OPP_ACID;
+use crate::headers::list_mon_race_flags_h::RF_UNIQUE;
+use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
@@ -1965,6 +1966,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#504): cornered (no escape, a fight on, danger at or
+    // above the HP): every buff it carries or can cast, Monster Confusion
+    // against a big monster, then a melee class fights without backing away.
+    let cornered = fight_cornered(st, pos_danger);
+    if cornered && cornered_boost(st) {
+        return true;
+    }
+    let all_out = cornered && melee_class(st);
+
     // Strategic retreat
     //
     // Do not retreat if
@@ -1974,7 +1984,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 4) we are not in a vault
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
-    if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+    if !all_out
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && retreat(st, pos_danger, borg_surround)
     {
         return true;
@@ -2004,7 +2015,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
-    if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+    if !all_out
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
         && back_away(st, pos_danger, borg_surround)
     {
         return true;
@@ -2149,6 +2161,119 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
     let mut note = prefix.to_vec();
     note.extend_from_slice(reason.as_deref().unwrap_or(b""));
     borg_note_bytes(st, &note);
+}
+
+/// borg-reborn-rs (#504): Warriors, Paladins, Rogues and Blackguards.
+fn melee_class(st: &BorgState) -> bool {
+    matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+}
+
+/// borg-reborn-rs (#504): cornered. In the dungeon, with no Phase Door,
+/// teleport or escape in the pack or spells, a known monster within
+/// `caution_cornered_radius` grids, and danger here at or above
+/// `caution_cornered_danger_tenths` / 10 of the current HP.
+pub(crate) fn fight_cornered(st: &BorgState, pos_danger: i32) -> bool {
+    fight_cornered_with(
+        st,
+        pos_danger,
+        p(Param::caution_cornered),
+        p(Param::caution_cornered_danger_tenths),
+        nearest_kill(st),
+        p(Param::caution_cornered_radius),
+    )
+}
+
+/// `fight_cornered` with its parameters and the nearest known monster's
+/// distance (-1: none) given.
+fn fight_cornered_with(st: &BorgState, pos_danger: i32, on: i32, tenths: i32, nearest: i32, radius: i32) -> bool {
+    on != 0
+        && st.borg.tr(BI_CDEPTH) != 0
+        && i64::from(pos_danger) * 10 >= i64::from(st.borg.tr(BI_CURHP)) * i64::from(tenths)
+        && nearest != -1
+        && nearest <= radius
+        && st.borg.tr(BI_APHASE) <= 0
+        && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_AESCAPE) <= 0
+}
+
+/// The distance to the nearest known monster, -1 when none is known.
+fn nearest_kill(st: &BorgState) -> i32 {
+    let mut best = -1;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if best == -1 || d < best {
+            best = d;
+        }
+    }
+    best
+}
+
+/// An adjacent known monster that is "big": unique, or above the Borg's
+/// level by more than `caution_cornered_big_level_margin`.
+fn big_monster_adjacent(st: &BorgState) -> bool {
+    let margin = p(Param::caution_cornered_big_level_margin);
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0
+            && engine::r_max() != 0
+            && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+            && engine::distance(st.borg.c, kill.pos) == 1
+            && (engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE)
+                || i32::from(kill.level) > st.borg.tr(BI_CLEVEL) + margin)
+    })
+}
+
+/// borg-reborn-rs (#504): the cornered boosts, in order, each while it is
+/// not active: a fear cure when afraid, Speed, Heroism, Berserk Strength,
+/// Blessing, then Monster Confusion against an adjacent big monster. Their
+/// usual danger windows (`borg_defend`'s "some danger but not much") do not
+/// apply: the Borg is losing and cannot leave.
+fn cornered_boost(st: &mut BorgState) -> bool {
+    let v = st.item_val;
+    if st.borg.tr(BI_ISAFRAID) != 0
+        && st.borg.tr(BI_CRSFEAR) == 0
+        && (borg_quaff_potion(st, v.sv_potion_boldness)
+            || borg_eat(st, TV_MUSHROOM as i32, v.sv_mush_cure_mind)
+            || borg_quaff_potion(st, v.sv_potion_heroism)
+            || borg_quaff_potion(st, v.sv_potion_berserk))
+    {
+        borg_note(st, "# Cornered: curing fear");
+        return true;
+    }
+    if !st.borg.temp.fast && borg_quaff_potion(st, v.sv_potion_speed) {
+        borg_note(st, "# Cornered: Speed");
+        return true;
+    }
+    if !st.borg.temp.hero && (borg_spell(st, HEROISM) || borg_quaff_potion(st, v.sv_potion_heroism)) {
+        borg_note(st, "# Cornered: Heroism");
+        return true;
+    }
+    if !st.borg.temp.berserk
+        && (borg_spell(st, BERSERK_STRENGTH) || borg_quaff_potion(st, v.sv_potion_berserk))
+    {
+        borg_note(st, "# Cornered: Berserk Strength");
+        return true;
+    }
+    if !st.borg.temp.bless
+        && (borg_spell(st, BLESS)
+            || borg_read_scroll(st, v.sv_scroll_holy_chant)
+            || borg_read_scroll(st, v.sv_scroll_blessing))
+    {
+        borg_note(st, "# Cornered: Blessing");
+        return true;
+    }
+    if engine::player_timed(TMD_ATT_CONF) == 0
+        && big_monster_adjacent(st)
+        && borg_read_scroll(st, v.sv_scroll_monster_confusion)
+    {
+        borg_note(st, "# Cornered: Monster Confusion");
+        return true;
+    }
+    false
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),
@@ -2385,5 +2510,52 @@ mod rising_tests {
         let mut st = rising();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
         assert!(!rising_holds_descent(&st, 0), "in town");
+    }
+}
+
+#[cfg(test)]
+mod cornered_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A Blackguard on DL1 at 5 HP, nothing to escape with.
+    fn trapped() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_CURHP as usize] = 5;
+        st.borg.trait_[BI_CLASS as usize] = 8;
+        st
+    }
+
+    /// #504: cornered with danger at or above the HP, a monster within the
+    /// radius and no Phase Door, teleport or escape; not in town, not with
+    /// an escape, not with the monster far or the danger low, not off.
+    #[test]
+    fn cornered_needs_danger_a_fight_and_no_escape() {
+        let st = trapped();
+        assert!(fight_cornered_with(&st, 5, 1, 10, 1, 2), "danger = HP, monster adjacent");
+        assert!(!fight_cornered_with(&st, 4, 1, 10, 1, 2), "danger below the HP");
+        assert!(fight_cornered_with(&st, 3, 1, 5, 1, 2), "half the HP at 5 tenths");
+        assert!(!fight_cornered_with(&st, 5, 0, 10, 1, 2), "switch off");
+        assert!(!fight_cornered_with(&st, 5, 1, 10, -1, 2), "no monster known");
+        assert!(!fight_cornered_with(&st, 5, 1, 10, 3, 2), "monster beyond the radius");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_AESCAPE] {
+            let mut st = trapped();
+            st.borg.trait_[t as usize] = 1;
+            assert!(!fight_cornered_with(&st, 5, 1, 10, 1, 2), "escape {t}");
+        }
+        let mut st = trapped();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!fight_cornered_with(&st, 5, 1, 10, 1, 2), "town");
+    }
+
+    #[test]
+    fn melee_classes_fight_all_out() {
+        for (class, melee) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+            let mut st = trapped();
+            st.borg.trait_[BI_CLASS as usize] = class;
+            assert_eq!(melee_class(&st), melee, "class {class}");
+        }
     }
 }

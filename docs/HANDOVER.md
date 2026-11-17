@@ -2,6 +2,28 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: cornered mode (#504, #488 slice B)
+
+- `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
+  teleport or escape, a monster within `caution_cornered_radius` 2, danger
+  at or above HP x `caution_cornered_danger_tenths` / 10) the Borg uses every
+  buff regardless of `borg_defend`'s "some danger but not much" window:
+  fear cure, Speed, Heroism, Berserk Strength, Blessing, then Monster
+  Confusion against an adjacent unique or higher-level monster
+  (`caution_cornered_big_level_margin` 0). Melee classes then neither retreat
+  nor back away. Monster Confusion leaves the planner's worthless list only
+  while the mode is on (the planner still gives it no value: no core
+  supply curve reads TMD_ATT_CONF).
+- On 193d9076 (run 44054277431's death starts): Blackguard 888896726
+  (Berserk Strength cast 9 times) and Rogue 1502695781 survive; the Ranger
+  (bleeding) plays identical keys (it has Phase Door); Ranger3 dies to a
+  crow instead of a centipede; the Druid is unchanged.
+- On main, 9 classes x 2 seeds (2001, 2002), 100k turns: 6 deaths off, 3 on
+  (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
+  a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
+- Built on main without #510 (#503); the two touch borg_caution.rs, params.rs,
+  harness/borg.txt and the docs: the second to merge re-syncs.
+
 ## 2026-11-17: explicit gold reserve, shipped 0 (#493)
 
 Owner: the gold reserve is a borg.txt setting, fixed and percent, and it

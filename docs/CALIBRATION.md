@@ -126,6 +126,29 @@ up staircase on one level.
 | `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
+## Cornered mode (#504)
+
+Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
+danger but not much" (10–50% of avoidance), so a Borg that is losing a fight
+it cannot leave used none: a Blackguard died at 1/41 HP with its Berserk
+Strength spell unused. With `caution_cornered`, cornered means: in the
+dungeon, no Phase Door, teleport or escape (in the pack or as a spell), a
+known monster within the radius, and danger here at or above the HP x tenths /
+10. Then, before any retreat, in order and each while not active: a fear cure
+when afraid, Speed, Heroism, Berserk Strength, Blessing, and Monster Confusion
+against an adjacent unique or higher-level monster. A melee class (Warrior,
+Paladin, Rogue, Blackguard) neither retreats nor backs away. Healing comes
+first as before (#457's outmatched heal). Monster Confusion is off the town
+planner's worthless list while the mode is on. The compiled defaults leave it
+off; `harness/borg.txt` ships 1, 10, 2 and 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2175` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2175` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2175` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2217` |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
