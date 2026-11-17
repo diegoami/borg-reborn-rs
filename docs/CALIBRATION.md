@@ -126,6 +126,30 @@ up staircase on one level.
 | `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
 | `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
 
+## Healing by class; no Shovel while poor (#487)
+
+The registry now holds **1821** parameters (1802 after #503; nineteen added).
+Owner, 2026-11-17, from #487's analysis (no melee class bought a weapon; the
+gold went to dozens of Cure Light Wounds for #491's 400% reserve and to a
+Shovel at the first visit):
+
+- `town_heal_curve_scale_percent_<class>` (`borg_town_capability.rs:350`,
+  0 = `town_heal_curve_scale_percent`) and `town_heal_reserve_hp_percent_<class>`
+  (`borg_town_capability.rs:369`, -1 = `town_heal_reserve_hp_percent`, 0 = no
+  reserve), for warrior, mage, druid, priest, necromancer, paladin, rogue,
+  ranger and blackguard. Unit `percent_override`; compiled defaults fall back
+  to the general values.
+- `town_digger_min_gold` (`borg_town_capability.rs:617`, 0 = off): below this
+  gold the live planner values no digging. A Shovel only clears rubble (the
+  engine swaps it in, "with your swap digger", 2–6 piles a game); a weapon
+  digs rubble too.
+
+Shipped in `harness/borg.txt`: the general reserve 200 (was 400); scale
+Warrior 50, Paladin and Blackguard 75, Rogue and Ranger 100, Priest and Druid
+125, Necromancer and Mage 150; reserve Warrior 100, Paladin and Blackguard
+150, Rogue and Ranger 200, Priest and Druid 250, Necromancer and Mage 300;
+digger 500 gold.
+
 ## Breeders and named scary monsters (#503)
 
 The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three

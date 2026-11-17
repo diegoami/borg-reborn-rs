@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: healing by class, no Shovel while poor (#487)
+
+- #487's analysis (on the issue): no melee class bought a weapon in five
+  games; for Warriors and Rogues the try-on rates every heavier weapon about
+  -44,500 power per lost blow, so keeping the Dagger is right; Paladins,
+  Blackguards and Rangers miss upgrades by a few gold. The gold went to
+  Cure Light Wounds for the 400% reserve (a CL8 Warrior bought 26 in one
+  visit and kept 712 gold) and to a Shovel (66 gold) at four of five first
+  visits.
+- Owner: per-class overrides of the healing curve scale and reserve
+  (`town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
+  shipped from 50 (Warrior) to 150 (Mage) and from 100 to 300; the general
+  reserve 200; `town_digger_min_gold` 500. Weapon saving is not done.
+- On main, 9 classes x 2 seeds: with the old values (reserve 400, scale 100,
+  no class values, digger 0) the 18 games play identical keys to main; with
+  the shipped ones 4 deaths become 2 (two lived, two others died: a Druid to
+  an acolyte, a Priest to a green worm mass), Warriors spend far less on
+  healing (590/1540 -> 330/240 gold), casters more. Too few games: borg-zoo
+  experiment to follow at the merge.
+
 ## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
 
 #488 (stand-and-fight) is split into #503 (A, breeders), #504 (B, the
