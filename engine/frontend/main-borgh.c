@@ -111,6 +111,8 @@
 #if defined(USE_BORGH) && defined(BORG_HARNESS) && defined(ALLOW_BORG)
 
 extern struct keypress (*inkey_hack)(int flush_first);
+extern void borg_capture_encounter(void);
+static bool encounter_capture_enabled;
 
 /* Options */
 static bool opt_exact_turns;
@@ -579,6 +581,8 @@ static void borgh_state(void)
  */
 static void borgh_key(struct keypress k)
 {
+	/* Include the exact loaded/birth state before the first played key. */
+	if (encounter_capture_enabled && !keys_logged) borg_capture_encounter();
 	if (opt_start_depth && !initial_depth) {
 		/* This is after generation, before the first Borg key is played.
 		 * Reject a town fallback or overwritten birth options as a failure. */
@@ -696,6 +700,16 @@ static void borgh_checkpoint(void)
 	checkpoint_next = ((long)turn / opt_checkpoint_every + 1) * opt_checkpoint_every;
 }
 
+
+/* Capture before each top-level game command, including repeated commands.
+ * The Rust reader restores engine RNG and owns its own diagnostic RNG. */
+static void borgh_command_boundary(void)
+{
+    if (encounter_capture_enabled && player && !player->is_dead &&
+        character_dungeon && !player->upkeep->generate_level)
+        borg_capture_encounter();
+    borgh_checkpoint();
+}
 
 static void prepare_borg_start(void)
 {
@@ -1102,7 +1116,10 @@ errr init_borgh(int argc, char *argv[])
 	borgh_turn_hook = borgh_tick;
 	borgh_key_hook = borgh_key;
 	borgh_message_hook = borgh_message;
-	borgh_command_hook = opt_checkpoint_dir ? borgh_checkpoint : NULL;
+	encounter_capture_enabled = getenv("BORG_ENCOUNTER_LOG") ||
+        getenv("BORG_OBSERVATION_LOG") || getenv("BORG_KNOWLEDGE_LOG") ||
+        getenv("BORG_ENCOUNTER_KNOWLEDGE_LOG");
+    borgh_command_hook = (opt_checkpoint_dir || encounter_capture_enabled) ? borgh_command_boundary : NULL;
 
 	term_data_link(0);
 	return 0;

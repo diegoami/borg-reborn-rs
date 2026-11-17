@@ -26,6 +26,8 @@ pub(crate) mod bindings;
 
 pub mod borg;
 pub mod danger;
+#[cfg(feature = "borgh")]
+mod encounter_capture;
 pub mod engine;
 pub mod equipment;
 pub mod executor;
