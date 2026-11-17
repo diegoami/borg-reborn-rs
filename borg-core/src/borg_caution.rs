@@ -1978,7 +1978,10 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
     let cornered = fight_cornered(st, pos_danger);
-    if (cornered || breeder_fight_hard(st, pos_danger)) && cornered_boost(st) {
+    if cornered && cornered_boost(st, "Cornered") {
+        return true;
+    }
+    if !cornered && breeder_fight_hard(st, pos_danger) && cornered_boost(st, "Hard breeder fight") {
         return true;
     }
     let all_out = cornered && melee_class(st);
@@ -2364,7 +2367,7 @@ fn big_monster_adjacent(st: &BorgState) -> bool {
 /// Blessing, then Monster Confusion against an adjacent big monster. Their
 /// usual danger windows (`borg_defend`'s "some danger but not much") do not
 /// apply: the Borg is losing and cannot leave.
-fn cornered_boost(st: &mut BorgState) -> bool {
+fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
     if st.borg.tr(BI_ISAFRAID) != 0
         && st.borg.tr(BI_CRSFEAR) == 0
@@ -2373,21 +2376,21 @@ fn cornered_boost(st: &mut BorgState) -> bool {
             || borg_quaff_potion(st, v.sv_potion_heroism)
             || borg_quaff_potion(st, v.sv_potion_berserk))
     {
-        borg_note(st, "# Cornered: curing fear");
+        borg_note(st, &format!("# {why}: curing fear"));
         return true;
     }
     if !st.borg.temp.fast && borg_quaff_potion(st, v.sv_potion_speed) {
-        borg_note(st, "# Cornered: Speed");
+        borg_note(st, &format!("# {why}: Speed"));
         return true;
     }
     if !st.borg.temp.hero && (borg_spell(st, HEROISM) || borg_quaff_potion(st, v.sv_potion_heroism)) {
-        borg_note(st, "# Cornered: Heroism");
+        borg_note(st, &format!("# {why}: Heroism"));
         return true;
     }
     if !st.borg.temp.berserk
         && (borg_spell(st, BERSERK_STRENGTH) || borg_quaff_potion(st, v.sv_potion_berserk))
     {
-        borg_note(st, "# Cornered: Berserk Strength");
+        borg_note(st, &format!("# {why}: Berserk Strength"));
         return true;
     }
     if !st.borg.temp.bless
@@ -2395,14 +2398,14 @@ fn cornered_boost(st: &mut BorgState) -> bool {
             || borg_read_scroll(st, v.sv_scroll_holy_chant)
             || borg_read_scroll(st, v.sv_scroll_blessing))
     {
-        borg_note(st, "# Cornered: Blessing");
+        borg_note(st, &format!("# {why}: Blessing"));
         return true;
     }
     if engine::player_timed(TMD_ATT_CONF) == 0
         && big_monster_adjacent(st)
         && borg_read_scroll(st, v.sv_scroll_monster_confusion)
     {
-        borg_note(st, "# Cornered: Monster Confusion");
+        borg_note(st, &format!("# {why}: Monster Confusion"));
         return true;
     }
     false
