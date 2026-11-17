@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: Speed before a very dangerous fight (#469)
+
+- Owner: when the danger is very high and the Borg fights rather than
+  retreats, drink a Potion of Speed. `attack_speed_fight_danger_tenths`
+  (0 = off, default): once `borg_attack` has chosen a positive best attack
+  other than waiting, a Borg in the dungeon, not fast, with a Speed potion,
+  drinks it first when the danger from monsters that can move (no
+  NEVER_MOVE) is above avoidance x value / 10. This is now the only change
+  that drinks Speed: #465 merged as hoarding only (its last-resort quaff was
+  dropped). The core's own `borg_defend_aux_speed` is unchanged.
+- Found: counting every monster, grey mushroom patches (NEVER_MOVE, spore
+  danger 204) set it off at any threshold. Moving monsters only, it fires 2
+  (setting 20) and 1 (setting 50) times in 180 starts of the ambitious arm
+  (4,2), at thieves (scruffy looking hobbit, cutpurse), with no rescue or
+  new death; off is byte-identical (12 of 12). Descriptive (RULES 14).
+- Left: those games end near DL2, where Speed rarely matters; the setting
+  needs a zoo arm with deeper play. Thieves' danger is inflated by theft.
+
 ## 2026-11-17: a game's start leaves out borg.txt and flags (#464 follow-up)
 
 - Owner-approved: a new borg.txt setting changed the file's hash and made
