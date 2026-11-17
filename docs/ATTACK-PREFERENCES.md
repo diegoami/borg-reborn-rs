@@ -11,7 +11,7 @@ controls; floor rounding and existing emergency eligibility are retained.
 `attack_preference_<class>_<family>_permille` has registry default 1000 (since #479
 the shipped `harness/borg.txt` sets 16 of them, the borg-zoo#170 speed30 bundle;
 docs/HANDOVER.md), inclusive bounds
-500..2000, unit `utility_permille`. Nine classes × six families = 54 parameters.
+500..2000, unit `utility_permille`. Nine classes × six families = 54 parameters until #520; since #520 one parameter per family (`attack_preference_<family>_permille`) with per-class values, the 54 names kept as aliases (docs/ZOO-INTERFACE.md, "Class values").
 Classes are engine class.txt order at 42cd156ac: Warrior, Mage, Druid, Priest,
 Necromancer, Paladin, Rogue, Ranger, Blackguard. Wait is fixed at neutral; unknown
 class IDs use neutral and are exposed as a numeric ID with null class name.

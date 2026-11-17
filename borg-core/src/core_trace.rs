@@ -299,7 +299,7 @@ mod tests {
         assert_eq!(trace.candidates[0].raw_utility, 25);
         assert_eq!(trace.candidates[0].adjusted_utility, 25);
         assert_eq!(trace.candidates[0].parameter_origin, "default");
-        assert_eq!(trace.candidates[0].parameter_name.as_deref(), Some("attack_preference_mage_melee_permille"));
+        assert_eq!(trace.candidates[0].parameter_name.as_deref(), Some("attack_preference_melee_permille"));
         let json = serde_json::to_string(trace).unwrap();
         assert_eq!(serde_json::from_str::<AttackRanking>(&json).unwrap(), *trace);
         assert!(attack_ranking().is_none());

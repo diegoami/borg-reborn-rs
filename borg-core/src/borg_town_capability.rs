@@ -363,41 +363,21 @@ fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     out
 }
 
-/// borg-reborn-rs (#487, owner): the healing curve's scale for a class:
-/// `town_heal_curve_scale_percent_<class>`, 0 = `town_heal_curve_scale_percent`.
-pub(crate) fn heal_curve_scale_percent(class: i32) -> i32 {
-    let by_class = match class {
-        0 => param(Param::town_heal_curve_scale_percent_warrior),
-        1 => param(Param::town_heal_curve_scale_percent_mage),
-        2 => param(Param::town_heal_curve_scale_percent_druid),
-        3 => param(Param::town_heal_curve_scale_percent_priest),
-        4 => param(Param::town_heal_curve_scale_percent_necromancer),
-        5 => param(Param::town_heal_curve_scale_percent_paladin),
-        6 => param(Param::town_heal_curve_scale_percent_rogue),
-        7 => param(Param::town_heal_curve_scale_percent_ranger),
-        8 => param(Param::town_heal_curve_scale_percent_blackguard),
-        _ => 0,
-    };
-    if by_class > 0 { by_class } else { param(Param::town_heal_curve_scale_percent) }
+/// borg-reborn-rs (#487, #520): the healing curve's scale:
+/// `town_heal_curve_scale_percent`, the class's own value when it has one.
+pub(crate) fn heal_curve_scale_percent(_class: i32) -> i32 {
+    // borg-reborn-rs (#520): the class's own value, if any, comes through
+    // `param` (town_heal_curve_scale_percent@<class> or the class file).
+    param(Param::town_heal_curve_scale_percent)
 }
 
-/// borg-reborn-rs (#487, owner): the healing reserve for a class:
-/// `town_heal_reserve_hp_percent_<class>`, -1 = `town_heal_reserve_hp_percent`
+/// borg-reborn-rs (#487, #520): the healing reserve:
+/// `town_heal_reserve_hp_percent`, the class's own value when it has one
 /// (0 is a reserve of none).
-pub(crate) fn heal_reserve_hp_percent(class: i32) -> i32 {
-    let by_class = match class {
-        0 => param(Param::town_heal_reserve_hp_percent_warrior),
-        1 => param(Param::town_heal_reserve_hp_percent_mage),
-        2 => param(Param::town_heal_reserve_hp_percent_druid),
-        3 => param(Param::town_heal_reserve_hp_percent_priest),
-        4 => param(Param::town_heal_reserve_hp_percent_necromancer),
-        5 => param(Param::town_heal_reserve_hp_percent_paladin),
-        6 => param(Param::town_heal_reserve_hp_percent_rogue),
-        7 => param(Param::town_heal_reserve_hp_percent_ranger),
-        8 => param(Param::town_heal_reserve_hp_percent_blackguard),
-        _ => -1,
-    };
-    if by_class >= 0 { by_class } else { param(Param::town_heal_reserve_hp_percent) }
+pub(crate) fn heal_reserve_hp_percent(_class: i32) -> i32 {
+    // borg-reborn-rs (#520): the class's own value, if any, comes through
+    // `param` (town_heal_reserve_hp_percent@<class> or the class file).
+    param(Param::town_heal_reserve_hp_percent)
 }
 
 /// borg-reborn-rs (#443, owner 2026-11-16): consumables the core never uses

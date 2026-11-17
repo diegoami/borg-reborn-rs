@@ -3003,23 +3003,13 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     b_n
 }
 
-/// borg-reborn-rs (#485): the divisor of a shot at an adjacent non-unique:
-/// the class's `attack_arrow_point_blank_divisor_<class>` when set (> 0),
-/// else the default `attack_arrow_point_blank_divisor`.
-pub(crate) fn point_blank_divisor(class: i32) -> i32 {
-    let by_class = match class {
-        0 => param(Param::attack_arrow_point_blank_divisor_warrior),
-        1 => param(Param::attack_arrow_point_blank_divisor_mage),
-        2 => param(Param::attack_arrow_point_blank_divisor_druid),
-        3 => param(Param::attack_arrow_point_blank_divisor_priest),
-        4 => param(Param::attack_arrow_point_blank_divisor_necromancer),
-        5 => param(Param::attack_arrow_point_blank_divisor_paladin),
-        6 => param(Param::attack_arrow_point_blank_divisor_rogue),
-        7 => param(Param::attack_arrow_point_blank_divisor_ranger),
-        8 => param(Param::attack_arrow_point_blank_divisor_blackguard),
-        _ => 0,
-    };
-    if by_class > 0 { by_class } else { param(Param::attack_arrow_point_blank_divisor) }
+/// borg-reborn-rs (#485, #520): the divisor of a shot at an adjacent
+/// non-unique: `attack_arrow_point_blank_divisor`, the class's own value
+/// when it has one.
+pub(crate) fn point_blank_divisor(_class: i32) -> i32 {
+    // borg-reborn-rs (#520): the class's own divisor, if any, comes through
+    // `param` (attack_arrow_point_blank_divisor@<class> or the class file).
+    param(Param::attack_arrow_point_blank_divisor)
 }
 
 /// Simulate/Apply the optimal result of ACTIVATING an attack artifact

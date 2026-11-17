@@ -2,6 +2,24 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: class values and per-class borg files (#520)
+
+Owner: one common borg.txt, per-class files overriding any setting, no
+per-class flags in the code; decisions A–D "yes to all" (on #520).
+
+- `params.rs`: every parameter has a common value and optional class values
+  (`borg_param_<name>@<class>`, `BORG_PARAM_<NAME>__<CLASS>`, or the pre-#520
+  per-class names as aliases). `value()` follows the character's class
+  (`set_class`). 81 per-class parameters became 6 (registry 2,116).
+- `harness/borg_<class>.txt` hold the 36 shipped class values; the generated
+  CLASS FILES block in `harness/borg.txt` carries them (legacy names, so zoo
+  profiles keep rewriting them); `scripts/tests/test_borg_class_files.py`
+  keeps the block in sync. The zoo adapter needs no change.
+- `params-core.json` adds `class_values`; the trace's attack `parameter_name`
+  is the family's parameter.
+- Checked: the 18 classes-18 starts play identical keys to main `435b07e7`.
+- Left: the cfg `borg_*` settings (decision C: later); #518's scary list by
+  class can use class values.
 ## 2026-11-17: borg.txt's formula section removed (#519)
 
 Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
