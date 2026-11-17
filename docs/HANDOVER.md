@@ -2,6 +2,39 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: cornered mode (#504, #488 slice B)
+
+- `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
+  teleport or escape, a monster within `caution_cornered_radius` 2, danger
+  at or above HP x `caution_cornered_danger_tenths` / 10) the Borg uses every
+  buff regardless of `borg_defend`'s "some danger but not much" window:
+  fear cure, Speed, Heroism, Berserk Strength, Blessing, then Monster
+  Confusion against an adjacent unique or higher-level monster
+  (`caution_cornered_big_level_margin` 0). Melee classes then neither retreat
+  nor back away. Monster Confusion leaves the planner's worthless list only
+  while the mode is on (the planner still gives it no value: no core
+  supply curve reads TMD_ATT_CONF).
+- On 193d9076 (run 44054277431's death starts): Blackguard 888896726
+  (Berserk Strength cast 9 times) and Rogue 1502695781 survive; the Ranger
+  (bleeding) plays identical keys (it has Phase Door); Ranger3 dies to a
+  crow instead of a centipede; the Druid is unchanged.
+- On main, 9 classes x 2 seeds (2001, 2002), 100k turns: 6 deaths off, 3 on
+  (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
+  a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
+- Re-synced with main after #510 (#503) merged.
+- Review (#511): buff spells only at or below `caution_cornered_spell_fail`
+  (25%) failure, Haste Self before the Speed potion; no Monster Confusion
+  against `RF_NO_CONF`; monsters that never move do not corner the Borg;
+  the outmatched heal stays at the end (tried before the boosts, it made a
+  Rogue drink in front of a grey mold instead of stepping away, and a Ranger
+  heal in place against Bullroarer: two new deaths on main `dd5f026e`); Teleport Level is an escape (Recall is
+  not); the boost order is a pure `boost_order`, unit-tested.
+- Owner: in a hard breeder fight the same boosts.
+  `caution_breeder_boost_danger_tenths` (compiled 0, shipped 5): standing
+  against breeders with no easy escape and danger here at or above half the
+  HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
+  Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
+
 ## 2026-11-17: healing by class, no Shovel while poor (#487)
 
 - #487's analysis (on the issue): no melee class bought a weapon in five

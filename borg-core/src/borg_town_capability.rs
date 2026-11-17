@@ -408,7 +408,7 @@ pub(crate) fn heal_reserve_hp_percent(class: i32) -> i32 {
 /// borg_junk). Harmful kinds are here too. Remove a kind when the core
 /// learns to use it.
 const WORTHLESS: &[(u32, &str)] = &[
-    (TV_SCROLL, "Monster Confusion"), (TV_SCROLL, "Door Destruction"), (TV_SCROLL, "Dispel Undead"),
+    (TV_SCROLL, "Door Destruction"), (TV_SCROLL, "Dispel Undead"),
     (TV_SCROLL, "Treasure Detection"), (TV_SCROLL, "Summon Monster"), (TV_SCROLL, "Summon Undead"),
     (TV_SCROLL, "*Destruction*"), (TV_SCROLL, "Aggravate Monster"), (TV_SCROLL, "Curse Weapon"),
     (TV_SCROLL, "Curse Armour"), (TV_SCROLL, "Darkness"), (TV_SCROLL, "Trap Creation"),
@@ -436,6 +436,12 @@ fn worthless(tval: u32, sval: i32) -> bool {
         .map(|&(t, name)| (t, engine::lookup_sval(t as i32, name)))
         .filter(|&(_, s)| s >= 0).collect())
         .contains(&(tval, sval))
+        // borg-reborn-rs (#504): the cornered mode reads Monster Confusion;
+        // without it the core never does.
+        || (param(Param::caution_cornered) == 0
+            && tval == TV_SCROLL
+            && sval >= 0
+            && sval == engine::lookup_sval(TV_SCROLL as i32, "Monster Confusion"))
 }
 
 fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize, i64)> {

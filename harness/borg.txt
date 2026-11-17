@@ -497,6 +497,21 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_reserve_hp_percent = 100
 borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_heal_speed_percent = 66
+# #504 (owner, 2026-11-17, #488 slice B): cornered (no Phase Door, teleport
+# or escape, a monster within the radius, danger at or above the HP), the
+# Borg uses every buff it has regardless of the usual danger windows (fear
+# cure, Speed, Heroism, Berserk Strength, Blessing), reads Monster Confusion
+# against an adjacent unique or higher-level monster, and a melee class
+# (Warrior, Paladin, Rogue, Blackguard) neither retreats nor backs away.
+# 0 = off (the control).
+borg_param_caution_cornered = 1
+borg_param_caution_cornered_danger_tenths = 10
+borg_param_caution_cornered_radius = 2
+borg_param_caution_cornered_big_level_margin = 0
+# Owner: when fighting breeders and things seem hard (no easy escape, danger
+# at or above half the HP), the same boosts: Speed, Heroism, Berserk
+# Strength, Blessing. 0 = off.
+borg_param_caution_breeder_boost_danger_tenths = 5
 # #487 (owner): the reserve counts the real HP restored; healing speed only
 # weights the healing curve (prefer Cure Serious over Cure Light when both
 # sell), not how many potions fill the reserve. 0 = speed-weighted (#491).
