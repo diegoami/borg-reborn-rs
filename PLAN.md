@@ -210,6 +210,25 @@ ranking seam, trace@2 and targeted validation. See docs/ATTACK-PREFERENCES.md.
 No danger correction, R implementation, population dispatch or default change.
 The post-merge review of task head 3f744ddb found no correctness bugs or blockers.
 Review follow-up #424 clarifies weighted attack logs and this completion status.
-Main promotion remains pending in #407; task integration is not main acceptance.
+Owner accepted #407 and delegated its promotion; it merged to main at
+4a2cb910. The earlier pending status is superseded by that disposition.
 Owner-accepted pinned P review precedes main promotion. R carries the accepted
 contract separately after promotion and #364/#366 coordination.
+
+## Owner-selected P4: M13 inventory calibration (#433, 2026-11-17)
+
+**In progress.** The owner selected #433 after #449 merged. Main is
+synchronized into track-p through #474/#475 at 9cf60aae. Scope: audit the
+M13 gaps in power, wear, buy/sell, store timing and home valuation; name
+policy thresholds/weights with neutral defaults and bounded overrides.
+Keep mechanics, UI/quantity bookkeeping, no-selling behavior and disabled
+exploit paths unchanged. The explicit shopping-plan redesign #293 remains
+a separate policy task, not an excuse to replace decisions in this migration.
+
+Exit: source classification and parameter contract documented, defaults
+reproduce the accepted full native 45-case streams, a non-neutral setting
+changes a real native decision, registry/profile/provenance and focused
+checks pass, every new natural death retained in Cemetery. Integrate task
+PR #433 only into track-p, then stop for a pinned owner-selected P4
+track-p→main review. R4 consumes the exact accepted pin in its own carry
+(#434); green task CI alone does not authorize promotion or an R port.

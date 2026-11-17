@@ -1,0 +1,5501 @@
+{
+  "source_commit": "68e39b7e848017347ed80a9f474d9552ac98de6c",
+  "parameters": [
+    {
+      "name": "buy_attack_wand_charge_limit",
+      "default": 40,
+      "unit": "count",
+      "min": 0,
+      "max": 1000,
+      "source": "borg_store_buy.rs:543"
+    },
+    {
+      "name": "buy_attack_wand_max_level",
+      "default": 30,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:552"
+    },
+    {
+      "name": "buy_black_market_early_gold",
+      "default": 20000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_buy.rs:310"
+    },
+    {
+      "name": "buy_black_market_early_level",
+      "default": 15,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:310"
+    },
+    {
+      "name": "buy_black_market_middle_gold",
+      "default": 15000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_buy.rs:313"
+    },
+    {
+      "name": "buy_black_market_middle_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:313"
+    },
+    {
+      "name": "buy_black_market_min_gold",
+      "default": 10000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_buy.rs:316"
+    },
+    {
+      "name": "buy_enchanted_ammo_min_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:231"
+    },
+    {
+      "name": "buy_extra_book_min_level",
+      "default": 5,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:346"
+    },
+    {
+      "name": "buy_home_stock_gold_divisor",
+      "default": 10,
+      "unit": "divisor",
+      "min": 1,
+      "max": 1000,
+      "source": "borg_store_buy.rs:1056"
+    },
+    {
+      "name": "buy_home_stock_gold_reserve",
+      "default": 1000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_buy.rs:1013"
+    },
+    {
+      "name": "buy_home_stock_min_level",
+      "default": 15,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:971"
+    },
+    {
+      "name": "buy_home_stock_price_multiplier",
+      "default": 5,
+      "unit": "multiplier",
+      "min": 1,
+      "max": 100,
+      "source": "borg_store_buy.rs:1013"
+    },
+    {
+      "name": "buy_hybrid_extra_book_max_level",
+      "default": 8,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_buy.rs:355"
+    },
+    {
+      "name": "home_amulets_limit",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:188"
+    },
+    {
+      "name": "home_amulets_penalty",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:188"
+    },
+    {
+      "name": "home_armor_limit",
+      "default": 6,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:189"
+    },
+    {
+      "name": "home_armor_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:189"
+    },
+    {
+      "name": "home_artifact_weight",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:449"
+    },
+    {
+      "name": "home_bad_gloves_penalty",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:203"
+    },
+    {
+      "name": "home_banishment_stack_multiplier",
+      "default": 2,
+      "unit": "multiplier",
+      "min": 1,
+      "max": 10,
+      "source": "borg_home_power.rs:305"
+    },
+    {
+      "name": "home_book_stock_base",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:441"
+    },
+    {
+      "name": "home_book_stock_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:441"
+    },
+    {
+      "name": "home_book_stock_limit",
+      "default": 5,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:438"
+    },
+    {
+      "name": "home_book_stock_max_level",
+      "default": 15,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:435"
+    },
+    {
+      "name": "home_boots_limit",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:194"
+    },
+    {
+      "name": "home_boots_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:194"
+    },
+    {
+      "name": "home_bows_limit",
+      "default": 2,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:181"
+    },
+    {
+      "name": "home_bows_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:181"
+    },
+    {
+      "name": "home_cloaks_limit",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:190"
+    },
+    {
+      "name": "home_cloaks_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:190"
+    },
+    {
+      "name": "home_cold_resist_base",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:341"
+    },
+    {
+      "name": "home_cold_resist_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:341"
+    },
+    {
+      "name": "home_cure_serious_penalty_min_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:412"
+    },
+    {
+      "name": "home_duplicate_item_penalty",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:208"
+    },
+    {
+      "name": "home_edged_weapon_penalty",
+      "default": 50,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:200"
+    },
+    {
+      "name": "home_ego_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:452"
+    },
+    {
+      "name": "home_enchant_armor_max_level",
+      "default": 45,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:254"
+    },
+    {
+      "name": "home_enchant_damage_max_level",
+      "default": 45,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:274"
+    },
+    {
+      "name": "home_enchant_hit_max_level",
+      "default": 45,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:264"
+    },
+    {
+      "name": "home_exp_stock_early_max_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:425"
+    },
+    {
+      "name": "home_exp_stock_late_min_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:423"
+    },
+    {
+      "name": "home_ffall_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:121"
+    },
+    {
+      "name": "home_ffall_one_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:121"
+    },
+    {
+      "name": "home_ffall_two_weight",
+      "default": 15,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:121"
+    },
+    {
+      "name": "home_food_stock_max_level",
+      "default": 10,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:234"
+    },
+    {
+      "name": "home_free_act_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:122"
+    },
+    {
+      "name": "home_free_act_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:122"
+    },
+    {
+      "name": "home_free_act_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:122"
+    },
+    {
+      "name": "home_gloves_limit",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:193"
+    },
+    {
+      "name": "home_gloves_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:193"
+    },
+    {
+      "name": "home_hats_limit",
+      "default": 4,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:192"
+    },
+    {
+      "name": "home_hats_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:192"
+    },
+    {
+      "name": "home_heat_resist_base",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:337"
+    },
+    {
+      "name": "home_heat_resist_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:337"
+    },
+    {
+      "name": "home_hold_life_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:123"
+    },
+    {
+      "name": "home_hold_life_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:123"
+    },
+    {
+      "name": "home_hold_life_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:123"
+    },
+    {
+      "name": "home_immune_acid_each_weight",
+      "default": 30,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:126"
+    },
+    {
+      "name": "home_immune_acid_one_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:126"
+    },
+    {
+      "name": "home_immune_acid_two_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:126"
+    },
+    {
+      "name": "home_immune_cold_each_weight",
+      "default": 30,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:132"
+    },
+    {
+      "name": "home_immune_cold_one_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:132"
+    },
+    {
+      "name": "home_immune_cold_two_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:132"
+    },
+    {
+      "name": "home_immune_elec_each_weight",
+      "default": 30,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:128"
+    },
+    {
+      "name": "home_immune_elec_one_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:128"
+    },
+    {
+      "name": "home_immune_elec_two_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:128"
+    },
+    {
+      "name": "home_immune_fire_each_weight",
+      "default": 30,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:130"
+    },
+    {
+      "name": "home_immune_fire_one_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:130"
+    },
+    {
+      "name": "home_immune_fire_two_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:130"
+    },
+    {
+      "name": "home_initial_heal_sell_level",
+      "default": 1,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:390"
+    },
+    {
+      "name": "home_light_each_weight",
+      "default": 5,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:116"
+    },
+    {
+      "name": "home_light_one_weight",
+      "default": 150,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:116"
+    },
+    {
+      "name": "home_light_two_weight",
+      "default": 170,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:116"
+    },
+    {
+      "name": "home_mana_stock_min_sp",
+      "default": 1,
+      "unit": "sp",
+      "min": 0,
+      "max": 10000,
+      "source": "borg_home_power.rs:377"
+    },
+    {
+      "name": "home_mass_banishment_stack_multiplier",
+      "default": 2,
+      "unit": "multiplier",
+      "min": 1,
+      "max": 10,
+      "source": "borg_home_power.rs:314"
+    },
+    {
+      "name": "home_max_level_exp_penalty",
+      "default": 7500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:421"
+    },
+    {
+      "name": "home_phase_stock_max_level",
+      "default": 10,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_home_power.rs:363"
+    },
+    {
+      "name": "home_regenerate_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:118"
+    },
+    {
+      "name": "home_regenerate_one_weight",
+      "default": 75,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:118"
+    },
+    {
+      "name": "home_regenerate_two_weight",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:118"
+    },
+    {
+      "name": "home_resist_acid_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:125"
+    },
+    {
+      "name": "home_resist_acid_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:125"
+    },
+    {
+      "name": "home_resist_acid_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:125"
+    },
+    {
+      "name": "home_resist_blind_each_weight",
+      "default": 5,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:143"
+    },
+    {
+      "name": "home_resist_blind_one_weight",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:143"
+    },
+    {
+      "name": "home_resist_blind_two_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:143"
+    },
+    {
+      "name": "home_resist_chaos_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:139"
+    },
+    {
+      "name": "home_resist_chaos_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:139"
+    },
+    {
+      "name": "home_resist_chaos_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:139"
+    },
+    {
+      "name": "home_resist_cold_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:131"
+    },
+    {
+      "name": "home_resist_cold_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:131"
+    },
+    {
+      "name": "home_resist_cold_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:131"
+    },
+    {
+      "name": "home_resist_conf_each_weight",
+      "default": 45,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:135"
+    },
+    {
+      "name": "home_resist_conf_one_weight",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:135"
+    },
+    {
+      "name": "home_resist_conf_two_weight",
+      "default": 8000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:135"
+    },
+    {
+      "name": "home_resist_dark_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:138"
+    },
+    {
+      "name": "home_resist_dark_one_weight",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:138"
+    },
+    {
+      "name": "home_resist_dark_two_weight",
+      "default": 150,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:138"
+    },
+    {
+      "name": "home_resist_disen_each_weight",
+      "default": 35,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:140"
+    },
+    {
+      "name": "home_resist_disen_one_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:140"
+    },
+    {
+      "name": "home_resist_disen_two_weight",
+      "default": 7000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:140"
+    },
+    {
+      "name": "home_resist_elec_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:127"
+    },
+    {
+      "name": "home_resist_elec_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:127"
+    },
+    {
+      "name": "home_resist_elec_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:127"
+    },
+    {
+      "name": "home_resist_fire_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:129"
+    },
+    {
+      "name": "home_resist_fire_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:129"
+    },
+    {
+      "name": "home_resist_fire_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:129"
+    },
+    {
+      "name": "home_resist_light_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:137"
+    },
+    {
+      "name": "home_resist_light_one_weight",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:137"
+    },
+    {
+      "name": "home_resist_light_two_weight",
+      "default": 150,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:137"
+    },
+    {
+      "name": "home_resist_neth_each_weight",
+      "default": 45,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:144"
+    },
+    {
+      "name": "home_resist_neth_one_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:144"
+    },
+    {
+      "name": "home_resist_neth_two_weight",
+      "default": 4000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:144"
+    },
+    {
+      "name": "home_resist_nexus_each_weight",
+      "default": 2,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:142"
+    },
+    {
+      "name": "home_resist_nexus_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:142"
+    },
+    {
+      "name": "home_resist_nexus_two_weight",
+      "default": 300,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:142"
+    },
+    {
+      "name": "home_resist_pois_each_weight",
+      "default": 40,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:134"
+    },
+    {
+      "name": "home_resist_pois_one_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:134"
+    },
+    {
+      "name": "home_resist_pois_two_weight",
+      "default": 9000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:134"
+    },
+    {
+      "name": "home_resist_shard_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:141"
+    },
+    {
+      "name": "home_resist_shard_one_weight",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:141"
+    },
+    {
+      "name": "home_resist_shard_two_weight",
+      "default": 150,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:141"
+    },
+    {
+      "name": "home_resist_sound_each_weight",
+      "default": 30,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:136"
+    },
+    {
+      "name": "home_resist_sound_one_weight",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:136"
+    },
+    {
+      "name": "home_resist_sound_two_weight",
+      "default": 700,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:136"
+    },
+    {
+      "name": "home_resistance_max_depth",
+      "default": 80,
+      "unit": "depth",
+      "min": 0,
+      "max": 127,
+      "source": "borg_home_power.rs:332"
+    },
+    {
+      "name": "home_resistance_min_depth",
+      "default": 20,
+      "unit": "depth",
+      "min": 0,
+      "max": 127,
+      "source": "borg_home_power.rs:331"
+    },
+    {
+      "name": "home_rings_excess_weight",
+      "default": 4000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:184"
+    },
+    {
+      "name": "home_rings_soft_limit",
+      "default": 6,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:183"
+    },
+    {
+      "name": "home_rings_spare_limit",
+      "default": 4,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:186"
+    },
+    {
+      "name": "home_rings_spare_penalty",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:186"
+    },
+    {
+      "name": "home_see_inv_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:120"
+    },
+    {
+      "name": "home_see_inv_one_weight",
+      "default": 800,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:120"
+    },
+    {
+      "name": "home_see_inv_two_weight",
+      "default": 1200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:120"
+    },
+    {
+      "name": "home_shields_limit",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:191"
+    },
+    {
+      "name": "home_shields_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:191"
+    },
+    {
+      "name": "home_slow_digest_each_weight",
+      "default": 5,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:117"
+    },
+    {
+      "name": "home_slow_digest_one_weight",
+      "default": 50,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:117"
+    },
+    {
+      "name": "home_slow_digest_two_weight",
+      "default": 70,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:117"
+    },
+    {
+      "name": "home_stat_caster_first_weight",
+      "default": 400,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_high_limit",
+      "default": 26,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_last_base",
+      "default": 3800,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_last_weight",
+      "default": 5,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_low_limit",
+      "default": 20,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_middle_base",
+      "default": 8000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_caster_middle_weight",
+      "default": 300,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:162"
+    },
+    {
+      "name": "home_stat_con_first_weight",
+      "default": 300,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_high_limit",
+      "default": 21,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_last_base",
+      "default": 5700,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_last_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_low_limit",
+      "default": 15,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_middle_base",
+      "default": 4500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_con_middle_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:155"
+    },
+    {
+      "name": "home_stat_dex_first_weight",
+      "default": 300,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_high_limit",
+      "default": 15,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_last_base",
+      "default": 3900,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_last_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_low_limit",
+      "default": 9,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_middle_base",
+      "default": 2700,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_dex_middle_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:151"
+    },
+    {
+      "name": "home_stat_str_first_weight",
+      "default": 300,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_high_limit",
+      "default": 15,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_last_base",
+      "default": 3900,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_last_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_low_limit",
+      "default": 9,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_middle_base",
+      "default": 2700,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stat_str_middle_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:149"
+    },
+    {
+      "name": "home_stock_cure_critical_base",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:397"
+    },
+    {
+      "name": "home_stock_cure_critical_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:397"
+    },
+    {
+      "name": "home_stock_cure_serious_base",
+      "default": -1500,
+      "unit": "score",
+      "min": -1000000,
+      "max": 0,
+      "source": "borg_home_power.rs:414"
+    },
+    {
+      "name": "home_stock_cure_serious_decay",
+      "default": -10,
+      "unit": "score",
+      "min": -1000000,
+      "max": 0,
+      "source": "borg_home_power.rs:414"
+    },
+    {
+      "name": "home_stock_cure_serious_limit",
+      "default": 90,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:414"
+    },
+    {
+      "name": "home_stock_early_exp_base",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:426"
+    },
+    {
+      "name": "home_stock_early_exp_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:426"
+    },
+    {
+      "name": "home_stock_early_exp_limit",
+      "default": 5,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:426"
+    },
+    {
+      "name": "home_stock_enchant_to_a_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:255"
+    },
+    {
+      "name": "home_stock_enchant_to_a_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:255"
+    },
+    {
+      "name": "home_stock_enchant_to_d_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:275"
+    },
+    {
+      "name": "home_stock_enchant_to_d_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:275"
+    },
+    {
+      "name": "home_stock_enchant_to_h_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:265"
+    },
+    {
+      "name": "home_stock_enchant_to_h_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:265"
+    },
+    {
+      "name": "home_stock_escape_base",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:350"
+    },
+    {
+      "name": "home_stock_escape_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:350"
+    },
+    {
+      "name": "home_stock_escape_limit",
+      "default": 85,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:350"
+    },
+    {
+      "name": "home_stock_ezheal_base",
+      "default": 8000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:407"
+    },
+    {
+      "name": "home_stock_ezheal_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:407"
+    },
+    {
+      "name": "home_stock_ezheal_limit",
+      "default": 198,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:407"
+    },
+    {
+      "name": "home_stock_food_base",
+      "default": 8000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:235"
+    },
+    {
+      "name": "home_stock_food_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:235"
+    },
+    {
+      "name": "home_stock_genocide_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:303"
+    },
+    {
+      "name": "home_stock_genocide_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:303"
+    },
+    {
+      "name": "home_stock_glyph_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:294"
+    },
+    {
+      "name": "home_stock_glyph_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:294"
+    },
+    {
+      "name": "home_stock_heal_base",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:406"
+    },
+    {
+      "name": "home_stock_heal_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:406"
+    },
+    {
+      "name": "home_stock_heal_limit",
+      "default": 90,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:406"
+    },
+    {
+      "name": "home_stock_ident_base",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:245"
+    },
+    {
+      "name": "home_stock_ident_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:245"
+    },
+    {
+      "name": "home_stock_initial_heal_base",
+      "default": -5000,
+      "unit": "score",
+      "min": -1000000,
+      "max": 0,
+      "source": "borg_home_power.rs:391"
+    },
+    {
+      "name": "home_stock_initial_heal_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:391"
+    },
+    {
+      "name": "home_stock_initial_heal_limit",
+      "default": 10,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:391"
+    },
+    {
+      "name": "home_stock_late_exp_base",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:424"
+    },
+    {
+      "name": "home_stock_late_exp_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:424"
+    },
+    {
+      "name": "home_stock_late_exp_limit",
+      "default": 70,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:424"
+    },
+    {
+      "name": "home_stock_life_base",
+      "default": 9000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:408"
+    },
+    {
+      "name": "home_stock_life_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:408"
+    },
+    {
+      "name": "home_stock_life_limit",
+      "default": 198,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:408"
+    },
+    {
+      "name": "home_stock_mana_base",
+      "default": 6000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:378"
+    },
+    {
+      "name": "home_stock_mana_decay",
+      "default": 8,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:378"
+    },
+    {
+      "name": "home_stock_mass_genocide_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:312"
+    },
+    {
+      "name": "home_stock_mass_genocide_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:312"
+    },
+    {
+      "name": "home_stock_pfe_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:285"
+    },
+    {
+      "name": "home_stock_pfe_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:285"
+    },
+    {
+      "name": "home_stock_phase_base",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:364"
+    },
+    {
+      "name": "home_stock_phase_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:364"
+    },
+    {
+      "name": "home_stock_recall_base",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:347"
+    },
+    {
+      "name": "home_stock_recall_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:347"
+    },
+    {
+      "name": "home_stock_recall_limit",
+      "default": 5,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:347"
+    },
+    {
+      "name": "home_stock_recharge_base",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:321"
+    },
+    {
+      "name": "home_stock_recharge_decay",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:321"
+    },
+    {
+      "name": "home_stock_teleport_base",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:360"
+    },
+    {
+      "name": "home_stock_teleport_decay",
+      "default": 0,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:360"
+    },
+    {
+      "name": "home_stock_teleport_limit",
+      "default": 85,
+      "unit": "count",
+      "min": 0,
+      "max": 512,
+      "source": "borg_home_power.rs:360"
+    },
+    {
+      "name": "home_sustain_all_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:171"
+    },
+    {
+      "name": "home_sustain_all_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:171"
+    },
+    {
+      "name": "home_sustain_all_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:171"
+    },
+    {
+      "name": "home_sustain_con_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:169"
+    },
+    {
+      "name": "home_sustain_con_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:169"
+    },
+    {
+      "name": "home_sustain_con_two_weight",
+      "default": 250,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:169"
+    },
+    {
+      "name": "home_sustain_dex_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:170"
+    },
+    {
+      "name": "home_sustain_dex_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:170"
+    },
+    {
+      "name": "home_sustain_dex_two_weight",
+      "default": 250,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:170"
+    },
+    {
+      "name": "home_sustain_int_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:167"
+    },
+    {
+      "name": "home_sustain_int_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:167"
+    },
+    {
+      "name": "home_sustain_int_two_weight",
+      "default": 250,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:167"
+    },
+    {
+      "name": "home_sustain_str_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:166"
+    },
+    {
+      "name": "home_sustain_str_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:166"
+    },
+    {
+      "name": "home_sustain_str_two_weight",
+      "default": 250,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:166"
+    },
+    {
+      "name": "home_sustain_wis_each_weight",
+      "default": 1,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:168"
+    },
+    {
+      "name": "home_sustain_wis_one_weight",
+      "default": 200,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:168"
+    },
+    {
+      "name": "home_sustain_wis_two_weight",
+      "default": 250,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:168"
+    },
+    {
+      "name": "home_telepathy_each_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:119"
+    },
+    {
+      "name": "home_telepathy_one_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:119"
+    },
+    {
+      "name": "home_telepathy_two_weight",
+      "default": 1500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:119"
+    },
+    {
+      "name": "home_teleport_staff_excess_penalty",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:355"
+    },
+    {
+      "name": "home_unidentified_weight",
+      "default": 1005,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:457"
+    },
+    {
+      "name": "home_weapons_excess_weight",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:177"
+    },
+    {
+      "name": "home_weapons_soft_limit",
+      "default": 5,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:176"
+    },
+    {
+      "name": "home_weapons_spare_limit",
+      "default": 1,
+      "unit": "count",
+      "min": 0,
+      "max": 100,
+      "source": "borg_home_power.rs:179"
+    },
+    {
+      "name": "home_weapons_spare_penalty",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_home_power.rs:179"
+    },
+    {
+      "name": "power_inventory_annihilation_wand_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1564"
+    },
+    {
+      "name": "power_inventory_attack_wand_charge_weight",
+      "default": 50,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1575"
+    },
+    {
+      "name": "power_inventory_constitution_potion_bonus",
+      "default": 550000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1635"
+    },
+    {
+      "name": "power_inventory_cure_serious_first_bonus",
+      "default": 15000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1185"
+    },
+    {
+      "name": "power_inventory_cursed_missile_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1531"
+    },
+    {
+      "name": "power_inventory_cut_cure_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1177"
+    },
+    {
+      "name": "power_inventory_destruction_staff_first_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1540"
+    },
+    {
+      "name": "power_inventory_dexterity_potion_bonus",
+      "default": 550000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1632"
+    },
+    {
+      "name": "power_inventory_dungeon_book_spell_weight",
+      "default": 15000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1729"
+    },
+    {
+      "name": "power_inventory_early_attack_wand_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1561"
+    },
+    {
+      "name": "power_inventory_early_shovel_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1696"
+    },
+    {
+      "name": "power_inventory_ego_missile_bonus",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1534"
+    },
+    {
+      "name": "power_inventory_enchant_armor_first_bonus",
+      "default": 540,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1657"
+    },
+    {
+      "name": "power_inventory_enchant_damage_first_bonus",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1667"
+    },
+    {
+      "name": "power_inventory_enchant_hit_first_bonus",
+      "default": 540,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1662"
+    },
+    {
+      "name": "power_inventory_encumbrance_penalty_weight",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1816"
+    },
+    {
+      "name": "power_inventory_first_empty_slot_bonus",
+      "default": 4000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1686"
+    },
+    {
+      "name": "power_inventory_fuel_extra_base",
+      "default": 6000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1145"
+    },
+    {
+      "name": "power_inventory_fuel_extra_decay",
+      "default": 100,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1145"
+    },
+    {
+      "name": "power_inventory_holiness_staff_first_bonus",
+      "default": 2500,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1580"
+    },
+    {
+      "name": "power_inventory_hungry_food_bonus",
+      "default": 100000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1153"
+    },
+    {
+      "name": "power_inventory_identify_first_bonus",
+      "default": 6000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1227"
+    },
+    {
+      "name": "power_inventory_intelligence_potion_bonus",
+      "default": 520000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1620"
+    },
+    {
+      "name": "power_inventory_max_constitution_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1606"
+    },
+    {
+      "name": "power_inventory_max_dexterity_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1603"
+    },
+    {
+      "name": "power_inventory_max_intelligence_bonus",
+      "default": 20000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1597"
+    },
+    {
+      "name": "power_inventory_max_spell_stat_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1611"
+    },
+    {
+      "name": "power_inventory_max_strength_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1594"
+    },
+    {
+      "name": "power_inventory_max_wisdom_bonus",
+      "default": 20000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1600"
+    },
+    {
+      "name": "power_inventory_other_quiver_slot_penalty",
+      "default": 10000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1525"
+    },
+    {
+      "name": "power_inventory_phase_first_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1271"
+    },
+    {
+      "name": "power_inventory_poison_cure_bonus",
+      "default": 100000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1174"
+    },
+    {
+      "name": "power_inventory_ranged_missile_excess_penalty",
+      "default": 1000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1520"
+    },
+    {
+      "name": "power_inventory_ranged_quiver_slot_penalty",
+      "default": 10000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1509"
+    },
+    {
+      "name": "power_inventory_recall_rod_bonus",
+      "default": 12000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1263"
+    },
+    {
+      "name": "power_inventory_recharge_first_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1490"
+    },
+    {
+      "name": "power_inventory_remove_curse_bonus",
+      "default": 90000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1644"
+    },
+    {
+      "name": "power_inventory_restore_experience_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1650"
+    },
+    {
+      "name": "power_inventory_spell_stat_potion_bonus",
+      "default": 575000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1626"
+    },
+    {
+      "name": "power_inventory_star_enchant_armor_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1677"
+    },
+    {
+      "name": "power_inventory_star_enchant_weapon_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1672"
+    },
+    {
+      "name": "power_inventory_star_remove_curse_bonus",
+      "default": 90000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1641"
+    },
+    {
+      "name": "power_inventory_strength_potion_bonus",
+      "default": 550000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1617"
+    },
+    {
+      "name": "power_inventory_teleport_first_bonus",
+      "default": 10000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1293"
+    },
+    {
+      "name": "power_inventory_teleport_other_wand_first_bonus",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1547"
+    },
+    {
+      "name": "power_inventory_warrior_early_attack_wand_bonus",
+      "default": 10000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1572"
+    },
+    {
+      "name": "power_inventory_warrior_teleport_other_bonus",
+      "default": 50000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1551"
+    },
+    {
+      "name": "power_inventory_wisdom_potion_bonus",
+      "default": 520000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_power.rs:1629"
+    },
+    {
+      "name": "sell_ammo_batch_count",
+      "default": 5,
+      "unit": "count",
+      "min": 1,
+      "max": 5,
+      "source": "borg_store_sell.rs:380"
+    },
+    {
+      "name": "sell_ammo_reserve_count",
+      "default": 45,
+      "unit": "count",
+      "min": 0,
+      "max": 1000,
+      "source": "borg_store_sell.rs:1010"
+    },
+    {
+      "name": "sell_attack_device_min_level",
+      "default": 35,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1030"
+    },
+    {
+      "name": "sell_batch_max_item_value",
+      "default": 5,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:367"
+    },
+    {
+      "name": "sell_batch_min_gold",
+      "default": 250,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:362"
+    },
+    {
+      "name": "sell_count_power_tolerance",
+      "default": 50,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_store_sell.rs:1335"
+    },
+    {
+      "name": "sell_food_batch_count",
+      "default": 3,
+      "unit": "count",
+      "min": 1,
+      "max": 5,
+      "source": "borg_store_sell.rs:386"
+    },
+    {
+      "name": "sell_gold_greed_base",
+      "default": 100,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1238"
+    },
+    {
+      "name": "sell_gold_greed_base_10",
+      "default": 5,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1258"
+    },
+    {
+      "name": "sell_gold_greed_base_13",
+      "default": 10,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1255"
+    },
+    {
+      "name": "sell_gold_greed_base_15",
+      "default": 20,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1252"
+    },
+    {
+      "name": "sell_gold_greed_base_20",
+      "default": 35,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1249"
+    },
+    {
+      "name": "sell_gold_greed_base_25",
+      "default": 50,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1246"
+    },
+    {
+      "name": "sell_gold_greed_base_5",
+      "default": 0,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1261"
+    },
+    {
+      "name": "sell_gold_greed_ceiling",
+      "default": 25000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1241"
+    },
+    {
+      "name": "sell_gold_greed_deep_depth",
+      "default": 50,
+      "unit": "depth",
+      "min": 0,
+      "max": 127,
+      "source": "borg_store_sell.rs:1242"
+    },
+    {
+      "name": "sell_gold_greed_deep_value",
+      "default": 75000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1243"
+    },
+    {
+      "name": "sell_gold_greed_divisor",
+      "default": 100,
+      "unit": "divisor",
+      "min": 1,
+      "max": 10000,
+      "source": "borg_store_sell.rs:1228"
+    },
+    {
+      "name": "sell_gold_greed_floor",
+      "default": 1000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:1241"
+    },
+    {
+      "name": "sell_gold_greed_level_10",
+      "default": 10,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1257"
+    },
+    {
+      "name": "sell_gold_greed_level_13",
+      "default": 13,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1254"
+    },
+    {
+      "name": "sell_gold_greed_level_15",
+      "default": 15,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1251"
+    },
+    {
+      "name": "sell_gold_greed_level_20",
+      "default": 20,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1248"
+    },
+    {
+      "name": "sell_gold_greed_level_25",
+      "default": 25,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1245"
+    },
+    {
+      "name": "sell_gold_greed_level_5",
+      "default": 5,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:1260"
+    },
+    {
+      "name": "sell_healing_rod_reserve_count",
+      "default": 3,
+      "unit": "count",
+      "min": 0,
+      "max": 1000,
+      "source": "borg_store_sell.rs:1015"
+    },
+    {
+      "name": "sell_home_stack_soft_limit",
+      "default": 90,
+      "unit": "count",
+      "min": 0,
+      "max": 90,
+      "source": "borg_store_sell.rs:679"
+    },
+    {
+      "name": "sell_identify_max_depth",
+      "default": 35,
+      "unit": "depth",
+      "min": 0,
+      "max": 127,
+      "source": "borg_store_sell.rs:929"
+    },
+    {
+      "name": "sell_mana_reserve_count",
+      "default": 99,
+      "unit": "count",
+      "min": 0,
+      "max": 1000,
+      "source": "borg_store_sell.rs:920"
+    },
+    {
+      "name": "sell_mana_reserve_min_sp",
+      "default": 100,
+      "unit": "sp",
+      "min": 0,
+      "max": 10000,
+      "source": "borg_store_sell.rs:917"
+    },
+    {
+      "name": "sell_mapping_rod_reserve_count",
+      "default": 2,
+      "unit": "count",
+      "min": 0,
+      "max": 1000,
+      "source": "borg_store_sell.rs:1023"
+    },
+    {
+      "name": "sell_unidentified_ego_min_copies",
+      "default": 2,
+      "unit": "count",
+      "min": 1,
+      "max": 99,
+      "source": "borg_store_sell.rs:956"
+    },
+    {
+      "name": "sell_unidentified_max_level",
+      "default": 10,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_store_sell.rs:898"
+    },
+    {
+      "name": "sell_value_cap",
+      "default": 30000,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_store_sell.rs:131"
+    },
+    {
+      "name": "shopping_emergency_light_max_level",
+      "default": 10,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_think_store.rs:235"
+    },
+    {
+      "name": "shopping_light_min_gold",
+      "default": 100,
+      "unit": "gold",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_think_store.rs:224"
+    },
+    {
+      "name": "shopping_max_bounces",
+      "default": 1350,
+      "unit": "count",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_think_store.rs:203"
+    },
+    {
+      "name": "shopping_max_turns",
+      "default": 2000,
+      "unit": "turns",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_think_store.rs:200"
+    },
+    {
+      "name": "shopping_unlit_min_level",
+      "default": 2,
+      "unit": "level",
+      "min": 1,
+      "max": 50,
+      "source": "borg_think_store.rs:218"
+    },
+    {
+      "name": "shopping_upgrade_light_radius",
+      "default": 1,
+      "unit": "grids",
+      "min": 1,
+      "max": 5,
+      "source": "borg_think_store.rs:224"
+    },
+    {
+      "name": "wear_backup_danger_divisor",
+      "default": 2,
+      "unit": "divisor",
+      "min": 1,
+      "max": 100,
+      "source": "borg_item_wear.rs:789"
+    },
+    {
+      "name": "wear_backup_max_bounces",
+      "default": 300,
+      "unit": "count",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:680"
+    },
+    {
+      "name": "wear_backup_unique_danger_divisor",
+      "default": 3,
+      "unit": "divisor",
+      "min": 1,
+      "max": 100,
+      "source": "borg_item_wear.rs:789"
+    },
+    {
+      "name": "wear_backup_unique_danger_numerator",
+      "default": 2,
+      "unit": "multiplier",
+      "min": 0,
+      "max": 100,
+      "source": "borg_item_wear.rs:789"
+    },
+    {
+      "name": "wear_best_max_bounces",
+      "default": 1300,
+      "unit": "count",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:876"
+    },
+    {
+      "name": "wear_best_max_turns",
+      "default": 2000,
+      "unit": "turns",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:873"
+    },
+    {
+      "name": "wear_full_ring_trial_rng_bound",
+      "default": 100,
+      "unit": "rng_bound",
+      "min": 11,
+      "max": 10000,
+      "source": "borg_item_wear.rs:989"
+    },
+    {
+      "name": "wear_identify_artifact_bonus",
+      "default": 150000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_item_wear.rs:190"
+    },
+    {
+      "name": "wear_identify_consumable_depth_weight",
+      "default": 500,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:258"
+    },
+    {
+      "name": "wear_identify_consumable_min_depth",
+      "default": 5,
+      "unit": "depth",
+      "min": 0,
+      "max": 127,
+      "source": "borg_item_wear.rs:256"
+    },
+    {
+      "name": "wear_identify_device_depth_weight",
+      "default": 2000,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:253"
+    },
+    {
+      "name": "wear_identify_ego_bonus",
+      "default": 100000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_item_wear.rs:194"
+    },
+    {
+      "name": "wear_identify_food_depth_weight",
+      "default": 10,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:261"
+    },
+    {
+      "name": "wear_identify_jewelry_depth_weight",
+      "default": 5000,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:251"
+    },
+    {
+      "name": "wear_identify_magic_bonus",
+      "default": 20000,
+      "unit": "score",
+      "min": 0,
+      "max": 1000000,
+      "source": "borg_item_wear.rs:199"
+    },
+    {
+      "name": "wear_identify_max_danger",
+      "default": 1,
+      "unit": "danger",
+      "min": 0,
+      "max": 10000,
+      "source": "borg_item_wear.rs:171"
+    },
+    {
+      "name": "wear_identify_min_sp",
+      "default": 50,
+      "unit": "sp",
+      "min": 0,
+      "max": 10000,
+      "source": "borg_item_wear.rs:163"
+    },
+    {
+      "name": "wear_identify_rod_depth_weight",
+      "default": 3000,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:252"
+    },
+    {
+      "name": "wear_min_power_gain",
+      "default": 50,
+      "unit": "score",
+      "min": 0,
+      "max": 100000,
+      "source": "borg_item_wear.rs:980"
+    },
+    {
+      "name": "wear_one_ring_power_multiplier",
+      "default": 2,
+      "unit": "multiplier",
+      "min": 1,
+      "max": 100,
+      "source": "borg_item_wear.rs:549"
+    },
+    {
+      "name": "wear_repeat_cooldown_turns",
+      "default": 10,
+      "unit": "turns",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:915"
+    },
+    {
+      "name": "wear_ring_reorder_max_turns",
+      "default": 1000,
+      "unit": "turns",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:340"
+    },
+    {
+      "name": "wear_ring_select_max_turns",
+      "default": 2000,
+      "unit": "turns",
+      "min": 0,
+      "max": 30000,
+      "source": "borg_item_wear.rs:496"
+    }
+  ],
+  "uses": [
+    {
+      "file": "borg_item_wear.rs",
+      "line": 163,
+      "name": "wear_identify_min_sp",
+      "literal": "50",
+      "replacement": "param(Param::wear_identify_min_sp)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 171,
+      "name": "wear_identify_max_danger",
+      "literal": "1",
+      "replacement": "param(Param::wear_identify_max_danger)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 190,
+      "name": "wear_identify_artifact_bonus",
+      "literal": "150000",
+      "replacement": "i64::from(param(Param::wear_identify_artifact_bonus))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 194,
+      "name": "wear_identify_ego_bonus",
+      "literal": "100000",
+      "replacement": "i64::from(param(Param::wear_identify_ego_bonus))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 199,
+      "name": "wear_identify_magic_bonus",
+      "literal": "20000",
+      "replacement": "i64::from(param(Param::wear_identify_magic_bonus))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 236,
+      "name": "wear_identify_artifact_bonus",
+      "literal": "150000",
+      "replacement": "i64::from(param(Param::wear_identify_artifact_bonus))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 241,
+      "name": "wear_identify_magic_bonus",
+      "literal": "20000",
+      "replacement": "i64::from(param(Param::wear_identify_magic_bonus))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 251,
+      "name": "wear_identify_jewelry_depth_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::wear_identify_jewelry_depth_weight))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 252,
+      "name": "wear_identify_rod_depth_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::wear_identify_rod_depth_weight))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 253,
+      "name": "wear_identify_device_depth_weight",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::wear_identify_device_depth_weight))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 256,
+      "name": "wear_identify_consumable_min_depth",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::wear_identify_consumable_min_depth))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 258,
+      "name": "wear_identify_consumable_depth_weight",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::wear_identify_consumable_depth_weight))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 261,
+      "name": "wear_identify_food_depth_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::wear_identify_food_depth_weight))"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 340,
+      "name": "wear_ring_reorder_max_turns",
+      "literal": "1000",
+      "replacement": "param(Param::wear_ring_reorder_max_turns)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 496,
+      "name": "wear_ring_select_max_turns",
+      "literal": "2000",
+      "replacement": "param(Param::wear_ring_select_max_turns)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 549,
+      "name": "wear_one_ring_power_multiplier",
+      "literal": "2",
+      "replacement": "param(Param::wear_one_ring_power_multiplier)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 680,
+      "name": "wear_backup_max_bounces",
+      "literal": "300",
+      "replacement": "(param(Param::wear_backup_max_bounces) as i16)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 789,
+      "name": "wear_backup_unique_danger_divisor",
+      "literal": "3",
+      "replacement": "param(Param::wear_backup_unique_danger_divisor)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 873,
+      "name": "wear_best_max_turns",
+      "literal": "2000",
+      "replacement": "param(Param::wear_best_max_turns)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 876,
+      "name": "wear_best_max_bounces",
+      "literal": "1300",
+      "replacement": "(param(Param::wear_best_max_bounces) as i16)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 915,
+      "name": "wear_repeat_cooldown_turns",
+      "literal": "10",
+      "replacement": "param(Param::wear_repeat_cooldown_turns)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 980,
+      "name": "wear_min_power_gain",
+      "literal": "50",
+      "replacement": "param(Param::wear_min_power_gain)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 989,
+      "name": "wear_full_ring_trial_rng_bound",
+      "literal": "100",
+      "replacement": "param(Param::wear_full_ring_trial_rng_bound) as u32"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 789,
+      "name": "wear_backup_unique_danger_numerator",
+      "literal": "2",
+      "replacement": "param(Param::wear_backup_unique_danger_numerator)"
+    },
+    {
+      "file": "borg_item_wear.rs",
+      "line": 789,
+      "name": "wear_backup_danger_divisor",
+      "literal": "2",
+      "replacement": "param(Param::wear_backup_danger_divisor)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 231,
+      "name": "buy_enchanted_ammo_min_level",
+      "literal": "35",
+      "replacement": "param(Param::buy_enchanted_ammo_min_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 310,
+      "name": "buy_black_market_early_level",
+      "literal": "15",
+      "replacement": "param(Param::buy_black_market_early_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 310,
+      "name": "buy_black_market_early_gold",
+      "literal": "20000",
+      "replacement": "param(Param::buy_black_market_early_gold)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 313,
+      "name": "buy_black_market_middle_level",
+      "literal": "35",
+      "replacement": "param(Param::buy_black_market_middle_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 313,
+      "name": "buy_black_market_middle_gold",
+      "literal": "15000",
+      "replacement": "param(Param::buy_black_market_middle_gold)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 316,
+      "name": "buy_black_market_min_gold",
+      "literal": "10000",
+      "replacement": "param(Param::buy_black_market_min_gold)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 346,
+      "name": "buy_extra_book_min_level",
+      "literal": "5",
+      "replacement": "param(Param::buy_extra_book_min_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 355,
+      "name": "buy_hybrid_extra_book_max_level",
+      "literal": "8",
+      "replacement": "param(Param::buy_hybrid_extra_book_max_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 543,
+      "name": "buy_attack_wand_charge_limit",
+      "literal": "40",
+      "replacement": "param(Param::buy_attack_wand_charge_limit)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 552,
+      "name": "buy_attack_wand_max_level",
+      "literal": "30",
+      "replacement": "param(Param::buy_attack_wand_max_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 971,
+      "name": "buy_home_stock_min_level",
+      "literal": "15",
+      "replacement": "param(Param::buy_home_stock_min_level)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 1013,
+      "name": "buy_home_stock_gold_reserve",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::buy_home_stock_gold_reserve))"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 1013,
+      "name": "buy_home_stock_price_multiplier",
+      "literal": "5",
+      "replacement": "param(Param::buy_home_stock_price_multiplier)"
+    },
+    {
+      "file": "borg_store_buy.rs",
+      "line": 1056,
+      "name": "buy_home_stock_gold_divisor",
+      "literal": "10",
+      "replacement": "param(Param::buy_home_stock_gold_divisor)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 131,
+      "name": "sell_value_cap",
+      "literal": "30000",
+      "replacement": "param(Param::sell_value_cap)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 134,
+      "name": "sell_value_cap",
+      "literal": "30000",
+      "replacement": "param(Param::sell_value_cap)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 362,
+      "name": "sell_batch_min_gold",
+      "literal": "250",
+      "replacement": "param(Param::sell_batch_min_gold)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 367,
+      "name": "sell_batch_max_item_value",
+      "literal": "5",
+      "replacement": "param(Param::sell_batch_max_item_value)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 380,
+      "name": "sell_ammo_batch_count",
+      "literal": "5",
+      "replacement": "(param(Param::sell_ammo_batch_count) as u8)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 383,
+      "name": "sell_ammo_batch_count",
+      "literal": "5",
+      "replacement": "param(Param::sell_ammo_batch_count)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 386,
+      "name": "sell_food_batch_count",
+      "literal": "3",
+      "replacement": "(param(Param::sell_food_batch_count) as u8)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 389,
+      "name": "sell_food_batch_count",
+      "literal": "3",
+      "replacement": "param(Param::sell_food_batch_count)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 679,
+      "name": "sell_home_stack_soft_limit",
+      "literal": "90",
+      "replacement": "(param(Param::sell_home_stack_soft_limit) as u8)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 898,
+      "name": "sell_unidentified_max_level",
+      "literal": "10",
+      "replacement": "param(Param::sell_unidentified_max_level)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 917,
+      "name": "sell_mana_reserve_min_sp",
+      "literal": "100",
+      "replacement": "param(Param::sell_mana_reserve_min_sp)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 920,
+      "name": "sell_mana_reserve_count",
+      "literal": "99",
+      "replacement": "param(Param::sell_mana_reserve_count)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 929,
+      "name": "sell_identify_max_depth",
+      "literal": "35",
+      "replacement": "param(Param::sell_identify_max_depth)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1010,
+      "name": "sell_ammo_reserve_count",
+      "literal": "45",
+      "replacement": "param(Param::sell_ammo_reserve_count)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1015,
+      "name": "sell_healing_rod_reserve_count",
+      "literal": "3",
+      "replacement": "param(Param::sell_healing_rod_reserve_count)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1023,
+      "name": "sell_mapping_rod_reserve_count",
+      "literal": "2",
+      "replacement": "(param(Param::sell_mapping_rod_reserve_count) as u8)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1030,
+      "name": "sell_attack_device_min_level",
+      "literal": "35",
+      "replacement": "param(Param::sell_attack_device_min_level)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1228,
+      "name": "sell_gold_greed_divisor",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::sell_gold_greed_divisor))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1238,
+      "name": "sell_gold_greed_base",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1241,
+      "name": "sell_gold_greed_floor",
+      "literal": "1000",
+      "replacement": "param(Param::sell_gold_greed_floor)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1241,
+      "name": "sell_gold_greed_ceiling",
+      "literal": "25000",
+      "replacement": "param(Param::sell_gold_greed_ceiling)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1242,
+      "name": "sell_gold_greed_deep_depth",
+      "literal": "50",
+      "replacement": "param(Param::sell_gold_greed_deep_depth)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1243,
+      "name": "sell_gold_greed_deep_value",
+      "literal": "75000",
+      "replacement": "param(Param::sell_gold_greed_deep_value)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1245,
+      "name": "sell_gold_greed_level_25",
+      "literal": "25",
+      "replacement": "param(Param::sell_gold_greed_level_25)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1246,
+      "name": "sell_gold_greed_base_25",
+      "literal": "50",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_25))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1248,
+      "name": "sell_gold_greed_level_20",
+      "literal": "20",
+      "replacement": "param(Param::sell_gold_greed_level_20)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1249,
+      "name": "sell_gold_greed_base_20",
+      "literal": "35",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_20))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1251,
+      "name": "sell_gold_greed_level_15",
+      "literal": "15",
+      "replacement": "param(Param::sell_gold_greed_level_15)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1252,
+      "name": "sell_gold_greed_base_15",
+      "literal": "20",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_15))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1254,
+      "name": "sell_gold_greed_level_13",
+      "literal": "13",
+      "replacement": "param(Param::sell_gold_greed_level_13)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1255,
+      "name": "sell_gold_greed_base_13",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_13))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1257,
+      "name": "sell_gold_greed_level_10",
+      "literal": "10",
+      "replacement": "param(Param::sell_gold_greed_level_10)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1258,
+      "name": "sell_gold_greed_base_10",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_10))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1260,
+      "name": "sell_gold_greed_level_5",
+      "literal": "5",
+      "replacement": "param(Param::sell_gold_greed_level_5)"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1261,
+      "name": "sell_gold_greed_base_5",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::sell_gold_greed_base_5))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 1335,
+      "name": "sell_count_power_tolerance",
+      "literal": "50",
+      "replacement": "param(Param::sell_count_power_tolerance)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 200,
+      "name": "shopping_max_turns",
+      "literal": "2000",
+      "replacement": "param(Param::shopping_max_turns)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 203,
+      "name": "shopping_max_bounces",
+      "literal": "1350",
+      "replacement": "param(Param::shopping_max_bounces)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 218,
+      "name": "shopping_unlit_min_level",
+      "literal": "2",
+      "replacement": "param(Param::shopping_unlit_min_level)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 224,
+      "name": "shopping_light_min_gold",
+      "literal": "100",
+      "replacement": "param(Param::shopping_light_min_gold)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 235,
+      "name": "shopping_light_min_gold",
+      "literal": "100",
+      "replacement": "param(Param::shopping_light_min_gold)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 235,
+      "name": "shopping_emergency_light_max_level",
+      "literal": "10",
+      "replacement": "param(Param::shopping_emergency_light_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 116,
+      "name": "home_light_each_weight",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::home_light_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 116,
+      "name": "home_light_two_weight",
+      "literal": "170",
+      "replacement": "i64::from(param(Param::home_light_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 116,
+      "name": "home_light_one_weight",
+      "literal": "150",
+      "replacement": "i64::from(param(Param::home_light_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 117,
+      "name": "home_slow_digest_each_weight",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::home_slow_digest_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 117,
+      "name": "home_slow_digest_two_weight",
+      "literal": "70",
+      "replacement": "i64::from(param(Param::home_slow_digest_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 117,
+      "name": "home_slow_digest_one_weight",
+      "literal": "50",
+      "replacement": "i64::from(param(Param::home_slow_digest_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 118,
+      "name": "home_regenerate_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_regenerate_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 118,
+      "name": "home_regenerate_two_weight",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_regenerate_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 118,
+      "name": "home_regenerate_one_weight",
+      "literal": "75",
+      "replacement": "i64::from(param(Param::home_regenerate_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 119,
+      "name": "home_telepathy_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_telepathy_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 119,
+      "name": "home_telepathy_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_telepathy_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 119,
+      "name": "home_telepathy_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_telepathy_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 120,
+      "name": "home_see_inv_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_see_inv_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 120,
+      "name": "home_see_inv_two_weight",
+      "literal": "1200",
+      "replacement": "i64::from(param(Param::home_see_inv_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 120,
+      "name": "home_see_inv_one_weight",
+      "literal": "800",
+      "replacement": "i64::from(param(Param::home_see_inv_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 121,
+      "name": "home_ffall_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_ffall_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 121,
+      "name": "home_ffall_two_weight",
+      "literal": "15",
+      "replacement": "i64::from(param(Param::home_ffall_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 121,
+      "name": "home_ffall_one_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_ffall_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 122,
+      "name": "home_free_act_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_free_act_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 122,
+      "name": "home_free_act_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_free_act_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 122,
+      "name": "home_free_act_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_free_act_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 123,
+      "name": "home_hold_life_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_hold_life_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 123,
+      "name": "home_hold_life_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_hold_life_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 123,
+      "name": "home_hold_life_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_hold_life_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 125,
+      "name": "home_resist_acid_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_acid_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 125,
+      "name": "home_resist_acid_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_resist_acid_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 125,
+      "name": "home_resist_acid_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_acid_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 126,
+      "name": "home_immune_acid_each_weight",
+      "literal": "30",
+      "replacement": "i64::from(param(Param::home_immune_acid_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 126,
+      "name": "home_immune_acid_two_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_immune_acid_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 126,
+      "name": "home_immune_acid_one_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_immune_acid_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 127,
+      "name": "home_resist_elec_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_elec_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 127,
+      "name": "home_resist_elec_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_resist_elec_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 127,
+      "name": "home_resist_elec_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_elec_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 128,
+      "name": "home_immune_elec_each_weight",
+      "literal": "30",
+      "replacement": "i64::from(param(Param::home_immune_elec_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 128,
+      "name": "home_immune_elec_two_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_immune_elec_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 128,
+      "name": "home_immune_elec_one_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_immune_elec_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 129,
+      "name": "home_resist_fire_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_fire_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 129,
+      "name": "home_resist_fire_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_resist_fire_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 129,
+      "name": "home_resist_fire_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_fire_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 130,
+      "name": "home_immune_fire_each_weight",
+      "literal": "30",
+      "replacement": "i64::from(param(Param::home_immune_fire_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 130,
+      "name": "home_immune_fire_two_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_immune_fire_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 130,
+      "name": "home_immune_fire_one_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_immune_fire_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 131,
+      "name": "home_resist_cold_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_cold_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 131,
+      "name": "home_resist_cold_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_resist_cold_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 131,
+      "name": "home_resist_cold_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_cold_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 132,
+      "name": "home_immune_cold_each_weight",
+      "literal": "30",
+      "replacement": "i64::from(param(Param::home_immune_cold_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 132,
+      "name": "home_immune_cold_two_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_immune_cold_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 132,
+      "name": "home_immune_cold_one_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_immune_cold_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 134,
+      "name": "home_resist_pois_each_weight",
+      "literal": "40",
+      "replacement": "i64::from(param(Param::home_resist_pois_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 134,
+      "name": "home_resist_pois_two_weight",
+      "literal": "9000",
+      "replacement": "i64::from(param(Param::home_resist_pois_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 134,
+      "name": "home_resist_pois_one_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_resist_pois_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 135,
+      "name": "home_resist_conf_each_weight",
+      "literal": "45",
+      "replacement": "i64::from(param(Param::home_resist_conf_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 135,
+      "name": "home_resist_conf_two_weight",
+      "literal": "8000",
+      "replacement": "i64::from(param(Param::home_resist_conf_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 135,
+      "name": "home_resist_conf_one_weight",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::home_resist_conf_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 136,
+      "name": "home_resist_sound_each_weight",
+      "literal": "30",
+      "replacement": "i64::from(param(Param::home_resist_sound_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 136,
+      "name": "home_resist_sound_two_weight",
+      "literal": "700",
+      "replacement": "i64::from(param(Param::home_resist_sound_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 136,
+      "name": "home_resist_sound_one_weight",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_resist_sound_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 137,
+      "name": "home_resist_light_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_light_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 137,
+      "name": "home_resist_light_two_weight",
+      "literal": "150",
+      "replacement": "i64::from(param(Param::home_resist_light_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 137,
+      "name": "home_resist_light_one_weight",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_resist_light_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 138,
+      "name": "home_resist_dark_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_dark_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 138,
+      "name": "home_resist_dark_two_weight",
+      "literal": "150",
+      "replacement": "i64::from(param(Param::home_resist_dark_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 138,
+      "name": "home_resist_dark_one_weight",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_resist_dark_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 139,
+      "name": "home_resist_chaos_each_weight",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_resist_chaos_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 139,
+      "name": "home_resist_chaos_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_resist_chaos_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 139,
+      "name": "home_resist_chaos_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_chaos_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 140,
+      "name": "home_resist_disen_each_weight",
+      "literal": "35",
+      "replacement": "i64::from(param(Param::home_resist_disen_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 140,
+      "name": "home_resist_disen_two_weight",
+      "literal": "7000",
+      "replacement": "i64::from(param(Param::home_resist_disen_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 140,
+      "name": "home_resist_disen_one_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_resist_disen_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 141,
+      "name": "home_resist_shard_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_resist_shard_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 141,
+      "name": "home_resist_shard_two_weight",
+      "literal": "150",
+      "replacement": "i64::from(param(Param::home_resist_shard_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 141,
+      "name": "home_resist_shard_one_weight",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_resist_shard_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 142,
+      "name": "home_resist_nexus_each_weight",
+      "literal": "2",
+      "replacement": "i64::from(param(Param::home_resist_nexus_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 142,
+      "name": "home_resist_nexus_two_weight",
+      "literal": "300",
+      "replacement": "i64::from(param(Param::home_resist_nexus_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 142,
+      "name": "home_resist_nexus_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_resist_nexus_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 143,
+      "name": "home_resist_blind_each_weight",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::home_resist_blind_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 143,
+      "name": "home_resist_blind_two_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_resist_blind_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 143,
+      "name": "home_resist_blind_one_weight",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_resist_blind_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 144,
+      "name": "home_resist_neth_each_weight",
+      "literal": "45",
+      "replacement": "i64::from(param(Param::home_resist_neth_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 144,
+      "name": "home_resist_neth_two_weight",
+      "literal": "4000",
+      "replacement": "i64::from(param(Param::home_resist_neth_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 144,
+      "name": "home_resist_neth_one_weight",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_resist_neth_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 166,
+      "name": "home_sustain_str_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_str_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 166,
+      "name": "home_sustain_str_two_weight",
+      "literal": "250",
+      "replacement": "i64::from(param(Param::home_sustain_str_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 166,
+      "name": "home_sustain_str_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_sustain_str_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 167,
+      "name": "home_sustain_int_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_int_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 167,
+      "name": "home_sustain_int_two_weight",
+      "literal": "250",
+      "replacement": "i64::from(param(Param::home_sustain_int_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 167,
+      "name": "home_sustain_int_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_sustain_int_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 168,
+      "name": "home_sustain_wis_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_wis_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 168,
+      "name": "home_sustain_wis_two_weight",
+      "literal": "250",
+      "replacement": "i64::from(param(Param::home_sustain_wis_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 168,
+      "name": "home_sustain_wis_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_sustain_wis_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 169,
+      "name": "home_sustain_con_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_con_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 169,
+      "name": "home_sustain_con_two_weight",
+      "literal": "250",
+      "replacement": "i64::from(param(Param::home_sustain_con_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 169,
+      "name": "home_sustain_con_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_sustain_con_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 170,
+      "name": "home_sustain_dex_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_dex_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 170,
+      "name": "home_sustain_dex_two_weight",
+      "literal": "250",
+      "replacement": "i64::from(param(Param::home_sustain_dex_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 170,
+      "name": "home_sustain_dex_one_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_sustain_dex_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 171,
+      "name": "home_sustain_all_each_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_sustain_all_each_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 171,
+      "name": "home_sustain_all_two_weight",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_sustain_all_two_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 171,
+      "name": "home_sustain_all_one_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_sustain_all_one_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_low_limit",
+      "literal": "9",
+      "replacement": "param(Param::home_stat_str_low_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_high_limit",
+      "literal": "15",
+      "replacement": "param(Param::home_stat_str_high_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_first_weight",
+      "literal": "300",
+      "replacement": "i64::from(param(Param::home_stat_str_first_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_middle_base",
+      "literal": "9 * 300",
+      "replacement": "i64::from(param(Param::home_stat_str_middle_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_middle_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_stat_str_middle_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_last_base",
+      "literal": "9 * 300 + 6 * 200",
+      "replacement": "i64::from(param(Param::home_stat_str_last_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 149,
+      "name": "home_stat_str_last_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_stat_str_last_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_low_limit",
+      "literal": "9",
+      "replacement": "param(Param::home_stat_dex_low_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_high_limit",
+      "literal": "15",
+      "replacement": "param(Param::home_stat_dex_high_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_first_weight",
+      "literal": "300",
+      "replacement": "i64::from(param(Param::home_stat_dex_first_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_middle_base",
+      "literal": "9 * 300",
+      "replacement": "i64::from(param(Param::home_stat_dex_middle_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_middle_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_stat_dex_middle_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_last_base",
+      "literal": "9 * 300 + 6 * 200",
+      "replacement": "i64::from(param(Param::home_stat_dex_last_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 151,
+      "name": "home_stat_dex_last_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_stat_dex_last_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_low_limit",
+      "literal": "15",
+      "replacement": "param(Param::home_stat_con_low_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_high_limit",
+      "literal": "21",
+      "replacement": "param(Param::home_stat_con_high_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_first_weight",
+      "literal": "300",
+      "replacement": "i64::from(param(Param::home_stat_con_first_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_middle_base",
+      "literal": "15 * 300",
+      "replacement": "i64::from(param(Param::home_stat_con_middle_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_middle_weight",
+      "literal": "200",
+      "replacement": "i64::from(param(Param::home_stat_con_middle_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_last_base",
+      "literal": "15 * 300 + 6 * 200",
+      "replacement": "i64::from(param(Param::home_stat_con_last_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 155,
+      "name": "home_stat_con_last_weight",
+      "literal": "1",
+      "replacement": "i64::from(param(Param::home_stat_con_last_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_low_limit",
+      "literal": "20",
+      "replacement": "param(Param::home_stat_caster_low_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_high_limit",
+      "literal": "26",
+      "replacement": "param(Param::home_stat_caster_high_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_first_weight",
+      "literal": "400",
+      "replacement": "i64::from(param(Param::home_stat_caster_first_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_middle_base",
+      "literal": "20 * 400",
+      "replacement": "i64::from(param(Param::home_stat_caster_middle_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_middle_weight",
+      "literal": "300",
+      "replacement": "i64::from(param(Param::home_stat_caster_middle_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_last_base",
+      "literal": "20 * 100 + 6 * 300",
+      "replacement": "i64::from(param(Param::home_stat_caster_last_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 162,
+      "name": "home_stat_caster_last_weight",
+      "literal": "5",
+      "replacement": "i64::from(param(Param::home_stat_caster_last_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 176,
+      "name": "home_weapons_soft_limit",
+      "literal": "5",
+      "replacement": "param(Param::home_weapons_soft_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 177,
+      "name": "home_weapons_soft_limit",
+      "literal": "5",
+      "replacement": "param(Param::home_weapons_soft_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 177,
+      "name": "home_weapons_excess_weight",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::home_weapons_excess_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 179,
+      "name": "home_weapons_spare_limit",
+      "literal": "1",
+      "replacement": "param(Param::home_weapons_spare_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 179,
+      "name": "home_weapons_spare_penalty",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_weapons_spare_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 181,
+      "name": "home_bows_limit",
+      "literal": "2",
+      "replacement": "param(Param::home_bows_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 181,
+      "name": "home_bows_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_bows_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 183,
+      "name": "home_rings_soft_limit",
+      "literal": "6",
+      "replacement": "param(Param::home_rings_soft_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 184,
+      "name": "home_rings_soft_limit",
+      "literal": "6",
+      "replacement": "param(Param::home_rings_soft_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 184,
+      "name": "home_rings_excess_weight",
+      "literal": "4000",
+      "replacement": "i64::from(param(Param::home_rings_excess_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 186,
+      "name": "home_rings_spare_limit",
+      "literal": "4",
+      "replacement": "param(Param::home_rings_spare_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 186,
+      "name": "home_rings_spare_penalty",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::home_rings_spare_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 200,
+      "name": "home_edged_weapon_penalty",
+      "literal": "50",
+      "replacement": "i64::from(param(Param::home_edged_weapon_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 203,
+      "name": "home_bad_gloves_penalty",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_bad_gloves_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 208,
+      "name": "home_duplicate_item_penalty",
+      "literal": "50000",
+      "replacement": "i64::from(param(Param::home_duplicate_item_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 234,
+      "name": "home_food_stock_max_level",
+      "literal": "10",
+      "replacement": "param(Param::home_food_stock_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 254,
+      "name": "home_enchant_armor_max_level",
+      "literal": "45",
+      "replacement": "param(Param::home_enchant_armor_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 264,
+      "name": "home_enchant_hit_max_level",
+      "literal": "45",
+      "replacement": "param(Param::home_enchant_hit_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 274,
+      "name": "home_enchant_damage_max_level",
+      "literal": "45",
+      "replacement": "param(Param::home_enchant_damage_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 305,
+      "name": "home_banishment_stack_multiplier",
+      "literal": "2",
+      "replacement": "param(Param::home_banishment_stack_multiplier)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 314,
+      "name": "home_mass_banishment_stack_multiplier",
+      "literal": "2",
+      "replacement": "param(Param::home_mass_banishment_stack_multiplier)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 331,
+      "name": "home_resistance_min_depth",
+      "literal": "20",
+      "replacement": "param(Param::home_resistance_min_depth)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 332,
+      "name": "home_resistance_max_depth",
+      "literal": "80",
+      "replacement": "param(Param::home_resistance_max_depth)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 337,
+      "name": "home_heat_resist_base",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_heat_resist_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 337,
+      "name": "home_heat_resist_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_heat_resist_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 341,
+      "name": "home_cold_resist_base",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_cold_resist_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 341,
+      "name": "home_cold_resist_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_cold_resist_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 355,
+      "name": "home_teleport_staff_excess_penalty",
+      "literal": "50000",
+      "replacement": "i64::from(param(Param::home_teleport_staff_excess_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 363,
+      "name": "home_phase_stock_max_level",
+      "literal": "10",
+      "replacement": "param(Param::home_phase_stock_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 377,
+      "name": "home_mana_stock_min_sp",
+      "literal": "1",
+      "replacement": "param(Param::home_mana_stock_min_sp)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 390,
+      "name": "home_initial_heal_sell_level",
+      "literal": "1",
+      "replacement": "param(Param::home_initial_heal_sell_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 412,
+      "name": "home_cure_serious_penalty_min_level",
+      "literal": "35",
+      "replacement": "param(Param::home_cure_serious_penalty_min_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 421,
+      "name": "home_max_level_exp_penalty",
+      "literal": "7500",
+      "replacement": "i64::from(param(Param::home_max_level_exp_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 423,
+      "name": "home_exp_stock_late_min_level",
+      "literal": "35",
+      "replacement": "param(Param::home_exp_stock_late_min_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 425,
+      "name": "home_exp_stock_early_max_level",
+      "literal": "35",
+      "replacement": "param(Param::home_exp_stock_early_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 435,
+      "name": "home_book_stock_max_level",
+      "literal": "15",
+      "replacement": "param(Param::home_book_stock_max_level)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 438,
+      "name": "home_book_stock_limit",
+      "literal": "5",
+      "replacement": "param(Param::home_book_stock_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 441,
+      "name": "home_book_stock_base",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_book_stock_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 441,
+      "name": "home_book_stock_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_book_stock_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 449,
+      "name": "home_artifact_weight",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_artifact_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 452,
+      "name": "home_ego_weight",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_ego_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 457,
+      "name": "home_unidentified_weight",
+      "literal": "1005",
+      "replacement": "i64::from(param(Param::home_unidentified_weight))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 188,
+      "name": "home_amulets_limit",
+      "literal": "3",
+      "replacement": "param(Param::home_amulets_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 188,
+      "name": "home_amulets_penalty",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_amulets_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 189,
+      "name": "home_armor_limit",
+      "literal": "6",
+      "replacement": "param(Param::home_armor_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 189,
+      "name": "home_armor_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_armor_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 190,
+      "name": "home_cloaks_limit",
+      "literal": "3",
+      "replacement": "param(Param::home_cloaks_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 190,
+      "name": "home_cloaks_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_cloaks_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 191,
+      "name": "home_shields_limit",
+      "literal": "3",
+      "replacement": "param(Param::home_shields_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 191,
+      "name": "home_shields_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_shields_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 192,
+      "name": "home_hats_limit",
+      "literal": "4",
+      "replacement": "param(Param::home_hats_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 192,
+      "name": "home_hats_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_hats_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 193,
+      "name": "home_gloves_limit",
+      "literal": "3",
+      "replacement": "param(Param::home_gloves_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 193,
+      "name": "home_gloves_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_gloves_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 194,
+      "name": "home_boots_limit",
+      "literal": "3",
+      "replacement": "param(Param::home_boots_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 194,
+      "name": "home_boots_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_boots_penalty))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 235,
+      "name": "home_stock_food_base",
+      "literal": "8000",
+      "replacement": "i64::from(param(Param::home_stock_food_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 235,
+      "name": "home_stock_food_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_food_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 245,
+      "name": "home_stock_ident_base",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::home_stock_ident_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 245,
+      "name": "home_stock_ident_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_ident_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 255,
+      "name": "home_stock_enchant_to_a_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_a_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 255,
+      "name": "home_stock_enchant_to_a_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_a_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 265,
+      "name": "home_stock_enchant_to_h_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_h_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 265,
+      "name": "home_stock_enchant_to_h_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_h_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 275,
+      "name": "home_stock_enchant_to_d_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_d_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 275,
+      "name": "home_stock_enchant_to_d_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_enchant_to_d_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 285,
+      "name": "home_stock_pfe_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_pfe_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 285,
+      "name": "home_stock_pfe_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_pfe_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 294,
+      "name": "home_stock_glyph_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_glyph_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 294,
+      "name": "home_stock_glyph_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_glyph_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 303,
+      "name": "home_stock_genocide_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_genocide_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 303,
+      "name": "home_stock_genocide_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_genocide_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 312,
+      "name": "home_stock_mass_genocide_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_mass_genocide_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 312,
+      "name": "home_stock_mass_genocide_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_mass_genocide_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 321,
+      "name": "home_stock_recharge_base",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::home_stock_recharge_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 321,
+      "name": "home_stock_recharge_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_recharge_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 347,
+      "name": "home_stock_recall_base",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::home_stock_recall_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 347,
+      "name": "home_stock_recall_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_recall_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 347,
+      "name": "home_stock_recall_limit",
+      "literal": "5",
+      "replacement": "param(Param::home_stock_recall_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 350,
+      "name": "home_stock_escape_base",
+      "literal": "2000",
+      "replacement": "i64::from(param(Param::home_stock_escape_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 350,
+      "name": "home_stock_escape_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_escape_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 350,
+      "name": "home_stock_escape_limit",
+      "literal": "85",
+      "replacement": "param(Param::home_stock_escape_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 360,
+      "name": "home_stock_teleport_base",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_stock_teleport_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 360,
+      "name": "home_stock_teleport_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_teleport_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 360,
+      "name": "home_stock_teleport_limit",
+      "literal": "85",
+      "replacement": "param(Param::home_stock_teleport_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 364,
+      "name": "home_stock_phase_base",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::home_stock_phase_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 364,
+      "name": "home_stock_phase_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_phase_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 378,
+      "name": "home_stock_mana_base",
+      "literal": "6000",
+      "replacement": "i64::from(param(Param::home_stock_mana_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 378,
+      "name": "home_stock_mana_decay",
+      "literal": "8",
+      "replacement": "i64::from(param(Param::home_stock_mana_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 391,
+      "name": "home_stock_initial_heal_base",
+      "literal": "-5000",
+      "replacement": "i64::from(param(Param::home_stock_initial_heal_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 391,
+      "name": "home_stock_initial_heal_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_initial_heal_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 391,
+      "name": "home_stock_initial_heal_limit",
+      "literal": "10",
+      "replacement": "param(Param::home_stock_initial_heal_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 397,
+      "name": "home_stock_cure_critical_base",
+      "literal": "1500",
+      "replacement": "i64::from(param(Param::home_stock_cure_critical_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 397,
+      "name": "home_stock_cure_critical_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_cure_critical_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 406,
+      "name": "home_stock_heal_base",
+      "literal": "3000",
+      "replacement": "i64::from(param(Param::home_stock_heal_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 406,
+      "name": "home_stock_heal_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_heal_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 406,
+      "name": "home_stock_heal_limit",
+      "literal": "90",
+      "replacement": "param(Param::home_stock_heal_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 407,
+      "name": "home_stock_ezheal_base",
+      "literal": "8000",
+      "replacement": "i64::from(param(Param::home_stock_ezheal_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 407,
+      "name": "home_stock_ezheal_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_ezheal_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 407,
+      "name": "home_stock_ezheal_limit",
+      "literal": "198",
+      "replacement": "param(Param::home_stock_ezheal_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 408,
+      "name": "home_stock_life_base",
+      "literal": "9000",
+      "replacement": "i64::from(param(Param::home_stock_life_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 408,
+      "name": "home_stock_life_decay",
+      "literal": "0",
+      "replacement": "i64::from(param(Param::home_stock_life_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 408,
+      "name": "home_stock_life_limit",
+      "literal": "198",
+      "replacement": "param(Param::home_stock_life_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 414,
+      "name": "home_stock_cure_serious_base",
+      "literal": "-1500",
+      "replacement": "i64::from(param(Param::home_stock_cure_serious_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 414,
+      "name": "home_stock_cure_serious_decay",
+      "literal": "-10",
+      "replacement": "i64::from(param(Param::home_stock_cure_serious_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 414,
+      "name": "home_stock_cure_serious_limit",
+      "literal": "90",
+      "replacement": "param(Param::home_stock_cure_serious_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 424,
+      "name": "home_stock_late_exp_base",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_stock_late_exp_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 424,
+      "name": "home_stock_late_exp_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_late_exp_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 424,
+      "name": "home_stock_late_exp_limit",
+      "literal": "70",
+      "replacement": "param(Param::home_stock_late_exp_limit)"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 426,
+      "name": "home_stock_early_exp_base",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::home_stock_early_exp_base))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 426,
+      "name": "home_stock_early_exp_decay",
+      "literal": "10",
+      "replacement": "i64::from(param(Param::home_stock_early_exp_decay))"
+    },
+    {
+      "file": "borg_home_power.rs",
+      "line": 426,
+      "name": "home_stock_early_exp_limit",
+      "literal": "5",
+      "replacement": "param(Param::home_stock_early_exp_limit)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1145,
+      "name": "power_inventory_fuel_extra_base",
+      "literal": "6000",
+      "replacement": "i64::from(param(Param::power_inventory_fuel_extra_base))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1145,
+      "name": "power_inventory_fuel_extra_decay",
+      "literal": "100",
+      "replacement": "param(Param::power_inventory_fuel_extra_decay)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1153,
+      "name": "power_inventory_hungry_food_bonus",
+      "literal": "100000",
+      "replacement": "param(Param::power_inventory_hungry_food_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1174,
+      "name": "power_inventory_poison_cure_bonus",
+      "literal": "100000",
+      "replacement": "param(Param::power_inventory_poison_cure_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1177,
+      "name": "power_inventory_cut_cure_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_cut_cure_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1185,
+      "name": "power_inventory_cure_serious_first_bonus",
+      "literal": "15000",
+      "replacement": "param(Param::power_inventory_cure_serious_first_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1227,
+      "name": "power_inventory_identify_first_bonus",
+      "literal": "6000",
+      "replacement": "i64::from(param(Param::power_inventory_identify_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1263,
+      "name": "power_inventory_recall_rod_bonus",
+      "literal": "12000",
+      "replacement": "param(Param::power_inventory_recall_rod_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1271,
+      "name": "power_inventory_phase_first_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_phase_first_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1293,
+      "name": "power_inventory_teleport_first_bonus",
+      "literal": "10000",
+      "replacement": "i64::from(param(Param::power_inventory_teleport_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1490,
+      "name": "power_inventory_recharge_first_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_recharge_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1509,
+      "name": "power_inventory_ranged_quiver_slot_penalty",
+      "literal": "10000",
+      "replacement": "i64::from(param(Param::power_inventory_ranged_quiver_slot_penalty))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1520,
+      "name": "power_inventory_ranged_missile_excess_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::power_inventory_ranged_missile_excess_penalty))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1525,
+      "name": "power_inventory_other_quiver_slot_penalty",
+      "literal": "10000",
+      "replacement": "i64::from(param(Param::power_inventory_other_quiver_slot_penalty))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1531,
+      "name": "power_inventory_cursed_missile_penalty",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::power_inventory_cursed_missile_penalty))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1534,
+      "name": "power_inventory_ego_missile_bonus",
+      "literal": "100",
+      "replacement": "i64::from(param(Param::power_inventory_ego_missile_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1540,
+      "name": "power_inventory_destruction_staff_first_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_destruction_staff_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1547,
+      "name": "power_inventory_teleport_other_wand_first_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_teleport_other_wand_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1551,
+      "name": "power_inventory_warrior_teleport_other_bonus",
+      "literal": "50000",
+      "replacement": "i64::from(param(Param::power_inventory_warrior_teleport_other_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1561,
+      "name": "power_inventory_early_attack_wand_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_early_attack_wand_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1564,
+      "name": "power_inventory_annihilation_wand_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_annihilation_wand_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1572,
+      "name": "power_inventory_warrior_early_attack_wand_bonus",
+      "literal": "10000",
+      "replacement": "i64::from(param(Param::power_inventory_warrior_early_attack_wand_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1575,
+      "name": "power_inventory_attack_wand_charge_weight",
+      "literal": "50",
+      "replacement": "i64::from(param(Param::power_inventory_attack_wand_charge_weight))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1580,
+      "name": "power_inventory_holiness_staff_first_bonus",
+      "literal": "2500",
+      "replacement": "i64::from(param(Param::power_inventory_holiness_staff_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1594,
+      "name": "power_inventory_max_strength_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_max_strength_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1597,
+      "name": "power_inventory_max_intelligence_bonus",
+      "literal": "20000",
+      "replacement": "param(Param::power_inventory_max_intelligence_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1600,
+      "name": "power_inventory_max_wisdom_bonus",
+      "literal": "20000",
+      "replacement": "param(Param::power_inventory_max_wisdom_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1603,
+      "name": "power_inventory_max_dexterity_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_max_dexterity_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1606,
+      "name": "power_inventory_max_constitution_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_max_constitution_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1611,
+      "name": "power_inventory_max_spell_stat_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_max_spell_stat_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1617,
+      "name": "power_inventory_strength_potion_bonus",
+      "literal": "550000",
+      "replacement": "param(Param::power_inventory_strength_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1620,
+      "name": "power_inventory_intelligence_potion_bonus",
+      "literal": "520000",
+      "replacement": "param(Param::power_inventory_intelligence_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1626,
+      "name": "power_inventory_spell_stat_potion_bonus",
+      "literal": "575000",
+      "replacement": "param(Param::power_inventory_spell_stat_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1629,
+      "name": "power_inventory_wisdom_potion_bonus",
+      "literal": "520000",
+      "replacement": "param(Param::power_inventory_wisdom_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1632,
+      "name": "power_inventory_dexterity_potion_bonus",
+      "literal": "550000",
+      "replacement": "param(Param::power_inventory_dexterity_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1635,
+      "name": "power_inventory_constitution_potion_bonus",
+      "literal": "550000",
+      "replacement": "param(Param::power_inventory_constitution_potion_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1641,
+      "name": "power_inventory_star_remove_curse_bonus",
+      "literal": "90000",
+      "replacement": "param(Param::power_inventory_star_remove_curse_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1644,
+      "name": "power_inventory_remove_curse_bonus",
+      "literal": "90000",
+      "replacement": "param(Param::power_inventory_remove_curse_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1650,
+      "name": "power_inventory_restore_experience_bonus",
+      "literal": "50000",
+      "replacement": "param(Param::power_inventory_restore_experience_bonus)"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1657,
+      "name": "power_inventory_enchant_armor_first_bonus",
+      "literal": "540",
+      "replacement": "i64::from(param(Param::power_inventory_enchant_armor_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1662,
+      "name": "power_inventory_enchant_hit_first_bonus",
+      "literal": "540",
+      "replacement": "i64::from(param(Param::power_inventory_enchant_hit_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1667,
+      "name": "power_inventory_enchant_damage_first_bonus",
+      "literal": "500",
+      "replacement": "i64::from(param(Param::power_inventory_enchant_damage_first_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1672,
+      "name": "power_inventory_star_enchant_weapon_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_star_enchant_weapon_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1677,
+      "name": "power_inventory_star_enchant_armor_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_star_enchant_armor_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1686,
+      "name": "power_inventory_first_empty_slot_bonus",
+      "literal": "4000",
+      "replacement": "i64::from(param(Param::power_inventory_first_empty_slot_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1696,
+      "name": "power_inventory_early_shovel_bonus",
+      "literal": "5000",
+      "replacement": "i64::from(param(Param::power_inventory_early_shovel_bonus))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1729,
+      "name": "power_inventory_dungeon_book_spell_weight",
+      "literal": "15000",
+      "replacement": "i64::from(param(Param::power_inventory_dungeon_book_spell_weight))"
+    },
+    {
+      "file": "borg_power.rs",
+      "line": 1816,
+      "name": "power_inventory_encumbrance_penalty_weight",
+      "literal": "1000",
+      "replacement": "i64::from(param(Param::power_inventory_encumbrance_penalty_weight))"
+    },
+    {
+      "file": "borg_store_sell.rs",
+      "line": 956,
+      "name": "sell_unidentified_ego_min_copies",
+      "literal": "2",
+      "replacement": "(param(Param::sell_unidentified_ego_min_copies) as u8)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 224,
+      "name": "shopping_upgrade_light_radius",
+      "literal": "1",
+      "replacement": "param(Param::shopping_upgrade_light_radius)"
+    },
+    {
+      "file": "borg_think_store.rs",
+      "line": 235,
+      "name": "shopping_upgrade_light_radius",
+      "literal": "1",
+      "replacement": "param(Param::shopping_upgrade_light_radius)"
+    }
+  ],
+  "default_edit_roundtrip_verified": true
+}

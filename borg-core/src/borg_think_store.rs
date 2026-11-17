@@ -45,6 +45,8 @@
 //!   attempt to use the home as a "stockpile", even though that is
 //!   not worth any money, since it may save us money eventually.
 
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
 use crate::borg::BorgTime;
 use crate::borg_io::{borg_keypress, borg_note_bytes, ESCAPE};
 use crate::borg_item::inven_wield;
@@ -197,10 +199,10 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if borg_timer(st, st.borg.time.level) > 2000 {
+    if borg_timer(st, st.borg.time.level) > param(Param::shopping_max_turns) {
         return false;
     }
-    if i32::from(st.borg.antibounce_count) > 1350 {
+    if i32::from(st.borg.antibounce_count) > param(Param::shopping_max_bounces) {
         return false;
     }
 
@@ -215,13 +217,13 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
     }
 
     /* If Starving  -- flow to general store */
-    if st.borg.tr(BI_FOOD) == 0 || (st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CLEVEL) >= 2) {
+    if st.borg.tr(BI_FOOD) == 0 || (st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CLEVEL) >= param(Param::shopping_unlit_min_level)) {
         /* G Store first */
         st.borg.goal.shop = 0;
     }
 
     /* if No Lantern -- flow to general store */
-    if st.borg.tr(BI_LIGHT) == 1 && st.borg.tr(BI_GOLD) >= 100 {
+    if st.borg.tr(BI_LIGHT) == param(Param::shopping_upgrade_light_radius) && st.borg.tr(BI_GOLD) >= param(Param::shopping_light_min_gold) {
         st.borg.goal.shop = 0;
     }
 
@@ -232,7 +234,7 @@ fn borg_choose_shop_inner(st: &mut BorgState) -> bool {
         || st.borg.tr(BI_FOOD) == 0
         || st.borg.tr(BI_ISCUT) != 0
         || st.borg.tr(BI_ISPOISONED) != 0)
-        || (st.borg.tr(BI_LIGHT) == 1 && st.borg.tr(BI_GOLD) >= 100 && st.borg.tr(BI_CLEVEL) < 10)
+        || (st.borg.tr(BI_LIGHT) == param(Param::shopping_upgrade_light_radius) && st.borg.tr(BI_GOLD) >= param(Param::shopping_light_min_gold) && st.borg.tr(BI_CLEVEL) < param(Param::shopping_emergency_light_max_level))
     {
         if borg_think_shop_buy_useful(st) {
             /* Message */

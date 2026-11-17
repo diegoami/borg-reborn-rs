@@ -6,6 +6,17 @@ Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
 
+## M13 inventory gap closure (#433 / P4)
+
+The current registry contains **2,143** parameters. This adds 362 neutral
+inventory parameters to the 1,781-entry accepted main registry: 48 power,
+23 wear, 14 buy, 34 sell, 6 store-choice and 237 home-valuation entries.
+The [M13 inventory contract](M13-INVENTORY-PARAMETERS.md) records scope,
+units, bounds, retained mechanics, #293 separation and the P-before-R4 gate;
+its JSON companion lists every new default and original source location.
+The extraction changes no default decision policy. Historical counts below
+remain receipts of their own snapshots.
+
 ## Class/family attack preference extension (#403)
 
 The historical P1–P3 counts above describe the original extraction. #403 adds
