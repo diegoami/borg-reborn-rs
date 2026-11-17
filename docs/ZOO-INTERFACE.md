@@ -100,7 +100,10 @@ makes the borg-rs core read the named scary monsters from `user/NAME`
 (docs/CALIBRATION.md). The shipped `harness/borg.txt` does not set it, so a
 zoo run uses the compiled list. To run a list, the adapter has to copy the
 file into `user/` and pin its hash, as it does for `borg_plan`. Without the
-copy, the core stops before play with exit 2 (the file is missing).
+copy, the core stops before play with exit 2 (the file is missing). An arm
+varies the list by appending lines to the specimen's file: a later line for
+the same monster replaces the earlier one, `monster | none` removes it, and a
+later `fragility:` value replaces the earlier one (borg-zoo#228).
 
 A profile's
 `borg_param_<name>` integer sets any of the 1803 entries in

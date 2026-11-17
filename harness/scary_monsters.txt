@@ -23,6 +23,11 @@
 #   character's level are known, and not while the Borg stands and fights
 #   breeders (#503).
 #
+# A later line for the same monster replaces the earlier one, and
+# "monster | none" removes it; a later fragility value replaces an earlier
+# one. An experiment can append its own lines to this file instead of
+# editing it (borg-zoo#228).
+#
 # An unknown monster, class or flag, a bad number or a backwards range stops
 # the run before play. To remove a monster, delete or comment out its line.
 

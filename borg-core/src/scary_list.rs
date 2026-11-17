@@ -32,9 +32,12 @@
 //!   this monster outright.
 //! - **`breeders`:** only while at least as many breeders as the character's
 //!   level are known, and not while the Borg stands against breeders (#503).
-//! - An unknown monster or class, a bad number or range, an unknown flag or
-//!   a class with two fragilities stops the run before play: a list is never
-//!   silently ignored.
+//! - **Overlays:** a later line for the same monster replaces the earlier
+//!   one, `monster | none` removes it, and a later `fragility:` value
+//!   replaces an earlier one. An experiment can append its changes to the
+//!   shipped list (borg-zoo#228).
+//! - An unknown monster or class, a bad number or range, or an unknown flag
+//!   stops the run before play: a list is never silently ignored.
 
 use std::sync::OnceLock;
 
@@ -120,7 +123,6 @@ fn range(s: &str) -> Result<(i32, i32), String> {
 /// Parse a list. `race` resolves a monster name to its race index.
 pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, String> {
     let mut list = List::default();
-    let mut fragility_set = [false; 9];
     for (n, raw) in text.lines().enumerate() {
         let line = raw.trim();
         if line.is_empty() || line.starts_with('#') {
@@ -128,10 +130,9 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         }
         let at = |e: String| format!("line {}: {e}", n + 1);
         if let Some(rest) = line.strip_prefix("fragility:") {
+            // A later line overrides an earlier one, so an experiment can
+            // append its changes to a shipped list (borg-zoo#228).
             for (c, v) in class_levels(rest, 100, "fragility").map_err(&at)? {
-                if std::mem::replace(&mut fragility_set[c], true) {
-                    return Err(at(format!("class '{}' has two fragilities", CLASSES[c])));
-                }
                 list.fragility[c] = v;
             }
             continue;
@@ -149,6 +150,15 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         } else {
             Target::Race(race(fields[0]).ok_or_else(|| at(format!("unknown monster '{}'", fields[0])))?)
         };
+        // A later line for the same monster replaces the earlier one, and
+        // `none` removes it: an experiment appends its changes (#228).
+        list.entries.retain(|e| e.target != target);
+        if fields[1].eq_ignore_ascii_case("none") {
+            if fields.len() > 2 {
+                return Err(at("'none' takes no class exceptions or flags".into()));
+            }
+            continue;
+        }
         let (tough, fragile) = range(fields[1]).map_err(&at)?;
         let mut classes = [None; 9];
         if let Some(pairs) = fields.get(2).filter(|s| !s.is_empty()) {
@@ -297,6 +307,18 @@ mod tests {
     }
 
     #[test]
+    fn appended_lines_override_and_none_removes() {
+        let shipped = "fragility: mage 100\nsoldier | 8-11\nFang, Farmer Maggot's Dog | 5-8\n";
+        let arm = format!("{shipped}# an experiment's overlay\nsoldier | 4\nFang, Farmer Maggot's Dog | none\nfragility: mage 0\n");
+        let l = parse(&arm, &race).unwrap();
+        assert!(is_scary(&l, 1, b"person", who(4, MAGE)), "soldier replaced by 4, fragility 0");
+        assert!(!is_scary(&l, 1, b"person", who(5, MAGE)));
+        assert!(!is_scary(&l, 4, b"canine", who(1, MAGE)), "Fang removed");
+        assert_eq!(l.entries.len(), 1);
+        assert!(parse("soldier | none\n", &race).unwrap().entries.is_empty(), "removing an absent monster is fine");
+    }
+
+    #[test]
     fn mistakes_stop_the_run() {
         let err = |t: &str| parse(t, &race).unwrap_err();
         assert!(err("Grip | 5\n").contains("line 1: unknown monster 'Grip'"), "full names only");
@@ -307,7 +329,7 @@ mod tests {
         assert!(err("soldier\n").contains("expected"));
         assert!(err("soldier | 8 | mage\n").contains("is not 'class number'"));
         assert!(err("base: | 4\n").contains("empty monster base"));
-        assert!(err("fragility: mage 100\nfragility: mage 50\n").contains("line 2: class 'mage' has two fragilities"));
+        assert!(err("soldier | none | mage 3\n").contains("'none' takes no"));
         assert!(err("fragility: mage 150\n").contains("not a fragility 0-100"));
         assert!(err("soldier | 8-5\n").contains("runs backwards"));
         assert!(err("soldier | 5-\n").contains("not a character level"));

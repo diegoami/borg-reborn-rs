@@ -269,6 +269,10 @@ classes-18 starts. With the shipped ranges, 2 of the 18 games change (the
 Rogue and the Ranger): the frail casters never passed C's levels within
 100,000 turns.
 
+A later line for the same monster replaces the earlier one, `monster | none`
+removes it, and a later `fragility:` value replaces an earlier one, so an
+experiment can append its changes to the shipped list (borg-zoo#228).
+
 An unknown monster, class or flag, a bad level or a backwards range stops
 the run before play
 with exit 2 and the line. Harness runs select a list with
