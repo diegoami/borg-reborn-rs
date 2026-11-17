@@ -765,7 +765,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam *= mult;
             /* don't point blank non-uniques */
             if cur_dis == 1 && !rf(r, RF_UNIQUE) {
-                dam /= param(Param::attack_arrow_point_blank_divisor);
+                dam /= point_blank_divisor(tr(st, BI_CLASS));
             }
             /* Do I hit regularly? (80%)*/
             if chance < armor * param(Param::attack_arrow_min_hit_tenths) / 10 {
@@ -3003,6 +3003,25 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     b_n
 }
 
+/// borg-reborn-rs (#485): the divisor of a shot at an adjacent non-unique:
+/// the class's `attack_arrow_point_blank_divisor_<class>` when set (> 0),
+/// else the default `attack_arrow_point_blank_divisor`.
+pub(crate) fn point_blank_divisor(class: i32) -> i32 {
+    let by_class = match class {
+        0 => param(Param::attack_arrow_point_blank_divisor_warrior),
+        1 => param(Param::attack_arrow_point_blank_divisor_mage),
+        2 => param(Param::attack_arrow_point_blank_divisor_druid),
+        3 => param(Param::attack_arrow_point_blank_divisor_priest),
+        4 => param(Param::attack_arrow_point_blank_divisor_necromancer),
+        5 => param(Param::attack_arrow_point_blank_divisor_paladin),
+        6 => param(Param::attack_arrow_point_blank_divisor_rogue),
+        7 => param(Param::attack_arrow_point_blank_divisor_ranger),
+        8 => param(Param::attack_arrow_point_blank_divisor_blackguard),
+        _ => 0,
+    };
+    if by_class > 0 { by_class } else { param(Param::attack_arrow_point_blank_divisor) }
+}
+
 /// Simulate/Apply the optimal result of ACTIVATING an attack artifact
 /// (`borg_attack_aux_activation`).
 fn borg_attack_aux_activation(
@@ -4605,5 +4624,20 @@ mod town_oil_tests {
         assert!(oil_reserved(true, 3, 3, false), "a longer forecast can need several fuel bottles");
         assert!(!oil_reserved(true, 0, 1, false), "a filled lantern can cover the forecast already");
         assert!(oil_reserved(false, 0, 0, false), "control retains its original behaviour");
+    }
+}
+
+#[cfg(test)]
+mod point_blank_tests {
+    use super::*;
+
+    /// #485: with no class override every class uses the default divisor
+    /// (compiled 5); an unknown class index too.
+    #[test]
+    fn every_class_falls_back_to_the_default_divisor() {
+        for class in 0..9 {
+            assert_eq!(point_blank_divisor(class), 5, "class {class}");
+        }
+        assert_eq!(point_blank_divisor(42), 5);
     }
 }

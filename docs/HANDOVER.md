@@ -2,6 +2,421 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: cornered mode (#504, #488 slice B)
+
+- `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
+  teleport or escape, a monster within `caution_cornered_radius` 2, danger
+  at or above HP x `caution_cornered_danger_tenths` / 10) the Borg uses every
+  buff regardless of `borg_defend`'s "some danger but not much" window:
+  fear cure, Speed, Heroism, Berserk Strength, Blessing, then Monster
+  Confusion against an adjacent unique or higher-level monster
+  (`caution_cornered_big_level_margin` 0). Melee classes then neither retreat
+  nor back away. Monster Confusion leaves the planner's worthless list only
+  while the mode is on (the planner still gives it no value: no core
+  supply curve reads TMD_ATT_CONF).
+- On 193d9076 (run 44054277431's death starts): Blackguard 888896726
+  (Berserk Strength cast 9 times) and Rogue 1502695781 survive; the Ranger
+  (bleeding) plays identical keys (it has Phase Door); Ranger3 dies to a
+  crow instead of a centipede; the Druid is unchanged.
+- On main, 9 classes x 2 seeds (2001, 2002), 100k turns: 6 deaths off, 3 on
+  (the same three, identical keys: Mage, Druid, Priest); rescued a Priest,
+  a Paladin (lava) and a Blackguard. Too few games: a zoo arm is needed.
+- Re-synced with main after #510 (#503) merged.
+- Review (#511): buff spells only at or below `caution_cornered_spell_fail`
+  (25%) failure, Haste Self before the Speed potion; no Monster Confusion
+  against `RF_NO_CONF`; monsters that never move do not corner the Borg;
+  the outmatched heal stays at the end (tried before the boosts, it made a
+  Rogue drink in front of a grey mold instead of stepping away, and a Ranger
+  heal in place against Bullroarer: two new deaths on main `dd5f026e`); Teleport Level is an escape (Recall is
+  not); the boost order is a pure `boost_order`, unit-tested.
+- Owner: in a hard breeder fight the same boosts.
+  `caution_breeder_boost_danger_tenths` (compiled 0, shipped 5): standing
+  against breeders with no easy escape and danger here at or above half the
+  HP, the Borg uses `cornered_boost` (fear cure, Speed, Heroism, Berserk
+  Strength, Blessing: the Bless spell, Holy Chant or Blessing scrolls).
+
+## 2026-11-17: healing by class, no Shovel while poor (#487)
+
+- #487's analysis (on the issue): no melee class bought a weapon in five
+  games; for Warriors and Rogues the try-on rates every heavier weapon about
+  -44,500 power per lost blow, so keeping the Dagger is right; Paladins,
+  Blackguards and Rangers miss upgrades by a few gold. The gold went to
+  Cure Light Wounds for the 400% reserve (a CL8 Warrior bought 26 in one
+  visit and kept 712 gold) and to a Shovel (66 gold) at four of five first
+  visits.
+- Owner: per-class overrides of the healing curve scale and reserve
+  (`town_heal_curve_scale_percent_<class>`, `town_heal_reserve_hp_percent_<class>`),
+  shipped from 50 (Warrior) to 150 (Mage) and from 100 to 300; the general
+  reserve 100 and curve scale 125; `town_digger_min_gold` 500. Weapon saving
+  is not done.
+- Owner: healing speed (#491) was not meant to set how many potions fill the
+  reserve. `town_heal_reserve_real_hp` (shipped 1) counts real HP in the
+  reserve; speed weights only the healing curve.
+- On main `233ef23e`, 9 classes x 2 seeds: with the old values (reserve 400,
+  scale 100, `town_heal_reserve_real_hp` 0, no class values, digger 0) the 18
+  games play identical keys to main. With the shipped ones (real-HP reserve
+  included) 4 deaths become 2: the four that died live (Mage, Necromancer,
+  Ranger, Blackguard), and two others die (a Druid to an acolyte, a Priest to
+  a green worm mass). Cure Light Wounds bought 212 -> 117, healing gold
+  7190 -> 5430, Shovels 20 -> 8; Warriors' healing 590/1540 -> 130/380 gold.
+  Too few games: a borg-zoo experiment follows at the merge.
+## 2026-11-17: scary by damage (#505)
+
+Owner: scary is a monster that can one- or two-shot you, as a percentage of
+HP. borg-zoo#216 saw the named list's removal (#510) kill characters (5 and
+4 deaths of 18 against 1).
+
+**Change:** `caution_scary_damage_percent` (compiled 0, shipped 60, owner).
+A known monster on the level makes it scary when one character turn of its
+melee, on average, takes that percent of max HP:
+`borg_caution::scary_by_damage`.
+- The damage is the average of its blows (`randcalc` AVERAGE: base, dice
+  and level bonus, review of #514) times its moves per
+  character turn.
+- Not `borg_danger`: a first try with it rated a street urchin at 245 and
+  a floating eye at 276 against 10 HP, from the penalties for stealing and
+  paralysis.
+- Spells are not counted.
+- A note `# Scary by damage: <monster>, <damage> of max HP <hp>` marks when
+  it first makes a level scary.
+- The named list stays shipped off; the resist-based scares and the latch
+  stay.
+
+**Local check:** 18 starts; the table is in docs/CALIBRATION.md. The rule
+keeps the levels and depth of "list off", where the named list loses about
+a quarter of them. Deaths can't be told apart at this size.
+
+**Left:**
+- a zoo pilot (list on, list off, the rule at 30/60/80) decides the value;
+- whether spells should count;
+- the latch, if the zoo shows it holds the Borg.
+
+## 2026-11-17: a planned purchase buys its copies in one transaction (#507)
+
+Found by the zoo on borg-zoo#198. Half-Troll Ranger 60792140 bought 120
+Arrows one transaction at a time: ~1,080 keys at one game turn, which the
+zoo counted as a stall. The zoo's half, borg-zoo#205, is closed: borg-zoo#207
+now flags such runs as `purchase_burst`.
+
+**Cause:** live mode set every action's quantity to 1, and `buy_selected`
+accepted the prompt's default of 1. The planner then re-solved after
+every copy.
+
+**Fix:**
+- A BUY keeps the copies the plan picked of the first ware of its chosen
+  option (`borg_town_shadow::evaluate`). Copies of the same class at a
+  second ware, and other kinds in the option, come on later re-solves.
+- `execute_store` caps them by the stack, the pack's room
+  (`inven_carry_num`) and the gold at the price of one (`price_item`):
+  `borg_town_live::purchase_quantity`, unit-tested. Never above store.c's
+  maximum, so 2 or more always meets the prompt.
+- `buy_selected` types the quantity.
+- The purchase note and object log name the copies bought, and the log's
+  cost is the gold the purse lost (for an uneven stack of wands or staves,
+  `price_item`'s total is not N times the price of one).
+- With `store_buy_direct` set the engine buys one copy with no prompt, so
+  the quantity is not typed. The shipped `harness/borg.txt` does not set it.
+- TAKE_HOME and sales still move one copy per action.
+- The fix is in the vendored core (`borg-core/`), so it plays only when
+  the borg-rs core is selected: `borg_reborn_core = borg-rs` (shipped since
+  #479) or `BORG_CORE=borg-rs`. The original reborn core is unaffected.
+
+**Checked:** three Ranger starts, 100,000 turns, on main `28360152` and on
+the branch:
+- the largest key count at one game turn fell from 149–330 to 72–80;
+- arrow purchases fell from 87–237 transactions to 14;
+- no "not enough gold" or "cannot carry" message.
+
+Play changes, and more arrows are bought in all (276–302 against 87–237),
+so it needs a zoo pilot. Deaths on a specimen with it need new Cemetery
+packages (RULES 12).
+
+**Still open from #491:** the healing reserve can crowd out Phase Door for
+poor characters. A local run of 18 starts found 114 departures without
+Phase Door at reserve 400, against 38 with no reserve. The owner chooses
+the fix after borg-zoo#192's small and medium runs: a cap on the
+reserve's gold, or a reserve that grows with level. Not a Phase Door
+floor: the owner rejected it, since Phase Door is not in the same league
+as healing. Those runs should keep the surviving games' purchase records,
+because deaths alone cannot show the crowding.
+
+## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
+
+#488 (stand-and-fight) is split into #503 (A, breeders), #504 (B, the
+cornered mode) and #505 (C, the scary-monster list). Owner: removing the
+hard-coded scary monsters belongs in this PR.
+
+- `caution_breeder_fight` (compiled 0, shipped 1): with breeders on the
+  level and no easy escape (a free staircase within
+  `caution_breeder_easy_escape_steps` 5, Phase Door, teleport, escape or
+  Word of Recall) the three breeder flees are skipped, and while every
+  known monster within `caution_breeder_stand_radius` 5 is a breeder the
+  Borg neither retreats nor backs away (the Rogue's death ping-ponged
+  between two grids). Warriors, Paladins, Rogues and Blackguards hunt
+  breeders below CL10 while at most `caution_breeder_hunt_max_count` 4 are
+  known.
+- `caution_scary_named_monsters` (compiled 1, shipped 0): the C Borg's
+  named scary monsters by character level and the low-level door scares.
+  The scary flag latches until a new level: a small kobold seen once kept
+  the Blackguard 888896726 fleeing for 54,000 game turns. Resist-based
+  scares stay. With it off, breeders scare through nothing; their handling
+  is the breeder flee / stand above.
+- Replays (run 44054277431's death starts): on 193d9076 all five die; with
+  the shipped settings all five reach the turn cap (CL5–8, DL1–3). On main
+  all six starts reach the cap without the change; with it, five do, at
+  CL6–8 instead of CL4–6, and the Druid 934061548 dies to a kobold shaman on
+  DL2 (CL6), on a later path.
+- Review (#510): Teleport Level counts as an easy escape; the no-retreat
+  rule needs no non-breeder within the danger horizon (20 grids), not only
+  within the radius; the generic low-HP and bleeding/poison flees are left to
+  #504; with the named list on, a breeder scare latched before the stand
+  engaged stays until a new level (a known limit of that intermediate arm). Too few games to claim anything: a zoo arm is
+  needed (named list off / breeder fight off / both).
+- `engine/tests/test_errands_plan.py` growth test: seed 1003 (the plan
+  feature's test; the shipped default stays no plan).
+- Left: #504 (cornered mode), #505 (now: whether the resist-based scares
+  and the latch need changes; to be decided with the owner).
+
+## 2026-11-17: CI cancels superseded pull-request runs (#499)
+
+Owner: are we doing too much on CI? The repositories are public (no paid
+minutes), but runner slots are shared with borg-zoo's experiments, and
+2026-11-17 had 43 CI runs. `.github/workflows/ci.yml` now has a concurrency
+group per pull request with `cancel-in-progress` for `pull_request` events:
+a new push to a PR cancels its older run. Each push to main or track-p has a
+group of its own (the run id), so those are never queued or cancelled. The
+session's practice from now on: batch review fixes into one push, and re-sync
+a PR with main only right before merging, when needed.
+
+## 2026-11-17: explicit gold reserve, shipped 0 (#493)
+
+Owner: the gold reserve is a borg.txt setting, fixed and percent, and it
+should be 0. Before, the live town planner kept gold only through
+`borg_town_w_gold` (25), a price in `solve_cash` (spending `c` costs
+`w x c / (gold left + 1)`) that made the last coins nearly unspendable.
+
+- New parameters `town_gold_reserve` and `town_gold_reserve_percent`
+  (default 0): `Budget::of` takes the larger from the gold left after the
+  urgent needs (which may still use the whole purse);
+  `borg_town_budget::{gold_reserve, spendable}`, unit-tested.
+- Shipped `harness/borg.txt`: both at 0 and `borg_town_w_gold = 0`; the
+  compiled default is 0 too (owner), declared in `borg_init.rs`
+  (`OUR_DEFAULTS`, `NEW_SETTINGS`). The soft price came from borg-rs
+  `785f5064` (2026-11-14, its docs/TOWN-UTILITY.md "Retaining gold"),
+  vendored with borg-rs #87.
+- The reserve bounds the purse at arrival; the visit's sale proceeds are
+  spendable on top of it (review F1, documented rather than changed).
+- Shipping `borg_town_w_gold = 0` changes the borg-rs core's key stream, so
+  zoo deaths on a specimen with it need new Cemetery packages (RULES 12).
+- On borg-zoo run 44054277431's death starts (main's defaults): the median
+  gold on leaving town fell from 143/64/48/96 to 7/9/46/6; a 50% reserve
+  holds (median 138). Healing purchases moved only partly (#491 is the
+  healing value).
+## 2026-11-17: no merge before the owner says the review is done (RULES 1a)
+
+Owner, after #496 was merged while it was under review: every PR waits
+for the owner to say its review is done, on every track and into any
+branch. Green CI is not enough. RULES 1a and AGENTS.md "At the end of a
+task" step 4 say so; track P's `track-p` task merges follow it too.
+
+## 2026-11-17: point-blank divisor by class (#485 follow-up)
+
+Owner: point blank 2 (#495) suits Rangers but not Rogues; keep a default
+divisor and a per-class override.
+
+- `attack_arrow_point_blank_divisor` stays the general divisor (compiled 5).
+- Nine new parameters, `attack_arrow_point_blank_divisor_<class>` (default 0 =
+  the general divisor), resolved in `borg_fight_attack::point_blank_divisor`.
+- Shipped `harness/borg.txt`: general 5, Ranger 2, Rogue 3 (the second
+  missile class). Every other class is back to borg-rs's 5; Rangers keep
+  #495's 2.
+- Registry 1783 -> 1792; `docs/CALIBRATION.md` and `docs/ZOO-INTERFACE.md`.
+## 2026-11-17: Boldness is no buff to the town planner (#486)
+
+The planner bought 14-21 Pints of Fine Wine a game (borg-zoo run 44054277431's
+death starts on main's defaults), and the core never drank them for what they
+were bought for. Wine (`object.txt`: weight 10, cost 2, `NOURISH:INC_BY 3`,
+`TIMED_INC:BOLD`) has been no food to the planner since #444, but `timed_cap`
+mapped `TMD_BOLD` to `BUFF`, the cheapest buff on offer.
+
+- A Bold timed effect is no buff the core uses. The core takes Boldness only
+  to cure fear: a Potion of Boldness is `CURE:AFRAID`, priced through FEAR,
+  and `borg_caution` / `borg_recover` quaff it when afraid. The hunger list
+  drinks wine as food.
+- `TMD_BOLD` no longer maps to `BUFF` (`borg_town_capability::timed_cap`).
+  The rule is effect-wide on purpose: the only kind with `TIMED_INC:BOLD` in
+  `object.txt` is the Pint of Fine Wine (no activation or class spell grants
+  it), and Potions of Boldness keep their fear-cure value (tested).
+- On the four starts: wine bought 21/20/16/14 -> 0, 14-21 lb less carried.
+  The freed gold isn't spent on healing; the healing value is a diminishing
+  curve (HP x exposure), which is borg-reborn-rs#491.
+## 2026-11-17: review of #496 (post-merge), fixes
+
+The owner's review of #496 found no behaviour defect: the maths, "off is
+identical" and the mage's death at reserve 800 all reproduce. Fixed here:
+- **F1:** `docs/ZOO-INTERFACE.md` gave the registry as 1783; it now says
+  1795 (1786 after #496, plus #498's nine per-class divisors).
+- **F2:** the CLW/CSW/Healing ranges in docs/CALIBRATION.md and below were
+  max HP, written as if they were potion HP. Reworded, with
+  `object.txt`'s figures.
+- **F3:** `tools/shopping-audit.py` reads `borg_town_capability::NAMES`
+  from the source instead of a hand-kept copy, which lacked "healing
+  reserve". Tested (`tools/tests/test_shopping_audit.py`).
+- **F4:** docs/CALIBRATION.md says that the curve scale also multiplies
+  healing's total value, and that the speed factor also changes the curve's
+  shape.
+
+## 2026-11-17: a healing reserve for the town planner (#491)
+
+Owner: "we can never have enough healing". The owner chose
+configurable borg.txt values instead of the issue's three proposals: a
+linear reserve as a percent of max HP (as in proposal 1), a value for the
+diminishing curve past it, and then healing speed, with proposed defaults.
+
+- **Code:** `borg_town_capability.rs`, details in docs/CALIBRATION.md.
+  - `town_heal_reserve_hp_percent` (0 = off): up to this percent of max HP
+    of healing, each HP is worth the curve's first HP (`w_bleeding / max HP`),
+    on top of the curve. Bought first, never sold below.
+  - `town_heal_curve_scale_percent` (100 = today): stretches the curve past
+    the reserve, keeping its first HP's value.
+  - `town_heal_speed_percent` (0 = HP alone), owner: "budget healing speed
+    as well". A potion that heals at least this percent of max HP in one
+    swallow counts in full; a smaller one counts `heal x heal / (percent x
+    max HP)`. HP per gold alone made Cure Light Wounds the best buy at every
+    level: 800% of a 300-HP character's max HP is 120 CLW, each healing
+    20 HP. At 66, CLW counts in full up to 30 max HP; the best buy moves to
+    CSW at 60–100 max HP, then Healing from about 200 max HP. CCW (60 HP for
+    200 gold) never wins on healing alone.
+- **Off is identical:** at 0, 100 and 0 the four starts of the issue play
+  the same key streams as main `4d83dd26`.
+- **Shipped (owner):** reserve 400, curve 100, speed 66, in
+  `harness/borg.txt`.
+  - 800 was proposed first. In CI, engine test
+    `test_active_cap_is_replaced_when_level_changes` (mage, seed 1001)
+    failed with it: at 10 max HP, 800% is 8 Cure Light Wounds, about 160
+    gold, almost all the starting gold. The mage bought no oil and died at
+    level 1 to a grey mold (turn 4,084).
+  - With 400 + 66, or 66 alone, the mage reaches level 2 alive.
+  - On the four starts, 400 + 66 bought 13 / 6 / 5 / 12 healing potions
+    (main 6 / 4 / 4 / 5). The Blackguard died early (turn 15,735), as it
+    did at 400 without speed. One game each, so an anecdote.
+  - Left: a zoo arm for reserve {400, 800} x speed {0, 66}, and possibly
+    a reserve that grows with level, so early characters keep gold for
+    their attack.
+- **Speed 66 on the four starts:** off still equals main and reserve 800
+  is unchanged by the new code.
+  - Rogue, Blackguard: unchanged, with or without the reserve.
+  - Ranger (34 HP) with reserve 800: 21 potions bought, 570 gold (CLW and
+    CSW), alive.
+  - Druid with reserve 800: 30 potions, 650 gold, alive.
+  - No deep character is measured.
+- **Measurement:** the four starts, 100k turns, branch build. Healing
+  potions bought, gold on healing / total, outcome. One game per cell,
+  descriptive (RULES 14).
+
+| setting | Rogue | Ranger | Blackguard | Druid | deaths |
+|---|---|---|---|---|---|
+| off (= main) | 6, 270/2337 | 4, 80/899 | 4, 80/322, **died** | 5, 100/1168 | 1 |
+| reserve 200 | 2, 40/814 | 3, 60/864 | 4, 180/761 | 5, 100/596 | 0 |
+| reserve 400 | 10, 400/1432 | 11, 370/1051 | 5, 100/192, **died** | 12, 240/650 | 1 |
+| **reserve 800** | 11, 220/1517 | 17, 340/837 | 9, 180/571 | 29, 780/1928 | 0 |
+| reserve 1200 | 31, 720/2059 | 28, 560/1198 | 10, 200/215 | 14, 280/537, **died** | 1 |
+| curve 300 | 17, 390/959 | 2, 40/117, **died** | 4, 80/138, **died** | 11, 270/793 | 2 |
+| reserve 400 + curve 300 | 7, 140/1088 | 10, 300/1188 | 5, 100/192, **died** | 13, 260/593 | 1 |
+| reserve 800 + curve 200 | 10, 200/1395 | 12, 240/1122 | 10, 200/941 | 8, 160/560 | 0 |
+
+- **Reading:**
+  - Reserve 200 is at or below what these low-level characters already
+    carry, so it buys little.
+  - Reserve 800 multiplies the healing bought by 2–6 and still leaves
+    gold for arrows, oil and Phase Door. 1200 starts to crowd them out.
+  - Stretching the curve alone (curve 300) bought more healing on two
+    starts but had two deaths against one; no sign it helps outcomes.
+  - Every game diverges early, so deaths are anecdotes.
+- **Left:**
+  - #496 review: the reserve's total value grows with max HP squared (its
+    weight and its size both grow with max HP). At 400%, a 300-HP character
+    can put about 3,200 gold into it (4 Healing). A reserve that grows less
+    than linearly in max HP, or with level, would keep early characters
+    cheap.
+  - No deep character is measured. With speed 66 the reserve fills with
+    Healing potions from about 200 max HP, not Cure Light Wounds.
+  - Zoo pilot requested: borg-zoo#192, reserve {0, 400, 800} x speed
+    {0, 66} on main `7e08c920`.
+  - #494 (gold reserve, `borg_town_w_gold = 0`) also changes what gold is
+    left for healing. #492 (no wine) is merged; it freed 14–21 lb and a
+    little gold.
+
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
+## 2026-11-17: point-blank shots keep half their damage (#485)
+
+Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its
+bow scored 4 (8 with the Ranger preference) against melee 22–64.
+
+- **Cause:** not the launcher's damage. Bow and Main Gauche both score 4,
+  and the engine agrees (1.2 shots, 1.17 blows, about 6 each per turn).
+  The gap is the danger bonus. Melee adds the target's danger over 2 turns
+  at full damage; `borg_launch_bolt_aux_hack` adds 1 turn weighted by the
+  monster's hit chance, 0 for a monster 2 squares away (same as C). An
+  adjacent non-unique could not be shot at all: damage / 5 = 0. The engine
+  has no point-blank penalty; arrow breakage is the same at any distance.
+  Per-term numbers are in the issue.
+- **Change (owner):** shipped `harness/borg.txt` sets
+  `borg_param_attack_arrow_point_blank_divisor = 2`. The compiled default
+  stays 5. It applies to launcher ammo and thrown objects of every class.
+- **Replay:** with 2, the Ranger is alive at the 100k-turn cap (CL8, max
+  DL7) instead of dying at turn 74,797. It diverges at turn 6,573, so this is
+  one game, not evidence (RULES 14); a zoo arm should measure it.
+- **Left:** the danger-term asymmetry itself (a `full_damage` parameter for
+  the launcher's term) is not changed. Owner's call after the zoo measure.
+
+## 2026-11-17: the speed30 bundle is the default, apart from the errands (#479)
+
+Owner request: the settings of borg-zoo#170's arm `reborn-bundle-plan-speed30`
+become the defaults, apart from the errands, and the default core switches to
+borg-rs ("reborn is not ready yet").
+
+- **Shipped `harness/borg.txt`:**
+  - `borg_reborn_core = borg-rs` (was reborn);
+  - `borg_town_plan = 1`;
+  - `borg_trip_policy = 1`, `borg_trip_unknown_stacks = 5`, `borg_trip_pack_slack = 1`;
+  - 18 `borg_param_*` lines: outmatched healing 1, speed fight 30, and the 16 class attack preferences.
+- **Not set:** `borg_plan` and `borg_reborn_errand` (none).
+- **Compiled defaults are unchanged.** `params.rs` and `borg_init.rs` stay neutral; unit tests pin them as the neutral and C-parity tables. The bundle comes from the shipped file, which a player's game and every zoo arm read. A zoo profile that names a key rewrites the line.
+- **`harness/run.sh`:**
+  - With no `BORG_CORE`, it rewrites the run's copy to `borg_reborn_core = reborn`, so the harness's reborn-core references (smoke, full, observations) still test the reborn core.
+  - New `BORG_TXT_SET="name=value;..."` pins an existing key.
+- **`test_shopping`'s home-storage round** pins `borg_town_plan=0`, the historical chooser it tests.
+- **Measurement:** borg-zoo#170's pilot was identical across speed 0/30/60 on 18 starts. The medium tier (run 43998795815) is the measurement of the bundle.
+
 ## 2026-11-17: never use unidentified items; Deep Descent discarded (#470)
 
 Owner request after borg-zoo#147: 35 of 900 small-tier games ended below
@@ -5128,3 +5543,19 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Preserve old parameter positions/defaults and immutable Cemetery #61
   evidence; no aliases or policy changes. Integrate only through track-p
   and update the exact #477 pin for owner re-review before main promotion.
+
+
+## 2026-11-17: P4 conflict resolution before promotion (#522)
+
+- Merge accepted main a8ac685a into task/T522-p4-main-sync from track-p
+  7078bb1d, preserving all main bug fixes, configuration and review rules.
+- Resolve params.rs test conflict by retaining both town and P4 source-module
+  validation; retain both calibration snapshots and correct the current count.
+- Main's 1829 specs stay byte-identical in the same order; append the same
+  362 reviewed P4 specs (2191 total). Unpromoted P4 absolute IDs move;
+  historical evidence remains pinned to its original registry and build.
+- The buying-code auto-merge keeps #507's quantity fix and neutral P4 lookups.
+  All other runtime modules equal their accepted parent versions exactly.
+- Required checks/CI and owner review precede task integration under RULES 1a.
+  #477 stays unmerged; update its pin after approved track-p integration and
+  re-review the synchronized result before promotion.

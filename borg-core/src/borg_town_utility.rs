@@ -597,7 +597,10 @@ mod tests {
 
     #[test]
     fn shallow_recall_loses_to_saving_gold_and_a_useful_wound_potion() {
-        let st = state(0, 1, 20);
+        // The soft gold price at borg-rs's 25 (the compiled default is 0
+        // since #493): saving gold still beats a shallow recall when priced.
+        let mut st = state(0, 1, 20);
+        st.core.cfg[BORG_TOWN_W_GOLD as usize] = 25;
         let u = Utility::of(&st, &[], false);
         let groups = [
             Group { key: GroupKey::Need(index(Need::Trip) as u8), options: vec![Choice::default(), Choice {

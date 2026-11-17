@@ -29,15 +29,15 @@ use crate::borg_flow_stairs::{
 };
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
-    BERSERK_STRENGTH, CURE_POISON, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
+    BERSERK_STRENGTH, BLESS, CURE_POISON, HASTE_SELF, HEALING, HERBAL_CURING, HEROISM, HOLY_WORD, MINOR_HEALING,
     PHASE_DOOR, PORTAL, REMOVE_HUNGER, TELEPORT_LEVEL,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_ATELEPORT, BI_CDEPTH,
+    BI_ACCW, BI_AESCAPE, BI_AEZHEAL, BI_AFUEL, BI_AHEAL, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_CDEPTH,
     BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURHP, BI_CURSP, BI_ESP, BI_FOOD, BI_GOLD, BI_IFIRE,
     BI_ISAFRAID, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISFIXCON, BI_ISFIXDEX, BI_ISFIXINT,
     BI_ISFIXSTR, BI_ISFIXWIS, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISPOISONED, BI_ISSTUN,
-    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_SPEED,
+    BI_ISWEAK, BI_KING, BI_LIGHT, BI_MAXCLEVEL, BI_MAXDEPTH, BI_MAXHP, BI_MAXSP, BI_RECALL, BI_SPEED,
 };
 use crate::borg_inventory::borg_slot;
 use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, KC_ENTER};
@@ -51,8 +51,9 @@ use crate::borg_light::{borg_maintain_light, BorgNeed};
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_legal};
 use crate::borg_store_sell::borg_count_sell;
 use crate::engine;
+use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
-use crate::headers::list_player_timed_h::TMD_OPP_ACID;
+use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
@@ -1462,7 +1463,11 @@ fn may_move_away(
     pos_danger: i32,
     retreat: bool,
 ) -> bool {
-    ((danger_test && !nasty && st.borg.no_retreat == 0) || (borg_surround && pos_danger != 0))
+    // borg-reborn-rs (#503): standing against breeders, danger alone does
+    // not move the Borg away (it ping-ponged between two grids while worms
+    // bit it); being surrounded still does.
+    ((danger_test && !nasty && st.borg.no_retreat == 0 && !breeder_stand_here(st))
+        || (borg_surround && pos_danger != 0))
         && !st.borg.morgoth_position
         && borg_timer(st, st.borg.time.antisummon) >= p(Param::caution_move_antisummon_delay)
         && st.borg.tr(BI_ISCONFUSED) == 0
@@ -1948,7 +1953,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Prevent breeder explosions when low level
-    if st.borg.near.breeder && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level) {
+    // borg-reborn-rs (#503): not without an easy escape: stand and fight.
+    if st.borg.near.breeder
+        && st.borg.tr(BI_CLEVEL) < p(Param::caution_breeder_flee_max_level)
+        && !breeder_stand(st)
+    {
         start_fleeing(st, "# Fleeing (breeder level)");
     }
 
@@ -1965,6 +1974,21 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#504): cornered (no escape, a fight on, danger at or
+    // above the HP): every buff it carries or can cast, Monster Confusion
+    // against a big monster, then a melee class fights without backing away.
+    let cornered = fight_cornered(st, pos_danger);
+    // The boosts. #457's outmatched heal stays at the end of `borg_caution`,
+    // after retreat and back-away: tried first, it kept a cornered Borg
+    // drinking in place where one step away saved it (#511 replays).
+    if cornered && cornered_boost(st, "Cornered") {
+        return true;
+    }
+    if !cornered && breeder_fight_hard(st, pos_danger) && cornered_boost(st, "Hard breeder fight") {
+        return true;
+    }
+    let all_out = cornered && melee_class(st);
+
     // Strategic retreat
     //
     // Do not retreat if
@@ -1974,7 +1998,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 4) we are not in a vault
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
-    if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
+    if !all_out
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && retreat(st, pos_danger, borg_surround)
     {
         return true;
@@ -2004,7 +2029,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 6) loads of HP
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
-    if may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
+    if !all_out
+        && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
         && back_away(st, pos_danger, borg_surround)
     {
         return true;
@@ -2151,6 +2177,381 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
     borg_note_bytes(st, &note);
 }
 
+/// borg-reborn-rs (#503): breeders on the level and no easy escape: stand
+/// and fight them at once instead of fleeing while they multiply. An easy
+/// escape is a free staircase within `caution_breeder_easy_escape_steps`
+/// (the engine's `distance`), or a Phase Door, teleport, Teleport Level,
+/// escape or Word of Recall in the pack or spells (recall is slow, but
+/// breeders are slow and level-wide). With one, the breeder flees of the C
+/// Borg stay (the breeder flee of `borg_caution`, the breeder scary trigger
+/// of `borg_near_monster_type`, the "no recall" flee of
+/// `borg_check_breeders`). The generic low-HP and bleeding/poison flees
+/// stay too: a Borg losing the fight is #504's cornered mode.
+pub(crate) fn breeder_stand(st: &BorgState) -> bool {
+    breeder_stand_with(
+        st,
+        p(Param::caution_breeder_fight),
+        p(Param::caution_breeder_easy_escape_steps),
+        nearest_free_stair(st, true),
+        nearest_free_stair(st, false),
+    )
+}
+
+/// `breeder_stand` with its parameters and the nearest free up and down
+/// staircases' distances (-1: none known) given.
+fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32) -> bool {
+    if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let near = |d: i32| d != -1 && d <= steps;
+    !(near(up)
+        || near(down)
+        || st.borg.tr(BI_APHASE) > 0
+        || st.borg.tr(BI_ATELEPORT) > 0
+        || st.borg.tr(BI_ATELEPORTLVL) > 0
+        || st.borg.tr(BI_AESCAPE) > 0
+        || st.borg.tr(BI_RECALL) > 0)
+}
+
+/// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
+/// least one breeder within `caution_breeder_stand_radius` grids, and no
+/// other known monster within the danger horizon
+/// (`danger_monster_max_distance` on the larger axis distance, the reach of
+/// `borg_danger`): the danger
+/// here is the breeders', so the Borg fights instead of retreating or
+/// backing away.
+pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
+    if !breeder_stand(st) {
+        return false;
+    }
+    let mut known = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        // The radius is the engine's distance; the horizon is `borg_danger`'s
+        // reach, the larger axis distance (`danger_one_kill`).
+        let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        known.push((
+            engine::distance(st.borg.c, kill.pos),
+            reach,
+            engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY),
+        ));
+    }
+    only_breeders_near(
+        &known,
+        p(Param::caution_breeder_stand_radius),
+        p(Param::danger_monster_max_distance),
+    )
+}
+
+/// The known monsters as (distance, danger reach, breeder): a breeder
+/// within `radius` (distance) and no other monster within `horizon` (reach).
+fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> bool {
+    let mut breeders = 0;
+    for &(d, reach, breeder) in known {
+        if !breeder && reach <= horizon {
+            return false;
+        }
+        if breeder && d <= radius {
+            breeders += 1;
+        }
+    }
+    breeders > 0
+}
+
+/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
+/// character level (`borg_near_monster_type`) and the low-level door scares
+/// (`borg_update`, `borg_messages`) mark the level scary.
+pub(crate) fn scary_named_monsters() -> bool {
+    p(Param::caution_scary_named_monsters) != 0
+}
+
+/// borg-reborn-rs (#505): a monster is scary when one of the character's
+/// turns of its melee can take at least `caution_scary_damage_percent` of
+/// the character's max HP (owner: scary is a monster that can one- or
+/// two-shot you, as a percentage of HP). The damage is the monster's own:
+/// the average of its blows (`randcalc` AVERAGE: base, dice and level bonus), times its moves per character turn
+/// (`extract_energy` of both speeds, at least one). Not `borg_danger`, which
+/// adds large penalties for stealing, paralysis or confusion (a street
+/// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
+/// current HP: a wounded character is the danger-against-avoidance flight's
+/// business. 0 = off.
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+    let percent = p(Param::caution_scary_damage_percent);
+    let max_hp = st.borg.tr(BI_MAXHP);
+    if percent <= 0 || max_hp <= 0 { return false; }
+    let kill = st.kills.kills[i as usize];
+    let r_idx = usize::from(kill.r_idx);
+    if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
+    let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
+    let scary = scary_damage_reaches(damage, max_hp, percent);
+    if scary && !st.borg.mon.scary {
+        let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
+        borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
+    }
+    scary
+}
+
+/// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
+/// character turn, at these speeds.
+fn melee_damage_per_turn(r_idx: usize, monster_speed: i32, player_speed: i32) -> i32 {
+    let never_blow = crate::engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_BLOW);
+    let level = i32::from(crate::engine::race(r_idx).level);
+    let blows: Vec<_> = (0..usize::from(crate::engine::z_info().mon_blows_max))
+        .map_while(|k| crate::engine::race_blow(r_idx, k))
+        .map(|b| (b.base, b.dice, b.sides, b.m_bonus))
+        .collect();
+    let energy = |speed: i32| i32::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    melee_damage(&blows, level, never_blow, energy(monster_speed), energy(player_speed))
+}
+
+/// borg-reborn-rs (#505): `randcalc(dice, level, AVERAGE)` (z-rand.c) in
+/// tenths of a point: `base + dice x (sides + 1) / 2 + m_bonus x level /
+/// MAX_RAND_DEPTH`, keeping the dice average's half point that the engine's
+/// integer `damcalc` drops (1d4 is 2.5, not 2). The engine rolls the same
+/// `random_value` for a blow (mon-attack.c `make_attack_normal`).
+fn blow_average_tenths(base: i32, dice: i32, sides: i32, m_bonus: i32, level: i32) -> i64 {
+    const MAX_RAND_DEPTH: i64 = 128; // z-rand.h
+    i64::from(base) * 10 + i64::from(dice) * i64::from(sides + 1) * 5
+        + i64::from(m_bonus) * i64::from(level) * 10 / MAX_RAND_DEPTH
+}
+
+/// borg-reborn-rs (#505): the sum of the blows' averages (`(base, dice,
+/// sides, m_bonus)`), times the monster's moves per character turn (its
+/// energy over the character's, at least one move), in whole points;
+/// nothing for a race that never blows.
+fn melee_damage(blows: &[(i32, i32, i32, i32)], level: i32, never_blow: bool, monster_energy: i32, player_energy: i32) -> i32 {
+    if never_blow { return 0; }
+    let tenths: i64 = blows.iter().map(|&(b, d, s, m)| blow_average_tenths(b, d, s, m, level)).sum();
+    let moves_tenths = (10 * i64::from(monster_energy.max(1)) / i64::from(player_energy.max(1))).max(10);
+    i32::try_from(tenths * moves_tenths / 100).unwrap_or(i32::MAX)
+}
+
+/// borg-reborn-rs (#505): `damage` is at least `percent` of `max_hp`.
+pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(damage) * 100 >= i64::from(max_hp) * i64::from(percent)
+}
+
+/// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
+/// Blackguard) hunt breeders while there are at most
+/// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
+/// clevel 10 (`borg_flow_kill`). Being surrounded is left to
+/// `borg_flow_kill_corridor`, which already counts a breeder next to the
+/// Borg as a reason to move to a corridor.
+pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
+    breeder_hunt_with(st, p(Param::caution_breeder_fight), p(Param::caution_breeder_hunt_max_count))
+}
+
+/// `breeder_hunt` with its parameters given.
+fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
+    fight != 0
+        && st.borg.tr(BI_CDEPTH) != 0
+        && matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+        && st.borg.mon.breeders > 0
+        && i32::from(st.borg.mon.breeders) <= max_count
+}
+
+/// borg-reborn-rs (#504): Warriors, Paladins, Rogues and Blackguards.
+fn melee_class(st: &BorgState) -> bool {
+    matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+}
+
+/// borg-reborn-rs (#504): cornered. In the dungeon, with no Phase Door,
+/// teleport, Teleport Level or escape in the pack or spells (unlike #503's
+/// easy escapes, Word of Recall does not count: it takes 15-35 turns, too
+/// slow for a fight already lost), a known monster within
+/// `caution_cornered_radius` grids, and danger here at or above
+/// `caution_cornered_danger_tenths` / 10 of the current HP.
+pub(crate) fn fight_cornered(st: &BorgState, pos_danger: i32) -> bool {
+    fight_cornered_with(
+        st,
+        pos_danger,
+        p(Param::caution_cornered),
+        p(Param::caution_cornered_danger_tenths),
+        nearest_kill(st),
+        p(Param::caution_cornered_radius),
+    )
+}
+
+/// `fight_cornered` with its parameters and the nearest known monster's
+/// distance (-1: none) given.
+fn fight_cornered_with(st: &BorgState, pos_danger: i32, on: i32, tenths: i32, nearest: i32, radius: i32) -> bool {
+    on != 0
+        && st.borg.tr(BI_CDEPTH) != 0
+        && i64::from(pos_danger) * 10 >= i64::from(st.borg.tr(BI_CURHP)) * i64::from(tenths)
+        && nearest != -1
+        && nearest <= radius
+        && st.borg.tr(BI_APHASE) <= 0
+        && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_ATELEPORTLVL) <= 0
+        && st.borg.tr(BI_AESCAPE) <= 0
+}
+
+/// The distance to the nearest known monster that can move, -1 when none is
+/// known. A monster that never moves (a mold) does not corner the Borg: one
+/// step away leaves it.
+fn nearest_kill(st: &BorgState) -> i32 {
+    let mut best = -1;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if best == -1 || d < best {
+            best = d;
+        }
+    }
+    best
+}
+
+/// borg-reborn-rs (#504, owner): standing against breeders (`breeder_stand`:
+/// no easy escape) and the fight seems hard, danger here at or above
+/// `caution_breeder_boost_danger_tenths` / 10 of the current HP: the same
+/// boosts as cornered (Heroism, Berserk Strength, Blessing, Speed), which
+/// `borg_defend`'s danger windows otherwise never use there (0 = off).
+fn breeder_fight_hard(st: &BorgState, pos_danger: i32) -> bool {
+    breeder_fight_hard_with(st, pos_danger, p(Param::caution_breeder_boost_danger_tenths)) && breeder_stand(st)
+}
+
+/// The danger half of `breeder_fight_hard`, with its parameter given.
+fn breeder_fight_hard_with(st: &BorgState, pos_danger: i32, tenths: i32) -> bool {
+    tenths > 0 && pos_danger > 0 && i64::from(pos_danger) * 10 >= i64::from(st.borg.tr(BI_CURHP)) * i64::from(tenths)
+}
+
+/// An adjacent known monster that is "big": unique, or above the Borg's
+/// level by more than `caution_cornered_big_level_margin`, and not immune to
+/// confusion (`RF_NO_CONF`).
+fn big_monster_adjacent(st: &BorgState) -> bool {
+    let margin = p(Param::caution_cornered_big_level_margin);
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0
+            && engine::r_max() != 0
+            && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+            && engine::distance(st.borg.c, kill.pos) == 1
+            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NO_CONF)
+            && (engine::race_flag_has(usize::from(kill.r_idx), RF_UNIQUE)
+                || i32::from(kill.level) > st.borg.tr(BI_CLEVEL) + margin)
+    })
+}
+
+/// borg-reborn-rs (#504): a cornered boost.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Boost {
+    FearCure,
+    Speed,
+    Heroism,
+    Berserk,
+    Blessing,
+    MonsterConfusion,
+}
+
+/// The boosts to try, in order, from what is active now: a fear cure when
+/// afraid, Speed, Heroism, Berserk Strength, Blessing, then Monster
+/// Confusion against an adjacent big monster. Each only while it is not
+/// active.
+fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool, confusing: bool, big: bool) -> Vec<Boost> {
+    let mut out = Vec::new();
+    if afraid {
+        out.push(Boost::FearCure);
+    }
+    if !fast {
+        out.push(Boost::Speed);
+    }
+    if !hero {
+        out.push(Boost::Heroism);
+    }
+    if !berserk {
+        out.push(Boost::Berserk);
+    }
+    if !bless {
+        out.push(Boost::Blessing);
+    }
+    if !confusing && big {
+        out.push(Boost::MonsterConfusion);
+    }
+    out
+}
+
+/// borg-reborn-rs (#504): the cornered boosts (`boost_order`), the first one
+/// carried or castable. Their usual danger windows (`borg_defend`'s "some
+/// danger but not much") do not apply: the Borg is losing and cannot leave.
+/// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
+/// below `caution_cornered_spell_fail` percent failure,
+/// so a failing cast is not retried turn after turn under fire.
+fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+    let v = st.item_val;
+    let fail = p(Param::caution_cornered_spell_fail);
+    let order = boost_order(
+        st.borg.tr(BI_ISAFRAID) != 0 && st.borg.tr(BI_CRSFEAR) == 0,
+        st.borg.temp.fast,
+        st.borg.temp.hero,
+        st.borg.temp.berserk,
+        st.borg.temp.bless,
+        engine::player_timed(TMD_ATT_CONF) != 0,
+        big_monster_adjacent(st),
+    );
+    for boost in order {
+        let (done, what) = match boost {
+            Boost::FearCure => (
+                borg_quaff_potion(st, v.sv_potion_boldness)
+                    || borg_eat(st, TV_MUSHROOM as i32, v.sv_mush_cure_mind)
+                    || borg_quaff_potion(st, v.sv_potion_heroism)
+                    || borg_quaff_potion(st, v.sv_potion_berserk),
+                "curing fear",
+            ),
+            Boost::Speed => (
+                borg_spell_fail(st, HASTE_SELF, fail) || borg_quaff_potion(st, v.sv_potion_speed),
+                "Speed",
+            ),
+            Boost::Heroism => (
+                borg_spell_fail(st, HEROISM, fail) || borg_quaff_potion(st, v.sv_potion_heroism),
+                "Heroism",
+            ),
+            Boost::Berserk => (
+                borg_spell_fail(st, BERSERK_STRENGTH, fail) || borg_quaff_potion(st, v.sv_potion_berserk),
+                "Berserk Strength",
+            ),
+            Boost::Blessing => (
+                borg_spell_fail(st, BLESS, fail)
+                    || borg_read_scroll(st, v.sv_scroll_holy_chant)
+                    || borg_read_scroll(st, v.sv_scroll_blessing),
+                "Blessing",
+            ),
+            Boost::MonsterConfusion => (borg_read_scroll(st, v.sv_scroll_monster_confusion), "Monster Confusion"),
+        };
+        if done {
+            borg_note(st, &format!("# {why}: {what}"));
+            return true;
+        }
+    }
+    false
+}
+
+/// borg-reborn-rs (#483): while rising to town (a trip or town return),
+/// hold a descent that is not a desperate escape. With connected stairs a
+/// Borg that arrives on a down staircase and takes it because the level is
+/// "scary" (or because no up staircase is known) lands on an up staircase,
+/// climbs back onto another down staircase and repeats: it never reaches
+/// town. Held, it explores for an up staircase instead. Real danger here
+/// (`caution_rising_descend_danger_tenths` of avoidance) or more than
+/// `caution_rising_explore_ticks` Borg ticks on the level (one per think,
+/// `borg_think`; restarted on each new level) lets the descent through.
+pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
+    let budget = p(Param::caution_rising_explore_ticks);
+    st.borg.goal.rising
+        && st.borg.tr(BI_CDEPTH) > 0
+        && budget > 0
+        && borg_timer(st, st.borg.time.level) < budget
+        && pos_danger <= i32::from(st.borg.avoidance) * p(Param::caution_rising_descend_danger_tenths) / 10
+}
+
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
@@ -2210,6 +2611,11 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     // if fleeing town, then dive
     if st.borg.tr(BI_CDEPTH) == 0 {
         st.borg.stair_more = true;
+    }
+
+    // borg-reborn-rs (#483): not while rising, unless in real danger.
+    if rising_holds_descent(st, pos_danger) {
+        st.borg.stair_more = false;
     }
 }
 
@@ -2301,6 +2707,47 @@ mod outmatched_tests {
 }
 
 #[cfg(test)]
+mod scary_damage_tests {
+    use super::*;
+
+    #[test]
+    fn a_monster_that_can_two_shot_you_is_scary() {
+        // 50 percent: two of its turns kill a character at full health.
+        assert!(scary_damage_reaches(5, 10, 50), "5 of 10 HP is half");
+        assert!(!scary_damage_reaches(4, 10, 50));
+        assert!(!scary_damage_reaches(12, 80, 50), "the same monster against 80 HP");
+        assert!(scary_damage_reaches(10, 10, 100), "100 = one shot only");
+        assert!(!scary_damage_reaches(9, 10, 100));
+        assert!(!scary_damage_reaches(1000, 10, 0), "0 = off");
+        assert!(scary_damage_reaches(i32::MAX, i32::MAX, 100), "no overflow");
+        assert!(!scary_damage_reaches(i32::MAX, i32::MAX, 1000));
+    }
+
+    #[test]
+    fn a_blow_averages_its_whole_random_value() {
+        assert_eq!(blow_average_tenths(0, 1, 4, 0, 10), 25, "1d4 is 2.5");
+        assert_eq!(blow_average_tenths(3, 1, 4, 0, 10), 55, "a fixed base adds");
+        // m_bonus 64 at level 64 averages 64 x 64 / 128 = 32.
+        assert_eq!(blow_average_tenths(0, 0, 0, 64, 64), 320, "the level-scaled bonus adds");
+        assert_eq!(blow_average_tenths(5, 2, 6, 64, 32), 50 + 70 + 160);
+    }
+
+    #[test]
+    fn melee_damage_sums_the_blows_times_the_moves() {
+        let bite = (0, 1, 8, 0); // 4.5
+        let claw = (0, 1, 3, 0); // 2.0
+        assert_eq!(melee_damage(&[bite], 1, false, 10, 10), 4, "one move: 4.5 rounds down");
+        assert_eq!(melee_damage(&[bite, claw], 1, false, 10, 10), 6, "several blows add");
+        // Twice the character's energy per game turn: two moves per character turn.
+        assert_eq!(melee_damage(&[bite], 1, false, 20, 10), 9, "a monster twice as fast doubles");
+        assert_eq!(melee_damage(&[bite], 1, false, 5, 10), 4, "a slower monster still gets one move");
+        assert_eq!(melee_damage(&[bite, claw], 1, true, 20, 10), 0, "RF_NEVER_BLOW");
+        assert_eq!(melee_damage(&[(4, 1, 8, 0)], 1, false, 10, 10), 8, "a base counts");
+        assert_eq!(melee_damage(&[], 1, false, 10, 10), 0);
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::borg_headers::borg_trait_h::BI_MAX;
@@ -2325,5 +2772,193 @@ mod tests {
         // an immune Borg may step on it
         st.borg.trait_[BI_IFIRE as usize] = 1;
         assert!(!lava_forbids_step(&st, &grid_of(FEAT_LAVA)));
+    }
+}
+
+#[cfg(test)]
+mod rising_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A Borg rising to town on DL2, 100 turns into the level, 20 avoidance.
+    fn rising() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 2;
+        st.borg.goal.rising = true;
+        st.borg.avoidance = 20;
+        st.borg.time.now = 1100;
+        st.borg.time.level = 1000;
+        st
+    }
+
+    /// #483: while rising, a descent is held in low danger and early on the
+    /// level, and released by real danger, the exploration budget, town or
+    /// not rising.
+    #[test]
+    fn rising_holds_a_descent_until_danger_or_budget() {
+        assert!(rising_holds_descent(&rising(), 0));
+        assert!(rising_holds_descent(&rising(), 20), "danger at avoidance x 10/10 still holds");
+        assert!(!rising_holds_descent(&rising(), 21), "real danger lets the descent through");
+        let mut st = rising();
+        st.borg.time.now = st.borg.time.level + 300;
+        assert!(!rising_holds_descent(&st, 0), "the exploration budget is spent");
+        let mut st = rising();
+        st.borg.goal.rising = false;
+        assert!(!rising_holds_descent(&st, 0), "not rising");
+        let mut st = rising();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!rising_holds_descent(&st, 0), "in town");
+    }
+}
+
+#[cfg(test)]
+mod breeder_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A CL3 Rogue on DL1 with 3 breeders known, no stairs known and
+    /// nothing to escape with.
+    fn cornered() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_CLEVEL as usize] = 3;
+        st.borg.trait_[BI_CLASS as usize] = 6;
+        st.borg.mon.breeders = 3;
+        st
+    }
+
+    /// #503: breeders and no easy escape: stand; an escape in the pack
+    /// (Phase Door, teleport, escape, recall), no breeders, town or the
+    /// switch off: the C Borg's flees stay.
+    #[test]
+    fn breeders_without_an_easy_escape_make_the_borg_stand() {
+        assert!(breeder_stand_with(&cornered(), 1, 5, -1, -1));
+        assert!(!breeder_stand_with(&cornered(), 0, 5, -1, -1), "switch off");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE, BI_RECALL] {
+            let mut st = cornered();
+            st.borg.trait_[t as usize] = 1;
+            assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "escape {t} in the pack");
+        }
+        let mut st = cornered();
+        st.borg.mon.breeders = 0;
+        assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "no breeders");
+        let mut st = cornered();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!breeder_stand_with(&st, 1, 5, -1, -1), "town");
+    }
+
+    /// #503 review: a free staircase within the steps is an easy escape,
+    /// up or down; one step beyond is not.
+    #[test]
+    fn a_near_staircase_is_an_easy_escape() {
+        let st = cornered();
+        assert!(!breeder_stand_with(&st, 1, 5, 5, -1), "up staircase at the boundary");
+        assert!(!breeder_stand_with(&st, 1, 5, -1, 5), "down staircase at the boundary");
+        assert!(!breeder_stand_with(&st, 1, 5, 0, -1), "standing on a staircase");
+        assert!(breeder_stand_with(&st, 1, 5, 6, 6), "both one step beyond");
+        assert!(breeder_stand_with(&st, 1, 0, 1, 1), "steps 0: only a staircase underfoot counts");
+    }
+
+    /// #503 review: no retreat only while the danger is the breeders': a
+    /// breeder within the radius and no other monster within the horizon.
+    #[test]
+    fn standing_needs_only_breeders_within_the_danger_horizon() {
+        assert!(only_breeders_near(&[(1, 1, true)], 5, 20));
+        assert!(only_breeders_near(&[(1, 1, true), (5, 4, true)], 5, 20));
+        assert!(!only_breeders_near(&[], 5, 20), "no monster");
+        assert!(!only_breeders_near(&[(6, 5, true)], 5, 20), "breeder beyond the radius");
+        assert!(!only_breeders_near(&[(1, 1, true), (12, 10, false)], 5, 20), "a caster within the horizon");
+        assert!(only_breeders_near(&[(1, 1, true), (21, 21, false)], 5, 20), "a monster beyond the horizon");
+        // #510 re-review: a breather at (+14,+14) is engine distance 21 but
+        // within borg_danger's reach (14): it vetoes.
+        assert!(!only_breeders_near(&[(1, 1, true), (21, 14, false)], 5, 20), "a diagonal monster within reach");
+        assert!(!only_breeders_near(&[(1, 1, false), (2, 2, true)], 5, 20), "a non-breeder adjacent");
+    }
+
+    /// #503: melee classes hunt while few breeders are known; casters and
+    /// archers do not, nor anyone with the switch off.
+    #[test]
+    fn melee_classes_hunt_few_breeders() {
+        assert!(breeder_hunt_with(&cornered(), 1, 4));
+        assert!(!breeder_hunt_with(&cornered(), 0, 4), "switch off");
+        assert!(!breeder_hunt_with(&cornered(), 1, 2), "too many breeders");
+        for (class, hunts) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+            let mut st = cornered();
+            st.borg.trait_[BI_CLASS as usize] = class;
+            assert_eq!(breeder_hunt_with(&st, 1, 4), hunts, "class {class}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod cornered_tests {
+    use super::*;
+    use crate::borg_headers::borg_trait_h::BI_MAX;
+
+    /// A Blackguard on DL1 at 5 HP, nothing to escape with.
+    fn trapped() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; BI_MAX as usize];
+        st.borg.trait_[BI_CDEPTH as usize] = 1;
+        st.borg.trait_[BI_CURHP as usize] = 5;
+        st.borg.trait_[BI_CLASS as usize] = 8;
+        st
+    }
+
+    /// #504: cornered with danger at or above the HP, a monster within the
+    /// radius and no Phase Door, teleport or escape; not in town, not with
+    /// an escape, not with the monster far or the danger low, not off.
+    #[test]
+    fn cornered_needs_danger_a_fight_and_no_escape() {
+        let st = trapped();
+        assert!(fight_cornered_with(&st, 5, 1, 10, 1, 2), "danger = HP, monster adjacent");
+        assert!(!fight_cornered_with(&st, 4, 1, 10, 1, 2), "danger below the HP");
+        assert!(fight_cornered_with(&st, 3, 1, 5, 1, 2), "half the HP at 5 tenths");
+        assert!(!fight_cornered_with(&st, 5, 0, 10, 1, 2), "switch off");
+        assert!(!fight_cornered_with(&st, 5, 1, 10, -1, 2), "no monster known");
+        assert!(!fight_cornered_with(&st, 5, 1, 10, 3, 2), "monster beyond the radius");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE] {
+            let mut st = trapped();
+            st.borg.trait_[t as usize] = 1;
+            assert!(!fight_cornered_with(&st, 5, 1, 10, 1, 2), "escape {t}");
+        }
+        let mut st = trapped();
+        st.borg.trait_[BI_CDEPTH as usize] = 0;
+        assert!(!fight_cornered_with(&st, 5, 1, 10, 1, 2), "town");
+    }
+
+    /// #504 (owner): a hard breeder fight boosts from danger at tenths x HP
+    /// / 10; 0 = off; no danger, no boost.
+    #[test]
+    fn a_hard_breeder_fight_boosts() {
+        let st = trapped();
+        assert!(breeder_fight_hard_with(&st, 3, 5), "danger 3 >= half of 5 HP");
+        assert!(!breeder_fight_hard_with(&st, 2, 5), "danger below half the HP");
+        assert!(!breeder_fight_hard_with(&st, 9, 0), "off");
+        assert!(!breeder_fight_hard_with(&st, 0, 5), "no danger");
+    }
+
+    /// #504 review: the boost order, each only while not active.
+    #[test]
+    fn boosts_come_in_order_and_skip_what_is_active() {
+        use Boost::*;
+        assert_eq!(
+            boost_order(true, false, false, false, false, false, true),
+            [FearCure, Speed, Heroism, Berserk, Blessing, MonsterConfusion]
+        );
+        assert_eq!(boost_order(false, false, false, false, false, false, false), [Speed, Heroism, Berserk, Blessing]);
+        assert_eq!(boost_order(false, true, true, false, true, false, false), [Berserk]);
+        assert_eq!(boost_order(false, true, true, true, true, true, true), [], "all active, hands already confusing");
+    }
+
+    #[test]
+    fn melee_classes_fight_all_out() {
+        for (class, melee) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+            let mut st = trapped();
+            st.borg.trait_[BI_CLASS as usize] = class;
+            assert_eq!(melee_class(&st), melee, "class {class}");
+        }
     }
 }

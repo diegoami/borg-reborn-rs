@@ -136,7 +136,9 @@ pub const BORG_SETTINGS: [BorgSetting; BORG_MAX_SETTINGS as usize] = [
     i(c"borg_town_food_trip", 10),
     i(c"borg_town_target_depth", 0),
     i(c"borg_town_trip_turns", 0),
-    i(c"borg_town_w_gold", 25),
+    // borg-reborn-rs (#493): 0, not borg-rs's 25. The gold reserve is
+    // explicit (town_gold_reserve); no soft price keeps gold unspent.
+    i(c"borg_town_w_gold", 0),
     i(c"borg_town_depth_gain", 1),
     i(c"borg_town_explore_turns", 1000),
     i(c"borg_town_stair_turns", 50),
@@ -1278,7 +1280,7 @@ mod tests {
              borg_town_w_bleeding = 100\nborg_town_w_poison = 100\nborg_town_w_escape = 50\n\
              borg_town_w_knowledge = 25\nborg_town_w_power = 50\nborg_town_w_trip = 50\n\
              borg_town_share = 10\nborg_town_light_depth = 15\nborg_town_food_trip = 10\n\
-             borg_town_target_depth = 0\nborg_town_trip_turns = 0\nborg_town_w_gold = 25\n\
+             borg_town_target_depth = 0\nborg_town_trip_turns = 0\nborg_town_w_gold = 0\n\
              borg_town_depth_gain = 1\nborg_town_explore_turns = 1000\nborg_town_stair_turns = 50\nborg_town_food_turns = 3000\nborg_town_light_turns = 5000\nborg_town_risk = 1000\nborg_town_home_discount = 500\nborg_town_w_space = 25\nborg_town_power_scale = 40000\n\
              borg_trip_policy = 0\nborg_trip_depth_margin = 0\nborg_trip_pack_slack = 2\n\
              borg_trip_unknown_stacks = 4\nborg_trip_return_gold = 0\n\
@@ -1407,7 +1409,7 @@ mod tests {
         ("borg_town_food_trip", b'i', 10, "10"),
         ("borg_town_target_depth", b'i', 0, "0"),
         ("borg_town_trip_turns", b'i', 0, "0"),
-        ("borg_town_w_gold", b'i', 25, "25"),
+        ("borg_town_w_gold", b'i', 0, "25"), // #493: compiled 0; borg-rs's pristine borg.txt keeps 25
         ("borg_town_depth_gain", b'i', 1, "1"),
         ("borg_town_explore_turns", b'i', 1000, "1000"),
         ("borg_town_stair_turns", b'i', 50, "50"),
@@ -1526,6 +1528,10 @@ mod tests {
     /// make the two backends read different configurations. The retired
     /// entries are the C oracle's only extra, each at the inert default
     /// `harness/diff` accepts.
+    /// borg-reborn-rs (#493): settings whose compiled default is ours, not
+    /// borg-rs's C table's (the C reference keeps its own value).
+    const OUR_DEFAULTS: &[(&str, i32)] = &[("borg_town_w_gold", 0)];
+
     #[test]
     fn the_c_table_matches_the_rust_table() {
         let c = include_str!("../c-reference/borg-init.c");
@@ -1563,7 +1569,10 @@ mod tests {
             let s = &BORG_SETTINGS[i];
             assert_eq!(s.name.to_str().unwrap(), *name);
             assert_eq!(s.kind, *kind);
-            assert_eq!(s.default_value, *value);
+            // borg-reborn-rs (#493): the declared default deviations from
+            // borg-rs's C reference table.
+            let value = OUR_DEFAULTS.iter().find(|(n, _)| n == name).map_or(*value, |(_, v)| *v);
+            assert_eq!(s.default_value, value, "{name}");
         }
         assert_eq!(retired.len(), RETIRED_SETTINGS.len(), "every retired setting is in the C table");
         for (name, kind, value) in retired {

@@ -21,7 +21,7 @@ class ShoppingTest(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
 
-    def run_game(self, name, errand, seed=1001, cls=1, extra=(), budget=0):
+    def run_game(self, name, errand, seed=1001, cls=1, extra=(), budget=0, borg_txt=''):
         out = self.root / name
         outcome = self.root / (name + '.jsonl')
         env = {k: v for k, v in os.environ.items()
@@ -31,6 +31,8 @@ class ShoppingTest(unittest.TestCase):
                    BORG_ERRAND_OUT=str(outcome), RUN_TIMEOUT_SECONDS='30',
                    BORG_DEATH_RECORDS_DIR=str(Path(tempfile.gettempdir()) /
                                               'borg-shopping-test-deaths'))
+        if borg_txt:
+            env['BORG_TXT_SET'] = borg_txt
         subprocess.run([str(ROOT / 'harness/run.sh'), str(out), str(seed),
                         '0', str(cls), '20000', 'menu,finalsave', '--', *extra],
                        env=env, check=True, capture_output=True, text=True,
@@ -42,7 +44,10 @@ class ShoppingTest(unittest.TestCase):
         return out, summary, outcomes
 
     def test_shops_home_and_two_rounds_hand_back_in_town(self):
-        out, summary, outcomes = self.run_game('rounds', '/shopping; /shopping')
+        # The historical chooser's round (home storage): the shipped default
+        # is the live town planner since #479.
+        out, summary, outcomes = self.run_game('rounds', '/shopping; /shopping',
+                                               borg_txt='borg_town_plan=0')
         self.assertEqual([r['outcome'] for r in outcomes], ['done', 'done'])
         self.assertTrue(all(r['depth'] == 0 for r in outcomes))
         self.assertEqual(summary['max_depth'], 0)

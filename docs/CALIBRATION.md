@@ -6,10 +6,14 @@ Defaults retain the vendored v12 policy. Input bounds support experiments;
 no value is recommended or claimed to improve play. Each section below
 identifies its pre-extraction source and retained mechanics/interface data.
 
+
+Each section below is a snapshot: its "registry now holds N" is the count
+right after that change, so older sections show older counts.
+
 ## M13 inventory gap closure (#433 / P4)
 
-The current registry contains **2,143** parameters. This adds 362 neutral
-inventory parameters to the 1,781-entry accepted main registry: 48 power,
+The synchronized registry contains **2,191** parameters. This adds 362 neutral
+inventory parameters to the 1,829-entry accepted main registry at `a8ac685a`: 48 power,
 23 wear, 14 buy, 34 sell, 6 store-choice and 237 home-valuation entries.
 The [M13 inventory contract](M13-INVENTORY-PARAMETERS.md) records scope,
 units, bounds, retained mechanics, #293 separation and the P-before-R4 gate;
@@ -26,6 +30,270 @@ family inventory, configuration and trace@2 contract is in
 multiplier of returned utility with neutral 1000, bounds 500..2000; it is distinct
 from the existing device-failure `permille` unit. No existing default changes.
 
+## Gold reserve (#493)
+
+The registry now holds **1797** parameters (1795 after #485's follow-up; two added). Before,
+the live town planner kept gold only through the soft price
+`borg_town_w_gold` (`borg_town_solve::solve_cash`: spending `c` costs
+`w x c / (gold left + 1)`), which made the last coins nearly unspendable. The
+reserve is now explicit: `Budget::of` (`borg_town_budget.rs`,
+`build_with_reserve`) takes the larger of the two below from the gold left
+after the urgent needs, which may still use the whole purse. The reserve
+bounds the purse at arrival: the proceeds of the visit's sales join the gold
+at the purchases stage (`borg_town_record`, `limits.gold + freed.gold`) and
+are spendable on top of it. The shipped `harness/borg.txt` sets both to 0 and
+`borg_town_w_gold = 0` (owner, 2026-11-17), and the compiled
+`borg_town_w_gold` default is 0 too (`borg_init.rs`, a declared deviation from
+borg-rs's C table, `OUR_DEFAULTS`; borg-rs's pristine `borg-core/borg.txt`
+keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
+`docs/TOWN-UTILITY.md` "Retaining gold"), vendored with borg-rs #87.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:263` |
+| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:263` |
+
+## Point-blank divisor by class (#485)
+
+The registry now holds **1795** parameters (1786 after #491; nine added). The
+damage of a shot or throw at an adjacent non-unique is divided by
+`attack_arrow_point_blank_divisor` (compiled 5, borg-rs's); since #485 a class
+overrides it with `attack_arrow_point_blank_divisor_<class>` (0, the default,
+means the general divisor), resolved by `borg_fight_attack::point_blank_divisor`.
+The shipped `harness/borg.txt` sets the general divisor to 5, the Ranger's to
+2 and the Rogue's to 3 (owner, 2026-11-17: 2 suits Rangers but not Rogues, the
+second missile class); #495 had shipped 2 for every class.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_arrow_point_blank_divisor_<class>` (warrior, mage, druid, priest, necromancer, paladin, rogue, ranger, blackguard) | 0 (= `attack_arrow_point_blank_divisor`) | divisor override (0 = the general divisor) | 0–1000 | `borg_fight_attack.rs:3009` |
+
+## Healing reserve (#491)
+
+The registry now holds **1786** parameters (1783 after #483; three added). Owner
+(2026-11-17): "we can never have enough healing", as configurable values, and
+"budget healing speed as well". All act on the live town planner's healing curve
+(`borg_town_capability::observe`), where carrying `x` HP of healing was worth
+`w x x / (x + d)` with `w = borg_town_w_bleeding x exposure` and
+`d = max HP x exposure`, so each potion was worth less than the one before.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:541` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:269` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:534` |
+
+- **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
+  same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
+  each HP is worth the curve's first HP, `w / d = borg_town_w_bleeding /
+  max HP`, independent of the trip's exposure, on top of the curve. It is a
+  requirement (negative demand, like food's floor), so the planner buys it
+  first and never sells below it; past it only the curve remains.
+- **Curve scale:** multiplies `w` and `d` together. The first HP keeps its
+  value; the curve reaches half its maximum at `scale x d` instead of `d`.
+  Its maximum, the most healing can ever be worth, is multiplied by
+  `scale / 100` too, so the scale changes the total value as well as the
+  shape (#496 review F4).
+- **Healing speed:** the HP one HEAL_HP use supplies, to the curve and the
+  reserve alike, are weighted by how fast it brings the character back to
+  max HP. A use that heals at least `town_heal_speed_percent` of max HP
+  counts in full; a smaller one counts `heal x heal / (percent x max HP)`.
+  At 66, Cure Light Wounds (20 HP) counts in full up to 30 max HP. The
+  planner's best healing per gold, by the character's max HP: CLW up to
+  about 30 max HP, Cure Serious Wounds (40 HP) at 60–100 max HP, Healing
+  (300 HP) from about 200 max HP. With HP alone it is CLW at every max HP.
+  Cure Critical Wounds (60 HP for 200 gold) never wins on healing alone
+  (`engine/angband/lib/gamedata/object.txt`: CLW 20 HP / 20 gold, CSW
+  40 / 70, CCW 60 / 200, Healing 300+m35 / 800).
+  The factor also shrinks each potion's HP on the curve while the curve's
+  demand stays in max-HP units: each weak potion is worth less on the curve,
+  and more of them are needed to reach half its value. So speed changes the
+  curve's shape as well as the ranking of potions (#496 review F4).
+- The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
+  measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
+  to before.
+
+## Rising to town explores for an up staircase (#483)
+
+The registry now holds **1783** parameters (1781 before; two added). While
+the Borg is rising to town (`goal.rising`: a trip or town return), a descent
+that is not a desperate escape is held, so that it explores the level for an
+up staircase. Before, with connected stairs, it arrived on a down staircase,
+took it (the level was "scary", or no up staircase was known), climbed back
+onto another down staircase and never reached town (borg-zoo#170 run
+44054277431, Ranger 1739161339: DL2/DL3 to the end). The gate is
+`borg_caution::rising_holds_descent`, applied in `choose_stairs`, in the flee
+block's flow to a down staircase and in `borg_leave_level`'s "no up stairs
+found, going down", and since the review every descent `borg_leave_level` decides
+(its "Go Down" block: bored, "spent too long on level", the trip policy).
+
+The budget counts Borg ticks, the same clock as "Spent too long on level";
+how many game turns a tick spans depends on what the Borg does (a move, a
+rest, a search). It is per level, not per return: it bounds the search for an
+up staircase on one level.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2163` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2163` (danger here above avoidance x value / 10 lets the descent through) |
+
+## Cornered mode (#504)
+
+The registry now holds **1809** parameters (1803 after #505's scary damage, #514; six added). Owner, 2026-11-17 (#488 slice B). `borg_defend`'s buffs fire only in "some
+danger but not much" (10–50% of avoidance), so a Borg that is losing a fight
+it cannot leave used none: a Blackguard died at 1/41 HP with its Berserk
+Strength spell unused. With `caution_cornered`, cornered means: in the
+dungeon, no Phase Door, teleport or escape (in the pack or as a spell), a
+known monster within the radius, and danger here at or above the HP x tenths /
+10. Then, before any retreat, in order and each while not active: a fear cure
+when afraid, Speed, Heroism, Berserk Strength, Blessing, and Monster Confusion
+against an adjacent unique or higher-level monster that is not immune to confusion.
+Buff spells (Haste Self for Druids and Rangers, Heroism, Berserk Strength,
+Bless) are cast only at or below `caution_cornered_spell_fail` (25) percent
+failure. A melee class (Warrior,
+Paladin, Rogue, Blackguard) neither retreats nor backs away. The ordinary heal tiers run earlier in `borg_caution`; #457's outmatched
+heal stays at the end, after retreat and back-away (tried first, it kept a
+cornered Borg drinking in place where a step away saved it). A monster that
+never moves (a mold) does not corner the Borg. Teleport Level counts as an escape; Word of Recall does not (unlike
+#503's easy escapes: 15–35 turns is too slow for a fight already lost). Monster Confusion is off the town
+planner's worthless list while the mode is on. The compiled defaults leave it
+off; `harness/borg.txt` ships 1, 10, 2 and 0. Owner: the same boosts in a
+hard breeder fight, `caution_breeder_boost_danger_tenths` (compiled 0 = off,
+shipped 5): while standing against breeders with no easy escape (#503's
+`breeder_stand`) and danger here at or above half the HP. Blessing is the
+Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2367` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2367` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2367` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2430` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2488` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2418` (0 = off; owner: the same boosts in a hard breeder fight) |
+
+## Healing by class; no Shovel while poor (#487)
+
+The registry now holds **1829** parameters (1809 after #504; twenty added).
+Owner, 2026-11-17, from #487's analysis (no melee class bought a weapon; the
+gold went to dozens of Cure Light Wounds for #491's 400% reserve and to a
+Shovel at the first visit):
+
+- `town_heal_curve_scale_percent_<class>` (`borg_town_capability.rs:368`,
+  0 = `town_heal_curve_scale_percent`) and `town_heal_reserve_hp_percent_<class>`
+  (`borg_town_capability.rs:387`, -1 = `town_heal_reserve_hp_percent`, 0 = no
+  reserve), for warrior, mage, druid, priest, necromancer, paladin, rogue,
+  ranger and blackguard. Unit `percent_override`; compiled defaults fall back
+  to the general values.
+- `town_digger_min_gold` (`borg_town_capability.rs:635`, 0 = off): below this
+  gold the live planner values no digging. A Shovel only clears rubble (the
+  engine swaps it in, "with your swap digger", 2–6 piles a game); a weapon
+  digs rubble too.
+
+- `town_heal_reserve_real_hp` (`borg_town_capability.rs:239`, 0 = #491 as
+  first shipped): the healing reserve counts the real HP a potion restores.
+  `town_heal_speed_percent` then weights only the healing curve (which kind is
+  worth more), not how many potions fill the reserve. Speed-weighted, a Cure
+  Light Wounds counted about 5.6 HP at 108 max HP and the reserve took dozens.
+
+Shipped in `harness/borg.txt`: the general reserve 100 (was 400) and the
+general curve scale 125 (owner); the reserve counts real HP; scale
+Warrior 50, Paladin and Blackguard 75, Rogue and Ranger 100, Priest and Druid
+125, Necromancer and Mage 150; reserve Warrior 100, Paladin and Blackguard
+150, Rogue and Ranger 200, Priest and Druid 250, Necromancer and Mage 300;
+digger 500 gold.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
+| `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
+| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+
+## Breeders and named scary monsters (#503)
+
+The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three
+ways (the breeder flee of `borg_caution`, the breeder scary trigger of
+`borg_near_monster_type`, the "no recall" flee of `borg_check_breeders`), backs
+away from their danger, and below clevel 10 never flows to them. With
+`caution_breeder_fight` and no easy escape (a free staircase within the steps,
+by the engine's `distance`; a Phase Door, teleport, Teleport Level, escape or
+Word of Recall) it stands and fights: none of the three flees, and no retreat
+or back-away while a breeder is within the radius and no other known monster
+is within the danger horizon (`danger_monster_max_distance`, on the larger axis
+distance like `borg_danger`); being surrounded
+still moves it. The generic low-HP and bleeding/poison flees stay (a Borg
+losing the fight is #504's cornered mode). With the named list on
+(`caution_scary_named_monsters = 1`) a level made scary by breeders before the
+stand engaged (while the Borg still had an escape) stays scary until a new
+level: the latch is a known limit of that intermediate arm. Warriors, Paladins,
+Rogues and Blackguards hunt breeders while at most the hunt count are known.
+
+`caution_scary_named_monsters` turns off the C Borg's hard-coded scary monsters
+by character level (squint-eyed rogue; Grip, Fang, small kobold; soldier,
+cutpurse, acolyte, apprentice, kobold, shrieker, Farmer Maggot, street urchin,
+veteran, mercenary; Bullroarer and the breeders; cave spider, red naga, giant
+red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
+Dread) and the low-level door scares. A scary level stays scary until a new
+level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
+turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2190` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2190` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2223` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+
+## Scary by damage (#505)
+
+The registry now holds **1803** parameters (1802 after #503; one added).
+Owner, 2026-11-17: scary is a monster that can one- or two-shot you, as a
+percentage of HP. Turning the named list off (#503) killed characters in
+borg-zoo#216 (run 44147930313): 5 and 4 deaths of 18 against 1 with the
+list, two of them at character level 1. The list stood in for this rule:
+each name had a character-level cap because Grip, Fang or a kobold is
+deadly only to a weak character.
+
+A monster on the level (`borg_near_monster_type`, every known monster, as
+the named list) makes the level scary when one character turn of its melee
+takes at least `caution_scary_damage_percent` of max HP. The damage is the
+monster's own: the average of each blow's `random_value` as the engine
+rolls it (`randcalc` AVERAGE: base, dice and level bonus; no blow in
+`monster.txt` has a base or bonus today), times its moves per
+character turn (`extract_energy` of both speeds, at least one). It is not
+`borg_danger`: a first try with it at 50 rated a street urchin (it steals)
+at 245 and a floating eye (it paralyses) at 276 against a 10-HP character,
+and made a level scary 14,507 times in 18 games. Spells are not counted.
+Max HP, not current HP: a wounded character is already the
+danger-against-avoidance flight's business. The scary level then works as
+before (leave and flee, latched until a new level). The resist-based scares
+and the named list's switch stay. Compiled 0 (off); `harness/borg.txt`
+ships 60 (owner), with the named list off.
+
+Local check, 18 class starts (borg-zoo's classes-18), 100,000 turns, main
+`dd5f026e`:
+
+| arm | deaths | sum of CL | sum of max depth | "Scary guy" notes |
+|---|---:|---:|---:|---:|
+| list off (main) | 2 | 109 | 42 | 0 |
+| named list on | 2 | 83 | 36 | 11,739 |
+| damage 30 | 2 | 111 | 43 | 415 |
+| damage 50 | 3 | 111 | 44 | 81 |
+| damage 60 (shipped) | 3 | 108 | 43 | 4 (16 of 18 games keep list off's keys) |
+| damage 80 | 2 | 109 | 42 | 0 (keys identical to list off) |
+
+At 30 the scares come from battle-scarred veterans, mercenaries, grey molds,
+centipedes and once Grip; at 50 almost only veterans, against low-HP
+characters. 18 games cannot separate the arms' deaths (borg-zoo#216 saw the
+list help: 1 death against 5); the zoo decides.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2281` (0 = off; read in `borg_flow_kill.rs`) |
+
 ## No unknown items (#470)
 
 The registry now holds **1781** parameters: five removed here, and one added by #469 (`attack_speed_fight_danger_tenths`).
@@ -39,7 +307,9 @@ parameters are too.
 ## Outmatched healing flag (#457)
 
 The registry now holds **1785** parameters (1783 before; two added). Two
-parameters control one study branch, off by default:
+parameters control one study branch, off in the compiled registry (default 0);
+since #479 the shipped `harness/borg.txt` sets `caution_heal_when_outmatched = 1`
+(docs/HANDOVER.md):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -94,7 +364,9 @@ not to the file's shifting line numbers after the hooks.
 
 The core selector accepts exactly `reborn`/`0` and `borg-rs`/`1`.
 `BORG_CORE` takes precedence over `borg_reborn_core` in borg.txt; absent
-both, the original reborn core remains the default. Invalid selectors,
+both, the compiled fallback is the original reborn core. Since #479 the shipped
+`harness/borg.txt` selects `borg-rs`, so a game reading it plays borg-rs's core;
+`harness/run.sh` still selects reborn when `BORG_CORE` is unset. Invalid selectors,
 including an empty environment value, fail with source/value diagnostics
 and exit status 2 instead of silently selecting another measured arm.
 

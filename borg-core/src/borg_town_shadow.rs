@@ -513,7 +513,10 @@ fn evaluate(st: &mut BorgState, live: bool) -> TownAction {
                     .map_or(0, |o| i64::from(o.sale_quote(act[0] as usize, 1)))
             };
         }
-        act[2] = 1;
+        // borg-reborn-rs (#507): a purchase keeps the copies the plan picked: the executor
+        // types them at the quantity prompt, capped by the native offer.
+        // Every other action moves one copy and re-solves.
+        if paction != crate::borg_town_record::action::BUY { act[2] = 1; } else { act[2] = act[2].max(1); }
     }
     let chosen = TownAction { code: paction, at: act };
     if file.is_none() { return chosen; }

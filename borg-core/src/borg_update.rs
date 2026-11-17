@@ -1398,7 +1398,12 @@ pub fn borg_update(st: &mut BorgState) {
     st.borg.status.anti_summon = floor_grid == 1;
 
     // Examine changing doors while shallow
-    if st.borg.tr(BI_CLEVEL) <= 5 && st.borg.tr(BI_CDEPTH) != 0 && st.flow.track_closed.num != 0 {
+    // borg-reborn-rs (#503): only with caution_scary_named_monsters
+    if st.borg.tr(BI_CLEVEL) <= 5
+        && st.borg.tr(BI_CDEPTH) != 0
+        && st.flow.track_closed.num != 0
+        && crate::borg_caution::scary_named_monsters()
+    {
         // Scan all known closed doors
         let mut i = 0;
         while i < i32::from(st.flow.track_closed.num) {

@@ -1056,14 +1056,24 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
         }
 
         /* No up stairs found. do down then back up */
-        if st.stairs.less.num == 0 {
+        // borg-reborn-rs (#483): while rising, explore for up stairs first.
+        let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        if st.stairs.less.num == 0 && crate::borg_caution::rising_holds_descent(st, here) {
+            borg_note(st, "# no up stairs found, exploring for them (rising)");
+        } else if st.stairs.less.num == 0 {
             borg_note(st, "# no up stairs found, going down");
             g = 1;
         }
     }
 
     /* Go Down */
-    if g > 0 {
+    // borg-reborn-rs (#483, review): every descent decided here (bored,
+    // "spent too long on level", the trip policy, the fallback above) is
+    // held while rising, unless in real danger.
+    let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if g > 0 && crate::borg_caution::rising_holds_descent(st, here) {
+        borg_note(st, "# Holding a descent while rising to town");
+    } else if g > 0 {
         /* Take next stairs */
         st.borg.stair_more = true;
 
