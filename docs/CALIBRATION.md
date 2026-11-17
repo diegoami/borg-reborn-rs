@@ -157,6 +157,13 @@ Warrior 50, Paladin and Blackguard 75, Rogue and Ranger 100, Priest and Druid
 150, Rogue and Ranger 200, Priest and Druid 250, Necromancer and Mage 300;
 digger 500 gold.
 
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
+| `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
+| `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+
 ## Breeders and named scary monsters (#503)
 
 The registry now holds **1802** parameters (1797 after #493; five added). Owner, 2026-11-17 (#488 slice A). The C Borg flees breeders at low level three

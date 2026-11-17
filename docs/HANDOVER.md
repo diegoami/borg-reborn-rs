@@ -19,12 +19,14 @@
 - Owner: healing speed (#491) was not meant to set how many potions fill the
   reserve. `town_heal_reserve_real_hp` (shipped 1) counts real HP in the
   reserve; speed weights only the healing curve.
-- On main, 9 classes x 2 seeds: with the old values (reserve 400, scale 100,
-  no class values, digger 0) the 18 games play identical keys to main; with
-  the shipped ones 4 deaths become 2 (two lived, two others died: a Druid to
-  an acolyte, a Priest to a green worm mass), Warriors spend far less on
-  healing (590/1540 -> 330/240 gold), casters more. Too few games: borg-zoo
-  experiment to follow at the merge.
+- On main `233ef23e`, 9 classes x 2 seeds: with the old values (reserve 400,
+  scale 100, `town_heal_reserve_real_hp` 0, no class values, digger 0) the 18
+  games play identical keys to main. With the shipped ones (real-HP reserve
+  included) 4 deaths become 2: the four that died live (Mage, Necromancer,
+  Ranger, Blackguard), and two others die (a Druid to an acolyte, a Priest to
+  a green worm mass). Cure Light Wounds bought 212 -> 117, healing gold
+  7190 -> 5430, Shovels 20 -> 8; Warriors' healing 590/1540 -> 130/380 gold.
+  Too few games: a borg-zoo experiment follows at the merge.
 
 ## 2026-11-17: stand and fight breeders; named scary monsters off (#503)
 
