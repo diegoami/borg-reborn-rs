@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: rising to town explores for an up staircase (#483)
+
+borg-zoo#170 run 44054277431 (specimen 193d9076): Ranger 1739161339 decided a
+trip return 16 times and never reached town. With connected stairs, each
+descent (21 of them through the scary-level flee in `choose_stairs`, the rest
+through "no up stairs found, going down") landed it on an up staircase, and
+each climb on a down staircase.
+
+- `borg_caution::rising_holds_descent` holds a descent that is not a
+  desperate escape while all of these hold:
+  - `goal.rising`;
+  - below DL0;
+  - within `caution_rising_explore_ticks` (300 Borg ticks, one per think,
+    restarted on each new level);
+  - danger here at most avoidance x `caution_rising_descend_danger_tenths`
+    (10) / 10.
+
+  The Borg then explores for an up staircase.
+- Applied in `choose_stairs`, in the flee block's `borg_flow_stair_more`, and
+  in `borg_leave_level`: its "no up stairs" branch (note `# no up stairs
+  found, exploring for them (rising)`) and, after the review, its whole "Go
+  Down" block (note `# Holding a descent while rising to town`): bored,
+  "spent too long on level", the trip policy.
+- Desperate stair flows are unchanged.
+- The budget is per level, not per return: it bounds the search on one level.
+- Default 300 is the owner's (2026-11-17), between the 250 and 500 tried.
+- On 193d9076 plus the change: Rogue 1502695781 (unknown2) and Ranger
+  1739161339 (unknown3) live to the turn cap (they died); the other three
+  deaths play identical keys.
 ## 2026-11-17: point-blank shots keep half their damage (#485)
 
 Investigation of the Ranger 1739161339 death (borg-zoo#170, unknown3): its

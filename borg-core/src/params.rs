@@ -242,6 +242,8 @@ parameters! {
     caution_flee_danger_hp_multiplier => (2, "multiplier", 0, 20, "borg_caution.rs:1685", "Controls flee danger hp multiplier."),
     caution_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1690", "Controls flee max level."),
     caution_town_flee_max_level => (50, "level", 1, 51, "borg_caution.rs:1704", "Controls town flee max level."),
+    caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:2163", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
+    caution_rising_descend_danger_tenths => (10, "tenths", 0, 1000, "borg_caution.rs:2163", "#483: while rising, danger here above avoidance x this / 10 lets a descent through again."),
     caution_stair_low_level => (5, "level", 1, 51, "borg_caution.rs:1719", "Controls stair low level."),
     caution_stair_danger_divisor => (2, "divisor", 1, 100, "borg_caution.rs:1719", "Controls stair danger divisor."),
     caution_breeder_flee_max_level => (15, "level", 1, 51, "borg_caution.rs:1799", "Controls breeder flee max level."),
