@@ -2094,3 +2094,16 @@ CLW/CSW/CCW and removes five parameters whose branches no longer exist.
 See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
 The live registry remains borg-core/src/params.rs; historical profiles are
 not rewritten or repinned. Both optional town/trip policies default off.
+
+
+## Track R receiving P4 contract (#528)
+
+Track R keeps its1,729 original specs/IDs/defaults and adds the362 exact
+accepted P4 inventory definitions, for2,091. The accepted main/P4 registry
+has2,191 entries with a different prefix; use the explicit name/ID mapping
+in R528-CARRY.json instead of comparing raw numeric IDs across specimens.
+M13-INVENTORY-PARAMETERS.json/md are the immutable accepted source contract;
+its historical validations do not describe the new receiving build.
+The isolated receiving delta is checked by scripts/check-p4-carry.py.
+No non-neutral overrides or unrelated shipped/default policy changes are
+introduced. Receiving native/shadow validation is required before integration.
