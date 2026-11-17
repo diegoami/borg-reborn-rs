@@ -57,6 +57,24 @@ impl Capture {
     }
 
     fn record(&mut self) {
+        // A knowledge-only request has no work after its single native dump.
+        if !self.first && self.encounters.is_none() && self.observations.is_none() {
+            return;
+        }
+        if !self.first && self.observations.is_none() {
+            if let Some(frame) = engine::with_borg_rng(&mut self.rng, engine::perceive_encounter) {
+                if let Some(log) = self.encounters.as_mut() {
+                    writeln!(
+                        log,
+                        "{}",
+                        serde_json::to_string(&frame).expect("native encounter serialization")
+                    )
+                    .and_then(|_| log.flush())
+                    .expect("native encounter capture: cannot write encounter frame");
+                }
+            }
+            return;
+        }
         let observation = engine::with_borg_rng(&mut self.rng, engine::perceive);
         let Some(observation) = observation else {
             return;
@@ -88,17 +106,49 @@ impl Capture {
     }
 }
 
+#[derive(Serialize)]
+pub(crate) struct Frame {
+    pub turn: i64,
+    pub status: Status,
+    pub monsters: Vec<Monster>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct Status {
+    pub hp: i32,
+    pub max_hp: i32,
+    pub sp: i32,
+    pub max_sp: i32,
+    pub level: i32,
+    pub depth: i32,
+}
+
+#[derive(Serialize)]
+pub(crate) struct Monster {
+    pub index: i32,
+    pub race: u32,
+}
+
 fn compact(observation: &Observation) -> String {
-    #[derive(Serialize)]
-    struct Frame<'a> {
-        turn: i64,
-        status: &'a crate::observation::Status,
-        monsters: &'a [crate::observation::MonsterSeen],
-    }
+    let s = &observation.status;
     serde_json::to_string(&Frame {
         turn: observation.turn,
-        status: &observation.status,
-        monsters: &observation.monsters,
+        status: Status {
+            hp: s.hp,
+            max_hp: s.max_hp,
+            sp: s.sp,
+            max_sp: s.max_sp,
+            level: s.level,
+            depth: s.depth,
+        },
+        monsters: observation
+            .monsters
+            .iter()
+            .map(|m| Monster {
+                index: m.index,
+                race: m.race,
+            })
+            .collect(),
     })
     .expect("native encounter capture: cannot serialize frame")
 }

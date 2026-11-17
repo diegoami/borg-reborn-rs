@@ -19,6 +19,10 @@ strategy or Track P milestone. The dedicated source PR starts from main
 - Capture uses a private diagnostic RNG inside the existing save/restore
   wrapper: neither the controller RNG nor saved engine RNG is advanced.
   No level filter is applied. Output errors fail visibly.
+- Ongoing compact capture reads only the same status/visible-monster subset
+  of L1; a native compact/full comparison verifies identical incident channels.
+  Full gear/spell/store descriptions are read only for the initial frame or
+  an explicitly requested full observation log.
 - Native logging-on/off tests cover both controllers and level-1 Mage/Warrior
   starts, compare complete key/state/message streams and final engine RNG,
   and check exact first observation turn on four saved-start loads.
