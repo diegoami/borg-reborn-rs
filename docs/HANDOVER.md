@@ -2,6 +2,15 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the named scary list is on again
+
+Owner, after borg-zoo#216's pilot (with the breeder stand on, 1 death with
+the named list against 4 without, with or without the errands plan):
+`harness/borg.txt` ships `caution_scary_named_monsters = 1` again, alongside
+#514's scary-by-damage rule (60). The owner wants the list flexible: #518
+moves it to a data file by class and level (designed, on hold: the owner
+first evaluates a per-class layout, possibly with #520's class files).
+
 ## 2026-11-17: cornered mode (#504, #488 slice B)
 
 - `caution_cornered` (compiled 0, shipped 1): cornered (no Phase Door,
