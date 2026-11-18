@@ -379,6 +379,21 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
         borg_prompt = false;
     }
 
+    // borg-reborn-rs (#551): "Change back and <verb> (y/n) or (r)eturn to
+    // normal?" (player_get_resume_normal_shape), with escape_fox_form.
+    if borg_prompt
+        && !engine::inkey_flag()
+        && crate::borg_escape::fox_form_on()
+        && prefix(cstr(&buffer[off..]), b"Change back and")
+    {
+        let answer = crate::borg_escape::change_back_answer(st);
+        if answer == b'y' {
+            borg_note(st, "# Fox Form: reverting for an item or a spell");
+        }
+        key.code = u32::from(answer);
+        return true;
+    }
+
     // handle the messages the borg has to react to immediately
     if borg_prompt && !engine::inkey_flag() && !cstr(&buffer[off..]).is_empty() {
         let text = cstr(&buffer[off..]).to_vec();
