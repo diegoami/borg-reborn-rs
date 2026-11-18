@@ -2,6 +2,26 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: CI skips the full test suite when it cannot matter (#577)
+
+Owner: make CI shorter. The engine job's `harness/suite.sh full` on the test
+build (8 of its 12 minutes) plays the reborn core only. A pull request whose
+changed files are all docs (`docs/`, `reference/`, top-level `*.md`), the
+vendored borg-rs core (`borg-core/`) or its settings (`harness/borg*.txt`,
+`harness/scary_monsters*.txt`, `harness/plans/`) now skips it and its diff;
+the perception and no-time checks then read smoke alone. Any other file, and
+every push to main or track-p, runs it as before. The list is an exclusion
+list on purpose: a new path runs the full suite.
+
+Scope (review of #578): the skip is of the reborn-core suite only. The
+settings files and `borg-core/` do change the borg-rs Borg's play, but that
+suite never plays it (`harness/run.sh` rewrites `borg_reborn_core` to
+`reborn` without `BORG_CORE`), so skipping it drops no check of the borg-rs
+arm. What CI checks of that arm (borg-core's release tests, the
+`BORG_CORE=borg-rs` runs with `BORG_CORE_OVERRIDES=off`, the parameter
+validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
+on the borg-rs core, before or after this change: the zoo measures that.
+
 ## 2026-11-18: when the Borg buys Word of Recall (#557)
 
 Owner: make the Recall rules adjustable, and value Recall more instead of a
