@@ -492,6 +492,10 @@ borg_param_escape_phase_adjacent_only = 1
 # With no staircase reachable, fight a scary monster at range with the best
 # ranged attack before reading Recall or a Phase Door (owner). 0 = off.
 borg_param_caution_scary_ranged_no_stairs = 1
+# #546 (owner, 2026-11-18): a living monster is estimated at least 1 HP, so
+# a monster left with 1 HP (a floating eye at 1/9 HP was estimated at 0) is
+# still worth attacking. 0 = off.
+borg_param_kill_live_min_power = 1
 # #504 (owner, 2026-11-17, #488 slice B): cornered (no Phase Door, teleport
 # or escape, a monster within the radius, danger at or above the HP), the
 # Borg uses every buff it has regardless of the usual danger windows (fear

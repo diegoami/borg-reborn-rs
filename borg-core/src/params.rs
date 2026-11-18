@@ -154,6 +154,7 @@ parameters! {
     caution_cut_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:736", "Controls cut reserve hp divisor."),
     caution_flee_stairs_before_recall => (0, "flag", 0, 1, "borg_caution.rs:2181", "#539 (owner): 1 = a fleeing Borg that can walk to a free staircase (the flee flows' stair flow reaches it) does not read Word of Recall (the flee flow walks it to the stairs); 0 = Recall first (C's behaviour)."),
     caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:2248", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
+    kill_live_min_power => (0, "hp", 0, 10, "borg_flow_kill.rs:375", "#546 (owner): a living monster (hp above 0) is estimated at least this many hit points; the estimate truncates twice and puts a monster left with 1 HP of 9 at 0, which every attack's overkill cap then scores 0; 0 = off (C's estimate)."),
     caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:872", "Controls desperate stair distance."),
     caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:881", "Controls desperate adjacent up distance."),
     caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:886", "Controls desperate scary distance."),
@@ -2581,6 +2582,7 @@ mod tests {
                 "shopping" => "think_store",
                 "home" => "home_power",
                 "town" => "town_budget",
+                "kill" => "flow_kill",
                 _ => prefix,
             };
             if prefix == "town" {
