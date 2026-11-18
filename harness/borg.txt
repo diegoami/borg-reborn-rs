@@ -519,19 +519,23 @@ borg_param_recover_rest_arms_see_invis = 0
 
 borg_param_escape_phase_adjacent_only = 1
 
-# Phase Door at escape level 3.1 only (#584): when the danger is above
-# avoidance x ordinary_danger_tenths / 10 with no unique near
-# (unique_danger_tenths with at least unique_min_count uniques near), the
-# landing has at most tolerance scary grids of 100 looking horizon turns
-# ahead, and at least antisummon_delay turns after an anti-summon corridor.
-# These six gate 1 of the 16 Phase Door sites (3 of 171 Phase Doors in 18
-# local games); docs/PHASE-DOOR.md lists every site and its settings.
-# Change together: these settings form one set.
+# Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
+# site and its settings):
+# - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,
+#   tolerance and horizon gate escape level 3.1 only: it fires when the
+#   danger is above avoidance x ordinary_danger_tenths / 10 with no unique
+#   near (unique_danger_tenths with at least unique_min_count uniques near),
+#   and phases if at most tolerance of 100 landing grids are scary looking
+#   horizon turns ahead. Change these five together.
+# - antisummon_delay is a shared timer, read at 7 of the 16 sites (escape
+#   2.2, 3.1, 3.3, 4.1, 4.3, 6.1, 8): no Phase Door there for that many turns
+#   after the Borg finished a digging flow (an anti-summon corridor, or a
+#   tunnel dug straight to a monster).
 # Impact (games of 6 that play differently with the value changed to):
 # escape_phase_ordinary_danger_tenths 20: 0;
 # escape_phase_unique_danger_tenths 26: 0; escape_phase_unique_min_count 4:
-# 0; escape_phase_tolerance 50: 0; escape_phase_horizon 4: 0;
-# escape_phase_antisummon_delay 100: 0.
+# 0; escape_phase_tolerance 50: 0; escape_phase_horizon 4: 0 (all level
+# 3.1); escape_phase_antisummon_delay 100: 0 (the 7 sites).
 
 borg_param_escape_phase_ordinary_danger_tenths = 10
 borg_param_escape_phase_unique_danger_tenths = 13

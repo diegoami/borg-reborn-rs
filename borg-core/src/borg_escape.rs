@@ -785,7 +785,7 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
         borg_note(st, &format!("# Phase ({}): no, {n} scary landing grids of 100 (at most {emergency})", site.label()));
         return false;
     }
-    borg_note(st, &format!("# Phase ({}): landing ok, {n} scary grids of 100 (at most {emergency})", site.label()));
+    borg_note(st, &format!("# Phase ({}): landing ok, {n} scary landing grids of 100 (at most {emergency})", site.label()));
 
     // Okay
     true

@@ -35,3 +35,11 @@ Left (#584, step 2): the owner's rule behind a switch, compiled off: Phase
 Door only with an enemy on an adjacent square and the fight judged lost;
 otherwise the best attack by magic or missiles, else a boost (Speed,
 Heroism, Bless, …). Then a zoo pilot.
+
+**Review of #602:** the six `escape_phase_*` settings are two kinds, not one
+set. Five gate escape level 3.1 only; `escape_phase_antisummon_delay` is a
+shared timer read at seven sites (2.2, 3.1, 3.3, 4.1, 4.3, 6.1, 8). The timer
+is set after any digging flow (the anti-summon corridor, or a tunnel dug to a
+monster), not only in the deep game. `harness/borg.txt` and
+docs/PHASE-DOOR.md now say so; the landing notes use the same words. Main
+merged (`ed3ffc04`, with #597); citations recomputed.
