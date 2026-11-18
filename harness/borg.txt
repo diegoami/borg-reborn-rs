@@ -254,7 +254,7 @@ borg_param_town_digger_min_gold = 500
 # Higher keeps more; 0 = value them on the diminishing curve.
 # Impact: set to 4, 5 of 6 test games play differently.
 
-borg_param_town_fear_cure_count = 2
+borg_param_town_fear_cure_count = 0
 
 # TRUE: no store visits at all, no buying, selling or home (a baseline arm,
 # borg-rs#36).
