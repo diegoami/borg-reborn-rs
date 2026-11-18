@@ -169,8 +169,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2168` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2168` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2175` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2175` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -200,12 +200,12 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2429` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2429` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2429` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2492` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2550` (buff spells only at or below this failure rate) |
-| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2480` (0 = off; owner: the same boosts in a hard breeder fight) |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2594` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2594` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2594` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2657` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2715` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2645` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Healing by class; no Shovel while poor (#487)
 
@@ -278,11 +278,11 @@ death with the list, 4 without), 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2195` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2195` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2285` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2405` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2329` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2320` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2320` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2450` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2570` |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2494` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)
 
@@ -297,11 +297,16 @@ does not, stand and fight. With `caution_scary_stand = 1`, in the dungeon,
   `caution_breeder_easy_escape_steps` or an escape item (#503's easy-escape
   test, `easy_escape_with`), or no scary monster awake and at least as fast
   as the character;
-- otherwise the Borg stands: the scary flag is cleared, the leave and flee
-  the scare set (`mon.scary_goals`) are withdrawn, and the note
+- otherwise the Borg stands: the scary flag is cleared, the leave, flee and
+  town flight the scary check itself set (`mon.scary_leaving`,
+  `scary_fleeing`, `scary_town`: each was off before it) are withdrawn, and
+  the note
   `# Scary guy on level, no escape: standing and fighting.` marks the
   change. #504's cornered mode supplies the boosts when the danger is high.
-  The decision is remade at every scan.
+  The decision is remade at every scan. A door scare (an unseen monster
+  opened or burst a door, with the named list on) enters the decision as a
+  scary pursuer (`mon.scary_door`). A new level and the jumpstarts forget
+  every scary fact (`forget_scary`).
 
 Compiled 0 (C), shipped 1. Evidence: of 1,301 deaths in today's 12,456 zoo
 games about 43% were monsters on the list, with it on; in 48 replayed
@@ -313,7 +318,7 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2235` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2360` (read in `borg_flow_kill.rs`) |
 
 ## The named scary list as data (#518)
 
@@ -410,7 +415,7 @@ list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2343` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2508` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 
@@ -696,7 +701,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:1475` |
 | `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:1481` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1615` |
-| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1648` |
+| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1646` |
 | `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1662` |
 | `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1676` |
 | `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1677` |

@@ -1163,6 +1163,7 @@ fn borg_parse_aux(st: &mut BorgState, msg: &[u8], len: i32) {
             && crate::borg_caution::scary_named_monsters()
         {
             st.borg.mon.scary = true;
+            st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
         }
     }
 
