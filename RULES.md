@@ -59,6 +59,18 @@ not undo other-track work already authorized before the gate.
    says "stacked on #n". Each PR updates the handover. Mark the issue
    `in progress` when you start, so two sessions never take the same task. Never amend
    published commits, force-push `main`, `track-p` or `reviewed`, or move tags.
+5a. **Every task works in its own git worktree** (owner, 2026-11-18, after
+   #539's commits reached `main` unreviewed: another session switched the
+   shared checkout to `main` while that work was uncommitted). Several
+   sessions run in this repository at once, so the main checkout is shared:
+   use it only to read and to fetch. Start a task with
+   `git worktree add ../wt-<name> -b task/<name> origin/<base>` and do every
+   edit, build, commit and push there. Before each commit check
+   `git branch --show-current`, and push with an explicit refspec
+   (`git push origin HEAD:refs/heads/task/<name>`), never a bare `git push`.
+   Never switch branches, merge, reset or stash in a checkout another
+   session may be using. Remove the worktree (`git worktree remove`) once
+   its PR is merged.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
    For P, the task merges into `track-p` and the review precedes promotion
