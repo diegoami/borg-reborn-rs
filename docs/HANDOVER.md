@@ -12,9 +12,10 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
   `caution_flee_known_down_cornered` (1): a moving monster adjacent, danger
   here at or above the HP or surrounded, and no Phase Door, teleport,
   Teleport Level or escape; and `caution_flee_known_down_max_cost` (40): the
-  staircase within that many grids of flow (the flow's depth; 0 = any).
-  Its own flow (`flee_known_down_flow`) keeps the recalling and #557
-  rising-hold checks of `borg_flow_stair_more`.
+  staircase within that many steps of flow (the flow's depth from the
+  staircases, the walk around walls; 0 = any). Its own flow
+  (`flee_known_down_flow`) keeps every refusal of `borg_flow_stair_more`
+  (`more_refused`, shared since review 2) and #557's rising hold.
 - K is its own flag, `caution_jumpstart_keep_stairs` (0).
 - Flags off: smoke 3/3 identical.
 - **Local classes-18** (this tree, `BORG_CORE=borg-rs`, 100,000 turns,
@@ -59,6 +60,26 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
   should set both. Loading the turn-88,147 save does not test A (a loaded
   game's Borg knows no down staircase); there, 6 seeds die or live the
   same in every arm (seeds 11 and 22 die to the worm mass).
+
+- **Review 2 of #566:** (1) main merged (#561, #570), count 2143,
+  citations re-done. (2) With an up staircase known but occupied, the flight
+  skipped `borg_flow_stair_more`'s refusals (not prepared for the next
+  depth, hungry, a sale held, no light) that block "four" applies to the
+  same staircase; now both share `more_refused` in `borg_flow_stairs.rs`
+  (the review read `borg_prepared_c` the wrong way round: it refuses when
+  *not* prepared, but the disagreement was real). (3) The escape traits
+  count items, not spells; adjacency is distance 1, tighter than #504's
+  radius. (4) `flee_down_cornered` reads as `breeder_exit`'s shape. (5) The
+  stairs are enqueued with `enqueue_stairs`. (6) No borg-cemetery case
+  exists for priest-1055640847 or these trials yet; the inputs are
+  `~/borg-play` (the owner's local copy).
+- **Rerun at this head** (main `8da9be99`, shipped `borg.txt`): local
+  classes-18, 0 deaths in ctl, narrow and narrow + K; the note 15 times in
+  2 games (Ranger 226104090, Druid 934061548) in both flag arms; narrow
+  plays the ctl's keys in 17 games, narrow + K in 12 (K alone changes
+  stuck games). Worm room, gate at 88,600: narrow dies at 91,153, narrow +
+  K alive at 120,000 (11 notes), wide + K alive (121); from 89,000 narrow +
+  K dies. Smoke 3/3 identical.
 
 Left: a zoo pilot of narrow + K against ctl (owner's choice).
 
