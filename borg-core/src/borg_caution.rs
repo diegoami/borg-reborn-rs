@@ -17,7 +17,7 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
-use crate::borg_cave::BorgGrid;
+use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
@@ -54,7 +54,7 @@ use crate::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
-use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
+use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
@@ -1027,9 +1027,22 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     }
 
     // If you are next to steps of the down stairs go for it
-    b_m <= p(Param::caution_desperate_adjacent_down_distance)
+    if b_m <= p(Param::caution_desperate_adjacent_down_distance)
         && b_m != -1
         && desperate_flow(st, false, "# Desperate for Stairs (four)")
+    {
+        return true;
+    }
+
+    // borg-reborn-rs (#544): in the dungeon, fleeing with no up staircase
+    // known, a known down staircase at any distance (an escape: the Borg comes back up
+    // when not prepared for the depth).
+    p(Param::caution_flee_known_down_stairs) != 0
+        && st.borg.tr(BI_CDEPTH) > 0
+        && (st.borg.goal.fleeing || st.borg.mon.scary)
+        && b_j == -1
+        && b_m != -1
+        && desperate_flow(st, false, "# Desperate for Stairs (down, no up stairs known)")
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -1974,6 +1987,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#544): only breeders near and outmatched, walk out of
+    // their room instead of fighting where it stands.
+    if breeder_exit(st, pos_danger) {
+        return true;
+    }
+
     // borg-reborn-rs (#504): cornered (no escape, a fight on, danger at or
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
@@ -2369,6 +2388,123 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
         p(Param::caution_breeder_stand_radius),
         p(Param::danger_monster_max_distance),
     )
+}
+
+/// borg-reborn-rs (#544): with only breeders near, one adjacent, and the
+/// danger here at or above the HP or the Borg surrounded, walk with the
+/// desperate flow (danger ignored, monster grids routed around) to the
+/// nearest known corridor grid at least `caution_breeder_exit_distance`
+/// grids from every known breeder. The danger of a crowd of breeders
+/// saturates at `danger_maximum` on every grid near them, so retreat and
+/// back-away find no better grid and the Borg fights on where it stands
+/// (priest-1055640847: 236 decisions on one grid of a dead-end worm room).
+fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
+    if p(Param::caution_breeder_exit) == 0 {
+        return false;
+    }
+    let distance = p(Param::caution_breeder_exit_distance);
+    let mut known = Vec::new();
+    let mut breeders = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        let breeder = engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY);
+        let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        known.push((engine::distance(st.borg.c, kill.pos), reach, breeder));
+        if breeder {
+            breeders.push(kill.pos);
+        }
+    }
+    if !only_breeders_near(&known, 1, p(Param::danger_monster_max_distance)) {
+        return false;
+    }
+    if pos_danger < st.borg.tr(BI_CURHP) && !borg_surrounded(st) {
+        return false;
+    }
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
+    };
+    let mut exits = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            if st.cave.grid(x, y).kill == 0 && breeder_exit_grid(&passable, loc { x, y }, &breeders, distance) {
+                exits.push(loc { x, y });
+            }
+        }
+    }
+    if exits.is_empty() {
+        return false;
+    }
+    // The desperate flow (danger ignored, unknown and monster grids routed
+    // around) is set for this flow only: `breeder_exit_flow` has no other
+    // exit, so the flag is always restored.
+    st.borg.status.desperate = true;
+    let ok = breeder_exit_flow(st, &exits);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, &format!("# Leaving the breeders' room ({} exit grids)", exits.len()));
+    }
+    ok
+}
+
+/// Flow to the nearest of `exits` and take its first step. When the flow
+/// is committed but no step can be taken, `borg_flow_old` cancels the goal
+/// (`goal.type_0 = 0`), so no `GOAL_FLEE` flow is left for the next think.
+fn breeder_exit_flow(st: &mut BorgState, exits: &[loc]) -> bool {
+    crate::borg_flow::borg_flow_clear(st);
+    for e in exits {
+        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+}
+
+/// The 8 neighbours' offsets.
+const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
+
+/// A breeder exit (#544): a passable grid at least `distance` grids from
+/// every known breeder that is a chokepoint (`chokepoint`). `passable` is
+/// known floor: an unknown grid counts as a wall, and the desperate flow does
+/// not cross unknown grids either, so every exit it reaches is on a known path.
+fn breeder_exit_grid(passable: &dyn Fn(i32, i32) -> bool, at: loc, breeders: &[loc], distance: i32) -> bool {
+    passable(at.x, at.y)
+        && chokepoint(passable, at)
+        && breeders.iter().all(|&b| engine::distance(b, at) >= distance)
+}
+
+/// A chokepoint: the passable neighbours of `at` fall into at least two
+/// groups that do not touch each other (8-connected), so the grid is a
+/// corridor or doorway between them. A room grid, a room edge or corner, a
+/// dead-end tip and an isolated grid have at most one group.
+fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
+    let open: Vec<(i32, i32)> = NEIGHBOURS.iter().copied().filter(|&(dx, dy)| passable(at.x + dx, at.y + dy)).collect();
+    let mut group = vec![usize::MAX; open.len()];
+    let mut groups = 0;
+    for start in 0..open.len() {
+        if group[start] != usize::MAX {
+            continue;
+        }
+        group[start] = groups;
+        let mut stack = vec![start];
+        while let Some(i) = stack.pop() {
+            for j in 0..open.len() {
+                if group[j] == usize::MAX
+                    && (open[i].0 - open[j].0).abs() <= 1
+                    && (open[i].1 - open[j].1).abs() <= 1
+                {
+                    group[j] = groups;
+                    stack.push(j);
+                }
+            }
+        }
+        groups += 1;
+    }
+    groups >= 2
 }
 
 /// The known monsters as (distance, danger reach, breeder): a breeder
@@ -3000,6 +3136,105 @@ mod breeder_tests {
         // within borg_danger's reach (14): it vetoes.
         assert!(!only_breeders_near(&[(1, 1, true), (21, 14, false)], 5, 20), "a diagonal monster within reach");
         assert!(!only_breeders_near(&[(1, 1, false), (2, 2, true)], 5, 20), "a non-breeder adjacent");
+    }
+
+    /// The Borg's map of priest-1055640847's worm room (its last `Borg.map`,
+    /// #544): `#` and `%` walls, ` ` unknown, everything else known floor,
+    /// `w` a worm. The only way out is the corridor north to `>`.
+    const WORM_ROOM: [&str; 28] = [
+        "#                 #.#",
+        "#                 #>#",
+        "#                 #.#",
+        "#                 #.#",
+        "#                 #.#####",
+        "#                 #.....#",
+        "#                 #####.#",
+        "#                     #.#",
+        "#                     #.#######",
+        "#                     #.......#",
+        "#                     #######.##",
+        "#                          %%..%",
+        "#                          %.%.%",
+        "#                          %%#.#",
+        "#                            #.%",
+        "#                            #.#",
+        "#                            #.#",
+        "#                            #.#",
+        "#                            #&#",
+        "#                            #.#",
+        "#                            #.#",
+        "#                      #######.#############",
+        "#                      #.ww..w.ww.w.w..w.w.#",
+        "#                      #..w.w.wwwww.wwww..w#",
+        "#                      #....w.w.wwww.ww..w.#",
+        "#                      #....w..&ww@wwww.w..#",
+        "#                      #ww.w.www.wwwwwww...#",
+        "#                      #.w.......w&w.w.....#",
+    ];
+
+    fn map_passable(map: &'static [&'static str]) -> impl Fn(i32, i32) -> bool {
+        move |x, y| {
+            y >= 0
+                && (y as usize) < map.len()
+                && x >= 0
+                && map[y as usize].as_bytes().get(x as usize).is_some_and(|&c| !matches!(c, b'#' | b'%' | b' '))
+        }
+    }
+
+    #[test]
+    fn breeder_exits_of_the_worm_room_are_on_its_corridor() {
+        let passable = map_passable(&WORM_ROOM);
+        let mut worms = Vec::new();
+        for (y, row) in WORM_ROOM.iter().enumerate() {
+            for (x, c) in row.bytes().enumerate() {
+                if c == b'w' {
+                    worms.push(loc { x: x as i32, y: y as i32 });
+                }
+            }
+        }
+        let room = |at: loc| at.y >= 22;
+        let mut exits = Vec::new();
+        for y in 0..WORM_ROOM.len() as i32 {
+            for x in 0..50 {
+                if breeder_exit_grid(&passable, loc { x, y }, &worms, 6) {
+                    exits.push(loc { x, y });
+                }
+            }
+        }
+        assert!(!exits.is_empty(), "the corridor has exits");
+        for e in &exits {
+            assert!(!room(*e), "no exit inside the room: {},{}", e.x, e.y);
+            assert!(worms.iter().all(|w| engine::distance(*w, *e) >= 6), "beyond the radius: {},{}", e.x, e.y);
+        }
+        // The corridor's dead-end tip (its unknown end, above `>`) and the
+        // room's corners and edges are not exits.
+        for at in [loc { x: 19, y: 0 }, loc { x: 24, y: 22 }, loc { x: 43, y: 22 }, loc { x: 24, y: 27 }, loc { x: 30, y: 22 }] {
+            assert!(!breeder_exit_grid(&passable, at, &[], 6), "{},{}", at.x, at.y);
+        }
+        // The doorway and the corridor are chokepoints.
+        assert!(chokepoint(&passable, loc { x: 30, y: 21 }), "the doorway");
+        assert!(chokepoint(&passable, loc { x: 30, y: 16 }), "the corridor");
+        assert!(breeder_exit_grid(&passable, loc { x: 30, y: 16 }, &worms, 6), "the corridor, 6 grids up");
+        assert!(exits.contains(&loc { x: 30, y: 16 }), "found by the scan");
+    }
+
+    #[test]
+    fn chokepoints_are_corridors_not_rooms() {
+        const LIT_ROOM: [&str; 5] = ["#####", "#...#", "#...#", "#...#", "#####"];
+        let passable = map_passable(&LIT_ROOM);
+        for at in [loc { x: 1, y: 1 }, loc { x: 2, y: 1 }, loc { x: 2, y: 2 }] {
+            assert!(!chokepoint(&passable, at), "corner, edge, middle: {},{}", at.x, at.y);
+        }
+        const CORRIDOR: [&str; 3] = ["####", "....", "####"];
+        assert!(chokepoint(&map_passable(&CORRIDOR), loc { x: 1, y: 1 }), "a corridor");
+        // A bend's corner is not one: its two neighbours touch diagonally,
+        // and the flow steps across it.
+        const BEND: [&str; 3] = ["#.##", "#..#", "####"];
+        assert!(!chokepoint(&map_passable(&BEND), loc { x: 1, y: 1 }), "a bend's corner");
+        const TIP: [&str; 3] = ["####", "#..#", "####"];
+        assert!(!chokepoint(&map_passable(&TIP), loc { x: 1, y: 1 }), "a dead-end tip");
+        const ALONE: [&str; 3] = ["###", "#.#", "###"];
+        assert!(!chokepoint(&map_passable(&ALONE), loc { x: 1, y: 1 }), "an isolated grid");
     }
 
     /// #503: melee classes hunt while few breeders are known; casters and
