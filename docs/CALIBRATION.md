@@ -55,8 +55,8 @@ these games say nothing about survival: that needs the zoo (Druid starts).
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:486` |
-| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:515` |
-| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:516` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:517` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:518` |
 
 ## Breeders hunted by every class (#558)
 

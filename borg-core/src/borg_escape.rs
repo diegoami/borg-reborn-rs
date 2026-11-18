@@ -500,7 +500,9 @@ pub(crate) fn is_fox() -> bool {
 pub(crate) fn keep_fox_form(st: &BorgState) -> bool {
     let flight = i32::from(st.borg.goal.type_0) == GOAL_FLEE || st.borg.goal.fleeing || st.borg.goal.leaving;
     let scary = st.borg.mon.scary || st.borg.mon.scary_stand;
-    fox_form_on() && is_fox() && keep_fox_when(st.borg.tr(BI_CDEPTH), flight, scary)
+    // The game's depth, not the Borg's last update: right after a Recall
+    // to town the trait still holds the old depth (review question 3).
+    fox_form_on() && is_fox() && keep_fox_when(engine::player_depth(), flight, scary)
 }
 
 fn keep_fox_when(depth: i32, flight: bool, scary_level: bool) -> bool {
