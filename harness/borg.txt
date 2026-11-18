@@ -3,7 +3,7 @@
 #
 # How to read the comments:
 # - What the setting does, then what raising or lowering it does.
-# - "Change together with": settings that only make sense as a set.
+# - "Change together": settings that only make sense as a set.
 # - "Impact": how many of 6 test games (Warrior, Mage, Druid, Priest,
 #   Ranger, Blackguard; 50,000 game turns each) play differently when this
 #   one value is changed as stated, everything else as shipped (#576). It
@@ -11,10 +11,15 @@
 #   change is better or worse: only a zoo run says that. 0 means not reached
 #   in these short games (deeper levels, rare monsters, later purchases), not
 #   that the setting does nothing.
+# - These are the shipped values, not the core's compiled defaults: the
+#   compiled core keeps neutral values (docs/CALIBRATION.md), and these
+#   lines change them for every game that reads this file (#479). For a
+#   switch, 0 turns the feature off.
 # - A zoo profile rewrites a line in place; BORG_PARAM_<NAME> in the
-#   environment overrides a borg_param_ line. A class's own value lives in
-#   harness/borg_<class>.txt, folded into the CLASS FILES block at the end
-#   (#520), and wins over the common line here.
+#   environment overrides a borg_param_ line, and BORG_PARAM_<NAME>__<CLASS>
+#   one class's value (a shell cannot export a name with @). A class's own
+#   value lives in harness/borg_<class>.txt, folded into the CLASS FILES
+#   block at the end (#520), and wins over the common line here.
 #
 # Sections: the core, the errand and when to stop; run control; Town; Word
 # of Recall; descending and the trip policy; Combat; Healing; Fleeing;
@@ -166,11 +171,14 @@ borg_town_power_scale = 40000
 
 # The weight of each need, against light at 100. Each weight scales how much
 # covering that need is worth; raising one makes the planner buy more of it
-# and less of the others. Change them together: only their ratios matter.
+# and less of the others. Change together: only their ratios matter.
 # - light, food: light sources and fuel, food;
 # - bleeding, poison: cures for cuts and poison;
 # - escape: Phase Door, teleport and similar;
-# - knowledge: identifying unknown items;
+# - knowledge: buying one of each unknown flavour to learn it; forced to 0
+#   with the shipped borg_trip_policy = 1 (the trip goes back to town to
+#   sell unknown items instead), so this line applies only with the policy
+#   off;
 # - power: better gear;
 # - trip: Word of Recall (the walk it saves);
 # - attack, magic, support, restore: missiles and attack devices, magic
@@ -210,8 +218,10 @@ borg_town_ranger_missile_turns = 50
 # thousandths of one carried; higher stores more at home.
 # borg_town_w_gold: the value of leaving gold unspent, 0 since #493 (the
 # reserve below replaces it).
-# borg_town_light_depth and borg_town_food_trip belong to the older v4 model
-# and are kept for replaying it.
+# borg_town_light_depth: from this descent target on, a second light
+# source is required; lower asks for it sooner. borg_town_food_trip: the
+# food rations to carry per trip; higher buys more food. Both feed the live
+# planner's light and food needs (borg_town_usefulness.rs, Trip).
 # Impact (games of 6 that play differently with the value changed to):
 # town_share 20: 0; town_w_space 50: 6; town_home_discount 1000: 6;
 # town_w_gold 1: 6; town_light_depth 30: 0; town_food_trip 20: 0.
@@ -273,7 +283,7 @@ borg_self_scum = FALSE
 # Buying, with the live planner. What a Word of Recall is worth, in percent
 # of the walk it saves (#557). Shallow, that walk is worth little, so a
 # low-level Borg never buys one; raise it to buy and keep one earlier.
-# Change together with borg_param_town_recall_reserve.
+# Change together: borg_param_town_recall_reserve.
 # Impact: set to 200, 0 of 6 test games play differently.
 
 borg_param_town_recall_value_percent = 100
@@ -309,7 +319,7 @@ borg_param_caution_flee_stairs_before_recall = 1
 # least _chasers awake monsters that can move are within _chase_distance;
 # otherwise walk. At 0 Recall is no easy escape in the stand tests either
 # (#557). Lower breeders/chasers or a larger distance read Recall more often.
-# Change the four together.
+# Change together: the four.
 # Impact (games of 6 that play differently with the value changed to):
 # caution_flee_recall 0: 2; caution_flee_recall_breeders 10: 0;
 # caution_flee_recall_chasers 6: 1; caution_flee_recall_chase_distance 12:
@@ -344,7 +354,7 @@ borg_param_caution_recall_prep_turns = 2
 # is at most phase_fail or portal_fail; cure potions when less than
 # cure_loss HP is lost; healing when more than heal_loss is lost. A lower
 # multiplier buys time sooner; higher fail rates and tolerance try harder.
-# Change together.
+# Change together: these settings form one set.
 # Impact (games of 6 that play differently with the value changed to):
 # caution_recall_danger_multiplier 4: 0; caution_recall_mana_maxsp 120: 0;
 # caution_recall_mana_divisor 8: 0; caution_recall_phase_tolerance 100: 0;
@@ -437,7 +447,7 @@ borg_param_kill_live_min_power = 1
 # most max_level, and below avoidance / max_danger_divisor; only at or below
 # the fail rate. A lower danger_divisor or a higher max_level blesses more
 # often; a lower max_danger_divisor stops sooner (beyond it, escapes take
-# over). Change together.
+# over). Change together: these settings form one set.
 # Impact (games of 6 that play differently with the value changed to):
 # defend_bless_near_distance 6: 0; defend_bless_danger_divisor 24: 0;
 # defend_bless_max_level 30: 0; defend_bless_max_danger_divisor 4: 2;
@@ -466,7 +476,7 @@ borg_param_caution_heal_outmatched_min_loss = 50
 # Healing potions to keep, in percent of max HP (#491, #487): bought first,
 # never sold below. Every class sets its own value in the class files (300
 # for Mages, 100 for Warriors), so this common line is not used now.
-# Change together with borg_param_town_heal_curve_scale_percent.
+# Change together: borg_param_town_heal_curve_scale_percent.
 # Impact: set to 200, 0 of 6 test games play differently.
 
 borg_param_town_heal_reserve_hp_percent = 100
@@ -514,7 +524,8 @@ borg_param_escape_phase_adjacent_only = 1
 # at least unique_min_count uniques near), the landing has at most
 # tolerance scary grids looking horizon turns ahead, and at least
 # antisummon_delay turns after an anti-summon. Lower danger tenths phase
-# sooner; a higher tolerance accepts riskier landings. Change together.
+# sooner; a higher tolerance accepts riskier landings.
+# Change together: these settings form one set.
 # Impact (games of 6 that play differently with the value changed to):
 # escape_phase_ordinary_danger_tenths 20: 0;
 # escape_phase_unique_danger_tenths 26: 0; escape_phase_unique_min_count 4:
@@ -536,7 +547,7 @@ borg_param_caution_scary_ranged_no_stairs = 1
 
 # Fleeing with no up staircase known, walk to a known down staircase (#544),
 # only when cornered (_cornered) and within _max_cost grids of flow (#548).
-# 0 = off. Change the three together.
+# 0 = off. Change together: the three.
 # Impact (games of 6 that play differently with the value changed to):
 # caution_flee_known_down_stairs 1: 0; caution_flee_known_down_cornered 0:
 # 0; caution_flee_known_down_max_cost 80: 0.
@@ -614,7 +625,7 @@ borg_param_caution_breeder_hunt_max_count = 4
 # The hunt: judge a hunted breeder on its bite, without the +200 armour
 # corrosion fear of acid; a green worm mass's 1d3 bite read 630 (#558). At 0
 # the hunt never walks to an acid breeder, and the rest switch does nothing
-# for them. Change the two together.
+# for them. Change together: the two.
 # Impact (games of 6 that play differently with the value changed to):
 # recover_breeder_hunt_hp_percent 100: 0; danger_hunt_breeder_no_acid_fear
 # 0: 2.

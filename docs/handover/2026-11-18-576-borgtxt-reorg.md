@@ -42,6 +42,19 @@ retired.
   0`), `borg_uses_dynamic_calcs`, `borg_restore_ignore_settings` and
   `borg_allow_strange_opts`. The last two are read in `borg_init.rs` (the
   first inventory missed that file's own readers) and do nothing at FALSE.
+- **Review fixes:** `borg_town_light_depth` and `borg_town_food_trip` are
+  live (the live planner's light and food needs), not v4 leftovers;
+  `borg_town_w_knowledge` is forced to 0 with `borg_trip_policy = 1`; the
+  header says the values are shipped, not compiled, and gives the
+  `BORG_PARAM_<NAME>__<CLASS>` form. `borg_uses_dynamic_calcs = TRUE`
+  changed 6 of 6 games only through its start-up warning (one extra key
+  acknowledges it), not through formulas.
+- **How the impact was measured** (the driver is not committed): one cell
+  per start as the zoo adapter runs it (`harness/borg.txt` with one
+  `key = value` rewritten, `scary_monsters.txt` beside it, `-turns 50000
+  -exact-turns`), the 6 classes-18 starts 1085222502 (Warrior),
+  801785300 (Mage), 102023799 (Druid), 1569794094 (Priest), 1739161339
+  (Ranger), 1472012981 (Blackguard), compared by `keys.log`.
 - **Left:** #599, retiring them in the core with `retired(...)`. It renumbers
   the settings table and touches several vendored files, the formula module
   among them.
