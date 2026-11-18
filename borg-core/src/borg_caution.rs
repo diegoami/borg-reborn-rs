@@ -1646,6 +1646,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // Note
         borg_note(st, "# Scary guy on level.");
 
+        // borg-reborn-rs (#530): which goals the scare itself sets.
+        let before = (st.borg.goal.leaving, st.borg.goal.fleeing, st.borg.goal.fleeing_to_town);
+
         // Start leaving
         start_leaving(st, "# Leaving (Scary guy on level)");
 
@@ -1656,6 +1659,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         if st.borg.tr(BI_CDEPTH) == 0 {
             st.borg.goal.fleeing_to_town = true;
         }
+        let goal = st.borg.goal.clone();
+        note_scary_goals(&mut st.borg.mon, before, &goal);
     }
 
     // Make a note if Ignoring monsters (no fighting)
@@ -2348,14 +2353,111 @@ fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32
     if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    !easy_escape_with(st, steps, up, down)
+}
+
+/// borg-reborn-rs (#503, #530): a free staircase within `steps` (the
+/// engine's distance; -1: none known), or a Phase Door, teleport, Teleport
+/// Level, escape or Word of Recall in the pack or spells.
+fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
     let near = |d: i32| d != -1 && d <= steps;
-    !(near(up)
+    near(up)
         || near(down)
         || st.borg.tr(BI_APHASE) > 0
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || st.borg.tr(BI_RECALL) > 0)
+        || st.borg.tr(BI_RECALL) > 0
+}
+
+/// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
+/// `caution_scary_stand` 1, in the dungeon: a monster that never moves is
+/// never scary (it cannot follow), and the Borg flees a scary level only
+/// while the escape is real. Real means an easy escape (`easy_escape_with`,
+/// the breeder stand's `caution_breeder_easy_escape_steps`), or no scary
+/// monster that is awake, can move and is at least as fast as the character
+/// (the Borg outpaces every pursuer).
+pub(crate) fn scary_stand() -> bool {
+    p(Param::caution_scary_stand) != 0
+}
+
+/// borg-reborn-rs (#530): applies the decision after a scan of the known
+/// monsters. `scary`: a scary monster that can move is known; `pursuer`:
+/// one of them is awake and at least as fast as the character. Standing
+/// clears the level's scary flag and withdraws the leave and flee the scare
+/// set (other cautions set theirs again in this think).
+pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) {
+    // A door scare (an unseen monster opened or burst a door) is scary too,
+    // and its monster may be fast: a pursuer (review of #531).
+    let (scary, pursuer) = stand_inputs(scary, pursuer, st.borg.mon.scary_door);
+    if !scary {
+        return;
+    }
+    let escape = st.borg.tr(BI_CDEPTH) == 0
+        || easy_escape_with(
+            st,
+            p(Param::caution_breeder_easy_escape_steps),
+            nearest_free_stair(st, true),
+            nearest_free_stair(st, false),
+        );
+    let stand = stand_decision(escape, pursuer);
+    if stand {
+        st.borg.mon.scary = false;
+        withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+        if !st.borg.mon.scary_stand {
+            borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
+        }
+    } else {
+        st.borg.mon.scary = true;
+    }
+    st.borg.mon.scary_stand = stand;
+}
+
+/// borg-reborn-rs (#530, review of #531): record which goals the scary check
+/// itself set: those that were false `before` it and are set now. A goal
+/// another caution had already set stays that caution's.
+pub(crate) fn note_scary_goals(mon: &mut crate::borg::BorgMonInfo, before: (bool, bool, bool), goal: &crate::borg::BorgGoal) {
+    mon.scary_leaving |= !before.0 && goal.leaving;
+    mon.scary_fleeing |= !before.1 && goal.fleeing;
+    mon.scary_town |= !before.2 && goal.fleeing_to_town;
+}
+
+/// borg-reborn-rs (#530, review of #531): withdraw only the goals the scare
+/// set, and forget that it set them. Another caution that still wants a
+/// goal sets it again in this think (the scan runs before `borg_caution`).
+pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) {
+    if std::mem::take(&mut mon.scary_leaving) {
+        goal.leaving = false;
+    }
+    if std::mem::take(&mut mon.scary_fleeing) {
+        goal.fleeing = false;
+    }
+    if std::mem::take(&mut mon.scary_town) {
+        goal.fleeing_to_town = false;
+    }
+}
+
+/// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
+/// the goals the scare owns and the stand (a new level, the jumpstarts).
+pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
+    mon.scary = false;
+    mon.scary_door = false;
+    mon.scary_leaving = false;
+    mon.scary_fleeing = false;
+    mon.scary_town = false;
+    mon.scary_stand = false;
+}
+
+/// borg-reborn-rs (#530, review of #531): the decision's inputs. A door
+/// scare is scary, and its unseen monster counts as a pursuer.
+fn stand_inputs(scan_scary: bool, scan_pursuer: bool, door: bool) -> (bool, bool) {
+    (scan_scary || door, scan_pursuer || door)
+}
+
+/// borg-reborn-rs (#530): stand when there is no real escape: no easy
+/// escape and a pursuer the Borg cannot outpace.
+fn stand_decision(escape: bool, pursuer: bool) -> bool {
+    !escape && pursuer
 }
 
 /// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
@@ -3003,6 +3105,112 @@ mod outmatched_tests {
         let flag = spec("caution_heal_when_outmatched");
         assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
         assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod scary_stand_tests {
+    use super::*;
+
+    fn st() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st
+    }
+
+    #[test]
+    fn stand_only_without_a_real_escape() {
+        assert!(stand_decision(false, true), "no escape, a pursuer as fast: stand");
+        assert!(!stand_decision(true, true), "an easy escape: flee");
+        assert!(!stand_decision(false, false), "every scary monster slower or asleep: flee");
+    }
+
+    use crate::borg::{BorgGoal, BorgMonInfo};
+
+    fn caution_scare(mon: &mut BorgMonInfo, goal: &mut BorgGoal, town: bool) {
+        // borg_caution's scary block: start_leaving, start_fleeing (each
+        // only when not set yet), fleeing_to_town in town, then the note.
+        let before = (goal.leaving, goal.fleeing, goal.fleeing_to_town);
+        goal.leaving = true;
+        goal.fleeing = true;
+        if town {
+            goal.fleeing_to_town = true;
+        }
+        note_scary_goals(mon, before, goal);
+    }
+
+    #[test]
+    fn a_the_scare_sets_both_goals_and_standing_withdraws_them() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(mon.scary_leaving && mon.scary_fleeing && !mon.scary_town);
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(!goal.leaving && !goal.fleeing);
+        assert!(!mon.scary_leaving && !mon.scary_fleeing, "ownership forgotten");
+    }
+
+    #[test]
+    fn b_another_cautions_goal_set_first_survives_the_stand() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        goal.leaving = true; // e.g. the restock caution
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(!mon.scary_leaving && mon.scary_fleeing, "the scare owns only fleeing");
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(goal.leaving, "the restock's leave survives");
+        assert!(!goal.fleeing);
+    }
+
+    #[test]
+    fn c_a_goal_another_caution_sets_after_the_scare_is_not_the_scares() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        goal.fleeing = true; // fleeing for another reason before the scare
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(mon.scary_leaving && !mon.scary_fleeing);
+        // Later the other caution still wants fleeing; the scare set only leaving.
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(!goal.leaving, "the scare's leave is withdrawn");
+        assert!(goal.fleeing, "the other caution's flee is not");
+    }
+
+    #[test]
+    fn d_forgetting_the_scare_clears_every_fact() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        mon.scary = true;
+        mon.scary_door = true;
+        mon.scary_stand = true;
+        caution_scare(&mut mon, &mut goal, true);
+        assert!(mon.scary_town);
+        forget_scary(&mut mon); // the jumpstarts, a new level
+        assert!(!mon.scary && !mon.scary_door && !mon.scary_stand);
+        assert!(!mon.scary_leaving && !mon.scary_fleeing && !mon.scary_town);
+        // A later stand withdraws nothing the forgotten scare owned.
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(goal.leaving && goal.fleeing && goal.fleeing_to_town);
+    }
+
+    #[test]
+    fn a_door_scare_enters_the_decision_as_a_pursuer() {
+        // Nothing scary in the scan, but a door scare: scary, and a pursuer.
+        assert_eq!(stand_inputs(false, false, true), (true, true));
+        let (scary, pursuer) = stand_inputs(false, false, true);
+        assert!(scary && stand_decision(false, pursuer), "no escape: stand");
+        assert!(!stand_decision(true, pursuer), "an easy escape: flee");
+        assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
+        assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn an_easy_escape_is_near_stairs_or_an_escape_item() {
+        let mut s = st();
+        assert!(!easy_escape_with(&s, 5, -1, -1), "nothing");
+        assert!(easy_escape_with(&s, 5, 5, -1), "an up staircase within the steps");
+        assert!(easy_escape_with(&s, 5, -1, 3), "a down staircase");
+        assert!(!easy_escape_with(&s, 5, 6, 9), "both too far");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE, BI_RECALL] {
+            s.borg.trait_[t as usize] = 1;
+            assert!(easy_escape_with(&s, 5, -1, -1), "escape trait {t}");
+            s.borg.trait_[t as usize] = 0;
+        }
     }
 }
 

@@ -1497,7 +1497,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         && boost_bravery(st, 3, 30000, |st| {
             /* Reset multiple factors to jumpstart the borg */
             st.borg.mon.unique = 0;
-            st.borg.mon.scary = false;
+            crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
             /* reset our breeder flag */
             st.borg.near.breeder = false;
@@ -1590,7 +1590,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Reset multiple factors to jumpstart the borg */
     st.borg.mon.unique = 0;
-    st.borg.mon.scary = false;
+    crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
     /* reset our breeder flag */
     st.borg.near.breeder = false;
