@@ -2,6 +2,17 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: harness/borg.txt's parameter block in the file's own format (#552)
+
+Owner: the flags added since #479 were hard to read. The block is now in the
+format of the older part of the file: `### Section ###` headings (Default
+parameters, Combat, Healing and town shopping, Fleeing, Cornered, Breeders,
+Scary monsters), and for each setting a short description, a blank line, the
+setting and a blank line. Issue numbers stay, as a pointer; the history moved
+out. Every setting and value is unchanged (140 keys, none duplicated), and
+three games play identical keys with the old and the new file. New settings
+should follow this format, in the section they belong to.
+
 ## 2026-11-17: flee only while the escape is real (#530)
 
 Owner: flee scary monsters while there is a chance; once there isn't, stand
@@ -15,6 +26,7 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
 - **Left:** the town (unchanged), and the escape itself: the owner notes
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
+
 ## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
 
 The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
