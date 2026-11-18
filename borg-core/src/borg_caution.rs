@@ -55,7 +55,7 @@ use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CO
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
-use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
+use crate::headers::list_tvals_h::{TV_FLASK, TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::params::{value as p, Param};
@@ -2141,6 +2141,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && !st.borg.goal.fleeing_to_town
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
+        && !ranged_before_recall(st)
         && borg_recall(st)
     {
         // Note
@@ -2183,6 +2184,46 @@ fn stairs_before_recall(st: &BorgState) -> bool {
         nearest_free_stair(st, true),
         nearest_free_stair(st, false),
     )
+}
+
+/// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
+/// choice is the best available ranged attack". With
+/// `caution_scary_ranged_no_stairs` and no free staircase known, a scary
+/// level does not stop `borg_attack` from targeting monsters at range.
+pub(crate) fn scary_ranged_no_stairs(st: &BorgState) -> bool {
+    p(Param::caution_scary_ranged_no_stairs) != 0
+        && nearest_free_stair(st, true) == -1
+        && nearest_free_stair(st, false) == -1
+}
+
+/// borg-reborn-rs (#539): Recall and Phase Door wait while the Borg can
+/// fight at range instead (`scary_ranged_no_stairs`): an awake monster in
+/// view, not next to it, and missiles or a flask to throw.
+pub(crate) fn ranged_before_recall(st: &BorgState) -> bool {
+    if !scary_ranged_no_stairs(st) {
+        return false;
+    }
+    let means = st.borg.tr(BI_AMISSILES) > 0
+        || st.items.items.iter().any(|it| it.iqty > 0 && u32::from(it.tval) == TV_FLASK);
+    let mut known = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        known.push((
+            kill.awake,
+            engine::distance(st.borg.c, kill.pos),
+            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0,
+        ));
+    }
+    ranged_target(means, &known)
+}
+
+/// Something to throw or shoot, and a known monster as (awake, distance,
+/// in view) that is awake, in view and not adjacent.
+fn ranged_target(means: bool, known: &[(bool, i32, bool)]) -> bool {
+    means && known.iter().any(|&(awake, d, view)| awake && view && d > 1)
 }
 
 /// `stairs_before_recall` with its switch and the nearest free up and down
@@ -2997,5 +3038,17 @@ mod recall_tests {
         assert!(stairs_before_recall_with(1, -1, 40), "a far down staircase");
         assert!(!stairs_before_recall_with(1, -1, -1), "no staircase known");
         assert!(!stairs_before_recall_with(0, 8, 8), "off");
+    }
+
+    /// #539: with no stairs, Recall waits for a ranged attack on a monster
+    /// in view at range.
+    #[test]
+    fn a_ranged_target_comes_before_recall_without_stairs() {
+        assert!(ranged_target(true, &[(true, 4, true)]), "Grip four grids up the corridor");
+        assert!(!ranged_target(false, &[(true, 4, true)]), "nothing to throw or shoot");
+        assert!(!ranged_target(true, &[(true, 1, true)]), "adjacent: melee's business");
+        assert!(!ranged_target(true, &[(true, 4, false)]), "out of view");
+        assert!(!ranged_target(true, &[(false, 4, true)]), "asleep");
+        assert!(!ranged_target(true, &[]), "no monster");
     }
 }

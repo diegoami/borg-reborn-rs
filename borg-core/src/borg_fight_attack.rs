@@ -4431,6 +4431,10 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
             } else if adjacent_monster {
                 /* Try to fight if there is a monster next to me */
                 borg_note(st, "# Adjacent to monster on Scaryguy Level.");
+            } else if crate::borg_caution::scary_ranged_no_stairs(st) {
+                /* borg-reborn-rs (#539, owner): no staircase to flee to, so
+                 * the best attack, at range too. */
+                borg_note(st, "# No stairs: fighting at range on Scaryguy Level.");
             } else {
                 /* Flee from other scary guys */
                 continue;

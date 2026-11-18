@@ -447,7 +447,8 @@ fn count_scary(
 /// found the Priest 809881907 again within a turn).
 pub(crate) fn phase_is_pointless(st: &BorgState) -> bool {
     if param(Param::escape_phase_adjacent_only) == 0 {
-        return false;
+        // #539: the ranged-attack rule stands on its own switch.
+        return crate::borg_caution::ranged_before_recall(st) && !adjacent_awake(st);
     }
     let mut monsters = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
@@ -457,7 +458,18 @@ pub(crate) fn phase_is_pointless(st: &BorgState) -> bool {
         }
         monsters.push((kill.awake, engine::distance(st.borg.c, kill.pos), kill.ranged_attack != 0, st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0));
     }
-    !phase_helps(&monsters)
+    // #539 (owner): with no stairs, the best ranged attack comes before a
+    // Phase Door too, unless a monster is already next to the Borg.
+    let adjacent = monsters.iter().any(|&(awake, d, _, _)| awake && d <= 1);
+    !phase_helps(&monsters) || (!adjacent && crate::borg_caution::ranged_before_recall(st))
+}
+
+/// An awake known monster next to the Borg.
+fn adjacent_awake(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+    })
 }
 
 /// The known monsters as (awake, distance, ranged attack, in view): a phase
