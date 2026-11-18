@@ -25,11 +25,11 @@
 
 // borg-reborn-rs (#243): named power policy; default operations unchanged.
 use crate::params::{value as param, Param};
-use crate::borg_formulas::borg_power_dynamic;
-use crate::borg_item::borg_item_weight;
-use crate::borg_item_activation::ActivationIds;
-use crate::borg_item_analyze::borg_ego_has_random_power;
-use crate::borg_magic::{borg_get_spell_entry, borg_spell_stat};
+use crate::decision_api::borg_formulas::borg_power_dynamic;
+use crate::decision_api::borg_item::borg_item_weight;
+use crate::decision_api::borg_item_activation::ActivationIds;
+use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
+use crate::decision_api::borg_magic::{borg_get_spell_entry, borg_spell_stat};
 use crate::borg_headers::borg_h::{
     BORG_USES_DYNAMIC_CALCS, BORG_WORSHIPS_AC,
     BORG_WORSHIPS_DAMAGE, BORG_WORSHIPS_HP, BORG_WORSHIPS_MANA, BORG_WORSHIPS_SPEED,
@@ -40,7 +40,7 @@ use crate::headers::list_stats_h::{STAT_CON, STAT_DEX, STAT_INT, STAT_STR, STAT_
 use crate::headers::list_tvals_h::{TV_ARROW, TV_DIGGING, TV_POTION, TV_SCROLL};
 use crate::headers::player_h::STAT_MAX;
 use crate::state::BorgState;
-use crate::engine;
+use crate::decision_api::engine;
 
 const CLASS_WARRIOR: i32 = 0;
 const CLASS_MAGE: i32 = 1;
@@ -300,7 +300,8 @@ fn activation_bonus(a: &ActivationIds, class: i32, clevel: i32, act: i32) -> i32
 }
 
 /// Helper function -- calculate "power" of equipment
-pub(crate) fn borg_power_equipment(st: &BorgState) -> i32 {
+pub(crate) fn borg_power_equipment_native(st: &BorgState) -> i32 {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::power.borg_power_equipment",format!("{:?}",())); }
     let tr = |i: u32| st.borg.tr(i);
     let cfg = |i: u32| st.cfg(i) != 0;
     let items = &st.items.items;
@@ -1142,7 +1143,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     count_up(v, &mut k, param(Param::power_inventory_afuel_limit), tr(BI_AFUEL), i64::from(param(Param::power_inventory_afuel_weight)));
     if tr(BI_STR) >= param(Param::power_inventory_str_threshold) {
         while k < param(Param::power_inventory_reward_fuel_threshold) && k < tr(BI_AFUEL) {
-            *v = add(*v, 6000 - i64::from(k * 100));
+            *v = add(*v, i64::from(param(Param::power_inventory_fuel_extra_base)) - i64::from(k * param(Param::power_inventory_fuel_extra_decay)));
             k += 1;
         }
     }
@@ -1150,7 +1151,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward Food
     // if hungry, food is THE top priority
     if (tr(BI_ISHUNGRY) != 0 || tr(BI_ISWEAK) != 0) && tr(BI_FOOD) != 0 {
-        *v = addi(*v, 100000);
+        *v = addi(*v, param(Param::power_inventory_hungry_food_bonus));
     }
     k = 0;
     count_up(v, &mut k, param(Param::power_inventory_food_limit), tr(BI_FOOD), i64::from(param(Param::power_inventory_food_weight)));
@@ -1171,10 +1172,10 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward Cure Poison and Cuts
     let hurt = tr(BI_ISCUT) != 0 || tr(BI_ISPOISONED) != 0;
     if hurt && tr(BI_ACCW) != 0 {
-        *v = addi(*v, 100000);
+        *v = addi(*v, param(Param::power_inventory_hurt_ccw_bonus));
     }
     if hurt && tr(BI_AHEAL) != 0 {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_hurt_heal_bonus));
     }
     if hurt && tr(BI_ACSW) != 0 {
         // usually takes more than one
@@ -1182,7 +1183,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         count_up(v, &mut k, param(Param::power_inventory_acsw_limit), tr(BI_ACSW), i64::from(param(Param::power_inventory_acsw_weight)));
     }
     if tr(BI_ISPOISONED) != 0 && tr(BI_ACUREPOIS) != 0 {
-        *v = addi(*v, 15000);
+        *v = addi(*v, param(Param::power_inventory_poisoned_cure_poison_bonus));
     }
 
     // collect Resistance pots if not immune -- All Classes
@@ -1224,7 +1225,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     if tr(BI_ALL_NEED_ID) != 0 {
         k = 0;
         while k < tr(BI_ALL_NEED_ID) && k < tr(BI_AID) {
-            *v = add(*v, 6000);
+            *v = add(*v, i64::from(param(Param::power_inventory_identify_first_bonus)));
             k += 1;
         }
     }
@@ -1260,7 +1261,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         }
         // Deep borgs need the rod to avoid low mana traps
         if tr(BI_MAXDEPTH) >= param(Param::power_inventory_maxdepth_threshold_4) && has(iv.kv_rod_recall) != 0 {
-            *v = addi(*v, 12000);
+            *v = addi(*v, param(Param::power_inventory_recall_rod_bonus));
         }
     }
 
@@ -1268,7 +1269,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     k = 1;
     // first phase door is very important
     if tr(BI_APHASE) != 0 {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_phase_first_bonus));
     }
     {
         count_up(v, &mut k, param(Param::power_inventory_aphase_limit), tr(BI_APHASE), i64::from(param(Param::power_inventory_aphase_weight)));
@@ -1290,7 +1291,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward teleport scroll
     k = 0;
     if tr(BI_CLEVEL) >= param(Param::power_inventory_clevel_threshold_4) && tr(BI_ATELEPORT) != 0 {
-        *v = add(*v, 10000);
+        *v = add(*v, i64::from(param(Param::power_inventory_teleport_first_bonus)));
     }
     if tr(BI_CLEVEL) >= param(Param::power_inventory_clevel_threshold_5) {
         count_up(v, &mut k, param(Param::power_inventory_ateleport_limit), tr(BI_ATELEPORT), i64::from(param(Param::power_inventory_ateleport_weight)));
@@ -1487,7 +1488,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // Reward Recharge ability
     if tr(BI_ARECHARGE) != 0 && tr(BI_MAXDEPTH) < param(Param::power_inventory_maxdepth_threshold_9) {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_recharge_first_bonus)));
     }
 
     // *** Missiles ***
@@ -1506,7 +1507,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         // penalize use of too many quiver slots
         k = param(Param::power_inventory_penalize_use_of_too_many_quiver_slots_threshold);
         while k < tr(BI_QUIVER_SLOTS) {
-            *v = sub(*v, 10000);
+            *v = sub(*v, i64::from(param(Param::power_inventory_ranged_quiver_slot_penalty)));
             k += 1;
         }
     } else {
@@ -1517,38 +1518,38 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         }
         // Don't carry too many
         if tr(BI_STR) <= param(Param::power_inventory_str_threshold_12) && tr(BI_AMISSILES) > param(Param::power_inventory_amissiles_threshold) {
-            *v = sub(*v, 1000);
+            *v = sub(*v, i64::from(param(Param::power_inventory_ranged_missile_excess_penalty)));
         }
         // penalize use of too many quiver slots
         k = param(Param::power_inventory_penalize_use_of_too_many_quiver_slots_threshold_2);
         while k < tr(BI_QUIVER_SLOTS) {
-            *v = sub(*v, 10000);
+            *v = sub(*v, i64::from(param(Param::power_inventory_other_quiver_slot_penalty)));
             k += 1;
         }
     }
 
     // cursed arrows are "bad"
-    *v = sub(*v, 1000 * i64::from(tr(BI_AMISSILES_CURSED)));
+    *v = sub(*v, i64::from(param(Param::power_inventory_cursed_missile_penalty)) * i64::from(tr(BI_AMISSILES_CURSED)));
 
     // ego arrows are worth a bonus
-    *v = add(*v, 100 * i64::from(tr(BI_AMISSILES_SPECIAL)));
+    *v = add(*v, i64::from(param(Param::power_inventory_ego_missile_bonus)) * i64::from(tr(BI_AMISSILES_SPECIAL)));
 
     // *** Various ***
 
     //  -- Reward carrying a staff of destruction.
     if tr(BI_ASTFDEST) != 0 {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_destruction_staff_first_bonus)));
     }
     k = 0;
     count_up(v, &mut k, param(Param::power_inventory_astfdest_limit), tr(BI_ASTFDEST), i64::from(param(Param::power_inventory_astfdest_weight)));
 
     //  -- Reward carrying a wand of Teleport Other.
     if tr(BI_ATPORTOTHER) != 0 {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_teleport_other_wand_first_bonus)));
     }
     // Much greater reward for Warrior
     if tr(BI_CLASS) == CLASS_WARRIOR && tr(BI_ATPORTOTHER) != 0 {
-        *v = add(*v, 50000);
+        *v = add(*v, i64::from(param(Param::power_inventory_warrior_teleport_other_bonus)));
     }
     // reward per charge
     k = 0;
@@ -1558,10 +1559,10 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     if (has(iv.kv_wand_magic_missile) != 0 || has(iv.kv_wand_stinking_cloud) != 0)
         && tr(BI_MAXDEPTH) < param(Param::power_inventory_maxdepth_threshold_10)
     {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_early_attack_wand_bonus)));
     }
     if has(iv.kv_wand_annihilation) != 0 && tr(BI_CDEPTH) < param(Param::power_inventory_cdepth_threshold) {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_annihilation_wand_bonus)));
     }
     // Much greater reward for Warrior or lower level
     if (tr(BI_CLASS) == CLASS_WARRIOR || tr(BI_CLEVEL) <= param(Param::power_inventory_clevel_threshold_14))
@@ -1569,15 +1570,15 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
             || has(iv.kv_wand_annihilation) != 0
             || has(iv.kv_wand_stinking_cloud) != 0)
     {
-        *v = add(*v, 10000);
+        *v = add(*v, i64::from(param(Param::power_inventory_warrior_early_attack_wand_bonus)));
     }
     // reward per charge
-    *v = add(*v, i64::from(tr(BI_GOOD_W_CHG)) * 50);
+    *v = add(*v, i64::from(tr(BI_GOOD_W_CHG)) * i64::from(param(Param::power_inventory_attack_wand_charge_weight)));
 
     // These staves are great but do not clutter inven with them
     //  -- Reward carrying a staff of holiness/power
     if tr(BI_GOOD_S_CHG) != 0 {
-        *v = add(*v, 2500);
+        *v = add(*v, i64::from(param(Param::power_inventory_holiness_staff_first_bonus)));
     }
     k = 0;
     count_up(v, &mut k, param(Param::power_inventory_good_s_chg_limit), tr(BI_GOOD_S_CHG), i64::from(param(Param::power_inventory_good_s_chg_weight)));
@@ -1591,90 +1592,90 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
     // Reward being at max stat
     let need = &st.borg.need_statgain;
     if !need[STAT_STR as usize] {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_max_strength_bonus));
     }
     if !need[STAT_INT as usize] {
-        *v = addi(*v, 20000);
+        *v = addi(*v, param(Param::power_inventory_max_intelligence_bonus));
     }
     if !need[STAT_WIS as usize] {
-        *v = addi(*v, 20000);
+        *v = addi(*v, param(Param::power_inventory_max_wisdom_bonus));
     }
     if !need[STAT_DEX as usize] {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_max_dexterity_bonus));
     }
     if !need[STAT_CON as usize] {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_max_constitution_bonus));
     }
 
     let spell_stat = borg_spell_stat();
     if spell_stat >= 0 && !need[spell_stat as usize] {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_max_spell_stat_bonus));
     }
 
     // Reward stat potions
     let amt = &st.borg.amt_statgain;
     if amt[STAT_STR as usize] != 0 && tr(BI_CSTR) < 18 + 100 {
-        *v = addi(*v, 550000);
+        *v = addi(*v, param(Param::power_inventory_strength_potion_bonus));
     }
     if amt[STAT_INT as usize] != 0 && tr(BI_CINT) < 18 + 100 {
-        *v = addi(*v, 520000);
+        *v = addi(*v, param(Param::power_inventory_intelligence_potion_bonus));
     }
     if spell_stat >= 0
         && amt[spell_stat as usize] != 0
         && tr(BI_CSTR + spell_stat as u32) < 18 + 100
     {
-        *v = addi(*v, 575000);
+        *v = addi(*v, param(Param::power_inventory_spell_stat_potion_bonus));
     }
     if amt[STAT_WIS as usize] != 0 && tr(BI_CWIS) < 18 + 100 {
-        *v = addi(*v, 520000);
+        *v = addi(*v, param(Param::power_inventory_wisdom_potion_bonus));
     }
     if amt[STAT_DEX as usize] != 0 && tr(BI_CDEX) < 18 + 100 {
-        *v = addi(*v, 550000);
+        *v = addi(*v, param(Param::power_inventory_dexterity_potion_bonus));
     }
     if amt[STAT_CON as usize] != 0 && tr(BI_CCON) < 18 + 100 {
-        *v = addi(*v, 550000);
+        *v = addi(*v, param(Param::power_inventory_constitution_potion_bonus));
     }
 
     // Reward Remove Curse
     if tr(BI_FIRST_CURSED) != 0 {
         if has(iv.kv_scroll_star_remove_curse) != 0 {
-            *v = addi(*v, 90000);
+            *v = addi(*v, param(Param::power_inventory_star_remove_curse_bonus));
         }
         if has(iv.kv_scroll_remove_curse) != 0 {
-            *v = addi(*v, 90000);
+            *v = addi(*v, param(Param::power_inventory_remove_curse_bonus));
         }
     }
 
     // Restore experience
     if tr(BI_HASFIXEXP) != 0 {
-        *v = addi(*v, 50000);
+        *v = addi(*v, param(Param::power_inventory_restore_experience_bonus));
     }
 
     // *** Enchantment ***
 
     // Reward enchant armor
     if tr(BI_AENCH_ARM) < param(Param::power_inventory_aench_arm_threshold) && tr(BI_NEED_ENCHANT_TO_A) != 0 {
-        *v = add(*v, 540);
+        *v = add(*v, i64::from(param(Param::power_inventory_enchant_armor_first_bonus)));
     }
 
     // Reward enchant weapon to hit
     if tr(BI_AENCH_TOH) < param(Param::power_inventory_aench_toh_threshold) && tr(BI_NEED_ENCHANT_TO_H) != 0 {
-        *v = add(*v, 540);
+        *v = add(*v, i64::from(param(Param::power_inventory_enchant_hit_first_bonus)));
     }
 
     // Reward enchant weapon to damage
     if tr(BI_AENCH_TOD) < param(Param::power_inventory_aench_tod_threshold) && tr(BI_NEED_ENCHANT_TO_D) != 0 {
-        *v = add(*v, 500);
+        *v = add(*v, i64::from(param(Param::power_inventory_enchant_damage_first_bonus)));
     }
 
     // Reward *enchant weapon* to damage
     if tr(BI_AENCH_SWEP) != 0 {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_star_enchant_weapon_bonus)));
     }
 
     // Reward *enchant armour*
     if tr(BI_AENCH_SARM) != 0 {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_star_enchant_armor_bonus)));
     }
 
     // Reward empty slots (up to 6)
@@ -1683,7 +1684,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 
     // first empty slot is highly rewarded
     if tr(BI_EMPTY) != 0 {
-        *v = add(*v, 4000);
+        *v = add(*v, i64::from(param(Param::power_inventory_first_empty_slot_bonus)));
     }
 
     // Reward carrying a shovel if low level
@@ -1693,7 +1694,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
         && u32::from(st.items.items[inven(WIELD)].tval) != TV_DIGGING
         && tr(BI_ADIGGER) == 1
     {
-        *v = add(*v, 5000);
+        *v = add(*v, i64::from(param(Param::power_inventory_early_shovel_bonus)));
     }
 
     // *** Books ***
@@ -1726,7 +1727,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
                 }
 
                 // Reward the book based on the spells I can cast
-                *v = add(*v, 15000);
+                *v = add(*v, i64::from(param(Param::power_inventory_dungeon_book_spell_weight)));
             }
         }
         // The "easy" books
@@ -1813,7 +1814,7 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
             // No encumbrance penalty for purchasing the items above;
             // C divides by `BI_CARRY / 10` unchecked (0 traps, Rust panics)
             let over = (tr(BI_WEIGHT) - tr(BI_CARRY) / 2) / (tr(BI_CARRY) / 10);
-            *v = sub(*v, i64::from(over) * 1000);
+            *v = sub(*v, i64::from(over) * i64::from(param(Param::power_inventory_encumbrance_penalty_weight)));
         }
     }
 
@@ -1822,14 +1823,15 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 }
 
 /// Calculate the "power" of the Borg
-pub fn borg_power(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_power_native(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::power.borg_power",format!("{:?}",())); }
     let mut value: i32 = 0;
 
     if st.cfg(BORG_USES_DYNAMIC_CALCS) != 0 {
         value = value.wrapping_add(borg_power_dynamic(st));
     } else {
         // Process the equipment
-        value = value.wrapping_add(borg_power_equipment(st));
+        value = value.wrapping_add(borg_power_equipment_native(st));
 
         // Process the inventory
         value = value.wrapping_add(borg_power_inventory(st));
@@ -1842,7 +1844,7 @@ pub fn borg_power(st: &mut BorgState) -> i32 {
     let mut i = 1;
     while i <= st.borg.tr(BI_MAXDEPTH) + param(Param::power_prepared_depth_lookahead) {
         // Dump fear code
-        if crate::borg_prepared::borg_prepared_c(st, i).is_some() {
+        if crate::decision_api::borg_prepared::borg_prepared_c(st, i).is_some() {
             break;
         }
         i += 1;
@@ -1897,4 +1899,14 @@ mod tests {
         a.dispel_evil = 8;
         assert_eq!(activation_bonus(&a, CLASS_WARRIOR, 21, 8), 500 + 10 + 52);
     }
+}
+
+// R434 facades retain the native public signatures and nested tape ownership.
+pub(crate) fn borg_power_equipment(st: &BorgState) -> i32 {
+if crate::decision_tape::active() { return borg_power_equipment_native(st); }
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::PowerEquipment) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
+}
+pub fn borg_power(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() { return borg_power_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::Power) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
 }

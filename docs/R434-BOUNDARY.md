@@ -1,3 +1,10 @@
+# Current implementation checkpoint
+
+Accepted P4 carry #529 merged at `99fa7cc5`; #434 now implements the owned
+power bodies and typed boundaries described below. See [current handover](R434-HANDOVER.md)
+for checks and remaining validation. The following design is retained as the
+pre-carry audit; its historical dependency statuses are superseded by that merge.
+
 # Power ownership boundary before the P4 carry (#434)
 
 This is source design, not a runtime implementation or validation report.

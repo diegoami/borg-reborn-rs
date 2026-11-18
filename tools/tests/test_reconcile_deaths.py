@@ -43,6 +43,50 @@ def dossier(registry, case, sha, fam=None):
 
 
 class RunsTest(unittest.TestCase):
+    def retained_pair(self, root, *, seed=1, race=0, cls=0, save=None, keys='k\n'):
+        """Synthetic registry records, not new native-game observations."""
+        sha = hashlib.sha256(b'k\n').hexdigest()
+        for registry, fam, result, start in [
+            ('canonical', 'old-build', sha, (1, 0, 0, None)),
+            ('temporary', 'new-build', hashlib.sha256(keys.encode()).hexdigest(),
+             (seed, race, cls, save)),
+        ]:
+            directory = Path(root) / registry
+            dossier(directory, 'D0001', result, fam=fam)
+            case = directory / 'D0001'
+            record = json.loads((case / 'record.json').read_text())
+            record['identity'] = {'impl': 'rust', 'seed': start[0]}
+            record['terminal'].update(race_idx=start[1], class_idx=start[2])
+            (case / 'record.json').write_text(json.dumps(record))
+            (case / 'config.txt').write_text(
+                f'flags={registry}\nborg_txt_sha256={registry}\n' +
+                (f'save_sha256={start[3]}\n' if start[3] is not None else ''))
+        return [str(Path(root) / 'temporary'), '--registry', str(Path(root) / 'canonical')]
+
+    def test_same_start_and_keys_reuse_canonical_game_across_builds_and_settings(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            args = self.retained_pair(temporary)
+            canonical = Path(temporary) / 'canonical/D0001/record.json'
+            original = canonical.read_bytes()
+            self.assertEqual(rc.main(args), 0)
+            self.assertEqual(rc.main(args + ['--exact']), 1)
+            self.assertEqual(canonical.read_bytes(), original)
+
+    def test_different_start_or_keys_still_require_a_canonical_game(self):
+        for change in [dict(seed=2), dict(race=1), dict(cls=1),
+                       dict(save='another-save'), dict(keys='different keys\n')]:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                self.assertEqual(rc.main(self.retained_pair(temporary, **change)), 1)
+
+    def test_unknown_start_cannot_alias_a_different_build(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            args = self.retained_pair(temporary)
+            path = Path(temporary) / 'temporary/D0001/record.json'
+            record = json.loads(path.read_text())
+            del record['identity']
+            path.write_text(json.dumps(record))
+            self.assertEqual(rc.main(args), 1)
+
     def test_an_unexported_death_fails_even_with_an_empty_registry(self):
         with tempfile.TemporaryDirectory() as t:
             run(t, 'a')

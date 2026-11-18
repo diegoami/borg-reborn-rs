@@ -1,0 +1,1844 @@
+{
+  "schema": "borg-reborn-rs/r528-p4-carry@1",
+  "receiving_baseline": "ba460186678ee07f6a3aad7053e27cf1e5b2c2b9",
+  "accepted_p4_source": "ac293ef700e0704ae3971cac161165d12054f330",
+  "accepted_p4_main_base": "a8ac685a2c90b412971fedd90d98b783b7f70380",
+  "p4_promotion_pr": 477,
+  "carry_issue": 528,
+  "runtime_donor_unchanged": "1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea",
+  "receiving_original_registry_count": 1729,
+  "receiving_registry_count": 2091,
+  "accepted_registry_count": 2191,
+  "p4_new_count": 362,
+  "receiving_original_specs_sha256": "ead4946bcfcdb720f433c6aa99cc0420dbd9c05a92e0b32edec5b82d41349f3b",
+  "accepted_p4_specs_sha256": "08fe7e957e7d59374708f2180b78a07a82026c9c320af0c8080c40a332395bc5",
+  "p4_patch_sha256": "6f958658822ef1cd5a4f10528a9ec2a5f1fa08ca1c0469df3438d10e071a2f33",
+  "receiving_original_module_sha256": {
+    "borg-core/src/borg_power.rs": "27cda0e5464dcdca6be744cc6bcb252fb7c1228dc3afb8d4317c6687acce4747",
+    "borg-core/src/borg_item_wear.rs": "31dff336388076dd992fbb8a799e87b0e4adca5935d1005931d6c492b6f85cfb",
+    "borg-core/src/borg_store_buy.rs": "29c2ea02611cb77e3f28ad17835ee78aff1f48dfdafd1d9d3239091f22d9bb36",
+    "borg-core/src/borg_store_sell.rs": "7dc70794a1528bea54033ea1d84c458efaa248bd8e8c6c29bbeb5d41681c9c19",
+    "borg-core/src/borg_think_store.rs": "6d7f9e2e46b81fd079c828b913d0050dae0c4b3b133a36c72b18b4cec337a559",
+    "borg-core/src/borg_home_power.rs": "1399a827b7e515d350ab718f77a15c2301b2271717875f0ec8c26e9068c87142"
+  },
+  "parameter_id_mapping": [
+    {
+      "name": "buy_attack_wand_charge_limit",
+      "accepted_id": 1829,
+      "receiving_id": 1729
+    },
+    {
+      "name": "buy_attack_wand_max_level",
+      "accepted_id": 1830,
+      "receiving_id": 1730
+    },
+    {
+      "name": "buy_black_market_early_gold",
+      "accepted_id": 1831,
+      "receiving_id": 1731
+    },
+    {
+      "name": "buy_black_market_early_level",
+      "accepted_id": 1832,
+      "receiving_id": 1732
+    },
+    {
+      "name": "buy_black_market_middle_gold",
+      "accepted_id": 1833,
+      "receiving_id": 1733
+    },
+    {
+      "name": "buy_black_market_middle_level",
+      "accepted_id": 1834,
+      "receiving_id": 1734
+    },
+    {
+      "name": "buy_black_market_min_gold",
+      "accepted_id": 1835,
+      "receiving_id": 1735
+    },
+    {
+      "name": "buy_enchanted_ammo_min_level",
+      "accepted_id": 1836,
+      "receiving_id": 1736
+    },
+    {
+      "name": "buy_extra_book_min_level",
+      "accepted_id": 1837,
+      "receiving_id": 1737
+    },
+    {
+      "name": "buy_home_stock_gold_divisor",
+      "accepted_id": 1838,
+      "receiving_id": 1738
+    },
+    {
+      "name": "buy_home_stock_gold_reserve",
+      "accepted_id": 1839,
+      "receiving_id": 1739
+    },
+    {
+      "name": "buy_home_stock_min_level",
+      "accepted_id": 1840,
+      "receiving_id": 1740
+    },
+    {
+      "name": "buy_home_stock_price_multiplier",
+      "accepted_id": 1841,
+      "receiving_id": 1741
+    },
+    {
+      "name": "buy_hybrid_extra_book_max_level",
+      "accepted_id": 1842,
+      "receiving_id": 1742
+    },
+    {
+      "name": "home_amulets_limit",
+      "accepted_id": 1843,
+      "receiving_id": 1743
+    },
+    {
+      "name": "home_amulets_penalty",
+      "accepted_id": 1844,
+      "receiving_id": 1744
+    },
+    {
+      "name": "home_armor_limit",
+      "accepted_id": 1845,
+      "receiving_id": 1745
+    },
+    {
+      "name": "home_armor_penalty",
+      "accepted_id": 1846,
+      "receiving_id": 1746
+    },
+    {
+      "name": "home_artifact_weight",
+      "accepted_id": 1847,
+      "receiving_id": 1747
+    },
+    {
+      "name": "home_bad_gloves_penalty",
+      "accepted_id": 1848,
+      "receiving_id": 1748
+    },
+    {
+      "name": "home_banishment_stack_multiplier",
+      "accepted_id": 1849,
+      "receiving_id": 1749
+    },
+    {
+      "name": "home_book_stock_base",
+      "accepted_id": 1850,
+      "receiving_id": 1750
+    },
+    {
+      "name": "home_book_stock_decay",
+      "accepted_id": 1851,
+      "receiving_id": 1751
+    },
+    {
+      "name": "home_book_stock_limit",
+      "accepted_id": 1852,
+      "receiving_id": 1752
+    },
+    {
+      "name": "home_book_stock_max_level",
+      "accepted_id": 1853,
+      "receiving_id": 1753
+    },
+    {
+      "name": "home_boots_limit",
+      "accepted_id": 1854,
+      "receiving_id": 1754
+    },
+    {
+      "name": "home_boots_penalty",
+      "accepted_id": 1855,
+      "receiving_id": 1755
+    },
+    {
+      "name": "home_bows_limit",
+      "accepted_id": 1856,
+      "receiving_id": 1756
+    },
+    {
+      "name": "home_bows_penalty",
+      "accepted_id": 1857,
+      "receiving_id": 1757
+    },
+    {
+      "name": "home_cloaks_limit",
+      "accepted_id": 1858,
+      "receiving_id": 1758
+    },
+    {
+      "name": "home_cloaks_penalty",
+      "accepted_id": 1859,
+      "receiving_id": 1759
+    },
+    {
+      "name": "home_cold_resist_base",
+      "accepted_id": 1860,
+      "receiving_id": 1760
+    },
+    {
+      "name": "home_cold_resist_decay",
+      "accepted_id": 1861,
+      "receiving_id": 1761
+    },
+    {
+      "name": "home_cure_serious_penalty_min_level",
+      "accepted_id": 1862,
+      "receiving_id": 1762
+    },
+    {
+      "name": "home_duplicate_item_penalty",
+      "accepted_id": 1863,
+      "receiving_id": 1763
+    },
+    {
+      "name": "home_edged_weapon_penalty",
+      "accepted_id": 1864,
+      "receiving_id": 1764
+    },
+    {
+      "name": "home_ego_weight",
+      "accepted_id": 1865,
+      "receiving_id": 1765
+    },
+    {
+      "name": "home_enchant_armor_max_level",
+      "accepted_id": 1866,
+      "receiving_id": 1766
+    },
+    {
+      "name": "home_enchant_damage_max_level",
+      "accepted_id": 1867,
+      "receiving_id": 1767
+    },
+    {
+      "name": "home_enchant_hit_max_level",
+      "accepted_id": 1868,
+      "receiving_id": 1768
+    },
+    {
+      "name": "home_exp_stock_early_max_level",
+      "accepted_id": 1869,
+      "receiving_id": 1769
+    },
+    {
+      "name": "home_exp_stock_late_min_level",
+      "accepted_id": 1870,
+      "receiving_id": 1770
+    },
+    {
+      "name": "home_ffall_each_weight",
+      "accepted_id": 1871,
+      "receiving_id": 1771
+    },
+    {
+      "name": "home_ffall_one_weight",
+      "accepted_id": 1872,
+      "receiving_id": 1772
+    },
+    {
+      "name": "home_ffall_two_weight",
+      "accepted_id": 1873,
+      "receiving_id": 1773
+    },
+    {
+      "name": "home_food_stock_max_level",
+      "accepted_id": 1874,
+      "receiving_id": 1774
+    },
+    {
+      "name": "home_free_act_each_weight",
+      "accepted_id": 1875,
+      "receiving_id": 1775
+    },
+    {
+      "name": "home_free_act_one_weight",
+      "accepted_id": 1876,
+      "receiving_id": 1776
+    },
+    {
+      "name": "home_free_act_two_weight",
+      "accepted_id": 1877,
+      "receiving_id": 1777
+    },
+    {
+      "name": "home_gloves_limit",
+      "accepted_id": 1878,
+      "receiving_id": 1778
+    },
+    {
+      "name": "home_gloves_penalty",
+      "accepted_id": 1879,
+      "receiving_id": 1779
+    },
+    {
+      "name": "home_hats_limit",
+      "accepted_id": 1880,
+      "receiving_id": 1780
+    },
+    {
+      "name": "home_hats_penalty",
+      "accepted_id": 1881,
+      "receiving_id": 1781
+    },
+    {
+      "name": "home_heat_resist_base",
+      "accepted_id": 1882,
+      "receiving_id": 1782
+    },
+    {
+      "name": "home_heat_resist_decay",
+      "accepted_id": 1883,
+      "receiving_id": 1783
+    },
+    {
+      "name": "home_hold_life_each_weight",
+      "accepted_id": 1884,
+      "receiving_id": 1784
+    },
+    {
+      "name": "home_hold_life_one_weight",
+      "accepted_id": 1885,
+      "receiving_id": 1785
+    },
+    {
+      "name": "home_hold_life_two_weight",
+      "accepted_id": 1886,
+      "receiving_id": 1786
+    },
+    {
+      "name": "home_immune_acid_each_weight",
+      "accepted_id": 1887,
+      "receiving_id": 1787
+    },
+    {
+      "name": "home_immune_acid_one_weight",
+      "accepted_id": 1888,
+      "receiving_id": 1788
+    },
+    {
+      "name": "home_immune_acid_two_weight",
+      "accepted_id": 1889,
+      "receiving_id": 1789
+    },
+    {
+      "name": "home_immune_cold_each_weight",
+      "accepted_id": 1890,
+      "receiving_id": 1790
+    },
+    {
+      "name": "home_immune_cold_one_weight",
+      "accepted_id": 1891,
+      "receiving_id": 1791
+    },
+    {
+      "name": "home_immune_cold_two_weight",
+      "accepted_id": 1892,
+      "receiving_id": 1792
+    },
+    {
+      "name": "home_immune_elec_each_weight",
+      "accepted_id": 1893,
+      "receiving_id": 1793
+    },
+    {
+      "name": "home_immune_elec_one_weight",
+      "accepted_id": 1894,
+      "receiving_id": 1794
+    },
+    {
+      "name": "home_immune_elec_two_weight",
+      "accepted_id": 1895,
+      "receiving_id": 1795
+    },
+    {
+      "name": "home_immune_fire_each_weight",
+      "accepted_id": 1896,
+      "receiving_id": 1796
+    },
+    {
+      "name": "home_immune_fire_one_weight",
+      "accepted_id": 1897,
+      "receiving_id": 1797
+    },
+    {
+      "name": "home_immune_fire_two_weight",
+      "accepted_id": 1898,
+      "receiving_id": 1798
+    },
+    {
+      "name": "home_initial_heal_sell_level",
+      "accepted_id": 1899,
+      "receiving_id": 1799
+    },
+    {
+      "name": "home_light_each_weight",
+      "accepted_id": 1900,
+      "receiving_id": 1800
+    },
+    {
+      "name": "home_light_one_weight",
+      "accepted_id": 1901,
+      "receiving_id": 1801
+    },
+    {
+      "name": "home_light_two_weight",
+      "accepted_id": 1902,
+      "receiving_id": 1802
+    },
+    {
+      "name": "home_mana_stock_min_sp",
+      "accepted_id": 1903,
+      "receiving_id": 1803
+    },
+    {
+      "name": "home_mass_banishment_stack_multiplier",
+      "accepted_id": 1904,
+      "receiving_id": 1804
+    },
+    {
+      "name": "home_max_level_exp_penalty",
+      "accepted_id": 1905,
+      "receiving_id": 1805
+    },
+    {
+      "name": "home_phase_stock_max_level",
+      "accepted_id": 1906,
+      "receiving_id": 1806
+    },
+    {
+      "name": "home_regenerate_each_weight",
+      "accepted_id": 1907,
+      "receiving_id": 1807
+    },
+    {
+      "name": "home_regenerate_one_weight",
+      "accepted_id": 1908,
+      "receiving_id": 1808
+    },
+    {
+      "name": "home_regenerate_two_weight",
+      "accepted_id": 1909,
+      "receiving_id": 1809
+    },
+    {
+      "name": "home_resist_acid_each_weight",
+      "accepted_id": 1910,
+      "receiving_id": 1810
+    },
+    {
+      "name": "home_resist_acid_one_weight",
+      "accepted_id": 1911,
+      "receiving_id": 1811
+    },
+    {
+      "name": "home_resist_acid_two_weight",
+      "accepted_id": 1912,
+      "receiving_id": 1812
+    },
+    {
+      "name": "home_resist_blind_each_weight",
+      "accepted_id": 1913,
+      "receiving_id": 1813
+    },
+    {
+      "name": "home_resist_blind_one_weight",
+      "accepted_id": 1914,
+      "receiving_id": 1814
+    },
+    {
+      "name": "home_resist_blind_two_weight",
+      "accepted_id": 1915,
+      "receiving_id": 1815
+    },
+    {
+      "name": "home_resist_chaos_each_weight",
+      "accepted_id": 1916,
+      "receiving_id": 1816
+    },
+    {
+      "name": "home_resist_chaos_one_weight",
+      "accepted_id": 1917,
+      "receiving_id": 1817
+    },
+    {
+      "name": "home_resist_chaos_two_weight",
+      "accepted_id": 1918,
+      "receiving_id": 1818
+    },
+    {
+      "name": "home_resist_cold_each_weight",
+      "accepted_id": 1919,
+      "receiving_id": 1819
+    },
+    {
+      "name": "home_resist_cold_one_weight",
+      "accepted_id": 1920,
+      "receiving_id": 1820
+    },
+    {
+      "name": "home_resist_cold_two_weight",
+      "accepted_id": 1921,
+      "receiving_id": 1821
+    },
+    {
+      "name": "home_resist_conf_each_weight",
+      "accepted_id": 1922,
+      "receiving_id": 1822
+    },
+    {
+      "name": "home_resist_conf_one_weight",
+      "accepted_id": 1923,
+      "receiving_id": 1823
+    },
+    {
+      "name": "home_resist_conf_two_weight",
+      "accepted_id": 1924,
+      "receiving_id": 1824
+    },
+    {
+      "name": "home_resist_dark_each_weight",
+      "accepted_id": 1925,
+      "receiving_id": 1825
+    },
+    {
+      "name": "home_resist_dark_one_weight",
+      "accepted_id": 1926,
+      "receiving_id": 1826
+    },
+    {
+      "name": "home_resist_dark_two_weight",
+      "accepted_id": 1927,
+      "receiving_id": 1827
+    },
+    {
+      "name": "home_resist_disen_each_weight",
+      "accepted_id": 1928,
+      "receiving_id": 1828
+    },
+    {
+      "name": "home_resist_disen_one_weight",
+      "accepted_id": 1929,
+      "receiving_id": 1829
+    },
+    {
+      "name": "home_resist_disen_two_weight",
+      "accepted_id": 1930,
+      "receiving_id": 1830
+    },
+    {
+      "name": "home_resist_elec_each_weight",
+      "accepted_id": 1931,
+      "receiving_id": 1831
+    },
+    {
+      "name": "home_resist_elec_one_weight",
+      "accepted_id": 1932,
+      "receiving_id": 1832
+    },
+    {
+      "name": "home_resist_elec_two_weight",
+      "accepted_id": 1933,
+      "receiving_id": 1833
+    },
+    {
+      "name": "home_resist_fire_each_weight",
+      "accepted_id": 1934,
+      "receiving_id": 1834
+    },
+    {
+      "name": "home_resist_fire_one_weight",
+      "accepted_id": 1935,
+      "receiving_id": 1835
+    },
+    {
+      "name": "home_resist_fire_two_weight",
+      "accepted_id": 1936,
+      "receiving_id": 1836
+    },
+    {
+      "name": "home_resist_light_each_weight",
+      "accepted_id": 1937,
+      "receiving_id": 1837
+    },
+    {
+      "name": "home_resist_light_one_weight",
+      "accepted_id": 1938,
+      "receiving_id": 1838
+    },
+    {
+      "name": "home_resist_light_two_weight",
+      "accepted_id": 1939,
+      "receiving_id": 1839
+    },
+    {
+      "name": "home_resist_neth_each_weight",
+      "accepted_id": 1940,
+      "receiving_id": 1840
+    },
+    {
+      "name": "home_resist_neth_one_weight",
+      "accepted_id": 1941,
+      "receiving_id": 1841
+    },
+    {
+      "name": "home_resist_neth_two_weight",
+      "accepted_id": 1942,
+      "receiving_id": 1842
+    },
+    {
+      "name": "home_resist_nexus_each_weight",
+      "accepted_id": 1943,
+      "receiving_id": 1843
+    },
+    {
+      "name": "home_resist_nexus_one_weight",
+      "accepted_id": 1944,
+      "receiving_id": 1844
+    },
+    {
+      "name": "home_resist_nexus_two_weight",
+      "accepted_id": 1945,
+      "receiving_id": 1845
+    },
+    {
+      "name": "home_resist_pois_each_weight",
+      "accepted_id": 1946,
+      "receiving_id": 1846
+    },
+    {
+      "name": "home_resist_pois_one_weight",
+      "accepted_id": 1947,
+      "receiving_id": 1847
+    },
+    {
+      "name": "home_resist_pois_two_weight",
+      "accepted_id": 1948,
+      "receiving_id": 1848
+    },
+    {
+      "name": "home_resist_shard_each_weight",
+      "accepted_id": 1949,
+      "receiving_id": 1849
+    },
+    {
+      "name": "home_resist_shard_one_weight",
+      "accepted_id": 1950,
+      "receiving_id": 1850
+    },
+    {
+      "name": "home_resist_shard_two_weight",
+      "accepted_id": 1951,
+      "receiving_id": 1851
+    },
+    {
+      "name": "home_resist_sound_each_weight",
+      "accepted_id": 1952,
+      "receiving_id": 1852
+    },
+    {
+      "name": "home_resist_sound_one_weight",
+      "accepted_id": 1953,
+      "receiving_id": 1853
+    },
+    {
+      "name": "home_resist_sound_two_weight",
+      "accepted_id": 1954,
+      "receiving_id": 1854
+    },
+    {
+      "name": "home_resistance_max_depth",
+      "accepted_id": 1955,
+      "receiving_id": 1855
+    },
+    {
+      "name": "home_resistance_min_depth",
+      "accepted_id": 1956,
+      "receiving_id": 1856
+    },
+    {
+      "name": "home_rings_excess_weight",
+      "accepted_id": 1957,
+      "receiving_id": 1857
+    },
+    {
+      "name": "home_rings_soft_limit",
+      "accepted_id": 1958,
+      "receiving_id": 1858
+    },
+    {
+      "name": "home_rings_spare_limit",
+      "accepted_id": 1959,
+      "receiving_id": 1859
+    },
+    {
+      "name": "home_rings_spare_penalty",
+      "accepted_id": 1960,
+      "receiving_id": 1860
+    },
+    {
+      "name": "home_see_inv_each_weight",
+      "accepted_id": 1961,
+      "receiving_id": 1861
+    },
+    {
+      "name": "home_see_inv_one_weight",
+      "accepted_id": 1962,
+      "receiving_id": 1862
+    },
+    {
+      "name": "home_see_inv_two_weight",
+      "accepted_id": 1963,
+      "receiving_id": 1863
+    },
+    {
+      "name": "home_shields_limit",
+      "accepted_id": 1964,
+      "receiving_id": 1864
+    },
+    {
+      "name": "home_shields_penalty",
+      "accepted_id": 1965,
+      "receiving_id": 1865
+    },
+    {
+      "name": "home_slow_digest_each_weight",
+      "accepted_id": 1966,
+      "receiving_id": 1866
+    },
+    {
+      "name": "home_slow_digest_one_weight",
+      "accepted_id": 1967,
+      "receiving_id": 1867
+    },
+    {
+      "name": "home_slow_digest_two_weight",
+      "accepted_id": 1968,
+      "receiving_id": 1868
+    },
+    {
+      "name": "home_stat_caster_first_weight",
+      "accepted_id": 1969,
+      "receiving_id": 1869
+    },
+    {
+      "name": "home_stat_caster_high_limit",
+      "accepted_id": 1970,
+      "receiving_id": 1870
+    },
+    {
+      "name": "home_stat_caster_last_base",
+      "accepted_id": 1971,
+      "receiving_id": 1871
+    },
+    {
+      "name": "home_stat_caster_last_weight",
+      "accepted_id": 1972,
+      "receiving_id": 1872
+    },
+    {
+      "name": "home_stat_caster_low_limit",
+      "accepted_id": 1973,
+      "receiving_id": 1873
+    },
+    {
+      "name": "home_stat_caster_middle_base",
+      "accepted_id": 1974,
+      "receiving_id": 1874
+    },
+    {
+      "name": "home_stat_caster_middle_weight",
+      "accepted_id": 1975,
+      "receiving_id": 1875
+    },
+    {
+      "name": "home_stat_con_first_weight",
+      "accepted_id": 1976,
+      "receiving_id": 1876
+    },
+    {
+      "name": "home_stat_con_high_limit",
+      "accepted_id": 1977,
+      "receiving_id": 1877
+    },
+    {
+      "name": "home_stat_con_last_base",
+      "accepted_id": 1978,
+      "receiving_id": 1878
+    },
+    {
+      "name": "home_stat_con_last_weight",
+      "accepted_id": 1979,
+      "receiving_id": 1879
+    },
+    {
+      "name": "home_stat_con_low_limit",
+      "accepted_id": 1980,
+      "receiving_id": 1880
+    },
+    {
+      "name": "home_stat_con_middle_base",
+      "accepted_id": 1981,
+      "receiving_id": 1881
+    },
+    {
+      "name": "home_stat_con_middle_weight",
+      "accepted_id": 1982,
+      "receiving_id": 1882
+    },
+    {
+      "name": "home_stat_dex_first_weight",
+      "accepted_id": 1983,
+      "receiving_id": 1883
+    },
+    {
+      "name": "home_stat_dex_high_limit",
+      "accepted_id": 1984,
+      "receiving_id": 1884
+    },
+    {
+      "name": "home_stat_dex_last_base",
+      "accepted_id": 1985,
+      "receiving_id": 1885
+    },
+    {
+      "name": "home_stat_dex_last_weight",
+      "accepted_id": 1986,
+      "receiving_id": 1886
+    },
+    {
+      "name": "home_stat_dex_low_limit",
+      "accepted_id": 1987,
+      "receiving_id": 1887
+    },
+    {
+      "name": "home_stat_dex_middle_base",
+      "accepted_id": 1988,
+      "receiving_id": 1888
+    },
+    {
+      "name": "home_stat_dex_middle_weight",
+      "accepted_id": 1989,
+      "receiving_id": 1889
+    },
+    {
+      "name": "home_stat_str_first_weight",
+      "accepted_id": 1990,
+      "receiving_id": 1890
+    },
+    {
+      "name": "home_stat_str_high_limit",
+      "accepted_id": 1991,
+      "receiving_id": 1891
+    },
+    {
+      "name": "home_stat_str_last_base",
+      "accepted_id": 1992,
+      "receiving_id": 1892
+    },
+    {
+      "name": "home_stat_str_last_weight",
+      "accepted_id": 1993,
+      "receiving_id": 1893
+    },
+    {
+      "name": "home_stat_str_low_limit",
+      "accepted_id": 1994,
+      "receiving_id": 1894
+    },
+    {
+      "name": "home_stat_str_middle_base",
+      "accepted_id": 1995,
+      "receiving_id": 1895
+    },
+    {
+      "name": "home_stat_str_middle_weight",
+      "accepted_id": 1996,
+      "receiving_id": 1896
+    },
+    {
+      "name": "home_stock_cure_critical_base",
+      "accepted_id": 1997,
+      "receiving_id": 1897
+    },
+    {
+      "name": "home_stock_cure_critical_decay",
+      "accepted_id": 1998,
+      "receiving_id": 1898
+    },
+    {
+      "name": "home_stock_cure_serious_base",
+      "accepted_id": 1999,
+      "receiving_id": 1899
+    },
+    {
+      "name": "home_stock_cure_serious_decay",
+      "accepted_id": 2000,
+      "receiving_id": 1900
+    },
+    {
+      "name": "home_stock_cure_serious_limit",
+      "accepted_id": 2001,
+      "receiving_id": 1901
+    },
+    {
+      "name": "home_stock_early_exp_base",
+      "accepted_id": 2002,
+      "receiving_id": 1902
+    },
+    {
+      "name": "home_stock_early_exp_decay",
+      "accepted_id": 2003,
+      "receiving_id": 1903
+    },
+    {
+      "name": "home_stock_early_exp_limit",
+      "accepted_id": 2004,
+      "receiving_id": 1904
+    },
+    {
+      "name": "home_stock_enchant_to_a_base",
+      "accepted_id": 2005,
+      "receiving_id": 1905
+    },
+    {
+      "name": "home_stock_enchant_to_a_decay",
+      "accepted_id": 2006,
+      "receiving_id": 1906
+    },
+    {
+      "name": "home_stock_enchant_to_d_base",
+      "accepted_id": 2007,
+      "receiving_id": 1907
+    },
+    {
+      "name": "home_stock_enchant_to_d_decay",
+      "accepted_id": 2008,
+      "receiving_id": 1908
+    },
+    {
+      "name": "home_stock_enchant_to_h_base",
+      "accepted_id": 2009,
+      "receiving_id": 1909
+    },
+    {
+      "name": "home_stock_enchant_to_h_decay",
+      "accepted_id": 2010,
+      "receiving_id": 1910
+    },
+    {
+      "name": "home_stock_escape_base",
+      "accepted_id": 2011,
+      "receiving_id": 1911
+    },
+    {
+      "name": "home_stock_escape_decay",
+      "accepted_id": 2012,
+      "receiving_id": 1912
+    },
+    {
+      "name": "home_stock_escape_limit",
+      "accepted_id": 2013,
+      "receiving_id": 1913
+    },
+    {
+      "name": "home_stock_ezheal_base",
+      "accepted_id": 2014,
+      "receiving_id": 1914
+    },
+    {
+      "name": "home_stock_ezheal_decay",
+      "accepted_id": 2015,
+      "receiving_id": 1915
+    },
+    {
+      "name": "home_stock_ezheal_limit",
+      "accepted_id": 2016,
+      "receiving_id": 1916
+    },
+    {
+      "name": "home_stock_food_base",
+      "accepted_id": 2017,
+      "receiving_id": 1917
+    },
+    {
+      "name": "home_stock_food_decay",
+      "accepted_id": 2018,
+      "receiving_id": 1918
+    },
+    {
+      "name": "home_stock_genocide_base",
+      "accepted_id": 2019,
+      "receiving_id": 1919
+    },
+    {
+      "name": "home_stock_genocide_decay",
+      "accepted_id": 2020,
+      "receiving_id": 1920
+    },
+    {
+      "name": "home_stock_glyph_base",
+      "accepted_id": 2021,
+      "receiving_id": 1921
+    },
+    {
+      "name": "home_stock_glyph_decay",
+      "accepted_id": 2022,
+      "receiving_id": 1922
+    },
+    {
+      "name": "home_stock_heal_base",
+      "accepted_id": 2023,
+      "receiving_id": 1923
+    },
+    {
+      "name": "home_stock_heal_decay",
+      "accepted_id": 2024,
+      "receiving_id": 1924
+    },
+    {
+      "name": "home_stock_heal_limit",
+      "accepted_id": 2025,
+      "receiving_id": 1925
+    },
+    {
+      "name": "home_stock_ident_base",
+      "accepted_id": 2026,
+      "receiving_id": 1926
+    },
+    {
+      "name": "home_stock_ident_decay",
+      "accepted_id": 2027,
+      "receiving_id": 1927
+    },
+    {
+      "name": "home_stock_initial_heal_base",
+      "accepted_id": 2028,
+      "receiving_id": 1928
+    },
+    {
+      "name": "home_stock_initial_heal_decay",
+      "accepted_id": 2029,
+      "receiving_id": 1929
+    },
+    {
+      "name": "home_stock_initial_heal_limit",
+      "accepted_id": 2030,
+      "receiving_id": 1930
+    },
+    {
+      "name": "home_stock_late_exp_base",
+      "accepted_id": 2031,
+      "receiving_id": 1931
+    },
+    {
+      "name": "home_stock_late_exp_decay",
+      "accepted_id": 2032,
+      "receiving_id": 1932
+    },
+    {
+      "name": "home_stock_late_exp_limit",
+      "accepted_id": 2033,
+      "receiving_id": 1933
+    },
+    {
+      "name": "home_stock_life_base",
+      "accepted_id": 2034,
+      "receiving_id": 1934
+    },
+    {
+      "name": "home_stock_life_decay",
+      "accepted_id": 2035,
+      "receiving_id": 1935
+    },
+    {
+      "name": "home_stock_life_limit",
+      "accepted_id": 2036,
+      "receiving_id": 1936
+    },
+    {
+      "name": "home_stock_mana_base",
+      "accepted_id": 2037,
+      "receiving_id": 1937
+    },
+    {
+      "name": "home_stock_mana_decay",
+      "accepted_id": 2038,
+      "receiving_id": 1938
+    },
+    {
+      "name": "home_stock_mass_genocide_base",
+      "accepted_id": 2039,
+      "receiving_id": 1939
+    },
+    {
+      "name": "home_stock_mass_genocide_decay",
+      "accepted_id": 2040,
+      "receiving_id": 1940
+    },
+    {
+      "name": "home_stock_pfe_base",
+      "accepted_id": 2041,
+      "receiving_id": 1941
+    },
+    {
+      "name": "home_stock_pfe_decay",
+      "accepted_id": 2042,
+      "receiving_id": 1942
+    },
+    {
+      "name": "home_stock_phase_base",
+      "accepted_id": 2043,
+      "receiving_id": 1943
+    },
+    {
+      "name": "home_stock_phase_decay",
+      "accepted_id": 2044,
+      "receiving_id": 1944
+    },
+    {
+      "name": "home_stock_recall_base",
+      "accepted_id": 2045,
+      "receiving_id": 1945
+    },
+    {
+      "name": "home_stock_recall_decay",
+      "accepted_id": 2046,
+      "receiving_id": 1946
+    },
+    {
+      "name": "home_stock_recall_limit",
+      "accepted_id": 2047,
+      "receiving_id": 1947
+    },
+    {
+      "name": "home_stock_recharge_base",
+      "accepted_id": 2048,
+      "receiving_id": 1948
+    },
+    {
+      "name": "home_stock_recharge_decay",
+      "accepted_id": 2049,
+      "receiving_id": 1949
+    },
+    {
+      "name": "home_stock_teleport_base",
+      "accepted_id": 2050,
+      "receiving_id": 1950
+    },
+    {
+      "name": "home_stock_teleport_decay",
+      "accepted_id": 2051,
+      "receiving_id": 1951
+    },
+    {
+      "name": "home_stock_teleport_limit",
+      "accepted_id": 2052,
+      "receiving_id": 1952
+    },
+    {
+      "name": "home_sustain_all_each_weight",
+      "accepted_id": 2053,
+      "receiving_id": 1953
+    },
+    {
+      "name": "home_sustain_all_one_weight",
+      "accepted_id": 2054,
+      "receiving_id": 1954
+    },
+    {
+      "name": "home_sustain_all_two_weight",
+      "accepted_id": 2055,
+      "receiving_id": 1955
+    },
+    {
+      "name": "home_sustain_con_each_weight",
+      "accepted_id": 2056,
+      "receiving_id": 1956
+    },
+    {
+      "name": "home_sustain_con_one_weight",
+      "accepted_id": 2057,
+      "receiving_id": 1957
+    },
+    {
+      "name": "home_sustain_con_two_weight",
+      "accepted_id": 2058,
+      "receiving_id": 1958
+    },
+    {
+      "name": "home_sustain_dex_each_weight",
+      "accepted_id": 2059,
+      "receiving_id": 1959
+    },
+    {
+      "name": "home_sustain_dex_one_weight",
+      "accepted_id": 2060,
+      "receiving_id": 1960
+    },
+    {
+      "name": "home_sustain_dex_two_weight",
+      "accepted_id": 2061,
+      "receiving_id": 1961
+    },
+    {
+      "name": "home_sustain_int_each_weight",
+      "accepted_id": 2062,
+      "receiving_id": 1962
+    },
+    {
+      "name": "home_sustain_int_one_weight",
+      "accepted_id": 2063,
+      "receiving_id": 1963
+    },
+    {
+      "name": "home_sustain_int_two_weight",
+      "accepted_id": 2064,
+      "receiving_id": 1964
+    },
+    {
+      "name": "home_sustain_str_each_weight",
+      "accepted_id": 2065,
+      "receiving_id": 1965
+    },
+    {
+      "name": "home_sustain_str_one_weight",
+      "accepted_id": 2066,
+      "receiving_id": 1966
+    },
+    {
+      "name": "home_sustain_str_two_weight",
+      "accepted_id": 2067,
+      "receiving_id": 1967
+    },
+    {
+      "name": "home_sustain_wis_each_weight",
+      "accepted_id": 2068,
+      "receiving_id": 1968
+    },
+    {
+      "name": "home_sustain_wis_one_weight",
+      "accepted_id": 2069,
+      "receiving_id": 1969
+    },
+    {
+      "name": "home_sustain_wis_two_weight",
+      "accepted_id": 2070,
+      "receiving_id": 1970
+    },
+    {
+      "name": "home_telepathy_each_weight",
+      "accepted_id": 2071,
+      "receiving_id": 1971
+    },
+    {
+      "name": "home_telepathy_one_weight",
+      "accepted_id": 2072,
+      "receiving_id": 1972
+    },
+    {
+      "name": "home_telepathy_two_weight",
+      "accepted_id": 2073,
+      "receiving_id": 1973
+    },
+    {
+      "name": "home_teleport_staff_excess_penalty",
+      "accepted_id": 2074,
+      "receiving_id": 1974
+    },
+    {
+      "name": "home_unidentified_weight",
+      "accepted_id": 2075,
+      "receiving_id": 1975
+    },
+    {
+      "name": "home_weapons_excess_weight",
+      "accepted_id": 2076,
+      "receiving_id": 1976
+    },
+    {
+      "name": "home_weapons_soft_limit",
+      "accepted_id": 2077,
+      "receiving_id": 1977
+    },
+    {
+      "name": "home_weapons_spare_limit",
+      "accepted_id": 2078,
+      "receiving_id": 1978
+    },
+    {
+      "name": "home_weapons_spare_penalty",
+      "accepted_id": 2079,
+      "receiving_id": 1979
+    },
+    {
+      "name": "power_inventory_annihilation_wand_bonus",
+      "accepted_id": 2080,
+      "receiving_id": 1980
+    },
+    {
+      "name": "power_inventory_attack_wand_charge_weight",
+      "accepted_id": 2081,
+      "receiving_id": 1981
+    },
+    {
+      "name": "power_inventory_constitution_potion_bonus",
+      "accepted_id": 2082,
+      "receiving_id": 1982
+    },
+    {
+      "name": "power_inventory_poisoned_cure_poison_bonus",
+      "accepted_id": 2083,
+      "receiving_id": 1983
+    },
+    {
+      "name": "power_inventory_cursed_missile_penalty",
+      "accepted_id": 2084,
+      "receiving_id": 1984
+    },
+    {
+      "name": "power_inventory_hurt_heal_bonus",
+      "accepted_id": 2085,
+      "receiving_id": 1985
+    },
+    {
+      "name": "power_inventory_destruction_staff_first_bonus",
+      "accepted_id": 2086,
+      "receiving_id": 1986
+    },
+    {
+      "name": "power_inventory_dexterity_potion_bonus",
+      "accepted_id": 2087,
+      "receiving_id": 1987
+    },
+    {
+      "name": "power_inventory_dungeon_book_spell_weight",
+      "accepted_id": 2088,
+      "receiving_id": 1988
+    },
+    {
+      "name": "power_inventory_early_attack_wand_bonus",
+      "accepted_id": 2089,
+      "receiving_id": 1989
+    },
+    {
+      "name": "power_inventory_early_shovel_bonus",
+      "accepted_id": 2090,
+      "receiving_id": 1990
+    },
+    {
+      "name": "power_inventory_ego_missile_bonus",
+      "accepted_id": 2091,
+      "receiving_id": 1991
+    },
+    {
+      "name": "power_inventory_enchant_armor_first_bonus",
+      "accepted_id": 2092,
+      "receiving_id": 1992
+    },
+    {
+      "name": "power_inventory_enchant_damage_first_bonus",
+      "accepted_id": 2093,
+      "receiving_id": 1993
+    },
+    {
+      "name": "power_inventory_enchant_hit_first_bonus",
+      "accepted_id": 2094,
+      "receiving_id": 1994
+    },
+    {
+      "name": "power_inventory_encumbrance_penalty_weight",
+      "accepted_id": 2095,
+      "receiving_id": 1995
+    },
+    {
+      "name": "power_inventory_first_empty_slot_bonus",
+      "accepted_id": 2096,
+      "receiving_id": 1996
+    },
+    {
+      "name": "power_inventory_fuel_extra_base",
+      "accepted_id": 2097,
+      "receiving_id": 1997
+    },
+    {
+      "name": "power_inventory_fuel_extra_decay",
+      "accepted_id": 2098,
+      "receiving_id": 1998
+    },
+    {
+      "name": "power_inventory_holiness_staff_first_bonus",
+      "accepted_id": 2099,
+      "receiving_id": 1999
+    },
+    {
+      "name": "power_inventory_hungry_food_bonus",
+      "accepted_id": 2100,
+      "receiving_id": 2000
+    },
+    {
+      "name": "power_inventory_identify_first_bonus",
+      "accepted_id": 2101,
+      "receiving_id": 2001
+    },
+    {
+      "name": "power_inventory_intelligence_potion_bonus",
+      "accepted_id": 2102,
+      "receiving_id": 2002
+    },
+    {
+      "name": "power_inventory_max_constitution_bonus",
+      "accepted_id": 2103,
+      "receiving_id": 2003
+    },
+    {
+      "name": "power_inventory_max_dexterity_bonus",
+      "accepted_id": 2104,
+      "receiving_id": 2004
+    },
+    {
+      "name": "power_inventory_max_intelligence_bonus",
+      "accepted_id": 2105,
+      "receiving_id": 2005
+    },
+    {
+      "name": "power_inventory_max_spell_stat_bonus",
+      "accepted_id": 2106,
+      "receiving_id": 2006
+    },
+    {
+      "name": "power_inventory_max_strength_bonus",
+      "accepted_id": 2107,
+      "receiving_id": 2007
+    },
+    {
+      "name": "power_inventory_max_wisdom_bonus",
+      "accepted_id": 2108,
+      "receiving_id": 2008
+    },
+    {
+      "name": "power_inventory_other_quiver_slot_penalty",
+      "accepted_id": 2109,
+      "receiving_id": 2009
+    },
+    {
+      "name": "power_inventory_phase_first_bonus",
+      "accepted_id": 2110,
+      "receiving_id": 2010
+    },
+    {
+      "name": "power_inventory_hurt_ccw_bonus",
+      "accepted_id": 2111,
+      "receiving_id": 2011
+    },
+    {
+      "name": "power_inventory_ranged_missile_excess_penalty",
+      "accepted_id": 2112,
+      "receiving_id": 2012
+    },
+    {
+      "name": "power_inventory_ranged_quiver_slot_penalty",
+      "accepted_id": 2113,
+      "receiving_id": 2013
+    },
+    {
+      "name": "power_inventory_recall_rod_bonus",
+      "accepted_id": 2114,
+      "receiving_id": 2014
+    },
+    {
+      "name": "power_inventory_recharge_first_bonus",
+      "accepted_id": 2115,
+      "receiving_id": 2015
+    },
+    {
+      "name": "power_inventory_remove_curse_bonus",
+      "accepted_id": 2116,
+      "receiving_id": 2016
+    },
+    {
+      "name": "power_inventory_restore_experience_bonus",
+      "accepted_id": 2117,
+      "receiving_id": 2017
+    },
+    {
+      "name": "power_inventory_spell_stat_potion_bonus",
+      "accepted_id": 2118,
+      "receiving_id": 2018
+    },
+    {
+      "name": "power_inventory_star_enchant_armor_bonus",
+      "accepted_id": 2119,
+      "receiving_id": 2019
+    },
+    {
+      "name": "power_inventory_star_enchant_weapon_bonus",
+      "accepted_id": 2120,
+      "receiving_id": 2020
+    },
+    {
+      "name": "power_inventory_star_remove_curse_bonus",
+      "accepted_id": 2121,
+      "receiving_id": 2021
+    },
+    {
+      "name": "power_inventory_strength_potion_bonus",
+      "accepted_id": 2122,
+      "receiving_id": 2022
+    },
+    {
+      "name": "power_inventory_teleport_first_bonus",
+      "accepted_id": 2123,
+      "receiving_id": 2023
+    },
+    {
+      "name": "power_inventory_teleport_other_wand_first_bonus",
+      "accepted_id": 2124,
+      "receiving_id": 2024
+    },
+    {
+      "name": "power_inventory_warrior_early_attack_wand_bonus",
+      "accepted_id": 2125,
+      "receiving_id": 2025
+    },
+    {
+      "name": "power_inventory_warrior_teleport_other_bonus",
+      "accepted_id": 2126,
+      "receiving_id": 2026
+    },
+    {
+      "name": "power_inventory_wisdom_potion_bonus",
+      "accepted_id": 2127,
+      "receiving_id": 2027
+    },
+    {
+      "name": "sell_ammo_batch_count",
+      "accepted_id": 2128,
+      "receiving_id": 2028
+    },
+    {
+      "name": "sell_ammo_reserve_count",
+      "accepted_id": 2129,
+      "receiving_id": 2029
+    },
+    {
+      "name": "sell_attack_device_min_level",
+      "accepted_id": 2130,
+      "receiving_id": 2030
+    },
+    {
+      "name": "sell_batch_max_item_value",
+      "accepted_id": 2131,
+      "receiving_id": 2031
+    },
+    {
+      "name": "sell_batch_min_gold",
+      "accepted_id": 2132,
+      "receiving_id": 2032
+    },
+    {
+      "name": "sell_count_power_tolerance",
+      "accepted_id": 2133,
+      "receiving_id": 2033
+    },
+    {
+      "name": "sell_food_batch_count",
+      "accepted_id": 2134,
+      "receiving_id": 2034
+    },
+    {
+      "name": "sell_gold_greed_base",
+      "accepted_id": 2135,
+      "receiving_id": 2035
+    },
+    {
+      "name": "sell_gold_greed_base_10",
+      "accepted_id": 2136,
+      "receiving_id": 2036
+    },
+    {
+      "name": "sell_gold_greed_base_13",
+      "accepted_id": 2137,
+      "receiving_id": 2037
+    },
+    {
+      "name": "sell_gold_greed_base_15",
+      "accepted_id": 2138,
+      "receiving_id": 2038
+    },
+    {
+      "name": "sell_gold_greed_base_20",
+      "accepted_id": 2139,
+      "receiving_id": 2039
+    },
+    {
+      "name": "sell_gold_greed_base_25",
+      "accepted_id": 2140,
+      "receiving_id": 2040
+    },
+    {
+      "name": "sell_gold_greed_base_5",
+      "accepted_id": 2141,
+      "receiving_id": 2041
+    },
+    {
+      "name": "sell_gold_greed_ceiling",
+      "accepted_id": 2142,
+      "receiving_id": 2042
+    },
+    {
+      "name": "sell_gold_greed_deep_depth",
+      "accepted_id": 2143,
+      "receiving_id": 2043
+    },
+    {
+      "name": "sell_gold_greed_deep_value",
+      "accepted_id": 2144,
+      "receiving_id": 2044
+    },
+    {
+      "name": "sell_gold_greed_divisor",
+      "accepted_id": 2145,
+      "receiving_id": 2045
+    },
+    {
+      "name": "sell_gold_greed_floor",
+      "accepted_id": 2146,
+      "receiving_id": 2046
+    },
+    {
+      "name": "sell_gold_greed_level_10",
+      "accepted_id": 2147,
+      "receiving_id": 2047
+    },
+    {
+      "name": "sell_gold_greed_level_13",
+      "accepted_id": 2148,
+      "receiving_id": 2048
+    },
+    {
+      "name": "sell_gold_greed_level_15",
+      "accepted_id": 2149,
+      "receiving_id": 2049
+    },
+    {
+      "name": "sell_gold_greed_level_20",
+      "accepted_id": 2150,
+      "receiving_id": 2050
+    },
+    {
+      "name": "sell_gold_greed_level_25",
+      "accepted_id": 2151,
+      "receiving_id": 2051
+    },
+    {
+      "name": "sell_gold_greed_level_5",
+      "accepted_id": 2152,
+      "receiving_id": 2052
+    },
+    {
+      "name": "sell_healing_rod_reserve_count",
+      "accepted_id": 2153,
+      "receiving_id": 2053
+    },
+    {
+      "name": "sell_home_stack_soft_limit",
+      "accepted_id": 2154,
+      "receiving_id": 2054
+    },
+    {
+      "name": "sell_identify_max_depth",
+      "accepted_id": 2155,
+      "receiving_id": 2055
+    },
+    {
+      "name": "sell_mana_reserve_count",
+      "accepted_id": 2156,
+      "receiving_id": 2056
+    },
+    {
+      "name": "sell_mana_reserve_min_sp",
+      "accepted_id": 2157,
+      "receiving_id": 2057
+    },
+    {
+      "name": "sell_mapping_rod_reserve_count",
+      "accepted_id": 2158,
+      "receiving_id": 2058
+    },
+    {
+      "name": "sell_unidentified_max_level",
+      "accepted_id": 2159,
+      "receiving_id": 2059
+    },
+    {
+      "name": "sell_value_cap",
+      "accepted_id": 2160,
+      "receiving_id": 2060
+    },
+    {
+      "name": "shopping_emergency_light_max_level",
+      "accepted_id": 2161,
+      "receiving_id": 2061
+    },
+    {
+      "name": "shopping_light_min_gold",
+      "accepted_id": 2162,
+      "receiving_id": 2062
+    },
+    {
+      "name": "shopping_max_bounces",
+      "accepted_id": 2163,
+      "receiving_id": 2063
+    },
+    {
+      "name": "shopping_max_turns",
+      "accepted_id": 2164,
+      "receiving_id": 2064
+    },
+    {
+      "name": "shopping_unlit_min_level",
+      "accepted_id": 2165,
+      "receiving_id": 2065
+    },
+    {
+      "name": "wear_backup_danger_divisor",
+      "accepted_id": 2166,
+      "receiving_id": 2066
+    },
+    {
+      "name": "wear_backup_max_bounces",
+      "accepted_id": 2167,
+      "receiving_id": 2067
+    },
+    {
+      "name": "wear_backup_unique_danger_divisor",
+      "accepted_id": 2168,
+      "receiving_id": 2068
+    },
+    {
+      "name": "wear_backup_unique_danger_numerator",
+      "accepted_id": 2169,
+      "receiving_id": 2069
+    },
+    {
+      "name": "wear_best_max_bounces",
+      "accepted_id": 2170,
+      "receiving_id": 2070
+    },
+    {
+      "name": "wear_best_max_turns",
+      "accepted_id": 2171,
+      "receiving_id": 2071
+    },
+    {
+      "name": "wear_full_ring_trial_rng_bound",
+      "accepted_id": 2172,
+      "receiving_id": 2072
+    },
+    {
+      "name": "wear_identify_artifact_bonus",
+      "accepted_id": 2173,
+      "receiving_id": 2073
+    },
+    {
+      "name": "wear_identify_consumable_depth_weight",
+      "accepted_id": 2174,
+      "receiving_id": 2074
+    },
+    {
+      "name": "wear_identify_consumable_min_depth",
+      "accepted_id": 2175,
+      "receiving_id": 2075
+    },
+    {
+      "name": "wear_identify_device_depth_weight",
+      "accepted_id": 2176,
+      "receiving_id": 2076
+    },
+    {
+      "name": "wear_identify_ego_bonus",
+      "accepted_id": 2177,
+      "receiving_id": 2077
+    },
+    {
+      "name": "wear_identify_food_depth_weight",
+      "accepted_id": 2178,
+      "receiving_id": 2078
+    },
+    {
+      "name": "wear_identify_jewelry_depth_weight",
+      "accepted_id": 2179,
+      "receiving_id": 2079
+    },
+    {
+      "name": "wear_identify_magic_bonus",
+      "accepted_id": 2180,
+      "receiving_id": 2080
+    },
+    {
+      "name": "wear_identify_max_danger",
+      "accepted_id": 2181,
+      "receiving_id": 2081
+    },
+    {
+      "name": "wear_identify_min_sp",
+      "accepted_id": 2182,
+      "receiving_id": 2082
+    },
+    {
+      "name": "wear_identify_rod_depth_weight",
+      "accepted_id": 2183,
+      "receiving_id": 2083
+    },
+    {
+      "name": "wear_min_power_gain",
+      "accepted_id": 2184,
+      "receiving_id": 2084
+    },
+    {
+      "name": "wear_one_ring_power_multiplier",
+      "accepted_id": 2185,
+      "receiving_id": 2085
+    },
+    {
+      "name": "wear_repeat_cooldown_turns",
+      "accepted_id": 2186,
+      "receiving_id": 2086
+    },
+    {
+      "name": "wear_ring_reorder_max_turns",
+      "accepted_id": 2187,
+      "receiving_id": 2087
+    },
+    {
+      "name": "wear_ring_select_max_turns",
+      "accepted_id": 2188,
+      "receiving_id": 2088
+    },
+    {
+      "name": "sell_unidentified_ego_min_copies",
+      "accepted_id": 2189,
+      "receiving_id": 2089
+    },
+    {
+      "name": "shopping_upgrade_light_radius",
+      "accepted_id": 2190,
+      "receiving_id": 2090
+    }
+  ],
+  "limits": "Exact accepted P4 definitions/sites only. Receiving existing IDs/defaults remain unchanged; numeric IDs are recorded per exact registry. Unrelated accepted-main registry/policy additions and shipped-default changes are not consumed.",
+  "accepted_contract_sha256": "48441aabf72a97c5717a29b046f0ec7c450eda2a482366adeab3c65d11f8fafd",
+  "receiving_non_spec_params_sha256": "9986e8071b276b9f2c6ff5754846144364a1d914648a3a0c1e7c300df0c67689",
+  "reviewed_native_seams": {
+    "path": "docs/R434-NATIVE-SEAMS.patch",
+    "sha256": "e2b95c4c0734561120bdd34451b0924189be6121874875cf6ea2516dd23bd51b",
+    "scope": "R434 ordered dependency imports, private native entry markers, exact public facades; no valuation body changes"
+  }
+}

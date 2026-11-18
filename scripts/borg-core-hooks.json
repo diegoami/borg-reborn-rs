@@ -328,6 +328,10 @@
       "donor_blob": "44e7a778f4fedb45bc4d3ee7a2fc343c21c3f2b5",
       "receiving_sha256": "f1ba477e65aff27b7df44736ffd0a53904a82f0ce3c4b0763bf946d828ddb9f6"
     },
+    "src/borg_home_power.rs": {
+      "donor_blob": "6f1f10f2de06864e9ad827ddbb0cea354503b515",
+      "receiving_sha256": "6dd98e54bf536129e1c0a204be6051ce55de305c290a99449789e9dd7c164614"
+    },
     "src/borg_init.rs": {
       "donor_blob": "bb0582afb95341ed85f576913ebf63b01e5d1bed",
       "receiving_sha256": "dc99f1e875c34faf663b12a6296a231da4db487c8afa5b8205b44bcfd7ff1a91"
@@ -358,7 +362,7 @@
     },
     "src/borg_item_wear.rs": {
       "donor_blob": "b5b1da963160e244af9dd99724cfa58e4e4a7f24",
-      "receiving_sha256": "31dff336388076dd992fbb8a799e87b0e4adca5935d1005931d6c492b6f85cfb"
+      "receiving_sha256": "769b0eaad86f409a1d6b4618ecdefdde4b2a155d83157a52d876ceb5f1b72d12"
     },
     "src/borg_magic.rs": {
       "donor_blob": "b4ba4288f69870c71414da641c01a3dd73123c8e",
@@ -374,7 +378,7 @@
     },
     "src/borg_power.rs": {
       "donor_blob": "40cab96d4505ed14e8c854b72a93369500698d65",
-      "receiving_sha256": "27cda0e5464dcdca6be744cc6bcb252fb7c1228dc3afb8d4317c6687acce4747"
+      "receiving_sha256": "c2732f682c2544bf1ea991aa917b6889b35d8c4f28d0d49f9948b5027015fd94"
     },
     "src/borg_prepared.rs": {
       "donor_blob": "71b530790683e1177e033c05d764aa25f902749f",
@@ -392,9 +396,13 @@
       "donor_blob": "e3471b1eda9eebfa85f4794bf1a90b57d897762d",
       "receiving_sha256": "5f20a1c4f2cdf0cdd54fc5dae0a3665face34601e146602091f898fafde1ab60"
     },
+    "src/borg_store_buy.rs": {
+      "donor_blob": "0df491ec29b3cf879987f48429b0d54cbbfaf886",
+      "receiving_sha256": "0628f142f12ffab082a29f8f14c5fd297015745a412eb4477de3d7d404ffa02a"
+    },
     "src/borg_store_sell.rs": {
       "donor_blob": "59bff90f2eed53f6cbceae3343898932d643e179",
-      "receiving_sha256": "7dc70794a1528bea54033ea1d84c458efaa248bd8e8c6c29bbeb5d41681c9c19"
+      "receiving_sha256": "78042fc5d2d4967c4f2e7a1f25d06e41d9446306488d1f01950bcaf5cd999802"
     },
     "src/borg_think.rs": {
       "donor_blob": "845f33700f2946f30ec01aef5a081b8850865a36",
@@ -407,6 +415,10 @@
     "src/borg_think_dungeon_util.rs": {
       "donor_blob": "2578b3ad612e691ea9aec5da5577ad9178c1b4e6",
       "receiving_sha256": "ce85cf0d60ea7a6c6a65de9a2ec5ef7d48b71dea8d9a68d7353d0e3d107b12cc"
+    },
+    "src/borg_think_store.rs": {
+      "donor_blob": "ba749516609811aa3519f5bd1c64246f2d945cbc",
+      "receiving_sha256": "4a3ebd5108ad9d86837883919d283bc3a8658f71ff51e8c4d5311c792be1a970"
     },
     "src/borg_town_live.rs": {
       "donor_blob": "20a1ac8125baebcaa32c8986cfac529c13bcd528",

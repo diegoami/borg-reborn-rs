@@ -1,35 +1,54 @@
-# R434 power boundary preparation
+# R434: owned power implementation
 
-Track R source `ba460186678ee07f6a3aad7053e27cf1e5b2c2b9` includes completed
-item-use PR #442. Its exact-head CI670 passed all jobs, including the final
-canonical archive gate; #435 is closed. Cemetery PR51 and supplemental PR60
-are merged. Existing R435 receipts remain unchanged by this task.
+The owner authorized #529's merge into `feature/track-r` at
+`99fa7cc5dafd301a6d74c2f5d18817c2a1998945`. Its accepted P4 carry is the
+receiving baseline for this task. P4 promotion #477 and R carry #528 are
+complete; their acceptance does not accept this new runtime port.
 
-Work is on `task/T434-power-port`, from `feature/track-r`, targeting that
-feature only. [Boundary design](R434-BOUNDARY.md) and its source-hash inventory
-are preparation only: no power wrappers, API additions, protocol changes,
-parameter moves, new games or performance claims. All runtime bytes remain
-the validated R435 input95fb364b.
+Work continues on `task/T434-power-port`, draft #478, targeting only
+`feature/track-r`. The initial boundary design remains in
+[R434-BOUNDARY.md](R434-BOUNDARY.md); its pre-carry inventory is historical.
+The refreshed JSON pins the receiving sources after the carry.
 
-#433 is now code-complete on Track P, not accepted/promoted. Its closure and
-review PR #477 explicitly retain the owner review gate. Do not consume its
-implementation head, merge #477 or implement P extraction in this R task.
-After the accepted promotion and a separate audited carry, refresh this
-inventory before writing the owned power policy. Source refresh was read-only;
-newer M13 attack/town changes observed in references were not imported.
+`borg-next/src/stateful/power.rs` owns all 11 production bodies: equipment,
+inventory, activation valuation, total-power ordering and arithmetic helpers.
+Every BI read uses a named borrowed projection, including the three indexed
+stat families. Spell entry lookup remains a taped memory query and the spell
+view borrows current memory. Engine facts, item weight, random ego power and
+spell-stat lookup use the closed API at their original call sites.
 
-Local verification checks every inventoried source hash and lexical trait
-mapping against the receiving tree, runs the existing R4 surface check and
-confirms the runtime input hash is unchanged. No gameplay campaign is needed
-for this preparation; future runtime validation requirements are in the
-boundary document. Keep #434 and its PR in progress/draft until the full port
-and all gates complete. Future gameplay evidence belongs in borg-cemetery.
+Equipment has a separate immutable `ReadDecision::PowerEquipment` entry;
+total power uses mutable `Decision::Power`. Public native signatures are
+preserved. Both private native entries and owned entries mark their policy
+visits. `borg_power_dynamic` is an explicitly shared configured algorithm,
+with complete state/result replay; no independent formula ownership is claimed.
+Preparation remains a real mutable service; its buffer and other state
+changes persist exactly. Full-state equality is enforced by the existing tape.
 
-P4 review disposition: owner-selected Claude review5935377145 on #477 found
-F1 (reserve quantity narrow-cast bound) and F2 (three misleading curing names).
-Both are confirmed at the pinned105f source and tracked in active Track P
-#481. No fixes are duplicated on R. The corrected P head needs a fresh #477
-pin and owner re-review/acceptance before promotion/carry. Notes N1–N3 do not
-request runtime changes. The native review raw streams matched45/45, but its
-harness endedFAILED because the pinned cemetery toolkit was unavailable;
-do not describe those reviewer runs as completed canonical validation.
+Shadow schema @6 adds power entries, its counter and the immutable equipment
+root. `--r4-power` requires that exact surface; older @5 item-use evidence
+still has its explicit reader. Historical evidence is never rewritten.
+
+`audit-power-port.py` verifies all 11 bodies, constants and quoted literals
+after declared API/Read/marker seams. Mutation tests reject arithmetic,
+parameter and return drift. The exact native facade/dependency patch is
+recorded separately as R434-NATIVE-SEAMS.patch; the P4 guard reverses it
+before proving the unchanged accepted P4 delta. This does not permit arbitrary
+native policy edits or rebaseline the accepted registry/contract.
+
+The test-only `test-r4-power` feature includes existing item-use controls and
+12 new synthetic cases: activation first-match, signed swap contributions and
+wrapping, first fuel reward, preparation buffer persistence, explicit shared
+dynamic formulas, nested effect-once replay, a rejected return fault and repair.
+These use copied memory and real engine facts. They do not consume items or
+count as natural games. The return-fault control is not an actual source-literal
+mutation run; that runtime witness remains required separately.
+
+Local checks pass: 54 source tests, 117 tools tests, workspace tests, 339 core
+tests (four existing ignores), clippy with the power feature and formatting. Clean
+native and test-feature builds, constructed execution, literal fault/repaired
+runtime control, normal nested callbacks, off/check/switch smoke and full 45,
+strict entry gates and canonical death reconciliation remain required. Do not
+mark #434 complete, merge #478, or claim R4 accepted from compilation alone.
+Keep all original attempts and actual source/build identities. Gameplay evidence
+belongs in borg-cemetery; this source handover records implementation and limits.

@@ -168,3 +168,13 @@ borrow without changing branch semantics. The API dependency retains complete
 input-state checking as a query. All genuinely stateful entries retain full
 fork/return/post-state comparison. @5 telemetry partitions these roots;
 previous @4 evidence is historical and explicitly readable, never upgraded.
+
+## Track R power port (#434, R4)
+
+`borg-next/src/stateful/power.rs` adapts the 11 production bodies from the
+receiving `borg-core/src/borg_power.rs` at `99fa7cc5`, M13 donor `1443c2d1`
+plus the accepted P4 carry #529. Original copyright/license notices remain.
+Named memory projections, ordered API facts and entry markers are the seams;
+valuation arithmetic and policy literals are unchanged. Dynamic formula policy
+remains explicitly shared. `scripts/audit-power-port.py` checks correspondence;
+it is not runtime validation or a new claim about game mechanics.

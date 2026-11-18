@@ -3,8 +3,8 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use')
-PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
                      'headers', 'borg_headers', *NATIVE}
@@ -45,8 +45,8 @@ def inspect(text, port=False, dispatch=False, policy=None):
             code = re.sub(pattern, '', code, count=1)
     if port:
         errors = []
-        if policy in ('attack', 'defence', 'item_use'):
-            module = {'attack':'borg_fight_attack', 'defence':'borg_fight_defend', 'item_use':'borg_item_use'}[policy]
+        if policy in ('attack', 'defence', 'item_use', 'power'):
+            module = {'attack':'borg_fight_attack', 'defence':'borg_fight_defend', 'item_use':'borg_item_use', 'power':'borg_power'}[policy]
             if re.search(r'\bborg_rs::decision_api::'+module+'::', code):
                 errors.append(policy+' may not delegate its own policy through a shared native result')
         if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):

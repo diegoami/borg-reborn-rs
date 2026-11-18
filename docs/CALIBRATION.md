@@ -2062,19 +2062,19 @@ zero valuation can also be calibrated, without changing effect IDs.
 
 Retained data: equipment slots, class/trait/activation identifiers, array
 sizes and loop/index increments, absent/invalid sentinels, raw-stat encoding
-18+100 and final stat index37, level50's completed-experience condition,
+18+100 and final stat index 37, level 50's completed-experience condition,
 slay/brand damage multipliers and fixed half-damage normalization, copied
-activation effect damage formulas, percentage complement100, book/spell
-iteration sizes and unknown-level99, item weight units (10), spell-point
+activation effect damage formulas, percentage complement 100, book/spell
+iteration sizes and unknown level 99, item weight units (10), spell-point
 units (100), and the engine's half-carry encumbrance rule with tenth-carry
 steps. First-item/index baselines remain categorical; tier quantity limits,
 weights, speed/armour breakpoints and strategic readiness bonuses are named.
 The legacy C int/long wrapping arithmetic is retained, including overflow
 semantics; no new arithmetic simplification or sorting changes were made.
 Input bounds require positive divisors, cap readiness lookahead at the
-existing50 levels and speed inputs at199, and bound count loops.
+existing 50 levels and speed inputs at 199, and bound count loops.
 
-Read equipment chapter6 (§§2,19), combat chapter4 and Borg notes §15.10.
+Read equipment chapter 6 (§§2,19), combat chapter 4 and Borg notes §15.10.
 Engine authority: `src/player-calcs.c` (carry, mana/weight and stat indexing),
 `src/player-attack.c` (slays/brands), `lib/gamedata/class.txt`, `object.txt`,
 `activation.txt` and `slay.txt`/`brand.txt`. Reward magnitudes and creature
@@ -2094,3 +2094,16 @@ CLW/CSW/CCW and removes five parameters whose branches no longer exist.
 See [M13 integration](M13-INTEGRATION.md) for the complete list and sources.
 The live registry remains borg-core/src/params.rs; historical profiles are
 not rewritten or repinned. Both optional town/trip policies default off.
+
+
+## Track R receiving P4 contract (#528)
+
+Track R keeps its 1,729 original specs/IDs/defaults and adds the 362 exact
+accepted P4 inventory definitions, for 2,091. The accepted main/P4 registry
+has 2,191 entries with a different prefix; use the explicit name/ID mapping
+in R528-CARRY.json instead of comparing raw numeric IDs across specimens.
+M13-INVENTORY-PARAMETERS.json/md are the immutable accepted source contract;
+its historical validations do not describe the new receiving build.
+The isolated receiving delta is checked by scripts/check-p4-carry.py.
+No non-neutral overrides or unrelated shipped/default policy changes are
+introduced. Receiving native/shadow validation is required before integration.

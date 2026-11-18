@@ -723,3 +723,25 @@ mod defence_fixture;
 
 #[cfg(feature = "test-r4-item-use")]
 mod item_use_fixture;
+
+// R434: borrowed source-memory projections; each access reads the current state.
+impl<'a> Read<'a> {
+    pub fn stat_index(self, stat: u32) -> i32 {
+        self.0.borg.tr(BI_STR_INDEX + stat)
+    }
+    pub fn stat_adjustment(self, stat: u32) -> i32 {
+        self.0.borg.tr(BI_ASTR + stat)
+    }
+    pub fn current_stat(self, stat: u32) -> i32 {
+        self.0.borg.tr(BI_CSTR + stat)
+    }
+    pub fn spell(
+        self,
+        index: usize,
+    ) -> &'a borg_rs::decision_api::borg_headers::borg_magic_h::borg_magic {
+        &self.0.magic.magics[index]
+    }
+}
+
+#[cfg(feature = "test-r4-power")]
+mod power_fixture;

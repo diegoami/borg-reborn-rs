@@ -40,13 +40,15 @@ def checked_map(value, allowed, path):
     return value
 
 
-def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False):
+def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False, expected_mode=None, r4_item_use=False, legacy_item_use=False, r4_power=False):
     if expected_mode not in (None, 'check', 'switch'):
         raise ValueError('expected mode must be check or switch')
     if legacy_r2 and legacy_attack:
         raise ValueError('select only one legacy surface')
-    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use))) > 1:
+    if sum(map(bool, (legacy_r2, legacy_attack, r4_item_use, legacy_item_use, r4_power))) > 1:
         raise ValueError("select only one shadow surface")
+    power_surface = r4_power
+    r4_item_use = r4_item_use or power_surface
     item_surface = r4_item_use or legacy_item_use
     if item_surface and (legacy_r2 or legacy_attack):
         raise ValueError("R4 cannot use a legacy surface")
@@ -54,9 +56,9 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     files = sorted({p for root in roots for p in Path(root).rglob('shadow-stats.jsonl')})
     if not files:
         raise ValueError('no shadow statistics found')
-    schema = 'borg-reborn-rs/shadow-stats@' + ('5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
-    allowed = R4_ENTRY_POINTS if item_surface else R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS if complete else ATTACK_SURFACE
-    fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ())
+    schema = 'borg-reborn-rs/shadow-stats@' + ('6' if power_surface else '5' if r4_item_use else '4' if legacy_item_use else '1' if legacy_r2 else '2' if legacy_attack else '3')
+    allowed = R4_ENTRY_POINTS + ('power.borg_power', 'power.borg_power_equipment') if power_surface else R4_ENTRY_POINTS if item_surface else R2_ENTRY_POINTS if legacy_r2 else ENTRY_POINTS if complete else ATTACK_SURFACE
+    fields = NUMERIC + (() if legacy_r2 else ('attack_calls', 'pure_attack_comparisons')) + (('defence_calls',) if complete else ()) + (('item_use_calls',) if item_surface else ()) + (('readonly_comparisons',) if r4_item_use else ()) + (('power_calls',) if power_surface else ())
     totals = dict.fromkeys((*fields, 'tape_events', 'policy_markers', 'dependency_requests'), 0)
     entries = dict.fromkeys(allowed, 0)
     pure_totals = dict.fromkeys(PURE_POINTS, 0) if not legacy_r2 else {}
@@ -77,9 +79,9 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             previous, last = row['counts']['thinks'], row
         if last is None:
             raise ValueError(f'{path}: empty statistics')
-        if not legacy_r2 and last.get('surface') != ('r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
+        if not legacy_r2 and last.get('surface') != ('r4-power' if power_surface else 'r4-item-use-readonly' if r4_item_use else 'r4-item-use' if legacy_item_use else 'r3-attack-defence' if complete else 'r3-attack'):
             raise ValueError(f'{path}: unexpected entry surface')
-        if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack', 'defence'] if complete else ['attack']) + (['item_use'] if item_surface else []):
+        if last.get('ported_points') != R2_PORTED + ([] if legacy_r2 else ['attack', 'defence'] if complete else ['attack']) + (['item_use'] if item_surface else []) + (['power'] if power_surface else []):
             raise ValueError(f'{path}: unexpected port coverage')
         if last.get('unported_points') != []:
             raise ValueError(f'{path}: unexpected unported boundaries')
@@ -92,7 +94,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             raise ValueError(f'{path}: danger calls were observed without comparisons')
         stateful = checked_map(counts.get('stateful_points'), allowed, path)
         pure = {} if legacy_r2 else checked_map(counts.get('pure_points'), PURE_POINTS, path)
-        readonly_allowed = {'item_use.borg_equips_item'} if r4_item_use else set()
+        readonly_allowed = ({'item_use.borg_equips_item', 'power.borg_power_equipment'} if power_surface else {'item_use.borg_equips_item'} if r4_item_use else set())
         readonly = checked_map(counts.get('readonly_points'), readonly_allowed, path) if r4_item_use else {}
         if r4_item_use and sum(readonly.values()) != counts['readonly_comparisons']:
             raise ValueError(f'{path}: inconsistent read-only root counts')
@@ -104,7 +106,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             raise ValueError(f'{path}: inconsistent root comparison counts')
         # Both values come from one visits loop: this is integrity, not an
         # independent proof of coverage or of any branch/effect executing.
-        for prefix in ('caution', 'escape', 'recovery') + (() if legacy_r2 else ('attack',)) + (('defence',) if complete else ()) + (('item_use',) if item_surface else ()):
+        for prefix in ('caution', 'escape', 'recovery') + (() if legacy_r2 else ('attack',)) + (('defence',) if complete else ()) + (('item_use',) if item_surface else ()) + (('power',) if power_surface else ()):
             observed = sum(v for k, v in stateful.items() if k.startswith(prefix + '.'))
             if prefix == 'attack':
                 observed += sum(pure.values())
@@ -163,12 +165,13 @@ def main():
     parser.add_argument('--legacy-r3-attack', action='store_true',
                         help='explicit @2 attack reader; cannot satisfy complete defence coverage')
     parser.add_argument('--legacy-r4-item-use', action='store_true', help='explicit historical @4 all-stateful item-use reader')
+    parser.add_argument('--r4-power', action='store_true', help='require complete @6 power and item-use surface')
     parser.add_argument('--r4-item-use', action='store_true', help='require complete @5 read-only/mutable item-use surface; historical readers cannot satisfy it')
     parser.add_argument('--expect-mode', choices=('check', 'switch'),
                         help='require this mode for every record in the supplied arm')
     args = parser.parse_args()
     try:
-        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use)
+        count, totals = check(args.roots, args.require_all_entries, args.legacy_r2, args.legacy_r3_attack, args.expect_mode, args.r4_item_use, args.legacy_r4_item_use, args.r4_power)
     except (ValueError, KeyError, OSError) as error:
         parser.exit(1, f'shadow check failed: {error}\n')
     print(f'{count} shadow runs (legacy_r2={args.legacy_r2}): {totals}; zero mismatches')

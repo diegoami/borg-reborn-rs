@@ -1,12 +1,12 @@
 {
   "schema": "borg-reborn-rs/r434-boundary-preparation@1",
-  "status": "design only; P4 acceptance/promotion and separate carry required before full implementation",
-  "receiving_commit": "ba460186678ee07f6a3aad7053e27cf1e5b2c2b9",
-  "runtime_input_sha256": "95fb364b150ad87a8330b45441d08f252096bedc0c766754e5eb3608b3e30293",
+  "status": "implementation active after accepted P4 carry; runtime validation pending",
+  "receiving_commit": "99fa7cc5dafd301a6d74c2f5d18817c2a1998945",
+  "runtime_input_sha256": "fd81074d1976f052ddc228a851e5ff3e793b321eac879179d240cf0a580b3fd6",
   "p4_implementation_commit_not_consumed": "105f79479df4631d7219eaa2d77c96a76e892238",
   "p4_promotion_pr": 477,
   "source_files_sha256": {
-    "borg-core/src/borg_power.rs": "27cda0e5464dcdca6be744cc6bcb252fb7c1228dc3afb8d4317c6687acce4747",
+    "borg-core/src/borg_power.rs": "8a3b42d7cc902b878e84fc8fd6fba5aa7d3982b0c2714cbc73531e7e45332e70",
     "borg-core/src/borg_prepared.rs": "eacf4b33dc35b64548357dc2ed1ec7479143bb75baf4add2fede888c4562f4aa",
     "borg-core/src/borg_formulas.rs": "7d8a3b309315f6b7a882a761a0ae3df1a5e4d2fecbbeaff8f3d178c34500c971",
     "borg-core/src/borg_item.rs": "e099e6cb5e4f2767b46b0b59cbc343c6d87ab951cccd0bf7c6838a13f2803977",
@@ -215,7 +215,7 @@
     "spell_chance",
     "z_info"
   ],
-  "limits": "Lexical references include comments/cfg arms. Names are not semantic coverage. All hashes and API/trait mapping must be refreshed after the accepted carry.",
+  "limits": "Hashes describe exact receiving source99fa7cc5, before wrappers; lexical BI references are not semantic coverage.",
   "proposed_entries_not_registered": [
     {
       "request": "ReadDecision::PowerEquipment",
@@ -253,11 +253,14 @@
     "review_url": "https://github.com/diegoami/borg-reborn-rs/pull/477#pullrequestreview-5935377145",
     "reviewed_head_not_consumed": "105f79479df4631d7219eaa2d77c96a76e892238",
     "track_p_fix_issue": 481,
-    "fix_status_at_inspection": "in progress; no R carry authorized",
+    "fix_status_at_inspection": "fixed, owner accepted/promoted, separate carry529 merged",
     "required_corrections": [
       "Bound sell_mapping_rod_reserve_count to255 for its u8 comparison; reject256/300 before play",
       "Rename three new curing parameters to match actual CCW/Healing/cure-poison guards, synchronizing call sites, registry descriptions, JSON and contract without moving old IDs/defaults"
     ],
-    "carry_gate": "Corrected track-p integration, new exact #477 review pin, owner acceptance/promotion, separate R carry, then refresh this inventory"
-  }
+    "carry_gate": "satisfied by accepted P4 promotion and reviewed R carry529"
+  },
+  "inventory_kind": "receiving carry source before R434 wrappers; original pre-carry design retained in Markdown",
+  "p4_promotion_merge": "435b07e7583581e91993bafda425d18378c91d5b",
+  "p4_carry_pr": 529
 }
