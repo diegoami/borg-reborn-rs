@@ -2538,7 +2538,10 @@ fn stand_inputs(scan_scary: bool, scan_pursuer: bool, door: bool) -> (bool, bool
 }
 
 /// borg-reborn-rs (#530): stand when there is no real escape: no easy
-/// escape and a pursuer the Borg cannot outpace.
+/// escape and a pursuer the Borg cannot outpace. A pursuer is a scary (or
+/// calmed, #539) monster that is awake and at least as fast as the
+/// character: it can catch a fleeing Borg, so with one the Borg stands and
+/// fights; with none, walking away is a real escape (review of #569).
 fn stand_decision(escape: bool, pursuer: bool) -> bool {
     !escape && pursuer
 }
@@ -2814,6 +2817,46 @@ pub(crate) fn scary_calmed(injury: i16, afraid: bool) -> bool {
 
 fn calmed(injury: i32, afraid: bool, hurt_percent: i32, afraid_counts: bool) -> bool {
     (hurt_percent > 0 && injury >= hurt_percent) || (afraid_counts && afraid)
+}
+
+/// borg-reborn-rs (#539, review of #569): one monster's scare in the scan
+/// of `borg_near_monster_type`. `scary`: it makes the level scary.
+/// `calmed_scare`: it is calmed but would have been a named-list or
+/// damage-rule scare (it can still pursue).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Scare {
+    pub(crate) scary: bool,
+    pub(crate) calmed_scare: bool,
+}
+
+/// borg-reborn-rs (#539, review of #569): the scan's rule, explicit.
+/// `named`: the named list says scary; `resist`: a resist-based scare;
+/// `calmed`: hurt or afraid (`scary_calmed`); `damage(note)`: the damage
+/// rule, writing its note when `note`. A calmed monster is no named-list or
+/// damage-rule scare; a resist-based scare always counts. The damage rule
+/// is asked only when the monster is not already scary, so with `calmed`
+/// false the calls (and notes) are C's: called unless named or resist.
+pub(crate) fn classify_scare(named: bool, resist: bool, calmed: bool, damage: impl FnOnce(bool) -> bool) -> Scare {
+    let mut scare = Scare { scary: (named && !calmed) || resist, calmed_scare: calmed && named };
+    if !scare.scary && damage(!calmed) {
+        if calmed {
+            scare.calmed_scare = true;
+        } else {
+            scare.scary = true;
+        }
+    }
+    scare
+}
+
+/// borg-reborn-rs (#530, #539): what one monster adds in stand mode:
+/// (makes the level scary, is a pursuer). A monster that never moves is
+/// neither: it cannot follow. A calmed one is only a pursuer, when it is
+/// awake and at least as fast as the character.
+pub(crate) fn stand_contribution(scare: Scare, never_move: bool, awake_and_fast: bool) -> (bool, bool) {
+    if never_move {
+        return (false, false);
+    }
+    (scare.scary, awake_and_fast && (scare.scary || scare.calmed_scare))
 }
 
 /// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
@@ -3393,6 +3436,69 @@ mod scary_stand_tests {
         assert!(goal.leaving, "the other caution's leave survives");
         assert!(!goal.fleeing && !goal.fleeing_to_town, "the scare's goals are withdrawn");
         assert!(!unlatch_scare(&mut mon, &mut goal), "already clear");
+    }
+
+    /// Review of #569: off, the rule and the damage calls are C's.
+    #[test]
+    fn h_uncalmed_scares_and_damage_calls_are_cs() {
+        for named in [false, true] {
+            for resist in [false, true] {
+                for dmg in [false, true] {
+                    let mut asked = None;
+                    let scare = classify_scare(named, resist, false, |note| {
+                        asked = Some(note);
+                        dmg
+                    });
+                    assert_eq!(scare, Scare { scary: named || resist || dmg, calmed_scare: false });
+                    let expect = if named || resist { None } else { Some(true) };
+                    assert_eq!(asked, expect, "named {named} resist {resist}");
+                }
+            }
+        }
+    }
+
+    /// Review of #569: the four combinations, calmed.
+    #[test]
+    fn i_a_calmed_monster_keeps_only_its_resist_scare() {
+        let never = |_: bool| -> bool { panic!("the damage rule is not asked") };
+        // Damage rule only: not scary, a calmed scare, and no note.
+        let mut note = None;
+        let damage_only = classify_scare(false, false, true, |n| {
+            note = Some(n);
+            true
+        });
+        assert_eq!(damage_only, Scare { scary: false, calmed_scare: true });
+        assert_eq!(note, Some(false), "a calmed monster writes no damage note");
+        // Named list only.
+        assert_eq!(classify_scare(true, false, true, |_| false), Scare { scary: false, calmed_scare: true });
+        // Resist-based only: still scary.
+        assert_eq!(classify_scare(false, true, true, never), Scare { scary: true, calmed_scare: false });
+        // Named and resist-based: scary through the resist scare.
+        assert_eq!(classify_scare(true, true, true, never), Scare { scary: true, calmed_scare: true });
+        // Calmed and nothing scary about it: nothing.
+        assert_eq!(classify_scare(false, false, true, |_| false), Scare { scary: false, calmed_scare: false });
+    }
+
+    /// Review of #569: the same in stand mode, through to the decision.
+    #[test]
+    fn j_in_stand_mode_a_calmed_monster_is_only_a_pursuer() {
+        let calmed = Scare { scary: false, calmed_scare: true };
+        let resist = Scare { scary: true, calmed_scare: false };
+        assert_eq!(stand_contribution(calmed, false, true), (false, true));
+        assert_eq!(stand_contribution(calmed, false, false), (false, false));
+        assert_eq!(stand_contribution(resist, false, true), (true, true));
+        assert_eq!(stand_contribution(resist, false, false), (true, false));
+        assert_eq!(stand_contribution(calmed, true, true), (false, false), "never moves");
+        assert_eq!(stand_contribution(resist, true, true), (false, false), "never moves");
+        // A calmed monster alone makes no level scary.
+        let (scary, pursuer) = stand_contribution(calmed, false, true);
+        assert!(!stand_inputs(scary, pursuer, false).0);
+        // A sleeping scary monster plus a calmed fast one: the Borg stands
+        // (the two deaths of #539's first version fled instead).
+        let (s1, p1) = stand_contribution(Scare { scary: true, calmed_scare: false }, false, false);
+        let (s2, p2) = stand_contribution(calmed, false, true);
+        let (scary, pursuer) = stand_inputs(s1 || s2, p1 || p2, false);
+        assert!(scary && stand_decision(false, pursuer));
     }
 
     #[test]

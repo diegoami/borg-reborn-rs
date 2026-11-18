@@ -80,8 +80,8 @@ death is the new `borg.txt`'s, not this change's: it comes from
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2784` |
-| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2784` |
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2815` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2815` |
 
 ## Fear cures and the see-invisible clock (#516)
 
@@ -455,7 +455,7 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2419` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2447` (read in `borg_flow_kill.rs`) |
 
 ### The scary flag stops latching (#515)
 
@@ -479,7 +479,7 @@ stand mode on: the same 3 deaths either way.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2435` |
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2463` |
 
 ## The named scary list as data (#518)
 
