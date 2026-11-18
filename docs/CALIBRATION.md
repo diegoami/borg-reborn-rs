@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Breeders hunted by every class (#558)
 
-The registry now holds **2128** parameters (2126 on main before #558; two
+The registry now holds **2136** parameters (2134 on main before #558; two
 added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
 with 70 HP never killed a green worm mass it could solo. The breeder hunt
 (#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
@@ -25,6 +25,42 @@ shipped 1 and 50:
 |---|---|---|---|---|
 | `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`: no rest while the hunt applies and HP is at least this percent of max HP; breeders multiply while the Borg rests) |
 | `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`: a breeder the Borg may hunt is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630) |
+
+## Fear cures and the see-invisible clock (#516)
+
+The registry now holds **2134** parameters. Owner, 2026-11-17 (purchase audit
+of #513). On 18 classes-18 starts on main `aa9ebf49`:
+- **Boldness:** 35 bought, 7 drunk. The planner values a Potion of
+  Boldness as a fear cure on the same diminishing curve as the confusion
+  and blindness cures. With `town_fear_cure_count` > 0 and the character
+  not afraid, fear cures are valued linearly up to that many units (one per
+  potion while not afraid) and not beyond. Afraid, the cure demand is as
+  before. The cap does not make a cure cheaper: with the cap at 2, one
+  potion is worth half the support weight and two all of it, far more than
+  on the curve (about 495 each), and a third is worth nothing.
+- **Detect Invisible:** 187 reads, 57 in town, 171 with no unseen monster
+  on the level. After every rest `borg_recover` (C's `borg-recover.c:385`,
+  "reset the inviso clock to avoid loops") stamps `need_see_invis` with the
+  current time, which `borg_defend_aux_inviso` reads as "hit by an unseen
+  monster recently", so every rest armed the defence. With
+  `recover_rest_arms_see_invis = 0` a rest leaves the clock alone; only an
+  unseen attack (`borg_locate_kill`) arms it. The same clock has two other readers,
+  which read it the other way round: the Light Beam defence
+  (`borg_defend_aux_lbeam`, skipped while the stamp is recent) and the
+  removal of regional fear when a monster appears (`borg_flow_kill`, kept
+  while recent). At 0, both can now act after a rest where C did not.
+
+Compiled defaults are C's (0 and 1); `harness/borg.txt` ships 2 and 0. On
+the same 18 starts: Detect Invisible read 95 times (0 in town) and bought
+81 (1,245 gold against 1,830); Boldness bought 8 (64 gold against 280) and
+drunk 10; no deaths in either; summed level 107 against 95, depth 43
+against 38 (18 games: direction only).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
+| `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
+
 
 ## A living monster keeps some hit points (#546)
 
@@ -271,6 +307,7 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:608` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 
 ## Breeders and named scary monsters (#503)
 
@@ -314,6 +351,11 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2626` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
 | `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:2626` (#549: the danger here above which the stair scum stops) |
+| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2655` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
+| `caution_flee_recall` | 1 (shipped 0) | flag | 0–1 | `borg_caution.rs:2303` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
+| `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2303` |
+| `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2303` |
+| `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2303` |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2272` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)
