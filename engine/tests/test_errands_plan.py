@@ -181,7 +181,7 @@ class ErrandsPlanTest(unittest.TestCase):
         plan=self.root/'plan.txt';plan.write_text(PLAN)
         for name,source,core,why in [('missing',self.root/'absent.txt','borg-rs','no such file'),
                                      ('empty','','borg-rs','no such file'),
-                                     ('core',plan,None,'needs BORG_CORE=borg-rs')]:
+                                     ('core',plan,'reborn','needs the borg-rs core')]:
             r,out=self.run_measured(name,source,core)
             self.assertEqual(r.returncode,2,(name,r.stderr))
             self.assertIn(why,r.stderr)
