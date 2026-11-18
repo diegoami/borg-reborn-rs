@@ -26,7 +26,7 @@ connected stairs (8 times from the owner's save on main).
   left in #557.
 - `caution_rising_explore_ticks = 300` is now written out in
   `harness/borg.txt` (its compiled default, owner) so a zoo arm can vary it.
-- `caution_flee_recall` (1 = C): 0 stops a flight from reading Word of
+- `caution_flee_recall` (compiled 1 = C; **0 in `harness/borg.txt`**, owner 2026-11-18): 0 stops a flight from reading Word of
   Recall (`borg_caution.rs`, "Fleeing the level (recall)") unless the level
   is swamped by breeders (`caution_flee_recall_breeders`, 5 known) or the
   Borg is chased (`caution_flee_recall_chasers`, 3 awake within
@@ -43,7 +43,7 @@ connected stairs (8 times from the owner's save on main).
   (twitchy)" (`borg_think_dungeon.rs`), `borg_leave_level`'s trips (rising
   from DL5+, restock, no stairs after 1000 turns, into the dungeon) and the
   low-light exit (`borg_think_dungeon_light`).
-- Off: smoke 3/3 identical; the six borg-play deaths replay their zoo keys.
+- The reserve and the hold off, the Recall gate on: smoke 3/3 identical (its games never flee with Recall). With the gate at 1, the six borg-play deaths replay their zoo keys.
 
 ## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
 
