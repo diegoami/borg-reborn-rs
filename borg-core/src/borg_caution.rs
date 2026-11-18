@@ -21,7 +21,7 @@ use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
-    borg_caution_phase, borg_escape, borg_freedom, borg_recall, borg_surrounded,
+    borg_escape, borg_freedom, borg_recall, borg_surrounded,
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
@@ -3225,14 +3225,22 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if borg_caution_phase(
+    // borg-reborn-rs (#584): through the one Phase Door decision.
+    if crate::borg_escape::phase_door(
         st,
-        p(Param::caution_recall_phase_tolerance),
-        p(Param::caution_recall_phase_horizon),
-    ) && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-        || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_recall_phase_fail))
-        || borg_spell_fail(st, PORTAL, p(Param::caution_recall_portal_fail))
-        || borg_activate_item(st, st.act.tele_phase))
+        crate::borg_escape::PhaseSite::RecallWait,
+        crate::borg_escape::PhaseCheck::Landing {
+            tolerance: p(Param::caution_recall_phase_tolerance),
+            horizon: p(Param::caution_recall_phase_horizon),
+        },
+        None,
+        |st| {
+            borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_recall_phase_fail))
+                || borg_spell_fail(st, PORTAL, p(Param::caution_recall_portal_fail))
+                || borg_activate_item(st, st.act.tele_phase)
+        },
+    )
     {
         borg_note(st, "# Buying time waiting for Recall.(2)");
         return true;

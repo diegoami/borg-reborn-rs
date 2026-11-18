@@ -519,12 +519,13 @@ borg_param_recover_rest_arms_see_invis = 0
 
 borg_param_escape_phase_adjacent_only = 1
 
-# Phase Door as an escape (#584): when the danger is above avoidance x
-# ordinary_danger_tenths / 10 with no unique near (unique_danger_tenths with
-# at least unique_min_count uniques near), the landing has at most
-# tolerance scary grids looking horizon turns ahead, and at least
-# antisummon_delay turns after an anti-summon. Lower danger tenths phase
-# sooner; a higher tolerance accepts riskier landings.
+# Phase Door at escape level 3.1 only (#584): when the danger is above
+# avoidance x ordinary_danger_tenths / 10 with no unique near
+# (unique_danger_tenths with at least unique_min_count uniques near), the
+# landing has at most tolerance scary grids of 100 looking horizon turns
+# ahead, and at least antisummon_delay turns after an anti-summon corridor.
+# These six gate 1 of the 16 Phase Door sites (3 of 171 Phase Doors in 18
+# local games); docs/PHASE-DOOR.md lists every site and its settings.
 # Change together: these settings form one set.
 # Impact (games of 6 that play differently with the value changed to):
 # escape_phase_ordinary_danger_tenths 20: 0;
