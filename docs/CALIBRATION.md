@@ -375,7 +375,31 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2379` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2419` (read in `borg_flow_kill.rs`) |
+
+### The scary flag stops latching (#515)
+
+With `caution_scary_stand = 1`, a scan that finds no scary monster left the
+flag as it was, so a level stayed scary until a new level even after its
+scary monsters were dead or forgotten. With `caution_scary_latch = 0`,
+`apply_scary_stand` then clears the flag and withdraws only the goals the
+scare set (`unlatch_scare`), with the note
+`# Scary guy gone: the level is no longer scary.` Door scares stay latched.
+The unlatch also ends a stand, so the next stand prints its note again.
+"Gone" includes forgotten: a monster not seen for 2000 game turns leaves the
+known monsters (`expire_kills`, `borg_update.rs:1563`), so with latch 0
+walking away from a scary monster ends its scare too, not only killing it.
+Read an arm's results with that in mind (review of #562).
+
+Compiled and shipped 1 (the latch), for a zoo pilot. Evidence (a lead):
+from the turn-88,147 save of `priest-1055640847`, 5 seeds to 120,000
+turns: latch on, 2 deaths to the worm mass and 1 of 5 in town by 120,000;
+latch off, 5 alive and 2 in town. The six borg-play deaths from birth with
+stand mode on: the same 3 deaths either way.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2435` |
 
 ## The named scary list as data (#518)
 

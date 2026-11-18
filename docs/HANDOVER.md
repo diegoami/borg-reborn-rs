@@ -2,6 +2,36 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
+
+Owner, from priest-1055640847's walk home (#557): "maybe the issue is that
+scary should go away". With #530's stand mode (shipped), the level's scary
+flag is decided after each monster scan, but a scan that finds nothing scary
+returned without clearing it: a level stayed scary until a new level, and the
+Borg kept fleeing. #515's parked branch (`e5fddf0d`) changed the pre-#530
+path only, which the stand mode no longer uses.
+
+- `caution_scary_latch` (1 compiled and in `harness/borg.txt`, the latch): 0
+  clears the flag when the scan finds no scary monster and withdraws only the
+  goals the scare set. Door scares stay latched.
+- From the turn-88,147 save, 5 seeds to 120,000 turns: latch on, seeds 11
+  and 22 die to the worm mass (91,850 and 91,145), 1 of 5 in town; latch off,
+  5 of 5 alive, 2 in town (113,332 and 95,336). With #559's descent hold on
+  as well, 2 deaths (poison, a soldier): the hold hurts.
+- The six borg-play deaths from birth (their zoo arm has stand mode off, so
+  latch 0 alone plays identical keys): with `caution_scary_stand = 1`, latch
+  on and off give the same 3 deaths and 3 survivors at 200,000; the latch
+  clears 0-8 times per game; ranger-1355387156 ends CL7 against CL10.
+- Latch 1: smoke 3/3 identical; the six deaths replay their zoo keys.
+- Not run: the 18 classes-18 starts.
+- Review of #562: the unlatch now also ends the stand (`mon.scary_stand`),
+  so the next stand prints its note. It resets the stand even when the
+  last think stood and had already cleared the flag, a case the review's
+  suggested fix missed. Only the note changes, not the keys.
+
+Left: a zoo arm against the control. Seeds 44 and 55 still stay on DL2:
+exploring for the up staircase (#557).
+
 ## 2026-11-18: Boldness capped, rests no longer arm Detect Invisible (#516)
 
 - **Boldness:** `town_fear_cure_count` (compiled 0, shipped 2). Not afraid,
