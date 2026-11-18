@@ -1,0 +1,26 @@
+name: apt-install
+description: >-
+  Install the Debian packages the runner image lacks (#585). apt-get update
+  runs only when installing without it fails: a slow mirror once made
+  update and install take 535 s in one job.
+inputs:
+  packages:
+    description: Space-separated package names.
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        missing=""
+        for p in $PACKAGES; do
+          dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q 'ok installed' || missing="$missing $p"
+        done
+        echo "apt-install: missing:${missing:- none}"
+        [ -z "$missing" ] && exit 0
+        # Package triggers rebuild the man-db index, which can take minutes.
+        sudo rm -f /var/lib/man-db/auto-update
+        sudo apt-get install -y -qq --no-install-recommends $missing \
+          || { sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends $missing; }
