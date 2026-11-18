@@ -42,7 +42,7 @@ against 38 (18 games: direction only).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:638` |
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
 
 ## A living monster keeps some hit points (#546)
