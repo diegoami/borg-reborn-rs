@@ -29,11 +29,21 @@ class ClassFilesTest(unittest.TestCase):
         # #520's second half: the core's borg_* settings (BORG_SETTINGS).
         self.assertEqual(bcf.class_lines('priest', 'borg_town_w_light = 150\nborg_worships_damage = TRUE\n'),
                          ['borg_town_w_light@priest = 150', 'borg_worships_damage@priest = TRUE'])
+        self.assertEqual(bcf.class_lines('mage', 'borg_town_w_light = -3\nborg_worships_damage = no\n'),
+                         ['borg_town_w_light@mage = -3', 'borg_worships_damage@mage = no'])
+
+    def test_the_table_gives_every_setting_a_kind(self):
+        kinds = bcf.core_settings()
+        self.assertEqual(kinds['borg_town_w_light'], 'i')
+        self.assertEqual(kinds['borg_worships_damage'], 'b')
+        self.assertEqual(len(kinds), 72)
 
     def test_bad_lines_are_refused(self):
         for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1',
                     'borg_reborn_core = borg-rs', 'borg_plan = errands_plan.txt', 'borg_scary_list = none',
-                    'borg_town_w_light@mage = 1', 'town_w_light = 1', 'borg_town_w_ligth = 1']:
+                    'borg_town_w_light@mage = 1', 'town_w_light = 1', 'borg_town_w_ligth = 1',
+                    'borg_town_w_light = 5x', 'borg_town_w_light = TRUE', 'borg_worships_damage = off',
+                    'borg_worships_damage = 2', 'borg_worships_damage = -', 'borg_town_w_light = --']:
             with self.assertRaises(SystemExit):
                 bcf.class_lines('mage', bad)
 

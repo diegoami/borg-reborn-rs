@@ -24,8 +24,16 @@ before: folded into the one `borg.txt`, its line applied to every class.
   class masks can conflict). A value the checks would change (a clamp, such as
   `borg_enchant_limit` 8..15) or reject (`borg_town_plan` 7, a buying-strategy
   mask) refuses the line and stops the Borg (`init_failure`), as an invalid
-  common line does. An error of the common values themselves is not blamed on
-  a class line.
+  common line does. A class value is judged on its own (re-review of #598):
+  against the common values with its setting put back to the compiled
+  default, so an error the common values have elsewhere is not blamed on it,
+  and the same error in that setting's common value does not hide its own.
+  If a class's lines fail together, all of that class's lines are dropped.
+- **Two kinds of refusal:** a line with a bad *value* (or unknown name or
+  class) is dropped with a warning and the common value is used; a line whose
+  value the *checks* reject also stops the Borg. `scripts/borg-class-files.py`
+  checks values the same strict way (by the setting's kind in
+  `BORG_SETTINGS`), so a bad value is caught in the class file.
 - **A runtime value is reset by a class line:** a setting with a class line
   gets its class or common value again at a reincarnation. Today the only
   setting written at runtime is `borg_money_scum_amount`; without a class line

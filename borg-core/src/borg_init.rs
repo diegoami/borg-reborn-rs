@@ -610,23 +610,23 @@ pub(crate) fn check_settings(cfg: &mut [i32]) -> Vec<&'static str> {
 /// the common values (already checked). A line whose value the checks would
 /// change (a clamp) or reject is refused with a warning, and the Borg does
 /// not start (`init_failure`). Then each class's accepted lines are checked
-/// together (two lines can conflict, as the buying strategies' class masks).
-/// Returns whether a warning was given.
+/// together (two lines can conflict, as the buying strategies' class masks);
+/// if they fail, that class's lines are all dropped, so it falls back to the
+/// common values. Returns whether a warning was given.
+///
+/// A class value is judged on its own (re-review of #598): the common values
+/// with the class line's settings put back to their compiled defaults are the
+/// base, so an error the common values have elsewhere is not blamed on the
+/// line, and an error of the same setting's common value does not hide the
+/// line's own (`judged`).
 fn check_class_settings<E: TxtEnv>(env: &mut E) -> bool {
     let lines = std::mem::take(&mut env.st().core.cfg_class);
     let common = env.st().core.cfg.clone();
-    // The common values' own errors were reported already: a class line is
-    // judged only on what it adds.
-    let base = check_settings(&mut common.clone());
     let mut kept = Vec::with_capacity(lines.len());
     let mut warning = false;
     for &(i, c, v) in &lines {
-        let mut cfg = common.clone();
-        cfg[i] = v;
-        let before = cfg.clone();
-        let mut errors = check_settings(&mut cfg);
-        errors.retain(|e| !base.contains(e));
-        if errors.is_empty() && cfg == before {
+        let (changed, errors) = judged(&common, &[(i, v)]);
+        if errors.is_empty() && !changed {
             kept.push((i, c, v));
             continue;
         }
@@ -637,25 +637,46 @@ fn check_class_settings<E: TxtEnv>(env: &mut E) -> bool {
         env.st().init.init_failure = true;
         warning = true;
     }
+    let mut dropped = Vec::new();
     for c in 0..crate::params::CLASSES.len() {
-        if !kept.iter().any(|&(_, k, _)| k == c) {
+        let mine: Vec<(usize, i32)> = kept.iter().filter(|&&(_, k, _)| k == c).map(|&(i, _, v)| (i, v)).collect();
+        if mine.is_empty() {
             continue;
         }
-        let mut cfg = common.clone();
-        for &(i, k, v) in &kept {
-            if k == c {
-                cfg[i] = v;
-            }
-        }
-        for error in check_settings(&mut cfg).into_iter().filter(|e| !base.contains(e)) {
-            let class = crate::params::CLASSES[c];
-            env.warning(&format!("borg.txt: the {class} class lines together: {error}"));
+        let (_, errors) = judged(&common, &mine);
+        let class = crate::params::CLASSES[c];
+        for error in &errors {
+            env.warning(&format!("borg.txt: the {class} class lines together: {error}; all refused"));
             env.st().init.init_failure = true;
             warning = true;
         }
+        if !errors.is_empty() {
+            dropped.push(c);
+        }
     }
+    kept.retain(|&(_, c, _)| !dropped.contains(&c));
     env.st().core.cfg_class = kept;
     warning
+}
+
+/// `check_settings` on `common` with the class `values` in place, judged
+/// against the base of `check_class_settings`: the same common values with
+/// those settings at their compiled defaults. Returns whether the checks
+/// changed a value (a clamp) and the errors the base does not have.
+fn judged(common: &[i32], values: &[(usize, i32)]) -> (bool, Vec<&'static str>) {
+    let mut base = common.to_vec();
+    for &(i, _) in values {
+        base[i] = BORG_SETTINGS[i].default_value;
+    }
+    let base_errors = check_settings(&mut base.clone());
+    let mut cfg = base;
+    for &(i, v) in values {
+        cfg[i] = v;
+    }
+    let before = cfg.clone();
+    let mut errors = check_settings(&mut cfg);
+    errors.retain(|e| !base_errors.contains(e));
+    (cfg != before, errors)
 }
 
 /// Initialize borg.txt (`borg_init_txt_file`). Returns whether a warning
@@ -1888,6 +1909,20 @@ borg_no_such_setting@mage = 1\n",
         let env = run(b"borg_buy_strategy_current_classes@mage = 2\nborg_buy_strategy_reserve410_classes@mage = 2\n");
         assert!(env.st.init.init_failure);
         assert!(env.out.iter().any(|o| o.contains("the mage class lines together")), "{:?}", env.out);
+        assert!(env.st.core.cfg_class.is_empty(), "the conflicting class's lines are dropped");
+        // Re-review of #598: an invalid class value is refused even when the
+        // same setting's common value has the same error.
+        let env = run(b"borg_town_plan = 7\nborg_town_plan@mage = 9\n");
+        assert!(env.st.core.cfg_class.is_empty(), "{:?}", env.out);
+        assert!(env.st.init.init_failure);
+        let env = run(b"borg_trip_policy = 5\nborg_trip_policy@mage = 5\n");
+        assert!(env.st.core.cfg_class.is_empty(), "{:?}", env.out);
+        let env = run(b"borg_buy_strategy_current_classes = 4\nborg_buy_strategy_reserve410_classes = 4\n\
+borg_buy_strategy_current_classes@mage = 4\nborg_buy_strategy_reserve410_classes@mage = 4\n");
+        assert!(env.st.core.cfg_class.is_empty(), "{:?}", env.out);
+        // ... and a good class value of that setting is still kept.
+        let env = run(b"borg_town_plan = 7\nborg_town_plan@mage = 1\n");
+        assert_eq!(env.st.core.cfg_class.len(), 1, "{:?}", env.out);
         // A common line's own error is not blamed on a good class line.
         let env = run(b"borg_town_plan = 7\nborg_town_w_light@mage = 50\n");
         assert_eq!(env.st.core.cfg_class.len(), 1);

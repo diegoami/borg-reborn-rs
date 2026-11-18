@@ -40,9 +40,23 @@ SHELL_KEYS = re.compile(r'^borg_(reborn_[a-z0-9_]+|plan|scary_list|respawn_[a-z0
 
 
 def core_settings():
-    """The names of the core's borg.txt settings (`BORG_SETTINGS`, borg_init.rs)."""
+    """The core's borg.txt settings (`BORG_SETTINGS`, borg_init.rs), name -> kind
+    ('i' an integer, 'b' true/false). The table's rows read `    i(c"name", default),`
+    or `    b(...)`; update this pattern if the table's format changes (a name it
+    cannot find is refused, never folded)."""
     text = (ROOT / 'borg-core/src/borg_init.rs').read_text()
-    return set(re.findall(r'^    [ib]\(c"(borg_[a-z0-9_]+)"', text, re.M))
+    return {name: kind for kind, name in re.findall(r'^    ([ib])\(c"(borg_[a-z0-9_]+)"', text, re.M)}
+
+
+BOOL_WORDS = {'TRUE', 'FALSE', 'YES', 'NO', 'T', 'F', 'Y', 'N', '1', '0'}
+
+
+def value_ok(kind, value):
+    """The core's strict class-line value (`class_setting_line`): exactly an
+    integer for an int setting, one of the true/false words for a bool one."""
+    if kind == 'b':
+        return value.upper() in BOOL_WORDS
+    return re.fullmatch(r'-?[0-9]+', value) is not None and -2**31 <= int(value) < 2**31
 
 
 def legacy_name(name, cls):
@@ -67,12 +81,16 @@ def class_lines(cls, text):
             if not s or s.group(1).startswith('borg_param_'):
                 raise SystemExit(f'harness/borg_{cls}.txt:{n}: expected "borg_param_<name> = <integer>" '
                                  f'or "borg_<setting> = <value>", got {raw!r}')
-            if s.group(1) not in core_settings():
-                raise SystemExit(f'harness/borg_{cls}.txt:{n}: {s.group(1)} is no borg.txt setting of the core '
-                                 '(BORG_SETTINGS in borg-core/src/borg_init.rs)')
             if SHELL_KEYS.match(s.group(1)):
                 raise SystemExit(f'harness/borg_{cls}.txt:{n}: {s.group(1)} has no class value '
                                  '(the shell reads it from borg.txt only, or it picks the next character)')
+            kind = core_settings().get(s.group(1))
+            if kind is None:
+                raise SystemExit(f'harness/borg_{cls}.txt:{n}: {s.group(1)} is no borg.txt setting of the core '
+                                 '(BORG_SETTINGS in borg-core/src/borg_init.rs; a retired setting has no class value)')
+            if not value_ok(kind, s.group(2)):
+                want = 'TRUE/FALSE/YES/NO/T/F/Y/N/1/0' if kind == 'b' else 'an integer'
+                raise SystemExit(f'harness/borg_{cls}.txt:{n}: {s.group(1)} = {s.group(2)}: the value must be {want}')
             out.append(f'{s.group(1)}@{cls} = {s.group(2)}')
             continue
         name, value = m.groups()
