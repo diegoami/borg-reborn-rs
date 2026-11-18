@@ -169,8 +169,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2175` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2175` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2773` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2773` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -701,7 +701,7 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:1475` |
 | `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:1481` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1615` |
-| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1646` |
+| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1800` |
 | `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1662` |
 | `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1676` |
 | `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1677` |
