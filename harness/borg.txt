@@ -540,6 +540,18 @@ borg_param_town_digger_min_gold = 500
 
 borg_param_town_recall_reserve = 0
 
+# What a Word of Recall is worth to the town planner, in percent of the walk
+# it saves (100 = as computed). Shallow, that walk is worth little, so a
+# low-level Borg never buys one; higher values make it buy and keep one
+# (#557, owner 2026-11-18).
+
+borg_param_town_recall_value_percent = 100
+
+# A descent to this depth or deeper needs one Word of Recall carried (C:
+# from DL5). It only stops descents; it buys nothing (#557). 0 = never.
+
+borg_param_prepared_recall_depth = 5
+
 
 ### Fleeing ###
 

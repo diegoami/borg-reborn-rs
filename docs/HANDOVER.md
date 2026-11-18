@@ -2,6 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: when the Borg buys Word of Recall (#557)
+
+Owner: make the Recall rules adjustable, and value Recall more instead of a
+reserve. Two new settings, both neutral in `harness/borg.txt`:
+- `town_recall_value_percent` (100): the town planner values a scroll at
+  this percent of the walk it saves (capability and need models).
+- `prepared_recall_depth` (5 = C): a descent to this depth or deeper needs
+  one Recall carried. It only stops descents.
+- Already a setting, and found inert for purchases under the shipped
+  planner: `power_inventory_clevel_threshold_3` (7), the old power scorer's
+  "Recall only above CL7".
+
+The six borg-play games from birth with the shipped `borg.txt`, 100,000
+turns (Recall bought in how many games): value 100% 0/6, 300% 1/6, 1000%
+4/6 (up to 3 scrolls); threshold 0: 0/6; recall depth 2: 1/6, and with
+1000% the same as 1000% alone. Defaults: smoke 3/3 identical.
+
 ## 2026-11-18: no flight Recall on DL1 (#557)
 
 Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
