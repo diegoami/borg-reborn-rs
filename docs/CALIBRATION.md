@@ -339,7 +339,7 @@ death with the list, 4 without), 1.
 | `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2303` |
-| `caution_flee_recall_min_depth` | 0 (shipped 2) | dungeon level | 0–127 | `borg_caution.rs:2303` (#557: with `caution_flee_recall` 1, above this depth a flight's Recall needs the breeder or chaser exception; 2 = DL1) |
+| `caution_flee_recall_gate_below_depth` | 0 (shipped 2) | dungeon level | 0–127 | `borg_caution.rs:2303` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2272` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)

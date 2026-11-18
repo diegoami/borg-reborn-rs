@@ -559,12 +559,12 @@ borg_param_caution_flee_recall_breeders = 5
 borg_param_caution_flee_recall_chasers = 3
 borg_param_caution_flee_recall_chase_distance = 6
 
-# Above this depth a flight reads Word of Recall only with the exceptions
-# above (breeders, chasers), even with caution_flee_recall = 1: on DL1 the
-# stairs are a short walk, and the scroll is kept for the trip home. 0 = off
-# (#557, owner 2026-11-18).
+# A ceiling: at depths shallower than this (2 = DL1 only) a flight reads
+# Word of Recall only with the exceptions above (breeders, chasers), even
+# with caution_flee_recall = 1: on DL1 the stairs are a short walk, and the
+# scroll is kept for the trip home. 0 or 1 = off (#557, owner 2026-11-18).
 
-borg_param_caution_flee_recall_min_depth = 2
+borg_param_caution_flee_recall_gate_below_depth = 2
 
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # that has a ranged attack, not while the monster is still distant (#539).

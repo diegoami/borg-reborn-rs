@@ -5,7 +5,7 @@
 ## 2026-11-18: no flight Recall on DL1 (#557)
 
 Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
-(#564), `caution_flee_recall_min_depth` (compiled 0; **2 in
+(#564), `caution_flee_recall_gate_below_depth` (compiled 0; **2 in
 `harness/borg.txt`**) makes a flight above that depth read Word of Recall
 only with #559's exceptions (5 known breeders, or 3 awake monsters that can
 move within 6 grids). Recall there is no easy escape in the stand tests
