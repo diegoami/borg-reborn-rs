@@ -2520,6 +2520,24 @@ fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::Bor
     true
 }
 
+/// borg-reborn-rs (#597): the twitch's random step refuses lava without
+/// fire immunity (`caution_twitch_avoid_lava`; lava deals 100 + 1d100 fire
+/// damage per step, `player-util.c:918`).
+pub(crate) fn twitch_refuses(st: &BorgState, grid: &BorgGrid) -> bool {
+    p(Param::caution_twitch_avoid_lava) != 0 && lava_forbids_step(st, grid)
+}
+
+/// borg-reborn-rs (#597): with `caution_stair_parked_fallback`, a stair flow
+/// into which no staircase entered (`enqueued`), while a monster is marked
+/// on known ones (`parked`), takes those staircases anyway.
+pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
+    p(Param::caution_stair_parked_fallback) != 0 && only_parked(enqueued, parked)
+}
+
+fn only_parked(enqueued: usize, parked: usize) -> bool {
+    enqueued == 0 && parked > 0
+}
+
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
 /// the goals the scare owns and the stand (a new level, the jumpstarts).
 pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
@@ -4064,6 +4082,14 @@ mod recall_tests {
 #[cfg(test)]
 mod flee_known_down_tests {
     use super::*;
+
+    #[test]
+    fn parked_stairs_are_taken_only_when_no_staircase_entered_the_flow() {
+        assert!(only_parked(0, 1), "every known staircase parked");
+        assert!(!only_parked(1, 1), "a free staircase entered the flow");
+        assert!(only_parked(0, 2), "the free one was refused as icky: it does not count");
+        assert!(!only_parked(0, 0), "none known");
+    }
 
     /// #548: cornered means an adjacent moving monster, no escape item, and
     /// the danger here at or above the HP or surrounded.
