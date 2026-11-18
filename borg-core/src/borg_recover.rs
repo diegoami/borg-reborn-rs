@@ -414,7 +414,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt.
     let hunt_first = hunt_before_rest(
-        crate::borg_caution::breeder_hunt(st),
+        crate::borg_flow_kill::breeder_hunt_now(st),
         st.borg.tr(BI_CURHP),
         st.borg.tr(BI_MAXHP),
         param(Param::recover_breeder_hunt_hp_percent),
@@ -439,7 +439,9 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER;
-    if rest_hp && hunt_first {
+    // Noted once per stretch of skipped rests, not every think.
+    let noted = NOT_RESTING_NOTED.with(|n| n.replace(rest_hp && hunt_first));
+    if rest_hp && hunt_first && !noted {
         borg_note(st, "# Not resting: breeders to hunt.");
     }
     if rest_hp && !hunt_first {
@@ -490,6 +492,12 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+thread_local! {
+    /// borg-reborn-rs (#558): the last think skipped a rest for the hunt.
+    /// Only the note reads it.
+    static NOT_RESTING_NOTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 /// borg-reborn-rs (#558): skip resting to hunt breeders while `hunt` (the

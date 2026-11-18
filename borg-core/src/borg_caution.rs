@@ -2738,7 +2738,8 @@ pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bo
 
 /// borg-reborn-rs (#503, #558): the Borg hunts breeders while there are at
 /// most `caution_breeder_hunt_max_count` of them, instead of avoiding them
-/// below clevel 10 (`borg_flow_kill`). Every class hunts; the count has
+/// below clevel 10 (`borg_flow_kill`; the gate is here too, since #558's
+/// rest and acid-fear switches read it). Every class hunts; the count has
 /// class values (the class files), and 0 turns a class's hunt off. Being
 /// surrounded is left to
 /// `borg_flow_kill_corridor`, which already counts a breeder next to the
@@ -2751,6 +2752,7 @@ pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
 fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
     fight != 0
         && st.borg.tr(BI_CDEPTH) != 0
+        && st.borg.tr(BI_CLEVEL) < 10
         && st.borg.mon.breeders > 0
         && i32::from(st.borg.mon.breeders) <= max_count
 }
@@ -3538,6 +3540,9 @@ mod breeder_tests {
         assert!(!breeder_hunt_with(&cornered(), 0, 4), "switch off");
         assert!(!breeder_hunt_with(&cornered(), 1, 2), "too many breeders");
         assert!(!breeder_hunt_with(&cornered(), 1, 0), "count 0: no hunt");
+        let mut high = cornered();
+        high.borg.trait_[BI_CLEVEL as usize] = 10;
+        assert!(!breeder_hunt_with(&high, 1, 4), "CL10: no hunt");
         for class in 0..9 {
             let mut st = cornered();
             st.borg.trait_[BI_CLASS as usize] = class;

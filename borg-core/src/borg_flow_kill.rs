@@ -1774,6 +1774,20 @@ fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
     hunt && max_sp > 0 && cur_sp * 2 >= max_sp
 }
 
+/// borg-reborn-rs (#558): a Mage or Necromancer below the level at which
+/// `borg_flow_kill` lets it walk to a fight.
+fn low_level_caster(st: &BorgState) -> bool {
+    (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
+        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
+}
+
+/// borg-reborn-rs (#558): whether `borg_flow_kill` would hunt breeders now:
+/// `borg_caution::breeder_hunt`, and for a low-level caster its mana too.
+pub(crate) fn breeder_hunt_now(st: &BorgState) -> bool {
+    let hunt = crate::borg_caution::breeder_hunt(st);
+    if low_level_caster(st) { caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) } else { hunt }
+}
+
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let mut b_j: i32 = -1;
     let mut b_stair: i32 = -1;
@@ -1802,9 +1816,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // the mana to fight them with spells (borg_attack casts before any walk
     // brings it next to them).
     let mut breeders_only = false;
-    if (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
-    {
+    if low_level_caster(st) {
         if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
             return false;
         }

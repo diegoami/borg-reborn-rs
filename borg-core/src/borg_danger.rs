@@ -143,14 +143,6 @@ fn pfe_applies(st: &BorgState, kill: &BorgKill) -> bool {
     st.borg.temp.prot_from_evil && rf(kill, RF_EVIL) && st.borg.tr(BI_CLEVEL) >= r_ptr.level
 }
 
-/// Calculate base danger from a monster's physical attacks
-/// (`borg_danger_physical`).
-///
-/// We attempt to take account of various resistances, both in
-/// terms of actual damage, and special effects, as appropriate.
-///
-/// We reduce the danger from distant "sleeping" monsters.
-/// PFE reduces my fear of an area.
 /// borg-reborn-rs (#558): a breeder the Borg may hunt
 /// (`borg_caution::breeder_hunt`), with `danger_hunt_breeder_no_acid_fear` on.
 fn hunted_breeder(st: &BorgState, kill: &BorgKill) -> bool {
@@ -161,6 +153,14 @@ fn hunted_breeder_with(switch: i32, breeder: bool, hunt: bool) -> bool {
     switch != 0 && breeder && hunt
 }
 
+/// Calculate base danger from a monster's physical attacks
+/// (`borg_danger_physical`).
+///
+/// We attempt to take account of various resistances, both in
+/// terms of actual damage, and special effects, as appropriate.
+///
+/// We reduce the danger from distant "sleeping" monsters.
+/// PFE reduces my fear of an area.
 fn borg_danger_physical(
     st: &mut BorgState,
     kill: &BorgKill,
