@@ -776,6 +776,9 @@ extern "C" fn borg_leave_game(
 /// Prepare some stuff based on the player race and class
 /// (`borg_prepare_race_class_info`).
 pub fn borg_prepare_race_class_info(st: &mut BorgState) {
+    // borg-reborn-rs (#520): the class whose parameter values apply.
+    crate::params::set_class(engine::class_cidx() as i32);
+
     // Initialize the various spell arrays by book
     crate::borg_magic::borg_prepare_book_info(st);
 
@@ -793,6 +796,8 @@ pub fn borg_init(st: &mut BorgState) {
     // borg-reborn-rs (#305): opt-in separate plan file, validated before play.
     crate::errands_plan::initialize();
     crate::params::initialize();
+    // borg-reborn-rs (#518): a scary list is read and checked before play.
+    let _ = crate::scary_list::selected();
     // Verify system
     // Redraw everything
     engine::do_cmd_redraw(st);

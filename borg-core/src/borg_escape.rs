@@ -30,6 +30,7 @@ use crate::borg_item_use::{
 use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
 use crate::borg_projection::{borg_distance, borg_los, borg_target};
 use crate::borg_update::Detect;
+use crate::borg_cave_view::BORG_VIEW;
 use crate::engine;
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
@@ -438,10 +439,56 @@ fn count_scary(
     n
 }
 
+/// borg-reborn-rs (#539, owner): "do not phase door when a monster is still
+/// distant". With `escape_phase_adjacent_only`, a Phase Door is pointless
+/// unless a known awake monster is next to the Borg, or one in view can
+/// hurt it from where it is (spells, breath, missiles): phasing away from a
+/// monster that has yet to arrive only spends the scroll (Grip, speed +10,
+/// found the Priest 809881907 again within a turn).
+pub(crate) fn phase_is_pointless(st: &mut BorgState) -> bool {
+    if param(Param::escape_phase_adjacent_only) == 0 {
+        // #539: the ranged-attack rule stands on its own switch.
+        return crate::borg_caution::ranged_before_recall(st) && !adjacent_awake(st);
+    }
+    let mut monsters = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        monsters.push((kill.awake, engine::distance(st.borg.c, kill.pos), kill.ranged_attack != 0, st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0));
+    }
+    // #539 (owner): with no stairs, the best ranged attack comes before a
+    // Phase Door too, unless a monster is already next to the Borg.
+    let adjacent = monsters.iter().any(|&(awake, d, _, _)| awake && d <= 1);
+    !phase_helps(&monsters) || (!adjacent && crate::borg_caution::ranged_before_recall(st))
+}
+
+/// An awake known monster next to the Borg.
+fn adjacent_awake(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+    })
+}
+
+/// The known monsters as (awake, distance, ranged attack, in view): a phase
+/// helps against an awake adjacent monster or an awake one in view with a
+/// ranged attack.
+fn phase_helps(monsters: &[(bool, i32, bool, bool)]) -> bool {
+    monsters.iter().any(|&(awake, d, ranged, view)| awake && (d <= 1 || (ranged && view)))
+}
+
 /// Help determine if PHASE_DOOR seems like a good idea
 pub fn borg_caution_phase(st: &mut BorgState, emergency: i32, turns: i32) -> bool {
     // must have the ability
     if st.borg.tr(BI_APHASE) == 0 {
+        return false;
+    }
+
+    // borg-reborn-rs (#539): not while the monster is still distant
+    if phase_is_pointless(st) {
+        borg_note(st, "# No Phase: no monster next to me");
         return false;
     }
 
@@ -798,6 +845,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         // emergency phase activation no concern for safety of landing zone.
         if st.borg.tr(BI_CDEPTH) != 0
             && (st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_critical_phase_hp_divisor) || b_q > avoid(st, param(Param::escape_emergency_danger_tenths), rb))
+            && !phase_is_pointless(st)
             && (borg_activate_item(st, st.act.tele_phase)
                 || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
         {
@@ -812,6 +860,7 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
         if st.borg.tr(BI_CDEPTH) != 0
             && st.borg.tr(BI_CLEVEL) < param(Param::escape_last_ditch_phase_max_level)
             && st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) / param(Param::escape_last_ditch_phase_hp_divisor)
+            && !phase_is_pointless(st)
             && (borg_spell_fail(st, PHASE_DOOR, param(Param::escape_last_ditch_phase_fail)) || borg_spell(st, PORTAL))
         {
             // Flee!
@@ -1251,4 +1300,22 @@ pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     }
 
     false
+}
+
+#[cfg(test)]
+mod phase_tests {
+    use super::*;
+
+    /// #539: a phase helps only against an awake monster next to the Borg,
+    /// or an awake one in view that hurts from range.
+    #[test]
+    fn a_phase_needs_a_monster_that_can_hurt_now() {
+        assert!(!phase_helps(&[]), "no monster");
+        assert!(!phase_helps(&[(true, 4, false, true)]), "Grip four grids away");
+        assert!(phase_helps(&[(true, 1, false, true)]), "adjacent");
+        assert!(!phase_helps(&[(false, 1, false, true)]), "adjacent but asleep");
+        assert!(phase_helps(&[(true, 6, true, true)]), "a caster in view");
+        assert!(!phase_helps(&[(true, 6, true, false)]), "a caster out of view");
+        assert!(phase_helps(&[(true, 6, false, true), (true, 1, false, true)]), "one adjacent among others");
+    }
 }

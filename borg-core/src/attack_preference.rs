@@ -236,64 +236,21 @@ pub(crate) fn class_name(class: i32) -> Option<&'static str> {
     }
 }
 
+/// The family's preference parameter. borg-reborn-rs (#520): one per family;
+/// its value is the class's own (`attack_preference_<family>_permille@<class>`
+/// or the class file) through `params::value`, so the class only gates which
+/// classes have preferences at all.
 pub(crate) fn parameter(class: i32, family: Family) -> Option<Param> {
-    match (class, family) {
-        (0, Family::Melee) => Some(Param::attack_preference_warrior_melee_permille),
-        (0, Family::Projectile) => Some(Param::attack_preference_warrior_projectile_permille),
-        (0, Family::Thrown) => Some(Param::attack_preference_warrior_thrown_permille),
-        (0, Family::Spell) => Some(Param::attack_preference_warrior_spell_permille),
-        (0, Family::Device) => Some(Param::attack_preference_warrior_device_permille),
-        (0, Family::Activation) => Some(Param::attack_preference_warrior_activation_permille),
-        (1, Family::Melee) => Some(Param::attack_preference_mage_melee_permille),
-        (1, Family::Projectile) => Some(Param::attack_preference_mage_projectile_permille),
-        (1, Family::Thrown) => Some(Param::attack_preference_mage_thrown_permille),
-        (1, Family::Spell) => Some(Param::attack_preference_mage_spell_permille),
-        (1, Family::Device) => Some(Param::attack_preference_mage_device_permille),
-        (1, Family::Activation) => Some(Param::attack_preference_mage_activation_permille),
-        (2, Family::Melee) => Some(Param::attack_preference_druid_melee_permille),
-        (2, Family::Projectile) => Some(Param::attack_preference_druid_projectile_permille),
-        (2, Family::Thrown) => Some(Param::attack_preference_druid_thrown_permille),
-        (2, Family::Spell) => Some(Param::attack_preference_druid_spell_permille),
-        (2, Family::Device) => Some(Param::attack_preference_druid_device_permille),
-        (2, Family::Activation) => Some(Param::attack_preference_druid_activation_permille),
-        (3, Family::Melee) => Some(Param::attack_preference_priest_melee_permille),
-        (3, Family::Projectile) => Some(Param::attack_preference_priest_projectile_permille),
-        (3, Family::Thrown) => Some(Param::attack_preference_priest_thrown_permille),
-        (3, Family::Spell) => Some(Param::attack_preference_priest_spell_permille),
-        (3, Family::Device) => Some(Param::attack_preference_priest_device_permille),
-        (3, Family::Activation) => Some(Param::attack_preference_priest_activation_permille),
-        (4, Family::Melee) => Some(Param::attack_preference_necromancer_melee_permille),
-        (4, Family::Projectile) => Some(Param::attack_preference_necromancer_projectile_permille),
-        (4, Family::Thrown) => Some(Param::attack_preference_necromancer_thrown_permille),
-        (4, Family::Spell) => Some(Param::attack_preference_necromancer_spell_permille),
-        (4, Family::Device) => Some(Param::attack_preference_necromancer_device_permille),
-        (4, Family::Activation) => Some(Param::attack_preference_necromancer_activation_permille),
-        (5, Family::Melee) => Some(Param::attack_preference_paladin_melee_permille),
-        (5, Family::Projectile) => Some(Param::attack_preference_paladin_projectile_permille),
-        (5, Family::Thrown) => Some(Param::attack_preference_paladin_thrown_permille),
-        (5, Family::Spell) => Some(Param::attack_preference_paladin_spell_permille),
-        (5, Family::Device) => Some(Param::attack_preference_paladin_device_permille),
-        (5, Family::Activation) => Some(Param::attack_preference_paladin_activation_permille),
-        (6, Family::Melee) => Some(Param::attack_preference_rogue_melee_permille),
-        (6, Family::Projectile) => Some(Param::attack_preference_rogue_projectile_permille),
-        (6, Family::Thrown) => Some(Param::attack_preference_rogue_thrown_permille),
-        (6, Family::Spell) => Some(Param::attack_preference_rogue_spell_permille),
-        (6, Family::Device) => Some(Param::attack_preference_rogue_device_permille),
-        (6, Family::Activation) => Some(Param::attack_preference_rogue_activation_permille),
-        (7, Family::Melee) => Some(Param::attack_preference_ranger_melee_permille),
-        (7, Family::Projectile) => Some(Param::attack_preference_ranger_projectile_permille),
-        (7, Family::Thrown) => Some(Param::attack_preference_ranger_thrown_permille),
-        (7, Family::Spell) => Some(Param::attack_preference_ranger_spell_permille),
-        (7, Family::Device) => Some(Param::attack_preference_ranger_device_permille),
-        (7, Family::Activation) => Some(Param::attack_preference_ranger_activation_permille),
-        (8, Family::Melee) => Some(Param::attack_preference_blackguard_melee_permille),
-        (8, Family::Projectile) => Some(Param::attack_preference_blackguard_projectile_permille),
-        (8, Family::Thrown) => Some(Param::attack_preference_blackguard_thrown_permille),
-        (8, Family::Spell) => Some(Param::attack_preference_blackguard_spell_permille),
-        (8, Family::Device) => Some(Param::attack_preference_blackguard_device_permille),
-        (8, Family::Activation) => Some(Param::attack_preference_blackguard_activation_permille),
-        // Waiting has no preference; unknown classes remain neutral.
-        _ => None,
+    class_name(class)?;
+    match family {
+        Family::Melee => Some(Param::attack_preference_melee_permille),
+        Family::Projectile => Some(Param::attack_preference_projectile_permille),
+        Family::Thrown => Some(Param::attack_preference_thrown_permille),
+        Family::Spell => Some(Param::attack_preference_spell_permille),
+        Family::Device => Some(Param::attack_preference_device_permille),
+        Family::Activation => Some(Param::attack_preference_activation_permille),
+        // Waiting has no preference.
+        Family::Wait => None,
     }
 }
 
@@ -397,7 +354,9 @@ mod tests {
     }
 
     #[test]
-    fn all_classes_have_six_distinct_neutral_parameters() {
+    fn all_classes_share_six_distinct_neutral_parameters() {
+        // #520: one parameter per family; a class's own value comes from
+        // `<name>@<class>` or its class file.
         let mut names = std::collections::BTreeSet::new();
         for class in 0..9 {
             assert!(class_name(class).is_some());
@@ -405,12 +364,13 @@ mod tests {
                 Family::Spell, Family::Device, Family::Activation] {
                 let p = parameter(class, family).unwrap();
                 let spec = &params::SPECS[p as usize];
-                assert!(names.insert(spec.name));
+                names.insert(spec.name);
+                assert_eq!(spec.name, format!("attack_preference_{}_permille", family.name()));
                 assert_eq!((spec.default, spec.min, spec.max, spec.unit), (1000, 500, 2000, "utility_permille"));
             }
             assert!(parameter(class, Family::Wait).is_none());
         }
-        assert_eq!(names.len(), 54);
+        assert_eq!(names.len(), 6);
         assert!(class_name(9).is_none());
         let candidate = evaluate(9, BF_THRUST as i32, 25);
         assert_eq!(candidate.adjusted, 25);
