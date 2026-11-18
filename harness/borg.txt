@@ -483,6 +483,12 @@ borg_param_attack_arrow_point_blank_divisor = 5
 borg_param_town_heal_reserve_hp_percent = 100
 borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_heal_speed_percent = 66
+# #539 (owner, 2026-11-18): fleeing, walk to any reachable staircase and read
+# Word of Recall only when none is reachable; no Phase Door while the
+# monster is still distant (only with an awake monster next to the Borg, or
+# one in view with a ranged attack). 0 = off.
+borg_param_caution_flee_stairs_before_recall = 1
+borg_param_escape_phase_adjacent_only = 1
 # #504 (owner, 2026-11-17, #488 slice B): cornered (no Phase Door, teleport
 # or escape, a monster within the radius, danger at or above the HP), the
 # Borg uses every buff it has regardless of the usual danger windows (fear

@@ -2132,9 +2132,15 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Use "recall" to flee if possible
+    // borg-reborn-rs (#539, owner): only when no staircase is known (a free
+    // up or down staircase on the level). Otherwise the Borg keeps the
+    // scroll and carries on: the flee flow walks it to the stairs, and it
+    // still fights and heals on the way. Recall costs the scroll and 15-35
+    // turns of waiting, often next to the monster it flees.
     if st.borg.goal.fleeing
         && !st.borg.goal.fleeing_to_town
         && st.borg.tr(BI_CDEPTH) >= 1
+        && !stairs_before_recall(st)
         && borg_recall(st)
     {
         // Note
@@ -2166,6 +2172,23 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // Nothing
     false
+}
+
+/// borg-reborn-rs (#539, owner): "use recall only if a stair is not
+/// reachable at all". With `caution_flee_stairs_before_recall`, a fleeing
+/// Borg that knows a free staircase does not read Recall.
+fn stairs_before_recall(st: &BorgState) -> bool {
+    stairs_before_recall_with(
+        p(Param::caution_flee_stairs_before_recall),
+        nearest_free_stair(st, true),
+        nearest_free_stair(st, false),
+    )
+}
+
+/// `stairs_before_recall` with its switch and the nearest free up and down
+/// staircases' distances (-1: none known) given.
+fn stairs_before_recall_with(on: i32, up: i32, down: i32) -> bool {
+    on != 0 && (up != -1 || down != -1)
 }
 
 /// `borg_note(format("<prefix>%s", reason))` for a `borg_restock()` reason.
@@ -2960,5 +2983,19 @@ mod cornered_tests {
             st.borg.trait_[BI_CLASS as usize] = class;
             assert_eq!(melee_class(&st), melee, "class {class}");
         }
+    }
+}
+
+#[cfg(test)]
+mod recall_tests {
+    use super::*;
+
+    /// #539: Recall is skipped while any free staircase is known.
+    #[test]
+    fn a_known_staircase_comes_before_recall() {
+        assert!(stairs_before_recall_with(1, 8, -1), "up staircase 8 away");
+        assert!(stairs_before_recall_with(1, -1, 40), "a far down staircase");
+        assert!(!stairs_before_recall_with(1, -1, -1), "no staircase known");
+        assert!(!stairs_before_recall_with(0, 8, 8), "off");
     }
 }
