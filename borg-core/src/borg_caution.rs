@@ -2167,6 +2167,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
         && !ranged_before_recall(st)
+        && recall_escape_allowed(st)
         && borg_recall(st)
     {
         // Note
@@ -2292,6 +2293,37 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// fight at range instead: switch on, a ranged attack the attack planner
 /// would make (`borg_fight_attack::ranged_means`), a `ranged_candidate`,
 /// and no staircase it can walk to.
+/// borg-reborn-rs (#557, owner): is Word of Recall an escape from this
+/// flight? `caution_flee_recall` 1: always (C). 0: only on a level swamped
+/// by breeders (`caution_flee_recall_breeders` known on the level) or when
+/// chased by several monsters (`caution_flee_recall_chasers` awake within
+/// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
+/// turns next to the monster it flees and is gone for the trip home.
+fn recall_escape_allowed(st: &BorgState) -> bool {
+    if p(Param::caution_flee_recall) != 0 {
+        return true;
+    }
+    let range = p(Param::caution_flee_recall_chase_distance);
+    let mut chasers = 0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= range {
+            chasers += 1;
+        }
+    }
+    recall_escape_with(
+        i32::from(st.borg.mon.breeders),
+        chasers,
+        p(Param::caution_flee_recall_breeders),
+        p(Param::caution_flee_recall_chasers),
+    )
+}
+
+/// Swamped by breeders or chased by several monsters (a limit of 0 is off).
+fn recall_escape_with(breeders: i32, chasers: i32, breeder_limit: i32, chaser_limit: i32) -> bool {
+    (breeder_limit > 0 && breeders >= breeder_limit) || (chaser_limit > 0 && chasers >= chaser_limit)
+}
+
 pub(crate) fn ranged_before_recall(st: &mut BorgState) -> bool {
     if p(Param::caution_scary_ranged_no_stairs) == 0 {
         return false;
@@ -2367,7 +2399,7 @@ fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || st.borg.tr(BI_RECALL) > 0
+        || (st.borg.tr(BI_RECALL) > 0 && recall_escape_allowed(st))
 }
 
 /// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
@@ -3220,6 +3252,15 @@ mod scary_stand_tests {
         assert!(!stand_decision(true, pursuer), "an easy escape: flee");
         assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
         assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn recall_is_an_escape_only_from_breeders_or_several_chasers() {
+        assert!(!recall_escape_with(0, 0, 5, 3), "one scary monster: no Recall");
+        assert!(!recall_escape_with(4, 2, 5, 3), "below both limits");
+        assert!(recall_escape_with(5, 0, 5, 3), "a level swamped by breeders");
+        assert!(recall_escape_with(0, 3, 5, 3), "chased by several monsters");
+        assert!(!recall_escape_with(100, 100, 0, 0), "both limits off");
     }
 
     #[test]

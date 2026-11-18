@@ -535,6 +535,16 @@ borg_param_town_recall_reserve = 0
 
 borg_param_caution_flee_stairs_before_recall = 1
 
+# 1 = fleeing, read Word of Recall as the escape (C). 0 = only on a level
+# swamped by breeders (that many known) or when chased by several awake
+# monsters (that many within the distance); otherwise walk. Recall then no
+# longer counts as an easy escape in the stand tests (#557). Off here.
+
+borg_param_caution_flee_recall = 1
+borg_param_caution_flee_recall_breeders = 5
+borg_param_caution_flee_recall_chasers = 3
+borg_param_caution_flee_recall_chase_distance = 6
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # that has a ranged attack, not while the monster is still distant (#539).
 

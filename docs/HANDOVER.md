@@ -2,7 +2,7 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
-## 2026-11-18: the walk home without Recall, two flags (#557, part)
+## 2026-11-18: the walk home without Recall, three flags (#557, part)
 
 Owner, from the replayed priest-1055640847 (`--to 88000`): a CL<=7 Borg
 never buys Word of Recall (the planner prices it as the walk it saves, worth
@@ -26,6 +26,23 @@ connected stairs (8 times from the owner's save on main).
   left in #557.
 - `caution_rising_explore_ticks = 300` is now written out in
   `harness/borg.txt` (its compiled default, owner) so a zoo arm can vary it.
+- `caution_flee_recall` (1 = C): 0 stops a flight from reading Word of
+  Recall (`borg_caution.rs`, "Fleeing the level (recall)") unless the level
+  is swamped by breeders (`caution_flee_recall_breeders`, 5 known) or the
+  Borg is chased (`caution_flee_recall_chasers`, 3 awake within
+  `caution_flee_recall_chase_distance`, 6); Recall then also stops counting
+  as an easy escape in #503/#530's stand tests. Owner: Recall is used too
+  often as an escape and seldom helps. In 144 local classes-18 zoo games on
+  `eea1bf9c` (with #539), a flight read Recall in 134, 113 times of 142 on
+  DL1, spending the starting scroll. The six borg-play deaths from birth with
+  0: four now alive at 200,000 (mage-1594647951, priest-809881907,
+  priest-1055640847, ranger-1355387156, CL5-8); ranger-2107852048 (Grip,
+  stair scum, #549) and mage-2028599180 (floating eye) die as before. From
+  the owner's save (no Recall carried): no change.
+  Other Recall reads left as they are: the stuck jumpstart's "Recalling
+  (twitchy)" (`borg_think_dungeon.rs`), `borg_leave_level`'s trips (rising
+  from DL5+, restock, no stairs after 1000 turns, into the dungeon) and the
+  low-light exit (`borg_think_dungeon_light`).
 - Off: smoke 3/3 identical; the six borg-play deaths replay their zoo keys.
 
 ## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
