@@ -2296,7 +2296,8 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// borg-reborn-rs (#557, owner): is Word of Recall an escape from this
 /// flight? `caution_flee_recall` 1: always (C). 0: only on a level swamped
 /// by breeders (`caution_flee_recall_breeders` known on the level) or when
-/// chased by several monsters (`caution_flee_recall_chasers` awake within
+/// chased by several monsters (`caution_flee_recall_chasers` awake, able to
+/// move, within
 /// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
 /// turns next to the monster it flees and is gone for the trip home.
 fn recall_escape_allowed(st: &BorgState) -> bool {
@@ -2307,7 +2308,12 @@ fn recall_escape_allowed(st: &BorgState) -> bool {
     let mut chasers = 0;
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = &st.kills.kills[i];
-        if kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= range {
+        // A monster that never moves (a mold) cannot chase.
+        if kill.r_idx != 0
+            && kill.awake
+            && engine::distance(st.borg.c, kill.pos) <= range
+            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+        {
             chasers += 1;
         }
     }
