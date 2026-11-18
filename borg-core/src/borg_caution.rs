@@ -2391,6 +2391,12 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     // and its monster may be fast: a pursuer (review of #531).
     let (scary, pursuer) = stand_inputs(scary, pursuer, st.borg.mon.scary_door);
     if !scary {
+        // experiment: the scary monster is gone, the level stops being scary.
+        if std::env::var_os("BORG_EXP_UNLATCH").is_some() && st.borg.mon.scary {
+            st.borg.mon.scary = false;
+            withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+            borg_note(st, "# Scary guy gone: the level is no longer scary.");
+        }
         return;
     }
     // borg-reborn-rs (#557): while rising, a down staircase the flight may
