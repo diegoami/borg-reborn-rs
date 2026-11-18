@@ -642,8 +642,15 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      * returning to town.
      */
     if st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
+        // EXPERIMENT: no item grab while anything threatens.
+        let exp = std::env::var("BORG_EXP_SCUM").is_ok();
+        let here = crate::borg_danger::borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+        let threat = st.borg.mon.scary || here > 0 || st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP);
+        if std::env::var("BORG_EXP_DEBUG").is_ok() {
+            borg_note(st, &format!("# EXP scum scary={} here={} hp={}/{}", st.borg.mon.scary, here, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP)));
+        }
         /* Try to grab a close item while I'm down here */
-        if borg_think_stair_scum(st) {
+        if !(exp && threat) && borg_think_stair_scum(st) {
             return choice!("borg_think_stair_scum");
         }
 
