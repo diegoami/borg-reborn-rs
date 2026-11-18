@@ -541,6 +541,12 @@ borg_param_town_digger_min_gold = 500
 # chaos, confusion, poison) stay either way. #518 moves the list to a data
 # file by class and level.
 borg_param_caution_scary_named_monsters = 1
+# The named scary monsters come from this file (#518, owner 2026-11-17):
+# a range per monster scaled by class fragility, C's list as the tough end.
+# none = the compiled C list (harness/scary_monsters_c.txt is the same list
+# as a file). harness/run.sh and the zoo copy the file next to borg.txt and
+# pin its hash.
+borg_scary_list = scary_monsters.txt
 # A monster on the level is scary when one character turn of its melee (the
 # average of its blows' damage times its moves per character turn) can take at
 # least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It
@@ -551,6 +557,19 @@ borg_param_caution_breeder_fight = 1
 borg_param_caution_breeder_easy_escape_steps = 5
 borg_param_caution_breeder_stand_radius = 5
 borg_param_caution_breeder_hunt_max_count = 4
+# #544 (owner, 2026-11-18, priest-1055640847's dead-end worm room): two
+# escapes the Borg missed, each on its own flag for a zoo arm. Off here (the
+# control).
+#   B, breeder exit: only breeders near, one adjacent, danger here at or
+#     above the HP or surrounded: walk to the nearest known chokepoint (a
+#     corridor or doorway grid: its passable known neighbours form two or more
+#     groups) at least the distance from every breeder.
+#   A+K, flee to known down stairs: fleeing with no up staircase known, walk
+#     to a known down staircase at any distance (the desperate flow), and the
+#     stuck jumpstart (bravery boost 3) keeps the known stairs.
+borg_param_caution_breeder_exit = 0
+borg_param_caution_breeder_exit_distance = 6
+borg_param_caution_flee_known_down_stairs = 0
 
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only

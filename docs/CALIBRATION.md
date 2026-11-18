@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## A living monster keeps some hit points (#546)
 
-The registry now holds **2120** parameters (2119 after #539; one added). Owner,
+The registry now holds **2123** parameters (2122 after #544, which added three; one added). Owner,
 2026-11-18, from the floating-eye Mage 2028599180, which stopped attacking an
 eye it had left at 1/9 HP and walked next to it: the HP estimate truncated to
 0. Compiled 0 (C's estimate); `harness/borg.txt` ships 1.
@@ -293,6 +293,9 @@ death with the list, 4 without), 1.
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2190` |
 | `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2223` |
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
+| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2401` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
+| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2401` (#544 B: the exit's distance from every breeder) |
+| `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## The named scary list as data (#518)
@@ -336,10 +339,14 @@ experiment can append its changes to the shipped list (borg-zoo#228).
 
 An unknown monster, class or flag, a bad level or a backwards range stops
 the run before play
-with exit 2 and the line. Harness runs select a list with
-`BORG_SCARY_LIST=FILE` (`harness/run.sh` copies it and pins its SHA-256 in
-the run's `borg.txt`); the shipped `borg.txt` does not name one until the zoo
-copies the file (docs/ZOO-INTERFACE.md).
+with exit 2 and the line. The shipped `borg.txt` selects `scary_monsters.txt`
+(owner, 2026-11-17); `borg_scary_list = none` keeps the compiled C list.
+`harness/run.sh` takes `BORG_SCARY_LIST=FILE` first (under its own file
+name), otherwise the list the `borg.txt` names from `harness/`, and with
+`none` runs the compiled list with no file and no hash. A copied list is
+pinned by its SHA-256 in the run's `borg.txt` and recorded in `config.txt`
+(`borg_scary_list`, `borg_scary_list_sha256`); the zoo copies and pins it as
+well (docs/ZOO-INTERFACE.md).
 
 ## Scary by damage (#505)
 

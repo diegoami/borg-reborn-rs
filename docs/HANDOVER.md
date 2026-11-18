@@ -20,6 +20,52 @@ least that many HP.
   16/18 games change (1-HP monsters are common); the same 2 deaths, sum of CL
   95 → 92. No measured gain beyond the Mage; the zoo would measure it.
 
+## 2026-11-18: escapes from a breeder room, two flags for a zoo arm (#544)
+
+Owner, from the replayed zoo death priest-1055640847 (`~/borg-play`): the
+Borg dies in a dead-end worm room the owner leaves in six moves from turn
+89,000. Found: the stuck jumpstart (bravery boost 3) forgets the known
+staircases, so "flee the level" has nowhere to go; and the danger of a worm
+crowd saturates at `danger_maximum` on every grid, so retreat and back-away
+never move it (236 attacks on one grid). The arm's #503 breeder stand is not
+the cause.
+
+- `caution_breeder_exit` (B): only breeders near, one adjacent, outmatched or
+  surrounded: the desperate flow to the nearest known chokepoint (corridor or
+  doorway: its passable neighbours form two or more groups; review of #545
+  replaced a neighbour count that took room corners for corridors) at least
+  `caution_breeder_exit_distance` (6) grids from every breeder.
+- `caution_flee_known_down_stairs` (A+K): in the dungeon, fleeing with no up
+  staircase known, the desperate flow to a known down staircase at any
+  distance; the jumpstart keeps the known stairs.
+- Both 0 in `harness/borg.txt`: smoke 3/3 identical, and the zoo game
+  replays key for key. With either on from turn 88,600 the Borg leaves the
+  room and is alive at 120,000. From 89,000 only B does: by then the stairs
+  are already forgotten. On from birth, the game diverges early (B first at
+  game turn 17,756 on DL1; A+K at 41,761), so this case alone says nothing about
+  the population.
+
+Left: a zoo arm against the control (owner's choice of size and runs); the
+track for #544 is the owner's to name.
+
+## 2026-11-17: the scary list file shipped on (#518)
+
+Owner: switch to our list. The shipped `borg.txt` sets
+`borg_scary_list = scary_monsters.txt` beside
+`caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
+none` keeps the compiled C list.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
+- **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
+  core, which ignores the list: smoke 3/3 identical to its references.
+- **The merge waits for the zoo:** its adapter must copy a list named by the
+  shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
+  stop with exit 2.
+
 ## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
 
 The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
