@@ -2301,7 +2301,14 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
 /// turns next to the monster it flees and is gone for the trip home.
 fn recall_escape_allowed(st: &BorgState) -> bool {
-    if p(Param::caution_flee_recall) != 0 {
+    // borg-reborn-rs (#557, owner): above `caution_flee_recall_min_depth`
+    // (DL1 at 2) the stairs are a short walk: the gate applies whatever
+    // `caution_flee_recall` says.
+    if !recall_needs_exception(
+        p(Param::caution_flee_recall) != 0,
+        st.borg.tr(BI_CDEPTH),
+        p(Param::caution_flee_recall_min_depth),
+    ) {
         return true;
     }
     let range = p(Param::caution_flee_recall_chase_distance);
@@ -2323,6 +2330,13 @@ fn recall_escape_allowed(st: &BorgState) -> bool {
         p(Param::caution_flee_recall_breeders),
         p(Param::caution_flee_recall_chasers),
     )
+}
+
+/// Does a flight's Recall need the breeder or chaser exception? Always with
+/// the gate on (`c_recall` false); with C's Recall, only above `min_depth`
+/// (0 = off).
+fn recall_needs_exception(c_recall: bool, depth: i32, min_depth: i32) -> bool {
+    !c_recall || (min_depth > 0 && depth < min_depth)
 }
 
 /// Swamped by breeders or chased by several monsters (a limit of 0 is off).
@@ -3300,6 +3314,15 @@ mod scary_stand_tests {
         assert!(!stand_decision(true, pursuer), "an easy escape: flee");
         assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
         assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn a_shallow_flight_recall_needs_the_exception() {
+        assert!(!recall_needs_exception(true, 1, 0), "C, no minimum depth");
+        assert!(recall_needs_exception(true, 1, 2), "C, DL1 below the minimum");
+        assert!(!recall_needs_exception(true, 2, 2), "C, at the minimum");
+        assert!(recall_needs_exception(false, 10, 2), "the gate on: any depth");
+        assert!(recall_needs_exception(false, 10, 0));
     }
 
     #[test]
