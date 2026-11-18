@@ -33,60 +33,12 @@ pub(crate) struct Spec {
 
 parameters! {
     // #403: final attack ranking, neutral for every supported class/family.
-    attack_preference_warrior_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior melee; floor rounding, no eligibility changes."),
-    attack_preference_warrior_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior projectile; floor rounding, no eligibility changes."),
-    attack_preference_warrior_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior thrown; floor rounding, no eligibility changes."),
-    attack_preference_warrior_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior spell; floor rounding, no eligibility changes."),
-    attack_preference_warrior_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior device; floor rounding, no eligibility changes."),
-    attack_preference_warrior_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior activation; floor rounding, no eligibility changes."),
-    attack_preference_mage_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage melee; floor rounding, no eligibility changes."),
-    attack_preference_mage_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage projectile; floor rounding, no eligibility changes."),
-    attack_preference_mage_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage thrown; floor rounding, no eligibility changes."),
-    attack_preference_mage_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage spell; floor rounding, no eligibility changes."),
-    attack_preference_mage_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage device; floor rounding, no eligibility changes."),
-    attack_preference_mage_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage activation; floor rounding, no eligibility changes."),
-    attack_preference_druid_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid melee; floor rounding, no eligibility changes."),
-    attack_preference_druid_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid projectile; floor rounding, no eligibility changes."),
-    attack_preference_druid_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid thrown; floor rounding, no eligibility changes."),
-    attack_preference_druid_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid spell; floor rounding, no eligibility changes."),
-    attack_preference_druid_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid device; floor rounding, no eligibility changes."),
-    attack_preference_druid_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid activation; floor rounding, no eligibility changes."),
-    attack_preference_priest_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest melee; floor rounding, no eligibility changes."),
-    attack_preference_priest_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest projectile; floor rounding, no eligibility changes."),
-    attack_preference_priest_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest thrown; floor rounding, no eligibility changes."),
-    attack_preference_priest_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest spell; floor rounding, no eligibility changes."),
-    attack_preference_priest_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest device; floor rounding, no eligibility changes."),
-    attack_preference_priest_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest activation; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer melee; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer projectile; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer thrown; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer spell; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer device; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer activation; floor rounding, no eligibility changes."),
-    attack_preference_paladin_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin melee; floor rounding, no eligibility changes."),
-    attack_preference_paladin_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin projectile; floor rounding, no eligibility changes."),
-    attack_preference_paladin_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin thrown; floor rounding, no eligibility changes."),
-    attack_preference_paladin_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin spell; floor rounding, no eligibility changes."),
-    attack_preference_paladin_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin device; floor rounding, no eligibility changes."),
-    attack_preference_paladin_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin activation; floor rounding, no eligibility changes."),
-    attack_preference_rogue_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue melee; floor rounding, no eligibility changes."),
-    attack_preference_rogue_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue projectile; floor rounding, no eligibility changes."),
-    attack_preference_rogue_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue thrown; floor rounding, no eligibility changes."),
-    attack_preference_rogue_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue spell; floor rounding, no eligibility changes."),
-    attack_preference_rogue_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue device; floor rounding, no eligibility changes."),
-    attack_preference_rogue_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue activation; floor rounding, no eligibility changes."),
-    attack_preference_ranger_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger melee; floor rounding, no eligibility changes."),
-    attack_preference_ranger_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger projectile; floor rounding, no eligibility changes."),
-    attack_preference_ranger_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger thrown; floor rounding, no eligibility changes."),
-    attack_preference_ranger_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger spell; floor rounding, no eligibility changes."),
-    attack_preference_ranger_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger device; floor rounding, no eligibility changes."),
-    attack_preference_ranger_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger activation; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard melee; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard projectile; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard thrown; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard spell; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard device; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard activation; floor rounding, no eligibility changes."),
+    attack_preference_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the melee family; per class with attack_preference_melee_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the projectile family; per class with attack_preference_projectile_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the thrown family; per class with attack_preference_thrown_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the spell family; per class with attack_preference_spell_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the device family; per class with attack_preference_device_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the activation family; per class with attack_preference_activation_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
     caution_bounce_healthy_tenths => (7, "tenths", 0, 100, "borg_caution.rs:102", "Controls bounce healthy tenths."),
     caution_bounce_limit => (300, "turns", 0, 100000, "borg_caution.rs:108", "Controls bounce limit."),
     caution_caster_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:157", "Controls caster stat vote."),
@@ -247,24 +199,6 @@ parameters! {
     town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:534", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
     town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:269", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone). With town_heal_reserve_real_hp = 1 speed weights only the healing curve; with 0 also the reserve."),
     town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:541", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
-    town_heal_curve_scale_percent_warrior => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the warrior healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_mage => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the mage healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_druid => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the druid healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_priest => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the priest healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_necromancer => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the necromancer healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_paladin => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the paladin healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_rogue => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the rogue healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_ranger => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the ranger healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_blackguard => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the blackguard healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_reserve_hp_percent_warrior => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the warrior healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_mage => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the mage healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_druid => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the druid healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_priest => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the priest healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_necromancer => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the necromancer healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_paladin => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the paladin healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_rogue => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the rogue healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_ranger => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the ranger healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_blackguard => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the blackguard healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
     town_heal_reserve_real_hp => (0, "flag", 0, 1, "borg_town_capability.rs:239", "#487: 1 = the healing reserve counts the real HP a potion restores; town_heal_speed_percent then weights only the healing curve (which kind is worth more), not how many potions fill the reserve; 0 = speed-weighted HP (#491 as first shipped)."),
     town_digger_min_gold => (0, "gold", 0, 10_000_000, "borg_town_capability.rs:635", "#487: below this much gold the live town planner values no digging (a Shovel only clears rubble, which a weapon also digs); 0 = off."),
     caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:2163", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
@@ -765,15 +699,6 @@ parameters! {
     attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:694", "Attack fear bonus max level: existing policy level."),
     attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:695", "Attack fear danger bonus: existing policy danger."),
     attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:766", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
-    attack_arrow_point_blank_divisor_warrior => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the warrior point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_mage => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the mage point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_druid => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the druid point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_priest => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the priest point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_necromancer => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the necromancer point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_paladin => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the paladin point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_rogue => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the rogue point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_ranger => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the ranger point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_blackguard => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the blackguard point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
     attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:769", "Attack arrow min hit tenths: existing policy tenths."),
     attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:777", "Attack mana unique min potions: existing policy count."),
     attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:779", "Attack mana unique multiplier: existing policy multiplier."),
@@ -2240,39 +2165,128 @@ parameters! {
 
 }
 
+/// borg-reborn-rs (#520): the class names, `class.txt` order (`cidx`).
+pub(crate) const CLASSES: [&str; 9] =
+    ["warrior", "mage", "druid", "priest", "necromancer", "paladin", "rogue", "ranger", "blackguard"];
+
+/// A class's own value of a parameter (`<name>@<class>`, a class file, or a
+/// legacy `<name>_<class>` alias).
+#[derive(Serialize)]
+struct ClassValue {
+    value: i32,
+    origin: &'static str,
+}
+
 #[derive(Serialize)]
 struct Setting<'a> {
     #[serde(flatten)]
     spec: &'a Spec,
     value: i32,
     origin: &'static str,
+    /// borg-reborn-rs (#520): per-class values, by class name.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    class_values: BTreeMap<&'static str, ClassValue>,
 }
 
 #[derive(Clone, Copy)]
 struct Resolved {
     value: i32,
     origin: &'static str,
+    class: [Option<(i32, &'static str)>; 9],
 }
 
 static VALUES: OnceLock<Vec<Resolved>> = OnceLock::new();
 
-pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
-    let i = param as usize;
-    VALUES.get().map_or((SPECS[i].default, "default"), |values| (values[i].value, values[i].origin))
+/// borg-reborn-rs (#520): the character's class (`cidx`), -1 while none is
+/// known. Set when the parameters load and whenever the Borg notices its
+/// race and class (start and reincarnation).
+static CLASS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// borg-reborn-rs (#520): the class whose values `value` returns.
+pub(crate) fn set_class(class: i32) {
+    CLASS.store(class, std::sync::atomic::Ordering::Relaxed);
 }
 
-/// Pure lookup after init; isolated decision tests use the same defaults.
+fn pick(r: &Resolved) -> (i32, &'static str) {
+    let class = CLASS.load(std::sync::atomic::Ordering::Relaxed);
+    usize::try_from(class).ok().and_then(|c| r.class.get(c).copied().flatten()).unwrap_or((r.value, r.origin))
+}
+
+pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
+    let i = param as usize;
+    VALUES.get().map_or((SPECS[i].default, "default"), |values| pick(&values[i]))
+}
+
+/// Pure lookup after init: the current class's value when it has one, else
+/// the common one. Isolated decision tests use the same defaults.
 pub(crate) fn value(param: Param) -> i32 {
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| values[i].value)
+    VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i]).0)
 }
+
+/// borg-reborn-rs (#520): the per-class names of the families that #520
+/// folded into one parameter, accepted as aliases of `<name>@<class>`. A
+/// value equal to the family's old "use the general value" sentinel sets no
+/// class value (divisor and curve scale 0, reserve -1).
+fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
+    let spec = |n: &str| SPECS.iter().find(|s| s.name == n);
+    for (c, class) in CLASSES.iter().enumerate() {
+        if let Some(fam) = name.strip_prefix(&format!("attack_preference_{class}_")).and_then(|r| r.strip_suffix("_permille")) {
+            return spec(&format!("attack_preference_{fam}_permille")).map(|s| (s, c, None));
+        }
+        for (base, sentinel) in [
+            ("attack_arrow_point_blank_divisor", 0),
+            ("town_heal_curve_scale_percent", 0),
+            ("town_heal_reserve_hp_percent", -1),
+        ] {
+            if name == format!("{base}_{class}") {
+                return spec(base).map(|s| (s, c, Some(sentinel)));
+            }
+        }
+    }
+    None
+}
+
+/// A setting's name: the parameter, its class if any, and the alias's
+/// "general value" sentinel.
+fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if let Some((base, class)) = name.split_once('@') {
+        let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
+        let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
+        return Ok((spec, Some(c), None));
+    }
+    if let Some(spec) = SPECS.iter().find(|s| s.name == name) {
+        return Ok((spec, None, None));
+    }
+    legacy_alias(name).map(|(s, c, sentinel)| (s, Some(c), sentinel)).ok_or(format!("unknown parameter {name}"))
+}
+
+/// The environment's name for a setting: `BORG_PARAM_<NAME>` with the class
+/// as `__<CLASS>` (shells cannot export a name with `@`); `@` and the
+/// legacy aliases are accepted too. Upper case only, as before #520: a
+/// lower-case name is an unknown parameter, not a silent match.
+fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if name != name.to_ascii_uppercase() {
+        return Err(format!("unknown parameter {name}"));
+    }
+    let lower = name.to_ascii_lowercase();
+    if let Some((base, class)) = lower.rsplit_once("__") {
+        if CLASSES.contains(&class) {
+            return split_name(&format!("{base}@{class}"));
+        }
+    }
+    split_name(&lower)
+}
+
+type Key = (&'static str, Option<usize>);
 
 fn parse<'a>(
     text: &str,
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
-    let mut file = BTreeMap::new();
+    // (parameter, class) -> (raw value, alias sentinel)
+    let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
         let raw = raw.split('#').next().unwrap_or("").trim();
         if !raw.starts_with("borg_param_") {
@@ -2282,47 +2296,49 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
-        if !specs.iter().any(|s| s.name == name) {
-            return Err(format!("unknown borg_param_{name}"));
-        }
-        if file.insert(name, value.trim()).is_some() {
+        let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
+        if file.insert((spec.name, class), (value.trim().to_string(), sentinel)).is_some() {
             return Err(format!("duplicate borg_param_{name}"));
         }
     }
-    for name in env.keys() {
-        if !specs.iter().any(|s| s.name.to_ascii_uppercase() == *name) {
-            return Err(format!("unknown BORG_PARAM_{name}"));
+    let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
+    for (name, value) in env {
+        let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
+        if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
+            return Err(format!("duplicate BORG_PARAM_{name}"));
         }
     }
-    let settings: Vec<Setting<'_>> = specs
-        .iter()
-        .map(|spec| {
-            let (raw, origin) = if let Some(raw) = env.get(&spec.name.to_ascii_uppercase()) {
-                (Some(raw.as_str()), "environment")
-            } else if let Some(raw) = file.get(spec.name) {
-                (Some(*raw), "borg.txt")
-            } else {
-                (None, "default")
-            };
-            let value = match raw {
-                Some(raw) => raw
-                    .parse::<i32>()
-                    .map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?,
-                None => spec.default,
-            };
-            if !(spec.min..=spec.max).contains(&value) {
-                return Err(format!(
-                    "{}: {value} outside {}..={} {}",
-                    spec.name, spec.min, spec.max, spec.unit
-                ));
+    let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
+        let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
+        if !(spec.min..=spec.max).contains(&value) {
+            return Err(format!("{}: {value} outside {}..={} {}", spec.name, spec.min, spec.max, spec.unit));
+        }
+        Ok(value)
+    };
+    let mut settings = Vec::with_capacity(specs.len());
+    for spec in specs {
+        let (value, origin) = if let Some((raw, _)) = envs.get(&(spec.name, None)) {
+            (check(spec, raw)?, "environment")
+        } else if let Some((raw, _)) = file.get(&(spec.name, None)) {
+            (check(spec, raw)?, "borg.txt")
+        } else {
+            (spec.default, "default")
+        };
+        let mut class_values = BTreeMap::new();
+        for (c, class) in CLASSES.iter().enumerate() {
+            let found = envs.get(&(spec.name, Some(c))).map(|v| (v, "environment"))
+                .or_else(|| file.get(&(spec.name, Some(c))).map(|v| (v, "borg.txt")));
+            if let Some(((raw, sentinel), origin)) = found {
+                let raw = raw.trim();
+                // An alias at its old "general value" sentinel sets nothing.
+                if sentinel.is_some() && raw.parse::<i32>().ok() == *sentinel {
+                    continue;
+                }
+                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin });
             }
-            Ok(Setting {
-                spec,
-                value,
-                origin,
-            })
-        })
-        .collect::<Result<_, String>>()?;
+        }
+        settings.push(Setting { spec, value, origin, class_values });
+    }
     let value = |name: &str| settings.iter().find(|s| s.spec.name == name).map(|s| s.value);
     for (low, high) in [
         ("sell_gold_greed_floor", "sell_gold_greed_ceiling"),
@@ -2339,8 +2355,22 @@ fn parse<'a>(
     Ok(settings)
 }
 
+fn resolve(settings: &[Setting<'_>]) -> Vec<Resolved> {
+    settings
+        .iter()
+        .map(|s| {
+            let mut class = [None; 9];
+            for (c, name) in CLASSES.iter().enumerate() {
+                class[c] = s.class_values.get(name).map(|v| (v.value, v.origin));
+            }
+            Resolved { value: s.value, origin: s.origin, class }
+        })
+        .collect()
+}
+
 /// Called before initialization consumes RNG or makes decisions. Configuration
-/// is immutable for the process, including reincarnations and core switches.
+/// is immutable for the process, including reincarnations and core switches;
+/// which class's values apply follows the character (`set_class`, #520).
 pub(crate) fn initialize() {
     VALUES.get_or_init(|| {
         let result = (|| -> Result<Vec<Resolved>, String> {
@@ -2361,13 +2391,16 @@ pub(crate) fn initialize() {
                 json.push(b'\n');
                 std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
             }
-            Ok(settings.iter().map(|s| Resolved { value: s.value, origin: s.origin }).collect())
+            Ok(resolve(&settings))
         })();
         result.unwrap_or_else(|e| {
             eprintln!("borg-reborn-rs: core parameters: {e}");
             std::process::exit(2)
         })
     });
+    if let Some(class) = crate::engine::class_cidx_if_set() {
+        set_class(class as i32);
+    }
 }
 
 #[cfg(test)]
@@ -2413,27 +2446,92 @@ mod tests {
         assert!(parse("borg_param_sell_gold_greed_floor = 30000", &env, SPECS).is_ok());
     }
 
+    /// #520: the class value of a setting and its origin.
+    fn class_value(settings: &[Setting<'_>], p: Param, class: &str) -> Option<(i32, &'static str)> {
+        settings[p as usize].class_values.get(class).map(|v| (v.value, v.origin))
+    }
+
     #[test]
     fn attack_preferences_validate_bounds_and_record_override_provenance() {
-        let name = "attack_preference_mage_spell_permille";
-        for bad in ["499", "2001", "1.5", "no", "2147483648"] {
-            assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err());
+        // #520: the legacy per-class name is an alias of `<name>@<class>`.
+        let legacy = "attack_preference_mage_spell_permille";
+        let p = Param::attack_preference_spell_permille;
+        for name in [legacy, "attack_preference_spell_permille@mage"] {
+            for bad in ["499", "2001", "1.5", "no", "2147483648"] {
+                assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err(), "{name} {bad}");
+            }
+            for valid in [500, 1000, 2000] {
+                let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+                assert_eq!(class_value(&values, p, "mage"), Some((valid, "borg.txt")));
+                assert_eq!((values[p as usize].value, values[p as usize].origin), (1000, "default"), "the common value stays");
+                assert_eq!(class_value(&values, p, "warrior"), None);
+            }
         }
         let env = BTreeMap::from([("ATTACK_PREFERENCE_MAGE_SPELL_PERMILLE".into(), "1600".into())]);
-        let values = parse(&format!("borg_param_{name} = 1500"), &env, SPECS).unwrap();
-        let resolved = &values[Param::attack_preference_mage_spell_permille as usize];
-        assert_eq!((resolved.value, resolved.origin), (1600, "environment"));
-        let json = serde_json::to_value(resolved).unwrap();
-        assert_eq!(json["name"], name);
+        let values = parse(&format!("borg_param_{legacy} = 1500"), &env, SPECS).unwrap();
+        assert_eq!(class_value(&values, p, "mage"), Some((1600, "environment")));
+        let json = serde_json::to_value(&values[p as usize]).unwrap();
+        assert_eq!(json["name"], "attack_preference_spell_permille");
         assert_eq!(json["unit"], "utility_permille");
         assert_eq!(json["default"], 1000);
-        for valid in [500, 1000, 2000] {
-            let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
-            let setting = &values[Param::attack_preference_mage_spell_permille as usize];
-            assert_eq!((setting.value, setting.origin), (valid, "borg.txt"));
-        }
-        assert!(parse(&format!("borg_param_{name} = 1000\nborg_param_{name} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert_eq!(json["class_values"]["mage"]["value"], 1600);
+        assert_eq!(json["class_values"]["mage"]["origin"], "environment");
+        // The same class value twice, by either name, is a duplicate.
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_{legacy} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_attack_preference_spell_permille@mage = 1500"), &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_preference_spell_permille@wizard = 1000", &BTreeMap::new(), SPECS).is_err());
+    }
+
+    /// #520: precedence (default < borg.txt < class line < environment <
+    /// class environment), the `__CLASS` environment form, and the legacy
+    /// aliases' "general value" sentinels.
+    #[test]
+    fn class_values_override_the_common_value() {
+        let p = Param::town_heal_reserve_hp_percent;
+        let text = "borg_param_town_heal_reserve_hp_percent = 100\nborg_param_town_heal_reserve_hp_percent@mage = 300\nborg_param_town_heal_reserve_hp_percent_warrior = 50";
+        let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (100, "borg.txt"));
+        assert_eq!(class_value(&values, p, "mage"), Some((300, "borg.txt")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        let env = BTreeMap::from([
+            ("TOWN_HEAL_RESERVE_HP_PERCENT".into(), "120".into()),
+            ("TOWN_HEAL_RESERVE_HP_PERCENT__MAGE".into(), "250".into()),
+        ]);
+        let values = parse(text, &env, SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (120, "environment"));
+        assert_eq!(class_value(&values, p, "mage"), Some((250, "environment")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        // The old "use the general value" sentinels set no class value.
+        for text in ["borg_param_town_heal_reserve_hp_percent_mage = -1",
+                     "borg_param_town_heal_curve_scale_percent_mage = 0",
+                     "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
+            let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+            assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
+        }
+        // #534 review: environment names stay upper case.
+        let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
+        assert!(parse("", &lower, SPECS).is_err());
+        let lower_class = BTreeMap::from([("TOWN_HEAL_RESERVE_HP_PERCENT__mage".into(), "100".into())]);
+        assert!(parse("", &lower_class, SPECS).is_err());
+        // Without the alias, the sentinel is out of range.
+        assert!(parse("borg_param_town_heal_reserve_hp_percent@mage = -1", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_arrow_point_blank_divisor_ranger = 2", &BTreeMap::new(), SPECS).is_ok());
+    }
+
+    /// #520: `pick` returns the current class's value, else the common one.
+    #[test]
+    fn lookup_follows_the_class() {
+        let mut class = [None; 9];
+        class[1] = Some((300, "borg.txt"));
+        let r = Resolved { value: 100, origin: "borg.txt", class };
+        set_class(-1);
+        assert_eq!(pick(&r), (100, "borg.txt"));
+        set_class(1);
+        assert_eq!(pick(&r), (300, "borg.txt"));
+        set_class(0);
+        assert_eq!(pick(&r), (100, "borg.txt"));
+        set_class(-1);
     }
 
     #[test]

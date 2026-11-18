@@ -4,6 +4,12 @@ Small contract cells, not a population experiment. Import the zoo's
 committed tree, never its working Python files or cached modules. The run
 uses the adapter unchanged, with no BORG_* environment. The frontend derives
 the diagnostic directory from -summary; profile settings alone select the core.
+
+#540: the environment overrides (BORG_CORE, BORG_ERRAND, BORG_ERRAND_BUDGET,
+BORG_STOPSCARED) are the core's own contract. The current adapter clears every
+ambient BORG_* variable, so those tests run the game directly (`direct`): the
+pinned adapter's own borg.txt (`config_text`) and command line (`command`),
+with the override in the environment.
 """
 import hashlib
 import importlib
@@ -84,6 +90,34 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertIsNone(self.adapter.check_config(config, profile))
         return out, record
 
+    def direct(self, name, settings, overrides):
+        """#540: the pinned adapter's borg.txt and command line for this
+        profile, run directly with `overrides` in the environment (the
+        adapter clears every ambient BORG_* variable). Returns the cell
+        directory and the adapter's outcome vocabulary for the exit."""
+        profile = {'description': 'core environment contract', 'settings': settings}
+        suite = {'cap': 300, 'wall_seconds': 600, 'birth': 'fixed'}
+        spec = {'ref': self.ref, 'impl': 'rust', 'kind': 'borg-rs',
+                'exact_turns': True, 'depth_stream': True}
+        cell = {'suite': 'contract', 'specimen': 'reborn', 'profile': name, 'seed': 29}
+        out = self.root / 'direct' / name
+        for d in ('user', 'save', 'archive', 'panic', 'scores'):
+            (out / d).mkdir(parents=True)
+        (out / 'user/borg.txt').write_text(self.adapter.config_text(self.build, profile, 0, 0))
+        argv = self.adapter.command(self.build / 'game' / 'angband', out, cell, 0, 0, suite, spec)
+        env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
+        env.update(overrides, TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
+        with (out / 'stderr.log').open('w') as err:
+            rc = subprocess.run(argv, cwd=self.build / 'game', env=env, stdout=subprocess.DEVNULL,
+                                stderr=err, timeout=suite['wall_seconds']).returncode
+        summary_path = out / 'summary.json'
+        summary = json.loads(summary_path.read_text()) if summary_path.is_file() else None
+        if rc != 0 and not summary:
+            return out, {'outcome': 'harness_failure', 'error': f'exit code {rc}', 'summary': None}
+        stop = summary.get('stop_reason') if summary else None
+        outcome = {'turns': 'turn_cap', 'borg_stopped': 'borg_stopped', 'death': 'death'}.get(stop, stop)
+        return out, {'outcome': outcome, 'error': None, 'summary': summary}
+
     def test_integer_profile_selects_core_and_resolves_parameters(self):
         examples = json.loads((ROOT / 'docs/examples/core-calibration-profiles.json').read_text())
         settings = dict(examples['profiles']['core-recover-rest-8']['settings'])
@@ -92,9 +126,11 @@ class CoreProfileContractTest(unittest.TestCase):
         out, record = self.cell('core-trial', settings)
         self.assertEqual(record['outcome'], 'turn_cap', record)
         settings = {s['name']: s for s in json.loads((out / 'params-core.json').read_text())}
-        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0),
-                            ('attack_preference_mage_spell_permille', 1600)]:
+        for name, value in [('recover_rest_sp_tenths', 8), ('power_equipment_unidentified_weapon_bonus', 0)]:
             self.assertEqual((settings[name]['value'], settings[name]['origin']), (value, 'borg.txt'))
+        # #520: the legacy per-class name sets the Mage's class value.
+        mage = settings['attack_preference_spell_permille']['class_values']['mage']
+        self.assertEqual((mage['value'], mage['origin']), (1600, 'borg.txt'))
         self.assertTrue((out / 'trace-core.jsonl').stat().st_size)
         self.assertEqual(record['binary_sha256'], self.binary_sha)
         self.assertEqual(json.loads((out / 'summary.json').read_text())['game_turns'], 300)
@@ -128,13 +164,13 @@ class CoreProfileContractTest(unittest.TestCase):
     def test_environment_selector_precedence_in_actual_process(self):
         for value in ['', 'true', '2', 'borg_rs']:
             with self.subTest(value=value):
-                out, record = self.cell('invalid-env-' + (value or 'empty'),
+                out, record = self.direct('invalid-env-' + (value or 'empty'),
                                        {'borg_reborn_core': 1}, {'BORG_CORE': value})
                 self.assertEqual(record['outcome'], 'harness_failure', record)
                 self.assertIn('exit code 2', record['error'])
                 self.assertIn('BORG_CORE: invalid core selector',
                               (out / 'stderr.log').read_text())
-        out, record = self.cell('valid-env-wins', {'borg_reborn_core': 7},
+        out, record = self.direct('valid-env-wins', {'borg_reborn_core': 7},
                                 {'BORG_CORE': 'borg-rs'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params-core.json').exists())
@@ -154,21 +190,21 @@ class CoreProfileContractTest(unittest.TestCase):
     def test_errand_environment_precedence_and_invalid_command_lines(self):
         for value in ['; ;', 'true', 'dvie 2', '/town; typo']:
             with self.subTest(value=value):
-                out, record = self.cell('invalid-errand-env-' + str(len(value)),
+                out, record = self.direct('invalid-errand-env-' + str(len(value)),
                                        {'borg_reborn_core': 1}, {'BORG_ERRAND': value})
                 self.assertEqual(record['outcome'], 'harness_failure', record)
                 self.assertIn('exit code 2', record['error'])
                 self.assertIn('BORG_ERRAND: invalid errand selector',
                               (out / 'stderr.log').read_text())
         for name, value in [('none', 'none'), ('empty', ''), ('command', '/dive 2')]:
-            out, record = self.cell('valid-errand-env-' + name,
+            out, record = self.direct('valid-errand-env-' + name,
                                    {'borg_reborn_core': 1, 'borg_reborn_errand': 7},
                                    {'BORG_ERRAND': value})
             self.assertEqual(record['outcome'], 'turn_cap', record)
             self.assertTrue((out / 'params-core.json').exists())
 
     def test_original_core_ignores_vendored_errand_configuration(self):
-        out, record = self.cell('original-ignores-errand',
+        out, record = self.direct('original-ignores-errand',
                                {'borg_reborn_core': 0, 'borg_reborn_errand': 7},
                                {'BORG_ERRAND': 'dvie 2'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
@@ -185,7 +221,7 @@ class CoreProfileContractTest(unittest.TestCase):
             self.assertIn('borg.txt borg_reborn_stopscared: invalid stopscared value',
                           (out / 'stderr.log').read_text())
         for value in ['bogus', '0', '1001', 'off; /dive 2']:
-            out, record = self.cell('invalid-fear-env-' + str(len(value)),
+            out, record = self.direct('invalid-fear-env-' + str(len(value)),
                                    {'borg_reborn_core': 1}, {'BORG_STOPSCARED': value})
             self.assertEqual(record['outcome'], 'harness_failure', record)
             self.assertIn('exit code 2', record['error'])
@@ -194,7 +230,7 @@ class CoreProfileContractTest(unittest.TestCase):
 
     def test_valid_fear_overrides_and_original_core_isolation(self):
         for name, value in [('off', 'off'), ('none', 'none'), ('empty', '')]:
-            out, record = self.cell('valid-fear-' + name,
+            out, record = self.direct('valid-fear-' + name,
                                    {'borg_reborn_core': 1, 'borg_reborn_stopscared': 1001},
                                    {'BORG_STOPSCARED': value})
             self.assertEqual(record['outcome'], 'turn_cap', record)
@@ -203,14 +239,14 @@ class CoreProfileContractTest(unittest.TestCase):
             'borg_reborn_core': 1, 'borg_reborn_stopscared': False,
         })
         self.assertEqual(record['outcome'], 'turn_cap', record)
-        out, record = self.cell('original-ignores-fear',
+        out, record = self.direct('original-ignores-fear',
                                {'borg_reborn_core': 0, 'borg_reborn_stopscared': 1001},
                                {'BORG_STOPSCARED': 'bogus'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params.json').exists())
 
     def test_non_utf8_fear_environment_is_not_silently_ignored(self):
-        out, record = self.cell('invalid-fear-bytes', {'borg_reborn_core': 1},
+        out, record = self.direct('invalid-fear-bytes', {'borg_reborn_core': 1},
                                {'BORG_STOPSCARED': os.fsdecode(b'\xff')})
         self.assertEqual(record['outcome'], 'harness_failure', record)
         self.assertIn('exit code 2', record['error'])
@@ -220,13 +256,13 @@ class CoreProfileContractTest(unittest.TestCase):
     def test_invalid_errand_budget_cannot_become_unbounded(self):
         values = ['bogus', '', '-1', '9223372036854775808', '1.5']
         for i, value in enumerate(values):
-            out, record = self.cell(f'invalid-budget-{i}', {'borg_reborn_core': 1},
+            out, record = self.direct(f'invalid-budget-{i}', {'borg_reborn_core': 1},
                                    {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
             self.assertEqual(record['outcome'], 'harness_failure', record)
             self.assertIn('exit code 2', record['error'])
             self.assertIn('BORG_ERRAND_BUDGET: invalid budget',
                           (out / 'stderr.log').read_text())
-        out, record = self.cell('invalid-budget-bytes', {'borg_reborn_core': 1},
+        out, record = self.direct('invalid-budget-bytes', {'borg_reborn_core': 1},
                                {'BORG_ERRAND': '/dive 2',
                                 'BORG_ERRAND_BUDGET': os.fsdecode(b'\xff')})
         self.assertEqual(record['outcome'], 'harness_failure', record)
@@ -235,14 +271,13 @@ class CoreProfileContractTest(unittest.TestCase):
 
     def test_valid_budget_and_inactive_core_isolation(self):
         for value in ['0', 'none', '9223372036854775807']:
-            _, record = self.cell('valid-budget-' + value, {'borg_reborn_core': 1},
+            _, record = self.direct('valid-budget-' + value, {'borg_reborn_core': 1},
                                   {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': value})
             self.assertEqual(record['outcome'], 'turn_cap', record)
-        out, record = self.cell('finite-budget', {'borg_reborn_core': 1},
+        out, record = self.direct('finite-budget', {'borg_reborn_core': 1},
                                {'BORG_ERRAND': '/dive 2', 'BORG_ERRAND_BUDGET': '1'})
-        # The pinned adapter classifies an intentional Borg stop as stalled.
-        self.assertEqual(record['outcome'], 'stalled', record)
-        self.assertEqual(record['runner_outcome'], 'borg_stopped', record)
+        # The core's own stop, read from its summary (#540: run directly).
+        self.assertEqual(record['outcome'], 'borg_stopped', record)
         summary = json.loads((out / 'summary.json').read_text())
         self.assertEqual(summary['stop_reason'], 'borg_stopped')
         self.assertLess(summary['game_turns'], 300)
@@ -250,6 +285,6 @@ class CoreProfileContractTest(unittest.TestCase):
             ('original', {'borg_reborn_core': 0}, '/dive 2'),
             ('inactive', {'borg_reborn_core': 1}, 'none'),
         ]:
-            _, record = self.cell('ignored-budget-' + name, settings,
+            _, record = self.direct('ignored-budget-' + name, settings,
                                   {'BORG_ERRAND': errand, 'BORG_ERRAND_BUDGET': 'bogus'})
             self.assertEqual(record['outcome'], 'turn_cap', record)

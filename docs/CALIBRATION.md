@@ -10,6 +10,24 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Class values and class files (#520)
+
+The registry now holds **2116** parameters (2191 before; 81 per-class
+parameters folded into 6 attack-preference families). Owner, 2026-11-17: one
+common `borg.txt`, per-class files that can override any setting, and no
+per-class parameter families in the code. `params::value` returns the current
+character's class value when it has one (`set_class`, from
+`params::initialize` and `borg_prepare_race_class_info`), else the common one.
+The families `attack_preference_<class>_<family>_permille` (54),
+`attack_arrow_point_blank_divisor_<class>`, `town_heal_curve_scale_percent_<class>`
+and `town_heal_reserve_hp_percent_<class>` (9 each) are gone from the registry;
+their names remain as aliases of the class values (docs/ZOO-INTERFACE.md,
+"Class values"). New: `attack_preference_melee_permille`, `_projectile_`,
+`_thrown_`, `_spell_`, `_device_`, `_activation_` (1000, 500–2000,
+`borg_fight_attack.rs:4575`). The shipped class values live in
+`harness/borg_<class>.txt`, folded into `harness/borg.txt` by
+`scripts/borg-class-files.py`.
+
 ## M13 inventory gap closure (#433 / P4)
 
 The synchronized registry contains **2,191** parameters. This adds 362 neutral
@@ -237,9 +255,9 @@ red frog, radiation eye; gravity and inertia hounds, ancient dragons, Beorn,
 Dread) and the low-level door scares. A scary level stays scary until a new
 level: one small kobold seen once kept a Blackguard fleeing for 54,000 game
 turns. The resist-based scares (nether, blindness, chaos, confusion, poison)
-stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and 0,
-and since the owner's decision after borg-zoo#216 (with the breeder stand on: 1
-death with the list, 4 without) the named list is on again (1).
+stay. The compiled defaults are C's; `harness/borg.txt` ships 1, 5, 5, 4 and,
+since the owner's decision after borg-zoo#216 (with the breeder stand on: 1
+death with the list, 4 without), 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

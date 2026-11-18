@@ -17,6 +17,50 @@ none` keeps the compiled C list.
   shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
   stop with exit 2.
 
+## 2026-11-18: contract tests run the environment overrides directly (#540)
+
+Moving the borg-zoo pin (needed for #535's shipped scary list) broke
+`engine/tests/test_core_profile_contract.py`: the current adapter clears every
+ambient `BORG_*` variable, so the tests' `BORG_CORE`, `BORG_ERRAND`,
+`BORG_ERRAND_BUDGET` and `BORG_STOPSCARED` overrides never reached the core.
+Those tests now run the game directly (`direct`), with the pinned adapter's
+own `config_text` and `command`. The profile tests still go through
+`run_cell`. 13/13 pass with the old pin (`c5f1b04`) and with `7b373a70`; the
+rest of the engine suite is unchanged between the two pins. Next: the pin
+move in its own PR, then #535.
+
+## 2026-11-17: class values and per-class borg files (#520)
+
+Owner: one common borg.txt, per-class files overriding any setting, no
+per-class flags in the code; decisions A–D "yes to all" (on #520).
+
+- `params.rs`: every parameter has a common value and optional class values
+  (`borg_param_<name>@<class>`, `BORG_PARAM_<NAME>__<CLASS>`, or the pre-#520
+  per-class names as aliases). `value()` follows the character's class
+  (`set_class`). 81 per-class parameters became 6 (registry 2,116).
+- `harness/borg_<class>.txt` hold the 36 shipped class values; the generated
+  CLASS FILES block in `harness/borg.txt` carries them (legacy names, so zoo
+  profiles keep rewriting them); `scripts/tests/test_borg_class_files.py`
+  keeps the block in sync. The zoo adapter needs no change.
+- `params-core.json` adds `class_values`; the trace's attack `parameter_name`
+  is the family's parameter.
+- Checked: the 18 classes-18 starts play identical keys to main `435b07e7`.
+- Left: the cfg `borg_*` settings (decision C: later); #518's scary list by
+  class can use class values.
+## 2026-11-17: borg.txt's formula section removed (#519)
+
+Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
+them. borg-rs's formula section (Power, Depth Requirement, Restock
+Requirement: 790 of `harness/borg.txt`'s 1,362 lines) is deleted; the file is
+now 576 lines. `borg-core/borg.txt` (borg-rs's copy, the parity check) keeps
+it.
+
+- The shipped `borg_uses_dynamic_calcs = FALSE`: the section was read but never
+  processed, and `borg_power`/`borg_prepared` use their built-in calculations.
+  Checked: the 18 classes-18 starts play identical keys to main `a8ac685a`.
+- Even with TRUE the formulas never took effect: a formula line fails to parse
+  and `borg_load_formulas` switches dynamic calculations off (#526, closed as
+  moot). With the section gone, TRUE warns "no formulas found" and stays off.
 ## 2026-11-17: the named scary list as data (#518)
 
 Owner: a flexible scary list, by monster, level and class.
