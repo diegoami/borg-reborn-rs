@@ -344,6 +344,11 @@ scary monsters were dead or forgotten. With `caution_scary_latch = 0`,
 `apply_scary_stand` then clears the flag and withdraws only the goals the
 scare set (`unlatch_scare`), with the note
 `# Scary guy gone: the level is no longer scary.` Door scares stay latched.
+The unlatch also ends a stand, so the next stand prints its note again.
+"Gone" includes forgotten: a monster not seen for 2000 game turns leaves the
+known monsters (`expire_kills`, `borg_update.rs:1563`), so with latch 0
+walking away from a scary monster ends its scare too, not only killing it.
+Read an arm's results with that in mind (review of #562).
 
 Compiled and shipped 1 (the latch), for a zoo pilot. Evidence (a lead):
 from the turn-88,147 save of `priest-1055640847`, 5 seeds to 120,000
