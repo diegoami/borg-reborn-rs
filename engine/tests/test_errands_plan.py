@@ -109,7 +109,8 @@ class ErrandsPlanTest(unittest.TestCase):
         # #503: seed 1003 (with breeders no longer fled and the named scary
         # monsters off, seed 1002's Mage dies before turn 20,000).
         # #516: seed 1004 (with Boldness capped and rests no longer arming
-        # Detect Invisible, seed 1003's Mage stays at level 1 until turn 20,000).
+        # Detect Invisible, seed 1003's Mage dies at level 1, to a yellow mold
+        # at turn 7,485).
         r,out=self.run_poc('growth',cls=1,seed=1004,turns=20000)
         self.assertEqual(r.returncode,0,r.stderr)
         notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
