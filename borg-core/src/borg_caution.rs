@@ -17,7 +17,7 @@
 
 // borg-reborn-rs (#219): named caution thresholds; arithmetic/order unchanged.
 use crate::borg::BorgTime;
-use crate::borg_cave::BorgGrid;
+use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
@@ -54,7 +54,7 @@ use crate::engine;
 use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CONF, RF_UNIQUE};
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
-use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
+use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
@@ -1027,9 +1027,22 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
     }
 
     // If you are next to steps of the down stairs go for it
-    b_m <= p(Param::caution_desperate_adjacent_down_distance)
+    if b_m <= p(Param::caution_desperate_adjacent_down_distance)
         && b_m != -1
         && desperate_flow(st, false, "# Desperate for Stairs (four)")
+    {
+        return true;
+    }
+
+    // borg-reborn-rs (#544): in the dungeon, fleeing with no up staircase
+    // known, a known down staircase at any distance (an escape: the Borg comes back up
+    // when not prepared for the depth).
+    p(Param::caution_flee_known_down_stairs) != 0
+        && st.borg.tr(BI_CDEPTH) > 0
+        && (st.borg.goal.fleeing || st.borg.mon.scary)
+        && b_j == -1
+        && b_m != -1
+        && desperate_flow(st, false, "# Desperate for Stairs (down, no up stairs known)")
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -1974,6 +1987,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#544): only breeders near and outmatched, walk out of
+    // their room instead of fighting where it stands.
+    if breeder_exit(st, pos_danger) {
+        return true;
+    }
+
     // borg-reborn-rs (#504): cornered (no escape, a fight on, danger at or
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
@@ -2244,6 +2263,80 @@ pub(crate) fn breeder_stand_here(st: &BorgState) -> bool {
         p(Param::caution_breeder_stand_radius),
         p(Param::danger_monster_max_distance),
     )
+}
+
+/// borg-reborn-rs (#544): with only breeders near, one adjacent, and the
+/// danger here at or above the HP or the Borg surrounded, walk with the
+/// desperate flow (danger ignored, monster grids routed around) to the
+/// nearest known corridor grid at least `caution_breeder_exit_distance`
+/// grids from every known breeder. The danger of a crowd of breeders
+/// saturates at `danger_maximum` on every grid near them, so retreat and
+/// back-away find no better grid and the Borg fights on where it stands
+/// (priest-1055640847: 236 decisions on one grid of a dead-end worm room).
+fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
+    if p(Param::caution_breeder_exit) == 0 {
+        return false;
+    }
+    let distance = p(Param::caution_breeder_exit_distance);
+    let mut known = Vec::new();
+    let mut breeders = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        let breeder = engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY);
+        let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        known.push((engine::distance(st.borg.c, kill.pos), reach, breeder));
+        if breeder {
+            breeders.push(kill.pos);
+        }
+    }
+    if !only_breeders_near(&known, 1, p(Param::danger_monster_max_distance)) {
+        return false;
+    }
+    if pos_danger < st.borg.tr(BI_CURHP) && !borg_surrounded(st) {
+        return false;
+    }
+    let neighbours = p(Param::caution_breeder_exit_neighbours);
+    let passable = |st: &BorgState, x: i32, y: i32| {
+        let ag = st.cave.grid(x, y);
+        borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+    };
+    st.borg.status.desperate = true;
+    crate::borg_flow::borg_flow_clear(st);
+    let mut exits = 0;
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            if !engine::square_in_bounds_fully(x, y) || !passable(st, x, y) || st.cave.grid(x, y).kill != 0 {
+                continue;
+            }
+            let open = (0..8)
+                .filter(|&i| passable(st, x + i32::from(engine::ddx_ddd(i)), y + i32::from(engine::ddy_ddd(i))))
+                .count() as i32;
+            if !breeder_exit_grid(loc { x, y }, open, &breeders, distance, neighbours) {
+                continue;
+            }
+            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+            exits += 1;
+        }
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    let ok = exits > 0
+        && crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE)
+        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, &format!("# Leaving the breeders' room ({exits} exit grids)"));
+    }
+    ok
+}
+
+/// A breeder exit (#544): a corridor grid (at most `neighbours` of its 8
+/// neighbours passable; `open` is that count) at least `distance` grids
+/// from every breeder.
+fn breeder_exit_grid(at: loc, open: i32, breeders: &[loc], distance: i32, neighbours: i32) -> bool {
+    open <= neighbours && breeders.iter().all(|&b| engine::distance(b, at) >= distance)
 }
 
 /// The known monsters as (distance, danger reach, breeder): a breeder
@@ -2875,6 +2968,16 @@ mod breeder_tests {
         // within borg_danger's reach (14): it vetoes.
         assert!(!only_breeders_near(&[(1, 1, true), (21, 14, false)], 5, 20), "a diagonal monster within reach");
         assert!(!only_breeders_near(&[(1, 1, false), (2, 2, true)], 5, 20), "a non-breeder adjacent");
+    }
+
+    #[test]
+    fn breeder_exits_are_corridor_grids_away_from_breeders() {
+        let worms = [loc { x: 10, y: 10 }, loc { x: 12, y: 9 }];
+        assert!(breeder_exit_grid(loc { x: 10, y: 3 }, 2, &worms, 6, 3), "a corridor 7 grids away");
+        assert!(!breeder_exit_grid(loc { x: 10, y: 3 }, 5, &worms, 6, 3), "a room grid");
+        assert!(!breeder_exit_grid(loc { x: 10, y: 5 }, 2, &worms, 6, 3), "a corridor 5 grids from a worm");
+        assert!(breeder_exit_grid(loc { x: 10, y: 5 }, 2, &[], 6, 3), "no breeders known");
+        assert!(breeder_exit_grid(loc { x: 10, y: 3 }, 3, &worms, 6, 3), "at the neighbour limit");
     }
 
     /// #503: melee classes hunt while few breeders are known; casters and
