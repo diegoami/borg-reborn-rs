@@ -66,7 +66,7 @@ heads, deltas and retained-pin reasons are recorded in
 it does not claim that all changed source code or catalogues were adopted.
 
 The report's new better-borg-c cases are the same D0020–D0030 collected,
-unassessed dossiers already read in the startup audit below. No new case
+unassessed dossiers already read in the startup audit above. No new case
 identifier was reported beyond that set. Preserve their existing source
 qualification and do not turn collected cases into a tuning conclusion.
 The new donor corrections/adoption text is reflected in the borg-rs row.
