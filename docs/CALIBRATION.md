@@ -10,6 +10,54 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A fleeing Druid takes Fox Form (#551)
+
+The registry now holds **2148** parameters (2145 before; three added). Owner,
+2026-11-18: Druids die most (borg-zoo#227), and Fox Form, a level-1 spell,
+is the strategy manual's CL1-20 escape (`14-class-playbooks.md:453`): the
+fox shape has `MOVES[1]` (each step costs half the energy,
+`player-util.c` `energy_per_move`) and Free Action (`shape.txt`).
+
+With `escape_fox_form = 1`:
+- **The cast:** a Druid about to take a flight step (`borg_flow_old` with
+  `GOAL_FLEE`) at least `escape_fox_form_min_steps` flow steps from its goal
+  casts Fox Form first, if its fail rate is at most `escape_fox_form_fail`.
+  The note is `# Fox Form: fleeing (N steps to go)`.
+- **Keeping the shape:** `borg_think` keeps it while the Borg is fleeing
+  (the flight flow, or the flee or leave goal) or the level is scary,
+  standing included, in the dungeon only. Otherwise it reverts as C does.
+  Keeping it on a scary level stops a flip-flop with #530's stand mode: a
+  stand cleared the flight for a think, the Borg reverted and recast at
+  the next flight (110 casts in one game; 13 after).
+- **Items and spells:** an item or spell command makes the game ask
+  "Change back and <verb> (y/n) or (r)eturn to normal?"
+  (`player_get_resume_normal_shape`). The Borg answers `y` (change back and
+  act, one command, no extra energy) while it keeps the shape, and `r`
+  for its own revert, which then queues only `v`. The note is
+  `# Fox Form: reverting for an item or a spell`.
+- **Not done:** `borg_danger` and the flee flows still assume one move per
+  turn, so they undervalue a fox's escape.
+
+Compiled and shipped 0 (C). Evidence, a lead (branch of main `8e7dbad4`,
+100,000 turns): the 18 classes-18 starts and 27 Druid starts from
+classes-1800 (29 Druids in all):
+
+| arm | Druid deaths | Druid sum of CL | Druid sum of max depth | other classes |
+|---|---:|---:|---:|---|
+| off | 3 | 161 | 54 | |
+| on | 3 | 154 | 57 | 16/16 keys identical |
+
+On, the Druids cast Fox Form 0-37 times a game (419 in all) and changed back
+for an item or a spell 124 times. A fox's step takes 5 game turns, not 10.
+The 3 deaths are the same in both arms, at CL1-2 and before any flight, so
+these games say nothing about survival: that needs the zoo (Druid starts).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:486` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:515` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:516` |
+
 ## Breeders hunted by every class (#558)
 
 The registry now holds **2139** parameters (2137 on main before #558; two

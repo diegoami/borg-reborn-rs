@@ -63,6 +63,8 @@ const BORG_DIG_HARD: i32 = 40;
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
 const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
+/// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
+const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
@@ -1306,6 +1308,14 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     }
 
     let b_i = select_step(st);
+
+    // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
+    if b_i >= 0 && why == GOAL_FLEE {
+        let steps_left = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+        if crate::borg_escape::fox_form_before_flight_step(st, steps_left) {
+            return true;
+        }
+    }
 
     /* Try it */
     if b_i >= 0 {

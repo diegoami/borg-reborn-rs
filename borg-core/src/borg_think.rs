@@ -198,11 +198,16 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     }
 
     /* Always revert shapechanged players to normal form. */
-    if engine::player_is_shapechanged() {
+    // borg-reborn-rs (#551): with escape_fox_form, a fleeing fox keeps its
+    // shape; the revert's "(r)eturn" is then answered by the prompt
+    // handler (borg_messages), so only the command is queued here.
+    if engine::player_is_shapechanged() && !crate::borg_escape::keep_fox_form(st) {
         /* it looks like throw is a good command that checks */
         /* your form without a prerequisite check */
         borg_keypress(st, 'v' as u32);
-        borg_keypress(st, 'r' as u32);
+        if !crate::borg_escape::fox_form_on() {
+            borg_keypress(st, 'r' as u32);
+        }
         return choice!("revert_shapechange");
     }
 

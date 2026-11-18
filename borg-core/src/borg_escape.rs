@@ -34,9 +34,11 @@ use crate::borg_cave_view::BORG_VIEW;
 use crate::engine;
 use crate::borg_headers::borg_h::BORG_PLAYS_RISKY;
 use crate::borg_headers::borg_magic_h::{
-    DIMENSION_DOOR, PHASE_DOOR, PORTAL, SHADOW_SHIFT, TELEPORT_LEVEL, TELEPORT_SELF,
+    DIMENSION_DOOR, FOX_FORM, PHASE_DOOR, PORTAL, SHADOW_SHIFT, TELEPORT_LEVEL, TELEPORT_SELF,
     WORD_OF_RECALL,
 };
+/// `GOAL_FLEE` (borg-flow.h): flee the level.
+const GOAL_FLEE: i32 = 7;
 use crate::borg_headers::borg_trait_h::{
     BI_AESCAPE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH, BI_CLASS, BI_CLEVEL,
     BI_CRSNOTEL, BI_CURHP, BI_CURSP, BI_ISAFRAID, BI_ISCUT, BI_ISHEAVYSTUN, BI_ISPOISONED,
@@ -477,6 +479,81 @@ fn adjacent_awake(st: &BorgState) -> bool {
 /// ranged attack.
 fn phase_helps(monsters: &[(bool, i32, bool, bool)]) -> bool {
     monsters.iter().any(|&(awake, d, ranged, view)| awake && (d <= 1 || (ranged && view)))
+}
+
+/// borg-reborn-rs (#551): `escape_fox_form` is on.
+pub(crate) fn fox_form_on() -> bool {
+    param(Param::escape_fox_form) != 0
+}
+
+/// borg-reborn-rs (#551): the player is in fox shape.
+pub(crate) fn is_fox() -> bool {
+    engine::player_is_shapechanged() && engine::player_shape_name() == b"fox"
+}
+
+/// borg-reborn-rs (#551): keep the fox shape this think: the switch is on,
+/// the player is a fox, in the dungeon (no shop takes a fox, cmd-cave.c),
+/// and still fleeing (a flight flow, or the flee or leave goal) or on a
+/// scary level, standing included: #530's stand clears the flee goal for a
+/// think, and reverting then recast the shape at the next flight (110 casts
+/// in one game). Otherwise `borg_think` reverts as C does.
+pub(crate) fn keep_fox_form(st: &BorgState) -> bool {
+    let flight = i32::from(st.borg.goal.type_0) == GOAL_FLEE || st.borg.goal.fleeing || st.borg.goal.leaving;
+    let scary = st.borg.mon.scary || st.borg.mon.scary_stand;
+    fox_form_on() && is_fox() && keep_fox_when(st.borg.tr(BI_CDEPTH), flight, scary)
+}
+
+fn keep_fox_when(depth: i32, flight: bool, scary_level: bool) -> bool {
+    depth > 0 && (flight || scary_level)
+}
+
+/// borg-reborn-rs (#551): the Druid is about to take a flight step with
+/// `steps_left` flow steps to go: cast Fox Form first (one turn; the next
+/// steps cost half the energy, `MOVES[1]`, player-util.c `energy_per_move`).
+/// The manual lists it as the CL1-20 escape (14-class-playbooks.md:453).
+pub(crate) fn fox_form_before_flight_step(st: &mut BorgState, steps_left: i32) -> bool {
+    let fail = param(Param::escape_fox_form_fail);
+    if !cast_fox_when(fox_form_on(), st.borg.tr(BI_CDEPTH), engine::player_is_shapechanged(), steps_left, param(Param::escape_fox_form_min_steps))
+        || !borg_spell_okay_fail(st, FOX_FORM, fail)
+    {
+        return false;
+    }
+    borg_note(st, &format!("# Fox Form: fleeing ({steps_left} steps to go)"));
+    borg_spell_fail(st, FOX_FORM, fail)
+}
+
+fn cast_fox_when(on: bool, depth: i32, shapechanged: bool, steps_left: i32, min_steps: i32) -> bool {
+    on && depth > 0 && !shapechanged && steps_left >= min_steps
+}
+
+/// borg-reborn-rs (#551): the answer to the game's "Change back and <verb>
+/// (y/n) or (r)eturn to normal?" (`player_get_resume_normal_shape`): `y`
+/// while the flight keeps the fox shape (change back and act, one command),
+/// `r` otherwise (the revert of `borg_think`, which then queues only `v`).
+pub(crate) fn change_back_answer(st: &BorgState) -> u8 {
+    if keep_fox_form(st) { b'y' } else { b'r' }
+}
+
+#[cfg(test)]
+mod fox_form_tests {
+    use super::{cast_fox_when, keep_fox_when};
+
+    #[test]
+    fn a_fox_form_is_cast_only_on_a_long_enough_flight_in_the_dungeon() {
+        assert!(cast_fox_when(true, 3, false, 3, 3));
+        assert!(!cast_fox_when(false, 3, false, 10, 3), "switch off");
+        assert!(!cast_fox_when(true, 0, false, 10, 3), "town");
+        assert!(!cast_fox_when(true, 3, true, 10, 3), "already shapechanged");
+        assert!(!cast_fox_when(true, 3, false, 2, 3), "too close to the goal");
+    }
+
+    #[test]
+    fn b_the_fox_shape_is_kept_while_fleeing_or_on_a_scary_level() {
+        assert!(keep_fox_when(2, true, false), "fleeing");
+        assert!(keep_fox_when(2, false, true), "a scary level, standing included");
+        assert!(!keep_fox_when(2, false, false), "the flight is over, the level calm");
+        assert!(!keep_fox_when(0, true, true), "town: no shop takes a fox");
+    }
 }
 
 /// Help determine if PHASE_DOOR seems like a good idea

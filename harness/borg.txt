@@ -593,6 +593,15 @@ borg_param_caution_flee_recall_gate_below_depth = 2
 
 borg_param_escape_phase_adjacent_only = 1
 
+# A fleeing Druid casts Fox Form (double movement, Free Action) before a
+# flight step at least min_steps from its goal, and keeps the shape while
+# fleeing; an item or a spell then changes back in the same command (#551).
+# 0 = never (C).
+
+borg_param_escape_fox_form = 0
+borg_param_escape_fox_form_fail = 25
+borg_param_escape_fox_form_min_steps = 3
+
 # On a scary level with no reachable staircase, attack the monster at range
 # with the best ranged attack before reading Recall or Phase Door (#539).
 
