@@ -24,4 +24,16 @@ retired.
   every store visit (`borg_think_store` returns after `execute_store`), so
   the Buying Strategy Family never runs: 0/6 games change even with every
   class bit set.
+- **Commented (owner: "comment them well, group them that should be
+  changed together, mention how much impact they have and what increasing
+  and decreasing do"):** every setting says what it does and what raising or
+  lowering does, the sets to change together share one comment, and an
+  "Impact" line gives how many of 6 test games (50,000 turns) play
+  differently with the value changed. All 77 written `borg_param_` lines and
+  56 core settings were measured.
+- **Found by the measurement:** `town_heal_reserve_hp_percent` and
+  `town_heal_curve_scale_percent` change no game, because every class sets
+  its own value in the class files; the common lines are unused now. Many
+  others change nothing in 50,000 turns (Phase Door thresholds, Recall waits,
+  Bless): situations these short games rarely reach.
 - **Owner to decide:** the retirement list in the PR. Nothing is retired yet.
