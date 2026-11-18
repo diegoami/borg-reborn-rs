@@ -24,16 +24,18 @@ reborn core, which is unaffected.
   third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear
   stays for everything else: at 0 everywhere, 18 starts went from 2 to 5
   deaths.
-- **Checks** (second review, against main `1b8dc60c`):
-  - all switches off: 18/18 classes-18 starts identical to main;
-  - on: 3 deaths against main's 4 (the Ranger that dies of poison at CL3 on
-    main survives here),
-    sum of CL 94 on both; the rest gate fires once (it fired 41 times before
-    the review asked it to test what the hunt tests);
+- **Checks** (third review, against main `68cf9eb5` and its `borg.txt`):
+  - control (the class counts at 0 for Mage, Druid, Priest, Necromancer and
+    Ranger, Warrior 4, both switches 0): 18/18 classes-18 starts identical to
+    main;
+  - shipped: 8 of 18 games change; the same 3 deaths (wild dog, blue yeek,
+    lava), sum of CL 100 against 101; the rest gate's note appears 8 times;
   - the owner's 88,147 save over 8 seeds: 4 worm deaths on main and 4 here.
     The save is a breeder trap either way (cornered by 14–22 worms), so
     #556 (no walking into colonies) is the follow-up;
-  - the six `borg-play` deaths: no new death.
+  - the six `borg-play` deaths: no new death (Priest 809881907 dies to a
+    soldier on main and survives here); Priest 1055640847 ends at CL3
+    against 6, Ranger 2107852048 on DL1 against DL3.
 - **Left:** more Bless and Heroism (#560). The return trip without Recall
   (#557) went into main as #559, from another session.
 
