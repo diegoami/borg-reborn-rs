@@ -27,6 +27,9 @@ use crate::borg_headers::borg_trait_h::{
 };
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::state::BorgState;
+
+/// `GOAL_FLEE` (borg-flow.h): flee the level.
+const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
@@ -182,7 +185,10 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 
     /* Enqueue useful grids */
     enqueue_stairs(st, Which::Less);
-    enqueue_stairs(st, Which::More);
+    // borg-reborn-rs (#557): no down staircase for a flight while rising.
+    if !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st)) {
+        enqueue_stairs(st, Which::More);
+    }
 
     /* Spread the flow */
     borg_flow::borg_flow_spread(st, 250, false, false, false, -1, sneak);
@@ -224,6 +230,11 @@ pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
 pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
     /* None to flow to */
     if st.stairs.more.num == 0 {
+        return false;
+    }
+
+    // borg-reborn-rs (#557): no flight down a staircase while rising.
+    if why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st) {
         return false;
     }
 

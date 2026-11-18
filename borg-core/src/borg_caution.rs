@@ -2167,6 +2167,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
         && !ranged_before_recall(st)
+        && recall_escape_allowed(st)
         && borg_recall(st)
     {
         // Note
@@ -2292,6 +2293,43 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// fight at range instead: switch on, a ranged attack the attack planner
 /// would make (`borg_fight_attack::ranged_means`), a `ranged_candidate`,
 /// and no staircase it can walk to.
+/// borg-reborn-rs (#557, owner): is Word of Recall an escape from this
+/// flight? `caution_flee_recall` 1: always (C). 0: only on a level swamped
+/// by breeders (`caution_flee_recall_breeders` known on the level) or when
+/// chased by several monsters (`caution_flee_recall_chasers` awake, able to
+/// move, within
+/// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
+/// turns next to the monster it flees and is gone for the trip home.
+fn recall_escape_allowed(st: &BorgState) -> bool {
+    if p(Param::caution_flee_recall) != 0 {
+        return true;
+    }
+    let range = p(Param::caution_flee_recall_chase_distance);
+    let mut chasers = 0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        // A monster that never moves (a mold) cannot chase.
+        if kill.r_idx != 0
+            && kill.awake
+            && engine::distance(st.borg.c, kill.pos) <= range
+            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+        {
+            chasers += 1;
+        }
+    }
+    recall_escape_with(
+        i32::from(st.borg.mon.breeders),
+        chasers,
+        p(Param::caution_flee_recall_breeders),
+        p(Param::caution_flee_recall_chasers),
+    )
+}
+
+/// Swamped by breeders or chased by several monsters (a limit of 0 is off).
+fn recall_escape_with(breeders: i32, chasers: i32, breeder_limit: i32, chaser_limit: i32) -> bool {
+    (breeder_limit > 0 && breeders >= breeder_limit) || (chaser_limit > 0 && chasers >= chaser_limit)
+}
+
 pub(crate) fn ranged_before_recall(st: &mut BorgState) -> bool {
     if p(Param::caution_scary_ranged_no_stairs) == 0 {
         return false;
@@ -2367,7 +2405,7 @@ fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || st.borg.tr(BI_RECALL) > 0
+        || (st.borg.tr(BI_RECALL) > 0 && recall_escape_allowed(st))
 }
 
 /// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
@@ -2399,13 +2437,11 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
         }
         return;
     }
+    // borg-reborn-rs (#557): while rising, a down staircase the flight may
+    // not take is no escape.
+    let down = if rising_holds_flee_descent(st) { -1 } else { nearest_free_stair(st, false) };
     let escape = st.borg.tr(BI_CDEPTH) == 0
-        || easy_escape_with(
-            st,
-            p(Param::caution_breeder_easy_escape_steps),
-            nearest_free_stair(st, true),
-            nearest_free_stair(st, false),
-        );
+        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down);
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
@@ -2665,6 +2701,26 @@ fn stair_scum_threatened_with(st: &mut BorgState, flag: i32, here: i32, danger_l
 /// The threat test of `stair_scum_threatened` (#549).
 fn stair_scum_threat(scary: bool, danger: i32, hp: i32, max_hp: i32, danger_limit: i32) -> bool {
     scary || danger > danger_limit || hp < max_hp
+}
+
+/// borg-reborn-rs (#557): with `caution_rising_hold_flee_descent`, while
+/// rising in the dungeon a flight takes no down staircase unless the danger
+/// here is at or above the HP. With `birth_connect_stairs` the down staircase
+/// lands the Borg on DL+1's up staircase, it climbs back to a fresh level on
+/// a down staircase again, and the walk home restarts: priest-1055640847
+/// bounced DL2-DL3 eight times in 30,000 turns without reaching town.
+pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
+    if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    rising_hold(here, st.borg.tr(BI_CURHP))
+}
+
+/// The danger test of `rising_holds_flee_descent` (#557): held unless the
+/// danger here is at or above the HP.
+fn rising_hold(danger: i32, hp: i32) -> bool {
+    danger < hp
 }
 
 /// The known monsters as (distance, danger reach, breeder): a breeder
@@ -3038,6 +3094,11 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     if rising_holds_descent(st, pos_danger) {
         st.borg.stair_more = false;
     }
+
+    // borg-reborn-rs (#557): no descent while rising, unless in real danger.
+    if st.borg.stair_more && rising_holds_flee_descent(st) {
+        st.borg.stair_more = false;
+    }
 }
 
 /// Buy time while waiting for recall in danger: mana, phase door, cure
@@ -3239,6 +3300,15 @@ mod scary_stand_tests {
         assert!(!stand_decision(true, pursuer), "an easy escape: flee");
         assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
         assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn recall_is_an_escape_only_from_breeders_or_several_chasers() {
+        assert!(!recall_escape_with(0, 0, 5, 3), "one scary monster: no Recall");
+        assert!(!recall_escape_with(4, 2, 5, 3), "below both limits");
+        assert!(recall_escape_with(5, 0, 5, 3), "a level swamped by breeders");
+        assert!(recall_escape_with(0, 3, 5, 3), "chased by several monsters");
+        assert!(!recall_escape_with(100, 100, 0, 0), "both limits off");
     }
 
     #[test]
@@ -3514,6 +3584,14 @@ mod breeder_tests {
         assert!(stair_scum_threat(false, 4, 14, 14, 0), "Grip in view (ranger-2107852048, turn 191)");
         assert!(!stair_scum_threat(false, 4, 14, 14, 4), "danger at the limit");
         assert!(stair_scum_threat(false, 0, 6, 14, 0), "hurt");
+    }
+
+    #[test]
+    fn rising_holds_a_flight_down_unless_in_real_danger() {
+        assert!(rising_hold(0, 70), "nothing near");
+        assert!(rising_hold(69, 70), "danger below the HP");
+        assert!(!rising_hold(70, 70), "danger at the HP");
+        assert!(!rising_hold(2000, 70), "a worm crowd");
     }
 
     /// Review of #550: the skip also ends the stair scum's own flow, so no
