@@ -10,6 +10,17 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A living monster keeps some hit points (#546)
+
+The registry now holds **2123** parameters (2122 after #544, which added three; one added). Owner,
+2026-11-18, from the floating-eye Mage 2028599180, which stopped attacking an
+eye it had left at 1/9 HP and walked next to it: the HP estimate truncated to
+0. Compiled 0 (C's estimate); `harness/borg.txt` ships 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `kill_live_min_power` | 0 | hp | 0–10 | `borg_flow_kill.rs` (`set_health`/`live_power`: a monster with hp above 0 is estimated at least this many HP; the attack overkill caps use the estimate) |
+
 ## Fleeing: stairs, range, no pointless Phase Door (#539)
 
 The registry now holds **2119** parameters (2116 after #520; three added). Owner,
@@ -200,12 +211,12 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2594` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2594` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2594` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2657` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2715` (buff spells only at or below this failure rate) |
-| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2645` (0 = off; owner: the same boosts in a hard breeder fight) |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2469` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2469` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2469` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2532` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2590` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2520` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Healing by class; no Shovel while poor (#487)
 
@@ -418,7 +429,7 @@ list help: 1 death against 5); the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2508` (0 = off; read in `borg_flow_kill.rs`) |
+| `caution_scary_damage_percent` | 0 | percent of max HP | 0–1000 | `borg_caution.rs:2286` (0 = off; read in `borg_flow_kill.rs`) |
 
 ## No unknown items (#470)
 
@@ -575,12 +586,12 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_mage_stat_fix_sp` | 100 | sp | 0–10000 | `borg_caution.rs:180` |
 | `caution_mage_stat_fix_votes` | 5 | votes | 0–100 | `borg_caution.rs:181` |
 | `caution_heal_spell_fail` | 15 | percent | 0–100 | `borg_caution.rs:196` |
-| `caution_clw_estimate_percent` | 15 | percent | 0–100 | `borg_caution.rs:201` |
-| `caution_clw_estimate_min` | 15 | hp | 0–10000 | `borg_caution.rs:201` |
-| `caution_csw_estimate_percent` | 20 | percent | 0–100 | `borg_caution.rs:202` |
-| `caution_csw_estimate_min` | 25 | hp | 0–10000 | `borg_caution.rs:202` |
-| `caution_ccw_estimate_percent` | 25 | percent | 0–100 | `borg_caution.rs:203` |
-| `caution_ccw_estimate_min` | 30 | hp | 0–10000 | `borg_caution.rs:203` |
+| `caution_clw_estimate_percent` | 15 | percent | 0–100 | `borg_caution.rs:203` |
+| `caution_clw_estimate_min` | 15 | hp | 0–10000 | `borg_caution.rs:203` |
+| `caution_csw_estimate_percent` | 20 | percent | 0–100 | `borg_caution.rs:204` |
+| `caution_csw_estimate_min` | 25 | hp | 0–10000 | `borg_caution.rs:204` |
+| `caution_ccw_estimate_percent` | 25 | percent | 0–100 | `borg_caution.rs:205` |
+| `caution_ccw_estimate_min` | 30 | hp | 0–10000 | `borg_caution.rs:205` |
 | `caution_heal_estimate_percent` | 35 | percent | 0–100 | `borg_caution.rs:205` |
 | `caution_heal_estimate_min` | 300 | hp | 0–10000 | `borg_caution.rs:205` |
 | `caution_healing_rod_fail` | 500 | permille | 0–1000 | `borg_caution.rs:211` |

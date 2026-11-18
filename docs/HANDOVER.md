@@ -15,6 +15,24 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
 - **Left:** the town (unchanged), and the escape itself: the owner notes
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
+## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
+
+The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
+the eye with Magic Missile or a flask. The Borg's first Magic Missile left the
+eye at 1/9 HP. `set_health` estimates HP as `maxhp * (100*hp/maxhp) / 100`,
+truncating twice: 9 × 11 / 100 = 0. The overkill caps (damage at most twice
+the estimate) then score every attack 0, and `borg_flow_old` walked the Borg
+next to the eye, whose gaze paralysed it until it died. New switch
+`kill_live_min_power` (compiled 0, shipped 1): a living monster is estimated at
+least that many HP.
+
+- The Mage lives: it casts again, then throws oil, and reaches the turn cap at
+  CL4. Five of the six `borg-play` deaths now live; the turn-276 Ranger (Grip)
+  plays the same as before.
+- 18 classes-18 starts on main `9ecbfd1e`: off identical to main (18/18). On,
+  16/18 games change (1-HP monsters are common); the same 2 deaths, sum of CL
+  95 → 92. No measured gain beyond the Mage; the zoo would measure it.
+
 ## 2026-11-18: escapes from a breeder room, two flags for a zoo arm (#544)
 
 Owner, from the replayed zoo death priest-1055640847 (`~/borg-play`): the
@@ -60,6 +78,7 @@ none` keeps the compiled C list.
 - **The merge waits for the zoo:** its adapter must copy a list named by the
   shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
   stop with exit 2.
+
 ## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
 
 The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
