@@ -529,11 +529,59 @@ fn cast_fox_when(on: bool, depth: i32, shapechanged: bool, steps_left: i32, min_
 }
 
 /// borg-reborn-rs (#551): the answer to the game's "Change back and <verb>
-/// (y/n) or (r)eturn to normal?" (`player_get_resume_normal_shape`): `y`
-/// while the flight keeps the fox shape (change back and act, one command),
-/// `r` otherwise (the revert of `borg_think`, which then queues only `v`).
-pub(crate) fn change_back_answer(st: &BorgState) -> u8 {
-    if keep_fox_form(st) { b'y' } else { b'r' }
+/// (y/n) or (r)eturn to normal?" (`player_get_resume_normal_shape`): `r`
+/// for the Borg's own change back (`fox_revert`, queued as `v` alone), `y`
+/// for an item or a spell command (change back and act, one command, no
+/// extra energy).
+pub(crate) fn change_back_answer(st: &mut BorgState) -> u8 {
+    if std::mem::take(&mut st.borg.fox_revert) { b'r' } else { b'y' }
+}
+
+/// borg-reborn-rs (#551): queue the Borg's own change back from fox shape:
+/// `v` (a command that asks), answered `r` by the prompt handler. Changing
+/// back uses no energy (`player_resume_normal_shape`).
+pub(crate) fn queue_fox_revert(st: &mut BorgState) {
+    st.borg.fox_revert = true;
+    borg_keypress(st, u32::from(b'v'));
+}
+
+/// borg-reborn-rs (#551, owner): a fox does not fight. Before a melee blow
+/// (an attack or a step into a monster), the Borg changes back; it fights
+/// in its own shape from the next think. Other attacks are item or spell
+/// commands, which change back through the game's prompt.
+pub(crate) fn revert_fox_to_fight(st: &mut BorgState) -> bool {
+    if !(fox_form_on() && is_fox()) {
+        return false;
+    }
+    borg_note(st, "# Fox Form: reverting to fight");
+    queue_fox_revert(st);
+    true
+}
+
+/// borg-reborn-rs (#551): the speed a flight is worth to the stand
+/// decision: a Druid that is a fox, or could cast Fox Form, moves at
+/// `escape_fox_form_speed` more (`MOVES[1]` halves a step's energy: +10 at
+/// normal speed, `extract_energy` 10 to 20).
+pub(crate) fn flight_speed_bonus(st: &BorgState) -> i32 {
+    if !fox_form_on() || engine::player_depth() == 0 {
+        return 0;
+    }
+    if is_fox() || borg_spell_okay_fail(st, FOX_FORM, param(Param::escape_fox_form_fail)) {
+        param(Param::escape_fox_form_speed)
+    } else {
+        0
+    }
+}
+
+/// borg-reborn-rs (#551): the speed bonus of a fox for `borg_danger`. A fox
+/// only moves (it changes back to fight or to use an item or a spell), so
+/// the monsters get half as many turns per step.
+pub(crate) fn fox_moving_speed_bonus() -> i32 {
+    if fox_form_on() && is_fox() {
+        param(Param::escape_fox_form_speed)
+    } else {
+        0
+    }
 }
 
 #[cfg(test)]
@@ -547,6 +595,16 @@ mod fox_form_tests {
         assert!(!cast_fox_when(true, 0, false, 10, 3), "town");
         assert!(!cast_fox_when(true, 3, true, 10, 3), "already shapechanged");
         assert!(!cast_fox_when(true, 3, false, 2, 3), "too close to the goal");
+    }
+
+    #[test]
+    fn c_the_prompt_is_answered_r_only_for_the_borgs_own_change_back() {
+        let mut st = crate::state::BorgState::default();
+        assert_eq!(super::change_back_answer(&mut st), b'y', "an item or a spell: change back and act");
+        st.borg.fox_revert = true;
+        assert_eq!(super::change_back_answer(&mut st), b'r', "its own change back");
+        assert!(!st.borg.fox_revert, "answered once");
+        assert_eq!(super::change_back_answer(&mut st), b'y');
     }
 
     #[test]

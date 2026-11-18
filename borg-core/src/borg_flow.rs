@@ -1119,6 +1119,11 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
             kill.pos.x,
         );
 
+        // borg-reborn-rs (#551, owner): a fox changes back before a blow.
+        if crate::borg_escape::revert_fox_to_fight(st) {
+            return true;
+        }
+
         /* Walk into it */
         if st.borg.status.no_alter {
             borg_keypress(st, keycode_t::from(b';'));
