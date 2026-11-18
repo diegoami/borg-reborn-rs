@@ -2754,6 +2754,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let player_speed = st.borg.tr(BI_SPEED) + crate::borg_escape::flight_speed_bonus(st);
     let mut stand_scary = false;
     let mut stand_pursuer = false;
+    let mut scary_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2861,6 +2862,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             let awake_and_fast = kill.awake && i32::from(kill.speed) >= player_speed;
             let (makes_scary, pursues) = crate::borg_caution::stand_contribution(scare, never_move, awake_and_fast);
             stand_scary |= makes_scary;
+            if makes_scary {
+                scary_races.push(r_idx); // borg-reborn-rs (#590)
+            }
             stand_pursuer |= pursues;
             scary = false;
         }
@@ -2938,6 +2942,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     }
 
     if stand_mode {
+        for r in scary_races {
+            crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
+        }
         crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
