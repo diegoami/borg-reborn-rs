@@ -521,6 +521,12 @@ borg_param_town_heal_speed_percent = 66
 
 borg_param_town_digger_min_gold = 500
 
+# Keep this many Word of Recall scrolls at any depth and level (#557):
+# without one, every trip home is a walk up, and a CL6 Priest stayed out
+# of town for 70,000 turns.
+
+borg_param_town_recall_reserve = 1
+
 
 ### Fleeing ###
 

@@ -68,6 +68,13 @@ const RANGER_MISSILES: usize = 57;
 /// it is worth the healing curve's first HP each (linear), past it nothing
 /// more than the curve. Zero weight when the parameter is 0.
 const HEAL_RESERVE: usize = 58;
+/// borg-reborn-rs (#557): the Recall reserve. Every Word of Recall counts
+/// here as well as in RECALL; up to `town_recall_reserve` of them it is a
+/// requirement worth the first healing's weight each, at any depth, so a
+/// low-level character keeps one (the trip curve alone values Recall by the
+/// walk it saves, next to nothing at DL1-3). Zero weight when the parameter
+/// is 0.
+const RECALL_RESERVE: usize = 59;
 const CLASS_RANGER: i32 = 7;
 const COUNT: usize = NAMES.len();
 /// borg-reborn-rs (food floor): the food items the core requires to be
@@ -83,14 +90,14 @@ pub(crate) const RATION_NUTRITION: i64 = 30;
 /// Waybread 75: object.txt) is worth what it adds from there.
 const HUNGRY_PERCENT: i64 = 15;
 
-pub const NAMES: [&str; 59] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
+pub const NAMES: [&str; 60] = ["light turns", "nutrition", "healing HP", "poison cure", "phase", "Recall",
     "ranged damage", "teleport", "level escape", "teleport other", "digging", "trap/door detection",
     "monster detection", "invisible detection", "mapping", "illumination", "speed", "resist fire",
     "resist cold", "resist poison", "resist acid", "resist electricity", "combat buff", "mana",
     "restore experience", "remove curse", "enchantment", "recharging", "confusion cure", "blindness cure",
     "fear cure", "glyph", "strength", "intelligence", "wisdom", "dexterity", "constitution", "charisma",
     "book 0", "book 1", "book 2", "book 3", "book 4", "book 5", "book 6", "book 7", "book 8",
-    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve"];
+    "banishment", "destruction", "wound/stun cure", "identify runes", "gain experience", "recharge target", "equipment opportunity", "cut reduction", "stun reduction", "monster control", "Ranger usable shots", "healing reserve", "Recall reserve"];
 
 /// Curves: [capability, weight in utility thousandths, demand, carried, Home].
 /// Supplies: [scope (shop 0..7, pack 8, Home 9), slot, capability, units/copy].
@@ -344,7 +351,18 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
     if let Some(&heal) = out.get(&HEAL) {
         out.insert(HEAL_RESERVE, reserve_heal(heal, real_heal, param(Param::town_heal_reserve_real_hp) != 0));
     }
+    // borg-reborn-rs (#557): the same Recall fills the Recall reserve.
+    if let Some(&recall) = out.get(&RECALL) {
+        out.insert(RECALL_RESERVE, recall);
+    }
     out.into_iter().collect()
+}
+
+/// borg-reborn-rs (#557): the Recall reserve's curve, (weight, demand), for
+/// `reserve` scrolls at `weight` (the first healing's) each.
+fn recall_reserve_curve(weight: i64, reserve: i32) -> (i64, i64) {
+    let n = i64::from(reserve.max(0));
+    if n == 0 { (0, -UNIT) } else { (weight * UNIT * n, -(n * UNIT)) }
 }
 
 fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(usize, i64)> {
@@ -600,6 +618,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
     curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1), UNIT);
+    // borg-reborn-rs (#557, owner: "ok to early scroll of recall"). Up to
+    // `town_recall_reserve` scrolls, a requirement (negative demand, like
+    // food's floor and the healing reserve): linear up to the reserve,
+    // nothing more past it, so Recall is bought first and never sold below
+    // it, whatever the depth (0 = off).
+    let recalls = recall_reserve_curve(cfg(BORG_TOWN_W_BLEEDING), param(Param::town_recall_reserve));
+    curve(RECALL_RESERVE, recalls.0, recalls.1);
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
@@ -818,6 +843,18 @@ pub fn shared_groups(groups: Vec<crate::borg_town_solve::Group>, input: &crate::
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #557: the Recall reserve is a requirement for its scrolls, off at 0.
+    #[test]
+    fn recall_reserve_is_a_requirement() {
+        assert_eq!(recall_reserve_curve(100, 0).0, 0, "off");
+        let (w, d) = recall_reserve_curve(100, 1);
+        assert_eq!((w, d), (100 * UNIT, -UNIT));
+        let row = [RECALL_RESERVE as i64, w, d, 0, 0];
+        assert_eq!(coverage(&row, UNIT), w, "one scroll covers it");
+        assert_eq!(coverage(&row, 2 * UNIT), w, "a second adds nothing");
+        assert_eq!(NAMES[RECALL_RESERVE], "Recall reserve");
+    }
     fn model() -> Model {
         Model { available: Vec::new(), packing: None, curves: (0..COUNT).map(|i| [i as i64, 100 * UNIT, UNIT, 0, 0]).collect(), supplies: Vec::new() }
     }
