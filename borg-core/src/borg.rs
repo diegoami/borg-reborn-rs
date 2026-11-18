@@ -210,6 +210,9 @@ pub struct BorgMonInfo {
     /// whether one of them was killed since.
     pub scary_races: [u16; 8],
     pub scary_killed: bool,
+    /// borg-reborn-rs (#593): this scan knows a monster of one of those
+    /// races hurt or afraid.
+    pub scary_calmed: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

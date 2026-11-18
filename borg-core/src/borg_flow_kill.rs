@@ -2753,6 +2753,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let mut stand_scary = false;
     let mut stand_pursuer = false;
     let mut scary_races: Vec<u16> = Vec::new();
+    let mut calmed_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2863,6 +2864,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             if makes_scary {
                 scary_races.push(r_idx); // borg-reborn-rs (#590)
             }
+            if scare.calmed_scare && !never_move {
+                calmed_races.push(r_idx); // borg-reborn-rs (#593)
+            }
             stand_pursuer |= pursues;
             scary = false;
         }
@@ -2943,6 +2947,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         for r in scary_races {
             crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
         }
+        crate::borg_caution::note_calmed(&mut st.borg.mon, &calmed_races);
         crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
