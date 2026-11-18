@@ -97,6 +97,14 @@ fn track(st: &BorgState, which: Which) -> &StairTrack {
 /// The "Enqueue useful grids" loop: every stair of the list without a
 /// monster parked on it, in list order.
 fn enqueue_stairs(st: &mut BorgState, which: Which) {
+    let (enqueued, parked) = enqueue_free_stairs(st, which);
+    enqueue_parked_if_alone(st, enqueued, parked);
+}
+
+/// borg-reborn-rs (#597): enqueue the staircases of `which` with no monster
+/// on them. Returns how many entered the flow (a grid the flow refuses, icky
+/// or too dangerous, does not count) and the parked ones.
+fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i32)>) {
     let mut parked = Vec::new();
     let mut enqueued = 0;
     let mut i = 0;
@@ -112,13 +120,19 @@ fn enqueue_stairs(st: &mut BorgState, which: Which) {
 
         /* Enqueue the grid */
         borg_flow::borg_flow_enqueue_grid(st, y, x);
-        enqueued += 1;
+        // An enqueued grid has cost 0; a refused one keeps the cleared cost.
+        if st.flow.cost_at(y, x) == 0 {
+            enqueued += 1;
+        }
         i += 1;
     }
+    (enqueued, parked)
+}
 
-    // borg-reborn-rs (#597): when a monster is parked on every known
-    // staircase of this kind, flow to them anyway: the walk there fights
-    // the monster in the way, or finds the mark stale.
+/// borg-reborn-rs (#597): when no staircase entered the flow and a monster
+/// is parked on the known ones, flow to those anyway: the walk there fights
+/// the monster in the way, or finds the mark stale.
+fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32, i32)>) {
     if crate::borg_caution::stair_parked_fallback(enqueued, parked.len()) {
         for (y, x) in parked {
             borg_flow::borg_flow_enqueue_grid(st, y, x);
@@ -197,11 +211,16 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     borg_flow::borg_flow_clear(st);
 
     /* Enqueue useful grids */
-    enqueue_stairs(st, Which::Less);
+    // borg-reborn-rs (#597): the parked fallback is decided across both
+    // kinds, so a parked up staircase is no goal while a down one is free.
+    let (mut enqueued, mut parked) = enqueue_free_stairs(st, Which::Less);
     // borg-reborn-rs (#557): no down staircase for a flight while rising.
     if !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st)) {
-        enqueue_stairs(st, Which::More);
+        let (more, more_parked) = enqueue_free_stairs(st, Which::More);
+        enqueued += more;
+        parked.extend(more_parked);
     }
+    enqueue_parked_if_alone(st, enqueued, parked);
 
     /* Spread the flow */
     borg_flow::borg_flow_spread(st, 250, false, false, false, -1, sneak);

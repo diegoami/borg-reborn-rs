@@ -1086,7 +1086,7 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
         }
 
         // borg-reborn-rs (#597): nor into lava without fire immunity.
-        if crate::borg_caution::twitch_refuses(u32::from(grid.feat), st.borg.tr(BI_IFIRE) != 0) {
+        if crate::borg_caution::twitch_refuses(st, &grid) {
             continue;
         }
 
@@ -1128,7 +1128,7 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             }
 
             // borg-reborn-rs (#597): nor into lava without fire immunity.
-            if crate::borg_caution::twitch_refuses(u32::from(grid.feat), st.borg.tr(BI_IFIRE) != 0) {
+            if crate::borg_caution::twitch_refuses(st, &grid) {
                 dir += 1;
                 continue;
             }
