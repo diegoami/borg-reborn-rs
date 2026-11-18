@@ -12,6 +12,16 @@ of the count (2/4/6, the same for every class) and of
 `recover_breeder_hunt_hp_percent` (0/50), is re-pinned to this commit. Its
 c4-h50 arm is this shipped configuration.
 
+## 2026-11-18: one worktree per task (RULES 5a)
+
+Owner: "do we not have a rule about that in this repository? If not add
+it!" #539's last part reached `main` without review (`fba1c6e0..4a482c58`,
+review after the fact in #569): another session (#548) switched the shared
+checkout to `main` while that work was uncommitted, and a bare `git push`
+sent it. RULES 5a now makes every task work in its own worktree, check
+the branch before committing and push with an explicit refspec. AGENTS.md's
+*Starting* section points to it.
+
 ## 2026-11-18: breeders hunted by every class (#558)
 
 Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
