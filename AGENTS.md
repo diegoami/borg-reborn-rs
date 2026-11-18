@@ -5,8 +5,10 @@ session, a local one, any model, or a person. It is the only entry point;
 `CLAUDE.md` just includes it. Read it first, then:
 
 1. [RULES.md](RULES.md);
-2. [docs/HANDOVER.md](docs/HANDOVER.md): where the work stands and what the
-   last session left;
+2. [docs/handover/](docs/handover/README.md): where the work stands and what
+   the last sessions left, one note per task, newest first
+   (`ls -r docs/handover/`); older entries are in
+   [docs/HANDOVER.md](docs/HANDOVER.md);
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the design direction;
@@ -187,7 +189,8 @@ At the end of a task:
    --all-targets -- -D warnings`, `cargo test --workspace --exclude
    borg-core` and `cargo test --release -p borg-core` pass (CI's commands),
    as well as the task's own checks;
-2. docs/HANDOVER.md says what was done, what was found, what is left, and
+2. the task's handover note, a new file in `docs/handover/` (RULES 5b), says
+   what was done, what was found, what is left, and
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;

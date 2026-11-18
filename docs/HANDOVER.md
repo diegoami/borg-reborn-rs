@@ -1,6 +1,8 @@
 # Handover
 
-*Where the work stands, for the next session. Update it in every PR.*
+*The archive, up to 2026-11-18.* Handover notes are now one file per task in
+[`docs/handover/`](handover/README.md) (RULES 5b, #580): read the newest
+there first (`ls -r docs/handover/`). Don't add entries to this file.
 
 ## 2026-11-18: no class values for the breeder hunt count (#574)
 
