@@ -740,6 +740,12 @@ borg_param_caution_scary_stand = 1
 
 borg_param_caution_scary_latch = 1
 
+# 1 = the level stops being scary once a monster of a race that made it
+# scary is killed, with the latch on or off; forgetting the monster is not
+# enough, it has not left the level (#590). 0 = the latch decides.
+
+borg_param_caution_scary_unlatch_kill = 0
+
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, makes nothing scary: Grip fled from
 # one flask of oil (#539). Resist-based and door scares still count. With the
