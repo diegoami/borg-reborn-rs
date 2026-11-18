@@ -1963,6 +1963,20 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     /*** Flee on foot ***/
 
+    // EXPERIMENT (worm room, priest-1055640847): candidate escapes, on with
+    // BORG_EXP=A|B|AB from game turn BORG_EXP_FROM_TURN.
+    if let Some(exp) = exp_active() {
+        if std::env::var("BORG_EXP_DEBUG").is_ok() {
+            borg_note(st, &format!("# EXP stairs less={} more={} at {},{}", st.stairs.less.num, st.stairs.more.num, st.borg.c.x, st.borg.c.y));
+        }
+        if exp.contains('A') && exp_down_stairs(st) {
+            return true;
+        }
+        if exp.contains('B') && exp_breeder_exit(st, pos_danger) {
+            return true;
+        }
+    }
+
     // Desperation Head for stairs
     if (st.stairs.less.num != 0 || st.stairs.more.num != 0)
         && (st.borg.goal.fleeing
@@ -2961,4 +2975,94 @@ mod cornered_tests {
             assert_eq!(melee_class(&st), melee, "class {class}");
         }
     }
+}
+
+/// EXPERIMENT: which candidate escapes are on now (`BORG_EXP`, from game turn
+/// `BORG_EXP_FROM_TURN`).
+fn exp_active() -> Option<String> {
+    let exp = std::env::var("BORG_EXP").ok()?;
+    let from: i32 = std::env::var("BORG_EXP_FROM_TURN").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+    (engine::game_turn() >= from).then_some(exp)
+}
+
+/// EXPERIMENT candidate A: fleeing with no up staircase known, walk to the
+/// nearest known down staircase whatever its distance, ignoring danger and
+/// routing around monsters (the desperate flow).
+fn exp_down_stairs(st: &mut BorgState) -> bool {
+    if std::env::var("BORG_EXP_DEBUG").is_ok() {
+        let (u, d) = (nearest_free_stair(st, true), nearest_free_stair(st, false));
+        borg_note(st, &format!("# EXP A dbg fleeing={} scary={} up={} down={} less={} more={}", st.borg.goal.fleeing, st.borg.mon.scary, u, d, st.stairs.less.num, st.stairs.more.num));
+    }
+    (st.borg.goal.fleeing || st.borg.mon.scary)
+        && nearest_free_stair(st, true) == -1
+        && nearest_free_stair(st, false) != -1
+        && desperate_flow(st, false, "# EXP A: desperate for the down stairs (no up stairs known)")
+}
+
+/// EXPERIMENT candidate B: only breeders near, one adjacent, and outmatched
+/// (danger here at or above the HP) or surrounded: walk to the nearest known
+/// corridor grid (at most 3 passable neighbours) at least
+/// `BORG_EXP_B_DIST` (6) grids from every known breeder, ignoring danger and
+/// routing around monsters.
+fn exp_breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
+    let min_d: i32 = std::env::var("BORG_EXP_B_DIST").ok().and_then(|v| v.parse().ok()).unwrap_or(6);
+    let horizon = p(Param::danger_monster_max_distance);
+    let mut breeders = Vec::new();
+    let mut adjacent = false;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 {
+            continue;
+        }
+        let d = engine::distance(st.borg.c, kill.pos);
+        if engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            breeders.push(kill.pos);
+            adjacent |= d <= 1;
+        } else {
+            let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+            if reach <= horizon {
+                return false;
+            }
+        }
+    }
+    if !adjacent || (pos_danger < st.borg.tr(BI_CURHP) && !borg_surrounded(st)) {
+        return false;
+    }
+    let passable = |st: &BorgState, x: i32, y: i32| {
+        let ag = st.cave.grid(x, y);
+        borg_cave_floor_grid(ag) && u32::from(ag.feat) != crate::headers::list_terrain_h::FEAT_NONE
+    };
+    st.borg.status.desperate = true;
+    crate::borg_flow::borg_flow_clear(st);
+    let mut targets = 0;
+    for y in 1..crate::borg_cave::AUTO_MAX_Y - 1 {
+        for x in 1..crate::borg_cave::AUTO_MAX_X - 1 {
+            if !engine::square_in_bounds_fully(x, y) || !passable(st, x, y) || st.cave.grid(x, y).kill != 0 {
+                continue;
+            }
+            let mut n = 0;
+            for i in 0..8 {
+                if passable(st, x + i32::from(engine::ddx_ddd(i)), y + i32::from(engine::ddy_ddd(i))) {
+                    n += 1;
+                }
+            }
+            if n > 3 {
+                continue;
+            }
+            if breeders.iter().any(|b| engine::distance(*b, loc { x, y }) < min_d) {
+                continue;
+            }
+            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+            targets += 1;
+        }
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    let ok = targets > 0
+        && crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE)
+        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, &format!("# EXP B: heading for the exit away from the breeders ({targets} exit grids)"));
+    }
+    ok
 }

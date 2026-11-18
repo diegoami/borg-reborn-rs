@@ -1512,8 +1512,14 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             st.borg.goal.ignoring = false;
 
             /* No known stairs */
-            st.stairs.less.num = 0;
-            st.stairs.more.num = 0;
+            // EXPERIMENT K: keep the known stairs through the jumpstart.
+            let keep = std::env::var("BORG_EXP").map(|e| e.contains('K')).unwrap_or(false)
+                && engine::game_turn()
+                    >= std::env::var("BORG_EXP_FROM_TURN").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+            if !keep {
+                st.stairs.less.num = 0;
+                st.stairs.more.num = 0;
+            }
 
             /* No known glyph */
             st.glyph.track.num = 0;
