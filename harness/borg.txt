@@ -643,6 +643,13 @@ borg_param_caution_scary_damage_percent = 60
 
 borg_param_caution_scary_stand = 1
 
+# 1 = a scary level stays scary until a new level, even after its scary
+# monsters are gone (the C latch). 0 = re-checked each scan: with none left,
+# the level stops being scary and the scare's leave and flee are withdrawn.
+# Door scares stay latched. Needs caution_scary_stand (#515).
+
+borg_param_caution_scary_latch = 1
+
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only
 # with borg_uses_dynamic_calcs = TRUE, which this file sets FALSE, so the
