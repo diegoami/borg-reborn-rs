@@ -1035,15 +1035,18 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         return true;
     }
 
-    // borg-reborn-rs (#544): in the dungeon, fleeing with no up staircase
-    // known, a known down staircase at any distance (an escape: the Borg comes back up
-    // when not prepared for the depth).
+    // borg-reborn-rs (#544, narrowed in #548): in the dungeon, fleeing with
+    // no up staircase known, a known down staircase (an escape: the Borg
+    // comes back up when not prepared for the depth). Only when cornered
+    // (`caution_flee_known_down_cornered`) and within
+    // `caution_flee_known_down_max_cost` grids of flow.
     p(Param::caution_flee_known_down_stairs) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && (st.borg.goal.fleeing || st.borg.mon.scary)
         && b_j == -1
         && b_m != -1
-        && desperate_flow(st, false, "# Desperate for Stairs (down, no up stairs known)")
+        && (p(Param::caution_flee_known_down_cornered) == 0 || flee_down_cornered(st, pos_danger))
+        && flee_known_down_flow(st, p(Param::caution_flee_known_down_max_cost))
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -3216,6 +3219,70 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
     false
 }
 
+/// borg-reborn-rs (#548): cornered for #544's flight down a known
+/// staircase. A known monster that can move is adjacent (`nearest_kill` ==
+/// 1, diagonals included; #504's `fight_cornered` takes any within
+/// `caution_cornered_radius`), it has no Phase Door, teleport, Teleport Level
+/// or escape in the pack (the traits count items, not spells; Recall is no
+/// escape here, as in #504), and the danger here is at or above the HP or
+/// the Borg is surrounded (as #544's `breeder_exit`). The caller has already
+/// found no free up staircase known.
+fn flee_down_cornered(st: &mut BorgState, pos_danger: i32) -> bool {
+    let adjacent = nearest_kill(st);
+    let no_escape = st.borg.tr(BI_APHASE) <= 0
+        && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_ATELEPORTLVL) <= 0
+        && st.borg.tr(BI_AESCAPE) <= 0;
+    let outmatched = pos_danger >= st.borg.tr(BI_CURHP);
+    cornered_shape(adjacent, no_escape, outmatched, || borg_surrounded(st))
+}
+
+/// `flee_down_cornered`'s test: `adjacent == 1 && no_escape && (outmatched
+/// || surrounded)`; `surrounded` (which notes) is asked only when needed.
+fn cornered_shape(adjacent: i32, no_escape: bool, outmatched: bool, surrounded: impl FnOnce() -> bool) -> bool {
+    adjacent == 1 && no_escape && (outmatched || surrounded())
+}
+
+/// borg-reborn-rs (#548): `borg_flow_stair_more(GOAL_FLEE)` for #544's
+/// flight, with the flow's depth capped at `max_cost` steps of flow (0: 250,
+/// any distance the flow reaches). It keeps that function's refusals
+/// (`more_refused`: with an up staircase known, not prepared for the next
+/// depth, hungry, a sale held or no light; recalling; review of #566) and
+/// #557's rising hold. Desperate (danger ignored, monster grids routed
+/// around). A staircase farther than the cap leaves the cost at the Borg's
+/// grid unset, so the commit fails and nothing is noted.
+fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
+    if rising_holds_flee_descent(st) || crate::borg_flow_stairs::more_refused(st, false) {
+        return false;
+    }
+    // Desperate before the enqueue too: `borg_flow_enqueue_grid` rates an
+    // unknown staircase grid's danger unless the flow ignores danger
+    // (review of #566; `desperate_flow` set it before the whole flow).
+    st.borg.status.desperate = true;
+    crate::borg_flow::borg_flow_clear(st);
+    crate::borg_flow_stairs::enqueue_down_stairs(st);
+    crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
+    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE)
+        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
+    }
+    ok
+}
+
+/// borg-reborn-rs (#548, K of #544): whether the stuck jumpstart (bravery
+/// boost 3, `borg_think_dungeon.rs`) keeps the known staircases.
+pub(crate) fn jumpstart_keeps_stairs() -> bool {
+    p(Param::caution_jumpstart_keep_stairs) != 0
+}
+
+/// The flow depth for `caution_flee_known_down_max_cost`: 0 is any
+/// distance (250, `borg_flow_stair_more`'s depth).
+fn flee_down_depth(max_cost: i32) -> i32 {
+    if max_cost <= 0 { 250 } else { max_cost.min(250) }
+}
+
 #[cfg(test)]
 mod outmatched_tests {
     use super::*;
@@ -3877,5 +3944,33 @@ mod recall_tests {
         assert_eq!(targets, vec![&grip], "only Grip, awake in view at range");
         assert!(ranged_target(true, &level), "so Recall waits");
         assert!(!ranged_target(true, &[sleeper, behind_wall, next_to_me]), "no candidate: Recall may go");
+    }
+}
+
+#[cfg(test)]
+mod flee_known_down_tests {
+    use super::*;
+
+    /// #548: cornered means an adjacent moving monster, no escape item, and
+    /// the danger here at or above the HP or surrounded.
+    #[test]
+    fn cornered_needs_an_adjacent_monster_no_escape_and_the_danger_or_a_surround() {
+        assert!(cornered_shape(1, true, true, || false));
+        assert!(cornered_shape(1, true, false, || true), "surrounded");
+        assert!(!cornered_shape(1, true, false, || false), "neither");
+        assert!(!cornered_shape(2, true, true, || true), "nothing adjacent");
+        assert!(!cornered_shape(-1, true, true, || true), "no monster known");
+        assert!(!cornered_shape(1, false, true, || true), "an escape in the pack");
+        assert!(cornered_shape(1, true, true, || panic!("not asked when outmatched")));
+    }
+
+    /// #548: 0 keeps #545's any distance (the flow's 250); a cap is the
+    /// flow's depth, never above 250.
+    #[test]
+    fn the_distance_cap_is_the_flow_depth() {
+        assert_eq!(flee_down_depth(0), 250);
+        assert_eq!(flee_down_depth(-3), 250);
+        assert_eq!(flee_down_depth(40), 40);
+        assert_eq!(flee_down_depth(1000), 250);
     }
 }

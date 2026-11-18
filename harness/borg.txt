@@ -598,11 +598,17 @@ borg_param_escape_phase_adjacent_only = 1
 
 borg_param_caution_scary_ranged_no_stairs = 1
 
-# Fleeing with no up staircase known, walk to a known down staircase at any
-# distance, and keep the known stairs when bravery is boosted (#544).
-# Off here.
+# Fleeing with no up staircase known, walk to a known down staircase (#544),
+# only when cornered and within 40 grids of flow (#548). Off here.
 
 borg_param_caution_flee_known_down_stairs = 0
+borg_param_caution_flee_known_down_cornered = 1
+borg_param_caution_flee_known_down_max_cost = 40
+
+# Keep the known staircases when bravery is boosted because the Borg is
+# stuck (#544's K, its own flag since #548). Off here (C forgets them).
+
+borg_param_caution_jumpstart_keep_stairs = 0
 
 # After fleeing town, the stair scum grabs DL1 items near the stairs before
 # going back up, and checks no danger. With the flag 1, skip it while the
