@@ -59,10 +59,14 @@ jobs:
         with:
           fetch-depth: 2
       # #577: the full test suite (8 of this job's 12 minutes) plays the
-      # reborn core only. A pull request whose files are all docs, the
-      # vendored borg-rs core or its settings cannot change it, and skips it;
-      # any other file, and every push to main or track-p, runs it. On a pull
-      # request HEAD is the merge commit and HEAD^1 the base.
+      # reborn core only (harness/run.sh sets borg_reborn_core = reborn
+      # without BORG_CORE). A pull request whose files are all docs, the
+      # vendored borg-rs core or its settings cannot change that core's play,
+      # and skips it. Those files can change the borg-rs core's play, which
+      # this suite never measures: the borg-rs steps below (and the zoo) do,
+      # and they run on every PR. Any other file, and every push to main or
+      # track-p, runs the full suite. On a pull request HEAD is the merge
+      # commit and HEAD^1 the base.
       - id: scope
         run: |
           full=1

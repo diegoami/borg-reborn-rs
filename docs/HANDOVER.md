@@ -13,6 +13,25 @@ the perception and no-time checks then read smoke alone. Any other file, and
 every push to main or track-p, runs it as before. The list is an exclusion
 list on purpose: a new path runs the full suite.
 
+Scope (review of #578): the skip is of the reborn-core suite only. The
+settings files and `borg-core/` do change the borg-rs Borg's play, but that
+suite never plays it (`harness/run.sh` rewrites `borg_reborn_core` to
+`reborn` without `BORG_CORE`), so skipping it drops no check of the borg-rs
+arm. What CI checks of that arm (borg-core's release tests, the
+`BORG_CORE=borg-rs` runs with `BORG_CORE_OVERRIDES=off`, the parameter
+validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
+on the borg-rs core, before or after this change: the zoo measures that.
+
+## 2026-11-18: one worktree per task (RULES 5a)
+
+Owner: "do we not have a rule about that in this repository? If not add
+it!" #539's last part reached `main` without review (`fba1c6e0..4a482c58`,
+review after the fact in #569): another session (#548) switched the shared
+checkout to `main` while that work was uncommitted, and a bare `git push`
+sent it. RULES 5a now makes every task work in its own worktree, check
+the branch before committing and push with an explicit refspec. AGENTS.md's
+*Starting* section points to it.
+
 ## 2026-11-18: breeders hunted by every class (#558)
 
 Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
