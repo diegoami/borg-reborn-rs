@@ -223,7 +223,9 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
 # #606 (owner): a run with no BORG_CORE plays the core harness/borg.txt
 # names (borg_reborn_core = borg-rs), the one the zoo runs and the one that
 # reads this file. BORG_CORE=reborn selects the reborn core (it reads the
-# profile above, not this file).
+# profile above, not this file); its run's borg.txt says so, so the file and
+# its hash describe the core that played (review of #607).
+[ "${BORG_CORE:-}" = reborn ] && sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"
 # BORG_TXT_SET="name=value;name=value": rewrite existing keys of the run's
 # borg.txt (a test pinning a setting whose shipped default moved, #479).
 if [ -n "${BORG_TXT_SET:-}" ]; then
@@ -306,6 +308,12 @@ fi
     for v in BORG_CORE BORG_CORE_OVERRIDES BORG_ERRAND BORG_STOPSCARED BORG_ERRAND_BUDGET BORG_LADDERS; do
         if [ -n "${!v+set}" ]; then echo "$(echo "$v" | tr '[:upper:]' '[:lower:]')=${!v}"; fi
     done
+    # #606 (review of #607): with no BORG_CORE the record still says which
+    # core played (the run's borg.txt names it), so a death record and its
+    # rerun know the core.
+    if [ -z "${BORG_CORE+set}" ]; then
+        echo "borg_core=$(sed -n 's/^borg_reborn_core = //p' "$OUT/user/borg.txt" | head -1)"
+    fi
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
     # The plan named relative to the checkout (no machine paths in dossiers).
     if [ -n "$PLAN" ]; then

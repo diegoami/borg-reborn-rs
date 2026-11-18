@@ -8,4 +8,14 @@ Owner: "the reviewers spent a lot of time on the wrong core, we should set the r
 - Tests: `test_build` pins the reborn core (it checks the reborn core's game options); `test_errands_plan` refuses a plan with `BORG_CORE=reborn`.
 - Docs: AGENTS.md ("Which core a run plays"), `harness/README.md`.
 
-Not done: the full suite on the borg-rs core has 3 deaths (two Druids, a Ranger); a `full-borg-rs` reference would need their Cemetery packages, so it is left for an issue if wanted.
+After the review of #607:
+- a `BORG_CORE=reborn` run's `borg.txt` says `borg_reborn_core = reborn` again, so the file and `borg_txt_sha256` describe the core that played;
+- `config.txt` always records the core that played (`borg_core=`; with no `BORG_CORE` it is read from the run's `borg.txt`), so a death record and its rerun know the core;
+- `test_character_build` pins the reborn core (its capture expects the reborn core's character), and `test_errands_plan` checks that a plan plays on the default core;
+- CI's dossier check accepts either core's pair (`trace-tail.jsonl` and `params.json`, or `trace-core-tail.jsonl` and `params-core.json`). A borg-rs death needs a Cemetery package like any other: `reconcile-deaths.py`'s registry is the Cemetery's;
+- live docs say the new default: `harness/borg.txt`'s comment, `docs/ERRANDS.md`, `docs/CALIBRATION.md`, `docs/ENGINE.md` (References), and the CI scope comment. **`docs/HANDOVER.md` (the archive, 2026-11-17, #577) says no CI step plays the shipped `harness/borg.txt` on the borg-rs core, and that `harness/run.sh` rewrites the core to reborn: both are no longer true.** The default core's smoke against `smoke-borg-rs` now runs on every PR, and covers the borg-rs arm when the full-suite scope rule skips the reborn full suite.
+
+Left:
+- replaying a record with no `borg_core` made before #606: diegoami/borg-cemetery#71;
+- a `full-borg-rs` reference: the full suite on the borg-rs core has 3 deaths (two Druids, a Ranger), #609;
+- the reborn references' `REFERENCE` `run_config` hashes predate later `harness/borg.txt` edits (as on main); `harness/diff` compares content, not that provenance.
