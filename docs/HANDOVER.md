@@ -23,6 +23,16 @@ Two reviews of #569 accepted #539's last part (`fba1c6e0..4a482c58`, on
 - **Owner's decision:** RULES 4's AI attribution trailers already on `main`
   (a cleanup pass or a CI guard; published commits cannot be amended, RULES 5).
 
+## 2026-11-18: one worktree per task (RULES 5a)
+
+Owner: "do we not have a rule about that in this repository? If not add
+it!" #539's last part reached `main` without review (`fba1c6e0..4a482c58`,
+review after the fact in #569): another session (#548) switched the shared
+checkout to `main` while that work was uncommitted, and a bare `git push`
+sent it. RULES 5a now makes every task work in its own worktree, check
+the branch before committing and push with an explicit refspec. AGENTS.md's
+*Starting* section points to it.
+
 ## 2026-11-18: breeders hunted by every class (#558)
 
 Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
