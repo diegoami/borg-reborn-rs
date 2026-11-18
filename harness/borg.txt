@@ -336,7 +336,7 @@ borg_param_caution_flee_recall_chase_distance = 6
 # is kept for the trip home (#557). Higher extends it deeper; 0 or 1 = off.
 # Impact: set to 4, 2 of 6 test games play differently.
 
-borg_param_caution_flee_recall_gate_below_depth = 2
+borg_param_caution_flee_recall_gate_below_depth = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
