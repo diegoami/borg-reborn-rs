@@ -108,7 +108,7 @@ monster replaces the earlier one, `monster | none` removes it, and a later
 `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2147 entries in
+`borg_param_<name>` integer sets any of the 2152 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
@@ -192,6 +192,23 @@ Any `borg_param_<name>` can have a value for one class:
 Precedence: compiled default < `borg.txt` < a `borg.txt` class line <
 `BORG_PARAM_<NAME>` < `BORG_PARAM_<NAME>__<CLASS>`. The character's class picks
 its values (also after a reincarnation into another class).
+
+Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
+`BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
+`borg_town_w_*`) have class values too, as `borg_<name>@<class> = <value>`
+lines. The character's class applies at birth and at every reincarnation; a
+setting with no line for that class keeps its common value. A class line is
+strict: its value must be exactly an integer, or TRUE/FALSE/YES/NO/T/F/Y/N/1/0
+for a true/false setting. A line with an unknown class or setting, a retired
+or `borg_respawn_*` setting, or a bad value is refused with a Borg warning. A
+class value goes through the same range checks and configuration checks as
+the common line, on top of the common values (each line, then each class's
+lines together); one they would change or reject is refused and the Borg does
+not start, as with an invalid common line. The keys the shell reads
+(`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
+and there is no environment form for these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
+are `[A-Za-z0-9_.-]`); it rewrites the common line, and a class line in the
+shipped file still wins for its class.
 
 The repository keeps each class's settings in `harness/borg_<class>.txt`;
 `scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a

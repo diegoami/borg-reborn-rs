@@ -336,7 +336,7 @@ borg_param_caution_flee_recall_chase_distance = 6
 # is kept for the trip home (#557). Higher extends it deeper; 0 or 1 = off.
 # Impact: set to 4, 2 of 6 test games play differently.
 
-borg_param_caution_flee_recall_gate_below_depth = 2
+borg_param_caution_flee_recall_gate_below_depth = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
@@ -538,6 +538,26 @@ borg_param_escape_phase_unique_min_count = 2
 borg_param_escape_phase_tolerance = 25
 borg_param_escape_phase_horizon = 2
 borg_param_escape_phase_antisummon_delay = 50
+
+# Fox Form for a fleeing Druid (#551). With the switch at 1, a Druid about
+# to take a flight step at least min_steps from its goal casts Fox Form
+# (double movement, Free Action) if its fail rate is at most fail. It keeps
+# the shape while it flees or the level is scary. A fox does not fight: it
+# changes back before a melee blow, and an item or a spell changes back in
+# the same command. speed is what a fox's flight is worth in the danger and
+# the stand decision (+10 at normal speed); stand_speed is the same for a
+# Druid that can cast Fox Form but is not a fox yet. Raising min_steps casts
+# on longer flights only; raising fail casts with a riskier spell; lowering
+# the speeds counts more monsters as pursuers (more stands). 0 = never (C).
+# Change together: these settings form one set.
+# Impact: escape_fox_form 1: 1 of 6 test games plays differently (the Druid);
+# the other four: 0 with the switch at 0.
+
+borg_param_escape_fox_form = 0
+borg_param_escape_fox_form_fail = 25
+borg_param_escape_fox_form_min_steps = 3
+borg_param_escape_fox_form_speed = 10
+borg_param_escape_fox_form_stand_speed = 10
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
