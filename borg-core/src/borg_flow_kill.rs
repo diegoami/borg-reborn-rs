@@ -2779,7 +2779,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         let id = st.borg.id;
         let b = &st.borg;
         let clevel = b.tr(BI_CLEVEL);
-        let mut scary = false;
+        let mut named_scare = false;
 
         // *** Scan for Scary Guys ***
         // Done before the distance checks: we are looking for scary guys on
@@ -2799,24 +2799,19 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                     breeder_stand,
                 };
                 if crate::scary_list::is_scary(list, usize::from(r_idx), engine::race_base_name(usize::from(r_idx)), who) {
-                    scary = true;
+                    named_scare = true;
                 }
             }
         }
         if named && crate::scary_list::selected().is_none()
             && c_named_scary(&id, ridx, engine::race_base_name(usize::from(r_idx)), clevel, b.tr(BI_CLASS), breeder_count, breeder_stand)
         {
-            scary = true;
+            named_scare = true;
         }
 
-        // borg-reborn-rs (#539): a hurt or afraid monster is no named or
-        // damage-rule scare; the resist-based scares below still count.
-        // `calmed_scare`: it would have been one (it can still pursue).
-        let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
-        let mut calmed_scare = calmed && scary;
-        if calmed {
-            scary = false;
-        }
+        // borg-reborn-rs (#539): the resist-based scares, kept apart: a hurt or
+        // afraid monster keeps them (borg_caution::classify_scare).
+        let mut resist_scare = false;
 
         // Nether breath is bad
         if b.tr(BI_SRNTHR) == 0
@@ -2824,7 +2819,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 || ridx == id.dracolich
                 || ridx == id.dracolisk)
         {
-            scary = true;
+            resist_scare = true;
         }
 
         // Blindness is really bad
@@ -2832,51 +2827,44 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             && ((ridx == id.light_hound && b.tr(BI_SRLITE) == 0)
                 || (ridx == id.dark_hound && b.tr(BI_SRDARK) == 0))
         {
-            scary = true;
+            resist_scare = true;
         }
 
         // Chaos and Confusion are really bad
         if (b.tr(BI_SRKAOS) == 0 && b.tr(BI_SRCONF) == 0) && rsf_has(r_idx, RSF_BR_CHAO) {
-            scary = true;
+            resist_scare = true;
         }
 
         if b.tr(BI_SRCONF) == 0 && (ridx == id.pukelman || ridx == id.night_mare) {
-            scary = true;
+            resist_scare = true;
         }
 
         // Poison is really Bad (note the RPois not SRPois)
         if b.tr(BI_RPOIS) == 0 && ridx == id.drolem {
-            scary = true;
+            resist_scare = true;
         }
 
         // borg-reborn-rs (#505): any monster that can take
         // caution_scary_damage_percent of max HP in one turn.
-        if !scary && crate::borg_caution::scary_by_damage(st, i, !calmed) {
-            if calmed {
-                calmed_scare = true;
-            } else {
-                scary = true;
-            }
-        }
+        // borg-reborn-rs (#539, review of #569): a hurt or afraid monster is
+        // no named-list or damage-rule scare; the rule is classify_scare.
+        let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
+        let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
+            crate::borg_caution::scary_by_damage(st, i, note)
+        });
+        let mut scary = scare.scary;
 
-        if scary && stand_mode {
+        if stand_mode {
             // A monster that never moves cannot follow: never scary here.
-            if !engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE) {
-                stand_scary = true;
+            let never_move = engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE);
+            let awake_and_fast = kill.awake && i32::from(kill.speed) >= player_speed;
+            let (makes_scary, pursues) = crate::borg_caution::stand_contribution(scare, never_move, awake_and_fast);
+            stand_scary |= makes_scary;
+            if makes_scary {
                 scary_races.push(r_idx); // borg-reborn-rs (#587)
-                if kill.awake && i32::from(kill.speed) >= player_speed {
-                    stand_pursuer = true;
-                }
             }
+            stand_pursuer |= pursues;
             scary = false;
-        }
-        if calmed_scare
-            && stand_mode
-            && kill.awake
-            && i32::from(kill.speed) >= player_speed
-            && !engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE)
-        {
-            stand_pursuer = true;
         }
 
         if scary {
