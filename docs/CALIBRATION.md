@@ -12,11 +12,15 @@ right after that change, so older sections show older counts.
 
 ## Breeders hunted by every class (#558)
 
-The registry now holds **2137** parameters (2135 on main before #558; two
+The registry now holds **2139** parameters (2137 on main before #558; two
 added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
 with 70 HP never killed a green worm mass it could solo. The breeder hunt
 (#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
 class values (Warrior 6, Priest 3, the others 4; 0 = no hunt for that class).
+The count is the switch for the new classes (owner): there is no separate
+flag, so the expansion plays even with the two switches below at 0. The
+configuration that plays as main is the count at 0 for Mage, Druid, Priest,
+Necromancer and Ranger and 4 for Warrior, with both switches at 0.
 Low-level Mages and Necromancers: the hunt walk (`borg_flow_kill`) targets
 breeders only, and only while they have half their mana, so they cast rather
 than melee (`borg_flow_kill_direct`, the dig to the closest monster after
@@ -28,8 +32,54 @@ switches, compiled 0, shipped 1 and 50:
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`, `borg_flow_kill::breeder_hunt_now`: when a rest is due, no rest while HP is at least this percent of max HP and the Borg is fit to hunt now: the hunt applies, the Borg is not ignoring the breeders, fleeing or leaving, no scary monster is on the level, a low-level caster has half its mana, it is not hungry, confused, hallucinating, afraid or stunned (a rest clears those), and a known breeder passes the walk's danger test (only that test: not the walk's leash to the stairs or reachability); breeders multiply while the Borg rests. For acid breeders it depends on the next switch: with the acid fear a green worm mass reads 507 against a limit of 23 at CL6, so the gate never opens) |
+| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`, `borg_flow_kill::breeder_hunt_now`: when a rest is due, no rest while HP is at least this percent of max HP and the Borg is fit to hunt now: the hunt applies, the Borg is not ignoring the breeders, fleeing or leaving, no scary monster is on the level, a low-level caster has half its mana, it is not hungry, confused, hallucinating, afraid or stunned (a rest clears those), and a known breeder passes the walk's danger test (only that test: not the walk's leash to the stairs or reachability); breeders multiply while the Borg rests. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For acid breeders it depends on the next switch: with the acid fear a green worm mass reads 507 against a limit of 23 at CL6, so the gate never opens) |
 | `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`, `borg_caution::breeder_engaged`: while the hunt applies and the Borg is not ignoring the breeders, fleeing, leaving or facing a scary monster, every breeder on the level is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630. Level-wide, not per monster: the regional fear map and retreat grids see it too) |
+
+## A hurt or afraid monster is not scary (#539)
+
+The registry now holds **2137** parameters (2135 after #562; two added).
+Owner, 2026-11-18, from the zoo death `priest-809881907` (Grip): "The dog
+stopped being scary as soon as I threw to him a flask of oil, can it stop
+being scary when it is low in hp?"
+
+In `borg_near_monster_type`, a monster that has lost at least
+`caution_scary_hurt_percent` of its HP (`kill.injury`, from the health bar),
+or that is afraid (`kill.afraid`, with `caution_scary_afraid`), is no
+named-list or damage-rule scare. Resist-based scares and door scares are not
+affected. A calmed monster still counts as a pursuer in stand mode
+(`caution_scary_stand`) when it is awake and at least as fast as the
+character. Without that, a monster turning afraid while other scary
+monsters slept made a stand into a flight from the level: a first version
+had two deaths on the 18 starts (a cave spider, a poisoning). With
+`caution_scary_latch = 1` (shipped) a calmed monster only keeps a level from
+becoming scary; with 0 the level's scare also ends once every scary monster
+is calmed, dead or forgotten.
+
+Compiled 0 and 0 (C); `harness/borg.txt` ships 50 and 1. On the 18
+classes-18 starts at 100,000 turns, branch of main `162f96af` (a lead, 18
+games show direction only):
+
+| arm | deaths | sum of CL | sum of max depth | keys as off |
+|---|---:|---:|---:|---:|
+| off (0, 0; latch 1) | 0 | 107 | 43 | |
+| shipped (50, 1; latch 1) | 0 | 107 | 43 | 17/18 |
+| latch 0 alone | 0 | 100 | 39 | 1/18 |
+| 50, 1 and latch 0 | 0 | 104 | 41 | 1/18 |
+
+The one shipped game that changes is Ranger 1739161339: Grip appears with 4
+HP and the Borg shoots it instead of fleeing the level.
+
+With the owner's `borg.txt` of main `fba1c6e0` (`borg_trip_unknown_stacks
+= 2`, `caution_stair_scum_threat = 1`), merged into this branch: off and
+shipped play identical keys in 18/18 games. In both arms, 1 death
+(Blackguard 1472012981, a cave spider), sum of CL 101 and max depth 38. The
+death is the new `borg.txt`'s, not this change's: it comes from
+`borg_trip_unknown_stacks = 2` (with 5 the game lives).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2784` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2784` |
 
 ## Fear cures and the see-invisible clock (#516)
 
@@ -356,11 +406,12 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2626` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
 | `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:2626` (#549: the danger here above which the stair scum stops) |
-| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2655` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
+| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2737` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
 | `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2303` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
 | `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2303` |
+| `caution_flee_recall_gate_below_depth` | 0 (shipped 2) | dungeon level | 0–127 | `borg_caution.rs:2303` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2272` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)

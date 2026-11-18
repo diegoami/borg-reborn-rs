@@ -2808,6 +2808,15 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             scary = true;
         }
 
+        // borg-reborn-rs (#539): a hurt or afraid monster is no named or
+        // damage-rule scare; the resist-based scares below still count.
+        // `calmed_scare`: it would have been one (it can still pursue).
+        let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
+        let mut calmed_scare = calmed && scary;
+        if calmed {
+            scary = false;
+        }
+
         // Nether breath is bad
         if b.tr(BI_SRNTHR) == 0
             && (ridx == id.osse // Ossë, Herald of Ulmo
@@ -2841,8 +2850,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
 
         // borg-reborn-rs (#505): any monster that can take
         // caution_scary_damage_percent of max HP in one turn.
-        if !scary && crate::borg_caution::scary_by_damage(st, i) {
-            scary = true;
+        if !scary && crate::borg_caution::scary_by_damage(st, i, !calmed) {
+            if calmed {
+                calmed_scare = true;
+            } else {
+                scary = true;
+            }
         }
 
         if scary && stand_mode {
@@ -2854,6 +2867,14 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 }
             }
             scary = false;
+        }
+        if calmed_scare
+            && stand_mode
+            && kill.awake
+            && i32::from(kill.speed) >= player_speed
+            && !engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE)
+        {
+            stand_pursuer = true;
         }
 
         if scary {

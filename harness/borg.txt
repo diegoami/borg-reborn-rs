@@ -375,7 +375,7 @@ borg_town_power_scale = 40000
 borg_trip_policy = 1
 borg_trip_depth_margin = 0
 borg_trip_pack_slack = 1
-borg_trip_unknown_stacks = 5
+borg_trip_unknown_stacks = 2
 borg_trip_return_gold = 0
 
 # Capability utility priorities and forecast actions per ranged/support use.
@@ -559,6 +559,13 @@ borg_param_caution_flee_recall_breeders = 5
 borg_param_caution_flee_recall_chasers = 3
 borg_param_caution_flee_recall_chase_distance = 6
 
+# A ceiling: at depths shallower than this (2 = DL1 only) a flight reads
+# Word of Recall only with the exceptions above (breeders, chasers), even
+# with caution_flee_recall = 1: on DL1 the stairs are a short walk, and the
+# scroll is kept for the trip home. 0 or 1 = off (#557, owner 2026-11-18).
+
+borg_param_caution_flee_recall_gate_below_depth = 2
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # that has a ranged attack, not while the monster is still distant (#539).
 
@@ -580,7 +587,7 @@ borg_param_caution_flee_known_down_stairs = 0
 # level is scary, the danger here is above the limit, or the HP is below the
 # maximum, and go straight back up (#549). Off here.
 
-borg_param_caution_stair_scum_threat = 0
+borg_param_caution_stair_scum_threat = 1
 borg_param_caution_stair_scum_danger = 0
 
 # Walking home (rising) in the dungeon, a flight takes no down staircase
@@ -604,7 +611,7 @@ borg_param_caution_rising_explore_ticks = 300
 # Monster Confusion against an adjacent unique or higher-level monster, and a
 # melee class (Warrior, Paladin, Rogue, Blackguard) does not retreat.
 
-borg_param_caution_cornered = 1
+borg_param_caution_cornered = 1 # 224
 
 # Danger, in tenths of the HP, at which the Borg counts as cornered
 # (10 = danger at or above the HP).
@@ -676,7 +683,7 @@ borg_param_caution_breeder_exit_distance = 6
 # leaves and flees and does not hunt (#503, #518). The resist-based scares
 # (nether, blindness, chaos, confusion, poison) apply either way.
 
-borg_param_caution_scary_named_monsters = 1
+borg_param_caution_scary_named_monsters = 1  # 227
 
 # The list of named scary monsters, by class and character level (#518).
 # none = the C Borg's compiled list. harness/run.sh and the zoo copy the
@@ -703,6 +710,15 @@ borg_param_caution_scary_stand = 1
 # Door scares stay latched. Needs caution_scary_stand (#515).
 
 borg_param_caution_scary_latch = 1
+
+# A named-list or damage-rule scary monster that has lost this percent of
+# its HP, or (with the flag) is afraid, makes nothing scary: Grip fled from
+# one flask of oil (#539). Resist-based and door scares still count. With the
+# latch at 1 this only stops a hurt or afraid monster from making a level
+# scary; with 0 it also ends the scare. 0 and 0 = C.
+
+borg_param_caution_scary_hurt_percent = 50
+borg_param_caution_scary_afraid = 1
 
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only

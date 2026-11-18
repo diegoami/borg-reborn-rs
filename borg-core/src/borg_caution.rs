@@ -2301,9 +2301,20 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
 /// turns next to the monster it flees and is gone for the trip home.
 fn recall_escape_allowed(st: &BorgState) -> bool {
-    if p(Param::caution_flee_recall) != 0 {
-        return true;
-    }
+    // borg-reborn-rs (#557, owner): shallower than
+    // `caution_flee_recall_gate_below_depth` (2: on DL1) the stairs are a
+    // short walk, so the exception is needed whatever `caution_flee_recall`
+    // says.
+    recall_allowed_with(
+        p(Param::caution_flee_recall) != 0,
+        st.borg.tr(BI_CDEPTH),
+        p(Param::caution_flee_recall_gate_below_depth),
+        || recall_exception(st),
+    )
+}
+
+/// The breeder or chaser exception (#559).
+fn recall_exception(st: &BorgState) -> bool {
     let range = p(Param::caution_flee_recall_chase_distance);
     let mut chasers = 0;
     for i in 1..st.kills.nxt.max(0) as usize {
@@ -2323,6 +2334,20 @@ fn recall_escape_allowed(st: &BorgState) -> bool {
         p(Param::caution_flee_recall_breeders),
         p(Param::caution_flee_recall_chasers),
     )
+}
+
+/// Is a flight's Recall allowed? Without the need for the exception, yes;
+/// otherwise only with it (`exception`, evaluated only then).
+fn recall_allowed_with(c_recall: bool, depth: i32, gate_below: i32, exception: impl FnOnce() -> bool) -> bool {
+    !recall_needs_exception(c_recall, depth, gate_below) || exception()
+}
+
+/// Does a flight's Recall need the breeder or chaser exception? Always with
+/// the gate on (`c_recall` false); with C's Recall, only at depths shallower
+/// than `gate_below` (a ceiling: 2 = DL1 only; 0 = off; 1 = off too, since
+/// the town never reaches here).
+fn recall_needs_exception(c_recall: bool, depth: i32, gate_below: i32) -> bool {
+    !c_recall || (gate_below > 0 && depth < gate_below)
 }
 
 /// Swamped by breeders or chased by several monsters (a limit of 0 is off).
@@ -2754,8 +2779,9 @@ pub(crate) fn scary_named_monsters() -> bool {
 /// adds large penalties for stealing, paralysis or confusion (a street
 /// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
 /// current HP: a wounded character is the danger-against-avoidance flight's
-/// business. 0 = off.
-pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+/// business. 0 = off. `note`: write the scare's note (#539: not for a
+/// calmed monster, which makes nothing scary).
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32, note: bool) -> bool {
     let percent = p(Param::caution_scary_damage_percent);
     let max_hp = st.borg.tr(BI_MAXHP);
     if percent <= 0 || max_hp <= 0 { return false; }
@@ -2764,11 +2790,27 @@ pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
     if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
     let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
     let scary = scary_damage_reaches(damage, max_hp, percent);
-    if scary && !st.borg.mon.scary {
+    if note && scary && !st.borg.mon.scary {
         let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
         borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
     }
     scary
+}
+
+/// borg-reborn-rs (#539): a monster that is hurt or afraid is no named-list
+/// or damage-rule scare (owner: Grip fled from one flask of oil). Hurt: it
+/// has lost at least `caution_scary_hurt_percent` of its HP (`kill.injury`,
+/// from the health bar); afraid: `kill.afraid`, with `caution_scary_afraid`.
+/// The resist-based scares and door scares are not affected. A calmed
+/// monster that is awake and fast still counts as a pursuer in stand mode:
+/// it can follow (else, with other scary monsters asleep, a monster turning
+/// afraid made a stand into a flight; two deaths on 18 starts). 0 and 0 = C.
+pub(crate) fn scary_calmed(injury: i16, afraid: bool) -> bool {
+    calmed(i32::from(injury), afraid, p(Param::caution_scary_hurt_percent), p(Param::caution_scary_afraid) != 0)
+}
+
+fn calmed(injury: i32, afraid: bool, hurt_percent: i32, afraid_counts: bool) -> bool {
+    (hurt_percent > 0 && injury >= hurt_percent) || (afraid_counts && afraid)
 }
 
 /// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
@@ -3287,6 +3329,21 @@ mod scary_stand_tests {
     }
 
     #[test]
+    fn g_a_hurt_or_afraid_monster_is_calmed_only_when_switched_on() {
+        // Off (C): never calmed.
+        assert!(!calmed(100, true, 0, false));
+        // Hurt: at the threshold and above, not below.
+        assert!(!calmed(49, false, 50, false));
+        assert!(calmed(50, false, 50, false));
+        assert!(calmed(90, false, 50, false));
+        // Afraid: only with its switch, whatever the injury.
+        assert!(!calmed(0, true, 50, false));
+        assert!(calmed(0, true, 50, true));
+        assert!(calmed(0, true, 0, true));
+        assert!(!calmed(0, false, 0, true));
+    }
+
+    #[test]
     fn f_a_stand_whose_scary_monster_is_gone_ends() {
         let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
         // The last think stood: the flag is clear, the stand is recorded.
@@ -3320,6 +3377,26 @@ mod scary_stand_tests {
         assert!(!stand_decision(true, pursuer), "an easy escape: flee");
         assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
         assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn a_shallow_flight_recall_needs_the_exception() {
+        assert!(!recall_needs_exception(true, 1, 0), "C, no minimum depth");
+        assert!(recall_needs_exception(true, 1, 2), "C, DL1 below the minimum");
+        assert!(!recall_needs_exception(true, 2, 2), "C, at the minimum");
+        assert!(recall_needs_exception(false, 10, 2), "the gate on: any depth");
+        assert!(recall_needs_exception(false, 10, 0));
+    }
+
+    #[test]
+    fn the_shipped_dl1_gate_allows_recall_only_with_the_exception() {
+        // Shipped: C's Recall (1) and the gate below depth 2.
+        let never = || -> bool { panic!("the exception is not needed") };
+        assert!(!recall_allowed_with(true, 1, 2, || false), "DL1, no breeders or chasers: no Recall");
+        assert!(recall_allowed_with(true, 1, 2, || true), "DL1 with the exception: Recall");
+        assert!(recall_allowed_with(true, 2, 2, never), "DL2: C's Recall, the exception not asked");
+        assert!(recall_allowed_with(true, 1, 0, never), "the gate off: C everywhere");
+        assert!(!recall_allowed_with(false, 5, 0, || false), "the full gate: any depth");
     }
 
     #[test]
