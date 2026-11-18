@@ -69,6 +69,12 @@ pub struct Borg {
     /// `borg.dont_react`: the reaction gate (set while knocked out or
     /// paralyzed, cleared on every message pump).
     pub dont_react: bool,
+    /// borg-reborn-rs (#551): the Borg queued its own change back from fox
+    /// shape (to fight, or the end of a flight): the game's "Change back
+    /// and ...?" prompt is answered `r`, not `y`. It lives as long as the
+    /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
+    /// the player is no longer shapechanged.
+    pub fox_revert: bool,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

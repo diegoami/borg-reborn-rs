@@ -10,6 +10,79 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A fleeing Druid takes Fox Form (#551)
+
+The registry now holds **2150** parameters (2145 before; five added). Owner,
+2026-11-18: Druids die most (borg-zoo#227), and Fox Form, a level-1 spell,
+is the strategy manual's CL1-20 escape (`14-class-playbooks.md:453`). The
+fox shape has `MOVES[1]` (each step costs half the energy, `player-util.c`
+`energy_per_move`) and Free Action (`shape.txt`). The owner's rules: use
+the new speed, make the step threshold a parameter, and once a fox, escape,
+or change back with an action before fighting.
+
+With `escape_fox_form = 1`:
+- **The cast:** a Druid about to take a flight step (`borg_flow_old` with
+  `GOAL_FLEE`) at least `escape_fox_form_min_steps` flow steps from its goal
+  casts Fox Form first, if its fail rate is at most `escape_fox_form_fail`.
+  Note: `# Fox Form: fleeing (N steps to go)`.
+- **Keeping the shape:** `borg_think` keeps it in the dungeon (the game's
+  depth) while the Borg flees (the flight flow, or the flee or leave goal)
+  or the level is scary, standing included. Otherwise the Borg changes back.
+  Keeping it on a scary level stops a flip-flop with #530's stand mode (110
+  casts in one game without it).
+- **A fox does not fight:** before a melee blow, `borg_attack` (`BF_THRUST`)
+  or a flow step into a known monster (`borg_play_step`), the Borg changes
+  back (no energy) and fights in its own shape from the next think. Note:
+  `# Fox Form: reverting to fight`. Every other attack is an item or a spell
+  command. For those the game asks "Change back and <verb> (y/n) or
+  (r)eturn to normal?" (`player_get_resume_normal_shape`), and the Borg
+  answers `y`: it changes back and acts in one command, with no extra
+  energy (`# Fox Form: reverting for an item or a spell`). Its own change
+  back sends `v` and answers `r` (`fox_revert`).
+- **The speed:** `escape_fox_form_speed` (10: halving a step's energy is +10
+  at normal speed, `extract_energy` 10 to 20) is added to `borg_danger`'s
+  speed while the Borg is a fox (a fox only moves), and to the player speed
+  of #530's stand decision while it is a fox. A Druid that is not yet a fox
+  but can cast Fox Form (it will at its first flight step) gets
+  `escape_fox_form_stand_speed` (10) there instead. That bonus is granted on
+  the ability, so it has a parameter of its own (review of #594). More speed
+  means fewer pursuers, so fewer stands and more flights. The flat +10 is
+  exact only at speed 110 (normal). At speed S a fox has
+  `2 × extract_energy[S]`, which is worth +2 at 100, +7 at 105, +15 at 115,
+  +24 at 120 (review of #594).
+- **The change-back flag:** `fox_revert` lives as long as its queued `v`. It
+  is consumed by the prompt and cleared by `borg_flush` (review of #594:
+  otherwise a flushed `v` left it set, and the next item command was
+  answered `r`, so the Borg changed back without acting).
+
+Compiled and shipped 0 (C). Evidence, a lead (branch of main `8e7dbad4`,
+100,000 turns): the 18 classes-18 starts and 27 Druid starts from
+classes-1800 (29 Druids in all):
+
+| arm | Druid deaths | Druid sum of CL | Druid sum of max depth | other classes |
+|---|---:|---:|---:|---|
+| off | 3 | 161 | 54 | |
+| on | 3 | 156 | 56 | 16/16 keys identical |
+
+With `escape_fox_form_stand_speed = 0`, 1 game of 29 changes: 36
+stands against 35, and the same deaths, sum of CL and depth.
+
+On, the Druids cast Fox Form 431 times in all. They changed back for an
+item or a spell 120 times, and to fight 67 times. A fox's step takes 5 game
+turns, not 10. Seven blows were still struck as a fox, all steps into an
+unseen monster ("You claw something"): the game turns the step into an
+attack the Borg did not know of. The 3 deaths are the same in both arms, at
+CL1-2 and before any flight, so these games say nothing about survival: that
+needs the zoo (Druid starts).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:486` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:517` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:518` |
+| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:574` |
+| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:576` |
+
 ## Breeders hunted by every class (#558)
 
 The registry now holds **2139** parameters (2137 on main before #558; two
