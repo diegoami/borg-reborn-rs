@@ -419,6 +419,7 @@ death with the list, 4 without), 1.
 | `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chase_distance` | 6 | grids | 1–30 | `borg_caution.rs:2303` |
 | `caution_flee_recall_gate_below_depth` | 0 (shipped 2) | dungeon level | 0–127 | `borg_caution.rs:2303` (#557: a ceiling; with `caution_flee_recall` 1, at depths shallower than this a flight's Recall needs the breeder or chaser exception; 2 = DL1 only; 0 or 1 = off) |
+| `caution_flee_recall_danger_percent` | 0 | percent of HP | 0–10000 | `borg_caution.rs:2324` (#587: where the gate holds a flight's Recall, danger here at this share of HP allows it; 0 = off) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2272` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)
@@ -480,6 +481,7 @@ stand mode on: the same 3 deaths either way.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2435` |
+| `caution_scary_unlatch_kill_only` | 0 | flag | 0–1 | `borg_caution.rs:2480` (#587: with the latch off, clear only after a scary race was killed) |
 
 ## The named scary list as data (#518)
 

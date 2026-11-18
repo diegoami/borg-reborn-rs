@@ -1150,6 +1150,9 @@ fn target_worked(st: &mut BorgState) {
 /// and reset the anti-bounce count.
 fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
     if count {
+        // borg-reborn-rs (#587): a scary monster's death, for the unlatch.
+        let r_idx = st.kills.kills[k as usize].r_idx;
+        crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);

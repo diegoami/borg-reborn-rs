@@ -2752,6 +2752,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let player_speed = st.borg.tr(BI_SPEED);
     let mut stand_scary = false;
     let mut stand_pursuer = false;
+    let mut scary_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2862,6 +2863,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             // A monster that never moves cannot follow: never scary here.
             if !engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE) {
                 stand_scary = true;
+                scary_races.push(r_idx); // borg-reborn-rs (#587)
                 if kill.awake && i32::from(kill.speed) >= player_speed {
                     stand_pursuer = true;
                 }
@@ -2950,6 +2952,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     }
 
     if stand_mode {
+        for r in scary_races {
+            crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
+        }
         crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }

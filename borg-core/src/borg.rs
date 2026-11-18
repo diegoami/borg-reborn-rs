@@ -206,6 +206,10 @@ pub struct BorgMonInfo {
     /// borg-reborn-rs (#530): standing against a scary monster it cannot
     /// escape (for the note on the change).
     pub scary_stand: bool,
+    /// borg-reborn-rs (#587): the races that made the level scary, and
+    /// whether one of them was killed since.
+    pub scary_races: [u16; 8],
+    pub scary_killed: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

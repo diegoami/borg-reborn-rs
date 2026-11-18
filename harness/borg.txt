@@ -585,6 +585,12 @@ borg_param_caution_flee_recall_chase_distance = 6
 
 borg_param_caution_flee_recall_gate_below_depth = 2
 
+# Fleeing. Where the settings above hold a flight's Recall back, the danger
+# here at or above this percent of the current HP allows it after all
+# (#587). 0 = off.
+
+borg_param_caution_flee_recall_danger_percent = 0
+
 
 ### Fleeing ###
 
@@ -739,6 +745,12 @@ borg_param_caution_scary_stand = 1
 # Door scares stay latched. Needs caution_scary_stand (#515).
 
 borg_param_caution_scary_latch = 1
+
+# With the latch off: 1 = the level stops being scary only after a monster
+# of a race that made it scary was killed. A forgotten monster has not left
+# the level (#587). 0 = whenever none is known.
+
+borg_param_caution_scary_unlatch_kill_only = 0
 
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, makes nothing scary: Grip fled from
