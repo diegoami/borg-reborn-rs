@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
+
+The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
+it read its only Recall with the up staircase 8 steps away, rested while Grip
+closed in, phased twice from a dog twice its speed and died meleeing with 17
+flasks of oil. Three switches (compiled 0, shipped 1):
+`caution_flee_stairs_before_recall`, `escape_phase_adjacent_only`,
+`caution_scary_ranged_no_stairs`.
+
+- The Priest lives (walks back to the stairs). Of the six `borg-play` deaths,
+  four live with the switches on; the floating-eye Mage and the turn-276
+  Ranger play identical keys (no rule engaged).
+- 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
+  deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
+  ranged 3.
+- A first version walked to the stairs inside `borg_caution` and returned, so a
+  fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
+  only declines to read Recall.
+- Left on #539: a hurt or afraid monster stops being scary (needs the scary
+  flag recomputed each think, with door/resist scares kept latched).
+
 ## 2026-11-17: class values and per-class borg files (#520)
 
 Owner: one common borg.txt, per-class files overriding any setting, no
