@@ -2,6 +2,38 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: #544's down-staircase flight only when cornered (#548)
+
+Owner: as merged in #545, A+K fired on almost every flight (13 of 18
+classes-18 games, up to 721 notes) and added 3 deaths in a local preview.
+Narrowed, each condition a parameter; all off in `harness/borg.txt`.
+
+- `caution_flee_known_down_stairs` (A, 0) now needs
+  `caution_flee_known_down_cornered` (1): a moving monster adjacent, danger
+  here at or above the HP or surrounded, and no Phase Door, teleport,
+  Teleport Level or escape; and `caution_flee_known_down_max_cost` (40): the
+  staircase within that many grids of flow (the flow's depth; 0 = any).
+  Its own flow (`flee_known_down_flow`) keeps the recalling and #557
+  rising-hold checks of `borg_flow_stair_more`.
+- K is its own flag, `caution_jumpstart_keep_stairs` (0).
+- Flags off: smoke 3/3 identical.
+- **Local classes-18** (this tree, `BORG_CORE=borg-rs`, 100,000 turns,
+  the zoo's 18 starts; not a zoo run, and the shipped `borg.txt` of today, not
+  #240's ctl): ctl 0 deaths, 0 notes; *wide* (#545 as merged: cornered 0,
+  cap 0, K 1) 2 deaths (Priest 1569794094 a soldier, Druid 934061548 a
+  wild cat), 2,607 notes in 17 games; *narrow* (the defaults above, K 0) 1
+  death, 31 notes in 3 games, the other 15 games key-for-key the ctl. The
+  narrow death (Priest 1569794094, poison from worms at turn 42,320) comes
+  5,450 turns after a flight that did escape an adjacent soldier (danger 84,
+  HP 34, staircase 24 flow away); the game had diverged. #240's three newly
+  killed (Ranger 1739161339, Warrior 1019921749, Druid 102023799) live in
+  every arm here, but this tree is not #240's.
+- **Not run: the worm room** (`~/borg-play/priest-1055640847` is not on this
+  computer, and #545's turn gate was never committed).
+
+Left: the worm-room check (does it still escape with the narrowed A, and
+with K on?), then a zoo pilot of narrow against ctl (owner's choice).
+
 ## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
 
 Owner, from priest-1055640847's walk home (#557): "maybe the issue is that
