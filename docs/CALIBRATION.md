@@ -169,8 +169,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2773` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2773` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2909` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2909` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -278,11 +278,14 @@ death with the list, 4 without), 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2320` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
-| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2320` |
-| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2450` |
-| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2570` |
-| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2494` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
+| `caution_breeder_fight` | 0 | flag | 0–1 | `borg_caution.rs:2195` (1 = stand and fight breeders without an easy escape, melee classes hunt them) |
+| `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2195` |
+| `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2228` |
+| `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2348` |
+| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2503` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
+| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2503` (#544 B: the exit's distance from every breeder) |
+| `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
+| `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2272` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## Flee only while the escape is real (#530)
 
@@ -318,7 +321,7 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2360` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2379` (read in `borg_flow_kill.rs`) |
 
 ## The named scary list as data (#518)
 
@@ -701,15 +704,15 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_escape_limit_max_depth` | 98 | depth | 0–127 | `borg_caution.rs:1475` |
 | `caution_escape_flee_limit` | 3 | count | 0–1000 | `borg_caution.rs:1481` |
 | `caution_swap_danger_divisor` | 3 | divisor | 1–100 | `borg_caution.rs:1615` |
-| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1800` |
-| `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1662` |
-| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1676` |
-| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1677` |
-| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:1678` |
-| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:1679` |
-| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1690` |
-| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1695` |
-| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1709` |
+| `caution_recall_prep_turns` | 2 | turns | 0–100000 | `borg_caution.rs:1813` |
+| `caution_restock_town_delay` | 200 | turns | 0–100000 | `borg_caution.rs:1675` |
+| `caution_restock_ccw_count` | 2 | count | 0–1000 | `borg_caution.rs:1689` |
+| `caution_restock_food_count` | 3 | count | 0–1000 | `borg_caution.rs:1690` |
+| `caution_restock_fuel_count` | 2 | count | 0–1000 | `borg_caution.rs:1691` |
+| `caution_restock_level_delay` | 400 | turns | 0–100000 | `borg_caution.rs:1692` |
+| `caution_flee_danger_hp_multiplier` | 2 | multiplier | 0–20 | `borg_caution.rs:1703` |
+| `caution_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1708` |
+| `caution_town_flee_max_level` | 50 | level | 1–51 | `borg_caution.rs:1722` |
 | `caution_stair_low_level` | 5 | level | 1–51 | `borg_caution.rs:1724` |
 | `caution_stair_danger_divisor` | 2 | divisor | 1–100 | `borg_caution.rs:1724` |
 | `caution_breeder_flee_max_level` | 15 | level | 1–51 | `borg_caution.rs:1804` |
