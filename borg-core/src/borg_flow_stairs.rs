@@ -226,6 +226,59 @@ pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     commit_and_step(st, c"up-stairs", why)
 }
 
+/// borg-reborn-rs (#548, review of #566): the refusals of
+/// `borg_flow_stair_more` before its flow (with an up staircase known: not
+/// prepared for the next depth unless `brave`, hungry, a sale held, no
+/// light; and recalling), shared with #544's flight down a known staircase
+/// so the two agree. True: no descent.
+pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
+    /* if there are no down stairs, don't filter use of up stairs */
+    if st.stairs.less.num != 0 {
+        /* not unless safe or brave */
+        if !brave {
+            let depth = st.borg.tr(BI_CDEPTH) + 1;
+            if crate::borg_prepared::borg_prepared_c(st, depth).is_some() {
+                return true;
+            }
+        }
+
+        /* dont go down if hungry or low on food, unless fleeing a scary town */
+        if !brave
+            && st.borg.tr(BI_CDEPTH) != 0
+            && !st.borg.mon.scary
+            && (st.borg.tr(BI_ISWEAK) != 0
+                || st.borg.tr(BI_ISHUNGRY) != 0
+                || st.borg.tr(BI_FOOD) < 2)
+        {
+            return true;
+        }
+
+        /* If I need to sell crap, then don't go down */
+        if crate::borg_trip::legacy_sale_hold(st) {
+            return true;
+        }
+
+        /* No diving if no light */
+        if st.borg.tr(BI_LIGHT) == 0 {
+            return true;
+        }
+    }
+
+    /* don't head for the stairs if you are recalling,  */
+    /* even if you are fleeing. */
+    if st.borg.goal.recalling != 0 {
+        return true;
+    }
+
+    false
+}
+
+/// borg-reborn-rs (#548): enqueue the down staircases without a monster on
+/// them (`enqueue_stairs`), for #544's capped flight.
+pub(crate) fn enqueue_down_stairs(st: &mut BorgState) {
+    enqueue_stairs(st, Which::More);
+}
+
 /// Prepare to flow towards "down" stairs.
 pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
     /* None to flow to */
@@ -238,41 +291,7 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
         return false;
     }
 
-    /* if there are no down stairs, don't filter use of up stairs */
-    if st.stairs.less.num != 0 {
-        /* not unless safe or brave */
-        if !brave {
-            let depth = st.borg.tr(BI_CDEPTH) + 1;
-            if crate::borg_prepared::borg_prepared_c(st, depth).is_some() {
-                return false;
-            }
-        }
-
-        /* dont go down if hungry or low on food, unless fleeing a scary town */
-        if !brave
-            && st.borg.tr(BI_CDEPTH) != 0
-            && !st.borg.mon.scary
-            && (st.borg.tr(BI_ISWEAK) != 0
-                || st.borg.tr(BI_ISHUNGRY) != 0
-                || st.borg.tr(BI_FOOD) < 2)
-        {
-            return false;
-        }
-
-        /* If I need to sell crap, then don't go down */
-        if crate::borg_trip::legacy_sale_hold(st) {
-            return false;
-        }
-
-        /* No diving if no light */
-        if st.borg.tr(BI_LIGHT) == 0 {
-            return false;
-        }
-    }
-
-    /* don't head for the stairs if you are recalling,  */
-    /* even if you are fleeing. */
-    if st.borg.goal.recalling != 0 {
+    if more_refused(st, brave) {
         return false;
     }
 

@@ -3200,10 +3200,13 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#548): cornered for #544's flight down a known
-/// staircase. A known monster that can move is adjacent (`nearest_kill`),
-/// the danger here is at or above the HP or the Borg is surrounded, and it
-/// has no Phase Door, teleport, Teleport Level or escape in the pack or
-/// spells. The caller has already found no free up staircase known.
+/// staircase. A known monster that can move is adjacent (`nearest_kill` ==
+/// 1, diagonals included; #504's `fight_cornered` takes any within
+/// `caution_cornered_radius`), it has no Phase Door, teleport, Teleport Level
+/// or escape in the pack (the traits count items, not spells; Recall is no
+/// escape here, as in #504), and the danger here is at or above the HP or
+/// the Borg is surrounded (as #544's `breeder_exit`). The caller has already
+/// found no free up staircase known.
 fn flee_down_cornered(st: &mut BorgState, pos_danger: i32) -> bool {
     let adjacent = nearest_kill(st);
     let no_escape = st.borg.tr(BI_APHASE) <= 0
@@ -3211,22 +3214,25 @@ fn flee_down_cornered(st: &mut BorgState, pos_danger: i32) -> bool {
         && st.borg.tr(BI_ATELEPORTLVL) <= 0
         && st.borg.tr(BI_AESCAPE) <= 0;
     let outmatched = pos_danger >= st.borg.tr(BI_CURHP);
-    flee_down_cornered_with(adjacent, outmatched, no_escape) || (no_escape && adjacent == 1 && borg_surrounded(st))
+    cornered_shape(adjacent, no_escape, outmatched, || borg_surrounded(st))
 }
 
-/// The test of `flee_down_cornered` without the surround check:
-/// `adjacent` is the nearest moving monster's distance (-1: none known).
-fn flee_down_cornered_with(adjacent: i32, outmatched: bool, no_escape: bool) -> bool {
-    adjacent == 1 && outmatched && no_escape
+/// `flee_down_cornered`'s test: `adjacent == 1 && no_escape && (outmatched
+/// || surrounded)`; `surrounded` (which notes) is asked only when needed.
+fn cornered_shape(adjacent: i32, no_escape: bool, outmatched: bool, surrounded: impl FnOnce() -> bool) -> bool {
+    adjacent == 1 && no_escape && (outmatched || surrounded())
 }
 
 /// borg-reborn-rs (#548): `borg_flow_stair_more(GOAL_FLEE)` for #544's
-/// flight, with the flow's depth capped at `max_cost` grids (0: 250, any
-/// distance the flow reaches). Desperate (danger ignored, monster grids
-/// routed around). A staircase farther than the cap leaves the cost at the
-/// Borg's grid unset, so the commit fails and nothing is noted.
+/// flight, with the flow's depth capped at `max_cost` steps of flow (0: 250,
+/// any distance the flow reaches). It keeps that function's refusals
+/// (`more_refused`: with an up staircase known, not prepared for the next
+/// depth, hungry, a sale held or no light; recalling; review of #566) and
+/// #557's rising hold. Desperate (danger ignored, monster grids routed
+/// around). A staircase farther than the cap leaves the cost at the Borg's
+/// grid unset, so the commit fails and nothing is noted.
 fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
-    if st.borg.goal.recalling != 0 || rising_holds_flee_descent(st) {
+    if rising_holds_flee_descent(st) || crate::borg_flow_stairs::more_refused(st, false) {
         return false;
     }
     // Desperate before the enqueue too: `borg_flow_enqueue_grid` rates an
@@ -3234,12 +3240,7 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     // (review of #566; `desperate_flow` set it before the whole flow).
     st.borg.status.desperate = true;
     crate::borg_flow::borg_flow_clear(st);
-    for i in 0..st.stairs.more.num.max(0) as usize {
-        let (x, y) = (st.stairs.more.x[i], st.stairs.more.y[i]);
-        if st.cave.grid(x, y).kill == 0 {
-            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
-        }
-    }
+    crate::borg_flow_stairs::enqueue_down_stairs(st);
     crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
     let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE)
         && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
@@ -3917,15 +3918,17 @@ mod recall_tests {
 mod flee_known_down_tests {
     use super::*;
 
-    /// #548: cornered means an adjacent moving monster, the danger here at
-    /// or above the HP, and no escape in the pack or spells.
+    /// #548: cornered means an adjacent moving monster, no escape item, and
+    /// the danger here at or above the HP or surrounded.
     #[test]
-    fn cornered_needs_an_adjacent_monster_the_danger_and_no_escape() {
-        assert!(flee_down_cornered_with(1, true, true));
-        assert!(!flee_down_cornered_with(2, true, true), "nothing adjacent");
-        assert!(!flee_down_cornered_with(-1, true, true), "no monster known");
-        assert!(!flee_down_cornered_with(1, false, true), "danger below the HP");
-        assert!(!flee_down_cornered_with(1, true, false), "an escape in the pack");
+    fn cornered_needs_an_adjacent_monster_no_escape_and_the_danger_or_a_surround() {
+        assert!(cornered_shape(1, true, true, || false));
+        assert!(cornered_shape(1, true, false, || true), "surrounded");
+        assert!(!cornered_shape(1, true, false, || false), "neither");
+        assert!(!cornered_shape(2, true, true, || true), "nothing adjacent");
+        assert!(!cornered_shape(-1, true, true, || true), "no monster known");
+        assert!(!cornered_shape(1, false, true, || true), "an escape in the pack");
+        assert!(cornered_shape(1, true, true, || panic!("not asked when outmatched")));
     }
 
     /// #548: 0 keeps #545's any distance (the flow's 250); a cap is the
