@@ -2,6 +2,18 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: contract tests run the environment overrides directly (#540)
+
+Moving the borg-zoo pin (needed for #535's shipped scary list) broke
+`engine/tests/test_core_profile_contract.py`: the current adapter clears every
+ambient `BORG_*` variable, so the tests' `BORG_CORE`, `BORG_ERRAND`,
+`BORG_ERRAND_BUDGET` and `BORG_STOPSCARED` overrides never reached the core.
+Those tests now run the game directly (`direct`), with the pinned adapter's
+own `config_text` and `command`. The profile tests still go through
+`run_cell`. 13/13 pass with the old pin (`c5f1b04`) and with `7b373a70`; the
+rest of the engine suite is unchanged between the two pins. Next: the pin
+move in its own PR, then #535.
+
 ## 2026-11-17: class values and per-class borg files (#520)
 
 Owner: one common borg.txt, per-class files overriding any setting, no
