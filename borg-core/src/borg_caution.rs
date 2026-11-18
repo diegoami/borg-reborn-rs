@@ -1035,15 +1035,18 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         return true;
     }
 
-    // borg-reborn-rs (#544): in the dungeon, fleeing with no up staircase
-    // known, a known down staircase at any distance (an escape: the Borg comes back up
-    // when not prepared for the depth).
+    // borg-reborn-rs (#544, narrowed in #548): in the dungeon, fleeing with
+    // no up staircase known, a known down staircase (an escape: the Borg
+    // comes back up when not prepared for the depth). Only when cornered
+    // (`caution_flee_known_down_cornered`) and within
+    // `caution_flee_known_down_max_cost` grids of flow.
     p(Param::caution_flee_known_down_stairs) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && (st.borg.goal.fleeing || st.borg.mon.scary)
         && b_j == -1
         && b_m != -1
-        && desperate_flow(st, false, "# Desperate for Stairs (down, no up stairs known)")
+        && (p(Param::caution_flee_known_down_cornered) == 0 || flee_down_cornered(st, pos_danger))
+        && flee_known_down_flow(st, p(Param::caution_flee_known_down_max_cost))
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -3154,6 +3157,66 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
     false
 }
 
+/// borg-reborn-rs (#548): cornered for #544's flight down a known
+/// staircase. A known monster that can move is adjacent (`nearest_kill`),
+/// the danger here is at or above the HP or the Borg is surrounded, and it
+/// has no Phase Door, teleport, Teleport Level or escape in the pack or
+/// spells. The caller has already found no free up staircase known.
+fn flee_down_cornered(st: &mut BorgState, pos_danger: i32) -> bool {
+    let adjacent = nearest_kill(st);
+    let no_escape = st.borg.tr(BI_APHASE) <= 0
+        && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_ATELEPORTLVL) <= 0
+        && st.borg.tr(BI_AESCAPE) <= 0;
+    let outmatched = pos_danger >= st.borg.tr(BI_CURHP);
+    flee_down_cornered_with(adjacent, outmatched, no_escape) || (no_escape && adjacent == 1 && borg_surrounded(st))
+}
+
+/// The test of `flee_down_cornered` without the surround check:
+/// `adjacent` is the nearest moving monster's distance (-1: none known).
+fn flee_down_cornered_with(adjacent: i32, outmatched: bool, no_escape: bool) -> bool {
+    adjacent == 1 && outmatched && no_escape
+}
+
+/// borg-reborn-rs (#548): `borg_flow_stair_more(GOAL_FLEE)` for #544's
+/// flight, with the flow's depth capped at `max_cost` grids (0: 250, any
+/// distance the flow reaches). Desperate (danger ignored, monster grids
+/// routed around). A staircase farther than the cap leaves the cost at the
+/// Borg's grid unset, so the commit fails and nothing is noted.
+fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
+    if st.borg.goal.recalling != 0 || rising_holds_flee_descent(st) {
+        return false;
+    }
+    crate::borg_flow::borg_flow_clear(st);
+    for i in 0..st.stairs.more.num.max(0) as usize {
+        let (x, y) = (st.stairs.more.x[i], st.stairs.more.y[i]);
+        if st.cave.grid(x, y).kill == 0 {
+            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+        }
+    }
+    st.borg.status.desperate = true;
+    crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
+    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE)
+        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
+    }
+    ok
+}
+
+/// borg-reborn-rs (#548, K of #544): whether the stuck jumpstart (bravery
+/// boost 3, `borg_think_dungeon.rs`) keeps the known staircases.
+pub(crate) fn jumpstart_keeps_stairs() -> bool {
+    p(Param::caution_jumpstart_keep_stairs) != 0
+}
+
+/// The flow depth for `caution_flee_known_down_max_cost`: 0 is any
+/// distance (250, `borg_flow_stair_more`'s depth).
+fn flee_down_depth(max_cost: i32) -> i32 {
+    if max_cost <= 0 { 250 } else { max_cost.min(250) }
+}
+
 #[cfg(test)]
 mod outmatched_tests {
     use super::*;
@@ -3767,5 +3830,31 @@ mod recall_tests {
         assert_eq!(targets, vec![&grip], "only Grip, awake in view at range");
         assert!(ranged_target(true, &level), "so Recall waits");
         assert!(!ranged_target(true, &[sleeper, behind_wall, next_to_me]), "no candidate: Recall may go");
+    }
+}
+
+#[cfg(test)]
+mod flee_known_down_tests {
+    use super::*;
+
+    /// #548: cornered means an adjacent moving monster, the danger here at
+    /// or above the HP, and no escape in the pack or spells.
+    #[test]
+    fn cornered_needs_an_adjacent_monster_the_danger_and_no_escape() {
+        assert!(flee_down_cornered_with(1, true, true));
+        assert!(!flee_down_cornered_with(2, true, true), "nothing adjacent");
+        assert!(!flee_down_cornered_with(-1, true, true), "no monster known");
+        assert!(!flee_down_cornered_with(1, false, true), "danger below the HP");
+        assert!(!flee_down_cornered_with(1, true, false), "an escape in the pack");
+    }
+
+    /// #548: 0 keeps #545's any distance (the flow's 250); a cap is the
+    /// flow's depth, never above 250.
+    #[test]
+    fn the_distance_cap_is_the_flow_depth() {
+        assert_eq!(flee_down_depth(0), 250);
+        assert_eq!(flee_down_depth(-3), 250);
+        assert_eq!(flee_down_depth(40), 40);
+        assert_eq!(flee_down_depth(1000), 250);
     }
 }
