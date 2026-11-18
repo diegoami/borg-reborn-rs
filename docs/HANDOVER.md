@@ -2,6 +2,19 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: flee only while the escape is real (#530)
+
+Owner: flee scary monsters while there is a chance; once there isn't, stand
+and fight. `caution_scary_stand` (compiled 0, shipped 1): in the dungeon a
+never-moving monster is never scary, and a scary level is fled only with an
+easy escape (stairs within the breeder stand's steps, or an escape item) or
+when no scary monster awake and as fast as the character exists; otherwise
+the scare's leave and flee are withdrawn and the Borg fights (the cornered
+mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
+45 stands; the setting at 0 plays main's keys.
+- **Left:** the town (unchanged), and the escape itself: the owner notes
+  the Borg is not always good at escaping (e.g. leave the room and close the
+  door) — #532.
 ## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
 
 The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
