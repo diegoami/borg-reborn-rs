@@ -5,12 +5,18 @@
 ## 2026-11-18: breeders hunted by every class (#558)
 
 Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
-a lone green worm mass. Three causes, all fixed behind switches:
+a lone green worm mass. Three causes, all fixed behind switches. All of it is
+in the vendored core (`borg-core/`), so it plays only with the borg-rs core:
+`borg_reborn_core = borg-rs` (shipped since #479; the zoo and `~/borg-play`)
+or `BORG_CORE=borg-rs`. A harness run without `BORG_CORE` plays the original
+reborn core, which is unaffected.
 - **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
   from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
 - **Class:** #503's hunt left Priests out. Every class hunts now, through
-  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3). Mages
-  and Necromancers below CL35 hunt breeders only, with half their mana.
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3). For
+  Mages and Necromancers below CL35 the hunt walk targets breeders only, with
+  half their mana (`borg_flow_kill_direct`, after 3000 turns on a level, still
+  digs to any monster).
 - **Danger:** the worm's 1d3 acid bite read 630 (200 corrosion fear per acid
   blow, then +150% for a breeder below CL20), above the hunt's limit of a
   third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear

@@ -17,14 +17,19 @@ added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
 with 70 HP never killed a green worm mass it could solo. The breeder hunt
 (#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
 class values (Warrior 6, Priest 3, the others 4; 0 = no hunt for that class).
-Low-level Mages and Necromancers hunt only breeders, and only while they have
-half their mana, so they cast rather than melee. Two new switches, compiled 0,
-shipped 1 and 50:
+Low-level Mages and Necromancers: the hunt walk (`borg_flow_kill`) targets
+breeders only, and only while they have half their mana, so they cast rather
+than melee (`borg_flow_kill_direct`, the dig to the closest monster after
+3000 turns on a level, is unchanged and has no such filter). All of it is in
+the vendored core, so it plays with the borg-rs core (`borg_reborn_core =
+borg-rs`, shipped since #479, or `BORG_CORE=borg-rs`); a harness run without
+`BORG_CORE` plays the reborn core, which it does not change. Two new
+switches, compiled 0, shipped 1 and 50:
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`: no rest while the hunt applies and HP is at least this percent of max HP; breeders multiply while the Borg rests) |
-| `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`: a breeder the Borg may hunt is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630) |
+| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`, `borg_flow_kill::breeder_hunt_now`: no rest while HP is at least this percent of max HP and the hunt walk would go to a breeder now: the hunt applies, the Borg is not ignoring the breeders, fleeing or leaving, no scary monster is on the level, a low-level caster has half its mana, it is not hungry, and a known breeder passes the walk's danger test; breeders multiply while the Borg rests) |
+| `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`, `borg_caution::breeder_engaged`: while the hunt applies and the Borg is not ignoring the breeders, fleeing, leaving or facing a scary monster, every breeder on the level is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630. Level-wide, not per monster: the regional fear map and retreat grids see it too) |
 
 ## Fear cures and the see-invisible clock (#516)
 
