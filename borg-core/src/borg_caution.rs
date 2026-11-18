@@ -2301,9 +2301,20 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
 /// turns next to the monster it flees and is gone for the trip home.
 fn recall_escape_allowed(st: &BorgState) -> bool {
-    if p(Param::caution_flee_recall) != 0 {
-        return true;
-    }
+    // borg-reborn-rs (#557, owner): shallower than
+    // `caution_flee_recall_gate_below_depth` (2: on DL1) the stairs are a
+    // short walk, so the exception is needed whatever `caution_flee_recall`
+    // says.
+    recall_allowed_with(
+        p(Param::caution_flee_recall) != 0,
+        st.borg.tr(BI_CDEPTH),
+        p(Param::caution_flee_recall_gate_below_depth),
+        || recall_exception(st),
+    )
+}
+
+/// The breeder or chaser exception (#559).
+fn recall_exception(st: &BorgState) -> bool {
     let range = p(Param::caution_flee_recall_chase_distance);
     let mut chasers = 0;
     for i in 1..st.kills.nxt.max(0) as usize {
@@ -2323,6 +2334,20 @@ fn recall_escape_allowed(st: &BorgState) -> bool {
         p(Param::caution_flee_recall_breeders),
         p(Param::caution_flee_recall_chasers),
     )
+}
+
+/// Is a flight's Recall allowed? Without the need for the exception, yes;
+/// otherwise only with it (`exception`, evaluated only then).
+fn recall_allowed_with(c_recall: bool, depth: i32, gate_below: i32, exception: impl FnOnce() -> bool) -> bool {
+    !recall_needs_exception(c_recall, depth, gate_below) || exception()
+}
+
+/// Does a flight's Recall need the breeder or chaser exception? Always with
+/// the gate on (`c_recall` false); with C's Recall, only at depths shallower
+/// than `gate_below` (a ceiling: 2 = DL1 only; 0 = off; 1 = off too, since
+/// the town never reaches here).
+fn recall_needs_exception(c_recall: bool, depth: i32, gate_below: i32) -> bool {
+    !c_recall || (gate_below > 0 && depth < gate_below)
 }
 
 /// Swamped by breeders or chased by several monsters (a limit of 0 is off).
@@ -3332,6 +3357,26 @@ mod scary_stand_tests {
         assert!(!stand_decision(true, pursuer), "an easy escape: flee");
         assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
         assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn a_shallow_flight_recall_needs_the_exception() {
+        assert!(!recall_needs_exception(true, 1, 0), "C, no minimum depth");
+        assert!(recall_needs_exception(true, 1, 2), "C, DL1 below the minimum");
+        assert!(!recall_needs_exception(true, 2, 2), "C, at the minimum");
+        assert!(recall_needs_exception(false, 10, 2), "the gate on: any depth");
+        assert!(recall_needs_exception(false, 10, 0));
+    }
+
+    #[test]
+    fn the_shipped_dl1_gate_allows_recall_only_with_the_exception() {
+        // Shipped: C's Recall (1) and the gate below depth 2.
+        let never = || -> bool { panic!("the exception is not needed") };
+        assert!(!recall_allowed_with(true, 1, 2, || false), "DL1, no breeders or chasers: no Recall");
+        assert!(recall_allowed_with(true, 1, 2, || true), "DL1 with the exception: Recall");
+        assert!(recall_allowed_with(true, 2, 2, never), "DL2: C's Recall, the exception not asked");
+        assert!(recall_allowed_with(true, 1, 0, never), "the gate off: C everywhere");
+        assert!(!recall_allowed_with(false, 5, 0, || false), "the full gate: any depth");
     }
 
     #[test]

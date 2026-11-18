@@ -2,6 +2,27 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: no flight Recall on DL1 (#557)
+
+Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
+(#564), `caution_flee_recall_gate_below_depth` (compiled 0; **2 in
+`harness/borg.txt`**; a ceiling, 2 = DL1 only) makes a flight at a depth
+shallower than that read Word of Recall only with #559's exceptions (5 known breeders, or 3 awake monsters that can
+move within 6 grids). Recall there is no easy escape in the stand tests
+either.
+
+- Local classes-18 on `d419072f`, 100,000 turns: 0 deaths in both arms;
+  flight Recalls 17 to 10 games; sum of CL 99 against 107, sum of max depth
+  41 against 43; 17 of 18 games change keys.
+- The six borg-play deaths from birth: with 2, four of six alive at 200,000
+  (as with the full gate); with 0 they replay their zoo keys.
+- Evaluated, not built (owner's items 2 and 4): in the 17 flight Recalls of
+  borg-zoo#255's local ctl cells, 13 were on DL1, 10 came after "unable to
+  flow to up stairs" (median 2,260 game turns on the level), and no
+  monster had fled before any of them. Several were set off by monsters
+  that never move (floating eye, grey mushroom patch): "excessive danger"
+  from a floating eye at 230 against 28 HP.
+
 ## 2026-11-18: a hurt or afraid monster is not scary (#539, last part)
 
 Owner, from `priest-809881907` (Grip fled from one flask of oil): a hurt or
