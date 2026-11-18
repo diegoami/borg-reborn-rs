@@ -19,6 +19,37 @@ none` keeps the compiled C list.
 - **The merge waits for the zoo:** its adapter must copy a list named by the
   shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
   stop with exit 2.
+## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
+
+The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
+it read its only Recall with the up staircase 8 steps away, rested while Grip
+closed in, phased twice from a dog twice its speed and died meleeing with 17
+flasks of oil. Three switches (compiled 0, shipped 1):
+`caution_flee_stairs_before_recall`, `escape_phase_adjacent_only`,
+`caution_scary_ranged_no_stairs`.
+
+- The Priest lives (walks back to the stairs). Of the six `borg-play` deaths,
+  four live with the switches on; the floating-eye Mage and the turn-276
+  Ranger play identical keys (no rule engaged).
+- 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
+  deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
+  ranged 3.
+- Review of #543: "known" was not "reachable". Recall now waits only when the
+  flee flows' own stair flow (up: `borg_flow_stair_less`'s; down: its gates,
+  or `borg_flow_stair_both`'s on a scary level) reaches the Borg from a free
+  staircase, probed without committing. "Something to throw or shoot" is the
+  attack planner's own choice (`ranged_means`: `best_throw`, `launch_damage`),
+  not any flask; on a scary level without stairs `borg_attack` takes only an
+  awake monster in view at range (`ranged_candidate`, shared with the Recall
+  and Phase waits). Rerun: off still identical to main (18/18); on 5 → 2
+  deaths, sum of CL 87 → 95; alone: stairs 3 deaths / 95, phase 3 / 89,
+  ranged 2 / 94. Priest and the same four `borg-play` deaths live; the two
+  others still play identical keys.
+- A first version walked to the stairs inside `borg_caution` and returned, so a
+  fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
+  only declines to read Recall.
+- Left on #539: a hurt or afraid monster stops being scary (needs the scary
+  flag recomputed each think, with door/resist scares kept latched).
 
 ## 2026-11-18: contract tests run the environment overrides directly (#540)
 
