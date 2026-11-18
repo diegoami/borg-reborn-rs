@@ -14,8 +14,25 @@ right after that change, so older sections show older counts.
 
 The registry now holds **2153** parameters (one added). Owner, 2026-11-18:
 "Could we try a setting where we always fight monsters in town, I have never
-got killed by monsters in town." On 18 classes-18 starts (100,000 turns,
-main `ed3ffc04`) the town was scary 2,017 times, nearly always because of
+got killed by monsters in town." All of it is in the vendored core, so it
+plays with the borg-rs core (`borg_reborn_core = borg-rs`, shipped since #479,
+or `BORG_CORE=borg-rs`); a harness run without `BORG_CORE` plays the reborn
+core, which has no scare and is not affected.
+
+The measurement: 18 starts, the 9 classes x seeds 2001 and 2002, race 0,
+100,000 game turns (not borg-zoo's classes-18 starts). Each was run as
+`angband -mborgh -n -- -seed S -race 0 -class C -turns 100000 -keylog ...
+-summary ... -menu-letters -exact-turns -statelog ... -msglog ...`, with the
+shipped `harness/borg.txt` copied as the run's `user/borg.txt` (so the
+borg-rs core) and `scary_monsters.txt` beside it; `BORG_CORE` unset.
+Counted from the logs:
+- **town scares:** `# Scary guy on level.` notes at depth 0;
+- **town <-> DL1 moves:** `state.log` depth changes between 0 and 1;
+- **game turns in town:** the sum, over `state.log` rows at depth 0, of the
+  turn-column gap to the next row;
+- **hits and thefts:** monster attack and theft messages at depth 0.
+
+On main `ed3ffc04` the town was scary 2,017 times, nearly always because of
 five town residents on the scary list: the battle-scarred veteran (669 of
 1,890 attributed), the mean-looking mercenary (591), the filthy street
 urchin (456), the squint-eyed rogue (424) and Farmer Maggot (259). Each
@@ -38,7 +55,15 @@ monster makes the level scary; the danger rules still apply.
 | deaths in town | 0 | 0 |
 
 With the switch at 0 the 18 games are identical to main. Direction only: 18
-games, no zoo run.
+games, no zoo run. The review of #605 reran borg-zoo's classes-18 starts with
+`BORG_CORE=borg-rs`: the same directions (town scares 3,215 to 0, town <->
+DL1 moves 3,012 to 1,151, no death in town), with 0 deaths on main and 2 with
+the switch, the sum of CL 99 against 97.
+
+The switch covers every scare decided in `borg_near_monster_type`. The door
+scare ("You hear a door burst open!", `borg_messages.rs`) is not gated by it;
+the town has no doors (its layout places only floor, walls and shop
+entrances), so it never fires there.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

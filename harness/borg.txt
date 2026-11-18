@@ -742,8 +742,8 @@ borg_param_caution_scary_afraid = 1
 # battle-scarred veteran, the mean-looking mercenary, the filthy street
 # urchin, the squint-eyed rogue, Farmer Maggot) made 2,017 town scares in 18
 # games. 0 = C.
-# Impact: set to 1, 18 of 18 classes-18 games (100,000 turns) play
-# differently.
+# Impact: not on the file's 6-game measure; set to 1, 18 of 18 games (9
+# classes x seeds 2001/2002, race 0, 100,000 turns) play differently.
 
 borg_param_caution_town_never_scary = 0
 

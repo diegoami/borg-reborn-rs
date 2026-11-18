@@ -2854,7 +2854,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // no named-list or damage-rule scare; the rule is classify_scare.
         let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
         let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
-            crate::borg_caution::scary_by_damage(st, i, note)
+            // borg-reborn-rs (#604, review): no "Scary by damage" note in a town
+            // that cannot be scary
+            crate::borg_caution::scary_by_damage(st, i, note && !town_calm)
         });
         let mut scary = scare.scary && !town_calm;
 
