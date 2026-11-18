@@ -646,10 +646,22 @@ borg_param_caution_breeder_easy_escape_steps = 5
 
 borg_param_caution_breeder_stand_radius = 5
 
-# Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt breeders below
-# CL10 while at most this many are known on the level.
+# Below CL10, hunt breeders while at most this many are known on the level
+# (#503, #558). Every class hunts (Mages and Necromancers with spells, while
+# they have half their mana); the class files set 6 for Warriors and 3 for
+# Priests, and 0 turns a class's hunt off.
 
 borg_param_caution_breeder_hunt_max_count = 4
+
+# While it may hunt breeders and has at least this percent of its max HP,
+# the Borg does not rest: breeders multiply while it rests (#558).
+
+borg_param_recover_breeder_hunt_hp_percent = 50
+
+# Judge a breeder the Borg may hunt on its bite, without the armour-corrosion
+# fear of its acid (#558): a green worm mass's 1d3 bite read 630 danger.
+
+borg_param_danger_hunt_breeder_no_acid_fear = 1
 
 # Fighting breeders with no easy escape and danger at or above this many
 # tenths of the HP (5 = half), use the cornered buffs: Speed, Heroism,
@@ -725,6 +737,7 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
+borg_param_caution_breeder_hunt_max_count@warrior = 6
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
@@ -738,6 +751,7 @@ borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
+borg_param_caution_breeder_hunt_max_count@priest = 3
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
