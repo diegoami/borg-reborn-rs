@@ -2148,6 +2148,9 @@ fn danger_one_kill(
     if st.borg.temp.fast {
         fake_speed += 10;
     }
+
+    // borg-reborn-rs (#551): a fox's steps cost half the energy.
+    fake_speed += crate::borg_escape::fox_moving_speed_bonus();
     if flags.slow_spell {
         monster_speed -= 10;
     }

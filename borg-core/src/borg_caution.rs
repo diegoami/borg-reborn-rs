@@ -2455,6 +2455,9 @@ pub(crate) fn scary_stand() -> bool {
 pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) {
     // A door scare (an unseen monster opened or burst a door) is scary too,
     // and its monster may be fast: a pursuer (review of #531).
+    // borg-reborn-rs (#590, review of #592): a scary monster still known
+    // spends any earlier kill, so only the last one's death clears the flag.
+    note_scan(&mut st.borg.mon, scary);
     let (scary, pursuer) = stand_inputs(scary, pursuer, st.borg.mon.scary_door);
     if !scary {
         // borg-reborn-rs (#515): without the latch, a level whose scary
@@ -2557,26 +2560,40 @@ fn unlatch_when(rules: UnlatchRules, killed: bool, calmed: bool) -> bool {
 /// borg-reborn-rs (#593): this scan's hurt or afraid monsters (`races`):
 /// is one of a race that made the level scary?
 pub(crate) fn note_calmed(mon: &mut crate::borg::BorgMonInfo, races: &[u16]) {
-    mon.scary_calmed = races.iter().any(|r| *r != 0 && mon.scary_races.contains(r));
+    mon.scary_calmed = races
+        .iter()
+        .any(|r| race_bit(*r).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0));
 }
 
-/// borg-reborn-rs (#590): remember the races that made the level scary (at
-/// most 8; later ones are not kept).
+/// borg-reborn-rs (#590): remember a race that made the level scary.
 pub(crate) fn note_scary_race(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
-    if r_idx == 0 || mon.scary_races.contains(&r_idx) {
-        return;
-    }
-    if let Some(slot) = mon.scary_races.iter_mut().find(|r| **r == 0) {
-        *slot = r_idx;
+    if let Some((word, bit)) = race_bit(r_idx) {
+        mon.scary_races[word] |= bit;
     }
 }
 
 /// borg-reborn-rs (#590): a monster of race `r_idx` died; was it one that
 /// made the level scary?
 pub(crate) fn note_kill(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
-    if r_idx != 0 && mon.scary_races.contains(&r_idx) {
+    if race_bit(r_idx).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0) {
         mon.scary_killed = true;
     }
+}
+
+/// borg-reborn-rs (#590, review of #592): a scan that finds a scary monster
+/// known spends any earlier kill: the flag clears only when the last scary
+/// monster known is gone because it was killed.
+pub(crate) fn note_scan(mon: &mut crate::borg::BorgMonInfo, scary_known: bool) {
+    if scary_known {
+        mon.scary_killed = false;
+    }
+}
+
+/// The word and bit of race `r_idx` in `scary_races` (none for 0 or past
+/// the mask).
+fn race_bit(r_idx: u16) -> Option<(usize, u64)> {
+    let r = usize::from(r_idx);
+    (r != 0 && r < 64 * 16).then(|| (r / 64, 1u64 << (r % 64)))
 }
 
 fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) -> bool {
@@ -2586,9 +2603,27 @@ fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::Bor
     }
     mon.scary_killed = false;
     mon.scary_calmed = false;
-    mon.scary_races = [0; 8];
+    mon.scary_races = [0; 16];
     withdraw_scary_goals(mon, goal);
     true
+}
+
+/// borg-reborn-rs (#597): the twitch's random step refuses lava without
+/// fire immunity (`caution_twitch_avoid_lava`; lava deals 100 + 1d100 fire
+/// damage per step, `player-util.c:918`).
+pub(crate) fn twitch_refuses(st: &BorgState, grid: &BorgGrid) -> bool {
+    p(Param::caution_twitch_avoid_lava) != 0 && lava_forbids_step(st, grid)
+}
+
+/// borg-reborn-rs (#597): with `caution_stair_parked_fallback`, a stair flow
+/// into which no staircase entered (`enqueued`), while a monster is marked
+/// on known ones (`parked`), takes those staircases anyway.
+pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
+    p(Param::caution_stair_parked_fallback) != 0 && only_parked(enqueued, parked)
+}
+
+fn only_parked(enqueued: usize, parked: usize) -> bool {
+    enqueued == 0 && parked > 0
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -2602,7 +2637,7 @@ pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
     mon.scary_stand = false;
     mon.scary_killed = false;
     mon.scary_calmed = false;
-    mon.scary_races = [0; 8];
+    mon.scary_races = [0; 16];
 }
 
 /// borg-reborn-rs (#530, review of #531): the decision's inputs. A door
@@ -3671,11 +3706,41 @@ mod scary_stand_tests {
         note_kill(&mut mon, 42);
         assert!(mon.scary_killed, "the scary race died");
         forget_scary(&mut mon);
-        assert!(!mon.scary_killed && mon.scary_races == [0; 8], "a new level forgets");
-        for r in 1..=10 {
+        assert!(!mon.scary_killed && mon.scary_races == [0; 16], "a new level forgets");
+        for r in [1u16, 40, 63, 64, 400, 623] {
             note_scary_race(&mut mon, r);
         }
-        assert_eq!(mon.scary_races, [1, 2, 3, 4, 5, 6, 7, 8], "at most 8 kept");
+        for r in [1u16, 40, 63, 64, 400, 623] {
+            mon.scary_killed = false;
+            note_kill(&mut mon, r);
+            assert!(mon.scary_killed, "race {r}: no cap on the races kept");
+        }
+        note_scary_race(&mut mon, u16::MAX);
+        note_kill(&mut mon, 0);
+    }
+
+    #[test]
+    fn an_old_kill_does_not_clear_a_later_scare() {
+        // The review's sequence: a stand, a kill, then a later monster of the
+        // same race that is only forgotten.
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 42);
+        assert!(mon.scary_killed, "the first one killed");
+        note_scan(&mut mon, true); // a later one of race 42 is known: the kill is spent
+        assert!(!mon.scary_killed);
+        note_scan(&mut mon, false); // then forgotten: nothing scary known
+        assert!(
+            !unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "forgotten, not killed: the flag stays"
+        );
+        note_kill(&mut mon, 42);
+        note_scan(&mut mon, false); // killed and none left known
+        assert!(
+            unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "the last one killed: the flag clears"
+        );
     }
 
     #[test]
@@ -4171,6 +4236,14 @@ mod recall_tests {
 #[cfg(test)]
 mod flee_known_down_tests {
     use super::*;
+
+    #[test]
+    fn parked_stairs_are_taken_only_when_no_staircase_entered_the_flow() {
+        assert!(only_parked(0, 1), "every known staircase parked");
+        assert!(!only_parked(1, 1), "a free staircase entered the flow");
+        assert!(only_parked(0, 2), "the free one was refused as icky: it does not count");
+        assert!(!only_parked(0, 0), "none known");
+    }
 
     /// #548: cornered means an adjacent moving monster, no escape item, and
     /// the danger here at or above the HP or surrounded.

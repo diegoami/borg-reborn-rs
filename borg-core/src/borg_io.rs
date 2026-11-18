@@ -300,6 +300,9 @@ pub fn borg_inkey(st: &mut BorgState, take: bool) -> keycode_t {
 pub fn borg_flush(st: &mut BorgState) {
     st.io.key_tail = st.io.key_head;
     st.io.queued_direction = 0;
+    // borg-reborn-rs (#551, review of #594): the flag belongs to the queued
+    // `v`; flushed with it, or the next item command would be answered `r`.
+    st.borg.fox_revert = false;
 }
 
 /// Remember a direction in case the game asks (`borg_queue_direction`).

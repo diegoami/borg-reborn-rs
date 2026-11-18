@@ -4555,6 +4555,16 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     };
     let b_n = ranking.utility;
 
+    // borg-reborn-rs (#551, owner): a fox changes back before a melee blow.
+    // The other attacks are item or spell commands, changed back by the
+    // game's prompt; Maim Foe's blow is a Blackguard spell, and only a
+    // Druid has Fox Form (class.txt), so a fox never gets there.
+    if b_g == BF_THRUST as i32 && crate::borg_escape::revert_fox_to_fight(st) {
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return true;
+    }
+
     // borg-reborn-rs (#469): committed to this fight (not waiting); when the
     // danger is very high, drink Speed first and attack next turn.
     if b_g != BF_REST as i32 {

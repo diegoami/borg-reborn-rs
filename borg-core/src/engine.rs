@@ -488,6 +488,24 @@ pub fn player_is_shapechanged() -> bool {
     unsafe { crate::headers::player_util_h::player_is_shapechanged(p) }
 }
 
+/// borg-reborn-rs (#551): the name of the player's shape
+/// (`player->shape->name`): "normal", "fox", ...
+pub fn player_shape_name() -> Vec<u8> {
+    let p = player_ref();
+    if p.shape.is_null() {
+        return Vec::new();
+    }
+    // SAFETY: `shape` points into the game's shape list, which lives for
+    // the game; its `name` is a NUL-terminated string set at parse time.
+    unsafe {
+        let shape = &*p.shape;
+        if shape.name.is_null() {
+            return Vec::new();
+        }
+        core::ffi::CStr::from_ptr(shape.name).to_bytes().to_vec()
+    }
+}
+
 /// A copy of the game's `savefile` buffer (ui-game.c, `char savefile[1024]`).
 pub fn savefile() -> [u8; 1024] {
     // SAFETY: plain copy of a char array global; engine thread.
