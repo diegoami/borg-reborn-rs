@@ -8,7 +8,8 @@ whatever the model.
 1. **Track P integrates on `track-p`, never directly on `main`** (owner,
    2026-11-15; branch spelling confirmed as `track-p`). A session creates P
    task branches from `track-p`, targets task PRs at `track-p`, and merges
-   them there after CI is green. CI success is not review approval. At each
+   them there after CI is green and the owner says the review is done
+   (rule 1a). CI success is not review approval. At each
    milestone, stop and open the review/promotion PR **`track-p` → `main`**,
    pinned to an exact commit. The owner chooses/runs the review; findings
    are fixed through PRs into `track-p`. Only after the milestone review is
@@ -21,14 +22,22 @@ whatever the model.
    wait for the default branch). Other tracks must not use a closed P task
    to bypass its review gate by carrying unreviewed P changes onto `main`.
    **Other tracks retain their own authorized workflow**; absent a track
-   exception, a session merges task PRs into `main` after green CI, and
-   leaves milestone review PRs (`main` → `reviewed`) to the owner.
+   exception, a session merges task PRs into `main` after green CI and the
+   owner's word that the review is done (rule 1a), and leaves milestone
+   review PRs (`main` → `reviewed`) to the owner.
    **Track R exception (owner, 2026-11-15):** R task PRs target and merge
    into `feature/track-r`, never `main`. Green CI and milestone completion
    do not authorize promotion of the unfinished redesign to `main` or
    `reviewed`. Promotion requires the owner's explicit approval of a ready
-   redesign. Main may be merged into the feature branch to carry Track P
-   changes forward.
+   redesign. Main may be merged into the feature branch to carry accepted
+   Track P changes forward; rule 1a also applies to those carry PRs.
+1a. **No merge before the owner says the review is done** (owner,
+   2026-11-17, after #496 was merged while under review). Every PR, on
+   every track and into any branch, waits for the owner to say its review
+   is done (or to say "merge it"). Green CI, an owner's choice of values or
+   an earlier "set it in a PR" are not that. When CI is green, the session
+   says so and asks; it does not merge. A PR the owner said is under review
+   is never merged by a session.
 2. Scope comes from [docs/GOALS.md](docs/GOALS.md), [PLAN.md](PLAN.md) and
    the task issues of the current GitHub milestone.
    **Work only inside the current milestone.** Work outside them waits
@@ -94,39 +103,34 @@ not undo other-track work already authorized before the gate.
 11. **Fair information** (GOALS D3): the Borg reads only what the C Borg
     reads. Every engine read goes through the engine boundary and is listed
     there.
-12. **Every natural death of a measured run is recorded** as a dossier
-    in `borg-cemetery/deaths/` by default (native dossier format; the decision trace from M3), with
-    the actual source, build, implementation, profile and seed. A measured
-    run is one played through `harness/run.sh`: a suite, a single run, CI
-    or the zoo's cells. This applies from the first game played (T1.2, #5),
-    whichever arm died. The toolkit is owned by borg-cemetery; local command
-    paths are compatibility pointers. `BORG_DEATH_RECORDS_DIR` explicitly selects
-    isolated validation or historical registries. Existing `docs/deaths/` stays
-    retained as the historical validation baseline. New historical imports use
-    `tools/import-deaths.py` to qualify provisional IDs and preserve source
-    packages; its CI check protects the accepted baseline and new imports
-    (docs/DOSSIER-IMPORT.md). Games watched with `watch-borg.sh` are not measured
-    runs and are not recorded (owner, 2026-11-10, E review finding 3): they
-    have no seed, key log or summary; a death seen there that matters is
-    reproduced as a measured run and recorded then. Repeats and replays
-    never inflate independent counts. CI writes its dossiers to a temporary
-    registry, uploads it, and fails if a death is not in the registry or
-    a run that died has no dossier (`tools/reconcile-deaths.py --runs`);
-    deaths of test-feature builds are not natural deaths of an arm and are
-    kept apart.
-
-    **Dossier allocation (owner, 2026-11-15, #338):** final numeric IDs are
-    assigned centrally on acceptance into borg-cemetery. Branch-local IDs
-    are provisional and cross-branch references require an exact containing
-    registry commit (plus CI run/registry namespace before commit). Preserve
-    published evidence and mappings; reject numeric collisions on import,
-    even when directory suffixes differ. See docs/DEATH-ID-POLICY.md. Local
-    exports do not by themselves establish canonical publication acceptance.
-    All tracks import new historical validation packets through
-    tools/import-deaths.py and pass its --check, preserving original bytes,
-    full qualified IDs and source maps. The accepted legacy inventory must
-    not be rebaselined to hide replaced evidence.
-
+12. **Every natural death of a measured run is recorded in borg-cemetery**,
+    with the actual source, build, implementation, configuration, inputs and
+    lineage. The Cemetery owns incident/death analysis, saved or constructed
+    scenarios and behavioral/counterfactual trial reports. Source repositories
+    keep code/tests, checksum-pinned fixture references and brief validation
+    summaries with canonical links; do not publish duplicate gameplay reports
+    or new validation dossiers here. Existing docs/deaths/ is historical, not
+    a destination for new evidence. Changes to that retained archive require
+    explicit source-qualified migration and integrity checks.
+    A measured run includes harness runs, suites, CI and zoo cells. CI may use
+    temporary registries/artifacts, but retained comparisons must point to
+    canonical Cemetery evidence; never weaken missing-death checks or compare
+    a temporary registry only against itself. An unchanged game is not a new
+    death (owner, 2026-11-16, #464): a death is recorded when the Cemetery
+    retains one with the same start (implementation, seed, race, class,
+    save; owner, 2026-11-17: not borg.txt or flags) and the same key stream,
+    from any build. A new
+    package is needed only when the game changes: another key stream, or
+    the same keys from another start. BORG_DEATH_RECORDS_DIR selects
+    isolated working storage, not a different owner for permanent reports.
+    Watched/recorded incidents may have unknown birth seeds; preserve their
+    recordings and saved states without inventing a measured seed identity.
+    Original player/mixed recordings and working saves may stay in
+    player-cemetery, linked by the canonical case. Case-specific alternative
+    plays and scenario trials belong to Cemetery. Replays, reloads and branches
+    of one life never inflate independent counts. Test-feature/fabricated
+    scenarios are explicitly labelled and kept apart from natural measured
+    deaths. Original published hashes and historical records are preserved.
 13. **Every run counts.** Stalls, timeouts, crashes and harness failures are
     reported, never dropped and never relabelled as deaths. Never weaken a
     seed list, a cap, a timeout or an assertion to get a green result.
@@ -152,7 +156,8 @@ not undo other-track work already authorized before the gate.
     lock: `flock /tmp/angband-validation.lock <command>`. Watch and log long
     runs, and never kill another session's job.
 18. Build output, saves, raw run directories and large logs are not
-    committed. Curated evidence (dossier files, reports) is.
+    committed here. Publish curated gameplay reports/dossiers in
+    borg-cemetery; source commits keep their pinned references (RULES12).
 19. No secrets in the repository or in run records.
 20. Population experiments run through borg-zoo and are started by the
     owner (they hold the account's Actions capacity for hours).
@@ -230,6 +235,13 @@ No strategy, default frontend flags or measured baseline changes are implied.
     fixed through PRs in `diegoami/angband-recorder`, not by silently
     patching the vendored recorder or adding consumer engine workarounds;
     adopting a recorder update here is a separate pin-update change.
+    For supported recorded builds, retain recent living native checkpoints
+    and periodic older saves with the run in player-cemetery; record the
+    actual retention settings/capability. Never claim an older recorder
+    supports rolling saves just because environment variables were set.
+    Use recorded-frame viewing and the nearest earlier copied checkpoint
+    for fast incident work, proving original-build reproduction separately
+    from a fresh-Borg counterfactual. A save does not restore Borg memory.
     Watched sessions retain rule 12's distinction from measured runs;
     publishing recordings is a
     separate owner request.
