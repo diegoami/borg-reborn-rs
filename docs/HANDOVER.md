@@ -44,11 +44,23 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
   #566 (`22ed701e`, `1310b46a`) carry a `Co-Authored-By` trailer against
   RULES 4. The owner chose not to force-push the task branch, so they stay,
   like the earlier pair; no later commit has one.
-- **Not run: the worm room** (`~/borg-play/priest-1055640847` is not on this
-  computer, and #545's turn gate was never committed).
+- **The worm room** (`~/borg-play/priest-1055640847`, the arm's
+  `borg.txt` plus the four #548 keys, from birth on this tree: flags off
+  plays the zoo game's 8,008 keys and dies at 91,153). With a temporary
+  local turn gate (not committed), as #545:
 
-Left: the worm-room check (does it still escape with the narrowed A, and
-with K on?), then a zoo pilot of narrow against ctl (owner's choice).
+  | flags on from | narrow, K 0 | narrow + K | wide + K (#545) |
+  |---|---|---|---|
+  | 88,600 | dies 91,153 (0 notes) | alive at 120,000 (11 notes) | alive at 120,000 (62) |
+  | 89,000 | dies 91,153 | dies 91,153 | dies 91,153 |
+
+  The narrowed A still escapes, but only with K: without it the stuck
+  jumpstart at 88,607 forgets the staircases. A zoo arm for this case
+  should set both. Loading the turn-88,147 save does not test A (a loaded
+  game's Borg knows no down staircase); there, 6 seeds die or live the
+  same in every arm (seeds 11 and 22 die to the worm mass).
+
+Left: a zoo pilot of narrow + K against ctl (owner's choice).
 
 ## 2026-11-18: no flight Recall on DL1 (#557)
 
