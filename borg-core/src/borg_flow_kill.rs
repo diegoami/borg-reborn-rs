@@ -2749,7 +2749,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // borg-reborn-rs (#530): with caution_scary_stand, the level's scary
     // flag is decided after the scan: flee while the escape is real.
     let stand_mode = crate::borg_caution::scary_stand();
-    let player_speed = st.borg.tr(BI_SPEED);
+    // borg-reborn-rs (#551): a Druid that is, or can become, a fox flees
+    // faster: fewer monsters can pursue it.
+    let player_speed = st.borg.tr(BI_SPEED) + crate::borg_escape::flight_speed_bonus(st);
     let mut stand_scary = false;
     let mut stand_pursuer = false;
     let mut scary_races: Vec<u16> = Vec::new();

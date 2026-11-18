@@ -10,6 +10,89 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## The scary flag clears after the kill (#590)
+
+The registry now holds **2153** parameters (one added). `caution_scary_unlatch_kill` (0, off): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and the last one known was killed, with the latch on or off; forgetting the monster is not enough. The scan records the races that made the level scary (a bit per race, no cap), a death message for one of them (both passes) marks the kill, and a scan that still finds a scary monster known spends an earlier kill.
+
+## The twitch and the parked staircase (#597)
+
+The registry now holds **2152** parameters (two added). priest-809881907 died in lava in town: the only known staircase had a monster marked on it, so every stair flow had no goal and the Borg twitched until a random step went into lava (100 + 1d100 fire damage).
+- `caution_twitch_avoid_lava` (compiled 0, shipped 1): the twitch refuses lava without fire immunity (`lava_forbids_step`, #458's rule).
+- `caution_stair_parked_fallback` (compiled 0, shipped 1): when no staircase entered a stair flow and a monster is marked on known ones, the flow takes those. A staircase the flow refuses as icky or dangerous does not count as entered. In `borg_flow_stair_both` the decision is across both kinds.
+
+## A fleeing Druid takes Fox Form (#551)
+
+The registry now holds **2150** parameters (2145 before; five added). Owner,
+2026-11-18: Druids die most (borg-zoo#227), and Fox Form, a level-1 spell,
+is the strategy manual's CL1-20 escape (`14-class-playbooks.md:453`). The
+fox shape has `MOVES[1]` (each step costs half the energy, `player-util.c`
+`energy_per_move`) and Free Action (`shape.txt`). The owner's rules: use
+the new speed, make the step threshold a parameter, and once a fox, escape,
+or change back with an action before fighting.
+
+With `escape_fox_form = 1`:
+- **The cast:** a Druid about to take a flight step (`borg_flow_old` with
+  `GOAL_FLEE`) at least `escape_fox_form_min_steps` flow steps from its goal
+  casts Fox Form first, if its fail rate is at most `escape_fox_form_fail`.
+  Note: `# Fox Form: fleeing (N steps to go)`.
+- **Keeping the shape:** `borg_think` keeps it in the dungeon (the game's
+  depth) while the Borg flees (the flight flow, or the flee or leave goal)
+  or the level is scary, standing included. Otherwise the Borg changes back.
+  Keeping it on a scary level stops a flip-flop with #530's stand mode (110
+  casts in one game without it).
+- **A fox does not fight:** before a melee blow, `borg_attack` (`BF_THRUST`)
+  or a flow step into a known monster (`borg_play_step`), the Borg changes
+  back (no energy) and fights in its own shape from the next think. Note:
+  `# Fox Form: reverting to fight`. Every other attack is an item or a spell
+  command. For those the game asks "Change back and <verb> (y/n) or
+  (r)eturn to normal?" (`player_get_resume_normal_shape`), and the Borg
+  answers `y`: it changes back and acts in one command, with no extra
+  energy (`# Fox Form: reverting for an item or a spell`). Its own change
+  back sends `v` and answers `r` (`fox_revert`).
+- **The speed:** `escape_fox_form_speed` (10: halving a step's energy is +10
+  at normal speed, `extract_energy` 10 to 20) is added to `borg_danger`'s
+  speed while the Borg is a fox (a fox only moves), and to the player speed
+  of #530's stand decision while it is a fox. A Druid that is not yet a fox
+  but can cast Fox Form (it will at its first flight step) gets
+  `escape_fox_form_stand_speed` (10) there instead. That bonus is granted on
+  the ability, so it has a parameter of its own (review of #594). More speed
+  means fewer pursuers, so fewer stands and more flights. The flat +10 is
+  exact only at speed 110 (normal). At speed S a fox has
+  `2 × extract_energy[S]`, which is worth +2 at 100, +7 at 105, +15 at 115,
+  +24 at 120 (review of #594).
+- **The change-back flag:** `fox_revert` lives as long as its queued `v`. It
+  is consumed by the prompt and cleared by `borg_flush` (review of #594:
+  otherwise a flushed `v` left it set, and the next item command was
+  answered `r`, so the Borg changed back without acting).
+
+Compiled and shipped 0 (C). Evidence, a lead (branch of main `8e7dbad4`,
+100,000 turns): the 18 classes-18 starts and 27 Druid starts from
+classes-1800 (29 Druids in all):
+
+| arm | Druid deaths | Druid sum of CL | Druid sum of max depth | other classes |
+|---|---:|---:|---:|---|
+| off | 3 | 161 | 54 | |
+| on | 3 | 156 | 56 | 16/16 keys identical |
+
+With `escape_fox_form_stand_speed = 0`, 1 game of 29 changes: 36
+stands against 35, and the same deaths, sum of CL and depth.
+
+On, the Druids cast Fox Form 431 times in all. They changed back for an
+item or a spell 120 times, and to fight 67 times. A fox's step takes 5 game
+turns, not 10. Seven blows were still struck as a fox, all steps into an
+unseen monster ("You claw something"): the game turns the step into an
+attack the Borg did not know of. The 3 deaths are the same in both arms, at
+CL1-2 and before any flight, so these games say nothing about survival: that
+needs the zoo (Druid starts).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:486` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:517` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:518` |
+| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:574` |
+| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:576` |
+
 ## Breeders hunted by every class (#558)
 
 The registry now holds **2139** parameters (2137 on main before #558; two
@@ -80,8 +163,8 @@ death is the new `borg.txt`'s, not this change's: it comes from
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2862` |
-| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2862` |
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2895` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2895` |
 
 ## Fear cures and the see-invisible clock (#516)
 
@@ -289,8 +372,8 @@ up staircase on one level.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2956` (0 = off, C's behaviour) |
-| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2956` (danger here above avoidance x value / 10 lets the descent through) |
+| `caution_rising_explore_ticks` | 300 | Borg ticks (one per think, `borg_think`; restarted on each new level) | 0–100000 | `borg_caution.rs:2989` (0 = off, C's behaviour) |
+| `caution_rising_descend_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2989` (danger here above avoidance x value / 10 lets the descent through) |
 
 ## Cornered mode (#504)
 
@@ -320,12 +403,12 @@ Bless spell, a Scroll of Holy Chant or a Scroll of Blessing.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2482` (1 = on) |
-| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2482` |
-| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2482` |
-| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2579` |
-| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2637` (buff spells only at or below this failure rate) |
-| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2565` (0 = off; owner: the same boosts in a hard breeder fight) |
+| `caution_cornered` | 0 | flag | 0–1 | `borg_caution.rs:2485` (1 = on) |
+| `caution_cornered_danger_tenths` | 10 | tenths | 0–1000 | `borg_caution.rs:2485` |
+| `caution_cornered_radius` | 2 | grids | 0–100 | `borg_caution.rs:2485` |
+| `caution_cornered_big_level_margin` | 0 | levels | 0–100 | `borg_caution.rs:2612` |
+| `caution_cornered_spell_fail` | 25 | percent | 0–100 | `borg_caution.rs:2670` (buff spells only at or below this failure rate) |
+| `caution_breeder_boost_danger_tenths` | 0 | tenths | 0–1000 | `borg_caution.rs:2580` (0 = off; owner: the same boosts in a hard breeder fight) |
 
 ## Healing by class; no Shovel while poor (#487)
 
@@ -405,15 +488,17 @@ death with the list, 4 without), 1.
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2195` |
 | `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2228` |
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2348` |
-| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2516` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
-| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2516` (#544 B: the exit's distance from every breeder) |
+| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2519` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
+| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2519` (#544 B: the exit's distance from every breeder) |
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
-| `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:3277` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
-| `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:3301` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3323` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
-| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2673` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
-| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:2673` (#549: the danger here above which the stair scum stops) |
-| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2784` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
+| `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:3310` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
+| `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:3334` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3356` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2586` (#597: the twitch never steps into lava without fire immunity) |
+| `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2593` (#597: a monster on every known staircase no longer hides them from the stair flows) |
+| `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2706` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
+| `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:2706` (#549: the danger here above which the stair scum stops) |
+| `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2817` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
 | `caution_flee_recall` | 1 (shipped 1; borg-zoo#255) | flag | 0–1 | `borg_caution.rs:2303` (#557: 0 = a flight reads Word of Recall only on a breeder-swamped level or when chased; Recall then is no easy escape in the stand tests) |
 | `caution_flee_recall_breeders` | 5 | monsters | 0–100 | `borg_caution.rs:2303` |
 | `caution_flee_recall_chasers` | 3 | monsters | 0–100 | `borg_caution.rs:2303` |
@@ -479,8 +564,8 @@ stand mode on: the same 3 deaths either way.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2467` |
-| `caution_scary_unlatch_kill` | 0 | flag | 0–1 | `borg_caution.rs:2467` (#590: clear after a scary race is killed, latch on or off; forgetting is not enough) |
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2470` |
+| `caution_scary_unlatch_kill` | 0 | flag | 0–1 | `borg_caution.rs:2470` (#590: with `caution_scary_stand`, clear once the last scary monster known was killed, latch on or off; forgetting is not enough) |
 
 ## The named scary list as data (#518)
 
