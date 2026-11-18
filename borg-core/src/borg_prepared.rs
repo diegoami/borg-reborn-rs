@@ -195,6 +195,15 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
         return Some("5 Food");
     }
 
+    // borg-reborn-rs (#557, owner): `prepared_recall_depth` moves C's
+    // "1 recall" (from depth 5) shallower: below 5 it is checked here, after
+    // light and food and before the DL1 and DL2 returns, so 1 and 2 gate
+    // the depths they name; from 5 on it stays where C has it.
+    let recall_depth = crate::params::value(crate::params::Param::prepared_recall_depth);
+    if depth < 5 && needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
+        return Some("1 recall");
+    }
+
     // Usually ready for level 1
     if depth <= 1 {
         return None;
@@ -282,13 +291,6 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
     // Potions of Cure Serious Wounds
     if b.tr(BI_MAXCLEVEL) < 30 && b.tr(BI_ACLW) + b.tr(BI_ACSW) + b.tr(BI_ACCW) < 2 {
         return Some("2 cure");
-    }
-
-    // borg-reborn-rs (#557, owner): `prepared_recall_depth` moves C's
-    // "1 recall" (from depth 5) shallower; from 5 on it stays where C has it.
-    let recall_depth = crate::params::value(crate::params::Param::prepared_recall_depth);
-    if depth < 5 && needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
-        return Some("1 recall");
     }
 
     // Usually ready for level 3 and 4
