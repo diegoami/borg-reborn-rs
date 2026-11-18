@@ -24,6 +24,10 @@ path only, which the stand mode no longer uses.
   clears 0-8 times per game; ranger-1355387156 ends CL7 against CL10.
 - Latch 1: smoke 3/3 identical; the six deaths replay their zoo keys.
 - Not run: the 18 classes-18 starts.
+- Review of #562: the unlatch now also ends the stand (`mon.scary_stand`),
+  so the next stand prints its note. It resets the stand even when the
+  last think stood and had already cleared the flag, a case the review's
+  suggested fix missed. Only the note changes, not the keys.
 
 Left: a zoo arm against the control. Seeds 44 and 55 still stay on DL2:
 exploring for the up staircase (#557).

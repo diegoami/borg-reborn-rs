@@ -2445,7 +2445,10 @@ pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mu
 
 /// borg-reborn-rs (#515): the scan found nothing scary; clear the flag and
 /// withdraw the goals the scare set. True when the level was scary.
+/// The stand ends too, even when the last think stood (a stand already
+/// cleared the flag), so the next stand prints its note (review of #562).
 fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) -> bool {
+    mon.scary_stand = false;
     if !std::mem::take(&mut mon.scary) {
         return false;
     }
@@ -3200,6 +3203,15 @@ mod scary_stand_tests {
         assert!(goal.leaving, "the other caution's leave survives");
         assert!(!goal.fleeing && !goal.fleeing_to_town, "the scare's goals are withdrawn");
         assert!(!unlatch_scare(&mut mon, &mut goal), "already clear");
+    }
+
+    #[test]
+    fn f_a_stand_whose_scary_monster_is_gone_ends() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        // The last think stood: the flag is clear, the stand is recorded.
+        mon.scary_stand = true;
+        assert!(!unlatch_scare(&mut mon, &mut goal), "the flag was already clear");
+        assert!(!mon.scary_stand, "the next stand prints its note again");
     }
 
     #[test]
