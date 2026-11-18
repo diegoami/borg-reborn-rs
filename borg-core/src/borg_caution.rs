@@ -2856,10 +2856,12 @@ pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bo
     percent > 0 && i64::from(damage) * 100 >= i64::from(max_hp) * i64::from(percent)
 }
 
-/// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
-/// Blackguard) hunt breeders while there are at most
-/// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
-/// clevel 10 (`borg_flow_kill`). Being surrounded is left to
+/// borg-reborn-rs (#503, #558): the Borg hunts breeders while there are at
+/// most `caution_breeder_hunt_max_count` of them, instead of avoiding them
+/// below clevel 10 (`borg_flow_kill`; the gate is here too, since #558's
+/// rest and acid-fear switches read it). Every class hunts; the count has
+/// class values (the class files), and 0 turns a class's hunt off. Being
+/// surrounded is left to
 /// `borg_flow_kill_corridor`, which already counts a breeder next to the
 /// Borg as a reason to move to a corridor.
 pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
@@ -2870,9 +2872,27 @@ pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
 fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
     fight != 0
         && st.borg.tr(BI_CDEPTH) != 0
-        && matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+        && st.borg.tr(BI_CLEVEL) < 10
         && st.borg.mon.breeders > 0
         && i32::from(st.borg.mon.breeders) <= max_count
+}
+
+/// borg-reborn-rs (#558): the hunt applies and the Borg is engaging the
+/// breeders: not ignoring them (`borg_check_breeders`), not fleeing or
+/// leaving the level, and no scary monster on it (`borg_flow_kill` then
+/// walks to no fight). Read only by #558's own switches, so the hunt of
+/// #503 keeps its keys with them off.
+pub(crate) fn breeder_engaged(st: &BorgState) -> bool {
+    breeder_hunt(st)
+        && engaged_with(
+            st.borg.goal.ignoring,
+            st.borg.goal.fleeing || st.borg.goal.fleeing_to_town || st.borg.goal.leaving,
+            st.borg.mon.scary,
+        )
+}
+
+fn engaged_with(ignoring: bool, fleeing: bool, scary: bool) -> bool {
+    !ignoring && !fleeing && !scary
 }
 
 /// borg-reborn-rs (#504): Warriors, Paladins, Rogues and Blackguards.
@@ -3794,18 +3814,31 @@ mod breeder_tests {
         assert!(!chokepoint(&map_passable(&ALONE), loc { x: 1, y: 1 }), "an isolated grid");
     }
 
-    /// #503: melee classes hunt while few breeders are known; casters and
-    /// archers do not, nor anyone with the switch off.
+    /// #503, #558: every class hunts while few breeders are known; the
+    /// count (a class value) decides, and 0 or the switch off stops it.
     #[test]
-    fn melee_classes_hunt_few_breeders() {
+    fn every_class_hunts_few_breeders() {
         assert!(breeder_hunt_with(&cornered(), 1, 4));
         assert!(!breeder_hunt_with(&cornered(), 0, 4), "switch off");
         assert!(!breeder_hunt_with(&cornered(), 1, 2), "too many breeders");
-        for (class, hunts) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+        assert!(!breeder_hunt_with(&cornered(), 1, 0), "count 0: no hunt");
+        let mut high = cornered();
+        high.borg.trait_[BI_CLEVEL as usize] = 10;
+        assert!(!breeder_hunt_with(&high, 1, 4), "CL10: no hunt");
+        for class in 0..9 {
             let mut st = cornered();
             st.borg.trait_[BI_CLASS as usize] = class;
-            assert_eq!(breeder_hunt_with(&st, 1, 4), hunts, "class {class}");
+            assert!(breeder_hunt_with(&st, 1, 4), "class {class}");
         }
+    }
+
+    /// #558 review: no engagement while ignoring, fleeing or scared.
+    #[test]
+    fn breeders_are_engaged_only_while_staying() {
+        assert!(engaged_with(false, false, false));
+        assert!(!engaged_with(true, false, false), "ignoring breeders");
+        assert!(!engaged_with(false, true, false), "fleeing or leaving");
+        assert!(!engaged_with(false, false, true), "scary monster");
     }
 }
 
