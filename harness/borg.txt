@@ -585,6 +585,12 @@ borg_param_caution_flee_recall_chase_distance = 6
 
 borg_param_caution_flee_recall_gate_below_depth = 2
 
+# Fleeing. Where the settings above hold a flight's Recall back, the danger
+# here at or above this percent of the current HP allows it after all
+# (#587). 0 = off.
+
+borg_param_caution_flee_recall_danger_percent = 0
+
 
 ### Fleeing ###
 
