@@ -542,14 +542,14 @@ borg_param_caution_breeder_hunt_max_count = 4
 # escapes the Borg missed, each on its own flag for a zoo arm. Off here (the
 # control).
 #   B, breeder exit: only breeders near, one adjacent, danger here at or
-#     above the HP or surrounded: walk to the nearest known corridor grid (at
-#     most the neighbours passable) at least the distance from every breeder.
+#     above the HP or surrounded: walk to the nearest known chokepoint (a
+#     corridor or doorway grid: its passable known neighbours form two or more
+#     groups) at least the distance from every breeder.
 #   A+K, flee to known down stairs: fleeing with no up staircase known, walk
 #     to a known down staircase at any distance (the desperate flow), and the
 #     stuck jumpstart (bravery boost 3) keeps the known stairs.
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
-borg_param_caution_breeder_exit_neighbours = 3
 borg_param_caution_flee_known_down_stairs = 0
 
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth

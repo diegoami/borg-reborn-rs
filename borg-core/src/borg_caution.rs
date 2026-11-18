@@ -2298,45 +2298,88 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
     if pos_danger < st.borg.tr(BI_CURHP) && !borg_surrounded(st) {
         return false;
     }
-    let neighbours = p(Param::caution_breeder_exit_neighbours);
-    let passable = |st: &BorgState, x: i32, y: i32| {
-        let ag = st.cave.grid(x, y);
-        borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
     };
-    st.borg.status.desperate = true;
-    crate::borg_flow::borg_flow_clear(st);
-    let mut exits = 0;
+    let mut exits = Vec::new();
     for y in 1..AUTO_MAX_Y - 1 {
         for x in 1..AUTO_MAX_X - 1 {
-            if !engine::square_in_bounds_fully(x, y) || !passable(st, x, y) || st.cave.grid(x, y).kill != 0 {
-                continue;
+            if st.cave.grid(x, y).kill == 0 && breeder_exit_grid(&passable, loc { x, y }, &breeders, distance) {
+                exits.push(loc { x, y });
             }
-            let open = (0..8)
-                .filter(|&i| passable(st, x + i32::from(engine::ddx_ddd(i)), y + i32::from(engine::ddy_ddd(i))))
-                .count() as i32;
-            if !breeder_exit_grid(loc { x, y }, open, &breeders, distance, neighbours) {
-                continue;
-            }
-            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
-            exits += 1;
         }
     }
-    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
-    let ok = exits > 0
-        && crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE)
-        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    if exits.is_empty() {
+        return false;
+    }
+    // The desperate flow (danger ignored, unknown and monster grids routed
+    // around) is set for this flow only: `breeder_exit_flow` has no other
+    // exit, so the flag is always restored.
+    st.borg.status.desperate = true;
+    let ok = breeder_exit_flow(st, &exits);
     st.borg.status.desperate = false;
     if ok {
-        borg_note(st, &format!("# Leaving the breeders' room ({exits} exit grids)"));
+        borg_note(st, &format!("# Leaving the breeders' room ({} exit grids)", exits.len()));
     }
     ok
 }
 
-/// A breeder exit (#544): a corridor grid (at most `neighbours` of its 8
-/// neighbours passable; `open` is that count) at least `distance` grids
-/// from every breeder.
-fn breeder_exit_grid(at: loc, open: i32, breeders: &[loc], distance: i32, neighbours: i32) -> bool {
-    open <= neighbours && breeders.iter().all(|&b| engine::distance(b, at) >= distance)
+/// Flow to the nearest of `exits` and take its first step. When the flow
+/// is committed but no step can be taken, `borg_flow_old` cancels the goal
+/// (`goal.type_0 = 0`), so no `GOAL_FLEE` flow is left for the next think.
+fn breeder_exit_flow(st: &mut BorgState, exits: &[loc]) -> bool {
+    crate::borg_flow::borg_flow_clear(st);
+    for e in exits {
+        crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
+    }
+    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+}
+
+/// The 8 neighbours' offsets.
+const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
+
+/// A breeder exit (#544): a passable grid at least `distance` grids from
+/// every known breeder that is a chokepoint (`chokepoint`). `passable` is
+/// known floor: an unknown grid counts as a wall, and the desperate flow does
+/// not cross unknown grids either, so every exit it reaches is on a known path.
+fn breeder_exit_grid(passable: &dyn Fn(i32, i32) -> bool, at: loc, breeders: &[loc], distance: i32) -> bool {
+    passable(at.x, at.y)
+        && chokepoint(passable, at)
+        && breeders.iter().all(|&b| engine::distance(b, at) >= distance)
+}
+
+/// A chokepoint: the passable neighbours of `at` fall into at least two
+/// groups that do not touch each other (8-connected), so the grid is a
+/// corridor or doorway between them. A room grid, a room edge or corner, a
+/// dead-end tip and an isolated grid have at most one group.
+fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
+    let open: Vec<(i32, i32)> = NEIGHBOURS.iter().copied().filter(|&(dx, dy)| passable(at.x + dx, at.y + dy)).collect();
+    let mut group = vec![usize::MAX; open.len()];
+    let mut groups = 0;
+    for start in 0..open.len() {
+        if group[start] != usize::MAX {
+            continue;
+        }
+        group[start] = groups;
+        let mut stack = vec![start];
+        while let Some(i) = stack.pop() {
+            for j in 0..open.len() {
+                if group[j] == usize::MAX
+                    && (open[i].0 - open[j].0).abs() <= 1
+                    && (open[i].1 - open[j].1).abs() <= 1
+                {
+                    group[j] = groups;
+                    stack.push(j);
+                }
+            }
+        }
+        groups += 1;
+    }
+    groups >= 2
 }
 
 /// The known monsters as (distance, danger reach, breeder): a breeder
@@ -2970,14 +3013,103 @@ mod breeder_tests {
         assert!(!only_breeders_near(&[(1, 1, false), (2, 2, true)], 5, 20), "a non-breeder adjacent");
     }
 
+    /// The Borg's map of priest-1055640847's worm room (its last `Borg.map`,
+    /// #544): `#` and `%` walls, ` ` unknown, everything else known floor,
+    /// `w` a worm. The only way out is the corridor north to `>`.
+    const WORM_ROOM: [&str; 28] = [
+        "#                 #.#",
+        "#                 #>#",
+        "#                 #.#",
+        "#                 #.#",
+        "#                 #.#####",
+        "#                 #.....#",
+        "#                 #####.#",
+        "#                     #.#",
+        "#                     #.#######",
+        "#                     #.......#",
+        "#                     #######.##",
+        "#                          %%..%",
+        "#                          %.%.%",
+        "#                          %%#.#",
+        "#                            #.%",
+        "#                            #.#",
+        "#                            #.#",
+        "#                            #.#",
+        "#                            #&#",
+        "#                            #.#",
+        "#                            #.#",
+        "#                      #######.#############",
+        "#                      #.ww..w.ww.w.w..w.w.#",
+        "#                      #..w.w.wwwww.wwww..w#",
+        "#                      #....w.w.wwww.ww..w.#",
+        "#                      #....w..&ww@wwww.w..#",
+        "#                      #ww.w.www.wwwwwww...#",
+        "#                      #.w.......w&w.w.....#",
+    ];
+
+    fn map_passable(map: &'static [&'static str]) -> impl Fn(i32, i32) -> bool {
+        move |x, y| {
+            y >= 0
+                && (y as usize) < map.len()
+                && x >= 0
+                && map[y as usize].as_bytes().get(x as usize).is_some_and(|&c| !matches!(c, b'#' | b'%' | b' '))
+        }
+    }
+
     #[test]
-    fn breeder_exits_are_corridor_grids_away_from_breeders() {
-        let worms = [loc { x: 10, y: 10 }, loc { x: 12, y: 9 }];
-        assert!(breeder_exit_grid(loc { x: 10, y: 3 }, 2, &worms, 6, 3), "a corridor 7 grids away");
-        assert!(!breeder_exit_grid(loc { x: 10, y: 3 }, 5, &worms, 6, 3), "a room grid");
-        assert!(!breeder_exit_grid(loc { x: 10, y: 5 }, 2, &worms, 6, 3), "a corridor 5 grids from a worm");
-        assert!(breeder_exit_grid(loc { x: 10, y: 5 }, 2, &[], 6, 3), "no breeders known");
-        assert!(breeder_exit_grid(loc { x: 10, y: 3 }, 3, &worms, 6, 3), "at the neighbour limit");
+    fn breeder_exits_of_the_worm_room_are_on_its_corridor() {
+        let passable = map_passable(&WORM_ROOM);
+        let mut worms = Vec::new();
+        for (y, row) in WORM_ROOM.iter().enumerate() {
+            for (x, c) in row.bytes().enumerate() {
+                if c == b'w' {
+                    worms.push(loc { x: x as i32, y: y as i32 });
+                }
+            }
+        }
+        let room = |at: loc| at.y >= 22;
+        let mut exits = Vec::new();
+        for y in 0..WORM_ROOM.len() as i32 {
+            for x in 0..50 {
+                if breeder_exit_grid(&passable, loc { x, y }, &worms, 6) {
+                    exits.push(loc { x, y });
+                }
+            }
+        }
+        assert!(!exits.is_empty(), "the corridor has exits");
+        for e in &exits {
+            assert!(!room(*e), "no exit inside the room: {},{}", e.x, e.y);
+            assert!(worms.iter().all(|w| engine::distance(*w, *e) >= 6), "beyond the radius: {},{}", e.x, e.y);
+        }
+        // The corridor's dead-end tip (its unknown end, above `>`) and the
+        // room's corners and edges are not exits.
+        for at in [loc { x: 19, y: 0 }, loc { x: 24, y: 22 }, loc { x: 43, y: 22 }, loc { x: 24, y: 27 }, loc { x: 30, y: 22 }] {
+            assert!(!breeder_exit_grid(&passable, at, &[], 6), "{},{}", at.x, at.y);
+        }
+        // The doorway and the corridor are chokepoints.
+        assert!(chokepoint(&passable, loc { x: 30, y: 21 }), "the doorway");
+        assert!(chokepoint(&passable, loc { x: 30, y: 16 }), "the corridor");
+        assert!(breeder_exit_grid(&passable, loc { x: 30, y: 16 }, &worms, 6), "the corridor, 6 grids up");
+        assert!(exits.contains(&loc { x: 30, y: 16 }), "found by the scan");
+    }
+
+    #[test]
+    fn chokepoints_are_corridors_not_rooms() {
+        const LIT_ROOM: [&str; 5] = ["#####", "#...#", "#...#", "#...#", "#####"];
+        let passable = map_passable(&LIT_ROOM);
+        for at in [loc { x: 1, y: 1 }, loc { x: 2, y: 1 }, loc { x: 2, y: 2 }] {
+            assert!(!chokepoint(&passable, at), "corner, edge, middle: {},{}", at.x, at.y);
+        }
+        const CORRIDOR: [&str; 3] = ["####", "....", "####"];
+        assert!(chokepoint(&map_passable(&CORRIDOR), loc { x: 1, y: 1 }), "a corridor");
+        // A bend's corner is not one: its two neighbours touch diagonally,
+        // and the flow steps across it.
+        const BEND: [&str; 3] = ["#.##", "#..#", "####"];
+        assert!(!chokepoint(&map_passable(&BEND), loc { x: 1, y: 1 }), "a bend's corner");
+        const TIP: [&str; 3] = ["####", "#..#", "####"];
+        assert!(!chokepoint(&map_passable(&TIP), loc { x: 1, y: 1 }), "a dead-end tip");
+        const ALONE: [&str; 3] = ["###", "#.#", "###"];
+        assert!(!chokepoint(&map_passable(&ALONE), loc { x: 1, y: 1 }), "an isolated grid");
     }
 
     /// #503: melee classes hunt while few breeders are known; casters and

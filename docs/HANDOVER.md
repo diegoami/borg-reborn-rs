@@ -13,8 +13,9 @@ never move it (236 attacks on one grid). The arm's #503 breeder stand is not
 the cause.
 
 - `caution_breeder_exit` (B): only breeders near, one adjacent, outmatched or
-  surrounded: the desperate flow to the nearest corridor grid
-  (`caution_breeder_exit_neighbours`, 3) at least
+  surrounded: the desperate flow to the nearest known chokepoint (corridor or
+  doorway: its passable neighbours form two or more groups; review of #545
+  replaced a neighbour count that took room corners for corridors) at least
   `caution_breeder_exit_distance` (6) grids from every breeder.
 - `caution_flee_known_down_stairs` (A+K): in the dungeon, fleeing with no up
   staircase known, the desperate flow to a known down staircase at any
