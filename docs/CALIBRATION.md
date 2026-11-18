@@ -265,7 +265,7 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   and more of them are needed to reach half its value. So speed changes the
   curve's shape as well as the ranking of potions (#496 review F4).
 - The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
-  measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
+  measurement in #491's entry of docs/HANDOVER.md, the archive). At 0, 100 and 0 play is byte-identical
   to before.
 
 ## Rising to town explores for an up staircase (#483)
@@ -590,7 +590,7 @@ parameters are too.
 The registry now holds **1785** parameters (1783 before; two added). Two
 parameters control one study branch, off in the compiled registry (default 0);
 since #479 the shipped `harness/borg.txt` sets `caution_heal_when_outmatched = 1`
-(docs/HANDOVER.md):
+(#479's entry in docs/HANDOVER.md, the archive):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
