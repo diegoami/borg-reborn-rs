@@ -1150,6 +1150,9 @@ fn target_worked(st: &mut BorgState) {
 /// and reset the anti-bounce count.
 fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
     if count {
+        // borg-reborn-rs (#590): a scary monster's death, for the unlatch.
+        let r_idx = st.kills.kills[k as usize].r_idx;
+        crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);
@@ -2350,6 +2353,10 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                 // Handle "xxx dies."
                 let k = borg_locate_kill(st, args(what), c, 20);
                 if k > 0 {
+                    // borg-reborn-rs (#590, review of #592): a death in this
+                    // pass counts for the unlatch too.
+                    let r_idx = st.kills.kills[k as usize].r_idx;
+                    crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
                     borg_count_death(st, k);
                     borg_delete_kill(st, k);
                     set_msg_use(st, i, 4);

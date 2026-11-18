@@ -2455,13 +2455,29 @@ pub(crate) fn scary_stand() -> bool {
 pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) {
     // A door scare (an unseen monster opened or burst a door) is scary too,
     // and its monster may be fast: a pursuer (review of #531).
+    // borg-reborn-rs (#590, review of #592): a scary monster still known
+    // spends any earlier kill, so only the last one's death clears the flag.
+    note_scan(&mut st.borg.mon, scary);
     let (scary, pursuer) = stand_inputs(scary, pursuer, st.borg.mon.scary_door);
     if !scary {
         // borg-reborn-rs (#515): without the latch, a level whose scary
         // monsters are gone (dead, forgotten, out of the known monsters)
         // stops being scary. Door scares stay latched (stand_inputs).
-        if p(Param::caution_scary_latch) == 0 && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
-            borg_note(st, "# Scary guy gone: the level is no longer scary.");
+        // borg-reborn-rs (#590, owner): with `caution_scary_unlatch_kill`,
+        // only after a scary monster was killed, latch on or off: a
+        // forgotten monster has not left the level.
+        let killed = st.borg.mon.scary_killed;
+        if unlatch_when(p(Param::caution_scary_latch) != 0, p(Param::caution_scary_unlatch_kill) != 0, killed)
+            && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal)
+        {
+            borg_note(
+                st,
+                if killed {
+                    "# Scary guy killed: the level is no longer scary."
+                } else {
+                    "# Scary guy gone: the level is no longer scary."
+                },
+            );
         }
         return;
     }
@@ -2511,11 +2527,55 @@ pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mu
 /// withdraw the goals the scare set. True when the level was scary.
 /// The stand ends too, even when the last think stood (a stand already
 /// cleared the flag), so the next stand prints its note (review of #562).
+/// borg-reborn-rs (#590): may the scare clear, now that no scary monster is
+/// known? With `kill` (`caution_scary_unlatch_kill`), only after a scary
+/// race was killed, whatever the latch; without it, only with the latch off.
+fn unlatch_when(latch: bool, kill: bool, killed: bool) -> bool {
+    if kill {
+        killed
+    } else {
+        !latch
+    }
+}
+
+/// borg-reborn-rs (#590): remember a race that made the level scary.
+pub(crate) fn note_scary_race(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
+    if let Some((word, bit)) = race_bit(r_idx) {
+        mon.scary_races[word] |= bit;
+    }
+}
+
+/// borg-reborn-rs (#590): a monster of race `r_idx` died; was it one that
+/// made the level scary?
+pub(crate) fn note_kill(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
+    if race_bit(r_idx).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0) {
+        mon.scary_killed = true;
+    }
+}
+
+/// borg-reborn-rs (#590, review of #592): a scan that finds a scary monster
+/// known spends any earlier kill: the flag clears only when the last scary
+/// monster known is gone because it was killed.
+pub(crate) fn note_scan(mon: &mut crate::borg::BorgMonInfo, scary_known: bool) {
+    if scary_known {
+        mon.scary_killed = false;
+    }
+}
+
+/// The word and bit of race `r_idx` in `scary_races` (none for 0 or past
+/// the mask).
+fn race_bit(r_idx: u16) -> Option<(usize, u64)> {
+    let r = usize::from(r_idx);
+    (r != 0 && r < 64 * 16).then(|| (r / 64, 1u64 << (r % 64)))
+}
+
 fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) -> bool {
     mon.scary_stand = false;
     if !std::mem::take(&mut mon.scary) {
         return false;
     }
+    mon.scary_killed = false;
+    mon.scary_races = [0; 16];
     withdraw_scary_goals(mon, goal);
     true
 }
@@ -2547,6 +2607,8 @@ pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
     mon.scary_fleeing = false;
     mon.scary_town = false;
     mon.scary_stand = false;
+    mon.scary_killed = false;
+    mon.scary_races = [0; 16];
 }
 
 /// borg-reborn-rs (#530, review of #531): the decision's inputs. A door
@@ -3608,6 +3670,51 @@ mod scary_stand_tests {
         assert!(recall_escape_with(5, 0, 5, 3), "a level swamped by breeders");
         assert!(recall_escape_with(0, 3, 5, 3), "chased by several monsters");
         assert!(!recall_escape_with(100, 100, 0, 0), "both limits off");
+    }
+
+    #[test]
+    fn a_kill_clears_the_scare_whatever_the_latch() {
+        assert!(!unlatch_when(true, false, true), "C: the latch holds even after a kill");
+        assert!(unlatch_when(false, false, false), "latch off: whenever none is known");
+        assert!(!unlatch_when(false, true, false), "kill rule: forgotten is not enough");
+        assert!(unlatch_when(true, true, true), "kill rule: a kill clears with the latch on");
+        assert!(unlatch_when(false, true, true));
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_kill(&mut mon, 7);
+        assert!(!mon.scary_killed, "another race died");
+        note_kill(&mut mon, 42);
+        assert!(mon.scary_killed, "the scary race died");
+        forget_scary(&mut mon);
+        assert!(!mon.scary_killed && mon.scary_races == [0; 16], "a new level forgets");
+        for r in [1u16, 40, 63, 64, 400, 623] {
+            note_scary_race(&mut mon, r);
+        }
+        for r in [1u16, 40, 63, 64, 400, 623] {
+            mon.scary_killed = false;
+            note_kill(&mut mon, r);
+            assert!(mon.scary_killed, "race {r}: no cap on the races kept");
+        }
+        note_scary_race(&mut mon, u16::MAX);
+        note_kill(&mut mon, 0);
+    }
+
+    #[test]
+    fn an_old_kill_does_not_clear_a_later_scare() {
+        // The review's sequence: a stand, a kill, then a later monster of the
+        // same race that is only forgotten.
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 42);
+        assert!(mon.scary_killed, "the first one killed");
+        note_scan(&mut mon, true); // a later one of race 42 is known: the kill is spent
+        assert!(!mon.scary_killed);
+        note_scan(&mut mon, false); // then forgotten: nothing scary known
+        assert!(!unlatch_when(true, true, mon.scary_killed), "forgotten, not killed: the flag stays");
+        note_kill(&mut mon, 42);
+        note_scan(&mut mon, false); // killed and none left known
+        assert!(unlatch_when(true, true, mon.scary_killed), "the last one killed: the flag clears");
     }
 
     #[test]
