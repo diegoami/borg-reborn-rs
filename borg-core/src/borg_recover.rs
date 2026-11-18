@@ -411,9 +411,17 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     /*** Just Rest ***/
 
+    // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
+    // them first while it may and is not badly hurt.
+    let hunt_first = hunt_before_rest(
+        crate::borg_caution::breeder_hunt(st),
+        st.borg.tr(BI_CURHP),
+        st.borg.tr(BI_MAXHP),
+        param(Param::recover_breeder_hunt_hp_percent),
+    );
     // Rest until healed
     let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
-    if st.borg.tr(BI_ISBLIND) == 0
+    let rest_hp = st.borg.tr(BI_ISBLIND) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_ISCUT) == 0
         && st.borg.tr(BI_ISWEAK) == 0
@@ -430,8 +438,11 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && p <= i32::from(
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
-        && st.borg.goal.type_0 != GOAL_RECOVER
-    {
+        && st.borg.goal.type_0 != GOAL_RECOVER;
+    if rest_hp && hunt_first {
+        borg_note(st, "# Not resting: breeders to hunt.");
+    }
+    if rest_hp && !hunt_first {
         // check for then call lite in dark room before resting
         if !borg_check_light_only(st) {
             borg_note(st, "# Resting to recover HP/SP...");
@@ -464,6 +475,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
+        && !hunt_first
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -478,4 +490,25 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+/// borg-reborn-rs (#558): skip resting to hunt breeders while `hunt` (the
+/// breeder hunt applies) and HP is at least `hp_percent` of the maximum;
+/// 0 = off (C's rest).
+fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
+    hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn breeders_are_hunted_before_resting() {
+        // The priest of priest-1055640847 at turn 88,147: 55/70 HP.
+        assert!(hunt_before_rest(true, 55, 70, 50));
+        assert!(!hunt_before_rest(true, 30, 70, 50), "badly hurt: rest");
+        assert!(!hunt_before_rest(false, 55, 70, 50), "no hunt");
+        assert!(!hunt_before_rest(true, 55, 70, 0), "off");
+    }
 }

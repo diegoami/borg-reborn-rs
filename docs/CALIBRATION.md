@@ -10,6 +10,22 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Breeders hunted by every class (#558)
+
+The registry now holds **2128** parameters (2126 on main before #558; two
+added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
+with 70 HP never killed a green worm mass it could solo. The breeder hunt
+(#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
+class values (Warrior 6, Priest 3, the others 4; 0 = no hunt for that class).
+Low-level Mages and Necromancers hunt only breeders, and only while they have
+half their mana, so they cast rather than melee. Two new switches, compiled 0,
+shipped 1 and 50:
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`: no rest while the hunt applies and HP is at least this percent of max HP; breeders multiply while the Borg rests) |
+| `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`: a breeder the Borg may hunt is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630) |
+
 ## A living monster keeps some hit points (#546)
 
 The registry now holds **2123** parameters (2122 after #544, which added three; one added). Owner,

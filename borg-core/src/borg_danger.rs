@@ -151,6 +151,16 @@ fn pfe_applies(st: &BorgState, kill: &BorgKill) -> bool {
 ///
 /// We reduce the danger from distant "sleeping" monsters.
 /// PFE reduces my fear of an area.
+/// borg-reborn-rs (#558): a breeder the Borg may hunt
+/// (`borg_caution::breeder_hunt`), with `danger_hunt_breeder_no_acid_fear` on.
+fn hunted_breeder(st: &BorgState, kill: &BorgKill) -> bool {
+    hunted_breeder_with(param(Param::danger_hunt_breeder_no_acid_fear), rf(kill, RF_MULTIPLY), crate::borg_caution::breeder_hunt(st))
+}
+
+fn hunted_breeder_with(switch: i32, breeder: bool, hunt: bool) -> bool {
+    switch != 0 && breeder && hunt
+}
+
 fn borg_danger_physical(
     st: &mut BorgState,
     kill: &BorgKill,
@@ -340,7 +350,11 @@ fn borg_danger_physical(
                     z = z * 4 / 3;
                 }
                 // Add fear for the effect
-                z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
+                // borg-reborn-rs (#558): not for a breeder the Borg may hunt;
+                // it is judged on its bite.
+                if !hunted_breeder(st, kill) {
+                    z += param(Param::danger_monblow_acid_fear); // We don't want our armour corroded.
+                }
                 if half {
                     z /= param(Param::danger_pfe_melee_divisor);
                 }
@@ -2642,6 +2656,16 @@ pub fn borg_danger(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #558: the corrosion fear is dropped only for a breeder the Borg may
+    /// hunt, with the switch on.
+    #[test]
+    fn hunted_breeders_lose_the_acid_fear() {
+        assert!(hunted_breeder_with(1, true, true));
+        assert!(!hunted_breeder_with(0, true, true), "switch off");
+        assert!(!hunted_breeder_with(1, false, true), "not a breeder");
+        assert!(!hunted_breeder_with(1, true, false), "no hunt");
+    }
 
     #[test]
     fn fear_map_sizes_match_c() {

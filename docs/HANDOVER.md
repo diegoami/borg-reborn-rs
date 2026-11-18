@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: breeders hunted by every class (#558)
+
+Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
+a lone green worm mass. Three causes, all fixed behind switches:
+- **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
+  from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
+- **Class:** #503's hunt left Priests out. Every class hunts now, through
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3). Mages
+  and Necromancers below CL35 hunt breeders only, with half their mana.
+- **Danger:** the worm's 1d3 acid bite read 630 (200 corrosion fear per acid
+  blow, then +150% for a breeder below CL20), above the hunt's limit of a
+  third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear
+  stays for everything else: at 0 everywhere, 18 starts went from 2 to 5
+  deaths.
+- **Checks:**
+  - all switches off: 18/18 classes-18 starts identical to main;
+  - on: the same 2 deaths, sum of CL 94 → 96;
+  - from the owner's 88,147 save, the Priest hunts, kills worms and reaches
+    DL1 (main stays on DL2);
+  - the six `borg-play` deaths: no new death.
+- **Left:** the return trip without Recall (#557) and more Bless and Heroism
+  (the new issue on Priest buffs).
+
 ## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
 
 Owner, from the replayed zoo death ranger-2107852048 (Grip, game turn 276):

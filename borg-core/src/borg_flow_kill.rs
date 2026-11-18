@@ -45,7 +45,7 @@ use crate::borg_headers::borg_magic_h::{
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_APHASE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURSP, BI_ESP,
     BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHUNGRY, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT,
-    BI_MAXCLEVEL, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
+    BI_MAXCLEVEL, BI_MAXSP, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
     BI_SRLITE, BI_SRNTHR,
 };
 use crate::headers::list_mon_race_flags_h::{
@@ -1768,6 +1768,12 @@ fn hall_wall(st: &BorgState, x: i32, y: i32) -> bool {
 /// Prepare to "flow" towards monsters to "kill" (`borg_flow_kill`)
 /// But in a few phases, viewable, near and far.
 /// Note that monsters under the player are always deleted
+/// borg-reborn-rs (#558): a low-level Mage or Necromancer hunts breeders
+/// only while the hunt applies and it has at least half its mana.
+fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
+    hunt && max_sp > 0 && cur_sp * 2 >= max_sp
+}
+
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let mut b_j: i32 = -1;
     let mut b_stair: i32 = -1;
@@ -1792,10 +1798,17 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     }
 
     // YOU ARE NOT A WARRIOR!! DON'T ACT LIKE ONE!!
+    // borg-reborn-rs (#558): except breeders the Borg may hunt, while it has
+    // the mana to fight them with spells (borg_attack casts before any walk
+    // brings it next to them).
+    let mut breeders_only = false;
     if (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
         && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
     {
-        return false;
+        if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+        breeders_only = true;
     }
 
     // Not if Weak from hunger or no food
@@ -1852,6 +1865,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
+        if breeders_only && !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
         let x9 = kill.pos.x;
         let y9 = kill.pos.y;
 
@@ -3317,6 +3333,14 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn casters_hunt_breeders_with_mana() {
+        assert!(caster_hunts(true, 5, 10));
+        assert!(!caster_hunts(true, 4, 10), "low on mana");
+        assert!(!caster_hunts(false, 10, 10), "no hunt");
+        assert!(!caster_hunts(true, 0, 0), "no mana at all");
+    }
 
     #[test]
     fn a_living_monster_keeps_some_power() {
