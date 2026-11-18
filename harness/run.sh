@@ -25,7 +25,7 @@
 #     RUN_TIMEOUT_SECONDS=N optional wall timeout per child (0 = off).
 #     SAVE_ROOT=DIR fixture root for save=NAME (default harness/saves).
 #     BORG_ERRANDS_PLAN=FILE an errands plan (docs/GAME-PLAN-LANGUAGE.md;
-#            needs BORG_CORE=borg-rs). It is copied to OUTDIR/user and
+#            needs the borg-rs core, the default). It is copied to OUTDIR/user and
 #            selected in the run's borg.txt with a line naming its SHA-256,
 #            so the plan's bytes are part of borg_txt_sha256 (#352).
 #     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
@@ -75,8 +75,8 @@ PLAN=""
 if [ -n "${BORG_ERRANDS_PLAN+set}" ]; then
     [ -n "$BORG_ERRANDS_PLAN" ] && [ -f "$BORG_ERRANDS_PLAN" ] || {
         echo "run.sh: BORG_ERRANDS_PLAN=$BORG_ERRANDS_PLAN: no such file" >&2; exit 2; }
-    [ "${BORG_CORE:-}" = borg-rs ] || {
-        echo "run.sh: BORG_ERRANDS_PLAN needs BORG_CORE=borg-rs" >&2; exit 2; }
+    [ "${BORG_CORE:-borg-rs}" = borg-rs ] || {
+        echo "run.sh: BORG_ERRANDS_PLAN needs the borg-rs core" >&2; exit 2; }
     PLAN="$(realpath "$BORG_ERRANDS_PLAN")"
     unset BORG_ERRANDS_PLAN
 fi
@@ -212,7 +212,7 @@ fi
 # BORG_CORE_OVERRIDES=off gives borg-rs's core its pristine copy instead
 # (borg-core/borg.txt): the parity check against borg-rs's build at the pin.
 BORG_TXT="$ROOT/harness/borg.txt"
-[ "${BORG_CORE:-}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
+[ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
 # The run's user/borg.txt, as before: the Rust Borg does not read it, but
 # the zoo's adapter copies harness/borg.txt (docs/ZOO-INTERFACE.md) and its
 # hash is part of a death's encounter family.
@@ -220,9 +220,10 @@ sed -e "s/^borg_respawn_race = .*/borg_respawn_race = $RACE/" \
     -e "s/^borg_respawn_class = .*/borg_respawn_class = $CLASS/" \
     -e "s/^borg_cheat_death = .*/borg_cheat_death = FALSE/" \
     "$BORG_TXT" > "$OUT/user/borg.txt"
-# #479: harness/borg.txt defaults to the borg-rs core; a harness run with
-# no BORG_CORE keeps testing the reborn core its references were made with.
-[ -n "${BORG_CORE+set}" ] || sed -i 's/^borg_reborn_core = .*/borg_reborn_core = reborn/' "$OUT/user/borg.txt"
+# #606 (owner): a run with no BORG_CORE plays the core harness/borg.txt
+# names (borg_reborn_core = borg-rs), the one the zoo runs and the one that
+# reads this file. BORG_CORE=reborn selects the reborn core (it reads the
+# profile above, not this file).
 # BORG_TXT_SET="name=value;name=value": rewrite existing keys of the run's
 # borg.txt (a test pinning a setting whose shipped default moved, #479).
 if [ -n "${BORG_TXT_SET:-}" ]; then
