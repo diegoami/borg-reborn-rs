@@ -551,10 +551,10 @@ borg_param_caution_flee_stairs_before_recall = 1
 # 1 = fleeing, read Word of Recall as the escape (C). 0 = only on a level
 # swamped by breeders (that many known) or when chased by several awake
 # monsters that can move (that many within the distance); otherwise walk. Recall then no
-# longer counts as an easy escape in the stand tests (#557). Shipped 0,
-# the gate (owner, 2026-11-18).
+# longer counts as an easy escape in the stand tests (#557). Shipped 1
+# (C) until borg-zoo#255 measures the gate (owner, 2026-11-18).
 
-borg_param_caution_flee_recall = 0
+borg_param_caution_flee_recall = 1
 borg_param_caution_flee_recall_breeders = 5
 borg_param_caution_flee_recall_chasers = 3
 borg_param_caution_flee_recall_chase_distance = 6

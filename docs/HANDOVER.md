@@ -65,7 +65,7 @@ connected stairs (8 times from the owner's save on main).
   left in #557.
 - `caution_rising_explore_ticks = 300` is now written out in
   `harness/borg.txt` (its compiled default, owner) so a zoo arm can vary it.
-- `caution_flee_recall` (compiled 1 = C; **0 in `harness/borg.txt`**, owner 2026-11-18): 0 stops a flight from reading Word of
+- `caution_flee_recall` (compiled 1 = C; shipped 0 at the merge of #559, then **back to 1** until borg-zoo#255 measures it, owner 2026-11-18): 0 stops a flight from reading Word of
   Recall (`borg_caution.rs`, "Fleeing the level (recall)") unless the level
   is swamped by breeders (`caution_flee_recall_breeders`, 5 known) or the
   Borg is chased (`caution_flee_recall_chasers`, 3 awake within
