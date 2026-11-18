@@ -28,8 +28,9 @@ tools/rerun-death.py docs/deaths/DXXXX-... OUT  # rerun a recorded death with th
 ```
 
 Saves and settings of `watch-borg.sh` are in `.angband-reborn/`. Until M3
-the Borg is a placeholder (it walks, rests and descends; see
-[docs/HANDOVER.md](docs/HANDOVER.md)). [tools/README.md](tools/README.md)
+the Borg is a placeholder (it walks, rests and descends). Where the work
+stands now: [docs/handover/](docs/handover/README.md), one note per task, newest
+first; older entries in [docs/HANDOVER.md](docs/HANDOVER.md), the archive. [tools/README.md](tools/README.md)
 documents the death records. The death registry itself is in
 [borg-cemetery](https://github.com/diegoami/borg-cemetery); a dossier is
 addressed by its source-qualified identity and case directory. Historical

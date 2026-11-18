@@ -1514,10 +1514,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             st.borg.goal.ignoring = false;
 
             /* No known stairs */
-            // borg-reborn-rs (#544, caution_flee_known_down_stairs): unless kept; forgetting them left the
+            // borg-reborn-rs (#544, caution_jumpstart_keep_stairs since #548): unless kept; forgetting them left the
             // Borg in a dead-end worm room with no way to the down staircase
             // it had arrived on (priest-1055640847).
-            if crate::params::value(crate::params::Param::caution_flee_known_down_stairs) == 0 {
+            if !crate::borg_caution::jumpstart_keeps_stairs() {
                 st.stairs.less.num = 0;
                 st.stairs.more.num = 0;
             }

@@ -1,27 +1,115 @@
 # Handover
 
-*Where the work stands, for the next session. Update it in every PR.*
+*The archive, up to 2026-11-18.* Handover notes are now one file per task in
+[`docs/handover/`](handover/README.md) (RULES 5b, #580): read the newest
+there first (`ls -r docs/handover/`). Don't add entries to this file.
 
-## 2026-11-18: review of #569 (#539's last part), the scan's scare rule made explicit
+## 2026-11-18: CI skips the full test suite when it cannot matter (#577)
 
-Two reviews of #569 accepted #539's last part (`fba1c6e0..4a482c58`, on
-`main` without a PR). Fixed here:
-- **[major] scan-level tests:** the scare rule of `borg_near_monster_type` is
-  now two pure functions in `borg_caution.rs`. `classify_scare` takes the
-  named-list, resist-based and damage-rule inputs and the calm; a calmed
-  monster keeps only its resist scare. `stand_contribution` gives the stand
-  mode's (scary, pursuer). The scan calls them. New tests cover: off = C,
-  including when the damage rule is asked and its note; the four calmed
-  combinations; and stand mode through to `stand_decision`.
-- **The 18 classes-18 starts,** this branch against main `68cf9eb5`:
-  identical keys in 18/18 with the switches off, and in 18/18 shipped.
-- **"Pursuer"** is explained at `stand_decision`: with one, the Borg stands.
-- **Citations moved by #565:** `caution_scary_stand` `:2444`,
-  `caution_scary_latch` `:2460`, the two #539 parameters `:2812`.
-- **New issue #572:** a remembered "afraid" keeps a monster calmed after its
-  fear has ended (use `kill.seen`).
-- **Owner's decision:** RULES 4's AI attribution trailers already on `main`
-  (a cleanup pass or a CI guard; published commits cannot be amended, RULES 5).
+Owner: make CI shorter. The engine job's `harness/suite.sh full` on the test
+build (8 of its 12 minutes) plays the reborn core only. A pull request whose
+changed files are all docs (`docs/`, `reference/`, top-level `*.md`), the
+vendored borg-rs core (`borg-core/`) or its settings (`harness/borg*.txt`,
+`harness/scary_monsters*.txt`, `harness/plans/`) now skips it and its diff;
+the perception and no-time checks then read smoke alone. Any other file, and
+every push to main or track-p, runs it as before. The list is an exclusion
+list on purpose: a new path runs the full suite.
+
+Scope (review of #578): the skip is of the reborn-core suite only. The
+settings files and `borg-core/` do change the borg-rs Borg's play, but that
+suite never plays it (`harness/run.sh` rewrites `borg_reborn_core` to
+`reborn` without `BORG_CORE`), so skipping it drops no check of the borg-rs
+arm. What CI checks of that arm (borg-core's release tests, the
+`BORG_CORE=borg-rs` runs with `BORG_CORE_OVERRIDES=off`, the parameter
+validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
+on the borg-rs core, before or after this change: the zoo measures that.
+
+## 2026-11-18: #544's down-staircase flight only when cornered (#548)
+
+Owner: as merged in #545, A+K fired on almost every flight (13 of 18
+classes-18 games, up to 721 notes) and added 3 deaths in a local preview.
+Narrowed, each condition a parameter; all off in `harness/borg.txt`.
+
+- `caution_flee_known_down_stairs` (A, 0) now needs
+  `caution_flee_known_down_cornered` (1): a moving monster adjacent, danger
+  here at or above the HP or surrounded, and no Phase Door, teleport,
+  Teleport Level or escape; and `caution_flee_known_down_max_cost` (40): the
+  staircase within that many steps of flow (the flow's depth from the
+  staircases, the walk around walls; 0 = any). Its own flow
+  (`flee_known_down_flow`) keeps every refusal of `borg_flow_stair_more`
+  (`more_refused`, shared since review 2) and #557's rising hold.
+- K is its own flag, `caution_jumpstart_keep_stairs` (0).
+- Flags off: smoke 3/3 identical.
+- **Local classes-18** (this tree, `BORG_CORE=borg-rs`, 100,000 turns,
+  the zoo's 18 starts; not a zoo run, and the shipped `borg.txt` of today, not
+  #240's ctl): ctl 0 deaths, 0 notes; *wide* (#545 as merged: cornered 0,
+  cap 0, K 1) 2 deaths (Priest 1569794094 a soldier, Druid 934061548 a
+  wild cat), 2,607 notes in 17 games; *narrow* (the defaults above, K 0) 1
+  death, 31 notes in 3 games, the other 15 games key-for-key the ctl. The
+  narrow death (Priest 1569794094, poison from worms at turn 42,320) comes
+  5,450 turns after a flight that did escape an adjacent soldier (danger 84,
+  HP 34, staircase 24 flow away); the game had diverged. #240's three newly
+  killed (Ranger 1739161339, Warrior 1019921749, Druid 102023799) live in
+  every arm here, but this tree is not #240's.
+- **Review of #566:** `status.desperate` is now set before the staircases
+  are enqueued (`borg_flow_enqueue_grid` rates an unknown staircase grid's
+  danger unless the flow ignores it), as `desperate_flow` did. Recall is no
+  escape for "cornered" here (as #504), though it is one for #503's easy
+  escape: the two disagree on purpose. `borg_surrounded` is checked only
+  with a monster adjacent, and prints its own "Possibility of being
+  surrounded" note.
+- **After syncing with main `4a482c58`** (the owner's new `borg.txt` values
+  and #539), ctl and narrow again: 1 death in both (Blackguard 1472012981,
+  a cave spider, as in #539's runs), the note 3 times in 1 game (Rogue
+  1381972077, alive), the other 17 games key-for-key the ctl. Main has
+  since taken #565 (DL1 flight Recall gate, shipped 2); not rerun with it.
+- **Grandfathered trailers (owner, 2026-11-18):** the first two commits of
+  #566 (`22ed701e`, `1310b46a`) carry a `Co-Authored-By` trailer against
+  RULES 4. The owner chose not to force-push the task branch, so they stay,
+  like the earlier pair; no later commit has one.
+- **The worm room** (`~/borg-play/priest-1055640847`, the arm's
+  `borg.txt` plus the four #548 keys, from birth on this tree: flags off
+  plays the zoo game's 8,008 keys and dies at 91,153). With a temporary
+  local turn gate (not committed), as #545:
+
+  | flags on from | narrow, K 0 | narrow + K | wide + K (#545) |
+  |---|---|---|---|
+  | 88,600 | dies 91,153 (0 notes) | alive at 120,000 (11 notes) | alive at 120,000 (62) |
+  | 89,000 | dies 91,153 | dies 91,153 | dies 91,153 |
+
+  The narrowed A still escapes, but only with K: without it the stuck
+  jumpstart at 88,607 forgets the staircases. A zoo arm for this case
+  should set both. Loading the turn-88,147 save does not test A (a loaded
+  game's Borg knows no down staircase); there, 6 seeds die or live the
+  same in every arm (seeds 11 and 22 die to the worm mass).
+
+- **Review 2 of #566:** (1) main merged (#561, #570), count 2143,
+  citations re-done. (2) With an up staircase known but occupied, the flight
+  skipped `borg_flow_stair_more`'s refusals (not prepared for the next
+  depth, hungry, a sale held, no light) that block "four" applies to the
+  same staircase; now both share `more_refused` in `borg_flow_stairs.rs`
+  (the review read `borg_prepared_c` the wrong way round: it refuses when
+  *not* prepared, but the disagreement was real). (3) The escape traits
+  count items, not spells; adjacency is distance 1, tighter than #504's
+  radius. (4) `flee_down_cornered` reads as `breeder_exit`'s shape. (5) The
+  stairs are enqueued with `enqueue_stairs`. (6) No borg-cemetery case
+  exists for priest-1055640847 or these trials yet; the inputs are
+  `~/borg-play` (the owner's local copy).
+- **Rerun at this head** (main `8da9be99`, shipped `borg.txt`): local
+  classes-18, 0 deaths in ctl, narrow and narrow + K; the note 15 times in
+  2 games (Ranger 226104090, Druid 934061548) in both flag arms; narrow
+  plays the ctl's keys in 17 games, narrow + K in 12 (K alone changes
+  stuck games). Worm room, gate at 88,600: narrow dies at 91,153, narrow +
+  K alive at 120,000 (11 notes), wide + K alive (121); from 89,000 narrow +
+  K dies. Smoke 3/3 identical.
+
+- **Re-review of #566:** accepted with two small items: main merged again
+  (`f660aecc`, with #571; count 2145, citations unchanged; smoke 3/3,
+  borg-core 418 tests) and the PR summary rewritten (the flight shares
+  `borg_flow_stair_more`'s refusals and differs only in the depth cap).
+
+Left: the zoo pilot, borg-zoo#286 (ctl, keep, narrow, narrow-keep on
+classes-18, specimen `b054287b`), requested, not dispatched.
 
 ## 2026-11-18: when the Borg buys Word of Recall (#557)
 

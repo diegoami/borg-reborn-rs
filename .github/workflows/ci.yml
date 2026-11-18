@@ -37,7 +37,9 @@ jobs:
       - run: python3 tools/import-deaths.py --check
       # The generated bindings match upstream's headers (TE.3): bindgen and
       # libclang, so the D3 audit's regeneration check runs too.
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libclang-dev
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: libclang-dev
       - run: cargo install bindgen-cli --version 0.73.2 --locked
       - run: engine/bindings/generate.sh --check
       # Upstream's own commit, so that test_engine checks that engine/UPSTREAM's
@@ -56,6 +58,27 @@ jobs:
     steps:
       - run: echo "BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/deaths" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      # #577: the full test suite (8 of this job's 12 minutes) plays the
+      # reborn core only (harness/run.sh sets borg_reborn_core = reborn
+      # without BORG_CORE). A pull request whose files are all docs, the
+      # vendored borg-rs core or its settings cannot change that core's play,
+      # and skips it. Those files can change the borg-rs core's play, which
+      # this suite never measures: the borg-rs steps below (and the zoo) do,
+      # and they run on every PR. Any other file, and every push to main or
+      # track-p, runs the full suite. On a pull request HEAD is the merge
+      # commit and HEAD^1 the base.
+      - id: scope
+        run: |
+          full=1
+          if [ "${{ github.event_name }}" = pull_request ] \
+              && ! git diff --name-only HEAD^1 HEAD \
+                | grep -qvE '^(docs/|reference/|borg-core/|harness/borg(_[a-z]+)?\.txt$|harness/scary_monsters[a-z_]*\.txt$|harness/plans/|[^/]+\.md$)'; then
+              full=0
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          echo "full test suite: $full"
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
       # Canonical gameplay evidence is separate from the death-tool pin and
@@ -107,7 +130,9 @@ jobs:
                   if case.is_dir() and (case / 'record.json').is_file():
                       (known / case.name).symlink_to(case.resolve(), target_is_directory=True)
           PYREGISTRY
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq cmake libx11-dev libssl-dev
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: cmake libx11-dev libssl-dev
       - run: BORG_IMPL=rust harness/build.sh
       - run: harness/identity.sh binary-impl build/rust/game/angband | grep -qx rust
       # Track P (#219): exercise the vendored core's real initialization,
@@ -220,13 +245,15 @@ jobs:
       # Full too: smoke has too few monsters to meet every case (T2.5 found
       # one only in full). The test build plays the reference's games, and
       # perception agrees with the engine on every think.
-      - run: BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh full harness/out/full-test
+      - if: steps.scope.outputs.full == '1'
+        run: BORG_DEATH_RECORDS_DIR=$RUNNER_TEMP/test-deaths ANGBAND_BIN=$PWD/build/rust-test/game/angband BORG_IMPL=rust harness/suite.sh full harness/out/full-test
       - run: harness/diff --suite smoke --expect-impl rust harness/out/smoke-hallucinate harness/reference/smoke-rust
-      - run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
-      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate harness/out/full-test
+      - if: steps.scope.outputs.full == '1'
+        run: harness/diff --suite full --expect-impl rust harness/out/full-test harness/reference/full-rust
+      - run: python3 tools/check-perception.py harness/out/smoke-hallucinate ${{ steps.scope.outputs.full == '1' && 'harness/out/full-test' || '' }}
       # No-time loops are visible too: level generation may not exceed its
       # declared cap at one game turn (M3 review, PR #135 finding 1).
-      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1 harness/out/full-test
+      - run: python3 tools/check-no-time.py harness/out/smoke-rust-1 ${{ steps.scope.outputs.full == '1' && 'harness/out/full-test' || '' }}
       # The run contract on the Rust arm (T1.4, T1.8).
       - run: BORG_IMPL=rust harness/suite.sh smoke-exact harness/out/smoke-exact-rust
       - run: harness/check-boundary.py harness/out/smoke-exact-rust harness/out/smoke-rust-1
@@ -269,7 +296,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/cemetery-tools
       - uses: dtolnay/rust-toolchain@stable
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq libx11-dev libssl-dev
+      - uses: ./.github/actions/apt-install
+        with:
+          packages: libx11-dev libssl-dev
       - run: cmake -S engine -B build/recorder -DSUPPORT_BORG_RECORDING=ON -DCMAKE_BUILD_TYPE=Release
       - run: cmake --build build/recorder -j4
       - run: python3 harness/check-recorder.py --binary build/recorder/game/angband --output "$RUNNER_TEMP/recorder-check"

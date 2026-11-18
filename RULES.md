@@ -38,8 +38,8 @@ whatever the model.
    for the owner. The secondary track Q (GOALS D12) has its own
    milestones; a session works on one only when the owner opens it, and
    never in the same PR as primary work. A session that finds a goal or
-   a task wrong says so in its PR or in [docs/HANDOVER.md](docs/HANDOVER.md),
-   and goes on with the rest.
+   a task wrong says so in its PR or in its handover note (rule 5b), and
+   goes on with the rest.
 3. The owner's decisions (GOALS.md, *Owner decisions*, once confirmed) are
    not reopened by a session. A session may report evidence against one.
 
@@ -56,7 +56,7 @@ not undo other-track work already authorized before the gate.
    lines for a model and no "Generated with" footers.
 5. One task issue per PR, on a branch named `task/Tn.m-short-name`; the PR
    says `Closes #N`. A branch may start from an unmerged one; the PR then
-   says "stacked on #n". Each PR updates the handover. Mark the issue
+   says "stacked on #n". Each PR writes its handover note (rule 5b). Mark the issue
    `in progress` when you start, so two sessions never take the same task. Never amend
    published commits, force-push `main`, `track-p` or `reviewed`, or move tags.
 5a. **Every task works in its own git worktree** (owner, 2026-11-18, after
@@ -75,6 +75,18 @@ not undo other-track work already authorized before the gate.
    session may be using. Remove the worktree (`git worktree remove`) once
    its PR is merged; if it refuses because of leftover files, check that
    nothing there is worth keeping, then use `git worktree remove --force`.
+5b. **Handover notes go in [`docs/handover/`](docs/handover/README.md), one
+   file per task** (owner, 2026-11-18, #580: every PR prepended its entry to
+   `docs/HANDOVER.md`, so any two open PRs conflicted there and each merge
+   of main cost a CI run). A task writes its note as a new file,
+   `docs/handover/YYYY-MM-DD-<issue>-<short-name>.md` (the day the PR opens,
+   the task issue's number, rule 5's short name), and later commits of the
+   same PR change only that file. Never edit another task's note, and never
+   add to `docs/HANDOVER.md`: its entries up to 2026-11-18 are the archive.
+   A note says what was done, what was found, what is left (each item an
+   issue) and anything the owner has to decide. To learn where the work
+   stands, read the newest notes first (`ls -r docs/handover/`), then the
+   archive.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
    For P, the task merges into `track-p` and the review precedes promotion

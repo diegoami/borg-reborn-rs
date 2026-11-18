@@ -80,8 +80,8 @@ death is the new `borg.txt`'s, not this change's: it comes from
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2812` |
-| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2812` |
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2815` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2815` |
 
 ## Fear cures and the see-invisible clock (#516)
 
@@ -265,7 +265,7 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
   and more of them are needed to reach half its value. So speed changes the
   curve's shape as well as the ranking of potions (#496 review F4).
 - The shipped `harness/borg.txt` sets 400, 100 and 66 (owner, #491;
-  measurement in docs/HANDOVER.md). At 0, 100 and 0 play is byte-identical
+  measurement in #491's entry of docs/HANDOVER.md, the archive). At 0, 100 and 0 play is byte-identical
   to before.
 
 ## Rising to town explores for an up staircase (#483)
@@ -407,7 +407,10 @@ death with the list, 4 without), 1.
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2348` |
 | `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2503` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
 | `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2503` (#544 B: the exit's distance from every breeder) |
-| `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
+| `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
+| `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:3230` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
+| `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:3254` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3276` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2626` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
 | `caution_stair_scum_danger` | 0 | danger | 0–10000 | `borg_caution.rs:2626` (#549: the danger here above which the stair scum stops) |
 | `caution_rising_hold_flee_descent` | 0 | flag | 0–1 | `borg_caution.rs:2737` (#557: 1 = while rising in the dungeon, no flight down a staircase unless danger here >= HP: `choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`; the held staircase is no easy escape in #530's stand) |
@@ -452,7 +455,7 @@ starts on the current build: 1 death against 2, 81 stands.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2444` (read in `borg_flow_kill.rs`) |
+| `caution_scary_stand` | 0 | flag | 0–1 | `borg_caution.rs:2447` (read in `borg_flow_kill.rs`) |
 
 ### The scary flag stops latching (#515)
 
@@ -476,7 +479,7 @@ stand mode on: the same 3 deaths either way.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2460` |
+| `caution_scary_latch` | 1 | flag | 0–1 | `borg_caution.rs:2463` |
 
 ## The named scary list as data (#518)
 
@@ -590,7 +593,7 @@ parameters are too.
 The registry now holds **1785** parameters (1783 before; two added). Two
 parameters control one study branch, off in the compiled registry (default 0);
 since #479 the shipped `harness/borg.txt` sets `caution_heal_when_outmatched = 1`
-(docs/HANDOVER.md):
+(#479's entry in docs/HANDOVER.md, the archive):
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
