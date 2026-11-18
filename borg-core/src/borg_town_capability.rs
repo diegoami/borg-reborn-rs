@@ -599,7 +599,18 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(POISON, if t(BI_ISPOISONED) > 0 { cfg(BORG_TOWN_W_POISON) * UNIT } else { 0 },
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
-    curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1), UNIT);
+    // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
+    // (worth the full trip weight each, nothing past them) at any depth: the
+    // walk it saves is always worth less than the full weight (the journey
+    // includes the exploring), so a shallow Borg otherwise never buys one and
+    // walks home, and the walk can fail (priest-1055640847).
+    let walk_value = cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1);
+    let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
+    if recall_reserve > 0 {
+        curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
+    } else {
+        curve(RECALL, walk_value, UNIT);
+    }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
@@ -828,6 +839,23 @@ mod tests {
         KitItem { joins_pack: false, place, slot, kind: 1, qty: count, weight: 10, need: -1, reduction: 0,
             power: 0, proceeds: 0, sell_shop: 0, unknown: false, unknown_flavour: false, just_bought: false, serves: 0 }
     }
+    /// #516 (review of #563): the fear-cure cap's value curve. With the cap
+    /// at 2 (demand -2 units) one potion is worth half the weight, two the
+    /// whole weight, and a third adds nothing, where the diminishing curve
+    /// gave each potion a small, never-zero value.
+    #[test]
+    fn the_fear_cure_cap_values_potions_linearly_up_to_the_cap() {
+        let w = 50_000;
+        let capped = [FEAR as i64, w, -2 * UNIT, 0, 0];
+        assert_eq!(coverage(&capped, UNIT), w / 2, "one potion");
+        assert_eq!(coverage(&capped, 2 * UNIT), w, "two");
+        assert_eq!(coverage(&capped, 3 * UNIT), w, "a third is worth nothing");
+        assert_eq!(coverage(&capped, 5 * UNIT), w);
+        let curve = [FEAR as i64, w, 100 * UNIT, 0, 0];
+        let (one, three) = (coverage(&curve, UNIT), coverage(&curve, 3 * UNIT));
+        assert!(one < w / 2 && three > coverage(&curve, 2 * UNIT), "the curve: small, still rising");
+    }
+
     #[test]
     fn ranger_empty_quiver_remains_valuable_when_devices_cover_damage() {
         let mut m = model();

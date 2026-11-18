@@ -534,6 +534,12 @@ borg_param_recover_rest_arms_see_invis = 0
 
 borg_param_town_digger_min_gold = 500
 
+# Keep this many Word of Recall at any depth: the planner values them at the
+# full trip weight, so a shallow Borg buys one and walks home only without
+# it (#557). Off here.
+
+borg_param_town_recall_reserve = 0
+
 
 ### Fleeing ###
 
@@ -541,6 +547,17 @@ borg_param_town_digger_min_gold = 500
 # none is reachable (#539).
 
 borg_param_caution_flee_stairs_before_recall = 1
+
+# 1 = fleeing, read Word of Recall as the escape (C). 0 = only on a level
+# swamped by breeders (that many known) or when chased by several awake
+# monsters that can move (that many within the distance); otherwise walk. Recall then no
+# longer counts as an easy escape in the stand tests (#557). Shipped 0,
+# the gate (owner, 2026-11-18).
+
+borg_param_caution_flee_recall = 0
+borg_param_caution_flee_recall_breeders = 5
+borg_param_caution_flee_recall_chasers = 3
+borg_param_caution_flee_recall_chase_distance = 6
 
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # that has a ranged attack, not while the monster is still distant (#539).
@@ -565,6 +582,18 @@ borg_param_caution_flee_known_down_stairs = 0
 
 borg_param_caution_stair_scum_threat = 0
 borg_param_caution_stair_scum_danger = 0
+
+# Walking home (rising) in the dungeon, a flight takes no down staircase
+# unless the danger here is at or above the HP; that staircase is then no
+# easy escape either (#557). Off here.
+
+borg_param_caution_rising_hold_flee_descent = 0
+
+# Walking home (rising), a descent that is not a desperate escape is held for
+# this many Borg ticks on each level while the Borg explores for an up
+# staircase (#483; the compiled default, written out for the zoo, #557).
+
+borg_param_caution_rising_explore_ticks = 300
 
 
 ### Cornered ###
