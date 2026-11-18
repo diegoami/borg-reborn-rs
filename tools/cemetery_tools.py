@@ -52,7 +52,6 @@ def verify_native_pin(repo, cemetery):
             f'({error})') from error
 
 
-
 def locate(repo):
     explicit = os.environ.get('BORG_CEMETERY_DIR')
     if explicit:

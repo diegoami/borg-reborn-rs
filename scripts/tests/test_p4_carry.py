@@ -40,6 +40,20 @@ class P4CarryTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'beyond accepted P4 delta'):
             carry.verify(self.root)
 
+    def test_validation_and_bounds_regressions_are_also_protected(self):
+        path = self.root / 'borg-core/src/params.rs'
+        original = path.read_text()
+        for before, after in [
+            ('|(a, b)| a > b', '|(a, b)| a >= b'),
+            ('for valid in [0, 2, 255]', 'for valid in [0, 2, 254]'),
+        ]:
+            with self.subTest(edit=before):
+                self.assertEqual(original.count(before), 1)
+                path.write_text(original.replace(before, after, 1))
+                with self.assertRaisesRegex(ValueError, 'non-spec parameter'):
+                    carry.verify(self.root)
+        path.write_text(original)
+
     def test_contract_mutation_and_wrong_id_mapping_are_rejected(self):
         path = self.root / 'docs/M13-INVENTORY-PARAMETERS.json'
         original = path.read_bytes()

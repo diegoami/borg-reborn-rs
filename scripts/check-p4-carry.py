@@ -29,12 +29,16 @@ def verify(root):
     metadata = json.loads((root / 'docs/R528-CARRY.json').read_text())
     if metadata.get('schema') != 'borg-reborn-rs/r528-p4-carry@1':
         raise ValueError('unsupported P4 carry metadata')
-    rows = SPEC.findall((root / 'borg-core/src/params.rs').read_text())
+    parameters = (root / 'borg-core/src/params.rs').read_text()
+    rows = SPEC.findall(parameters)
     count = metadata['receiving_original_registry_count']
     if len(rows) != metadata['receiving_registry_count']:
         raise ValueError('receiving registry count changed')
     if digest(encoded(rows[:count])) != metadata['receiving_original_specs_sha256']:
         raise ValueError('an existing receiving spec or ID changed')
+    remainder = SPEC.sub('', parameters).encode()
+    if digest(remainder) != metadata['receiving_non_spec_params_sha256']:
+        raise ValueError('non-spec parameter validation/test code changed')
     added = rows[count:]
     if len(added) != metadata['p4_new_count'] or digest(encoded(added)) != metadata['accepted_p4_specs_sha256']:
         raise ValueError('accepted P4 definitions/order changed')

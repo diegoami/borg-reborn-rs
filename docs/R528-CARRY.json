@@ -1834,5 +1834,6 @@
     }
   ],
   "limits": "Exact accepted P4 definitions/sites only. Receiving existing IDs/defaults remain unchanged; numeric IDs are recorded per exact registry. Unrelated accepted-main registry/policy additions and shipped-default changes are not consumed.",
-  "accepted_contract_sha256": "48441aabf72a97c5717a29b046f0ec7c450eda2a482366adeab3c65d11f8fafd"
+  "accepted_contract_sha256": "48441aabf72a97c5717a29b046f0ec7c450eda2a482366adeab3c65d11f8fafd",
+  "receiving_non_spec_params_sha256": "9986e8071b276b9f2c6ff5754846144364a1d914648a3a0c1e7c300df0c67689"
 }
