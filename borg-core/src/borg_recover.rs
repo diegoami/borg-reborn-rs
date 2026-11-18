@@ -411,15 +411,6 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     /*** Just Rest ***/
 
-    // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
-    // them first while it may and is not badly hurt.
-    // The breeder scan runs only when the HP test passes.
-    let hunt_first = hunt_before_rest(
-        true,
-        st.borg.tr(BI_CURHP),
-        st.borg.tr(BI_MAXHP),
-        param(Param::recover_breeder_hunt_hp_percent),
-    ) && crate::borg_flow_kill::breeder_hunt_now(st);
     // Rest until healed
     let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
     let rest_hp = st.borg.tr(BI_ISBLIND) == 0
@@ -440,6 +431,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER;
+    // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
+    // them first while it may and is not badly hurt. The breeder scan runs
+    // only when a rest is due and the HP test passes.
+    let hunt_first = rest_hp && hunt_now(st);
     // Noted once per stretch of skipped rests, not every think.
     let noted = NOT_RESTING_NOTED.with(|n| n.replace(rest_hp && hunt_first));
     if rest_hp && hunt_first && !noted {
@@ -484,7 +479,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
-        && !hunt_first
+        && !hunt_now(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -505,6 +500,13 @@ thread_local! {
     /// borg-reborn-rs (#558): the last think skipped a rest for the hunt.
     /// Only the note reads it.
     static NOT_RESTING_NOTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// borg-reborn-rs (#558): `hunt_before_rest` with the HP test first, so
+/// `borg_flow_kill::breeder_hunt_now`'s scan runs only when it passes.
+fn hunt_now(st: &mut BorgState) -> bool {
+    hunt_before_rest(true, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::recover_breeder_hunt_hp_percent))
+        && crate::borg_flow_kill::breeder_hunt_now(st)
 }
 
 /// borg-reborn-rs (#558): skip resting to hunt breeders while `hunt` (the

@@ -44,7 +44,7 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_APHASE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURSP, BI_ESP,
-    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHUNGRY, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT,
+    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISSTUN, BI_ISWEAK, BI_LIGHT,
     BI_MAXCLEVEL, BI_MAXSP, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
     BI_SRLITE, BI_SRNTHR,
 };
@@ -1781,16 +1781,28 @@ fn low_level_caster(st: &BorgState) -> bool {
         && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
 }
 
-/// borg-reborn-rs (#558): whether `borg_flow_kill` would walk to a breeder
-/// now: the Borg engages the breeders (`borg_caution::breeder_engaged`), a
-/// low-level caster has the mana, it is not hungry, and a known breeder
-/// passes the hunt's danger test.
+/// borg-reborn-rs (#558): whether the Borg is fit to hunt breeders now, for
+/// `borg_recover`'s rest gate: it engages the breeders
+/// (`borg_caution::breeder_engaged`), a low-level caster has the mana, it is
+/// not hungry, and not confused, hallucinating, afraid or stunned (a rest
+/// clears those), and a known breeder passes the hunt walk's danger test.
+/// Only that test of the walk's: not its leash to the stairs, nor whether
+/// the breeder can be reached.
 pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
     let mut hunt = crate::borg_caution::breeder_engaged(st);
     if low_level_caster(st) {
         hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
     }
     if !hunt || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_FOOD) == 0 {
+        return false;
+    }
+    if !fit_to_hunt(
+        st.borg.tr(BI_ISCONFUSED) != 0
+            || st.borg.tr(BI_ISIMAGE) != 0
+            || st.borg.tr(BI_ISAFRAID) != 0
+            || st.borg.tr(BI_ISSTUN) != 0
+            || st.borg.tr(BI_ISHEAVYSTUN) != 0,
+    ) {
         return false;
     }
     for i in 1..i32::from(st.kills.nxt) {
@@ -1804,6 +1816,11 @@ pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
         }
     }
     false
+}
+
+/// borg-reborn-rs (#558): a status a rest clears means rest, not hunt.
+fn fit_to_hunt(status: bool) -> bool {
+    !status
 }
 
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
@@ -3370,6 +3387,13 @@ mod tests {
         assert!(!caster_hunts(true, 4, 10), "low on mana");
         assert!(!caster_hunts(false, 10, 10), "no hunt");
         assert!(!caster_hunts(true, 0, 0), "no mana at all");
+    }
+
+    /// #558 review 3: confused, afraid or stunned, the Borg rests first.
+    #[test]
+    fn a_status_means_rest_not_hunt() {
+        assert!(fit_to_hunt(false));
+        assert!(!fit_to_hunt(true));
     }
 
     #[test]
