@@ -81,7 +81,13 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
   K alive at 120,000 (11 notes), wide + K alive (121); from 89,000 narrow +
   K dies. Smoke 3/3 identical.
 
-Left: a zoo pilot of narrow + K against ctl (owner's choice).
+- **Re-review of #566:** accepted with two small items: main merged again
+  (`f660aecc`, with #571; count 2145, citations unchanged; smoke 3/3,
+  borg-core 418 tests) and the PR summary rewritten (the flight shares
+  `borg_flow_stair_more`'s refusals and differs only in the depth cap).
+
+Left: the zoo pilot, borg-zoo#286 (ctl, keep, narrow, narrow-keep on
+classes-18, specimen `b054287b`), requested, not dispatched.
 
 ## 2026-11-18: when the Borg buys Word of Recall (#557)
 
