@@ -628,6 +628,13 @@ borg_scary_list = scary_monsters.txt
 
 borg_param_caution_scary_damage_percent = 60
 
+# Flee a scary level only while the escape is real: a free staircase within
+# the breeders' easy-escape steps, an escape item, or no scary monster awake
+# and at least as fast as the character. Otherwise stand and fight, with the
+# cornered buffs. A monster that never moves is never scary (#530).
+
+borg_param_caution_scary_stand = 1
+
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only
 # with borg_uses_dynamic_calcs = TRUE, which this file sets FALSE, so the

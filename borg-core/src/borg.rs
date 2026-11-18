@@ -193,6 +193,19 @@ pub struct BorgInitSave {
 pub struct BorgMonInfo {
     pub breeders: u16,
     pub scary: bool,
+    /// borg-reborn-rs (#530, review of #531): the scary check itself set
+    /// `goal.leaving`, `goal.fleeing` and `goal.fleeing_to_town` (each was
+    /// false before it); standing withdraws only these.
+    pub scary_leaving: bool,
+    pub scary_fleeing: bool,
+    pub scary_town: bool,
+    /// borg-reborn-rs (#530, review of #531): a door scare (an unseen
+    /// monster opened or burst a door) made the level scary; the stand
+    /// decision reads it.
+    pub scary_door: bool,
+    /// borg-reborn-rs (#530): standing against a scary monster it cannot
+    /// escape (for the note on the change).
+    pub scary_stand: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

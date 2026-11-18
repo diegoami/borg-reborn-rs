@@ -2683,6 +2683,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // stands and fights them (no easy escape).
     let breeder_stand = crate::borg_caution::breeder_stand(st);
     let named = crate::borg_caution::scary_named_monsters();
+    // borg-reborn-rs (#530): with caution_scary_stand, the level's scary
+    // flag is decided after the scan: flee while the escape is real.
+    let stand_mode = crate::borg_caution::scary_stand();
+    let player_speed = st.borg.tr(BI_SPEED);
+    let mut stand_scary = false;
+    let mut stand_pursuer = false;
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2776,6 +2782,17 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             scary = true;
         }
 
+        if scary && stand_mode {
+            // A monster that never moves cannot follow: never scary here.
+            if !engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE) {
+                stand_scary = true;
+                if kill.awake && i32::from(kill.speed) >= player_speed {
+                    stand_pursuer = true;
+                }
+            }
+            scary = false;
+        }
+
         if scary {
             st.borg.mon.scary = true;
         }
@@ -2846,6 +2863,10 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 st.borg.near.summoner_idx = i as i16;
             }
         }
+    }
+
+    if stand_mode {
+        crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
 
