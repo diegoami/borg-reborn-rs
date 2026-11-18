@@ -534,37 +534,59 @@ borg_param_recover_rest_arms_see_invis = 0
 
 borg_param_town_digger_min_gold = 500
 
-# Keep this many Word of Recall at any depth: the planner values them at the
-# full trip weight, so a shallow Borg buys one and walks home only without
-# it (#557). Off here.
+
+### Word of Recall ###
+
+# Buying. What a Word of Recall is worth to the town planner, in percent of
+# the walk it saves (100 = as computed). Shallow, that walk is worth little,
+# so a low-level Borg never buys one; higher values make it buy and keep one
+# (#557, owner 2026-11-18).
+
+borg_param_town_recall_value_percent = 100
+
+# Buying. Keep this many Word of Recall at any depth: the planner values
+# them at the full trip weight (#557). Off here.
 
 borg_param_town_recall_reserve = 0
 
+# Buying, old chooser only (borg_town_plan = 0): the power scorer values
+# Recall only above this character level. The shipped planner does not read
+# it (#557).
 
-### Fleeing ###
+borg_param_power_inventory_clevel_threshold_3 = 7
+
+# Descending. A descent to this depth or deeper needs one Word of Recall
+# carried (C: from DL5). It only stops descents; it buys nothing (#557).
+# 0 = never.
+
+borg_param_prepared_recall_depth = 5
 
 # Fleeing, walk to a reachable staircase, and read Word of Recall only when
 # none is reachable (#539).
 
 borg_param_caution_flee_stairs_before_recall = 1
 
-# 1 = fleeing, read Word of Recall as the escape (C). 0 = only on a level
+# Fleeing. 1 = read Word of Recall as the escape (C). 0 = only on a level
 # swamped by breeders (that many known) or when chased by several awake
-# monsters that can move (that many within the distance); otherwise walk. Recall then no
-# longer counts as an easy escape in the stand tests (#557). Shipped 1
-# (C) until borg-zoo#255 measures the gate (owner, 2026-11-18).
+# monsters that can move (that many within the distance); otherwise walk.
+# Recall then no longer counts as an easy escape in the stand tests (#557).
+# Shipped 1 (C) until borg-zoo#255 measures the gate (owner, 2026-11-18).
 
 borg_param_caution_flee_recall = 1
 borg_param_caution_flee_recall_breeders = 5
 borg_param_caution_flee_recall_chasers = 3
 borg_param_caution_flee_recall_chase_distance = 6
 
-# A ceiling: at depths shallower than this (2 = DL1 only) a flight reads
-# Word of Recall only with the exceptions above (breeders, chasers), even
-# with caution_flee_recall = 1: on DL1 the stairs are a short walk, and the
-# scroll is kept for the trip home. 0 or 1 = off (#557, owner 2026-11-18).
+# Fleeing. A ceiling: at depths shallower than this (2 = DL1 only) a flight
+# reads Word of Recall only with the exceptions above (breeders, chasers),
+# even with caution_flee_recall = 1: on DL1 the stairs are a short walk, and
+# the scroll is kept for the trip home. 0 or 1 = off (#557, owner
+# 2026-11-18).
 
 borg_param_caution_flee_recall_gate_below_depth = 2
+
+
+### Fleeing ###
 
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # that has a ranged attack, not while the monster is still distant (#539).
