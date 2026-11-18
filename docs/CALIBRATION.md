@@ -16,7 +16,9 @@ The registry now holds **2139** parameters (2137 on main before #558; two
 added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
 with 70 HP never killed a green worm mass it could solo. The breeder hunt
 (#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
-class values (Warrior 6, Priest 3, the others 4; 0 = no hunt for that class).
+the common 4 for every class (#561 shipped Warrior 6 and Priest 3; #574,
+owner, removed them until borg-zoo#277 is read; a class value of 0 turns a
+class's hunt off).
 The count is the switch for the new classes (owner): there is no separate
 flag, so the expansion plays even with the two switches below at 0. The
 configuration that plays as main is the count at 0 for Mage, Druid, Priest,
