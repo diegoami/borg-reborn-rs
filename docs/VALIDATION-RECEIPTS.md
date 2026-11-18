@@ -59,6 +59,7 @@ test "$(git -C "$DONOR" rev-parse HEAD)" = 1443c2d1b97d110ffbf5ae420d6c6b97ac15f
 test "$(git -C "$CEMETERY" rev-parse HEAD)" = 33c375527a8e443cdfcda19e864e4561f0c1c9ef
 test -z "$(git -C "$RECEIVING" status --porcelain)"
 test -z "$(git -C "$DONOR" status --porcelain)"
+test -z "$(git -C "$CEMETERY" status --porcelain)"
 test ! -e "$OUTPUT"
 mkdir -p "$OUTPUT"
 SUITE="$RECEIVING/harness/suites/full"
@@ -137,8 +138,18 @@ against the retained evidence. The pinned identity algorithms applied to clean
 Git trees reproduce receiving source hash `87717140…` and donor `d07a8547…`,
 exactly as retained. These are metadata checks, not new compiler or game runs.
 
+Donor-side source inspection at `1443c2d1` also confirms the external suite
+path branch in `harness/suite.sh`, C defaults in both scripts, and
+`BORG_RECORDING` selecting the CMake recording flag in `harness/build.sh`.
+The recipe records SHA-256 identities for both inspected scripts so another
+reader can check those same objects. These are local source checks; the
+reviewer did not independently inspect the donor repository.
+
 Preserve strict comparison failure. Use the receiving checker's pinned version;
-do not drop fields, permit incomplete suites or turn its failure into success:
+do not drop fields, permit incomplete suites or turn its failure into success.
+This block is expected to exit 1 for the historical comparison; its status is
+in `strict-summary.exit`. With `set -e`, a combined script stops there as intended.
+
 
 ```bash
 (

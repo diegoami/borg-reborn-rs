@@ -2,6 +2,35 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+
+## 2026-11-18: exact historical validation recipes (#374 / P5)
+
+- Owner authorized continuing after #555/#537 merged into track-p 6aa38d2b.
+  Task uses its own worktree .worktrees/T374 on task/T374-validation-invocations.
+- Add docs/VALIDATION-RECEIPTS.md's future capture contract and portable
+  reconstruction instructions plus harness/recipes/p341-full.json. These are
+  command metadata, not new gameplay reports, and original P341 files/packages
+  stay byte-identical. No original shell history or new 45-start run is claimed.
+- Exact receiving suite SHA-256: 7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed.
+  It has 45 menu-letter starts, nine classes and 100000 turns each. Both roles
+  must use this file; donor's built-in full has another hash and lacks menu.
+- Verify clean pinned Git-tree source hashes 87717140… (receiving) and
+  d07a8547… (donor), every start/config hash, pristine effective borg.txt,
+  receiving profile/selectors and all 45 retained stream-hash pairs. Commands
+  are verified historical reconstruction; JOBS=2 and portable output paths are
+  explicit choices, not invented contemporaneous captures. The full host
+  environment and original argv spelling are not recoverable from the JSON.
+- Preserve strict comparison failure and output hash e06e85e8…; never report
+  the 0/45 complete-summary result as parity. Do not recover unretained opt-in,
+  replay/probe or donor death-postprocessing argv by assumption. The original
+  evidence/map retain their actual outcomes and original source-qualified IDs.
+- No runtime/default/pin change, local gameplay comparison, Cemetery write or
+  population experiment. Source-owned command contracts link immutable evidence.
+  Required checks/CI and owner review precede task integration; #375 follows.
+- #579 review found no blocker. Add the Cemetery clean-tree preflight,
+  explicit expected exit-1 note and pinned donor-script source/hash checks;
+  place this task entry first, preserving the earlier handover entries.
+
 ## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
 
 The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
@@ -5769,29 +5798,3 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Kickoff PR must pass checks and owner review under RULES 1a before merging
   into track-p. Then #374 goes first; #375 follows. No reviewer launched,
   next gameplay policy, population measurement or external evidence rewrite.
-
-
-## 2026-11-18: exact historical validation recipes (#374 / P5)
-
-- Owner authorized continuing after #555/#537 merged into track-p 6aa38d2b.
-  Task uses its own worktree .worktrees/T374 on task/T374-validation-invocations.
-- Add docs/VALIDATION-RECEIPTS.md's future capture contract and portable
-  reconstruction instructions plus harness/recipes/p341-full.json. These are
-  command metadata, not new gameplay reports, and original P341 files/packages
-  stay byte-identical. No original shell history or new 45-start run is claimed.
-- Exact receiving suite SHA-256: 7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed.
-  It has 45 menu-letter starts, nine classes and 100000 turns each. Both roles
-  must use this file; donor's built-in full has another hash and lacks menu.
-- Verify clean pinned Git-tree source hashes 87717140… (receiving) and
-  d07a8547… (donor), every start/config hash, pristine effective borg.txt,
-  receiving profile/selectors and all 45 retained stream-hash pairs. Commands
-  are verified historical reconstruction; JOBS=2 and portable output paths are
-  explicit choices, not invented contemporaneous captures. The full host
-  environment and original argv spelling are not recoverable from the JSON.
-- Preserve strict comparison failure and output hash e06e85e8…; never report
-  the 0/45 complete-summary result as parity. Do not recover unretained opt-in,
-  replay/probe or donor death-postprocessing argv by assumption. The original
-  evidence/map retain their actual outcomes and original source-qualified IDs.
-- No runtime/default/pin change, local gameplay comparison, Cemetery write or
-  population experiment. Source-owned command contracts link immutable evidence.
-  Required checks/CI and owner review precede task integration; #375 follows.
