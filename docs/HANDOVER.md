@@ -5750,3 +5750,22 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - #537 depends on this dedicated refresh; after its approved integration,
   #537 contains only the kickoff plan and its handover. Preserve published
   commits. Neither PR merges until owner review and green CI (RULES 1a).
+
+
+## 2026-11-18: P5 kickoff after accepted P4 (#536)
+
+- Owner requested the next milestone after #477 promoted P4 at 435b07e7.
+  Define bounded P5: #374 exact validation commands/suite identities, then
+  #375's preservation/compatibility design for future reference receipts.
+- Originally synchronized main 6101ca01 from track-p ac293ef7. Review
+  follow-up now includes accepted main c9e58ca0 through prerequisite #555.
+  Fresh task branches must use track-p after approved prerequisite integration.
+- Isolate scripts/refresh-sources.py --update borg-rs and its ledger/all-source
+  inventory in #554/#555. Merge that source-only PR before #537; then this
+  kickoff adds only PLAN and its handover. Original mixed commit e5108d52
+  stays historical; do not amend or force-push it.
+- P4's completion replaces its stale in-progress status in PLAN. Historical
+  validation/packages stay attributed to their original source and hashes.
+- Kickoff PR must pass checks and owner review under RULES 1a before merging
+  into track-p. Then #374 goes first; #375 follows. No reviewer launched,
+  next gameplay policy, population measurement or external evidence rewrite.
