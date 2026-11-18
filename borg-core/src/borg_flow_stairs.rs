@@ -97,19 +97,32 @@ fn track(st: &BorgState, which: Which) -> &StairTrack {
 /// The "Enqueue useful grids" loop: every stair of the list without a
 /// monster parked on it, in list order.
 fn enqueue_stairs(st: &mut BorgState, which: Which) {
+    let mut parked = Vec::new();
+    let mut enqueued = 0;
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
 
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
+            parked.push((y, x));
             i += 1;
             continue;
         }
 
         /* Enqueue the grid */
         borg_flow::borg_flow_enqueue_grid(st, y, x);
+        enqueued += 1;
         i += 1;
+    }
+
+    // borg-reborn-rs (#597): when a monster is parked on every known
+    // staircase of this kind, flow to them anyway: the walk there fights
+    // the monster in the way, or finds the mark stale.
+    if crate::borg_caution::stair_parked_fallback(enqueued, parked.len()) {
+        for (y, x) in parked {
+            borg_flow::borg_flow_enqueue_grid(st, y, x);
+        }
     }
 }
 

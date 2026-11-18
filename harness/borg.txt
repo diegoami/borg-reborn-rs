@@ -610,6 +610,18 @@ borg_param_caution_flee_known_down_max_cost = 40
 
 borg_param_caution_jumpstart_keep_stairs = 0
 
+# The twitch (a random step when the Borg has nothing else to do) never
+# steps into lava without fire immunity: one step deals 100-200 fire
+# damage (#597).
+
+borg_param_caution_twitch_avoid_lava = 1
+
+# When a monster is marked on every known staircase, the stair flows go
+# there anyway instead of finding no staircase: in town the only staircase
+# was refused for a monster on it, harmless or long gone (#597).
+
+borg_param_caution_stair_parked_fallback = 1
+
 # After fleeing town, the stair scum grabs DL1 items near the stairs before
 # going back up, and checks no danger. With the flag 1, skip it while the
 # level is scary, the danger here is above the limit, or the HP is below the

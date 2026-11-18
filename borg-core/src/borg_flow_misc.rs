@@ -1085,6 +1085,11 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#597): nor into lava without fire immunity.
+        if crate::borg_caution::twitch_refuses(u32::from(grid.feat), st.borg.tr(BI_IFIRE) != 0) {
+            continue;
+        }
+
         /* monsters count as walls if afraid */
         if grid.kill != 0 && afraid(st) {
             continue;
@@ -1118,6 +1123,12 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             /* don't twitch into walls */
             /* unless afraid (and even then, not perm walls) */
             if is_wall(&grid) && (!afraid(st) || u32::from(grid.feat) == FEAT_PERM) {
+                dir += 1;
+                continue;
+            }
+
+            // borg-reborn-rs (#597): nor into lava without fire immunity.
+            if crate::borg_caution::twitch_refuses(u32::from(grid.feat), st.borg.tr(BI_IFIRE) != 0) {
                 dir += 1;
                 continue;
             }
