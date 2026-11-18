@@ -443,7 +443,13 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.borg.antibounce_count = 0;
 
             // reset the inviso clock to avoid loops
-            st.borg.need_see_invis = st.borg.time.now;
+            // borg-reborn-rs (#516): C's reset stamps the clock as recent,
+            // which arms the Detect Invisible defence after every rest
+            // (borg_defend_aux_inviso fires while it is recent). With
+            // recover_rest_arms_see_invis 0 a rest leaves the clock alone.
+            if crate::params::value(crate::params::Param::recover_rest_arms_see_invis) != 0 {
+                st.borg.need_see_invis = st.borg.time.now;
+            }
 
             return true;
         } else {

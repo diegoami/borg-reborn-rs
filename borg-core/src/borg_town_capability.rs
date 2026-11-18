@@ -633,11 +633,14 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     }
     // borg-reborn-rs (#452): SPEED left this loop (the escape reserve above).
     curve(BUFF, ordinary, journey.turns * UNIT);
+    // borg-reborn-rs (#516): not afraid, fear cures (a Potion of Boldness)
+    // are worth only up to town_fear_cure_count in the pack (0 = the curve).
+    let fear_cap = i64::from(param(Param::town_fear_cure_count));
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
         curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { ordinary }, if t(condition) > 0 {
             let timed = match cap { CONFUSION => TMD_CONFUSED, BLIND => TMD_BLIND, _ => TMD_AFRAID };
             -(i64::from(engine::player_timed(timed)).max(1) * UNIT)
-        } else { exposure });
+        } else if cap == FEAR && fear_cap > 0 { -fear_cap * UNIT } else { exposure });
     }
     for stat in 0..5 {
         let drained = t(BI_ISFIXSTR + stat as u32) > 0;
