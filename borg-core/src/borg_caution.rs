@@ -70,6 +70,7 @@ const CLASS_PALADIN: i32 = 5;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
+use crate::borg_flow_take::GOAL_TAKE;
 
 /// A literal key (`borg_keypress('R')` etc.).
 fn key(c: u8) -> keycode_t {
@@ -2514,12 +2515,30 @@ fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
 /// below the maximum. The stair scum runs before `borg_caution` and checks
 /// only light, so the Borg picked up items while Grip bit it, one step from
 /// the up staircase home (ranger-2107852048).
+///
+/// When it reports a threat it also cancels a live `GOAL_TAKE` flow: the
+/// stair scum's `borg_flow_old` keeps the goal after each step, and the
+/// "Continue flowing towards objects" step in `borg_think_dungeon` comes
+/// before the flee flows, so a flow committed on an earlier, unthreatened
+/// turn would take the Borg one more step toward the item (review of #550).
 pub(crate) fn stair_scum_threatened(st: &mut BorgState) -> bool {
     if p(Param::caution_stair_scum_threat) == 0 {
         return false;
     }
     let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
-    stair_scum_threat(st.borg.mon.scary, here, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_stair_scum_danger))
+    stair_scum_threatened_with(st, 1, here, p(Param::caution_stair_scum_danger))
+}
+
+/// `stair_scum_threatened` with the flag, the danger here and its limit given.
+fn stair_scum_threatened_with(st: &mut BorgState, flag: i32, here: i32, danger_limit: i32) -> bool {
+    if flag == 0 {
+        return false;
+    }
+    let threat = stair_scum_threat(st.borg.mon.scary, here, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), danger_limit);
+    if threat && i32::from(st.borg.goal.type_0) == i32::from(GOAL_TAKE) {
+        st.borg.goal.type_0 = 0;
+    }
+    threat
 }
 
 /// The threat test of `stair_scum_threatened` (#549).
@@ -3245,6 +3264,43 @@ mod breeder_tests {
         assert!(stair_scum_threat(false, 4, 14, 14, 0), "Grip in view (ranger-2107852048, turn 191)");
         assert!(!stair_scum_threat(false, 4, 14, 14, 4), "danger at the limit");
         assert!(stair_scum_threat(false, 0, 6, 14, 0), "hurt");
+    }
+
+    /// Review of #550: the skip also ends the stair scum's own flow, so no
+    /// `GOAL_TAKE` step follows it; other goals and the unthreatened case
+    /// keep theirs.
+    #[test]
+    fn a_threat_cancels_the_stair_scum_flow() {
+        let scum = || {
+            let mut st = cornered();
+            st.borg.trait_[BI_CURHP as usize] = 14;
+            st.borg.trait_[BI_MAXHP as usize] = 14;
+            st.borg.goal.type_0 = GOAL_TAKE as _;
+            st
+        };
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        assert!(stair_scum_threatened_with(&mut st, 1, 0, 0));
+        assert_eq!(st.borg.goal.type_0, 0, "the scum flow is cancelled");
+
+        let mut st = scum();
+        assert!(stair_scum_threatened_with(&mut st, 1, 4, 0), "danger here");
+        assert_eq!(st.borg.goal.type_0, 0);
+
+        let mut st = scum();
+        assert!(!stair_scum_threatened_with(&mut st, 1, 0, 0), "no threat");
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_TAKE), "no threat: the scum goes on");
+
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        assert!(!stair_scum_threatened_with(&mut st, 0, 0, 0), "flag off");
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_TAKE), "flag off: untouched");
+
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        st.borg.goal.type_0 = GOAL_FLEE as _;
+        assert!(stair_scum_threatened_with(&mut st, 1, 0, 0));
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_FLEE), "a flee flow is kept");
     }
 
     #[test]
