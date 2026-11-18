@@ -447,129 +447,186 @@ borg_reborn_errand = none
 
 borg_reborn_stopscared = off
 
-# Default parameters (#479, owner 2026-11-17): the borg-zoo#170 arm
-# reborn-bundle-plan-speed30 without its errands plan. borg-core's compiled
-# registry keeps the neutral defaults (docs/CALIBRATION.md); these lines set
-# the bundle for every game that reads this file. BORG_PARAM_<NAME> in the
-# environment overrides a line; a zoo profile rewrites it in place.
-# Since #520 a class's own values (the bundle's 16 attack preferences, the
-# point-blank divisor, the healing scale and reserve) live in
-# harness/borg_<class>.txt, folded into the CLASS FILES block below.
-# BORG_PARAM_<NAME>__<CLASS> overrides one class's value.
-borg_param_caution_heal_when_outmatched = 1
+
+### Default parameters ###
+
+# The settings below are the shipped defaults (#479). The compiled core keeps
+# neutral values (docs/CALIBRATION.md); these lines change them for every game
+# that reads this file. BORG_PARAM_<NAME> in the environment overrides a line,
+# and a zoo profile rewrites it in place. A setting of 0 turns a feature off.
+# A class's own values live in harness/borg_<class>.txt, folded into the
+# CLASS FILES block at the end (#520); BORG_PARAM_<NAME>__<CLASS> overrides
+# one class's value.
+
+
+### Combat ###
+
+# Drink a Potion of Speed before a fight the Borg has committed to, when the
+# danger of the monsters that can move is above this many tenths of its
+# avoidance (#469).
+
 borg_param_attack_speed_fight_danger_tenths = 30
-# #493: the live town planner's gold reserve, kept outside the urgent needs:
-# the larger of a fixed amount and a percent of the purse (owner: 0).
+
+# Divide the damage of a shot or throw at an adjacent non-unique monster by
+# this (launcher ammo and thrown objects, not Magic Missile) (#485). The
+# class files set 2 for Rangers and 3 for Rogues.
+
+borg_param_attack_arrow_point_blank_divisor = 5
+
+# Count a living monster as having at least this many hit points (#546).
+# Without it a monster left with 1 HP (a floating eye at 1/9) counts as 0
+# and no attack seems worth making.
+
+borg_param_kill_live_min_power = 1
+
+
+### Healing and town shopping ###
+
+# Hurt and outmatched after every escape was declined: drink a Cure Light,
+# Serious or Critical Wounds potion instead of attacking.
+
+borg_param_caution_heal_when_outmatched = 1
+
+# Gold the town planner keeps back from shopping: the larger of a fixed
+# amount and a percent of the purse (#493).
+
 borg_param_town_gold_reserve = 0
 borg_param_town_gold_reserve_percent = 0
-# #485 (owner, 2026-11-17): the damage of a shot or throw at an adjacent
-# non-unique is divided by this (launcher ammo and thrown objects, not Magic
-# Missile). The default is borg-rs's 5; a class overrides it in its class
-# file (harness/borg_<class>.txt, #520).
-# Owner: 2 for Rangers (a bow competes with melee point blank), 3 for
-# Rogues (the second missile class), the default 5 for the rest.
-borg_param_attack_arrow_point_blank_divisor = 5
-# #491 (owner, 2026-11-17: "we can never have enough healing"): the live town
-# planner (borg_town_plan = 1) values healing linearly, at the healing
-# curve's first-HP value, up to this percent of max HP (100 = once max HP
-# of healing; 0 = off), on top of the curve; healing is bought first and
-# never sold below it. The curve past it is stretched by the scale percent
-# (100 = the historical curve). Healing speed (owner: "budget healing speed
-# as well"): a potion that heals at least the speed percent of max HP in one
-# swallow counts in full, a smaller one heal x heal / (that share of max HP),
-# so Cure Light Wounds loses value above 30 max HP and a deep character
-# prefers Cure Serious Wounds, then Healing (0 = HP alone). Compiled
-# defaults: 0, 100 and 0.
+
+# Healing potions to keep, in percent of max HP (#491, #487). The planner
+# buys healing first and never sells below this. The class files raise it
+# for fragile casters (300 for Mages) and keep it at 100 for Warriors.
+
 borg_param_town_heal_reserve_hp_percent = 100
-borg_param_town_heal_curve_scale_percent = 125
-borg_param_town_heal_speed_percent = 66
-# #539 (owner, 2026-11-18): fleeing, walk to any reachable staircase and read
-# Word of Recall only when none is reachable; no Phase Door while the
-# monster is still distant (only with an awake monster next to the Borg, or
-# one in view with a ranged attack). 0 = off.
-borg_param_caution_flee_stairs_before_recall = 1
-borg_param_escape_phase_adjacent_only = 1
-# With no staircase reachable, fight a scary monster at range with the best
-# ranged attack before reading Recall or a Phase Door (owner). 0 = off.
-borg_param_caution_scary_ranged_no_stairs = 1
-# #546 (owner, 2026-11-18): a living monster is estimated at least 1 HP, so
-# a monster left with 1 HP (a floating eye at 1/9 HP was estimated at 0) is
-# still worth attacking. 0 = off.
-borg_param_kill_live_min_power = 1
-# #504 (owner, 2026-11-17, #488 slice B): cornered (no Phase Door, teleport
-# or escape, a monster within the radius, danger at or above the HP), the
-# Borg uses every buff it has regardless of the usual danger windows (fear
-# cure, Speed, Heroism, Berserk Strength, Blessing), reads Monster Confusion
-# against an adjacent unique or higher-level monster, and a melee class
-# (Warrior, Paladin, Rogue, Blackguard) neither retreats nor backs away.
-# 0 = off (the control).
-borg_param_caution_cornered = 1
-borg_param_caution_cornered_danger_tenths = 10
-borg_param_caution_cornered_radius = 2
-borg_param_caution_cornered_big_level_margin = 0
-# Owner: when fighting breeders and things seem hard (no easy escape, danger
-# at or above half the HP), the same boosts: Speed, Heroism, Berserk
-# Strength, Blessing. 0 = off.
-borg_param_caution_breeder_boost_danger_tenths = 5
-# #487 (owner): the reserve counts the real HP restored; healing speed only
-# weights the healing curve (prefer Cure Serious over Cure Light when both
-# sell), not how many potions fill the reserve. 0 = speed-weighted (#491).
+
+# Count the real HP a potion restores towards that reserve (#487). 0 = count
+# speed-weighted HP.
+
 borg_param_town_heal_reserve_real_hp = 1
-# #487 (owner, 2026-11-17): 400% of max HP of healing was too much (a CL8
-# Warrior bought 26 Cure Light Wounds in one visit and kept 712 gold): the
-# general reserve is 100 and the general curve scale 125 (owner). A class
-# overrides both in its class file (harness/borg_<class>.txt, #520):
-# fragile casters value healing more, warriors less (owner:
-# scale 150 for mages, 50 for warriors; reserve 300 for mages, 100 for
-# warriors; the rest in between).
-# #487 (owner): a Shovel only clears rubble (the engine swaps it in; a
-# weapon digs rubble too), yet four of five first visits spent 66 of 118-292
-# gold on one. Below this much gold the planner values no digging (0 = off).
+
+# How much more healing is worth beyond the reserve, in percent of the
+# historical curve (#491). The class files set 150 for Mages, 50 for
+# Warriors.
+
+borg_param_town_heal_curve_scale_percent = 125
+
+# Healing speed: a potion that heals at least this percent of max HP in one
+# swallow counts in full, a smaller one less, so a deeper character prefers
+# Cure Serious Wounds, then Healing (#491).
+
+borg_param_town_heal_speed_percent = 66
+
+# Below this much gold, buy no digger (#487): a Shovel only clears rubble,
+# and early visits spent half their gold on one.
+
 borg_param_town_digger_min_gold = 500
-# #503 (owner, 2026-11-17, #488 slice A): with breeders on the level and no
-# easy escape (no free staircase within the steps, no Phase Door, teleport,
-# Teleport Level, escape or recall), the Borg stands and fights them at once,
-# and while only breeders are near it does not retreat: breeders no longer
-# make it flee. Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt
-# breeders while at most the hunt count are known. 0 = off (the control).
-# The C Borg's hard-coded "scary" monsters (by character level) and the
-# low-level door scares mark the level scary until a new level: the Borg
-# leaves and flees, will not hunt, and once fled from a small kobold seen
-# once for 54,000 game turns. Off since #503; on again (owner, 2026-11-17)
-# after borg-zoo#216: with the breeder stand on, 1 death with the list
-# against 4 without. 0 = off; the resist-based scares (nether, blindness,
-# chaos, confusion, poison) stay either way. #518 moves the list to a data
-# file by class and level.
-borg_param_caution_scary_named_monsters = 1
-# The named scary monsters come from this file (#518, owner 2026-11-17):
-# a range per monster scaled by class fragility, C's list as the tough end.
-# none = the compiled C list (harness/scary_monsters_c.txt is the same list
-# as a file). harness/run.sh and the zoo copy the file next to borg.txt and
-# pin its hash.
-borg_scary_list = scary_monsters.txt
-# A monster on the level is scary when one character turn of its melee (the
-# average of its blows' damage times its moves per character turn) can take at
-# least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It
-# adds to the named list: any monster, scaled to the character (Fang is
-# scary to a 10-HP mage, not to an 80-HP warrior). Spells are not counted.
-borg_param_caution_scary_damage_percent = 60
+
+
+### Fleeing ###
+
+# Fleeing, walk to a reachable staircase, and read Word of Recall only when
+# none is reachable (#539).
+
+borg_param_caution_flee_stairs_before_recall = 1
+
+# Read Phase Door only with an awake monster next to the Borg, or one in view
+# that has a ranged attack, not while the monster is still distant (#539).
+
+borg_param_escape_phase_adjacent_only = 1
+
+# On a scary level with no reachable staircase, attack the monster at range
+# with the best ranged attack before reading Recall or Phase Door (#539).
+
+borg_param_caution_scary_ranged_no_stairs = 1
+
+# Fleeing with no up staircase known, walk to a known down staircase at any
+# distance, and keep the known stairs when bravery is boosted (#544).
+# Off here.
+
+borg_param_caution_flee_known_down_stairs = 0
+
+
+### Cornered ###
+
+# Cornered: no Phase Door, teleport or escape, a known monster within the
+# radius, and danger at or above the HP (#504). Then the Borg uses every buff
+# it has (fear cure, Speed, Heroism, Berserk Strength, Blessing), reads
+# Monster Confusion against an adjacent unique or higher-level monster, and a
+# melee class (Warrior, Paladin, Rogue, Blackguard) does not retreat.
+
+borg_param_caution_cornered = 1
+
+# Danger, in tenths of the HP, at which the Borg counts as cornered
+# (10 = danger at or above the HP).
+
+borg_param_caution_cornered_danger_tenths = 10
+
+# Cornered only with a known monster within this many grids.
+
+borg_param_caution_cornered_radius = 2
+
+# An adjacent monster counts as big (worth Monster Confusion) when it is a
+# unique or its level exceeds the Borg's by more than this.
+
+borg_param_caution_cornered_big_level_margin = 0
+
+
+### Breeders ###
+
+# With breeders on the level and no easy escape, stand and fight them: they
+# no longer make the level scary or the Borg flee, and while only breeders
+# are near it does not retreat (#503).
+
 borg_param_caution_breeder_fight = 1
+
+# A free staircase within this many grids is an easy escape (as are Phase
+# Door, teleport, Teleport Level, an escape or Word of Recall).
+
 borg_param_caution_breeder_easy_escape_steps = 5
+
+# Standing against breeders, with one within this many grids and no other
+# monster near, the Borg neither retreats nor backs away.
+
 borg_param_caution_breeder_stand_radius = 5
+
+# Melee classes (Warrior, Paladin, Rogue, Blackguard) hunt breeders below
+# CL10 while at most this many are known on the level.
+
 borg_param_caution_breeder_hunt_max_count = 4
-# #544 (owner, 2026-11-18, priest-1055640847's dead-end worm room): two
-# escapes the Borg missed, each on its own flag for a zoo arm. Off here (the
-# control).
-#   B, breeder exit: only breeders near, one adjacent, danger here at or
-#     above the HP or surrounded: walk to the nearest known chokepoint (a
-#     corridor or doorway grid: its passable known neighbours form two or more
-#     groups) at least the distance from every breeder.
-#   A+K, flee to known down stairs: fleeing with no up staircase known, walk
-#     to a known down staircase at any distance (the desperate flow), and the
-#     stuck jumpstart (bravery boost 3) keeps the known stairs.
+
+# Fighting breeders with no easy escape and danger at or above this many
+# tenths of the HP (5 = half), use the cornered buffs: Speed, Heroism,
+# Berserk Strength, Blessing (#504).
+
+borg_param_caution_breeder_boost_danger_tenths = 5
+
+# Breeder exit (#544): with only breeders near, one adjacent, and danger at or
+# above the HP (or surrounded), walk to the nearest known corridor or doorway
+# at least the distance below from every breeder. Off here.
+
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
-borg_param_caution_flee_known_down_stairs = 0
+
+
+### Scary monsters ###
+
+# Named scary monsters make the level scary until a new level: the Borg
+# leaves and flees and does not hunt (#503, #518). The resist-based scares
+# (nether, blindness, chaos, confusion, poison) apply either way.
+
+borg_param_caution_scary_named_monsters = 1
+
+# The list of named scary monsters, by class and character level (#518).
+# none = the C Borg's compiled list. harness/run.sh and the zoo copy the
+# file next to borg.txt and pin its hash.
+
+borg_scary_list = scary_monsters.txt
+
+# A monster is also scary when one character turn of its melee can take at
+# least this percent of max HP, so Fang is scary to a 10-HP Mage but not to
+# an 80-HP Warrior (#505). Spells are not counted.
+
+borg_param_caution_scary_damage_percent = 60
 
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only
