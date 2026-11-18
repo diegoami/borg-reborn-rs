@@ -48,7 +48,8 @@ With the owner's `borg.txt` of main `fba1c6e0` (`borg_trip_unknown_stacks
 = 2`, `caution_stair_scum_threat = 1`), merged into this branch: off and
 shipped play identical keys in 18/18 games. In both arms, 1 death
 (Blackguard 1472012981, a cave spider), sum of CL 101 and max depth 38. The
-death is the new `borg.txt`'s, not this change's.
+death is the new `borg.txt`'s, not this change's: it comes from
+`borg_trip_unknown_stacks = 2` (with 5 the game lives).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

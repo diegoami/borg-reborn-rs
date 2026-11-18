@@ -19,8 +19,11 @@ afraid scary monster should stop being scary.
   off; the Ranger shoots a 4-HP Grip.
 - With the owner's `borg.txt` of `fba1c6e0` merged in, off and shipped
   are identical (18/18). Both have 1 death: Blackguard 1472012981, a cave
-  spider, which no arm had before that `borg.txt`. This is worth a look
-  under #549/#248's new values.
+  spider, which no arm had before that `borg.txt`. It comes from
+  `borg_trip_unknown_stacks = 2`: with 5 the game lives to 100,000, and
+  with `caution_stair_scum_threat = 0` it still dies. At turn 42,023 it is
+  surrounded by a soldier, a salamander and a cave spider. A lead for
+  borg-zoo#248.
 - **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
   against 107, and max depth 39 against 43, on the 18 starts. Both arms had
   0 deaths. Details in docs/CALIBRATION.md.
