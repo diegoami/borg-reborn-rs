@@ -10,6 +10,40 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Town never scary (#604)
+
+The registry now holds **2153** parameters (one added). Owner, 2026-11-18:
+"Could we try a setting where we always fight monsters in town, I have never
+got killed by monsters in town." On 18 classes-18 starts (100,000 turns,
+main `ed3ffc04`) the town was scary 2,017 times, nearly always because of
+five town residents on the scary list: the battle-scarred veteran (669 of
+1,890 attributed), the mean-looking mercenary (591), the filthy street
+urchin (456), the squint-eyed rogue (424) and Farmer Maggot (259). Each
+scare sends the Borg down to DL1, from where "finish shopping" brings it
+back up, so it shuttled between town and DL1 2,831 times.
+
+`caution_town_never_scary` (compiled 0, written out at 0): in town no
+monster makes the level scary; the danger rules still apply.
+
+| on the 18 starts | main | switch on |
+|---|---:|---:|
+| deaths | 3 | 2 |
+| sum of character levels | 93 | 105 |
+| sum of max depth | 35 | 39 |
+| town scares | 2,017 | 0 |
+| town <-> DL1 moves | 2,831 | 1,286 |
+| game turns in town | 484,073 | 298,362 |
+| hits from town monsters | 61 | 80 |
+| thefts in town | 9 | 6 |
+| deaths in town | 0 | 0 |
+
+With the switch at 0 the 18 games are identical to main. Direction only: 18
+games, no zoo run.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_town_never_scary` | 0 | flag | 0–1 | `borg_caution.rs` (`town_never_scary`, read in `borg_flow_kill.rs` `borg_near_monster_type`) |
+
 ## The twitch and the parked staircase (#597)
 
 The registry now holds **2152** parameters (two added). priest-809881907 died in lava in town: the only known staircase had a monster marked on it, so every stair flow had no goal and the Borg twitched until a random step went into lava (100 + 1d100 fire damage).
