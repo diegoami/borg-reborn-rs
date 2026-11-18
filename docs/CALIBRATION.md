@@ -10,6 +10,23 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Fleeing: stairs, range, no pointless Phase Door (#539)
+
+The registry now holds **2119** parameters (2116 after #520; three added). Owner,
+2026-11-18, from the Priest 809881907 (borg-zoo#227), who read its only Word of
+Recall with the up staircase 8 steps away, rested while Grip closed in, phased
+twice from a dog twice its speed and died meleeing with 17 flasks of oil: "use
+recall only if a stair is not reachable at all", "do not phase door when a
+monster is still distant", and with no stairs "the best available ranged
+attack" before Recall and Phase Door. Compiled 0 (C's behaviour); `harness/borg.txt`
+ships all three at 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_flee_stairs_before_recall` | 0 | flag | 0–1 | `borg_caution.rs` (`stairs_before_recall`: no Recall while the flee flows' stair flow reaches a free staircase) |
+| `escape_phase_adjacent_only` | 0 | flag | 0–1 | `borg_escape.rs` (`phase_is_pointless`: a Phase Door only with an awake monster adjacent, or one in view with a ranged attack) |
+| `caution_scary_ranged_no_stairs` | 0 | flag | 0–1 | `borg_caution.rs` (`scary_ranged_no_stairs`: no staircase reachable, a scary level lets `borg_attack` target an awake monster in view at range; Recall and Phase Door wait while there is one and the attack planner has a missile or a throwable object) |
+
 ## Class values and class files (#520)
 
 The registry now holds **2116** parameters (2191 before; 81 per-class
