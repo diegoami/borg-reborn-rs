@@ -71,7 +71,9 @@ pub struct Borg {
     pub dont_react: bool,
     /// borg-reborn-rs (#551): the Borg queued its own change back from fox
     /// shape (to fight, or the end of a flight): the game's "Change back
-    /// and ...?" prompt is answered `r`, not `y`.
+    /// and ...?" prompt is answered `r`, not `y`. It lives as long as the
+    /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
+    /// the player is no longer shapechanged.
     pub fox_revert: bool,
     pub targeting: bool,
     pub goal: BorgGoal,

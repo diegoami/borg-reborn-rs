@@ -559,15 +559,21 @@ pub(crate) fn revert_fox_to_fight(st: &mut BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#551): the speed a flight is worth to the stand
-/// decision: a Druid that is a fox, or could cast Fox Form, moves at
-/// `escape_fox_form_speed` more (`MOVES[1]` halves a step's energy: +10 at
-/// normal speed, `extract_energy` 10 to 20).
+/// decision (`MOVES[1]` halves a step's energy: +10 at normal speed,
+/// `extract_energy` 10 to 20). A fox moves at `escape_fox_form_speed`
+/// more. A Druid that can cast Fox Form, and will at the first flight step
+/// at least `escape_fox_form_min_steps` from its goal, counts
+/// `escape_fox_form_stand_speed` more (review of #594: granted on the
+/// ability, so a parameter of its own, measured apart). More speed means
+/// fewer pursuers, so fewer stands and more flights.
 pub(crate) fn flight_speed_bonus(st: &BorgState) -> i32 {
     if !fox_form_on() || engine::player_depth() == 0 {
         return 0;
     }
-    if is_fox() || borg_spell_okay_fail(st, FOX_FORM, param(Param::escape_fox_form_fail)) {
+    if is_fox() {
         param(Param::escape_fox_form_speed)
+    } else if borg_spell_okay_fail(st, FOX_FORM, param(Param::escape_fox_form_fail)) {
+        param(Param::escape_fox_form_stand_speed)
     } else {
         0
     }
@@ -605,6 +611,10 @@ mod fox_form_tests {
         assert_eq!(super::change_back_answer(&mut st), b'r', "its own change back");
         assert!(!st.borg.fox_revert, "answered once");
         assert_eq!(super::change_back_answer(&mut st), b'y');
+        // Review of #594: a flushed `v` takes its flag with it.
+        st.borg.fox_revert = true;
+        crate::borg_io::borg_flush(&mut st);
+        assert_eq!(super::change_back_answer(&mut st), b'y', "a flushed change back answers no later prompt");
     }
 
     #[test]

@@ -604,6 +604,7 @@ borg_param_escape_fox_form = 0
 borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
+borg_param_escape_fox_form_stand_speed = 10
 
 # On a scary level with no reachable staircase, attack the monster at range
 # with the best ranged attack before reading Recall or Phase Door (#539).
