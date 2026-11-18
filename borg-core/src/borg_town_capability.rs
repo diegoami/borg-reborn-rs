@@ -600,12 +600,13 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
-    // (worth the full trip weight each, nothing past them) while the walk
-    // they save is worth less: a shallow Borg otherwise never buys one and
+    // (worth the full trip weight each, nothing past them) at any depth: the
+    // walk it saves is always worth less than the full weight (the journey
+    // includes the exploring), so a shallow Borg otherwise never buys one and
     // walks home, and the walk can fail (priest-1055640847).
     let walk_value = cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1);
     let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
-    if recall_reserve > 0 && walk_value < cfg(BORG_TOWN_W_TRIP) * UNIT {
+    if recall_reserve > 0 {
         curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
     } else {
         curve(RECALL, walk_value, UNIT);

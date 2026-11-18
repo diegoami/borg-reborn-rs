@@ -255,7 +255,7 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:607` (#557: this many Word of Recall are a requirement at the full trip weight each while the walk they save is worth less; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:608` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 
 ## Breeders and named scary monsters (#503)
 

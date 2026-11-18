@@ -10,7 +10,8 @@ less than gold at DL1-3), and walking home bounces DL2<->DL3 with
 connected stairs (8 times from the owner's save on main).
 
 - `town_recall_reserve` (0): that many Recall scrolls are a requirement at
-  the full trip weight while the walk is worth less. It is set in the live
+  the full trip weight, at any depth (review: the walk is never worth the
+  full weight, so a depth condition never applied and was dropped). It is set in the live
   capability model (`borg_town_capability.rs`), which values purchases when
   present, and in `borg_town_utility.rs`'s need model. From birth with 1,
   the Borg reads its starting Recall at 77,690 and buys and keeps a new one at
