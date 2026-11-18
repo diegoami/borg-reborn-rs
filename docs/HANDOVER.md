@@ -23,6 +23,23 @@ Two reviews of #569 accepted #539's last part (`fba1c6e0..4a482c58`, on
 - **Owner's decision:** RULES 4's AI attribution trailers already on `main`
   (a cleanup pass or a CI guard; published commits cannot be amended, RULES 5).
 
+## 2026-11-18: when the Borg buys Word of Recall (#557)
+
+Owner: make the Recall rules adjustable, and value Recall more instead of a
+reserve. Two new settings, both neutral in `harness/borg.txt`:
+- `town_recall_value_percent` (100): the town planner values a scroll at
+  this percent of the walk it saves (capability and need models).
+- `prepared_recall_depth` (5 = C): a descent to this depth or deeper needs
+  one Recall carried. It only stops descents.
+- Already a setting, and found inert for purchases under the shipped
+  planner: `power_inventory_clevel_threshold_3` (7), the old power scorer's
+  "Recall only above CL7".
+
+The six borg-play games from birth with the shipped `borg.txt`, 100,000
+turns (Recall bought in how many games): value 100% 0/6, 300% 1/6, 1000%
+4/6 (up to 3 scrolls); threshold 0: 0/6; recall depth 2: 1/6, and with
+1000% the same as 1000% alone. Defaults: smoke 3/3 identical.
+
 ## 2026-11-18: no class values for the breeder hunt count (#574)
 
 Owner, after #561: "I do not want those setting set in the main right now,

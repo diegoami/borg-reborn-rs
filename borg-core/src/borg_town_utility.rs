@@ -162,7 +162,9 @@ impl Utility {
             // borg-reborn-rs (#557): the first `recall_reserve` scrolls are
             // worth the full weight each, at any depth: without one a shallow
             // Borg walks home, and the walk can fail (priest-1055640847).
-            Need::Trip => (coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk))
+            Need::Trip => crate::borg_town_capability::recall_value_scaled(
+                coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk),
+            )
                 .max(w * amount.min(self.recall_reserve * UNIT)),
             Need::Healing if self.cut && !self.cure_spell => {
                 (coverage(w, amount, self.journey.demand(need)) * self.journey.exposure() / UNIT)
