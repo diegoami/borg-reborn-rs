@@ -3229,6 +3229,10 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     if st.borg.goal.recalling != 0 || rising_holds_flee_descent(st) {
         return false;
     }
+    // Desperate before the enqueue too: `borg_flow_enqueue_grid` rates an
+    // unknown staircase grid's danger unless the flow ignores danger
+    // (review of #566; `desperate_flow` set it before the whole flow).
+    st.borg.status.desperate = true;
     crate::borg_flow::borg_flow_clear(st);
     for i in 0..st.stairs.more.num.max(0) as usize {
         let (x, y) = (st.stairs.more.x[i], st.stairs.more.y[i]);
@@ -3236,7 +3240,6 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
             crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
         }
     }
-    st.borg.status.desperate = true;
     crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
     let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE)
         && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);

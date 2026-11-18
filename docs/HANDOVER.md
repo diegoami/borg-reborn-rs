@@ -28,6 +28,22 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
   HP 34, staircase 24 flow away); the game had diverged. #240's three newly
   killed (Ranger 1739161339, Warrior 1019921749, Druid 102023799) live in
   every arm here, but this tree is not #240's.
+- **Review of #566:** `status.desperate` is now set before the staircases
+  are enqueued (`borg_flow_enqueue_grid` rates an unknown staircase grid's
+  danger unless the flow ignores it), as `desperate_flow` did. Recall is no
+  escape for "cornered" here (as #504), though it is one for #503's easy
+  escape: the two disagree on purpose. `borg_surrounded` is checked only
+  with a monster adjacent, and prints its own "Possibility of being
+  surrounded" note.
+- **After syncing with main `4a482c58`** (the owner's new `borg.txt` values
+  and #539), ctl and narrow again: 1 death in both (Blackguard 1472012981,
+  a cave spider, as in #539's runs), the note 3 times in 1 game (Rogue
+  1381972077, alive), the other 17 games key-for-key the ctl. Main has
+  since taken #565 (DL1 flight Recall gate, shipped 2); not rerun with it.
+- **Grandfathered trailers (owner, 2026-11-18):** the first two commits of
+  #566 (`22ed701e`, `1310b46a`) carry a `Co-Authored-By` trailer against
+  RULES 4. The owner chose not to force-push the task branch, so they stay,
+  like the earlier pair; no later commit has one.
 - **Not run: the worm room** (`~/borg-play/priest-1055640847` is not on this
   computer, and #545's turn gate was never committed).
 
