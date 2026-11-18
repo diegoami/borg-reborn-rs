@@ -604,7 +604,9 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // walk it saves is always worth less than the full weight (the journey
     // includes the exploring), so a shallow Borg otherwise never buys one and
     // walks home, and the walk can fail (priest-1055640847).
-    let walk_value = cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1);
+    // borg-reborn-rs (#557, owner): `town_recall_value_percent` scales what
+    // the walk a scroll saves is worth (100 = as computed).
+    let walk_value = recall_value_scaled(cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1));
     let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
     if recall_reserve > 0 {
         curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
@@ -1180,5 +1182,28 @@ mod class_heal_tests {
         }
         assert_eq!(heal_curve_scale_percent(99), param(Param::town_heal_curve_scale_percent));
         assert_eq!(heal_reserve_hp_percent(99), param(Param::town_heal_reserve_hp_percent));
+    }
+}
+
+/// borg-reborn-rs (#557, owner): a Word of Recall's value (the walk it
+/// saves) times `town_recall_value_percent` / 100.
+pub(crate) fn recall_value_scaled(value: i64) -> i64 {
+    scale_percent(value, param(Param::town_recall_value_percent))
+}
+
+fn scale_percent(value: i64, percent: i32) -> i64 {
+    value.saturating_mul(i64::from(percent.max(0))) / 100
+}
+
+#[cfg(test)]
+mod recall_value_tests {
+    use super::scale_percent;
+
+    #[test]
+    fn the_recall_value_scales_by_its_percent() {
+        assert_eq!(scale_percent(1000, 100), 1000, "100 = as computed");
+        assert_eq!(scale_percent(1000, 500), 5000, "five times");
+        assert_eq!(scale_percent(1000, 0), 0);
+        assert_eq!(scale_percent(1000, -5), 0, "never negative");
     }
 }

@@ -195,6 +195,15 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
         return Some("5 Food");
     }
 
+    // borg-reborn-rs (#557, owner): `prepared_recall_depth` moves C's
+    // "1 recall" (from depth 5) shallower: below 5 it is checked here, after
+    // light and food and before the DL1 and DL2 returns, so 1 and 2 gate
+    // the depths they name; from 5 on it stays where C has it.
+    let recall_depth = crate::params::value(crate::params::Param::prepared_recall_depth);
+    if depth < 5 && needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
+        return Some("1 recall");
+    }
+
     // Usually ready for level 1
     if depth <= 1 {
         return None;
@@ -354,7 +363,7 @@ fn borg_prepared_aux(st: &mut BorgState, depth: i32) -> Option<&'static str> {
     }
 
     // Scrolls of Word of Recall
-    if b.tr(BI_RECALL) < 1 {
+    if needs_recall(depth, recall_depth, b.tr(BI_RECALL)) {
         return Some("1 recall");
     }
 
@@ -1072,4 +1081,25 @@ pub fn borg_must_return_to_town(st: &mut BorgState) -> Option<Reason> {
 
     // need to return to town if restock is needed
     borg_restock(st, st.borg.tr(BI_CDEPTH))
+}
+
+/// borg-reborn-rs (#557): a descent to `depth` needs a Word of Recall from
+/// `recall_depth` on (C: 5; 0 = never).
+fn needs_recall(depth: i32, recall_depth: i32, carried: i32) -> bool {
+    recall_depth > 0 && depth >= recall_depth && carried < 1
+}
+
+#[cfg(test)]
+mod recall_depth_tests {
+    use super::needs_recall;
+
+    #[test]
+    fn a_descent_needs_a_recall_from_the_set_depth() {
+        assert!(!needs_recall(4, 5, 0), "C: DL4 without one");
+        assert!(needs_recall(5, 5, 0), "C: DL5 needs one");
+        assert!(!needs_recall(5, 5, 1), "carried");
+        assert!(needs_recall(2, 2, 0), "moved to DL2");
+        assert!(!needs_recall(1, 2, 0));
+        assert!(!needs_recall(30, 0, 0), "0 = never");
+    }
 }
