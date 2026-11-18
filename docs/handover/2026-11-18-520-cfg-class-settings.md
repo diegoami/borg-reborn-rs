@@ -1,0 +1,32 @@
+## 2026-11-18: class values for the core's borg.txt settings (#520, second half)
+
+#534 gave every `borg_param_*` a value per class. This does the same for the
+core's own `borg.txt` settings (`borg_*`, `BORG_SETTINGS`), such as the
+shopping weights `borg_town_w_*`, which a class file could not override
+before: folded into the one `borg.txt`, its line applied to every class.
+
+- **The line:** `borg_<name>@<class> = <value>` (`borg_init.rs`,
+  `class_setting_line`). It is kept apart while the file is read, so it never
+  changes the common value. A `borg_param_*` class line stays params.rs's.
+- **When it applies:** after the file is read (and after the range checks of
+  `finish_txt_settings`), each setting with class lines remembers its common
+  value. `borg_prepare_race_class_info` (birth and every reincarnation) and
+  the end of `borg_init_txt_file` (a `$` reload) then give it the current
+  class's value, or the common one. Settings without class lines are
+  untouched, so runtime values such as the money-scum amount survive.
+- **Refused, with a Borg warning:** an unknown class or setting, or no
+  value.
+- **The class files:** `scripts/borg-class-files.py` now accepts `borg_*`
+  lines and folds them as `borg_<name>@<class>`. It checks each name against
+  `BORG_SETTINGS`, and refuses the shell's keys (`borg_reborn_*`,
+  `borg_plan`, `borg_scary_list`) and `borg_respawn_*`.
+- **Shipped files unchanged:** no class file has a `borg_*` line yet, so
+  `harness/borg.txt` is byte for byte the same and every game plays as on
+  main.
+- **docs/ZOO-INTERFACE.md**, *Class values*: the new lines, and that a zoo
+  profile cannot write one (`BORG_TXT_SET` names have no `@`).
+
+Left for the owner: which `borg_*` values (e.g. the healing and Phase Door
+weights of #520's evaluation) go into which class file, measured as a zoo arm
+first. No environment form (`BORG_*__<CLASS>`) for these settings: the
+params.rs one (decision B) covers `borg_param_*` only.

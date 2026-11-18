@@ -193,6 +193,18 @@ Precedence: compiled default < `borg.txt` < a `borg.txt` class line <
 `BORG_PARAM_<NAME>` < `BORG_PARAM_<NAME>__<CLASS>`. The character's class picks
 its values (also after a reincarnation into another class).
 
+Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
+`BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
+`borg_town_w_*`) have class values too, as `borg_<name>@<class> = <value>`
+lines. The character's class applies at birth and at every reincarnation; a
+setting with no line for that class keeps its common value. A line with an
+unknown class or setting, or no value, is refused with a Borg warning. The
+keys the shell reads (`borg_reborn_*`, `borg_plan`, `borg_scary_list`) and
+`borg_respawn_*` have no class value, and there is no environment form for
+these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
+are `[A-Za-z0-9_.-]`); it rewrites the common line, and a class line in the
+shipped file still wins for its class.
+
 The repository keeps each class's settings in `harness/borg_<class>.txt`;
 `scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a
 generated "CLASS FILES" block (under the legacy names where one exists, so a

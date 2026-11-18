@@ -25,8 +25,15 @@ class ClassFilesTest(unittest.TestCase):
         self.assertEqual(bcf.class_lines('mage', '# c\n\nborg_param_caution_cornered = 0 # off\n'),
                          ['borg_param_caution_cornered@mage = 0'])
 
+    def test_core_settings_get_the_class_suffix(self):
+        # #520's second half: the core's borg_* settings (BORG_SETTINGS).
+        self.assertEqual(bcf.class_lines('priest', 'borg_town_w_light = 150\nborg_worships_damage = TRUE\n'),
+                         ['borg_town_w_light@priest = 150', 'borg_worships_damage@priest = TRUE'])
+
     def test_bad_lines_are_refused(self):
-        for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1']:
+        for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1',
+                    'borg_reborn_core = borg-rs', 'borg_plan = errands_plan.txt', 'borg_scary_list = none',
+                    'borg_town_w_light@mage = 1', 'town_w_light = 1', 'borg_town_w_ligth = 1']:
             with self.assertRaises(SystemExit):
                 bcf.class_lines('mage', bad)
 

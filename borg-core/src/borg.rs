@@ -273,6 +273,12 @@ impl Borg {
 pub struct CoreState {
     /// Configuration from borg.txt (`borg_cfg`), indexed by `BORG_*`.
     pub cfg: Vec<i32>,
+    /// borg-reborn-rs (#520): the class lines of borg.txt
+    /// (`borg_<name>@<class> = <value>`), as (setting, class `cidx`, value),
+    /// and each such setting's common value (after the range checks), so a
+    /// class change puts back the common value (`apply_class_settings`).
+    pub cfg_class: Vec<(usize, usize, i32)>,
+    pub cfg_common: Vec<(usize, i32)>,
     /// The Borg's own RNG state, swapped in around `borg_think()`
     /// (`borg_rand_local`).
     pub rand_local: u32,
@@ -290,6 +296,8 @@ impl Default for CoreState {
     fn default() -> Self {
         CoreState {
             cfg: Vec::new(),
+            cfg_class: Vec::new(),
+            cfg_common: Vec::new(),
             rand_local: 0,
             engine_date: "Nov  4 2026",
             step: 0,

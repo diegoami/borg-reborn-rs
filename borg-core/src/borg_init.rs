@@ -414,6 +414,8 @@ pub(crate) fn read_txt_settings<E: TxtEnv>(env: &mut E) -> (bool, bool) {
 
     // allocate the config data and start it with the default values
     env.st().core.cfg = BORG_SETTINGS.iter().map(|s| s.default_value).collect();
+    env.st().core.cfg_class.clear();
+    env.st().core.cfg_common.clear();
 
     let mut buf = [0u8; TXT_BUF];
 
@@ -428,6 +430,16 @@ pub(crate) fn read_txt_settings<E: TxtEnv>(env: &mut E) -> (bool, bool) {
         buf[TXT_BUF - 1] = 0;
         let len = buf.iter().position(|&c| c == 0).expect("NUL-terminated");
         let line = &buf[..len];
+
+        // borg-reborn-rs (#520): a class line, `borg_<name>@<class> = <value>`,
+        // is kept apart and applied for that class only (`apply_class_settings`).
+        if let Some(class_line) = class_setting_line(line) {
+            match class_line {
+                Ok(entry) => env.st().core.cfg_class.push(entry),
+                Err(what) => env.warning(&what),
+            }
+            continue;
+        }
 
         let mut i = 0;
         while i < n {
@@ -643,7 +655,75 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
         fp.close();
     }
 
-    finish_txt_settings(&mut file, formulas_found, old_formulas_found)
+    let warning = finish_txt_settings(&mut file, formulas_found, old_formulas_found);
+    // borg-reborn-rs (#520): the common values of the settings with class
+    // lines, then the current character's class lines (a reload with `$`
+    // keeps the class; birth and reincarnation apply them again).
+    record_class_commons(&mut st.core);
+    apply_class_settings(&mut st.core, engine::class_cidx() as i32);
+    warning
+}
+
+/// borg-reborn-rs (#520): a borg.txt line `borg_<name>@<class> = <value>`:
+/// `None` when the line is no class line of a `borg_*` setting (a
+/// `borg_param_*` class line is params.rs's), else the (setting, class `cidx`,
+/// value) or why it is refused (unknown class or setting, or a value that
+/// does not parse). The name must be a setting's whole name; the value is
+/// read as `borg_proc_setting` reads it.
+pub(crate) fn class_setting_line(line: &[u8]) -> Option<Result<(usize, usize, i32), String>> {
+    let text = String::from_utf8_lossy(line);
+    let text = text.trim_start();
+    let key_end = text.find(|c: char| c == ' ' || c == '=').unwrap_or(text.len());
+    let (name, class) = text[..key_end].split_once('@')?;
+    // `borg_param_*` class lines are params.rs's (#520's first half).
+    if !name.starts_with("borg_") || name.starts_with("borg_param_") {
+        return None;
+    }
+    let rest = &text[key_end..];
+    let Some(c) = crate::params::CLASSES.iter().position(|k| k.eq_ignore_ascii_case(class)) else {
+        return Some(Err(format!("borg.txt: {name}@{class}: unknown class {class}")));
+    };
+    let Some(i) = BORG_SETTINGS.iter().position(|s| s.name.to_bytes().eq_ignore_ascii_case(name.as_bytes())) else {
+        return Some(Err(format!("borg.txt: {name}@{class}: unknown setting {name}")));
+    };
+    let s = &BORG_SETTINGS[i];
+    // The value as the setting's own line would give it, from a value that
+    // cannot be mistaken for it (a parse that sets nothing is refused).
+    let rebuilt = format!("{name}{rest}");
+    let mut a = [i32::MIN];
+    let mut b = [i32::MAX];
+    borg_proc_setting(&mut a, 0, s.name.to_bytes(), s.kind, rebuilt.as_bytes());
+    borg_proc_setting(&mut b, 0, s.name.to_bytes(), s.kind, rebuilt.as_bytes());
+    if a[0] != b[0] {
+        return Some(Err(format!("borg.txt: {name}@{class}: no value")));
+    }
+    Some(Ok((i, c, a[0])))
+}
+
+/// borg-reborn-rs (#520): remember the common value of every setting that
+/// has a class line (after the range checks of `finish_txt_settings`).
+pub(crate) fn record_class_commons(core: &mut crate::borg::CoreState) {
+    core.cfg_common.clear();
+    for &(i, _, _) in &core.cfg_class {
+        if !core.cfg_common.iter().any(|&(j, _)| j == i) && i < core.cfg.len() {
+            core.cfg_common.push((i, core.cfg[i]));
+        }
+    }
+}
+
+/// borg-reborn-rs (#520): give every setting that has class lines the value
+/// of `class` (`cidx`; -1 or none: the common value). The last line for a
+/// class wins, as in the file. Settings without class lines are untouched,
+/// so runtime values (the money-scum amount) survive a reincarnation.
+pub(crate) fn apply_class_settings(core: &mut crate::borg::CoreState, class: i32) {
+    for &(i, common) in &core.cfg_common {
+        core.cfg[i] = common;
+    }
+    for &(i, c, v) in &core.cfg_class {
+        if usize::try_from(class).is_ok_and(|k| k == c) && i < core.cfg.len() {
+            core.cfg[i] = v;
+        }
+    }
 }
 
 /// Restore the player's ignore settings saved by `borg_reinit_options()`
@@ -778,6 +858,8 @@ extern "C" fn borg_leave_game(
 pub fn borg_prepare_race_class_info(st: &mut BorgState) {
     // borg-reborn-rs (#520): the class whose parameter values apply.
     crate::params::set_class(engine::class_cidx() as i32);
+    // ... and the class lines of the `borg_*` settings.
+    apply_class_settings(&mut st.core, engine::class_cidx() as i32);
 
     // Initialize the various spell arrays by book
     crate::borg_magic::borg_prepare_book_info(st);
@@ -1641,4 +1723,52 @@ mod tests {
         }
     }
 
+
+    /// #520: `borg_<name>@<class>` lines override a `borg_*` setting for one
+    /// class only; the common value comes back for any other class.
+    #[test]
+    fn class_lines_override_one_class_and_restore_the_common_value() {
+        let light = BORG_SETTINGS.iter().position(|s| s.name == c"borg_town_w_light").unwrap();
+        let damage = BORG_SETTINGS.iter().position(|s| s.name == c"borg_worships_damage").unwrap();
+        let mut env = FakeTxt::new(
+            b"borg_town_w_light = 150\n\
+borg_town_w_light@priest = 300\n\
+borg_town_w_light@mage = 50\n\
+borg_town_w_light@priest = 320\n\
+borg_worships_damage@warrior = TRUE\n\
+borg_param_town_heal_reserve_hp_percent@priest = 250\n\
+borg_town_w_light@wizard = 1\n\
+borg_no_such_setting@mage = 1\n",
+        );
+        read_txt_settings(&mut env);
+        let core = &mut env.st.core;
+        // The class lines do not touch the common value.
+        assert_eq!(core.cfg[light], 150);
+        assert_eq!(core.cfg[damage], 0);
+        // The borg_param_ line is params.rs's; the bad ones are refused.
+        assert_eq!(core.cfg_class.len(), 4);
+        record_class_commons(core);
+        apply_class_settings(core, 3); // priest: the last line wins
+        assert_eq!((core.cfg[light], core.cfg[damage]), (320, 0));
+        apply_class_settings(core, 1); // mage
+        assert_eq!((core.cfg[light], core.cfg[damage]), (50, 0));
+        apply_class_settings(core, 0); // warrior
+        assert_eq!((core.cfg[light], core.cfg[damage]), (150, 1));
+        apply_class_settings(core, -1); // no class yet
+        assert_eq!((core.cfg[light], core.cfg[damage]), (150, 0));
+    }
+
+    /// #520: what is and is not a class line.
+    #[test]
+    fn class_setting_lines() {
+        let light = BORG_SETTINGS.iter().position(|s| s.name == c"borg_town_w_light").unwrap();
+        assert_eq!(class_setting_line(b"borg_town_w_light@ranger = 7"), Some(Ok((light, 7, 7))));
+        assert_eq!(class_setting_line(b"  borg_town_w_light@Ranger=7"), Some(Ok((light, 7, 7))));
+        assert_eq!(class_setting_line(b"borg_town_w_light = 7"), None);
+        assert_eq!(class_setting_line(b"borg_param_town_gold_reserve@mage = 1"), None);
+        assert_eq!(class_setting_line(b"borg_reborn_errand = /trips 1*/1,2,1*@3/"), None);
+        assert!(matches!(class_setting_line(b"borg_town_w_light@elf = 7"), Some(Err(_))));
+        assert!(matches!(class_setting_line(b"borg_town_w_light@mage ="), Some(Err(_))));
+        assert!(matches!(class_setting_line(b"borg_town_w_ligh@mage = 7"), Some(Err(_))));
+    }
 }
