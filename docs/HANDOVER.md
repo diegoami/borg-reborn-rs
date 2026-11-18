@@ -5733,3 +5733,20 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Required checks/CI and owner review precede task integration under RULES 1a.
   #477 stays unmerged; update its pin after approved track-p integration and
   re-review the synchronized result before promotion.
+
+
+## 2026-11-18: isolated P5 source refresh after #537 review (#554)
+
+- Dedicated task/T554-p5-source-refresh starts from track-p ac293ef7 and
+  synchronizes accepted main c9e58ca0. Only source reference/reading metadata
+  changes beyond that main snapshot; runtime/tool/evidence inputs stay exact.
+- Separate the borg-rs pin/copy refresh from #536's P5 plan/P4 completion
+  edits. Update KNOWLEDGE.md for the actual donor material read, including
+  unaccepted default-off direct buy and the empty-light-slot Recall correction.
+- Run the all-six-source report before --update borg-rs; record every observed
+  head and deferral in docs/research/P5-SOURCE-REFRESH.md. Main's newer zoo pin
+  stays; engine/C/tracker and further zoo changes are intentionally deferred.
+  This is a scoped refresh proposal for owner review, not a claim all pins moved.
+- #537 depends on this dedicated refresh; after its approved integration,
+  #537 contains only the kickoff plan and its handover. Preserve published
+  commits. Neither PR merges until owner review and green CI (RULES 1a).
