@@ -2813,6 +2813,24 @@ fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
         && i32::from(st.borg.mon.breeders) <= max_count
 }
 
+/// borg-reborn-rs (#558): the hunt applies and the Borg is engaging the
+/// breeders: not ignoring them (`borg_check_breeders`), not fleeing or
+/// leaving the level, and no scary monster on it (`borg_flow_kill` then
+/// walks to no fight). Read only by #558's own switches, so the hunt of
+/// #503 keeps its keys with them off.
+pub(crate) fn breeder_engaged(st: &BorgState) -> bool {
+    breeder_hunt(st)
+        && engaged_with(
+            st.borg.goal.ignoring,
+            st.borg.goal.fleeing || st.borg.goal.fleeing_to_town || st.borg.goal.leaving,
+            st.borg.mon.scary,
+        )
+}
+
+fn engaged_with(ignoring: bool, fleeing: bool, scary: bool) -> bool {
+    !ignoring && !fleeing && !scary
+}
+
 /// borg-reborn-rs (#504): Warriors, Paladins, Rogues and Blackguards.
 fn melee_class(st: &BorgState) -> bool {
     matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
@@ -3626,6 +3644,15 @@ mod breeder_tests {
             st.borg.trait_[BI_CLASS as usize] = class;
             assert!(breeder_hunt_with(&st, 1, 4), "class {class}");
         }
+    }
+
+    /// #558 review: no engagement while ignoring, fleeing or scared.
+    #[test]
+    fn breeders_are_engaged_only_while_staying() {
+        assert!(engaged_with(false, false, false));
+        assert!(!engaged_with(true, false, false), "ignoring breeders");
+        assert!(!engaged_with(false, true, false), "fleeing or leaving");
+        assert!(!engaged_with(false, false, true), "scary monster");
     }
 }
 

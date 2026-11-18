@@ -413,12 +413,13 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt.
+    // The breeder scan runs only when the HP test passes.
     let hunt_first = hunt_before_rest(
-        crate::borg_flow_kill::breeder_hunt_now(st),
+        true,
         st.borg.tr(BI_CURHP),
         st.borg.tr(BI_MAXHP),
         param(Param::recover_breeder_hunt_hp_percent),
-    );
+    ) && crate::borg_flow_kill::breeder_hunt_now(st);
     // Rest until healed
     let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
     let rest_hp = st.borg.tr(BI_ISBLIND) == 0

@@ -1781,11 +1781,29 @@ fn low_level_caster(st: &BorgState) -> bool {
         && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
 }
 
-/// borg-reborn-rs (#558): whether `borg_flow_kill` would hunt breeders now:
-/// `borg_caution::breeder_hunt`, and for a low-level caster its mana too.
-pub(crate) fn breeder_hunt_now(st: &BorgState) -> bool {
-    let hunt = crate::borg_caution::breeder_hunt(st);
-    if low_level_caster(st) { caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) } else { hunt }
+/// borg-reborn-rs (#558): whether `borg_flow_kill` would walk to a breeder
+/// now: the Borg engages the breeders (`borg_caution::breeder_engaged`), a
+/// low-level caster has the mana, it is not hungry, and a known breeder
+/// passes the hunt's danger test.
+pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
+    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    if low_level_caster(st) {
+        hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
+    }
+    if !hunt || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_FOOD) == 0 {
+        return false;
+    }
+    for i in 1..i32::from(st.kills.nxt) {
+        let kill = st.kills.kills[i as usize];
+        if kill.r_idx == 0 || !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
+        // borg_flow_kill's test below CL15
+        if borg_danger(st, kill.pos.y, kill.pos.x, 1, true, false) <= i32::from(st.borg.avoidance) / 3 {
+            return true;
+        }
+    }
+    false
 }
 
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {

@@ -143,10 +143,13 @@ fn pfe_applies(st: &BorgState, kill: &BorgKill) -> bool {
     st.borg.temp.prot_from_evil && rf(kill, RF_EVIL) && st.borg.tr(BI_CLEVEL) >= r_ptr.level
 }
 
-/// borg-reborn-rs (#558): a breeder the Borg may hunt
-/// (`borg_caution::breeder_hunt`), with `danger_hunt_breeder_no_acid_fear` on.
+/// borg-reborn-rs (#558): a breeder on a level whose breeders the Borg is
+/// hunting (`borg_caution::breeder_engaged`), with
+/// `danger_hunt_breeder_no_acid_fear` on. The condition is the level's, not
+/// one monster's: every breeder there loses the fear, in the regional fear
+/// map and at retreat grids too, while the hunt lasts.
 fn hunted_breeder(st: &BorgState, kill: &BorgKill) -> bool {
-    hunted_breeder_with(param(Param::danger_hunt_breeder_no_acid_fear), rf(kill, RF_MULTIPLY), crate::borg_caution::breeder_hunt(st))
+    hunted_breeder_with(param(Param::danger_hunt_breeder_no_acid_fear), rf(kill, RF_MULTIPLY), crate::borg_caution::breeder_engaged(st))
 }
 
 fn hunted_breeder_with(switch: i32, breeder: bool, hunt: bool) -> bool {
