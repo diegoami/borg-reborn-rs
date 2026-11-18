@@ -44,6 +44,12 @@ games show direction only):
 The one shipped game that changes is Ranger 1739161339: Grip appears with 4
 HP and the Borg shoots it instead of fleeing the level.
 
+With the owner's `borg.txt` of main `fba1c6e0` (`borg_trip_unknown_stacks
+= 2`, `caution_stair_scum_threat = 1`), merged into this branch: off and
+shipped play identical keys in 18/18 games. In both arms, 1 death
+(Blackguard 1472012981, a cave spider), sum of CL 101 and max depth 38. The
+death is the new `borg.txt`'s, not this change's.
+
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2784` |

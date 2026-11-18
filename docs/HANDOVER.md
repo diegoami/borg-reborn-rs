@@ -17,6 +17,10 @@ afraid scary monster should stop being scary.
   poisoning). A calmed monster now still counts as a pursuer when it is
   awake and fast. Then 0 deaths, and 17/18 games play the same keys as
   off; the Ranger shoots a 4-HP Grip.
+- With the owner's `borg.txt` of `fba1c6e0` merged in, off and shipped
+  are identical (18/18). Both have 1 death: Blackguard 1472012981, a cave
+  spider, which no arm had before that `borg.txt`. This is worth a look
+  under #549/#248's new values.
 - **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
   against 107, and max depth 39 against 43, on the 18 starts. Both arms had
   0 deaths. Details in docs/CALIBRATION.md.
