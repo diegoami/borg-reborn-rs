@@ -34,6 +34,60 @@ Narrowed, each condition a parameter; all off in `harness/borg.txt`.
 Left: the worm-room check (does it still escape with the narrowed A, and
 with K on?), then a zoo pilot of narrow against ctl (owner's choice).
 
+## 2026-11-18: no flight Recall on DL1 (#557)
+
+Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
+(#564), `caution_flee_recall_gate_below_depth` (compiled 0; **2 in
+`harness/borg.txt`**; a ceiling, 2 = DL1 only) makes a flight at a depth
+shallower than that read Word of Recall only with #559's exceptions (5 known breeders, or 3 awake monsters that can
+move within 6 grids). Recall there is no easy escape in the stand tests
+either.
+
+- Local classes-18 on `d419072f`, 100,000 turns: 0 deaths in both arms;
+  flight Recalls 17 to 10 games; sum of CL 99 against 107, sum of max depth
+  41 against 43; 17 of 18 games change keys.
+- The six borg-play deaths from birth: with 2, four of six alive at 200,000
+  (as with the full gate); with 0 they replay their zoo keys.
+- Evaluated, not built (owner's items 2 and 4): in the 17 flight Recalls of
+  borg-zoo#255's local ctl cells, 13 were on DL1, 10 came after "unable to
+  flow to up stairs" (median 2,260 game turns on the level), and no
+  monster had fled before any of them. Several were set off by monsters
+  that never move (floating eye, grey mushroom patch): "excessive danger"
+  from a floating eye at 230 against 28 HP.
+
+## 2026-11-18: a hurt or afraid monster is not scary (#539, last part)
+
+Owner, from `priest-809881907` (Grip fled from one flask of oil): a hurt or
+afraid scary monster should stop being scary.
+
+- `caution_scary_hurt_percent` (compiled 0, shipped 50) and
+  `caution_scary_afraid` (compiled 0, shipped 1): a monster that has lost
+  that share of its HP, or is afraid, is no named-list or damage-rule
+  scare. Resist-based and door scares are unchanged.
+- **Found:** with stand mode, a calmed monster that stopped counting as a
+  pursuer turned a stand into a flight while other scary monsters slept.
+  The first version had 2 deaths on the 18 starts (a cave spider, a
+  poisoning). A calmed monster now still counts as a pursuer when it is
+  awake and fast. Then 0 deaths, and 17/18 games play the same keys as
+  off; the Ranger shoots a 4-HP Grip.
+- With the owner's `borg.txt` of `fba1c6e0` merged in, off and shipped
+  are identical (18/18). Both have 1 death: Blackguard 1472012981, a cave
+  spider, which no arm had before that `borg.txt`. It comes from
+  `borg_trip_unknown_stacks = 2`: with 5 the game lives to 100,000, and
+  with `caution_stair_scum_threat = 0` it still dies. At turn 42,023 it is
+  surrounded by a soldier, a salamander and a cave spider. A lead for
+  borg-zoo#248.
+- **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
+  against 107, and max depth 39 against 43, on the 18 starts. Both arms had
+  0 deaths. Details in docs/CALIBRATION.md.
+- **Not run:** the issue's own case (replay from the 1,721 save) and the
+  other `borg-play` deaths, because `~/borg-play` is not on this machine.
+
+Left: a zoo arm (hurt/afraid on against off). #539 closes with this PR. Its
+follow-ups are now issues: #567 (no rest for Recall with a monster near) and
+#568 (throws ranked fairly against melee). The third, Phase Door only with a
+monster adjacent, shipped in #543.
+
 ## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
 
 Owner, from priest-1055640847's walk home (#557): "maybe the issue is that
