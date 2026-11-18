@@ -10,6 +10,31 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Breeders hunted by every class (#558)
+
+The registry now holds **2139** parameters (2137 on main before #558; two
+added). Owner, 2026-11-18, from `~/borg-play/priest-1055640847`: a CL6 Priest
+with 70 HP never killed a green worm mass it could solo. The breeder hunt
+(#503) now takes every class: `caution_breeder_hunt_max_count` decides, with
+class values (Warrior 6, Priest 3, the others 4; 0 = no hunt for that class).
+The count is the switch for the new classes (owner): there is no separate
+flag, so the expansion plays even with the two switches below at 0. The
+configuration that plays as main is the count at 0 for Mage, Druid, Priest,
+Necromancer and Ranger and 4 for Warrior, with both switches at 0.
+Low-level Mages and Necromancers: the hunt walk (`borg_flow_kill`) targets
+breeders only, and only while they have half their mana, so they cast rather
+than melee (`borg_flow_kill_direct`, the dig to the closest monster after
+3000 turns on a level, is unchanged and has no such filter). All of it is in
+the vendored core, so it plays with the borg-rs core (`borg_reborn_core =
+borg-rs`, shipped since #479, or `BORG_CORE=borg-rs`); a harness run without
+`BORG_CORE` plays the reborn core, which it does not change. Two new
+switches, compiled 0, shipped 1 and 50:
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_breeder_hunt_hp_percent` | 0 | percent | 0–100 | `borg_recover.rs` (`hunt_before_rest`, `borg_flow_kill::breeder_hunt_now`: when a rest is due, no rest while HP is at least this percent of max HP and the Borg is fit to hunt now: the hunt applies, the Borg is not ignoring the breeders, fleeing or leaving, no scary monster is on the level, a low-level caster has half its mana, it is not hungry, confused, hallucinating, afraid or stunned (a rest clears those), and a known breeder passes the walk's danger test (only that test: not the walk's leash to the stairs or reachability); breeders multiply while the Borg rests. The HP rest is skipped only when it is due and those hold; the mana rest is skipped whenever they hold. For acid breeders it depends on the next switch: with the acid fear a green worm mass reads 507 against a limit of 23 at CL6, so the gate never opens) |
+| `danger_hunt_breeder_no_acid_fear` | 0 | flag | 0–1 | `borg_danger.rs` (`hunted_breeder`, `borg_caution::breeder_engaged`: while the hunt applies and the Borg is not ignoring the breeders, fleeing, leaving or facing a scary monster, every breeder on the level is judged without `danger_monblow_acid_fear`, the flat 200 per acid blow that put a green worm mass's 1d3 bite at 630. Level-wide, not per monster: the regional fear map and retreat grids see it too) |
+
 ## A hurt or afraid monster is not scary (#539)
 
 The registry now holds **2137** parameters (2135 after #562; two added).
@@ -90,6 +115,7 @@ against 38 (18 games: direction only).
 |---|---|---|---|---|
 | `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
 | `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
+
 
 ## A living monster keeps some hit points (#546)
 
@@ -336,7 +362,7 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:608` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1190` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 

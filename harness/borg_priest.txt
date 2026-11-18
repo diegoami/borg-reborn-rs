@@ -5,3 +5,4 @@
 borg_param_attack_preference_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_heal_reserve_hp_percent = 250
+borg_param_caution_breeder_hunt_max_count = 3

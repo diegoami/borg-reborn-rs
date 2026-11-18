@@ -44,8 +44,8 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_APHASE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURSP, BI_ESP,
-    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHUNGRY, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT,
-    BI_MAXCLEVEL, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
+    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISSTUN, BI_ISWEAK, BI_LIGHT,
+    BI_MAXCLEVEL, BI_MAXSP, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
     BI_SRLITE, BI_SRNTHR,
 };
 use crate::headers::list_mon_race_flags_h::{
@@ -1768,6 +1768,61 @@ fn hall_wall(st: &BorgState, x: i32, y: i32) -> bool {
 /// Prepare to "flow" towards monsters to "kill" (`borg_flow_kill`)
 /// But in a few phases, viewable, near and far.
 /// Note that monsters under the player are always deleted
+/// borg-reborn-rs (#558): a low-level Mage or Necromancer hunts breeders
+/// only while the hunt applies and it has at least half its mana.
+fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
+    hunt && max_sp > 0 && cur_sp * 2 >= max_sp
+}
+
+/// borg-reborn-rs (#558): a Mage or Necromancer below the level at which
+/// `borg_flow_kill` lets it walk to a fight.
+fn low_level_caster(st: &BorgState) -> bool {
+    (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
+        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
+}
+
+/// borg-reborn-rs (#558): whether the Borg is fit to hunt breeders now, for
+/// `borg_recover`'s rest gate: it engages the breeders
+/// (`borg_caution::breeder_engaged`), a low-level caster has the mana, it is
+/// not hungry, and not confused, hallucinating, afraid or stunned (a rest
+/// clears those), and a known breeder passes the hunt walk's danger test.
+/// Only that test of the walk's: not its leash to the stairs, nor whether
+/// the breeder can be reached.
+pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
+    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    if low_level_caster(st) {
+        hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
+    }
+    if !hunt || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_FOOD) == 0 {
+        return false;
+    }
+    if !fit_to_hunt(
+        st.borg.tr(BI_ISCONFUSED) != 0
+            || st.borg.tr(BI_ISIMAGE) != 0
+            || st.borg.tr(BI_ISAFRAID) != 0
+            || st.borg.tr(BI_ISSTUN) != 0
+            || st.borg.tr(BI_ISHEAVYSTUN) != 0,
+    ) {
+        return false;
+    }
+    for i in 1..i32::from(st.kills.nxt) {
+        let kill = st.kills.kills[i as usize];
+        if kill.r_idx == 0 || !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
+        // borg_flow_kill's test below CL15
+        if borg_danger(st, kill.pos.y, kill.pos.x, 1, true, false) <= i32::from(st.borg.avoidance) / 3 {
+            return true;
+        }
+    }
+    false
+}
+
+/// borg-reborn-rs (#558): a status a rest clears means rest, not hunt.
+fn fit_to_hunt(status: bool) -> bool {
+    !status
+}
+
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let mut b_j: i32 = -1;
     let mut b_stair: i32 = -1;
@@ -1792,10 +1847,15 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     }
 
     // YOU ARE NOT A WARRIOR!! DON'T ACT LIKE ONE!!
-    if (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
-    {
-        return false;
+    // borg-reborn-rs (#558): except breeders the Borg may hunt, while it has
+    // the mana to fight them with spells (borg_attack casts before any walk
+    // brings it next to them).
+    let mut breeders_only = false;
+    if low_level_caster(st) {
+        if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+        breeders_only = true;
     }
 
     // Not if Weak from hunger or no food
@@ -1852,6 +1912,9 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
+        if breeders_only && !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
         let x9 = kill.pos.x;
         let y9 = kill.pos.y;
 
@@ -3338,6 +3401,21 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn casters_hunt_breeders_with_mana() {
+        assert!(caster_hunts(true, 5, 10));
+        assert!(!caster_hunts(true, 4, 10), "low on mana");
+        assert!(!caster_hunts(false, 10, 10), "no hunt");
+        assert!(!caster_hunts(true, 0, 0), "no mana at all");
+    }
+
+    /// #558 review 3: confused, afraid or stunned, the Borg rests first.
+    #[test]
+    fn a_status_means_rest_not_hunt() {
+        assert!(fit_to_hunt(false));
+        assert!(!fit_to_hunt(true));
+    }
 
     #[test]
     fn a_living_monster_keeps_some_power() {
