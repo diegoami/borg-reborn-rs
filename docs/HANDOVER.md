@@ -17,6 +17,17 @@ flasks of oil. Three switches (compiled 0, shipped 1):
 - 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
   deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
   ranged 3.
+- Review of #543: "known" was not "reachable". Recall now waits only when the
+  flee flows' own stair flow (up: `borg_flow_stair_less`'s; down: its gates,
+  or `borg_flow_stair_both`'s on a scary level) reaches the Borg from a free
+  staircase, probed without committing. "Something to throw or shoot" is the
+  attack planner's own choice (`ranged_means`: `best_throw`, `launch_damage`),
+  not any flask; on a scary level without stairs `borg_attack` takes only an
+  awake monster in view at range (`ranged_candidate`, shared with the Recall
+  and Phase waits). Rerun: off still identical to main (18/18); on 5 → 2
+  deaths, sum of CL 87 → 95; alone: stairs 3 deaths / 95, phase 3 / 89,
+  ranged 2 / 94. Priest and the same four `borg-play` deaths live; the two
+  others still play identical keys.
 - A first version walked to the stairs inside `borg_caution` and returned, so a
   fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
   only declines to read Recall.

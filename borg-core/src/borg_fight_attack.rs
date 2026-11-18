@@ -2146,6 +2146,53 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
 ///
 /// When no missile is chosen (every `borg_launch_bolt` finds no target)
 /// `b_k` stays -1 and nothing is used.
+/// The average damage of firing quiver `item` from `bow`, or `None` when
+/// `borg_attack_aux_launch` skips it (borg-reborn-rs #539: shared with
+/// `ranged_means`).
+fn launch_damage(st: &BorgState, item: &borg_item, bow: &borg_item) -> Option<i32> {
+    /* Skip missiles that don't match the bow */
+    if i32::from(item.tval) != tr(st, BI_AMMO_TVAL) {
+        return None;
+    }
+
+    /* Skip worthless missiles */
+    if item.value <= 0 {
+        return None;
+    }
+
+    /* Determine average damage */
+    let mut d = i32::from(item.dd) * (i32::from(item.ds) + 1) / 2;
+    d = d + i32::from(item.to_d) + i32::from(bow.to_d);
+    d = d * tr(st, BI_AMMO_POWER) * tr(st, BI_SHOTS);
+
+    /* Boost the perceived damage on unID'd ones so he can get a quick
+     * pseudoID on it */
+    if borg_item_note_needs_id(st, item) {
+        d *= param(Param::attack_ego_ammo_multiplier);
+    }
+
+    /* Paranoia */
+    (d > 0).then_some(d)
+}
+
+/// borg-reborn-rs (#539 review): something the attack planner would shoot
+/// or throw now, by its own rules: a quiver missile `borg_attack_aux_launch`
+/// fires from the bow, or the object `borg_attack_aux_object` throws (a
+/// flask kept for lantern fuel or worth money for little damage is not one),
+/// and nothing that stops aiming.
+pub(crate) fn ranged_means(st: &BorgState) -> bool {
+    if cant_aim(st) {
+        return false;
+    }
+    let bow = st.items.items[(inven_wield() + 1) as usize];
+    let shoot = bow.iqty != 0
+        && (quiver_start()..quiver_end())
+            .map(|k| st.items.items[k as usize])
+            .take_while(|item| item.iqty != 0)
+            .any(|item| launch_damage(st, &item, &bow).is_some());
+    shoot || best_throw(st).0 >= 0
+}
+
 pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
     let mut b_n = 0;
     let mut b_k: i32 = -1;
@@ -2172,33 +2219,10 @@ pub fn borg_attack_aux_launch(st: &mut BorgState) -> i32 {
             break;
         }
 
-        /* Skip missiles that don't match the bow */
-        if i32::from(item.tval) != tr(st, BI_AMMO_TVAL) {
+        let Some(d) = launch_damage(st, &item, &bow) else {
             continue;
-        }
-
-        /* Skip worthless missiles */
-        if item.value <= 0 {
-            continue;
-        }
-
-        /* Determine average damage */
-        let mut d = i32::from(item.dd) * (i32::from(item.ds) + 1) / 2;
-        d = d + i32::from(item.to_d) + i32::from(bow.to_d);
-        d = d * tr(st, BI_AMMO_POWER) * tr(st, BI_SHOTS);
-
+        };
         let v = item.value;
-
-        /* Boost the perceived damage on unID'd ones so he can get a quick
-         * pseudoID on it */
-        if borg_item_note_needs_id(st, &item) {
-            d *= param(Param::attack_ego_ammo_multiplier);
-        }
-
-        /* Paranoia */
-        if d <= 0 {
-            continue;
-        }
 
         /* Choose optimal target of bolt */
         let power = 6 + 2 * tr(st, BI_AMMO_POWER);
@@ -2381,6 +2405,25 @@ fn borg_attack_aux_rest(st: &mut BorgState) -> i32 {
 /// munchkin attacks, removed with the mode in borg-rs#60).
 /// Rust returns `b_n`, as the c2rust translation did.
 fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
+    let (b_k, b_d) = best_throw(st);
+
+    /* Nothing to use */
+    if b_k < 0 {
+        return 0;
+    }
+
+    /* No firing while blind, confused, or hallucinating */
+    if cant_aim(st) {
+        return 0;
+    }
+
+    borg_attack_aux_object_fire(st, b_k, b_d)
+}
+
+/// borg-reborn-rs (#539): the pack scan of `borg_attack_aux_object`, the
+/// object it would throw and its average damage, as `(slot, damage)`
+/// (`(-1, -1)`: nothing). `ranged_means` asks it too.
+fn best_throw(st: &BorgState) -> (i32, i32) {
     // The shopping supply estimate is needed only for a throwable flask
     // while a fuel-burning lantern is worn. It is independent of the return
     // policy and reused within this evaluation.
@@ -2460,17 +2503,11 @@ fn borg_attack_aux_object(st: &mut BorgState) -> i32 {
          * used; it only reads `adj_str_blow`) */
         let _ = engine::adj_str_blow(tr(st, BI_STR_INDEX) as usize);
     }
+    (b_k, b_d)
+}
 
-    /* Nothing to use */
-    if b_k < 0 {
-        return 0;
-    }
-
-    /* No firing while blind, confused, or hallucinating */
-    if cant_aim(st) {
-        return 0;
-    }
-
+/// `borg_attack_aux_object` after its scan: aim and throw `b_k`.
+fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
     let power = 6 + 2 * tr(st, BI_AMMO_POWER);
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
@@ -4348,6 +4385,8 @@ pub fn borg_calculate_attack_effectiveness(st: &mut BorgState, attack_type: i32)
 pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     let mut ranking = crate::attack_preference::Ranking::default();
     let mut adjacent_monster = false;
+    // borg-reborn-rs (#539): `scary_ranged_no_stairs`, probed at most once
+    let mut no_stairs: Option<bool> = None;
 
     /* Nobody around */
     if st.kills.cnt == 0 {
@@ -4431,9 +4470,12 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
             } else if adjacent_monster {
                 /* Try to fight if there is a monster next to me */
                 borg_note(st, "# Adjacent to monster on Scaryguy Level.");
-            } else if crate::borg_caution::scary_ranged_no_stairs(st) {
+            } else if crate::borg_caution::ranged_candidate(st, &kill)
+                && *no_stairs.get_or_insert_with(|| crate::borg_caution::scary_ranged_no_stairs(st))
+            {
                 /* borg-reborn-rs (#539, owner): no staircase to flee to, so
-                 * the best attack, at range too. */
+                 * the best attack on an awake monster in view at range
+                 * (the one Recall and Phase Door wait for). */
                 borg_note(st, "# No stairs: fighting at range on Scaryguy Level.");
             } else {
                 /* Flee from other scary guys */

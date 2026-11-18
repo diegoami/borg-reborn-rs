@@ -445,7 +445,7 @@ fn count_scary(
 /// hurt it from where it is (spells, breath, missiles): phasing away from a
 /// monster that has yet to arrive only spends the scroll (Grip, speed +10,
 /// found the Priest 809881907 again within a turn).
-pub(crate) fn phase_is_pointless(st: &BorgState) -> bool {
+pub(crate) fn phase_is_pointless(st: &mut BorgState) -> bool {
     if param(Param::escape_phase_adjacent_only) == 0 {
         // #539: the ranged-attack rule stands on its own switch.
         return crate::borg_caution::ranged_before_recall(st) && !adjacent_awake(st);

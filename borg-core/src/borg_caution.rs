@@ -55,7 +55,7 @@ use crate::headers::list_mon_race_flags_h::{RF_MULTIPLY, RF_NEVER_MOVE, RF_NO_CO
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::headers::list_player_timed_h::{TMD_ATT_CONF, TMD_OPP_ACID};
 use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE};
-use crate::headers::list_tvals_h::{TV_FLASK, TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
+use crate::headers::list_tvals_h::{TV_MUSHROOM, TV_POTION, TV_ROD, TV_STAFF};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::params::{value as p, Param};
@@ -2177,34 +2177,101 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
 /// borg-reborn-rs (#539, owner): "use recall only if a stair is not
 /// reachable at all". With `caution_flee_stairs_before_recall`, a fleeing
-/// Borg that knows a free staircase does not read Recall.
-fn stairs_before_recall(st: &BorgState) -> bool {
-    stairs_before_recall_with(
-        p(Param::caution_flee_stairs_before_recall),
-        nearest_free_stair(st, true),
-        nearest_free_stair(st, false),
-    )
+/// Borg that can walk to a free staircase does not read Recall.
+fn stairs_before_recall(st: &mut BorgState) -> bool {
+    p(Param::caution_flee_stairs_before_recall) != 0 && stair_reachable(st)
+}
+
+/// borg-reborn-rs (#539 review): can the Borg walk to a free staircase now?
+/// Not "is one known": the probe spreads the flee flows' own stair flow
+/// from every free staircase (no monster on it) and asks whether it reaches
+/// the Borg. The up flow is `borg_flow_stair_less`'s; the down flow is
+/// `borg_flow_stair_both`'s on a scary level and `borg_flow_stair_more`'s,
+/// with its gates (preparation, food, sale, light, the #483 rising hold),
+/// elsewhere. Nothing is committed: the cost map is rebuilt by the next
+/// flow, and the danger marks are the ones that flow would make.
+fn stair_reachable(st: &mut BorgState) -> bool {
+    (!engine::player_opt(OPT_birth_force_descend) && stair_flow_reaches(st, true))
+        || (down_stair_allowed(st) && stair_flow_reaches(st, false))
+}
+
+/// Would the flee flows take a down staircase (their gates, not the path)?
+fn down_stair_allowed(st: &mut BorgState) -> bool {
+    if st.borg.tr(BI_LIGHT) == 0 && st.borg.tr(BI_CDEPTH) != 0 {
+        return false;
+    }
+    if st.borg.mon.scary {
+        // borg_flow_stair_both: light is its only gate on a fleeing Borg
+        return true;
+    }
+    if st.borg.goal.recalling != 0 {
+        return false;
+    }
+    if st.stairs.less.num != 0 {
+        let depth = st.borg.tr(BI_CDEPTH) + 1;
+        if crate::borg_prepared::borg_prepared_c(st, depth).is_some()
+            || (st.borg.tr(BI_CDEPTH) != 0
+                && (st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_FOOD) < 2))
+            || crate::borg_trip::legacy_sale_hold(st)
+        {
+            return false;
+        }
+    }
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let here = borg_danger(st, y, x, 1, true, false);
+    !rising_holds_descent(st, here)
+}
+
+/// Does the up (`up`) or down stair flow, spread as the flee flows spread
+/// it, reach the Borg?
+fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
+    let track = if up { &st.stairs.less } else { &st.stairs.more };
+    let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
+    if stairs.is_empty() {
+        return false;
+    }
+    crate::borg_flow::borg_flow_clear(st);
+    for (y, x) in stairs {
+        if st.cave.grid(x, y).kill == 0 {
+            crate::borg_flow::borg_flow_enqueue_grid(st, y, x);
+        }
+    }
+    let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
+    crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
+    i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
 /// choice is the best available ranged attack". With
-/// `caution_scary_ranged_no_stairs` and no free staircase known, a scary
-/// level does not stop `borg_attack` from targeting monsters at range.
-pub(crate) fn scary_ranged_no_stairs(st: &BorgState) -> bool {
-    p(Param::caution_scary_ranged_no_stairs) != 0
-        && nearest_free_stair(st, true) == -1
-        && nearest_free_stair(st, false) == -1
+/// `caution_scary_ranged_no_stairs` and no staircase the Borg can walk to,
+/// a scary level lets `borg_attack` target a `ranged_candidate`.
+pub(crate) fn scary_ranged_no_stairs(st: &mut BorgState) -> bool {
+    p(Param::caution_scary_ranged_no_stairs) != 0 && !stair_reachable(st)
+}
+
+/// borg-reborn-rs (#539): the monster the ranged rule is about: awake, in
+/// view and not next to the Borg. Recall and Phase Door wait for one, and
+/// `borg_attack` takes only these on a scary level without stairs.
+pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::BorgKill) -> bool {
+    ranged_target(
+        true,
+        &[(
+            kill.awake,
+            engine::distance(st.borg.c, kill.pos),
+            st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0,
+        )],
+    )
 }
 
 /// borg-reborn-rs (#539): Recall and Phase Door wait while the Borg can
-/// fight at range instead (`scary_ranged_no_stairs`): an awake monster in
-/// view, not next to it, and missiles or a flask to throw.
-pub(crate) fn ranged_before_recall(st: &BorgState) -> bool {
-    if !scary_ranged_no_stairs(st) {
+/// fight at range instead: switch on, a ranged attack the attack planner
+/// would make (`borg_fight_attack::ranged_means`), a `ranged_candidate`,
+/// and no staircase it can walk to.
+pub(crate) fn ranged_before_recall(st: &mut BorgState) -> bool {
+    if p(Param::caution_scary_ranged_no_stairs) == 0 {
         return false;
     }
-    let means = st.borg.tr(BI_AMISSILES) > 0
-        || st.items.items.iter().any(|it| it.iqty > 0 && u32::from(it.tval) == TV_FLASK);
+    let means = crate::borg_fight_attack::ranged_means(st);
     let mut known = Vec::new();
     for i in 1..st.kills.nxt.max(0) as usize {
         let kill = &st.kills.kills[i];
@@ -2217,19 +2284,13 @@ pub(crate) fn ranged_before_recall(st: &BorgState) -> bool {
             st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0,
         ));
     }
-    ranged_target(means, &known)
+    ranged_target(means, &known) && !stair_reachable(st)
 }
 
 /// Something to throw or shoot, and a known monster as (awake, distance,
 /// in view) that is awake, in view and not adjacent.
 fn ranged_target(means: bool, known: &[(bool, i32, bool)]) -> bool {
     means && known.iter().any(|&(awake, d, view)| awake && view && d > 1)
-}
-
-/// `stairs_before_recall` with its switch and the nearest free up and down
-/// staircases' distances (-1: none known) given.
-fn stairs_before_recall_with(on: i32, up: i32, down: i32) -> bool {
-    on != 0 && (up != -1 || down != -1)
 }
 
 /// `borg_note(format("<prefix>%s", reason))` for a `borg_restock()` reason.
@@ -3031,15 +3092,6 @@ mod cornered_tests {
 mod recall_tests {
     use super::*;
 
-    /// #539: Recall is skipped while any free staircase is known.
-    #[test]
-    fn a_known_staircase_comes_before_recall() {
-        assert!(stairs_before_recall_with(1, 8, -1), "up staircase 8 away");
-        assert!(stairs_before_recall_with(1, -1, 40), "a far down staircase");
-        assert!(!stairs_before_recall_with(1, -1, -1), "no staircase known");
-        assert!(!stairs_before_recall_with(0, 8, 8), "off");
-    }
-
     /// #539: with no stairs, Recall waits for a ranged attack on a monster
     /// in view at range.
     #[test]
@@ -3050,5 +3102,22 @@ mod recall_tests {
         assert!(!ranged_target(true, &[(true, 4, false)]), "out of view");
         assert!(!ranged_target(true, &[(false, 4, true)]), "asleep");
         assert!(!ranged_target(true, &[]), "no monster");
+    }
+
+    /// #539 review: `borg_attack` on a scary level without stairs takes a
+    /// monster only if `ranged_candidate` holds for it alone, so it targets
+    /// exactly the monsters Recall and Phase Door wait for, not any monster
+    /// the accumulated `adjacent_monster` happened to let through.
+    #[test]
+    fn the_attack_targets_the_monster_recall_waits_for() {
+        let grip = (true, 4, true);
+        let sleeper = (false, 5, true);
+        let behind_wall = (true, 3, false);
+        let next_to_me = (true, 1, true);
+        let level = [sleeper, behind_wall, next_to_me, grip];
+        let targets: Vec<_> = level.iter().filter(|&&m| ranged_target(true, &[m])).collect();
+        assert_eq!(targets, vec![&grip], "only Grip, awake in view at range");
+        assert!(ranged_target(true, &level), "so Recall waits");
+        assert!(!ranged_target(true, &[sleeper, behind_wall, next_to_me]), "no candidate: Recall may go");
     }
 }

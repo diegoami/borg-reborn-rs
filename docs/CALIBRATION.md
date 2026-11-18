@@ -23,9 +23,9 @@ ships all three at 1.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_flee_stairs_before_recall` | 0 | flag | 0–1 | `borg_caution.rs` (`stairs_before_recall`: no Recall while a free staircase is known) |
+| `caution_flee_stairs_before_recall` | 0 | flag | 0–1 | `borg_caution.rs` (`stairs_before_recall`: no Recall while the flee flows' stair flow reaches a free staircase) |
 | `escape_phase_adjacent_only` | 0 | flag | 0–1 | `borg_escape.rs` (`phase_is_pointless`: a Phase Door only with an awake monster adjacent, or one in view with a ranged attack) |
-| `caution_scary_ranged_no_stairs` | 0 | flag | 0–1 | `borg_caution.rs` (`scary_ranged_no_stairs`: no stairs known, a scary level lets `borg_attack` target monsters at range; Recall and Phase Door wait for that attack) |
+| `caution_scary_ranged_no_stairs` | 0 | flag | 0–1 | `borg_caution.rs` (`scary_ranged_no_stairs`: no staircase reachable, a scary level lets `borg_attack` target an awake monster in view at range; Recall and Phase Door wait while there is one and the attack planner has a missile or a throwable object) |
 
 ## Class values and class files (#520)
 
