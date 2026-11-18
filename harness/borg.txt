@@ -537,6 +537,12 @@ borg_param_town_digger_min_gold = 500
 # chaos, confusion, poison) stay either way. #518 moves the list to a data
 # file by class and level.
 borg_param_caution_scary_named_monsters = 1
+# The named scary monsters come from this file (#518, owner 2026-11-17):
+# a range per monster scaled by class fragility, C's list as the tough end.
+# none = the compiled C list (harness/scary_monsters_c.txt is the same list
+# as a file). harness/run.sh and the zoo copy the file next to borg.txt and
+# pin its hash.
+borg_scary_list = scary_monsters.txt
 # A monster on the level is scary when one character turn of its melee (the
 # average of its blows' damage times its moves per character turn) can take at
 # least this percent of max HP (owner, 2026-11-17, #505: 60). 0 = off. It

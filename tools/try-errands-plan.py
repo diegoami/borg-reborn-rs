@@ -31,6 +31,11 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     for name in ['user','save','archive','panic','scores']: (out/name).mkdir()
     shutil.copy2(ROOT/'harness/borg.txt',out/'user/borg.txt')
+    # #535: the scary list the shipped borg.txt names travels with it.
+    for line in (out/'user/borg.txt').read_text().splitlines():
+        key, _, value = line.partition('=')
+        if key.strip() == 'borg_scary_list' and value.strip() not in ('', 'none'):
+            shutil.copy2(ROOT/'harness'/value.strip(), out/'user'/value.strip())
     source = out/'errands_plan.input.txt';source.write_bytes(plan)
     exe = a.binary.resolve()
     env = {k:v for k,v in os.environ.items() if not k.startswith(('BORG_','BORGH_','ANGBAND_'))}

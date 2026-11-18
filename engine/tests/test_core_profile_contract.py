@@ -26,6 +26,10 @@ ROOT = Path(__file__).resolve().parents[2]
 GAME = ROOT / 'build/rust/game'
 ZOO = Path(os.environ.get('BORG_ZOO_CONTRACT_REPO', ROOT / 'vendor/borg-zoo'))
 AVAILABLE = (GAME / 'angband').is_file() and (ZOO / '.git').exists()
+# The adapter's word for a core that stops before play with exit 2: a
+# harness failure, or a configuration error on a specimen that pins a scary
+# list or plan (borg-zoo#233).
+REFUSED = ('harness_failure', 'config_error')
 if os.environ.get('BORG_ZOO_CONTRACT_REQUIRED') == '1' and not AVAILABLE:
     raise RuntimeError('core profile contract requires the build and pinned vendor/borg-zoo')
 
@@ -59,8 +63,15 @@ class CoreProfileContractTest(unittest.TestCase):
         cls.binary_sha = hashlib.sha256((GAME / 'angband').read_bytes()).hexdigest()
         if cls.binary_sha != ident['binary_sha256']:
             raise AssertionError('build identity does not match the binary')
+        # #535: the shipped borg.txt names a scary list; the specimen pins it
+        # and the build carries it, as the zoo's build does (borg-zoo#233).
+        name = 'scary_monsters.txt'
+        (cls.build / 'scary_lists').mkdir()
+        (cls.build / 'scary_lists' / name).write_bytes((ROOT / 'harness' / name).read_bytes())
+        cls.scary_lists = {name: hashlib.sha256((ROOT / 'harness' / name).read_bytes()).hexdigest()}
         (cls.build / 'build.json').write_text(json.dumps({
             'source_commit': cls.ref, 'impl': 'rust', 'binary_sha256': cls.binary_sha,
+            'scary_lists': cls.scary_lists,
         }))
 
     @classmethod
@@ -75,6 +86,7 @@ class CoreProfileContractTest(unittest.TestCase):
             'specimens': {'specimens': {'reborn': {
                 'ref': self.ref, 'impl': 'rust', 'kind': 'borg-rs',
                 'exact_turns': True, 'depth_stream': True,
+                'scary_lists': self.scary_lists,
             }}},
         }
         cell = {'suite': 'contract', 'specimen': 'reborn', 'profile': name, 'seed': 29}
@@ -103,7 +115,24 @@ class CoreProfileContractTest(unittest.TestCase):
         out = self.root / 'direct' / name
         for d in ('user', 'save', 'archive', 'panic', 'scores'):
             (out / d).mkdir(parents=True)
-        (out / 'user/borg.txt').write_text(self.adapter.config_text(self.build, profile, 0, 0))
+        text = self.adapter.config_text(self.build, profile, 0, 0)
+        # The scary list the written borg.txt names travels with it, pinned
+        # as the adapter and harness/run.sh pin it (borg-zoo#233, #535): the
+        # exact bytes of the build's copy, its SHA-256 checked against the
+        # specimen and written next to the selecting line.
+        names = [v.strip() for k, _, v in (l.partition('=') for l in text.splitlines())
+                 if k.strip() == 'borg_scary_list' and v.strip() not in ('', 'none')]
+        scary = None
+        if names:
+            name = names[-1]
+            data = (self.build / 'scary_lists' / name).read_bytes()
+            sha = hashlib.sha256(data).hexdigest()
+            self.assertEqual(sha, self.scary_lists[name], 'the build carries the pinned list')
+            (out / 'user' / name).write_bytes(data)
+            text = '\n'.join(l for l in text.splitlines() if l.partition('=')[0].strip() != 'borg_scary_list')
+            text += f'\n# direct (#535): scary list sha256 {sha}\nborg_scary_list = {name}\n'
+            scary = {'name': name, 'sha256': sha}
+        (out / 'user/borg.txt').write_text(text)
         argv = self.adapter.command(self.build / 'game' / 'angband', out, cell, 0, 0, suite, spec)
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides, TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
@@ -113,10 +142,11 @@ class CoreProfileContractTest(unittest.TestCase):
         summary_path = out / 'summary.json'
         summary = json.loads(summary_path.read_text()) if summary_path.is_file() else None
         if rc != 0 and not summary:
-            return out, {'outcome': 'harness_failure', 'error': f'exit code {rc}', 'summary': None}
+            return out, {'outcome': 'harness_failure', 'error': f'exit code {rc}', 'summary': None,
+                         'scary_list': scary}
         stop = summary.get('stop_reason') if summary else None
         outcome = {'turns': 'turn_cap', 'borg_stopped': 'borg_stopped', 'death': 'death'}.get(stop, stop)
-        return out, {'outcome': outcome, 'error': None, 'summary': summary}
+        return out, {'outcome': outcome, 'error': None, 'summary': summary, 'scary_list': scary}
 
     def test_integer_profile_selects_core_and_resolves_parameters(self):
         examples = json.loads((ROOT / 'docs/examples/core-calibration-profiles.json').read_text())
@@ -134,12 +164,16 @@ class CoreProfileContractTest(unittest.TestCase):
         self.assertTrue((out / 'trace-core.jsonl').stat().st_size)
         self.assertEqual(record['binary_sha256'], self.binary_sha)
         self.assertEqual(json.loads((out / 'summary.json').read_text())['game_turns'], 300)
+        # #535: the shipped scary list reached the game, pinned (borg-zoo#233).
+        self.assertEqual((out / 'user/scary_monsters.txt').read_bytes(),
+                         (ROOT / 'harness/scary_monsters.txt').read_bytes())
+        self.assertEqual(record['scary_list']['sha256'], self.scary_lists['scary_monsters.txt'], record)
 
     def test_invalid_profile_value_fails_instead_of_using_default(self):
         out, record = self.cell('invalid', {
             'borg_reborn_core': 1, 'borg_param_recover_rest_sp_tenths': 11,
         })
-        self.assertEqual(record['outcome'], 'harness_failure', record)
+        self.assertIn(record['outcome'], REFUSED, record)
         self.assertIn('exit code 2', record['error'])
         self.assertIn('recover_rest_sp_tenths: 11 outside 0..=10', (out / 'stderr.log').read_text())
         self.assertFalse((out / 'params-core.json').exists())
@@ -154,7 +188,7 @@ class CoreProfileContractTest(unittest.TestCase):
         for value in [2, 7, True]:
             with self.subTest(value=value):
                 out, record = self.cell(f'invalid-core-{value}', {'borg_reborn_core': value})
-                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn(record['outcome'], REFUSED, record)
                 self.assertIn('exit code 2', record['error'])
                 self.assertIn('borg.txt borg_reborn_core: invalid core selector',
                               (out / 'stderr.log').read_text())
@@ -174,6 +208,12 @@ class CoreProfileContractTest(unittest.TestCase):
                                 {'BORG_CORE': 'borg-rs'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params-core.json').exists())
+        # The direct run plays the shipped list, pinned by its hash (#535).
+        name = 'scary_monsters.txt'
+        self.assertEqual(record['scary_list'], {'name': name, 'sha256': self.scary_lists[name]}, record)
+        self.assertIn(f"scary list sha256 {self.scary_lists[name]}\nborg_scary_list = {name}\n",
+                      (out / 'user/borg.txt').read_text())
+        self.assertEqual((out / 'user' / name).read_bytes(), (ROOT / 'harness' / name).read_bytes())
 
     def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
         for value in [2, True]:
@@ -181,7 +221,7 @@ class CoreProfileContractTest(unittest.TestCase):
                 out, record = self.cell(f'invalid-errand-{value}', {
                     'borg_reborn_core': 1, 'borg_reborn_errand': value,
                 })
-                self.assertEqual(record['outcome'], 'harness_failure', record)
+                self.assertIn(record['outcome'], REFUSED, record)
                 self.assertIn('exit code 2', record['error'])
                 self.assertIn('borg.txt borg_reborn_errand: invalid errand selector',
                               (out / 'stderr.log').read_text())
@@ -216,7 +256,7 @@ class CoreProfileContractTest(unittest.TestCase):
             out, record = self.cell(f'invalid-fear-file-{value}', {
                 'borg_reborn_core': 1, 'borg_reborn_stopscared': value,
             })
-            self.assertEqual(record['outcome'], 'harness_failure', record)
+            self.assertIn(record['outcome'], REFUSED, record)
             self.assertIn('exit code 2', record['error'])
             self.assertIn('borg.txt borg_reborn_stopscared: invalid stopscared value',
                           (out / 'stderr.log').read_text())

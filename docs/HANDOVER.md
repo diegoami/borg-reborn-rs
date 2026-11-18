@@ -2,6 +2,23 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-17: the scary list file shipped on (#518)
+
+Owner: switch to our list. The shipped `borg.txt` sets
+`borg_scary_list = scary_monsters.txt` beside
+`caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
+none` keeps the compiled C list.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
+- **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
+  core, which ignores the list: smoke 3/3 identical to its references.
+- **The merge waits for the zoo:** its adapter must copy a list named by the
+  shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
+  stop with exit 2.
 ## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
 
 The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
