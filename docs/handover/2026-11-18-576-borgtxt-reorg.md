@@ -36,4 +36,12 @@ retired.
   its own value in the class files; the common lines are unused now. Many
   others change nothing in 50,000 turns (Phase Door thresholds, Recall waits,
   Bless): situations these short games rarely reach.
-- **Owner to decide:** the retirement list in the PR. Nothing is retired yet.
+- **Retired from the file (owner: "yes retire them"):** seven settings, all at
+  their compiled defaults, so play is unchanged (6/6 starts identical):
+  the four Buying Strategy settings (only reachable with `borg_town_plan =
+  0`), `borg_uses_dynamic_calcs`, `borg_restore_ignore_settings` and
+  `borg_allow_strange_opts`. The last two are read in `borg_init.rs` (the
+  first inventory missed that file's own readers) and do nothing at FALSE.
+- **Left:** #599, retiring them in the core with `retired(...)`. It renumbers
+  the settings table and touches several vendored files, the formula module
+  among them.

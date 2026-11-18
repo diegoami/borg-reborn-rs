@@ -267,23 +267,6 @@ borg_money_scum_amount = 0
 
 borg_self_scum = FALSE
 
-# Only with borg_town_plan = 0, the C Borg's chooser; the live planner never
-# reads these.
-# borg_buy_strategy_*: 0 = current (the accepted impact-v10 behaviour),
-# 1 = reserve410 (the rejected better-borg-c#410 early reserve), by class
-# mask (1<<class: Warrior 1, Mage 2, Druid 4, Priest 8, Necromancer 16,
-# Paladin 32, Rogue 64, Ranger 128, Blackguard 256); class wins over the
-# default, and conflicting masks are invalid. borg_buy_identify = 1: buy one
-# copy of each unknown learning-list kind through CL7 (borg-rs#27).
-# Impact (with the live planner) (games of 6 that play differently with the value changed to):
-# buy_strategy_default 1: 0; buy_strategy_current_classes 511: 0;
-# buy_strategy_reserve410_classes 511: 0; buy_identify 1: 0.
-
-borg_buy_strategy_default = 0
-borg_buy_strategy_current_classes = 0
-borg_buy_strategy_reserve410_classes = 0
-borg_buy_identify = 0
-
 
 ### Word of Recall ###
 
@@ -754,18 +737,15 @@ borg_chest_fail_tolerance = 7
 
 borg_enchant_limit = 12
 
-# Read by nothing in this core (C: restore the ignore settings from before
-# the Borg ran; allow birth options the Borg handles badly).
-
-borg_restore_ignore_settings = false
-borg_allow_strange_opts = FALSE
-
-# The C formula section (Power, Depth and Restock Requirement) was removed by
-# #519; TRUE now only warns "no formulas found" and keeps the built-in
-# calculations.
-# Impact: set to TRUE, 6 of 6 test games play differently.
-
-borg_uses_dynamic_calcs = FALSE
+# Retired from this file (#576, owner 2026-11-18); each is read at the value
+# shown, its compiled default, which is what this file shipped:
+# - borg_buy_strategy_default = 0, borg_buy_strategy_current_classes = 0,
+#   borg_buy_strategy_reserve410_classes = 0, borg_buy_identify = 0: the C
+#   chooser's buying strategy (the rejected better-borg-c#410 reserve and the
+#   learning purchases), never reached with borg_town_plan = 1;
+# - borg_uses_dynamic_calcs = FALSE: the formula section went with #519;
+# - borg_restore_ignore_settings = FALSE, borg_allow_strange_opts = FALSE.
+# A line naming one still sets it; retiring them in the core is #599.
 
 # The munchkin start, its by-class variant, the lunal mode and self-lunal
 # were removed: there is one play mode. An old borg.txt that names one at
