@@ -516,6 +516,19 @@ borg_param_town_heal_curve_scale_percent = 125
 
 borg_param_town_heal_speed_percent = 66
 
+# Fear cures to keep while not afraid (#516). A Potion of Boldness cures
+# fear; beyond this many in the pack the planner buys no more (it bought 35
+# and drank 7 on 18 games). 0 = value them on the diminishing curve.
+
+borg_param_town_fear_cure_count = 2
+
+# Whether a rest arms the Detect Invisible defence (#516). The C Borg stamps
+# the see-invisible clock after every rest, so every rest triggered a read:
+# 187 on 18 games, 57 in town, 171 with no unseen monster on the level.
+# 0 = a rest leaves the clock alone; 1 = the C Borg's behaviour.
+
+borg_param_recover_rest_arms_see_invis = 0
+
 # Below this much gold, buy no digger (#487): a Shovel only clears rubble,
 # and early visits spent half their gold on one.
 

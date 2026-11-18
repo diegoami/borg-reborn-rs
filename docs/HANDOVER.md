@@ -2,6 +2,16 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: Boldness capped, rests no longer arm Detect Invisible (#516)
+
+- **Boldness:** `town_fear_cure_count` (compiled 0, shipped 2). Not afraid,
+  fear cures are valued linearly up to 2 in the pack.
+- **Detect Invisible:** `recover_rest_arms_see_invis` (compiled 1 = C,
+  shipped 0). C's rest stamped the see-invisible clock as recent, so every
+  rest triggered a Detect Invisible read, 57 of them in town.
+- **18 starts:** reads 187 to 95 (0 in town), Detect Invisible gold 1,830 to
+  1,245, Boldness 35 to 8 bought (7 to 10 drunk), deaths 0 and 0, levels 95
+  to 107. Details in docs/CALIBRATION.md.
 ## 2026-11-18: the walk home without Recall, three flags (#557, part)
 
 Owner, from the replayed priest-1055640847 (`--to 88000`): a CL<=7 Borg

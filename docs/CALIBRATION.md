@@ -10,6 +10,41 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Fear cures and the see-invisible clock (#516)
+
+The registry now holds **2134** parameters. Owner, 2026-11-17 (purchase audit
+of #513). On 18 classes-18 starts on main `aa9ebf49`:
+- **Boldness:** 35 bought, 7 drunk. The planner values a Potion of
+  Boldness as a fear cure on the same diminishing curve as the confusion
+  and blindness cures. With `town_fear_cure_count` > 0 and the character
+  not afraid, fear cures are valued linearly up to that many units (one per
+  potion while not afraid) and not beyond. Afraid, the cure demand is as
+  before. The cap does not make a cure cheaper: with the cap at 2, one
+  potion is worth half the support weight and two all of it, far more than
+  on the curve (about 495 each), and a third is worth nothing.
+- **Detect Invisible:** 187 reads, 57 in town, 171 with no unseen monster
+  on the level. After every rest `borg_recover` (C's `borg-recover.c:385`,
+  "reset the inviso clock to avoid loops") stamps `need_see_invis` with the
+  current time, which `borg_defend_aux_inviso` reads as "hit by an unseen
+  monster recently", so every rest armed the defence. With
+  `recover_rest_arms_see_invis = 0` a rest leaves the clock alone; only an
+  unseen attack (`borg_locate_kill`) arms it. The same clock has two other readers,
+  which read it the other way round: the Light Beam defence
+  (`borg_defend_aux_lbeam`, skipped while the stamp is recent) and the
+  removal of regional fear when a monster appears (`borg_flow_kill`, kept
+  while recent). At 0, both can now act after a rest where C did not.
+
+Compiled defaults are C's (0 and 1); `harness/borg.txt` ships 2 and 0. On
+the same 18 starts: Detect Invisible read 95 times (0 in town) and bought
+81 (1,245 gold against 1,830); Boldness bought 8 (64 gold against 280) and
+drunk 10; no deaths in either; summed level 107 against 95, depth 43
+against 38 (18 games: direction only).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_fear_cure_count` | 0 | count | 0–100 | `borg_town_capability.rs:649` |
+| `recover_rest_arms_see_invis` | 1 | flag | 0–1 | `borg_recover.rs:450` |
+
 ## A living monster keeps some hit points (#546)
 
 The registry now holds **2123** parameters (2122 after #544, which added three; one added). Owner,
