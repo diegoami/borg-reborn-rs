@@ -10,6 +10,17 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A living monster keeps some hit points (#546)
+
+The registry now holds **2120** parameters (2119 after #539; one added). Owner,
+2026-11-18, from the floating-eye Mage 2028599180, which stopped attacking an
+eye it had left at 1/9 HP and walked next to it: the HP estimate truncated to
+0. Compiled 0 (C's estimate); `harness/borg.txt` ships 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `kill_live_min_power` | 0 | hp | 0–10 | `borg_flow_kill.rs` (`set_health`/`live_power`: a monster with hp above 0 is estimated at least this many HP; the attack overkill caps use the estimate) |
+
 ## Fleeing: stairs, range, no pointless Phase Door (#539)
 
 The registry now holds **2119** parameters (2116 after #520; three added). Owner,
