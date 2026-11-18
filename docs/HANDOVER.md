@@ -22,6 +22,16 @@ arm. What CI checks of that arm (borg-core's release tests, the
 validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
 on the borg-rs core, before or after this change: the zoo measures that.
 
+## 2026-11-18: no class values for the breeder hunt count (#574)
+
+Owner, after #561: "I do not want those setting set in the main right now,
+warrior and priest, remove them". `harness/borg_warrior.txt` and
+`harness/borg_priest.txt` no longer set `caution_breeder_hunt_max_count`
+(6 and 3), so every class hunts with the common 4. borg-zoo#277, the pilot
+of the count (2/4/6, the same for every class) and of
+`recover_breeder_hunt_hp_percent` (0/50), is re-pinned to this commit. Its
+c4-h50 arm is this shipped configuration.
+
 ## 2026-11-18: one worktree per task (RULES 5a)
 
 Owner: "do we not have a rule about that in this repository? If not add
@@ -43,7 +53,8 @@ reborn core, which is unaffected.
 - **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
   from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
 - **Class:** #503's hunt left Priests out. Every class hunts now, through
-  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3); the
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3; removed
+  by #574, all classes now use 4); the
   count is the switch, with no flag of its own, so the control that plays as
   main sets it to 0 for Mage, Druid, Priest, Necromancer and Ranger. For
   Mages and Necromancers below CL35 the hunt walk targets breeders only, with
