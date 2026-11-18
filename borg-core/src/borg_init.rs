@@ -548,9 +548,29 @@ pub(crate) fn finish_txt_settings<E: TxtEnv>(
     }
     env.st().init.retired_seen = seen;
 
-    let st = env.st();
-    let cfg = &mut st.core.cfg;
+    // The range checks and the configuration errors (`check_settings`).
+    for error in check_settings(&mut env.st().core.cfg) {
+        env.warning(error);
+        env.st().init.init_failure = true;
+    }
 
+    // borg-reborn-rs (#520, review of #598): a class line goes through the
+    // same checks, on top of the common values. One the checks would change
+    // or reject is refused and the Borg does not start, as with an invalid
+    // common line (or a `borg_param_*` class value out of range).
+    if check_class_settings(env) {
+        warning = true;
+    }
+
+    // Success
+    warning
+}
+
+/// The range checks of `borg_init_txt_file()` (clamps that put a value in
+/// range) and the configuration errors (`borg_buy_strategy` and `borg_trip`'s
+/// `config_error`, `borg_town_plan` 0 or 1), on `cfg`. Returns the errors,
+/// in the order they are reported.
+pub(crate) fn check_settings(cfg: &mut [i32]) -> Vec<&'static str> {
     // (the munchkin level/depth range checks went with the mode, borg-rs#60)
 
     let enchant = BORG_ENCHANT_LIMIT as usize;
@@ -571,22 +591,70 @@ pub(crate) fn finish_txt_settings<E: TxtEnv>(
         cfg[BORG_STOP_KING as usize] = 0;
     }
 
+    let mut errors = Vec::new();
     // Post-M10 family settings are Rust-only behaviour. The C parser carries
     // the same fields so the default `current` control keeps identical input.
     if let Some(error) = crate::borg_buy_strategy::config_error(cfg) {
-        env.warning(error);
-        env.st().init.init_failure = true;
+        errors.push(error);
     }
-    if !matches!(env.st().cfg(crate::borg_headers::borg_h::BORG_TOWN_PLAN), 0 | 1) {
-        env.warning("borg_town_plan must be 0 (control) or 1 (live planner)");
-        env.st().init.init_failure = true;
+    if !matches!(cfg[crate::borg_headers::borg_h::BORG_TOWN_PLAN as usize], 0 | 1) {
+        errors.push("borg_town_plan must be 0 (control) or 1 (live planner)");
     }
-    if let Some(error) = crate::borg_trip::config_error(&env.st().core.cfg) {
-        env.warning(error);
-        env.st().init.init_failure = true;
+    if let Some(error) = crate::borg_trip::config_error(cfg) {
+        errors.push(error);
     }
+    errors
+}
 
-    // Success
+/// borg-reborn-rs (#520, review of #598): check every class line on top of
+/// the common values (already checked). A line whose value the checks would
+/// change (a clamp) or reject is refused with a warning, and the Borg does
+/// not start (`init_failure`). Then each class's accepted lines are checked
+/// together (two lines can conflict, as the buying strategies' class masks).
+/// Returns whether a warning was given.
+fn check_class_settings<E: TxtEnv>(env: &mut E) -> bool {
+    let lines = std::mem::take(&mut env.st().core.cfg_class);
+    let common = env.st().core.cfg.clone();
+    // The common values' own errors were reported already: a class line is
+    // judged only on what it adds.
+    let base = check_settings(&mut common.clone());
+    let mut kept = Vec::with_capacity(lines.len());
+    let mut warning = false;
+    for &(i, c, v) in &lines {
+        let mut cfg = common.clone();
+        cfg[i] = v;
+        let before = cfg.clone();
+        let mut errors = check_settings(&mut cfg);
+        errors.retain(|e| !base.contains(e));
+        if errors.is_empty() && cfg == before {
+            kept.push((i, c, v));
+            continue;
+        }
+        let name = BORG_SETTINGS[i].name.to_string_lossy();
+        let class = crate::params::CLASSES[c];
+        let why = errors.first().copied().unwrap_or("out of range");
+        env.warning(&format!("borg.txt: {name}@{class} = {v}: refused ({why})"));
+        env.st().init.init_failure = true;
+        warning = true;
+    }
+    for c in 0..crate::params::CLASSES.len() {
+        if !kept.iter().any(|&(_, k, _)| k == c) {
+            continue;
+        }
+        let mut cfg = common.clone();
+        for &(i, k, v) in &kept {
+            if k == c {
+                cfg[i] = v;
+            }
+        }
+        for error in check_settings(&mut cfg).into_iter().filter(|e| !base.contains(e)) {
+            let class = crate::params::CLASSES[c];
+            env.warning(&format!("borg.txt: the {class} class lines together: {error}"));
+            env.st().init.init_failure = true;
+            warning = true;
+        }
+    }
+    env.st().core.cfg_class = kept;
     warning
 }
 
@@ -666,38 +734,53 @@ pub fn borg_init_txt_file(st: &mut BorgState) -> bool {
 
 /// borg-reborn-rs (#520): a borg.txt line `borg_<name>@<class> = <value>`:
 /// `None` when the line is no class line of a `borg_*` setting (a
-/// `borg_param_*` class line is params.rs's), else the (setting, class `cidx`,
-/// value) or why it is refused (unknown class or setting, or a value that
-/// does not parse). The name must be a setting's whole name; the value is
-/// read as `borg_proc_setting` reads it.
+/// `borg_param_*` class line is params.rs's), else the (setting, class
+/// `cidx`, value) or why it is refused: an unknown class or setting, a
+/// retired setting or a `borg_respawn_*` one (they have no class value), or a
+/// value that is not exactly an integer (int settings) or one of
+/// TRUE/FALSE/YES/NO/T/F/Y/N/1/0 (bool settings), optionally followed by a
+/// `#` comment (review of #598: a class line is strict, so a typo is
+/// refused, not read as 5 or FALSE). Names and classes are matched without
+/// regard to case, as `borg_proc_setting` matches names.
 pub(crate) fn class_setting_line(line: &[u8]) -> Option<Result<(usize, usize, i32), String>> {
     let text = String::from_utf8_lossy(line);
     let text = text.trim_start();
     let key_end = text.find(|c: char| c == ' ' || c == '=').unwrap_or(text.len());
     let (name, class) = text[..key_end].split_once('@')?;
+    let lower = name.to_ascii_lowercase();
     // `borg_param_*` class lines are params.rs's (#520's first half).
-    if !name.starts_with("borg_") || name.starts_with("borg_param_") {
+    if !lower.starts_with("borg_") || lower.starts_with("borg_param_") {
         return None;
     }
-    let rest = &text[key_end..];
+    let refuse = |why: String| Some(Err(format!("borg.txt: {name}@{class}: {why}")));
     let Some(c) = crate::params::CLASSES.iter().position(|k| k.eq_ignore_ascii_case(class)) else {
-        return Some(Err(format!("borg.txt: {name}@{class}: unknown class {class}")));
+        return refuse(format!("unknown class {class}"));
     };
-    let Some(i) = BORG_SETTINGS.iter().position(|s| s.name.to_bytes().eq_ignore_ascii_case(name.as_bytes())) else {
-        return Some(Err(format!("borg.txt: {name}@{class}: unknown setting {name}")));
-    };
-    let s = &BORG_SETTINGS[i];
-    // The value as the setting's own line would give it, from a value that
-    // cannot be mistaken for it (a parse that sets nothing is refused).
-    let rebuilt = format!("{name}{rest}");
-    let mut a = [i32::MIN];
-    let mut b = [i32::MAX];
-    borg_proc_setting(&mut a, 0, s.name.to_bytes(), s.kind, rebuilt.as_bytes());
-    borg_proc_setting(&mut b, 0, s.name.to_bytes(), s.kind, rebuilt.as_bytes());
-    if a[0] != b[0] {
-        return Some(Err(format!("borg.txt: {name}@{class}: no value")));
+    if let Some(r) = RETIRED_SETTINGS.iter().find(|r| r.name.to_bytes().eq_ignore_ascii_case(name.as_bytes())) {
+        return refuse(format!("a retired setting has no class value ({})", r.advice));
     }
-    Some(Ok((i, c, a[0])))
+    if lower.starts_with("borg_respawn_") {
+        return refuse("a respawn setting picks the next character and has no class value".into());
+    }
+    let Some(i) = BORG_SETTINGS.iter().position(|s| s.name.to_bytes().eq_ignore_ascii_case(name.as_bytes())) else {
+        return refuse(format!("unknown setting {name}"));
+    };
+    let rest = text[key_end..].split('#').next().unwrap_or("");
+    let value = rest.trim_start_matches(|c: char| c == ' ' || c == '=').trim_end();
+    let parsed = if BORG_SETTINGS[i].kind == b'b' {
+        match value.to_ascii_uppercase().as_str() {
+            "TRUE" | "YES" | "T" | "Y" | "1" => Some(1),
+            "FALSE" | "NO" | "F" | "N" | "0" => Some(0),
+            _ => None,
+        }
+    } else {
+        value.parse::<i32>().ok().filter(|_| !value.starts_with('+'))
+    };
+    match parsed {
+        Some(v) => Some(Ok((i, c, v))),
+        None if value.is_empty() => refuse("no value".into()),
+        None => refuse(format!("not a value of this setting: {value:?}")),
+    }
 }
 
 /// borg-reborn-rs (#520): remember the common value of every setting that
@@ -1770,5 +1853,74 @@ borg_no_such_setting@mage = 1\n",
         assert!(matches!(class_setting_line(b"borg_town_w_light@elf = 7"), Some(Err(_))));
         assert!(matches!(class_setting_line(b"borg_town_w_light@mage ="), Some(Err(_))));
         assert!(matches!(class_setting_line(b"borg_town_w_ligh@mage = 7"), Some(Err(_))));
+    }
+
+    fn setting_index(name: &CStr) -> usize {
+        BORG_SETTINGS.iter().position(|s| s.name == name).unwrap()
+    }
+
+    /// Review of #598, finding 1: a class line goes through the range checks
+    /// and the configuration errors on top of the common values. One they
+    /// would change or reject is refused, with `init_failure` as for an
+    /// invalid common line; good lines are kept.
+    #[test]
+    fn class_lines_are_checked_like_common_lines() {
+        let run = |text: &[u8]| {
+            let mut env = FakeTxt::new(text);
+            let (found, old) = read_txt_settings(&mut env);
+            finish_txt_settings(&mut env, found, old);
+            env
+        };
+        // Good: kept, the Borg starts.
+        let env = run(b"borg_town_w_light@mage = 50\nborg_enchant_limit@mage = 10\n");
+        assert_eq!(env.st.core.cfg_class.len(), 2);
+        assert!(!env.st.init.init_failure);
+        // A clamp (enchant 8..15) and an invalid value (town plan 0/1) refuse
+        // the line and stop the Borg.
+        for bad in [&b"borg_enchant_limit@mage = 999\n"[..], b"borg_town_plan@mage = 7\n",
+                    b"borg_buy_strategy_current_classes@mage = 9999\n"] {
+            let env = run(bad);
+            assert!(env.st.core.cfg_class.is_empty(), "{}", String::from_utf8_lossy(bad));
+            assert!(env.st.init.init_failure, "{}", String::from_utf8_lossy(bad));
+            assert!(env.out.iter().any(|o| o.contains("refused")), "{:?}", env.out);
+        }
+        // Each line alone is fine; together the two class masks conflict.
+        let env = run(b"borg_buy_strategy_current_classes@mage = 2\nborg_buy_strategy_reserve410_classes@mage = 2\n");
+        assert!(env.st.init.init_failure);
+        assert!(env.out.iter().any(|o| o.contains("the mage class lines together")), "{:?}", env.out);
+        // A common line's own error is not blamed on a good class line.
+        let env = run(b"borg_town_plan = 7\nborg_town_w_light@mage = 50\n");
+        assert_eq!(env.st.core.cfg_class.len(), 1);
+        assert!(env.st.init.init_failure, "the common line still stops the Borg");
+    }
+
+    /// Review of #598, findings 2, 3 and 5: strict values, names in any
+    /// case, retired and respawn settings refused with their reason.
+    #[test]
+    fn class_line_values_and_names_are_strict() {
+        let light = setting_index(c"borg_town_w_light");
+        let damage = setting_index(c"borg_worships_damage");
+        let ok = |l: &[u8]| class_setting_line(l).unwrap().unwrap();
+        let refused = |l: &[u8]| matches!(class_setting_line(l), Some(Err(_)));
+        // Ints: exactly an integer, negatives, a trailing comment.
+        assert_eq!(ok(b"borg_town_w_light@mage = -3"), (light, 1, -3));
+        assert_eq!(ok(b"borg_town_w_light@mage = 5 # five"), (light, 1, 5));
+        assert!(refused(b"borg_town_w_light@mage = 5x"));
+        assert!(refused(b"borg_town_w_light@mage = 150%"));
+        assert!(refused(b"borg_town_w_light@mage = TRUE"));
+        assert!(refused(b"borg_town_w_light@mage = +5"));
+        // Bools: the documented forms only.
+        assert_eq!(ok(b"borg_worships_damage@mage = yes"), (damage, 1, 1));
+        assert_eq!(ok(b"borg_worships_damage@mage = FALSE"), (damage, 1, 0));
+        assert!(refused(b"borg_worships_damage@mage = xyz"));
+        assert!(refused(b"borg_worships_damage@mage = 2"));
+        // Upper case is a class line too.
+        assert_eq!(ok(b"BORG_TOWN_W_LIGHT@MAGE = 5"), (light, 1, 5));
+        assert!(refused(b"BORG_TOWN_W_LIGTH@MAGE = 5"));
+        assert_eq!(class_setting_line(b"BORG_PARAM_TOWN_GOLD_RESERVE@MAGE = 1"), None);
+        // Retired and respawn settings name their reason.
+        let why = |l: &[u8]| class_setting_line(l).unwrap().unwrap_err();
+        assert!(why(b"borg_munchkin_start@mage = TRUE").contains("retired"));
+        assert!(why(b"borg_respawn_class@mage = 1").contains("respawn"));
     }
 }

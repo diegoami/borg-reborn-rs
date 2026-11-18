@@ -197,11 +197,16 @@ Since #520's second half, the core's own `borg.txt` settings (`borg_*`,
 `BORG_SETTINGS` in `borg-core/src/borg_init.rs`, e.g. the shopping weights
 `borg_town_w_*`) have class values too, as `borg_<name>@<class> = <value>`
 lines. The character's class applies at birth and at every reincarnation; a
-setting with no line for that class keeps its common value. A line with an
-unknown class or setting, or no value, is refused with a Borg warning. The
-keys the shell reads (`borg_reborn_*`, `borg_plan`, `borg_scary_list`) and
-`borg_respawn_*` have no class value, and there is no environment form for
-these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
+setting with no line for that class keeps its common value. A class line is
+strict: its value must be exactly an integer, or TRUE/FALSE/YES/NO/T/F/Y/N/1/0
+for a true/false setting. A line with an unknown class or setting, a retired
+or `borg_respawn_*` setting, or a bad value is refused with a Borg warning. A
+class value goes through the same range checks and configuration checks as
+the common line, on top of the common values (each line, then each class's
+lines together); one they would change or reject is refused and the Borg does
+not start, as with an invalid common line. The keys the shell reads
+(`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
+and there is no environment form for these settings. A zoo profile cannot write such a line (`BORG_TXT_SET` names
 are `[A-Za-z0-9_.-]`); it rewrites the common line, and a class line in the
 shipped file still wins for its class.
 

@@ -14,8 +14,22 @@ before: folded into the one `borg.txt`, its line applied to every class.
   the end of `borg_init_txt_file` (a `$` reload) then give it the current
   class's value, or the common one. Settings without class lines are
   untouched, so runtime values such as the money-scum amount survive.
-- **Refused, with a Borg warning:** an unknown class or setting, or no
-  value.
+- **Refused, with a Borg warning:** an unknown class or setting, a retired
+  or `borg_respawn_*` setting, or a value that is not exactly an integer (or
+  TRUE/FALSE/YES/NO/T/F/Y/N/1/0 for a true/false setting). Names and classes
+  in any case.
+- **Checked like the common line** (review of #598): the range checks and
+  configuration errors are one function, `check_settings`. Each class line is
+  tried on top of the common values, then each class's lines together (two
+  class masks can conflict). A value the checks would change (a clamp, such as
+  `borg_enchant_limit` 8..15) or reject (`borg_town_plan` 7, a buying-strategy
+  mask) refuses the line and stops the Borg (`init_failure`), as an invalid
+  common line does. An error of the common values themselves is not blamed on
+  a class line.
+- **A runtime value is reset by a class line:** a setting with a class line
+  gets its class or common value again at a reincarnation. Today the only
+  setting written at runtime is `borg_money_scum_amount`; without a class line
+  it keeps its runtime value.
 - **The class files:** `scripts/borg-class-files.py` now accepts `borg_*`
   lines and folds them as `borg_<name>@<class>`. It checks each name against
   `BORG_SETTINGS`, and refuses the shell's keys (`borg_reborn_*`,
