@@ -2422,7 +2422,15 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
 /// Spread the monsters' danger as regional fear and count the breeders
 /// (monsters probably in a vault are skipped).
 fn spread_monster_fear(st: &mut BorgState) {
+    // borg-reborn-rs (#558): counted before the spread, so every monster's
+    // danger below (`borg_danger`'s hunted breeder) sees the full count.
     st.borg.mon.breeders = 0;
+    for k in 1..i32::from(st.kills.nxt) {
+        let r_idx = usize::from(st.kills.kills[idx(k)].r_idx);
+        if r_idx != 0 && engine::race_flag_has(r_idx, RF_MULTIPLY) {
+            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
+        }
+    }
     let mut i = 1;
     while i < i32::from(st.kills.nxt) {
         let kill = st.kills.kills[idx(i)];
@@ -2437,9 +2445,6 @@ fn spread_monster_fear(st: &mut BorgState) {
         }
 
         let r_idx = usize::from(kill.r_idx);
-        if engine::race_flag_has(r_idx, RF_MULTIPLY) {
-            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
-        }
 
         // Skip monsters that dont chase
         if engine::race_flag_has(r_idx, RF_NEVER_MOVE) {

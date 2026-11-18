@@ -23,6 +23,43 @@ Two reviews of #569 accepted #539's last part (`fba1c6e0..4a482c58`, on
 - **Owner's decision:** RULES 4's AI attribution trailers already on `main`
   (a cleanup pass or a CI guard; published commits cannot be amended, RULES 5).
 
+## 2026-11-18: breeders hunted by every class (#558)
+
+Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
+a lone green worm mass. Three causes, all fixed behind switches. All of it is
+in the vendored core (`borg-core/`), so it plays only with the borg-rs core:
+`borg_reborn_core = borg-rs` (shipped since #479; the zoo and `~/borg-play`)
+or `BORG_CORE=borg-rs`. A harness run without `BORG_CORE` plays the original
+reborn core, which is unaffected.
+- **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
+  from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
+- **Class:** #503's hunt left Priests out. Every class hunts now, through
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3); the
+  count is the switch, with no flag of its own, so the control that plays as
+  main sets it to 0 for Mage, Druid, Priest, Necromancer and Ranger. For
+  Mages and Necromancers below CL35 the hunt walk targets breeders only, with
+  half their mana (`borg_flow_kill_direct`, after 3000 turns on a level, still
+  digs to any monster).
+- **Danger:** the worm's 1d3 acid bite read 630 (200 corrosion fear per acid
+  blow, then +150% for a breeder below CL20), above the hunt's limit of a
+  third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear
+  stays for everything else: at 0 everywhere, 18 starts went from 2 to 5
+  deaths.
+- **Checks** (third review, against main `68cf9eb5` and its `borg.txt`):
+  - control (the class counts at 0 for Mage, Druid, Priest, Necromancer and
+    Ranger, Warrior 4, both switches 0): 18/18 classes-18 starts identical to
+    main;
+  - shipped: 8 of 18 games change; the same 3 deaths (wild dog, blue yeek,
+    lava), sum of CL 100 against 101; the rest gate's note appears 8 times;
+  - the owner's 88,147 save over 8 seeds: 4 worm deaths on main and 4 here.
+    The save is a breeder trap either way (cornered by 14–22 worms), so
+    #556 (no walking into colonies) is the follow-up;
+  - the six `borg-play` deaths: no new death (Priest 809881907 dies to a
+    soldier on main and survives here); Priest 1055640847 ends at CL3
+    against 6, Ranger 2107852048 on DL1 against DL3.
+- **Left:** more Bless and Heroism (#560). The return trip without Recall
+  (#557) went into main as #559, from another session.
+
 ## 2026-11-18: no flight Recall on DL1 (#557)
 
 Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
@@ -159,6 +196,7 @@ connected stairs (8 times from the owner's save on main).
   from DL5+, restock, no stairs after 1000 turns, into the dungeon) and the
   low-light exit (`borg_think_dungeon_light`).
 - The reserve and the hold off, the Recall gate on: smoke 3/3 identical (its games never flee with Recall). With the gate at 1, the six borg-play deaths replay their zoo keys.
+
 
 ## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
 

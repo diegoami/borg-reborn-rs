@@ -7,3 +7,4 @@ borg_param_attack_preference_projectile_permille = 1200
 borg_param_attack_preference_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent = 50
 borg_param_town_heal_reserve_hp_percent = 100
+borg_param_caution_breeder_hunt_max_count = 6
