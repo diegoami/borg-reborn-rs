@@ -1,0 +1,7 @@
+# borg-reborn-rs (#520): the priest's own settings. Each line overrides the
+# common harness/borg.txt for a priest only. After editing, run
+# scripts/borg-class-files.py fold (it writes them into harness/borg.txt,
+# the one file a run reads).
+borg_param_attack_preference_spell_permille = 1700
+borg_param_town_heal_curve_scale_percent = 125
+borg_param_town_heal_reserve_hp_percent = 250

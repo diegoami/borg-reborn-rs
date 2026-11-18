@@ -5,6 +5,11 @@ versions and configurations differ in survival and progress?* It owns the
 catalogues, orchestration, the results store, the statistics and the site. It
 owns no Borg code.
 
+The proposed [scenario evaluation plan](SCENARIO-EVALUATION.md) adds
+cemetery-owned generated-dungeon evidence alongside identity checks and
+zoo population comparisons. It defines their separate claims, execution
+dependencies and staged acceptance gates; it is not an execution capability.
+
 ## Pieces
 
 **Specimen.** Repository, full commit SHA, carried-fix count and label. The
@@ -225,6 +230,15 @@ the commit set in `zoo/catalogue.py`). Three rules follow:
   (older builds ignore the unknown line; every cell would be a
   `config_error`). An experiment recorded before the cutoff keeps its
   arms under an explicit `"pre_cutoff": "<date and reason>"` note.
+- The same guard covers `diegoami/borg-rs` ports: milestone tags v8 and
+  later require explicit mode profiles, including M13 even though its
+  shipped class-rule default is off. Tagged v2-v7 and the known M0 pin are
+  pre-cutoff. Untagged unknown pins conservatively require explicit modes;
+  an explicit `mode_side` overrides this. Separate borg-reborn-rs trees and
+  specimens declaring `play_mode: single` are outside this legacy rule.
+  Planning, paired statistics and the dashboard share `catalogue.mode_side`.
+  The three legacy M8-M10 smoke definitions retain their implicit profiles
+  under archival `pre_cutoff` notes; their recorded cells are unchanged.
 - Version pairings (`vs_version`) between specimens on opposite sides of
   the cutoff are not computed (`zoo/stats.py`).
 - Run pages label pre-cutoff results (recorded before 2026-11-10, or

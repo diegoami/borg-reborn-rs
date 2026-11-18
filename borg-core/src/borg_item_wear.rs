@@ -22,6 +22,8 @@
 //! pack hole holding the old equipment reads the candidate's `desc` while
 //! the candidate is worn (review of 4c06cec08, finding 1).
 
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
 use crate::borg::BorgBest;
 use crate::borg_danger::borg_danger;
 use crate::borg_inventory::{borg_first_empty_inventory_slot, borg_item_worth_id, borg_wield_slot};
@@ -160,7 +162,7 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
     let free_id = borg_spell_legal(st, IDENTIFY_RUNE);
 
     /* don't ID stuff when you can't recover spent spell point immediately */
-    if st.borg.tr(BI_CURSP) < 50 && borg_spell_legal(st, IDENTIFY_RUNE) && {
+    if st.borg.tr(BI_CURSP) < param(Param::wear_identify_min_sp) && borg_spell_legal(st, IDENTIFY_RUNE) && {
         let (y, x) = (st.borg.c.y, st.borg.c.x);
         !borg_flow_misc::borg_check_rest(st, y, x)
     } {
@@ -168,7 +170,7 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
     }
 
     /* No ID if in danger */
-    if danger_here(st) > 1 {
+    if danger_here(st) > param(Param::wear_identify_max_danger) {
         return false;
     }
 
@@ -187,16 +189,16 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
 
         /* Preferentially ID egos and artifacts */
         if item.art_idx != 0 {
-            v = add_long(item.value, 150000);
+            v = add_long(item.value, i64::from(param(Param::wear_identify_artifact_bonus)));
         }
 
         if borg_ego_has_random_power(usize::from(item.ego_idx)) {
-            v = add_long(item.value, 100000);
+            v = add_long(item.value, i64::from(param(Param::wear_identify_ego_bonus)));
         }
 
         /* Prioritize the ID */
         if borg_item_note_needs_id(st, item) {
-            v = add_long(item.value, 20000);
+            v = add_long(item.value, i64::from(param(Param::wear_identify_magic_bonus)));
         }
 
         /* Ignore */
@@ -233,12 +235,12 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
 
         /* Preferentially ID artifacts */
         if item.art_idx != 0 {
-            v = add_long(item.value, 150000);
+            v = add_long(item.value, i64::from(param(Param::wear_identify_artifact_bonus)));
         }
 
         /* Identify "good" items */
         if borg_item_note_needs_id(st, &item) {
-            v = add_long(item.value, 20000);
+            v = add_long(item.value, i64::from(param(Param::wear_identify_magic_bonus)));
         } else if free_id || borg_item_worth_id(st, &item) {
             v = item.value;
         }
@@ -248,17 +250,17 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
             let maxdepth = i64::from(st.borg.tr(BI_MAXDEPTH));
             /* Analyze the type */
             match u32::from(item.tval) {
-                TV_RING | TV_AMULET => v = add_long(v, maxdepth * 5000),
-                TV_ROD => v = add_long(v, maxdepth * 3000),
-                TV_WAND | TV_STAFF => v = add_long(v, maxdepth * 2000),
+                TV_RING | TV_AMULET => v = add_long(v, maxdepth * i64::from(param(Param::wear_identify_jewelry_depth_weight))),
+                TV_ROD => v = add_long(v, maxdepth * i64::from(param(Param::wear_identify_rod_depth_weight))),
+                TV_WAND | TV_STAFF => v = add_long(v, maxdepth * i64::from(param(Param::wear_identify_device_depth_weight))),
                 TV_POTION | TV_SCROLL => {
                     /* Boring levels */
-                    if maxdepth >= 5 {
+                    if maxdepth >= i64::from(param(Param::wear_identify_consumable_min_depth)) {
                         /* Reward depth */
-                        v = add_long(v, maxdepth * 500);
+                        v = add_long(v, maxdepth * i64::from(param(Param::wear_identify_consumable_depth_weight)));
                     }
                 }
-                TV_FOOD => v = add_long(v, maxdepth * 10),
+                TV_FOOD => v = add_long(v, maxdepth * i64::from(param(Param::wear_identify_food_depth_weight))),
                 _ => {}
             }
         }
@@ -337,7 +339,7 @@ pub fn borg_swap_rings(st: &mut BorgState) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if borg_timer(st, st.borg.time.level) > 1000 {
+    if borg_timer(st, st.borg.time.level) > param(Param::wear_ring_reorder_max_turns) {
         return false;
     }
     if st.borg.tr(BI_CDEPTH) != 0 {
@@ -493,7 +495,7 @@ pub fn borg_wear_rings(st: &mut BorgState) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if borg_timer(st, st.borg.time.level) > 2000 {
+    if borg_timer(st, st.borg.time.level) > param(Param::wear_ring_select_max_turns) {
         return false;
     }
 
@@ -546,7 +548,7 @@ pub fn borg_wear_rings(st: &mut BorgState) -> bool {
 
         /* the One Ring would be awesome */
         if st.items.items[i as usize].one_ring {
-            p = st.borg.power.wrapping_mul(2);
+            p = st.borg.power.wrapping_mul(param(Param::wear_one_ring_power_multiplier));
         }
 
         /* Restore the old item (empty) */
@@ -677,7 +679,7 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if st.borg.antibounce_count > 300 {
+    if st.borg.antibounce_count > (param(Param::wear_backup_max_bounces) as i16) {
         return false;
     }
 
@@ -786,7 +788,7 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
 
     /* good swap.  Make sure it helps a significant amount */
     let avoidance = i32::from(st.borg.avoidance);
-    let limit = if st.borg.near.unique != 0 { (avoidance * 2) / 3 } else { avoidance / 2 };
+    let limit = if st.borg.near.unique != 0 { (avoidance * param(Param::wear_backup_unique_danger_numerator)) / param(Param::wear_backup_unique_danger_divisor) } else { avoidance / param(Param::wear_backup_danger_divisor) };
     if p > b_p && b_p <= limit {
         /* Log */
         borg_note(st, &format!("# Swapping backup.  ({} < {}).", b_p, p));
@@ -870,10 +872,10 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
 
     /* Forbid if been sitting on level forever */
     /*    Just come back and work through the loop later */
-    if borg_timer(st, st.borg.time.level) > 2000 {
+    if borg_timer(st, st.borg.time.level) > param(Param::wear_best_max_turns) {
         return false;
     }
-    if st.borg.antibounce_count > 1300 {
+    if st.borg.antibounce_count > (param(Param::wear_best_max_bounces) as i16) {
         return false;
     }
 
@@ -912,7 +914,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
             /* Examine the worn list */
             if wear.track_worn_num >= 1
                 && wear.track_worn_name1[o as usize] == item.art_idx
-                && borg_timer(st, i32::from(wear.track_worn_time)) > 10
+                && borg_timer(st, i32::from(wear.track_worn_time)) > param(Param::wear_repeat_cooldown_turns)
             {
                 /* Recently worn item */
                 recently_worn = true;
@@ -977,7 +979,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
             /* XXX XXX XXX Consider if slot is empty */
 
             /* Ignore "essentially equal" swaps */
-            if p <= b_p + 50 {
+            if p <= b_p + param(Param::wear_min_power_gain) {
                 continue;
             }
 
@@ -986,7 +988,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
             b_p = p;
         } /* non-rings, non full */
 
-        if engine::randint0(100) == 10 || st.items.items[i as usize].one_ring {
+        if engine::randint0(param(Param::wear_full_ring_trial_rng_bound) as u32) == 10 || st.items.items[i as usize].one_ring {
             /* ring, full hands */
             if slot == left
                 && st.items.items[left as usize].iqty != 0

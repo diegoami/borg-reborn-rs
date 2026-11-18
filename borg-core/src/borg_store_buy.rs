@@ -23,6 +23,8 @@
 //! pointer does). C's pointer `item` into a ware is read again
 //! at each use (`ware`), never cached across a call.
 
+// borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+use crate::params::{value as param, Param};
 use crate::borg_buy_strategy::{
     buy_identify_enabled, is_learning_candidate, reserve410_unmet, RESERVE410_CURE,
     RESERVE410_PHASE,
@@ -228,7 +230,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     /* Check the object */
     match tval {
         TV_SHOT | TV_ARROW | TV_BOLT => {
-            if st.borg.tr(BI_CLEVEL) < 35 {
+            if st.borg.tr(BI_CLEVEL) < param(Param::buy_enchanted_ammo_min_level) {
                 if item.to_h != 0 {
                     return false;
                 }
@@ -307,13 +309,13 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
             return true;
         }
 
-        if b.tr(BI_CLEVEL) < 15 && b.tr(BI_GOLD) < 20000 {
+        if b.tr(BI_CLEVEL) < param(Param::buy_black_market_early_level) && b.tr(BI_GOLD) < param(Param::buy_black_market_early_gold) {
             return false;
         }
-        if b.tr(BI_CLEVEL) < 35 && b.tr(BI_GOLD) < 15000 {
+        if b.tr(BI_CLEVEL) < param(Param::buy_black_market_middle_level) && b.tr(BI_GOLD) < param(Param::buy_black_market_middle_gold) {
             return false;
         }
-        if b.tr(BI_GOLD) < 10000 {
+        if b.tr(BI_GOLD) < param(Param::buy_black_market_min_gold) {
             return false;
         }
     }
@@ -343,7 +345,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
     }
 
     /* Low level borgs should not waste the money on certain things */
-    if st.borg.tr(BI_MAXCLEVEL) < 5 {
+    if st.borg.tr(BI_MAXCLEVEL) < param(Param::buy_extra_book_min_level) {
         /* next book, cant read it */
         if can_browse(&item) && sval >= 1 {
             return false;
@@ -352,7 +354,7 @@ fn borg_good_buy(st: &mut BorgState, who: i32, ware_n: i32) -> bool {
 
     /* Not direct spell casters and the extra books */
     /* classes that are direct spell casters get more than 3 books */
-    if !borg_primarily_caster() && st.borg.tr(BI_MAXCLEVEL) <= 8 && can_browse(&item) && sval >= 1 {
+    if !borg_primarily_caster() && st.borg.tr(BI_MAXCLEVEL) <= param(Param::buy_hybrid_extra_book_max_level) && can_browse(&item) && sval >= 1 {
         return false;
     }
 
@@ -540,7 +542,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
             if tval == TV_WAND
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud)
-                && st.borg.tr(BI_GOOD_W_CHG) > 40
+                && st.borg.tr(BI_GOOD_W_CHG) > param(Param::buy_attack_wand_charge_limit)
             {
                 continue;
             }
@@ -549,7 +551,7 @@ pub fn borg_think_shop_buy_useful(st: &mut BorgState) -> bool {
             if tval == TV_WAND
                 && (sval == st.item_val.sv_wand_magic_missile
                     || sval == st.item_val.sv_wand_stinking_cloud)
-                && st.borg.tr(BI_MAXCLEVEL) > 30
+                && st.borg.tr(BI_MAXCLEVEL) > param(Param::buy_attack_wand_max_level)
             {
                 continue;
             }
@@ -968,7 +970,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
     }
 
     /* not until later-- use that money for better equipment */
-    if st.borg.tr(BI_CLEVEL) < 15 {
+    if st.borg.tr(BI_CLEVEL) < param(Param::buy_home_stock_min_level) {
         return false;
     }
 
@@ -1010,7 +1012,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
             /* Require some "extra" cash */
             // `1000L + cost * 5`: the product is an int32_t, the sum a long
             if i64::from(st.borg.tr(BI_GOLD))
-                < 1000 + i64::from(ware(st, k, n).cost.wrapping_mul(5))
+                < i64::from(param(Param::buy_home_stock_gold_reserve)) + i64::from(ware(st, k, n).cost.wrapping_mul(param(Param::buy_home_stock_price_multiplier)))
             {
                 continue;
             }
@@ -1053,7 +1055,7 @@ pub fn borg_think_shop_grab_interesting(st: &mut BorgState) -> bool {
             let c = ware(st, k, n).cost.wrapping_mul(qty);
 
             /* Penalize expensive items */
-            if c > st.borg.tr(BI_GOLD) / 10 {
+            if c > st.borg.tr(BI_GOLD) / param(Param::buy_home_stock_gold_divisor) {
                 s = s.wrapping_sub(c);
             }
 

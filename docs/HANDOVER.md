@@ -16,6 +16,99 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
 
+## 2026-11-17: the scary list file shipped on (#518)
+
+Owner: switch to our list. The shipped `borg.txt` sets
+`borg_scary_list = scary_monsters.txt` beside
+`caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
+none` keeps the compiled C list.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
+- **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
+  core, which ignores the list: smoke 3/3 identical to its references.
+- **The merge waits for the zoo:** its adapter must copy a list named by the
+  shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
+  stop with exit 2.
+## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
+
+The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
+it read its only Recall with the up staircase 8 steps away, rested while Grip
+closed in, phased twice from a dog twice its speed and died meleeing with 17
+flasks of oil. Three switches (compiled 0, shipped 1):
+`caution_flee_stairs_before_recall`, `escape_phase_adjacent_only`,
+`caution_scary_ranged_no_stairs`.
+
+- The Priest lives (walks back to the stairs). Of the six `borg-play` deaths,
+  four live with the switches on; the floating-eye Mage and the turn-276
+  Ranger play identical keys (no rule engaged).
+- 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
+  deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
+  ranged 3.
+- Review of #543: "known" was not "reachable". Recall now waits only when the
+  flee flows' own stair flow (up: `borg_flow_stair_less`'s; down: its gates,
+  or `borg_flow_stair_both`'s on a scary level) reaches the Borg from a free
+  staircase, probed without committing. "Something to throw or shoot" is the
+  attack planner's own choice (`ranged_means`: `best_throw`, `launch_damage`),
+  not any flask; on a scary level without stairs `borg_attack` takes only an
+  awake monster in view at range (`ranged_candidate`, shared with the Recall
+  and Phase waits). Rerun: off still identical to main (18/18); on 5 → 2
+  deaths, sum of CL 87 → 95; alone: stairs 3 deaths / 95, phase 3 / 89,
+  ranged 2 / 94. Priest and the same four `borg-play` deaths live; the two
+  others still play identical keys.
+- A first version walked to the stairs inside `borg_caution` and returned, so a
+  fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
+  only declines to read Recall.
+- Left on #539: a hurt or afraid monster stops being scary (needs the scary
+  flag recomputed each think, with door/resist scares kept latched).
+
+## 2026-11-18: contract tests run the environment overrides directly (#540)
+
+Moving the borg-zoo pin (needed for #535's shipped scary list) broke
+`engine/tests/test_core_profile_contract.py`: the current adapter clears every
+ambient `BORG_*` variable, so the tests' `BORG_CORE`, `BORG_ERRAND`,
+`BORG_ERRAND_BUDGET` and `BORG_STOPSCARED` overrides never reached the core.
+Those tests now run the game directly (`direct`), with the pinned adapter's
+own `config_text` and `command`. The profile tests still go through
+`run_cell`. 13/13 pass with the old pin (`c5f1b04`) and with `7b373a70`; the
+rest of the engine suite is unchanged between the two pins. Next: the pin
+move in its own PR, then #535.
+
+## 2026-11-17: class values and per-class borg files (#520)
+
+Owner: one common borg.txt, per-class files overriding any setting, no
+per-class flags in the code; decisions A–D "yes to all" (on #520).
+
+- `params.rs`: every parameter has a common value and optional class values
+  (`borg_param_<name>@<class>`, `BORG_PARAM_<NAME>__<CLASS>`, or the pre-#520
+  per-class names as aliases). `value()` follows the character's class
+  (`set_class`). 81 per-class parameters became 6 (registry 2,116).
+- `harness/borg_<class>.txt` hold the 36 shipped class values; the generated
+  CLASS FILES block in `harness/borg.txt` carries them (legacy names, so zoo
+  profiles keep rewriting them); `scripts/tests/test_borg_class_files.py`
+  keeps the block in sync. The zoo adapter needs no change.
+- `params-core.json` adds `class_values`; the trace's attack `parameter_name`
+  is the family's parameter.
+- Checked: the 18 classes-18 starts play identical keys to main `435b07e7`.
+- Left: the cfg `borg_*` settings (decision C: later); #518's scary list by
+  class can use class values.
+## 2026-11-17: borg.txt's formula section removed (#519)
+
+Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
+them. borg-rs's formula section (Power, Depth Requirement, Restock
+Requirement: 790 of `harness/borg.txt`'s 1,362 lines) is deleted; the file is
+now 576 lines. `borg-core/borg.txt` (borg-rs's copy, the parity check) keeps
+it.
+
+- The shipped `borg_uses_dynamic_calcs = FALSE`: the section was read but never
+  processed, and `borg_power`/`borg_prepared` use their built-in calculations.
+  Checked: the 18 classes-18 starts play identical keys to main `a8ac685a`.
+- Even with TRUE the formulas never took effect: a formula line fails to parse
+  and `borg_load_formulas` switches dynamic calculations off (#526, closed as
+  moot). With the section gone, TRUE warns "no formulas found" and stays off.
 ## 2026-11-17: the named scary list as data (#518)
 
 Owner: a flexible scary list, by monster, level and class.
@@ -5553,3 +5646,57 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   the receiving hook and clarify configuration semantics in the documentation.
 - The PR runtime pin is already current; refresh it and validation after these
   runtime changes. #448 remains open for historical raw-evidence custody.
+
+## 2026-11-17: Track P synchronization before inventory calibration (#474)
+
+- Owner selected #433. Synchronize accepted main 68e39b7e into track-p
+  through this CI-checked integration PR; prior track-p is an ancestor.
+- Preserve all accepted runtime, recorder, death identity/matching, evidence
+  references and plan-cap fixes. No new gameplay policy is introduced.
+- Next: M13 inventory parameter audit/extraction under #433, with neutral
+  defaults, parity checks and a pinned owner-selected promotion review.
+
+## 2026-11-17: P4 M13 inventory parameter extraction (#433)
+
+- Owner selected #433; #475 synchronized accepted main into track-p at
+  9cf60aae after green CI. P4 is the bounded active milestone in PLAN.md.
+- Append 362 neutral parameters (2,143 total): power48, wear23, buy14,
+  sell34, shop6, home237. Existing IDs/defaults, C-long/i32 arithmetic,
+  tie/RNG order, quantities, no-selling and disabled exploit paths stay.
+- M13-INVENTORY-PARAMETERS.md/.json classifies policy versus retained
+  mechanics and gives original source references. #293 stays separate;
+  R4 #434 waits for owner-reviewed promotion of an exact P4 pin.
+- Divisors/narrow counts are bounded; invalid greed/tier/depth ordering
+  fails before play. Add a native non-neutral town-budget regression.
+- Validation/evidence receipts are recorded on the task PR before merge.
+  Task integration targets track-p; the subsequent milestone review and
+  owner acceptance gate promotion to main. No tuning/population claim.
+
+## 2026-11-17: P4 milestone review fixes (#481)
+
+- Owner-selected review #477 at 105f7947 confirms neutral extraction and
+  independently matches all 45 native streams, with an exporter checkout
+  mismatch limiting that reviewer's harness/reconciliation status.
+- F1: cap mapping-rod reserve at 255 and test 256/300 rejection plus the
+  valid endpoints and all new u8/i16 operand bounds. Default remains 2.
+- F2: rename the three unpromoted curing bonuses for their actual CCW,
+  Healing and poison-cure guards; synchronize descriptions and JSON.
+- Preserve old parameter positions/defaults and immutable Cemetery #61
+  evidence; no aliases or policy changes. Integrate only through track-p
+  and update the exact #477 pin for owner re-review before main promotion.
+
+
+## 2026-11-17: P4 conflict resolution before promotion (#522)
+
+- Merge accepted main a8ac685a into task/T522-p4-main-sync from track-p
+  7078bb1d, preserving all main bug fixes, configuration and review rules.
+- Resolve params.rs test conflict by retaining both town and P4 source-module
+  validation; retain both calibration snapshots and correct the current count.
+- Main's 1829 specs stay byte-identical in the same order; append the same
+  362 reviewed P4 specs (2191 total). Unpromoted P4 absolute IDs move;
+  historical evidence remains pinned to its original registry and build.
+- The buying-code auto-merge keeps #507's quantity fix and neutral P4 lookups.
+  All other runtime modules equal their accepted parent versions exactly.
+- Required checks/CI and owner review precede task integration under RULES 1a.
+  #477 stays unmerged; update its pin after approved track-p integration and
+  re-review the synchronized result before promotion.

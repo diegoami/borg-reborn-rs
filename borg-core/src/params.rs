@@ -33,60 +33,12 @@ pub(crate) struct Spec {
 
 parameters! {
     // #403: final attack ranking, neutral for every supported class/family.
-    attack_preference_warrior_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior melee; floor rounding, no eligibility changes."),
-    attack_preference_warrior_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior projectile; floor rounding, no eligibility changes."),
-    attack_preference_warrior_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior thrown; floor rounding, no eligibility changes."),
-    attack_preference_warrior_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior spell; floor rounding, no eligibility changes."),
-    attack_preference_warrior_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior device; floor rounding, no eligibility changes."),
-    attack_preference_warrior_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for warrior activation; floor rounding, no eligibility changes."),
-    attack_preference_mage_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage melee; floor rounding, no eligibility changes."),
-    attack_preference_mage_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage projectile; floor rounding, no eligibility changes."),
-    attack_preference_mage_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage thrown; floor rounding, no eligibility changes."),
-    attack_preference_mage_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage spell; floor rounding, no eligibility changes."),
-    attack_preference_mage_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage device; floor rounding, no eligibility changes."),
-    attack_preference_mage_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for mage activation; floor rounding, no eligibility changes."),
-    attack_preference_druid_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid melee; floor rounding, no eligibility changes."),
-    attack_preference_druid_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid projectile; floor rounding, no eligibility changes."),
-    attack_preference_druid_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid thrown; floor rounding, no eligibility changes."),
-    attack_preference_druid_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid spell; floor rounding, no eligibility changes."),
-    attack_preference_druid_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid device; floor rounding, no eligibility changes."),
-    attack_preference_druid_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for druid activation; floor rounding, no eligibility changes."),
-    attack_preference_priest_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest melee; floor rounding, no eligibility changes."),
-    attack_preference_priest_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest projectile; floor rounding, no eligibility changes."),
-    attack_preference_priest_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest thrown; floor rounding, no eligibility changes."),
-    attack_preference_priest_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest spell; floor rounding, no eligibility changes."),
-    attack_preference_priest_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest device; floor rounding, no eligibility changes."),
-    attack_preference_priest_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for priest activation; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer melee; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer projectile; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer thrown; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer spell; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer device; floor rounding, no eligibility changes."),
-    attack_preference_necromancer_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for necromancer activation; floor rounding, no eligibility changes."),
-    attack_preference_paladin_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin melee; floor rounding, no eligibility changes."),
-    attack_preference_paladin_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin projectile; floor rounding, no eligibility changes."),
-    attack_preference_paladin_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin thrown; floor rounding, no eligibility changes."),
-    attack_preference_paladin_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin spell; floor rounding, no eligibility changes."),
-    attack_preference_paladin_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin device; floor rounding, no eligibility changes."),
-    attack_preference_paladin_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for paladin activation; floor rounding, no eligibility changes."),
-    attack_preference_rogue_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue melee; floor rounding, no eligibility changes."),
-    attack_preference_rogue_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue projectile; floor rounding, no eligibility changes."),
-    attack_preference_rogue_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue thrown; floor rounding, no eligibility changes."),
-    attack_preference_rogue_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue spell; floor rounding, no eligibility changes."),
-    attack_preference_rogue_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue device; floor rounding, no eligibility changes."),
-    attack_preference_rogue_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for rogue activation; floor rounding, no eligibility changes."),
-    attack_preference_ranger_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger melee; floor rounding, no eligibility changes."),
-    attack_preference_ranger_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger projectile; floor rounding, no eligibility changes."),
-    attack_preference_ranger_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger thrown; floor rounding, no eligibility changes."),
-    attack_preference_ranger_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger spell; floor rounding, no eligibility changes."),
-    attack_preference_ranger_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger device; floor rounding, no eligibility changes."),
-    attack_preference_ranger_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for ranger activation; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard melee; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard projectile; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard thrown; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard spell; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard device; floor rounding, no eligibility changes."),
-    attack_preference_blackguard_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for blackguard activation; floor rounding, no eligibility changes."),
+    attack_preference_melee_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the melee family; per class with attack_preference_melee_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_projectile_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the projectile family; per class with attack_preference_projectile_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_thrown_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the thrown family; per class with attack_preference_thrown_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_spell_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the spell family; per class with attack_preference_spell_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_device_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the device family; per class with attack_preference_device_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
+    attack_preference_activation_permille => (1000, "utility_permille", 500, 2000, "borg_fight_attack.rs:4575", "Final returned attack utility preference for the activation family; per class with attack_preference_activation_permille@<class> or the class files (#520); floor rounding, no eligibility changes."),
     caution_bounce_healthy_tenths => (7, "tenths", 0, 100, "borg_caution.rs:102", "Controls bounce healthy tenths."),
     caution_bounce_limit => (300, "turns", 0, 100000, "borg_caution.rs:108", "Controls bounce limit."),
     caution_caster_stat_vote => (1, "votes", 0, 100, "borg_caution.rs:157", "Controls caster stat vote."),
@@ -200,6 +152,8 @@ parameters! {
     caution_cut_critical_hp => (2, "hp", 0, 10000, "borg_caution.rs:713", "Controls cut critical hp."),
     caution_cut_critical_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:713", "Controls cut critical hp divisor."),
     caution_cut_reserve_hp_divisor => (20, "divisor", 1, 100, "borg_caution.rs:736", "Controls cut reserve hp divisor."),
+    caution_flee_stairs_before_recall => (0, "flag", 0, 1, "borg_caution.rs:2181", "#539 (owner): 1 = a fleeing Borg that can walk to a free staircase (the flee flows' stair flow reaches it) does not read Word of Recall (the flee flow walks it to the stairs); 0 = Recall first (C's behaviour)."),
+    caution_scary_ranged_no_stairs => (0, "flag", 0, 1, "borg_caution.rs:2248", "#539 (owner): 1 = with no staircase the Borg can walk to, a scary level lets borg_attack target an awake monster in view at range (the best ranged attack), and Word of Recall and Phase Door wait while there is one (none next to the Borg) and the attack planner has something to shoot or throw at it; 0 = off."),
     caution_desperate_stair_distance => (3, "grids", 1, 100, "borg_caution.rs:872", "Controls desperate stair distance."),
     caution_desperate_adjacent_up_distance => (2, "grids", 1, 100, "borg_caution.rs:881", "Controls desperate adjacent up distance."),
     caution_desperate_scary_distance => (20, "grids", 1, 100, "borg_caution.rs:886", "Controls desperate scary distance."),
@@ -247,24 +201,6 @@ parameters! {
     town_heal_curve_scale_percent => (100, "percent", 1, 10_000, "borg_town_capability.rs:534", "#491: stretches the live town planner's diminishing healing curve: weight and demand scale together, keeping the first HP's value and moving the half-value point to this percent of today's (100 = today)."),
     town_heal_speed_percent => (0, "percent of max HP", 0, 100, "borg_town_capability.rs:269", "#491: healing speed. A HEAL_HP use that restores at least this percent of max HP counts its HP in full in the live town planner's healing and healing reserve; a smaller one counts heal x heal / (this percent of max HP) (0 = HP alone). With town_heal_reserve_real_hp = 1 speed weights only the healing curve; with 0 also the reserve."),
     town_heal_reserve_hp_percent => (0, "percent of max HP", 0, 10_000, "borg_town_capability.rs:541", "#491: healing, as a percent of max HP, the live town planner values linearly at the curve's first-HP value on top of the curve; bought first, never sold below (0 = off)."),
-    town_heal_curve_scale_percent_warrior => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the warrior healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_mage => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the mage healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_druid => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the druid healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_priest => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the priest healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_necromancer => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the necromancer healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_paladin => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the paladin healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_rogue => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the rogue healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_ranger => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the ranger healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_curve_scale_percent_blackguard => (0, "percent_override", 0, 10_000, "borg_town_capability.rs:368", "#487: the blackguard healing curve scale; 0 = town_heal_curve_scale_percent."),
-    town_heal_reserve_hp_percent_warrior => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the warrior healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_mage => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the mage healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_druid => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the druid healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_priest => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the priest healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_necromancer => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the necromancer healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_paladin => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the paladin healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_rogue => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the rogue healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_ranger => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the ranger healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
-    town_heal_reserve_hp_percent_blackguard => (-1, "percent_override", -1, 10_000, "borg_town_capability.rs:387", "#487: the blackguard healing reserve (percent of max HP); -1 = town_heal_reserve_hp_percent, 0 = none."),
     town_heal_reserve_real_hp => (0, "flag", 0, 1, "borg_town_capability.rs:239", "#487: 1 = the healing reserve counts the real HP a potion restores; town_heal_speed_percent then weights only the healing curve (which kind is worth more), not how many potions fill the reserve; 0 = speed-weighted HP (#491 as first shipped)."),
     town_digger_min_gold => (0, "gold", 0, 10_000_000, "borg_town_capability.rs:635", "#487: below this much gold the live town planner values no digging (a Shovel only clears rubble, which a weapon also digs); 0 = off."),
     caution_rising_explore_ticks => (300, "ticks", 0, 100000, "borg_caution.rs:2168", "#483: while rising to town, Borg ticks (one per think; restarted on each new level) during which a descent other than a desperate one is held so the Borg explores for an up staircase; 0 = off (C's behaviour)."),
@@ -583,6 +519,7 @@ parameters! {
     danger_rsf_s_demon_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1795", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_DEMON."),
     danger_rsf_s_hi_undead_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1813", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_HI_UNDEAD."),
     danger_rsf_s_unique_protected_power_multiplier => (1, "multiplier", 0, 50, "borg_danger.rs:1849", "Implicit factor 1 at the cited protected branch (spell_power with no literal multiplier); spell-power risk multiplier for RSF_S_UNIQUE."),
+    escape_phase_adjacent_only => (0, "flag", 0, 1, "borg_escape.rs:448", "#539 (owner): 1 = no Phase Door unless an awake monster is next to the Borg or one in view has a ranged attack (\"do not phase door when a monster is still distant\"); 0 = off (C's behaviour)."),
     escape_antisummon_reset_turns => (50, "turns", 0, 100000, "borg_escape.rs:77", "Sets antisummon reset turns, measured in turns, in the existing escape rule."),
     escape_recall_fail => (60, "percent", 0, 100, "borg_escape.rs:95", "Sets recall fail, measured in percent, in the existing escape rule."),
     escape_recall_depth_window => (5, "depth", 0, 127, "borg_escape.rs:107", "Sets recall depth window, measured in depth, in the existing escape rule."),
@@ -766,15 +703,6 @@ parameters! {
     attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:694", "Attack fear bonus max level: existing policy level."),
     attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:695", "Attack fear danger bonus: existing policy danger."),
     attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:766", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
-    attack_arrow_point_blank_divisor_warrior => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the warrior point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_mage => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the mage point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_druid => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the druid point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_priest => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the priest point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_necromancer => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the necromancer point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_paladin => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the paladin point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_rogue => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the rogue point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_ranger => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the ranger point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
-    attack_arrow_point_blank_divisor_blackguard => (0, "divisor_override", 0, 1000, "borg_fight_attack.rs:3009", "#485: the blackguard point-blank divisor; 0 = attack_arrow_point_blank_divisor."),
     attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:769", "Attack arrow min hit tenths: existing policy tenths."),
     attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:777", "Attack mana unique min potions: existing policy count."),
     attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:779", "Attack mana unique multiplier: existing policy multiplier."),
@@ -1875,6 +1803,382 @@ parameters! {
     power_prepared_depth_lookahead => (50, "depth", 0, 50, "borg_power.rs:1849", "Power prepared depth lookahead: existing policy depth."),
     power_equipment_spell_reliability_weight => (100, "score", 0, 200, "borg_power.rs:603", "Power equipment spell reliability weight: existing policy score."),
 
+    // #433: M13 inventory policy, pre-extraction source at 68e39b7e.
+    buy_attack_wand_charge_limit => (40, "count", 0, 1000, "borg_store_buy.rs:543", "buy attack wand charge limit: inherited policy; neutral default."),
+    buy_attack_wand_max_level => (30, "level", 1, 50, "borg_store_buy.rs:552", "buy attack wand max level: inherited policy; neutral default."),
+    buy_black_market_early_gold => (20000, "gold", 0, 1000000, "borg_store_buy.rs:310", "buy black market early gold: inherited policy; neutral default."),
+    buy_black_market_early_level => (15, "level", 1, 50, "borg_store_buy.rs:310", "buy black market early level: inherited policy; neutral default."),
+    buy_black_market_middle_gold => (15000, "gold", 0, 1000000, "borg_store_buy.rs:313", "buy black market middle gold: inherited policy; neutral default."),
+    buy_black_market_middle_level => (35, "level", 1, 50, "borg_store_buy.rs:313", "buy black market middle level: inherited policy; neutral default."),
+    buy_black_market_min_gold => (10000, "gold", 0, 1000000, "borg_store_buy.rs:316", "buy black market min gold: inherited policy; neutral default."),
+    buy_enchanted_ammo_min_level => (35, "level", 1, 50, "borg_store_buy.rs:231", "buy enchanted ammo min level: inherited policy; neutral default."),
+    buy_extra_book_min_level => (5, "level", 1, 50, "borg_store_buy.rs:346", "buy extra book min level: inherited policy; neutral default."),
+    buy_home_stock_gold_divisor => (10, "divisor", 1, 1000, "borg_store_buy.rs:1056", "buy home stock gold divisor: inherited policy; neutral default."),
+    buy_home_stock_gold_reserve => (1000, "gold", 0, 1000000, "borg_store_buy.rs:1013", "buy home stock gold reserve: inherited policy; neutral default."),
+    buy_home_stock_min_level => (15, "level", 1, 50, "borg_store_buy.rs:971", "buy home stock min level: inherited policy; neutral default."),
+    buy_home_stock_price_multiplier => (5, "multiplier", 1, 100, "borg_store_buy.rs:1013", "buy home stock price multiplier: inherited policy; neutral default."),
+    buy_hybrid_extra_book_max_level => (8, "level", 1, 50, "borg_store_buy.rs:355", "buy hybrid extra book max level: inherited policy; neutral default."),
+    home_amulets_limit => (3, "count", 0, 100, "borg_home_power.rs:188", "home amulets limit: inherited policy; neutral default."),
+    home_amulets_penalty => (1500, "score", 0, 1000000, "borg_home_power.rs:188", "home amulets penalty: inherited policy; neutral default."),
+    home_armor_limit => (6, "count", 0, 100, "borg_home_power.rs:189", "home armor limit: inherited policy; neutral default."),
+    home_armor_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:189", "home armor penalty: inherited policy; neutral default."),
+    home_artifact_weight => (500, "score", 0, 1000000, "borg_home_power.rs:449", "home artifact weight: inherited policy; neutral default."),
+    home_bad_gloves_penalty => (3000, "score", 0, 1000000, "borg_home_power.rs:203", "home bad gloves penalty: inherited policy; neutral default."),
+    home_banishment_stack_multiplier => (2, "multiplier", 1, 10, "borg_home_power.rs:305", "home banishment stack multiplier: inherited policy; neutral default."),
+    home_book_stock_base => (5000, "score", 0, 1000000, "borg_home_power.rs:441", "home book stock base: inherited policy; neutral default."),
+    home_book_stock_decay => (10, "score", 0, 1000000, "borg_home_power.rs:441", "home book stock decay: inherited policy; neutral default."),
+    home_book_stock_limit => (5, "count", 0, 100, "borg_home_power.rs:438", "home book stock limit: inherited policy; neutral default."),
+    home_book_stock_max_level => (15, "level", 1, 50, "borg_home_power.rs:435", "home book stock max level: inherited policy; neutral default."),
+    home_boots_limit => (3, "count", 0, 100, "borg_home_power.rs:194", "home boots limit: inherited policy; neutral default."),
+    home_boots_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:194", "home boots penalty: inherited policy; neutral default."),
+    home_bows_limit => (2, "count", 0, 100, "borg_home_power.rs:181", "home bows limit: inherited policy; neutral default."),
+    home_bows_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:181", "home bows penalty: inherited policy; neutral default."),
+    home_cloaks_limit => (3, "count", 0, 100, "borg_home_power.rs:190", "home cloaks limit: inherited policy; neutral default."),
+    home_cloaks_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:190", "home cloaks penalty: inherited policy; neutral default."),
+    home_cold_resist_base => (100, "score", 0, 1000000, "borg_home_power.rs:341", "home cold resist base: inherited policy; neutral default."),
+    home_cold_resist_decay => (10, "score", 0, 1000000, "borg_home_power.rs:341", "home cold resist decay: inherited policy; neutral default."),
+    home_cure_serious_penalty_min_level => (35, "level", 1, 50, "borg_home_power.rs:412", "home cure serious penalty min level: inherited policy; neutral default."),
+    home_duplicate_item_penalty => (50000, "score", 0, 1000000, "borg_home_power.rs:208", "home duplicate item penalty: inherited policy; neutral default."),
+    home_edged_weapon_penalty => (50, "score", 0, 1000000, "borg_home_power.rs:200", "home edged weapon penalty: inherited policy; neutral default."),
+    home_ego_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:452", "home ego weight: inherited policy; neutral default."),
+    home_enchant_armor_max_level => (45, "level", 1, 50, "borg_home_power.rs:254", "home enchant armor max level: inherited policy; neutral default."),
+    home_enchant_damage_max_level => (45, "level", 1, 50, "borg_home_power.rs:274", "home enchant damage max level: inherited policy; neutral default."),
+    home_enchant_hit_max_level => (45, "level", 1, 50, "borg_home_power.rs:264", "home enchant hit max level: inherited policy; neutral default."),
+    home_exp_stock_early_max_level => (35, "level", 1, 50, "borg_home_power.rs:425", "home exp stock early max level: inherited policy; neutral default."),
+    home_exp_stock_late_min_level => (35, "level", 1, 50, "borg_home_power.rs:423", "home exp stock late min level: inherited policy; neutral default."),
+    home_ffall_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:121", "home ffall each weight: inherited policy; neutral default."),
+    home_ffall_one_weight => (10, "score", 0, 1000000, "borg_home_power.rs:121", "home ffall one weight: inherited policy; neutral default."),
+    home_ffall_two_weight => (15, "score", 0, 1000000, "borg_home_power.rs:121", "home ffall two weight: inherited policy; neutral default."),
+    home_food_stock_max_level => (10, "level", 1, 50, "borg_home_power.rs:234", "home food stock max level: inherited policy; neutral default."),
+    home_free_act_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:122", "home free act each weight: inherited policy; neutral default."),
+    home_free_act_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:122", "home free act one weight: inherited policy; neutral default."),
+    home_free_act_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:122", "home free act two weight: inherited policy; neutral default."),
+    home_gloves_limit => (3, "count", 0, 100, "borg_home_power.rs:193", "home gloves limit: inherited policy; neutral default."),
+    home_gloves_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:193", "home gloves penalty: inherited policy; neutral default."),
+    home_hats_limit => (4, "count", 0, 100, "borg_home_power.rs:192", "home hats limit: inherited policy; neutral default."),
+    home_hats_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:192", "home hats penalty: inherited policy; neutral default."),
+    home_heat_resist_base => (100, "score", 0, 1000000, "borg_home_power.rs:337", "home heat resist base: inherited policy; neutral default."),
+    home_heat_resist_decay => (10, "score", 0, 1000000, "borg_home_power.rs:337", "home heat resist decay: inherited policy; neutral default."),
+    home_hold_life_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:123", "home hold life each weight: inherited policy; neutral default."),
+    home_hold_life_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:123", "home hold life one weight: inherited policy; neutral default."),
+    home_hold_life_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:123", "home hold life two weight: inherited policy; neutral default."),
+    home_immune_acid_each_weight => (30, "score", 0, 1000000, "borg_home_power.rs:126", "home immune acid each weight: inherited policy; neutral default."),
+    home_immune_acid_one_weight => (3000, "score", 0, 1000000, "borg_home_power.rs:126", "home immune acid one weight: inherited policy; neutral default."),
+    home_immune_acid_two_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:126", "home immune acid two weight: inherited policy; neutral default."),
+    home_immune_cold_each_weight => (30, "score", 0, 1000000, "borg_home_power.rs:132", "home immune cold each weight: inherited policy; neutral default."),
+    home_immune_cold_one_weight => (3000, "score", 0, 1000000, "borg_home_power.rs:132", "home immune cold one weight: inherited policy; neutral default."),
+    home_immune_cold_two_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:132", "home immune cold two weight: inherited policy; neutral default."),
+    home_immune_elec_each_weight => (30, "score", 0, 1000000, "borg_home_power.rs:128", "home immune elec each weight: inherited policy; neutral default."),
+    home_immune_elec_one_weight => (3000, "score", 0, 1000000, "borg_home_power.rs:128", "home immune elec one weight: inherited policy; neutral default."),
+    home_immune_elec_two_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:128", "home immune elec two weight: inherited policy; neutral default."),
+    home_immune_fire_each_weight => (30, "score", 0, 1000000, "borg_home_power.rs:130", "home immune fire each weight: inherited policy; neutral default."),
+    home_immune_fire_one_weight => (3000, "score", 0, 1000000, "borg_home_power.rs:130", "home immune fire one weight: inherited policy; neutral default."),
+    home_immune_fire_two_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:130", "home immune fire two weight: inherited policy; neutral default."),
+    home_initial_heal_sell_level => (1, "level", 1, 50, "borg_home_power.rs:390", "home initial heal sell level: inherited policy; neutral default."),
+    home_light_each_weight => (5, "score", 0, 1000000, "borg_home_power.rs:116", "home light each weight: inherited policy; neutral default."),
+    home_light_one_weight => (150, "score", 0, 1000000, "borg_home_power.rs:116", "home light one weight: inherited policy; neutral default."),
+    home_light_two_weight => (170, "score", 0, 1000000, "borg_home_power.rs:116", "home light two weight: inherited policy; neutral default."),
+    home_mana_stock_min_sp => (1, "sp", 0, 10000, "borg_home_power.rs:377", "home mana stock min sp: inherited policy; neutral default."),
+    home_mass_banishment_stack_multiplier => (2, "multiplier", 1, 10, "borg_home_power.rs:314", "home mass banishment stack multiplier: inherited policy; neutral default."),
+    home_max_level_exp_penalty => (7500, "score", 0, 1000000, "borg_home_power.rs:421", "home max level exp penalty: inherited policy; neutral default."),
+    home_phase_stock_max_level => (10, "level", 1, 50, "borg_home_power.rs:363", "home phase stock max level: inherited policy; neutral default."),
+    home_regenerate_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:118", "home regenerate each weight: inherited policy; neutral default."),
+    home_regenerate_one_weight => (75, "score", 0, 1000000, "borg_home_power.rs:118", "home regenerate one weight: inherited policy; neutral default."),
+    home_regenerate_two_weight => (100, "score", 0, 1000000, "borg_home_power.rs:118", "home regenerate two weight: inherited policy; neutral default."),
+    home_resist_acid_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:125", "home resist acid each weight: inherited policy; neutral default."),
+    home_resist_acid_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:125", "home resist acid one weight: inherited policy; neutral default."),
+    home_resist_acid_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:125", "home resist acid two weight: inherited policy; neutral default."),
+    home_resist_blind_each_weight => (5, "score", 0, 1000000, "borg_home_power.rs:143", "home resist blind each weight: inherited policy; neutral default."),
+    home_resist_blind_one_weight => (500, "score", 0, 1000000, "borg_home_power.rs:143", "home resist blind one weight: inherited policy; neutral default."),
+    home_resist_blind_two_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:143", "home resist blind two weight: inherited policy; neutral default."),
+    home_resist_chaos_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:139", "home resist chaos each weight: inherited policy; neutral default."),
+    home_resist_chaos_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:139", "home resist chaos one weight: inherited policy; neutral default."),
+    home_resist_chaos_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:139", "home resist chaos two weight: inherited policy; neutral default."),
+    home_resist_cold_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:131", "home resist cold each weight: inherited policy; neutral default."),
+    home_resist_cold_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:131", "home resist cold one weight: inherited policy; neutral default."),
+    home_resist_cold_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:131", "home resist cold two weight: inherited policy; neutral default."),
+    home_resist_conf_each_weight => (45, "score", 0, 1000000, "borg_home_power.rs:135", "home resist conf each weight: inherited policy; neutral default."),
+    home_resist_conf_one_weight => (2000, "score", 0, 1000000, "borg_home_power.rs:135", "home resist conf one weight: inherited policy; neutral default."),
+    home_resist_conf_two_weight => (8000, "score", 0, 1000000, "borg_home_power.rs:135", "home resist conf two weight: inherited policy; neutral default."),
+    home_resist_dark_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:138", "home resist dark each weight: inherited policy; neutral default."),
+    home_resist_dark_one_weight => (100, "score", 0, 1000000, "borg_home_power.rs:138", "home resist dark one weight: inherited policy; neutral default."),
+    home_resist_dark_two_weight => (150, "score", 0, 1000000, "borg_home_power.rs:138", "home resist dark two weight: inherited policy; neutral default."),
+    home_resist_disen_each_weight => (35, "score", 0, 1000000, "borg_home_power.rs:140", "home resist disen each weight: inherited policy; neutral default."),
+    home_resist_disen_one_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:140", "home resist disen one weight: inherited policy; neutral default."),
+    home_resist_disen_two_weight => (7000, "score", 0, 1000000, "borg_home_power.rs:140", "home resist disen two weight: inherited policy; neutral default."),
+    home_resist_elec_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:127", "home resist elec each weight: inherited policy; neutral default."),
+    home_resist_elec_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:127", "home resist elec one weight: inherited policy; neutral default."),
+    home_resist_elec_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:127", "home resist elec two weight: inherited policy; neutral default."),
+    home_resist_fire_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:129", "home resist fire each weight: inherited policy; neutral default."),
+    home_resist_fire_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:129", "home resist fire one weight: inherited policy; neutral default."),
+    home_resist_fire_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:129", "home resist fire two weight: inherited policy; neutral default."),
+    home_resist_light_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:137", "home resist light each weight: inherited policy; neutral default."),
+    home_resist_light_one_weight => (100, "score", 0, 1000000, "borg_home_power.rs:137", "home resist light one weight: inherited policy; neutral default."),
+    home_resist_light_two_weight => (150, "score", 0, 1000000, "borg_home_power.rs:137", "home resist light two weight: inherited policy; neutral default."),
+    home_resist_neth_each_weight => (45, "score", 0, 1000000, "borg_home_power.rs:144", "home resist neth each weight: inherited policy; neutral default."),
+    home_resist_neth_one_weight => (3000, "score", 0, 1000000, "borg_home_power.rs:144", "home resist neth one weight: inherited policy; neutral default."),
+    home_resist_neth_two_weight => (4000, "score", 0, 1000000, "borg_home_power.rs:144", "home resist neth two weight: inherited policy; neutral default."),
+    home_resist_nexus_each_weight => (2, "score", 0, 1000000, "borg_home_power.rs:142", "home resist nexus each weight: inherited policy; neutral default."),
+    home_resist_nexus_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:142", "home resist nexus one weight: inherited policy; neutral default."),
+    home_resist_nexus_two_weight => (300, "score", 0, 1000000, "borg_home_power.rs:142", "home resist nexus two weight: inherited policy; neutral default."),
+    home_resist_pois_each_weight => (40, "score", 0, 1000000, "borg_home_power.rs:134", "home resist pois each weight: inherited policy; neutral default."),
+    home_resist_pois_one_weight => (5000, "score", 0, 1000000, "borg_home_power.rs:134", "home resist pois one weight: inherited policy; neutral default."),
+    home_resist_pois_two_weight => (9000, "score", 0, 1000000, "borg_home_power.rs:134", "home resist pois two weight: inherited policy; neutral default."),
+    home_resist_shard_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:141", "home resist shard each weight: inherited policy; neutral default."),
+    home_resist_shard_one_weight => (100, "score", 0, 1000000, "borg_home_power.rs:141", "home resist shard one weight: inherited policy; neutral default."),
+    home_resist_shard_two_weight => (150, "score", 0, 1000000, "borg_home_power.rs:141", "home resist shard two weight: inherited policy; neutral default."),
+    home_resist_sound_each_weight => (30, "score", 0, 1000000, "borg_home_power.rs:136", "home resist sound each weight: inherited policy; neutral default."),
+    home_resist_sound_one_weight => (500, "score", 0, 1000000, "borg_home_power.rs:136", "home resist sound one weight: inherited policy; neutral default."),
+    home_resist_sound_two_weight => (700, "score", 0, 1000000, "borg_home_power.rs:136", "home resist sound two weight: inherited policy; neutral default."),
+    home_resistance_max_depth => (80, "depth", 0, 127, "borg_home_power.rs:332", "home resistance max depth: inherited policy; neutral default."),
+    home_resistance_min_depth => (20, "depth", 0, 127, "borg_home_power.rs:331", "home resistance min depth: inherited policy; neutral default."),
+    home_rings_excess_weight => (4000, "score", 0, 1000000, "borg_home_power.rs:184", "home rings excess weight: inherited policy; neutral default."),
+    home_rings_soft_limit => (6, "count", 0, 100, "borg_home_power.rs:183", "home rings soft limit: inherited policy; neutral default."),
+    home_rings_spare_limit => (4, "count", 0, 100, "borg_home_power.rs:186", "home rings spare limit: inherited policy; neutral default."),
+    home_rings_spare_penalty => (2000, "score", 0, 1000000, "borg_home_power.rs:186", "home rings spare penalty: inherited policy; neutral default."),
+    home_see_inv_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:120", "home see inv each weight: inherited policy; neutral default."),
+    home_see_inv_one_weight => (800, "score", 0, 1000000, "borg_home_power.rs:120", "home see inv one weight: inherited policy; neutral default."),
+    home_see_inv_two_weight => (1200, "score", 0, 1000000, "borg_home_power.rs:120", "home see inv two weight: inherited policy; neutral default."),
+    home_shields_limit => (3, "count", 0, 100, "borg_home_power.rs:191", "home shields limit: inherited policy; neutral default."),
+    home_shields_penalty => (1000, "score", 0, 1000000, "borg_home_power.rs:191", "home shields penalty: inherited policy; neutral default."),
+    home_slow_digest_each_weight => (5, "score", 0, 1000000, "borg_home_power.rs:117", "home slow digest each weight: inherited policy; neutral default."),
+    home_slow_digest_one_weight => (50, "score", 0, 1000000, "borg_home_power.rs:117", "home slow digest one weight: inherited policy; neutral default."),
+    home_slow_digest_two_weight => (70, "score", 0, 1000000, "borg_home_power.rs:117", "home slow digest two weight: inherited policy; neutral default."),
+    home_stat_caster_first_weight => (400, "score", 0, 1000000, "borg_home_power.rs:162", "home stat caster first weight: inherited policy; neutral default."),
+    home_stat_caster_high_limit => (26, "count", 0, 100, "borg_home_power.rs:162", "home stat caster high limit: inherited policy; neutral default."),
+    home_stat_caster_last_base => (3800, "score", 0, 1000000, "borg_home_power.rs:162", "home stat caster last base: inherited policy; neutral default."),
+    home_stat_caster_last_weight => (5, "score", 0, 1000000, "borg_home_power.rs:162", "home stat caster last weight: inherited policy; neutral default."),
+    home_stat_caster_low_limit => (20, "count", 0, 100, "borg_home_power.rs:162", "home stat caster low limit: inherited policy; neutral default."),
+    home_stat_caster_middle_base => (8000, "score", 0, 1000000, "borg_home_power.rs:162", "home stat caster middle base: inherited policy; neutral default."),
+    home_stat_caster_middle_weight => (300, "score", 0, 1000000, "borg_home_power.rs:162", "home stat caster middle weight: inherited policy; neutral default."),
+    home_stat_con_first_weight => (300, "score", 0, 1000000, "borg_home_power.rs:155", "home stat con first weight: inherited policy; neutral default."),
+    home_stat_con_high_limit => (21, "count", 0, 100, "borg_home_power.rs:155", "home stat con high limit: inherited policy; neutral default."),
+    home_stat_con_last_base => (5700, "score", 0, 1000000, "borg_home_power.rs:155", "home stat con last base: inherited policy; neutral default."),
+    home_stat_con_last_weight => (1, "score", 0, 1000000, "borg_home_power.rs:155", "home stat con last weight: inherited policy; neutral default."),
+    home_stat_con_low_limit => (15, "count", 0, 100, "borg_home_power.rs:155", "home stat con low limit: inherited policy; neutral default."),
+    home_stat_con_middle_base => (4500, "score", 0, 1000000, "borg_home_power.rs:155", "home stat con middle base: inherited policy; neutral default."),
+    home_stat_con_middle_weight => (200, "score", 0, 1000000, "borg_home_power.rs:155", "home stat con middle weight: inherited policy; neutral default."),
+    home_stat_dex_first_weight => (300, "score", 0, 1000000, "borg_home_power.rs:151", "home stat dex first weight: inherited policy; neutral default."),
+    home_stat_dex_high_limit => (15, "count", 0, 100, "borg_home_power.rs:151", "home stat dex high limit: inherited policy; neutral default."),
+    home_stat_dex_last_base => (3900, "score", 0, 1000000, "borg_home_power.rs:151", "home stat dex last base: inherited policy; neutral default."),
+    home_stat_dex_last_weight => (1, "score", 0, 1000000, "borg_home_power.rs:151", "home stat dex last weight: inherited policy; neutral default."),
+    home_stat_dex_low_limit => (9, "count", 0, 100, "borg_home_power.rs:151", "home stat dex low limit: inherited policy; neutral default."),
+    home_stat_dex_middle_base => (2700, "score", 0, 1000000, "borg_home_power.rs:151", "home stat dex middle base: inherited policy; neutral default."),
+    home_stat_dex_middle_weight => (200, "score", 0, 1000000, "borg_home_power.rs:151", "home stat dex middle weight: inherited policy; neutral default."),
+    home_stat_str_first_weight => (300, "score", 0, 1000000, "borg_home_power.rs:149", "home stat str first weight: inherited policy; neutral default."),
+    home_stat_str_high_limit => (15, "count", 0, 100, "borg_home_power.rs:149", "home stat str high limit: inherited policy; neutral default."),
+    home_stat_str_last_base => (3900, "score", 0, 1000000, "borg_home_power.rs:149", "home stat str last base: inherited policy; neutral default."),
+    home_stat_str_last_weight => (1, "score", 0, 1000000, "borg_home_power.rs:149", "home stat str last weight: inherited policy; neutral default."),
+    home_stat_str_low_limit => (9, "count", 0, 100, "borg_home_power.rs:149", "home stat str low limit: inherited policy; neutral default."),
+    home_stat_str_middle_base => (2700, "score", 0, 1000000, "borg_home_power.rs:149", "home stat str middle base: inherited policy; neutral default."),
+    home_stat_str_middle_weight => (200, "score", 0, 1000000, "borg_home_power.rs:149", "home stat str middle weight: inherited policy; neutral default."),
+    home_stock_cure_critical_base => (1500, "score", 0, 1000000, "borg_home_power.rs:397", "home stock cure critical base: inherited policy; neutral default."),
+    home_stock_cure_critical_decay => (10, "score", 0, 1000000, "borg_home_power.rs:397", "home stock cure critical decay: inherited policy; neutral default."),
+    home_stock_cure_serious_base => (-1500, "score", -1000000, 0, "borg_home_power.rs:414", "home stock cure serious base: inherited policy; neutral default."),
+    home_stock_cure_serious_decay => (-10, "score", -1000000, 0, "borg_home_power.rs:414", "home stock cure serious decay: inherited policy; neutral default."),
+    home_stock_cure_serious_limit => (90, "count", 0, 512, "borg_home_power.rs:414", "home stock cure serious limit: inherited policy; neutral default."),
+    home_stock_early_exp_base => (1000, "score", 0, 1000000, "borg_home_power.rs:426", "home stock early exp base: inherited policy; neutral default."),
+    home_stock_early_exp_decay => (10, "score", 0, 1000000, "borg_home_power.rs:426", "home stock early exp decay: inherited policy; neutral default."),
+    home_stock_early_exp_limit => (5, "count", 0, 512, "borg_home_power.rs:426", "home stock early exp limit: inherited policy; neutral default."),
+    home_stock_enchant_to_a_base => (500, "score", 0, 1000000, "borg_home_power.rs:255", "home stock enchant to a base: inherited policy; neutral default."),
+    home_stock_enchant_to_a_decay => (10, "score", 0, 1000000, "borg_home_power.rs:255", "home stock enchant to a decay: inherited policy; neutral default."),
+    home_stock_enchant_to_d_base => (500, "score", 0, 1000000, "borg_home_power.rs:275", "home stock enchant to d base: inherited policy; neutral default."),
+    home_stock_enchant_to_d_decay => (10, "score", 0, 1000000, "borg_home_power.rs:275", "home stock enchant to d decay: inherited policy; neutral default."),
+    home_stock_enchant_to_h_base => (500, "score", 0, 1000000, "borg_home_power.rs:265", "home stock enchant to h base: inherited policy; neutral default."),
+    home_stock_enchant_to_h_decay => (10, "score", 0, 1000000, "borg_home_power.rs:265", "home stock enchant to h decay: inherited policy; neutral default."),
+    home_stock_escape_base => (2000, "score", 0, 1000000, "borg_home_power.rs:350", "home stock escape base: inherited policy; neutral default."),
+    home_stock_escape_decay => (10, "score", 0, 1000000, "borg_home_power.rs:350", "home stock escape decay: inherited policy; neutral default."),
+    home_stock_escape_limit => (85, "count", 0, 512, "borg_home_power.rs:350", "home stock escape limit: inherited policy; neutral default."),
+    home_stock_ezheal_base => (8000, "score", 0, 1000000, "borg_home_power.rs:407", "home stock ezheal base: inherited policy; neutral default."),
+    home_stock_ezheal_decay => (0, "score", 0, 1000000, "borg_home_power.rs:407", "home stock ezheal decay: inherited policy; neutral default."),
+    home_stock_ezheal_limit => (198, "count", 0, 512, "borg_home_power.rs:407", "home stock ezheal limit: inherited policy; neutral default."),
+    home_stock_food_base => (8000, "score", 0, 1000000, "borg_home_power.rs:235", "home stock food base: inherited policy; neutral default."),
+    home_stock_food_decay => (10, "score", 0, 1000000, "borg_home_power.rs:235", "home stock food decay: inherited policy; neutral default."),
+    home_stock_genocide_base => (500, "score", 0, 1000000, "borg_home_power.rs:303", "home stock genocide base: inherited policy; neutral default."),
+    home_stock_genocide_decay => (10, "score", 0, 1000000, "borg_home_power.rs:303", "home stock genocide decay: inherited policy; neutral default."),
+    home_stock_glyph_base => (500, "score", 0, 1000000, "borg_home_power.rs:294", "home stock glyph base: inherited policy; neutral default."),
+    home_stock_glyph_decay => (10, "score", 0, 1000000, "borg_home_power.rs:294", "home stock glyph decay: inherited policy; neutral default."),
+    home_stock_heal_base => (3000, "score", 0, 1000000, "borg_home_power.rs:406", "home stock heal base: inherited policy; neutral default."),
+    home_stock_heal_decay => (0, "score", 0, 1000000, "borg_home_power.rs:406", "home stock heal decay: inherited policy; neutral default."),
+    home_stock_heal_limit => (90, "count", 0, 512, "borg_home_power.rs:406", "home stock heal limit: inherited policy; neutral default."),
+    home_stock_ident_base => (2000, "score", 0, 1000000, "borg_home_power.rs:245", "home stock ident base: inherited policy; neutral default."),
+    home_stock_ident_decay => (10, "score", 0, 1000000, "borg_home_power.rs:245", "home stock ident decay: inherited policy; neutral default."),
+    home_stock_initial_heal_base => (-5000, "score", -1000000, 0, "borg_home_power.rs:391", "home stock initial heal base: inherited policy; neutral default."),
+    home_stock_initial_heal_decay => (0, "score", 0, 1000000, "borg_home_power.rs:391", "home stock initial heal decay: inherited policy; neutral default."),
+    home_stock_initial_heal_limit => (10, "count", 0, 512, "borg_home_power.rs:391", "home stock initial heal limit: inherited policy; neutral default."),
+    home_stock_late_exp_base => (1000, "score", 0, 1000000, "borg_home_power.rs:424", "home stock late exp base: inherited policy; neutral default."),
+    home_stock_late_exp_decay => (10, "score", 0, 1000000, "borg_home_power.rs:424", "home stock late exp decay: inherited policy; neutral default."),
+    home_stock_late_exp_limit => (70, "count", 0, 512, "borg_home_power.rs:424", "home stock late exp limit: inherited policy; neutral default."),
+    home_stock_life_base => (9000, "score", 0, 1000000, "borg_home_power.rs:408", "home stock life base: inherited policy; neutral default."),
+    home_stock_life_decay => (0, "score", 0, 1000000, "borg_home_power.rs:408", "home stock life decay: inherited policy; neutral default."),
+    home_stock_life_limit => (198, "count", 0, 512, "borg_home_power.rs:408", "home stock life limit: inherited policy; neutral default."),
+    home_stock_mana_base => (6000, "score", 0, 1000000, "borg_home_power.rs:378", "home stock mana base: inherited policy; neutral default."),
+    home_stock_mana_decay => (8, "score", 0, 1000000, "borg_home_power.rs:378", "home stock mana decay: inherited policy; neutral default."),
+    home_stock_mass_genocide_base => (500, "score", 0, 1000000, "borg_home_power.rs:312", "home stock mass genocide base: inherited policy; neutral default."),
+    home_stock_mass_genocide_decay => (0, "score", 0, 1000000, "borg_home_power.rs:312", "home stock mass genocide decay: inherited policy; neutral default."),
+    home_stock_pfe_base => (500, "score", 0, 1000000, "borg_home_power.rs:285", "home stock pfe base: inherited policy; neutral default."),
+    home_stock_pfe_decay => (10, "score", 0, 1000000, "borg_home_power.rs:285", "home stock pfe decay: inherited policy; neutral default."),
+    home_stock_phase_base => (5000, "score", 0, 1000000, "borg_home_power.rs:364", "home stock phase base: inherited policy; neutral default."),
+    home_stock_phase_decay => (0, "score", 0, 1000000, "borg_home_power.rs:364", "home stock phase decay: inherited policy; neutral default."),
+    home_stock_recall_base => (100, "score", 0, 1000000, "borg_home_power.rs:347", "home stock recall base: inherited policy; neutral default."),
+    home_stock_recall_decay => (0, "score", 0, 1000000, "borg_home_power.rs:347", "home stock recall decay: inherited policy; neutral default."),
+    home_stock_recall_limit => (5, "count", 0, 512, "borg_home_power.rs:347", "home stock recall limit: inherited policy; neutral default."),
+    home_stock_recharge_base => (500, "score", 0, 1000000, "borg_home_power.rs:321", "home stock recharge base: inherited policy; neutral default."),
+    home_stock_recharge_decay => (10, "score", 0, 1000000, "borg_home_power.rs:321", "home stock recharge decay: inherited policy; neutral default."),
+    home_stock_teleport_base => (5000, "score", 0, 1000000, "borg_home_power.rs:360", "home stock teleport base: inherited policy; neutral default."),
+    home_stock_teleport_decay => (0, "score", 0, 1000000, "borg_home_power.rs:360", "home stock teleport decay: inherited policy; neutral default."),
+    home_stock_teleport_limit => (85, "count", 0, 512, "borg_home_power.rs:360", "home stock teleport limit: inherited policy; neutral default."),
+    home_sustain_all_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:171", "home sustain all each weight: inherited policy; neutral default."),
+    home_sustain_all_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:171", "home sustain all one weight: inherited policy; neutral default."),
+    home_sustain_all_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:171", "home sustain all two weight: inherited policy; neutral default."),
+    home_sustain_con_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:169", "home sustain con each weight: inherited policy; neutral default."),
+    home_sustain_con_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:169", "home sustain con one weight: inherited policy; neutral default."),
+    home_sustain_con_two_weight => (250, "score", 0, 1000000, "borg_home_power.rs:169", "home sustain con two weight: inherited policy; neutral default."),
+    home_sustain_dex_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:170", "home sustain dex each weight: inherited policy; neutral default."),
+    home_sustain_dex_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:170", "home sustain dex one weight: inherited policy; neutral default."),
+    home_sustain_dex_two_weight => (250, "score", 0, 1000000, "borg_home_power.rs:170", "home sustain dex two weight: inherited policy; neutral default."),
+    home_sustain_int_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:167", "home sustain int each weight: inherited policy; neutral default."),
+    home_sustain_int_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:167", "home sustain int one weight: inherited policy; neutral default."),
+    home_sustain_int_two_weight => (250, "score", 0, 1000000, "borg_home_power.rs:167", "home sustain int two weight: inherited policy; neutral default."),
+    home_sustain_str_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:166", "home sustain str each weight: inherited policy; neutral default."),
+    home_sustain_str_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:166", "home sustain str one weight: inherited policy; neutral default."),
+    home_sustain_str_two_weight => (250, "score", 0, 1000000, "borg_home_power.rs:166", "home sustain str two weight: inherited policy; neutral default."),
+    home_sustain_wis_each_weight => (1, "score", 0, 1000000, "borg_home_power.rs:168", "home sustain wis each weight: inherited policy; neutral default."),
+    home_sustain_wis_one_weight => (200, "score", 0, 1000000, "borg_home_power.rs:168", "home sustain wis one weight: inherited policy; neutral default."),
+    home_sustain_wis_two_weight => (250, "score", 0, 1000000, "borg_home_power.rs:168", "home sustain wis two weight: inherited policy; neutral default."),
+    home_telepathy_each_weight => (10, "score", 0, 1000000, "borg_home_power.rs:119", "home telepathy each weight: inherited policy; neutral default."),
+    home_telepathy_one_weight => (1000, "score", 0, 1000000, "borg_home_power.rs:119", "home telepathy one weight: inherited policy; neutral default."),
+    home_telepathy_two_weight => (1500, "score", 0, 1000000, "borg_home_power.rs:119", "home telepathy two weight: inherited policy; neutral default."),
+    home_teleport_staff_excess_penalty => (50000, "score", 0, 1000000, "borg_home_power.rs:355", "home teleport staff excess penalty: inherited policy; neutral default."),
+    home_unidentified_weight => (1005, "score", 0, 1000000, "borg_home_power.rs:457", "home unidentified weight: inherited policy; neutral default."),
+    home_weapons_excess_weight => (2000, "score", 0, 1000000, "borg_home_power.rs:177", "home weapons excess weight: inherited policy; neutral default."),
+    home_weapons_soft_limit => (5, "count", 0, 100, "borg_home_power.rs:176", "home weapons soft limit: inherited policy; neutral default."),
+    home_weapons_spare_limit => (1, "count", 0, 100, "borg_home_power.rs:179", "home weapons spare limit: inherited policy; neutral default."),
+    home_weapons_spare_penalty => (100, "score", 0, 1000000, "borg_home_power.rs:179", "home weapons spare penalty: inherited policy; neutral default."),
+    power_inventory_annihilation_wand_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1564", "power inventory annihilation wand bonus: inherited policy; neutral default."),
+    power_inventory_attack_wand_charge_weight => (50, "score", 0, 1000000, "borg_power.rs:1575", "power inventory attack wand charge weight: inherited policy; neutral default."),
+    power_inventory_constitution_potion_bonus => (550000, "score", 0, 1000000, "borg_power.rs:1635", "power inventory constitution potion bonus: inherited policy; neutral default."),
+    power_inventory_poisoned_cure_poison_bonus => (15000, "score", 0, 1000000, "borg_power.rs:1185", "Bonus for poison cures while poisoned (BI_ACUREPOIS)."),
+    power_inventory_cursed_missile_penalty => (1000, "score", 0, 1000000, "borg_power.rs:1531", "power inventory cursed missile penalty: inherited policy; neutral default."),
+    power_inventory_hurt_heal_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1177", "Bonus for Healing while cut or poisoned (BI_AHEAL)."),
+    power_inventory_destruction_staff_first_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1540", "power inventory destruction staff first bonus: inherited policy; neutral default."),
+    power_inventory_dexterity_potion_bonus => (550000, "score", 0, 1000000, "borg_power.rs:1632", "power inventory dexterity potion bonus: inherited policy; neutral default."),
+    power_inventory_dungeon_book_spell_weight => (15000, "score", 0, 1000000, "borg_power.rs:1729", "power inventory dungeon book spell weight: inherited policy; neutral default."),
+    power_inventory_early_attack_wand_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1561", "power inventory early attack wand bonus: inherited policy; neutral default."),
+    power_inventory_early_shovel_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1696", "power inventory early shovel bonus: inherited policy; neutral default."),
+    power_inventory_ego_missile_bonus => (100, "score", 0, 1000000, "borg_power.rs:1534", "power inventory ego missile bonus: inherited policy; neutral default."),
+    power_inventory_enchant_armor_first_bonus => (540, "score", 0, 1000000, "borg_power.rs:1657", "power inventory enchant armor first bonus: inherited policy; neutral default."),
+    power_inventory_enchant_damage_first_bonus => (500, "score", 0, 1000000, "borg_power.rs:1667", "power inventory enchant damage first bonus: inherited policy; neutral default."),
+    power_inventory_enchant_hit_first_bonus => (540, "score", 0, 1000000, "borg_power.rs:1662", "power inventory enchant hit first bonus: inherited policy; neutral default."),
+    power_inventory_encumbrance_penalty_weight => (1000, "score", 0, 1000000, "borg_power.rs:1816", "power inventory encumbrance penalty weight: inherited policy; neutral default."),
+    power_inventory_first_empty_slot_bonus => (4000, "score", 0, 1000000, "borg_power.rs:1686", "power inventory first empty slot bonus: inherited policy; neutral default."),
+    power_inventory_fuel_extra_base => (6000, "score", 0, 1000000, "borg_power.rs:1145", "power inventory fuel extra base: inherited policy; neutral default."),
+    power_inventory_fuel_extra_decay => (100, "score", 0, 1000000, "borg_power.rs:1145", "power inventory fuel extra decay: inherited policy; neutral default."),
+    power_inventory_holiness_staff_first_bonus => (2500, "score", 0, 1000000, "borg_power.rs:1580", "power inventory holiness staff first bonus: inherited policy; neutral default."),
+    power_inventory_hungry_food_bonus => (100000, "score", 0, 1000000, "borg_power.rs:1153", "power inventory hungry food bonus: inherited policy; neutral default."),
+    power_inventory_identify_first_bonus => (6000, "score", 0, 1000000, "borg_power.rs:1227", "power inventory identify first bonus: inherited policy; neutral default."),
+    power_inventory_intelligence_potion_bonus => (520000, "score", 0, 1000000, "borg_power.rs:1620", "power inventory intelligence potion bonus: inherited policy; neutral default."),
+    power_inventory_max_constitution_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1606", "power inventory max constitution bonus: inherited policy; neutral default."),
+    power_inventory_max_dexterity_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1603", "power inventory max dexterity bonus: inherited policy; neutral default."),
+    power_inventory_max_intelligence_bonus => (20000, "score", 0, 1000000, "borg_power.rs:1597", "power inventory max intelligence bonus: inherited policy; neutral default."),
+    power_inventory_max_spell_stat_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1611", "power inventory max spell stat bonus: inherited policy; neutral default."),
+    power_inventory_max_strength_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1594", "power inventory max strength bonus: inherited policy; neutral default."),
+    power_inventory_max_wisdom_bonus => (20000, "score", 0, 1000000, "borg_power.rs:1600", "power inventory max wisdom bonus: inherited policy; neutral default."),
+    power_inventory_other_quiver_slot_penalty => (10000, "score", 0, 1000000, "borg_power.rs:1525", "power inventory other quiver slot penalty: inherited policy; neutral default."),
+    power_inventory_phase_first_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1271", "power inventory phase first bonus: inherited policy; neutral default."),
+    power_inventory_hurt_ccw_bonus => (100000, "score", 0, 1000000, "borg_power.rs:1174", "Bonus for Cure Critical Wounds while cut or poisoned (BI_ACCW)."),
+    power_inventory_ranged_missile_excess_penalty => (1000, "score", 0, 1000000, "borg_power.rs:1520", "power inventory ranged missile excess penalty: inherited policy; neutral default."),
+    power_inventory_ranged_quiver_slot_penalty => (10000, "score", 0, 1000000, "borg_power.rs:1509", "power inventory ranged quiver slot penalty: inherited policy; neutral default."),
+    power_inventory_recall_rod_bonus => (12000, "score", 0, 1000000, "borg_power.rs:1263", "power inventory recall rod bonus: inherited policy; neutral default."),
+    power_inventory_recharge_first_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1490", "power inventory recharge first bonus: inherited policy; neutral default."),
+    power_inventory_remove_curse_bonus => (90000, "score", 0, 1000000, "borg_power.rs:1644", "power inventory remove curse bonus: inherited policy; neutral default."),
+    power_inventory_restore_experience_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1650", "power inventory restore experience bonus: inherited policy; neutral default."),
+    power_inventory_spell_stat_potion_bonus => (575000, "score", 0, 1000000, "borg_power.rs:1626", "power inventory spell stat potion bonus: inherited policy; neutral default."),
+    power_inventory_star_enchant_armor_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1677", "power inventory star enchant armor bonus: inherited policy; neutral default."),
+    power_inventory_star_enchant_weapon_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1672", "power inventory star enchant weapon bonus: inherited policy; neutral default."),
+    power_inventory_star_remove_curse_bonus => (90000, "score", 0, 1000000, "borg_power.rs:1641", "power inventory star remove curse bonus: inherited policy; neutral default."),
+    power_inventory_strength_potion_bonus => (550000, "score", 0, 1000000, "borg_power.rs:1617", "power inventory strength potion bonus: inherited policy; neutral default."),
+    power_inventory_teleport_first_bonus => (10000, "score", 0, 1000000, "borg_power.rs:1293", "power inventory teleport first bonus: inherited policy; neutral default."),
+    power_inventory_teleport_other_wand_first_bonus => (5000, "score", 0, 1000000, "borg_power.rs:1547", "power inventory teleport other wand first bonus: inherited policy; neutral default."),
+    power_inventory_warrior_early_attack_wand_bonus => (10000, "score", 0, 1000000, "borg_power.rs:1572", "power inventory warrior early attack wand bonus: inherited policy; neutral default."),
+    power_inventory_warrior_teleport_other_bonus => (50000, "score", 0, 1000000, "borg_power.rs:1551", "power inventory warrior teleport other bonus: inherited policy; neutral default."),
+    power_inventory_wisdom_potion_bonus => (520000, "score", 0, 1000000, "borg_power.rs:1629", "power inventory wisdom potion bonus: inherited policy; neutral default."),
+    sell_ammo_batch_count => (5, "count", 1, 5, "borg_store_sell.rs:380", "sell ammo batch count: inherited policy; neutral default."),
+    sell_ammo_reserve_count => (45, "count", 0, 1000, "borg_store_sell.rs:1010", "sell ammo reserve count: inherited policy; neutral default."),
+    sell_attack_device_min_level => (35, "level", 1, 50, "borg_store_sell.rs:1030", "sell attack device min level: inherited policy; neutral default."),
+    sell_batch_max_item_value => (5, "gold", 0, 1000000, "borg_store_sell.rs:367", "sell batch max item value: inherited policy; neutral default."),
+    sell_batch_min_gold => (250, "gold", 0, 1000000, "borg_store_sell.rs:362", "sell batch min gold: inherited policy; neutral default."),
+    sell_count_power_tolerance => (50, "score", 0, 100000, "borg_store_sell.rs:1335", "sell count power tolerance: inherited policy; neutral default."),
+    sell_food_batch_count => (3, "count", 1, 5, "borg_store_sell.rs:386", "sell food batch count: inherited policy; neutral default."),
+    sell_gold_greed_base => (100, "gold", 0, 1000000, "borg_store_sell.rs:1238", "sell gold greed base: inherited policy; neutral default."),
+    sell_gold_greed_base_10 => (5, "gold", 0, 1000000, "borg_store_sell.rs:1258", "sell gold greed base 10: inherited policy; neutral default."),
+    sell_gold_greed_base_13 => (10, "gold", 0, 1000000, "borg_store_sell.rs:1255", "sell gold greed base 13: inherited policy; neutral default."),
+    sell_gold_greed_base_15 => (20, "gold", 0, 1000000, "borg_store_sell.rs:1252", "sell gold greed base 15: inherited policy; neutral default."),
+    sell_gold_greed_base_20 => (35, "gold", 0, 1000000, "borg_store_sell.rs:1249", "sell gold greed base 20: inherited policy; neutral default."),
+    sell_gold_greed_base_25 => (50, "gold", 0, 1000000, "borg_store_sell.rs:1246", "sell gold greed base 25: inherited policy; neutral default."),
+    sell_gold_greed_base_5 => (0, "gold", 0, 1000000, "borg_store_sell.rs:1261", "sell gold greed base 5: inherited policy; neutral default."),
+    sell_gold_greed_ceiling => (25000, "gold", 0, 1000000, "borg_store_sell.rs:1241", "sell gold greed ceiling: inherited policy; neutral default."),
+    sell_gold_greed_deep_depth => (50, "depth", 0, 127, "borg_store_sell.rs:1242", "sell gold greed deep depth: inherited policy; neutral default."),
+    sell_gold_greed_deep_value => (75000, "gold", 0, 1000000, "borg_store_sell.rs:1243", "sell gold greed deep value: inherited policy; neutral default."),
+    sell_gold_greed_divisor => (100, "divisor", 1, 10000, "borg_store_sell.rs:1228", "sell gold greed divisor: inherited policy; neutral default."),
+    sell_gold_greed_floor => (1000, "gold", 0, 1000000, "borg_store_sell.rs:1241", "sell gold greed floor: inherited policy; neutral default."),
+    sell_gold_greed_level_10 => (10, "level", 1, 50, "borg_store_sell.rs:1257", "sell gold greed level 10: inherited policy; neutral default."),
+    sell_gold_greed_level_13 => (13, "level", 1, 50, "borg_store_sell.rs:1254", "sell gold greed level 13: inherited policy; neutral default."),
+    sell_gold_greed_level_15 => (15, "level", 1, 50, "borg_store_sell.rs:1251", "sell gold greed level 15: inherited policy; neutral default."),
+    sell_gold_greed_level_20 => (20, "level", 1, 50, "borg_store_sell.rs:1248", "sell gold greed level 20: inherited policy; neutral default."),
+    sell_gold_greed_level_25 => (25, "level", 1, 50, "borg_store_sell.rs:1245", "sell gold greed level 25: inherited policy; neutral default."),
+    sell_gold_greed_level_5 => (5, "level", 1, 50, "borg_store_sell.rs:1260", "sell gold greed level 5: inherited policy; neutral default."),
+    sell_healing_rod_reserve_count => (3, "count", 0, 1000, "borg_store_sell.rs:1015", "sell healing rod reserve count: inherited policy; neutral default."),
+    sell_home_stack_soft_limit => (90, "count", 0, 90, "borg_store_sell.rs:679", "sell home stack soft limit: inherited policy; neutral default."),
+    sell_identify_max_depth => (35, "depth", 0, 127, "borg_store_sell.rs:929", "sell identify max depth: inherited policy; neutral default."),
+    sell_mana_reserve_count => (99, "count", 0, 1000, "borg_store_sell.rs:920", "sell mana reserve count: inherited policy; neutral default."),
+    sell_mana_reserve_min_sp => (100, "sp", 0, 10000, "borg_store_sell.rs:917", "sell mana reserve min sp: inherited policy; neutral default."),
+    sell_mapping_rod_reserve_count => (2, "count", 0, 255, "borg_store_sell.rs:1023", "sell mapping rod reserve count: inherited policy; neutral default."),
+    sell_unidentified_max_level => (10, "level", 1, 50, "borg_store_sell.rs:898", "sell unidentified max level: inherited policy; neutral default."),
+    sell_value_cap => (30000, "gold", 0, 1000000, "borg_store_sell.rs:131", "sell value cap: inherited policy; neutral default."),
+    shopping_emergency_light_max_level => (10, "level", 1, 50, "borg_think_store.rs:235", "shopping emergency light max level: inherited policy; neutral default."),
+    shopping_light_min_gold => (100, "gold", 0, 1000000, "borg_think_store.rs:224", "shopping light min gold: inherited policy; neutral default."),
+    shopping_max_bounces => (1350, "count", 0, 30000, "borg_think_store.rs:203", "shopping max bounces: inherited policy; neutral default."),
+    shopping_max_turns => (2000, "turns", 0, 30000, "borg_think_store.rs:200", "shopping max turns: inherited policy; neutral default."),
+    shopping_unlit_min_level => (2, "level", 1, 50, "borg_think_store.rs:218", "shopping unlit min level: inherited policy; neutral default."),
+    wear_backup_danger_divisor => (2, "divisor", 1, 100, "borg_item_wear.rs:789", "wear backup danger divisor: inherited policy; neutral default."),
+    wear_backup_max_bounces => (300, "count", 0, 30000, "borg_item_wear.rs:680", "wear backup max bounces: inherited policy; neutral default."),
+    wear_backup_unique_danger_divisor => (3, "divisor", 1, 100, "borg_item_wear.rs:789", "wear backup unique danger divisor: inherited policy; neutral default."),
+    wear_backup_unique_danger_numerator => (2, "multiplier", 0, 100, "borg_item_wear.rs:789", "wear backup unique danger numerator: inherited policy; neutral default."),
+    wear_best_max_bounces => (1300, "count", 0, 30000, "borg_item_wear.rs:876", "wear best max bounces: inherited policy; neutral default."),
+    wear_best_max_turns => (2000, "turns", 0, 30000, "borg_item_wear.rs:873", "wear best max turns: inherited policy; neutral default."),
+    wear_full_ring_trial_rng_bound => (100, "rng_bound", 11, 10000, "borg_item_wear.rs:989", "wear full ring trial rng bound: inherited policy; neutral default."),
+    wear_identify_artifact_bonus => (150000, "score", 0, 1000000, "borg_item_wear.rs:190", "wear identify artifact bonus: inherited policy; neutral default."),
+    wear_identify_consumable_depth_weight => (500, "score", 0, 100000, "borg_item_wear.rs:258", "wear identify consumable depth weight: inherited policy; neutral default."),
+    wear_identify_consumable_min_depth => (5, "depth", 0, 127, "borg_item_wear.rs:256", "wear identify consumable min depth: inherited policy; neutral default."),
+    wear_identify_device_depth_weight => (2000, "score", 0, 100000, "borg_item_wear.rs:253", "wear identify device depth weight: inherited policy; neutral default."),
+    wear_identify_ego_bonus => (100000, "score", 0, 1000000, "borg_item_wear.rs:194", "wear identify ego bonus: inherited policy; neutral default."),
+    wear_identify_food_depth_weight => (10, "score", 0, 100000, "borg_item_wear.rs:261", "wear identify food depth weight: inherited policy; neutral default."),
+    wear_identify_jewelry_depth_weight => (5000, "score", 0, 100000, "borg_item_wear.rs:251", "wear identify jewelry depth weight: inherited policy; neutral default."),
+    wear_identify_magic_bonus => (20000, "score", 0, 1000000, "borg_item_wear.rs:199", "wear identify magic bonus: inherited policy; neutral default."),
+    wear_identify_max_danger => (1, "danger", 0, 10000, "borg_item_wear.rs:171", "wear identify max danger: inherited policy; neutral default."),
+    wear_identify_min_sp => (50, "sp", 0, 10000, "borg_item_wear.rs:163", "wear identify min sp: inherited policy; neutral default."),
+    wear_identify_rod_depth_weight => (3000, "score", 0, 100000, "borg_item_wear.rs:252", "wear identify rod depth weight: inherited policy; neutral default."),
+    wear_min_power_gain => (50, "score", 0, 100000, "borg_item_wear.rs:980", "wear min power gain: inherited policy; neutral default."),
+    wear_one_ring_power_multiplier => (2, "multiplier", 1, 100, "borg_item_wear.rs:549", "wear one ring power multiplier: inherited policy; neutral default."),
+    wear_repeat_cooldown_turns => (10, "turns", 0, 30000, "borg_item_wear.rs:915", "wear repeat cooldown turns: inherited policy; neutral default."),
+    wear_ring_reorder_max_turns => (1000, "turns", 0, 30000, "borg_item_wear.rs:340", "wear ring reorder max turns: inherited policy; neutral default."),
+    wear_ring_select_max_turns => (2000, "turns", 0, 30000, "borg_item_wear.rs:496", "wear ring select max turns: inherited policy; neutral default."),
+    sell_unidentified_ego_min_copies => (2, "count", 1, 99, "borg_store_sell.rs:956", "sell unidentified ego min copies: inherited policy; neutral default."),
+    shopping_upgrade_light_radius => (1, "grids", 1, 5, "borg_think_store.rs:224", "shopping upgrade light radius: inherited policy; neutral default."),
+
+}
+
+/// borg-reborn-rs (#520): the class names, `class.txt` order (`cidx`).
+pub(crate) const CLASSES: [&str; 9] =
+    ["warrior", "mage", "druid", "priest", "necromancer", "paladin", "rogue", "ranger", "blackguard"];
+
+/// A class's own value of a parameter (`<name>@<class>`, a class file, or a
+/// legacy `<name>_<class>` alias).
+#[derive(Serialize)]
+struct ClassValue {
+    value: i32,
+    origin: &'static str,
 }
 
 #[derive(Serialize)]
@@ -1883,33 +2187,110 @@ struct Setting<'a> {
     spec: &'a Spec,
     value: i32,
     origin: &'static str,
+    /// borg-reborn-rs (#520): per-class values, by class name.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    class_values: BTreeMap<&'static str, ClassValue>,
 }
 
 #[derive(Clone, Copy)]
 struct Resolved {
     value: i32,
     origin: &'static str,
+    class: [Option<(i32, &'static str)>; 9],
 }
 
 static VALUES: OnceLock<Vec<Resolved>> = OnceLock::new();
 
-pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
-    let i = param as usize;
-    VALUES.get().map_or((SPECS[i].default, "default"), |values| (values[i].value, values[i].origin))
+/// borg-reborn-rs (#520): the character's class (`cidx`), -1 while none is
+/// known. Set when the parameters load and whenever the Borg notices its
+/// race and class (start and reincarnation).
+static CLASS: std::sync::atomic::AtomicI32 = std::sync::atomic::AtomicI32::new(-1);
+
+/// borg-reborn-rs (#520): the class whose values `value` returns.
+pub(crate) fn set_class(class: i32) {
+    CLASS.store(class, std::sync::atomic::Ordering::Relaxed);
 }
 
-/// Pure lookup after init; isolated decision tests use the same defaults.
+fn pick(r: &Resolved) -> (i32, &'static str) {
+    let class = CLASS.load(std::sync::atomic::Ordering::Relaxed);
+    usize::try_from(class).ok().and_then(|c| r.class.get(c).copied().flatten()).unwrap_or((r.value, r.origin))
+}
+
+pub(crate) fn resolved(param: Param) -> (i32, &'static str) {
+    let i = param as usize;
+    VALUES.get().map_or((SPECS[i].default, "default"), |values| pick(&values[i]))
+}
+
+/// Pure lookup after init: the current class's value when it has one, else
+/// the common one. Isolated decision tests use the same defaults.
 pub(crate) fn value(param: Param) -> i32 {
     let i = param as usize;
-    VALUES.get().map_or(SPECS[i].default, |values| values[i].value)
+    VALUES.get().map_or(SPECS[i].default, |values| pick(&values[i]).0)
 }
+
+/// borg-reborn-rs (#520): the per-class names of the families that #520
+/// folded into one parameter, accepted as aliases of `<name>@<class>`. A
+/// value equal to the family's old "use the general value" sentinel sets no
+/// class value (divisor and curve scale 0, reserve -1).
+fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
+    let spec = |n: &str| SPECS.iter().find(|s| s.name == n);
+    for (c, class) in CLASSES.iter().enumerate() {
+        if let Some(fam) = name.strip_prefix(&format!("attack_preference_{class}_")).and_then(|r| r.strip_suffix("_permille")) {
+            return spec(&format!("attack_preference_{fam}_permille")).map(|s| (s, c, None));
+        }
+        for (base, sentinel) in [
+            ("attack_arrow_point_blank_divisor", 0),
+            ("town_heal_curve_scale_percent", 0),
+            ("town_heal_reserve_hp_percent", -1),
+        ] {
+            if name == format!("{base}_{class}") {
+                return spec(base).map(|s| (s, c, Some(sentinel)));
+            }
+        }
+    }
+    None
+}
+
+/// A setting's name: the parameter, its class if any, and the alias's
+/// "general value" sentinel.
+fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if let Some((base, class)) = name.split_once('@') {
+        let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
+        let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
+        return Ok((spec, Some(c), None));
+    }
+    if let Some(spec) = SPECS.iter().find(|s| s.name == name) {
+        return Ok((spec, None, None));
+    }
+    legacy_alias(name).map(|(s, c, sentinel)| (s, Some(c), sentinel)).ok_or(format!("unknown parameter {name}"))
+}
+
+/// The environment's name for a setting: `BORG_PARAM_<NAME>` with the class
+/// as `__<CLASS>` (shells cannot export a name with `@`); `@` and the
+/// legacy aliases are accepted too. Upper case only, as before #520: a
+/// lower-case name is an unknown parameter, not a silent match.
+fn split_env_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    if name != name.to_ascii_uppercase() {
+        return Err(format!("unknown parameter {name}"));
+    }
+    let lower = name.to_ascii_lowercase();
+    if let Some((base, class)) = lower.rsplit_once("__") {
+        if CLASSES.contains(&class) {
+            return split_name(&format!("{base}@{class}"));
+        }
+    }
+    split_name(&lower)
+}
+
+type Key = (&'static str, Option<usize>);
 
 fn parse<'a>(
     text: &str,
     env: &BTreeMap<String, String>,
     specs: &'a [Spec],
 ) -> Result<Vec<Setting<'a>>, String> {
-    let mut file = BTreeMap::new();
+    // (parameter, class) -> (raw value, alias sentinel)
+    let mut file: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
     for (line, raw) in text.lines().enumerate() {
         let raw = raw.split('#').next().unwrap_or("").trim();
         if !raw.starts_with("borg_param_") {
@@ -1919,51 +2300,81 @@ fn parse<'a>(
             .split_once('=')
             .ok_or_else(|| format!("borg.txt:{}: expected name = integer", line + 1))?;
         let name = name.trim().strip_prefix("borg_param_").unwrap();
-        if !specs.iter().any(|s| s.name == name) {
-            return Err(format!("unknown borg_param_{name}"));
-        }
-        if file.insert(name, value.trim()).is_some() {
+        let (spec, class, sentinel) = split_name(name).map_err(|_| format!("unknown borg_param_{name}"))?;
+        if file.insert((spec.name, class), (value.trim().to_string(), sentinel)).is_some() {
             return Err(format!("duplicate borg_param_{name}"));
         }
     }
-    for name in env.keys() {
-        if !specs.iter().any(|s| s.name.to_ascii_uppercase() == *name) {
-            return Err(format!("unknown BORG_PARAM_{name}"));
+    let mut envs: BTreeMap<Key, (String, Option<i32>)> = BTreeMap::new();
+    for (name, value) in env {
+        let (spec, class, sentinel) = split_env_name(name).map_err(|_| format!("unknown BORG_PARAM_{name}"))?;
+        if envs.insert((spec.name, class), (value.clone(), sentinel)).is_some() {
+            return Err(format!("duplicate BORG_PARAM_{name}"));
         }
     }
-    specs
-        .iter()
-        .map(|spec| {
-            let (raw, origin) = if let Some(raw) = env.get(&spec.name.to_ascii_uppercase()) {
-                (Some(raw.as_str()), "environment")
-            } else if let Some(raw) = file.get(spec.name) {
-                (Some(*raw), "borg.txt")
-            } else {
-                (None, "default")
-            };
-            let value = match raw {
-                Some(raw) => raw
-                    .parse::<i32>()
-                    .map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?,
-                None => spec.default,
-            };
-            if !(spec.min..=spec.max).contains(&value) {
-                return Err(format!(
-                    "{}: {value} outside {}..={} {}",
-                    spec.name, spec.min, spec.max, spec.unit
-                ));
+    let check = |spec: &Spec, raw: &str| -> Result<i32, String> {
+        let value = raw.parse::<i32>().map_err(|_| format!("{}: expected integer, got {raw:?}", spec.name))?;
+        if !(spec.min..=spec.max).contains(&value) {
+            return Err(format!("{}: {value} outside {}..={} {}", spec.name, spec.min, spec.max, spec.unit));
+        }
+        Ok(value)
+    };
+    let mut settings = Vec::with_capacity(specs.len());
+    for spec in specs {
+        let (value, origin) = if let Some((raw, _)) = envs.get(&(spec.name, None)) {
+            (check(spec, raw)?, "environment")
+        } else if let Some((raw, _)) = file.get(&(spec.name, None)) {
+            (check(spec, raw)?, "borg.txt")
+        } else {
+            (spec.default, "default")
+        };
+        let mut class_values = BTreeMap::new();
+        for (c, class) in CLASSES.iter().enumerate() {
+            let found = envs.get(&(spec.name, Some(c))).map(|v| (v, "environment"))
+                .or_else(|| file.get(&(spec.name, Some(c))).map(|v| (v, "borg.txt")));
+            if let Some(((raw, sentinel), origin)) = found {
+                let raw = raw.trim();
+                // An alias at its old "general value" sentinel sets nothing.
+                if sentinel.is_some() && raw.parse::<i32>().ok() == *sentinel {
+                    continue;
+                }
+                class_values.insert(*class, ClassValue { value: check(spec, raw)?, origin });
             }
-            Ok(Setting {
-                spec,
-                value,
-                origin,
-            })
+        }
+        settings.push(Setting { spec, value, origin, class_values });
+    }
+    let value = |name: &str| settings.iter().find(|s| s.spec.name == name).map(|s| s.value);
+    for (low, high) in [
+        ("sell_gold_greed_floor", "sell_gold_greed_ceiling"),
+        ("home_stat_str_low_limit", "home_stat_str_high_limit"),
+        ("home_stat_dex_low_limit", "home_stat_dex_high_limit"),
+        ("home_stat_con_low_limit", "home_stat_con_high_limit"),
+        ("home_stat_caster_low_limit", "home_stat_caster_high_limit"),
+        ("home_resistance_min_depth", "home_resistance_max_depth"),
+    ] {
+        if value(low).zip(value(high)).is_some_and(|(a, b)| a > b) {
+            return Err(format!("{low} must not exceed {high}"));
+        }
+    }
+    Ok(settings)
+}
+
+fn resolve(settings: &[Setting<'_>]) -> Vec<Resolved> {
+    settings
+        .iter()
+        .map(|s| {
+            let mut class = [None; 9];
+            for (c, name) in CLASSES.iter().enumerate() {
+                class[c] = s.class_values.get(name).map(|v| (v.value, v.origin));
+            }
+            Resolved { value: s.value, origin: s.origin, class }
         })
         .collect()
 }
 
 /// Called before initialization consumes RNG or makes decisions. Configuration
-/// is immutable for the process, including reincarnations and core switches.
+/// is immutable for the process, including reincarnations and core switches;
+/// which class's values apply follows the character (`set_class`, #520).
 pub(crate) fn initialize() {
     VALUES.get_or_init(|| {
         let result = (|| -> Result<Vec<Resolved>, String> {
@@ -1984,13 +2395,16 @@ pub(crate) fn initialize() {
                 json.push(b'\n');
                 std::fs::write(&path, json).map_err(|e| format!("{}: {e}", path.display()))?;
             }
-            Ok(settings.iter().map(|s| Resolved { value: s.value, origin: s.origin }).collect())
+            Ok(resolve(&settings))
         })();
         result.unwrap_or_else(|e| {
             eprintln!("borg-reborn-rs: core parameters: {e}");
             std::process::exit(2)
         })
     });
+    if let Some(class) = crate::engine::class_cidx_if_set() {
+        set_class(class as i32);
+    }
 }
 
 #[cfg(test)]
@@ -1998,26 +2412,130 @@ mod tests {
     use super::*;
 
     #[test]
+    fn inventory_bounds_reject_unsafe_quantity_rng_and_ordering() {
+        for text in [
+            "borg_param_sell_ammo_batch_count = 0",
+            "borg_param_sell_ammo_batch_count = 6",
+            "borg_param_sell_food_batch_count = 6",
+            "borg_param_sell_home_stack_soft_limit = 91",
+            "borg_param_sell_mapping_rod_reserve_count = 256",
+            "borg_param_sell_mapping_rod_reserve_count = 300",
+            "borg_param_sell_mapping_rod_reserve_count = 1000",
+            "borg_param_wear_full_ring_trial_rng_bound = 10",
+            "borg_param_wear_full_ring_trial_rng_bound = 10001",
+            "borg_param_wear_backup_max_bounces = 32768",
+            "borg_param_buy_home_stock_gold_divisor = 0",
+            "borg_param_sell_gold_greed_floor = 30000",
+            "borg_param_home_stat_caster_low_limit = 30",
+        ] {
+            assert!(parse(text, &BTreeMap::new(), SPECS).is_err(), "{text}");
+        }
+        for valid in [0, 2, 255] {
+            let settings = parse(&format!("borg_param_sell_mapping_rod_reserve_count = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+            assert_eq!(settings[Param::sell_mapping_rod_reserve_count as usize].value, valid);
+        }
+        for (p, max) in [
+            (Param::sell_mapping_rod_reserve_count, i32::from(u8::MAX)),
+            (Param::sell_ammo_batch_count, i32::from(u8::MAX)),
+            (Param::sell_food_batch_count, i32::from(u8::MAX)),
+            (Param::sell_home_stack_soft_limit, i32::from(u8::MAX)),
+            (Param::sell_unidentified_ego_min_copies, i32::from(u8::MAX)),
+            (Param::wear_backup_max_bounces, i32::from(i16::MAX)),
+            (Param::wear_best_max_bounces, i32::from(i16::MAX)),
+        ] {
+            let spec = &SPECS[p as usize];
+            assert!(spec.min >= 0 && spec.max <= max, "{} exceeds its operand type", spec.name);
+        }
+        let env = BTreeMap::from([("SELL_GOLD_GREED_CEILING".into(), "40000".into())]);
+        assert!(parse("borg_param_sell_gold_greed_floor = 30000", &env, SPECS).is_ok());
+    }
+
+    /// #520: the class value of a setting and its origin.
+    fn class_value(settings: &[Setting<'_>], p: Param, class: &str) -> Option<(i32, &'static str)> {
+        settings[p as usize].class_values.get(class).map(|v| (v.value, v.origin))
+    }
+
+    #[test]
     fn attack_preferences_validate_bounds_and_record_override_provenance() {
-        let name = "attack_preference_mage_spell_permille";
-        for bad in ["499", "2001", "1.5", "no", "2147483648"] {
-            assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err());
+        // #520: the legacy per-class name is an alias of `<name>@<class>`.
+        let legacy = "attack_preference_mage_spell_permille";
+        let p = Param::attack_preference_spell_permille;
+        for name in [legacy, "attack_preference_spell_permille@mage"] {
+            for bad in ["499", "2001", "1.5", "no", "2147483648"] {
+                assert!(parse(&format!("borg_param_{name} = {bad}"), &BTreeMap::new(), SPECS).is_err(), "{name} {bad}");
+            }
+            for valid in [500, 1000, 2000] {
+                let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
+                assert_eq!(class_value(&values, p, "mage"), Some((valid, "borg.txt")));
+                assert_eq!((values[p as usize].value, values[p as usize].origin), (1000, "default"), "the common value stays");
+                assert_eq!(class_value(&values, p, "warrior"), None);
+            }
         }
         let env = BTreeMap::from([("ATTACK_PREFERENCE_MAGE_SPELL_PERMILLE".into(), "1600".into())]);
-        let values = parse(&format!("borg_param_{name} = 1500"), &env, SPECS).unwrap();
-        let resolved = &values[Param::attack_preference_mage_spell_permille as usize];
-        assert_eq!((resolved.value, resolved.origin), (1600, "environment"));
-        let json = serde_json::to_value(resolved).unwrap();
-        assert_eq!(json["name"], name);
+        let values = parse(&format!("borg_param_{legacy} = 1500"), &env, SPECS).unwrap();
+        assert_eq!(class_value(&values, p, "mage"), Some((1600, "environment")));
+        let json = serde_json::to_value(&values[p as usize]).unwrap();
+        assert_eq!(json["name"], "attack_preference_spell_permille");
         assert_eq!(json["unit"], "utility_permille");
         assert_eq!(json["default"], 1000);
-        for valid in [500, 1000, 2000] {
-            let values = parse(&format!("borg_param_{name} = {valid}"), &BTreeMap::new(), SPECS).unwrap();
-            let setting = &values[Param::attack_preference_mage_spell_permille as usize];
-            assert_eq!((setting.value, setting.origin), (valid, "borg.txt"));
-        }
-        assert!(parse(&format!("borg_param_{name} = 1000\nborg_param_{name} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert_eq!(json["class_values"]["mage"]["value"], 1600);
+        assert_eq!(json["class_values"]["mage"]["origin"], "environment");
+        // The same class value twice, by either name, is a duplicate.
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_{legacy} = 1500"), &BTreeMap::new(), SPECS).is_err());
+        assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_attack_preference_spell_permille@mage = 1500"), &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_preference_spell_permille@wizard = 1000", &BTreeMap::new(), SPECS).is_err());
+    }
+
+    /// #520: precedence (default < borg.txt < class line < environment <
+    /// class environment), the `__CLASS` environment form, and the legacy
+    /// aliases' "general value" sentinels.
+    #[test]
+    fn class_values_override_the_common_value() {
+        let p = Param::town_heal_reserve_hp_percent;
+        let text = "borg_param_town_heal_reserve_hp_percent = 100\nborg_param_town_heal_reserve_hp_percent@mage = 300\nborg_param_town_heal_reserve_hp_percent_warrior = 50";
+        let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (100, "borg.txt"));
+        assert_eq!(class_value(&values, p, "mage"), Some((300, "borg.txt")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        let env = BTreeMap::from([
+            ("TOWN_HEAL_RESERVE_HP_PERCENT".into(), "120".into()),
+            ("TOWN_HEAL_RESERVE_HP_PERCENT__MAGE".into(), "250".into()),
+        ]);
+        let values = parse(text, &env, SPECS).unwrap();
+        assert_eq!((values[p as usize].value, values[p as usize].origin), (120, "environment"));
+        assert_eq!(class_value(&values, p, "mage"), Some((250, "environment")));
+        assert_eq!(class_value(&values, p, "warrior"), Some((50, "borg.txt")));
+        // The old "use the general value" sentinels set no class value.
+        for text in ["borg_param_town_heal_reserve_hp_percent_mage = -1",
+                     "borg_param_town_heal_curve_scale_percent_mage = 0",
+                     "borg_param_attack_arrow_point_blank_divisor_mage = 0"] {
+            let values = parse(text, &BTreeMap::new(), SPECS).unwrap();
+            assert!(values.iter().all(|s| s.class_values.is_empty()), "{text}");
+        }
+        // #534 review: environment names stay upper case.
+        let lower = BTreeMap::from([("town_heal_reserve_hp_percent".into(), "100".into())]);
+        assert!(parse("", &lower, SPECS).is_err());
+        let lower_class = BTreeMap::from([("TOWN_HEAL_RESERVE_HP_PERCENT__mage".into(), "100".into())]);
+        assert!(parse("", &lower_class, SPECS).is_err());
+        // Without the alias, the sentinel is out of range.
+        assert!(parse("borg_param_town_heal_reserve_hp_percent@mage = -1", &BTreeMap::new(), SPECS).is_err());
+        assert!(parse("borg_param_attack_arrow_point_blank_divisor_ranger = 2", &BTreeMap::new(), SPECS).is_ok());
+    }
+
+    /// #520: `pick` returns the current class's value, else the common one.
+    #[test]
+    fn lookup_follows_the_class() {
+        let mut class = [None; 9];
+        class[1] = Some((300, "borg.txt"));
+        let r = Resolved { value: 100, origin: "borg.txt", class };
+        set_class(-1);
+        assert_eq!(pick(&r), (100, "borg.txt"));
+        set_class(1);
+        assert_eq!(pick(&r), (300, "borg.txt"));
+        set_class(0);
+        assert_eq!(pick(&r), (100, "borg.txt"));
+        set_class(-1);
     }
 
     #[test]
@@ -2029,7 +2547,9 @@ mod tests {
         ] {
             assert_eq!(SPECS.iter().find(|s| s.name == name).unwrap().default, expected);
         }
-        for name in ["recover_munchkin_rest_min_food", "power_inventory_maxclevel_threshold_2",
+        for name in ["power_inventory_poison_cure_bonus", "power_inventory_cut_cure_bonus",
+                     "power_inventory_cure_serious_first_bonus",
+                     "recover_munchkin_rest_min_food", "power_inventory_maxclevel_threshold_2",
                      "defend_shield_low_danger_numerator", "defend_shield_low_danger_divisor",
                      "defend_shield_low_fail_adjustment"] {
             assert!(parse(&format!("borg_param_{name} = 1"), &BTreeMap::new(), SPECS).is_err());
@@ -2051,6 +2571,11 @@ mod tests {
                 "attack" => "fight_attack",
                 "defend" => "fight_defend",
                 "item" => "item_use",
+                "wear" => "item_wear",
+                "buy" => "store_buy",
+                "sell" => "store_sell",
+                "shopping" => "think_store",
+                "home" => "home_power",
                 "town" => "town_budget",
                 _ => prefix,
             };
