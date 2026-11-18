@@ -241,7 +241,9 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 
 ## P5: validation reproducibility and evidence receipts (2026-11-18)
 
-**In progress: #374; #375 follows.** Owner accepted the re-review and
+**In progress: #375; #374 is integrated.** Owner authorized #579, merged
+into track-p at `f357404e` after green CI; #374 is complete. Owner accepted
+the kickoff re-review and
 merged source refresh #555 into track-p at `0336d44e`, then kickoff #537
 at `6aa38d2b`; issues #554 and #536 are complete. The
 owner requested the next Track P milestone after P4 promotion. No P5 was

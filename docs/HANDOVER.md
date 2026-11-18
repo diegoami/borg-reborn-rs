@@ -2,6 +2,29 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: reference-receipt compatibility decision (#375 / P5)
+
+- Owner authorized #579 merge and continuation. #579 integrated into track-p
+  at f357404e after green CI; #374 is closed. Work proceeds in its own
+  .worktrees/T375 checkout on task/T375-reference-receipts from that source.
+- Assess the existing full-package importer and Cemetery native API 1 at
+  pinned 09225018. No payload-reference resolver/closure contract exists;
+  retain self-contained qualified packages and implement no alternate registrar.
+- Read-only validation rechecks all 25 P341 mapped packages; all 13 receiving
+  packages have earlier qualified family/key matches present at 2f74e1c5.
+  Twelve identical parameter payloads occupy one Git blob already. Logical
+  working-tree byte totals are not claimed Git storage savings or new lives.
+- docs/REFERENCE-RECEIPTS.md records full versus coverage identity, mandatory
+  actual new-attempt provenance, changed-payload retention, missing-reference
+  failure and owner/version/index/reconciliation/retention boundaries for a
+  future format. Existing KNOWN coverage avoids unnecessary new death packages;
+  it does not establish complete result equality or capture another build's data.
+- No runtime/default/pin/schema/index/registry change, game, canonical write,
+  historical migration or deletion. Original records/maps/packages remain exact.
+  Full-package retention is the concrete permitted design outcome of #375.
+- Importer regressions and archive verification pass; required checks/CI and
+  owner review precede task integration. After the last P5 task merges, stop
+  for a pinned track-p→main milestone review; do not promote automatically.
 
 ## 2026-11-18: exact historical validation recipes (#374 / P5)
 
