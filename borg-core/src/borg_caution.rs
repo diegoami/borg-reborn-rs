@@ -2393,13 +2393,11 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
     if !scary {
         return;
     }
+    // borg-reborn-rs (#557): while rising, a down staircase the flight may
+    // not take is no escape.
+    let down = if rising_holds_flee_descent(st) { -1 } else { nearest_free_stair(st, false) };
     let escape = st.borg.tr(BI_CDEPTH) == 0
-        || easy_escape_with(
-            st,
-            p(Param::caution_breeder_easy_escape_steps),
-            nearest_free_stair(st, true),
-            nearest_free_stair(st, false),
-        );
+        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down);
     let stand = stand_decision(escape, pursuer);
     if stand {
         st.borg.mon.scary = false;
@@ -2646,6 +2644,26 @@ fn stair_scum_threatened_with(st: &mut BorgState, flag: i32, here: i32, danger_l
 /// The threat test of `stair_scum_threatened` (#549).
 fn stair_scum_threat(scary: bool, danger: i32, hp: i32, max_hp: i32, danger_limit: i32) -> bool {
     scary || danger > danger_limit || hp < max_hp
+}
+
+/// borg-reborn-rs (#557): with `caution_rising_hold_flee_descent`, while
+/// rising in the dungeon a flight takes no down staircase unless the danger
+/// here is at or above the HP. With `birth_connect_stairs` the down staircase
+/// lands the Borg on DL+1's up staircase, it climbs back to a fresh level on
+/// a down staircase again, and the walk home restarts: priest-1055640847
+/// bounced DL2-DL3 eight times in 30,000 turns without reaching town.
+pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
+    if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    rising_hold(here, st.borg.tr(BI_CURHP))
+}
+
+/// The danger test of `rising_holds_flee_descent` (#557): held unless the
+/// danger here is at or above the HP.
+fn rising_hold(danger: i32, hp: i32) -> bool {
+    danger < hp
 }
 
 /// The known monsters as (distance, danger reach, breeder): a breeder
@@ -3017,6 +3035,11 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
 
     // borg-reborn-rs (#483): not while rising, unless in real danger.
     if rising_holds_descent(st, pos_danger) {
+        st.borg.stair_more = false;
+    }
+
+    // borg-reborn-rs (#557): no descent while rising, unless in real danger.
+    if st.borg.stair_more && rising_holds_flee_descent(st) {
         st.borg.stair_more = false;
     }
 }
@@ -3472,6 +3495,14 @@ mod breeder_tests {
         assert!(stair_scum_threat(false, 4, 14, 14, 0), "Grip in view (ranger-2107852048, turn 191)");
         assert!(!stair_scum_threat(false, 4, 14, 14, 4), "danger at the limit");
         assert!(stair_scum_threat(false, 0, 6, 14, 0), "hurt");
+    }
+
+    #[test]
+    fn rising_holds_a_flight_down_unless_in_real_danger() {
+        assert!(rising_hold(0, 70), "nothing near");
+        assert!(rising_hold(69, 70), "danger below the HP");
+        assert!(!rising_hold(70, 70), "danger at the HP");
+        assert!(!rising_hold(2000, 70), "a worm crowd");
     }
 
     /// Review of #550: the skip also ends the stair scum's own flow, so no

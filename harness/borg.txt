@@ -521,6 +521,12 @@ borg_param_town_heal_speed_percent = 66
 
 borg_param_town_digger_min_gold = 500
 
+# Keep this many Word of Recall at any depth: the planner values them at the
+# full trip weight, so a shallow Borg buys one and walks home only without
+# it (#557). Off here.
+
+borg_param_town_recall_reserve = 0
+
 
 ### Fleeing ###
 
@@ -552,6 +558,18 @@ borg_param_caution_flee_known_down_stairs = 0
 
 borg_param_caution_stair_scum_threat = 0
 borg_param_caution_stair_scum_danger = 0
+
+# Walking home (rising) in the dungeon, a flight takes no down staircase
+# unless the danger here is at or above the HP; that staircase is then no
+# easy escape either (#557). Off here.
+
+borg_param_caution_rising_hold_flee_descent = 0
+
+# Walking home (rising), a descent that is not a desperate escape is held for
+# this many Borg ticks on each level while the Borg explores for an up
+# staircase (#483; the compiled default, written out for the zoo, #557).
+
+borg_param_caution_rising_explore_ticks = 300
 
 
 ### Cornered ###

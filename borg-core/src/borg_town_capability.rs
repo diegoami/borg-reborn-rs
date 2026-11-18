@@ -599,7 +599,17 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(POISON, if t(BI_ISPOISONED) > 0 { cfg(BORG_TOWN_W_POISON) * UNIT } else { 0 },
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
     curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
-    curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1), UNIT);
+    // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
+    // (worth the full trip weight each, nothing past them) while the walk
+    // they save is worth less: a shallow Borg otherwise never buys one and
+    // walks home, and the walk can fail (priest-1055640847).
+    let walk_value = cfg(BORG_TOWN_W_TRIP) * UNIT * journey.walk / journey.turns.max(journey.walk).max(1);
+    let recall_reserve = i64::from(param(Param::town_recall_reserve)).max(0);
+    if recall_reserve > 0 && walk_value < cfg(BORG_TOWN_W_TRIP) * UNIT {
+        curve(RECALL, cfg(BORG_TOWN_W_TRIP) * UNIT * recall_reserve, -(recall_reserve * UNIT));
+    } else {
+        curve(RECALL, walk_value, UNIT);
+    }
     let damage_scale = journey.level * 2 + 4;
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
