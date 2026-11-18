@@ -2779,8 +2779,9 @@ pub(crate) fn scary_named_monsters() -> bool {
 /// adds large penalties for stealing, paralysis or confusion (a street
 /// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
 /// current HP: a wounded character is the danger-against-avoidance flight's
-/// business. 0 = off.
-pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+/// business. 0 = off. `note`: write the scare's note (#539: not for a
+/// calmed monster, which makes nothing scary).
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32, note: bool) -> bool {
     let percent = p(Param::caution_scary_damage_percent);
     let max_hp = st.borg.tr(BI_MAXHP);
     if percent <= 0 || max_hp <= 0 { return false; }
@@ -2789,11 +2790,27 @@ pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
     if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
     let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
     let scary = scary_damage_reaches(damage, max_hp, percent);
-    if scary && !st.borg.mon.scary {
+    if note && scary && !st.borg.mon.scary {
         let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
         borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
     }
     scary
+}
+
+/// borg-reborn-rs (#539): a monster that is hurt or afraid is no named-list
+/// or damage-rule scare (owner: Grip fled from one flask of oil). Hurt: it
+/// has lost at least `caution_scary_hurt_percent` of its HP (`kill.injury`,
+/// from the health bar); afraid: `kill.afraid`, with `caution_scary_afraid`.
+/// The resist-based scares and door scares are not affected. A calmed
+/// monster that is awake and fast still counts as a pursuer in stand mode:
+/// it can follow (else, with other scary monsters asleep, a monster turning
+/// afraid made a stand into a flight; two deaths on 18 starts). 0 and 0 = C.
+pub(crate) fn scary_calmed(injury: i16, afraid: bool) -> bool {
+    calmed(i32::from(injury), afraid, p(Param::caution_scary_hurt_percent), p(Param::caution_scary_afraid) != 0)
+}
+
+fn calmed(injury: i32, afraid: bool, hurt_percent: i32, afraid_counts: bool) -> bool {
+    (hurt_percent > 0 && injury >= hurt_percent) || (afraid_counts && afraid)
 }
 
 /// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
@@ -3289,6 +3306,21 @@ mod scary_stand_tests {
         assert!(goal.leaving, "the other caution's leave survives");
         assert!(!goal.fleeing && !goal.fleeing_to_town, "the scare's goals are withdrawn");
         assert!(!unlatch_scare(&mut mon, &mut goal), "already clear");
+    }
+
+    #[test]
+    fn g_a_hurt_or_afraid_monster_is_calmed_only_when_switched_on() {
+        // Off (C): never calmed.
+        assert!(!calmed(100, true, 0, false));
+        // Hurt: at the threshold and above, not below.
+        assert!(!calmed(49, false, 50, false));
+        assert!(calmed(50, false, 50, false));
+        assert!(calmed(90, false, 50, false));
+        // Afraid: only with its switch, whatever the injury.
+        assert!(!calmed(0, true, 50, false));
+        assert!(calmed(0, true, 50, true));
+        assert!(calmed(0, true, 0, true));
+        assert!(!calmed(0, false, 0, true));
     }
 
     #[test]
