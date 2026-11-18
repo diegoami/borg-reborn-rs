@@ -566,6 +566,13 @@ borg_param_caution_breeder_hunt_max_count = 4
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
 borg_param_caution_flee_known_down_stairs = 0
+# #549 (owner, 2026-11-18, ranger-2107852048 killed by Grip): after fleeing
+# town, the stair scum (grabbing DL1 items near the stairs before going back
+# up) runs before any danger check. With the threat flag 1 it is skipped while
+# the level is scary, the danger here is above the limit, or the HP is below
+# the maximum: the Borg goes straight back up. Off here (the control).
+borg_param_caution_stair_scum_threat = 0
+borg_param_caution_stair_scum_danger = 0
 
 # #519 (owner, 2026-11-17): borg-rs's formula section (Power, Depth
 # Requirement, Restock Requirement; 790 lines) is removed. It was read only

@@ -2507,6 +2507,26 @@ fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
     groups >= 2
 }
 
+/// borg-reborn-rs (#549): with `caution_stair_scum_threat`, the stair scum
+/// (after fleeing town, grabbing DL1 items near the stairs before going back
+/// up, `borg_think_stair_scum`) is skipped while the Borg is threatened: the
+/// level scary, the danger here above `caution_stair_scum_danger`, or the HP
+/// below the maximum. The stair scum runs before `borg_caution` and checks
+/// only light, so the Borg picked up items while Grip bit it, one step from
+/// the up staircase home (ranger-2107852048).
+pub(crate) fn stair_scum_threatened(st: &mut BorgState) -> bool {
+    if p(Param::caution_stair_scum_threat) == 0 {
+        return false;
+    }
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    stair_scum_threat(st.borg.mon.scary, here, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_stair_scum_danger))
+}
+
+/// The threat test of `stair_scum_threatened` (#549).
+fn stair_scum_threat(scary: bool, danger: i32, hp: i32, max_hp: i32, danger_limit: i32) -> bool {
+    scary || danger > danger_limit || hp < max_hp
+}
+
 /// The known monsters as (distance, danger reach, breeder): a breeder
 /// within `radius` (distance) and no other monster within `horizon` (reach).
 fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> bool {
@@ -3216,6 +3236,15 @@ mod breeder_tests {
         assert!(chokepoint(&passable, loc { x: 30, y: 16 }), "the corridor");
         assert!(breeder_exit_grid(&passable, loc { x: 30, y: 16 }, &worms, 6), "the corridor, 6 grids up");
         assert!(exits.contains(&loc { x: 30, y: 16 }), "found by the scan");
+    }
+
+    #[test]
+    fn stair_scum_stops_under_any_threat() {
+        assert!(!stair_scum_threat(false, 0, 14, 14, 0), "nothing near, full HP");
+        assert!(stair_scum_threat(true, 0, 14, 14, 0), "the level is scary");
+        assert!(stair_scum_threat(false, 4, 14, 14, 0), "Grip in view (ranger-2107852048, turn 191)");
+        assert!(!stair_scum_threat(false, 4, 14, 14, 4), "danger at the limit");
+        assert!(stair_scum_threat(false, 0, 6, 14, 0), "hurt");
     }
 
     #[test]
