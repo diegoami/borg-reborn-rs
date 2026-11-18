@@ -2,6 +2,32 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: a hurt or afraid monster is not scary (#539, last part)
+
+Owner, from `priest-809881907` (Grip fled from one flask of oil): a hurt or
+afraid scary monster should stop being scary.
+
+- `caution_scary_hurt_percent` (compiled 0, shipped 50) and
+  `caution_scary_afraid` (compiled 0, shipped 1): a monster that has lost
+  that share of its HP, or is afraid, is no named-list or damage-rule
+  scare. Resist-based and door scares are unchanged.
+- **Found:** with stand mode, a calmed monster that stopped counting as a
+  pursuer turned a stand into a flight while other scary monsters slept.
+  The first version had 2 deaths on the 18 starts (a cave spider, a
+  poisoning). A calmed monster now still counts as a pursuer when it is
+  awake and fast. Then 0 deaths, and 17/18 games play the same keys as
+  off; the Ranger shoots a 4-HP Grip.
+- **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
+  against 107, and max depth 39 against 43, on the 18 starts. Both arms had
+  0 deaths. Details in docs/CALIBRATION.md.
+- **Not run:** the issue's own case (replay from the 1,721 save) and the
+  other `borg-play` deaths, because `~/borg-play` is not on this machine.
+
+Left: a zoo arm (hurt/afraid on against off). #539 closes with this PR. Its
+follow-ups are now issues: #567 (no rest for Recall with a monster near) and
+#568 (throws ranked fairly against melee). The third, Phase Door only with a
+monster adjacent, shipped in #543.
+
 ## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
 
 Owner, from priest-1055640847's walk home (#557): "maybe the issue is that

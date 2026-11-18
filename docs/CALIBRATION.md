@@ -10,6 +10,45 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A hurt or afraid monster is not scary (#539)
+
+The registry now holds **2137** parameters (2135 after #562; two added).
+Owner, 2026-11-18, from the zoo death `priest-809881907` (Grip): "The dog
+stopped being scary as soon as I threw to him a flask of oil, can it stop
+being scary when it is low in hp?"
+
+In `borg_near_monster_type`, a monster that has lost at least
+`caution_scary_hurt_percent` of its HP (`kill.injury`, from the health bar),
+or that is afraid (`kill.afraid`, with `caution_scary_afraid`), is no
+named-list or damage-rule scare. Resist-based scares and door scares are not
+affected. A calmed monster still counts as a pursuer in stand mode
+(`caution_scary_stand`) when it is awake and at least as fast as the
+character. Without that, a monster turning afraid while other scary
+monsters slept made a stand into a flight from the level: a first version
+had two deaths on the 18 starts (a cave spider, a poisoning). With
+`caution_scary_latch = 1` (shipped) a calmed monster only keeps a level from
+becoming scary; with 0 the level's scare also ends once every scary monster
+is calmed, dead or forgotten.
+
+Compiled 0 and 0 (C); `harness/borg.txt` ships 50 and 1. On the 18
+classes-18 starts at 100,000 turns, branch of main `162f96af` (a lead, 18
+games show direction only):
+
+| arm | deaths | sum of CL | sum of max depth | keys as off |
+|---|---:|---:|---:|---:|
+| off (0, 0; latch 1) | 0 | 107 | 43 | |
+| shipped (50, 1; latch 1) | 0 | 107 | 43 | 17/18 |
+| latch 0 alone | 0 | 100 | 39 | 1/18 |
+| 50, 1 and latch 0 | 0 | 104 | 41 | 1/18 |
+
+The one shipped game that changes is Ranger 1739161339: Grip appears with 4
+HP and the Borg shoots it instead of fleeing the level.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_scary_hurt_percent` | 0 | percent of HP | 0–100 | `borg_caution.rs:2784` |
+| `caution_scary_afraid` | 0 | flag | 0–1 | `borg_caution.rs:2784` |
+
 ## Fear cures and the see-invisible clock (#516)
 
 The registry now holds **2134** parameters. Owner, 2026-11-17 (purchase audit
