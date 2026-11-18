@@ -372,8 +372,16 @@ fn set_health(kill: &mut BorgKill, m: &MonsterView) {
     };
 
     // Compute estimated HP based on number of * in monster health bar
-    kill.power = (i32::from(m.maxhp) * pct / 100) as i16;
+    kill.power = live_power(i32::from(m.maxhp) * pct / 100, m.hp, crate::params::value(crate::params::Param::kill_live_min_power)) as i16;
     kill.injury = (100 - pct) as i16;
+}
+
+/// borg-reborn-rs (#546): the estimate truncates twice, so a monster left
+/// with 1 HP of 9 (pct 11) is estimated at 0 and every attack on it scores
+/// 0 (the overkill caps). With `kill_live_min_power` a living monster's
+/// estimate is at least that much; 0 = off (C's estimate, unchanged).
+fn live_power(power: i32, hp: i16, floor: i32) -> i32 {
+    if hp > 0 && floor > 0 { power.max(floor) } else { power }
 }
 
 /// Preload the spells from the race into this individual monster.
@@ -3288,6 +3296,25 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_living_monster_keeps_some_power() {
+        // The floating eye of mage-2028599180: 1 HP of 9, pct 11.
+        assert_eq!(live_power(9 * 11 / 100, 1, 0), 0);
+        assert_eq!(live_power(9 * 11 / 100, 1, 1), 1);
+        assert_eq!(live_power(5, 5, 1), 5);
+        assert_eq!(live_power(0, 0, 1), 0);
+        // Off is C's estimate for every input, a negative one included.
+        assert_eq!(live_power(-5, 1, 0), -5);
+        assert_eq!(live_power(-5, 1, 1), 1);
+        // The class of the bug: 1 HP of maxhp truncates to 0 whenever
+        // maxhp * (100 / maxhp) < 100.
+        for maxhp in [3, 9, 12, 15, 22, 35, 45, 1000] {
+            let pct = 100 / maxhp;
+            assert_eq!(maxhp * pct / 100, 0, "{maxhp}");
+            assert_eq!(live_power(maxhp * pct / 100, 1, 1), 1, "{maxhp}");
+        }
+    }
 
     #[test]
     fn string_helpers_match_z_util() {

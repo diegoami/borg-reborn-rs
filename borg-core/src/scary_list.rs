@@ -4,8 +4,8 @@
 //! the character is at or below a level (`borg_near_monster_type`, the
 //! `caution_scary_named_monsters` block). This module reads that list from a
 //! file instead, selected in `borg.txt` with `borg_scary_list = FILE` (a
-//! relative name is resolved under the user directory). Without the key the
-//! compiled C list stays in use.
+//! relative name is resolved under the user directory). Without the key, or
+//! with `borg_scary_list = none`, the compiled C list stays in use.
 //!
 //! ```text
 //! # class fragility, 0 (toughest) to 100 (most fragile)
@@ -221,6 +221,10 @@ pub fn selected() -> Option<&'static List> {
         let file = file.trim();
         if file.is_empty() {
             fatal("empty borg_scary_list");
+        }
+        // `none`: the compiled C list (an experiment's control arm).
+        if file.eq_ignore_ascii_case("none") {
+            return None;
         }
         let path = if std::path::Path::new(file).is_absolute() {
             file.to_string()

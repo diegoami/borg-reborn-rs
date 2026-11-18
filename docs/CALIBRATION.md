@@ -10,6 +10,52 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A living monster keeps some hit points (#546)
+
+The registry now holds **2123** parameters (2122 after #544, which added three; one added). Owner,
+2026-11-18, from the floating-eye Mage 2028599180, which stopped attacking an
+eye it had left at 1/9 HP and walked next to it: the HP estimate truncated to
+0. Compiled 0 (C's estimate); `harness/borg.txt` ships 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `kill_live_min_power` | 0 | hp | 0–10 | `borg_flow_kill.rs` (`set_health`/`live_power`: a monster with hp above 0 is estimated at least this many HP; the attack overkill caps use the estimate) |
+
+## Fleeing: stairs, range, no pointless Phase Door (#539)
+
+The registry now holds **2119** parameters (2116 after #520; three added). Owner,
+2026-11-18, from the Priest 809881907 (borg-zoo#227), who read its only Word of
+Recall with the up staircase 8 steps away, rested while Grip closed in, phased
+twice from a dog twice its speed and died meleeing with 17 flasks of oil: "use
+recall only if a stair is not reachable at all", "do not phase door when a
+monster is still distant", and with no stairs "the best available ranged
+attack" before Recall and Phase Door. Compiled 0 (C's behaviour); `harness/borg.txt`
+ships all three at 1.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_flee_stairs_before_recall` | 0 | flag | 0–1 | `borg_caution.rs` (`stairs_before_recall`: no Recall while the flee flows' stair flow reaches a free staircase) |
+| `escape_phase_adjacent_only` | 0 | flag | 0–1 | `borg_escape.rs` (`phase_is_pointless`: a Phase Door only with an awake monster adjacent, or one in view with a ranged attack) |
+| `caution_scary_ranged_no_stairs` | 0 | flag | 0–1 | `borg_caution.rs` (`scary_ranged_no_stairs`: no staircase reachable, a scary level lets `borg_attack` target an awake monster in view at range; Recall and Phase Door wait while there is one and the attack planner has a missile or a throwable object) |
+
+## Class values and class files (#520)
+
+The registry now holds **2116** parameters (2191 before; 81 per-class
+parameters folded into 6 attack-preference families). Owner, 2026-11-17: one
+common `borg.txt`, per-class files that can override any setting, and no
+per-class parameter families in the code. `params::value` returns the current
+character's class value when it has one (`set_class`, from
+`params::initialize` and `borg_prepare_race_class_info`), else the common one.
+The families `attack_preference_<class>_<family>_permille` (54),
+`attack_arrow_point_blank_divisor_<class>`, `town_heal_curve_scale_percent_<class>`
+and `town_heal_reserve_hp_percent_<class>` (9 each) are gone from the registry;
+their names remain as aliases of the class values (docs/ZOO-INTERFACE.md,
+"Class values"). New: `attack_preference_melee_permille`, `_projectile_`,
+`_thrown_`, `_spell_`, `_device_`, `_activation_` (1000, 500–2000,
+`borg_fight_attack.rs:4575`). The shipped class values live in
+`harness/borg_<class>.txt`, folded into `harness/borg.txt` by
+`scripts/borg-class-files.py`.
+
 ## M13 inventory gap closure (#433 / P4)
 
 The synchronized registry contains **2,191** parameters. This adds 362 neutral
@@ -247,6 +293,9 @@ death with the list, 4 without), 1.
 | `caution_breeder_easy_escape_steps` | 5 | grids | 0–100 | `borg_caution.rs:2190` |
 | `caution_breeder_stand_radius` | 5 | grids | 0–100 | `borg_caution.rs:2223` |
 | `caution_breeder_hunt_max_count` | 4 | count | 0–1000 | `borg_caution.rs:2343` |
+| `caution_breeder_exit` | 0 | flag | 0–1 | `borg_caution.rs:2401` (#544 B: 1 = only breeders near and outmatched or surrounded, walk to a known chokepoint (corridor or doorway: its passable neighbours form two or more groups) away from every breeder) |
+| `caution_breeder_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:2401` (#544 B: the exit's distance from every breeder) |
+| `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1040` (#544 A+K: 1 = fleeing with no up staircase known, a known down staircase at any distance; the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs) |
 | `caution_scary_named_monsters` | 1 | flag | 0–1 | `borg_caution.rs:2267` (0 = off; read in `borg_flow_kill.rs`, `borg_update.rs`, `borg_messages.rs`) |
 
 ## The named scary list as data (#518)
@@ -290,10 +339,14 @@ experiment can append its changes to the shipped list (borg-zoo#228).
 
 An unknown monster, class or flag, a bad level or a backwards range stops
 the run before play
-with exit 2 and the line. Harness runs select a list with
-`BORG_SCARY_LIST=FILE` (`harness/run.sh` copies it and pins its SHA-256 in
-the run's `borg.txt`); the shipped `borg.txt` does not name one until the zoo
-copies the file (docs/ZOO-INTERFACE.md).
+with exit 2 and the line. The shipped `borg.txt` selects `scary_monsters.txt`
+(owner, 2026-11-17); `borg_scary_list = none` keeps the compiled C list.
+`harness/run.sh` takes `BORG_SCARY_LIST=FILE` first (under its own file
+name), otherwise the list the `borg.txt` names from `harness/`, and with
+`none` runs the compiled list with no file and no hash. A copied list is
+pinned by its SHA-256 in the run's `borg.txt` and recorded in `config.txt`
+(`borg_scary_list`, `borg_scary_list_sha256`); the zoo copies and pins it as
+well (docs/ZOO-INTERFACE.md).
 
 ## Scary by damage (#505)
 

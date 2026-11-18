@@ -2,6 +2,132 @@
 
 *Where the work stands, for the next session. Update it in every PR.*
 
+## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
+
+The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
+the eye with Magic Missile or a flask. The Borg's first Magic Missile left the
+eye at 1/9 HP. `set_health` estimates HP as `maxhp * (100*hp/maxhp) / 100`,
+truncating twice: 9 × 11 / 100 = 0. The overkill caps (damage at most twice
+the estimate) then score every attack 0, and `borg_flow_old` walked the Borg
+next to the eye, whose gaze paralysed it until it died. New switch
+`kill_live_min_power` (compiled 0, shipped 1): a living monster is estimated at
+least that many HP.
+
+- The Mage lives: it casts again, then throws oil, and reaches the turn cap at
+  CL4. Five of the six `borg-play` deaths now live; the turn-276 Ranger (Grip)
+  plays the same as before.
+- 18 classes-18 starts on main `9ecbfd1e`: off identical to main (18/18). On,
+  16/18 games change (1-HP monsters are common); the same 2 deaths, sum of CL
+  95 → 92. No measured gain beyond the Mage; the zoo would measure it.
+
+## 2026-11-18: escapes from a breeder room, two flags for a zoo arm (#544)
+
+Owner, from the replayed zoo death priest-1055640847 (`~/borg-play`): the
+Borg dies in a dead-end worm room the owner leaves in six moves from turn
+89,000. Found: the stuck jumpstart (bravery boost 3) forgets the known
+staircases, so "flee the level" has nowhere to go; and the danger of a worm
+crowd saturates at `danger_maximum` on every grid, so retreat and back-away
+never move it (236 attacks on one grid). The arm's #503 breeder stand is not
+the cause.
+
+- `caution_breeder_exit` (B): only breeders near, one adjacent, outmatched or
+  surrounded: the desperate flow to the nearest known chokepoint (corridor or
+  doorway: its passable neighbours form two or more groups; review of #545
+  replaced a neighbour count that took room corners for corridors) at least
+  `caution_breeder_exit_distance` (6) grids from every breeder.
+- `caution_flee_known_down_stairs` (A+K): in the dungeon, fleeing with no up
+  staircase known, the desperate flow to a known down staircase at any
+  distance; the jumpstart keeps the known stairs.
+- Both 0 in `harness/borg.txt`: smoke 3/3 identical, and the zoo game
+  replays key for key. With either on from turn 88,600 the Borg leaves the
+  room and is alive at 120,000. From 89,000 only B does: by then the stairs
+  are already forgotten. On from birth, the game diverges early (B first at
+  game turn 17,756 on DL1; A+K at 41,761), so this case alone says nothing about
+  the population.
+
+Left: a zoo arm against the control (owner's choice of size and runs); the
+track for #544 is the owner's to name.
+
+## 2026-11-17: the scary list file shipped on (#518)
+
+Owner: switch to our list. The shipped `borg.txt` sets
+`borg_scary_list = scary_monsters.txt` beside
+`caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
+none` keeps the compiled C list.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
+- **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
+  core, which ignores the list: smoke 3/3 identical to its references.
+- **The merge waits for the zoo:** its adapter must copy a list named by the
+  shipped `borg.txt` (borg-zoo#228 follow-up). Otherwise zoo cells would
+  stop with exit 2.
+
+## 2026-11-18: fleeing: stairs, range, no pointless Phase Door (#539)
+
+The owner replayed borg-zoo#227's Priest 809881907 (`~/borg-play`): at 13/13 HP
+it read its only Recall with the up staircase 8 steps away, rested while Grip
+closed in, phased twice from a dog twice its speed and died meleeing with 17
+flasks of oil. Three switches (compiled 0, shipped 1):
+`caution_flee_stairs_before_recall`, `escape_phase_adjacent_only`,
+`caution_scary_ranged_no_stairs`.
+
+- The Priest lives (walks back to the stairs). Of the six `borg-play` deaths,
+  four live with the switches on; the floating-eye Mage and the turn-276
+  Ranger play identical keys (no rule engaged).
+- 18 classes-18 starts on main `3727505f`: off identical (18/18); on 5 → 2
+  deaths, sum of CL 87 → 90; each switch alone: stairs 5 deaths, phase 3,
+  ranged 3.
+- Review of #543: "known" was not "reachable". Recall now waits only when the
+  flee flows' own stair flow (up: `borg_flow_stair_less`'s; down: its gates,
+  or `borg_flow_stair_both`'s on a scary level) reaches the Borg from a free
+  staircase, probed without committing. "Something to throw or shoot" is the
+  attack planner's own choice (`ranged_means`: `best_throw`, `launch_damage`),
+  not any flask; on a scary level without stairs `borg_attack` takes only an
+  awake monster in view at range (`ranged_candidate`, shared with the Recall
+  and Phase waits). Rerun: off still identical to main (18/18); on 5 → 2
+  deaths, sum of CL 87 → 95; alone: stairs 3 deaths / 95, phase 3 / 89,
+  ranged 2 / 94. Priest and the same four `borg-play` deaths live; the two
+  others still play identical keys.
+- A first version walked to the stairs inside `borg_caution` and returned, so a
+  fleeing Borg never reached `borg_attack` (sum of CL 87 → 69); the shipped one
+  only declines to read Recall.
+- Left on #539: a hurt or afraid monster stops being scary (needs the scary
+  flag recomputed each think, with door/resist scares kept latched).
+
+## 2026-11-18: contract tests run the environment overrides directly (#540)
+
+Moving the borg-zoo pin (needed for #535's shipped scary list) broke
+`engine/tests/test_core_profile_contract.py`: the current adapter clears every
+ambient `BORG_*` variable, so the tests' `BORG_CORE`, `BORG_ERRAND`,
+`BORG_ERRAND_BUDGET` and `BORG_STOPSCARED` overrides never reached the core.
+Those tests now run the game directly (`direct`), with the pinned adapter's
+own `config_text` and `command`. The profile tests still go through
+`run_cell`. 13/13 pass with the old pin (`c5f1b04`) and with `7b373a70`; the
+rest of the engine suite is unchanged between the two pins. Next: the pin
+move in its own PR, then #535.
+
+## 2026-11-17: class values and per-class borg files (#520)
+
+Owner: one common borg.txt, per-class files overriding any setting, no
+per-class flags in the code; decisions A–D "yes to all" (on #520).
+
+- `params.rs`: every parameter has a common value and optional class values
+  (`borg_param_<name>@<class>`, `BORG_PARAM_<NAME>__<CLASS>`, or the pre-#520
+  per-class names as aliases). `value()` follows the character's class
+  (`set_class`). 81 per-class parameters became 6 (registry 2,116).
+- `harness/borg_<class>.txt` hold the 36 shipped class values; the generated
+  CLASS FILES block in `harness/borg.txt` carries them (legacy names, so zoo
+  profiles keep rewriting them); `scripts/tests/test_borg_class_files.py`
+  keeps the block in sync. The zoo adapter needs no change.
+- `params-core.json` adds `class_values`; the trace's attack `parameter_name`
+  is the family's parameter.
+- Checked: the 18 classes-18 starts play identical keys to main `435b07e7`.
+- Left: the cfg `borg_*` settings (decision C: later); #518's scary list by
+  class can use class values.
 ## 2026-11-17: borg.txt's formula section removed (#519)
 
 Owner: "Borg.txt is becoming a monster"; the formulas are not used, so remove
@@ -5609,18 +5735,35 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
   re-review the synchronized result before promotion.
 
 
+## 2026-11-18: isolated P5 source refresh after #537 review (#554)
+
+- Dedicated task/T554-p5-source-refresh starts from track-p ac293ef7 and
+  synchronizes accepted main c9e58ca0. Only source reference/reading metadata
+  changes beyond that main snapshot; runtime/tool/evidence inputs stay exact.
+- Separate the borg-rs pin/copy refresh from #536's P5 plan/P4 completion
+  edits. Update KNOWLEDGE.md for the actual donor material read, including
+  unaccepted default-off direct buy and the empty-light-slot Recall correction.
+- Run the all-six-source report before --update borg-rs; record every observed
+  head and deferral in docs/research/P5-SOURCE-REFRESH.md. Main's newer zoo pin
+  stays; engine/C/tracker and further zoo changes are intentionally deferred.
+  This is a scoped refresh proposal for owner review, not a claim all pins moved.
+- #537 depends on this dedicated refresh; after its approved integration,
+  #537 contains only the kickoff plan and its handover. Preserve published
+  commits. Neither PR merges until owner review and green CI (RULES 1a).
+
+
 ## 2026-11-18: P5 kickoff after accepted P4 (#536)
 
 - Owner requested the next milestone after #477 promoted P4 at 435b07e7.
   Define bounded P5: #374 exact validation commands/suite identities, then
   #375's preservation/compatibility design for future reference receipts.
-- Start task/T536-p5-kickoff from track-p ac293ef7; accepted main 6101ca01
-  is a descendant, so synchronization is a clean fast-forward in this task.
-- Run scripts/refresh-sources.py --update borg-rs. The reference pin moves
-  4ed3263b→8c5d000a; read/copy the fork-correction and adoption-status deltas.
-  They document donor history (including proposed direct-buy behavior), not
-  permission to change this engine or core. Vendored core remains 8c5d000a;
-  other engine/tool/evidence pins and the death index are unchanged.
+- Originally synchronized main 6101ca01 from track-p ac293ef7. Review
+  follow-up now includes accepted main c9e58ca0 through prerequisite #555.
+  Fresh task branches must use track-p after approved prerequisite integration.
+- Isolate scripts/refresh-sources.py --update borg-rs and its ledger/all-source
+  inventory in #554/#555. Merge that source-only PR before #537; then this
+  kickoff adds only PLAN and its handover. Original mixed commit e5108d52
+  stays historical; do not amend or force-push it.
 - P4's completion replaces its stale in-progress status in PLAN. Historical
   validation/packages stay attributed to their original source and hashes.
 - Kickoff PR must pass checks and owner review under RULES 1a before merging

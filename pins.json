@@ -46,9 +46,9 @@
     },
     "borg-zoo": {
       "repository": "diegoami/borg-zoo",
-      "commit": "c5f1b0429ea898c8d5484aa4f1ac0d681972aac7",
+      "commit": "7b373a702e7b9bb491ba468d97d34cf99ec3df2d",
       "role": "The yardstick: suites, specimens, outcome vocabulary, the borg-rs adapter (zoo/borgrs.py) the reborn Borg and the controls must satisfy (T1.8). Design and catalogue copied in reference/zoo/.",
-      "read_on": "2026-11-13",
+      "read_on": "2026-11-18",
       "issues": true
     },
     "borg-runner": {

@@ -241,16 +241,22 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 
 ## P5: validation reproducibility and evidence receipts (2026-11-18)
 
-**In progress: kickoff #536 awaits owner review before integration.** The
+**In progress: source refresh #554/#555 and kickoff #536/#537 await owner
+review before integration.** The
 owner requested the next Track P milestone after P4 promotion. No P5 was
 previously defined; this milestone closes a bounded pair of deferred review
 follow-ups rather than extending gameplay policy.
 
-1. **Kickoff/source refresh (#536):** synchronize accepted main `6101ca01`
-   into a task branch from track-p `ac293ef7`. Refresh only the borg-rs
+1. **Source refresh (#554/#555), then kickoff (#536/#537):** source-only
+   refresh synchronizes accepted main `c9e58ca0` from track-p `ac293ef7`.
+   The earlier kickoff sync `6101ca01` is historical. Refresh the borg-rs
    reference/copies from `4ed3263b` to `8c5d000a`; the vendored core already
-   uses the latter source. Engine, runtime/tool/fixture pins and historical
-   evidence remain unchanged. Other source updates stay outside this scope.
+   uses the latter source. The all-six-source report, observed heads and
+   explicit deferral reasons are in [the source inventory](docs/research/P5-SOURCE-REFRESH.md).
+   Preserve main’s already accepted zoo pin and runtime/engine/tool/evidence
+   inputs. Merge the reviewed source PR first; the kickoff then adds only
+   PLAN and its handover. Subsequent tasks use the updated track-p, with any
+   further needed main synchronization through its own reviewed PR.
 2. **Exact validation receipts (#374):** record copyable donor/receiving
    build/run commands, environment selections and the explicit-menu suite's
    SHA-256. Identify verified historical reconstruction separately from
