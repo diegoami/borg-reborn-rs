@@ -64,13 +64,16 @@ not undo other-track work already authorized before the gate.
    shared checkout to `main` while that work was uncommitted). Several
    sessions run in this repository at once, so the main checkout is shared:
    use it only to read and to fetch. Start a task with
-   `git worktree add ../wt-<name> -b task/<name> origin/<base>` and do every
-   edit, build, commit and push there. Before each commit check
+   `git worktree add ../wt-<name> -b <branch> origin/<base>`, where
+   `<branch>` is rule 5's name (`task/Tn.m-short-name`) and `<base>` is
+   `track-p` for a P task (rule 1), otherwise `main`; do every edit, build,
+   commit and push there. Before each commit check
    `git branch --show-current`, and push with an explicit refspec
-   (`git push origin HEAD:refs/heads/task/<name>`), never a bare `git push`.
+   (`git push origin HEAD:refs/heads/<branch>`), never a bare `git push`.
    Never switch branches, merge, reset or stash in a checkout another
    session may be using. Remove the worktree (`git worktree remove`) once
-   its PR is merged.
+   its PR is merged; if it refuses because of leftover files, check that
+   nothing there is worth keeping, then use `git worktree remove --force`.
 6. **Reviews happen at milestones, not per task.** When a milestone's last
    task is merged, the session stops and opens the review PR (PLAN.md).
    For P, the task merges into `track-p` and the review precedes promotion

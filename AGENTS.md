@@ -75,7 +75,8 @@ current report pages with pointers. All P/R tracks follow this ownership rule.
 ## Starting
 
 Work in a worktree of your own, never in the shared main checkout
-(RULES 5a): `git worktree add ../wt-<name> -b task/<name> origin/<base>`.
+(RULES 5a): `git worktree add ../wt-<name> -b task/Tn.m-short-name
+origin/<base>` (`track-p` for a P task, otherwise `main`).
 
 ```sh
 git status --short
