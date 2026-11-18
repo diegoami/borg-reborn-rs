@@ -564,13 +564,17 @@ borg_param_caution_jumpstart_keep_stairs = 0
 
 # The twitch (a random step when the Borg has nothing else to do) never
 # steps into lava without fire immunity: one step deals 100-200 fire
-# damage (#597).
+# damage (#597). 0 = C.
+# Impact: with both #597 settings on, 1 of 18 classes-18 games plays
+# differently; priest-809881907 lives instead of dying in lava.
 
 borg_param_caution_twitch_avoid_lava = 1
 
 # When a monster is marked on every known staircase, the stair flows go
 # there anyway instead of finding no staircase: in town the only staircase
-# was refused for a monster on it, harmless or long gone (#597).
+# was refused for a monster on it, harmless or long gone (#597). 0 = C.
+# Impact: with both #597 settings on, 1 of 18 classes-18 games plays
+# differently (a Druid, one level lower).
 
 borg_param_caution_stair_parked_fallback = 1
 
