@@ -545,6 +545,14 @@ borg_param_caution_scary_ranged_no_stairs = 1
 
 borg_param_caution_flee_known_down_stairs = 0
 
+# After fleeing town, the stair scum grabs DL1 items near the stairs before
+# going back up, and checks no danger. With the flag 1, skip it while the
+# level is scary, the danger here is above the limit, or the HP is below the
+# maximum, and go straight back up (#549). Off here.
+
+borg_param_caution_stair_scum_threat = 0
+borg_param_caution_stair_scum_danger = 0
+
 
 ### Cornered ###
 
