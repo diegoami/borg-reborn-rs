@@ -8,9 +8,12 @@ Owner: switch to our list. The shipped `borg.txt` sets
 `borg_scary_list = scary_monsters.txt` beside
 `caution_scary_named_monsters = 1`; both are needed. `borg_scary_list =
 none` keeps the compiled C list.
-- **`harness/run.sh`:** copies the named list from `harness/` (or
-  `BORG_SCARY_LIST=FILE`), rewrites the one selecting line with its SHA-256,
-  and plays.
+- **`harness/run.sh`:** `BORG_SCARY_LIST=FILE` wins under its own name;
+  otherwise the list the `borg.txt` names is copied from `harness/`; `none`
+  runs the compiled list with no file and no hash. A copied list's one
+  selecting line is rewritten with its SHA-256, and `config.txt` records
+  `borg_scary_list` and `borg_scary_list_sha256`
+  (`engine/tests/test_scary_list_harness.py`).
 - **Harness runs without `BORG_CORE=borg-rs`** play the original reborn
   core, which ignores the list: smoke 3/3 identical to its references.
 - **The merge waits for the zoo:** its adapter must copy a list named by the

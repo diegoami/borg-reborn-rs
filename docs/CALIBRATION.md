@@ -310,9 +310,12 @@ An unknown monster, class or flag, a bad level or a backwards range stops
 the run before play
 with exit 2 and the line. The shipped `borg.txt` selects `scary_monsters.txt`
 (owner, 2026-11-17); `borg_scary_list = none` keeps the compiled C list.
-`harness/run.sh` copies the list the `borg.txt` names from `harness/` (or
-`BORG_SCARY_LIST=FILE` instead) and pins its SHA-256 in the run's `borg.txt`;
-the zoo copies and pins it as well (docs/ZOO-INTERFACE.md).
+`harness/run.sh` takes `BORG_SCARY_LIST=FILE` first (under its own file
+name), otherwise the list the `borg.txt` names from `harness/`, and with
+`none` runs the compiled list with no file and no hash. A copied list is
+pinned by its SHA-256 in the run's `borg.txt` and recorded in `config.txt`
+(`borg_scary_list`, `borg_scary_list_sha256`); the zoo copies and pins it as
+well (docs/ZOO-INTERFACE.md).
 
 ## Scary by damage (#505)
 

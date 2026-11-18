@@ -116,14 +116,23 @@ class CoreProfileContractTest(unittest.TestCase):
         for d in ('user', 'save', 'archive', 'panic', 'scores'):
             (out / d).mkdir(parents=True)
         text = self.adapter.config_text(self.build, profile, 0, 0)
+        # The scary list the written borg.txt names travels with it, pinned
+        # as the adapter and harness/run.sh pin it (borg-zoo#233, #535): the
+        # exact bytes of the build's copy, its SHA-256 checked against the
+        # specimen and written next to the selecting line.
+        names = [v.strip() for k, _, v in (l.partition('=') for l in text.splitlines())
+                 if k.strip() == 'borg_scary_list' and v.strip() not in ('', 'none')]
+        scary = None
+        if names:
+            name = names[-1]
+            data = (self.build / 'scary_lists' / name).read_bytes()
+            sha = hashlib.sha256(data).hexdigest()
+            self.assertEqual(sha, self.scary_lists[name], 'the build carries the pinned list')
+            (out / 'user' / name).write_bytes(data)
+            text = '\n'.join(l for l in text.splitlines() if l.partition('=')[0].strip() != 'borg_scary_list')
+            text += f'\n# direct (#535): scary list sha256 {sha}\nborg_scary_list = {name}\n'
+            scary = {'name': name, 'sha256': sha}
         (out / 'user/borg.txt').write_text(text)
-        # The scary list the written borg.txt names travels with it, as the
-        # adapter ships it (borg-zoo#233); `none` needs no file.
-        for line in text.splitlines():
-            key, _, value = line.partition('=')
-            if key.strip() == 'borg_scary_list' and value.strip() not in ('', 'none'):
-                src = self.build / 'scary_lists' / value.strip()
-                (out / 'user' / value.strip()).write_bytes(src.read_bytes())
         argv = self.adapter.command(self.build / 'game' / 'angband', out, cell, 0, 0, suite, spec)
         env = {k: v for k, v in os.environ.items() if not k.startswith('BORG_')}
         env.update(overrides, TZ='UTC', LANG='C.UTF-8', LC_ALL='C.UTF-8')
@@ -133,10 +142,11 @@ class CoreProfileContractTest(unittest.TestCase):
         summary_path = out / 'summary.json'
         summary = json.loads(summary_path.read_text()) if summary_path.is_file() else None
         if rc != 0 and not summary:
-            return out, {'outcome': 'harness_failure', 'error': f'exit code {rc}', 'summary': None}
+            return out, {'outcome': 'harness_failure', 'error': f'exit code {rc}', 'summary': None,
+                         'scary_list': scary}
         stop = summary.get('stop_reason') if summary else None
         outcome = {'turns': 'turn_cap', 'borg_stopped': 'borg_stopped', 'death': 'death'}.get(stop, stop)
-        return out, {'outcome': outcome, 'error': None, 'summary': summary}
+        return out, {'outcome': outcome, 'error': None, 'summary': summary, 'scary_list': scary}
 
     def test_integer_profile_selects_core_and_resolves_parameters(self):
         examples = json.loads((ROOT / 'docs/examples/core-calibration-profiles.json').read_text())
@@ -198,6 +208,12 @@ class CoreProfileContractTest(unittest.TestCase):
                                 {'BORG_CORE': 'borg-rs'})
         self.assertEqual(record['outcome'], 'turn_cap', record)
         self.assertTrue((out / 'params-core.json').exists())
+        # The direct run plays the shipped list, pinned by its hash (#535).
+        name = 'scary_monsters.txt'
+        self.assertEqual(record['scary_list'], {'name': name, 'sha256': self.scary_lists[name]}, record)
+        self.assertIn(f"scary list sha256 {self.scary_lists[name]}\nborg_scary_list = {name}\n",
+                      (out / 'user/borg.txt').read_text())
+        self.assertEqual((out / 'user' / name).read_bytes(), (ROOT / 'harness' / name).read_bytes())
 
     def test_invalid_errand_profile_is_not_an_unconstrained_core_run(self):
         for value in [2, True]:

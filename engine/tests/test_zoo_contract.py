@@ -48,6 +48,12 @@ class RunContractTest(unittest.TestCase):
         for d in ('user', 'save', 'archive', 'panic', 'scores'):
             (out / d).mkdir()
         (out / 'user/borg.txt').write_text((ROOT / 'harness/borg.txt').read_text())
+        # #535: the scary list the shipped borg.txt names travels with it, as
+        # the zoo ships it (borg-zoo#233).
+        for line in (ROOT / 'harness/borg.txt').read_text().splitlines():
+            key, _, value = line.partition('=')
+            if key.strip() == 'borg_scary_list' and value.strip() not in ('', 'none'):
+                (out / 'user' / value.strip()).write_bytes((ROOT / 'harness' / value.strip()).read_bytes())
         # zoo/borgrs.py command(), with exact_turns and depth_stream on.
         argv = ['./angband', '-mborgh', '-n', '-uBorg'] + [f'-d{d}={out / d}' for d in ('user', 'save', 'archive', 'panic', 'scores')] + \
             ['--', '-seed', '29', '-race', '0', '-class', '0', '-turns', '300', '-keylog', str(out / 'keys.log'),

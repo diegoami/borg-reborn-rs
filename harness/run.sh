@@ -29,12 +29,14 @@
 #            selected in the run's borg.txt with a line naming its SHA-256,
 #            so the plan's bytes are part of borg_txt_sha256 (#352).
 #     BORG_SCARY_LIST=FILE the named scary monsters as data (#518; read by
-#            the borg-rs core with caution_scary_named_monsters = 1),
-#            replacing the list the borg.txt names (harness/NAME, shipped:
-#            scary_monsters.txt). Either one is copied to OUTDIR/user and
-#            selected in the run's borg.txt with a line naming its SHA-256,
-#            so its bytes are part of borg_txt_sha256. borg_scary_list = none
-#            keeps the compiled C list.
+#            the borg-rs core with caution_scary_named_monsters = 1). It wins
+#            over the list the borg.txt names (harness/NAME, shipped:
+#            scary_monsters.txt) and over borg_scary_list = none, under its
+#            own file name. Either is copied to OUTDIR/user and selected in
+#            the run's borg.txt with a line naming its SHA-256 (part of
+#            borg_txt_sha256); config.txt records borg_scary_list and
+#            borg_scary_list_sha256. borg_scary_list = none without
+#            BORG_SCARY_LIST keeps the compiled C list: no file, no hash.
 #     BORG_TXT_SET="name=value;..." rewrites existing keys of the run's
 #            borg.txt (part of borg_txt_sha256): harness/borg.txt's copy, or
 #            borg-core/borg.txt's with BORG_CORE_OVERRIDES=off, which has no
@@ -238,26 +240,29 @@ if grep -Eq '^[[:space:]]*borg_plan[[:space:]]*=' "$OUT/user/borg.txt"; then
     echo "run.sh: $BORG_TXT selects a plan; harness runs select plans with BORG_ERRANDS_PLAN" >&2
     exit 2
 fi
-# The scary list (#518): the one the borg.txt names (harness/NAME), or
-# BORG_SCARY_LIST's file; "none" keeps the compiled C list. The list is
-# copied next to the run's borg.txt and its selecting line rewritten with the
-# list's SHA-256, so the list's bytes are part of borg_txt_sha256.
+# The scary list (#518, review of #535). Precedence:
+#  1. BORG_SCARY_LIST=FILE: that file, under its own file name;
+#  2. otherwise the list the borg.txt names, copied from harness/NAME;
+#  3. borg_scary_list = none (or no key): the compiled C list, no file, no hash.
+# A copied list goes next to the run's borg.txt; its one selecting line is
+# rewritten with the list's SHA-256, so its bytes are part of
+# borg_txt_sha256, and config.txt records its name and hash.
 SCARY_NAME="$(sed -n 's/^[[:space:]]*borg_scary_list[[:space:]]*=[[:space:]]*//p' "$OUT/user/borg.txt" | tail -1 | tr -d '[:space:]')"
-SCARY_SRC=""
+SCARY_SRC=""; SCARY_SHA=""
 if [ -n "$SCARY" ]; then
-    SCARY_SRC="$SCARY"
-    case "$SCARY_NAME" in ''|none) SCARY_NAME=scary_monsters.txt ;; esac
+    SCARY_SRC="$SCARY"; SCARY_NAME="$(basename "$SCARY")"
 elif [ -n "$SCARY_NAME" ] && [ "$SCARY_NAME" != none ]; then
     SCARY_SRC="$ROOT/harness/$SCARY_NAME"
 fi
 if [ -n "$SCARY_SRC" ]; then
-    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ ]] || {
-        echo "run.sh: borg_scary_list = $SCARY_NAME: a file name in harness/ is expected" >&2; exit 2; }
+    [[ "$SCARY_NAME" =~ ^[A-Za-z0-9_.-]+$ && "$SCARY_NAME" != none ]] || {
+        echo "run.sh: scary list name '$SCARY_NAME': a plain file name is expected" >&2; exit 2; }
     [ -f "$SCARY_SRC" ] || { echo "run.sh: scary list $SCARY_SRC: no such file" >&2; exit 2; }
     cp "$SCARY_SRC" "$OUT/user/$SCARY_NAME"
+    SCARY_SHA="$(sha256sum < "$SCARY_SRC" | cut -d' ' -f1)"
     sed -i '/^[[:space:]]*borg_scary_list[[:space:]]*=/d' "$OUT/user/borg.txt"
     printf '\n# harness/run.sh (#518): scary list sha256 %s\nborg_scary_list = %s\n' \
-        "$(sha256sum < "$SCARY_SRC" | cut -d' ' -f1)" "$SCARY_NAME" >> "$OUT/user/borg.txt"
+        "$SCARY_SHA" "$SCARY_NAME" >> "$OUT/user/borg.txt"
 fi
 if [ -n "$PLAN" ]; then
     # The SHA-256 line puts the plan's bytes into borg_txt_sha256, which the
@@ -306,6 +311,9 @@ fi
         echo "borg_errands_plan=$PLAN_NAME"
         echo "borg_errands_plan_sha256=$PLAN_SHA"
     fi
+    # The scary list (#518): its name, and hash when one was copied.
+    echo "borg_scary_list=${SCARY_NAME:-none}"
+    if [ -n "$SCARY_SHA" ]; then echo "borg_scary_list_sha256=$SCARY_SHA"; fi
 } > "$OUT/config.txt"
 cd "$(dirname "$BIN")"   # the game finds ./lib relative to the cwd
 DATA_ARGS=()
