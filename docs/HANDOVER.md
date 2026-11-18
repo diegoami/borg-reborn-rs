@@ -12,6 +12,35 @@
 - **18 starts:** reads 187 to 95 (0 in town), Detect Invisible gold 1,830 to
   1,245, Boldness 35 to 8 bought (7 to 10 drunk), deaths 0 and 0, levels 95
   to 107. Details in docs/CALIBRATION.md.
+## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
+
+Owner, from the replayed zoo death ranger-2107852048 (Grip, game turn 276):
+after fleeing town the Borg landed on DL1 on the up staircase home, and the
+C Borg's stair scum (`borg_think_stair_scum`, grab DL1 items near the stairs,
+then go back up) picked up items while Grip bit it from 14 to 6 HP. It runs
+before `borg_caution` and checks only light. The same bug killed
+mage-1594647951 (the soldier). #539's switches do not help: the scum returns
+first.
+
+- `caution_stair_scum_threat` (0 compiled and in `harness/borg.txt`): 1 skips
+  the stair scum while the level is scary, the danger here is above
+  `caution_stair_scum_danger` (0), or the HP is below the maximum.
+- Flag off: smoke 3/3 identical; the six borg-play deaths replay key for key.
+  Flag on: the Ranger returns to town at turn 201 (alive at 20,000), the Mage
+  lives (85,841); the other four play identical keys.
+
+Left: a zoo arm against the control.
+
+## 2026-11-18: harness/borg.txt's parameter block in the file's own format (#552)
+
+Owner: the flags added since #479 were hard to read. The block is now in the
+format of the older part of the file: `### Section ###` headings (Default
+parameters, Combat, Healing and town shopping, Fleeing, Cornered, Breeders,
+Scary monsters), and for each setting a short description, a blank line, the
+setting and a blank line. Issue numbers stay, as a pointer; the history moved
+out. Every setting and value is unchanged (140 keys, none duplicated), and
+three games play identical keys with the old and the new file. New settings
+should follow this format, in the section they belong to.
 
 ## 2026-11-17: flee only while the escape is real (#530)
 
@@ -26,6 +55,7 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
 - **Left:** the town (unchanged), and the escape itself: the owner notes
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
+
 ## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
 
 The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
