@@ -10,6 +10,47 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A resting place: a staircase, else a room corner (#642, first step)
+
+The registry now holds **2178** parameters (2177 after #567 and #637; one
+added). Owner, 2026-11-19, on #615: "what I usually do I look for an empty
+room, close the door if it exists, I clear it if there are easy monsters, and
+sleep in a corner away from the entrance ... ideal is over a staircase ...
+room corners are usually best or any place where you can see what is coming".
+
+- **`recover_rest_spot_steps`** (flow steps, 0 = rest where it stands, C):
+  before the HP/SP or mana rest in `borg_recover`, a Borg that stands on
+  neither walks to a staircase within N flow steps, or else to a room corner,
+  and rests there. Notes: `# Flowing toward a staircase to rest on` / `a room
+  corner to rest in`. The walk is a `GOAL_RECOVER` flow, which
+  `borg_think_dungeon` continues.
+- **A room corner** (`rest_spot_kind`): walls on two adjacent sides, the two
+  opposite sides and the opposite diagonal open (a room, not a corridor
+  bend), no door and no unknown grid next to it, and a grid
+  `borg_check_rest` accepts.
+- **A cooldown:** a walk that does not end on the spot is not retried for
+  2 x N thinks; the Borg rests where it stands.
+- **Not yet:** closing the room's doors and clearing easy monsters first
+  (the owner's routine); the corner farthest from the entrance.
+
+Evidence, a lead (the 18 classes-18 starts, 100,000 turns, borg-rs core,
+main `3ba17e2c`):
+
+| arm | deaths | sum of CL | keys as main | walks to stairs / corners | rests started |
+|---|---:|---:|---:|---:|---:|
+| off | 1 (Priest, game turn 8,158) | 101 | 18/18 | | 1,893 |
+| 10 | 2 (the same Priest; a Blackguard at 65,686) | 94 | 0/18 | 151 / 293 | 1,831 |
+| 20 | 2 (the same two) | 89 | 0/18 | 210 / 165 | 1,556 |
+
+**Worse in this sample.** The Blackguard dies with no light to an unseen
+attacker, 65,000 game turns after its only walk to a resting place; the
+levels lost are the clearer signal: walking to rest costs time, and more at
+20 than at 10. A lead, not a measurement: the zoo decides.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_rest_spot_steps` | 0 | steps of flow | 0–50 | `borg_recover.rs:519` |
+
 ## No Recall rest right after a monster was near (#567)
 
 The registry now holds **2177** parameters (2175 after #637; two added). From

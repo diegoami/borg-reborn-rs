@@ -598,6 +598,14 @@ borg_param_caution_stairs_leave_on_monster = 0
 borg_param_caution_stairs_leave_danger_percent = 10
 borg_param_caution_stairs_leave_down = 1
 
+# A resting place (#642, owner: "ideal is over a staircase ... room corners
+# are usually best"). recover_rest_spot_steps = N (flow steps, 0 = rest where
+# it stands): before the HP/SP or mana rest, walk to a staircase, else a room
+# corner with no door or unknown grid next to it, within N steps.
+# Impact (18 classes-18 starts, 100,000 turns): 10: 18 of 18 play differently
+# (sum of CL 94 against 101); 20: 18 of 18 (89).
+borg_param_recover_rest_spot_steps = 0
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.

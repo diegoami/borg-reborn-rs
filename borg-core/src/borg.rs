@@ -75,6 +75,9 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#642): when the last walk to a resting spot started
+    /// (a cooldown, so a broken walk does not repeat every think).
+    pub rest_spot_time: BorgTime,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
