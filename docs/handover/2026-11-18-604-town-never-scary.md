@@ -6,8 +6,9 @@ in town."
 
 - **Who:** five town residents on `harness/scary_monsters.txt` (scary up to
   CL8-11): the battle-scarred veteran, the mean-looking mercenary, the filthy
-  street urchin, the squint-eyed rogue and Farmer Maggot. They made the town
-  scary 2,017 times in 18 games.
+  street urchin, the squint-eyed rogue and Farmer Maggot. They made most of
+  the town scares: at least 697 in 18 games (up to 2,740 counting the notes
+  at a level change, which the message log cannot place).
 - **`caution_town_never_scary`** (compiled 0, written out at 0 in
   `harness/borg.txt`): in town no monster makes the level scary.
 - **On 18 starts** (9 classes x seeds 2001/2002, race 0, the borg-rs core): 2 deaths against 3, sum of CL 105 against
@@ -23,3 +24,7 @@ in town."
   (sum of CL 99 against 97). So the deaths and levels are not settled;
   the town scares and the "finish shopping" loop are (both to 0). The door
   scare is not gated by the switch; the town has no doors.
+- **Re-review of #605:** three message-counted rows (scares, attacks,
+  thefts) were miscounted by my script (the depth at a message, and a theft
+  test that matched any "touches you"). They are recounted with the position
+  notes, as certain plus "at a level change".

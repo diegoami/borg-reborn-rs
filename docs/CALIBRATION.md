@@ -26,16 +26,22 @@ The measurement: 18 starts, the 9 classes x seeds 2001 and 2002, race 0,
 shipped `harness/borg.txt` copied as the run's `user/borg.txt` (so the
 borg-rs core) and `scary_monsters.txt` beside it; `BORG_CORE` unset.
 Counted from the logs:
-- **town scares:** `# Scary guy on level.` notes at depth 0;
+- **town scares, attacks, thefts:** messages placed at depth 0 by the
+  `# Loc:... Dep:N` notes around them: counted when the previous and the
+  next position note both say town, and "at a level change" when they
+  disagree. The Borg can arrive on DL1 and leave again within one game turn
+  without a position note, so a DL1 message can sit between two town notes:
+  the remaining "town scares" with the switch on are of that kind (the ones
+  checked by hand were DL1 arrivals), and the code sets no scare in town;
 - **town <-> DL1 moves:** `state.log` depth changes between 0 and 1;
 - **game turns in town:** the sum, over `state.log` rows at depth 0, of the
   turn-column gap to the next row;
-- **hits and thefts:** monster attack and theft messages at depth 0.
 
-On main `ed3ffc04` the town was scary 2,017 times, nearly always because of
-five town residents on the scary list: the battle-scarred veteran (669 of
-1,890 attributed), the mean-looking mercenary (591), the filthy street
-urchin (456), the squint-eyed rogue (424) and Farmer Maggot (259). Each
+On main `ed3ffc04` the town was scary at least 697 times (up to 2,740 with
+the notes at a level change). The monsters known in town when a scare was
+noted are, most often first, five town residents on the scary list: the
+battle-scarred veteran, the mean-looking mercenary, the filthy street
+urchin, the squint-eyed rogue and Farmer Maggot (who never attacks). Each
 scare sends the Borg down to DL1, from where "finish shopping" brings it
 back up, so it shuttled between town and DL1 2,831 times.
 
@@ -47,11 +53,11 @@ monster makes the level scary; the danger rules still apply.
 | deaths | 3 | 2 |
 | sum of character levels | 93 | 105 |
 | sum of max depth | 35 | 39 |
-| town scares | 2,017 | 0 |
+| town scares | 697 (+2,043 at a level change) | 0 by construction (4 + 398 at a level change; see below) |
 | town <-> DL1 moves | 2,831 | 1,286 |
 | game turns in town | 484,073 | 298,362 |
-| hits from town monsters | 61 | 80 |
-| thefts in town | 9 | 6 |
+| attacks from town monsters | 47 (+42 at a level change) | 73 (+30) |
+| thefts in town | 0 (+1 at a level change) | 0 (+2) |
 | deaths in town | 0 | 0 |
 
 With the switch at 0 the 18 games are identical to main. Direction only: 18
