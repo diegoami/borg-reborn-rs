@@ -58,30 +58,43 @@ const GOAL_FLEE: i16 = 7;
 /// (`caution_stairs_leave_on_monster`). Noted when it holds a rest that
 /// would otherwise start.
 fn rest_held_for_stairs(st: &mut BorgState) -> bool {
-    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
-    let on_stairs = feat == crate::headers::list_terrain_h::FEAT_LESS || feat == crate::headers::list_terrain_h::FEAT_MORE;
-    // On the flight flow, the steps left from here. Otherwise a flight that
-    // is still on (fleeing, leaving or a scary level) whose last step was
-    // within FLIGHT_MEMORY: a new monster wipes the flow goal for a think,
-    // and the rest must not slip in then (the Druid of #614 did, 11 steps
-    // from the stairs, in a first version).
-    let (flight, steps) = if st.borg.goal.type_0 == GOAL_FLEE {
-        (true, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]))
-    } else {
-        let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
-        let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= FLIGHT_MEMORY;
-        (still_fleeing && recent && st.borg.flight_time > 0, st.borg.flight_steps)
-    };
-    if !hold_rest_for_stairs(param(Param::recover_rest_reach_stairs), flight, on_stairs, steps) {
+    if !holding_for_stairs(st) {
         return false;
     }
+    let steps = committed_steps(st);
     borg_note(st, &format!("# No rest: committed to the stairs, {steps} steps to go."));
     true
 }
 
-/// borg-reborn-rs (#614): how long (Borg time) a flight step commits the Borg
-/// to its staircase after the flow goal is wiped.
-const FLIGHT_MEMORY: i32 = 10;
+/// borg-reborn-rs (#614, review of #616): the Borg is committed to a
+/// staircase, so neither a rest nor a flow to a recovery grid
+/// (`borg_flow_recover`, `GOAL_RECOVER`) may take it off the flight.
+pub(crate) fn holding_for_stairs(st: &BorgState) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let on_stairs = feat == crate::headers::list_terrain_h::FEAT_LESS || feat == crate::headers::list_terrain_h::FEAT_MORE;
+    let (flight, steps) = flight_now(st);
+    hold_rest_for_stairs(param(Param::recover_rest_reach_stairs), flight, on_stairs, steps)
+}
+
+fn committed_steps(st: &BorgState) -> i32 {
+    flight_now(st).1
+}
+
+/// (on a flight, the flow steps it has to go). On the flight flow, the steps
+/// left from here. Otherwise a flight that is still on (fleeing, leaving or
+/// a scary level), on this level, whose last step was within
+/// `recover_rest_reach_stairs_memory`: a new monster wipes the flow goal for
+/// a think, and the rest must not slip in then (the Druid of #614 did, 11
+/// steps from the stairs, in a first version).
+fn flight_now(st: &BorgState) -> (bool, i32) {
+    if st.borg.goal.type_0 == GOAL_FLEE {
+        return (true, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]));
+    }
+    let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
+    let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= param(Param::recover_rest_reach_stairs_memory);
+    let here = st.borg.flight_depth == crate::engine::player_depth();
+    (still_fleeing && recent && here && st.borg.flight_time > 0, st.borg.flight_steps)
+}
 
 fn hold_rest_for_stairs(max_steps: i32, flight: bool, on_stairs: bool, steps: i32) -> bool {
     max_steps > 0 && flight && !on_stairs && steps <= max_steps

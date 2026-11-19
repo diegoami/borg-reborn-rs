@@ -80,6 +80,8 @@ pub struct Borg {
     /// think; the commitment to the staircase outlives that.
     pub flight_steps: i32,
     pub flight_time: BorgTime,
+    /// The depth of that flight step (review of #616: a new level forgets it).
+    pub flight_depth: i32,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

@@ -108,7 +108,7 @@ monster replaces the earlier one, `monster | none` removes it, and a later
 `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2157 entries in
+`borg_param_<name>` integer sets any of the 2160 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 

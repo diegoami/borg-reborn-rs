@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Rest at the stairs (#614)
 
-The registry now holds **2157** parameters (2155 before; two added). Owner,
+The registry now holds **2160** parameters (2155 before; five added). Owner,
 2026-11-19, from the death of Elf Druid 1678765969 in borg-zoo#312's small
 tier: "once committed to a stair, it must at least reach that stair before
 stopping to rest ... He can rest on the stairs, and if a mob appears he can
@@ -20,48 +20,68 @@ climb up/down immediately." That Druid, fleeing as a fox to stairs 11 steps
 away, stopped for `borg_recover`'s low-level mana rest. A white harpy and an
 apprentice arrived during the rest, and it never reached the stairs.
 
-- `recover_rest_reach_stairs` (steps of flow, 0 = off): on a flight flow
-  (`GOAL_FLEE`) whose staircase is at most this many steps away, `borg_recover`
-  holds every rest (the rod, HP and mana rests) until the Borg stands on a
-  staircase. Potions and cures are not rests. The commitment outlives a
-  think without the flow goal: a new monster wipes the goal, and a flight
-  still on (fleeing, leaving or a scary level) whose last step was within 10
-  Borg-time units still holds the rest (`borg.flight_steps`/`flight_time`,
-  set at each flight step). Without that, the Druid rested anyway when a
-  white harpy appeared. Note: `# No rest: committed to
-  the stairs, N steps to go.` A first version held rests at any distance:
-  a hurt Druid then walked a 138-step flight without resting and died to a
-  crow, and 16 of 18 games changed (2 deaths). A farther staircase is a long
-  walk, not a commitment.
-- `caution_stairs_leave_on_monster` (flag): a Borg standing on a staircase
-  that still needs to recover (HP or SP below the maximum) takes the stairs
-  as soon as a monster threatens it (danger here above 0), through
-  `borg_caution`'s stair block and `choose_stairs`. Note: `# Leaving by the
-  stairs: a monster while recovering (danger N).`
+- **`recover_rest_reach_stairs`** (steps of flow, 0 = off):
+  - **The rule:** on a flight (`GOAL_FLEE`) to a staircase at most this many
+    steps away, the Borg holds every rest in `borg_recover` (rod, HP, mana)
+    until it stands on a staircase. It also skips `borg_think_dungeon`'s flow
+    to a recovery grid (`borg_flow_recover` and `GOAL_RECOVER`, review of
+    #616), which could walk it off the flight. Potions and cures are not
+    rests. Note: `# No rest: committed to the stairs, N steps to go.`
+  - **Why a distance:** a first version held rests at any distance. A hurt
+    Druid then walked a 138-step flight without resting and died to a crow.
+  - **Surviving a re-plan:** a new monster wipes the flow goal for a think.
+    The commitment still holds while the flight is on (fleeing, leaving or a
+    scary level), on the same level, if its last step was within
+    `recover_rest_reach_stairs_memory` (10 Borg-time units). Each flight step
+    sets `borg.flight_steps`, `flight_time` and `flight_depth`.
+- **`caution_stairs_leave_on_monster`** (flag): in the dungeon, a Borg
+  standing on a staircase that still needs to recover (HP or SP below the
+  maximum) takes the stairs when a monster threatens it. Note: `# Leaving by
+  the stairs: a monster while recovering (danger N, up|down).`
+  - **Not in town** (review of #616): the town's down staircase made it dive
+    into DL1, 38 of 72 firings.
+  - **A real threat:** the danger here must be at least
+    `caution_stairs_leave_danger_percent` (10) of the current HP, and at least
+    1. Before, it fired at any danger above 0, 59 of 121 times at danger 1.
+  - **The direction:** `caution_stairs_leave_down` (1) takes the staircase
+    under the Borg, up or down (the owner's "climb up/down"); 0 takes an up
+    staircase only. The staircase sets `stair_less` or `stair_more` itself,
+    because `choose_stairs` may set neither for a Borg that is recovering
+    rather than fleeing.
 
-Compiled and shipped 0 (C). Evidence, a lead (the 18 classes-18 starts,
-100,000 turns, branch of main `9a423670`):
+Compiled and shipped 0 (C), with the companions at 10, 10 and 1. Evidence, a
+lead (the 18 classes-18 starts, 100,000 turns, branch merged with main
+`951eecbd`, borg-rs core):
 
-| arm | deaths | sum of CL | sum of max depth | keys as off | held rests | stairs taken |
+| arm | deaths | sum of CL | sum of max depth | keys as off | held rests | stairs taken (up/down) |
 |---|---:|---:|---:|---:|---:|---:|
 | off | 0 | 99 | 41 | | | |
 | reach 20 | 2 (Mage, an apprentice; Druid, a crow) | 92 | 39 | 5/18 | 228 | |
-| leave 1 | 0 | 102 | 39 | 6/18 | | 72 |
-| both | 2 (the same) | 93 | 35 | 3/18 | 135 | 53 |
+| leave 1 | 1 (Priest, a giant white mouse) | 97 | 39 | 10/18 | | 20/3 |
+| leave 1, up only | 1 (the same Priest) | 98 | 38 | 10/18 | | 22/0 |
+| both | 2 (the Mage and the Druid) | 93 | 37 | 3/18 | 219 | 17/4 |
 
-Both deaths come thousands of game turns after the games first differ (the
-Mage's last held rest at 23,595, death at 28,905; the Druid's at 4,663, death
-at 13,826), so they are leads, not effects. **The scene itself**, replayed
-from the zoo cell with this branch (off replays the zoo death byte for byte):
-with reach 20 the Druid holds the rest 11 steps out, keeps its flight when the
-harpy appears, kills it with Stinking Cloud, reaches the up staircase at game
-turn 67,268, rests on the stairs of the new level, and lives to 100,000 (CL7).
-A zoo pilot is the measurement.
+Every death comes thousands of game turns after its game first differs. The
+Mage's last held rest was at 23,595 and it died at 28,905. The Druid's was at
+4,663 and it died at 13,826. The Priest's last leave was at 63,020 and it died
+at 86,224, among breeders. So the deaths are leads. The review of #616
+reported 45 starts of the `full` suite for the first version: reach 20 had 2
+deaths against 3 off, with higher levels and depth.
+
+**The scene itself:** replayed from the zoo cell with this branch. Off, it
+replays the zoo death byte for byte. With reach 20 the Druid holds the rest
+11 steps out and keeps its flight when the harpy appears. It kills the harpy
+with Stinking Cloud, reaches the up staircase at game turn 67,268, rests on
+the stairs of the new level, and lives to 100,000 (CL7). The zoo is the
+measurement.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:75` |
-| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3257` |
+| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:76` |
+| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:94` |
+| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3262` |
+| `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:3259` |
+| `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:3261` |
 
 ## Flight Recall from a danger share (#587)
 

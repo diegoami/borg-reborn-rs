@@ -3254,15 +3254,27 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
     let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
     let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
-    if !stairs_leave_when(p(Param::caution_stairs_leave_on_monster) != 0, feat == FEAT_LESS || feat == FEAT_MORE, recovering, pos_danger) {
+    // Review of #616: a real threat (a share of the HP), not any danger; and
+    // never in town, whose down staircase is a dive into DL1.
+    let threshold = (st.borg.tr(BI_CURHP) * p(Param::caution_stairs_leave_danger_percent) / 100).max(1);
+    let up = feat == FEAT_LESS;
+    let down = feat == FEAT_MORE && p(Param::caution_stairs_leave_down) != 0;
+    if !stairs_leave_when(p(Param::caution_stairs_leave_on_monster) != 0, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold) {
         return false;
     }
-    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger})."));
+    // The staircase under the Borg decides the way: choose_stairs alone may
+    // not set it for a Borg that is recovering, not fleeing.
+    if up {
+        st.borg.stair_less = true;
+    } else {
+        st.borg.stair_more = true;
+    }
+    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
     true
 }
 
-fn stairs_leave_when(on: bool, on_stairs: bool, recovering: bool, pos_danger: i32) -> bool {
-    on && on_stairs && recovering && pos_danger > 0
+fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
+    on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
 }
 
 fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
@@ -3465,11 +3477,12 @@ mod stairs_leave_tests {
 
     #[test]
     fn a_recovering_borg_on_the_stairs_leaves_when_a_monster_threatens() {
-        assert!(stairs_leave_when(true, true, true, 5));
-        assert!(!stairs_leave_when(true, true, true, 0), "nothing threatens");
-        assert!(!stairs_leave_when(true, true, false, 5), "nothing to recover: fight as before");
-        assert!(!stairs_leave_when(true, false, true, 5), "not on a staircase");
-        assert!(!stairs_leave_when(false, true, true, 5), "switch off (C)");
+        assert!(stairs_leave_when(true, 2, true, true, 5, 3));
+        assert!(!stairs_leave_when(true, 2, true, true, 2, 3), "below the threat threshold");
+        assert!(!stairs_leave_when(true, 0, true, true, 5, 3), "town: no dive into DL1");
+        assert!(!stairs_leave_when(true, 2, true, false, 5, 3), "nothing to recover: fight as before");
+        assert!(!stairs_leave_when(true, 2, false, true, 5, 3), "no usable staircase (or a down one with leave_down 0)");
+        assert!(!stairs_leave_when(false, 2, true, true, 5, 3), "switch off (C)");
     }
 }
 

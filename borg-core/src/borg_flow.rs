@@ -1320,6 +1320,7 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         // borg-reborn-rs (#614): remember the flight (rests wait for the stairs).
         st.borg.flight_steps = steps_left;
         st.borg.flight_time = st.borg.time.now;
+        st.borg.flight_depth = crate::engine::player_depth();
         if crate::borg_escape::fox_form_before_flight_step(st, steps_left) {
             return true;
         }

@@ -22,6 +22,17 @@ them if a monster appears. In any form, not only a fox.
   - on the 18 starts at 20: 2 deaths against 0 (a Mage, a Druid), both
     thousands of turns after the games differ. The leave rule alone: no
     deaths, sum of CL 102 against 99.
-- **Left:** a zoo pilot (off, reach 20, leave, both). The general question of
+- **Review of #616, fixed:**
+  - the leave rule never fires in town (it dove into DL1) and needs a real
+    threat (`caution_stairs_leave_danger_percent`, 10);
+  - its direction is a switch (`caution_stairs_leave_down`, 1 = up or down);
+  - the flow to a recovery spot is held too;
+  - the flight memory is a parameter (`recover_rest_reach_stairs_memory`)
+    and forgets a flight on another level.
+
+  On the 18 starts the leave rule fires 23 times instead of 72, and 10 of 18
+  games stay identical. Its one death (a Priest among breeders) comes 23,000
+  turns after its last leave.
+- **Left:** a zoo pilot (off, reach 20, leave, leave up only, both). The general question of
   where and when to rest is #615. Phase Door during a flight is #584.
 - **Owner:** the shipped values, after the pilot.
