@@ -3179,17 +3179,44 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
     breeders > 0
 }
 
-/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
-/// character level (`borg_near_monster_type`) and the low-level door scares
-/// (`borg_update`, `borg_messages`) mark the level scary.
 /// borg-reborn-rs (#622, owner): how many character levels sooner a town
 /// race (race level 0) stops being scary on the named list.
 pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
     if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
 }
 
+/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
+/// character level (`borg_near_monster_type`) and the low-level door scares
+/// (`borg_update`, `borg_messages`) mark the level scary.
 pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
+}
+
+/// borg-reborn-rs (#647): with `caution_town_flee_no_worse`, in town while
+/// the level is scary or the Borg flees, the flow refuses no grid that is
+/// at most as dangerous as the Borg's own: standing still is no safer. A
+/// low-level Borg next to a filthy street urchin rated its own grid 406 and
+/// the one toward the stairs 203, above the flow's fear (90): no path left
+/// its grid, and it twitched in town for 70,000 turns. 0 when off, when not
+/// in town or not fleeing (the flow's own fear applies alone). It applies to
+/// every flow in town while scary or fleeing, not only the stair flow. A grid
+/// marked icky under a lower floor stays icky until the level changes
+/// (`data_icky` is cleared by `borg_forget_map`): the floor unblocks grids
+/// assessed while it holds, not earlier marks (review of #660). The depth is
+/// the game's, as `keep_fox_form`'s.
+pub(crate) fn town_flee_fear_floor(st: &mut BorgState) -> i32 {
+    if !town_flee_applies(
+        p(Param::caution_town_flee_no_worse),
+        crate::engine::player_depth(),
+        st.borg.mon.scary || st.borg.goal.fleeing || st.borg.goal.leaving,
+    ) {
+        return 0;
+    }
+    borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false)
+}
+
+fn town_flee_applies(switch: i32, depth: i32, fleeing: bool) -> bool {
+    switch != 0 && depth == 0 && fleeing
 }
 
 /// borg-reborn-rs (#604): with `caution_town_never_scary`, no monster makes
@@ -3201,6 +3228,17 @@ pub(crate) fn town_never_scary(depth: i32) -> bool {
 
 fn town_never_scary_with(switch: i32, depth: i32) -> bool {
     switch != 0 && depth == 0
+}
+
+#[cfg(test)]
+mod town_flee_tests {
+    #[test]
+    fn the_no_worse_floor_is_for_a_flight_in_town() {
+        assert!(super::town_flee_applies(1, 0, true));
+        assert!(!super::town_flee_applies(0, 0, true), "switch off");
+        assert!(!super::town_flee_applies(1, 1, true), "the dungeon");
+        assert!(!super::town_flee_applies(1, 0, false), "not fleeing");
+    }
 }
 
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
