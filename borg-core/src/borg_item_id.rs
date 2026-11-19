@@ -14,8 +14,8 @@
 //!    and not for profit purposes provided that this copyright and statement
 //!    are included in all such copies.  Other copyrights may also apply.
 
-use crate::borg_io::{borg_keypress, borg_keypresses, KC_ENTER};
-use crate::borg_item::{inven_wield, quiver_end};
+use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, KC_ENTER};
+use crate::decision_api::borg_item::{inven_wield, quiver_end};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_headers::borg_trait_h::BI_CDEPTH;
 use crate::headers::list_elements_h::{
@@ -28,8 +28,8 @@ use crate::headers::list_object_flags_h::{
 use crate::headers::list_object_modifiers_h::OBJ_MOD_SPEED;
 use crate::headers::list_tvals_h::{TV_BOW, TV_RING};
 use crate::state::BorgState;
-use crate::borg_item_analyze::borg_ego_has_random_power;
-use crate::engine;
+use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
+use crate::decision_api::engine;
 
 /// `strstr(hay, needle) != NULL` on the bytes of a C string.
 fn contains(hay: &[u8], needle: &[u8]) -> bool {
@@ -51,7 +51,8 @@ fn res_level(item: &borg_item, elem: u32) -> i16 {
 ///
 /// This goes through inventory and equipment and inscribes items with
 /// random powers (egos with a random power, artifacts) with their powers.
-pub fn borg_object_fully_id(st: &mut BorgState) -> bool {
+pub(crate) fn borg_object_fully_id_native(st: &mut BorgState) -> bool {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_object_fully_id",format!("{:?}",())); }
     // look in inventory and equipment for something to *id*
     // (or INVEN_TOTAL)
     for i in 0..quiver_end() {
@@ -59,7 +60,7 @@ pub fn borg_object_fully_id(st: &mut BorgState) -> bool {
         let item = st.items.items[i as usize];
 
         // inscribe certain objects
-        let note = crate::borg_item::item_note(st, &item);
+        let note = crate::decision_api::borg_item::item_note(st, &item);
         if st.borg.tr(BI_CDEPTH) != 0
             && u32::from(item.tval) >= TV_BOW
             && u32::from(item.tval) <= TV_RING
@@ -164,7 +165,7 @@ pub fn borg_item_note_needs_id(st: &BorgState, item: &borg_item) -> bool {
         return true;
     }
 
-    contains(&crate::borg_item::item_note(st, item), b"{??}")
+    contains(&crate::decision_api::borg_item::item_note(st, item), b"{??}")
 }
 
 /// Consumables whose unknown flavour can be learned by a successful sale.
@@ -186,4 +187,9 @@ mod tests {
         assert!(!contains(b"", b"uncursed"));
         assert!(contains(b"{uncursed}", b"uncursed"));
     }
+}
+
+pub fn borg_object_fully_id(st:&mut BorgState) -> bool {
+if crate::decision_tape::active() { return borg_object_fully_id_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::ObjectFullyId) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
 }

@@ -8,9 +8,9 @@ ledger merge is 17992dfcfc74509b723c861b41056f45993dc37c. Reference refresh
 
 Current checkpoint: item use #435 is merged. P4 #477 is accepted/promoted;
 reviewed carry #528/#529 merged into feature/track-r at `99fa7cc5`.
-Power #434/#478 now implements the owned equipment/inventory/activation
-valuations and typed power entries; runtime validation remains pending.
-See [current handover](R434-HANDOVER.md). Historical dependency audit below
+Power #434/#478 is accepted and merged. Wearing/identification #436 is active,
+with adjacent enchant/decurse explicitly shared pending parameter contract #680.
+See [current handover](R436-HANDOVER.md). Historical dependency audit below
 records why the separate accepted contract carry was required.
 
 ## Counted scope and parameter gate

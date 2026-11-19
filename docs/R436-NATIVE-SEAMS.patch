@@ -1,0 +1,422 @@
+diff --git a/borg-core/src/borg_inventory.rs b/borg-core/src/borg_inventory.rs
+index 665569f3..029ddd58 100644
+--- a/borg-core/src/borg_inventory.rs
++++ b/borg-core/src/borg_inventory.rs
+@@ -225,5 +225,5 @@ pub fn borg_item_worth_id(st: &mut BorgState, item: &borg_item) -> bool {
+     }
+ 
+     /* Things that can't be wielded can't be ID'd (potions, scrolls etc) */
+-    borg_wield_slot(item) >= 0
++    crate::decision_api::borg_inventory::borg_wield_slot(item) >= 0
+ }
+diff --git a/borg-core/src/borg_io.rs b/borg-core/src/borg_io.rs
+index 031da137..e05faed3 100644
+--- a/borg-core/src/borg_io.rs
++++ b/borg-core/src/borg_io.rs
+@@ -139,6 +139,11 @@ fn borg_info(_what: &[u8]) {}
+ /// Memorize a message, log it, check it, and show it in the Borg windows
+ /// (`borg_note_internal`).
+ fn borg_note_internal(st: &mut BorgState, warning: bool, what: &[u8]) {
++    #[cfg(feature="test-r4-equipment")]
++    if crate::decision_api::item_use_fixture::messages_stubbed() {
++        note_policy_side_effects(st,what);
++        return;
++    }
+     let old = engine::term_current();
+     if warning {
+         engine::msg(st, what);
+@@ -148,12 +153,7 @@ fn borg_note_internal(st: &mut BorgState, warning: bool, what: &[u8]) {
+     }
+     borg_info(what);
+ 
+-    // Mega-Hack -- Check against the swap loops
+-    if contains(what, b"Best Combo") || contains(what, b"Taking off ") {
+-        st.borg.antibounce_count = st.borg.antibounce_count.wrapping_add(10);
+-        let msg = format!("# Anti-loop variable tick ({}).", st.borg.antibounce_count);
+-        borg_note(st, &msg);
+-    }
++    note_policy_side_effects(st, what);
+ 
+     for j in 0..8 {
+         let Some(t) = engine::angband_term(j) else {
+@@ -388,3 +388,14 @@ pub fn borg_free_io(st: &mut BorgState) {
+     st.io.key_history = Vec::new();
+     st.io.key_queue = Vec::new();
+ }
++
++// R436: shared note-state logic is the same in real UI and constructed copies.
++fn note_policy_side_effects(st: &mut BorgState, what:&[u8]) {
++    // Mega-Hack -- Check against the swap loops
++    if contains(what, b"Best Combo") || contains(what, b"Taking off ") {
++        st.borg.antibounce_count = st.borg.antibounce_count.wrapping_add(10);
++        let msg = format!("# Anti-loop variable tick ({}).", st.borg.antibounce_count);
++        borg_note(st, &msg);
++    }
++
++}
+diff --git a/borg-core/src/borg_item_id.rs b/borg-core/src/borg_item_id.rs
+index 60257d98..c5b6475e 100644
+--- a/borg-core/src/borg_item_id.rs
++++ b/borg-core/src/borg_item_id.rs
+@@ -14,8 +14,8 @@
+ //!    and not for profit purposes provided that this copyright and statement
+ //!    are included in all such copies.  Other copyrights may also apply.
+ 
+-use crate::borg_io::{borg_keypress, borg_keypresses, KC_ENTER};
+-use crate::borg_item::{inven_wield, quiver_end};
++use crate::decision_api::borg_io::{borg_keypress, borg_keypresses, KC_ENTER};
++use crate::decision_api::borg_item::{inven_wield, quiver_end};
+ use crate::borg_headers::borg_item_h::borg_item;
+ use crate::borg_headers::borg_trait_h::BI_CDEPTH;
+ use crate::headers::list_elements_h::{
+@@ -28,8 +28,8 @@ use crate::headers::list_object_flags_h::{
+ use crate::headers::list_object_modifiers_h::OBJ_MOD_SPEED;
+ use crate::headers::list_tvals_h::{TV_BOW, TV_RING};
+ use crate::state::BorgState;
+-use crate::borg_item_analyze::borg_ego_has_random_power;
+-use crate::engine;
++use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
++use crate::decision_api::engine;
+ 
+ /// `strstr(hay, needle) != NULL` on the bytes of a C string.
+ fn contains(hay: &[u8], needle: &[u8]) -> bool {
+@@ -51,7 +51,8 @@ fn res_level(item: &borg_item, elem: u32) -> i16 {
+ ///
+ /// This goes through inventory and equipment and inscribes items with
+ /// random powers (egos with a random power, artifacts) with their powers.
+-pub fn borg_object_fully_id(st: &mut BorgState) -> bool {
++pub(crate) fn borg_object_fully_id_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_object_fully_id",format!("{:?}",())); }
+     // look in inventory and equipment for something to *id*
+     // (or INVEN_TOTAL)
+     for i in 0..quiver_end() {
+@@ -59,7 +60,7 @@ pub fn borg_object_fully_id(st: &mut BorgState) -> bool {
+         let item = st.items.items[i as usize];
+ 
+         // inscribe certain objects
+-        let note = crate::borg_item::item_note(st, &item);
++        let note = crate::decision_api::borg_item::item_note(st, &item);
+         if st.borg.tr(BI_CDEPTH) != 0
+             && u32::from(item.tval) >= TV_BOW
+             && u32::from(item.tval) <= TV_RING
+@@ -164,7 +165,7 @@ pub fn borg_item_note_needs_id(st: &BorgState, item: &borg_item) -> bool {
+         return true;
+     }
+ 
+-    contains(&crate::borg_item::item_note(st, item), b"{??}")
++    contains(&crate::decision_api::borg_item::item_note(st, item), b"{??}")
+ }
+ 
+ /// Consumables whose unknown flavour can be learned by a successful sale.
+@@ -187,3 +188,8 @@ mod tests {
+         assert!(contains(b"{uncursed}", b"uncursed"));
+     }
+ }
++
++pub fn borg_object_fully_id(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_object_fully_id_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::ObjectFullyId) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
+diff --git a/borg-core/src/borg_item_wear.rs b/borg-core/src/borg_item_wear.rs
+index 139b391e..943ac4db 100644
+--- a/borg-core/src/borg_item_wear.rs
++++ b/borg-core/src/borg_item_wear.rs
+@@ -24,18 +24,19 @@
+ 
+ // borg-reborn-rs (#433): neutral M13 inventory policy parameters.
+ use crate::params::{value as param, Param};
+-use crate::borg::BorgBest;
+-use crate::borg_danger::borg_danger;
+-use crate::borg_inventory::{borg_first_empty_inventory_slot, borg_item_worth_id, borg_wield_slot};
+-use crate::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
+-use crate::borg_item::{inven_wield, quiver_end, quiver_start};
+-use crate::borg_item_analyze::borg_ego_has_random_power;
++use crate::decision_api::borg::BorgBest;
++use crate::decision_api::borg_danger::borg_danger;
++use crate::decision_api::borg_inventory::{borg_first_empty_inventory_slot, borg_wield_slot};
++use crate::borg_inventory::borg_item_worth_id;
++use crate::decision_api::borg_io::{borg_keypress, borg_note, borg_note_bytes, ESCAPE, KC_ENTER};
++use crate::decision_api::borg_item::{inven_wield, quiver_end, quiver_start};
++use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
+ use crate::borg_item_id::borg_item_note_needs_id;
+-use crate::borg_magic::{borg_spell, borg_spell_legal};
+-use crate::borg_power::borg_power;
+-use crate::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
+-use crate::borg_flow_misc;
+-use crate::engine;
++use crate::decision_api::borg_magic::{borg_spell, borg_spell_legal};
++use crate::decision_api::borg_power::borg_power;
++use crate::decision_api::borg_store::{borg_home_full, borg_inventory_full, BORG_HOME, SHOP_MENU_ITEMS};
++use crate::decision_api::borg_flow_misc;
++use crate::decision_api::engine;
+ use crate::borg_headers::borg_h::BORG_VERBOSE;
+ use crate::borg_headers::borg_item_h::borg_item;
+ use crate::borg_headers::borg_magic_h::IDENTIFY_RUNE;
+@@ -156,7 +157,8 @@ fn add_long(a: i32, b: i64) -> i32 {
+ ///
+ /// We instantly identify items known to be "good" (or "terrible"), and
+ /// most un-aware and un-known items as soon as possible.
+-pub fn borg_test_stuff(st: &mut BorgState) -> bool {
++pub(crate) fn borg_test_stuff_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_test_stuff",format!("{:?}",())); }
+     let mut b_i: i32 = -1;
+     let mut b_v: i32 = -1;
+     let mut inv_item_needs_id = false;
+@@ -285,7 +287,7 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
+     if b_i >= 0 {
+         /* Use an item to identify */
+         let sv = st.item_val.sv_scroll_identify;
+-        if borg_spell(st, IDENTIFY_RUNE) || crate::borg_item_use::borg_read_scroll(st, sv) {
++        if borg_spell(st, IDENTIFY_RUNE) || crate::decision_api::borg_item_use::borg_read_scroll(st, sv) {
+             /* Log -- may be cancelled */
+             let item = st.items.items[b_i as usize];
+             note_desc(st, "# Identifying ", &item, ".");
+@@ -322,7 +324,8 @@ pub fn borg_test_stuff(st: &mut BorgState) -> bool {
+ /// Make sure that, if possible, the "best" ring is on the "right" (tight)
+ /// finger (`borg_swap_rings`), so that the other functions can assume the
+ /// right ring is "good for us" and should never be removed.
+-pub fn borg_swap_rings(st: &mut BorgState) -> bool {
++pub(crate) fn borg_swap_rings_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_swap_rings",format!("{:?}",())); }
+     let hole = borg_first_empty_inventory_slot(st);
+     let left = inven_left();
+     let right = inven_right();
+@@ -390,7 +393,7 @@ pub fn borg_swap_rings(st: &mut BorgState) -> bool {
+         st.items.items[left as usize].iqty = 0;
+ 
+         /* Examine the inventory */
+-        crate::borg_trait::borg_notice(st, true);
++        crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+         /* Evaluate the inventory */
+         let v1 = borg_power(st);
+@@ -414,7 +417,7 @@ pub fn borg_swap_rings(st: &mut BorgState) -> bool {
+     st.items.items[right as usize].iqty = 0;
+ 
+     /* Examine the inventory */
+-    crate::borg_trait::borg_notice(st, false);
++    crate::decision_api::borg_trait::borg_notice(st, false);
+ 
+     /* Evaluate the inventory */
+     let v2 = borg_power(st);
+@@ -450,7 +453,7 @@ pub fn borg_swap_rings(st: &mut BorgState) -> bool {
+     }
+ 
+     /* fix the inventory */
+-    crate::borg_trait::borg_notice(st, true);
++    crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+     /* Nope */
+     false
+@@ -460,7 +463,8 @@ pub fn borg_swap_rings(st: &mut BorgState) -> bool {
+ /// (`borg_wear_rings`): each ring is tried on the left hand and the one
+ /// that gives the most "power" is worn. Only used when both ring fingers
+ /// are empty.
+-pub fn borg_wear_rings(st: &mut BorgState) -> bool {
++pub(crate) fn borg_wear_rings_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_wear_rings",format!("{:?}",())); }
+     let hole = borg_first_empty_inventory_slot(st);
+     let left = inven_left() as usize;
+ 
+@@ -542,7 +546,7 @@ pub fn borg_wear_rings(st: &mut BorgState) -> bool {
+         fix = true;
+ 
+         /* Examine the inventory */
+-        crate::borg_trait::borg_notice(st, true);
++        crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+         /* Evaluate the inventory */
+         let mut p = borg_power(st);
+@@ -570,7 +574,7 @@ pub fn borg_wear_rings(st: &mut BorgState) -> bool {
+ 
+     /* Restore bonuses */
+     if fix {
+-        crate::borg_trait::borg_notice(st, true);
++        crate::decision_api::borg_trait::borg_notice(st, true);
+     }
+ 
+     /* No item */
+@@ -620,7 +624,7 @@ fn backup_try(st: &mut BorgState, i: i32) -> Option<(i32, i32)> {
+     add_iqty(st, i, -1);
+ 
+     /* Examine the benefits of the swap item */
+-    crate::borg_trait::borg_notice(st, false);
++    crate::decision_api::borg_trait::borg_notice(st, false);
+ 
+     /* Evaluate the power with the new item worn */
+     Some((slot, danger_here(st)))
+@@ -663,7 +667,8 @@ fn backup_swap_choice(armour_swap: i32, weapon_swap: i32, b_p1: i32, b_p2: i32)
+ /// the weapon swap are evaluated and the one with the lower danger (but
+ /// see docs/c-bugs.md) is worn when it lowers the danger `p` enough.
+ /// The borg is forbidden to swap out certain resistances.
+-pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
++pub(crate) fn borg_backup_swap_native(st: &mut BorgState, p: i32) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_backup_swap",format!("{:?}",(p,))); }
+     let mut b_p1: i32 = 9999;
+     let mut b_p2: i32 = 9999;
+ 
+@@ -723,7 +728,7 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
+ 
+         /* Restore bonuses */
+         if fix {
+-            crate::borg_trait::borg_notice(st, true);
++            crate::decision_api::borg_trait::borg_notice(st, true);
+         }
+ 
+         /*  skip random artifact not star id'd  */
+@@ -767,7 +772,7 @@ pub fn borg_backup_swap(st: &mut BorgState, p: i32) -> bool {
+ 
+         /* Restore bonuses */
+         if fix {
+-            crate::borg_trait::borg_notice(st, true);
++            crate::decision_api::borg_trait::borg_notice(st, true);
+         }
+ 
+         /*  skip random artifact not star id'd  */
+@@ -822,7 +827,7 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
+     add_iqty(st, i, -1);
+ 
+     /* Examine the inventory */
+-    crate::borg_trait::borg_notice(st, true);
++    crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+     /* Evaluate the inventory */
+     let p = borg_power(st);
+@@ -848,7 +853,8 @@ fn wear_trial(st: &mut BorgState, hole: i32, slot: i32, i: i32) -> (i32, i32) {
+ /// current equipment, and take one step towards the world with the most
+ /// "power". With both hands full, a ring is now and then (or always, the
+ /// One Ring) tried on each hand.
+-pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
++pub(crate) fn borg_wear_stuff_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_wear_stuff",format!("{:?}",())); }
+     let left = inven_left();
+     let right = inven_right();
+ 
+@@ -1028,7 +1034,7 @@ pub fn borg_wear_stuff(st: &mut BorgState) -> bool {
+ 
+     /* Restore bonuses */
+     if fix {
+-        crate::borg_trait::borg_notice(st, true);
++        crate::decision_api::borg_trait::borg_notice(st, true);
+     }
+ 
+     /* item */
+@@ -1213,7 +1219,7 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
+             st.borg.goal.best_item[item_num].home = false;
+             return true;
+         }
+-        crate::borg_think::borg_oops(st, "unable to find item in home");
++        crate::decision_api::borg_think::borg_oops(st, "unable to find item in home");
+     } else {
+         /* if wearing an item in that slot, take it off */
+         if st.items.items[slot as usize].iqty != 0 {
+@@ -1237,7 +1243,7 @@ fn borg_one_step_wearing_best(st: &mut BorgState, skip: i32) -> bool {
+             st.borg.goal.best_item[item_num] = BorgBest::default();
+             return true;
+         }
+-        crate::borg_think::borg_oops(st, "unable to find item in inventory");
++        crate::decision_api::borg_think::borg_oops(st, "unable to find item in inventory");
+     }
+ 
+     false
+@@ -1252,7 +1258,7 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut
+     /* All done */
+     if order == NO_SLOT {
+         /* Examine */
+-        crate::borg_trait::borg_notice(st, true);
++        crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+         /* Evaluate */
+         let p = borg_power(st);
+@@ -1361,7 +1367,8 @@ fn borg_best_stuff_aux(st: &mut BorgState, n: i32, test: &mut [u16], best: &mut
+ /// (`borg_best_stuff`): out of everything worn, in the pack and in the
+ /// home. Only at home, once per trip to town; the changes are then made
+ /// one step at a time.
+-pub fn borg_best_stuff(st: &mut BorgState) -> bool {
++pub(crate) fn borg_best_stuff_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_best_stuff",format!("{:?}",())); }
+     /* only do this at home */
+     if i32::from(st.think.shop_num) != BORG_HOME as i32 {
+         return false;
+@@ -1393,7 +1400,7 @@ pub fn borg_best_stuff(st: &mut BorgState) -> bool {
+     borg_best_stuff_aux(st, 0, &mut test, &mut best, &mut value);
+ 
+     /* Restore bonuses */
+-    crate::borg_trait::borg_notice(st, true);
++    crate::decision_api::borg_trait::borg_notice(st, true);
+ 
+     /* convert the list into a list of items we can find even if they */
+     /* change locations due to picking up and dropping items */
+@@ -1452,7 +1459,8 @@ pub fn borg_best_stuff(st: &mut BorgState) -> bool {
+ 
+ /// Clear out the "best" swap list and trigger to do another
+ /// (`borg_clear_best`).
+-pub fn borg_clear_best(st: &mut BorgState) {
++pub(crate) fn borg_clear_best_native(st: &mut BorgState) {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_clear_best",format!("{:?}",())); }
+     st.borg.goal.best_item = Vec::new();
+     st.borg.goal.do_best = true;
+ }
+@@ -1460,7 +1468,8 @@ pub fn borg_clear_best(st: &mut BorgState) {
+ /// Scan the item list and recharge items before leaving the level
+ /// (`borg_wear_recharge`). Rods are not recharged from this, except rods
+ /// of recall.
+-pub fn borg_wear_recharge(st: &mut BorgState) -> bool {
++pub(crate) fn borg_wear_recharge_native(st: &mut BorgState) -> bool {
++if crate::decision_tape::active() { crate::decision_tape::mark("policy::equipment.borg_wear_recharge",format!("{:?}",())); }
+     let mut b_i: i32 = -1;
+     let mut b_slot: i32 = -1;
+ 
+@@ -1618,3 +1627,52 @@ mod tests {
+         assert_eq!(backup_swap_choice(0, 0, 9999, 9999), (9999, -1));
+     }
+ }
++
++pub fn borg_test_stuff(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_test_stuff_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearTestStuff) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_swap_rings(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_swap_rings_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearSwapRings) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_wear_rings(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_wear_rings_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearRings) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_backup_swap(st:&mut BorgState, p:i32) -> bool {
++if crate::decision_tape::active() { return borg_backup_swap_native(st,p); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearBackupSwap { p }) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_wear_stuff(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_wear_stuff_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearStuff) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_best_stuff(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_best_stuff_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearBestStuff) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++pub fn borg_clear_best(st:&mut BorgState) {
++if crate::decision_tape::active() { return borg_clear_best_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearClearBest) { crate::decisions::Value::Unit=>(),_=>unreachable!() }
++}
++
++pub fn borg_wear_recharge(st:&mut BorgState) -> bool {
++if crate::decision_tape::active() { return borg_wear_recharge_native(st); }
++match crate::shadow::decision(st,crate::decisions::Decision::WearRecharge) { crate::decisions::Value::Acted(v)=>v,_=>unreachable!() }
++}
++
++// R436 constructed-only helper bridge. No engine commands or fabricated policy results.
++#[cfg(feature="test-r4-equipment")]
++pub mod fixture {
++    use crate::state::BorgState;
++    pub fn trial(st:&mut BorgState,hole:i32,slot:i32,item:i32)->(i32,i32) { super::wear_trial(st,hole,slot,item) }
++    pub fn critical(st:&BorgState,conf:i32,blind:i32,free:i32)->[bool;3] { super::lost_critical(st,conf,blind,free) }
++    pub fn choice(armour:i32,weapon:i32,a:i32,b:i32)->(i32,i32) { super::backup_swap_choice(armour,weapon,a,b) }
++}

@@ -68,6 +68,15 @@ def verify(root):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
         # R434 facades are reversed separately before verifying the immutable P4 delta.
+        equipment = metadata.get('reviewed_equipment_seams')
+        if equipment:
+            equipment_path = root / equipment['path']
+            if equipment['path'] != 'docs/R436-NATIVE-SEAMS.patch' or digest(equipment_path.read_bytes()) != equipment['sha256']:
+                raise ValueError('reviewed equipment seam patch changed')
+            result = subprocess.run(['git', 'apply', '--reverse', '--include=borg-core/src/borg_item_wear.rs', str(equipment_path.resolve())],
+                                    cwd=target, capture_output=True, text=True)
+            if result.returncode:
+                raise ValueError('source includes changes beyond accepted P4 delta: cannot reverse equipment seams')
         seams = metadata.get('reviewed_native_seams')
         if seams:
             seam_path = root / seams['path']

@@ -3,11 +3,11 @@ import re
 from pathlib import Path
 from rust_ports import mask_non_code
 
-NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power')
-PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power')
+NATIVE = ('borg_caution', 'borg_escape', 'borg_recover', 'borg_fight_attack', 'borg_fight_defend', 'borg_item_use', 'borg_power', 'borg_item_wear', 'borg_item_id')
+PORTS = ('caution', 'escape', 'recovery', 'attack', 'defence', 'item_use', 'power', 'equipment_wear', 'equipment_identify')
 NATIVE_NAMESPACES = {'decision_api', 'decision_tape', 'decisions', 'shadow',
                      'params', 'borg', 'borg_cave', 'borg_update', 'state',
-                     'headers', 'borg_headers', *NATIVE}
+                     'headers', 'borg_headers', 'borg_inventory', *NATIVE}
 PARENT_ESCAPE = {'borg_caution_phase', 'borg_escape', 'borg_freedom',
                  'borg_recall', 'borg_surrounded'}
 PORT_NAMESPACES = {'decision_api', 'decision_tape', 'memory', 'threat_facts'}
@@ -49,6 +49,9 @@ def inspect(text, port=False, dispatch=False, policy=None):
             module = {'attack':'borg_fight_attack', 'defence':'borg_fight_defend', 'item_use':'borg_item_use', 'power':'borg_power'}[policy]
             if re.search(r'\bborg_rs::decision_api::'+module+'::', code):
                 errors.append(policy+' may not delegate its own policy through a shared native result')
+        if policy in ('equipment_wear', 'equipment_identify'):
+            if re.search(r'\bborg_rs::decision_api::(?:borg_item_wear|borg_item_id)::',code) or re.search(r'\bborg_rs::decision_api::borg_inventory::borg_item_worth_id\b',code):
+                errors.append('equipment may not delegate its owned policy through a native result')
         if re.search(r'\buse\s*(?:\{|crate::\s*[{{*])', code):
             errors.append('policy must not hide local/core paths in a grouped root import')
         # A parent may expose private root imports and Decision::native.
@@ -60,6 +63,8 @@ def inspect(text, port=False, dispatch=False, policy=None):
             return match[0]
         code = re.sub(r'\buse\s+super::escape::\{([^}]+)\}\s*;', local_escape, code)
         code = re.sub(r'\bsuper::(?:set_mana|set_confusion_resistance|set_free_action)\s*(?=\()', '', code)
+        if policy == 'equipment_wear':
+            code = re.sub(r'\buse\s+super::equipment_identify::borg_item_note_needs_id\s*;', '', code, count=1)
         if re.search(r'\b(?:super|self)::', code):
             errors.append('policy bypasses the audited parent dependency paths')
         if re.search(r'\buse\s+(?:crate|super|self)\s*(?:as\b|;)', code):
@@ -89,7 +94,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
                 errors.append(f'unrecorded local namespace crate::{match[1]}')
     else:
         errors = []
-    if re.search(r'\b(?:borg_rs|crate)::decision_api::item_use_fixture\b', code):
+    if re.search(r'\b(?:borg_rs|crate)::decision_api::(?:item_use_fixture|equipment_fixture)\b', code):
         errors.append('policy may not invoke the constructed test driver')
     code = re.sub(r'\s*::\s*', '::', code)
     prefix = 'borg_rs' if port else 'crate'
@@ -104,7 +109,7 @@ def inspect(text, port=False, dispatch=False, policy=None):
                      'decisions': {'Decision', 'ReadDecision', 'Value'} if dispatch else set()} if port else {
         'params': {'value','Param'}, 'borg': {'BorgTime'},
         'borg_cave': {'AUTO_MAX_X','AUTO_MAX_Y','BorgGrid','DUNGEON_HGT','DUNGEON_WID'}, 'borg_update': {'Detect'},
-        'state': {'BorgState'}}
+        'state': {'BorgState'}, 'borg_inventory': {'borg_item_worth_id'}}
     for m in re.finditer(r'\buse\s+'+prefix+r'::(\w+)::([^;]+);',code,re.S):
         namespace,tail=m.groups()
         if namespace in exact_imports:
@@ -141,7 +146,7 @@ def check(root):
     for path, port in paths:
         errors = inspect(path.read_text(), port,
                          dispatch=port and path == directory / 'mod.rs',
-                         policy=next((name for name in ('attack','defence','item_use') if port and
+                         policy=next((name for name in ('attack','defence','item_use','power','equipment_wear','equipment_identify') if port and
                              (path.stem == name or name in path.relative_to(directory).parts[:-1])),None))
         if errors:
             raise ValueError(f'{path}: ' + '; '.join(errors))

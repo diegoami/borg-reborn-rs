@@ -139,6 +139,11 @@ fn borg_info(_what: &[u8]) {}
 /// Memorize a message, log it, check it, and show it in the Borg windows
 /// (`borg_note_internal`).
 fn borg_note_internal(st: &mut BorgState, warning: bool, what: &[u8]) {
+    #[cfg(feature="test-r4-equipment")]
+    if crate::decision_api::item_use_fixture::messages_stubbed() {
+        note_policy_side_effects(st,what);
+        return;
+    }
     let old = engine::term_current();
     if warning {
         engine::msg(st, what);
@@ -148,12 +153,7 @@ fn borg_note_internal(st: &mut BorgState, warning: bool, what: &[u8]) {
     }
     borg_info(what);
 
-    // Mega-Hack -- Check against the swap loops
-    if contains(what, b"Best Combo") || contains(what, b"Taking off ") {
-        st.borg.antibounce_count = st.borg.antibounce_count.wrapping_add(10);
-        let msg = format!("# Anti-loop variable tick ({}).", st.borg.antibounce_count);
-        borg_note(st, &msg);
-    }
+    note_policy_side_effects(st, what);
 
     for j in 0..8 {
         let Some(t) = engine::angband_term(j) else {
@@ -387,4 +387,15 @@ pub fn borg_free_io(st: &mut BorgState) {
     engine::event_remove_handler(EVENT_BELL, borg_bell);
     st.io.key_history = Vec::new();
     st.io.key_queue = Vec::new();
+}
+
+// R436: shared note-state logic is the same in real UI and constructed copies.
+fn note_policy_side_effects(st: &mut BorgState, what:&[u8]) {
+    // Mega-Hack -- Check against the swap loops
+    if contains(what, b"Best Combo") || contains(what, b"Taking off ") {
+        st.borg.antibounce_count = st.borg.antibounce_count.wrapping_add(10);
+        let msg = format!("# Anti-loop variable tick ({}).", st.borg.antibounce_count);
+        borg_note(st, &msg);
+    }
+
 }

@@ -7,12 +7,26 @@ use borg_rs::{
 pub mod attack;
 pub mod caution;
 pub mod defence;
+pub mod equipment_identify;
+pub mod equipment_wear;
 pub mod escape;
 pub mod item_use;
 pub mod power;
 pub mod recovery;
 pub fn decide(st: &mut BorgState, request: Decision) -> Value {
     match request {
+        Decision::WearTestStuff => Value::Acted(equipment_wear::borg_test_stuff(st)),
+        Decision::WearSwapRings => Value::Acted(equipment_wear::borg_swap_rings(st)),
+        Decision::WearRings => Value::Acted(equipment_wear::borg_wear_rings(st)),
+        Decision::WearBackupSwap { p } => Value::Acted(equipment_wear::borg_backup_swap(st, p)),
+        Decision::WearStuff => Value::Acted(equipment_wear::borg_wear_stuff(st)),
+        Decision::WearBestStuff => Value::Acted(equipment_wear::borg_best_stuff(st)),
+        Decision::WearClearBest => {
+            equipment_wear::borg_clear_best(st);
+            Value::Unit
+        }
+        Decision::WearRecharge => Value::Acted(equipment_wear::borg_wear_recharge(st)),
+        Decision::ObjectFullyId => Value::Acted(equipment_identify::borg_object_fully_id(st)),
         Decision::Power => Value::Score(power::borg_power(st)),
         Decision::ItemQuaffCrit { no_check } => {
             Value::Acted(item_use::borg_quaff_crit(st, no_check))

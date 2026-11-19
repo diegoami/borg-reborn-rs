@@ -7,13 +7,13 @@
   "totals": {
     "primary": {
       "files": 9,
-      "physical_lines_including_tests": 9507,
-      "function_definitions_including_tests": 230
+      "physical_lines_including_tests": 9565,
+      "function_definitions_including_tests": 241
     },
     "adjacent": {
       "files": 5,
-      "physical_lines_including_tests": 2068,
-      "function_definitions_including_tests": 48
+      "physical_lines_including_tests": 2074,
+      "function_definitions_including_tests": 49
     },
     "shared": {
       "files": 19,
@@ -1028,10 +1028,21 @@
     {
       "path": "borg-core/src/borg_item_wear.rs",
       "role": "primary",
-      "sha256": "769b0eaad86f409a1d6b4618ecdefdde4b2a155d83157a52d876ceb5f1b72d12",
-      "physical_lines_including_tests": 1620,
-      "function_definitions_including_tests": 36,
+      "sha256": "5c971a30c0161e30ae283564dabffcdb346073ab79087e14c3d396a566da24d2",
+      "physical_lines_including_tests": 1678,
+      "function_definitions_including_tests": 47,
       "public_function_spellings_including_methods": [
+        "borg_test_stuff_native",
+        "borg_swap_rings_native",
+        "borg_wear_rings_native",
+        "borg_backup_swap_native",
+        "borg_wear_stuff_native",
+        "borg_best_stuff_native",
+        "borg_clear_best_native",
+        "borg_wear_recharge_native",
+        "borg_is_ammo",
+        "borg_init_item_wear",
+        "borg_free_item_wear",
         "borg_test_stuff",
         "borg_swap_rings",
         "borg_wear_rings",
@@ -1040,9 +1051,9 @@
         "borg_best_stuff",
         "borg_clear_best",
         "borg_wear_recharge",
-        "borg_is_ammo",
-        "borg_init_item_wear",
-        "borg_free_item_wear"
+        "trial",
+        "critical",
+        "choice"
       ],
       "named_parameters": [
         "wear_backup_danger_divisor",
@@ -1070,24 +1081,15 @@
         "wear_ring_select_max_turns"
       ],
       "direct_crate_namespaces": [
-        "borg",
-        "borg_danger",
-        "borg_flow_misc",
         "borg_headers",
         "borg_inventory",
-        "borg_io",
-        "borg_item",
-        "borg_item_analyze",
         "borg_item_id",
-        "borg_item_use",
-        "borg_magic",
-        "borg_power",
-        "borg_store",
-        "borg_think",
-        "borg_trait",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
@@ -1916,22 +1918,23 @@
     {
       "path": "borg-core/src/borg_item_id.rs",
       "role": "adjacent",
-      "sha256": "9c81b12dd403bad83ce728b6a031309acb062472f3c6bb4364a914adac79c9ac",
-      "physical_lines_including_tests": 189,
-      "function_definitions_including_tests": 7,
+      "sha256": "4d2d9e38a562d98908a704c631e43964f014373ced1892ae210b7cdd4c3fa7d7",
+      "physical_lines_including_tests": 195,
+      "function_definitions_including_tests": 8,
       "public_function_spellings_including_methods": [
-        "borg_object_fully_id",
+        "borg_object_fully_id_native",
         "borg_item_note_needs_id",
-        "flavour_sale_type"
+        "flavour_sale_type",
+        "borg_object_fully_id"
       ],
       "named_parameters": [],
       "direct_crate_namespaces": [
         "borg_headers",
-        "borg_io",
-        "borg_item",
-        "borg_item_analyze",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [
@@ -2081,7 +2084,7 @@
     {
       "path": "borg-core/src/borg_inventory.rs",
       "role": "shared",
-      "sha256": "b9abfa06a1d400d4718c7c65b54b8a635268bb5ca53a28687870b44a1cbbb9f1",
+      "sha256": "7a0539ed09204490ccdd53d7ced260f832aff21d3b9f01145e5e8ea211470898",
       "physical_lines_including_tests": 229,
       "function_definitions_including_tests": 9,
       "public_function_spellings_including_methods": [
@@ -2098,6 +2101,7 @@
         "borg_item",
         "borg_item_analyze",
         "borg_item_id",
+        "decision_api",
         "engine",
         "headers",
         "state"

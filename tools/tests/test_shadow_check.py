@@ -134,6 +134,34 @@ class ShadowCheckTest(unittest.TestCase):
                         with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
                             module.check([root],r4_power=True,require_all_entries=True)
 
+    def test_equipment_surface_requires_v7_and_all_equipment_entries(self):
+        row=valid_row()
+        names=('borg_test_stuff','borg_swap_rings','borg_wear_rings','borg_backup_swap',
+               'borg_wear_stuff','borg_best_stuff','borg_clear_best','borg_wear_recharge','borg_object_fully_id')
+        row.update(schema='borg-reborn-rs/shadow-stats@7',surface='r4-equipment',
+                   ported_points=module.R2_PORTED+['attack','defence','item_use','power','equipment'])
+        c=row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS,1))
+        c['stateful_points'].update({'power.borg_power':1,'power.borg_power_equipment':1})
+        c['stateful_points'].update({'equipment.'+name:1 for name in names})
+        added=len(module.ITEM_USE_ENTRY_POINTS)+2+len(names)
+        c['policy_markers']+=added;c['tape_events']+=added
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,equipment_calls=len(names),
+                 readonly_comparisons=2,readonly_points={'item_use.borg_equips_item':1,'power.borg_power_equipment':1},
+                 stateful_comparisons=3,comparisons=10)
+        c['root_points'].update({'power.borg_power':1,'equipment.borg_test_stuff':1})
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);self.write(root,row)
+            module.check([root],r4_equipment=True,require_all_entries=True)
+            with self.assertRaisesRegex(ValueError,'wrong schema'):
+                module.check([root],r4_power=True)
+            missing=copy.deepcopy(row)
+            del missing['counts']['stateful_points']['equipment.borg_wear_rings']
+            for field in ['equipment_calls','policy_markers','tape_events']:missing['counts'][field]-=1
+            self.write(root,missing);module.check([root],r4_equipment=True)
+            with self.assertRaisesRegex(ValueError,'missing individual entry coverage'):
+                module.check([root],r4_equipment=True,require_all_entries=True)
+
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)

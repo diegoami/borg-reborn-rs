@@ -96,6 +96,7 @@ HOOKED = {
     'src/borg_item_use.rs',
     'src/borg_item_val.rs',
     'src/borg_item_wear.rs',
+    'src/borg_item_id.rs',
     'src/borg_magic.rs',
     'src/borg_messages.rs',
     'src/borg_messages_react.rs',

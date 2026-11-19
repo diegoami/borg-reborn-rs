@@ -178,3 +178,13 @@ Named memory projections, ordered API facts and entry markers are the seams;
 valuation arithmetic and policy literals are unchanged. Dynamic formula policy
 remains explicitly shared. `scripts/audit-power-port.py` checks correspondence;
 it is not runtime validation or a new claim about game mechanics.
+
+## Track R wear and identification (#436, R4)
+
+The equipment_wear/equipment_identify modules adapt the receiving native wear
+and ID bodies plus inventory's worth-ID helper after accepted power #434.
+Original copyright/license headers remain. R436-SOURCE.json names every owned
+body and the native receiving hashes. The exact seam patch folds back native
+wear, ID, inventory and the shared note implementation. The latter retains
+its original state logic; only constructed test builds can suppress engine UI.
+Adjacent enchant/decurse policy remains shared pending accepted P contract #680.

@@ -250,7 +250,7 @@
   "files": {
     "Cargo.toml": {
       "donor_blob": "f09222f2f0d69ce9f0089bf40f177ddde6a07139",
-      "receiving_sha256": "892460cb584892c26c89e08beb329f8990ca29e328d6db0339af0c9257b22bb7"
+      "receiving_sha256": "429be54b3d7143e098fcb496ac860b25b4462671123b158c41e2f04d93e93f0e"
     },
     "build.rs": {
       "donor_blob": "9d24439107a218ec33578cabbf1215f38e986805",
@@ -338,11 +338,11 @@
     },
     "src/borg_inventory.rs": {
       "donor_blob": "df8087169d095180cce1bd4301a3497f3a1edfc5",
-      "receiving_sha256": "b9abfa06a1d400d4718c7c65b54b8a635268bb5ca53a28687870b44a1cbbb9f1"
+      "receiving_sha256": "7a0539ed09204490ccdd53d7ced260f832aff21d3b9f01145e5e8ea211470898"
     },
     "src/borg_io.rs": {
       "donor_blob": "1a65ffbbf790dbaf98c8e6e584f3d1c26a17e953",
-      "receiving_sha256": "32e4d796487949eb459acf225410d44a5acdaa2493e1d858cfef9d68ca862108"
+      "receiving_sha256": "3f6dc025b4cfd2268ffdb38e7b70001e8aea5d8b0466124b5f89370f87a5f96b"
     },
     "src/borg_item.rs": {
       "donor_blob": "9727802ea9a5480ba856801cc35b81e1abca3079",
@@ -351,6 +351,10 @@
     "src/borg_item_activation.rs": {
       "donor_blob": "783cde72fc7887ba1cb3a5f62ca5d360d3fa09ba",
       "receiving_sha256": "91d2f7263a4c65da1a0c71d40e5bb8a55d230631fff9fb88dbd867e3b831b48a"
+    },
+    "src/borg_item_id.rs": {
+      "donor_blob": "60257d98f672a1328226482ac39261064189cbd6",
+      "receiving_sha256": "4d2d9e38a562d98908a704c631e43964f014373ced1892ae210b7cdd4c3fa7d7"
     },
     "src/borg_item_use.rs": {
       "donor_blob": "fbf2fe365b54a5d0b60c9053b55b40b4d128d354",
@@ -362,7 +366,7 @@
     },
     "src/borg_item_wear.rs": {
       "donor_blob": "b5b1da963160e244af9dd99724cfa58e4e4a7f24",
-      "receiving_sha256": "769b0eaad86f409a1d6b4618ecdefdde4b2a155d83157a52d876ceb5f1b72d12"
+      "receiving_sha256": "5c971a30c0161e30ae283564dabffcdb346073ab79087e14c3d396a566da24d2"
     },
     "src/borg_magic.rs": {
       "donor_blob": "b4ba4288f69870c71414da641c01a3dd73123c8e",

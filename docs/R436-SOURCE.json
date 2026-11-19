@@ -1,0 +1,61 @@
+{
+  "schema": "borg-reborn-rs/r436-source@1",
+  "receiving_commit": "327d5f1058c221d715f2295adc740eb901b89938",
+  "owned_bodies": {
+    "borg-next/src/stateful/equipment_wear.rs": {
+      "inven_right": "borg-core/src/borg_item_wear.rs",
+      "inven_left": "borg-core/src/borg_item_wear.rs",
+      "pack_slots": "borg-core/src/borg_item_wear.rs",
+      "borg_timer": "borg-core/src/borg_item_wear.rs",
+      "letter": "borg-core/src/borg_item_wear.rs",
+      "swap_letter": "borg-core/src/borg_item_wear.rs",
+      "desc": "borg-core/src/borg_item_wear.rs",
+      "note_desc": "borg-core/src/borg_item_wear.rs",
+      "randarts": "borg-core/src/borg_item_wear.rs",
+      "danger_here": "borg-core/src/borg_item_wear.rs",
+      "from_safe": "borg-core/src/borg_item_wear.rs",
+      "add_iqty": "borg-core/src/borg_item_wear.rs",
+      "antibounce": "borg-core/src/borg_item_wear.rs",
+      "add_long": "borg-core/src/borg_item_wear.rs",
+      "borg_test_stuff": "borg-core/src/borg_item_wear.rs",
+      "borg_swap_rings": "borg-core/src/borg_item_wear.rs",
+      "borg_wear_rings": "borg-core/src/borg_item_wear.rs",
+      "backup_try": "borg-core/src/borg_item_wear.rs",
+      "lost_critical": "borg-core/src/borg_item_wear.rs",
+      "backup_forbidden": "borg-core/src/borg_item_wear.rs",
+      "backup_swap_choice": "borg-core/src/borg_item_wear.rs",
+      "borg_backup_swap": "borg-core/src/borg_item_wear.rs",
+      "wear_trial": "borg-core/src/borg_item_wear.rs",
+      "borg_wear_stuff": "borg-core/src/borg_item_wear.rs",
+      "borg_best_stuff_order": "borg-core/src/borg_item_wear.rs",
+      "equip_slots_max": "borg-core/src/borg_item_wear.rs",
+      "borg_one_step_wearing_best": "borg-core/src/borg_item_wear.rs",
+      "borg_best_stuff_aux": "borg-core/src/borg_item_wear.rs",
+      "borg_best_stuff": "borg-core/src/borg_item_wear.rs",
+      "borg_clear_best": "borg-core/src/borg_item_wear.rs",
+      "borg_wear_recharge": "borg-core/src/borg_item_wear.rs",
+      "borg_item_worth_id": "borg-core/src/borg_inventory.rs"
+    },
+    "borg-next/src/stateful/equipment_identify.rs": {
+      "contains": "borg-core/src/borg_item_id.rs",
+      "of_has": "borg-core/src/borg_item_id.rs",
+      "res_level": "borg-core/src/borg_item_id.rs",
+      "borg_object_fully_id": "borg-core/src/borg_item_id.rs",
+      "borg_item_note_needs_id": "borg-core/src/borg_item_id.rs"
+    }
+  },
+  "native_seams_sha256": "0cdb4e44ab64d83290f01c3c2f25b3ed33e4a2191b12ede1c7558c68168680cb",
+  "receiving_original_sha256": {
+    "borg-core/src/borg_item_wear.rs": "769b0eaad86f409a1d6b4618ecdefdde4b2a155d83157a52d876ceb5f1b72d12",
+    "borg-core/src/borg_item_id.rs": "9c81b12dd403bad83ce728b6a031309acb062472f3c6bb4364a914adac79c9ac",
+    "borg-core/src/borg_inventory.rs": "b9abfa06a1d400d4718c7c65b54b8a635268bb5ca53a28687870b44a1cbbb9f1",
+    "borg-core/src/borg_io.rs": "32e4d796487949eb459acf225410d44a5acdaa2493e1d858cfef9d68ca862108"
+  },
+  "shared_policy": [
+    "decurse/enchant pending accepted P contract680",
+    "notice/flow/rest and slot facts",
+    "existing power/item-use entries",
+    "metadata allocation/free and ammunition classifier"
+  ],
+  "limits": "37 bodies including the inventory worth-ID helper; lexical correspondence and native fold-back do not establish branch coverage."
+}
