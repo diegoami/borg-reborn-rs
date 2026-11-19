@@ -359,8 +359,37 @@ fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(
 // arrow contributes both damage and one reliable shot, separate objectives.
 fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     let mut out = vec![(ATTACK, damage)];
-    if class == CLASS_RANGER { out.push((RANGER_MISSILES, UNIT)); }
+    if missiles_percent(class, param(Param::town_missiles_percent)) > 0 { out.push((RANGER_MISSILES, UNIT)); }
     out
+}
+
+/// borg-reborn-rs (#666, owner): the reserve of shots for the class's
+/// launcher, in percent of `borg_town_w_ranger_missiles`:
+/// `town_missiles_percent` (per class, by shooting skill); -1 = C, the
+/// Ranger's reserve only (100 for a Ranger, 0 for the others).
+fn missiles_percent(class: i32, setting: i32) -> i64 {
+    if setting < 0 { if class == CLASS_RANGER { 100 } else { 0 } } else { i64::from(setting) }
+}
+
+/// borg-reborn-rs (#666, owner): "projectile buying is more important if they
+/// cannot get flasks of oil or wands". With at least `OTHER_RANGED_ENOUGH`
+/// flasks of oil and attack-wand charges carried, the shots' reserve weighs
+/// `town_missiles_other_ranged_percent` (100 = no change).
+const OTHER_RANGED_ENOUGH: i64 = 5;
+fn missiles_other_ranged(weight: i64, other_ranged: i64, percent: i32) -> i64 {
+    if other_ranged >= OTHER_RANGED_ENOUGH { scale_percent(weight, percent) } else { weight }
+}
+
+/// The flasks of oil and the charges of attack wands in the pack.
+fn other_ranged(st: &BorgState) -> i64 {
+    let iv = &st.item_val;
+    st.items.items.iter().take(crate::borg_item::inven_wield() as usize).filter(|i| i.iqty != 0).map(|i| {
+        let tval = u32::from(i.tval);
+        let sval = i32::from(i.sval);
+        if tval == TV_FLASK { i64::from(i.iqty) }
+        else if tval == TV_WAND && i.aware && (sval == iv.sv_wand_magic_missile || sval == iv.sv_wand_stinking_cloud) { i64::from(i.pval).max(0) }
+        else { 0 }
+    }).sum()
 }
 
 /// borg-reborn-rs (#487, #520): the healing curve's scale:
@@ -527,6 +556,11 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
             rod_uses(qty, i64::from(item.timeout), i64::from(turns), ctx.journey.turns) * UNIT / qty
         } else { UNIT };
     for (_, units) in &mut out { *units = *units * uses / UNIT; }
+    // borg-reborn-rs (#666, owner): a device is worth `town_devices_percent`
+    // of what it supplies (per class, by device skill; 100 = as computed).
+    if matches!(tval, TV_WAND | TV_ROD | TV_STAFF) {
+        for (_, units) in &mut out { *units = scale_percent(*units, param(Param::town_devices_percent)); }
+    }
     out.retain(|&(_, units)| units > 0);
     if matches!(tval, TV_WAND | TV_STAFF) && item.pval > 0 {
         let maximum = engine::kind_value_average(engine::kind(item.kind as usize).charge).max(1);
@@ -617,7 +651,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(ATTACK, risk(BORG_TOWN_W_ATTACK), damage_scale * journey.turns * UNIT / cfg(BORG_TOWN_ATTACK_TURNS).max(1));
     // Reliable bow ammunition is a separate reserve for Rangers. Oil, devices
     // and spells supply damage but cannot replenish usable missile shots.
-    curve(RANGER_MISSILES, if st.borg.tr(BI_CLASS) == CLASS_RANGER { risk(BORG_TOWN_W_RANGER_MISSILES) } else { 0 },
+    // borg-reborn-rs (#666): every class by its own percent (shooting skill),
+    // less when it carries flasks or attack-wand charges.
+    let missiles_weight = scale_percent(risk(BORG_TOWN_W_RANGER_MISSILES), missiles_percent(st.borg.tr(BI_CLASS), param(Param::town_missiles_percent)) as i32);
+    let missiles_weight = missiles_other_ranged(missiles_weight, other_ranged(st), param(Param::town_missiles_other_ranged_percent));
+    curve(RANGER_MISSILES, missiles_weight,
           (journey.turns * UNIT / cfg(BORG_TOWN_RANGER_MISSILE_TURNS).max(1)).max(UNIT));
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
@@ -1190,6 +1228,19 @@ mod class_heal_tests {
         }
         assert_eq!(heal_curve_scale_percent(99), param(Param::town_heal_curve_scale_percent));
         assert_eq!(heal_reserve_hp_percent(99), param(Param::town_heal_reserve_hp_percent));
+    }
+
+    #[test]
+    fn shots_for_every_class_by_its_percent() {
+        // #666: -1 keeps C (the Ranger only); a percent applies to any class.
+        assert_eq!(missiles_percent(CLASS_RANGER, -1), 100);
+        assert_eq!(missiles_percent(0, -1), 0);
+        assert_eq!(missiles_percent(0, 75), 75);
+        assert_eq!(missiles_percent(CLASS_RANGER, 100), 100);
+        // Fewer shots wanted with flasks or attack-wand charges in the pack.
+        assert_eq!(missiles_other_ranged(1000, 4, 50), 1000);
+        assert_eq!(missiles_other_ranged(1000, 5, 50), 500);
+        assert_eq!(missiles_other_ranged(1000, 20, 100), 1000);
     }
 
     #[test]
