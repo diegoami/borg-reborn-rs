@@ -361,6 +361,7 @@ crate::decision_tape::effect(st,"borg_light::borg_light_beam",format!("{:?}",(si
 }
 pub mod borg_magic {
 pub fn borg_spell_stat() -> i32 {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_spell_stat(); }
 crate::decision_tape::engine("borg_magic::borg_spell_stat",format!("{:?}",()),crate::borg_magic::borg_spell_stat)
 }
 pub fn borg_get_spell_entry(st:&crate::state::BorgState,book:i32,entry:i32)->Option<usize> {
@@ -767,6 +768,7 @@ use crate::memory::BorgGrid; }
 
 pub mod borg_item {
 pub fn borg_item_weight(item:&crate::borg_headers::borg_item_h::borg_item)->i16 {
+if !crate::decision_tape::active() { return crate::borg_item::borg_item_weight(item); }
 crate::decision_tape::engine("borg_item::borg_item_weight",format!("{:?}",item),|| crate::borg_item::borg_item_weight(item))
 }
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
@@ -863,6 +865,7 @@ crate::decision_tape::effect(st,"borg_escape::borg_surrounded",format!("{:?}",()
 
 pub mod borg_item_analyze {
 pub fn borg_ego_has_random_power(index:usize)->bool {
+if !crate::decision_tape::active() { return crate::borg_item_analyze::borg_ego_has_random_power(index); }
 crate::decision_tape::engine("borg_item_analyze::borg_ego_has_random_power",format!("{:?}",(index,)),|| crate::borg_item_analyze::borg_ego_has_random_power(index))
 }
 use crate::state::BorgState;

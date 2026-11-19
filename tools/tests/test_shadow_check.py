@@ -105,6 +105,35 @@ class ShadowCheckTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,error):
                     module.check([root],r4_power=True,require_all_entries=True)
 
+    def test_nested_equipment_marker_cannot_replace_each_readonly_root(self):
+        row = valid_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@6', surface='r4-power',
+                   ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use', 'power'])
+        c=row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS,1))
+        c['stateful_points'].update({'power.borg_power':1, 'power.borg_power_equipment':1})
+        c['root_points']['power.borg_power']=1
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
+                 stateful_comparisons=2,readonly_comparisons=1,comparisons=8)
+        added=len(module.ITEM_USE_ENTRY_POINTS)+2
+        c['policy_markers']+=added
+        c['tape_events']+=added
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for missing,present in [('power.borg_power_equipment','item_use.borg_equips_item'),
+                                    ('item_use.borg_equips_item','power.borg_power_equipment')]:
+                for explicitly_zero in [False,True]:
+                    with self.subTest(missing=missing,explicitly_zero=explicitly_zero):
+                        changed=copy.deepcopy(row)
+                        changed['counts']['readonly_points']={present:1}
+                        if explicitly_zero:
+                            changed['counts']['readonly_points'][missing]=0
+                        self.write(root,changed)
+                        # All policy markers and arithmetic are otherwise valid.
+                        module.check([root],r4_power=True)
+                        with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                            module.check([root],r4_power=True,require_all_entries=True)
+
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)

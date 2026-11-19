@@ -80,12 +80,17 @@ jobs:
                          and r['items_unchanged'] is True for r in rows)
               power = [json.loads(line) for line in pathlib.Path(f'harness/out/item-use-fixture-{mode}/r4-power-fixtures.jsonl').read_text().splitlines()]
               assert len(power) == 12 and len({r['case'] for r in power}) == 12
-              assert all(r['schema'] == 'borg-reborn-rs/r4-power-constructed@1'
+              assert all(r['schema'] == 'borg-reborn-rs/r4-power-constructed@2'
                          and r['synthetic'] is True and r['engine_consumption'] is False
-                         and r['mode'] == mode and r['value'] == r['expected']
+                         and r['mode'] == mode
                          and r['items_unchanged'] is True for r in power)
+              values = [r for r in power if r['control_kind'] == 'value-assertion']
+              effects = [r for r in power if r['control_kind'] == 'parity-and-side-effects']
+              assert len(values) == 8 and all(type(r['expected']) is int and r['value'] == r['expected'] for r in values)
+              assert {r['case'] for r in effects} == {'empty-equipment', 'static-empty-preparation-stop', 'preparation-buffer-persists', 'explicit-shared-dynamic-formula'}
+              assert all(r['expected'] is None for r in effects)
           PYITEM
-          if strings build/rust/game/angband | grep -q 'R4 item-use constructed fixture'; then
+          if strings build/rust/game/angband | grep -E 'R4 (item-use|power) constructed fixture' > /dev/null; then
             echo 'R4 constructed fixtures leaked into the normal binary'; exit 1
           fi
       - name: Retain constructed item-use evidence

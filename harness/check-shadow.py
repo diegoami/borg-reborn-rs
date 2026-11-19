@@ -62,6 +62,8 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
     totals = dict.fromkeys((*fields, 'tape_events', 'policy_markers', 'dependency_requests'), 0)
     entries = dict.fromkeys(allowed, 0)
     pure_totals = dict.fromkeys(PURE_POINTS, 0) if not legacy_r2 else {}
+    readonly_allowed = ({'item_use.borg_equips_item', 'power.borg_power_equipment'} if power_surface else {'item_use.borg_equips_item'} if r4_item_use else set())
+    readonly_totals = dict.fromkeys(readonly_allowed, 0)
     for path in files:
         previous, last, file_mode = 0, None, None
         for line in path.read_text().splitlines():
@@ -94,7 +96,6 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             raise ValueError(f'{path}: danger calls were observed without comparisons')
         stateful = checked_map(counts.get('stateful_points'), allowed, path)
         pure = {} if legacy_r2 else checked_map(counts.get('pure_points'), PURE_POINTS, path)
-        readonly_allowed = ({'item_use.borg_equips_item', 'power.borg_power_equipment'} if power_surface else {'item_use.borg_equips_item'} if r4_item_use else set())
         readonly = checked_map(counts.get('readonly_points'), readonly_allowed, path) if r4_item_use else {}
         if r4_item_use and sum(readonly.values()) != counts['readonly_comparisons']:
             raise ValueError(f'{path}: inconsistent read-only root counts')
@@ -139,12 +140,17 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             totals[name] += value
         for name, hits in stateful.items():
             entries[name] += hits
+        for name, hits in readonly.items():
+            readonly_totals[name] += hits
         for name, hits in pure.items():
             entries[name] += hits
             pure_totals[name] += hits
     if not all(totals[name] for name in fields):
         raise ValueError(f'insufficient comparison/boundary coverage: {totals}')
     if require_all_entries:
+        missing_readonly = sorted(name for name, hits in readonly_totals.items() if hits == 0)
+        if missing_readonly:
+            raise ValueError(f'missing read-only root coverage: {missing_readonly}')
         missing = [name for name, hits in entries.items() if hits == 0]
         if missing:
             raise ValueError(f'missing individual entry coverage: {missing}')
@@ -152,6 +158,7 @@ def check(roots, require_all_entries=False, legacy_r2=False, legacy_attack=False
             raise ValueError('missing standalone pure attack comparison coverage')
     totals['entry_points'] = entries
     totals['pure_points'] = pure_totals
+    totals['readonly_points'] = readonly_totals
     return len(files), totals
 
 

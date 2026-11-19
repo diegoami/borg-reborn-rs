@@ -37,7 +37,8 @@ before proving the unchanged accepted P4 delta. This does not permit arbitrary
 native policy edits or rebaseline the accepted registry/contract.
 
 The test-only `test-r4-power` feature includes existing item-use controls and
-12 new synthetic cases: activation first-match, signed swap contributions and
+12 new synthetic cases (eight value assertions and four parity/side-effect
+controls; the latter do not assert an independently expected score): activation first-match, signed swap contributions and
 wrapping, first fuel reward, preparation buffer persistence, explicit shared
 dynamic formulas, nested effect-once replay, a rejected return fault and repair.
 These use copied memory and real engine facts. They do not consume items or
@@ -52,3 +53,9 @@ strict entry gates and canonical death reconciliation remain required. Do not
 mark #434 complete, merge #478, or claim R4 accepted from compilation alone.
 Keep all original attempts and actual source/build identities. Gameplay evidence
 belongs in borg-cemetery; this source handover records implementation and limits.
+
+Review corrections: shadow-off fact wrappers return before formatting; strict
+coverage also requires every immutable root. Fixture schema @2 distinguishes
+value assertions from parity/side-effect controls. The nested case enters the
+provider, not the public facade. Normal binaries reject either fixture marker.
+Fresh native validation after these corrections remains required.

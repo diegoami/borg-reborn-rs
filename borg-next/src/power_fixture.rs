@@ -38,7 +38,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "empty-equipment",
             equipment,
-            equipment,
+            None,
             &base,
             &base,
         );
@@ -53,7 +53,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "activation-first-match",
             value.wrapping_sub(equipment),
-            550,
+            Some(550),
             &collision,
             &collision,
         );
@@ -64,7 +64,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "static-empty-preparation-stop",
             total,
-            total,
+            None,
             &base,
             &total_state,
         );
@@ -83,7 +83,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                 mode,
                 label,
                 value,
-                total.wrapping_add(weapon).wrapping_add(armour),
+                Some(total.wrapping_add(weapon).wrapping_add(armour)),
                 &before,
                 &state,
             );
@@ -97,7 +97,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "inventory-first-fuel",
             value.wrapping_sub(total),
-            param(Param::power_inventory_afuel_weight),
+            Some(param(Param::power_inventory_afuel_weight)),
             &before,
             &fuel,
         );
@@ -122,7 +122,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "preparation-buffer-persists",
             value,
-            value,
+            None,
             &before,
             &prepared,
         );
@@ -139,11 +139,12 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "explicit-shared-dynamic-formula",
             value,
-            value,
+            None,
             &before,
             &dynamic,
         );
-        // A real public power facade is entered under an opaque outer effect.
+        // The power provider is entered under an opaque outer effect.
+        // This checks nested provider replay, not the native public facade.
         // The outer replay must consume its state/result without invoking it twice.
         let calls = Cell::new(0);
         let mut nested = base.clone();
@@ -167,7 +168,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "nested-effect-once",
             calls.get(),
-            1,
+            Some(1),
             &base,
             &nested,
         );
@@ -189,7 +190,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "reject-return-fault",
             i32::from(agreement.is_err()),
-            1,
+            Some(1),
             &base,
             &faulty,
         );
@@ -200,7 +201,7 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
             mode,
             "repaired-power",
             value,
-            total,
+            Some(total),
             &base,
             &repaired,
         );
@@ -219,18 +220,21 @@ fn emit(
     mode: Mode,
     label: &str,
     value: i32,
-    expected: i32,
+    expected: Option<i32>,
     before: &BorgState,
     after: &BorgState,
 ) {
-    let row = serde_json::json!({"schema":"borg-reborn-rs/r4-power-constructed@1","synthetic":true,"mode":mode,
-        "case":label,"value":value,"expected":expected,"items_unchanged":before.items==after.items,
+    let row = serde_json::json!({"schema":"borg-reborn-rs/r4-power-constructed@2","synthetic":true,"mode":mode,
+        "case":label,"value":value,"expected":expected,
+        "control_kind":if expected.is_some() { "value-assertion" } else { "parity-and-side-effects" },"items_unchanged":before.items==after.items,
         "prepared_buffer_changed":before.prepared.buffer!=after.prepared.buffer,"engine_consumption":false,
         "limits":"shared dynamic formulas are replayed, not independently owned; empty/branch controls are not game trials"});
     serde_json::to_writer(&mut *out, &row).unwrap();
     out.write_all(b"\n").unwrap();
     out.flush().unwrap();
-    assert_eq!(value, expected, "{label}");
+    if let Some(expected) = expected {
+        assert_eq!(value, expected, "{label}");
+    }
     assert!(
         before.items == after.items,
         "{label}: valuation changed items"
