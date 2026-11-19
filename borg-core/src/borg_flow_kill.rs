@@ -2872,11 +2872,10 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 scary_races.push(r_idx); // borg-reborn-rs (#590)
             }
             if scare.calmed_scare && !never_move {
-                calmed_races.push(r_idx); // borg-reborn-rs (#593)
-                // A calmed monster's race would have made the level scary:
-                // record it, so a monster already hurt or afraid when first
-                // seen counts too (review of #595).
-                scary_races.push(r_idx);
+                // borg-reborn-rs (#593). Not recorded in scary_races: a monster
+                // hurt or afraid from first sight never made the level scary,
+                // so its race speaks for no scare (second review of #595).
+                calmed_races.push(r_idx);
             }
             stand_pursuer |= pursues;
             scary = false;

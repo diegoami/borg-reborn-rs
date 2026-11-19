@@ -3807,6 +3807,23 @@ mod scary_stand_tests {
     }
 
     #[test]
+    fn only_races_that_made_the_level_scary_clear_it() {
+        // The second review of #595: race 42 made the level scary; race 7 was
+        // only ever seen hurt or afraid, so it is not in the record.
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 7); // a hurt race-7 monster is killed
+        assert!(!mon.scary_killed, "a race that never made the level scary is no kill");
+        note_calmed(&mut mon, &[7]); // race 42 forgotten, race 7 known hurt
+        assert!(!mon.scary_calmed, "nor is it calmed");
+        assert!(!unlatch_when(r(true, true, true), mon.scary_killed, mon.scary_calmed), "the flag stays");
+        note_calmed(&mut mon, &[42]);
+        assert!(unlatch_when(r(true, false, true), mon.scary_killed, mon.scary_calmed), "race 42 hurt: it clears");
+    }
+
+    #[test]
     fn an_easy_escape_is_near_stairs_or_an_escape_item() {
         let mut s = st();
         assert!(!easy_escape_with(&s, 5, -1, -1), "nothing");
