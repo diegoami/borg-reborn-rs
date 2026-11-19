@@ -14,3 +14,10 @@ Owner: "I do not want it to behave differently after Word of Recall." While `goa
 - The measurement is in the PR (classes-18, the switch at 0 against 1).
 
 Left: a zoo pilot. Related: #582 and #583 (what the Borg does during the wait), #567 (no rest with a monster near).
+
+**Review of #627** (first round): the change is sound.
+- `every_switched_site_asks_recall_restricts` counts the switch's check in each of the five files, so a site put back to `goal.recalling` fails the test.
+- The PR now lists every kept read of `goal.recalling`. That includes the engine-counter sync (`borg_trait.rs`), which must stay. It also names the gap in restoring mana: restoring mana has no ordinary equivalent of `buy_time_for_recall`.
+- At 1 the Recall still fires and still lands the Borg in town.
+- **For the owner:** a Borg out of light (`borg_think_dungeon_util.rs:209`) waits for the Recall with no danger test, before `borg_caution`, so the switch does not reach it. Making it a wait only when safe changes play at 0 too.
+- Merged with main after #595 and #631: the registry holds 2161.
