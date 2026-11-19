@@ -1260,6 +1260,11 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
     /* Shops -- Enter */
     if engine::feat_is_shop(i32::from(ag.feat)) {
+        // borg-reborn-rs (#620): no shop takes a fox.
+        if crate::borg_escape::revert_fox_at_shop(st) {
+            return true;
+        }
+
         /* Message */
         borg_note(st, &format!("# Entering a '{}' shop", ag.store));
 
@@ -1328,6 +1333,10 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
         if crate::borg_escape::fox_form_before_flight_step(st, steps_left) {
             return true;
         }
+    }
+    // borg-reborn-rs (#620): a low-level Druid's walk in town: Fox Form first.
+    if b_i >= 0 && crate::borg_escape::fox_form_before_town_step(st, why, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize])) {
+        return true;
     }
 
     /* Try it */

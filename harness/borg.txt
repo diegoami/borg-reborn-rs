@@ -659,6 +659,20 @@ borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
 borg_param_escape_fox_form_stand_speed = 10
 
+# Fox Form for a Druid's walks in town (#620). With the switch at 1, a Druid
+# at most max_level, about to take a step of a walk in town (a shop, home, a
+# staircase, a flight) at least min_steps from its goal, casts Fox Form
+# (escape_fox_form_fail above sets the highest fail rate) and keeps it while
+# the walk lasts: it crosses town at double speed, and the town monsters get
+# half the turns. It changes back at the shop door (the game shuts it on a
+# fox) and before a blow. Raising min_steps casts on longer walks only (each
+# cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
+# Impact: set to 1, 1 of 6 test games play differently (the Druid).
+
+borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town_max_level = 20
+borg_param_escape_fox_form_town_min_steps = 10
+
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
 # Impact: set to 0, 2 of 6 test games play differently.
