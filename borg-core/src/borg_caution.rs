@@ -2172,6 +2172,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#690): surrounded by monsters slower than the Borg (or
+    // that never move) at the danger cap: walk out instead of fighting.
+    if slow_crowd_exit(st, pos_danger) {
+        return true;
+    }
+
     // borg-reborn-rs (#504): cornered (no escape, a fight on, danger at or
     // above the HP): every buff it carries or can cast, Monster Confusion
     // against a big monster, then a melee class fights without backing away.
@@ -2976,6 +2982,122 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
         borg_note(st, &format!("# Leaving the breeders' room ({} exit grids)", exits.len()));
     }
     ok
+}
+
+/// borg-reborn-rs (#690, generalising #544's breeder exit): surrounded,
+/// the danger here at or above the HP, and every awake monster within
+/// `borg_danger`'s reach slower than the Borg (`slower`) or never moving:
+/// walk with the desperate flow to the nearest known chokepoint or
+/// staircase at least `caution_slow_crowd_exit_distance` grids from every
+/// monster within that reach. A crowd's danger saturates at the cap on every
+/// grid near it, so retreat and back-away find no better grid, and with no
+/// escape item the Borg fought on one grid until it died (borg-cemetery#78:
+/// a Blackguard in a yellow worm mass colony, speed 100 against its 110).
+fn slow_crowd_exit(st: &mut BorgState, pos_danger: i32) -> bool {
+    if p(Param::caution_slow_crowd_exit) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    if pos_danger < st.borg.tr(BI_CURHP) {
+        return false;
+    }
+    let horizon = p(Param::danger_monster_max_distance);
+    let energy = |speed: i32| i32::from(engine::extract_energy(speed.clamp(0, 199) as usize));
+    let own = energy(st.borg.tr(BI_SPEED));
+    let margin = p(Param::caution_slow_crowd_exit_margin_percent);
+    let mut known = Vec::new();
+    let mut crowd = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        let reach = (kill.pos.x - st.borg.c.x).abs().max((kill.pos.y - st.borg.c.y).abs());
+        if reach > horizon {
+            continue;
+        }
+        let still = engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE);
+        known.push(CrowdMonster { reach, awake: kill.awake, still, energy: energy(i32::from(kill.speed)) });
+        crowd.push(kill.pos);
+    }
+    if !slow_crowd(&known, own, margin) {
+        return false;
+    }
+    if !borg_surrounded(st) {
+        return false;
+    }
+    let distance = p(Param::caution_slow_crowd_exit_distance);
+    let passable = |x: i32, y: i32| {
+        engine::square_in_bounds_fully(x, y) && {
+            let ag = st.cave.grid(x, y);
+            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+        }
+    };
+    let stairs = |x: i32, y: i32| {
+        let feat = u32::from(st.cave.grid(x, y).feat);
+        feat == FEAT_LESS || feat == FEAT_MORE
+    };
+    let mut exits = Vec::new();
+    for y in 1..AUTO_MAX_Y - 1 {
+        for x in 1..AUTO_MAX_X - 1 {
+            let at = loc { x, y };
+            if st.cave.grid(x, y).kill == 0 && crowd_exit_grid(&passable, &stairs, at, &crowd, distance) {
+                exits.push(at);
+            }
+        }
+    }
+    if exits.is_empty() {
+        return false;
+    }
+    // As the breeder exit: the desperate flow for this flow only, restored.
+    st.borg.status.desperate = true;
+    let ok = breeder_exit_flow(st, &exits);
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(
+            st,
+            &format!("# Walking out of a slower crowd ({} monsters, danger {pos_danger}, {} exit grids)", known.len(), exits.len()),
+        );
+    }
+    ok
+}
+
+/// A monster within reach, for `slow_crowd` (#690).
+#[derive(Clone, Copy)]
+struct CrowdMonster {
+    /// `borg_danger`'s distance (the larger axis distance).
+    reach: i32,
+    awake: bool,
+    /// The race never moves (`RF_NEVER_MOVE`).
+    still: bool,
+    /// `extract_energy` of its speed: energy per game turn.
+    energy: i32,
+}
+
+/// The crowd can be walked away from (#690): a monster adjacent, and every
+/// awake monster that moves acts less often than the Borg by the margin
+/// (`own` energy at least `100 + margin_percent` % of its energy). A
+/// sleeping monster does not chase; one that never moves cannot.
+fn slow_crowd(known: &[CrowdMonster], own: i32, margin_percent: i32) -> bool {
+    let adjacent = known.iter().any(|m| m.reach <= 1);
+    adjacent
+        && known
+            .iter()
+            .all(|m| !m.awake || m.still || own * 100 >= m.energy * (100 + margin_percent))
+}
+
+/// A crowd exit (#690): a passable grid at least `distance` grids from
+/// every monster of the crowd that is a chokepoint (a corridor or doorway,
+/// `chokepoint`) or a staircase.
+fn crowd_exit_grid(
+    passable: &dyn Fn(i32, i32) -> bool,
+    stairs: &dyn Fn(i32, i32) -> bool,
+    at: loc,
+    crowd: &[loc],
+    distance: i32,
+) -> bool {
+    passable(at.x, at.y)
+        && (stairs(at.x, at.y) || chokepoint(passable, at))
+        && crowd.iter().all(|&m| engine::distance(m, at) >= distance)
 }
 
 /// Flow to the nearest of `exits` and take its first step. When the flow
@@ -4833,6 +4955,57 @@ mod breeder_tests {
         assert!(chokepoint(&passable, loc { x: 30, y: 16 }), "the corridor");
         assert!(breeder_exit_grid(&passable, loc { x: 30, y: 16 }, &worms, 6), "the corridor, 6 grids up");
         assert!(exits.contains(&loc { x: 30, y: 16 }), "found by the scan");
+    }
+
+    /// #690: the crowd can be walked away from only when a monster is
+    /// adjacent and every awake monster that moves is slower by the margin.
+    #[test]
+    fn a_crowd_is_slow_when_every_awake_mover_is_slower_by_the_margin() {
+        let m = |reach, awake, still, energy| CrowdMonster { reach, awake, still, energy };
+        // The case (borg-cemetery#78): yellow worm masses, speed 100 (energy
+        // 5) against the Borg's 110 (energy 10), with a grey mushroom patch.
+        let worms = [m(1, true, false, 5), m(1, true, false, 5), m(2, true, false, 5), m(1, true, true, 10)];
+        assert!(slow_crowd(&worms, 10, 25), "the worm colony with a mushroom patch");
+        assert!(!slow_crowd(&[m(1, true, false, 10)], 10, 25), "as fast as the Borg");
+        assert!(!slow_crowd(&[m(1, true, false, 5), m(4, true, false, 20)], 10, 25), "a faster monster near holds it");
+        assert!(slow_crowd(&[m(1, true, false, 5), m(4, false, false, 20)], 10, 25), "a faster one asleep does not");
+        assert!(slow_crowd(&[m(1, true, true, 30)], 10, 25), "a fast one that never moves");
+        // Speed 105 is energy 7: 10 against 7 clears a 25% margin, not 50%.
+        assert!(slow_crowd(&[m(1, true, false, 7)], 10, 25), "105 at 25%");
+        assert!(!slow_crowd(&[m(1, true, false, 7)], 10, 50), "105 at 50%");
+        assert!(!slow_crowd(&[m(2, true, false, 5)], 10, 25), "none adjacent");
+        assert!(!slow_crowd(&[], 10, 25), "no monster");
+    }
+
+    /// #690: a crowd exit is a chokepoint or a staircase, beyond the distance
+    /// from every monster of the crowd; a room corner is not, unless it holds
+    /// a staircase.
+    #[test]
+    fn crowd_exits_are_corridors_and_staircases_beyond_the_crowd() {
+        const ROOM: [&str; 7] = [
+            "##############",
+            "#ww.........>#",
+            "#w@w.........#",
+            "#ww..........#",
+            "#............####",
+            "#................",
+            "#################",
+        ];
+        let passable = map_passable(&ROOM);
+        let stairs = |x: i32, y: i32| ROOM.get(y as usize).and_then(|r| r.as_bytes().get(x as usize)) == Some(&b'>');
+        let mut crowd = Vec::new();
+        for (y, row) in ROOM.iter().enumerate() {
+            for (x, c) in row.bytes().enumerate() {
+                if c == b'w' {
+                    crowd.push(loc { x: x as i32, y: y as i32 });
+                }
+            }
+        }
+        assert!(crowd_exit_grid(&passable, &stairs, loc { x: 12, y: 1 }, &crowd, 6), "the staircase in the far corner");
+        assert!(!crowd_exit_grid(&passable, &stairs, loc { x: 12, y: 4 }, &crowd, 6), "a room grid");
+        assert!(!crowd_exit_grid(&passable, &stairs, loc { x: 12, y: 1 }, &crowd, 12), "the staircase within the distance");
+        assert!(crowd_exit_grid(&passable, &stairs, loc { x: 13, y: 5 }, &crowd, 6), "the doorway on the east wall");
+        assert!(!breeder_exit_grid(&passable, loc { x: 12, y: 1 }, &crowd, 6), "the breeder exit takes no staircase");
     }
 
     #[test]
