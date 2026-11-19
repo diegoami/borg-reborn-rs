@@ -74,8 +74,14 @@ generation/classification and build-impact reports are later slices of
 ```sh
 BORG_IMPL=rust flock /tmp/angband-validation.lock harness/build.sh
 flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
-harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
+harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-borg-rs
+# the reborn core (#606): BORG_CORE=reborn, against its own references
+BORG_CORE=reborn flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke-reborn
+harness/diff --suite smoke --expect-impl rust harness/out/smoke-reborn harness/reference/smoke-rust
 ```
+
+With no `BORG_CORE` a run plays the core `harness/borg.txt` names, borg-rs
+(#606); `BORG_CORE=reborn` plays the reborn core.
 
 | File | What |
 | --- | --- |
@@ -94,7 +100,7 @@ harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/referenc
 | `borg.txt` | The C Borg's configuration file. The Rust Borg does not read it; it stays because the zoo copies it |
 | `profiles/` | The Rust Borg's profiles (`reborn-default.txt`), docs/ARCHITECTURE.md *Parameters* |
 | `suites/` | `smoke`, `full` (9 classes × 5 seeds × 100,000 turns, race = (class + k) % 11), and their `-exact` variants |
-| `reference/` | `smoke-rust`, `full-rust`, `smoke-exact-rust`: the Rust Borg's outputs at the commit their `REFERENCE` names; regression references, not oracles. CI compares smoke and smoke-exact |
+| `reference/` | `smoke-borg-rs`: the default (borg-rs) core's smoke outputs (#606). `smoke-rust`, `full-rust`, `smoke-exact-rust`: the reborn core's (`BORG_CORE=reborn`) outputs at the commit their `REFERENCE` names; regression references, not oracles. CI compares smoke and smoke-exact |
 
 ## The run contract and the logs
 
