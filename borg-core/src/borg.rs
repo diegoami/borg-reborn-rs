@@ -78,6 +78,12 @@ pub struct Borg {
     /// borg-reborn-rs (#644): the think that last noted a rest held for
     /// breeders (one note a think).
     pub breeder_rest_noted: Option<BorgTime>,
+    /// borg-reborn-rs (#567): the game turn and depth at which an awake
+    /// monster was last known within `caution_recall_rest_monster_distance`
+    /// (recorded each dungeon think while the switch is on). A monster out of
+    /// view is soon forgotten; this outlives that.
+    pub recall_watch_turn: i32,
+    pub recall_watch_depth: i32,
     /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
     /// steps it had to go, and when. A new monster wipes the flow goal for a
     /// think; the commitment to the staircase outlives that.
