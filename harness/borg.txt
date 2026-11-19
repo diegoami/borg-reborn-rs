@@ -575,6 +575,13 @@ borg_param_town_heal_reserve_real_hp = 1
 
 borg_param_town_heal_curve_scale_percent = 125
 
+# Phase Door and flasks of oil by class (#682, owner 2026-11-19). The Phase
+# Door curve stretches as healing's (weight and demand together); the oil
+# scale weights each flask's thrown damage (flasks kept as lantern fuel are
+# not changed). 100 = before #682. Each class sets its own in its class file.
+borg_param_town_phase_curve_scale_percent = 100
+borg_param_town_oil_curve_scale_percent = 100
+
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
 # Serious Wounds, then Healing. Higher shifts purchases to stronger potions.
