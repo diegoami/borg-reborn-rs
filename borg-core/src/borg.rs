@@ -75,6 +75,12 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#644): the think that last noted a rest held for
+    /// breeders (one note a think).
+    pub breeder_rest_noted: Option<BorgTime>,
+    /// #644: `goal.leaving` was set by the breeder rest rule (so the hunt
+    /// may still clear it). Only read while `goal.leaving` is set.
+    pub breeder_leaving: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of

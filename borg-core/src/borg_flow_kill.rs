@@ -1798,7 +1798,14 @@ fn low_level_caster(st: &BorgState) -> bool {
 /// Only that test of the walk's: not its leash to the stairs, nor whether
 /// the breeder can be reached.
 pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
-    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    let engaged = crate::borg_caution::breeder_engaged(st);
+    breeder_hunt_now_with(st, engaged)
+}
+
+/// `breeder_hunt_now` with the engagement given (#644: the rule's own leave
+/// does not count).
+pub(crate) fn breeder_hunt_now_with(st: &mut BorgState, engaged: bool) -> bool {
+    let mut hunt = engaged;
     if low_level_caster(st) {
         hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
     }
