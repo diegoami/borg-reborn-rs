@@ -10,6 +10,30 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Store at home only when overweight (#711)
+
+The registry now holds **2201** parameters (2200 before; one added).
+Owner, 2026-11-20: "only when it weighs too much they should stash the
+object with less value at home, untile they are not overcarrying again".
+
+- **`town_store_only_overweight`** (compiled 0, shipped 0). With it on, the
+  live town planner (`dispositions`, `borg_town_utility.rs`) moves a pack
+  stack to the Home only while the pack is over its weight allowance. The
+  pack is visited lowest keep value per weight first, so the least valuable
+  stack goes first, and the storing stops once the pack is under.
+- **0 (today):** a stack also goes home when its value kept for later
+  (times `borg_town_home_discount` / 1000, shipped 500) minus a home slot's
+  cost beats its value carried now minus its carrying cost. Next to a few
+  Cure Light Wounds the healing curve is nearly full, so a Cure Serious
+  Wounds went home with the pack light (#711; the pack power rule,
+  `power_inventory_maxclevel_threshold`, plays no part with
+  `borg_town_plan = 1`).
+- Taking stacks back from the Home is unchanged.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_store_only_overweight` | 0 | flag | 0–1 | `borg_town_utility.rs:256` |
+
 ## No detection prayer by panel at low level (#685)
 
 The registry now holds **2200** parameters (2199 after #625; one added).
