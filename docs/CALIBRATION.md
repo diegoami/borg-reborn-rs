@@ -10,6 +10,35 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## No Recall rest right after a monster was near (#567)
+
+The registry now holds **2168** parameters (2166 after #603; two added). From
+`priest-809881907` (borg-zoo#227, #539): at game turn 1,761 the Priest saw
+Grip 4 grids away and read its only Word of Recall. A think later, at 1,771,
+Grip was out of view and forgotten (its kill record deleted, danger 0), so
+the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
+
+- **`caution_recall_rest_monster_turns`** (game turns, 0 = off): while Recall
+  is pending, if an awake monster was known within
+  `caution_recall_rest_monster_distance` (20 grids) in the last N game turns
+  on this level, neither "Resting for Recall" (`caution_recall_rest_turns`)
+  nor "Waiting for Recall" (9 turns) runs. The Borg stays still one turn
+  (`,`, the engine's "stay still"; a rest count of 1 repeats the previous
+  count, `cmd-cave.c` `do_cmd_rest`), so every think sees a monster that
+  comes back. Note: `# Watching for Recall: a monster was near N game turns
+  ago.`
+- **The memory:** each dungeon think, `borg_caution` records the game turn
+  and depth while such a monster is known. It outlives the forgetting of a
+  monster out of view. A monster that never moves (a floating eye, a mold)
+  does not count: in a first local run a floating eye held every Recall wait.
+- **With #603:** `caution_recall_wait_as_usual` keeps the rest in place when
+  safe; this switch decides whether that rest is a long one.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:3440` |
+| `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:3443` |
+
 ## Play by the ordinary rules while Recall counts down (#603)
 
 The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (0, off): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).

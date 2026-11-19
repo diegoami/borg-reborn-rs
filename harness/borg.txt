@@ -374,7 +374,9 @@ borg_param_caution_recall_prep_turns = 2
 # caution_recall_rest_monster_turns = N (game turns, 0 = off): while Recall is
 # active, if an awake monster was known within caution_recall_rest_monster_distance
 # grids in the last N game turns, stay still one turn at a time instead of
-# resting, so a monster that comes back is seen before it bites.
+# resting, so a monster that comes back is seen before it bites. A monster
+# that never moves does not count.
+# Impact (18 classes-18 starts, 100,000 turns): 200: 9 of 18 play differently.
 borg_param_caution_recall_rest_monster_turns = 0
 borg_param_caution_recall_rest_monster_distance = 20
 
