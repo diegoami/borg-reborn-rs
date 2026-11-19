@@ -648,6 +648,19 @@ borg_param_escape_phase_adjacent_rule = 0
 borg_param_escape_phase_lost_test = 1
 borg_param_escape_phase_lost_danger_percent = 100
 
+# Ranged first against immobile attackers (#646, owner: "always choose ranged
+# against immobile but annoying monsters"). 1 = next to a known monster that
+# never moves and attacks (mushroom patch, mold, floating eye), confused or
+# carrying something to throw or shoot (then once per monster and level;
+# confused up to three times),
+# the Borg steps out of its reach and
+# does not cure confusion next to it; not when the monsters that move are as
+# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
+# times, borg-cemetery#75).
+# Change together: works with what the Borg carries to throw (#649, #652).
+
+borg_param_caution_ranged_vs_immobile = 0
+
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
 # - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,
