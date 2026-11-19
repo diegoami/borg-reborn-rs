@@ -522,6 +522,14 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# Throws on melee's footing (#568): 1 = a thrown object is rated with the
+# engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
+# chance with the throwing skill, no launcher, and melee's danger term
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
+# Impact: see CALIBRATION (#568).
+
+borg_param_attack_throw_as_melee = 0
+
 # The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
 # steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
 # (breeders when a hunt for them applies, dangerous town monsters); 2 = no
