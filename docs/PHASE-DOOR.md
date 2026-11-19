@@ -131,12 +131,12 @@ comparisons behind a setting):
 | value | the adjacent fight is lost when |
 |---|---|
 | 0 | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
-| **1** (compiled) | the fight compared: the Borg's best attack now (`borg_attack_estimate`: the expected damage of the attack `borg_attack` would choose, nothing done) needs more turns to kill the adjacent awake monsters (their HP, `kill.power`) than the danger where it stands needs to kill it |
+| **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
 
-Tests 1 and 2 note their numbers (`# Phase rule: the fight: …`, `… the
-landing: …`). They draw random numbers (the attack simulation, the landing
-samples), so with the rule on a game can change from the first decision. The rule is decided and noted once per think, at the first site
+Tests 1 and 2 note their numbers (`# Phase rule: the fight: <HP left> HP at
+<damage> a turn, …; danger d, HP h: lost / not lost`, `… the landing: …`).
+Test 2 draws random numbers (the landing samples). The rule is decided and noted once per think, at the first site
 that asks (`# Phase rule (from <site>): …`); later sites reuse it. Its attack
 or boost (`phase_rule_act`) runs once, in `borg_caution` right after
 `borg_escape`, so after the emergency levels' borrowed mana is put back.

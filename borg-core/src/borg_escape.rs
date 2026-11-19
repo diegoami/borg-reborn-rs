@@ -787,20 +787,28 @@ fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> Pha
 /// setting):
 /// - 0: the danger here at or above `escape_phase_lost_danger_percent` of
 ///   the HP (`phase_verdict`);
-/// - 1 (compiled): the fight compared. The Borg's best attack now
-///   (`borg_attack_estimate`, its expected damage) kills the adjacent awake
-///   monsters (their HP, `kill.power`) in more turns than the danger here
-///   kills the Borg (`fight_lost_by`);
+/// - 1 (compiled): the fight compared. Killing the adjacent awake monsters
+///   one after another (their HP left, `kill.power` less `kill.injury`
+///   percent) takes more turns than the danger here needs to kill the Borg
+///   (`fight_lost_by`). The Borg's damage a turn is the larger of its melee
+///   against that monster (`borg_thrust_damage_one`) and the true damage of
+///   the attack it would choose now, of any kind (`borg_attack_estimate`: a
+///   Mage casts next to an enemy). (Review of #612's Druid death:
+///   `borg_attack`'s ranking value adds the kill and danger bonuses to the
+///   damage, so the true damage is tracked apart.)
 /// - 2: as 1, and the expected landing is safer than here: the mean danger
 ///   of the sampled landing grids (`landing_danger`) below the danger here.
 fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
     match param(Param::escape_phase_lost_test) {
         0 => phase_verdict(true, here, hp, param(Param::escape_phase_lost_danger_percent)) == PhaseVerdict::Phase,
         test => {
-            let foes = adjacent_awake_hp(st);
-            let value = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
-            let lost = fight_lost_by(foes, value, here, hp);
-            let note = format!("# Phase rule: the fight: adjacent HP {foes}, best attack {value} a turn, danger {here}, HP {hp}: {}", if lost { "lost" } else { "not lost" });
+            // The attack the Borg would choose now, of any kind (a Mage casts
+            // next to an enemy too; owner, 2026-11-19): its true damage.
+            let best = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+            let foes: Vec<(i32, i32)> = adjacent_foes(st).into_iter().map(|(left, melee)| (left, melee.max(best))).collect();
+            let lost = fight_lost_by(&foes, here, hp);
+            let list: Vec<String> = foes.iter().map(|(left, dam)| format!("{left} HP at {dam} a turn")).collect();
+            let note = format!("# Phase rule: the fight: {}; danger {here}, HP {hp}: {}", list.join(", "), if lost { "lost" } else { "not lost" });
             borg_note(st, &note);
             if !lost || test < 2 {
                 return lost;
@@ -812,22 +820,48 @@ fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
     }
 }
 
-/// The fight is lost when the Borg's attack (`value` a turn) needs more
-/// turns to kill `foes` HP than the danger (`danger` a turn) needs to kill
-/// its `hp`: foes / value > hp / danger. No attack: lost.
-fn fight_lost_by(foes: i32, value: i32, danger: i32, hp: i32) -> bool {
-    value <= 0 || i64::from(foes) * i64::from(danger) > i64::from(hp) * i64::from(value)
+/// The fight is lost when killing every foe, one after another (HP left and
+/// the Borg's damage a turn against it), takes more turns than the danger
+/// (`danger` a turn) needs to kill the Borg's `hp`: sum(left / dam) >
+/// hp / danger. A foe it cannot hurt (damage 0) loses the fight; no foe, or
+/// no danger, does not.
+fn fight_lost_by(foes: &[(i32, i32)], danger: i32, hp: i32) -> bool {
+    if foes.iter().any(|&(_, dam)| dam <= 0) {
+        return true;
+    }
+    // sum(left_i / dam_i) * danger > hp, in exact fractions: scaled by the
+    // product of the damages would overflow; compare in f64.
+    let turns: f64 = foes.iter().map(|&(left, dam)| f64::from(left) / f64::from(dam)).sum();
+    turns * f64::from(danger) > f64::from(hp)
 }
 
-/// The summed HP (`kill.power`) of the awake known monsters next to the Borg.
-fn adjacent_awake_hp(st: &BorgState) -> i32 {
+/// The awake known monsters next to the Borg, as (HP left, the Borg's melee
+/// damage a turn against it): `kill.power` less `kill.injury` percent (at
+/// least 1), and `borg_thrust_damage_one` without its unique bonus (its
+/// Mage/Necromancer reduction stays: it errs towards the Phase Door).
+fn adjacent_foes(st: &BorgState) -> Vec<(i32, i32)> {
     (1..st.kills.nxt.max(0) as usize)
         .filter(|&i| {
             let kill = &st.kills.kills[i];
-            kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+            kill.r_idx != 0
+                && engine::r_max() != 0
+                && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+                && kill.awake
+                && engine::distance(st.borg.c, kill.pos) <= 1
         })
-        .map(|i| i32::from(st.kills.kills[i].power).max(1))
-        .sum()
+        .map(|i| {
+            let kill = &st.kills.kills[i];
+            let left = (i32::from(kill.power) * (100 - i32::from(kill.injury).clamp(0, 100)) / 100).max(1);
+            let mut dam = crate::borg_fight_attack::borg_thrust_damage_one(st, i as i32);
+            // `borg_thrust_damage_one` multiplies the damage on a unique in the
+            // dungeon by 1 + `attack_melee_unique_bonus` so the Borg targets
+            // it: a preference, not damage (Grip, Fang). Taken back out.
+            if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_UNIQUE) && st.borg.tr(BI_CDEPTH) >= 1 {
+                dam /= 1 + param(Param::attack_melee_unique_bonus).max(0);
+            }
+            (left, dam)
+        })
+        .collect()
 }
 
 /// The mean danger (one turn) of the grids a Phase Door may land on: up to
@@ -1854,16 +1888,22 @@ mod phase_decision_tests {
     }
 
     /// #584 (owner): the fight is lost when the Borg needs more turns to kill
-    /// the adjacent monsters than they need to kill it; no attack is lost.
+    /// the adjacent monsters than they need to kill it; a foe it cannot hurt
+    /// loses it.
     #[test]
     fn the_fight_is_lost_when_the_borg_dies_first() {
-        // 20 HP of foes, 5 a turn: 4 turns to win; 12 danger on 40 HP: 3.3 turns to die.
-        assert!(fight_lost_by(20, 5, 12, 40));
-        // 10 danger on 40 HP: 4 turns to die; a draw is not lost.
-        assert!(!fight_lost_by(20, 5, 10, 40));
-        assert!(!fight_lost_by(20, 10, 12, 40), "a stronger attack wins");
-        assert!(fight_lost_by(1, 0, 1, 100), "no attack");
-        assert!(!fight_lost_by(20, 5, 0, 40), "no danger");
+        // The Druid of #612's review: a wild cat with 8 HP left, a 1d3 whip at
+        // about 2 a turn: 4 turns; danger 18 on 7 HP: under a turn. Lost.
+        assert!(fight_lost_by(&[(8, 2)], 18, 7));
+        // 20 HP at 5 a turn: 4 turns; 10 danger on 40 HP: 4 turns. Not lost.
+        assert!(!fight_lost_by(&[(20, 5)], 10, 40));
+        assert!(fight_lost_by(&[(20, 5)], 12, 40), "3.3 turns to die");
+        // Two foes are killed one after another: 2 + 2 turns.
+        assert!(fight_lost_by(&[(10, 5), (10, 5)], 12, 40));
+        assert!(!fight_lost_by(&[(10, 5), (10, 5)], 10, 40));
+        assert!(fight_lost_by(&[(5, 0)], 1, 100), "no damage");
+        assert!(!fight_lost_by(&[(20, 5)], 0, 40), "no danger");
+        assert!(!fight_lost_by(&[], 50, 10), "no foe");
     }
 
     /// #584: the note of a Phase Door names the site, the HP, the danger
