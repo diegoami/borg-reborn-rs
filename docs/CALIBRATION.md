@@ -16,7 +16,7 @@ The registry now holds **2157** parameters (one added). Owner, 2026-11-19:
 "rather than having a flag 'town not scary' maybe let us have a
 'town_less_scary' that decreases the scaryness level of town monsters".
 
-`caution_town_scary_levels_less` (levels, compiled 0, written out at 0): for
+`caution_town_scary_levels_less` (levels, compiled 0, **shipped 3**, owner 2026-11-19: "N=3 sounds good"): for
 a town race (race level 0) on the named scary list, the listed level is
 lowered by this many character levels (`clevel <= up_to - N`,
 `scary_list::is_scary`). The damage rule and the resist scares are not

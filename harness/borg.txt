@@ -780,11 +780,12 @@ borg_param_caution_town_never_scary = 0
 # scare ends earlier. Higher ends it sooner: 11 or more ends the list's town
 # scares at once (as caution_town_never_scary, but only for the list). Each
 # level less brings more thefts (the urchin, the squint-eyed rogue): on 18
-# games 1 at 3, 13 at 6, 16 at 11. 0 = the list as it is.
+# games 1 at 3, 13 at 6, 16 at 11. 0 = the list as it is. Shipped 3
+# (owner, 2026-11-19).
 # Impact: not on the file's 6-game measure; on 18 classes-18 games (100,000
-# turns), 3: 0 deaths, sum of CL 102; 6: 1, 99; 11: 2, 98 (shipped 0, 99).
+# turns), 0: 0 deaths, sum of CL 99; 3: 0, 102; 6: 1, 99; 11: 2, 98.
 
-borg_param_caution_town_scary_levels_less = 0
+borg_param_caution_town_scary_levels_less = 3
 
 
 ### The C Borg's own settings ###
