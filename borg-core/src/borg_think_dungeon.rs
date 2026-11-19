@@ -1462,20 +1462,30 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         borg_note(st, "# Considering Phase (twitchy)");
 
         /* Phase */
+        /* borg-reborn-rs (#584): through the one Phase Door decision; no
+         * check, as before. */
         if borg_allow_teleport(st)
-            && (borg_spell(st, PHASE_DOOR)
-                || {
-                    let act = st.act.tele_phase;
-                    borg_activate_item(st, act)
-                }
-                || {
-                    let sv = st.item_val.sv_scroll_phase_door;
-                    borg_read_scroll(st, sv)
-                }
-                || borg_dimension_door(st, 90)
-                || borg_spell(st, TELEPORT_SELF)
-                || borg_spell(st, PORTAL)
-                || borg_shadow_shift(st, 90))
+            && crate::borg_escape::phase_door(
+                st,
+                crate::borg_escape::PhaseSite::TwitchyThink,
+                crate::borg_escape::PhaseCheck::None,
+                None,
+                |st| {
+                    borg_spell(st, PHASE_DOOR)
+                        || {
+                            let act = st.act.tele_phase;
+                            borg_activate_item(st, act)
+                        }
+                        || {
+                            let sv = st.item_val.sv_scroll_phase_door;
+                            borg_read_scroll(st, sv)
+                        }
+                        || borg_dimension_door(st, 90)
+                        || borg_spell(st, TELEPORT_SELF)
+                        || borg_spell(st, PORTAL)
+                        || borg_shadow_shift(st, 90)
+                },
+            )
         {
             /* Success */
             return choice!("twitch_phase");
