@@ -596,7 +596,10 @@ borg_param_escape_phase_adjacent_only = 1
 # Shipped with lost_test 0 at 100% (#661, borg-zoo#347's thr-100 arm, 1,728
 # paired starts on 4acf071f): 77 deaths against 93 with the rule off (55
 # rescued, 39 newly killed, p = 0.12), mean max CL and DL unchanged; the
-# fight tests (1, 2) were neutral leaning worse. A lead, not a confirmed gain.
+# fight tests (1, 2) were neutral leaning worse. Confirmed on fresh starts
+# (borg-zoo#347's main confirmation, classes-1800-b, 3,600 games on
+# 3ba17e2c): 89 deaths against 128 (79 rescued, 40 newly killed, p =
+# 0.00045), CL and DL non-inferior; only Blackguards worse (7 to 11).
 
 borg_param_escape_phase_adjacent_rule = 1
 borg_param_escape_phase_lost_test = 0
