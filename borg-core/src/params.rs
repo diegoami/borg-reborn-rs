@@ -830,6 +830,7 @@ parameters! {
     attack_ego_ammo_multiplier => (99, "multiplier", 0, 198, "borg_fight_attack.rs:2360", "Attack ego ammo multiplier: existing policy multiplier."),
     attack_throw_max_target_age => (10, "turns", 1, 10, "borg_fight_attack.rs:2486", "Attack throw max target age: existing policy turns."),
     attack_throw_fast_monster_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:2532", "Attack throw fast monster margin: existing policy speed."),
+    kill_flow_mode => (0, "mode", 0, 3, "borg_flow_kill.rs:1925", "#691: the hunt (borg_flow_kill, walking to a monster to fight it) removed in steps. 0 = C. 1 = only the targeted hunts: breeders when a hunt for them applies (#503, #558), dangerous town monsters (#619, #637). 2 = no out-of-view call (\"chase old monsters\"). 3 = never hunt; borg_attack still fights what is in reach."),
     attack_throw_min_item_value => (100, "gold", 0, 100000, "borg_fight_attack.rs:2647", "Attack throw min item value: existing policy gold."),
     attack_throw_low_damage => (5, "damage", 0, 5000, "borg_fight_attack.rs:2647", "Attack throw low damage: existing policy damage."),
     attack_throw_as_melee => (0, "flag", 0, 1, "borg_fight_attack.rs:2685", "#568: 1 = a throw is rated on melee's footing: the engine's throw damage (a flask of oil 22, not its 1d4), the engine's hit chance with the throwing skill, no launcher, and melee's danger term (its horizon, full damage, the partial-kill division). 0 = C (the dice average, the bow skill and launcher, the bolt's one-turn danger)."),

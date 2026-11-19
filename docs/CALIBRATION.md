@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Throws on melee's footing (#568)
 
-The registry now holds **2197** parameters (2196 after #682; one added).
+The registry now holds **2198** parameters (2197 after #691; one added).
 From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
@@ -57,6 +57,49 @@ one flask and Grip fled.
 - **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
   turn 1,881, main melees (44); with the switch on the Borg throws a flask
   (80). Both arms survive the scene; with `keep-load-rng` too.
+## The hunt removed in steps (#691)
+
+The registry now holds **2197** parameters (2196 before; one added).
+Owner, 2026-11-19, on #691: "what if we got rid of it?" and "for me this
+flow kill is a candidate for rewrite".
+
+- **`kill_flow_mode`** (mode, 0 = C): what `borg_flow_kill` may walk to.
+  `borg_attack` (melee, throws, spells, shots at what is in reach) is not
+  affected at any value, nor `borg_flow_kill_aim`, `_corridor`, `_direct`.
+  - 0: as C.
+  - 1: only the targeted hunts: breeders while a hunt for them applies
+    (#503, #558), dangerous town monsters (#619, #637). Their own settings
+    are unchanged, but #503's melee hunt, which walks to any monster at C,
+    walks only to breeders at 1 (as #558's caster hunt already did): for
+    Warriors, Paladins, Rogues and Blackguards mode 1 narrows the targets,
+    not only the calls (review of #695).
+  - 2: no out-of-view call (the "chase old monsters" calls: `nearness` 250
+    and `max_range + 1`, `viewable` false).
+  - 3: never.
+- **The analysis behind it** is on #691: in 19 games below CL10 the hunt
+  walks 263 times against about 22,000 exploring steps; the out-of-view
+  call finds a target in 516 calls and walks in 27.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
+  base `a87b4c96`** (19 games):
+
+| mode | deaths | sum of max CL | sum of max DL | walks to a fight | kills | games that differ from 0 |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 | 0 | 108 | 40 | 305 | 1,427 | — |
+| 1 | 2 | 100 | 39 | 26 | 1,234 | 15 |
+| 2 | 0 | 111 | 41 | 302 | 1,475 | 11 |
+| 3 | 1 | 104 | 41 | 0 | 1,268 | 16 |
+
+  The deaths are not hunting decisions:
+  - `1502695781` (modes 1 and 3, same turn): the Borg rests again and again
+    while an invisible clear icky thing touches it ("# Invisible monster
+    nearby", "Resting to recover HP/SP"), #462's pattern on the borg-rs core;
+  - `1472012981` (mode 1): at HP 12/46, unable to flow to an up stair, it
+    searches for secret doors until a soldier arrives.
+  Below CL10 the hunt is worth about 10% of the kills and a few levels. Mode
+  2 loses nothing here. CL10 and above are not measured locally (no game gets
+  there); that is the zoo pilot's question. Not a measure of benefit (RULES
+  14).
+
 ## Phase Door and flasks of oil by class (#682)
 
 The registry now holds **2196** parameters (2194 before; two added). Owner,
