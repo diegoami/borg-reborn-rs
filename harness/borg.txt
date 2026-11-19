@@ -744,6 +744,18 @@ borg_param_caution_scary_unlatch_kill = 0
 borg_param_caution_scary_hurt_percent = 50
 borg_param_caution_scary_afraid = 1
 
+# 1 = in town no monster makes the level scary (the named list, the damage
+# rule, the resist scares): the Borg meets town monsters by its danger rules,
+# fights them or walks past, instead of fleeing to DL1 and coming back to
+# finish shopping (#604, owner). The five town residents on the list (the
+# battle-scarred veteran, the mean-looking mercenary, the filthy street
+# urchin, the squint-eyed rogue, Farmer Maggot) made most of the town
+# scares: at least 697 in 18 games. 0 = C.
+# Impact: not on the file's 6-game measure; set to 1, 18 of 18 games (9
+# classes x seeds 2001/2002, race 0, 100,000 turns) play differently.
+
+borg_param_caution_town_never_scary = 0
+
 
 ### The C Borg's own settings ###
 

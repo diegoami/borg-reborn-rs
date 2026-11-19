@@ -2754,6 +2754,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     let player_speed = st.borg.tr(BI_SPEED) + crate::borg_escape::flight_speed_bonus(st);
     let mut stand_scary = false;
     let mut stand_pursuer = false;
+    // borg-reborn-rs (#604): with caution_town_never_scary, nothing makes the
+    // town scary.
+    let town_calm = crate::borg_caution::town_never_scary(st.borg.tr(BI_CDEPTH));
     let mut scary_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
@@ -2852,11 +2855,13 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         // no named-list or damage-rule scare; the rule is classify_scare.
         let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
         let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
-            crate::borg_caution::scary_by_damage(st, i, note)
+            // borg-reborn-rs (#604, review): no "Scary by damage" note in a town
+            // that cannot be scary
+            crate::borg_caution::scary_by_damage(st, i, note && !town_calm)
         });
-        let mut scary = scare.scary;
+        let mut scary = scare.scary && !town_calm;
 
-        if stand_mode {
+        if stand_mode && !town_calm {
             // A monster that never moves cannot follow: never scary here.
             let never_move = engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE);
             let awake_and_fast = kill.awake && i32::from(kill.speed) >= player_speed;

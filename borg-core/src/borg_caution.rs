@@ -2856,6 +2856,17 @@ pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
 
+/// borg-reborn-rs (#604): with `caution_town_never_scary`, no monster makes
+/// the town scary: the Borg meets town monsters by its danger rules (fights
+/// or avoids them) instead of fleeing to DL1.
+pub(crate) fn town_never_scary(depth: i32) -> bool {
+    town_never_scary_with(p(Param::caution_town_never_scary), depth)
+}
+
+fn town_never_scary_with(switch: i32, depth: i32) -> bool {
+    switch != 0 && depth == 0
+}
+
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
 /// turns of its melee can take at least `caution_scary_damage_percent` of
 /// the character's max HP (owner: scary is a monster that can one- or
@@ -3824,6 +3835,19 @@ mod rising_tests {
         let mut st = rising();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
         assert!(!rising_holds_descent(&st, 0), "in town");
+    }
+}
+
+#[cfg(test)]
+mod town_scary_tests {
+    use super::*;
+
+    /// #604: only in town, and only with the switch on.
+    #[test]
+    fn town_is_never_scary_with_the_switch() {
+        assert!(town_never_scary_with(1, 0));
+        assert!(!town_never_scary_with(0, 0), "switch off");
+        assert!(!town_never_scary_with(1, 1), "dungeon");
     }
 }
 
