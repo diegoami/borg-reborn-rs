@@ -43,26 +43,34 @@ The case **no longer replays** on any current build: main's shipped values chang
   - the far-corner clip is tested;
   - the stale smoke paragraph is gone.
 
-**Checked** on this head, merged with main `3ba17e2c`:
+**Owner, 2026-11-19, on the Druid's death (borg-cemetery#77): "count all attacks".** The first kill rate (melee, then a bow, then the last ranked attack) was a hand-picked subset. It missed throws: the Druid judged 3 mice unstoppable on its whip while carrying 18 Flasks of oil. Now:
+- the kill rate is the attack planner's own dry run (`borg_attack_estimate`, every attack the Borg has), with the random state restored after it;
+- the planner counts the kills of each aim (`kill_acc`/`kill_best`: for each monster hit, damage over its HP, at most 1);
+- a think is judged only with something to attack, and the level is lost only after 5 judged thinks in a row (`caution_breeder_stoppable_confirm`);
+- on a lost level with no staircase known, the Borg fights on.
+
+**Checked** on this head (`37c5697e`, merged with main `3ba17e2c`):
 - CI's commands, `check-param-citations.py` (2178), `borg-core-vendor.py check`.
 - Switch off: the 18 classes-18 starts play keys identical to main (18/18).
 - classes-18 with it on (100,000 turns; local leads, RULES 14):
 
-| arm | games changed | deaths | sum max CL | median CL change | breeder kills |
+| arm | deaths | levels lost | breeder kills | sum max CL | median CL change |
 |---|---:|---:|---:|---:|---:|
-| main | – | 1 | 101 | – | 106 |
-| stoppable | 17 | 3 | 87 | 0 | 143 |
-| stoppable + flight avoidance | 17 | 3 | 87 | 0 | 136 |
+| main | 1 | – | 106 | 101 | – |
+| stoppable | 3 | 3 | 99 | 88 | 0 |
+| stoppable + flight avoidance | 2 | 3 | 134 | 92 | 0 |
 
+- **The Druid (102023799) lives in both arms.**
+- **"Lost" verdicts** are few and come with real trouble: 5 worm masses at 235 danger against 31 HP; 8 breeders at 1.54 births against 1.00 kills a turn.
 - **The deaths:**
-  - the rock lizard (Human Priest 1569794094) is in every arm;
-  - Human Druid 102023799: melee only at CL3, it judged 3 mice unstoppable at turn 9,654 ("0.39 births a turn, 1.7 turns a kill") and died to them at 11,412;
-  - Half-Elf Ranger 1739161339: it shot the first mouse at turn 1,003 where main fled the level, and Fang killed it 5,000 turns later in a game that had gone its own way.
-- **Levels:** the CL sum falls because two control games were unusually good (CL12 and CL8). Every arm that changes them loses them, so 18 games can't separate the arms on levels.
+  - the rock lizard (in every arm);
+  - the Half-Elf Ranger 1739161339: it shot a mouse where main fled, and Fang killed it 5,000 turns later in a diverged game;
+  - in the stoppable arm only, the Human Necromancer 300036923: a wild cat, not a breeder, in a diverged game.
+- **Levels:** the CL sum falls because two control games were unusually good (CL12 and CL8); the median change is 0.
 
 **For the owner:**
-- the zoo pilot (replacing borg-zoo#364, which pinned the first design);
-- the births weight (200%), which decides calls like the Druid's;
+- the zoo pilot (borg-zoo#411, re-pinned to this head);
+- the births weight (200%) and the confirmation (5 thinks);
 - whether to ship.
 
-Left: the kill rate does not count mana over the whole fight (#625's PR #657 does that for the Phase Door rule).
+Left: the planner checks the mana for the next cast, not for a whole fight against the colony (#625's PR #657 does that for the Phase Door rule).
