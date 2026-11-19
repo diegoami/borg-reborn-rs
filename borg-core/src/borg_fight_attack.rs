@@ -81,6 +81,9 @@ pub struct FightAttackState {
     /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
     pub dmg_acc: i32,
     pub dmg_best: i32,
+    /// borg-reborn-rs (#637): a wand is being rated in town: only a
+    /// dangerous town monster is worth its charge.
+    pub town_wand: bool,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -97,6 +100,7 @@ impl Default for FightAttackState {
             tp_other_n: 0,
             dmg_acc: 0,
             dmg_best: 0,
+            town_wand: false,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -367,6 +371,33 @@ fn town_kill_bonus(st: &BorgState, r_idx: usize, dam: i32) -> i32 {
     if town_kill_on_sight(st, r_idx) { dam * param(Param::attack_town_dangerous_bonus_percent) / 100 } else { dam }
 }
 
+/// borg-reborn-rs (#637): with `attack_town_dangerous_bonus_whole`, the
+/// bonus also multiplies the danger term an attack's value adds (melee and
+/// bolts), so a dangerous town monster is the target for certain, not only
+/// when its damage term wins.
+fn town_danger_bonus(st: &BorgState, r_idx: usize, p: i32) -> i32 {
+    if param(Param::attack_town_dangerous_bonus_whole) != 0 { town_kill_bonus(st, r_idx, p) } else { p }
+}
+
+/// borg-reborn-rs (#637): with `attack_town_dangerous_caster_walk`, a Mage
+/// or Necromancer below the level of `borg_flow_kill`'s caster rule walks to
+/// a dangerous town monster too (its town hunt is otherwise breeders only,
+/// and no town race breeds).
+pub(crate) fn town_caster_walk() -> bool {
+    param(Param::attack_town_dangerous_caster_walk) != 0
+}
+
+/// borg-reborn-rs (#637): with `attack_town_dangerous_wand`, a wand may be
+/// aimed in town when a dangerous town monster (killed on sight) is known;
+/// only those are worth a charge (`town_wand` in `borg_launch_damage_one`).
+fn town_wand_allowed(st: &BorgState) -> bool {
+    param(Param::attack_town_dangerous_wand) != 0
+        && (1..usize::try_from(st.kills.nxt).unwrap_or(0)).any(|k| {
+            let r = st.kills.kills[k].r_idx;
+            r != 0 && town_kill_on_sight(st, usize::from(r))
+        })
+}
+
 /// Guess how much damage a physical attack will do to a monster
 /// (`borg_thrust_damage_one`).
 ///
@@ -559,6 +590,9 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
     if d <= power(st, k as usize) && tr(st, BI_MAXCLEVEL) > param(Param::attack_melee_partial_min_level) {
         p /= param(Param::attack_melee_partial_danger_divisor);
     }
+
+    // borg-reborn-rs (#637): the town bonus on the danger term too.
+    p = town_danger_bonus(st, usize::from(st.kills.kills[k as usize].r_idx), p);
 
     /* Add the danger-bonus to the damage */
     d += p;
@@ -1355,6 +1389,10 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
     }
     // borg-reborn-rs (#619): a dangerous town monster comes first.
     dam = town_kill_bonus(st, usize::from(r), dam);
+    // borg-reborn-rs (#637): a wand in town: nothing else is worth a charge.
+    if st.fight_attack.town_wand && !town_kill_on_sight(st, usize::from(r)) {
+        dam = 0;
+    }
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
@@ -1504,6 +1542,8 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     /* Calculate "danger" to player */
     let p1 = danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false);
+    // borg-reborn-rs (#637): the town bonus on the danger term too.
+    let p1 = town_danger_bonus(st, usize::from(r), p1);
 
     // borg-reborn-rs (#584): the true damage, at most the monster's HP.
     st.fight_attack.dmg_acc += d.clamp(0, i32::from(kill.power).max(0));
@@ -3048,7 +3088,9 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Dont use wands in town, charges are too spendy */
-    if tr(st, BI_CDEPTH) == 0 {
+    // borg-reborn-rs (#637): except at a dangerous town monster.
+    let town = tr(st, BI_CDEPTH) == 0;
+    if town && (!town_wand_allowed(st) || sval == st.item_val.sv_wand_wonder) {
         return 0;
     }
 
@@ -3076,7 +3118,9 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Choose optimal location */
+    st.fight_attack.town_wand = town;
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
+    st.fight_attack.town_wand = false;
 
     /* Penalize charge usage */
     if tr(st, BI_CLEVEL) > param(Param::attack_unknown_wand_penalty_min_level) {

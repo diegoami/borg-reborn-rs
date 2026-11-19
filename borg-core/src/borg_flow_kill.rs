@@ -1860,7 +1860,14 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // the mana to fight them with spells (borg_attack casts before any walk
     // brings it next to them).
     let mut breeders_only = false;
-    if low_level_caster(st) {
+    // borg-reborn-rs (#637): with attack_town_dangerous_caster_walk, a
+    // town hunt for dangerous monsters stands in for the breeders, with the
+    // same mana condition.
+    if low_level_caster(st) && town_dangerous_only && crate::borg_fight_attack::town_caster_walk() {
+        if !caster_hunts(true, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+    } else if low_level_caster(st) {
         if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
             return false;
         }

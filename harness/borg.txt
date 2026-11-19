@@ -483,6 +483,17 @@ borg_param_attack_town_dangerous_on_sight = 0
 borg_param_attack_town_dangerous_min_damage = 6
 borg_param_attack_town_dangerous_bonus_percent = 300
 
+# Follow-ups to the switch above (#637), each 0 = as #619. caster_walk: a
+# Mage or Necromancer below CL25 walks to them too, with half its mana.
+# wand: a wand (not Wonder) may be aimed at them in town, only at them.
+# bonus_whole: the bonus multiplies the danger term of the attack's value
+# too, so they are the target for certain. Each needs on_sight at 1.
+# Impact: not on the file's 6-game measure; see CALIBRATION (#637).
+
+borg_param_attack_town_dangerous_caster_walk = 0
+borg_param_attack_town_dangerous_wand = 0
+borg_param_attack_town_dangerous_bonus_whole = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
