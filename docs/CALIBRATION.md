@@ -23,8 +23,13 @@ dice x sides): the battle-scarred veteran (2d6), the mean-looking mercenary
 (1d10), the squint-eyed rogue (1d6, steals) and the filthy street urchin
 (steals). With `attack_town_dangerous_on_sight = 1`, in town, its attack
 value is multiplied by `attack_town_dangerous_bonus_percent` / 100 (300), so
-`borg_attack` picks it first with its best attack, and the hunt walks to it
-below CL20 (C never hunts in town then). The scare is not touched: while the
+`borg_attack` picks it first with its best attack (not a wand: C never aims
+one in town), and the hunt walks to it below CL20 (C never hunts in town
+then); a Mage or Necromancer below CL25 still doesn't walk to it, since its
+town hunt is breeders only and no town race breeds. The bonus multiplies
+the damage term only, not the danger term `melee_score` adds: that it makes
+the four the preferred target was measured through their kill counts, not
+checked per target choice. The scare is not touched: while the
 scary list makes the town scary the Borg flees as before.
 
 On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`):

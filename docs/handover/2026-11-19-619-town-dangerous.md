@@ -13,6 +13,11 @@ the monster.
   CL, 2 games of 18 change). It costs deaths once the scare is removed
   (town never scary: 3 deaths, 89 CL). With #622's levels less, N = 3: 0
   deaths, 101 CL. Thefts are not reduced.
+- **First review (e389bcdb), non-blocking, now in the docs:** a Mage or
+  Necromancer below CL25 never walks to them (its town hunt is breeders
+  only), though it still shoots them; no wands in town (C); the preference
+  is measured by kill counts, not checked per target choice (the bonus
+  multiplies damage, not `melee_score`'s danger term).
 - **Resynced with main after #621 (ignore list) and #595:** the ignore check
   runs before the bonus (an ignored monster stays at 0; none of the four is
   ignored); the helpers moved above `borg_thrust_damage_one`'s doc comment;

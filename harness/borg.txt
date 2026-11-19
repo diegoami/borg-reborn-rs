@@ -459,8 +459,9 @@ borg_param_kill_live_min_power = 1
 # town monster that steals or hurts for at least min_damage (dice x sides; 6
 # takes the veteran, the mercenary, the squint-eyed rogue and the urchin, not
 # the cats, dogs and beggars) is the preferred target: its attack value is
-# multiplied by bonus_percent / 100, borg_attack picks the best attack on it,
-# and the hunt walks to it below CL20. A lower min_damage takes more monsters;
+# multiplied by bonus_percent / 100, borg_attack picks the best attack on it
+# (no wands: C never aims one in town), and the hunt walks to it below CL20
+# (not a Mage or Necromancer below CL25: C's town hunt stays breeders only). A lower min_damage takes more monsters;
 # a higher bonus picks them sooner over the others. Change together. 0 = C.
 # Impact: not on the file's 6-game measure; on 18 classes-18 games (100,000
 # turns) with the shipped list, 2 of 18 play differently (0 deaths, sum of
