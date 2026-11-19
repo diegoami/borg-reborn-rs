@@ -729,6 +729,15 @@ borg_param_caution_scary_stand = 1
 
 borg_param_caution_scary_latch = 1
 
+# 1 = the level stops being scary once the last scary monster known was
+# killed, with the latch on or off; forgetting the monster is not enough, it
+# has not left the level (#590). 0 = the latch decides.
+# Change together: needs caution_scary_stand = 1 (the flag is decided after
+# each scan only there).
+# Impact: off here; set to 1, it fires in 3 of 6 test games.
+
+borg_param_caution_scary_unlatch_kill = 0
+
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, scares no more: Grip fled from one
 # flask of oil (#539). Lower calms monsters sooner; 0 and 0 = C. With the
