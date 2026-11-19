@@ -4555,6 +4555,15 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     };
     let b_n = ranking.utility;
 
+    // borg-reborn-rs (#584): an estimate only: the winner's raw value (its
+    // expected damage), nothing done.
+    if st.traits.estimate_only {
+        st.traits.estimate = Some(winning_raw);
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return false;
+    }
+
     // borg-reborn-rs (#551, owner): a fox changes back before a melee blow.
     // The other attacks are item or spell commands, changed back by the
     // game's prompt; Maim Foe's blow is a Blackguard spell, and only a
@@ -4595,6 +4604,17 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#584): the raw value (expected damage) of the attack
+/// `borg_attack` would choose now, without making it; `None` when it would
+/// choose none. The simulation draws the random numbers `borg_attack` would.
+pub(crate) fn borg_attack_estimate(st: &mut BorgState) -> Option<i32> {
+    st.traits.estimate = None;
+    st.traits.estimate_only = true;
+    let _ = borg_attack(st, false);
+    st.traits.estimate_only = false;
+    st.traits.estimate.take()
 }
 
 /// borg-reborn-rs (#469): whether to drink Speed before a fight the Borg has

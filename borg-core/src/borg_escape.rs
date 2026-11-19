@@ -731,7 +731,8 @@ pub(crate) fn phase_door(
     let checked = match check {
         PhaseCheck::Landing { tolerance, horizon } => caution_phase(st, site, tolerance, horizon),
         PhaseCheck::MonsterNear => {
-            let pointless = phase_is_pointless(st);
+            // With #584's rule on, the rule decides instead of #539.
+            let pointless = param(Param::escape_phase_adjacent_rule) == 0 && phase_is_pointless(st);
             if pointless {
                 borg_note(st, &format!("# Phase ({}): no, no monster next to me", site.label()));
             }
@@ -781,6 +782,81 @@ fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> Pha
     }
 }
 
+/// borg-reborn-rs (#584, owner): whether the adjacent fight is lost, by
+/// `escape_phase_lost_test` (owner, 2026-11-19: both comparisons behind a
+/// setting):
+/// - 0: the danger here at or above `escape_phase_lost_danger_percent` of
+///   the HP (`phase_verdict`);
+/// - 1 (compiled): the fight compared. The Borg's best attack now
+///   (`borg_attack_estimate`, its expected damage) kills the adjacent awake
+///   monsters (their HP, `kill.power`) in more turns than the danger here
+///   kills the Borg (`fight_lost_by`);
+/// - 2: as 1, and the expected landing is safer than here: the mean danger
+///   of the sampled landing grids (`landing_danger`) below the danger here.
+fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
+    match param(Param::escape_phase_lost_test) {
+        0 => phase_verdict(true, here, hp, param(Param::escape_phase_lost_danger_percent)) == PhaseVerdict::Phase,
+        test => {
+            let foes = adjacent_awake_hp(st);
+            let value = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+            let lost = fight_lost_by(foes, value, here, hp);
+            let note = format!("# Phase rule: the fight: adjacent HP {foes}, best attack {value} a turn, danger {here}, HP {hp}: {}", if lost { "lost" } else { "not lost" });
+            borg_note(st, &note);
+            if !lost || test < 2 {
+                return lost;
+            }
+            let landing = landing_danger(st);
+            borg_note(st, &format!("# Phase rule: the landing: mean danger {landing}, here {here}"));
+            landing < here
+        }
+    }
+}
+
+/// The fight is lost when the Borg's attack (`value` a turn) needs more
+/// turns to kill `foes` HP than the danger (`danger` a turn) needs to kill
+/// its `hp`: foes / value > hp / danger. No attack: lost.
+fn fight_lost_by(foes: i32, value: i32, danger: i32, hp: i32) -> bool {
+    value <= 0 || i64::from(foes) * i64::from(danger) > i64::from(hp) * i64::from(value)
+}
+
+/// The summed HP (`kill.power`) of the awake known monsters next to the Borg.
+fn adjacent_awake_hp(st: &BorgState) -> i32 {
+    (1..st.kills.nxt.max(0) as usize)
+        .filter(|&i| {
+            let kill = &st.kills.kills[i];
+            kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+        })
+        .map(|i| i32::from(st.kills.kills[i].power).max(1))
+        .sum()
+}
+
+/// The mean danger (one turn) of the grids a Phase Door may land on: up to
+/// `escape_landing_samples` floor grids without a monster, 5 to 10 steps
+/// away, drawn as `count_scary` draws them. `i32::MAX` when none is found.
+fn landing_danger(st: &mut BorgState) -> i32 {
+    let dis = 10;
+    let min = dis / 2;
+    let (mut sum, mut n) = (0i64, 0i64);
+    for _ in 0..param(Param::escape_landing_samples) {
+        for _ in 0..param(Param::escape_landing_trials) {
+            let y = rand_spread(st.borg.c.y, dis);
+            let x = rand_spread(st.borg.c.x, dis);
+            let d = engine::distance(st.borg.c, loc { x, y });
+            if d < min || d > dis || y <= 0 || y >= AUTO_MAX_Y - 1 || x <= 0 || x >= AUTO_MAX_X - 1 {
+                continue;
+            }
+            let g = *st.cave.grid(x, y);
+            if !borg_cave_floor_bold(st, y, x) || g.kill != 0 || g.web {
+                continue;
+            }
+            sum += i64::from(borg_danger(st, y, x, 1, true, false));
+            n += 1;
+            break;
+        }
+    }
+    if n == 0 { i32::MAX } else { (sum / n) as i32 }
+}
+
 /// borg-reborn-rs (#584, owner): the rule's verdict this think. Decided and
 /// noted once, at the first site that asks (re-review of #612: one note and
 /// no attack simulation per site); later sites reuse it. `danger` is the
@@ -795,7 +871,15 @@ fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) 
     }
     let hp = st.borg.tr(BI_CURHP);
     let here = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
-    let verdict = phase_verdict(adjacent_awake(st), here, hp, param(Param::escape_phase_lost_danger_percent));
+    let adjacent = adjacent_awake(st);
+    let lost = adjacent && fight_lost(st, here, hp);
+    let verdict = if !adjacent {
+        PhaseVerdict::Shoot
+    } else if lost {
+        PhaseVerdict::Phase
+    } else {
+        PhaseVerdict::Fight
+    };
     let label = site.label();
     let why = match verdict {
         PhaseVerdict::Phase => format!("enemy adjacent and the fight looks lost (danger {here}, HP {hp}): the rule allows a Phase Door"),
@@ -828,7 +912,21 @@ pub(crate) fn phase_rule_act(st: &mut BorgState) -> bool {
         borg_note(st, "# Phase rule: attacked instead of a Phase Door");
         return true;
     }
-    awake_in_view(st) && crate::borg_caution::cornered_boost(st, "Phase rule boost")
+    if !awake_in_view(st) {
+        return false;
+    }
+    if crate::borg_caution::cornered_boost(st, "Phase rule boost") {
+        return true;
+    }
+    // The owner's "potions, scrolls, spells, staves": `borg_defend`'s
+    // boosts (resistances, Protection from Evil, shields, the staves), at the
+    // danger where the Borg stands.
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    if crate::borg_fight_defend::borg_defend(st, here) {
+        borg_note(st, "# Phase rule boost: a defence (borg_defend)");
+        return true;
+    }
+    false
 }
 
 /// An awake known monster in view (#584's boost waits for one).
@@ -868,8 +966,9 @@ fn caution_phase(st: &mut BorgState, site: PhaseSite, emergency: i32, turns: i32
         return false;
     }
 
-    // borg-reborn-rs (#539): not while the monster is still distant
-    if phase_is_pointless(st) {
+    // borg-reborn-rs (#539): not while the monster is still distant. With
+    // #584's rule on, the rule decides instead (it must not rely on #539).
+    if param(Param::escape_phase_adjacent_rule) == 0 && phase_is_pointless(st) {
         borg_note(st, &format!("# Phase ({}): no, no monster next to me", site.label()));
         return false;
     }
@@ -1752,6 +1851,19 @@ mod phase_decision_tests {
         assert_eq!(phase_verdict(true, 9, 10, 100), PhaseVerdict::Fight, "danger below the HP");
         assert_eq!(phase_verdict(true, 5, 10, 50), PhaseVerdict::Phase, "a lower percent phases sooner");
         assert_eq!(phase_verdict(true, 0, 10, 0), PhaseVerdict::Phase, "0 percent: any adjacent enemy");
+    }
+
+    /// #584 (owner): the fight is lost when the Borg needs more turns to kill
+    /// the adjacent monsters than they need to kill it; no attack is lost.
+    #[test]
+    fn the_fight_is_lost_when_the_borg_dies_first() {
+        // 20 HP of foes, 5 a turn: 4 turns to win; 12 danger on 40 HP: 3.3 turns to die.
+        assert!(fight_lost_by(20, 5, 12, 40));
+        // 10 danger on 40 HP: 4 turns to die; a draw is not lost.
+        assert!(!fight_lost_by(20, 5, 10, 40));
+        assert!(!fight_lost_by(20, 10, 12, 40), "a stronger attack wins");
+        assert!(fight_lost_by(1, 0, 1, 100), "no attack");
+        assert!(!fight_lost_by(20, 5, 0, 40), "no danger");
     }
 
     /// #584: the note of a Phase Door names the site, the HP, the danger

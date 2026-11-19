@@ -121,16 +121,29 @@ can Phase Door at all (`BI_APHASE`):
 
 | situation | verdict | at the site | after `borg_escape` found no escape |
 |---|---|---|---|
-| no awake enemy on an adjacent square | no Phase Door | the site goes on with its other escapes (stairs, teleports) | its best attack (`borg_attack`, the Borg's own ranking; with nothing adjacent only a ranged attack can win it); if none and an awake monster is in view, a boost (`cornered_boost`: Speed first, then Heroism, Berserk Strength, Bless) |
+| no awake enemy on an adjacent square | no Phase Door | the site goes on with its other escapes (stairs, teleports) | its best attack (`borg_attack`, the Borg's own ranking; with nothing adjacent only a ranged attack can win it); if none and an awake monster is in view, a boost (`cornered_boost`: Speed first, then Heroism, Berserk Strength, Bless; else `borg_defend`: resistances, Protection from Evil, shields, staves) |
 | an enemy adjacent, the fight not lost | no Phase Door | the same | counter-attack (`borg_attack`), else the boost |
 | an enemy adjacent, the fight lost | Phase Door allowed | the site's own check (landing test, …) and cast, as before | – |
 
-"Lost" is the danger where the Borg stands at or above
-`escape_phase_lost_danger_percent` (100) % of the current HP: it could die
-this turn. The rule is decided and noted once per think, at the first site
+"Lost" is chosen by `escape_phase_lost_test` (owner, 2026-11-19: both
+comparisons behind a setting):
+
+| value | the adjacent fight is lost when |
+|---|---|
+| 0 | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
+| **1** (compiled) | the fight compared: the Borg's best attack now (`borg_attack_estimate`: the expected damage of the attack `borg_attack` would choose, nothing done) needs more turns to kill the adjacent awake monsters (their HP, `kill.power`) than the danger where it stands needs to kill it |
+| 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
+
+Tests 1 and 2 note their numbers (`# Phase rule: the fight: …`, `… the
+landing: …`). They draw random numbers (the attack simulation, the landing
+samples), so with the rule on a game can change from the first decision. The rule is decided and noted once per think, at the first site
 that asks (`# Phase rule (from <site>): …`); later sites reuse it. Its attack
 or boost (`phase_rule_act`) runs once, in `borg_caution` right after
 `borg_escape`, so after the emergency levels' borrowed mana is put back.
+
+With the rule on, #539's `escape_phase_adjacent_only` check
+(`phase_is_pointless`) is skipped at every site: the rule decides (the
+owner's spec: it must not rely on #539).
 
 Outside `borg_escape` (the Recall wait, the twitchy paths) the rule only
 refuses the Phase Door; the Borg's ordinary flow fights later in the think.
