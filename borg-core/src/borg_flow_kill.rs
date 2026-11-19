@@ -1741,6 +1741,9 @@ pub fn borg_locate_kill(st: &mut BorgState, who: &[u8], mut c: loc, r: i32) -> i
 
 /// Notice the "death" of a monster (`borg_count_death`)
 pub fn borg_count_death(st: &mut BorgState, i: i32) {
+    // borg-reborn-rs (#567, review of #645): a watch clock set by this
+    // monster ends with it.
+    crate::borg_caution::monster_died(st, i);
     let kill = st.kills.kills[i as usize];
 
     if kill.r_idx != 0 {
@@ -1795,7 +1798,14 @@ fn low_level_caster(st: &BorgState) -> bool {
 /// Only that test of the walk's: not its leash to the stairs, nor whether
 /// the breeder can be reached.
 pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
-    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    let engaged = crate::borg_caution::breeder_engaged(st);
+    breeder_hunt_now_with(st, engaged)
+}
+
+/// `breeder_hunt_now` with the engagement given (#644: the rule's own leave
+/// does not count).
+pub(crate) fn breeder_hunt_now_with(st: &mut BorgState, engaged: bool) -> bool {
+    let mut hunt = engaged;
     if low_level_caster(st) {
         hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
     }
@@ -2107,7 +2117,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // Spread the flow: if we are not flowing toward monsters that we can
     // see, make sure they are at least easily reachable.
-    borg_flow::borg_flow_spread(st, nearness, true, !viewable, false, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, nearness, true, !viewable, false, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, c"kill", i32::from(GOAL_KILL)) {
@@ -2239,7 +2249,7 @@ pub fn borg_flow_kill_aim(st: &mut BorgState, viewable: bool) -> bool {
                 st.borg.c.y = s_c_y;
 
                 // Spread the flow
-                borg_flow::borg_flow_spread(st, 5, true, !viewable, false, -1, false);
+                borg_flow::borg_flow_spread_hunting(st, 5, true, !viewable, false, -1, false);
 
                 // Attempt to Commit the flow
                 if !borg_flow::borg_flow_commit(st, c"targetable position", i32::from(GOAL_KILL)) {
@@ -2338,7 +2348,7 @@ fn dig_to(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr, twice: boo
     if twice {
         st.borg.status.digging = true;
     }
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {
@@ -2462,7 +2472,7 @@ pub fn borg_flow_kill_corridor(st: &mut BorgState) -> bool {
         borg_flow::borg_flow_clear(st);
         st.borg.status.digging = true;
         borg_flow::borg_flow_enqueue_grid(st, kill.pos.y, kill.pos.x);
-        borg_flow::borg_flow_spread(st, 10, true, !mapped, false, -1, false);
+        borg_flow::borg_flow_spread_hunting(st, 10, true, !mapped, false, -1, false);
         if !borg_flow::borg_flow_commit(st, c"Monster Path", i32::from(GOAL_KILL)) {
             return false;
         }
@@ -2681,7 +2691,7 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
     borg_flow::borg_flow_enqueue_grid(st, y, x);
 
     // Spread the flow
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {

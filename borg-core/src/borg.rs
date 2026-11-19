@@ -75,12 +75,28 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#644): the think that last noted a rest held for
+    /// breeders (one note a think).
+    pub breeder_rest_noted: Option<BorgTime>,
+    /// #644: `goal.leaving` was set by the breeder rest rule (so the hunt
+    /// may still clear it). Only read while `goal.leaving` is set.
+    pub breeder_leaving: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
     /// view is soon forgotten; this outlives that.
     pub recall_watch_turn: i32,
     pub recall_watch_depth: i32,
+    /// The kill index of the monster that last set `recall_watch_turn`; its
+    /// death clears the clock (review of #645). 0 = none.
+    pub recall_watch_kill: i32,
+    /// borg-reborn-rs (#615 rule a): the same for every rest
+    /// (`recover_rest_monster_distance`), and the think that last noted a
+    /// held rest.
+    pub rest_watch_turn: i32,
+    pub rest_watch_depth: i32,
+    pub rest_watch_kill: i32,
+    pub rest_watch_noted: Option<BorgTime>,
     /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
     /// steps it had to go, and when. A new monster wipes the flow goal for a
     /// think; the commitment to the staircase outlives that.
@@ -99,6 +115,30 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#556): the grids where a breeder was last known on
+    /// this level, with when (the kill's `when`); cleared on a new level.
+    pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
+    /// borg-reborn-rs (#556): per grid (`y * AUTO_MAX_X + x`), within
+    /// `caution_breeder_avoid_radius` of a fresh mark; rebuilt each think,
+    /// empty with `caution_breeder_avoid` 0.
+    pub breeder_block: Vec<bool>,
+    /// borg-reborn-rs (#556): when (`time.now`) a flight last took the plain
+    /// route through remembered breeders (`fight_through`); cleared on a new
+    /// level.
+    pub breeder_through: Option<BorgTime>,
+    /// borg-reborn-rs (#556): when (`time.now`) the Borg, stuck, suspended
+    /// the breeder marks (`suspend_breeder_marks_when_stuck`); cleared on a
+    /// new level.
+    pub breeder_stuck: Option<BorgTime>,
+    /// borg-reborn-rs (#556): the known breeders could not be stopped on this
+    /// level (`note_breeders_stoppable`); cleared on a new level.
+    pub breeders_lost: bool,
+    /// borg-reborn-rs (#556): the judged thinks in a row on which the breeding
+    /// outpaced the kills (`caution_breeder_stoppable_confirm` lose the level).
+    pub breeders_behind: i32,
+    /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
+    /// at or above its HP, so it does not stand against the breeders now.
+    pub breeders_in_danger: bool,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,
@@ -244,6 +284,13 @@ pub struct BorgMonInfo {
     /// borg-reborn-rs (#593): this scan knows a monster of one of those
     /// races hurt or afraid.
     pub scary_calmed: bool,
+    /// borg-reborn-rs (#646, reviews of #659): the immobile attackers the Borg
+    /// stepped away from this level, by grid (y, x), with the confused steps
+    /// and the ranged steps counted apart (kill indices are reused), and the
+    /// level's arrival time they belong to: a bounded number of steps each,
+    /// so a flow that passes them again does not loop.
+    pub immobile_stepped: [[u8; 4]; 16],
+    pub immobile_stepped_level: BorgTime,
     pub morgoth_panel: loc,
     pub unique: u32,
 }

@@ -878,7 +878,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Continue flowing to a safe grid on which I may recover */
     // borg-reborn-rs (#614, review of #616): not while committed to stairs.
-    if !crate::borg_recover::holding_for_stairs(st) && borg_flow_old(st, GOAL_RECOVER) {
+    if !crate::borg_recover::holding_for_stairs(st)
+        && !crate::borg_recover::holding_for_monster(st)
+        && borg_flow_old(st, GOAL_RECOVER) {
         return choice!("borg_flow_old");
     }
 
@@ -889,7 +891,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Attempt to find a grid which is safe and I can recover on it.  This
      * should work closely with borg_recover. */
-    if !crate::borg_recover::holding_for_stairs(st) && borg_flow_recover(st, 50) {
+    if !crate::borg_recover::holding_for_stairs(st)
+        && !crate::borg_recover::holding_for_monster(st)
+        && borg_flow_recover(st, 50) {
         return choice!("borg_flow_recover");
     }
 
@@ -1455,6 +1459,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Set a flag that the borg is  not allowed to retreat for 5 rounds */
     st.borg.no_retreat = 5;
+
+    // borg-reborn-rs (#556): stuck while remembered breeders block the
+    // flows (caution_breeder_avoid): the marks are suspended for a few turns,
+    // so the stuck think's flows below may cross them (fight its way out).
+    crate::borg_caution::suspend_breeder_marks_when_stuck(st);
 
     /* Boost slightly */
     let to = st.borg.tr(BI_CURHP).wrapping_mul(2);

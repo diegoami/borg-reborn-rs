@@ -250,6 +250,23 @@ borg_param_town_gold_reserve_percent = 0
 
 borg_param_town_digger_min_gold = 500
 
+# Projectiles and devices by class (#666, owner). town_missiles_percent: the
+# reserve of shots for the class's launcher, in percent of
+# borg_town_w_ranger_missiles, for any class; -1 = only the Ranger's (C).
+# town_devices_percent: what a wand, rod or staff is worth, in percent of
+# what it supplies. The class files set both, from class.txt's shooting and
+# device skills; town_missiles_percent stays -1 until a zoo pilot (#676;
+owner: flasks, always in the General Store, come first).
+# town_missiles_other_ranged_percent: with 5 or more flasks
+# of oil and attack-wand charges in the pack the shots weigh this percent
+# (owner: buy projectiles mostly when there are no flasks; the General
+# Store always stocks them); 100 = no change.
+# Change together: the shots' weight is borg_town_w_ranger_missiles x these.
+
+borg_param_town_missiles_percent = -1
+borg_param_town_missiles_other_ranged_percent = 100
+borg_param_town_devices_percent = 100
+
 # Fear cures to keep while not afraid (#516): beyond this many Potions of
 # Boldness the planner buys no more (it bought 35 and drank 7 on 18 games).
 # Higher keeps more; 0 = value them on the diminishing curve.
@@ -598,6 +615,17 @@ borg_param_caution_stairs_leave_on_monster = 0
 borg_param_caution_stairs_leave_danger_percent = 10
 borg_param_caution_stairs_leave_down = 1
 
+# No rest with a monster near (#615 rule a). recover_rest_monster_turns = N
+# (game turns, 0 = off): no rod, HP/SP or mana rest while an awake monster
+# that can move was known within recover_rest_monster_distance grids in the
+# last N game turns on this level (a monster that comes into view breaks a
+# rest; one that left the screen may come back).
+# Kept when confused, blind, hallucinating, stunned or afraid; the clock
+# clears when the monster that set it dies. The walk to a recovery grid waits too.
+# Impact (18 classes-18 starts, 100,000 turns): 100: 16 of 18 play differently; 200: 16 of 18.
+borg_param_recover_rest_monster_turns = 0
+borg_param_recover_rest_monster_distance = 20
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.
@@ -619,6 +647,19 @@ borg_param_escape_phase_adjacent_only = 1
 borg_param_escape_phase_adjacent_rule = 0
 borg_param_escape_phase_lost_test = 1
 borg_param_escape_phase_lost_danger_percent = 100
+
+# Ranged first against immobile attackers (#646, owner: "always choose ranged
+# against immobile but annoying monsters"). 1 = next to a known monster that
+# never moves and attacks (mushroom patch, mold, floating eye), confused or
+# carrying something to throw or shoot (then once per monster and level;
+# confused up to three times),
+# the Borg steps out of its reach and
+# does not cure confusion next to it; not when the monsters that move are as
+# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
+# times, borg-cemetery#75).
+# Change together: works with what the Borg carries to throw (#649, #652).
+
+borg_param_caution_ranged_vs_immobile = 0
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
@@ -789,6 +830,14 @@ borg_param_caution_breeder_hunt_max_count = 4
 borg_param_recover_breeder_hunt_hp_percent = 50
 borg_param_danger_hunt_breeder_no_acid_fear = 1
 
+# No rest while breeders are known on the level (#644, owner: "clear the
+# breeders or leave the level asap"). 1 = in the dungeon no rod, HP/SP or mana
+# rest while any breeder is known: hunt them when the hunt above applies,
+# otherwise leave the level. Kept when confused, blind, hallucinating or
+# stunned. 0 = rest as C.
+# Impact (18 classes-18 starts, 100,000 turns): 1: 13 of 18 play differently.
+borg_param_recover_rest_breeders = 0
+
 # Fighting breeders with no easy escape and danger at or above this many
 # tenths of the HP (5 = half), use the cornered buffs (#504). Lower buffs
 # sooner and uses more potions; 0 = never.
@@ -804,6 +853,43 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
+
+# Avoid breeder colonies (#556): remember where breeders were seen for
+# caution_breeder_avoid_turns Borg turns; every flow but a kill flow (stairs,
+# flight, exploration, items, the breeder exit) refuses the grids within
+# caution_breeder_avoid_radius of one (the Borg's first step excepted), and a
+# Phase Door landing there counts as scary. 0 = off.
+
+borg_param_caution_breeder_avoid = 0
+borg_param_caution_breeder_avoid_radius = 1
+borg_param_caution_breeder_avoid_turns = 50
+
+# Fight through (#556, owner): when fleeing finds no route around the
+# remembered breeders, take the route through them; retreat and back-away
+# stand down for caution_breeder_through_turns Borg turns after, while the
+# danger is below the HP. 0 = the flight looks elsewhere.
+
+borg_param_caution_breeder_avoid_fight_through = 1
+borg_param_caution_breeder_through_turns = 5
+
+# Stuck behind breeders (#556): when the Borg is stuck (no flow finds a
+# route) while remembered breeders block it, the marks are ignored for this
+# many Borg turns. 0 = never.
+
+borg_param_caution_breeder_stuck_turns = 20
+
+# Kill breeders first (#556, owner): stand and hunt breeders while the
+# breeding can be stopped (the known breeders' expected births a turn, times
+# births_percent, below the Borg's kills a turn with its best attack of any
+# kind, the attack planner's own choice), at any count and level
+# and whether or not it carries an escape; danger at or above the HP stops the
+# stand for that think. Once the breeding outpaces the kills the level is lost
+# to them and the breeder flees act (with caution_breeder_avoid the flight
+# avoids the colony). 0 = #503's stand and #558's hunt.
+
+borg_param_caution_breeder_stoppable = 0
+borg_param_caution_breeder_stoppable_births_percent = 200
+borg_param_caution_breeder_stoppable_confirm = 5
 
 
 ### Scary monsters ###
@@ -903,6 +989,14 @@ borg_param_caution_town_never_scary = 0
 
 borg_param_caution_town_scary_levels_less = 3
 
+# In town, while scary or fleeing, a path step no more dangerous than the
+# Borg's own grid is never refused (#647). C refuses any grid above the
+# flow's fear: a thief next to a low-level Borg makes its grid and every
+# grid toward the stairs too dangerous, and it cannot leave. 0 = C.
+# Impact: see CALIBRATION (#647).
+
+borg_param_caution_town_flee_no_worse = 0
+
 
 ### The C Borg's own settings ###
 
@@ -978,43 +1072,52 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
+borg_param_town_devices_percent@warrior = 75
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
+borg_param_town_devices_percent@mage = 150
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
+borg_param_town_devices_percent@druid = 100
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
+borg_param_town_devices_percent@priest = 125
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
+borg_param_town_devices_percent@necromancer = 150
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
+borg_param_town_devices_percent@paladin = 100
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
+borg_param_town_devices_percent@rogue = 135
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
+borg_param_town_devices_percent@ranger = 115
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 75
 borg_param_town_heal_reserve_hp_percent_blackguard = 150
+borg_param_town_devices_percent@blackguard = 100
 # ---- END CLASS FILES ----
