@@ -363,6 +363,11 @@ fn missile_supply(class: i32, damage: i64) -> Vec<(usize, i64)> {
     out
 }
 
+/// borg-reborn-rs (#666): a launcher in the bow slot (equipment slot 1).
+fn launcher_worn(st: &BorgState) -> bool {
+    st.items.items.get(crate::borg_item::inven_wield() as usize + 1).is_some_and(|it| it.iqty != 0)
+}
+
 /// borg-reborn-rs (#666, owner): the reserve of shots for the class's
 /// launcher, in percent of `borg_town_w_ranger_missiles`:
 /// `town_missiles_percent` (per class, by shooting skill); -1 = C, the
@@ -484,6 +489,10 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
         if st.borg.tr(BI_AMMO_TVAL) != i32::from(item.tval) || item.cursed { return Vec::new(); }
+        // borg-reborn-rs (#666): ammunition is worth nothing without a launcher
+        // in the bow slot: a Warrior with no sling bought 78 Iron Shots and
+        // fired none.
+        if !launcher_worn(st) { return Vec::new(); }
         let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2
             + (i64::from(item.to_d) + i64::from(st.borg.tr(BI_BTODAM))) * UNIT).max(UNIT)
             * i64::from(st.borg.tr(BI_AMMO_POWER)).max(1);
