@@ -1,6 +1,7 @@
 //! borg-reborn-rs (#219): calibration of the vendored core.
 //!
-//! Source locations: caution at 726e04fa; danger/escape/recovery at 30ab9d66 (before hooks).
+//! Source locations: each citation points at the first line in the live tree that reads the
+//! parameter, or inside the function that does (scripts/check-param-citations.py, #601).
 //! Defaults retain the original integer operations and RNG calls.
 use serde::Serialize;
 use std::collections::BTreeMap;

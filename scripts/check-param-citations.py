@@ -3,7 +3,8 @@
 
 Every parameter in borg-core/src/params.rs cites the line that reads it,
 "borg_caution.rs:2447", and docs/CALIBRATION.md repeats the citation in its
-tables. A citation is right when the cited line mentions `Param::<name>`, or
+tables (not the bare "Source line" column of the P2 tables, which cites the
+5d9abb8f snapshot their headers name). A citation is right when the cited line mentions `Param::<name>`, or
 lies inside a function that does (a table of parameters read in one place,
 such as the attack preferences, cites that function's line).
 
@@ -48,24 +49,55 @@ def entries(text):
     return out
 
 
-def strip_noise(line):
-    """The line without string and char literals and the // comment, so
-    braces inside them do not count."""
-    line = re.sub(r'"(?:\\.|[^"\\])*"', '""', line)
-    line = re.sub(r"'(?:\\.|[^'\\])'", "''", line)
-    return line.split('//', 1)[0]
+def strip_noise(line, in_block=False):
+    """(code, in_block): the line without string, raw-string and char
+    literals and comments, so braces inside them do not count. in_block says
+    whether a /* */ comment is open at the line's start, and at its end."""
+    out, i = [], 0
+    while i < len(line):
+        if in_block:
+            end = line.find('*/', i)
+            if end < 0:
+                return ''.join(out), True
+            i, in_block = end + 2, False
+            continue
+        raw = re.match(r'b?r(#*)"', line[i:])
+        if raw and not (i and (line[i - 1].isalnum() or line[i - 1] == '_')):
+            close = '"' + raw.group(1)
+            end = line.find(close, i + raw.end())
+            out.append('""')
+            i = len(line) if end < 0 else end + len(close)
+            continue
+        m = re.match(r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])\'', line[i:])
+        if m:
+            out.append('""')
+            i += m.end()
+            continue
+        if line.startswith('//', i):
+            break
+        if line.startswith('/*', i):
+            in_block, i = True, i + 2
+            continue
+        out.append(line[i])
+        i += 1
+    return ''.join(out), in_block
 
 
 def fn_spans(lines):
     """(first, last) 1-based line spans of every fn, from its signature to
     its closing brace (nested fns included)."""
     spans = []
+    block = []  # block[i]: a /* */ comment is open at line i's start
+    state = False
+    for line in lines:
+        block.append(state)
+        state = strip_noise(line, state)[1]
     for start, line in enumerate(lines):
-        if not FN_START.match(line):
+        if block[start] or not FN_START.match(line):
             continue
-        depth, opened = 0, False
+        depth, opened, state = 0, False, False
         for j in range(start, len(lines)):
-            code = strip_noise(lines[j])
+            code, state = strip_noise(lines[j], state)
             if not opened and ';' in code and '{' not in code:
                 break  # a declaration without a body
             for ch in code:
@@ -128,7 +160,6 @@ def fix_params(text, wrong):
 
 ROW = re.compile(r'^\| `([a-z][a-z0-9_]*)` \|')
 FILE_CITE = re.compile(r'`(borg_[a-z0-9_]+\.rs):(\d+)`')
-BARE_LINE = re.compile(r'\| (\d+) \|\s*$')  # the "Source line" column of the P2 tables
 
 
 def registry(params_text):
@@ -138,8 +169,10 @@ def registry(params_text):
 
 def calibration_rows(text, cited):
     """(row index, name, the row's citation) for every docs/CALIBRATION.md
-    table row of a registered parameter that carries a citation: `file:line`
-    for the parameter's own file, or the bare "Source line" column."""
+    table row of a registered parameter that cites `file:line` in the
+    parameter's own file. The bare "Source line" column of the P2 tables is
+    left out: those tables cite a pinned snapshot (5d9abb8f, stated in their
+    headers), not the live tree."""
     out = []
     for i, row in enumerate(text.split('\n')):
         m = ROW.match(row)
@@ -150,10 +183,6 @@ def calibration_rows(text, cited):
         own = [int(n) for f, n in FILE_CITE.findall(row) if f == file]
         if own:
             out.append((i, name, own[0]))
-        else:
-            bare = BARE_LINE.search(row)
-            if bare:
-                out.append((i, name, int(bare.group(1))))
     return out
 
 
@@ -168,12 +197,7 @@ def fix_calibration(text, cited):
     rows = text.split('\n')
     for i, name, line, want in check_calibration(text, cited):
         file = cited[name][0]
-        row = rows[i]
-        if f'`{file}:{line}`' in row:
-            row = row.replace(f'`{file}:{line}`', f'`{file}:{want}`')
-        else:
-            row = BARE_LINE.sub(f'| {want} |', row)
-        rows[i] = row
+        rows[i] = rows[i].replace(f'`{file}:{line}`', f'`{file}:{want}`')
     return '\n'.join(rows)
 
 

@@ -78,23 +78,40 @@ class CitationTest(unittest.TestCase):
         wrong, unread = cpc.check(params(('caution_gone', 'borg_x.rs:4')), lambda file: src)
         self.assertEqual((wrong, unread), ([], [('caution_gone', 'borg_x.rs', 4)]))
 
-    def test_calibration_rows_agree_with_the_registry_in_both_forms(self):
+    def test_calibration_rows_agree_with_the_registry(self):
         cited = {'caution_alpha': ('borg_x.rs', 4), 'defend_beta': ('borg_y.rs', 30)}
         doc = '\n'.join([
             '| `caution_alpha` | 0 | flag | 0–1 | `borg_x.rs:12` |',
             '| `caution_alpha` | 0 | flag | 0–1 | `borg_x.rs:4` (read in `borg_z.rs`) |',
-            '| `defend_beta` | 5 | turns | 31 |',
-            '| `defend_beta` | 5 | turns | 30 |',
             '| `unknown_name` | 5 | turns | 99 |',
             '| `caution_alpha` | 0 | flag | 0–1 | no citation |',
         ])
         self.assertEqual([(i, n, l, w) for i, n, l, w in cpc.check_calibration(doc, cited)],
-                         [(0, 'caution_alpha', 12, 4), (2, 'defend_beta', 31, 30)])
+                         [(0, 'caution_alpha', 12, 4)])
         fixed = cpc.fix_calibration(doc, cited)
         self.assertEqual(cpc.check_calibration(fixed, cited), [])
-        self.assertIn('| `defend_beta` | 5 | turns | 30 |', fixed.split('\n')[2])
         self.assertIn('`borg_x.rs:4`', fixed.split('\n')[0])
 
+    def test_the_p2_tables_bare_source_lines_are_left_alone(self):
+        # The P2 tables cite the 5d9abb8f snapshot their headers name, not the live tree.
+        cited = {'defend_beta': ('borg_y.rs', 30)}
+        doc = '| Name | Default | Unit | Source line |\n| `defend_beta` | 5 | turns | 31 |'
+        self.assertEqual(cpc.check_calibration(doc, cited), [])
+        self.assertEqual(cpc.fix_calibration(doc, cited), doc)
+
+    def test_braces_in_block_comments_and_raw_strings_do_not_count(self):
+        src = source('''\
+fn alpha() {
+    /* a } brace
+       and another } in a comment */
+    let r = r#"}"#;
+    let x = Param::caution_alpha;
+}
+
+fn beta() {}
+''')
+        self.assertEqual(src.spans, [(1, 6), (8, 8)])
+        self.assertTrue(src.ok('caution_alpha', 1))
 
 if __name__ == '__main__':
     unittest.main()
