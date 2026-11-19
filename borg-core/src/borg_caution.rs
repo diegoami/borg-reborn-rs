@@ -2196,7 +2196,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 4) we are not in a vault
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    // borg-reborn-rs (#556): fighting through breeders to the stairs, no
+    // retreat or back-away undoes the flight while the danger is below the HP.
+    let through = breeder_fighting_through(st, pos_danger);
     if !all_out
+        && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && retreat(st, pos_danger, borg_surround)
     {
@@ -2235,6 +2239,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
     if !all_out
+        && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
         && back_away(st, pos_danger, borg_surround)
     {
@@ -2600,6 +2605,11 @@ fn note_with_reason(st: &mut BorgState, prefix: &[u8], reason: Option<Vec<u8>>) 
 /// `borg_check_breeders`). The generic low-HP and bleeding/poison flees
 /// stay too: a Borg losing the fight is #504's cornered mode.
 pub(crate) fn breeder_stand(st: &BorgState) -> bool {
+    // borg-reborn-rs (#556): with caution_breeder_stoppable, the Borg stands
+    // while the breeding can be stopped, escape or not.
+    if let Some(stop) = breeders_stoppable(st) {
+        return stop;
+    }
     breeder_stand_with(
         st,
         p(Param::caution_breeder_fight),
@@ -2980,6 +2990,242 @@ fn breeder_exit_flow(st: &mut BorgState, exits: &[loc]) -> bool {
     crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 
+/// borg-reborn-rs (#556): with `caution_breeder_avoid`, remember the grid of
+/// every known breeder (with the kill's `when`), forget marks older than
+/// `caution_breeder_avoid_turns`, and rebuild `breeder_block`: the grids
+/// within `caution_breeder_avoid_radius` of a mark. Called once per think
+/// after the monsters are updated; it draws no random numbers.
+pub(crate) fn note_breeders(st: &mut BorgState) {
+    if p(Param::caution_breeder_avoid) == 0 {
+        return;
+    }
+    let now = st.borg.time.now;
+    let turns = p(Param::caution_breeder_avoid_turns);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if !engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            continue;
+        }
+        remember_breeder(&mut st.borg.breeder_marks, kill.pos, kill.when);
+    }
+    st.borg.breeder_marks.retain(|&(_, when)| now.wrapping_sub(when) <= turns);
+    // Only a flight avoids the colony (owner, 2026-11-19: "the flight should
+    // be from places where the breeding cannot be stopped any more"); while
+    // the Borg fights them, nothing is blocked.
+    let mut block = std::mem::take(&mut st.borg.breeder_block);
+    if st.borg.goal.fleeing || st.borg.mon.scary {
+        breeder_block_grid(&mut block, &st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius));
+    } else {
+        block.clear();
+    }
+    st.borg.breeder_block = block;
+}
+
+/// borg-reborn-rs (#556, owner 2026-11-19: "the first choice should be to
+/// kill them first and only escape if it is not possible"): with
+/// `caution_breeder_stoppable`, once per think after the monster update,
+/// whether the known breeders can still be wiped out (`breeders_stoppable`).
+/// Once they cannot, the level is lost to them until a new level
+/// (`breeders_lost`), so the Borg does not swing between fighting and
+/// fleeing as breeders leave its view. Draws no random numbers.
+pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
+    st.borg.breeders_in_danger = false;
+    if p(Param::caution_breeder_stoppable) == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return;
+    }
+    if st.borg.breeders_lost {
+        return;
+    }
+    let mut breeders = Vec::new();
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if !engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            continue;
+        }
+        breeders.push(i);
+    }
+    if breeders.is_empty() {
+        return;
+    }
+    let positions: Vec<loc> = (1..st.kills.nxt.max(0) as usize)
+        .map(|i| st.kills.kills[i])
+        .filter(|k| k.r_idx != 0)
+        .map(|k| k.pos)
+        .collect();
+    let energy = |speed: i32| f64::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    let mut births = 0.0;
+    for &i in &breeders {
+        let kill = st.kills.kills[i];
+        let k = positions.iter().filter(|q| (q.x - kill.pos.x).abs() <= 1 && (q.y - kill.pos.y).abs() <= 1).count();
+        births += breed_chance(k as i32) * energy(i32::from(kill.speed)) / energy(st.borg.tr(BI_SPEED)).max(1.0);
+    }
+    // Every attack the Borg has (owner, 2026-11-19: "count all attacks"): the
+    // attack planner's own dry run (`borg_attack_estimate`: melee, missiles,
+    // throws, every spell with its mana and fail checks, wands, rods, staves,
+    // activations) and the kills of the attack it would choose: for each
+    // monster it hits, its true damage over that monster's HP, at most 1, so a
+    // finishing blow is a kill and a ball over three mice is three. The dry
+    // run draws the Borg's random numbers; their state is restored after it
+    // (it also leaves an attack ranking in the decision trace and refills the
+    // temporary target list, as #584's estimate does).
+    let (quick, value) = crate::engine::rand_state();
+    let estimate = crate::borg_fight_attack::borg_attack_estimate(st);
+    crate::engine::set_rand_state(quick, value);
+    let kills = st.fight_attack.est_kills;
+    // Only a turn with something to attack is judged: out of reach is not
+    // "cannot be stopped".
+    if estimate.unwrap_or(0) <= 0 || kills <= 0.0 {
+        return;
+    }
+    // The danger where the Borg stands (one turn, averaged), against the HP:
+    // too high stops the stand for this think only (`breeders_in_danger`);
+    // only the breeding outpacing the kills loses the level.
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    st.borg.breeders_in_danger = here >= st.borg.tr(BI_CURHP);
+    let ok = stoppable(births, kills, p(Param::caution_breeder_stoppable_births_percent));
+    // Lost only when the breeding outpaces the kills on
+    // caution_breeder_stoppable_confirm judged thinks in a row.
+    st.borg.breeders_behind = if ok { 0 } else { st.borg.breeders_behind.saturating_add(1) };
+    let ok = ok || st.borg.breeders_behind < p(Param::caution_breeder_stoppable_confirm);
+    if !ok {
+        st.borg.breeders_lost = true;
+        borg_note(
+            st,
+            &format!(
+                "# Breeders cannot be stopped: {} known, {births:.2} births a turn, {kills:.2} kills a turn (best attack {} damage), {} thinks in a row, danger {here}, HP {}",
+                breeders.len(),
+                estimate.unwrap_or(0),
+                st.borg.breeders_behind,
+                st.borg.tr(BI_CURHP)
+            ),
+        );
+    }
+}
+
+/// The engine's chance that a breeder with `k` monsters in its 3x3 block
+/// (itself included) breeds on its turn: 1 in `k` x `mon-play:mult-rate` (8,
+/// constants.txt) while `k` < 4, never with 4 or more
+/// (`monster_turn_multiply`, mon-move.c).
+fn breed_chance(k: i32) -> f64 {
+    let rate = f64::from(crate::engine::z_info().repro_monster_rate.max(1));
+    if (1..4).contains(&k) {
+        1.0 / (f64::from(k) * rate)
+    } else {
+        0.0
+    }
+}
+
+/// borg-reborn-rs (#556, owner): stand while the colony can be stopped; on a
+/// level lost to the breeders, still stand while no staircase is known (a
+/// flight with nowhere to go only wanders through the colony,
+/// borg-cemetery#77); never while the danger here is at or above the HP.
+fn stand_against_breeders(lost: bool, no_stairs_known: bool, in_danger: bool) -> bool {
+    !in_danger && (!lost || no_stairs_known)
+}
+
+/// The colony can be stopped: the Borg kills `kills` breeders a turn, more
+/// than the known breeders are expected to breed (`births` a turn, weighted
+/// by `births_percent` for the walk between them and the ones not seen).
+fn stoppable(births: f64, kills: f64, births_percent: i32) -> bool {
+    births * f64::from(births_percent) / 100.0 < kills
+}
+
+/// borg-reborn-rs (#556): with `caution_breeder_stoppable`, the decision to
+/// stand and hunt (`Some(stoppable)`); `None` with the switch off (the #503
+/// stand and #558 hunt decide).
+fn breeders_stoppable(st: &BorgState) -> Option<bool> {
+    (p(Param::caution_breeder_stoppable) != 0)
+        .then(|| {
+            stand_against_breeders(
+                st.borg.breeders_lost,
+                st.stairs.less.num == 0 && st.stairs.more.num == 0,
+                st.borg.breeders_in_danger,
+            ) && st.borg.mon.breeders > 0
+                && st.borg.tr(BI_CDEPTH) != 0
+        })
+}
+
+/// borg-reborn-rs (#556): the Borg is stuck (the dungeon think's bravery
+/// boosts are next) and remembered breeders block its flows: with
+/// `caution_breeder_stuck_turns` above 0, the marks are suspended for that
+/// many Borg turns (`breeder_marks_suspended`), so the flows may cross the
+/// colony instead of leaving the Borg boxed in (human-druid-102023799: no
+/// staircase known, every exploration route marked, 1,200 turns stuck
+/// until the mice killed it). Draws no random numbers.
+pub(crate) fn suspend_breeder_marks_when_stuck(st: &mut BorgState) {
+    let turns = p(Param::caution_breeder_stuck_turns);
+    if turns == 0 || st.borg.breeder_block.is_empty() || breeder_marks_suspended(st) {
+        return;
+    }
+    st.borg.breeder_stuck = Some(st.borg.time.now);
+    borg_note(st, &format!("# Stuck behind remembered breeders: ignoring them for {turns} turns"));
+}
+
+/// borg-reborn-rs (#556): the marks are suspended
+/// (`suspend_breeder_marks_when_stuck`).
+fn breeder_marks_suspended(st: &BorgState) -> bool {
+    st.borg.breeder_stuck.is_some_and(|t| st.borg.time.now.wrapping_sub(t) < p(Param::caution_breeder_stuck_turns))
+}
+
+/// borg-reborn-rs (#556): `caution_breeder_avoid_fight_through` is on (the
+/// stair flows' fallback through the breeders, `fight_through`).
+pub(crate) fn breeder_fight_through_on() -> bool {
+    p(Param::caution_breeder_avoid_fight_through) != 0
+}
+
+/// borg-reborn-rs (#556): a flight took the plain route through remembered
+/// breeders (`fight_through`, borg_flow_stairs.rs) within the last
+/// `caution_breeder_through_turns` Borg turns, and the danger here is below
+/// the HP: the Borg fights its way along it instead of backing away.
+pub(crate) fn breeder_fighting_through(st: &BorgState, pos_danger: i32) -> bool {
+    st.borg.breeder_through.is_some_and(|t| {
+        st.borg.time.now.wrapping_sub(t) <= p(Param::caution_breeder_through_turns)
+    }) && pos_danger < st.borg.tr(BI_CURHP)
+}
+
+/// Record a breeder seen at `at` at `when`, keeping the latest time per grid.
+fn remember_breeder(marks: &mut Vec<(loc, BorgTime)>, at: loc, when: BorgTime) {
+    match marks.iter_mut().find(|(g, _)| g.x == at.x && g.y == at.y) {
+        Some(m) => m.1 = m.1.max(when),
+        None => marks.push((at, when)),
+    }
+}
+
+/// Fill `block` with the grids (`y * AUTO_MAX_X + x`) within `radius` (the
+/// engine's distance) of a mark; empty when there is no mark. The buffer is
+/// reused from think to think.
+fn breeder_block_grid(block: &mut Vec<bool>, marks: &[(loc, BorgTime)], radius: i32) {
+    block.clear();
+    if marks.is_empty() {
+        return;
+    }
+    block.resize((AUTO_MAX_X * AUTO_MAX_Y) as usize, false);
+    for &(m, _) in marks {
+        for y in (m.y - radius).max(0)..=(m.y + radius).min(AUTO_MAX_Y - 1) {
+            for x in (m.x - radius).max(0)..=(m.x + radius).min(AUTO_MAX_X - 1) {
+                if engine::distance(m, loc { x, y }) <= radius {
+                    block[(y * AUTO_MAX_X + x) as usize] = true;
+                }
+            }
+        }
+    }
+}
+
+/// borg-reborn-rs (#556): `(x, y)` is near a remembered breeder
+/// (`breeder_block`; always false with `caution_breeder_avoid` 0).
+pub(crate) fn near_known_breeder(st: &BorgState, x: i32, y: i32) -> bool {
+    if x < 0 || y < 0 || x >= AUTO_MAX_X || y >= AUTO_MAX_Y || breeder_marks_suspended(st) {
+        return false;
+    }
+    st.borg.breeder_block.get((y * AUTO_MAX_X + x) as usize).copied().unwrap_or(false)
+}
+
 /// The 8 neighbours' offsets.
 const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
 
@@ -3290,6 +3536,11 @@ pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bo
 /// `borg_flow_kill_corridor`, which already counts a breeder next to the
 /// Borg as a reason to move to a corridor.
 pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
+    // borg-reborn-rs (#556): with caution_breeder_stoppable, the Borg hunts
+    // while the breeding can be stopped, at any count and level.
+    if let Some(stop) = breeders_stoppable(st) {
+        return stop;
+    }
     breeder_hunt_with(st, p(Param::caution_breeder_fight), p(Param::caution_breeder_hunt_max_count))
 }
 
@@ -4805,6 +5056,93 @@ mod flee_known_down_tests {
         assert_eq!(flee_down_depth(-3), 250);
         assert_eq!(flee_down_depth(40), 40);
         assert_eq!(flee_down_depth(1000), 250);
+    }
+}
+
+#[cfg(test)]
+mod breeder_avoid_tests {
+    use super::*;
+
+    /// #556: one mark per grid, with the latest time it was seen there.
+    #[test]
+    fn a_breeder_grid_keeps_its_latest_sighting() {
+        let mut marks = Vec::new();
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 10);
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 30);
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 20);
+        remember_breeder(&mut marks, loc { x: 6, y: 7 }, 25);
+        assert_eq!(marks.len(), 2);
+        assert_eq!(marks[0].1, 30, "the latest sighting wins");
+        assert_eq!(marks[1].1, 25);
+    }
+
+    /// #556 (owner): the engine's breeding chance, and the colony stoppable
+    /// while the kills outpace the weighted births.
+    #[test]
+    fn a_colony_is_stoppable_while_the_borg_kills_faster_than_it_breeds() {
+        // 4 lone mice: 4 x 1/8 = 0.5 births a turn; one kill a turn.
+        assert!(stoppable(0.5, 1.0, 100));
+        assert!(!stoppable(0.5, 1.0, 200), "doubled for the walk: 1.0, not below 1");
+        assert!(stoppable(0.4, 1.0, 200));
+        // Two turns a kill: 0.5 kills a turn.
+        assert!(!stoppable(0.3, 0.5, 200));
+        assert!(!stoppable(0.0, 0.0, 200), "cannot hurt them");
+        // The kills of one attack (borg_fight_attack::kill_fraction): a
+        // finishing blow on a 1 HP mouse is a kill; a flask (7) on a 2 HP
+        // mouse is one, not 3.5; a 2-damage whip on a 5 HP worm is 0.4.
+        use crate::borg_fight_attack::kill_fraction;
+        assert_eq!(kill_fraction(1, 1), 1.0);
+        assert_eq!(kill_fraction(7, 2), 1.0);
+        assert_eq!(kill_fraction(2, 5), 0.4);
+        assert_eq!(kill_fraction(3, 0), 0.0, "no HP known");
+        // Lost, but no staircase known: fight on; with one, flee.
+        assert!(stand_against_breeders(false, false, false));
+        assert!(stand_against_breeders(true, true, false), "nowhere to flee");
+        assert!(!stand_against_breeders(true, false, false));
+        assert!(!stand_against_breeders(false, true, true), "danger at or above the HP");
+    }
+
+    /// #556: the blocked grids are those within the radius (the engine's
+    /// distance) of a mark, clipped to the map; none without a mark.
+    #[test]
+    fn grids_near_a_mark_are_blocked_within_the_radius() {
+        let grid = |marks: &[(loc, BorgTime)], radius| {
+            let mut b = vec![true; 3];
+            breeder_block_grid(&mut b, marks, radius);
+            b
+        };
+        assert!(grid(&[], 1).is_empty(), "the buffer is cleared");
+        let at = |b: &[bool], x: i32, y: i32| b[(y * AUTO_MAX_X + x) as usize];
+        let b = grid(&[(loc { x: 10, y: 10 }, 0)], 1);
+        assert!(at(&b, 10, 10) && at(&b, 11, 11) && at(&b, 9, 10));
+        assert!(!at(&b, 12, 10) && !at(&b, 10, 8));
+        let b0 = grid(&[(loc { x: 10, y: 10 }, 0)], 0);
+        assert!(at(&b0, 10, 10) && !at(&b0, 11, 10), "radius 0: only its own grid");
+        // distance((10,10), (12,11)) = 2 + 1/2 = 2: inside radius 2
+        let b2 = grid(&[(loc { x: 10, y: 10 }, 0)], 2);
+        assert!(at(&b2, 12, 11) && !at(&b2, 12, 12), "the engine's distance, not the square");
+        let corner = grid(&[(loc { x: 0, y: 0 }, 0)], 3);
+        assert!(at(&corner, 0, 0) && at(&corner, 2, 1));
+        let far = grid(&[(loc { x: AUTO_MAX_X - 1, y: AUTO_MAX_Y - 1 }, 0)], 2);
+        assert!(at(&far, AUTO_MAX_X - 1, AUTO_MAX_Y - 1) && at(&far, AUTO_MAX_X - 3, AUTO_MAX_Y - 1));
+    }
+
+    /// #556: with the switches off (compiled 0) nothing is remembered,
+    /// nothing blocks, and the stand and hunt decisions are #503's and #558's.
+    #[test]
+    fn with_the_switches_off_nothing_changes() {
+        let mut st = BorgState::default();
+        note_breeders(&mut st);
+        note_breeders_stoppable(&mut st);
+        assert!(st.borg.breeder_marks.is_empty() && st.borg.breeder_block.is_empty());
+        assert!(!near_known_breeder(&st, 5, 5));
+        assert_eq!(breeders_stoppable(&st), None);
+        assert!(!st.borg.breeders_lost && !st.borg.breeders_in_danger);
+        // A block outside a flight is never built; a set one is honoured.
+        st.borg.breeder_block = vec![false; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+        st.borg.breeder_block[(5 * AUTO_MAX_X + 5) as usize] = true;
+        assert!(near_known_breeder(&st, 5, 5) && !near_known_breeder(&st, 6, 6));
+        assert!(!near_known_breeder(&st, -1, 5) && !near_known_breeder(&st, AUTO_MAX_X, 5), "off the map");
     }
 }
 

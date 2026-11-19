@@ -112,6 +112,9 @@ pub struct FlowState {
     pub data_know: BorgData,
     /// `borg_data_icky`: current "icky" flags
     pub data_icky: BorgData,
+    /// borg-reborn-rs (#556): the spread running is a kill flow's
+    /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
+    pub hunting: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -140,6 +143,7 @@ impl Default for FlowState {
             data_hard: Vec::new(),
             data_know: Vec::new(),
             data_icky: Vec::new(),
+            hunting: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -541,6 +545,30 @@ fn spread_blocked(
 /// nor to Monster grids if borg_desperate is set.
 ///
 /// "Sneak" will have the borg avoid grids which are adjacent to a monster.
+/// borg-reborn-rs (#556): a spread refuses grid (`x`, `y`) when it is near a
+/// remembered breeder, unless the spread is a kill flow's (`hunting`) or the
+/// grid is next to the Borg at `borg` (its first step).
+fn breeder_blocks(near: bool, hunting: bool, borg: crate::headers::z_type_h::loc, x: i32, y: i32) -> bool {
+    near && !hunting && (x - borg.x).abs().max((y - borg.y).abs()) > 1
+}
+
+/// borg-reborn-rs (#556): `borg_flow_spread` for a flow toward monsters
+/// (the kill flows, their digging): it may cross the grids near remembered
+/// breeders (#503's hunt goes to them).
+pub fn borg_flow_spread_hunting(
+    st: &mut BorgState,
+    depth: i32,
+    optimize: bool,
+    avoid: bool,
+    tunneling: bool,
+    stair_idx: i32,
+    sneak: bool,
+) {
+    let was = std::mem::replace(&mut st.flow.hunting, true);
+    borg_flow_spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak);
+    st.flow.hunting = was;
+}
+
 pub fn borg_flow_spread(
     st: &mut BorgState,
     depth: i32,
@@ -626,6 +654,13 @@ pub fn borg_flow_spread(
             }
 
             if spread_blocked(st, &ag, x, y, avoid, tunneling, twitchy) {
+                continue;
+            }
+
+            // borg-reborn-rs (#556): no flow but a kill flow crosses the
+            // grids near a remembered breeder; the grids next to the Borg
+            // stay open, so its first step can still leave the colony.
+            if breeder_blocks(crate::borg_caution::near_known_breeder(st, x, y), st.flow.hunting, st.borg.c, x, y) {
                 continue;
             }
 
@@ -1534,5 +1569,23 @@ mod tests {
         assert!(contains(b"Small wooden chest", b"chest"));
         assert!(!contains(b"Ruined chest", b"chests"));
         assert!(contains(b"abc", b""));
+    }
+}
+
+#[cfg(test)]
+mod breeder_block_tests {
+    use super::*;
+    use crate::headers::z_type_h::loc;
+
+    /// #556: near a remembered breeder a grid is refused, except for a kill
+    /// flow and the grids next to the Borg (its first step).
+    #[test]
+    fn the_block_spares_kill_flows_and_the_first_step() {
+        let borg = loc { x: 10, y: 10 };
+        assert!(breeder_blocks(true, false, borg, 12, 10), "two steps away");
+        assert!(!breeder_blocks(true, false, borg, 11, 11), "next to the Borg");
+        assert!(!breeder_blocks(true, false, borg, 10, 10), "the Borg's grid");
+        assert!(!breeder_blocks(true, true, borg, 12, 10), "a kill flow");
+        assert!(!breeder_blocks(false, false, borg, 12, 10), "no breeder near");
     }
 }

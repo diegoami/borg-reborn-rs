@@ -109,6 +109,30 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#556): the grids where a breeder was last known on
+    /// this level, with when (the kill's `when`); cleared on a new level.
+    pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
+    /// borg-reborn-rs (#556): per grid (`y * AUTO_MAX_X + x`), within
+    /// `caution_breeder_avoid_radius` of a fresh mark; rebuilt each think,
+    /// empty with `caution_breeder_avoid` 0.
+    pub breeder_block: Vec<bool>,
+    /// borg-reborn-rs (#556): when (`time.now`) a flight last took the plain
+    /// route through remembered breeders (`fight_through`); cleared on a new
+    /// level.
+    pub breeder_through: Option<BorgTime>,
+    /// borg-reborn-rs (#556): when (`time.now`) the Borg, stuck, suspended
+    /// the breeder marks (`suspend_breeder_marks_when_stuck`); cleared on a
+    /// new level.
+    pub breeder_stuck: Option<BorgTime>,
+    /// borg-reborn-rs (#556): the known breeders could not be stopped on this
+    /// level (`note_breeders_stoppable`); cleared on a new level.
+    pub breeders_lost: bool,
+    /// borg-reborn-rs (#556): the judged thinks in a row on which the breeding
+    /// outpaced the kills (`caution_breeder_stoppable_confirm` lose the level).
+    pub breeders_behind: i32,
+    /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
+    /// at or above its HP, so it does not stand against the breeders now.
+    pub breeders_in_danger: bool,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,
