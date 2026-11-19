@@ -722,10 +722,12 @@ pub(crate) fn phase_door(
     // It only refuses the Phase Door: the site goes on with its other escapes,
     // and the rule's attack or boost waits until no escape acted
     // (`phase_rule_act`, from `borg_caution`).
-    if param(Param::escape_phase_adjacent_rule) != 0
-        && st.borg.tr(BI_APHASE) > 0
-        && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase
-    {
+    // Shoot N Scoot's own check answers first (re-review of #612): it only
+    // passes with a monster next to the Borg, so asking the rule before it
+    // made two thirds of the rule's notes on turns with nothing adjacent.
+    let rule = param(Param::escape_phase_adjacent_rule) != 0 && st.borg.tr(BI_APHASE) > 0;
+    let site_first = matches!(check, PhaseCheck::ShootScoot { .. });
+    if rule && !site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
         return false;
     }
     let checked = match check {
@@ -744,6 +746,9 @@ pub(crate) fn phase_door(
         PhaseCheck::None => true,
     };
     if !checked {
+        return false;
+    }
+    if rule && site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
         return false;
     }
     let done = cast(st);

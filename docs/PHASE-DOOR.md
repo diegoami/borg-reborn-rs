@@ -141,6 +141,19 @@ that asks (`# Phase rule (from <site>): …`); later sites reuse it. Its attack
 or boost (`phase_rule_act`) runs once, in `borg_caution` right after
 `borg_escape`, so after the emergency levels' borrowed mana is put back.
 
+Shoot N Scoot's own check (`borg_shoot_scoot_safe`, which needs a monster
+next to the Borg) answers before the rule there, so the rule is not asked
+on its turns with nothing adjacent.
+
+Two consequences of the order, with the rule on:
+- `phase_rule_act` comes before `borg_caution`'s cures (fear, confusion)
+  and later steps: the Borg attacks before it cures. Melee refuses while
+  afraid, but a confused Borg may still swing; the boost cures fear first.
+- The tests draw from the Borg's own random numbers (the attack simulation
+  of `borg_attack_estimate`; test 2's landing samples; never the game's), so
+  the attack the Borg then makes is drawn from a later point of that stream
+  than without the rule. Two runs with the rule on play the same keys.
+
 With the rule on, #539's `escape_phase_adjacent_only` check
 (`phase_is_pointless`) is skipped at every site: the rule decides (the
 owner's spec: it must not rely on #539).
