@@ -2872,6 +2872,12 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
 /// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
 /// character level (`borg_near_monster_type`) and the low-level door scares
 /// (`borg_update`, `borg_messages`) mark the level scary.
+/// borg-reborn-rs (#622, owner): how many character levels sooner a town
+/// race (race level 0) stops being scary on the named list.
+pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
+    if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
+}
+
 pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
