@@ -575,6 +575,13 @@ borg_param_town_heal_reserve_real_hp = 1
 
 borg_param_town_heal_curve_scale_percent = 125
 
+# Phase Door and flasks of oil by class (#682, owner 2026-11-19). The Phase
+# Door curve stretches as healing's (weight and demand together); the oil
+# scale weights each flask's thrown damage (flasks kept as lantern fuel are
+# not changed). 100 = before #682. Each class sets its own in its class file.
+borg_param_town_phase_curve_scale_percent = 100
+borg_param_town_oil_curve_scale_percent = 100
+
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
 # Serious Wounds, then Healing. Higher shifts purchases to stronger potions.
@@ -1088,34 +1095,46 @@ borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
 borg_param_town_devices_percent@warrior = 75
+borg_param_town_phase_curve_scale_percent@warrior = 75
+borg_param_town_oil_curve_scale_percent@warrior = 100
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
 borg_param_town_devices_percent@mage = 150
+borg_param_town_phase_curve_scale_percent@mage = 175
+borg_param_town_oil_curve_scale_percent@mage = 100
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
 borg_param_town_devices_percent@druid = 100
+borg_param_town_phase_curve_scale_percent@druid = 175
+borg_param_town_oil_curve_scale_percent@druid = 150
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
 borg_param_town_devices_percent@priest = 125
+borg_param_town_phase_curve_scale_percent@priest = 125
+borg_param_town_oil_curve_scale_percent@priest = 150
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
 borg_param_town_devices_percent@necromancer = 150
+borg_param_town_phase_curve_scale_percent@necromancer = 175
+borg_param_town_oil_curve_scale_percent@necromancer = 100
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
 borg_param_town_devices_percent@paladin = 100
+borg_param_town_phase_curve_scale_percent@paladin = 100
+borg_param_town_oil_curve_scale_percent@paladin = 125
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
@@ -1123,16 +1142,22 @@ borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
 borg_param_town_devices_percent@rogue = 135
+borg_param_town_phase_curve_scale_percent@rogue = 125
+borg_param_town_oil_curve_scale_percent@rogue = 125
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
 borg_param_town_devices_percent@ranger = 115
+borg_param_town_phase_curve_scale_percent@ranger = 150
+borg_param_town_oil_curve_scale_percent@ranger = 50
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
-borg_param_town_heal_curve_scale_percent_blackguard = 75
-borg_param_town_heal_reserve_hp_percent_blackguard = 150
+borg_param_town_heal_curve_scale_percent_blackguard = 100
+borg_param_town_heal_reserve_hp_percent_blackguard = 200
 borg_param_town_devices_percent@blackguard = 100
+borg_param_town_phase_curve_scale_percent@blackguard = 50
+borg_param_town_oil_curve_scale_percent@blackguard = 100
 # ---- END CLASS FILES ----
