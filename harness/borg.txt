@@ -947,8 +947,11 @@ borg_param_caution_scary_unlatch_kill = 0
 # caution_scary_hurt_percent and caution_scary_afraid.
 # Impact: set to 1, 14 of 18 classes-18 games play differently (it clears
 # the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
+# Shipped 1 (#671, borg-zoo#400, all 1,800 classes-1800 starts on 3ba17e2c):
+# 93 deaths against 105 (28 rescued, 16 newly killed, p = 0.096), mean max CL
+# +0.09 and DL +0.05 (both significant). Safe to adopt; deaths not confirmed.
 
-borg_param_caution_scary_unlatch_calmed = 0
+borg_param_caution_scary_unlatch_calmed = 1
 
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, scares no more: Grip fled from one
