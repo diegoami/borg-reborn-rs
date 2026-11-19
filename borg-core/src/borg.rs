@@ -75,6 +75,9 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#644): the think that last noted a rest held for
+    /// breeders (one note a think).
+    pub breeder_rest_noted: Option<BorgTime>,
     /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
     /// steps it had to go, and when. A new monster wipes the flow goal for a
     /// think; the commitment to the staircase outlives that.

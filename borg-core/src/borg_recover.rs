@@ -462,6 +462,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_breeders(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -503,7 +504,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER
-        && !rest_held_for_stairs(st);
+        && !rest_held_for_stairs(st)
+        && !rest_held_for_breeders(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -554,6 +556,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !hunt_now(st)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_breeders(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -568,6 +571,51 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+/// borg-reborn-rs (#644, owner: "no rest if aware of any breeders, clear the
+/// breeders or leave the level asap"). With `recover_rest_breeders`, in the
+/// dungeon, while any breeder is known on the level, no rod, HP/SP or mana
+/// rest: breeders multiply while the Borg rests (#556, #558). Instead the
+/// Borg hunts them when #558's hunt applies (`breeder_hunt_now`), otherwise
+/// it leaves the level (`goal.leaving`). Kept when confused, blind,
+/// hallucinating or stunned: walking then is worse (#615 rule a).
+fn rest_held_for_breeders(st: &mut BorgState) -> bool {
+    let on = param(Param::recover_rest_breeders) != 0;
+    if !on || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let breeders = (1..st.kills.nxt.max(0) as usize)
+        .filter(|&i| {
+            let r = st.kills.kills[i].r_idx;
+            r != 0 && engine::race_flag_has(usize::from(r), crate::headers::list_mon_race_flags_h::RF_MULTIPLY)
+        })
+        .count();
+    if !breeder_hold(on, st.borg.tr(BI_CDEPTH), impaired(st), breeders) {
+        return false;
+    }
+    let hunt = crate::borg_flow_kill::breeder_hunt_now(st);
+    if !hunt {
+        crate::borg_caution::start_leaving(st, "# Leaving (breeders on the level, no rest)");
+    }
+    if st.borg.breeder_rest_noted != Some(st.borg.time.now) {
+        st.borg.breeder_rest_noted = Some(st.borg.time.now);
+        let then = if hunt { "hunting them" } else { "leaving" };
+        borg_note(st, &format!("# No rest: {breeders} breeders known on the level, {then}."));
+    }
+    true
+}
+
+/// The test of `rest_held_for_breeders`: on, in the dungeon, not impaired,
+/// and a breeder known on the level.
+fn breeder_hold(on: bool, depth: i32, impaired: bool, breeders: usize) -> bool {
+    on && depth > 0 && !impaired && breeders > 0
+}
+
+/// Confused, blind, hallucinating or stunned: a rest clears it, and walking
+/// is dangerous.
+fn impaired(st: &BorgState) -> bool {
+    [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN].iter().any(|&f| st.borg.tr(f) != 0)
 }
 
 thread_local! {
@@ -588,6 +636,21 @@ fn hunt_now(st: &mut BorgState) -> bool {
 /// 0 = off (C's rest).
 fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
     hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod breeder_rest_tests {
+    use super::breeder_hold;
+
+    /// #644: no rest while a breeder is known on the level.
+    #[test]
+    fn no_rest_while_breeders_are_known() {
+        assert!(breeder_hold(true, 3, false, 1), "a worm mass on DL3");
+        assert!(!breeder_hold(true, 3, false, 0), "no breeder known");
+        assert!(!breeder_hold(true, 0, false, 4), "town");
+        assert!(!breeder_hold(true, 3, true, 4), "confused: the rest clears it");
+        assert!(!breeder_hold(false, 3, false, 4), "off (C)");
+    }
 }
 
 #[cfg(test)]

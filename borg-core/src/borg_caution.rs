@@ -118,7 +118,7 @@ fn rod_ok(st: &BorgState, rod_good: bool) -> bool {
 }
 
 /// `borg.goal.leaving = true` with its note, if not leaving yet.
-fn start_leaving(st: &mut BorgState, why: &str) {
+pub(crate) fn start_leaving(st: &mut BorgState, why: &str) {
     if !st.borg.goal.leaving {
         borg_note(st, why);
         st.borg.goal.leaving = true;
