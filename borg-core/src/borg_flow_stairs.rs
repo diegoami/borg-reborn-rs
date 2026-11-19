@@ -300,7 +300,8 @@ pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
 
     /* don't head for the stairs if you are recalling,  */
     /* even if you are fleeing. */
-    if st.borg.goal.recalling != 0 {
+    // borg-reborn-rs (#603): unless caution_recall_wait_as_usual.
+    if crate::borg_caution::recall_restricts(st) {
         return true;
     }
 

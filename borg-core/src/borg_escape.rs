@@ -1186,7 +1186,9 @@ pub fn borg_dimension_door(st: &mut BorgState, allow_fail: i32) -> bool {
 fn borg_teleport_off_level(st: &mut BorgState) -> bool {
     // don't if we are already recalling or waiting for
     // deep descent
-    if !(st.borg.goal.recalling != 0 || st.borg.goal.descending != 0) {
+    // borg-reborn-rs (#603): a pending Recall blocks it only without
+    // caution_recall_wait_as_usual (the countdown survives the level change).
+    if !(crate::borg_caution::recall_restricts(st) || st.borg.goal.descending != 0) {
         // teleport level before deep descent because there is no delay
         if borg_read_scroll(st, st.item_val.sv_scroll_teleport_level)
             || borg_activate_item(st, st.act.tele_level)
