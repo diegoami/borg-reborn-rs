@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Throws on melee's footing (#568)
 
-The registry now holds **2195** parameters (2194 after #644; one added).
+The registry now holds **2197** parameters (2196 after #682; one added).
 From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
 Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
 one flask and Grip fled.
@@ -27,7 +27,10 @@ one flask and Grip fled.
   - **hit chance**: the engine's (`throw_hit_percent`,
     `player-attack.c:121-219`): the throwing skill (`BI_THT`, 3/2 of it for a
     non-THROWING object), the object's to-hit (and the player's for a
-    THROWING one), less the distance; 12% always hit, 5% always miss. The
+    THROWING one), less the distance; 12% always hit, 5% always miss. It is
+    the base chance: the engine halves it against a target that is not
+    obvious (`chance_of_missile_hit`), which this leaves out (review of #687).
+    The
     damage is scaled by it, as melee scales by its own chance. C used the bow
     skill, the launcher's to-hit and its multiplier, and zeroed the damage
     below 80% of the armour;
@@ -36,6 +39,9 @@ one flask and Grip fled.
     for a partial kill above `attack_melee_partial_min_level`. C gave a throw
     the bolt's (`attack_bolt_danger_horizon`, 1 turn, partial damage). This is
     where melee's bigger bonus came from.
+  - So "melee's footing" holds for the damage, the hit chance and the danger
+    term; the point-blank divisor and the kill multiplier below stay the
+    bolt's (review of #687).
   - Unchanged: the point-blank divisor for an adjacent non-unique
     (`attack_arrow_point_blank_divisor`, 5; Rogue 3, Ranger 2), the bolt's
     kill multiplier, the missile conservation above CL20. No separate term for
@@ -51,6 +57,40 @@ one flask and Grip fled.
 - **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
   turn 1,881, main melees (44); with the switch on the Borg throws a flask
   (80). Both arms survive the scene; with `keep-load-rng` too.
+## Phase Door and flasks of oil by class (#682)
+
+The registry now holds **2196** parameters (2194 before; two added). Owner,
+2026-11-19: a class-based curve for Phase Door and flasks of oil, "in the
+same way are healing objects"; no reserve, only the curve.
+
+- **`town_phase_curve_scale_percent`** (100 = before #682): stretches the
+  live town planner's Phase Door curve as `town_heal_curve_scale_percent`
+  does healing's: weight and demand scale together, so the first scroll is
+  worth the same and more scrolls stay worth buying.
+- **`town_oil_curve_scale_percent`** (100): weights each flask of oil's
+  thrown damage on the planner's attack curve. A flask's throw has no curve
+  of its own (it shares `ATTACK` with missiles, wands and spells; a curve of
+  its own would be a new capability and a plan-record schema change, and
+  would change the play of every class at 100). Flasks kept as lantern fuel
+  are not changed.
+- **Per class** (`<name>@<class>`, the class files, owner's values):
+
+| class | Phase Door % | oil % | healing curve % / reserve % (unchanged unless noted) |
+|---|---:|---:|---|
+| Warrior | 75 | 100 | 50 / 100 |
+| Mage | 175 | 100 | 150 / 300 |
+| Druid | 175 | 150 | 125 / 250 |
+| Priest | 125 | 150 | 125 / 250 |
+| Necromancer | 175 | 100 | 150 / 300 |
+| Paladin | 100 | 125 | 75 / 150 |
+| Rogue | 125 | 125 | 100 / 200 |
+| Ranger | 150 | 50 | 100 / 200 |
+| Blackguard | 50 | 100 | **100 / 200** (was 75 / 150; owner: as Rogue and Ranger) |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:639` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:484` |
 
 ## No rest while breeders are known (#644)
 
@@ -1221,7 +1261,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1267` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1272` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)

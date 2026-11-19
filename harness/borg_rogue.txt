@@ -9,3 +9,6 @@ borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_reserve_hp_percent = 200
 # #666 (owner): devices by device skill (class.txt; 24 = 100).
 borg_param_town_devices_percent = 135
+# #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the rogue.
+borg_param_town_phase_curve_scale_percent = 125
+borg_param_town_oil_curve_scale_percent = 125
