@@ -101,8 +101,21 @@ Engine builds and suites (see [harness/README.md](harness/README.md)) run under 
 ```sh
 BORG_IMPL=rust flock /tmp/angband-validation.lock harness/build.sh
 flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
-harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
+harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-borg-rs
 ```
+
+**Which core a run plays** (owner, #606). With no `BORG_CORE`, the harness
+plays the core `harness/borg.txt` names: **borg-rs** (`borg-core/`), the one
+the zoo runs and the only one that reads `harness/borg.txt` and its
+`borg_param_*` settings. Its reference is `harness/reference/smoke-borg-rs`.
+`BORG_CORE=reborn` plays our own reborn core, which reads
+`harness/profiles/reborn-default.txt` instead; its references are
+`smoke-rust`, `smoke-exact-rust` and `full-rust`. A change to a borg-rs
+setting or to `borg-core/` is checked on the default core; a review prompt
+says which core each check ran. A PR that changes how the borg-rs core plays
+at the shipped settings re-records `smoke-borg-rs` in the same PR, after
+merging main (`harness/make-reference.sh` from a clean build), as reborn-core
+changes do with `smoke-rust`: CI compares the PR merged with main.
 
 ## Retained evidence: all tracks
 

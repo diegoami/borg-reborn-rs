@@ -165,11 +165,13 @@ difference from the C set is declared here, with its reason.
 
 ## References
 
-`harness/reference/smoke-rust/` and `full-rust/` hold the Rust Borg's
-smoke and full outputs (keys, messages and state, xz-compressed, plus
-`summary.json`) at the commit recorded in each `REFERENCE` file. They are
-regression references, not oracles (docs/SPEC.md §4). CI compares smoke
-with them. Full is compared locally, under the lock, when the Borg's code
+`harness/reference/smoke-rust/` and `full-rust/` hold the reborn core's
+(`BORG_CORE=reborn`) smoke and full outputs (keys, messages and state,
+xz-compressed, plus `summary.json`) at the commit recorded in each
+`REFERENCE` file; `smoke-borg-rs/` holds the default (borg-rs) core's smoke
+(#606). They are regression references, not oracles (docs/SPEC.md §4). CI
+compares the reborn core's smoke with `smoke-rust` and the default core's
+smoke with `smoke-borg-rs`. Full is compared locally, under the lock, when the Borg's code
 changes.
 
 TE.5 made them from the build on our own integration, after TE.4's
