@@ -426,7 +426,9 @@ fn spread_blocked(
     // borg-reborn-rs (#713): never into the reach of an immobile creature
     // kept at range: its grid (a step into it is a blow) or a grid next to
     // it (an item under a jelly drew the Borg back beside it, 60 touches).
-    if crate::borg_caution::in_reach_of_kept(st, x, y) {
+    // Not the Borg's own grid, so a flow can always lead out (as
+    // `breeder_blocks` keeps the grids next to the Borg open).
+    if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_kept(st, x, y) {
         return true;
     }
 
