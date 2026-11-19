@@ -224,9 +224,11 @@ This repository is **model agnostic**. Nothing in it depends on which model
 or tool writes the code, and the Borg itself uses no model when it plays.
 Which model works on a task is decided outside the repository by the
 owner's general rules. **The owner chooses the reviewer** (RULES 6): the
-session does not pick one. The session writes the review prompt and may
-run the review itself and post it on the PR (the owner's choice of
-reviewer); it may also hand the prompt to the owner to run. A milestone
+session does not pick one, and it does not post a review before the owner
+has named the reviewer. The session writes the review prompt, pinned to an
+exact commit, and posts it on the PR it reviews; the owner names the
+reviewer; the session may then run that review itself and post it (it may
+also hand the prompt to the owner to run). A milestone
 review is done by the owner or by a model of a **different family** from
 the one that wrote most of the milestone. Name both in the review PR.
 
