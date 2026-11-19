@@ -250,6 +250,16 @@ borg_param_town_gold_reserve_percent = 0
 
 borg_param_town_digger_min_gold = 500
 
+# Seeing invisible monsters (Detect Invisible, See Invisible) is low
+# priority while shallow (#650): while the max depth is above
+# town_invisible_min_depth, it weighs town_invisible_shallow_percent of its
+# ordinary weight. A Scroll of Detect Invisible tied with Phase Door at CL1.
+# 0 / 100 = no change.
+# Change together: both; the depth alone does nothing at 100 percent.
+
+borg_param_town_invisible_min_depth = 0
+borg_param_town_invisible_shallow_percent = 100
+
 # Fear cures to keep while not afraid (#516): beyond this many Potions of
 # Boldness the planner buys no more (it bought 35 and drank 7 on 18 games).
 # Higher keeps more; 0 = value them on the diminishing curve.

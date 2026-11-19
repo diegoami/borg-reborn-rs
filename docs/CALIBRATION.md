@@ -10,6 +10,10 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Seeing invisible monsters is low priority while shallow (#650)
+
+The registry now holds **2171** parameters (2169 after #619; two added). Owner, 2026-11-19: a Scroll of Detect Invisible "should have low priority". At CL1 the town plan valued one Scroll of Detect Invisible as high as one Phase Door (both gain 26,190 for the Priest of borg-cemetery#75), at any depth. `town_invisible_min_depth` (0, off) and `town_invisible_shallow_percent` (100): while the max depth is above the depth, the INVISIBLE capability (Detect Invisible, See Invisible) weighs that percent of its ordinary weight (`borg_town_capability.rs:630`). The invisible monsters that matter start around DL10–15 (`monster.txt`: clear mushroom patch 10, air spirit 12, clear hound 15; earlier only the clear icky thing, the clear worm mass and Sméagol).
+
 ## Dangerous town monsters killed on sight (#619)
 
 The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
@@ -744,7 +748,7 @@ Shovel at the first visit):
   reserve), for warrior, mage, druid, priest, necromancer, paladin, rogue,
   ranger and blackguard. Unit `percent_override`; compiled defaults fall back
   to the general values.
-- `town_digger_min_gold` (`borg_town_capability.rs:635`, 0 = off): below this
+- `town_digger_min_gold` (`borg_town_capability.rs:640`, 0 = off): below this
   gold the live planner values no digging. A Shovel only clears rubble (the
   engine swaps it in, "with your swap digger", 2–6 piles a game); a weapon
   digs rubble too.
@@ -768,8 +772,10 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+| `town_invisible_min_depth` | 0 | depth | 0–127 | `borg_town_capability.rs:630` |
+| `town_invisible_shallow_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:630` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1190` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1214` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
