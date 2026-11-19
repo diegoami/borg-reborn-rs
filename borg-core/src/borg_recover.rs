@@ -462,7 +462,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
         && !rest_held_for_stairs(st)
-        && !rest_held_for_breeders(st)
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -505,7 +506,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         )
         && st.borg.goal.type_0 != GOAL_RECOVER
         && !rest_held_for_stairs(st)
-        && !rest_held_for_breeders(st);
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -556,7 +558,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !hunt_now(st)
         && !rest_held_for_stairs(st)
-        && !rest_held_for_breeders(st)
+        // borg-reborn-rs (#644): the rest is due; breeders may hold it.
+        && !hold_for_breeders(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -574,41 +577,85 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#644, owner: "no rest if aware of any breeders, clear the
-/// breeders or leave the level asap"). With `recover_rest_breeders`, in the
-/// dungeon, while any breeder is known on the level, no rod, HP/SP or mana
-/// rest: breeders multiply while the Borg rests (#556, #558). Instead the
-/// Borg hunts them when #558's hunt applies (`breeder_hunt_now`), otherwise
-/// it leaves the level (`goal.leaving`). Kept when confused, blind,
-/// hallucinating or stunned: walking then is worse (#615 rule a).
-fn rest_held_for_breeders(st: &mut BorgState) -> bool {
+/// breeders or leave the level asap"): what to do instead of a rest while
+/// breeders are known on the level.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum BreederRest {
+    /// No breeder rule applies: rest as before.
+    Rest,
+    /// Hunt the breeders (#558's hunt applies).
+    Hunt,
+    /// Leave the level (`goal.leaving`).
+    Leave,
+}
+
+/// The decision of `recover_rest_breeders`, read from the state only. The
+/// hunt is judged as if this rule's own leave were not set (review of #656:
+/// `breeder_engaged` reads `goal.leaving` as "not engaged", so a leave set
+/// here stopped the hunt from ever resuming on the level).
+fn breeder_rest_decision(st: &mut BorgState) -> BreederRest {
     let on = param(Param::recover_rest_breeders) != 0;
-    if !on || st.borg.tr(BI_CDEPTH) == 0 {
-        return false;
+    if !on {
+        return BreederRest::Rest;
     }
-    let breeders = (1..st.kills.nxt.max(0) as usize)
-        .filter(|&i| {
-            let r = st.kills.kills[i].r_idx;
-            r != 0 && engine::race_flag_has(usize::from(r), crate::headers::list_mon_race_flags_h::RF_MULTIPLY)
-        })
-        .count();
+    let breeders = i32::from(st.borg.mon.breeders);
     if !breeder_hold(on, st.borg.tr(BI_CDEPTH), impaired(st), breeders) {
-        return false;
+        return BreederRest::Rest;
     }
-    let hunt = crate::borg_flow_kill::breeder_hunt_now(st);
-    if !hunt {
-        crate::borg_caution::start_leaving(st, "# Leaving (breeders on the level, no rest)");
+    let ours = st.borg.breeder_leaving && st.borg.goal.leaving;
+    let engaged = crate::borg_caution::breeder_engaged_but_own_leave(st, ours);
+    breeder_choice(crate::borg_flow_kill::breeder_hunt_now_with(st, engaged))
+}
+
+/// Hunt when the hunt applies, otherwise leave.
+fn breeder_choice(hunt: bool) -> BreederRest {
+    if hunt {
+        BreederRest::Hunt
+    } else {
+        BreederRest::Leave
+    }
+}
+
+/// Act on a `Hunt` or `Leave` decision: a hunt that applies again clears
+/// this rule's own leave; a leave is set once and remembered as this rule's.
+/// Noted once a think.
+fn apply_breeder_rest(st: &mut BorgState, d: BreederRest) {
+    match d {
+        BreederRest::Rest => return,
+        BreederRest::Hunt => {
+            if st.borg.breeder_leaving && st.borg.goal.leaving {
+                st.borg.goal.leaving = false;
+                borg_note(st, "# Not leaving: the breeder hunt applies again.");
+            }
+            st.borg.breeder_leaving = false;
+        }
+        BreederRest::Leave => {
+            if !st.borg.goal.leaving {
+                crate::borg_caution::start_leaving(st, "# Leaving (breeders on the level, no rest)");
+                st.borg.breeder_leaving = true;
+            }
+        }
     }
     if st.borg.breeder_rest_noted != Some(st.borg.time.now) {
         st.borg.breeder_rest_noted = Some(st.borg.time.now);
-        let then = if hunt { "hunting them" } else { "leaving" };
-        borg_note(st, &format!("# No rest: {breeders} breeders known on the level, {then}."));
+        let then = if d == BreederRest::Hunt { "hunting them" } else { "leaving" };
+        let n = st.borg.mon.breeders;
+        borg_note(st, &format!("# No rest: {n} breeders known on the level, {then}."));
     }
-    true
 }
 
-/// The test of `rest_held_for_breeders`: on, in the dungeon, not impaired,
+/// A rest that is due is held for breeders: decide, act on the decision,
+/// and say whether the rest is held. Kept when confused, blind,
+/// hallucinating or stunned: walking then is worse (#615 rule a).
+fn hold_for_breeders(st: &mut BorgState) -> bool {
+    let d = breeder_rest_decision(st);
+    apply_breeder_rest(st, d);
+    d != BreederRest::Rest
+}
+
+/// The test of `breeder_rest_decision`: on, in the dungeon, not impaired,
 /// and a breeder known on the level.
-fn breeder_hold(on: bool, depth: i32, impaired: bool, breeders: usize) -> bool {
+fn breeder_hold(on: bool, depth: i32, impaired: bool, breeders: i32) -> bool {
     on && depth > 0 && !impaired && breeders > 0
 }
 
@@ -640,7 +687,7 @@ fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bo
 
 #[cfg(test)]
 mod breeder_rest_tests {
-    use super::breeder_hold;
+    use super::{breeder_choice, breeder_hold, BreederRest};
 
     /// #644: no rest while a breeder is known on the level.
     #[test]
@@ -650,6 +697,22 @@ mod breeder_rest_tests {
         assert!(!breeder_hold(true, 0, false, 4), "town");
         assert!(!breeder_hold(true, 3, true, 4), "confused: the rest clears it");
         assert!(!breeder_hold(false, 3, false, 4), "off (C)");
+        assert_eq!(breeder_choice(true), BreederRest::Hunt);
+        assert_eq!(breeder_choice(false), BreederRest::Leave);
+    }
+
+    /// Review of #656: hunt, a transient failure (the HP below the hunt's
+    /// percent) sets this rule's leave, and the hunt resumes when it applies
+    /// again, because the hunt ignores the rule's own leave.
+    #[test]
+    fn the_hunt_resumes_after_the_rules_own_leave() {
+        use crate::borg_caution::engaged_ignoring_own_leave as engaged;
+        // (ignoring, fleeing, leaving, scary, leaving is ours)
+        assert!(engaged(false, false, false, false, false), "hunting");
+        assert!(engaged(false, false, true, false, true), "this rule's leave does not stop the hunt");
+        assert!(!engaged(false, false, true, false, false), "another rule's leave still does");
+        assert!(!engaged(true, false, true, false, true), "ignoring the breeders (#503) still does");
+        assert!(!engaged(false, true, true, false, true), "fleeing still does");
     }
 }
 

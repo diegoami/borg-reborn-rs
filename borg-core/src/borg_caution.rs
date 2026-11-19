@@ -3115,6 +3115,24 @@ pub(crate) fn breeder_engaged(st: &BorgState) -> bool {
         )
 }
 
+/// `breeder_engaged`, except that a leave set by #644's rule
+/// (`own_leave`) does not count (review of #656).
+pub(crate) fn breeder_engaged_but_own_leave(st: &BorgState, own_leave: bool) -> bool {
+    breeder_hunt(st)
+        && engaged_ignoring_own_leave(
+            st.borg.goal.ignoring,
+            st.borg.goal.fleeing || st.borg.goal.fleeing_to_town,
+            st.borg.goal.leaving,
+            st.borg.mon.scary,
+            own_leave,
+        )
+}
+
+/// `engaged_with` with the leave split out: `own_leave` = the leave is #644's.
+pub(crate) fn engaged_ignoring_own_leave(ignoring: bool, fleeing: bool, leaving: bool, scary: bool, own_leave: bool) -> bool {
+    engaged_with(ignoring, fleeing || (leaving && !own_leave), scary)
+}
+
 fn engaged_with(ignoring: bool, fleeing: bool, scary: bool) -> bool {
     !ignoring && !fleeing && !scary
 }
