@@ -18,17 +18,22 @@ for moving faster and ignore the town mobs for the most time?"
 
 With `escape_fox_form_town = 1`, a Druid at most
 `escape_fox_form_town_max_level` (20), about to take a step of a walk in
-town (to a shop, home, a staircase, or a flight; not a kill or a take) at
+town (to a shop, home, a staircase, or a flight; not a kill, a take or a
+rest) at
 least `escape_fox_form_town_min_steps` (10) from its goal, casts Fox Form
 (`MOVES[1]` in `shape.txt`: a step costs half the energy) if its fail rate
 is at most `escape_fox_form_fail`. It casts only when the mana left stays
 at or above `borg_recover`'s mana rest (`recover_mana_rest_sp_tenths`
 below `recover_mana_rest_max_level`), and not while standing on a
-staircase. It keeps the shape while the walk lasts, changes back at the
-shop door (the game shuts it on a shapechanged player, `cmd-cave.c`,
-home included) and before a blow (#551's `revert_fox_to_fight`); the
-change-back prompt is answered as with `escape_fox_form`. Harmless town
-monsters are left to #621's ignore list.
+staircase. It keeps the shape while the walk lasts, changes back on a
+staircase (before the stairs are taken), at the shop door (a shapechanged
+player is refused: `player-util.c` `player_handle_post_move`, "the door
+slams shut"; the home refuses silently) and before a blow (#551's
+`revert_fox_to_fight`); the change-back prompt is answered as with
+`escape_fox_form`. A step into an unseen monster is still struck as a fox
+(#551's gap). Harmless town monsters are left to #621's ignore list. The
+fail rate is #551's `escape_fox_form_fail`, shared on purpose (same spell);
+tuning the two apart would need a parameter of its own.
 
 On 18 Druid starts (the two classes-18 Druids and 16 more, 100,000 turns,
 main `3ba17e2c`, the zoo adapter's steps):
@@ -37,6 +42,7 @@ main `3ba17e2c`, the zoo adapter's steps):
 |---|---:|---:|---:|---:|---:|
 | off | | 2 | 117 | 233,996 | |
 | on | 3/18 | 2 (the same two) | 107 | 276,229 | 153 |
+| on, review fixes | 3/18 | 2 (the same two) | 114 | 245,316 | |
 
 One game accounts for the rise in town time: it went another way and stuck
 in town for 70,000 turns, fleeing an adjacent filthy street urchin with no
@@ -44,7 +50,10 @@ staircase found, unrelated to the fox (no cast in its last 400 turns
 before; #647). Without it, town time falls by 10% (194,236 against
 214,651), lower in 10 games, higher in 5. The levels fall in 8 games and
 rise in 2. A first version without the mana condition doubled the town
-time: each cast sent the Druid to rest for its mana. Direction only.
+time: each cast sent the Druid to rest for its mana. With the review's
+fixes (no fox on a staircase: the first version took the stairs as a fox 42
+times in 13 games, now 0; no fox for a rest) the levels are 114 against
+117 and the town time +5%, with no stall. Direction only.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -262,8 +271,8 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:833` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:912` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:913` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:921` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:922` |
 
 ## Town less scary (#622)
 
@@ -450,11 +459,11 @@ needs the zoo (Druid starts).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:489` |
-| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:526` |
-| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:605` |
-| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:661` |
-| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:663` |
+| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:491` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:529` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:613` |
+| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:669` |
+| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:671` |
 
 ## Breeders hunted by every class (#558)
 
@@ -1714,7 +1723,7 @@ the vendored mechanics model:
 | `danger_rsf_s_demon_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1795` |
 | `danger_rsf_s_hi_undead_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1813` |
 | `danger_rsf_s_unique_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1849` |
-| `escape_antisummon_reset_turns` | 50 | turns | 0–100000 | `borg_escape.rs:85` |
+| `escape_antisummon_reset_turns` | 50 | turns | 0–100000 | `borg_escape.rs:87` |
 | `escape_recall_fail` | 60 | percent | 0–100 | `borg_escape.rs:100` |
 | `escape_recall_depth_window` | 5 | depth | 0–127 | `borg_escape.rs:112` |
 | `escape_recall_reset_min_depth` | 80 | depth | 0–127 | `borg_escape.rs:116` |
@@ -1734,15 +1743,15 @@ the vendored mechanics model:
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
 | `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1156` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1218` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1227` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1227` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1236` |
 | `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1240` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1318` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1329` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1332` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1333` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1327` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1338` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1341` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1342` |
 | `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1338` |
-| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1329` |
+| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1368` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1347` |
 | `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1365` |
 | `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1403` |

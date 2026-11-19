@@ -42,6 +42,8 @@ const GOAL_FLEE: i32 = 7;
 /// `GOAL_KILL`, `GOAL_TAKE` (borg-flow.h): not walks (#620).
 const GOAL_KILL: i32 = 1;
 const GOAL_TAKE: i32 = 2;
+/// `GOAL_RECOVER` (borg-flow.h): a walk to rest, not worth the shape.
+const GOAL_RECOVER: i32 = 9;
 use crate::borg_headers::borg_trait_h::{
     BI_AESCAPE, BI_AMISSILES, BI_APHASE, BI_ATELEPORT, BI_CDEPTH, BI_CLASS, BI_CLEVEL,
     BI_CRSNOTEL, BI_CURHP, BI_CURSP, BI_ISAFRAID, BI_ISCUT, BI_ISHEAVYSTUN, BI_ISPOISONED,
@@ -503,9 +505,10 @@ fn town_fox_when(on: bool, depth: i32, clevel: i32, max_level: i32) -> bool {
 }
 
 /// borg-reborn-rs (#620): the goal is a walk (to a shop, home, a staircase,
-/// or a flight), not a monster to kill or an object to take.
+/// or a flight), not a monster to kill, an object to take or a place to rest
+/// (review of #648, finding 3: a fox would rest at STR -3).
 fn walk_goal(goal: i32) -> bool {
-    goal != 0 && goal != GOAL_KILL && goal != GOAL_TAKE
+    goal != 0 && goal != GOAL_KILL && goal != GOAL_TAKE && goal != GOAL_RECOVER
 }
 
 fn town_fox_now(st: &BorgState) -> bool {
@@ -543,10 +546,15 @@ pub(crate) fn fox_form_before_town_step(st: &mut BorgState, why: i32, steps_left
     borg_spell_fail(st, FOX_FORM, fail)
 }
 
-/// borg-reborn-rs (#620): standing on a staircase, the next move may be the
-/// stairs (a fox in the dungeon changes back at once: the cast is lost).
-fn on_stairs(st: &BorgState) -> bool {
-    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+/// borg-reborn-rs (#620): standing on a staircase. No cast there (it would
+/// be spent on the step onto the stairs), and a town fox there changes
+/// back (`keep_fox_form`) before the think that takes them.
+/// The game's grid, not the Borg's: `borg_think` checks the shape before
+/// this think's `borg_update`, when `st.borg.c` is still the grid before the
+/// last step (as `keep_fox_form` reads the game's depth).
+fn on_stairs(_st: &BorgState) -> bool {
+    let at = engine::player_grid();
+    let feat = u32::from(engine::square_feat(at.x, at.y));
     feat == FEAT_LESS || feat == FEAT_MORE
 }
 
@@ -559,8 +567,10 @@ fn mana_kept(sp_after: i32, max_sp: i32, rest_applies: bool, rest_tenths: i32) -
 }
 
 /// borg-reborn-rs (#620): a fox about to step onto a shop entrance changes
-/// back first: the game shuts the door on a shapechanged player
-/// (`cmd-cave.c` `move_player`, home included). Changing back uses no
+/// back first: a shapechanged player on a shop entrance is refused
+/// (`player-util.c` `player_handle_post_move`, from `move_player`; also
+/// `cmd-cave.c` `do_cmd_hold`): "the door slams shut", and the home refuses
+/// silently. Changing back uses no
 /// energy; the step comes at the next think.
 pub(crate) fn revert_fox_at_shop(st: &mut BorgState) -> bool {
     if !(any_fox_form_on() && is_fox()) {
@@ -587,8 +597,10 @@ pub(crate) fn keep_fox_form(st: &BorgState) -> bool {
     let scary = st.borg.mon.scary || st.borg.mon.scary_stand;
     // The game's depth, not the Borg's last update: right after a Recall
     // to town the trait still holds the old depth (review question 3).
-    // borg-reborn-rs (#620): and in town while a walk lasts.
-    let town = town_fox_now(st) && walk_goal(i32::from(st.borg.goal.type_0));
+    // borg-reborn-rs (#620): and in town while a walk lasts, but not on a
+    // staircase: the change back comes before the think that takes the
+    // stairs (review of #648, finding 1: a fox arrived in the dungeon).
+    let town = town_fox_now(st) && walk_goal(i32::from(st.borg.goal.type_0)) && !on_stairs(st);
     is_fox() && ((fox_form_on() && keep_fox_when(engine::player_depth(), flight, scary)) || town)
 }
 
@@ -697,7 +709,7 @@ mod fox_form_tests {
         assert!(!town_fox_when(true, 1, 5, 20), "the dungeon: #551's rules");
         assert!(!town_fox_when(true, 0, 21, 20), "above the level");
         assert!(walk_goal(3) && walk_goal(7), "a shop or stairs walk, a flight");
-        assert!(!walk_goal(0) && !walk_goal(1) && !walk_goal(2), "no goal, a kill, a take");
+        assert!(!walk_goal(0) && !walk_goal(1) && !walk_goal(2) && !walk_goal(9), "no goal, a kill, a take, a rest");
     }
 
     #[test]
