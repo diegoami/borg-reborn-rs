@@ -350,6 +350,17 @@ borg_param_caution_flee_recall_gate_below_depth = 1
 
 borg_param_caution_flee_recall_danger_percent = 0
 
+# Waiting: 1 = while Word of Recall counts down, play by the ordinary rules:
+# flee by stairs or Teleport Level (the countdown keeps running on the new
+# level), use the ordinary escapes and attacks, treat a scary level as
+# usual; still rest or wait in place when safe (#603). Only on DL2 and
+# deeper: in town and on DL1 a staircase crosses between town and dungeon,
+# and the Recall would take the Borg back. 0 = C's Recall-only rules (the
+# buy-time escapes of caution_recall_*).
+# Impact: off here; see the PR for classes-18.
+
+borg_param_caution_recall_wait_as_usual = 0
+
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
 # game turns x the game ratio of the jump, prepare the spells for arriving.
@@ -461,8 +472,9 @@ borg_param_kill_live_min_power = 1
 # the cats, dogs and beggars) is the preferred target: its attack value is
 # multiplied by bonus_percent / 100, borg_attack picks the best attack on it
 # (no wands: C never aims one in town), and the hunt walks to it below CL20
-# (not a Mage or Necromancer below CL25: C's town hunt stays breeders only). A lower min_damage takes more monsters;
-# a higher bonus picks them sooner over the others. Change together. 0 = C.
+# (not a Mage or Necromancer below CL25: C's town hunt stays breeders only).
+# A lower min_damage takes more monsters; a higher bonus picks them sooner
+# over the others. Change together. 0 = C.
 # Impact: not on the file's 6-game measure; on 18 classes-18 games (100,000
 # turns) with the shipped list, 2 of 18 play differently (0 deaths, sum of
 # CL 99 as main); with caution_town_never_scary = 1, 3 deaths, CL 89.
@@ -541,6 +553,28 @@ borg_param_recover_rest_arms_see_invis = 0
 
 
 ### Fleeing ###
+
+# Rest at the stairs (#614). recover_rest_reach_stairs = N: on a flight to a
+# staircase at most N flow steps away the Borg does not rest (rod, HP or
+# mana), nor walk to a recovery spot, until it stands on the staircase;
+# potions and cures still work. A farther staircase is a long walk: it rests
+# as before. Raising N holds rests on longer flights. _memory: how long the
+# commitment outlives a re-plan (a new monster) on the same level. caution_stairs_leave_on_monster =
+# 1: in the dungeon, standing on a staircase while it still needs to recover
+# (HP or SP below the maximum), it takes the stairs as soon as a monster
+# threatens it (danger at least _danger_percent of the current HP), instead
+# of fighting; _down = 1 takes a down staircase too, 0 only an up one. 0 = C (it could rest mid-flight, 11 steps short of the
+# stairs, and be caught there).
+# Change together: the two make one rule (reach the stairs, rest there,
+# leave when something comes).
+# Impact: recover_rest_reach_stairs 20: 3 of 6 test games play differently;
+# caution_stairs_leave_on_monster 1: 2 of 6 (up only: 2 of 6); both: 3 of 6.
+
+borg_param_recover_rest_reach_stairs = 0
+borg_param_recover_rest_reach_stairs_memory = 10
+borg_param_caution_stairs_leave_on_monster = 0
+borg_param_caution_stairs_leave_danger_percent = 10
+borg_param_caution_stairs_leave_down = 1
 
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).

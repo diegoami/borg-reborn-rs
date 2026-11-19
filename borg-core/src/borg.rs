@@ -75,6 +75,19 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
+    /// steps it had to go, and when. A new monster wipes the flow goal for a
+    /// think; the commitment to the staircase outlives that.
+    pub flight_steps: i32,
+    pub flight_time: BorgTime,
+    /// The depth of that flight step (review of #616: a new level forgets it).
+    pub flight_depth: i32,
+    /// Whether the current `GOAL_FLEE` flow goes to a staircase (review of
+    /// #616, N4): the breeder exit and the flow to light are flights too.
+    /// Cleared by every flow commit, set by the stair flows.
+    pub flight_to_stairs: bool,
+    /// The think (`time.now`) that last noted a held rest (one note a think).
+    pub rest_hold_noted: Option<BorgTime>,
     /// borg-reborn-rs (#584): the Phase Door rule's decision this think,
     /// as (the think's `time.now`, the verdict, whether its attack or boost
     /// was tried): decided once at the first site that asks, used by every

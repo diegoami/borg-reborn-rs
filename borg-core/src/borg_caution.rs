@@ -1885,13 +1885,19 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     let avoidance = i32::from(st.borg.avoidance);
     // Leaving or Fleeing, take stairs
-    if st.borg.goal.leaving
-        || st.borg.goal.fleeing
-        || st.borg.mon.scary
-        || ((pos_danger > avoidance
-            || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
-                && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
-            && on_upstair)
+    // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
+    // is skipped then, so nothing cancels a departure the rule has noted
+    // (review of #616, N1).
+    let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
+        && leave_stairs_on_monster(st, pos_danger);
+    if !by_stairs_rule
+        && (st.borg.goal.leaving
+            || st.borg.goal.fleeing
+            || st.borg.mon.scary
+            || ((pos_danger > avoidance
+                || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
+                    && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
+                && on_upstair))
     // danger and standing on stair
     {
         choose_stairs(st, pos_danger);
@@ -1913,7 +1919,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Take stairs down
-    if st.borg.stair_more && st.borg.goal.recalling == 0 {
+    if st.borg.stair_more && !recall_restricts(st) {
         // borg-reborn-rs (#208): /shopping is town-only, even if caution
         // chooses a direct descent before the ordinary town-leave hook.
         if crate::shell::shopping_departure(st) {
@@ -2189,7 +2195,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall,and in danger, buy time with
     // phase and cure_anythings.
-    if st.borg.goal.recalling != 0
+    // borg-reborn-rs (#603): with caution_recall_wait_as_usual the ordinary
+    // escape and attack decisions apply instead.
+    if recall_restricts(st)
         && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
     {
@@ -2240,7 +2248,7 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
         // borg_flow_stair_both: light is its only gate on a fleeing Borg
         return true;
     }
-    if st.borg.goal.recalling != 0 {
+    if recall_restricts(st) {
         return false;
     }
     if st.stairs.less.num != 0 {
@@ -2646,6 +2654,26 @@ pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
 
 fn only_parked(enqueued: usize, parked: usize) -> bool {
     enqueued == 0 && parked > 0
+}
+
+/// borg-reborn-rs (#603, owner): does a pending Word of Recall switch the
+/// Borg to its Recall-only rules (no flight by stairs or Teleport Level, the
+/// buy-time escapes, fighting because recalling)? With
+/// `caution_recall_wait_as_usual` it plays by its ordinary rules instead:
+/// the countdown keeps running on a new level (`effect-handler-general.c`).
+/// Resting or waiting when safe is kept either way. Only on DL2 and deeper:
+/// in town and on DL1 a staircase crosses between town and dungeon, and the
+/// Recall would fire on the other side and take the Borg back (owner, #627).
+pub(crate) fn recall_restricts(st: &BorgState) -> bool {
+    recall_restricts_with(
+        st.borg.goal.recalling != 0,
+        p(Param::caution_recall_wait_as_usual) != 0,
+        st.borg.tr(BI_CDEPTH),
+    )
+}
+
+fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
+    recalling && (!as_usual || depth <= 1)
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -3288,6 +3316,47 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
+/// borg-reborn-rs (#614, owner): "he can rest on the stairs, and if a mob
+/// appears he can climb up/down immediately". With
+/// `caution_stairs_leave_on_monster`, a Borg standing on a staircase that
+/// still needs to recover (HP or SP below the maximum) takes the stairs as
+/// soon as a monster threatens it (danger here at least
+/// `caution_stairs_leave_danger_percent` of the HP), instead of fighting or
+/// reading an escape. The staircase under the Borg is the way; while rising,
+/// a down staircase is held as in `choose_stairs`.
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
+    // Review of #616: a real threat (a share of the HP), not any danger; and
+    // never in town, whose down staircase is a dive into DL1.
+    let threshold = (st.borg.tr(BI_CURHP) * p(Param::caution_stairs_leave_danger_percent) / 100).max(1);
+    let on = p(Param::caution_stairs_leave_on_monster) != 0;
+    let up = feat == FEAT_LESS;
+    // Review of #616 (N1): while rising, the holds of #483 and #557 keep a
+    // descent off, as they do in choose_stairs (asked only when the rule is on).
+    let down = on
+        && feat == FEAT_MORE
+        && p(Param::caution_stairs_leave_down) != 0
+        && !rising_holds_descent(st, pos_danger)
+        && !rising_holds_flee_descent(st);
+    if !stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold) {
+        return false;
+    }
+    // The staircase under the Borg decides the way: choose_stairs alone may
+    // not set it for a Borg that is recovering, not fleeing.
+    if up {
+        st.borg.stair_less = true;
+    } else {
+        st.borg.stair_more = true;
+    }
+    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
+    true
+}
+
+fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
+    on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
+}
+
 fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
@@ -3461,8 +3530,10 @@ fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
     crate::borg_flow::borg_flow_clear(st);
     crate::borg_flow_stairs::enqueue_down_stairs(st);
     crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
-    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE)
-        && crate::borg_flow::borg_flow_old(st, GOAL_FLEE);
+    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+        st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+        crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    };
     st.borg.status.desperate = false;
     if ok {
         borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
@@ -3480,6 +3551,21 @@ pub(crate) fn jumpstart_keeps_stairs() -> bool {
 /// distance (250, `borg_flow_stair_more`'s depth).
 fn flee_down_depth(max_cost: i32) -> i32 {
     if max_cost <= 0 { 250 } else { max_cost.min(250) }
+}
+
+#[cfg(test)]
+mod stairs_leave_tests {
+    use super::stairs_leave_when;
+
+    #[test]
+    fn a_recovering_borg_on_the_stairs_leaves_when_a_monster_threatens() {
+        assert!(stairs_leave_when(true, 2, true, true, 5, 3));
+        assert!(!stairs_leave_when(true, 2, true, true, 2, 3), "below the threat threshold");
+        assert!(!stairs_leave_when(true, 0, true, true, 5, 3), "town: no dive into DL1");
+        assert!(!stairs_leave_when(true, 2, true, false, 5, 3), "nothing to recover: fight as before");
+        assert!(!stairs_leave_when(true, 2, false, true, 5, 3), "no usable staircase (or a down one with leave_down 0)");
+        assert!(!stairs_leave_when(false, 2, true, true, 5, 3), "switch off (C)");
+    }
 }
 
 #[cfg(test)]
@@ -3834,6 +3920,33 @@ mod scary_stand_tests {
         assert!(!unlatch_when(r(true, true, true), mon.scary_killed, mon.scary_calmed), "the flag stays");
         note_calmed(&mut mon, &[42]);
         assert!(unlatch_when(r(true, false, true), mon.scary_killed, mon.scary_calmed), "race 42 hurt: it clears");
+    }
+
+    #[test]
+    fn a_pending_recall_restricts_only_without_the_switch() {
+        assert!(recall_restricts_with(true, false, 5), "C: Recall-only rules");
+        assert!(!recall_restricts_with(true, true, 5), "the switch: the ordinary rules on DL5");
+        assert!(!recall_restricts_with(true, true, 2), "and on DL2");
+        assert!(recall_restricts_with(true, true, 1), "not on DL1: the up staircase leads to town");
+        assert!(recall_restricts_with(true, true, 0), "not in town: the down staircase leads to the dungeon");
+        assert!(!recall_restricts_with(false, false, 5), "no Recall pending");
+        assert!(!recall_restricts_with(false, true, 0));
+    }
+
+    #[test]
+    fn every_switched_site_asks_recall_restricts() {
+        // The seven sites of #603 (review of #627): a site put back to
+        // `goal.recalling != 0` would ignore the switch and still pass the
+        // helper's test, so count the calls in each file.
+        for (file, src, calls) in [
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 3),
+            ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
+            ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
+            ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
+            ("borg_think_dungeon.rs", include_str!("borg_think_dungeon.rs"), 2),
+        ] {
+            assert_eq!(src.matches(concat!("recall_", "restricts(st)")).count(), calls, "{file}");
+        }
     }
 
     #[test]

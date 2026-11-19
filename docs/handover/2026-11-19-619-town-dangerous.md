@@ -21,6 +21,8 @@ the monster.
 - **Resynced with main after #621 (ignore list) and #595:** the ignore check
   runs before the bonus (an ignored monster stays at 0; none of the four is
   ignored); the helpers moved above `borg_thrust_damage_one`'s doc comment;
-  the count is 2163. The figures above are from before both, not re-measured.
+  the count is 2169 (after #603 too); `check-param-citations.py --fix`
+  moved the 84 citations the helpers shifted. The figures above are from
+  before both, not re-measured.
 - **Left:** zoo arms with #622 (borg-zoo#328 after the merges); #620 (Druid
   Fox Form in town).
