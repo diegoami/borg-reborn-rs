@@ -2047,6 +2047,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#584, owner): the Phase Door rule refused a Phase Door
+    // and no escape acted: attack, at range when nothing is adjacent, else
+    // boost (`phase_rule_act`, once per think).
+    if crate::borg_escape::phase_rule_act(st) {
+        return true;
+    }
+
     /*** Back away ***/
     // Do not back up if
     // 1) we are nasty (poisoned, blind, confused etc
@@ -2865,6 +2872,12 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
 /// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
 /// character level (`borg_near_monster_type`) and the low-level door scares
 /// (`borg_update`, `borg_messages`) mark the level scary.
+/// borg-reborn-rs (#622, owner): how many character levels sooner a town
+/// race (race level 0) stops being scary on the named list.
+pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
+    if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
+}
+
 pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
 }
@@ -3174,7 +3187,7 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
-fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(

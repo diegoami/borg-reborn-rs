@@ -81,6 +81,9 @@ pub struct Situation {
     pub class: i32,
     pub breeder_count: i32,
     pub breeder_stand: bool,
+    /// #622: character levels taken off this monster's listed level (the
+    /// caller sets it for town races; 0 = the list as it is).
+    pub levels_less: i32,
 }
 
 fn class_index(name: &str) -> Result<usize, String> {
@@ -181,6 +184,8 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
 }
 
 /// Whether race `r_idx` (with base name `base`) is scary for `who`.
+/// #622: the listed level is lowered by `who.levels_less` (the caller sets it
+/// for town races, `caution_town_scary_levels_less`).
 pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
     let class = usize::try_from(who.class).ok().filter(|&c| c < CLASSES.len());
     list.entries.iter().any(|e| {
@@ -197,7 +202,7 @@ pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool 
             Some(c) => e.classes[c].unwrap_or_else(|| scaled(e.tough, e.fragile, list.fragility[c])),
             None => e.tough,
         };
-        who.clevel <= up_to && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
+        who.clevel <= up_to - who.levels_less && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
     })
 }
 
@@ -251,7 +256,19 @@ mod tests {
             .position(|n| !n.is_empty() && *n == name)
     }
     fn who(clevel: i32, class: i32) -> Situation {
-        Situation { clevel, class, breeder_count: 0, breeder_stand: false }
+        Situation { clevel, class, breeder_count: 0, breeder_stand: false, levels_less: 0 }
+    }
+
+    /// #622: a monster's listed level, lowered by `levels_less`.
+    #[test]
+    fn levels_less_lowers_the_listed_level() {
+        let list = parse("fragility: warrior 0, mage 100\nbattle-scarred veteran | 8-11\n", &|n| (n == "battle-scarred veteran").then_some(7)).unwrap();
+        let at = |clevel, less| is_scary(&list, 7, b"person", Situation { clevel, class: 0, breeder_count: 0, breeder_stand: false, levels_less: less });
+        assert!(at(8, 0), "warrior, CL8: scary up to 8");
+        assert!(!at(9, 0));
+        assert!(at(4, 4), "4 levels less: up to 4");
+        assert!(!at(5, 4));
+        assert!(!at(1, 20), "never scary");
     }
     const WARRIOR: i32 = 0;
     const MAGE: i32 = 1;
@@ -352,7 +369,7 @@ mod tests {
             for class in 0..9 {
                 for clevel in 0..=60 {
                     for (breeder_count, breeder_stand) in [(0, false), (100, false), (100, true)] {
-                        let who = Situation { clevel, class, breeder_count, breeder_stand };
+                        let who = Situation { clevel, class, breeder_count, breeder_stand, levels_less: 0 };
                         let c = crate::borg_flow_kill::c_named_scary(&st.borg.id, r as u32, base.as_bytes(), clevel, class, breeder_count, breeder_stand);
                         assert_eq!(is_scary(&c_file, r, base.as_bytes(), who), c, "C file: race {} {who:?}", races[i].0);
                         if tough.contains(&class) {
