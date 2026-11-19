@@ -10,6 +10,46 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Dangerous town monsters killed on sight (#619)
+
+The registry now holds **2159** parameters (three added). Owner, 2026-11-19:
+"I would also kill the dangerous ones on sight with the best attacks that we
+have, if possible", and "test it together when town is scary until a certain
+level, also dependent on the level of the monsters that are scary".
+
+A town monster (race level 0) is dangerous when a blow steals (`EAT_GOLD`,
+`EAT_ITEM`) or hurts for at least `attack_town_dangerous_min_damage` (6,
+dice x sides): the battle-scarred veteran (2d6), the mean-looking mercenary
+(1d10), the squint-eyed rogue (1d6, steals) and the filthy street urchin
+(steals). With `attack_town_dangerous_on_sight = 1`, in town, its attack
+value is multiplied by `attack_town_dangerous_bonus_percent` / 100 (300), so
+`borg_attack` picks it first with its best attack, and the hunt walks to it
+below CL20 (C never hunts in town then). The scare is not touched: while the
+scary list makes the town scary the Borg flees as before.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`):
+
+| arm | keys as main | deaths | sum of CL |
+|---|---:|---:|---:|
+| main | | 0 | 99 |
+| switch 0 | 18/18 | 0 | 99 |
+| switch 1, shipped list | 16/18 | 0 | 99 |
+| town-calm list (borg-zoo#328) | 0/18 | 2 | 102 |
+| switch 1, town-calm list | 0/18 | 2 | 101 |
+| `caution_town_never_scary = 1` | 0/18 | 2 | 97 |
+| switch 1, town never scary | 0/18 | 3 | 89 |
+
+With #622's `caution_town_scary_levels_less` (a build of both): N = 3 gives
+0 deaths and 101 CL, N = 6 1 and 102, N = 11 3 and 90. Killing them on sight
+raises the kills of the four (20 to 53 at N = 3) but not the thefts. Without
+the scare it costs deaths. Direction only: 18 games, no zoo run.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_town_dangerous_on_sight` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_kill_on_sight`; the bonus in `borg_thrust_damage_one`, `borg_launch_damage_one`; the hunt in `borg_flow_kill`) |
+| `attack_town_dangerous_min_damage` | 6 | damage | 1–1000 | `borg_fight_attack.rs` (`dangerous_town_race`) |
+| `attack_town_dangerous_bonus_percent` | 300 | percent | 100–10000 | `borg_fight_attack.rs` (`town_kill_bonus`) |
+
 ## Flight Recall from a danger share (#587)
 
 The registry now holds **2155** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.
