@@ -368,6 +368,63 @@ mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
   the Borg is not always good at escaping (e.g. leave the room and close the
   door) — #532.
 
+## 2026-11-18: reference-receipt compatibility decision (#375 / P5)
+
+- Owner authorized #579 merge and continuation. #579 integrated into track-p
+  at f357404e after green CI; #374 is closed. Work proceeds in its own
+  .worktrees/T375 checkout on task/T375-reference-receipts from that source.
+- Assess the existing full-package importer and Cemetery native API 1 at
+  pinned 09225018. No payload-reference resolver/closure contract exists;
+  retain self-contained qualified packages and implement no alternate registrar.
+- Read-only validation rechecks all 25 P341 mapped packages; all 13 receiving
+  packages have earlier qualified family/key matches present at 2f74e1c5.
+  Twelve identical parameter payloads occupy one Git blob already. Logical
+  working-tree byte totals are not claimed Git storage savings or new lives.
+- docs/REFERENCE-RECEIPTS.md records full versus coverage identity, mandatory
+  actual new-attempt provenance, changed-payload retention, missing-reference
+  failure and owner/version/index/reconciliation/retention boundaries for a
+  future format. Existing KNOWN coverage avoids unnecessary new death packages;
+  it does not establish complete result equality or capture another build's data.
+- No runtime/default/pin/schema/index/registry change, game, canonical write,
+  historical migration or deletion. Original records/maps/packages remain exact.
+  Full-package retention is the concrete permitted design outcome of #375.
+- #608 review recommends approval. Clarify that routine KNOWN controls require
+  no new record or extra retention/publication step; retained receipts/payloads
+  are scoped to explicit evidence claims, with a concrete Cemetery bundle link.
+  The thirteenth receiving package selects borg_core=reborn and has params.json,
+  not params-core.json; the twelve-copy byte/blob count is unchanged.
+- Importer regressions and archive verification pass; required checks/CI and
+  owner review precede task integration. After the last P5 task merges, stop
+  for a pinned track-p→main milestone review; do not promote automatically.
+
+## 2026-11-18: exact historical validation recipes (#374 / P5)
+
+- Owner authorized continuing after #555/#537 merged into track-p 6aa38d2b.
+  Task uses its own worktree .worktrees/T374 on task/T374-validation-invocations.
+- Add docs/VALIDATION-RECEIPTS.md's future capture contract and portable
+  reconstruction instructions plus harness/recipes/p341-full.json. These are
+  command metadata, not new gameplay reports, and original P341 files/packages
+  stay byte-identical. No original shell history or new 45-start run is claimed.
+- Exact receiving suite SHA-256: 7c81c28c03be3e6c188cb555fa8c917402bae0819d0791a1a810e031214d2eed.
+  It has 45 menu-letter starts, nine classes and 100000 turns each. Both roles
+  must use this file; donor's built-in full has another hash and lacks menu.
+- Verify clean pinned Git-tree source hashes 87717140… (receiving) and
+  d07a8547… (donor), every start/config hash, pristine effective borg.txt,
+  receiving profile/selectors and all 45 retained stream-hash pairs. Commands
+  are verified historical reconstruction; JOBS=2 and portable output paths are
+  explicit choices, not invented contemporaneous captures. The full host
+  environment and original argv spelling are not recoverable from the JSON.
+- Preserve strict comparison failure and output hash e06e85e8…; never report
+  the 0/45 complete-summary result as parity. Do not recover unretained opt-in,
+  replay/probe or donor death-postprocessing argv by assumption. The original
+  evidence/map retain their actual outcomes and original source-qualified IDs.
+- No runtime/default/pin change, local gameplay comparison, Cemetery write or
+  population experiment. Source-owned command contracts link immutable evidence.
+  Required checks/CI and owner review precede task integration; #375 follows.
+- #579 review found no blocker. Add the Cemetery clean-tree preflight,
+  explicit expected exit-1 note and pinned donor-script source/hash checks;
+  place this task entry first, preserving the earlier handover entries.
+
 ## 2026-11-18: a monster left with 1 HP is still worth attacking (#546)
 
 The owner replayed the floating-eye Mage 2028599180 (`~/borg-play`) and killed
@@ -6099,3 +6156,39 @@ and fresh gameplay evidence belong in Cemetery docs/reviews/M2, not here.
 - Required checks/CI and owner review precede task integration under RULES 1a.
   #477 stays unmerged; update its pin after approved track-p integration and
   re-review the synchronized result before promotion.
+
+
+## 2026-11-18: isolated P5 source refresh after #537 review (#554)
+
+- Dedicated task/T554-p5-source-refresh starts from track-p ac293ef7 and
+  synchronizes accepted main c9e58ca0. Only source reference/reading metadata
+  changes beyond that main snapshot; runtime/tool/evidence inputs stay exact.
+- Separate the borg-rs pin/copy refresh from #536's P5 plan/P4 completion
+  edits. Update KNOWLEDGE.md for the actual donor material read, including
+  unaccepted default-off direct buy and the empty-light-slot Recall correction.
+- Run the all-six-source report before --update borg-rs; record every observed
+  head and deferral in docs/research/P5-SOURCE-REFRESH.md. Main's newer zoo pin
+  stays; engine/C/tracker and further zoo changes are intentionally deferred.
+  This is a scoped refresh proposal for owner review, not a claim all pins moved.
+- #537 depends on this dedicated refresh; after its approved integration,
+  #537 contains only the kickoff plan and its handover. Preserve published
+  commits. Neither PR merges until owner review and green CI (RULES 1a).
+
+
+## 2026-11-18: P5 kickoff after accepted P4 (#536)
+
+- Owner requested the next milestone after #477 promoted P4 at 435b07e7.
+  Define bounded P5: #374 exact validation commands/suite identities, then
+  #375's preservation/compatibility design for future reference receipts.
+- Originally synchronized main 6101ca01 from track-p ac293ef7. Review
+  follow-up now includes accepted main c9e58ca0 through prerequisite #555.
+  Fresh task branches must use track-p after approved prerequisite integration.
+- Isolate scripts/refresh-sources.py --update borg-rs and its ledger/all-source
+  inventory in #554/#555. Merge that source-only PR before #537; then this
+  kickoff adds only PLAN and its handover. Original mixed commit e5108d52
+  stays historical; do not amend or force-push it.
+- P4's completion replaces its stale in-progress status in PLAN. Historical
+  validation/packages stay attributed to their original source and hashes.
+- Kickoff PR must pass checks and owner review under RULES 1a before merging
+  into track-p. Then #374 goes first; #375 follows. No reviewer launched,
+  next gameplay policy, population measurement or external evidence rewrite.

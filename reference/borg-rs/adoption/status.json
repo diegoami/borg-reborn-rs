@@ -1,6 +1,6 @@
 {
   "schema": "borg-rs/c-consumer-adoption@1",
-  "phase": "impact_v11r_accepted",
+  "phase": "impact_v13r_owner_accepted",
   "review_issue": "https://github.com/diegoami/borg-rs/issues/2",
   "m5_candidate": "28468aa9fdc74cbb65d351349b973835d8c42af9",
   "m5_accepted_source": "020322749026418a666da3209c169f48ec9d608c",
@@ -20,6 +20,102 @@
     "review_package_commit": "9929eb4eb16412ef2415a5711a3eecab92fa1288"
   },
   "adopted_batches": [
+    {
+      "id": "c-v13r",
+      "target_commit": "9ccb2aaeebc56ad6aeb35b668f112f0f58b142f8",
+      "target_tag": "4.2.6-impact-v13",
+      "previous_commit": "4e1b912cbf6d2b8a0243b19ebddfb2d26e7509f2",
+      "state": "carried_pending_review",
+      "units": 19,
+      "consumer_carries": 19,
+      "tracking_record": "docs/adoption/c-v13r/README.md",
+      "series": "docs/adoption/c-v13r/series.json",
+      "receipt": "docs/validation/2026-11-14-c-v13r/README.md",
+      "pr": "https://github.com/diegoami/borg-rs/pull/72",
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/73 (closed 2026-11-14)",
+      "rust_base_commit": "a4739fa8c81e6183f17723733e899c0ed8e19dfb",
+      "implementation_head": "a2c6c67",
+      "merge_commit": "5dcc1db",
+      "merged_branch": "claude/v13r-carry",
+      "tag": "4.2.6-impact-v13",
+      "tag_target_commit": "5dcc1db",
+      "github_milestone": "4.2.6 impact v13 (milestone 5, closed; tracking issue #73 assigned)",
+      "owner_acceptance": {
+        "instruction": "accept and merge (owner, 2026-11-14)",
+        "date": "2026-11-14",
+        "basis": "independent review approve with corrections (F1 low, the changed-run count, corrected and pushed); consumer-side milestone-13 review approve with corrections (docs/fixture tooling only)",
+        "merged_as": "https://github.com/diegoami/borg-rs/pull/72",
+        "merge_commit": "5dcc1db"
+      },
+      "owner_direction": "carry BBC milestone 13 changes as milestone v13R (owner-directed, 2026-11-14: 'you can do v13r')",
+      "note": "Nineteen consumer carry units (patches 0119-0137): heal amounts, cure lists, BI_PSTUN, elemental vulnerability in the danger model, swap fear, wand svals by name, dead-unique bookkeeping, respawn birth-menu letters, glyph-flow fixes, three dead-code removals, two comments. The consumer's post-tag carries 0138-0140 are milestone-14 scope there and are not taken. The consumer's own milestone-13 review (better-borg-c#521) returned approve with corrections on 2026-11-14; the corrections are docs/fixture-tooling only on the consumer side (PR 531, 72cdf63bb, after the tag) - no src/borg code changed, so the carried snapshot is the approved state. No cohort or benefit claim.",
+      "rust_milestone_accepted": false,
+      "c_rust_parity": "111/111 identical on keys, messages and state (smoke 3/3, full 45/45, classes 16/16, config 7/7, config-six 6/6, options 25/25, deep 9/9) after a full two-pass oracle re-record; 103 of the 111 runs are byte-identical to the previous corpus, 8 changed (review F1 corrected the count)",
+      "rust_tests": "123 passed, 1 existing ignored (new: the 0132 swap-fear pin)",
+      "clippy": "clean on rustc 1.98.1",
+      "no_c_borg": "OK: the Rust binary links no C Borg (154/154 engine objects identical)",
+      "oracle_refresh": "all seven standing suite oracles re-made from the v13R C build (checkout_source_sha256=41879551b0ff7eccbd3c3d38fcba7547ff310e9dc2e2762f31c18e4254878378), two passes identical, pass 2 re-checked, Rust role matching 111/111; digests in docs/validation/2026-11-14-c-v13r/oracle-digests.json"
+    },
+    {
+      "id": "c-v12r",
+      "target_commit": "4e1b912cbf6d2b8a0243b19ebddfb2d26e7509f2",
+      "target_tag": "4.2.6-impact-v12",
+      "previous_commit": "39268ca8a470d1cbd44de27bf1fd1b3ee403bada",
+      "state": "reviewed_pass_owner_accepted",
+      "units": 3,
+      "consumer_carries": 1,
+      "official_import": true,
+      "upstream_head": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
+      "retired_local_carries": {
+        "0001 (CBUG-0066 safer emergency swap)": "upstream bc67c099e",
+        "0002 (CBUG-0002 knockout reaction gate)": "upstream 9d062a64d, 8c75bdccb, 42cd156ac"
+      },
+      "tracking_issue": "https://github.com/diegoami/borg-rs/issues/57",
+      "receipt": "docs/validation/2026-11-13-c-v12r/README.md",
+      "record": "docs/adoption/c-v12r/README.md",
+      "series": "docs/adoption/c-v12r/series.json",
+      "rust_base_commit": "4ed3263ba340ce907484465f2d3addbdf5eab8ed",
+      "implementation_commit": "b938452",
+      "owner_direction": "carry BBC milestone 12 changes as milestone v12R (owner-directed, 2026-11-13)",
+      "note": "One consumer carry (0118 NEWKILL-95) and the official angband import since impact v11; the consumer's carries 0001 and 0002 are retired because upstream now carries that logic. The C blobs are the consumer's v12 files and the vendored engine moves to 42cd156ac; the Rust carries the same three Borg-side changes. No cohort or benefit claim.",
+      "rust_milestone_accepted": true,
+      "game_cases": 70,
+      "c_rust_parity": "70/70 identical on keys, messages and state (smoke 3/3, full 45/45, classes 16/16, config-six 6/6)",
+      "rust_tests": "122 passed, 1 existing ignored",
+      "clippy": "7 pre-existing findings, identical on main with this sandbox toolchain (rustc 1.100.0); none from the carry",
+      "no_c_borg": "OK: the Rust binary links no C Borg",
+      "suites_run_for_the_oracle_refresh": "deep (9 x 1,000,000 turns) and options (25 runs) were not part of the v12R validation matrix (sandbox cost); on 2026-11-14 both were run for the oracle refresh on the owner's machine, the C role twice and the Rust role once, with full parity (see oracle_refresh)",
+      "standing_reference": "the standing C reference no longer applied (0/45 against harness/reference/full): the import changes engine behaviour, so it was refreshed on owner direction (2026-11-13)",
+      "oracle_refresh": "all seven standing suite oracles (smoke, full, classes, config, config-six, options, deep) are the v12R C build. smoke, full, classes, config and config-six were re-made from the v12R C build on 2026-11-13, each suite run twice with the two passes identical; the Rust role matches the new oracles 3/3, 45/45, 16/16 and 6/6. options and deep were re-made the same way on 2026-11-14 on the owner's machine (a C pass costs minutes there, not the sandbox's hours): both passes identical, pass 2 re-checked against the stored oracle, and the Rust roles match 25/25 and 9/9 on keys, messages and state - the first C/Rust parity check of these suites on the imported engine. The second refresh's build was made from d3d280e with the same checkout_source_sha256 (28974d08...) as the first five, so the whole corpus describes one C source of truth. Digests for all 576 stored files in docs/validation/2026-11-13-c-v12r/oracle-digests.json",
+      "independent_review": {
+        "verdict": "pass on re-review; no remaining findings",
+        "reviewed_source": "d1099ab (the finding), re-review 071c5c5",
+        "finding": "blocking: the branch did not compile - borg-rs/src/borg.rs:433 and borg-rs/src/borg_caution.rs:1509 still read st.msgs.dont_react after MsgState.dont_react was removed",
+        "author_fix": "c1e5df3 - both sites use st.borg.dont_react and the Borg struct field is the gate itself again",
+        "finding_reported": "the reviewer, by source inspection (the finding was relayed by the owner; no GitHub review or review comment exists)",
+        "qualification": "the build and the tests were not independently reproduced: the reviewer has no Cargo locally and the repository has no CI workflow (no .github/workflows at the root), so no Actions run exists for any head. The build/test evidence is the author's, taken on the exact pushed tree: 122 tests pass (1 ignored), clippy reports the same seven pre-existing findings, and a fresh C run matches the installed oracle 3/3",
+        "open_findings": []
+      },
+      "receipt_digests": "docs/validation/2026-11-13-c-v12r/suite-digests.json",
+      "owner_acceptance": {
+        "instruction": "accept v12R and place the tag, delete the probe branches, refresh options and deep, add the CI workflow (owner selection, 2026-11-14)",
+        "date": "2026-11-14",
+        "basis": "independent review pass on re-review with no remaining findings; the compile fix c1e5df3 verified on the exact pushed tree; the qualification gap (no CI) closed after the review",
+        "merged_as": "https://github.com/diegoami/borg-rs/pull/58",
+        "merge_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+        "merged_branch": "claude/v12r-carry",
+        "branch_head": "b26d6d9b972c5128cf076d03140e162d068658e6",
+        "tag": "4.2.6-impact-v12",
+        "tag_target_commit": "e6d13fc9baff0ef7f06de6333fbda436c961e0bf",
+        "github_milestone": "4.2.6 impact v12 (milestone 2, closed; tracking issue #57 assigned)",
+        "ci_workflow": ".github/workflows/rust-test.yml (added 6b066ea): checkout, Rust toolchain, cargo test --release --manifest-path borg-rs/Cargo.toml; green runs on the branch heads",
+        "probe_branches_deleted": [
+          "claude/v12r-oracle-probe",
+          "tmp-probe"
+        ],
+        "record": "docs/adoption/c-v12r/README.md"
+      }
+    },
     {
       "id": "c-v11r",
       "target_commit": "39268ca8a470d1cbd44de27bf1fd1b3ee403bada",
@@ -51,7 +147,9 @@
         "merged_as": "PR #30",
         "merge_commit": "f4149b4cc84af7e4c680f90d4db9f61ba8b660f3",
         "tracking_issue": "https://github.com/diegoami/borg-rs/issues/29",
-        "tag_pending_owner": "The v11R tag is not placed by this record; the GitHub App exposes no tag-creation tool, so the owner pushes it."
+        "tag_pending_owner": "The v11R tag is not placed by this record; the GitHub App exposes no tag-creation tool, so the owner pushes it.",
+        "reconciliation": "The owner has since pushed the annotated tag 4.2.6-impact-v11 (on the branch-side record commit 0f98f85b, contained in main via PR #30). The GitHub milestone was backfilled on 2026-11-14.",
+        "github_milestone": "4.2.6 impact v11 (milestone 4, closed; tracking issue #29 assigned)"
       }
     },
     {
@@ -438,13 +536,14 @@
         "basis": "independent qualified pass with no acceptance blockers (borg-rs#23); findings M10-R-01, M10-R-02 and M10-R-04 addressed in dd9983b",
         "tag": "4.2.6-impact-v10",
         "tag_note": "annotated tag on the merged main commit; the session git proxy refuses tag pushes, so the owner pushes it",
-        "scope": "Tag 4.2.6-impact-v10 marks main with the C milestone10 carry, after 4.2.6-impact-v9 for milestone9"
+        "scope": "Tag 4.2.6-impact-v10 marks main with the C milestone10 carry, after 4.2.6-impact-v9 for milestone9",
+        "github_milestone": "4.2.6 impact v10 (milestone 3, backfilled 2026-11-14, closed; tracking issue #23 assigned)"
       }
     }
   ],
-  "unchanged_engine_base": "e473720ed88a0f0c7ca66815cef3000eb4a38bc3",
+  "unchanged_engine_base": "42cd156ac9f95ddf4311e88dd7ad462292d6d1d6",
   "policy": "docs/C-CONSUMER-ADOPTION.md",
-  "next_action": "v11R is owner-accepted and merged as PR #30 at f4149b4cc84af7e4c680f90d4db9f61ba8b660f3. The v11R tag decision remains with the owner. The post-M10 family lane (PR #26 and PR #28) is merged separately, is opt-in and carries no derived tag and no benefit claim. No later C milestone is selected automatically.",
+  "next_action": "v13R is carried on branch claude/v13r-carry (owner-directed, 2026-11-14): nineteen units from better-borg-c 4.2.6-impact-v13 (9ccb2aaee), gates green (123 tests, clippy clean, no-C-Borg OK) and a full two-pass oracle re-record with the Rust role matching 111/111. It awaits borg-rs's independent review on the PR, then owner acceptance and the tag decision. The consumer's own milestone-13 review (better-borg-c#521) was open at carry time. The post-M10 family lane is separate and unaffected.",
   "independent_review": {
     "verdict": "pass",
     "acceptance_blockers": false,
@@ -468,15 +567,16 @@
     "tagging_delegated": true
   },
   "active_batch": {
-    "id": "c-v11r",
-    "starting_rust_main": "399c907950b1fd474ddfc1c5a5d4f86063778aac",
-    "state": "accepted_impact_v11r",
-    "record": "docs/adoption/c-v11r/README.md",
-    "receipt": "docs/validation/2026-11-10-c-v11r/README.md",
-    "branch": "claude/v11r-carry",
-    "merge_pr": "https://github.com/diegoami/borg-rs/pull/30",
-    "merge_commit": "f4149b4cc84af7e4c680f90d4db9f61ba8b660f3",
-    "owner_acceptance_date": "2026-11-11"
+    "id": "c-v13r",
+    "starting_rust_main": "a4739fa8c81e6183f17723733e899c0ed8e19dfb",
+    "state": "reviewed_pass_owner_accepted",
+    "record": "docs/adoption/c-v13r/README.md",
+    "receipt": "docs/validation/2026-11-14-c-v13r/README.md",
+    "branch": "claude/v13r-carry",
+    "target_commit": "9ccb2aaeebc56ad6aeb35b668f112f0f58b142f8",
+    "target_tag": "4.2.6-impact-v13",
+    "pr": "https://github.com/diegoami/borg-rs/pull/72",
+    "tracking_issue": "https://github.com/diegoami/borg-rs/issues/73"
   },
   "m2_active_batch_record": {
     "id": "c-m2",
@@ -514,5 +614,6 @@
       "reconciliation": "Corrected on 2026-11-11: the owner-pushed annotated tag 4.2.6-impact-v2 (2026-11-08T04:20:01Z) and the docs/STATUS.md statement are the acceptance record; this mirror had not been updated.",
       "tag_target_commit": "383215189a20a3c47158c8e641d1b99723f84891"
     }
-  }
+  },
+  "engine_base_note": "The official import in the consumer milestone 12 moves the vendored engine base from e473720ed88a0f0c7ca66815cef3000eb4a38bc3 to the imported 42cd156ac9f95ddf4311e88dd7ad462292d6d1d6; borg-rs's own fork corrections (docs/FORK-CORRECTIONS.md) and harness hooks are unchanged."
 }
