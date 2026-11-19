@@ -10,6 +10,53 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Blackguards: combat mana, Berserk Strength, Whirlwind Attack (#684)
+
+The registry now holds **2195** parameters (2194 on main; one added).
+Owner: Blackguards are the one class worse with the Phase Door rule (#662:
+7 to 11 deaths in borg-zoo#347's confirmation); "do they use their spells?"
+
+**How a Blackguard's mana works** (`PF_COMBAT_REGEN`, `player-util.c`
+`take_hit`, `player_regen_mana`):
+- it gains SP as it loses HP: losing X% of its HP gives X% of max(SP, 10);
+- its SP always drains, and the drain heals it at double efficiency;
+- resting does not bring SP back.
+
+**The 18 Blackguard deaths of borg-zoo#347's confirmation** (both arms):
+- all ended with at least half their SP;
+- casts: Seek Battle 317, Berserk Strength 36, Whirlwind Attack 2,
+  Shatter Stone 1. Seek Battle is cast as the Blackguard's Detect Evil
+  (`borg_light.rs`);
+- the commonest end is general, not the Blackguard's: fleeing on foot from
+  an adjacent soldier or cutpurse, hit in the back each turn (#532).
+
+**Berserk Strength** is cast by C only at "some danger but not much"
+(`borg_defend`), and `borg_defend` is not consulted while fleeing. With
+`attack_combat_regen_berserk = 1`, a combat-regen class casts it before a
+melee blow or a Whirlwind Attack when it is not berserk. On 40 Blackguard
+starts (the 17 that died in the confirmation, the 2 classes-18 ones, 21
+more; 100,000 turns; the Phase Door rule on in both arms; main
+`826cde4c`), the switch doubles the Berserk casts (61 to 130) and changes
+19 of 40 games, with deaths 1 and 1 (the same), sum of CL 214 to 210 and of
+max depth 95 to 91. Not shipped: Berserk Strength also stops HP
+regeneration and costs 10 AC (`class.txt`). The confirmation's deaths do
+not reproduce on this main: 1 of the 40.
+
+**Whirlwind Attack** (CL5, 4 SP: one blow to each adjacent enemy) is
+cast once in the 40 games. Logged at every attack decision of a
+Blackguard that knows it (1,219 with an enemy adjacent and an attack
+chosen):
+- SP below 4 in 1,151 (94%), SP 0 in 791 (65%);
+- two or more enemies adjacent and castable: once.
+
+A Blackguard starts each fight near 0 SP (the drain) and earns 4 SP only
+after losing about 40% of its HP. The Borg does not miss Whirlwind: at
+low level it is almost never affordable.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_combat_regen_berserk` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`combat_regen_berserk`, before the blow in `borg_attack`) |
+
 ## No rest while breeders are known (#644)
 
 The registry now holds **2194** parameters (2193 after #556; one added).
