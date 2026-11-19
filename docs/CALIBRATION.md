@@ -14,7 +14,7 @@ right after that change, so older sections show older counts.
 
 The registry now holds **2172** parameters (2169 after #619; three added). Owner, 2026-11-19: "weighing buying projectile and magic by class. Not only rangers, but other classes should buy more projectiles"; by shooting skill and by device skill; "projectile buying is more important if they cannot get flasks of oil or wands".
 - `town_missiles_percent` (compiled -1 = C, the Ranger's reserve only): the town plan's reserve of shots for the class's launcher, in percent of `borg_town_w_ranger_missiles`, for any class. The class files set it by `class.txt`'s shooting skill (Ranger 72 = 100): Rogue 90, Warrior 75, Paladin 70, Druid 55, Priest and Blackguard 50, Mage and Necromancer 30.
-- `town_missiles_other_ranged_percent` (compiled 100, shipped 50): with 5 or more flasks of oil and attack-wand charges (Magic Missile, Stinking Cloud) in the pack, the shots weigh this percent.
+- `town_missiles_other_ranged_percent` (compiled 100, shipped 10; owner: "I would make them buy it mostly when they cannot find flasks of oil at all", and the General Store always stocks flasks, `store.txt`): with 5 or more flasks of oil and attack-wand charges (Magic Missile, Stinking Cloud) in the pack, the shots weigh this percent.
 - `town_devices_percent` (compiled 100): a wand, rod or staff is worth this percent of what it supplies. The class files set it by device skill (24 = 100): Mage and Necromancer 150, Rogue 135, Priest 125, Ranger 115, Druid, Paladin and Blackguard 100, Warrior 75.
 
 ## Dangerous town monsters killed on sight (#619)
