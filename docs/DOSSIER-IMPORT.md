@@ -24,6 +24,21 @@ neither a package nor a pin move. Another key stream, or the same keys from
 another start, is a new death and is retained as below. `reconcile-deaths.py
 --exact` restores the build-qualified match for audits.
 
+## Reference receipts decision (#375)
+
+Keep qualified packages self-contained under the current import/native-tool
+contracts. [The reference-receipt assessment](REFERENCE-RECEIPTS.md) explains
+why identical results do not permit dropping distinct source/build/config
+provenance, and records requirements for any future Cemetery-owned resolver.
+No reference-only package, symlink payload or alternate registrar is introduced.
+A routine `KNOWN` control needs no new record/package or additional receipt
+retention/publication step beyond the existing CI workflow (#464). Only when a
+specific validation/investigation claim depends on retaining a run do its
+actual receipt and required differing payloads belong with that case's Cemetery
+evidence bundle; the assessment links an existing example. A link to an older
+case never substitutes its metadata for that run. Existing packages, maps and
+legacy inventory stay immutable.
+
 ## Retain a completed validation package
 
 Import each completed native dossier with:
