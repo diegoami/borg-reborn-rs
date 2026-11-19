@@ -10,6 +10,25 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## No detection prayer by panel at low level (#685)
+
+The registry now holds **2200** parameters (2199 after #625; one added).
+
+- **`light_detect_evil_spell_min_level`** (0 = C): below this character
+  level, `borg_check_light`'s panel check casts no Detect Evil, Detect
+  Monsters, Read Minds or Seek Battle. Items, rods and Sense Surroundings
+  still detect. C casts the prayer on every new panel, so a low-level
+  Priest or Paladin, with 2–6 SP, spends them there and then rests for
+  mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
+  Paladins. Detect Evil also misses the animals that kill these classes on
+  DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; 0 (C) for
+  Warrior, Rogue, Ranger and Blackguard.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:365` |
+
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
 The registry now holds **2199** parameters (2198 before; one added).
