@@ -343,7 +343,7 @@ gap to the next row. Shipped play changes, so `harness/reference/smoke-borg-rs`
 is re-recorded (#606). Direction only: 18 games, no zoo run.
 ## The scary flag clears when the scary monster is hurt or afraid (#593)
 
-The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (0, off): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
+The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (compiled 0, shipped 1 since #671): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
 
 ## The owner's Phase Door rule (#584)
 
