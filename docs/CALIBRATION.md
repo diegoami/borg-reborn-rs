@@ -10,6 +10,59 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## No rest with a monster near (#615, rule a)
+
+The registry now holds **2179** parameters (2177 after #567 and #637; two added).
+Owner, 2026-11-19, on the rest analysis (borg-cemetery#74): "ok do a". In 108
+games on main, 63% of town rests and 13% of dungeon rests lasted one player
+turn, mostly with an awake monster in view: the game breaks the rest and the
+Borg starts another, up to 32 in a row. `borg_check_rest` refuses a rest for
+monsters close by (within 1 grid, 2 for a mover, 5 for a scary one, 10 for a
+breeder, a ranged attacker in view); it has no memory of a monster that was
+near a moment ago, and none of an awake one further off that may come. The
+game breaks a rest when a monster comes into view (`mon-util.c`, "Disturb on
+appearance").
+
+- **`recover_rest_monster_turns`** (game turns, 0 = off): no rod, HP/SP or
+  mana rest in `borg_recover` while an awake monster that can move was known
+  within `recover_rest_monster_distance` (20 grids) in the last N game turns
+  on this level. The Borg does something else that think. Note: `# No rest:
+  a monster was near N game turns ago.` (once a think).
+- **The memory:** #567's scan (`nearest_mover_seen`), run each dungeon think
+  in `borg_caution` and before each rest. The clock is set while an awake
+  monster that can move is **on screen** (`kill.seen`), and then holds rests
+  for N game turns after it leaves the screen or is forgotten. Review of
+  #645: it records which monster set it, and that monster's death
+  (`borg_count_death`) clears it, so a dead yeek no longer holds a rest.
+- **Not when impaired:** confused, blind, hallucinating, stunned or afraid,
+  the rest is kept. In a first local run a confused Ranger held its rest in
+  town, walked toward its home into lava and died; an afraid Borg twitches
+  in a random direction (review of #645).
+- **The walk to a recovery grid** (`borg_flow_recover`, `GOAL_RECOVER`) is
+  held too (`holding_for_monster`, review of #645), as #614 does: the Borg
+  could not rest there either.
+- The Recall rests (all three, #567) keep their own switch,
+  `caution_recall_rest_monster_turns`.
+
+Evidence, a lead (the 18 classes-18 starts, 100,000 turns, borg-rs core,
+branch with main `13e1187c`):
+
+| arm | deaths | sum of CL | rests started | held-rest notes |
+|---|---:|---:|---:|---:|
+| off (keys = #640's off, 18/18) | 1 (Priest, game turn 8,158) | 101 | 1,893 | |
+| 100 | 2 (the same Priest; a Druid at 90,700, 9,000 game turns after its last held rest, walking to the stairs at 2 HP) | 96 | 1,203 | 1,172 |
+| 200 | 1 (the same Priest) | 97 | 1,246 | 1,684 |
+
+Re-taken after the review of #645 (the clock clears on the monster's death,
+afraid is impaired, the recovery-grid walk waits). The reviewer's own 66
+games (6 races x 11 classes) gave 3 deaths at 100 and at 200 against 6 off,
+and a higher mean minimum HP. Direction only: the zoo decides.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_recover.rs:56` |
+| `recover_rest_monster_distance` | 20 | grids | 1–100 | `borg_recover.rs:57` |
+
 ## No Recall rest right after a monster was near (#567)
 
 The registry now holds **2177** parameters (2175 after #637; two added). From
@@ -294,8 +347,8 @@ measurement.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:76` |
-| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:94` |
+| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:143` |
+| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:164` |
 | `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3333` |
 | `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:3332` |
 | `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:3339` |
@@ -971,7 +1024,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3607` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3650` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2650` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2657` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2877` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -1469,14 +1522,14 @@ and at each source location. The prefix `caution_` is part of every name.
 | `caution_sell_max_level` | 25 | level | 1–51 | `borg_caution.rs:3379` |
 | `caution_sell_max_gold` | 25000 | gold | 0–1000000 | `borg_caution.rs:3380` |
 | `caution_sell_min_count` | 13 | count | 0–1000 | `borg_caution.rs:3381` |
-| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:3496` |
-| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:3497` |
-| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:3503` |
-| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:3504` |
-| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:3509` |
-| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:3510` |
-| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:3519` |
-| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:3528` |
+| `caution_recall_mana_maxsp` | 60 | sp | 0–10000 | `borg_caution.rs:3539` |
+| `caution_recall_mana_divisor` | 4 | divisor | 1–100 | `borg_caution.rs:3540` |
+| `caution_recall_phase_tolerance` | 50 | percent | 0–100 | `borg_caution.rs:3553` |
+| `caution_recall_phase_horizon` | 1 | turns | 1–100000 | `borg_caution.rs:3554` |
+| `caution_recall_phase_fail` | 30 | percent | 0–100 | `borg_caution.rs:3559` |
+| `caution_recall_portal_fail` | 30 | percent | 0–100 | `borg_caution.rs:3560` |
+| `caution_recall_cure_loss` | 100 | hp | 0–10000 | `borg_caution.rs:3569` |
+| `caution_recall_heal_loss` | 150 | hp | 0–10000 | `borg_caution.rs:3578` |
 | `caution_retreat_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1145` |
 | `caution_back_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1373` |
 | `caution_danger_horizon` | 1 | turns | 1–10 | `borg_caution.rs:1684` |
@@ -1964,21 +2017,21 @@ item preference, random roll or effect was changed.
 
 | Name | Default | Unit | Range | Original location |
 | --- | ---: | --- | --- | --- |
-| `recover_danger_horizon` | 1 | turns | 1–10 | `borg_recover.rs:170` |
-| `recover_danger_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:173` |
-| `recover_hurt_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:183` |
-| `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:184` |
-| `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:188` |
-| `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:189` |
-| `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:196` |
-| `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:160` |
-| `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:173` |
-| `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:186` |
-| `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:199` |
-| `recover_cheap_image_chance` | 75 | percent | 0–100 | `borg_recover.rs:207` |
-| `recover_cheap_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:214` |
-| `recover_cheap_heal_chance` | 75 | percent | 0–100 | `borg_recover.rs:215` |
-| `recover_cheap_heal_sp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:217` |
+| `recover_danger_horizon` | 1 | turns | 1–10 | `borg_recover.rs:233` |
+| `recover_danger_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:236` |
+| `recover_hurt_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:229` |
+| `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:230` |
+| `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:234` |
+| `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:235` |
+| `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:242` |
+| `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:278` |
+| `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:291` |
+| `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:304` |
+| `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:317` |
+| `recover_cheap_image_chance` | 75 | percent | 0–100 | `borg_recover.rs:342` |
+| `recover_cheap_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:349` |
+| `recover_cheap_heal_chance` | 75 | percent | 0–100 | `borg_recover.rs:350` |
+| `recover_cheap_heal_sp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:352` |
 | `recover_unholy_min_hp` | 90 | hp | 0–10000 | `borg_recover.rs:237` |
 | `recover_costly_stun_chance` | 25 | percent | 0–100 | `borg_recover.rs:266` |
 | `recover_costly_heavy_stun_chance` | 95 | percent | 0–100 | `borg_recover.rs:279` |
