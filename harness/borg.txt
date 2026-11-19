@@ -374,9 +374,13 @@ borg_param_caution_flee_recall_danger_percent = 0
 # deeper: in town and on DL1 a staircase crosses between town and dungeon,
 # and the Recall would take the Borg back. 0 = C's Recall-only rules (the
 # buy-time escapes of caution_recall_*).
-# Impact: off here; see the PR for classes-18.
+# Impact: zoo-neutral and rarely reached: borg-zoo#400 (1,800 starts) 103
+# deaths against 105; reborn-recall-usual-200k-main (72 starts at 200k) the
+# same 4 deaths, 17 games changed, CL -0.04, DL -0.05; borg-zoo#428 (108
+# starts on e5cc5469) 2 against 2, 3 games changed. Shipped 1 (owner,
+# 2026-11-20, #694: "I would adopt it"), as the better way to play.
 
-borg_param_caution_recall_wait_as_usual = 0
+borg_param_caution_recall_wait_as_usual = 1
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
