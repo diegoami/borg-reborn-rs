@@ -81,6 +81,12 @@ pub struct Borg {
     /// view is soon forgotten; this outlives that.
     pub recall_watch_turn: i32,
     pub recall_watch_depth: i32,
+    /// borg-reborn-rs (#615 rule a): the same for every rest
+    /// (`recover_rest_monster_distance`), and the think that last noted a
+    /// held rest.
+    pub rest_watch_turn: i32,
+    pub rest_watch_depth: i32,
+    pub rest_watch_noted: Option<BorgTime>,
     /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
     /// steps it had to go, and when. A new monster wipes the flow goal for a
     /// think; the commitment to the staircase outlives that.

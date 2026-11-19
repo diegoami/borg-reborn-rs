@@ -47,6 +47,43 @@ const GOAL_RECOVER: i16 = 9;
 /// `GOAL_FLEE` (borg-flow.h): the flight to a staircase (#614).
 const GOAL_FLEE: i16 = 7;
 
+/// borg-reborn-rs (#615 rule a, owner: "ok do a"): with
+/// `recover_rest_monster_turns`, record the game turn while an awake monster
+/// that can move is known within `recover_rest_monster_distance`. Called
+/// every dungeon think (`borg_caution`) and before every rest, so a monster
+/// forgotten out of view still counts.
+pub(crate) fn watch_for_rest(st: &mut BorgState) {
+    if param(Param::recover_rest_monster_turns) != 0
+        && crate::borg_caution::awake_mover_within(st, param(Param::recover_rest_monster_distance))
+    {
+        st.borg.rest_watch_turn = crate::engine::game_turn();
+        st.borg.rest_watch_depth = crate::engine::player_depth();
+    }
+}
+
+/// #615 rule a: no rest (rod, HP/SP, mana) while an awake monster was near
+/// within the last `recover_rest_monster_turns` game turns on this level.
+/// A rest then is broken at once by the game (#615's analysis: 63% of town
+/// rests and 13% of dungeon rests lasted one player turn, mostly with an
+/// awake monster in view, up to 32 in a row). The Borg does something else.
+fn rest_held_for_monster(st: &mut BorgState) -> bool {
+    let turns = param(Param::recover_rest_monster_turns);
+    if turns == 0 {
+        return false;
+    }
+    watch_for_rest(st);
+    let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
+    let here = st.borg.rest_watch_depth == crate::engine::player_depth();
+    if !crate::borg_caution::recall_watch_holds(turns, st.borg.rest_watch_turn, ago, here) {
+        return false;
+    }
+    if st.borg.rest_watch_noted != Some(st.borg.time.now) {
+        st.borg.rest_watch_noted = Some(st.borg.time.now);
+        borg_note(st, &format!("# No rest: a monster was near {ago} game turns ago."));
+    }
+    true
+}
+
 /// borg-reborn-rs (#614, owner): "once committed to a stair, it must at
 /// least reach that stair before stopping to rest". A Borg on a flight
 /// flow (`GOAL_FLEE`) whose staircase is at most `recover_rest_reach_stairs`
@@ -462,6 +499,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -503,7 +541,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER
-        && !rest_held_for_stairs(st);
+        && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -554,6 +593,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !hunt_now(st)
         && !rest_held_for_stairs(st)
+        && !rest_held_for_monster(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 

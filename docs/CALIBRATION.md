@@ -119,8 +119,8 @@ measurement.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:76` |
-| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:94` |
+| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:117` |
+| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:138` |
 | `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3333` |
 | `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:3332` |
 | `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:3339` |
@@ -796,7 +796,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3600` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3605` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2650` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2657` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2877` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -1789,16 +1789,16 @@ item preference, random roll or effect was changed.
 
 | Name | Default | Unit | Range | Original location |
 | --- | ---: | --- | --- | --- |
-| `recover_danger_horizon` | 1 | turns | 1–10 | `borg_recover.rs:170` |
-| `recover_danger_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:173` |
-| `recover_hurt_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:183` |
-| `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:184` |
-| `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:188` |
-| `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:189` |
+| `recover_danger_horizon` | 1 | turns | 1–10 | `borg_recover.rs:207` |
+| `recover_danger_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:210` |
+| `recover_hurt_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:220` |
+| `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:221` |
+| `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:225` |
+| `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:226` |
 | `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:196` |
-| `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:160` |
-| `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:173` |
-| `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:186` |
+| `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:269` |
+| `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:282` |
+| `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:295` |
 | `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:199` |
 | `recover_cheap_image_chance` | 75 | percent | 0–100 | `borg_recover.rs:207` |
 | `recover_cheap_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:214` |

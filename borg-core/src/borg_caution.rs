@@ -3437,22 +3437,27 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
 /// away, read its only Word of Recall, forgot Grip a think later (out of
 /// view: danger 0) and rested for Recall; Grip came back and bit.
 fn watch_for_recall(st: &mut BorgState) {
-    if p(Param::caution_recall_rest_monster_turns) == 0 {
-        return;
+    if p(Param::caution_recall_rest_monster_turns) != 0
+        && awake_mover_within(st, p(Param::caution_recall_rest_monster_distance))
+    {
+        st.borg.recall_watch_turn = engine::game_turn();
+        st.borg.recall_watch_depth = engine::player_depth();
     }
-    let range = p(Param::caution_recall_rest_monster_distance);
-    let near = (1..st.kills.nxt.max(0) as usize).any(|i| {
+    // #615 rule a: the same memory for every rest.
+    crate::borg_recover::watch_for_rest(st);
+}
+
+/// An awake monster that can move is known within `range` (the engine's
+/// distance). A monster that never moves (a floating eye, a mold) cannot
+/// come back (#567).
+pub(crate) fn awake_mover_within(st: &BorgState, range: i32) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
         let kill = &st.kills.kills[i];
-        // A monster that never moves (a floating eye, a mold) cannot come back.
         kill.r_idx != 0
             && kill.awake
             && engine::distance(st.borg.c, kill.pos) <= range
             && !engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
-    });
-    if near {
-        st.borg.recall_watch_turn = engine::game_turn();
-        st.borg.recall_watch_depth = engine::player_depth();
-    }
+    })
 }
 
 /// borg-reborn-rs (#567): instead of a long rest for Recall, stay still one
@@ -3475,7 +3480,7 @@ pub(crate) fn recall_rest_held(st: &mut BorgState) -> bool {
 
 /// The test of `recall_rest_held`: on, a monster recorded (turn above 0), on
 /// this level, within `turns` game turns.
-fn recall_watch_holds(turns: i32, seen_turn: i32, ago: i32, same_level: bool) -> bool {
+pub(crate) fn recall_watch_holds(turns: i32, seen_turn: i32, ago: i32, same_level: bool) -> bool {
     turns > 0 && seen_turn > 0 && same_level && ago <= turns
 }
 

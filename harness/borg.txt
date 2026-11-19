@@ -568,6 +568,13 @@ borg_param_caution_stairs_leave_on_monster = 0
 borg_param_caution_stairs_leave_danger_percent = 10
 borg_param_caution_stairs_leave_down = 1
 
+# No rest with a monster near (#615 rule a). recover_rest_monster_turns = N
+# (game turns, 0 = off): no rod, HP/SP or mana rest while an awake monster
+# that can move was known within recover_rest_monster_distance grids in the
+# last N game turns on this level; the game would break such a rest at once.
+borg_param_recover_rest_monster_turns = 0
+borg_param_recover_rest_monster_distance = 20
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.
