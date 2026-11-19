@@ -49,7 +49,7 @@ use crate::borg_headers::borg_trait_h::{
 };
 use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL, RF_PASS_WALL};
 use crate::headers::list_options_h::OPT_birth_force_descend;
-use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_NONE};
+use crate::headers::list_terrain_h::{FEAT_LAVA, FEAT_LESS, FEAT_MORE, FEAT_NONE};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
@@ -528,12 +528,34 @@ pub(crate) fn fox_form_before_town_step(st: &mut BorgState, why: i32, steps_left
         || !walk_goal(why)
         || engine::player_is_shapechanged()
         || steps_left < param(Param::escape_fox_form_town_min_steps)
+        || on_stairs(st)
         || !borg_spell_okay_fail(st, FOX_FORM, fail)
+        || !mana_kept(
+            st.borg.tr(BI_CURSP) - crate::borg_magic::borg_get_spell_power(st, FOX_FORM),
+            st.borg.tr(BI_MAXSP),
+            st.borg.tr(BI_CLEVEL) <= param(Param::recover_mana_rest_max_level),
+            param(Param::recover_mana_rest_sp_tenths),
+        )
     {
         return false;
     }
     borg_note(st, &format!("# Fox Form: walking in town ({steps_left} steps to go)"));
     borg_spell_fail(st, FOX_FORM, fail)
+}
+
+/// borg-reborn-rs (#620): standing on a staircase, the next move may be the
+/// stairs (a fox in the dungeon changes back at once: the cast is lost).
+fn on_stairs(st: &BorgState) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    feat == FEAT_LESS || feat == FEAT_MORE
+}
+
+/// borg-reborn-rs (#620): the cast leaves the mana above `borg_recover`'s
+/// mana rest (`recover_mana_rest_*`): a cast that sends the Druid to rest
+/// costs more time in town than the fox saves (the first measure: twice the
+/// town time, all of it resting for one SP).
+fn mana_kept(sp_after: i32, max_sp: i32, rest_applies: bool, rest_tenths: i32) -> bool {
+    sp_after >= 0 && (!rest_applies || sp_after >= max_sp * rest_tenths / 10)
 }
 
 /// borg-reborn-rs (#620): a fox about to step onto a shop entrance changes
@@ -657,7 +679,16 @@ pub(crate) fn fox_moving_speed_bonus() -> i32 {
 
 #[cfg(test)]
 mod fox_form_tests {
-    use super::{cast_fox_when, keep_fox_when, town_fox_when, walk_goal};
+    use super::{cast_fox_when, keep_fox_when, mana_kept, town_fox_when, walk_goal};
+
+    #[test]
+    fn e_a_town_cast_keeps_the_mana_above_the_rest() {
+        assert!(!mana_kept(4, 7, true, 8), "7 SP, 4 left: below 5 (7 x 8 / 10), the cast sends it to rest");
+        assert!(mana_kept(1, 2, true, 8), "the rest's own integer line: 2 x 8 / 10 = 1");
+        assert!(mana_kept(7, 8, true, 8), "8 SP: 7 left is above 6.4");
+        assert!(mana_kept(1, 2, false, 8), "above the mana rest's level");
+        assert!(!mana_kept(-1, 2, false, 8), "not enough mana");
+    }
 
     #[test]
     fn d_a_town_fox_is_a_low_level_walk_in_town() {
