@@ -10,6 +10,47 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Ignored town monsters (#618, #621)
+
+The registry still holds **2160** parameters (none added). Owner, 2026-11-19
+(#613): leave Farmer Maggot alone; then "should we not have an ignore list?",
+"yes reuse it, ignore 10-20", and "add the first ones too, unless they are
+in the way".
+
+`harness/scary_monsters.txt` gets a flag, `ignore`: an ignore line is not a
+scare. Up to its level (by class, as the scary levels) the Borg doesn't
+target or hunt the monster (`borg_fight_attack.rs` `ignored`: its attack
+value is 0 in melee and at range; `borg_flow_kill` skips it), but one
+standing in its way is still attacked: the walk step is unchanged. A scare
+line and an ignore line for the same monster are separate entries; a later
+line replaces only its own kind, and `monster | none | | ignore` removes the
+ignore line. The compiled C list (`borg_scary_list = none`) has no ignore
+entries. Ignore lines apply whatever `caution_scary_named_monsters` says
+(that switch is for the scares), and an ignore line takes no `breeders`
+flag (it would do nothing, so the parser refuses it).
+
+Shipped, at 10-20 (CL10 for Warriors, Paladins and Blackguards up to CL20
+for Mages and Necromancers): Farmer Maggot (MOAN, 350 HP) and the six
+townsfolk that do no damage (BEG or DROOL in `monster.txt`): the
+pitiful-looking beggar, the singing, happy drunk, the blubbering idiot, the
+village idiot, the mangy-looking leper and the boil-covered wretch.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `4acf071f`, the zoo
+adapter's steps, the borg-rs core):
+
+| | main | ignore list |
+|---|---:|---:|
+| keys as main | | 0/18 |
+| deaths | 1 (a wild cat, CL1) | 1 (a rock lizard, CL1) |
+| sum of CL | 91 | 101 |
+| attacks aimed at the seven (`# Facing`/`# Targeting`) | 509 | 0 |
+| the seven killed | 220 | 70 |
+| walk-ins on one in the way | 8 | 121 |
+| game turns in town | 441,954 | 347,559 |
+
+Game turns in town: the sum, over `state.log` rows at depth 0, of the turn
+gap to the next row. Shipped play changes, so `harness/reference/smoke-borg-rs`
+is re-recorded (#606). Direction only: 18 games, no zoo run.
 ## The scary flag clears when the scary monster is hurt or afraid (#593)
 
 The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (0, off): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
