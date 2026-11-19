@@ -29,13 +29,14 @@ use crate::borg_magic::{borg_spell, borg_spell_fail, borg_spell_okay_fail};
 use crate::borg_messages_react::borg_react;
 use crate::borg_update::Detect;
 use crate::engine;
+use crate::params::{value as param, Param};
 use crate::borg_headers::borg_magic_h::{
     CALL_LIGHT, CLAIRVOYANCE, CREATE_DARKNESS, DETECTION, DETECT_EVIL, DETECT_MONSTERS,
     DETECT_STAIRS, FIND_TRAPS_DOORS_STAIRS, FUME_OF_MORDOR, LIGHT_ROOM, OBJECT_DETECTION,
     READ_MINDS, SEEK_BATTLE, SENSE_SURROUNDINGS, SPEAR_OF_LIGHT,
 };
 use crate::borg_headers::borg_trait_h::{
-    BI_CDEPTH, BI_CLASS, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
+    BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_ESP, BI_ISBLIND, BI_ISCONFUSED, BI_ISCUT, BI_ISIMAGE, BI_ISPOISONED,
     BI_ISWEAK, BI_LIGHT, BI_MAXCLEVEL,
 };
 use crate::headers::list_object_flags_h::OF_NO_FUEL;
@@ -357,7 +358,13 @@ pub fn borg_check_light(st: &mut BorgState) -> bool {
     }
 
     /* Find evil */
+    // borg-reborn-rs (#685): below light_detect_evil_spell_min_level the
+    // panel check casts no detection spell. A low-level caster's few SP go
+    // to it on every new panel and it then rests for mana; Detect Evil
+    // misses the animals that kill it on DL1. 0 = C.
+    let detect_spell_ok = st.borg.tr(BI_CLEVEL) >= param(Param::light_detect_evil_spell_min_level);
     if do_evil
+        && detect_spell_ok
         && due(st, st.borg.time.detect_evil, 20)
         && (borg_spell_fail(st, DETECT_EVIL, 40)
             || borg_spell_fail(st, DETECT_MONSTERS, 40)
