@@ -76,6 +76,11 @@ pub struct FightAttackState {
     pub target_closest: i32,
     /// `borg_tp_other_n`: the monsters in the line of a Teleport Other
     pub tp_other_n: i16,
+    /// borg-reborn-rs (#584): the true damage (no kill bonus, no danger
+    /// bonus) of the attack being rated: summed over the monsters one aim
+    /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
+    pub dmg_acc: i32,
+    pub dmg_best: i32,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -90,6 +95,8 @@ impl Default for FightAttackState {
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
+            dmg_acc: 0,
+            dmg_best: 0,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -309,6 +316,57 @@ pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
     MONBLOW_NONE as i32
 }
 
+/// borg-reborn-rs (#618, #621, owner): a monster on the scary list's ignore
+/// entries (`harness/scary_monsters.txt`, flag `ignore`) up to its level for
+/// the class: no attack on it is worth anything, and the hunt skips it. One
+/// in the Borg's way is still attacked (the walk step is unchanged). The
+/// race's base name is read only for a base entry (the race copy is not
+/// free, and this runs on every damage estimate).
+pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
+    let Some(list) = crate::scary_list::selected() else { return false };
+    let who = crate::scary_list::Situation {
+        clevel: tr(st, BI_CLEVEL),
+        class: tr(st, BI_CLASS),
+        breeder_count: 0,
+        breeder_stand: false,
+        levels_less: 0,
+    };
+    crate::scary_list::is_ignored(list, r_idx, || engine::race_base_name(r_idx), who)
+}
+
+/// borg-reborn-rs (#619): a dangerous town monster: a town race (level 0)
+/// with a blow that steals (gold or an item) or hurts for at least
+/// `attack_town_dangerous_min_damage` (dice x sides): the battle-scarred
+/// veteran, the mean-looking mercenary, the squint-eyed rogue, the filthy
+/// street urchin; not the cats, dogs and beggars.
+pub(crate) fn dangerous_town_race(r_idx: usize) -> bool {
+    if engine::race(r_idx).level != 0 {
+        return false;
+    }
+    let min = param(Param::attack_town_dangerous_min_damage);
+    (0..usize::from(engine::z_info().mon_blows_max))
+        .map_while(|k| engine::race_blow(r_idx, k))
+        .any(|b| dangerous_blow(borg_mon_blow_effect(b.effect_name.to_bytes()) as u32, i32::from(b.dice) * i32::from(b.sides), min))
+}
+
+fn dangerous_blow(effect: u32, max_damage: i32, min_damage: i32) -> bool {
+    effect == MONBLOW_EAT_GOLD || effect == MONBLOW_EAT_ITEM || (effect == MONBLOW_HURT && max_damage >= min_damage)
+}
+
+/// borg-reborn-rs (#619, owner): with `attack_town_dangerous_on_sight`, in
+/// town, a dangerous town monster is killed on sight: it is the preferred
+/// target and the hunt walks to it. The scare is the scary list's: while the
+/// town is scary (below a listed monster's level for the class) the Borg
+/// flees as before; from that level on it kills on sight.
+pub(crate) fn town_kill_on_sight(st: &BorgState, r_idx: usize) -> bool {
+    param(Param::attack_town_dangerous_on_sight) != 0 && tr(st, BI_CDEPTH) == 0 && dangerous_town_race(r_idx)
+}
+
+/// borg-reborn-rs (#619): the target bonus for a monster killed on sight.
+fn town_kill_bonus(st: &BorgState, r_idx: usize, dam: i32) -> i32 {
+    if town_kill_on_sight(st, r_idx) { dam * param(Param::attack_town_dangerous_bonus_percent) / 100 } else { dam }
+}
+
 /// Guess how much damage a physical attack will do to a monster
 /// (`borg_thrust_damage_one`).
 ///
@@ -444,6 +502,11 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
             dam = 0;
         }
     }
+    if ignored(st, usize::from(r)) {
+        dam = 0;
+    }
+    // borg-reborn-rs (#619): a dangerous town monster comes first.
+    dam = town_kill_bonus(st, usize::from(r), dam);
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
@@ -541,6 +604,7 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
             continue;
         }
 
+        let true_d = d;
         let Some(d) = melee_score(st, k, x, y, d) else {
             continue;
         };
@@ -553,6 +617,13 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
         /* Save the info */
         b_i = i - 1;
         b_d = d;
+        // borg-reborn-rs (#584): the true damage, without the unique
+        // targeting bonus of `borg_thrust_damage_one`.
+        st.fight_attack.dmg_best = if rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
+            true_d / (1 + param(Param::attack_melee_unique_bonus).max(0))
+        } else {
+            true_d
+        };
     }
 
     /* Nothing to attack */
@@ -1279,6 +1350,11 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam = 0;
         }
     }
+    if ignored(st, usize::from(r)) {
+        dam = 0;
+    }
+    // borg-reborn-rs (#619): a dangerous town monster comes first.
+    dam = town_kill_bonus(st, usize::from(r), dam);
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
@@ -1428,6 +1504,9 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     /* Calculate "danger" to player */
     let p1 = danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false);
+
+    // borg-reborn-rs (#584): the true damage, at most the monster's HP.
+    st.fight_attack.dmg_acc += d.clamp(0, i32::from(kill.power).max(0));
 
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
@@ -1796,6 +1875,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 /* Reset Teleport Other variables */
                 st.fight_attack.tp_other_n = 0;
                 let mut n = 0;
+                st.fight_attack.dmg_acc = 0;
 
                 /* Bounds check */
                 if !engine::square_in_bounds(x, y) {
@@ -1863,6 +1943,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 b_o_y = o_y;
                 b_o_x = o_x;
                 b_d = d;
+                st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
             }
         }
         i += 1;
@@ -2097,6 +2178,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         }
 
         /* Consider it if its a ball spell or right on top of it */
+        st.fight_attack.dmg_acc = 0;
         let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max);
 
         /* Skip useless attacks */
@@ -2118,6 +2200,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         b_i = i - 1;
         b_n = n;
         b_d = d;
+        st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
     }
     if b_i == -1 {
         return b_n;
@@ -3301,6 +3384,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
             continue;
         }
 
+        let true_d = d;
         let Some(d) = melee_score(st, k, x, y, d) else {
             continue;
         };
@@ -3313,6 +3397,13 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         /* Save the info */
         b_i = i - 1;
         b_d = d;
+        // borg-reborn-rs (#584): the true damage, without the unique
+        // targeting bonus of `borg_thrust_damage_one`.
+        st.fight_attack.dmg_best = if rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
+            true_d / (1 + param(Param::attack_melee_unique_bonus).max(0))
+        } else {
+            true_d
+        };
     }
 
     /* Nothing to attack */
@@ -3475,6 +3566,13 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     let mut i = 0;
     while i < i32::from(st.flow.temp_n) {
         let (y, x) = st.flow.temp_at(i as usize);
+
+        // borg-reborn-rs (#621 review): never strike at an ignored monster.
+        let k = grid(st, x, y).kill;
+        if k != 0 && ignored(st, usize::from(st.kills.kills[usize::from(k)].r_idx)) {
+            i += 1;
+            continue;
+        }
 
         /* closest distance */
         let dist = dist_to(st, x, y);
@@ -4459,7 +4557,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
                 /* Try to fight been there too long. */
             } else if boosted_bravery
                 || st.borg.no_retreat >= 1
-                || st.borg.goal.recalling != 0
+                || crate::borg_caution::recall_restricts(st)
                 || st.borg.goal.descending != 0
             {
                 /* Try to fight if being Boosted or recall engaged. */
@@ -4532,9 +4630,11 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     let mut attack_trace = crate::core_trace::attack_ranking();
     let mut winning_raw = 0;
+    let mut winning_damage = 0;
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
+        st.fight_attack.dmg_best = 0;
         let raw = borg_calculate_attack_effectiveness(st, g);
 
         // borg-reborn-rs (#403): apply preference once, only during ranking.
@@ -4542,7 +4642,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let class = tr(st, BI_CLASS);
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
-        if changed { winning_raw = raw; }
+        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4554,6 +4654,25 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         return false;
     };
     let b_n = ranking.utility;
+
+    // borg-reborn-rs (#584): an estimate only (`borg_attack_estimate`): the
+    // winner's true damage, nothing done.
+    if st.traits.estimate_only {
+        st.traits.estimate = Some(winning_damage);
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return false;
+    }
+
+    // borg-reborn-rs (#551, owner): a fox changes back before a melee blow.
+    // The other attacks are item or spell commands, changed back by the
+    // game's prompt; Maim Foe's blow is a Blackguard spell, and only a
+    // Druid has Fox Form (class.txt), so a fox never gets there.
+    if b_g == BF_THRUST as i32 && crate::borg_escape::revert_fox_to_fight(st) {
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return true;
+    }
 
     // borg-reborn-rs (#469): committed to this fight (not waiting); when the
     // danger is very high, drink Speed first and attack next turn.
@@ -4585,6 +4704,19 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#584): the true damage (no kill bonus, no danger bonus,
+/// no unique targeting bonus) of the attack `borg_attack` would choose now,
+/// of any kind (melee, missiles, throws, spells, wands, rods, activations),
+/// without making it; `None` when it would choose none. The simulation draws
+/// the random numbers `borg_attack` would.
+pub(crate) fn borg_attack_estimate(st: &mut BorgState) -> Option<i32> {
+    st.traits.estimate = None;
+    st.traits.estimate_only = true;
+    let _ = borg_attack(st, false);
+    st.traits.estimate_only = false;
+    st.traits.estimate.take()
 }
 
 /// borg-reborn-rs (#469): whether to drink Speed before a fight the Borg has
@@ -4630,6 +4762,22 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod town_kill_tests {
+    use super::*;
+
+    /// #619: thieves always, hurting blows from the minimum damage on.
+    #[test]
+    fn dangerous_town_blows() {
+        assert!(dangerous_blow(MONBLOW_EAT_GOLD, 0, 6), "the urchin");
+        assert!(dangerous_blow(MONBLOW_EAT_ITEM, 0, 6), "the rogue's touch");
+        assert!(dangerous_blow(MONBLOW_HURT, 12, 6), "the veteran, 2d6");
+        assert!(dangerous_blow(MONBLOW_HURT, 6, 6), "the rogue, 1d6");
+        assert!(!dangerous_blow(MONBLOW_HURT, 3, 6), "the merchant, 1d3");
+        assert!(!dangerous_blow(MONBLOW_HURT, 1, 6), "a cat or a dog");
+    }
 }
 
 #[cfg(test)]

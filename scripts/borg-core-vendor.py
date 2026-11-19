@@ -52,11 +52,15 @@ HOOKED = {
     'src/borg_town_budget.rs',  # #493: explicit gold reserve in Budget::of
     'src/borg_junk.rs',  # #470: discard Deep Descent on sight
     'src/borg_flow_kill.rs',  # #503: no breeder scary level without an easy escape; melee classes hunt breeders; named scary monsters behind a flag
+    'src/borg_flow_stairs.rs',  # #557: no flight down a staircase while rising
+    'src/borg_flow_misc.rs',  # #597: the twitch refuses lava
     'src/borg_update.rs',  # #503: door-opened scare behind caution_scary_named_monsters
     'src/borg_store_sell.rs',  # #470: historical chooser sells one of each unaware kind
     'src/borg_town_live.rs',  # #507: a planned purchase asks for its copies
+    'src/borg.rs',  # #530: the scary goals and scary stand flags
     'src/borg_store_buy.rs',  # #507: types the purchase quantity, logs the copies bought
     'src/borg_object_log.rs',  # #507: a purchase of several copies is one log line
+    'src/borg_flow.rs',  # #551: a Druid's flight step casts Fox Form first
     'build.rs',  # #328: receiving recorder integrity checker path
     'src/headers/option_h.rs',  # #328: receiving upstream player_options ABI
 

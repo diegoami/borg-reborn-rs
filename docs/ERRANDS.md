@@ -11,7 +11,7 @@ evaluation is preserved in [closed PR #206](https://github.com/diegoami/borg-reb
 
 | setting | where | values |
 |---|---|---|
-| core | `BORG_CORE`, else `borg_reborn_core` in the run's `borg.txt` | `borg-rs` (the shipped default since #479; the reborn core is not ready) or `reborn` (this repository's Borg; `harness/run.sh` still runs it when `BORG_CORE` is unset) |
+| core | `BORG_CORE`, else `borg_reborn_core` in the run's `borg.txt` | `borg-rs` (the shipped default since #479, and the harness default since #606) or `reborn` (this repository's Borg, not ready; `BORG_CORE=reborn`) |
 | errand | `BORG_ERRAND`, else `borg_reborn_errand` | a command line, below; `none` |
 | fear | `BORG_STOPSCARED`, else `borg_reborn_stopscared` | `off`, `flee`, `1`-`1000` |
 | budget | `BORG_ERRAND_BUDGET` | nonnegative game turns; absent, `0` or `none` means unbounded |

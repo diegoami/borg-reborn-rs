@@ -88,7 +88,10 @@ class BinaryContractTest(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         cls.out = Path(cls.tmp.name) / 'run'
-        env = dict(os.environ, BORG_IMPL='rust', BORG_DEATH_RECORDS_DIR=str(Path(cls.tmp.name) / 'deaths'))
+        # The reborn core's contract (its game options, docs/ENGINE.md): the
+        # harness default is the borg-rs core since #606.
+        env = dict(os.environ, BORG_IMPL='rust', BORG_CORE='reborn',
+                   BORG_DEATH_RECORDS_DIR=str(Path(cls.tmp.name) / 'deaths'))
         cls.result = subprocess.run([str(ROOT / 'harness/run.sh'), str(cls.out), '101', '0', '0', '200', 'menu,exact'],
                                  env=env, capture_output=True, text=True)
 

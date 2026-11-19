@@ -63,6 +63,8 @@ const BORG_DIG_HARD: i32 = 40;
 /// `GOAL_DARK` / `GOAL_DIGGING` (borg-flow.h).
 const GOAL_DARK: i32 = 4;
 const GOAL_DIGGING: i32 = 10;
+/// `GOAL_FLEE` (borg-flow.h): flee the level (#551).
+const GOAL_FLEE: i32 = 7;
 
 /// Size of the step/door tracks (`borg_init_flow()`).
 const TRACK_SIZE: i16 = 100;
@@ -746,6 +748,8 @@ pub fn flow_commit(st: &mut BorgState, who: Option<&[u8]>, why: i32) -> bool {
 
     /* Save the goal type */
     st.borg.goal.type_0 = why as i16;
+    // borg-reborn-rs (#614, review of #616): only a stair flow sets it again.
+    st.borg.flight_to_stairs = false;
 
     /* Success */
     true
@@ -1117,6 +1121,11 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
             kill.pos.x,
         );
 
+        // borg-reborn-rs (#551, owner): a fox changes back before a blow.
+        if crate::borg_escape::revert_fox_to_fight(st) {
+            return true;
+        }
+
         /* Walk into it */
         if st.borg.status.no_alter {
             borg_keypress(st, keycode_t::from(b';'));
@@ -1306,6 +1315,20 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     }
 
     let b_i = select_step(st);
+
+    // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
+    if b_i >= 0 && why == GOAL_FLEE {
+        let steps_left = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+        // borg-reborn-rs (#614): remember a flight to stairs (rests wait for them).
+        if st.borg.flight_to_stairs {
+            st.borg.flight_steps = steps_left;
+            st.borg.flight_time = st.borg.time.now;
+            st.borg.flight_depth = crate::engine::player_depth();
+        }
+        if crate::borg_escape::fox_form_before_flight_step(st, steps_left) {
+            return true;
+        }
+    }
 
     /* Try it */
     if b_i >= 0 {

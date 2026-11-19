@@ -31,6 +31,7 @@ resolve here. Read them at the pinned commit, for example
 | better-borg-c | `docs/measurement/DEATH-IMPROVEMENT-WORKFLOW.md`, `DEATH-QUEUE.md`, `FLOW-DANGER-CACHE.md`, `NAMED-HEADLESS.md`, `flowcache-404/d0008-result.json` | Process documents and the D0008 flow-cache result |
 | better-borg-c | `produce_death.py`, `replay-borg.py`, `replay_next_death.py`, `run-borg-headless.py` | Tools named in replay instructions |
 | borg-rs | `docs/C-CONSUMER-ADOPTION.md` | The adoption contract |
+| borg-rs | [docs/ENGINE-UPGRADE.md](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ENGINE-UPGRADE.md), linked from `borg-rs/FORK-CORRECTIONS.md` | The historical engine-upgrade procedure, outside the configured copy selection |
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
 

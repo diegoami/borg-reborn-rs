@@ -44,6 +44,77 @@ use crate::state::BorgState;
 
 /// `GOAL_RECOVER` (borg-flow.h): the goal of flowing somewhere safe to rest.
 const GOAL_RECOVER: i16 = 9;
+/// `GOAL_FLEE` (borg-flow.h): the flight to a staircase (#614).
+const GOAL_FLEE: i16 = 7;
+
+/// borg-reborn-rs (#614, owner): "once committed to a stair, it must at
+/// least reach that stair before stopping to rest". A Borg on a flight
+/// flow (`GOAL_FLEE`) whose staircase is at most `recover_rest_reach_stairs`
+/// flow steps away does not rest until it stands on it: no rod, HP or mana
+/// rest. Potions and cures are not rests. A farther staircase is a long walk,
+/// not a commitment: a hurt Borg that held its rests for 138 steps walked into
+/// a crow and died (18 starts, first version). 0 = off (C). On the staircase
+/// it may rest; a monster then sends it up or down
+/// (`caution_stairs_leave_on_monster`). Noted when it holds a rest that
+/// would otherwise start.
+fn rest_held_for_stairs(st: &mut BorgState) -> bool {
+    if !holding_for_stairs(st) {
+        return false;
+    }
+    // Review of #616: the rod, HP and mana rests all ask; one note a think.
+    if st.borg.rest_hold_noted != Some(st.borg.time.now) {
+        st.borg.rest_hold_noted = Some(st.borg.time.now);
+        let steps = committed_steps(st);
+        borg_note(st, &format!("# No rest: committed to the stairs, {steps} steps to go."));
+    }
+    true
+}
+
+/// borg-reborn-rs (#614, review of #616): the Borg is committed to a
+/// staircase, so neither a rest nor a flow to a recovery grid
+/// (`borg_flow_recover`, `GOAL_RECOVER`) may take it off the flight.
+pub(crate) fn holding_for_stairs(st: &BorgState) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let on_stairs = feat == crate::headers::list_terrain_h::FEAT_LESS || feat == crate::headers::list_terrain_h::FEAT_MORE;
+    let (flight, steps) = flight_now(st);
+    hold_rest_for_stairs(param(Param::recover_rest_reach_stairs), flight, on_stairs, steps)
+}
+
+fn committed_steps(st: &BorgState) -> i32 {
+    flight_now(st).1
+}
+
+/// (on a flight, the flow steps it has to go). On the flight flow, the steps
+/// left from here. Otherwise a flight that is still on (fleeing, leaving or
+/// a scary level), on this level, whose last step was within
+/// `recover_rest_reach_stairs_memory`: a new monster wipes the flow goal for
+/// a think, and the rest must not slip in then (the Druid of #614 did, 11
+/// steps from the stairs, in a first version).
+fn flight_now(st: &BorgState) -> (bool, i32) {
+    // Review of #616 (N4): only a flight to a staircase; the breeder exit and
+    // the flow to light are flights to somewhere else.
+    if st.borg.goal.type_0 == GOAL_FLEE {
+        let steps = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+        return flee_flow_flight(st.borg.flight_to_stairs, steps);
+    }
+    let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
+    let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= param(Param::recover_rest_reach_stairs_memory);
+    let here = st.borg.flight_depth == crate::engine::player_depth();
+    (still_fleeing && recent && here && st.borg.flight_time > 0, st.borg.flight_steps)
+}
+
+/// On a flee flow: a flight to a staircase, `steps` away, or none.
+fn flee_flow_flight(to_stairs: bool, steps: i32) -> (bool, i32) {
+    if to_stairs {
+        (true, steps)
+    } else {
+        (false, 0)
+    }
+}
+
+fn hold_rest_for_stairs(max_steps: i32, flight: bool, on_stairs: bool, steps: i32) -> bool {
+    max_steps > 0 && flight && !on_stairs && steps <= max_steps
+}
 
 /// A literal key (`borg_keypress('R')` etc.).
 fn key(c: u8) -> keycode_t {
@@ -390,6 +461,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISPOISONED) == 0
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
+        && !rest_held_for_stairs(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -413,7 +485,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Rest until healed
     let sp_tenths = if st.borg.tr(BI_CDEPTH) > param(Param::recover_rest_high_depth) { param(Param::recover_rest_high_sp_tenths) } else { param(Param::recover_rest_sp_tenths) };
-    if st.borg.tr(BI_ISBLIND) == 0
+    let rest_hp = st.borg.tr(BI_ISBLIND) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_ISCUT) == 0
         && st.borg.tr(BI_ISWEAK) == 0
@@ -431,7 +503,17 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
         && st.borg.goal.type_0 != GOAL_RECOVER
-    {
+        && !rest_held_for_stairs(st);
+    // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
+    // them first while it may and is not badly hurt. The breeder scan runs
+    // only when a rest is due and the HP test passes.
+    let hunt_first = rest_hp && hunt_now(st);
+    // Noted once per stretch of skipped rests, not every think.
+    let noted = NOT_RESTING_NOTED.with(|n| n.replace(rest_hp && hunt_first));
+    if rest_hp && hunt_first && !noted {
+        borg_note(st, "# Not resting: breeders to hunt.");
+    }
+    if rest_hp && !hunt_first {
         // check for then call lite in dark room before resting
         if !borg_check_light_only(st) {
             borg_note(st, "# Resting to recover HP/SP...");
@@ -443,7 +525,13 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
             st.borg.antibounce_count = 0;
 
             // reset the inviso clock to avoid loops
-            st.borg.need_see_invis = st.borg.time.now;
+            // borg-reborn-rs (#516): C's reset stamps the clock as recent,
+            // which arms the Detect Invisible defence after every rest
+            // (borg_defend_aux_inviso fires while it is recent). With
+            // recover_rest_arms_see_invis 0 a rest leaves the clock alone.
+            if crate::params::value(crate::params::Param::recover_rest_arms_see_invis) != 0 {
+                st.borg.need_see_invis = st.borg.time.now;
+            }
 
             return true;
         } else {
@@ -464,6 +552,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISHUNGRY) == 0
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
+        && !hunt_now(st)
+        && !rest_held_for_stairs(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -478,4 +568,61 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
 
     // Nope
     false
+}
+
+thread_local! {
+    /// borg-reborn-rs (#558): the last think skipped a rest for the hunt.
+    /// Only the note reads it.
+    static NOT_RESTING_NOTED: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// borg-reborn-rs (#558): `hunt_before_rest` with the HP test first, so
+/// `borg_flow_kill::breeder_hunt_now`'s scan runs only when it passes.
+fn hunt_now(st: &mut BorgState) -> bool {
+    hunt_before_rest(true, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), param(Param::recover_breeder_hunt_hp_percent))
+        && crate::borg_flow_kill::breeder_hunt_now(st)
+}
+
+/// borg-reborn-rs (#558): skip resting to hunt breeders while `hunt` (the
+/// breeder hunt applies) and HP is at least `hp_percent` of the maximum;
+/// 0 = off (C's rest).
+fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
+    hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod rest_at_stairs_tests {
+    use super::hold_rest_for_stairs;
+
+    #[test]
+    fn a_rest_waits_for_the_stairs_only_on_a_flight_off_the_stairs() {
+        assert!(hold_rest_for_stairs(20, true, false, 11), "committed, not there yet");
+        assert!(hold_rest_for_stairs(20, true, false, 20), "at the limit");
+        assert!(!hold_rest_for_stairs(20, true, false, 21), "a long walk, not a commitment");
+        assert!(!hold_rest_for_stairs(20, true, true, 0), "on the staircase: rest");
+        assert!(!hold_rest_for_stairs(20, false, false, 11), "no flight");
+        assert!(!hold_rest_for_stairs(0, true, false, 11), "off (C)");
+    }
+
+    /// Review of #616 (N4): a flee flow that is not to a staircase (the
+    /// breeder exit, the flow to light) is not a commitment to the stairs.
+    #[test]
+    fn only_a_flight_to_stairs_commits_the_rest() {
+        assert_eq!(super::flee_flow_flight(false, 11), (false, 0), "the breeder exit");
+        assert_eq!(super::flee_flow_flight(true, 11), (true, 11), "a stair flow, 11 steps to go");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn breeders_are_hunted_before_resting() {
+        // The priest of priest-1055640847 at turn 88,147: 55/70 HP.
+        assert!(hunt_before_rest(true, 55, 70, 50));
+        assert!(!hunt_before_rest(true, 30, 70, 50), "badly hurt: rest");
+        assert!(!hunt_before_rest(false, 55, 70, 50), "no hunt");
+        assert!(!hunt_before_rest(true, 55, 70, 0), "off");
+    }
 }

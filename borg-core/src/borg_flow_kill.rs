@@ -44,8 +44,8 @@ use crate::borg_headers::borg_magic_h::{
 };
 use crate::borg_headers::borg_trait_h::{
     BI_AMISSILES, BI_APHASE, BI_CDEPTH, BI_CLASS, BI_CLEVEL, BI_CRSFEAR, BI_CURSP, BI_ESP,
-    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHUNGRY, BI_ISIMAGE, BI_ISWEAK, BI_LIGHT,
-    BI_MAXCLEVEL, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
+    BI_FOOD, BI_INFRA, BI_ISAFRAID, BI_ISCONFUSED, BI_ISHEAVYSTUN, BI_ISHUNGRY, BI_ISIMAGE, BI_ISSTUN, BI_ISWEAK, BI_LIGHT,
+    BI_MAXCLEVEL, BI_MAXSP, BI_RPOIS, BI_SINV, BI_SPEED, BI_SRBLIND, BI_SRCONF, BI_SRDARK, BI_SRKAOS,
     BI_SRLITE, BI_SRNTHR,
 };
 use crate::headers::list_mon_race_flags_h::{
@@ -1768,6 +1768,61 @@ fn hall_wall(st: &BorgState, x: i32, y: i32) -> bool {
 /// Prepare to "flow" towards monsters to "kill" (`borg_flow_kill`)
 /// But in a few phases, viewable, near and far.
 /// Note that monsters under the player are always deleted
+/// borg-reborn-rs (#558): a low-level Mage or Necromancer hunts breeders
+/// only while the hunt applies and it has at least half its mana.
+fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
+    hunt && max_sp > 0 && cur_sp * 2 >= max_sp
+}
+
+/// borg-reborn-rs (#558): a Mage or Necromancer below the level at which
+/// `borg_flow_kill` lets it walk to a fight.
+fn low_level_caster(st: &BorgState) -> bool {
+    (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
+        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
+}
+
+/// borg-reborn-rs (#558): whether the Borg is fit to hunt breeders now, for
+/// `borg_recover`'s rest gate: it engages the breeders
+/// (`borg_caution::breeder_engaged`), a low-level caster has the mana, it is
+/// not hungry, and not confused, hallucinating, afraid or stunned (a rest
+/// clears those), and a known breeder passes the hunt walk's danger test.
+/// Only that test of the walk's: not its leash to the stairs, nor whether
+/// the breeder can be reached.
+pub(crate) fn breeder_hunt_now(st: &mut BorgState) -> bool {
+    let mut hunt = crate::borg_caution::breeder_engaged(st);
+    if low_level_caster(st) {
+        hunt = caster_hunts(hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP));
+    }
+    if !hunt || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_FOOD) == 0 {
+        return false;
+    }
+    if !fit_to_hunt(
+        st.borg.tr(BI_ISCONFUSED) != 0
+            || st.borg.tr(BI_ISIMAGE) != 0
+            || st.borg.tr(BI_ISAFRAID) != 0
+            || st.borg.tr(BI_ISSTUN) != 0
+            || st.borg.tr(BI_ISHEAVYSTUN) != 0,
+    ) {
+        return false;
+    }
+    for i in 1..i32::from(st.kills.nxt) {
+        let kill = st.kills.kills[i as usize];
+        if kill.r_idx == 0 || !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
+        // borg_flow_kill's test below CL15
+        if borg_danger(st, kill.pos.y, kill.pos.x, 1, true, false) <= i32::from(st.borg.avoidance) / 3 {
+            return true;
+        }
+    }
+    false
+}
+
+/// borg-reborn-rs (#558): a status a rest clears means rest, not hunt.
+fn fit_to_hunt(status: bool) -> bool {
+    !status
+}
+
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let mut b_j: i32 = -1;
     let mut b_stair: i32 = -1;
@@ -1784,18 +1839,32 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     }
 
     // Don't chase down town monsters when you are just starting out
+    // borg-reborn-rs (#619): except a dangerous one, killed on sight: then
+    // the hunt goes for those only.
+    let mut town_dangerous_only = false;
     if st.borg.tr(BI_CDEPTH) == 0
         && st.borg.tr(BI_CLEVEL) < 20
         && st.cfg(BORG_MONEY_SCUM_AMOUNT) == 0
     {
-        return false;
+        if !(1..i32::from(st.kills.nxt)).any(|k| {
+            let r = st.kills.kills[k as usize].r_idx;
+            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+        }) {
+            return false;
+        }
+        town_dangerous_only = true;
     }
 
     // YOU ARE NOT A WARRIOR!! DON'T ACT LIKE ONE!!
-    if (st.borg.tr(BI_CLASS) == CLASS_MAGE || st.borg.tr(BI_CLASS) == CLASS_NECROMANCER)
-        && st.borg.tr(BI_CLEVEL) < (if st.borg.tr(BI_CDEPTH) != 0 { 35 } else { 25 })
-    {
-        return false;
+    // borg-reborn-rs (#558): except breeders the Borg may hunt, while it has
+    // the mana to fight them with spells (borg_attack casts before any walk
+    // brings it next to them).
+    let mut breeders_only = false;
+    if low_level_caster(st) {
+        if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+        breeders_only = true;
     }
 
     // Not if Weak from hunger or no food
@@ -1852,6 +1921,14 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // Scan the monster list
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
+        if breeders_only && !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
+        if town_dangerous_only
+            && (kill.r_idx == 0 || !crate::borg_fight_attack::town_kill_on_sight(st, usize::from(kill.r_idx)))
+        {
+            continue;
+        }
         let x9 = kill.pos.x;
         let y9 = kill.pos.y;
 
@@ -1904,6 +1981,10 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             && st.borg.tr(BI_CDEPTH) == 0
             && st.borg.tr(BI_CLEVEL) < 5
         {
+            continue;
+        }
+        // borg-reborn-rs (#618, #621): no hunt for an ignored monster.
+        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx)) {
             continue;
         }
 
@@ -2683,6 +2764,19 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // stands and fights them (no easy escape).
     let breeder_stand = crate::borg_caution::breeder_stand(st);
     let named = crate::borg_caution::scary_named_monsters();
+    // borg-reborn-rs (#530): with caution_scary_stand, the level's scary
+    // flag is decided after the scan: flee while the escape is real.
+    let stand_mode = crate::borg_caution::scary_stand();
+    // borg-reborn-rs (#551): a Druid that is, or can become, a fox flees
+    // faster: fewer monsters can pursue it.
+    let player_speed = st.borg.tr(BI_SPEED) + crate::borg_escape::flight_speed_bonus(st);
+    let mut stand_scary = false;
+    let mut stand_pursuer = false;
+    // borg-reborn-rs (#604): with caution_town_never_scary, nothing makes the
+    // town scary.
+    let town_calm = crate::borg_caution::town_never_scary(st.borg.tr(BI_CDEPTH));
+    let mut scary_races: Vec<u16> = Vec::new();
+    let mut calmed_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2709,7 +2803,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         let id = st.borg.id;
         let b = &st.borg;
         let clevel = b.tr(BI_CLEVEL);
-        let mut scary = false;
+        let mut named_scare = false;
 
         // *** Scan for Scary Guys ***
         // Done before the distance checks: we are looking for scary guys on
@@ -2727,17 +2821,24 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                     class: b.tr(BI_CLASS),
                     breeder_count,
                     breeder_stand,
+                    // borg-reborn-rs (#622): a town monster is scary for
+                    // caution_town_scary_levels_less fewer character levels.
+                    levels_less: crate::borg_caution::town_scary_levels_less(usize::from(r_idx)),
                 };
                 if crate::scary_list::is_scary(list, usize::from(r_idx), engine::race_base_name(usize::from(r_idx)), who) {
-                    scary = true;
+                    named_scare = true;
                 }
             }
         }
         if named && crate::scary_list::selected().is_none()
             && c_named_scary(&id, ridx, engine::race_base_name(usize::from(r_idx)), clevel, b.tr(BI_CLASS), breeder_count, breeder_stand)
         {
-            scary = true;
+            named_scare = true;
         }
+
+        // borg-reborn-rs (#539): the resist-based scares, kept apart: a hurt or
+        // afraid monster keeps them (borg_caution::classify_scare).
+        let mut resist_scare = false;
 
         // Nether breath is bad
         if b.tr(BI_SRNTHR) == 0
@@ -2745,7 +2846,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 || ridx == id.dracolich
                 || ridx == id.dracolisk)
         {
-            scary = true;
+            resist_scare = true;
         }
 
         // Blindness is really bad
@@ -2753,27 +2854,52 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             && ((ridx == id.light_hound && b.tr(BI_SRLITE) == 0)
                 || (ridx == id.dark_hound && b.tr(BI_SRDARK) == 0))
         {
-            scary = true;
+            resist_scare = true;
         }
 
         // Chaos and Confusion are really bad
         if (b.tr(BI_SRKAOS) == 0 && b.tr(BI_SRCONF) == 0) && rsf_has(r_idx, RSF_BR_CHAO) {
-            scary = true;
+            resist_scare = true;
         }
 
         if b.tr(BI_SRCONF) == 0 && (ridx == id.pukelman || ridx == id.night_mare) {
-            scary = true;
+            resist_scare = true;
         }
 
         // Poison is really Bad (note the RPois not SRPois)
         if b.tr(BI_RPOIS) == 0 && ridx == id.drolem {
-            scary = true;
+            resist_scare = true;
         }
 
         // borg-reborn-rs (#505): any monster that can take
         // caution_scary_damage_percent of max HP in one turn.
-        if !scary && crate::borg_caution::scary_by_damage(st, i) {
-            scary = true;
+        // borg-reborn-rs (#539, review of #569): a hurt or afraid monster is
+        // no named-list or damage-rule scare; the rule is classify_scare.
+        let calmed = crate::borg_caution::scary_calmed(kill.injury, kill.afraid);
+        let scare = crate::borg_caution::classify_scare(named_scare, resist_scare, calmed, |note| {
+            // borg-reborn-rs (#604, review): no "Scary by damage" note in a town
+            // that cannot be scary
+            crate::borg_caution::scary_by_damage(st, i, note && !town_calm)
+        });
+        let mut scary = scare.scary && !town_calm;
+
+        if stand_mode && !town_calm {
+            // A monster that never moves cannot follow: never scary here.
+            let never_move = engine::race_flag_has(usize::from(r_idx), crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE);
+            let awake_and_fast = kill.awake && i32::from(kill.speed) >= player_speed;
+            let (makes_scary, pursues) = crate::borg_caution::stand_contribution(scare, never_move, awake_and_fast);
+            stand_scary |= makes_scary;
+            if makes_scary {
+                scary_races.push(r_idx); // borg-reborn-rs (#590)
+            }
+            if scare.calmed_scare && !never_move {
+                // borg-reborn-rs (#593). Not recorded in scary_races: a monster
+                // hurt or afraid from first sight never made the level scary,
+                // so its race speaks for no scare (second review of #595).
+                calmed_races.push(r_idx);
+            }
+            stand_pursuer |= pursues;
+            scary = false;
         }
 
         if scary {
@@ -2846,6 +2972,14 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                 st.borg.near.summoner_idx = i as i16;
             }
         }
+    }
+
+    if stand_mode {
+        for r in scary_races {
+            crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
+        }
+        crate::borg_caution::note_calmed(&mut st.borg.mon, &calmed_races);
+        crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
 
@@ -3296,6 +3430,21 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn casters_hunt_breeders_with_mana() {
+        assert!(caster_hunts(true, 5, 10));
+        assert!(!caster_hunts(true, 4, 10), "low on mana");
+        assert!(!caster_hunts(false, 10, 10), "no hunt");
+        assert!(!caster_hunts(true, 0, 0), "no mana at all");
+    }
+
+    /// #558 review 3: confused, afraid or stunned, the Borg rests first.
+    #[test]
+    fn a_status_means_rest_not_hunt() {
+        assert!(fit_to_hunt(false));
+        assert!(!fit_to_hunt(true));
+    }
 
     #[test]
     fn a_living_monster_keeps_some_power() {

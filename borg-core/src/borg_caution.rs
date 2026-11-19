@@ -21,7 +21,7 @@ use crate::borg_cave::{BorgGrid, AUTO_MAX_X, AUTO_MAX_Y};
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid};
 use crate::borg_danger::borg_danger;
 use crate::borg_escape::{
-    borg_caution_phase, borg_escape, borg_freedom, borg_recall, borg_surrounded,
+    borg_escape, borg_freedom, borg_recall, borg_surrounded,
 };
 use crate::borg_fight_defend::borg_defend;
 use crate::borg_flow_stairs::{
@@ -70,6 +70,7 @@ const CLASS_PALADIN: i32 = 5;
 
 /// `GOAL_FLEE` (borg-flow.h): flee the level.
 const GOAL_FLEE: i32 = 7;
+use crate::borg_flow_take::GOAL_TAKE;
 
 /// A literal key (`borg_keypress('R')` etc.).
 fn key(c: u8) -> keycode_t {
@@ -1034,15 +1035,18 @@ fn desperate_for_stairs(st: &mut BorgState, pos_danger: i32) -> bool {
         return true;
     }
 
-    // borg-reborn-rs (#544): in the dungeon, fleeing with no up staircase
-    // known, a known down staircase at any distance (an escape: the Borg comes back up
-    // when not prepared for the depth).
+    // borg-reborn-rs (#544, narrowed in #548): in the dungeon, fleeing with
+    // no up staircase known, a known down staircase (an escape: the Borg
+    // comes back up when not prepared for the depth). Only when cornered
+    // (`caution_flee_known_down_cornered`) and within
+    // `caution_flee_known_down_max_cost` grids of flow.
     p(Param::caution_flee_known_down_stairs) != 0
         && st.borg.tr(BI_CDEPTH) > 0
         && (st.borg.goal.fleeing || st.borg.mon.scary)
         && b_j == -1
         && b_m != -1
-        && desperate_flow(st, false, "# Desperate for Stairs (down, no up stairs known)")
+        && (p(Param::caution_flee_known_down_cornered) == 0 || flee_down_cornered(st, pos_danger))
+        && flee_known_down_flow(st, p(Param::caution_flee_known_down_max_cost))
 }
 
 /// Strategic retreat to a "happy" grid in view (the first "Retreat" block
@@ -1645,6 +1649,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         // Note
         borg_note(st, "# Scary guy on level.");
 
+        // borg-reborn-rs (#530): which goals the scare itself sets.
+        let before = (st.borg.goal.leaving, st.borg.goal.fleeing, st.borg.goal.fleeing_to_town);
+
         // Start leaving
         start_leaving(st, "# Leaving (Scary guy on level)");
 
@@ -1655,6 +1662,8 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         if st.borg.tr(BI_CDEPTH) == 0 {
             st.borg.goal.fleeing_to_town = true;
         }
+        let goal = st.borg.goal.clone();
+        note_scary_goals(&mut st.borg.mon, before, &goal);
     }
 
     // Make a note if Ignoring monsters (no fighting)
@@ -1876,13 +1885,19 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     let avoidance = i32::from(st.borg.avoidance);
     // Leaving or Fleeing, take stairs
-    if st.borg.goal.leaving
-        || st.borg.goal.fleeing
-        || st.borg.mon.scary
-        || ((pos_danger > avoidance
-            || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
-                && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
-            && on_upstair)
+    // borg-reborn-rs (#614): the stairs rule sets the way itself; choose_stairs
+    // is skipped then, so nothing cancels a departure the rule has noted
+    // (review of #616, N1).
+    let by_stairs_rule = !(st.borg.goal.leaving || st.borg.goal.fleeing || st.borg.mon.scary)
+        && leave_stairs_on_monster(st, pos_danger);
+    if !by_stairs_rule
+        && (st.borg.goal.leaving
+            || st.borg.goal.fleeing
+            || st.borg.mon.scary
+            || ((pos_danger > avoidance
+                || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
+                    && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
+                && on_upstair))
     // danger and standing on stair
     {
         choose_stairs(st, pos_danger);
@@ -1904,7 +1919,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Take stairs down
-    if st.borg.stair_more && st.borg.goal.recalling == 0 {
+    if st.borg.stair_more && !recall_restricts(st) {
         // borg-reborn-rs (#208): /shopping is town-only, even if caution
         // chooses a direct descent before the ordinary town-leave hook.
         if crate::shell::shopping_departure(st) {
@@ -2038,6 +2053,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#584, owner): the Phase Door rule refused a Phase Door
+    // and no escape acted: attack, at range when nothing is adjacent, else
+    // boost (`phase_rule_act`, once per think).
+    if crate::borg_escape::phase_rule_act(st) {
+        return true;
+    }
+
     /*** Back away ***/
     // Do not back up if
     // 1) we are nasty (poisoned, blind, confused etc
@@ -2161,6 +2183,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
         && !ranged_before_recall(st)
+        && recall_escape_allowed(st, Some(pos_danger))
         && borg_recall(st)
     {
         // Note
@@ -2172,7 +2195,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall,and in danger, buy time with
     // phase and cure_anythings.
-    if st.borg.goal.recalling != 0
+    // borg-reborn-rs (#603): with caution_recall_wait_as_usual the ordinary
+    // escape and attack decisions apply instead.
+    if recall_restricts(st)
         && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
     {
@@ -2223,7 +2248,7 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
         // borg_flow_stair_both: light is its only gate on a fleeing Borg
         return true;
     }
-    if st.borg.goal.recalling != 0 {
+    if recall_restricts(st) {
         return false;
     }
     if st.stairs.less.num != 0 {
@@ -2286,6 +2311,81 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// fight at range instead: switch on, a ranged attack the attack planner
 /// would make (`borg_fight_attack::ranged_means`), a `ranged_candidate`,
 /// and no staircase it can walk to.
+/// borg-reborn-rs (#557, owner): is Word of Recall an escape from this
+/// flight? `caution_flee_recall` 1: always (C). 0: only on a level swamped
+/// by breeders (`caution_flee_recall_breeders` known on the level) or when
+/// chased by several monsters (`caution_flee_recall_chasers` awake, able to
+/// move, within
+/// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
+/// turns next to the monster it flees and is gone for the trip home.
+/// `danger`: the danger here, when the caller has it (the flight's read);
+/// the stand tests pass `None` and get no danger exception.
+fn recall_escape_allowed(st: &BorgState, danger: Option<i32>) -> bool {
+    // borg-reborn-rs (#557, owner): shallower than
+    // `caution_flee_recall_gate_below_depth` (2: on DL1) the stairs are a
+    // short walk, so the exception is needed whatever `caution_flee_recall`
+    // says.
+    recall_allowed_with(
+        p(Param::caution_flee_recall) != 0,
+        st.borg.tr(BI_CDEPTH),
+        p(Param::caution_flee_recall_gate_below_depth),
+        || recall_exception(st) || danger.is_some_and(|d| recall_danger_reaches(d, st.borg.tr(BI_CURHP))),
+    )
+}
+
+/// borg-reborn-rs (#587, owner): "Recall only from a certain danger". The
+/// danger here at or above `caution_flee_recall_danger_percent` of the
+/// current HP allows the flight's Recall where the gate holds it (0 = off).
+fn recall_danger_reaches(danger: i32, hp: i32) -> bool {
+    danger_reaches_percent(danger, hp, p(Param::caution_flee_recall_danger_percent))
+}
+
+fn danger_reaches_percent(danger: i32, hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
+}
+
+/// The breeder or chaser exception (#559).
+fn recall_exception(st: &BorgState) -> bool {
+    let range = p(Param::caution_flee_recall_chase_distance);
+    let mut chasers = 0;
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = &st.kills.kills[i];
+        // A monster that never moves (a mold) cannot chase.
+        if kill.r_idx != 0
+            && kill.awake
+            && engine::distance(st.borg.c, kill.pos) <= range
+            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+        {
+            chasers += 1;
+        }
+    }
+    recall_escape_with(
+        i32::from(st.borg.mon.breeders),
+        chasers,
+        p(Param::caution_flee_recall_breeders),
+        p(Param::caution_flee_recall_chasers),
+    )
+}
+
+/// Is a flight's Recall allowed? Without the need for the exception, yes;
+/// otherwise only with it (`exception`, evaluated only then).
+fn recall_allowed_with(c_recall: bool, depth: i32, gate_below: i32, exception: impl FnOnce() -> bool) -> bool {
+    !recall_needs_exception(c_recall, depth, gate_below) || exception()
+}
+
+/// Does a flight's Recall need the breeder or chaser exception? Always with
+/// the gate on (`c_recall` false); with C's Recall, only at depths shallower
+/// than `gate_below` (a ceiling: 2 = DL1 only; 0 = off; 1 = off too, since
+/// the town never reaches here).
+fn recall_needs_exception(c_recall: bool, depth: i32, gate_below: i32) -> bool {
+    !c_recall || (gate_below > 0 && depth < gate_below)
+}
+
+/// Swamped by breeders or chased by several monsters (a limit of 0 is off).
+fn recall_escape_with(breeders: i32, chasers: i32, breeder_limit: i32, chaser_limit: i32) -> bool {
+    (breeder_limit > 0 && breeders >= breeder_limit) || (chaser_limit > 0 && chasers >= chaser_limit)
+}
+
 pub(crate) fn ranged_before_recall(st: &mut BorgState) -> bool {
     if p(Param::caution_scary_ranged_no_stairs) == 0 {
         return false;
@@ -2347,14 +2447,262 @@ fn breeder_stand_with(st: &BorgState, fight: i32, steps: i32, up: i32, down: i32
     if fight == 0 || st.borg.mon.breeders == 0 || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
+    !easy_escape_with(st, steps, up, down)
+}
+
+/// borg-reborn-rs (#503, #530): a free staircase within `steps` (the
+/// engine's distance; -1: none known), or a Phase Door, teleport, Teleport
+/// Level, escape or Word of Recall in the pack or spells.
+fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
     let near = |d: i32| d != -1 && d <= steps;
-    !(near(up)
+    near(up)
         || near(down)
         || st.borg.tr(BI_APHASE) > 0
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || st.borg.tr(BI_RECALL) > 0)
+        || (st.borg.tr(BI_RECALL) > 0 && recall_escape_allowed(st, None))
+}
+
+/// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
+/// `caution_scary_stand` 1, in the dungeon: a monster that never moves is
+/// never scary (it cannot follow), and the Borg flees a scary level only
+/// while the escape is real. Real means an easy escape (`easy_escape_with`,
+/// the breeder stand's `caution_breeder_easy_escape_steps`), or no scary
+/// monster that is awake, can move and is at least as fast as the character
+/// (the Borg outpaces every pursuer).
+pub(crate) fn scary_stand() -> bool {
+    p(Param::caution_scary_stand) != 0
+}
+
+/// borg-reborn-rs (#530): applies the decision after a scan of the known
+/// monsters. `scary`: a scary monster that can move is known; `pursuer`:
+/// one of them is awake and at least as fast as the character. Standing
+/// clears the level's scary flag and withdraws the leave and flee the scare
+/// set (other cautions set theirs again in this think).
+pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) {
+    // A door scare (an unseen monster opened or burst a door) is scary too,
+    // and its monster may be fast: a pursuer (review of #531).
+    // borg-reborn-rs (#590, review of #592): a scary monster still known
+    // spends any earlier kill, so only the last one's death clears the flag.
+    note_scan(&mut st.borg.mon, scary);
+    let (scary, pursuer) = stand_inputs(scary, pursuer, st.borg.mon.scary_door);
+    if !scary {
+        // borg-reborn-rs (#515): without the latch, a level whose scary
+        // monsters are gone (dead, forgotten, out of the known monsters)
+        // stops being scary. Door scares stay latched (stand_inputs).
+        // borg-reborn-rs (#590, owner): with `caution_scary_unlatch_kill`,
+        // only after a scary monster was killed, latch on or off: a
+        // forgotten monster has not left the level.
+        // borg-reborn-rs (#593, owner): `caution_scary_unlatch_calmed` also
+        // clears it once a scary monster is known hurt or afraid.
+        let killed = st.borg.mon.scary_killed;
+        let calmed = st.borg.mon.scary_calmed;
+        let rules = UnlatchRules {
+            latch: p(Param::caution_scary_latch) != 0,
+            kill: p(Param::caution_scary_unlatch_kill) != 0,
+            calmed: p(Param::caution_scary_unlatch_calmed) != 0,
+        };
+        if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
+            borg_note(
+                st,
+                if killed && (rules.kill || rules.calmed) {
+                    "# Scary guy killed: the level is no longer scary."
+                } else if calmed && rules.calmed {
+                    "# Scary guy hurt or afraid: the level is no longer scary."
+                } else {
+                    "# Scary guy gone: the level is no longer scary."
+                },
+            );
+        }
+        return;
+    }
+    // borg-reborn-rs (#557): while rising, a down staircase the flight may
+    // not take is no escape.
+    let down = if rising_holds_flee_descent(st) { -1 } else { nearest_free_stair(st, false) };
+    let escape = st.borg.tr(BI_CDEPTH) == 0
+        || easy_escape_with(st, p(Param::caution_breeder_easy_escape_steps), nearest_free_stair(st, true), down);
+    let stand = stand_decision(escape, pursuer);
+    if stand {
+        st.borg.mon.scary = false;
+        withdraw_scary_goals(&mut st.borg.mon, &mut st.borg.goal);
+        if !st.borg.mon.scary_stand {
+            borg_note(st, "# Scary guy on level, no escape: standing and fighting.");
+        }
+    } else {
+        st.borg.mon.scary = true;
+    }
+    st.borg.mon.scary_stand = stand;
+}
+
+/// borg-reborn-rs (#530, review of #531): record which goals the scary check
+/// itself set: those that were false `before` it and are set now. A goal
+/// another caution had already set stays that caution's.
+pub(crate) fn note_scary_goals(mon: &mut crate::borg::BorgMonInfo, before: (bool, bool, bool), goal: &crate::borg::BorgGoal) {
+    mon.scary_leaving |= !before.0 && goal.leaving;
+    mon.scary_fleeing |= !before.1 && goal.fleeing;
+    mon.scary_town |= !before.2 && goal.fleeing_to_town;
+}
+
+/// borg-reborn-rs (#530, review of #531): withdraw only the goals the scare
+/// set, and forget that it set them. Another caution that still wants a
+/// goal sets it again in this think (the scan runs before `borg_caution`).
+pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) {
+    if std::mem::take(&mut mon.scary_leaving) {
+        goal.leaving = false;
+    }
+    if std::mem::take(&mut mon.scary_fleeing) {
+        goal.fleeing = false;
+    }
+    if std::mem::take(&mut mon.scary_town) {
+        goal.fleeing_to_town = false;
+    }
+}
+
+/// borg-reborn-rs (#515): the scan found nothing scary; clear the flag and
+/// withdraw the goals the scare set. True when the level was scary.
+/// The stand ends too, even when the last think stood (a stand already
+/// cleared the flag), so the next stand prints its note (review of #562).
+/// borg-reborn-rs (#590, #593): the settings that decide when the scare
+/// clears.
+#[derive(Clone, Copy)]
+struct UnlatchRules {
+    latch: bool,
+    kill: bool,
+    calmed: bool,
+}
+
+/// borg-reborn-rs (#590, #593): may the scare clear, now that no scary
+/// monster is known? With the kill rule (`caution_scary_unlatch_kill`), only
+/// after a scary race was killed; with the calmed rule
+/// (`caution_scary_unlatch_calmed`), after one is known hurt or afraid, or
+/// killed; whatever the latch. Without either, only with the latch off.
+fn unlatch_when(rules: UnlatchRules, killed: bool, calmed: bool) -> bool {
+    if rules.kill || rules.calmed {
+        // A kill is the stronger signal: the calmed rule clears on it too
+        // (review of #595).
+        (rules.kill && killed) || (rules.calmed && (calmed || killed))
+    } else {
+        !rules.latch
+    }
+}
+
+/// borg-reborn-rs (#593): this scan's hurt or afraid monsters (`races`):
+/// is one of a race that made the level scary?
+pub(crate) fn note_calmed(mon: &mut crate::borg::BorgMonInfo, races: &[u16]) {
+    mon.scary_calmed = races
+        .iter()
+        .any(|r| race_bit(*r).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0));
+}
+
+/// borg-reborn-rs (#590): remember a race that made the level scary.
+pub(crate) fn note_scary_race(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
+    if let Some((word, bit)) = race_bit(r_idx) {
+        mon.scary_races[word] |= bit;
+    }
+}
+
+/// borg-reborn-rs (#590): a monster of race `r_idx` died; was it one that
+/// made the level scary?
+pub(crate) fn note_kill(mon: &mut crate::borg::BorgMonInfo, r_idx: u16) {
+    if race_bit(r_idx).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0) {
+        mon.scary_killed = true;
+    }
+}
+
+/// borg-reborn-rs (#590, review of #592): a scan that finds a scary monster
+/// known spends any earlier kill: the flag clears only when the last scary
+/// monster known is gone because it was killed.
+pub(crate) fn note_scan(mon: &mut crate::borg::BorgMonInfo, scary_known: bool) {
+    if scary_known {
+        mon.scary_killed = false;
+    }
+}
+
+/// The word and bit of race `r_idx` in `scary_races` (none for 0 or past
+/// the mask).
+fn race_bit(r_idx: u16) -> Option<(usize, u64)> {
+    let r = usize::from(r_idx);
+    (r != 0 && r < 64 * 16).then(|| (r / 64, 1u64 << (r % 64)))
+}
+
+fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::BorgGoal) -> bool {
+    mon.scary_stand = false;
+    if !std::mem::take(&mut mon.scary) {
+        return false;
+    }
+    mon.scary_killed = false;
+    mon.scary_calmed = false;
+    mon.scary_races = [0; 16];
+    withdraw_scary_goals(mon, goal);
+    true
+}
+
+/// borg-reborn-rs (#597): the twitch's random step refuses lava without
+/// fire immunity (`caution_twitch_avoid_lava`; lava deals 100 + 1d100 fire
+/// damage per step, `player-util.c:918`).
+pub(crate) fn twitch_refuses(st: &BorgState, grid: &BorgGrid) -> bool {
+    p(Param::caution_twitch_avoid_lava) != 0 && lava_forbids_step(st, grid)
+}
+
+/// borg-reborn-rs (#597): with `caution_stair_parked_fallback`, a stair flow
+/// into which no staircase entered (`enqueued`), while a monster is marked
+/// on known ones (`parked`), takes those staircases anyway.
+pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
+    p(Param::caution_stair_parked_fallback) != 0 && only_parked(enqueued, parked)
+}
+
+fn only_parked(enqueued: usize, parked: usize) -> bool {
+    enqueued == 0 && parked > 0
+}
+
+/// borg-reborn-rs (#603, owner): does a pending Word of Recall switch the
+/// Borg to its Recall-only rules (no flight by stairs or Teleport Level, the
+/// buy-time escapes, fighting because recalling)? With
+/// `caution_recall_wait_as_usual` it plays by its ordinary rules instead:
+/// the countdown keeps running on a new level (`effect-handler-general.c`).
+/// Resting or waiting when safe is kept either way. Only on DL2 and deeper:
+/// in town and on DL1 a staircase crosses between town and dungeon, and the
+/// Recall would fire on the other side and take the Borg back (owner, #627).
+pub(crate) fn recall_restricts(st: &BorgState) -> bool {
+    recall_restricts_with(
+        st.borg.goal.recalling != 0,
+        p(Param::caution_recall_wait_as_usual) != 0,
+        st.borg.tr(BI_CDEPTH),
+    )
+}
+
+fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
+    recalling && (!as_usual || depth <= 1)
+}
+
+/// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
+/// the goals the scare owns and the stand (a new level, the jumpstarts).
+pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
+    mon.scary = false;
+    mon.scary_door = false;
+    mon.scary_leaving = false;
+    mon.scary_fleeing = false;
+    mon.scary_town = false;
+    mon.scary_stand = false;
+    mon.scary_killed = false;
+    mon.scary_calmed = false;
+    mon.scary_races = [0; 16];
+}
+
+/// borg-reborn-rs (#530, review of #531): the decision's inputs. A door
+/// scare is scary, and its unseen monster counts as a pursuer.
+fn stand_inputs(scan_scary: bool, scan_pursuer: bool, door: bool) -> (bool, bool) {
+    (scan_scary || door, scan_pursuer || door)
+}
+
+/// borg-reborn-rs (#530): stand when there is no real escape: no easy
+/// escape and a pursuer the Borg cannot outpace. A pursuer is a scary (or
+/// calmed, #539) monster that is awake and at least as fast as the
+/// character: it can catch a fleeing Borg, so with one the Borg stands and
+/// fights; with none, walking away is a real escape (review of #569).
+fn stand_decision(escape: bool, pursuer: bool) -> bool {
+    !escape && pursuer
 }
 
 /// borg-reborn-rs (#503): standing against breeders (`breeder_stand`), at
@@ -2507,6 +2855,64 @@ fn chokepoint(passable: &dyn Fn(i32, i32) -> bool, at: loc) -> bool {
     groups >= 2
 }
 
+/// borg-reborn-rs (#549): with `caution_stair_scum_threat`, the stair scum
+/// (after fleeing town, grabbing DL1 items near the stairs before going back
+/// up, `borg_think_stair_scum`) is skipped while the Borg is threatened: the
+/// level scary, the danger here above `caution_stair_scum_danger`, or the HP
+/// below the maximum. The stair scum runs before `borg_caution` and checks
+/// only light, so the Borg picked up items while Grip bit it, one step from
+/// the up staircase home (ranger-2107852048).
+///
+/// When it reports a threat it also cancels a live `GOAL_TAKE` flow: the
+/// stair scum's `borg_flow_old` keeps the goal after each step, and the
+/// "Continue flowing towards objects" step in `borg_think_dungeon` comes
+/// before the flee flows, so a flow committed on an earlier, unthreatened
+/// turn would take the Borg one more step toward the item (review of #550).
+pub(crate) fn stair_scum_threatened(st: &mut BorgState) -> bool {
+    if p(Param::caution_stair_scum_threat) == 0 {
+        return false;
+    }
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    stair_scum_threatened_with(st, 1, here, p(Param::caution_stair_scum_danger))
+}
+
+/// `stair_scum_threatened` with the flag, the danger here and its limit given.
+fn stair_scum_threatened_with(st: &mut BorgState, flag: i32, here: i32, danger_limit: i32) -> bool {
+    if flag == 0 {
+        return false;
+    }
+    let threat = stair_scum_threat(st.borg.mon.scary, here, st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), danger_limit);
+    if threat && i32::from(st.borg.goal.type_0) == i32::from(GOAL_TAKE) {
+        st.borg.goal.type_0 = 0;
+    }
+    threat
+}
+
+/// The threat test of `stair_scum_threatened` (#549).
+fn stair_scum_threat(scary: bool, danger: i32, hp: i32, max_hp: i32, danger_limit: i32) -> bool {
+    scary || danger > danger_limit || hp < max_hp
+}
+
+/// borg-reborn-rs (#557): with `caution_rising_hold_flee_descent`, while
+/// rising in the dungeon a flight takes no down staircase unless the danger
+/// here is at or above the HP. With `birth_connect_stairs` the down staircase
+/// lands the Borg on DL+1's up staircase, it climbs back to a fresh level on
+/// a down staircase again, and the walk home restarts: priest-1055640847
+/// bounced DL2-DL3 eight times in 30,000 turns without reaching town.
+pub(crate) fn rising_holds_flee_descent(st: &mut BorgState) -> bool {
+    if p(Param::caution_rising_hold_flee_descent) == 0 || !st.borg.goal.rising || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
+    rising_hold(here, st.borg.tr(BI_CURHP))
+}
+
+/// The danger test of `rising_holds_flee_descent` (#557): held unless the
+/// danger here is at or above the HP.
+fn rising_hold(danger: i32, hp: i32) -> bool {
+    danger < hp
+}
+
 /// The known monsters as (distance, danger reach, breeder): a breeder
 /// within `radius` (distance) and no other monster within `horizon` (reach).
 fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> bool {
@@ -2525,8 +2931,25 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
 /// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
 /// character level (`borg_near_monster_type`) and the low-level door scares
 /// (`borg_update`, `borg_messages`) mark the level scary.
+/// borg-reborn-rs (#622, owner): how many character levels sooner a town
+/// race (race level 0) stops being scary on the named list.
+pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
+    if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
+}
+
 pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
+}
+
+/// borg-reborn-rs (#604): with `caution_town_never_scary`, no monster makes
+/// the town scary: the Borg meets town monsters by its danger rules (fights
+/// or avoids them) instead of fleeing to DL1.
+pub(crate) fn town_never_scary(depth: i32) -> bool {
+    town_never_scary_with(p(Param::caution_town_never_scary), depth)
+}
+
+fn town_never_scary_with(switch: i32, depth: i32) -> bool {
+    switch != 0 && depth == 0
 }
 
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
@@ -2538,8 +2961,9 @@ pub(crate) fn scary_named_monsters() -> bool {
 /// adds large penalties for stealing, paralysis or confusion (a street
 /// urchin rated 245 against 10 HP). Spells are not counted. Max HP, not
 /// current HP: a wounded character is the danger-against-avoidance flight's
-/// business. 0 = off.
-pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
+/// business. 0 = off. `note`: write the scare's note (#539: not for a
+/// calmed monster, which makes nothing scary).
+pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32, note: bool) -> bool {
     let percent = p(Param::caution_scary_damage_percent);
     let max_hp = st.borg.tr(BI_MAXHP);
     if percent <= 0 || max_hp <= 0 { return false; }
@@ -2548,11 +2972,67 @@ pub(crate) fn scary_by_damage(st: &mut BorgState, i: i32) -> bool {
     if r_idx == 0 || r_idx >= usize::from(crate::engine::z_info().r_max) - 1 { return false; }
     let damage = melee_damage_per_turn(r_idx, i32::from(kill.speed), st.borg.tr(BI_SPEED));
     let scary = scary_damage_reaches(damage, max_hp, percent);
-    if scary && !st.borg.mon.scary {
+    if note && scary && !st.borg.mon.scary {
         let name = crate::borg_flow_kill::borg_race_name(r_idx as i32).to_string_lossy();
         borg_note(st, &format!("# Scary by damage: {name}, {damage} of max HP {max_hp}"));
     }
     scary
+}
+
+/// borg-reborn-rs (#539): a monster that is hurt or afraid is no named-list
+/// or damage-rule scare (owner: Grip fled from one flask of oil). Hurt: it
+/// has lost at least `caution_scary_hurt_percent` of its HP (`kill.injury`,
+/// from the health bar); afraid: `kill.afraid`, with `caution_scary_afraid`.
+/// The resist-based scares and door scares are not affected. A calmed
+/// monster that is awake and fast still counts as a pursuer in stand mode:
+/// it can follow (else, with other scary monsters asleep, a monster turning
+/// afraid made a stand into a flight; two deaths on 18 starts). 0 and 0 = C.
+pub(crate) fn scary_calmed(injury: i16, afraid: bool) -> bool {
+    calmed(i32::from(injury), afraid, p(Param::caution_scary_hurt_percent), p(Param::caution_scary_afraid) != 0)
+}
+
+fn calmed(injury: i32, afraid: bool, hurt_percent: i32, afraid_counts: bool) -> bool {
+    (hurt_percent > 0 && injury >= hurt_percent) || (afraid_counts && afraid)
+}
+
+/// borg-reborn-rs (#539, review of #569): one monster's scare in the scan
+/// of `borg_near_monster_type`. `scary`: it makes the level scary.
+/// `calmed_scare`: it is calmed but would have been a named-list or
+/// damage-rule scare (it can still pursue).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct Scare {
+    pub(crate) scary: bool,
+    pub(crate) calmed_scare: bool,
+}
+
+/// borg-reborn-rs (#539, review of #569): the scan's rule, explicit.
+/// `named`: the named list says scary; `resist`: a resist-based scare;
+/// `calmed`: hurt or afraid (`scary_calmed`); `damage(note)`: the damage
+/// rule, writing its note when `note`. A calmed monster is no named-list or
+/// damage-rule scare; a resist-based scare always counts. The damage rule
+/// is asked only when the monster is not already scary, so with `calmed`
+/// false the calls (and notes) are C's: called unless named or resist.
+pub(crate) fn classify_scare(named: bool, resist: bool, calmed: bool, damage: impl FnOnce(bool) -> bool) -> Scare {
+    let mut scare = Scare { scary: (named && !calmed) || resist, calmed_scare: calmed && named };
+    if !scare.scary && damage(!calmed) {
+        if calmed {
+            scare.calmed_scare = true;
+        } else {
+            scare.scary = true;
+        }
+    }
+    scare
+}
+
+/// borg-reborn-rs (#530, #539): what one monster adds in stand mode:
+/// (makes the level scary, is a pursuer). A monster that never moves is
+/// neither: it cannot follow. A calmed one is only a pursuer, when it is
+/// awake and at least as fast as the character.
+pub(crate) fn stand_contribution(scare: Scare, never_move: bool, awake_and_fast: bool) -> (bool, bool) {
+    if never_move {
+        return (false, false);
+    }
+    (scare.scary, awake_and_fast && (scare.scary || scare.calmed_scare))
 }
 
 /// borg-reborn-rs (#505): the average melee damage of race `r_idx` in one
@@ -2595,10 +3075,12 @@ pub(crate) fn scary_damage_reaches(damage: i32, max_hp: i32, percent: i32) -> bo
     percent > 0 && i64::from(damage) * 100 >= i64::from(max_hp) * i64::from(percent)
 }
 
-/// borg-reborn-rs (#503): melee classes (Warrior, Paladin, Rogue,
-/// Blackguard) hunt breeders while there are at most
-/// `caution_breeder_hunt_max_count` of them, instead of avoiding them below
-/// clevel 10 (`borg_flow_kill`). Being surrounded is left to
+/// borg-reborn-rs (#503, #558): the Borg hunts breeders while there are at
+/// most `caution_breeder_hunt_max_count` of them, instead of avoiding them
+/// below clevel 10 (`borg_flow_kill`; the gate is here too, since #558's
+/// rest and acid-fear switches read it). Every class hunts; the count has
+/// class values (the class files), and 0 turns a class's hunt off. Being
+/// surrounded is left to
 /// `borg_flow_kill_corridor`, which already counts a breeder next to the
 /// Borg as a reason to move to a corridor.
 pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
@@ -2609,9 +3091,27 @@ pub(crate) fn breeder_hunt(st: &BorgState) -> bool {
 fn breeder_hunt_with(st: &BorgState, fight: i32, max_count: i32) -> bool {
     fight != 0
         && st.borg.tr(BI_CDEPTH) != 0
-        && matches!(st.borg.tr(BI_CLASS), 0 | 5 | 6 | 8)
+        && st.borg.tr(BI_CLEVEL) < 10
         && st.borg.mon.breeders > 0
         && i32::from(st.borg.mon.breeders) <= max_count
+}
+
+/// borg-reborn-rs (#558): the hunt applies and the Borg is engaging the
+/// breeders: not ignoring them (`borg_check_breeders`), not fleeing or
+/// leaving the level, and no scary monster on it (`borg_flow_kill` then
+/// walks to no fight). Read only by #558's own switches, so the hunt of
+/// #503 keeps its keys with them off.
+pub(crate) fn breeder_engaged(st: &BorgState) -> bool {
+    breeder_hunt(st)
+        && engaged_with(
+            st.borg.goal.ignoring,
+            st.borg.goal.fleeing || st.borg.goal.fleeing_to_town || st.borg.goal.leaving,
+            st.borg.mon.scary,
+        )
+}
+
+fn engaged_with(ignoring: bool, fleeing: bool, scary: bool) -> bool {
+    !ignoring && !fleeing && !scary
 }
 
 /// borg-reborn-rs (#504): Warriors, Paladins, Rogues and Blackguards.
@@ -2746,7 +3246,7 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
-fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
@@ -2816,6 +3316,47 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
+/// borg-reborn-rs (#614, owner): "he can rest on the stairs, and if a mob
+/// appears he can climb up/down immediately". With
+/// `caution_stairs_leave_on_monster`, a Borg standing on a staircase that
+/// still needs to recover (HP or SP below the maximum) takes the stairs as
+/// soon as a monster threatens it (danger here at least
+/// `caution_stairs_leave_danger_percent` of the HP), instead of fighting or
+/// reading an escape. The staircase under the Borg is the way; while rising,
+/// a down staircase is held as in `choose_stairs`.
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
+    // Review of #616: a real threat (a share of the HP), not any danger; and
+    // never in town, whose down staircase is a dive into DL1.
+    let threshold = (st.borg.tr(BI_CURHP) * p(Param::caution_stairs_leave_danger_percent) / 100).max(1);
+    let on = p(Param::caution_stairs_leave_on_monster) != 0;
+    let up = feat == FEAT_LESS;
+    // Review of #616 (N1): while rising, the holds of #483 and #557 keep a
+    // descent off, as they do in choose_stairs (asked only when the rule is on).
+    let down = on
+        && feat == FEAT_MORE
+        && p(Param::caution_stairs_leave_down) != 0
+        && !rising_holds_descent(st, pos_danger)
+        && !rising_holds_flee_descent(st);
+    if !stairs_leave_when(on, st.borg.tr(BI_CDEPTH), up || down, recovering, pos_danger, threshold) {
+        return false;
+    }
+    // The staircase under the Borg decides the way: choose_stairs alone may
+    // not set it for a Borg that is recovering, not fleeing.
+    if up {
+        st.borg.stair_less = true;
+    } else {
+        st.borg.stair_more = true;
+    }
+    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger}, {}).", if up { "up" } else { "down" }));
+    true
+}
+
+fn stairs_leave_when(on: bool, depth: i32, usable_stairs: bool, recovering: bool, pos_danger: i32, threshold: i32) -> bool {
+    on && depth > 0 && usable_stairs && recovering && pos_danger >= threshold
+}
+
 fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
@@ -2878,6 +3419,11 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     if rising_holds_descent(st, pos_danger) {
         st.borg.stair_more = false;
     }
+
+    // borg-reborn-rs (#557): no descent while rising, unless in real danger.
+    if st.borg.stair_more && rising_holds_flee_descent(st) {
+        st.borg.stair_more = false;
+    }
 }
 
 /// Buy time while waiting for recall in danger: mana, phase door, cure
@@ -2896,14 +3442,22 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
 
-    if borg_caution_phase(
+    // borg-reborn-rs (#584): through the one Phase Door decision.
+    if crate::borg_escape::phase_door(
         st,
-        p(Param::caution_recall_phase_tolerance),
-        p(Param::caution_recall_phase_horizon),
-    ) && (borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
-        || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_recall_phase_fail))
-        || borg_spell_fail(st, PORTAL, p(Param::caution_recall_portal_fail))
-        || borg_activate_item(st, st.act.tele_phase))
+        crate::borg_escape::PhaseSite::RecallWait,
+        crate::borg_escape::PhaseCheck::Landing {
+            tolerance: p(Param::caution_recall_phase_tolerance),
+            horizon: p(Param::caution_recall_phase_horizon),
+        },
+        None,
+        |st| {
+            borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || borg_spell_fail(st, PHASE_DOOR, p(Param::caution_recall_phase_fail))
+                || borg_spell_fail(st, PORTAL, p(Param::caution_recall_portal_fail))
+                || borg_activate_item(st, st.act.tele_phase)
+        },
+    )
     {
         borg_note(st, "# Buying time waiting for Recall.(2)");
         return true;
@@ -2931,6 +3485,87 @@ fn buy_time_for_recall(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+/// borg-reborn-rs (#548): cornered for #544's flight down a known
+/// staircase. A known monster that can move is adjacent (`nearest_kill` ==
+/// 1, diagonals included; #504's `fight_cornered` takes any within
+/// `caution_cornered_radius`), it has no Phase Door, teleport, Teleport Level
+/// or escape in the pack (the traits count items, not spells; Recall is no
+/// escape here, as in #504), and the danger here is at or above the HP or
+/// the Borg is surrounded (as #544's `breeder_exit`). The caller has already
+/// found no free up staircase known.
+fn flee_down_cornered(st: &mut BorgState, pos_danger: i32) -> bool {
+    let adjacent = nearest_kill(st);
+    let no_escape = st.borg.tr(BI_APHASE) <= 0
+        && st.borg.tr(BI_ATELEPORT) <= 0
+        && st.borg.tr(BI_ATELEPORTLVL) <= 0
+        && st.borg.tr(BI_AESCAPE) <= 0;
+    let outmatched = pos_danger >= st.borg.tr(BI_CURHP);
+    cornered_shape(adjacent, no_escape, outmatched, || borg_surrounded(st))
+}
+
+/// `flee_down_cornered`'s test: `adjacent == 1 && no_escape && (outmatched
+/// || surrounded)`; `surrounded` (which notes) is asked only when needed.
+fn cornered_shape(adjacent: i32, no_escape: bool, outmatched: bool, surrounded: impl FnOnce() -> bool) -> bool {
+    adjacent == 1 && no_escape && (outmatched || surrounded())
+}
+
+/// borg-reborn-rs (#548): `borg_flow_stair_more(GOAL_FLEE)` for #544's
+/// flight, with the flow's depth capped at `max_cost` steps of flow (0: 250,
+/// any distance the flow reaches). It keeps that function's refusals
+/// (`more_refused`: with an up staircase known, not prepared for the next
+/// depth, hungry, a sale held or no light; recalling; review of #566) and
+/// #557's rising hold. Desperate (danger ignored, monster grids routed
+/// around). A staircase farther than the cap leaves the cost at the Borg's
+/// grid unset, so the commit fails and nothing is noted.
+fn flee_known_down_flow(st: &mut BorgState, max_cost: i32) -> bool {
+    if rising_holds_flee_descent(st) || crate::borg_flow_stairs::more_refused(st, false) {
+        return false;
+    }
+    // Desperate before the enqueue too: `borg_flow_enqueue_grid` rates an
+    // unknown staircase grid's danger unless the flow ignores danger
+    // (review of #566; `desperate_flow` set it before the whole flow).
+    st.borg.status.desperate = true;
+    crate::borg_flow::borg_flow_clear(st);
+    crate::borg_flow_stairs::enqueue_down_stairs(st);
+    crate::borg_flow::borg_flow_spread(st, flee_down_depth(max_cost), true, false, false, -1, false);
+    let ok = crate::borg_flow::borg_flow_commit(st, c"down-stairs", GOAL_FLEE) && {
+        st.borg.flight_to_stairs = true; // #614: a flight to a staircase
+        crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
+    };
+    st.borg.status.desperate = false;
+    if ok {
+        borg_note(st, "# Desperate for Stairs (down, no up stairs known)");
+    }
+    ok
+}
+
+/// borg-reborn-rs (#548, K of #544): whether the stuck jumpstart (bravery
+/// boost 3, `borg_think_dungeon.rs`) keeps the known staircases.
+pub(crate) fn jumpstart_keeps_stairs() -> bool {
+    p(Param::caution_jumpstart_keep_stairs) != 0
+}
+
+/// The flow depth for `caution_flee_known_down_max_cost`: 0 is any
+/// distance (250, `borg_flow_stair_more`'s depth).
+fn flee_down_depth(max_cost: i32) -> i32 {
+    if max_cost <= 0 { 250 } else { max_cost.min(250) }
+}
+
+#[cfg(test)]
+mod stairs_leave_tests {
+    use super::stairs_leave_when;
+
+    #[test]
+    fn a_recovering_borg_on_the_stairs_leaves_when_a_monster_threatens() {
+        assert!(stairs_leave_when(true, 2, true, true, 5, 3));
+        assert!(!stairs_leave_when(true, 2, true, true, 2, 3), "below the threat threshold");
+        assert!(!stairs_leave_when(true, 0, true, true, 5, 3), "town: no dive into DL1");
+        assert!(!stairs_leave_when(true, 2, true, false, 5, 3), "nothing to recover: fight as before");
+        assert!(!stairs_leave_when(true, 2, false, true, 5, 3), "no usable staircase (or a down one with leave_down 0)");
+        assert!(!stairs_leave_when(false, 2, true, true, 5, 3), "switch off (C)");
+    }
 }
 
 #[cfg(test)]
@@ -2964,6 +3599,368 @@ mod outmatched_tests {
         let flag = spec("caution_heal_when_outmatched");
         assert_eq!((flag.default, flag.min, flag.max), (0, 0, 1));
         assert_eq!(spec("caution_heal_outmatched_min_loss").default, 50);
+    }
+}
+
+#[cfg(test)]
+mod scary_stand_tests {
+    use super::*;
+
+    fn st() -> BorgState {
+        let mut st = BorgState::default();
+        st.borg.trait_ = vec![0; crate::borg_headers::borg_trait_h::BI_MAX as usize];
+        st
+    }
+
+    #[test]
+    fn stand_only_without_a_real_escape() {
+        assert!(stand_decision(false, true), "no escape, a pursuer as fast: stand");
+        assert!(!stand_decision(true, true), "an easy escape: flee");
+        assert!(!stand_decision(false, false), "every scary monster slower or asleep: flee");
+    }
+
+    use crate::borg::{BorgGoal, BorgMonInfo};
+
+    fn caution_scare(mon: &mut BorgMonInfo, goal: &mut BorgGoal, town: bool) {
+        // borg_caution's scary block: start_leaving, start_fleeing (each
+        // only when not set yet), fleeing_to_town in town, then the note.
+        let before = (goal.leaving, goal.fleeing, goal.fleeing_to_town);
+        goal.leaving = true;
+        goal.fleeing = true;
+        if town {
+            goal.fleeing_to_town = true;
+        }
+        note_scary_goals(mon, before, goal);
+    }
+
+    #[test]
+    fn a_the_scare_sets_both_goals_and_standing_withdraws_them() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(mon.scary_leaving && mon.scary_fleeing && !mon.scary_town);
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(!goal.leaving && !goal.fleeing);
+        assert!(!mon.scary_leaving && !mon.scary_fleeing, "ownership forgotten");
+    }
+
+    #[test]
+    fn b_another_cautions_goal_set_first_survives_the_stand() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        goal.leaving = true; // e.g. the restock caution
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(!mon.scary_leaving && mon.scary_fleeing, "the scare owns only fleeing");
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(goal.leaving, "the restock's leave survives");
+        assert!(!goal.fleeing);
+    }
+
+    #[test]
+    fn c_a_goal_another_caution_sets_after_the_scare_is_not_the_scares() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        goal.fleeing = true; // fleeing for another reason before the scare
+        caution_scare(&mut mon, &mut goal, false);
+        assert!(mon.scary_leaving && !mon.scary_fleeing);
+        // Later the other caution still wants fleeing; the scare set only leaving.
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(!goal.leaving, "the scare's leave is withdrawn");
+        assert!(goal.fleeing, "the other caution's flee is not");
+    }
+
+    #[test]
+    fn e_a_scare_that_is_gone_unlatches_only_its_own_goals() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        assert!(!unlatch_scare(&mut mon, &mut goal), "never scary: nothing to clear");
+        goal.leaving = true; // another caution's leave, set first
+        mon.scary = true;
+        caution_scare(&mut mon, &mut goal, true);
+        assert!(unlatch_scare(&mut mon, &mut goal), "the scary monster is gone");
+        assert!(!mon.scary);
+        assert!(goal.leaving, "the other caution's leave survives");
+        assert!(!goal.fleeing && !goal.fleeing_to_town, "the scare's goals are withdrawn");
+        assert!(!unlatch_scare(&mut mon, &mut goal), "already clear");
+    }
+
+    /// Review of #569: off, the rule and the damage calls are C's.
+    #[test]
+    fn h_uncalmed_scares_and_damage_calls_are_cs() {
+        for named in [false, true] {
+            for resist in [false, true] {
+                for dmg in [false, true] {
+                    let mut asked = None;
+                    let scare = classify_scare(named, resist, false, |note| {
+                        asked = Some(note);
+                        dmg
+                    });
+                    assert_eq!(scare, Scare { scary: named || resist || dmg, calmed_scare: false });
+                    let expect = if named || resist { None } else { Some(true) };
+                    assert_eq!(asked, expect, "named {named} resist {resist}");
+                }
+            }
+        }
+    }
+
+    /// Review of #569: the four combinations, calmed.
+    #[test]
+    fn i_a_calmed_monster_keeps_only_its_resist_scare() {
+        let never = |_: bool| -> bool { panic!("the damage rule is not asked") };
+        // Damage rule only: not scary, a calmed scare, and no note.
+        let mut note = None;
+        let damage_only = classify_scare(false, false, true, |n| {
+            note = Some(n);
+            true
+        });
+        assert_eq!(damage_only, Scare { scary: false, calmed_scare: true });
+        assert_eq!(note, Some(false), "a calmed monster writes no damage note");
+        // Named list only.
+        assert_eq!(classify_scare(true, false, true, |_| false), Scare { scary: false, calmed_scare: true });
+        // Resist-based only: still scary.
+        assert_eq!(classify_scare(false, true, true, never), Scare { scary: true, calmed_scare: false });
+        // Named and resist-based: scary through the resist scare.
+        assert_eq!(classify_scare(true, true, true, never), Scare { scary: true, calmed_scare: true });
+        // Calmed and nothing scary about it: nothing.
+        assert_eq!(classify_scare(false, false, true, |_| false), Scare { scary: false, calmed_scare: false });
+    }
+
+    /// Review of #569: the same in stand mode, through to the decision.
+    #[test]
+    fn j_in_stand_mode_a_calmed_monster_is_only_a_pursuer() {
+        let calmed = Scare { scary: false, calmed_scare: true };
+        let resist = Scare { scary: true, calmed_scare: false };
+        assert_eq!(stand_contribution(calmed, false, true), (false, true));
+        assert_eq!(stand_contribution(calmed, false, false), (false, false));
+        assert_eq!(stand_contribution(resist, false, true), (true, true));
+        assert_eq!(stand_contribution(resist, false, false), (true, false));
+        assert_eq!(stand_contribution(calmed, true, true), (false, false), "never moves");
+        assert_eq!(stand_contribution(resist, true, true), (false, false), "never moves");
+        // A calmed monster alone makes no level scary.
+        let (scary, pursuer) = stand_contribution(calmed, false, true);
+        assert!(!stand_inputs(scary, pursuer, false).0);
+        // A sleeping scary monster plus a calmed fast one: the Borg stands
+        // (the two deaths of #539's first version fled instead).
+        let (s1, p1) = stand_contribution(Scare { scary: true, calmed_scare: false }, false, false);
+        let (s2, p2) = stand_contribution(calmed, false, true);
+        let (scary, pursuer) = stand_inputs(s1 || s2, p1 || p2, false);
+        assert!(scary && stand_decision(false, pursuer));
+    }
+
+    #[test]
+    fn g_a_hurt_or_afraid_monster_is_calmed_only_when_switched_on() {
+        // Off (C): never calmed.
+        assert!(!calmed(100, true, 0, false));
+        // Hurt: at the threshold and above, not below.
+        assert!(!calmed(49, false, 50, false));
+        assert!(calmed(50, false, 50, false));
+        assert!(calmed(90, false, 50, false));
+        // Afraid: only with its switch, whatever the injury.
+        assert!(!calmed(0, true, 50, false));
+        assert!(calmed(0, true, 50, true));
+        assert!(calmed(0, true, 0, true));
+        assert!(!calmed(0, false, 0, true));
+    }
+
+    #[test]
+    fn f_a_stand_whose_scary_monster_is_gone_ends() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        // The last think stood: the flag is clear, the stand is recorded.
+        mon.scary_stand = true;
+        assert!(!unlatch_scare(&mut mon, &mut goal), "the flag was already clear");
+        assert!(!mon.scary_stand, "the next stand prints its note again");
+    }
+
+    #[test]
+    fn d_forgetting_the_scare_clears_every_fact() {
+        let (mut mon, mut goal) = (BorgMonInfo::default(), BorgGoal::default());
+        mon.scary = true;
+        mon.scary_door = true;
+        mon.scary_stand = true;
+        caution_scare(&mut mon, &mut goal, true);
+        assert!(mon.scary_town);
+        forget_scary(&mut mon); // the jumpstarts, a new level
+        assert!(!mon.scary && !mon.scary_door && !mon.scary_stand);
+        assert!(!mon.scary_leaving && !mon.scary_fleeing && !mon.scary_town);
+        // A later stand withdraws nothing the forgotten scare owned.
+        withdraw_scary_goals(&mut mon, &mut goal);
+        assert!(goal.leaving && goal.fleeing && goal.fleeing_to_town);
+    }
+
+    #[test]
+    fn a_door_scare_enters_the_decision_as_a_pursuer() {
+        // Nothing scary in the scan, but a door scare: scary, and a pursuer.
+        assert_eq!(stand_inputs(false, false, true), (true, true));
+        let (scary, pursuer) = stand_inputs(false, false, true);
+        assert!(scary && stand_decision(false, pursuer), "no escape: stand");
+        assert!(!stand_decision(true, pursuer), "an easy escape: flee");
+        assert_eq!(stand_inputs(false, false, false), (false, false), "nothing scary: no decision");
+        assert_eq!(stand_inputs(true, false, false), (true, false));
+    }
+
+    #[test]
+    fn a_shallow_flight_recall_needs_the_exception() {
+        assert!(!recall_needs_exception(true, 1, 0), "C, no minimum depth");
+        assert!(recall_needs_exception(true, 1, 2), "C, DL1 below the minimum");
+        assert!(!recall_needs_exception(true, 2, 2), "C, at the minimum");
+        assert!(recall_needs_exception(false, 10, 2), "the gate on: any depth");
+        assert!(recall_needs_exception(false, 10, 0));
+    }
+
+    #[test]
+    fn the_shipped_dl1_gate_allows_recall_only_with_the_exception() {
+        // Shipped: C's Recall (1) and the gate below depth 2.
+        let never = || -> bool { panic!("the exception is not needed") };
+        assert!(!recall_allowed_with(true, 1, 2, || false), "DL1, no breeders or chasers: no Recall");
+        assert!(recall_allowed_with(true, 1, 2, || true), "DL1 with the exception: Recall");
+        assert!(recall_allowed_with(true, 2, 2, never), "DL2: C's Recall, the exception not asked");
+        assert!(recall_allowed_with(true, 1, 0, never), "the gate off: C everywhere");
+        assert!(!recall_allowed_with(false, 5, 0, || false), "the full gate: any depth");
+    }
+
+    #[test]
+    fn recall_is_an_escape_only_from_breeders_or_several_chasers() {
+        assert!(!recall_escape_with(0, 0, 5, 3), "one scary monster: no Recall");
+        assert!(!recall_escape_with(4, 2, 5, 3), "below both limits");
+        assert!(recall_escape_with(5, 0, 5, 3), "a level swamped by breeders");
+        assert!(recall_escape_with(0, 3, 5, 3), "chased by several monsters");
+        assert!(!recall_escape_with(100, 100, 0, 0), "both limits off");
+    }
+
+    #[test]
+    fn a_flight_recall_from_a_danger_share_of_the_hp() {
+        assert!(!danger_reaches_percent(1000, 10, 0), "0 = off");
+        assert!(danger_reaches_percent(50, 100, 50), "at the share");
+        assert!(!danger_reaches_percent(49, 100, 50));
+        assert!(danger_reaches_percent(200, 100, 150), "above the HP");
+        assert!(danger_reaches_percent(1, 0, 100), "no HP left");
+        assert!(!danger_reaches_percent(i32::MAX, i32::MAX, 101), "no overflow");
+    }
+
+    #[test]
+    fn a_kill_clears_the_scare_whatever_the_latch() {
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        assert!(!unlatch_when(r(true, false, false), true, true), "C: the latch holds even after a kill");
+        assert!(unlatch_when(r(false, false, false), false, false), "latch off: whenever none is known");
+        assert!(!unlatch_when(r(false, true, false), false, false), "kill rule: forgotten is not enough");
+        assert!(unlatch_when(r(true, true, false), true, false), "kill rule: a kill clears with the latch on");
+        assert!(unlatch_when(r(false, true, false), true, false));
+        assert!(!unlatch_when(r(true, true, false), false, true), "kill rule alone: calmed is not enough");
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_kill(&mut mon, 7);
+        assert!(!mon.scary_killed, "another race died");
+        note_kill(&mut mon, 42);
+        assert!(mon.scary_killed, "the scary race died");
+        forget_scary(&mut mon);
+        assert!(!mon.scary_killed && mon.scary_races == [0; 16], "a new level forgets");
+        for r in [1u16, 40, 63, 64, 400, 623] {
+            note_scary_race(&mut mon, r);
+        }
+        for r in [1u16, 40, 63, 64, 400, 623] {
+            mon.scary_killed = false;
+            note_kill(&mut mon, r);
+            assert!(mon.scary_killed, "race {r}: no cap on the races kept");
+        }
+        note_scary_race(&mut mon, u16::MAX);
+        note_kill(&mut mon, 0);
+    }
+
+    #[test]
+    fn an_old_kill_does_not_clear_a_later_scare() {
+        // The review's sequence: a stand, a kill, then a later monster of the
+        // same race that is only forgotten.
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 42);
+        assert!(mon.scary_killed, "the first one killed");
+        note_scan(&mut mon, true); // a later one of race 42 is known: the kill is spent
+        assert!(!mon.scary_killed);
+        note_scan(&mut mon, false); // then forgotten: nothing scary known
+        assert!(
+            !unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "forgotten, not killed: the flag stays"
+        );
+        note_kill(&mut mon, 42);
+        note_scan(&mut mon, false); // killed and none left known
+        assert!(
+            unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "the last one killed: the flag clears"
+        );
+    }
+
+    #[test]
+    fn a_hurt_or_afraid_scary_monster_clears_the_scare() {
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        assert!(unlatch_when(r(true, false, true), false, true), "calmed rule, latch on");
+        assert!(unlatch_when(r(true, false, true), true, false), "calmed rule alone: a kill clears too");
+        assert!(unlatch_when(r(true, true, true), true, false), "both rules: a kill");
+        assert!(unlatch_when(r(true, true, true), false, true), "both rules: calmed");
+        assert!(!unlatch_when(r(false, false, true), false, false), "calmed rule, latch off: forgotten is not enough");
+        assert!(!unlatch_when(r(true, false, true), false, false), "calmed rule alone: forgotten is not enough");
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_calmed(&mut mon, &[7]);
+        assert!(!mon.scary_calmed, "another race calmed");
+        note_calmed(&mut mon, &[42]);
+        assert!(mon.scary_calmed, "the scary race is hurt or afraid");
+        note_calmed(&mut mon, &[]);
+        assert!(!mon.scary_calmed, "each scan decides afresh");
+    }
+
+    #[test]
+    fn only_races_that_made_the_level_scary_clear_it() {
+        // The second review of #595: race 42 made the level scary; race 7 was
+        // only ever seen hurt or afraid, so it is not in the record.
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 7); // a hurt race-7 monster is killed
+        assert!(!mon.scary_killed, "a race that never made the level scary is no kill");
+        note_calmed(&mut mon, &[7]); // race 42 forgotten, race 7 known hurt
+        assert!(!mon.scary_calmed, "nor is it calmed");
+        assert!(!unlatch_when(r(true, true, true), mon.scary_killed, mon.scary_calmed), "the flag stays");
+        note_calmed(&mut mon, &[42]);
+        assert!(unlatch_when(r(true, false, true), mon.scary_killed, mon.scary_calmed), "race 42 hurt: it clears");
+    }
+
+    #[test]
+    fn a_pending_recall_restricts_only_without_the_switch() {
+        assert!(recall_restricts_with(true, false, 5), "C: Recall-only rules");
+        assert!(!recall_restricts_with(true, true, 5), "the switch: the ordinary rules on DL5");
+        assert!(!recall_restricts_with(true, true, 2), "and on DL2");
+        assert!(recall_restricts_with(true, true, 1), "not on DL1: the up staircase leads to town");
+        assert!(recall_restricts_with(true, true, 0), "not in town: the down staircase leads to the dungeon");
+        assert!(!recall_restricts_with(false, false, 5), "no Recall pending");
+        assert!(!recall_restricts_with(false, true, 0));
+    }
+
+    #[test]
+    fn every_switched_site_asks_recall_restricts() {
+        // The seven sites of #603 (review of #627): a site put back to
+        // `goal.recalling != 0` would ignore the switch and still pass the
+        // helper's test, so count the calls in each file.
+        for (file, src, calls) in [
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 3),
+            ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
+            ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
+            ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
+            ("borg_think_dungeon.rs", include_str!("borg_think_dungeon.rs"), 2),
+        ] {
+            assert_eq!(src.matches(concat!("recall_", "restricts(st)")).count(), calls, "{file}");
+        }
+    }
+
+    #[test]
+    fn an_easy_escape_is_near_stairs_or_an_escape_item() {
+        let mut s = st();
+        assert!(!easy_escape_with(&s, 5, -1, -1), "nothing");
+        assert!(easy_escape_with(&s, 5, 5, -1), "an up staircase within the steps");
+        assert!(easy_escape_with(&s, 5, -1, 3), "a down staircase");
+        assert!(!easy_escape_with(&s, 5, 6, 9), "both too far");
+        for t in [BI_APHASE, BI_ATELEPORT, BI_ATELEPORTLVL, BI_AESCAPE, BI_RECALL] {
+            s.borg.trait_[t as usize] = 1;
+            assert!(easy_escape_with(&s, 5, -1, -1), "escape trait {t}");
+            s.borg.trait_[t as usize] = 0;
+        }
     }
 }
 
@@ -3070,6 +4067,19 @@ mod rising_tests {
         let mut st = rising();
         st.borg.trait_[BI_CDEPTH as usize] = 0;
         assert!(!rising_holds_descent(&st, 0), "in town");
+    }
+}
+
+#[cfg(test)]
+mod town_scary_tests {
+    use super::*;
+
+    /// #604: only in town, and only with the switch on.
+    #[test]
+    fn town_is_never_scary_with_the_switch() {
+        assert!(town_never_scary_with(1, 0));
+        assert!(!town_never_scary_with(0, 0), "switch off");
+        assert!(!town_never_scary_with(1, 1), "dungeon");
     }
 }
 
@@ -3219,6 +4229,60 @@ mod breeder_tests {
     }
 
     #[test]
+    fn stair_scum_stops_under_any_threat() {
+        assert!(!stair_scum_threat(false, 0, 14, 14, 0), "nothing near, full HP");
+        assert!(stair_scum_threat(true, 0, 14, 14, 0), "the level is scary");
+        assert!(stair_scum_threat(false, 4, 14, 14, 0), "Grip in view (ranger-2107852048, turn 191)");
+        assert!(!stair_scum_threat(false, 4, 14, 14, 4), "danger at the limit");
+        assert!(stair_scum_threat(false, 0, 6, 14, 0), "hurt");
+    }
+
+    #[test]
+    fn rising_holds_a_flight_down_unless_in_real_danger() {
+        assert!(rising_hold(0, 70), "nothing near");
+        assert!(rising_hold(69, 70), "danger below the HP");
+        assert!(!rising_hold(70, 70), "danger at the HP");
+        assert!(!rising_hold(2000, 70), "a worm crowd");
+    }
+
+    /// Review of #550: the skip also ends the stair scum's own flow, so no
+    /// `GOAL_TAKE` step follows it; other goals and the unthreatened case
+    /// keep theirs.
+    #[test]
+    fn a_threat_cancels_the_stair_scum_flow() {
+        let scum = || {
+            let mut st = cornered();
+            st.borg.trait_[BI_CURHP as usize] = 14;
+            st.borg.trait_[BI_MAXHP as usize] = 14;
+            st.borg.goal.type_0 = GOAL_TAKE as _;
+            st
+        };
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        assert!(stair_scum_threatened_with(&mut st, 1, 0, 0));
+        assert_eq!(st.borg.goal.type_0, 0, "the scum flow is cancelled");
+
+        let mut st = scum();
+        assert!(stair_scum_threatened_with(&mut st, 1, 4, 0), "danger here");
+        assert_eq!(st.borg.goal.type_0, 0);
+
+        let mut st = scum();
+        assert!(!stair_scum_threatened_with(&mut st, 1, 0, 0), "no threat");
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_TAKE), "no threat: the scum goes on");
+
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        assert!(!stair_scum_threatened_with(&mut st, 0, 0, 0), "flag off");
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_TAKE), "flag off: untouched");
+
+        let mut st = scum();
+        st.borg.mon.scary = true;
+        st.borg.goal.type_0 = GOAL_FLEE as _;
+        assert!(stair_scum_threatened_with(&mut st, 1, 0, 0));
+        assert_eq!(i32::from(st.borg.goal.type_0), i32::from(GOAL_FLEE), "a flee flow is kept");
+    }
+
+    #[test]
     fn chokepoints_are_corridors_not_rooms() {
         const LIT_ROOM: [&str; 5] = ["#####", "#...#", "#...#", "#...#", "#####"];
         let passable = map_passable(&LIT_ROOM);
@@ -3237,18 +4301,31 @@ mod breeder_tests {
         assert!(!chokepoint(&map_passable(&ALONE), loc { x: 1, y: 1 }), "an isolated grid");
     }
 
-    /// #503: melee classes hunt while few breeders are known; casters and
-    /// archers do not, nor anyone with the switch off.
+    /// #503, #558: every class hunts while few breeders are known; the
+    /// count (a class value) decides, and 0 or the switch off stops it.
     #[test]
-    fn melee_classes_hunt_few_breeders() {
+    fn every_class_hunts_few_breeders() {
         assert!(breeder_hunt_with(&cornered(), 1, 4));
         assert!(!breeder_hunt_with(&cornered(), 0, 4), "switch off");
         assert!(!breeder_hunt_with(&cornered(), 1, 2), "too many breeders");
-        for (class, hunts) in [(0, true), (1, false), (2, false), (3, false), (4, false), (5, true), (6, true), (7, false), (8, true)] {
+        assert!(!breeder_hunt_with(&cornered(), 1, 0), "count 0: no hunt");
+        let mut high = cornered();
+        high.borg.trait_[BI_CLEVEL as usize] = 10;
+        assert!(!breeder_hunt_with(&high, 1, 4), "CL10: no hunt");
+        for class in 0..9 {
             let mut st = cornered();
             st.borg.trait_[BI_CLASS as usize] = class;
-            assert_eq!(breeder_hunt_with(&st, 1, 4), hunts, "class {class}");
+            assert!(breeder_hunt_with(&st, 1, 4), "class {class}");
         }
+    }
+
+    /// #558 review: no engagement while ignoring, fleeing or scared.
+    #[test]
+    fn breeders_are_engaged_only_while_staying() {
+        assert!(engaged_with(false, false, false));
+        assert!(!engaged_with(true, false, false), "ignoring breeders");
+        assert!(!engaged_with(false, true, false), "fleeing or leaving");
+        assert!(!engaged_with(false, false, true), "scary monster");
     }
 }
 
@@ -3354,5 +4431,41 @@ mod recall_tests {
         assert_eq!(targets, vec![&grip], "only Grip, awake in view at range");
         assert!(ranged_target(true, &level), "so Recall waits");
         assert!(!ranged_target(true, &[sleeper, behind_wall, next_to_me]), "no candidate: Recall may go");
+    }
+}
+
+#[cfg(test)]
+mod flee_known_down_tests {
+    use super::*;
+
+    #[test]
+    fn parked_stairs_are_taken_only_when_no_staircase_entered_the_flow() {
+        assert!(only_parked(0, 1), "every known staircase parked");
+        assert!(!only_parked(1, 1), "a free staircase entered the flow");
+        assert!(only_parked(0, 2), "the free one was refused as icky: it does not count");
+        assert!(!only_parked(0, 0), "none known");
+    }
+
+    /// #548: cornered means an adjacent moving monster, no escape item, and
+    /// the danger here at or above the HP or surrounded.
+    #[test]
+    fn cornered_needs_an_adjacent_monster_no_escape_and_the_danger_or_a_surround() {
+        assert!(cornered_shape(1, true, true, || false));
+        assert!(cornered_shape(1, true, false, || true), "surrounded");
+        assert!(!cornered_shape(1, true, false, || false), "neither");
+        assert!(!cornered_shape(2, true, true, || true), "nothing adjacent");
+        assert!(!cornered_shape(-1, true, true, || true), "no monster known");
+        assert!(!cornered_shape(1, false, true, || true), "an escape in the pack");
+        assert!(cornered_shape(1, true, true, || panic!("not asked when outmatched")));
+    }
+
+    /// #548: 0 keeps #545's any distance (the flow's 250); a cap is the
+    /// flow's depth, never above 250.
+    #[test]
+    fn the_distance_cap_is_the_flow_depth() {
+        assert_eq!(flee_down_depth(0), 250);
+        assert_eq!(flee_down_depth(-3), 250);
+        assert_eq!(flee_down_depth(40), 40);
+        assert_eq!(flee_down_depth(1000), 250);
     }
 }

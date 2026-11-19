@@ -25,7 +25,7 @@ use crate::borg_cave_light::AUTO_LIGHT_MAX;
 use crate::borg_cave_util::{borg_cave_floor_bold, borg_cave_floor_grid, borg_panel_hgt, borg_panel_wid};
 use crate::borg_cave_view::BORG_VIEW;
 use crate::borg_danger::{borg_danger, borg_danger_one_kill};
-use crate::borg_escape::{borg_allow_teleport, borg_caution_phase, borg_shadow_shift};
+use crate::borg_escape::{borg_allow_teleport, borg_shadow_shift, phase_door, PhaseCheck, PhaseSite};
 use crate::borg_flow::{
     borg_can_dig, borg_flow_clear, borg_flow_commit, borg_flow_enqueue_grid, borg_flow_old,
     borg_flow_spread, flow_commit,
@@ -1041,14 +1041,16 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
     borg_note(st, "# Twitchy!");
 
     /* try to phase out of it */
+    // borg-reborn-rs (#584): through the one Phase Door decision.
     if borg_allow_teleport(st)
-        && borg_caution_phase(st, 15, 2)
-        && (borg_spell_fail(st, PHASE_DOOR, 40)
-            || borg_spell_fail(st, PORTAL, 40)
-            || borg_shadow_shift(st, 40)
-            || borg_activate_item(st, st.act.tele_phase)
-            || borg_activate_item(st, st.act.tele_long)
-            || borg_read_scroll(st, st.item_val.sv_scroll_phase_door))
+        && phase_door(st, PhaseSite::TwitchyMove, PhaseCheck::Landing { tolerance: 15, horizon: 2 }, None, |st| {
+            borg_spell_fail(st, PHASE_DOOR, 40)
+                || borg_spell_fail(st, PORTAL, 40)
+                || borg_shadow_shift(st, 40)
+                || borg_activate_item(st, st.act.tele_phase)
+                || borg_activate_item(st, st.act.tele_long)
+                || borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+        })
     {
         /* We did something */
         return true;
@@ -1085,8 +1087,18 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#597): nor into lava without fire immunity.
+        if crate::borg_caution::twitch_refuses(st, &grid) {
+            continue;
+        }
+
         /* monsters count as walls if afraid */
         if grid.kill != 0 && afraid(st) {
+            continue;
+        }
+
+        // borg-reborn-rs (#621 review): and an ignored monster always does.
+        if grid.kill != 0 && crate::borg_fight_attack::ignored(st, usize::from(st.kills.kills[usize::from(grid.kill)].r_idx)) {
             continue;
         }
 
@@ -1118,6 +1130,12 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             /* don't twitch into walls */
             /* unless afraid (and even then, not perm walls) */
             if is_wall(&grid) && (!afraid(st) || u32::from(grid.feat) == FEAT_PERM) {
+                dir += 1;
+                continue;
+            }
+
+            // borg-reborn-rs (#597): nor into lava without fire immunity.
+            if crate::borg_caution::twitch_refuses(st, &grid) {
                 dir += 1;
                 continue;
             }

@@ -27,6 +27,9 @@ use crate::borg_headers::borg_trait_h::{
 };
 use crate::headers::list_options_h::OPT_birth_force_descend;
 use crate::state::BorgState;
+
+/// `GOAL_FLEE` (borg-flow.h): flee the level.
+const GOAL_FLEE: i32 = 7;
 use crate::{borg_flow, borg_io, borg_magic, engine};
 
 /// A list of known stairs (`struct borg_track` as used for `track_less`
@@ -94,19 +97,46 @@ fn track(st: &BorgState, which: Which) -> &StairTrack {
 /// The "Enqueue useful grids" loop: every stair of the list without a
 /// monster parked on it, in list order.
 fn enqueue_stairs(st: &mut BorgState, which: Which) {
+    let (enqueued, parked) = enqueue_free_stairs(st, which);
+    enqueue_parked_if_alone(st, enqueued, parked);
+}
+
+/// borg-reborn-rs (#597): enqueue the staircases of `which` with no monster
+/// on them. Returns how many entered the flow (a grid the flow refuses, icky
+/// or too dangerous, does not count) and the parked ones.
+fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i32)>) {
+    let mut parked = Vec::new();
+    let mut enqueued = 0;
     let mut i = 0;
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
 
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
+            parked.push((y, x));
             i += 1;
             continue;
         }
 
         /* Enqueue the grid */
         borg_flow::borg_flow_enqueue_grid(st, y, x);
+        // An enqueued grid has cost 0; a refused one keeps the cleared cost.
+        if st.flow.cost_at(y, x) == 0 {
+            enqueued += 1;
+        }
         i += 1;
+    }
+    (enqueued, parked)
+}
+
+/// borg-reborn-rs (#597): when no staircase entered the flow and a monster
+/// is parked on the known ones, flow to those anyway: the walk there fights
+/// the monster in the way, or finds the mark stale.
+fn enqueue_parked_if_alone(st: &mut BorgState, enqueued: usize, parked: Vec<(i32, i32)>) {
+    if crate::borg_caution::stair_parked_fallback(enqueued, parked.len()) {
+        for (y, x) in parked {
+            borg_flow::borg_flow_enqueue_grid(st, y, x);
+        }
     }
 }
 
@@ -116,6 +146,8 @@ fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
     if !borg_flow::borg_flow_commit(st, who, why) {
         return false;
     }
+    // borg-reborn-rs (#614): a flight to a staircase (rests wait for it).
+    st.borg.flight_to_stairs = true;
 
     /* Take one step */
     if !borg_flow::borg_flow_old(st, why) {
@@ -181,8 +213,16 @@ pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     borg_flow::borg_flow_clear(st);
 
     /* Enqueue useful grids */
-    enqueue_stairs(st, Which::Less);
-    enqueue_stairs(st, Which::More);
+    // borg-reborn-rs (#597): the parked fallback is decided across both
+    // kinds, so a parked up staircase is no goal while a down one is free.
+    let (mut enqueued, mut parked) = enqueue_free_stairs(st, Which::Less);
+    // borg-reborn-rs (#557): no down staircase for a flight while rising.
+    if !(why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st)) {
+        let (more, more_parked) = enqueue_free_stairs(st, Which::More);
+        enqueued += more;
+        parked.extend(more_parked);
+    }
+    enqueue_parked_if_alone(st, enqueued, parked);
 
     /* Spread the flow */
     borg_flow::borg_flow_spread(st, 250, false, false, false, -1, sneak);
@@ -220,20 +260,19 @@ pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
     commit_and_step(st, c"up-stairs", why)
 }
 
-/// Prepare to flow towards "down" stairs.
-pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
-    /* None to flow to */
-    if st.stairs.more.num == 0 {
-        return false;
-    }
-
+/// borg-reborn-rs (#548, review of #566): the refusals of
+/// `borg_flow_stair_more` before its flow (with an up staircase known: not
+/// prepared for the next depth unless `brave`, hungry, a sale held, no
+/// light; and recalling), shared with #544's flight down a known staircase
+/// so the two agree. True: no descent.
+pub(crate) fn more_refused(st: &mut BorgState, brave: bool) -> bool {
     /* if there are no down stairs, don't filter use of up stairs */
     if st.stairs.less.num != 0 {
         /* not unless safe or brave */
         if !brave {
             let depth = st.borg.tr(BI_CDEPTH) + 1;
             if crate::borg_prepared::borg_prepared_c(st, depth).is_some() {
-                return false;
+                return true;
             }
         }
 
@@ -245,23 +284,49 @@ pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bo
                 || st.borg.tr(BI_ISHUNGRY) != 0
                 || st.borg.tr(BI_FOOD) < 2)
         {
-            return false;
+            return true;
         }
 
         /* If I need to sell crap, then don't go down */
         if crate::borg_trip::legacy_sale_hold(st) {
-            return false;
+            return true;
         }
 
         /* No diving if no light */
         if st.borg.tr(BI_LIGHT) == 0 {
-            return false;
+            return true;
         }
     }
 
     /* don't head for the stairs if you are recalling,  */
     /* even if you are fleeing. */
-    if st.borg.goal.recalling != 0 {
+    // borg-reborn-rs (#603): unless caution_recall_wait_as_usual.
+    if crate::borg_caution::recall_restricts(st) {
+        return true;
+    }
+
+    false
+}
+
+/// borg-reborn-rs (#548): enqueue the down staircases without a monster on
+/// them (`enqueue_stairs`), for #544's capped flight.
+pub(crate) fn enqueue_down_stairs(st: &mut BorgState) {
+    enqueue_stairs(st, Which::More);
+}
+
+/// Prepare to flow towards "down" stairs.
+pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
+    /* None to flow to */
+    if st.stairs.more.num == 0 {
+        return false;
+    }
+
+    // borg-reborn-rs (#557): no flight down a staircase while rising.
+    if why == GOAL_FLEE && crate::borg_caution::rising_holds_flee_descent(st) {
+        return false;
+    }
+
+    if more_refused(st, brave) {
         return false;
     }
 

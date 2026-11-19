@@ -1150,6 +1150,9 @@ fn target_worked(st: &mut BorgState) {
 /// and reset the anti-bounce count.
 fn kill_found(st: &mut BorgState, k: i32, i: i32, used: i16, count: bool) {
     if count {
+        // borg-reborn-rs (#590): a scary monster's death, for the unlatch.
+        let r_idx = st.kills.kills[k as usize].r_idx;
+        crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
         borg_count_death(st, k);
     }
     borg_delete_kill(st, k);
@@ -1419,6 +1422,7 @@ pub fn borg_update(st: &mut BorgState) {
                     &format!("# Monster opened door at {y},{x}.  That's scary."),
                 );
                 st.borg.mon.scary = true;
+                st.borg.mon.scary_door = true; // borg-reborn-rs (#530)
             }
         }
     }
@@ -1907,6 +1911,7 @@ fn new_level(st: &mut BorgState) {
     b.status.vault = false;
     b.mon.unique = 0;
     b.mon.scary = false;
+    crate::borg_caution::forget_scary(&mut b.mon); // borg-reborn-rs (#530)
 
     // reset our breeder flag
     b.near.breeder = false;
@@ -2348,6 +2353,10 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
                 // Handle "xxx dies."
                 let k = borg_locate_kill(st, args(what), c, 20);
                 if k > 0 {
+                    // borg-reborn-rs (#590, review of #592): a death in this
+                    // pass counts for the unlatch too.
+                    let r_idx = st.kills.kills[k as usize].r_idx;
+                    crate::borg_caution::note_kill(&mut st.borg.mon, r_idx);
                     borg_count_death(st, k);
                     borg_delete_kill(st, k);
                     set_msg_use(st, i, 4);
@@ -2420,7 +2429,15 @@ fn handle_late_messages(st: &mut BorgState, hit_dist: i32) {
 /// Spread the monsters' danger as regional fear and count the breeders
 /// (monsters probably in a vault are skipped).
 fn spread_monster_fear(st: &mut BorgState) {
+    // borg-reborn-rs (#558): counted before the spread, so every monster's
+    // danger below (`borg_danger`'s hunted breeder) sees the full count.
     st.borg.mon.breeders = 0;
+    for k in 1..i32::from(st.kills.nxt) {
+        let r_idx = usize::from(st.kills.kills[idx(k)].r_idx);
+        if r_idx != 0 && engine::race_flag_has(r_idx, RF_MULTIPLY) {
+            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
+        }
+    }
     let mut i = 1;
     while i < i32::from(st.kills.nxt) {
         let kill = st.kills.kills[idx(i)];
@@ -2435,9 +2452,6 @@ fn spread_monster_fear(st: &mut BorgState) {
         }
 
         let r_idx = usize::from(kill.r_idx);
-        if engine::race_flag_has(r_idx, RF_MULTIPLY) {
-            st.borg.mon.breeders = st.borg.mon.breeders.wrapping_add(1);
-        }
 
         // Skip monsters that dont chase
         if engine::race_flag_has(r_idx, RF_NEVER_MOVE) {
