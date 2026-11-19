@@ -14,7 +14,10 @@ Merges inserted code above them, and later PRs copied the wrong numbers.
   and `--fix` repairs both files. Tests: `scripts/tests/test_check_param_citations.py`.
 - **Fixed:** 221 of 2,153 citations in `params.rs` (91 in `borg_caution.rs`,
   47 in `borg_fight_attack.rs`, 39 in `borg_escape.rs`), each now at its
-  first read, and 72 CALIBRATION rows that disagreed with the registry.
+  first read, and 72 CALIBRATION rows that disagreed with the registry. After
+  merging main `2026-11-19` (#607 and others), `--fix` found 91 citations
+  and 88 rows wrong again on the merged tree, which is the drift the check
+  now stops.
 - **Not changed:** the historical archives (`docs/deaths/*/params-core.json`
   and `docs/HANDOVER.md`) keep the citations of their time.
 - **For later PRs:** after inserting code above a read, run
