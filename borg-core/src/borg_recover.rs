@@ -515,6 +515,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
     if rest_hp && !hunt_first {
         // check for then call lite in dark room before resting
+        // borg-reborn-rs (#642): a staircase or a room corner first.
+        if borg_flow_misc::borg_flow_rest_spot(st, param(Param::recover_rest_spot_steps)) {
+            return true;
+        }
         if !borg_check_light_only(st) {
             borg_note(st, "# Resting to recover HP/SP...");
 
@@ -555,6 +559,10 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && !hunt_now(st)
         && !rest_held_for_stairs(st)
     {
+        // borg-reborn-rs (#642): a staircase or a room corner first.
+        if borg_flow_misc::borg_flow_rest_spot(st, param(Param::recover_rest_spot_steps)) {
+            return true;
+        }
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
         // Rest until done

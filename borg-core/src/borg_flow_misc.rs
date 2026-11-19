@@ -430,6 +430,93 @@ pub fn borg_flow_recover(st: &mut BorgState, dist: i32) -> bool {
     commit_and_step(st, c"Recover Grid", GOAL_RECOVER)
 }
 
+/// borg-reborn-rs (#642, owner: "room corners are usually best or any place
+/// where you can see what is coming ... ideal is over a staircase"): how good
+/// a resting grid is. 2 = a staircase (an escape at once); 1 = a room corner:
+/// walls on two adjacent sides, the two opposite sides and the opposite
+/// diagonal open (a room, not a corridor bend), no door and no unknown grid
+/// next to it; 0 = neither. `nb` is the eight neighbours, N, NE, E, SE, S,
+/// SW, W, NW.
+pub(crate) fn rest_spot_kind(center: u32, nb: [u32; 8]) -> u8 {
+    if center == FEAT_LESS || center == FEAT_MORE {
+        return 2;
+    }
+    if center != crate::headers::list_terrain_h::FEAT_FLOOR {
+        return 0;
+    }
+    if nb.iter().any(|&f| f == FEAT_NONE || f == FEAT_CLOSED || f == FEAT_OPEN || f == FEAT_BROKEN) {
+        return 0;
+    }
+    let wall = |i: usize| nb[i] >= FEAT_SECRET;
+    // (wall, wall, open diagonal opposite) with the opposite sides open.
+    const N: usize = 0;
+    const NE: usize = 1;
+    const E: usize = 2;
+    const SE: usize = 3;
+    const S: usize = 4;
+    const SW: usize = 5;
+    const W: usize = 6;
+    const NW: usize = 7;
+    let corner = [(N, W, SE, S, E), (N, E, SW, S, W), (S, W, NE, N, E), (S, E, NW, N, W)]
+        .iter()
+        .any(|&(a, b, diag, oa, ob)| wall(a) && wall(b) && !wall(diag) && !wall(oa) && !wall(ob));
+    u8::from(corner)
+}
+
+/// `rest_spot_kind` of a known grid.
+fn rest_spot_at(st: &BorgState, y: i32, x: i32) -> u8 {
+    if !engine::square_in_bounds_fully(x, y) {
+        return 0;
+    }
+    const D: [(i32, i32); 8] = [(-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1)];
+    let mut nb = [FEAT_NONE; 8];
+    for (k, (dy, dx)) in D.iter().enumerate() {
+        if !engine::square_in_bounds_fully(x + dx, y + dy) {
+            return 0;
+        }
+        nb[k] = u32::from(st.cave.grid(x + dx, y + dy).feat);
+    }
+    rest_spot_kind(u32::from(st.cave.grid(x, y).feat), nb)
+}
+
+/// borg-reborn-rs (#642): before a long rest, walk to a better resting grid
+/// within `steps` flow steps: a staircase if one is in reach, else a room
+/// corner (`rest_spot_kind`), each a grid `borg_check_rest` accepts. Nothing
+/// when the Borg already stands on one, none is in reach, or the last walk
+/// started fewer than `2 * steps` thinks ago (a broken walk: rest here).
+/// Flows as `GOAL_RECOVER`, which `borg_think_dungeon` continues.
+pub fn borg_flow_rest_spot(st: &mut BorgState, steps: i32) -> bool {
+    if steps <= 0 || rest_spot_at(st, st.borg.c.y, st.borg.c.x) > 0 {
+        return false;
+    }
+    if st.borg.rest_spot_time > 0 && borg_timer(st, st.borg.rest_spot_time) < 2 * steps {
+        return false;
+    }
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    for want in [2u8, 1] {
+        st.flow.temp_n = 0;
+        for y in cy - steps..=cy + steps {
+            for x in cx - steps..=cx + steps {
+                if (y, x) != (cy, cx) && rest_spot_at(st, y, x) == want && borg_check_rest(st, y, x) {
+                    st.flow.temp_push(y, x);
+                }
+            }
+        }
+        if st.flow.temp_n == 0 {
+            continue;
+        }
+        borg_flow_clear(st);
+        enqueue_temp(st);
+        borg_flow_spread(st, steps, false, true, false, -1, false);
+        st.borg.rest_spot_time = st.borg.time.now;
+        let who = if want == 2 { c"a staircase to rest on" } else { c"a room corner to rest in" };
+        if commit_and_step(st, who, GOAL_RECOVER) {
+            return true;
+        }
+    }
+    false
+}
+
 /// The tests of one grid of `borg_flow_recover()`'s scan, in C's order.
 fn recover_grid_ok(st: &mut BorgState, y: i32, x: i32) -> bool {
     /* Stay in bounds */
@@ -1577,5 +1664,28 @@ mod tests {
         assert_eq!(st.flow_misc.track_vein.x.len(), 100);
         borg_free_flow_misc(&mut st);
         assert!(st.flow_misc.track_shop_x.is_empty() && st.flow_misc.track_vein.x.is_empty());
+    }
+}
+
+#[cfg(test)]
+mod rest_spot_tests {
+    use super::rest_spot_kind;
+    use crate::headers::list_terrain_h::{FEAT_CLOSED, FEAT_FLOOR, FEAT_GRANITE, FEAT_LESS, FEAT_NONE};
+
+    const F: u32 = FEAT_FLOOR;
+    const W: u32 = FEAT_GRANITE;
+
+    /// #642: a staircase, else a room corner; not a corridor, a bend, the
+    /// middle of a room, or a grid by a door or unknown grids.
+    #[test]
+    fn a_staircase_or_a_room_corner() {
+        // N, NE, E, SE, S, SW, W, NW
+        assert_eq!(rest_spot_kind(FEAT_LESS, [F; 8]), 2, "a staircase");
+        assert_eq!(rest_spot_kind(F, [W, W, F, F, F, W, W, W]), 1, "the NW corner of a room");
+        assert_eq!(rest_spot_kind(F, [F; 8]), 0, "the middle of a room");
+        assert_eq!(rest_spot_kind(F, [F, W, W, W, F, W, W, W]), 0, "a north-south corridor");
+        assert_eq!(rest_spot_kind(F, [W, W, F, W, F, W, W, W]), 0, "a corridor bend (the diagonal is a wall)");
+        assert_eq!(rest_spot_kind(F, [W, W, FEAT_CLOSED, F, F, W, W, W]), 0, "a door next to it");
+        assert_eq!(rest_spot_kind(F, [W, W, F, FEAT_NONE, F, W, W, W]), 0, "an unknown grid next to it");
     }
 }
