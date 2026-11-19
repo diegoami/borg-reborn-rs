@@ -1423,6 +1423,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     if st.borg.goal.recalling != 0
         && borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false) <= 0
     {
+        // borg-reborn-rs (#567): a monster was near a moment ago: one turn.
+        if crate::borg_caution::recall_rest_held(st) {
+            return choice!("wait_for_recall");
+        }
+
         /* Take note */
         borg_note(st, "# Waiting for Recall...");
 
