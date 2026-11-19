@@ -2012,6 +2012,7 @@ fn new_level(st: &mut BorgState) {
 
     // Assume not leaving the level
     b.goal.leaving = false;
+    b.breeder_leaving = false; // borg-reborn-rs (#644, re-review of #656)
 
     // Assume not fleeing the level
     b.goal.fleeing = false;

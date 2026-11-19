@@ -29,7 +29,10 @@ breeders or leave the level asap".
   rule's own leave (`breeder_engaged_but_own_leave`), and a hunt that
   applies again clears it (`# Not leaving: the breeder hunt applies
   again.`). A leave set by another rule, ignoring the breeders (#503) or
-  fleeing still stops the hunt.
+  fleeing still stops the hunt. The withdrawal only takes the rule's own
+  leave while the Borg is not fleeing (re-review of #656): the low-hit-points
+  and bleeding/poison leaves also set `goal.fleeing`, and may have joined the
+  rule's leave after it was set. The ownership flag resets on a new level.
 - **The code:** a decision (`breeder_rest_decision`: rest, hunt or leave)
   and its effect (`apply_breeder_rest`), taken only when a rest is due.
 - **Not changed:** the Recall rests (a Borg waiting for Recall is leaving

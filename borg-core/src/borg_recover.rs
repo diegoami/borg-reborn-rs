@@ -689,7 +689,8 @@ fn apply_breeder_rest(st: &mut BorgState, d: BreederRest) {
     match d {
         BreederRest::Rest => return,
         BreederRest::Hunt => {
-            if st.borg.breeder_leaving && st.borg.goal.leaving {
+            let g = &st.borg.goal;
+            if withdraw_own_leave(st.borg.breeder_leaving, g.leaving, g.fleeing || g.fleeing_to_town) {
                 st.borg.goal.leaving = false;
                 borg_note(st, "# Not leaving: the breeder hunt applies again.");
             }
@@ -708,6 +709,15 @@ fn apply_breeder_rest(st: &mut BorgState, d: BreederRest) {
         let n = st.borg.mon.breeders;
         borg_note(st, &format!("# No rest: {n} breeders known on the level, {then}."));
     }
+}
+
+/// Re-review of #656: a hunt that applies again withdraws the leave only if
+/// it is this rule's (`own`) and the Borg is not fleeing. The low-hit-points
+/// and bleeding/poison leaves (`borg_caution`) set `goal.fleeing` too; they
+/// may join a leave this rule set first (they only set it when it is not
+/// set yet), and must not lose it to the hunt.
+fn withdraw_own_leave(own: bool, leaving: bool, fleeing: bool) -> bool {
+    own && leaving && !fleeing
 }
 
 /// A rest that is due is held for breeders: decide, act on the decision,
@@ -779,6 +789,17 @@ mod breeder_rest_tests {
         assert!(!engaged(false, false, true, false, false), "another rule's leave still does");
         assert!(!engaged(true, false, true, false, true), "ignoring the breeders (#503) still does");
         assert!(!engaged(false, true, true, false, true), "fleeing still does");
+    }
+
+    /// Re-review of #656: the rule's leave, then the low-HP leave joins it
+    /// (and sets fleeing): the resumed hunt keeps the leave.
+    #[test]
+    fn the_hunt_keeps_a_leave_another_rule_joined() {
+        use super::withdraw_own_leave;
+        assert!(withdraw_own_leave(true, true, false), "the rule's own leave: withdrawn");
+        assert!(!withdraw_own_leave(true, true, true), "low HP or bleeding joined (fleeing): kept");
+        assert!(!withdraw_own_leave(false, true, false), "another rule's leave: kept");
+        assert!(!withdraw_own_leave(true, false, false), "nothing to withdraw");
     }
 }
 
