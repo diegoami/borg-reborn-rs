@@ -124,6 +124,9 @@ def alias(name, pnames):
     "Class values"), or the name itself."""
     if name in pnames:
         return name
+    base, _, cls = name.rpartition("__")
+    if cls in CLASSES and base in pnames:
+        return base  # #696: <name>__<class>
     for c in CLASSES:
         for cand in (name.replace(f"_{c}_", "_", 1), name.removesuffix(f"_{c}")):
             if cand != name and cand in pnames:
