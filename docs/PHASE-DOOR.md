@@ -39,8 +39,9 @@ the `# Danger Level N` notes after an escape are unchanged.
 ## Words used below
 
 - **Danger** (`b_q` in `borg_escape`): the Borg's estimate of the damage it can
-  take in the next turn on the least dangerous grid around it
-  (`borg_danger`).
+  take where it stands (`borg_caution`'s `pos_danger`, `borg_danger` over
+  `caution_danger_horizon` turns). C's comment on `borg_escape` says "the
+  least dangerous square around us", but C passes the same `pos_danger`.
 - **Avoidance**: the danger the Borg accepts. It is the current HP, unless the
   Borg raised it to get unstuck (`boost_bravery`). A threshold written as
   `tenths` is `avoidance × tenths / 10`: 10 means "danger above the HP", 5
@@ -90,26 +91,76 @@ own.
 
 ## What this shows
 
+Counts from the 18 local classes-18 games of #602's check (borg-rs core,
+100,000 turns, shipped `borg.txt`, main `dbe99509`; per site in #602's PR
+body and `docs/handover/2026-11-18-584-phase-decision.md`): 150 Phase Doors.
+
 - **Each site decides from a danger threshold alone.** None compares Phase
   Door with attacking or with boosting.
 - **Levels 4.1 and 5.1 phase below the HP:** at 0.6 × and 0.5 × avoidance.
-  In 18 local classes-18 games (#584's investigation, main `8da9be99`) they
-  made 67 of 171 Phase Doors, at a median danger of 0.6–0.7 × the HP, often
-  at full HP.
+  They made 71 of the 150 (40 and 31), often at full HP.
 - **The six `escape_phase_*` settings are two kinds.** Five
   (`escape_phase_ordinary_danger_tenths`, `_unique_danger_tenths`,
-  `_unique_min_count`, `_tolerance`, `_horizon`) gate only level 3.1 (3 of
-  those 171). The sixth, `escape_phase_antisummon_delay`, is a shared timer
+  `_unique_min_count`, `_tolerance`, `_horizon`) gate only level 3.1 (1 of
+  the 150). The sixth, `escape_phase_antisummon_delay`, is a shared timer
   read at seven sites (2.2, 3.1, 3.3, 4.1, 4.3, 6.1, 8), which made 56 of
-  the 150 Phase Doors in the 18 games of #602's check; it only blocks them
-  for 50 turns after a digging flow.
-- **Twitchy think has no check**, so #539's "a monster next to me" does not
-  apply to it.
+  the 150; it only blocks them for 50 turns after a digging flow.
+- **Twitchy think has no check** (25 of the 150), so #539's "a monster next
+  to me" does not apply to it.
 
-## Next (#584, owner 2026-11-18)
+## The owner's rule (#584, `escape_phase_adjacent_rule`)
 
-Behind a switch, compiled off: Phase Door only with an enemy on an adjacent
-square, and only when the Borg judges it cannot win the fight there.
-Otherwise attack with magic or missiles (the best by the Borg's own
-estimate); if it can't, boost itself first (Speed, Heroism, Bless, …). Every
-site above then asks that rule instead of its threshold.
+Owner, 2026-11-18: "to use Phase Door, enemies must be on the square next to
+you"; otherwise, if the Borg cannot escape, attack with magic or missiles,
+and if that is not possible, boost (Speed included); only in close quarters,
+when the Borg thinks it cannot win, Phase Door.
+
+With `escape_phase_adjacent_rule = 1` (compiled 0, shipped 0), `phase_door`
+asks one rule at every site above, before the site's own check, if the Borg
+can Phase Door at all (`BI_APHASE`):
+
+| situation | verdict | at the site | after `borg_escape` found no escape |
+|---|---|---|---|
+| no awake enemy on an adjacent square | no Phase Door | the site goes on with its other escapes (stairs, teleports) | its best attack (`borg_attack`, the Borg's own ranking; with nothing adjacent only a ranged attack can win it); if none and an awake monster is in view, a boost (`cornered_boost`: Speed first, then Heroism, Berserk Strength, Bless; else `borg_defend`: resistances, Protection from Evil, shields, staves) |
+| an enemy adjacent, the fight not lost | no Phase Door | the same | counter-attack (`borg_attack`), else the boost |
+| an enemy adjacent, the fight lost | Phase Door allowed | the site's own check (landing test, …) and cast, as before | – |
+
+"Lost" is chosen by `escape_phase_lost_test` (owner, 2026-11-19: both
+comparisons behind a setting):
+
+| value | the adjacent fight is lost when |
+|---|---|
+| 0 | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
+| **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
+| 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
+
+Tests 1 and 2 note their numbers (`# Phase rule: the fight: <HP left> HP at
+<damage> a turn, …; danger d, HP h: lost / not lost`, `… the landing: …`).
+Test 2 draws random numbers (the landing samples). The rule is decided and noted once per think, at the first site
+that asks (`# Phase rule (from <site>): …`); later sites reuse it. Its attack
+or boost (`phase_rule_act`) runs once, in `borg_caution` right after
+`borg_escape`, so after the emergency levels' borrowed mana is put back.
+
+Shoot N Scoot's own check (`borg_shoot_scoot_safe`, which needs a monster
+next to the Borg) answers before the rule there, so the rule is not asked
+on its turns with nothing adjacent.
+
+Two consequences of the order, with the rule on:
+- `phase_rule_act` comes before `borg_caution`'s cures (fear, confusion)
+  and later steps: the Borg attacks before it cures. Melee refuses while
+  afraid, but a confused Borg may still swing; the boost cures fear first.
+- The tests draw from the Borg's own random numbers (the attack simulation
+  of `borg_attack_estimate`; test 2's landing samples; never the game's), so
+  the attack the Borg then makes is drawn from a later point of that stream
+  than without the rule. Two runs with the rule on play the same keys.
+
+With the rule on, #539's `escape_phase_adjacent_only` check
+(`phase_is_pointless`) is skipped at every site: the rule decides (the
+owner's spec: it must not rely on #539).
+
+Outside `borg_escape` (the Recall wait, the twitchy paths) the rule only
+refuses the Phase Door; the Borg's ordinary flow fights later in the think.
+With no enemy adjacent the Borg no longer phases to get unstuck.
+
+Whether the rule saves or costs games is the zoo pilot's question
+(borg-zoo#334, RULES 14): the 100 % threshold is a hypothesis.
