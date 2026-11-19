@@ -46,8 +46,13 @@ apprentice arrived during the rest, and it never reached the stairs.
   - **The direction:** `caution_stairs_leave_down` (1) takes the staircase
     under the Borg, up or down (the owner's "climb up/down"); 0 takes an up
     staircase only. The staircase sets `stair_less` or `stair_more` itself,
-    because `choose_stairs` may set neither for a Borg that is recovering
-    rather than fleeing.
+    and `choose_stairs` is skipped then, so nothing cancels a noted
+    departure. While rising, a down staircase is held as in `choose_stairs`
+    (#483, #557; re-review of #616).
+- **Only a flight to stairs:** the breeder exit (#544) and the flow to light
+  are `GOAL_FLEE` flows too. `borg.flight_to_stairs`, set by the stair flows
+  and cleared by every other flow commit, keeps them from holding rests
+  (re-review of #616).
 
 Compiled and shipped 0 (C), with the companions at 10, 10 and 1. Evidence, a
 lead (the 18 classes-18 starts, 100,000 turns, branch merged with main

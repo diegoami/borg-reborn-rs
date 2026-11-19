@@ -61,8 +61,12 @@ fn rest_held_for_stairs(st: &mut BorgState) -> bool {
     if !holding_for_stairs(st) {
         return false;
     }
-    let steps = committed_steps(st);
-    borg_note(st, &format!("# No rest: committed to the stairs, {steps} steps to go."));
+    // Review of #616: the rod, HP and mana rests all ask; one note a think.
+    if st.borg.rest_hold_noted != Some(st.borg.time.now) {
+        st.borg.rest_hold_noted = Some(st.borg.time.now);
+        let steps = committed_steps(st);
+        borg_note(st, &format!("# No rest: committed to the stairs, {steps} steps to go."));
+    }
     true
 }
 
@@ -87,13 +91,25 @@ fn committed_steps(st: &BorgState) -> i32 {
 /// a think, and the rest must not slip in then (the Druid of #614 did, 11
 /// steps from the stairs, in a first version).
 fn flight_now(st: &BorgState) -> (bool, i32) {
+    // Review of #616 (N4): only a flight to a staircase; the breeder exit and
+    // the flow to light are flights to somewhere else.
     if st.borg.goal.type_0 == GOAL_FLEE {
-        return (true, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]));
+        let steps = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+        return flee_flow_flight(st.borg.flight_to_stairs, steps);
     }
     let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
     let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= param(Param::recover_rest_reach_stairs_memory);
     let here = st.borg.flight_depth == crate::engine::player_depth();
     (still_fleeing && recent && here && st.borg.flight_time > 0, st.borg.flight_steps)
+}
+
+/// On a flee flow: a flight to a staircase, `steps` away, or none.
+fn flee_flow_flight(to_stairs: bool, steps: i32) -> (bool, i32) {
+    if to_stairs {
+        (true, steps)
+    } else {
+        (false, 0)
+    }
 }
 
 fn hold_rest_for_stairs(max_steps: i32, flight: bool, on_stairs: bool, steps: i32) -> bool {
@@ -586,6 +602,14 @@ mod rest_at_stairs_tests {
         assert!(!hold_rest_for_stairs(20, true, true, 0), "on the staircase: rest");
         assert!(!hold_rest_for_stairs(20, false, false, 11), "no flight");
         assert!(!hold_rest_for_stairs(0, true, false, 11), "off (C)");
+    }
+
+    /// Review of #616 (N4): a flee flow that is not to a staircase (the
+    /// breeder exit, the flow to light) is not a commitment to the stairs.
+    #[test]
+    fn only_a_flight_to_stairs_commits_the_rest() {
+        assert_eq!(super::flee_flow_flight(false, 11), (false, 0), "the breeder exit");
+        assert_eq!(super::flee_flow_flight(true, 11), (true, 11), "a stair flow, 11 steps to go");
     }
 }
 

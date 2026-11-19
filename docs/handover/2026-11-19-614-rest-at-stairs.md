@@ -33,6 +33,21 @@ them if a monster appears. In any form, not only a fox.
   On the 18 starts the leave rule fires 23 times instead of 72, and 10 of 18
   games stay identical. Its one death (a Priest among breeders) comes 23,000
   turns after its last leave.
-- **Left:** a zoo pilot (off, reach 20, leave, leave up only, both). The general question of
+- **Re-reviews of #616 (head `8a427494`), fixed after merging main
+  `4acf071f` (registry 2164):**
+  - N1: while rising, the leave rule takes no down staircase (the holds of
+    #483 and #557), and when it decides, `choose_stairs` is skipped, so a
+    noted departure is never cancelled;
+  - N4: only a stair flow (`borg_flow_stairs`' commit, #548's desperate
+    down flow) sets `borg.flight_to_stairs`; every flow commit clears it. The
+    breeder exit and the flow to light no longer count as a commitment to the
+    stairs;
+  - a held rest is noted once a think (the rod, HP and mana rests all ask);
+  - N2 (citations): set with #601's `check-param-citations.py --fix` after
+    #610 is merged.
+- **Pilot:** borg-zoo#365, `reborn-rest-stairs-pilot`, run 44462654412, on
+  `8a427494` (before these fixes; with the switches at their pilot values
+  the fixes change only rising descents and breeder exits, which ship off).
+- **Left:** The general question of
   where and when to rest is #615. Phase Door during a flight is #584.
 - **Owner:** the shipped values, after the pilot.
