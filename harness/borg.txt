@@ -651,7 +651,7 @@ borg_param_escape_fox_form_stand_speed = 10
 # half the turns. It changes back at the shop door (the game shuts it on a
 # fox) and before a blow. Raising min_steps casts on longer walks only (each
 # cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
-# Impact: not on the file's 6-game measure (one Druid); see CALIBRATION.
+# Impact: set to 1, 1 of 6 test games play differently (the Druid).
 
 borg_param_escape_fox_form_town = 0
 borg_param_escape_fox_form_town_max_level = 20

@@ -270,9 +270,9 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:833` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:921` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:922` |
+| `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:855` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:934` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:935` |
 
 ## Town less scary (#622)
 
@@ -461,9 +461,9 @@ needs the zoo (Druid starts).
 |---|---|---|---|---|
 | `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:491` |
 | `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:529` |
-| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:613` |
-| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:669` |
-| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:671` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:626` |
+| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:682` |
+| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:684` |
 
 ## Breeders hunted by every class (#558)
 
@@ -1742,15 +1742,15 @@ the vendored mechanics model:
 | `escape_landing_samples` | 100 | count | 1–1000 | `borg_escape.rs:363` |
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
-| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1156` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1227` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1236` |
-| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1240` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1327` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1338` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1341` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1342` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1338` |
+| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1178` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1240` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1249` |
+| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1292` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1340` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1351` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1354` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1355` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1360` |
 | `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1368` |
 | `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1347` |
 | `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1365` |
@@ -1767,8 +1767,8 @@ the vendored mechanics model:
 | `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1419` |
 | `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1423` |
 | `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1433` |
-| `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1335` |
-| `escape_emergency_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1335` |
+| `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1464` |
+| `escape_emergency_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1464` |
 | `escape_last_ditch_max_level` | 10 | level | 1–51 | `borg_escape.rs:1354` |
 | `escape_last_ditch_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1355` |
 | `escape_last_ditch_dimension_fail` | 90 | percent | 0–100 | `borg_escape.rs:1357` |

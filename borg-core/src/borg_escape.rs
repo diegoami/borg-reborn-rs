@@ -566,6 +566,15 @@ fn mana_kept(sp_after: i32, max_sp: i32, rest_applies: bool, rest_tenths: i32) -
     sp_after >= 0 && (!rest_applies || sp_after >= max_sp * rest_tenths / 10)
 }
 
+/// borg-reborn-rs (#620, review of #648): the note of `borg_think`'s change
+/// back, when it is the town fox's on a staircase (the other two reverts,
+/// at the shop door and before a blow, write their own).
+pub(crate) fn note_fox_revert(st: &mut BorgState) {
+    if is_fox() && town_fox_now(st) && on_stairs(st) {
+        borg_note(st, "# Fox Form: changing back on the staircase");
+    }
+}
+
 /// borg-reborn-rs (#620): a fox about to step onto a shop entrance changes
 /// back first: a shapechanged player on a shop entrance is refused
 /// (`player-util.c` `player_handle_post_move`, from `move_player`; also
