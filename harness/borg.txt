@@ -650,10 +650,17 @@ borg_param_escape_phase_adjacent_only = 1
 # staves). lost_test: 0 = the danger threshold below; 1 = the fight compared
 # (its best attack of any kind, true damage, needs more turns to kill the
 # adjacent monsters, their HP left, than the danger needs to kill it); 2 = as 1, and the expected landing
-# is safer than here. 0 = each site's own check. Off here until a zoo pilot measures it.
+# is safer than here. 0 = each site's own check.
+# Shipped with lost_test 0 at 100% (#661, borg-zoo#347's thr-100 arm, 1,728
+# paired starts on 4acf071f): 77 deaths against 93 with the rule off (55
+# rescued, 39 newly killed, p = 0.12), mean max CL and DL unchanged; the
+# fight tests (1, 2) were neutral leaning worse. Confirmed on fresh starts
+# (borg-zoo#347's main confirmation, classes-1800-b, 3,600 games on
+# 3ba17e2c): 89 deaths against 128 (79 rescued, 40 newly killed, p =
+# 0.00045), CL and DL non-inferior; only Blackguards worse (7 to 11).
 
-borg_param_escape_phase_adjacent_rule = 0
-borg_param_escape_phase_lost_test = 1
+borg_param_escape_phase_adjacent_rule = 1
+borg_param_escape_phase_lost_test = 0
 borg_param_escape_phase_lost_danger_percent = 100
 
 # Ranged first against immobile attackers (#646, owner: "always choose ranged
@@ -955,8 +962,11 @@ borg_param_caution_scary_unlatch_kill = 0
 # caution_scary_hurt_percent and caution_scary_afraid.
 # Impact: set to 1, 14 of 18 classes-18 games play differently (it clears
 # the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
+# Shipped 1 (#671, borg-zoo#400, all 1,800 classes-1800 starts on 3ba17e2c):
+# 93 deaths against 105 (28 rescued, 16 newly killed, p = 0.096), mean max CL
+# +0.09 and DL +0.05 (both significant). Safe to adopt; deaths not confirmed.
 
-borg_param_caution_scary_unlatch_calmed = 0
+borg_param_caution_scary_unlatch_calmed = 1
 
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, scares no more: Grip fled from one
