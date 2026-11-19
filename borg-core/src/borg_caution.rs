@@ -1512,6 +1512,23 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
         )
 }
 
+/// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
+/// immobile creature kept at range (its reach). Off: no scan.
+pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
+    if p(Param::caution_immobile_ranged_only) == 0 {
+        return false;
+    }
+    (-1..=1).any(|dy| {
+        (-1..=1).any(|dx| {
+            let (gx, gy) = (x + dx, y + dy);
+            engine::square_in_bounds_fully(gx, gy) && {
+                let k = st.cave.grid(gx, gy).kill;
+                k != 0 && immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(k)].r_idx))
+            }
+        })
+    })
+}
+
 /// borg-reborn-rs (#713): an immobile creature kept at range is next to the
 /// Borg.
 fn kept_at_range_next_to(st: &BorgState) -> bool {
@@ -1655,7 +1672,9 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     }
     let Some((i, _)) = best else { return false };
     let pos = (st.kills.kills[who].pos.y as u8, st.kills.kills[who].pos.x as u8);
-    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused) {
+    // #713: a creature kept at range allows the confused tries' count of
+    // steps (3), not the single ranged step.
+    if !step_allowed(&mut st.borg.mon, st.borg.time.level, pos, confused || kept) {
         return false;
     }
     let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));

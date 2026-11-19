@@ -423,14 +423,15 @@ fn spread_blocked(
         return true;
     }
 
+    // borg-reborn-rs (#713): never into the reach of an immobile creature
+    // kept at range: its grid (a step into it is a blow) or a grid next to
+    // it (an item under a jelly drew the Borg back beside it, 60 touches).
+    if crate::borg_caution::in_reach_of_kept(st, x, y) {
+        return true;
+    }
+
     /* flowing into monsters */
     if ag.kill != 0 {
-        // borg-reborn-rs (#713): never through an immobile creature kept at
-        // range: a step into its grid is a blow.
-        if crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
-            return true;
-        }
-
         /* Avoid if Desperate */
         if b.status.desperate {
             return true;
