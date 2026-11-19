@@ -81,6 +81,13 @@ pub struct FightAttackState {
     /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
     pub dmg_acc: i32,
     pub dmg_best: i32,
+    /// borg-reborn-rs (#556): the kills of the same aim or target: for each
+    /// monster hit, its true damage over its HP, at most 1 (`kill_acc`, of the
+    /// best aim `kill_best`); and the winner's, for `borg_attack_estimate`
+    /// (`est_kills`).
+    pub kill_acc: f64,
+    pub kill_best: f64,
+    pub est_kills: f64,
     /// borg-reborn-rs (#637): a wand is being rated in town: only a
     /// dangerous town monster is worth its charge.
     pub town_wand: bool,
@@ -100,6 +107,9 @@ impl Default for FightAttackState {
             tp_other_n: 0,
             dmg_acc: 0,
             dmg_best: 0,
+            kill_acc: 0.0,
+            kill_best: 0.0,
+            est_kills: 0.0,
             town_wand: false,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
@@ -606,6 +616,15 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
 
 /// Simulate/Apply the optimal result of making a physical attack
 /// (`borg_attack_aux_thrust`).
+/// borg-reborn-rs (#556): the share of a monster of `hp` that `damage`
+/// kills: damage over HP, at most 1 (0 for no HP known).
+pub(crate) fn kill_fraction(damage: i32, hp: i32) -> f64 {
+    if hp <= 0 {
+        return 0.0;
+    }
+    (f64::from(damage.max(0)) / f64::from(hp)).min(1.0)
+}
+
 fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
     let mut b_i: i32 = -1;
     let mut b_d: i32 = -1;
@@ -663,6 +682,7 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
         } else {
             true_d
         };
+        st.fight_attack.kill_best = kill_fraction(st.fight_attack.dmg_best, i32::from(st.kills.kills[k as usize].power));
     }
 
     /* Nothing to attack */
@@ -1552,6 +1572,7 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
 
     // borg-reborn-rs (#584): the true damage, at most the monster's HP.
     st.fight_attack.dmg_acc += d.clamp(0, i32::from(kill.power).max(0));
+    st.fight_attack.kill_acc += kill_fraction(d, i32::from(kill.power));
 
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
@@ -1921,6 +1942,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 st.fight_attack.tp_other_n = 0;
                 let mut n = 0;
                 st.fight_attack.dmg_acc = 0;
+                st.fight_attack.kill_acc = 0.0;
 
                 /* Bounds check */
                 if !engine::square_in_bounds(x, y) {
@@ -1989,6 +2011,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 b_o_x = o_x;
                 b_d = d;
                 st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
+                st.fight_attack.kill_best = st.fight_attack.kill_acc;
             }
         }
         i += 1;
@@ -2224,6 +2247,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
 
         /* Consider it if its a ball spell or right on top of it */
         st.fight_attack.dmg_acc = 0;
+        st.fight_attack.kill_acc = 0.0;
         let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max);
 
         /* Skip useless attacks */
@@ -2246,6 +2270,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         b_n = n;
         b_d = d;
         st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
+        st.fight_attack.kill_best = st.fight_attack.kill_acc;
     }
     if b_i == -1 {
         return b_n;
@@ -3461,6 +3486,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         } else {
             true_d
         };
+        st.fight_attack.kill_best = kill_fraction(st.fight_attack.dmg_best, i32::from(st.kills.kills[k as usize].power));
     }
 
     /* Nothing to attack */
@@ -4688,10 +4714,12 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     let mut attack_trace = crate::core_trace::attack_ranking();
     let mut winning_raw = 0;
     let mut winning_damage = 0;
+    let mut winning_kills = 0.0;
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
         st.fight_attack.dmg_best = 0;
+        st.fight_attack.kill_best = 0.0;
         let raw = borg_calculate_attack_effectiveness(st, g);
 
         // borg-reborn-rs (#403): apply preference once, only during ranking.
@@ -4699,7 +4727,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let class = tr(st, BI_CLASS);
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
-        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; }
+        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; winning_kills = st.fight_attack.kill_best; }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4716,6 +4744,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     // winner's true damage, nothing done.
     if st.traits.estimate_only {
         st.traits.estimate = Some(winning_damage);
+        st.fight_attack.est_kills = winning_kills;
         st.traits.simulate = false;
         st.traits.attacking = false;
         return false;
@@ -4770,6 +4799,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 /// the random numbers `borg_attack` would.
 pub(crate) fn borg_attack_estimate(st: &mut BorgState) -> Option<i32> {
     st.traits.estimate = None;
+    st.fight_attack.est_kills = 0.0;
     st.traits.estimate_only = true;
     let _ = borg_attack(st, false);
     st.traits.estimate_only = false;

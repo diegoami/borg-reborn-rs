@@ -1460,6 +1460,11 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /* Set a flag that the borg is  not allowed to retreat for 5 rounds */
     st.borg.no_retreat = 5;
 
+    // borg-reborn-rs (#556): stuck while remembered breeders block the
+    // flows (caution_breeder_avoid): the marks are suspended for a few turns,
+    // so the stuck think's flows below may cross them (fight its way out).
+    crate::borg_caution::suspend_breeder_marks_when_stuck(st);
+
     /* Boost slightly */
     let to = st.borg.tr(BI_CURHP).wrapping_mul(2);
     if i32::from(st.borg.avoidance) < to && boost_bravery(st, 1, to, |_| {}) {
