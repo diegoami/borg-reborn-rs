@@ -531,6 +531,22 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# Throws on melee's footing (#568): 1 = a thrown object is rated with the
+# engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
+# chance with the throwing skill, no launcher, and melee's danger term
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
+# Impact: see CALIBRATION (#568).
+
+borg_param_attack_throw_as_melee = 0
+
+# The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
+# steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
+# (breeders when a hunt for them applies, dangerous town monsters); 2 = no
+# out-of-view call ("chase old monsters"); 3 = never hunt (borg_attack still
+# fights what is in reach). Impact: see CALIBRATION (#691).
+
+borg_param_kill_flow_mode = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
@@ -590,6 +606,12 @@ borg_param_town_heal_curve_scale_percent = 125
 # not changed). 100 = before #682. Each class sets its own in its class file.
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 100
+
+# No detection prayer by panel at low level (#685, owner 2026-11-19): below
+# this character level the panel check casts no Detect Evil, Detect Monsters,
+# Read Minds or Seek Battle (items and rods still detect). 0 = C. The casters
+# set 10 in their class files.
+borg_param_light_detect_evil_spell_min_level = 0
 
 # A potion that heals at least this percent of max HP in one swallow counts
 # in full, a smaller one less (#491), so a deeper character prefers Cure
@@ -670,6 +692,14 @@ borg_param_escape_phase_adjacent_only = 1
 borg_param_escape_phase_adjacent_rule = 1
 borg_param_escape_phase_lost_test = 0
 borg_param_escape_phase_lost_danger_percent = 100
+
+# With lost_test 1 or 2 (#625): 1 = the chosen attack counts at its success
+# chance (spell fail rate, device failure), and only for the uses the Borg can
+# pay for: all its mana (owner: the escape reserve is not set aside), a
+# wand's charges, one zap for a rod; then another attack that needs no mana
+# (never the chosen one itself), or melee. 0 = full damage every turn (#612).
+
+borg_param_escape_phase_lost_mana = 1
 
 # Ranged first against immobile attackers (#646, owner: "always choose ranged
 # against immobile but annoying monsters"). 1 = next to a known monster that
@@ -972,7 +1002,10 @@ borg_param_caution_scary_unlatch_kill = 0
 # the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
 # Shipped 1 (#671, borg-zoo#400, all 1,800 classes-1800 starts on 3ba17e2c):
 # 93 deaths against 105 (28 rescued, 16 newly killed, p = 0.096), mean max CL
-# +0.09 and DL +0.05 (both significant). Safe to adopt; deaths not confirmed.
+# +0.09 and DL +0.05 (both significant). The confirmation on fresh starts
+# (reborn-calmed-confirm, 3,600 games, #696): 128 deaths against 130
+# (p = 0.89), mean max CL +0.10 [+0.06, +0.15]. Neutral on deaths, helpful on
+# progress.
 
 borg_param_caution_scary_unlatch_calmed = 1
 
@@ -1095,85 +1128,90 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
-borg_param_town_devices_percent@warrior = 75
-borg_param_town_phase_curve_scale_percent@warrior = 75
-borg_param_town_oil_curve_scale_percent@warrior = 100
-borg_param_prepared_depth_early_levels_per_dl@warrior = 2
-borg_param_prepared_depth_early_until_level@warrior = 4
-borg_param_prepared_depth_late_levels_below@warrior = 0
+borg_param_town_devices_percent__warrior = 75
+borg_param_town_phase_curve_scale_percent__warrior = 75
+borg_param_town_oil_curve_scale_percent__warrior = 100
+borg_param_prepared_depth_early_levels_per_dl__warrior = 2
+borg_param_prepared_depth_early_until_level__warrior = 4
+borg_param_prepared_depth_late_levels_below__warrior = 0
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
-borg_param_town_devices_percent@mage = 150
-borg_param_town_phase_curve_scale_percent@mage = 175
-borg_param_town_oil_curve_scale_percent@mage = 100
+borg_param_town_devices_percent__mage = 150
+borg_param_town_phase_curve_scale_percent__mage = 175
+borg_param_town_oil_curve_scale_percent__mage = 100
+borg_param_light_detect_evil_spell_min_level__mage = 10
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
-borg_param_town_devices_percent@druid = 100
-borg_param_town_phase_curve_scale_percent@druid = 175
-borg_param_town_oil_curve_scale_percent@druid = 150
+borg_param_town_devices_percent__druid = 100
+borg_param_town_phase_curve_scale_percent__druid = 175
+borg_param_town_oil_curve_scale_percent__druid = 150
+borg_param_light_detect_evil_spell_min_level__druid = 10
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
-borg_param_town_devices_percent@priest = 125
-borg_param_town_phase_curve_scale_percent@priest = 125
-borg_param_town_oil_curve_scale_percent@priest = 150
+borg_param_town_devices_percent__priest = 125
+borg_param_town_phase_curve_scale_percent__priest = 125
+borg_param_town_oil_curve_scale_percent__priest = 150
+borg_param_light_detect_evil_spell_min_level__priest = 10
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
-borg_param_town_devices_percent@necromancer = 150
-borg_param_town_phase_curve_scale_percent@necromancer = 175
-borg_param_town_oil_curve_scale_percent@necromancer = 100
+borg_param_town_devices_percent__necromancer = 150
+borg_param_town_phase_curve_scale_percent__necromancer = 175
+borg_param_town_oil_curve_scale_percent__necromancer = 100
+borg_param_light_detect_evil_spell_min_level__necromancer = 10
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
-borg_param_town_devices_percent@paladin = 100
-borg_param_town_phase_curve_scale_percent@paladin = 100
-borg_param_town_oil_curve_scale_percent@paladin = 125
-borg_param_prepared_depth_early_levels_per_dl@paladin = 2
-borg_param_prepared_depth_early_until_level@paladin = 4
-borg_param_prepared_depth_late_levels_below@paladin = 0
+borg_param_town_devices_percent__paladin = 100
+borg_param_town_phase_curve_scale_percent__paladin = 100
+borg_param_town_oil_curve_scale_percent__paladin = 125
+borg_param_light_detect_evil_spell_min_level__paladin = 10
+borg_param_prepared_depth_early_levels_per_dl__paladin = 2
+borg_param_prepared_depth_early_until_level__paladin = 4
+borg_param_prepared_depth_late_levels_below__paladin = 0
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
-borg_param_town_devices_percent@rogue = 135
-borg_param_town_phase_curve_scale_percent@rogue = 125
-borg_param_town_oil_curve_scale_percent@rogue = 125
-borg_param_prepared_depth_early_levels_per_dl@rogue = 2
-borg_param_prepared_depth_early_until_level@rogue = 4
-borg_param_prepared_depth_late_levels_below@rogue = 0
+borg_param_town_devices_percent__rogue = 135
+borg_param_town_phase_curve_scale_percent__rogue = 125
+borg_param_town_oil_curve_scale_percent__rogue = 125
+borg_param_prepared_depth_early_levels_per_dl__rogue = 2
+borg_param_prepared_depth_early_until_level__rogue = 4
+borg_param_prepared_depth_late_levels_below__rogue = 0
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
-borg_param_town_devices_percent@ranger = 115
-borg_param_town_phase_curve_scale_percent@ranger = 150
-borg_param_town_oil_curve_scale_percent@ranger = 50
-borg_param_prepared_depth_early_levels_per_dl@ranger = 2
-borg_param_prepared_depth_early_until_level@ranger = 4
-borg_param_prepared_depth_late_levels_below@ranger = 0
+borg_param_town_devices_percent__ranger = 115
+borg_param_town_phase_curve_scale_percent__ranger = 150
+borg_param_town_oil_curve_scale_percent__ranger = 50
+borg_param_prepared_depth_early_levels_per_dl__ranger = 2
+borg_param_prepared_depth_early_until_level__ranger = 4
+borg_param_prepared_depth_late_levels_below__ranger = 0
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 100
 borg_param_town_heal_reserve_hp_percent_blackguard = 200
-borg_param_town_devices_percent@blackguard = 100
-borg_param_town_phase_curve_scale_percent@blackguard = 50
-borg_param_town_oil_curve_scale_percent@blackguard = 100
-borg_param_prepared_depth_early_levels_per_dl@blackguard = 2
-borg_param_prepared_depth_early_until_level@blackguard = 4
-borg_param_prepared_depth_late_levels_below@blackguard = 0
+borg_param_town_devices_percent__blackguard = 100
+borg_param_town_phase_curve_scale_percent__blackguard = 50
+borg_param_town_oil_curve_scale_percent__blackguard = 100
+borg_param_prepared_depth_early_levels_per_dl__blackguard = 2
+borg_param_prepared_depth_early_until_level__blackguard = 4
+borg_param_prepared_depth_late_levels_below__blackguard = 0
 # ---- END CLASS FILES ----

@@ -23,14 +23,14 @@ class ClassFilesTest(unittest.TestCase):
         self.assertEqual(bcf.class_lines('ranger', 'borg_param_attack_arrow_point_blank_divisor = 2'),
                          ['borg_param_attack_arrow_point_blank_divisor_ranger = 2'])
         self.assertEqual(bcf.class_lines('mage', '# c\n\nborg_param_caution_cornered = 0 # off\n'),
-                         ['borg_param_caution_cornered@mage = 0'])
+                         ['borg_param_caution_cornered__mage = 0'])
 
     def test_core_settings_get_the_class_suffix(self):
         # #520's second half: the core's borg_* settings (BORG_SETTINGS).
         self.assertEqual(bcf.class_lines('priest', 'borg_town_w_light = 150\nborg_worships_damage = TRUE\n'),
-                         ['borg_town_w_light@priest = 150', 'borg_worships_damage@priest = TRUE'])
+                         ['borg_town_w_light__priest = 150', 'borg_worships_damage__priest = TRUE'])
         self.assertEqual(bcf.class_lines('mage', 'borg_town_w_light = -3\nborg_worships_damage = no\n'),
-                         ['borg_town_w_light@mage = -3', 'borg_worships_damage@mage = no'])
+                         ['borg_town_w_light__mage = -3', 'borg_worships_damage__mage = no'])
 
     def test_the_table_gives_every_setting_a_kind(self):
         kinds = bcf.core_settings()
@@ -39,7 +39,7 @@ class ClassFilesTest(unittest.TestCase):
         self.assertEqual(len(kinds), 72)
 
     def test_bad_lines_are_refused(self):
-        for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1',
+        for bad in ['borg_respawn_class = 1', 'borg_param_x = y', 'borg_param_x@mage = 1', 'borg_param_caution_cornered__mage = 1', 'borg_town_w_light__mage = 1',
                     'borg_reborn_core = borg-rs', 'borg_plan = errands_plan.txt', 'borg_scary_list = none',
                     'borg_town_w_light@mage = 1', 'town_w_light = 1', 'borg_town_w_ligth = 1',
                     'borg_town_w_light = 5x', 'borg_town_w_light = TRUE', 'borg_worships_damage = off',

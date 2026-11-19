@@ -11,6 +11,8 @@ borg_param_town_devices_percent = 100
 # #682 (owner, 2026-11-19): Phase Door and flask-of-oil curves for the paladin.
 borg_param_town_phase_curve_scale_percent = 100
 borg_param_town_oil_curve_scale_percent = 125
+# #685 (owner, 2026-11-19): no detection prayer by panel below CL10.
+borg_param_light_detect_evil_spell_min_level = 10
 # #693: the depth cap's fighter values (CL1-2 DL1, CL3-4 DL2, then CL).
 borg_param_prepared_depth_early_levels_per_dl = 2
 borg_param_prepared_depth_early_until_level = 4

@@ -12,7 +12,7 @@ PR that updates the pin and this table.
 | `c-borg/README.md` | same | same | Index of the C Borg documents |
 | `c-manual/` | diegoami/neo-angband-tracker `docs/c-manual/` (default branch, pin `neo-angband-tracker`) | `c2ddf2ca045d0ceade7a915a8f7a0ab2a427d4d3` | The complete Angband Strategy Manual (S14): every file of the directory: chapters 0–16, appendices A1–A10 and their generator, and `user-manual/`, a copy of the official manual and in-game help at `e473720` (without `thanks.rst`, as the source explains) |
 | `deaths/better-borg-c/` | diegoami/better-borg-c `docs/deaths/` | `46037038cb0ce3a248ea22c06f02454818dbe4b4` | Every top-level file (README, FEEDBACK, REVIEW-TEMPLATE, `index.json`, `owner-reviews.json`, `window-profile-v2.json`), and every `.md` and `.json` file at the root of each case: `report.md`, `assessment.json`, `record.json`, `build.json`, `overall-assessment.md`, owner feedback, review anchors and verification records |
-| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `4ed3263ba340ce907484465f2d3addbdf5eab8ed` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
+| `deaths/borg-rs/` | diegoami/borg-rs `docs/deaths/` | `8c5d000a58e9ddca1f1954ab9552e505856b313f` | Same selection, including `discussion.json`, `owner-reviews.json`, the cohort notes and the seed reports |
 | `borg-rs/FORK-CORRECTIONS.md`, `borg-rs/adoption/status.json` | diegoami/borg-rs `docs/` | see `pins.json` | What borg-rs changed in its engine tree; context only since milestone E (our tree is upstream's, docs/ENGINE.md) |
 | `borg-runner/manuals/`, `borg-runner/knowledge/` | diegoami/borg-runner `manuals/`, `knowledge/` | `e55ac6f384f2e19c0b148c2b1d2ac932fbec3d83` | What agent players learned (S15): `INSTRUCTIONS.md`, the page they read, every found line traced to `run#ask`; `INSTRUCTIONS_2.md` (depth 5–20, untested); `jev-1.md`; and each run's notebook |
 | `borg-runner/records/` | diegoami/borg-runner `records/` | same | Every `.md` file: each run's `REPORT.md` and `notebook.md`, and `OVERVIEW.md`. Screens, keys, decisions and replay pages are left out: read them at the pin (`git -C vendor/borg-runner show e829a01:records/<run>/...`) |
@@ -31,6 +31,7 @@ resolve here. Read them at the pinned commit, for example
 | better-borg-c | `docs/measurement/DEATH-IMPROVEMENT-WORKFLOW.md`, `DEATH-QUEUE.md`, `FLOW-DANGER-CACHE.md`, `NAMED-HEADLESS.md`, `flowcache-404/d0008-result.json` | Process documents and the D0008 flow-cache result |
 | better-borg-c | `produce_death.py`, `replay-borg.py`, `replay_next_death.py`, `run-borg-headless.py` | Tools named in replay instructions |
 | borg-rs | `docs/C-CONSUMER-ADOPTION.md` | The adoption contract |
+| borg-rs | [docs/ENGINE-UPGRADE.md](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ENGINE-UPGRADE.md), linked from `borg-rs/FORK-CORRECTIONS.md` | The historical engine-upgrade procedure, outside the configured copy selection |
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
 
