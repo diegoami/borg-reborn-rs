@@ -10,39 +10,45 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
-## Farmer Maggot left alone (#618)
+## Ignored town monsters (#618, #621)
 
-The registry now holds **2156** parameters (one added). Owner, 2026-11-19
-(#613): leave Farmer Maggot alone. He never attacks (`monster.txt`: MOAN,
-MOAN) and has 350 HP. The C Borg ignores town uniques only below
-`attack_town_unique_min_level` (5) for attacks and below CL5 for the walk
-and the hunt; above that, and whenever the town is not scary, the Borg
-attacks him.
+The registry still holds **2159** parameters (none added). Owner, 2026-11-19
+(#613): leave Farmer Maggot alone; then "should we not have an ignore list?",
+"yes reuse it, ignore 10-20", and "add the first ones too, unless they are
+in the way".
 
-`attack_town_leave_maggot` (compiled 0, written out at 0): his attack value
-is 0 in melee and at range, no step walks into him, the hunt skips him. All
-in the vendored core, so it plays with the borg-rs core (`borg_reborn_core =
-borg-rs`, the default since #606).
+`harness/scary_monsters.txt` gets a flag, `ignore`: an ignore line is not a
+scare. Up to its level (by class, as the scary levels) the Borg doesn't
+target or hunt the monster (`borg_fight_attack.rs` `ignored`: its attack
+value is 0 in melee and at range; `borg_flow_kill` skips it), but one
+standing in its way is still attacked: the walk step is unchanged. A scare
+line and an ignore line for the same monster are separate entries; a later
+line replaces only its own kind, and `monster | none | | ignore` removes the
+ignore line. The compiled C list (`borg_scary_list = none`) has no ignore
+entries.
 
-On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`, the
-zoo adapter's steps):
+Shipped, at 10-20 (CL10 for Warriors, Paladins and Blackguards up to CL20
+for Mages and Necromancers): Farmer Maggot (MOAN, 350 HP) and the six
+townsfolk that do no damage (BEG or DROOL in `monster.txt`): the
+pitiful-looking beggar, the singing, happy drunk, the blubbering idiot, the
+village idiot, the mangy-looking leper and the boil-covered wretch.
 
-| arm | keys as main | deaths | sum of CL | attacks on Maggot (notes / walk-ins / hits) | game turns in town |
-|---|---:|---:|---:|---|---:|
-| main | | 0 | 99 | 51 / 0 / 90 | 286,100 |
-| switch 0 | 18/18 | 0 | 99 | 51 / 0 / 90 | 286,100 |
-| switch 1 | 17/18 | 0 | 99 | 0 / 0 / 0 | 290,904 |
-| `caution_town_never_scary = 1` | 0/18 | 2 | 97 | 199 / 243 / 324 | 249,702 |
-| both | 0/18 | 2 | 96 | 0 / 0 / 0 | 239,796 |
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `4acf071f`, the zoo
+adapter's steps, the borg-rs core):
 
-Game turns in town: the sum, over `state.log` rows in force at depth 0, of
-the turn gap to the next row. Attacks: `# Facing`/`# Targeting` notes,
-`# Walking into a 'Farmer Maggot'` notes and "You hit Farmer Maggot".
-Direction only: 18 games, no zoo run.
+| | main | ignore list |
+|---|---:|---:|
+| keys as main | | 0/18 |
+| deaths | 1 (a wild cat, CL1) | 1 (a rock lizard, CL1) |
+| sum of CL | 91 | 101 |
+| attacks aimed at the seven (`# Facing`/`# Targeting`) | 509 | 0 |
+| the seven killed | 220 | 70 |
+| walk-ins on one in the way | 8 | 121 |
+| game turns in town | 441,954 | 347,559 |
 
-| parameter | default | unit | range | source |
-|---|---|---|---|---|
-| `attack_town_leave_maggot` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`leave_maggot`, read in `borg_thrust_damage_one`, `borg_launch_damage_one`, `borg_flow.rs`'s step and `borg_flow_kill`) |
+Game turns in town: the sum, over `state.log` rows at depth 0, of the turn
+gap to the next row. Shipped play changes, so `harness/reference/smoke-borg-rs`
+is re-recorded (#606). Direction only: 18 games, no zoo run.
 
 ## The owner's Phase Door rule (#584)
 
