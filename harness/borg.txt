@@ -376,7 +376,8 @@ borg_param_caution_recall_prep_turns = 2
 # grids in the last N game turns, stay still one turn at a time instead of
 # resting, so a monster that comes back is seen before it bites. A monster
 # that never moves does not count.
-# Impact (18 classes-18 starts, 100,000 turns): 200: 9 of 18 play differently.
+# Impact (18 classes-18 starts, 100,000 turns, main 3ba17e2c): 200: 7 of 18
+# play differently (sum of CL 97 against 101, the same one death).
 borg_param_caution_recall_rest_monster_turns = 0
 borg_param_caution_recall_rest_monster_distance = 20
 
