@@ -8,10 +8,16 @@ leave the level asap".
   them when #558's hunt applies, otherwise starts leaving the level. Kept
   when confused, blind, hallucinating or stunned. Details in
   docs/CALIBRATION.md.
-- **Checked:** off plays main `3ba17e2c`'s keys in 18 of 18 classes-18
-  starts. On: the same one death, sum of CL 96 against 101 (mostly one
-  Warrior, diverging early), 781 held rests and 20 leaves in 11 games. Unit
-  test `no_rest_while_breeders_are_known`.
+- **Checked** (after the review of #656, main `592c6984`): off plays main's
+  keys in 18 of 18 classes-18 starts. On: no death in either arm, sum of CL
+  100 against 97, 561 held rests in 13 games (126 hunting, 25 leaves, one
+  hunt resumed after the rule's own leave). Unit tests
+  `no_rest_while_breeders_are_known` and
+  `the_hunt_resumes_after_the_rules_own_leave`.
+- **Review of #656, fixed:** the rule's own leave stopped the hunt for the
+  rest of the level (`breeder_engaged` reads `goal.leaving`); the hunt is now
+  judged without it and clears it when it applies again. The decision and
+  its effect are separate functions. `mon.breeders` replaces a second scan.
 - **Not checked:** the breeder case itself. Priest 592068863 (Cemetery
   D-5153ba00…) died among breeders only in #616's leave arm; here it plays
   main's keys with the rule on (no rest came due while breeders were known).

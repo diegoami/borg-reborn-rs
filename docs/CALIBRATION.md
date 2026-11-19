@@ -40,15 +40,15 @@ breeders or leave the level asap".
   is kept (#615 rule a: a confused Borg that walked instead died in lava).
 
 Evidence, a lead (the 18 classes-18 starts, 100,000 turns, borg-rs core,
-main `3ba17e2c`):
+main `592c6984`, after the review of #656):
 
-| arm | deaths | sum of CL | keys as main | held rests | leaves started |
+| arm | deaths | sum of CL | keys as main | held rests | hunting / leaving / hunt resumed |
 |---|---:|---:|---:|---:|---:|
-| off | 1 (Priest, game turn 8,158) | 101 | 18/18 | | |
-| 1 | 1 (the same Priest) | 96 | 7/18 | 781 | 20 |
+| off | 0 | 97 | 18/18 | | |
+| 1 | 0 | 100 | 5/18 | 561 (13 games) | 126 / 25 / 1 |
 
-The loss is mostly one Warrior (CL 12 to 7 after 5 held rests and one
-leave), whose game diverges early. 11 games hold a rest at least once.
+Before the fix (main `3ba17e2c`, the hunt stopped by the rule's own leave):
+1 death in both arms, sum of CL 96 against 101.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

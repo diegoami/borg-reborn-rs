@@ -794,6 +794,7 @@ borg_param_danger_hunt_breeder_no_acid_fear = 1
 # rest while any breeder is known: hunt them when the hunt above applies,
 # otherwise leave the level. Kept when confused, blind, hallucinating or
 # stunned. 0 = rest as C.
+# Impact (18 classes-18 starts, 100,000 turns): 1: 13 of 18 play differently.
 borg_param_recover_rest_breeders = 0
 
 # Fighting breeders with no easy escape and danger at or above this many
