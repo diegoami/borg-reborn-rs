@@ -2947,7 +2947,12 @@ pub(crate) fn scary_named_monsters() -> bool {
 /// low-level Borg next to a filthy street urchin rated its own grid 406 and
 /// the one toward the stairs 203, above the flow's fear (90): no path left
 /// its grid, and it twitched in town for 70,000 turns. 0 when off, when not
-/// in town or not fleeing (the flow's own fear applies alone).
+/// in town or not fleeing (the flow's own fear applies alone). It applies to
+/// every flow in town while scary or fleeing, not only the stair flow. A grid
+/// marked icky under a lower floor stays icky until the level changes
+/// (`data_icky` is cleared by `borg_forget_map`): the floor unblocks grids
+/// assessed while it holds, not earlier marks (review of #660). The depth is
+/// the game's, as `keep_fox_form`'s.
 pub(crate) fn town_flee_fear_floor(st: &mut BorgState) -> i32 {
     if !town_flee_applies(
         p(Param::caution_town_flee_no_worse),

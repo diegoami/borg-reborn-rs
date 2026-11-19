@@ -28,8 +28,11 @@ With `caution_town_flee_no_worse = 1`, in town while the level is scary or
 the Borg flees or leaves, the flow's fear is at least the danger at the
 Borg's own grid (`borg_caution::town_flee_fear_floor`, in
 `borg_flow_spread` and `borg_flow_enqueue_grid`): standing still is no
-safer. On the stalled game's build: 7,002 "Twitchy!" notes to 0, and the
-Borg leaves town.
+safer. It applies to every flow in town while scary or fleeing; a grid
+already marked icky under a lower floor stays so until the level changes.
+On the stalled game's build (#620's branch; main does not reproduce the
+stall): 7,002 "Twitchy!" notes to 0, and the Borg leaves town. On main the
+switch is insurance against a rare deadlock.
 
 On main `3ba17e2c` (100,000 turns, the zoo adapter's steps) no game stalls
 with the switch off:
