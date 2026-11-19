@@ -238,8 +238,18 @@ not start, as with an invalid common line. The keys the shell reads
 (`borg_reborn_*`, `borg_plan`, `borg_scary_list`) have no class value either,
 and there is no environment form for these settings. A zoo profile writes a
 class value with the `__<class>` name (`BORG_TXT_SET` names are
-`[A-Za-z0-9_.-]`, so not with `@`). Rewriting the common line does not change
-a class that has its own line: that class line still wins for its class.
+`[A-Za-z0-9_.-]`, so not with `@`). Which names can be written depends on the
+writer:
+- the zoo's adapter rewrites a name the shipped file carries and appends one
+  it doesn't, so a profile can set any class value;
+- `harness/run.sh`'s `BORG_TXT_SET` refuses a name that isn't a key of the
+  run's `borg.txt`, so it can only rewrite the class lines `harness/borg.txt`
+  ships (today the 27 `town_*` ones).
+
+The class name's case follows the form: in a `borg_param_*` name it is exact
+(`__mage`, not `__MAGE`), in a `borg_*` setting's name it is case-insensitive
+(`__RANGER` works), as with `@`. Rewriting the common line does not change a
+class that has its own line: that class line still wins for its class.
 
 The repository keeps each class's settings in `harness/borg_<class>.txt`;
 `scripts/borg-class-files.py fold` writes them into `harness/borg.txt` as a
