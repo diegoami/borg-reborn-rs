@@ -476,8 +476,8 @@ keeps 25). The soft price came from borg-rs `785f5064` (2026-11-14,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:263` |
-| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:263` |
+| `town_gold_reserve` | 0 | gold | 0–10000000 | `borg_town_budget.rs:250` |
+| `town_gold_reserve_percent` | 0 | percent of the purse | 0–100 | `borg_town_budget.rs:251` |
 
 ## Point-blank divisor by class (#485)
 
@@ -505,9 +505,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:541` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:269` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:534` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:380` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:287` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:371` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -633,7 +633,7 @@ digger 500 gold.
 |---|---|---|---|---|
 | `town_heal_curve_scale_percent_<class>` (nine) | 0 (= `town_heal_curve_scale_percent`) | percent_override | 0–10000 | `borg_town_capability.rs:368` |
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
-| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:239` |
+| `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
 | `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1190` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
@@ -1303,7 +1303,7 @@ the vendored mechanics model:
 | `danger_monblow_eat_food_fear` | 5 | danger | 0–5000 | `borg_danger.rs:302` |
 | `danger_monblow_eat_light_hit_power` | 5 | hit_power | 0–1000 | `borg_danger.rs:310` |
 | `danger_monblow_eat_light_fear` | 5 | danger | 0–5000 | `borg_danger.rs:319` |
-| `danger_monblow_acid_fear` | 200 | danger | 0–5000 | `borg_danger.rs:337` |
+| `danger_monblow_acid_fear` | 200 | danger | 0–5000 | `borg_danger.rs:359` |
 | `danger_monblow_elec_hit_power` | 10 | hit_power | 0–1000 | `borg_danger.rs:348` |
 | `danger_monblow_elec_damage_multiplier` | 2 | multiplier | 0–50 | `borg_danger.rs:356` |
 | `danger_monblow_fire_hit_power` | 10 | hit_power | 0–1000 | `borg_danger.rs:367` |
@@ -1460,8 +1460,8 @@ the vendored mechanics model:
 | `danger_melee_hit_ac_divisor` | 4 | divisor | 1–1000 | `borg_danger.rs:657` |
 | `danger_melee_hit_power_scale` | 3 | denominator multiplier | 1–1000 | `borg_danger.rs:657` |
 | `danger_melee_hit_floor_percent` | 5 | percent | 0–100 | `borg_danger.rs:663` |
-| `danger_summon_protected_divisor` | 100 | divisor | 1–1000 | `borg_danger.rs:707` |
-| `danger_summon_corridor_divisor` | 1000 | divisor | 1–10000 | `borg_danger.rs:710` |
+| `danger_summon_protected_divisor` | 100 | divisor | 1–1000 | `borg_danger.rs:739` |
+| `danger_summon_corridor_divisor` | 1000 | divisor | 1–10000 | `borg_danger.rs:742` |
 | `danger_unknown_spell` | 1000 | danger | 0–5000 | `borg_danger.rs:766` |
 | `danger_brain_smash_save_weight` | 2 | multiplier | 0–50 | `borg_danger.rs:1362` |
 | `danger_cause4_save_bias` | 120 | save_points | 0–1000 | `borg_danger.rs:1374` |
@@ -1470,12 +1470,12 @@ the vendored mechanics model:
 | `danger_corridor_spell_tenths` | 7 | tenths | 0–30 | `borg_danger.rs:1901` |
 | `danger_worst_spell_average_tenths` | 15 | tenths | 0–30 | `borg_danger.rs:1948` |
 | `danger_worst_spell_hp_tenths` | 8 | tenths | 0–30 | `borg_danger.rs:1948` |
-| `danger_sleep_level_margin` | 15 | level | 1–51 | `borg_danger.rs:1972` |
-| `danger_ghost_monster` | 100 | danger | 0–5000 | `borg_danger.rs:2035` |
-| `danger_monster_max_distance` | 20 | grids | 1–100 | `borg_danger.rs:2067` |
-| `danger_fast_player_threshold` | 135 | speed | 110–135 | `borg_danger.rs:2072` |
-| `danger_fast_player_unique_speed` | 120 | speed | 110–189 | `borg_danger.rs:2073` |
-| `danger_fast_player_normal_speed` | 125 | speed | 110–189 | `borg_danger.rs:2073` |
+| `danger_sleep_level_margin` | 15 | level | 1–51 | `borg_danger.rs:2043` |
+| `danger_ghost_monster` | 100 | danger | 0–5000 | `borg_danger.rs:2106` |
+| `danger_monster_max_distance` | 20 | grids | 1–100 | `borg_danger.rs:2138` |
+| `danger_fast_player_threshold` | 135 | speed | 110–135 | `borg_danger.rs:2143` |
+| `danger_fast_player_unique_speed` | 120 | speed | 110–189 | `borg_danger.rs:2144` |
+| `danger_fast_player_normal_speed` | 125 | speed | 110–189 | `borg_danger.rs:2144` |
 | `danger_low_hp_speed_limit` | 20 | hp | 0–10000 | `borg_danger.rs:2085` |
 | `danger_low_hp_monster_speed_bonus` | 3 | speed | 0–3 | `borg_danger.rs:2086` |
 | `danger_minimum_monster_energy` | 10 | energy_tenths | 1–100 | `borg_danger.rs:2122` |
@@ -1529,9 +1529,9 @@ the vendored mechanics model:
 | `danger_frequency_high_percent` | 51 | percent | 0–100 | `borg_danger.rs:2471` |
 | `danger_frequency_high_tenths` | 8 | tenths | 0–30 | `borg_danger.rs:2472` |
 | `danger_maximum` | 2000 | danger | 0–5000 | `borg_danger.rs:2487` |
-| `danger_regional_fear_max_depth` | 80 | depth | 0–127 | `borg_danger.rs:2544` |
-| `danger_morgoth_regional_fear_cap` | 300 | danger | 0–5000 | `borg_danger.rs:2549` |
-| `danger_monster_fear_bounce_limit` | 200 | count | 0–1000 | `borg_danger.rs:2556` |
+| `danger_regional_fear_max_depth` | 80 | depth | 0–127 | `borg_danger.rs:2618` |
+| `danger_morgoth_regional_fear_cap` | 300 | danger | 0–5000 | `borg_danger.rs:2623` |
+| `danger_monster_fear_bounce_limit` | 200 | count | 0–1000 | `borg_danger.rs:2630` |
 | `danger_rsf_s_kin_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1685` |
 | `danger_rsf_s_hi_demon_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1703` |
 | `danger_rsf_s_hydra_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1759` |
@@ -3052,4 +3052,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4668` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4699` |
