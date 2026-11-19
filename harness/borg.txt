@@ -494,6 +494,17 @@ borg_param_attack_town_dangerous_on_sight = 0
 borg_param_attack_town_dangerous_min_damage = 6
 borg_param_attack_town_dangerous_bonus_percent = 300
 
+# Follow-ups to the switch above (#637), each 0 = as #619. caster_walk: a
+# Mage or Necromancer below CL25 walks to them too, with half its mana.
+# wand: a wand (not Wonder) may be aimed at them in town, only at them.
+# bonus_whole: the bonus multiplies the danger term of the attack's value
+# too, so they are the target for certain. Each needs on_sight at 1.
+# Impact: not on the file's 6-game measure; see CALIBRATION (#637).
+
+borg_param_attack_town_dangerous_caster_walk = 0
+borg_param_attack_town_dangerous_wand = 0
+borg_param_attack_town_dangerous_bonus_whole = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
@@ -664,6 +675,20 @@ borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
 borg_param_escape_fox_form_stand_speed = 10
+
+# Fox Form for a Druid's walks in town (#620). With the switch at 1, a Druid
+# at most max_level, about to take a step of a walk in town (a shop, home, a
+# staircase, a flight) at least min_steps from its goal, casts Fox Form
+# (escape_fox_form_fail above sets the highest fail rate) and keeps it while
+# the walk lasts: it crosses town at double speed, and the town monsters get
+# half the turns. It changes back at the shop door (the game shuts it on a
+# fox) and before a blow. Raising min_steps casts on longer walks only (each
+# cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
+# Impact: set to 1, 1 of 6 test games play differently (the Druid).
+
+borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town_max_level = 20
+borg_param_escape_fox_form_town_min_steps = 10
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.

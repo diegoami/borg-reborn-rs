@@ -383,7 +383,7 @@ pub fn borg_get_messages(st: &mut BorgState, key: &mut keypress, cursor: loc) ->
     // normal?" (player_get_resume_normal_shape), with escape_fox_form.
     if borg_prompt
         && !engine::inkey_flag()
-        && crate::borg_escape::fox_form_on()
+        && crate::borg_escape::any_fox_form_on()
         && prefix(cstr(&buffer[off..]), b"Change back and")
     {
         let answer = crate::borg_escape::change_back_answer(st);
