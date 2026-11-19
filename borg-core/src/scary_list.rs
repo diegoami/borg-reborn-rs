@@ -187,6 +187,9 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
                 }
             }
         }
+        if ignore && breeders {
+            return Err(at("'ignore' takes no 'breeders' flag".into()));
+        }
         list.entries.push(Entry { target, tough, fragile, classes, breeders, ignore });
     }
     Ok(list)
@@ -301,6 +304,7 @@ mod tests {
         let removed = parse("Farmer Maggot | 8-11\nFarmer Maggot | 10-20 | | ignore\nFarmer Maggot | none | | ignore\n", &race).unwrap();
         assert!(is_scary(&removed, 4, b"person", who(8)) && !is_ignored(&removed, 4, || b"person", who(8)));
         assert!(parse("Farmer Maggot | none | | breeders\n", &race).is_err());
+        assert!(parse("Farmer Maggot | 10-20 | | ignore, breeders\n", &race).is_err(), "a flag that would do nothing");
     }
 
     /// #622: a monster's listed level, lowered by `levels_less`.

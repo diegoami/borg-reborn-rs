@@ -728,9 +728,10 @@ borg_param_caution_breeder_exit_distance = 6
 
 borg_param_caution_scary_named_monsters = 1
 
-# The named scary monsters, by class and character level (#518); none = the
-# C Borg's compiled list. harness/run.sh and the zoo copy the file next to
-# borg.txt and pin its hash.
+# The named scary monsters, by class and character level (#518), and the
+# monsters to ignore (#621, flag ignore; on whatever the switch above says);
+# none = the C Borg's compiled list, with no ignore lines. harness/run.sh
+# and the zoo copy the file next to borg.txt and pin its hash.
 
 borg_scary_list = scary_monsters.txt
 

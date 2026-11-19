@@ -25,7 +25,9 @@ standing in its way is still attacked: the walk step is unchanged. A scare
 line and an ignore line for the same monster are separate entries; a later
 line replaces only its own kind, and `monster | none | | ignore` removes the
 ignore line. The compiled C list (`borg_scary_list = none`) has no ignore
-entries.
+entries. Ignore lines apply whatever `caution_scary_named_monsters` says
+(that switch is for the scares), and an ignore line takes no `breeders`
+flag (it would do nothing, so the parser refuses it).
 
 Shipped, at 10-20 (CL10 for Warriors, Paladins and Blackguards up to CL20
 for Mages and Necromancers): Farmer Maggot (MOAN, 350 HP) and the six

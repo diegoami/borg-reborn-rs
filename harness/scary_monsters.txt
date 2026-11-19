@@ -24,7 +24,9 @@
 #   breeders (#503).
 #   "ignore" (#621) = not a scare: up to the level the Borg doesn't target or
 #   hunt the monster; it still attacks one standing in its way. A scare line
-#   and an ignore line for the same monster are separate entries.
+#   and an ignore line for the same monster are separate entries. It takes
+#   no "breeders" flag. Ignore lines apply whenever this file is selected,
+#   whatever caution_scary_named_monsters says (that switch is for scares).
 #
 # A later line for the same monster and kind (scare or ignore) replaces the
 # earlier one, and "monster | none" removes it ("monster | none | | ignore"
