@@ -1839,11 +1839,20 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     }
 
     // Don't chase down town monsters when you are just starting out
+    // borg-reborn-rs (#619): except a dangerous one, killed on sight: then
+    // the hunt goes for those only.
+    let mut town_dangerous_only = false;
     if st.borg.tr(BI_CDEPTH) == 0
         && st.borg.tr(BI_CLEVEL) < 20
         && st.cfg(BORG_MONEY_SCUM_AMOUNT) == 0
     {
-        return false;
+        if !(1..i32::from(st.kills.nxt)).any(|k| {
+            let r = st.kills.kills[k as usize].r_idx;
+            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+        }) {
+            return false;
+        }
+        town_dangerous_only = true;
     }
 
     // YOU ARE NOT A WARRIOR!! DON'T ACT LIKE ONE!!
@@ -1915,6 +1924,11 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         if breeders_only && !rf_has(kill.r_idx, RF_MULTIPLY) {
             continue;
         }
+        if town_dangerous_only
+            && (kill.r_idx == 0 || !crate::borg_fight_attack::town_kill_on_sight(st, usize::from(kill.r_idx)))
+        {
+            continue;
+        }
         let x9 = kill.pos.x;
         let y9 = kill.pos.y;
 
@@ -1967,6 +1981,10 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
             && st.borg.tr(BI_CDEPTH) == 0
             && st.borg.tr(BI_CLEVEL) < 5
         {
+            continue;
+        }
+        // borg-reborn-rs (#618, #621): no hunt for an ignored monster.
+        if crate::borg_fight_attack::ignored(st, usize::from(kill.r_idx)) {
             continue;
         }
 
@@ -2758,6 +2776,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // town scary.
     let town_calm = crate::borg_caution::town_never_scary(st.borg.tr(BI_CDEPTH));
     let mut scary_races: Vec<u16> = Vec::new();
+    let mut calmed_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2873,6 +2892,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             if makes_scary {
                 scary_races.push(r_idx); // borg-reborn-rs (#590)
             }
+            if scare.calmed_scare && !never_move {
+                // borg-reborn-rs (#593). Not recorded in scary_races: a monster
+                // hurt or afraid from first sight never made the level scary,
+                // so its race speaks for no scare (second review of #595).
+                calmed_races.push(r_idx);
+            }
             stand_pursuer |= pursues;
             scary = false;
         }
@@ -2953,6 +2978,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         for r in scary_races {
             crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
         }
+        crate::borg_caution::note_calmed(&mut st.borg.mon, &calmed_races);
         crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
