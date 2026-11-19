@@ -10,6 +10,57 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Immobile creatures kept at range (#713)
+
+The registry now holds **2201** parameters (2200 after #685; one added).
+Owner, 2026-11-20, on #713 (a Paladin meleed a yellow jelly for 120 game
+turns and died of its poison): "step away from immobile creature with
+annoying effects and only attack them from a distance, if you have to".
+
+- **`caution_immobile_ranged_only`** (mode, 0 = C). An immobile attacker
+  (`NEVER_MOVE` with a blow, #646's `immobile_attacker`) is kept at range:
+  - **1:** one whose blows do more than plain damage (any effect but `HURT`:
+    poison, confusion, paralysis, fear, blindness, hallucination, stat or
+    experience drain, theft, elemental damage). That is 23 of the 25 in
+    `monster.txt`, and every one below DL10. Only the clear mushroom patch and
+    the old forest tree are left out.
+  - **2:** every immobile attacker.
+- **What "kept at range" does** (in the dungeon):
+  - **No melee:** `borg_thrust_damage_one` scores 0.
+  - **No hunt walk:** `borg_flow_kill` skips it.
+  - **No flow into its reach:** `spread_blocked` blocks its grid and the 8 next
+    to it (`in_reach_of_kept`), and `borg_flow_old` never walks into it.
+  - **Step away:** next to one, the Borg steps out of reach with #646's step
+    (`immobile_step_away`), with or without `caution_ranged_vs_immobile`, while
+    fleeing too, up to 3 times per creature per level.
+  - Ranged attacks are unchanged: from two grids away a throw has no
+    point-blank divisor.
+- **The case** (766958386 Human Paladin, the dying build `e5cc5469` with this
+  change applied): at 0 it dies of poison at game turn 5,100 after 18 poisonings
+  (the dossier). At 1 it steps away, throws 45 flasks and lives to the
+  100,000-turn cap at CL6. At 2 the game takes another path and lives (CL4).
+- **Found while measuring, and fixed:**
+  - **Fleeing:** in the case the Borg was "fleeing" (bored, no reachable
+    stairs), where #646's step never runs, and its exploring path walked
+    into the jelly 12 times.
+  - **The reach:** on current main, an item thrown under a white jelly drew
+    the Borg back beside it about 60 times.
+  - Hence the step while fleeing and the flow block on the whole reach.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
+  base `dbc92d18`:**
+
+| mode | deaths | sum of max CL | sum of max DL | steps away | touches by immobile creatures | differ from 0 |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 | 1 | 111 | 40 | 0 | — | — |
+| 1 | 1 | 111 | 41 | 86 | 2 | 13 |
+| 2 | 2 | 112 | 45 | 114 | 0 | 16 |
+
+  - Mode 0's keys are identical to main in 19 of 19; smoke is identical.
+  - The death shared by every mode is a blue worm mass (1574344917).
+  - Mode 2's extra death is a giant white louse colony that surrounded a CL8
+    Druid, 27,000 game turns after its last step away (#690's problem).
+  - Not a measure of benefit (RULES 14).
+
 ## No detection prayer by panel at low level (#685)
 
 The registry now holds **2200** parameters (2199 after #625; one added).
