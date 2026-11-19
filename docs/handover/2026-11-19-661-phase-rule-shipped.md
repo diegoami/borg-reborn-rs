@@ -11,6 +11,8 @@ Owner: make a PR with the shipped-config changes the zoo evidence supports.
   against 93 with the rule off (55 rescued, 39 newly killed, p = 0.12).
   Mean max CL and DL are unchanged, and Druids drop from 19 to 12. The big
   tier alone gave p = 0.011 but the full tier was flat (47 against 46).
+  In this study no class was worse by more than one death (Blackguards 6
+  to 7); in the confirmation below Blackguards were worse by four.
 - **Confirmed** (borg-zoo#347, `reborn-phase-rule-main-confirm`, fresh
   starts on classes-1800-b, 3,600 games on main `3ba17e2c`): deaths 128 to
   89 (79 rescued, 40 newly killed, exact McNemar p = 0.00045); mean max CL
@@ -18,9 +20,11 @@ Owner: make a PR with the shipped-config changes the zoo evidence supports.
   Blackguards do worse (7 to 11); Rogues 8 to 0, Paladins 11 to 5, Priests
   24 to 15.
 - **smoke-borg-rs re-recorded** with `scripts/rerecord-smoke-borg-rs.sh`:
-  2/3 games identical to the old reference. smoke-mage-2 diverges at key 744:
-  the rule refuses a Phase Door with no adjacent enemy (a shrieker and an icky
-  thing in view) and the Borg attacks at range instead.
+  smoke-mage-2 diverges from main's reference at key 328 (game turn 2312):
+  with a white icky thing adjacent, the rule judges the fight not lost
+  (danger 4, HP 7, below lost_test 0's 100% of HP) and refuses the Phase
+  Door, so the Borg fights the adjacent monster (Magic Missile) instead of
+  leaving. Re-recorded last on the final merge of main (review of #662).
 - **Checked:** `cargo fmt --check -p borg-reborn-rs`, clippy with
   `-D warnings`, `cargo test --workspace --exclude borg-core`,
   `cargo test --release -p borg-core` (447 passed), `scripts/tests`,
