@@ -2491,7 +2491,7 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
         if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
             borg_note(
                 st,
-                if killed && rules.kill {
+                if killed && (rules.kill || rules.calmed) {
                     "# Scary guy killed: the level is no longer scary."
                 } else if calmed && rules.calmed {
                     "# Scary guy hurt or afraid: the level is no longer scary."

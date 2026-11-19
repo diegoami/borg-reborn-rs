@@ -755,8 +755,8 @@ borg_param_caution_scary_unlatch_kill = 0
 # the latch on or off; forgetting it is not enough (#593). 0 = off.
 # Change together: needs caution_scary_stand = 1, and reads the thresholds
 # caution_scary_hurt_percent and caution_scary_afraid.
-# Impact: set to 1, 13 of 18 classes-18 games play differently (it clears
-# the flag 37 times); no deaths either way.
+# Impact: set to 1, 14 of 18 classes-18 games play differently (it clears
+# the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
 
 borg_param_caution_scary_unlatch_calmed = 0
 
