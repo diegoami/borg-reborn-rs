@@ -1097,6 +1097,11 @@ pub fn borg_twitchy(st: &mut BorgState) -> bool {
             continue;
         }
 
+        // borg-reborn-rs (#621 review): and an ignored monster always does.
+        if grid.kill != 0 && crate::borg_fight_attack::ignored(st, usize::from(st.kills.kills[usize::from(grid.kill)].r_idx)) {
+            continue;
+        }
+
         break;
     }
 

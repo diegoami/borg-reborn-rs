@@ -103,12 +103,16 @@ copies the file named by the arm's profile or, without one, by the written
 `borg.txt`, from the specimen's `harness/`; pins its hash in the specimen
 (`"scary_lists"`); appends an arm's `borg_scary_list_lines`; and records the
 written file's hash with the cell (borg-zoo#228, #230). An arm returns to the
-compiled C list with `borg_scary_list = none`. A later line for the same
-monster replaces the earlier one, `monster | none` removes it, and a later
-`fragility:` value replaces the earlier one.
+compiled C list with `borg_scary_list = none`, which has no ignore lines.
+A line is a scare, or with the flag `ignore` (#621) an ignore line: up to
+its level the Borg neither targets nor hunts the monster, whatever
+`caution_scary_named_monsters` says. A monster can have one of each. A later
+line for the same monster and kind replaces the earlier one of that kind:
+`monster | none` removes the scare, `monster | none | | ignore` the ignore
+line. A later `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2158 entries in
+`borg_param_<name>` integer sets any of the 2163 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 

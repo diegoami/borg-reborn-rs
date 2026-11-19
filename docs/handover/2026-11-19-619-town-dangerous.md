@@ -13,5 +13,9 @@ the monster.
   CL, 2 games of 18 change). It costs deaths once the scare is removed
   (town never scary: 3 deaths, 89 CL). With #622's levels less, N = 3: 0
   deaths, 101 CL. Thefts are not reduced.
+- **Resynced with main after #621 (ignore list) and #595:** the ignore check
+  runs before the bonus (an ignored monster stays at 0; none of the four is
+  ignored); the helpers moved above `borg_thrust_damage_one`'s doc comment;
+  the count is 2163. The figures above are from before both, not re-measured.
 - **Left:** zoo arms with #622 (borg-zoo#328 after the merges); #620 (Druid
   Fox Form in town).
