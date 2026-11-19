@@ -112,7 +112,10 @@ the zoo runs and the only one that reads `harness/borg.txt` and its
 `harness/profiles/reborn-default.txt` instead; its references are
 `smoke-rust`, `smoke-exact-rust` and `full-rust`. A change to a borg-rs
 setting or to `borg-core/` is checked on the default core; a review prompt
-says which core each check ran.
+says which core each check ran. A PR that changes how the borg-rs core plays
+at the shipped settings re-records `smoke-borg-rs` in the same PR, after
+merging main (`harness/make-reference.sh` from a clean build), as reborn-core
+changes do with `smoke-rust`: CI compares the PR merged with main.
 
 ## Retained evidence: all tracks
 

@@ -18,6 +18,7 @@ After the review of #607:
 After the re-review of #607:
 - `BORG_CORE_OVERRIDES=off` with no `BORG_CORE` now sets `BORG_CORE=borg-rs`: `borg-core/borg.txt` names no core, so the game fell back to the reborn core and the record said `borg_core=` (empty, unreplayable). The record is never empty (no core named means the compiled fallback, reborn);
 - `harness/reference/smoke-borg-rs` is re-recorded at the merged head: the fix commit had edited `harness/borg.txt`'s comment, so the reference's recorded `run_config` hashes no longer matched (the play did not change). The reborn references' stale `run_config` hashes predate this PR (as on main) and are left as they are.
+- `smoke-borg-rs` re-recorded again after merging main's #602 (the Phase Door decision), which changes the borg-rs core's smoke play: CI compares the PR merged with main, and it failed against the older reference. AGENTS.md now says a PR that changes the borg-rs core's play re-records `smoke-borg-rs`.
 
 Left:
 - replaying a record with no `borg_core` made before #606: diegoami/borg-cemetery#71;
