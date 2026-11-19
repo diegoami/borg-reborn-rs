@@ -821,7 +821,7 @@ fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
                 let primary = Primary::of(best, cost);
                 let lost = fight_turns(&foes, primary, fallback).is_none_or(|t| t * f64::from(here) > f64::from(hp));
                 let list: Vec<String> = foes.iter().map(|(left, melee)| format!("{left} HP (melee {melee})")).collect();
-                let uses = primary.uses.map_or("no limit".to_string(), |u| format!("{u} uses"));
+                let uses = primary.uses.map_or("no limit".to_string(), |u| format!("{u} use{}", if u == 1 { "" } else { "s" }));
                 let note = format!(
                     "# Phase rule: the fight: {}; attack {best} at {}% fail ({uses}), then {fallback}; danger {here}, HP {hp}: {}",
                     list.join(", "),
