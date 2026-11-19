@@ -605,6 +605,17 @@ mod tests {
         inp.revision = 11;
         let mut u = Utility::of(&st, &kit, false);
         assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store]);
+        // Review of #654: the reported shape, a stack bought unaware (the
+        // flavour learned on purchase) and still flagged unknown.
+        let unaware = [KitItem { just_bought: true, need: -1, reduction: 0, unknown: true,
+            unknown_flavour: true, sell_shop: -1, ..recall(Place::Pack) }];
+        let mut inp = input(&unaware);
+        inp.revision = 11;
+        let mut u = Utility::of(&st, inp.kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store]);
+        inp.revision = 12;
+        let mut u = Utility::of(&st, inp.kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
     }
 
     #[test]
