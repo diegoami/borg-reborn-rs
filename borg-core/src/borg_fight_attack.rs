@@ -334,6 +334,39 @@ pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
     crate::scary_list::is_ignored(list, r_idx, || engine::race_base_name(r_idx), who)
 }
 
+/// borg-reborn-rs (#619): a dangerous town monster: a town race (level 0)
+/// with a blow that steals (gold or an item) or hurts for at least
+/// `attack_town_dangerous_min_damage` (dice x sides): the battle-scarred
+/// veteran, the mean-looking mercenary, the squint-eyed rogue, the filthy
+/// street urchin; not the cats, dogs and beggars.
+pub(crate) fn dangerous_town_race(r_idx: usize) -> bool {
+    if engine::race(r_idx).level != 0 {
+        return false;
+    }
+    let min = param(Param::attack_town_dangerous_min_damage);
+    (0..usize::from(engine::z_info().mon_blows_max))
+        .map_while(|k| engine::race_blow(r_idx, k))
+        .any(|b| dangerous_blow(borg_mon_blow_effect(b.effect_name.to_bytes()) as u32, i32::from(b.dice) * i32::from(b.sides), min))
+}
+
+fn dangerous_blow(effect: u32, max_damage: i32, min_damage: i32) -> bool {
+    effect == MONBLOW_EAT_GOLD || effect == MONBLOW_EAT_ITEM || (effect == MONBLOW_HURT && max_damage >= min_damage)
+}
+
+/// borg-reborn-rs (#619, owner): with `attack_town_dangerous_on_sight`, in
+/// town, a dangerous town monster is killed on sight: it is the preferred
+/// target and the hunt walks to it. The scare is the scary list's: while the
+/// town is scary (below a listed monster's level for the class) the Borg
+/// flees as before; from that level on it kills on sight.
+pub(crate) fn town_kill_on_sight(st: &BorgState, r_idx: usize) -> bool {
+    param(Param::attack_town_dangerous_on_sight) != 0 && tr(st, BI_CDEPTH) == 0 && dangerous_town_race(r_idx)
+}
+
+/// borg-reborn-rs (#619): the target bonus for a monster killed on sight.
+fn town_kill_bonus(st: &BorgState, r_idx: usize, dam: i32) -> i32 {
+    if town_kill_on_sight(st, r_idx) { dam * param(Param::attack_town_dangerous_bonus_percent) / 100 } else { dam }
+}
+
 /// Guess how much damage a physical attack will do to a monster
 /// (`borg_thrust_damage_one`).
 ///
@@ -472,6 +505,8 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     if ignored(st, usize::from(r)) {
         dam = 0;
     }
+    // borg-reborn-rs (#619): a dangerous town monster comes first.
+    dam = town_kill_bonus(st, usize::from(r), dam);
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
@@ -1318,6 +1353,8 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
     if ignored(st, usize::from(r)) {
         dam = 0;
     }
+    // borg-reborn-rs (#619): a dangerous town monster comes first.
+    dam = town_kill_bonus(st, usize::from(r), dam);
 
     /* give a small bonus for whacking a breeder */
     if rf(r, RF_MULTIPLY) {
@@ -4725,6 +4762,22 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
+}
+
+#[cfg(test)]
+mod town_kill_tests {
+    use super::*;
+
+    /// #619: thieves always, hurting blows from the minimum damage on.
+    #[test]
+    fn dangerous_town_blows() {
+        assert!(dangerous_blow(MONBLOW_EAT_GOLD, 0, 6), "the urchin");
+        assert!(dangerous_blow(MONBLOW_EAT_ITEM, 0, 6), "the rogue's touch");
+        assert!(dangerous_blow(MONBLOW_HURT, 12, 6), "the veteran, 2d6");
+        assert!(dangerous_blow(MONBLOW_HURT, 6, 6), "the rogue, 1d6");
+        assert!(!dangerous_blow(MONBLOW_HURT, 3, 6), "the merchant, 1d3");
+        assert!(!dangerous_blow(MONBLOW_HURT, 1, 6), "a cat or a dog");
+    }
 }
 
 #[cfg(test)]

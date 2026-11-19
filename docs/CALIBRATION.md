@@ -10,6 +10,53 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Dangerous town monsters killed on sight (#619)
+
+The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
+"I would also kill the dangerous ones on sight with the best attacks that we
+have, if possible", and "test it together when town is scary until a certain
+level, also dependent on the level of the monsters that are scary".
+
+A town monster (race level 0) is dangerous when a blow steals (`EAT_GOLD`,
+`EAT_ITEM`) or hurts for at least `attack_town_dangerous_min_damage` (6,
+dice x sides): the battle-scarred veteran (2d6), the mean-looking mercenary
+(1d10), the squint-eyed rogue (1d6, steals) and the filthy street urchin
+(steals). With `attack_town_dangerous_on_sight = 1`, in town, its attack
+value is multiplied by `attack_town_dangerous_bonus_percent` / 100 (300), so
+`borg_attack` picks it first with its best attack (not a wand: C never aims
+one in town), and the hunt walks to it below CL20 (C never hunts in town
+then); a Mage or Necromancer below CL25 still doesn't walk to it, since its
+town hunt is breeders only and no town race breeds. The bonus multiplies
+the damage term only, not the danger term `melee_score` adds: that it makes
+the four the preferred target was measured through their kill counts, not
+checked per target choice. The scare is not touched: while the
+scary list makes the town scary the Borg flees as before.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`):
+
+| arm | keys as main | deaths | sum of CL |
+|---|---:|---:|---:|
+| main | | 0 | 99 |
+| switch 0 | 18/18 | 0 | 99 |
+| switch 1, shipped list | 16/18 | 0 | 99 |
+| town-calm list (borg-zoo#328) | 0/18 | 2 | 102 |
+| switch 1, town-calm list | 0/18 | 2 | 101 |
+| `caution_town_never_scary = 1` | 0/18 | 2 | 97 |
+| switch 1, town never scary | 0/18 | 3 | 89 |
+
+With #622's `caution_town_scary_levels_less` (a build of both): N = 3 gives
+0 deaths and 101 CL, N = 6 1 and 102, N = 11 3 and 90. Killing them on sight
+raises the kills of the four (20 to 53 at N = 3) but not the thefts. Without
+the scare it costs deaths. Direction only: 18 games, no zoo run, and all
+before #621's ignore list (none of the four is ignored: their blows are
+not MOAN, BEG or DROOL) and #595.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_town_dangerous_on_sight` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_kill_on_sight`; the bonus in `borg_thrust_damage_one`, `borg_launch_damage_one`; the hunt in `borg_flow_kill`) |
+| `attack_town_dangerous_min_damage` | 6 | damage | 1–1000 | `borg_fight_attack.rs` (`dangerous_town_race`) |
+| `attack_town_dangerous_bonus_percent` | 300 | percent | 100–10000 | `borg_fight_attack.rs` (`town_kill_bonus`) |
+
 ## Play by the ordinary rules while Recall counts down (#603)
 
 The registry now holds **2166** parameters (2165 after #614; one added). `caution_recall_wait_as_usual` (0, off): while Word of Recall is pending (`goal.recalling`), the Borg plays by its ordinary rules. The engine keeps the countdown through a level change (`player->word_recall`, `effect-handler-general.c`), so none of the Recall-only rules is needed for the jump. Under the switch, `recall_restricts` is false and seven places act as without Recall: the flee and leave goals (`borg_think_dungeon.rs`), taking stairs down and the staircase as an escape (`borg_caution.rs`), the stair flows (`borg_flow_stairs.rs`), Teleport Level (`borg_escape.rs`), and "fight because recalling" on a scary level (`borg_fight_attack.rs`); `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored". Only on DL2 and deeper: in town and on DL1 a staircase crosses between town and dungeon, and the Recall would fire on the other side and take the Borg back (owner, #627).
@@ -3138,4 +3185,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4699` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4736` |
