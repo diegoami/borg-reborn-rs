@@ -767,7 +767,13 @@ pub(crate) fn class_setting_line(line: &[u8]) -> Option<Result<(usize, usize, i3
     let text = String::from_utf8_lossy(line);
     let text = text.trim_start();
     let key_end = text.find(|c: char| c == ' ' || c == '=').unwrap_or(text.len());
-    let (name, class) = text[..key_end].split_once('@')?;
+    // #696: `name__class` is `name@class` in the characters a zoo profile can
+    // write; only a known class makes it a class line.
+    let key = &text[..key_end];
+    let (name, class) = key.split_once('@').or_else(|| {
+        key.rsplit_once("__")
+            .filter(|(_, class)| crate::params::CLASSES.iter().any(|k| k.eq_ignore_ascii_case(class)))
+    })?;
     let lower = name.to_ascii_lowercase();
     // `borg_param_*` class lines are params.rs's (#520's first half).
     if !lower.starts_with("borg_") || lower.starts_with("borg_param_") {
@@ -1868,6 +1874,9 @@ borg_no_such_setting@mage = 1\n",
         let light = BORG_SETTINGS.iter().position(|s| s.name == c"borg_town_w_light").unwrap();
         assert_eq!(class_setting_line(b"borg_town_w_light@ranger = 7"), Some(Ok((light, 7, 7))));
         assert_eq!(class_setting_line(b"  borg_town_w_light@Ranger=7"), Some(Ok((light, 7, 7))));
+        // #696: the form a zoo profile can write.
+        assert_eq!(class_setting_line(b"borg_town_w_light__ranger = 7"), Some(Ok((light, 7, 7))));
+        assert_eq!(class_setting_line(b"borg_town_w_light__elf = 7"), None, "not a class: a common name");
         assert_eq!(class_setting_line(b"borg_town_w_light = 7"), None);
         assert_eq!(class_setting_line(b"borg_param_town_gold_reserve@mage = 1"), None);
         assert_eq!(class_setting_line(b"borg_reborn_errand = /trips 1*/1,2,1*@3/"), None);

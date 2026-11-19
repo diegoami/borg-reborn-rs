@@ -2335,6 +2335,16 @@ fn legacy_alias(name: &str) -> Option<(&'static Spec, usize, Option<i32>)> {
 /// A setting's name: the parameter, its class if any, and the alias's
 /// "general value" sentinel.
 fn split_name(name: &str) -> Result<(&'static Spec, Option<usize>, Option<i32>), String> {
+    // #696: `<name>__<class>` is `<name>@<class>` in the characters a zoo
+    // profile can write (`[A-Za-z0-9_.-]`); no parameter name has `__`.
+    let at;
+    let name = match name.rsplit_once("__") {
+        Some((base, class)) if !name.contains('@') && CLASSES.contains(&class) => {
+            at = format!("{base}@{class}");
+            at.as_str()
+        }
+        _ => name,
+    };
     if let Some((base, class)) = name.split_once('@') {
         let spec = SPECS.iter().find(|s| s.name == base).ok_or(format!("unknown parameter {base}"))?;
         let c = CLASSES.iter().position(|k| *k == class).ok_or(format!("{name}: unknown class {class}"))?;
@@ -2566,6 +2576,13 @@ mod tests {
         assert!(parse(&format!("borg_param_{legacy} = 1000\nborg_param_attack_preference_spell_permille@mage = 1500"), &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_mage_wait_permille = 1000", &BTreeMap::new(), SPECS).is_err());
         assert!(parse("borg_param_attack_preference_spell_permille@wizard = 1000", &BTreeMap::new(), SPECS).is_err());
+        // #696: `<name>__<class>` is `<name>@<class>`, for every parameter.
+        let d = Param::town_devices_percent;
+        let values = parse("borg_param_town_devices_percent__mage = 150", &BTreeMap::new(), SPECS).unwrap();
+        assert_eq!(class_value(&values, d, "mage"), Some((150, "borg.txt")));
+        assert_eq!(values[d as usize].value, 100, "the common value stays");
+        assert!(parse("borg_param_town_devices_percent__mage = 150\nborg_param_town_devices_percent@mage = 140", &BTreeMap::new(), SPECS).is_err(), "a duplicate");
+        assert!(parse("borg_param_town_devices_percent__wizard = 150", &BTreeMap::new(), SPECS).is_err());
     }
 
     /// #520: precedence (default < borg.txt < class line < environment <
