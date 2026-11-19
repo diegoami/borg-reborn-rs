@@ -592,10 +592,14 @@ borg_param_escape_phase_adjacent_only = 1
 # staves). lost_test: 0 = the danger threshold below; 1 = the fight compared
 # (its best attack of any kind, true damage, needs more turns to kill the
 # adjacent monsters, their HP left, than the danger needs to kill it); 2 = as 1, and the expected landing
-# is safer than here. 0 = each site's own check. Off here until a zoo pilot measures it.
+# is safer than here. 0 = each site's own check.
+# Shipped with lost_test 0 at 100% (#661, borg-zoo#347's thr-100 arm, 1,728
+# paired starts on 4acf071f): 77 deaths against 93 with the rule off (55
+# rescued, 39 newly killed, p = 0.12), mean max CL and DL unchanged; the
+# fight tests (1, 2) were neutral leaning worse. A lead, not a confirmed gain.
 
-borg_param_escape_phase_adjacent_rule = 0
-borg_param_escape_phase_lost_test = 1
+borg_param_escape_phase_adjacent_rule = 1
+borg_param_escape_phase_lost_test = 0
 borg_param_escape_phase_lost_danger_percent = 100
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
