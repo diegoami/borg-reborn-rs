@@ -533,11 +533,12 @@ borg_param_escape_phase_adjacent_only = 1
 
 # The owner's Phase Door rule (#584), at every Phase Door site
 # (docs/PHASE-DOOR.md), before the site's own check: Phase Door only with an
-# awake enemy on an adjacent square and the fight judged lost (danger at or
-# above lost_danger_percent of the current HP). With an enemy adjacent and
-# the fight not lost, counter-attack; with none adjacent, the best attack at
-# range, else a boost (Speed first) with an awake monster in view. 0 = each
-# site's own check. Off here until a zoo pilot measures it.
+# awake enemy on an adjacent square and the fight judged lost (danger where
+# the Borg stands at or above lost_danger_percent of the current HP). The rule
+# only refuses the Phase Door: the other escapes go on, and if none acts the
+# Borg attacks (its best attack; at range with nothing adjacent) or, with an
+# awake monster in view, boosts (Speed first). 0 = each site's own check.
+# Off here until a zoo pilot (borg-zoo#334) measures it.
 
 borg_param_escape_phase_adjacent_rule = 0
 borg_param_escape_phase_lost_danger_percent = 100

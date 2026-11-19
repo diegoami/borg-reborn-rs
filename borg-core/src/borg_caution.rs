@@ -2047,6 +2047,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#584, owner): the Phase Door rule refused a Phase Door
+    // and no escape acted: attack, at range when nothing is adjacent, else
+    // boost (`phase_rule_act`, once per think).
+    if crate::borg_escape::phase_rule_act(st) {
+        return true;
+    }
+
     /*** Back away ***/
     // Do not back up if
     // 1) we are nasty (poisoned, blind, confused etc

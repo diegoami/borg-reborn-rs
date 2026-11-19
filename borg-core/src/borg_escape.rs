@@ -719,10 +719,14 @@ pub(crate) fn phase_door(
     cast: impl FnOnce(&mut BorgState) -> bool,
 ) -> bool {
     // borg-reborn-rs (#584, owner): the one rule, before the site's own check.
-    if param(Param::escape_phase_adjacent_rule) != 0 {
-        if let Some(acted) = adjacent_rule(st, site, danger) {
-            return acted;
-        }
+    // It only refuses the Phase Door: the site goes on with its other escapes,
+    // and the rule's attack or boost waits until no escape acted
+    // (`phase_rule_act`, from `borg_caution`).
+    if param(Param::escape_phase_adjacent_rule) != 0
+        && st.borg.tr(BI_APHASE) > 0
+        && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase
+    {
+        return false;
     }
     let checked = match check {
         PhaseCheck::Landing { tolerance, horizon } => caution_phase(st, site, tolerance, horizon),
@@ -749,22 +753,24 @@ pub(crate) fn phase_door(
     done
 }
 
-/// borg-reborn-rs (#584, owner): what the rule decides at a Phase Door site.
+/// borg-reborn-rs (#584, owner): what the rule decides in a think.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-enum PhaseVerdict {
+pub(crate) enum PhaseVerdict {
     /// An enemy on an adjacent square and the fight looks lost: the site's
     /// own check and Phase Door follow.
     Phase,
-    /// An enemy on an adjacent square, the fight not lost: counter-attack.
+    /// An enemy on an adjacent square, the fight not lost: no Phase Door;
+    /// if no escape acts, counter-attack.
     Fight,
-    /// No enemy on an adjacent square: the best attack (necessarily at
-    /// range), else a boost.
+    /// No enemy on an adjacent square: no Phase Door; if no escape acts, the
+    /// best attack (necessarily at range), else a boost.
     Shoot,
 }
 
 /// The rule (`escape_phase_adjacent_rule`): Phase Door only with an awake
-/// enemy on an adjacent square and the fight judged lost, the danger here at
-/// or above `escape_phase_lost_danger_percent` of the current HP.
+/// enemy on an adjacent square and the fight judged lost, the danger where
+/// the Borg stands at or above `escape_phase_lost_danger_percent` of the
+/// current HP.
 fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> PhaseVerdict {
     if !adjacent {
         PhaseVerdict::Shoot
@@ -775,40 +781,65 @@ fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> Pha
     }
 }
 
-/// borg-reborn-rs (#584, owner): the rule at `site`. `None`: Phase Door is
-/// allowed, the site's own check follows. `Some(acted)`: no Phase Door; the
-/// Borg attacked (its best attack by its own estimate, `borg_attack`: with
-/// no enemy adjacent only a ranged one can be chosen) or, failing that and
-/// with an awake monster in view, boosted itself (`cornered_boost`: Speed
-/// first, then Heroism, Berserk Strength, Bless, ...).
-fn adjacent_rule(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) -> Option<bool> {
-    let label = site.label();
+/// borg-reborn-rs (#584, owner): the rule's verdict this think. Decided and
+/// noted once, at the first site that asks (re-review of #612: one note and
+/// no attack simulation per site); later sites reuse it. `danger` is the
+/// site's danger where the Borg stands (`borg_escape`'s `b_q` is
+/// `borg_caution`'s `pos_danger`), else measured here.
+fn phase_rule_verdict(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) -> PhaseVerdict {
+    let now = st.borg.time.now;
+    if let Some((t, verdict, _)) = st.borg.phase_rule {
+        if t == now {
+            return verdict;
+        }
+    }
     let hp = st.borg.tr(BI_CURHP);
     let here = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
-    let percent = param(Param::escape_phase_lost_danger_percent);
-    let verdict = phase_verdict(adjacent_awake(st), here, hp, percent);
-    match verdict {
-        PhaseVerdict::Phase => {
-            borg_note(st, &format!("# Phase ({label}): enemy adjacent, the fight looks lost (danger {here}, HP {hp}): phase allowed"));
-            return None;
-        }
-        PhaseVerdict::Fight => borg_note(st, &format!("# Phase ({label}): no, enemy adjacent but the fight is not lost (danger {here}, HP {hp}): fight")),
-        PhaseVerdict::Shoot => borg_note(st, &format!("# Phase ({label}): no, no enemy on an adjacent square: attack at range or boost")),
+    let verdict = phase_verdict(adjacent_awake(st), here, hp, param(Param::escape_phase_lost_danger_percent));
+    let label = site.label();
+    let why = match verdict {
+        PhaseVerdict::Phase => format!("enemy adjacent and the fight looks lost (danger {here}, HP {hp}): the rule allows a Phase Door"),
+        PhaseVerdict::Fight => format!("enemy adjacent but the fight is not lost (danger {here}, HP {hp}): no Phase Door; other escapes, else fight"),
+        PhaseVerdict::Shoot => "no enemy on an adjacent square: no Phase Door; other escapes, else attack at range or boost".to_string(),
+    };
+    borg_note(st, &format!("# Phase rule (from {label}): {why}"));
+    st.borg.phase_rule = Some((now, verdict, false));
+    verdict
+}
+
+/// borg-reborn-rs (#584, owner): after `borg_escape` found no escape, act on
+/// the rule's refusal this think, once: the Borg's best attack by its own
+/// ranking (`borg_attack`; with no enemy adjacent only a ranged one can be
+/// chosen), else, with an awake monster in view, a boost (`cornered_boost`:
+/// Speed first, then Heroism, Berserk Strength, Bless; its Monster Confusion
+/// needs a big monster adjacent, so never in the Shoot case). The boost is
+/// the cornered one by its set, not by its premise: in the Fight case the
+/// fight is not lost. Returns whether the Borg acted.
+pub(crate) fn phase_rule_act(st: &mut BorgState) -> bool {
+    let now = st.borg.time.now;
+    let Some((t, verdict, tried)) = st.borg.phase_rule else {
+        return false;
+    };
+    if t != now || tried || verdict == PhaseVerdict::Phase {
+        return false;
     }
+    st.borg.phase_rule = Some((t, verdict, true));
     if crate::borg_fight_attack::borg_attack(st, false) {
-        return Some(true);
+        borg_note(st, "# Phase rule: attacked instead of a Phase Door");
+        return true;
     }
-    if awake_in_view(st) && crate::borg_caution::cornered_boost(st, &format!("Phase ({label}) boost")) {
-        return Some(true);
-    }
-    Some(false)
+    awake_in_view(st) && crate::borg_caution::cornered_boost(st, "Phase rule boost")
 }
 
 /// An awake known monster in view (#584's boost waits for one).
 fn awake_in_view(st: &BorgState) -> bool {
     (1..st.kills.nxt.max(0) as usize).any(|i| {
         let kill = &st.kills.kills[i];
-        kill.r_idx != 0 && kill.awake && st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0
+        kill.r_idx != 0
+            && engine::r_max() != 0
+            && (kill.r_idx as i32) < engine::r_max() as i32 - 1
+            && kill.awake
+            && st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0
     })
 }
 
@@ -1043,7 +1074,9 @@ fn near_unique_1_8(st: &BorgState) -> bool {
 }
 
 /// Try to phase door or teleport
-/// b_q is the danger of the least dangerous square around us.
+/// b_q is the danger where the Borg stands (`borg_caution`'s `pos_danger`;
+/// C's comment said "of the least dangerous square around us", but C passes
+/// the same `pos_danger`, borg-caution.c).
 pub fn borg_escape(st: &mut BorgState, b_q: i32) -> bool {
     let mut risky_boost = 0;
 
