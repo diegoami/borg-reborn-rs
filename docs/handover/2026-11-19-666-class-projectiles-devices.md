@@ -11,11 +11,14 @@ Owner: "weighing buying projectile and magic by class"; by shooting and by devic
 - **Measured and not shipped:**
   - **Shots by shooting skill** (Rogue 90, Warrior 75, Paladin 70, Druid 55, Priest and Blackguard 50, Mage and Necromancer 30; Ranger 72 = 100). Over classes-18, ammunition gold went 2,200 → 2,916, healing bought 54 → 51, Phase Door 45 → 40, sum of CL 97 → 95, max DL 37 → 34. Shots at 10% with flasks did not hold it back: the flasks are often used up by the time the Borg is in town.
   - **A first-launcher boost:** it changed nothing, and it was removed.
-- **Why no launcher or wand is bought:** `borg_town_share = 10`, so no single purchase costs more than a tenth of the purse. A 150-gold Sling needs 1,500 gold in hand; a Wand of Magic Missile (330) needs 3,300. Separate issue, owner.
+- **Why no launcher is bought: not known.** A first-launcher boost of 2,000 or 8,000 power changed no game.
+  - My first explanation was wrong. `borg_town_share` is not applied in play: `caution_allows` is dead code outside tests (`borg_town_usefulness.rs`).
   - Flasks of oil are always stocked in the General Store (`store.txt`, `always:flask:Flask of Oil`).
+  - A wand is bought when the purse allows: smoke's priest-3 buys a 330-gold Wand of Magic Missile.
+  - Follow-up issue to investigate.
 - **Results:**
   - classes-18: 18 of 18 games are key-for-key main's.
   - Smoke: priest-3 buys a Wand of Magic Missile at turn 15,156 (device weight 125). `smoke-borg-rs` re-recorded.
 - **Left:**
-  - The share cap, in its own issue.
+  - Why no launcher is bought (follow-up issue).
   - Shots per class after a zoo pilot.
