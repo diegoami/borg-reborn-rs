@@ -864,6 +864,14 @@ borg_param_caution_town_never_scary = 0
 
 borg_param_caution_town_scary_levels_less = 3
 
+# In town, while scary or fleeing, a path step no more dangerous than the
+# Borg's own grid is never refused (#647). C refuses any grid above the
+# flow's fear: a thief next to a low-level Borg makes its grid and every
+# grid toward the stairs too dangerous, and it cannot leave. 0 = C.
+# Impact: see CALIBRATION (#647).
+
+borg_param_caution_town_flee_no_worse = 0
+
 
 ### The C Borg's own settings ###
 
