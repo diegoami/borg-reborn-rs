@@ -9,9 +9,14 @@ dependency-closure contract. A package link is useful provenance, but cannot
 replace payload bytes under the current import/verification contract.
 
 For future unchanged controls, use the already accepted `KNOWN` reconciliation
-rule (#464), retaining the new run's actual receipts and any changed payloads
-in the Cemetery-owned evidence workflow. It avoids requiring another death
-package; it does not make another build's metadata describe the new run.
+rule (#464). Routine `KNOWN` controls need no new record/package or additional
+receipt-retention/publication step beyond the existing CI workflow. When a
+specific validation or investigation claim depends on retaining a run, retain
+its actual receipts and the payloads needed for that claim with its case's
+Cemetery evidence bundle. The existing
+[inventory-parameters-433 bundle](https://github.com/diegoami/borg-cemetery/tree/a71dba05bc9867ddac3f566cd8eb8afcadbbfe2b/validation/borg-reborn-rs/inventory-parameters-433)
+is an example location, not a requirement to publish every control. Reusing a
+verified case never makes another build's metadata describe the new run.
 Existing packages, original records, maps and legacy inventory stay unchanged.
 No format, pin, index, exporter or runtime changes are delivered by this design.
 
@@ -28,7 +33,7 @@ Native tools are pinned by `death-tools-pin.txt` to Cemetery
 | `import_packages` / `check_registry` | Never overwrite differing evidence; publish under the owned lock; delegate index generation. The checker protects the legacy inventory and verifies every qualified package. Canonical Cemetery allocation is refused at this boundary. |
 | Cemetery `death_registry.py:aggregate` | Reads materialized records/assessments. Counts package directories separately from distinct starts and deduplicates retained death attempts by canonical encounter family plus result/key hash. Reference links must not redefine those keys or inflate counts. |
 | Cemetery `reconcile-deaths.py` | Default `KNOWN` matching uses implementation, seed, race, class, starting-save hash and key hash, excluding build, borg.txt and flags. Missing start information falls back to exact matching; `--exact` retains family/key matching. This is a coverage rule, not a package or full-stream equivalence test. |
-| Cemetery `export-death.py:export` | A complete existing family/key case can return `repeat`. That return value alone does not capture a new run's source/build/configuration or process history. Preserve the new run receipt separately; never relabel the old record. |
+| Cemetery `export-death.py:export` | A complete existing family/key case can return `repeat`. That return value alone does not capture a new run's source/build/configuration or process history. For a claim-dependent retained run, preserve its own receipt; never relabel the old record. |
 
 For source details see [the importer](../tools/import-deaths.py) and
 [its contract](DOSSIER-IMPORT.md). The owned tools above are inspected at the
@@ -45,6 +50,9 @@ Across those 13 pairs, all build, summary and report files differ, as do 12
 configuration files. Twelve `params-core.json` payloads are byte-identical to
 the earlier matched payloads. Those twelve copies total 5,942,064 logical bytes
 and share one Git blob, `ab757b31d52ebada5a3a0435f48888ac773f2244`.
+The remaining [receiving package ending `6b4bb62c77f0`](deaths/D0000-q4a22a9426e911a40b94827ecdbeb7811683c3dfeb4a2ab10f2cc6b4bb62c77f0/record.json)
+has no `params-core.json`: its config selects `borg_core=reborn` and it retains
+`params.json` instead. Thus there are twelve core-parameter files, not thirteen.
 All thirteen receiving directories together contain 7,113,140 logical bytes,
 including their import metadata. These are uncompressed file-byte totals,
 **not** Git object-store size or a measured storage-saving estimate: Git already
@@ -59,13 +67,14 @@ is removed, merged, rewritten or reclassified by this assessment.
 
 | New run | Treatment with current contracts |
 |---|---|
-| Same start and keys; another source/build/config | Reconcile as `KNOWN` if the owner tool confirms it. Retain the actual new run receipt and payloads needed for its claims; link the existing verified death package. Do not create a partial dossier. |
+| Same start and keys; another source/build/config | Reconcile as `KNOWN` if the owner tool confirms it; no new record or extra retention is required for an ordinary control. If an explicit claim depends on retaining this run, retain its actual receipt/needed payloads with that case evidence and link the verified death package. Do not create a partial dossier. |
 | Another key stream, or the same keys from another start | `UNRECORDED`: use the Cemetery-owned full evidence delivery/registration workflow. |
 | Only family/result matches, or start/provenance is missing | Do not infer full package identity. Preserve the source evidence; let the pinned exact/fallback checks decide coverage. Mark unknown receipt fields explicitly. |
-| Same keys but messages/state/trace/config/summary differ | A `KNOWN` result does not establish those channels' equality. Retain the differing bytes and report the actual comparison; never substitute the linked package's payloads. |
+| Same keys but messages/state/trace/config/summary differ | A `KNOWN` result does not establish those channels' equality. If a claim relies on them, retain the required differing bytes and report the actual comparison; never substitute the linked package's payloads. This adds no blanket retention rule for routine controls. |
 | Failed run/export, retry, replay or branch | Keep its process receipt and lineage/status. A reference cannot turn failure into success, supply missing evidence or create another independent life. |
 
-The new receipt must retain its actual source commit/hash/dirty state and diff,
+For a run selected for claim-dependent retention, its receipt must retain the
+actual source commit/hash/dirty state and diff,
 build identity/binary/toolchain, start/save identity, argv/environment/profile/
 parameters/flags and configuration hashes, per-channel hashes and explicit
 missing channels, process exit/completion status and attempt/replay lineage.
@@ -73,7 +82,9 @@ Store exact config/build/summary/trace bytes wherever they differ, with the
 run's original record if one was produced. Preserve all captured attempt
 metadata even when the catalogue deduplicates its family/key accounting.
 Use [the capture contract](VALIDATION-RECEIPTS.md); distinguish actual capture
-from reconstruction. A metadata link is not a new death-record schema.
+from reconstruction. These are provenance requirements for retained evidence,
+not instructions to publish receipts for all `KNOWN` controls. A metadata link
+is not a new death-record schema.
 
 ## Requirements for any future payload-reference format
 

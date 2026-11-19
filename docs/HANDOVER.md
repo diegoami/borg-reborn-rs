@@ -22,6 +22,11 @@
 - No runtime/default/pin/schema/index/registry change, game, canonical write,
   historical migration or deletion. Original records/maps/packages remain exact.
   Full-package retention is the concrete permitted design outcome of #375.
+- #608 review recommends approval. Clarify that routine KNOWN controls require
+  no new record or extra retention/publication step; retained receipts/payloads
+  are scoped to explicit evidence claims, with a concrete Cemetery bundle link.
+  The thirteenth receiving package selects borg_core=reborn and has params.json,
+  not params-core.json; the twelve-copy byte/blob count is unchanged.
 - Importer regressions and archive verification pass; required checks/CI and
   owner review precede task integration. After the last P5 task merges, stop
   for a pinned track-p→main milestone review; do not promote automatically.
