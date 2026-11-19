@@ -522,6 +522,14 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# A Blackguard's mana comes from fighting: it gains SP as it loses HP, and
+# its SP drains while HP is above half (#684). With this at 1 it casts
+# Berserk Strength (no fear, +75 melee skill) before a melee blow when it is
+# not berserk; C casts it only at some danger, and never while fleeing.
+# 0 = C. Impact: see CALIBRATION (#684).
+
+borg_param_attack_combat_regen_berserk = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below

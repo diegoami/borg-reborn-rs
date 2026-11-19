@@ -389,6 +389,27 @@ fn town_danger_bonus(st: &BorgState, r_idx: usize, p: i32) -> i32 {
     if param(Param::attack_town_dangerous_bonus_whole) != 0 { town_kill_bonus(st, r_idx, p) } else { p }
 }
 
+/// borg-reborn-rs (#684): with `attack_combat_regen_berserk`, a class whose
+/// mana comes from fighting (`PF_COMBAT_REGEN`: a Blackguard; it gains SP
+/// from HP lost and its SP drains while HP is above half, `player-util.c`
+/// `take_hit`, `player_regen_mana`) casts Berserk Strength (no fear, +75
+/// melee skill, `class.txt`) before its first melee blow of a fight, when it
+/// is not berserk and the spell's fail rate is at most `defend_berserk_fail`.
+/// C casts it only at "some danger but not much" (`borg_defend`), and not
+/// while fleeing: in borg-zoo#347's confirmation all 18 Blackguard deaths
+/// ended with at least half their SP, and 317 casts of 355 were Seek Battle.
+fn combat_regen_berserk(st: &mut BorgState) -> bool {
+    if param(Param::attack_combat_regen_berserk) == 0
+        || !engine::player_has(crate::headers::list_player_flags_h::PF_COMBAT_REGEN)
+        || st.borg.temp.berserk
+        || !borg_spell_okay_fail(st, BERSERK_STRENGTH, param(Param::defend_berserk_fail))
+    {
+        return false;
+    }
+    borg_note(st, "# Berserk Strength before the blow (combat mana)");
+    borg_spell(st, BERSERK_STRENGTH)
+}
+
 /// borg-reborn-rs (#637): with `attack_town_dangerous_caster_walk`, a Mage
 /// or Necromancer below the level of `borg_flow_kill`'s caster rule walks to
 /// a dangerous town monster too (its town hunt is otherwise breeders only,
@@ -4755,6 +4776,14 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     // game's prompt; Maim Foe's blow is a Blackguard spell, and only a
     // Druid has Fox Form (class.txt), so a fox never gets there.
     if b_g == BF_THRUST as i32 && crate::borg_escape::revert_fox_to_fight(st) {
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return true;
+    }
+
+    // borg-reborn-rs (#684): a combat-regen class (a Blackguard) casts
+    // Berserk Strength before a melee blow.
+    if (b_g == BF_THRUST as i32 || b_g == BF_SPELL_WHIRLWIND_ATTACK as i32) && combat_regen_berserk(st) {
         st.traits.simulate = false;
         st.traits.attacking = false;
         return true;
