@@ -339,6 +339,17 @@ borg_param_caution_flee_recall_chase_distance = 6
 
 borg_param_caution_flee_recall_gate_below_depth = 1
 
+# Fleeing: where caution_flee_recall = 0 or the depth gate above holds a
+# flight's Recall back, the danger here at or above this percent of the
+# current HP allows it after all, beside the breeder and chaser exceptions
+# (#587). Only the flight's own read; the stand tests ignore it. 0 = off.
+# Change together: with caution_flee_recall and
+# caution_flee_recall_gate_below_depth; it does nothing unless one holds
+# Recall back.
+# Impact: off here; not measured yet (a zoo pilot is pending).
+
+borg_param_caution_flee_recall_danger_percent = 0
+
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
 # game turns x the game ratio of the jump, prepare the spells for arriving.
@@ -509,6 +520,7 @@ borg_param_town_heal_speed_percent = 66
 # Impact: set to 1, 5 of 6 test games play differently.
 
 borg_param_recover_rest_arms_see_invis = 0
+
 
 
 ### Fleeing ###
@@ -744,6 +756,18 @@ borg_param_caution_scary_unlatch_kill = 0
 
 borg_param_caution_scary_hurt_percent = 50
 borg_param_caution_scary_afraid = 1
+
+# 1 = in town no monster makes the level scary (the named list, the damage
+# rule, the resist scares): the Borg meets town monsters by its danger rules,
+# fights them or walks past, instead of fleeing to DL1 and coming back to
+# finish shopping (#604, owner). The five town residents on the list (the
+# battle-scarred veteran, the mean-looking mercenary, the filthy street
+# urchin, the squint-eyed rogue, Farmer Maggot) made most of the town
+# scares: at least 697 in 18 games. 0 = C.
+# Impact: not on the file's 6-game measure; set to 1, 18 of 18 games (9
+# classes x seeds 2001/2002, race 0, 100,000 turns) play differently.
+
+borg_param_caution_town_never_scary = 0
 
 
 ### The C Borg's own settings ###
