@@ -5,10 +5,14 @@ use its `tools/export-death.py` compatibility command and the documented
 `BORG_DEATH_RECORDS_DIR` override for isolated CI or local validation runs.
 Normal canonical exports still go through the cemetery's own registrar.
 
-Numeric `D####` IDs from an isolated registry are provisional. They must not
-be committed as new historical archive IDs: another track, task branch or CI
-runner can independently allocate the same number. Per-track ranges alone do
-not solve concurrent branches of the same track.
+Since #628 (the death-tools pin at borg-cemetery `a4c76ac5`), the exporter
+names a dossier `D-<SHA-256>`, the Cemetery's canonical ID (`death-id@1`:
+encounter family and original key stream), and writes `death-id.json`
+beside it. Older isolated registries hold numeric `D####` IDs. Neither kind
+is committed as a new historical archive ID here: numeric IDs collide
+between tracks, branches and CI runners, and the archive keeps its
+`D0000-q` namespace below. Per-track ranges alone do not solve concurrent
+branches of the same track.
 
 ## When a new package is needed
 
@@ -40,7 +44,7 @@ legacy inventory stay immutable.
 Import each completed native dossier with:
 
 ```sh
-python3 tools/import-deaths.py /path/to/isolated/D0001-rust-seed1011
+python3 tools/import-deaths.py /path/to/isolated/D-<SHA-256>
 python3 tools/import-deaths.py --check
 ```
 
@@ -51,7 +55,10 @@ The namespace is deterministic: identical evidence gives identical IDs;
 different payloads or provenance produce different IDs. No branch label,
 clock, random number or caller-supplied counter is used.
 
-The original `record.json` is retained byte for byte in `.source-record.json`.
+The original `record.json` is retained byte for byte in `.source-record.json`,
+and the exporter's `death-id.json`, if any, in `.source-death-id.json` (it
+describes the original record, which the working record no longer is; the
+receipt's `original_id` is the same canonical ID).
 The working record differs only in its display/storage `id`; source/build,
 encounter family, attempts and file hashes remain unchanged. All other files,
 including the original report and assessment, retain their exact bytes.

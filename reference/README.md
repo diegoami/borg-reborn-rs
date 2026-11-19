@@ -31,6 +31,7 @@ resolve here. Read them at the pinned commit, for example
 | better-borg-c | `docs/measurement/DEATH-IMPROVEMENT-WORKFLOW.md`, `DEATH-QUEUE.md`, `FLOW-DANGER-CACHE.md`, `NAMED-HEADLESS.md`, `flowcache-404/d0008-result.json` | Process documents and the D0008 flow-cache result |
 | better-borg-c | `produce_death.py`, `replay-borg.py`, `replay_next_death.py`, `run-borg-headless.py` | Tools named in replay instructions |
 | borg-rs | `docs/C-CONSUMER-ADOPTION.md` | The adoption contract |
+| borg-rs | [docs/ENGINE-UPGRADE.md](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ENGINE-UPGRADE.md), linked from `borg-rs/FORK-CORRECTIONS.md` | The historical engine-upgrade procedure, outside the configured copy selection |
 | borg-rs | `docs/validation/2026-11-07-post-m4-investigation/` (including `death-checkpoints/*.save`) | Validation runs and living saves of the cohort |
 | borg-rs | `produce_death.py`, `replay-borg.py`, `replay_next_death.py` | Tools named in replay instructions |
 
@@ -54,12 +55,3 @@ relative link between files inside a copied registry resolves.
 
 Licences: the Angband material is under Angband's dual licence (GPLv2 /
 Angband licence), as the source projects state.
-
-
-## Relative link in the borg-rs correction copy
-
-The byte-exact `borg-rs/FORK-CORRECTIONS.md` copy links to `ENGINE-UPGRADE.md`,
-which is outside this repository's configured copy selection. Read
-[the donor's ENGINE-UPGRADE.md at the same source pin](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ENGINE-UPGRADE.md).
-The copied document is intentionally unchanged; this note does not adopt an
-engine upgrade or change a source pin.

@@ -246,11 +246,10 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 #579 into track-p at `f357404e` and #608 at `7e3ea58f`, both after green CI;
 #374 and #375 are complete. Review follow-up #629 updates this status and
 handover discoverability; promotion remains unmerged pending owner acceptance.
-Owner accepted
-the kickoff re-review and
-merged source refresh #555 into track-p at `0336d44e`, then kickoff #537
-at `6aa38d2b`; issues #554 and #536 are complete. The
-owner requested the next Track P milestone after P4 promotion. No P5 was
+
+The owner accepted the kickoff re-review and merged source refresh #555 into
+track-p at `0336d44e`, then kickoff #537 at `6aa38d2b`; issues #554 and #536
+are complete. The owner requested the next Track P milestone after P4 promotion. No P5 was
 previously defined; this milestone closes a bounded pair of deferred review
 follow-ups rather than extending gameplay policy.
 
