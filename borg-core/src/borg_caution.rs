@@ -3096,17 +3096,44 @@ fn only_breeders_near(known: &[(i32, i32, bool)], radius: i32, horizon: i32) -> 
     breeders > 0
 }
 
-/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
-/// character level (`borg_near_monster_type`) and the low-level door scares
-/// (`borg_update`, `borg_messages`) mark the level scary.
 /// borg-reborn-rs (#622, owner): how many character levels sooner a town
 /// race (race level 0) stops being scary on the named list.
 pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
     if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
 }
 
+/// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
+/// character level (`borg_near_monster_type`) and the low-level door scares
+/// (`borg_update`, `borg_messages`) mark the level scary.
 pub(crate) fn scary_named_monsters() -> bool {
     p(Param::caution_scary_named_monsters) != 0
+}
+
+/// borg-reborn-rs (#647): with `caution_town_flee_no_worse`, in town while
+/// the level is scary or the Borg flees, the flow refuses no grid that is
+/// at most as dangerous as the Borg's own: standing still is no safer. A
+/// low-level Borg next to a filthy street urchin rated its own grid 406 and
+/// the one toward the stairs 203, above the flow's fear (90): no path left
+/// its grid, and it twitched in town for 70,000 turns. 0 when off, when not
+/// in town or not fleeing (the flow's own fear applies alone). It applies to
+/// every flow in town while scary or fleeing, not only the stair flow. A grid
+/// marked icky under a lower floor stays icky until the level changes
+/// (`data_icky` is cleared by `borg_forget_map`): the floor unblocks grids
+/// assessed while it holds, not earlier marks (review of #660). The depth is
+/// the game's, as `keep_fox_form`'s.
+pub(crate) fn town_flee_fear_floor(st: &mut BorgState) -> i32 {
+    if !town_flee_applies(
+        p(Param::caution_town_flee_no_worse),
+        crate::engine::player_depth(),
+        st.borg.mon.scary || st.borg.goal.fleeing || st.borg.goal.leaving,
+    ) {
+        return 0;
+    }
+    borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false)
+}
+
+fn town_flee_applies(switch: i32, depth: i32, fleeing: bool) -> bool {
+    switch != 0 && depth == 0 && fleeing
 }
 
 /// borg-reborn-rs (#604): with `caution_town_never_scary`, no monster makes
@@ -3118,6 +3145,17 @@ pub(crate) fn town_never_scary(depth: i32) -> bool {
 
 fn town_never_scary_with(switch: i32, depth: i32) -> bool {
     switch != 0 && depth == 0
+}
+
+#[cfg(test)]
+mod town_flee_tests {
+    #[test]
+    fn the_no_worse_floor_is_for_a_flight_in_town() {
+        assert!(super::town_flee_applies(1, 0, true));
+        assert!(!super::town_flee_applies(0, 0, true), "switch off");
+        assert!(!super::town_flee_applies(1, 1, true), "the dungeon");
+        assert!(!super::town_flee_applies(1, 0, false), "not fleeing");
+    }
 }
 
 /// borg-reborn-rs (#505): a monster is scary when one of the character's
@@ -3604,10 +3642,37 @@ fn watch_for_recall(st: &mut BorgState) {
         return;
     }
     let range = p(Param::caution_recall_rest_monster_distance);
-    let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
-    if mover_seen_within(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE)) {
+    if let Some(k) = nearest_mover_seen(st, range) {
         st.borg.recall_watch_turn = engine::game_turn();
         st.borg.recall_watch_depth = engine::player_depth();
+        st.borg.recall_watch_kill = k;
+    }
+    // #615 rule a: the same memory for every rest.
+    crate::borg_recover::watch_for_rest(st);
+}
+
+/// An awake monster that can move, seen in this update, within `range` of
+/// the Borg (`mover_seen_within`; #615 rule a).
+/// The kill index of the nearest one, if any (review of #645: a clock set by
+/// a monster is cleared when that monster dies, `monster_died`).
+pub(crate) fn nearest_mover_seen(st: &BorgState, range: i32) -> Option<i32> {
+    let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
+    nearest_mover_seen_in(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE))
+        .map(|i| i as i32 + 1)
+}
+
+/// borg-reborn-rs (#567, review of #645): the monster that set a watch
+/// clock died, so the clock no longer stands for a monster that may come
+/// back; clear it. A monster forgotten out of view (not dead) keeps the
+/// clock: that is #567's case (Grip came back).
+pub(crate) fn monster_died(st: &mut BorgState, k: i32) {
+    if st.borg.recall_watch_kill == k {
+        st.borg.recall_watch_turn = 0;
+        st.borg.recall_watch_kill = 0;
+    }
+    if st.borg.rest_watch_kill == k {
+        st.borg.rest_watch_turn = 0;
+        st.borg.rest_watch_kill = 0;
     }
 }
 
@@ -3616,10 +3681,26 @@ fn watch_for_recall(st: &mut BorgState) {
 /// monster is lost, and refreshed the watch every think), within `range`
 /// (the engine's distance) of `c`. A monster that never moves (a floating
 /// eye, a mold) cannot come back.
+#[cfg(test)]
 fn mover_seen_within(kills: &[crate::borg_flow_kill::BorgKill], c: loc, range: i32, never_moves: impl Fn(u16) -> bool) -> bool {
-    kills.iter().any(|kill| {
-        kill.r_idx != 0 && kill.seen && kill.awake && engine::distance(c, kill.pos) <= range && !never_moves(kill.r_idx)
-    })
+    nearest_mover_seen_in(kills, c, range, never_moves).is_some()
+}
+
+/// The position in `kills` of the nearest such monster.
+fn nearest_mover_seen_in(
+    kills: &[crate::borg_flow_kill::BorgKill],
+    c: loc,
+    range: i32,
+    never_moves: impl Fn(u16) -> bool,
+) -> Option<usize> {
+    kills
+        .iter()
+        .enumerate()
+        .filter(|(_, kill)| {
+            kill.r_idx != 0 && kill.seen && kill.awake && engine::distance(c, kill.pos) <= range && !never_moves(kill.r_idx)
+        })
+        .min_by_key(|(_, kill)| engine::distance(c, kill.pos))
+        .map(|(i, _)| i)
 }
 
 /// borg-reborn-rs (#567): instead of a long rest for Recall, stay still one
@@ -3645,7 +3726,7 @@ pub(crate) fn recall_rest_held(st: &mut BorgState) -> bool {
 
 /// The test of `recall_rest_held`: on, a monster recorded (turn above 0), on
 /// this level, within `turns` game turns.
-fn recall_watch_holds(turns: i32, seen_turn: i32, ago: i32, same_level: bool) -> bool {
+pub(crate) fn recall_watch_holds(turns: i32, seen_turn: i32, ago: i32, same_level: bool) -> bool {
     turns > 0 && seen_turn > 0 && same_level && ago <= turns
 }
 

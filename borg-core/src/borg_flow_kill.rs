@@ -1741,6 +1741,9 @@ pub fn borg_locate_kill(st: &mut BorgState, who: &[u8], mut c: loc, r: i32) -> i
 
 /// Notice the "death" of a monster (`borg_count_death`)
 pub fn borg_count_death(st: &mut BorgState, i: i32) {
+    // borg-reborn-rs (#567, review of #645): a watch clock set by this
+    // monster ends with it.
+    crate::borg_caution::monster_died(st, i);
     let kill = st.kills.kills[i as usize];
 
     if kill.r_idx != 0 {
