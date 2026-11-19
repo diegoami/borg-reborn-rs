@@ -87,6 +87,10 @@ pub struct Borg {
     /// `caution_breeder_avoid_radius` of a fresh mark; rebuilt each think,
     /// empty with `caution_breeder_avoid` 0.
     pub breeder_block: Vec<bool>,
+    /// borg-reborn-rs (#556): when (`time.now`) a flight last took the plain
+    /// route through remembered breeders (`fight_through`); cleared on a new
+    /// level.
+    pub breeder_through: Option<BorgTime>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

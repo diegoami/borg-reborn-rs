@@ -2026,7 +2026,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // 4) we are not in a vault
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) / p(Param::caution_retreat_danger_divisor);
+    // borg-reborn-rs (#556): fighting through breeders to the stairs, no
+    // retreat or back-away undoes the flight while the danger is below the HP.
+    let through = breeder_fighting_through(st, pos_danger);
     if !all_out
+        && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, true)
         && retreat(st, pos_danger, borg_surround)
     {
@@ -2065,6 +2069,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     let danger_test =
         pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_back_danger_tenths) / 10;
     if !all_out
+        && !through
         && may_move_away(st, danger_test, nasty, borg_surround, pos_danger, false)
         && back_away(st, pos_danger, borg_surround)
     {
@@ -2776,6 +2781,22 @@ pub(crate) fn note_breeders(st: &mut BorgState) {
     }
     st.borg.breeder_marks.retain(|&(_, when)| now.wrapping_sub(when) <= turns);
     st.borg.breeder_block = breeder_block_grid(&st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius));
+}
+
+/// borg-reborn-rs (#556): `caution_breeder_avoid_fight_through` is on (the
+/// stair flows' fallback through the breeders, `fight_through`).
+pub(crate) fn breeder_fight_through_on() -> bool {
+    p(Param::caution_breeder_avoid_fight_through) != 0
+}
+
+/// borg-reborn-rs (#556): a flight took the plain route through remembered
+/// breeders (`fight_through`, borg_flow_stairs.rs) within the last
+/// `caution_breeder_through_turns` Borg turns, and the danger here is below
+/// the HP: the Borg fights its way along it instead of backing away.
+pub(crate) fn breeder_fighting_through(st: &BorgState, pos_danger: i32) -> bool {
+    st.borg.breeder_through.is_some_and(|t| {
+        st.borg.time.now.wrapping_sub(t) <= p(Param::caution_breeder_through_turns)
+    }) && pos_danger < st.borg.tr(BI_CURHP)
 }
 
 /// Record a breeder seen at `at` at `when`, keeping the latest time per grid.

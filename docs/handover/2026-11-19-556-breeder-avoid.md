@@ -49,17 +49,31 @@ with `caution_breeder_avoid_radius` (1) and `caution_breeder_avoid_turns`
   exploring for another staircase instead, and met Grip on the level 3,000
   turns later. The control walked that route and lived.
 
-**For the owner to decide:**
-- **A refused only route.** When the colony blocks the only known way to the
-  stairs while fleeing, the switch keeps the Borg on the level (the Rogue).
-  Options: as now; or, while fleeing, fall back to the plain route when the
-  avoiding flow finds nothing (that is the Priest's walk-in again, but only
-  when there is no other way); or a larger memory/radius trade-off. The zoo
-  should measure it; one local game is a lead (RULES 14).
-- **The zoo arm:** the issue's check is an arm on top of
-  `caution_breeder_exit` at borg-zoo#240's tier (360 starts): breeder deaths
-  are rare.
-- **main's smoke reference:** main fails the smoke job since `e0c4a527`
+**Fight through (owner, 2026-11-19: "can we fallback to fight our way
+out"):** `caution_breeder_avoid_fight_through` (1) and
+`caution_breeder_through_turns` (5).
+- A flight (`GOAL_FLEE`) whose stair flow finds no route around the marks
+  retries with the plain route through them (`fight_through`, wrapping
+  `borg_flow_stair_both/less/more`; noted `# Fighting through the breeders
+  to the stairs`).
+- For 5 Borg turns after, retreat and back-away stand down while the danger
+  here is below the HP (`breeder_fighting_through`): the Borg attacks what
+  blocks the way (`borg_attack` runs before the flee flow) and steps on,
+  instead of the Priest's step-in / back-away ping-pong. A Phase Door into
+  the colony still counts as scary.
+- classes-18 with both on: off still 18/18 identical. Deaths 2 against the
+  control's 1: the shared wild cat and a new one, Human Necromancer
+  300036923, a cave spider swarm on DL2 at 54,241 while exploring; its last
+  fight-through was at 37,657, so that is a different game, not the
+  mechanism. The Rogue 1381972077 now lives (28 fight-throughs). The
+  fight-through fired in 13 of 18 games (1–66 times). The Priest plays as
+  with avoidance alone (no fight-through in that game).
+
+**Zoo arm:** requested (owner: "ok to zoo arm"), on top of
+`caution_breeder_exit` at borg-zoo#240's tier.
+
+**For the owner to decide:** the zoo result; whether to ship.
+- **main's smoke reference** (owner: being fixed): main fails the smoke job since `e0c4a527`
   (`caution_rising_explore_ticks` 300 → 500,
   `caution_scary_damage_percent` 60 → 50) because `smoke-borg-rs` was not
   re-recorded (smoke-mage-2 diverges at game turn 5,703). This PR's engine

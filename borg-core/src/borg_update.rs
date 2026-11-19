@@ -1920,6 +1920,7 @@ fn new_level(st: &mut BorgState) {
     // borg-reborn-rs (#556): a new level's breeders are not this one's
     b.breeder_marks.clear();
     b.breeder_block.clear();
+    b.breeder_through = None;
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;

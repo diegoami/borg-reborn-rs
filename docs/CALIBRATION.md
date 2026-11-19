@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Avoid breeder colonies (#556)
 
-The registry now holds **2162** parameters (2159 after #584; three added).
+The registry now holds **2164** parameters (2159 after #584; five added).
 Owner, 2026-11-18: "maybe in that scenario one should not walk into a room
 with breeders then". The flows that move the Borg ignored known breeders, and
 a breeder out of view is forgotten, so the next think's flow walked back into
@@ -32,12 +32,23 @@ borg-cemetery#73).
 - `caution_breeder_avoid_radius` (1): the engine's distance from a mark.
 - `caution_breeder_avoid_turns` (50): a mark is kept this many Borg turns
   (`time.now`, one per think) after the breeder was last known there.
+- `caution_breeder_avoid_fight_through` (1; owner, 2026-11-19: "fallback
+  to fight our way out"): a flight (`GOAL_FLEE`) whose stair flow finds no
+  route around the marks takes the plain route through them
+  (`fight_through`, borg_flow_stairs.rs; noted `# Fighting through the
+  breeders to the stairs`); 0 = no route, the flight looks elsewhere.
+- `caution_breeder_through_turns` (5): for this many Borg turns after the
+  fight-through, retreat and back-away stand down while the danger here is
+  below the HP (`breeder_fighting_through`), so the Borg kills what blocks
+  the way and goes on instead of stepping back (the Priest's ping-pong).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `caution_breeder_avoid` | 0 | flag | 0–1 | `borg_caution.rs:2762` |
-| `caution_breeder_avoid_radius` | 1 | grids | 0–10 | `borg_caution.rs:2778` |
-| `caution_breeder_avoid_turns` | 50 | Borg turns | 1–100000 | `borg_caution.rs:2766` |
+| `caution_breeder_avoid` | 0 | flag | 0–1 | `borg_caution.rs:2767` |
+| `caution_breeder_avoid_radius` | 1 | grids | 0–10 | `borg_caution.rs:2783` |
+| `caution_breeder_avoid_turns` | 50 | Borg turns | 1–100000 | `borg_caution.rs:2771` |
+| `caution_breeder_avoid_fight_through` | 1 | flag | 0–1 | `borg_caution.rs:2789` |
+| `caution_breeder_through_turns` | 5 | Borg turns | 0–1000 | `borg_caution.rs:2798` |
 
 ## The owner's Phase Door rule (#584)
 

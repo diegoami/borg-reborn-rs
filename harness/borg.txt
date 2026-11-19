@@ -728,6 +728,14 @@ borg_param_caution_breeder_avoid = 0
 borg_param_caution_breeder_avoid_radius = 1
 borg_param_caution_breeder_avoid_turns = 50
 
+# Fight through (#556, owner): when fleeing finds no route around the
+# remembered breeders, take the route through them; retreat and back-away
+# stand down for caution_breeder_through_turns Borg turns after, while the
+# danger is below the HP. 0 = the flight looks elsewhere.
+
+borg_param_caution_breeder_avoid_fight_through = 1
+borg_param_caution_breeder_through_turns = 5
+
 
 ### Scary monsters ###
 
