@@ -145,7 +145,8 @@ Close the task issue explicitly with its integration PR/commit. Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review
-PR. The owner selects/runs the review; fix findings through `track-p` task
+PR. The owner chooses the reviewer (RULES 6); the session may run that
+review and post it on the PR. Fix findings through `track-p` task
 PRs. Keep promotion unmerged until the owner accepts the milestone review
 and CI passes. The owner merges the promotion or explicitly delegates that
 reviewed merge. Then the next milestone may start. Keep the reviewed head
@@ -225,11 +226,22 @@ move to the other track.
 This repository is **model agnostic**. Nothing in it depends on which model
 or tool writes the code, and the Borg itself uses no model when it plays.
 Which model works on a task is decided outside the repository by the
-owner's general rules. **The reviewer is always the owner's choice**
-(RULES 6). The session writes the review prompt and hands it over; it does
-not pick or launch a reviewer. A milestone review is done by the owner or by
-a model of a **different family** from the one that wrote most of the
-milestone. Name both in the review PR.
+owner's general rules. **The owner chooses the reviewer** (RULES 6): the
+session does not pick one, and it does not post a review before the owner
+has named the reviewer. The session writes the review prompt, pinned to an
+exact commit, and posts it on the PR it reviews; the owner names the
+reviewer; the session may then run that review and post it: it launches
+the reviewer the owner named, with the pinned prompt and nothing else from
+its own context, and posts the reviewer's findings unedited; it never
+reviews its own work in its own context. It may also hand the prompt to
+the owner to run, and posts the review on the PR if the owner has not.
+A review is posted as a **comment** — never a GitHub *approve* or *request
+changes*, which would read as the owner's verdict — headed with the
+reviewer the owner named and the pinned commit; posting it is not the
+owner's acceptance (RULES 1a). A milestone
+review is done by the owner or by a model of a **different
+family** from the one that wrote most of the milestone. Name both in the
+review PR.
 
 ## Where things are
 
