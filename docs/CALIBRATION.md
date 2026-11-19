@@ -44,6 +44,45 @@ Direction only: 18 games, no zoo run.
 |---|---|---|---|---|
 | `attack_town_leave_maggot` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`leave_maggot`, read in `borg_thrust_damage_one`, `borg_launch_damage_one`, `borg_flow.rs`'s step and `borg_flow_kill`) |
 
+## Town less scary (#622)
+
+The registry now holds **2156** parameters (one added). Owner, 2026-11-19:
+"rather than having a flag 'town not scary' maybe let us have a
+'town_less_scary' that decreases the scaryness level of town monsters".
+
+`caution_town_scary_levels_less` (levels, compiled 0, **shipped 3**, owner 2026-11-19: "N=3 sounds good"): for
+a town race (race level 0) on the data-file scary list (`borg_scary_list`,
+shipped `scary_monsters.txt`), the listed level is lowered by this many
+character levels (`clevel <= up_to - N`, `scary_list::is_scary`); the
+compiled C list (`borg_scary_list = none`) is not changed. A level-0 race
+is only ever generated in town (`mon-make.c`: "No town monsters in
+dungeon"). The damage rule and the resist scares are not
+changed. In the vendored core: it plays with the borg-rs core, the default
+since #606.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`, the zoo
+adapter's steps). With #619's `attack_town_dangerous_on_sight` on top, from
+a build of both branches:
+
+| N | deaths | sum of CL | town scares | town <-> DL1 | thefts in town | dangerous town monsters killed |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 (= main, 18/18) | 0 | 99 | 2,260 | 3,012 | 0 | 6 |
+| 3 | 0 | 102 | 2,090 | 2,908 | 1 | 20 |
+| 6 | 1 | 99 | 850 | 2,076 | 13 | 37 |
+| 11 | 2 | 98 | 0 | 1,152 | 16 | 15 |
+| 3, kill on sight | 0 | 101 | 2,058 | 2,884 | 1 | 53 |
+| 6, kill on sight | 1 | 102 | 907 | 2,108 | 16 | 38 |
+| 11, kill on sight | 3 | 90 | 0 | 1,138 | 11 | 52 |
+
+All the deaths are early in the dungeon (wild cats, Grip, a floating eye,
+CL1-4), none in town. Messages are placed in town when every `state.log` row
+in force at their game turn says depth 0. Direction only: 18 games, no zoo
+run.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_town_scary_levels_less` | 0 | levels | 0–51 | `borg_caution.rs` (`town_scary_levels_less`, read in `borg_flow_kill.rs` `borg_near_monster_type` through `scary_list::Situation::levels_less`) |
+
 ## Flight Recall from a danger share (#587)
 
 The registry now holds **2155** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.
