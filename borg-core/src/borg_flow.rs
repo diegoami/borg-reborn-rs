@@ -559,6 +559,9 @@ pub fn borg_flow_spread(
     /* Is the borg moving under boosted bravery? */
     let twitchy = i32::from(st.borg.avoidance) > st.borg.tr(BI_CURHP);
 
+    // borg-reborn-rs (#647): fleeing in town, no grid worse than here.
+    let fear_floor = crate::borg_caution::town_flee_fear_floor(st);
+
     /* Use the closest stair for calculation distance (cost) from the stair to
      * the goal */
     if stair_idx >= 0 && st.borg.tr(BI_CLEVEL) < 15 {
@@ -641,7 +644,7 @@ pub fn borg_flow_spread(
                 let p = borg_danger(st, y, x, 1, true, false);
 
                 /* Increase bravery */
-                let fear = flow_fear(st);
+                let fear = flow_fear(st).max(fear_floor);
 
                 /* Dangerous grid */
                 if p > fear {
@@ -695,7 +698,8 @@ pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
         let p = borg_danger(st, y, x, 1, true, false);
 
         /* Increase bravery */
-        let fear = flow_fear(st);
+        // borg-reborn-rs (#647): fleeing in town, no grid worse than here.
+        let fear = flow_fear(st).max(crate::borg_caution::town_flee_fear_floor(st));
 
         /* Dangerous grid */
         if p > fear {
