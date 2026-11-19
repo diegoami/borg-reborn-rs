@@ -108,7 +108,10 @@ class ErrandsPlanTest(unittest.TestCase):
         # off); the test is about the cap following the level, not the game.
         # #503: seed 1003 (with breeders no longer fled and the named scary
         # monsters off, seed 1002's Mage dies before turn 20,000).
-        r,out=self.run_poc('growth',cls=1,seed=1003,turns=20000)
+        # #516: seed 1004 (with Boldness capped and rests no longer arming
+        # Detect Invisible, seed 1003's Mage dies at level 1, to a yellow mold
+        # at turn 7,485).
+        r,out=self.run_poc('growth',cls=1,seed=1004,turns=20000)
         self.assertEqual(r.returncode,0,r.stderr)
         notes=[l for l in (out/'messages.log').read_text().splitlines() if '# Plan:' in l]
         self.assertTrue(any('level=1 ' in l and 'max-depth 1' in l for l in notes),notes)
@@ -178,8 +181,18 @@ class ErrandsPlanTest(unittest.TestCase):
         plan=self.root/'plan.txt';plan.write_text(PLAN)
         for name,source,core,why in [('missing',self.root/'absent.txt','borg-rs','no such file'),
                                      ('empty','','borg-rs','no such file'),
-                                     ('core',plan,None,'needs BORG_CORE=borg-rs')]:
+                                     ('core',plan,'reborn','needs the borg-rs core')]:
             r,out=self.run_measured(name,source,core)
             self.assertEqual(r.returncode,2,(name,r.stderr))
             self.assertIn(why,r.stderr)
             self.assertFalse(out.exists(),name)
+
+    def test_a_plan_with_no_core_set_plays_on_the_default_core(self):
+        # #606: with BORG_CORE unset the harness plays borg-rs, so a plan is accepted.
+        plan=self.root/'plan.txt';plan.write_text(PLAN)
+        r,out=self.run_measured('default',plan,None)
+        self.assertEqual(r.returncode,0,r.stderr)
+        text=(out/'user/borg.txt').read_text()
+        self.assertIn('borg_reborn_core = borg-rs\n',text)
+        self.assertIn('borg_plan = errands_plan.txt\n',text)
+        self.assertEqual(self.config(out).get('borg_core'),'borg-rs','the record says which core played')

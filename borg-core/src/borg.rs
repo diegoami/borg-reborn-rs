@@ -69,6 +69,17 @@ pub struct Borg {
     /// `borg.dont_react`: the reaction gate (set while knocked out or
     /// paralyzed, cleared on every message pump).
     pub dont_react: bool,
+    /// borg-reborn-rs (#551): the Borg queued its own change back from fox
+    /// shape (to fight, or the end of a flight): the game's "Change back
+    /// and ...?" prompt is answered `r`, not `y`. It lives as long as the
+    /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
+    /// the player is no longer shapechanged.
+    pub fox_revert: bool,
+    /// borg-reborn-rs (#584): the Phase Door rule's decision this think,
+    /// as (the think's `time.now`, the verdict, whether its attack or boost
+    /// was tried): decided once at the first site that asks, used by every
+    /// later site, acted on once by `borg_caution` after `borg_escape`.
+    pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,
@@ -193,6 +204,24 @@ pub struct BorgInitSave {
 pub struct BorgMonInfo {
     pub breeders: u16,
     pub scary: bool,
+    /// borg-reborn-rs (#530, review of #531): the scary check itself set
+    /// `goal.leaving`, `goal.fleeing` and `goal.fleeing_to_town` (each was
+    /// false before it); standing withdraws only these.
+    pub scary_leaving: bool,
+    pub scary_fleeing: bool,
+    pub scary_town: bool,
+    /// borg-reborn-rs (#530, review of #531): a door scare (an unseen
+    /// monster opened or burst a door) made the level scary; the stand
+    /// decision reads it.
+    pub scary_door: bool,
+    /// borg-reborn-rs (#530): standing against a scary monster it cannot
+    /// escape (for the note on the change).
+    pub scary_stand: bool,
+    /// borg-reborn-rs (#590): the races that made the level scary (a bit
+    /// per race index; the engine has 624 races), and whether one of them
+    /// was killed since a scan last found a scary monster known.
+    pub scary_races: [u64; 16],
+    pub scary_killed: bool,
     pub morgoth_panel: loc,
     pub unique: u32,
 }
@@ -260,6 +289,12 @@ impl Borg {
 pub struct CoreState {
     /// Configuration from borg.txt (`borg_cfg`), indexed by `BORG_*`.
     pub cfg: Vec<i32>,
+    /// borg-reborn-rs (#520): the class lines of borg.txt
+    /// (`borg_<name>@<class> = <value>`), as (setting, class `cidx`, value),
+    /// and each such setting's common value (after the range checks), so a
+    /// class change puts back the common value (`apply_class_settings`).
+    pub cfg_class: Vec<(usize, usize, i32)>,
+    pub cfg_common: Vec<(usize, i32)>,
     /// The Borg's own RNG state, swapped in around `borg_think()`
     /// (`borg_rand_local`).
     pub rand_local: u32,
@@ -277,6 +312,8 @@ impl Default for CoreState {
     fn default() -> Self {
         CoreState {
             cfg: Vec::new(),
+            cfg_class: Vec::new(),
+            cfg_common: Vec::new(),
             rand_local: 0,
             engine_date: "Nov  4 2026",
             step: 0,

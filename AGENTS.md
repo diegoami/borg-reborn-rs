@@ -5,8 +5,10 @@ session, a local one, any model, or a person. It is the only entry point;
 `CLAUDE.md` just includes it. Read it first, then:
 
 1. [RULES.md](RULES.md);
-2. [docs/HANDOVER.md](docs/HANDOVER.md): where the work stands and what the
-   last session left;
+2. [docs/handover/](docs/handover/README.md): where the work stands and what
+   the last sessions left, one note per task, newest first
+   (`ls -r docs/handover/`); older entries are in
+   [docs/HANDOVER.md](docs/HANDOVER.md);
 3. [PLAN.md](PLAN.md): milestones, tasks and their status;
 4. [docs/GOALS.md](docs/GOALS.md): what we build and the owner's decisions;
 5. [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the design direction;
@@ -74,6 +76,10 @@ current report pages with pointers. All P/R tracks follow this ownership rule.
 
 ## Starting
 
+Work in a worktree of your own, never in the shared main checkout
+(RULES 5a): `git worktree add .worktrees/<name> -b task/Tn.m-short-name
+origin/<base>` (`track-p` for a P task, otherwise `main`).
+
 ```sh
 git status --short
 git log --oneline -5
@@ -95,8 +101,21 @@ Engine builds and suites (see [harness/README.md](harness/README.md)) run under 
 ```sh
 BORG_IMPL=rust flock /tmp/angband-validation.lock harness/build.sh
 flock /tmp/angband-validation.lock harness/suite.sh smoke harness/out/smoke
-harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-rust
+harness/diff --suite smoke --expect-impl rust harness/out/smoke harness/reference/smoke-borg-rs
 ```
+
+**Which core a run plays** (owner, #606). With no `BORG_CORE`, the harness
+plays the core `harness/borg.txt` names: **borg-rs** (`borg-core/`), the one
+the zoo runs and the only one that reads `harness/borg.txt` and its
+`borg_param_*` settings. Its reference is `harness/reference/smoke-borg-rs`.
+`BORG_CORE=reborn` plays our own reborn core, which reads
+`harness/profiles/reborn-default.txt` instead; its references are
+`smoke-rust`, `smoke-exact-rust` and `full-rust`. A change to a borg-rs
+setting or to `borg-core/` is checked on the default core; a review prompt
+says which core each check ran. A PR that changes how the borg-rs core plays
+at the shipped settings re-records `smoke-borg-rs` in the same PR, after
+merging main (`harness/make-reference.sh` from a clean build), as reborn-core
+changes do with `smoke-rust`: CI compares the PR merged with main.
 
 ## Retained evidence: all tracks
 
@@ -183,7 +202,8 @@ At the end of a task:
    --all-targets -- -D warnings`, `cargo test --workspace --exclude
    borg-core` and `cargo test --release -p borg-core` pass (CI's commands),
    as well as the task's own checks;
-2. docs/HANDOVER.md says what was done, what was found, what is left, and
+2. the task's handover note, a new file in `docs/handover/` (RULES 5b), says
+   what was done, what was found, what is left, and
    anything the owner has to decide; anything left becomes a new issue;
 3. the PR says what changed, how it was checked and what was not checked,
    and `Closes #N` for its issue;

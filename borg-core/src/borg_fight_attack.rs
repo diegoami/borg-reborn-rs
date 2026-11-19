@@ -76,6 +76,11 @@ pub struct FightAttackState {
     pub target_closest: i32,
     /// `borg_tp_other_n`: the monsters in the line of a Teleport Other
     pub tp_other_n: i16,
+    /// borg-reborn-rs (#584): the true damage (no kill bonus, no danger
+    /// bonus) of the attack being rated: summed over the monsters one aim
+    /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
+    pub dmg_acc: i32,
+    pub dmg_best: i32,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -90,6 +95,8 @@ impl Default for FightAttackState {
             successful_target: 0,
             target_closest: 0,
             tp_other_n: 0,
+            dmg_acc: 0,
+            dmg_best: 0,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -541,6 +548,7 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
             continue;
         }
 
+        let true_d = d;
         let Some(d) = melee_score(st, k, x, y, d) else {
             continue;
         };
@@ -553,6 +561,13 @@ fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
         /* Save the info */
         b_i = i - 1;
         b_d = d;
+        // borg-reborn-rs (#584): the true damage, without the unique
+        // targeting bonus of `borg_thrust_damage_one`.
+        st.fight_attack.dmg_best = if rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
+            true_d / (1 + param(Param::attack_melee_unique_bonus).max(0))
+        } else {
+            true_d
+        };
     }
 
     /* Nothing to attack */
@@ -1429,6 +1444,9 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     /* Calculate "danger" to player */
     let p1 = danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false);
 
+    // borg-reborn-rs (#584): the true damage, at most the monster's HP.
+    st.fight_attack.dmg_acc += d.clamp(0, i32::from(kill.power).max(0));
+
     /* Extra "bonus" if attack kills */
     if d >= i32::from(kill.power) {
         d *= param(Param::attack_bolt_kill_multiplier);
@@ -1796,6 +1814,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 /* Reset Teleport Other variables */
                 st.fight_attack.tp_other_n = 0;
                 let mut n = 0;
+                st.fight_attack.dmg_acc = 0;
 
                 /* Bounds check */
                 if !engine::square_in_bounds(x, y) {
@@ -1863,6 +1882,7 @@ pub fn borg_launch_bolt(st: &mut BorgState, rad: i32, dam: i32, typ: i32, max: i
                 b_o_y = o_y;
                 b_o_x = o_x;
                 b_d = d;
+                st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
             }
         }
         i += 1;
@@ -2097,6 +2117,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         }
 
         /* Consider it if its a ball spell or right on top of it */
+        st.fight_attack.dmg_acc = 0;
         let n = borg_launch_arc_at_location(st, y, x, degrees, dam, typ, max);
 
         /* Skip useless attacks */
@@ -2118,6 +2139,7 @@ fn borg_launch_arc(st: &mut BorgState, degrees: i32, dam: i32, typ: i32, mut max
         b_i = i - 1;
         b_n = n;
         b_d = d;
+        st.fight_attack.dmg_best = st.fight_attack.dmg_acc;
     }
     if b_i == -1 {
         return b_n;
@@ -3301,6 +3323,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
             continue;
         }
 
+        let true_d = d;
         let Some(d) = melee_score(st, k, x, y, d) else {
             continue;
         };
@@ -3313,6 +3336,13 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
         /* Save the info */
         b_i = i - 1;
         b_d = d;
+        // borg-reborn-rs (#584): the true damage, without the unique
+        // targeting bonus of `borg_thrust_damage_one`.
+        st.fight_attack.dmg_best = if rf(st.kills.kills[k as usize].r_idx, RF_UNIQUE) && tr(st, BI_CDEPTH) >= 1 {
+            true_d / (1 + param(Param::attack_melee_unique_bonus).max(0))
+        } else {
+            true_d
+        };
     }
 
     /* Nothing to attack */
@@ -4532,9 +4562,11 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     let mut attack_trace = crate::core_trace::attack_ranking();
     let mut winning_raw = 0;
+    let mut winning_damage = 0;
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
+        st.fight_attack.dmg_best = 0;
         let raw = borg_calculate_attack_effectiveness(st, g);
 
         // borg-reborn-rs (#403): apply preference once, only during ranking.
@@ -4542,7 +4574,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let class = tr(st, BI_CLASS);
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
-        if changed { winning_raw = raw; }
+        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4554,6 +4586,25 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         return false;
     };
     let b_n = ranking.utility;
+
+    // borg-reborn-rs (#584): an estimate only (`borg_attack_estimate`): the
+    // winner's true damage, nothing done.
+    if st.traits.estimate_only {
+        st.traits.estimate = Some(winning_damage);
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return false;
+    }
+
+    // borg-reborn-rs (#551, owner): a fox changes back before a melee blow.
+    // The other attacks are item or spell commands, changed back by the
+    // game's prompt; Maim Foe's blow is a Blackguard spell, and only a
+    // Druid has Fox Form (class.txt), so a fox never gets there.
+    if b_g == BF_THRUST as i32 && crate::borg_escape::revert_fox_to_fight(st) {
+        st.traits.simulate = false;
+        st.traits.attacking = false;
+        return true;
+    }
 
     // borg-reborn-rs (#469): committed to this fight (not waiting); when the
     // danger is very high, drink Speed first and attack next turn.
@@ -4585,6 +4636,19 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#584): the true damage (no kill bonus, no danger bonus,
+/// no unique targeting bonus) of the attack `borg_attack` would choose now,
+/// of any kind (melee, missiles, throws, spells, wands, rods, activations),
+/// without making it; `None` when it would choose none. The simulation draws
+/// the random numbers `borg_attack` would.
+pub(crate) fn borg_attack_estimate(st: &mut BorgState) -> Option<i32> {
+    st.traits.estimate = None;
+    st.traits.estimate_only = true;
+    let _ = borg_attack(st, false);
+    st.traits.estimate_only = false;
+    st.traits.estimate.take()
 }
 
 /// borg-reborn-rs (#469): whether to drink Speed before a fight the Borg has

@@ -142,8 +142,12 @@ Donor-side source inspection at `1443c2d1` also confirms the external suite
 path branch in `harness/suite.sh`, C defaults in both scripts, and
 `BORG_RECORDING` selecting the CMake recording flag in `harness/build.sh`.
 The recipe records SHA-256 identities for both inspected scripts so another
-reader can check those same objects. These are local source checks; the
-reviewer did not independently inspect the donor repository.
+reader can check those same objects. These were local source checks at the
+#579 task review, whose reviewer did not inspect the donor repository. The
+later [P5 milestone review](https://github.com/diegoami/borg-reborn-rs/pull/626#issuecomment-6998991184)
+independently checked those donor scripts, the donor full-suite hash and the
+M13 tag. Neither review started a new build or game; the reconstruction's
+historical-capture limits remain unchanged.
 
 Preserve strict comparison failure. Use the receiving checker's pinned version;
 do not drop fields, permit incomplete suites or turn its failure into success.

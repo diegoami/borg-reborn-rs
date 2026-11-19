@@ -96,6 +96,9 @@ pub struct Utility {
     pub gold_weight: i64,
     home_discount: i64,
     pub(crate) space_weight: i64,
+    /// borg-reborn-rs (#557): `town_recall_reserve`, the Word of Recall
+    /// valued at the full trip weight each, whatever the depth.
+    pub(crate) recall_reserve: i64,
 }
 impl Utility {
     pub fn of(st: &BorgState, kit: &[KitItem], cure_spell: bool) -> Self {
@@ -143,7 +146,8 @@ impl Utility {
             poisoned: t(BI_ISPOISONED) > 0, cut: t(BI_ISCUT) > 0, cure_spell,
             home_discount: i64::from(st.cfg(BORG_TOWN_HOME_DISCOUNT)).clamp(0, UNIT),
             space_weight: i64::from(st.cfg(BORG_TOWN_W_SPACE)).max(0),
-            gold_weight: i64::from(st.cfg(BORG_TOWN_W_GOLD)).max(0) * UNIT }
+            gold_weight: i64::from(st.cfg(BORG_TOWN_W_GOLD)).max(0) * UNIT,
+            recall_reserve: i64::from(crate::params::value(crate::params::Param::town_recall_reserve)).max(0) }
     }
 
     pub fn total(&self, need: Need, amount: i64) -> i64 {
@@ -155,7 +159,13 @@ impl Utility {
             // Recall buys avoided walking, not a mandatory pair of scrolls.
             // Its value tends to zero for a nearby destination, and rises
             // smoothly as returning on foot occupies more of the journey.
-            Need::Trip => coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk),
+            // borg-reborn-rs (#557): the first `recall_reserve` scrolls are
+            // worth the full weight each, at any depth: without one a shallow
+            // Borg walks home, and the walk can fail (priest-1055640847).
+            Need::Trip => crate::borg_town_capability::recall_value_scaled(
+                coverage(w, amount, UNIT) * self.journey.walk / self.journey.turns.max(self.journey.walk),
+            )
+                .max(w * amount.min(self.recall_reserve * UNIT)),
             Need::Healing if self.cut && !self.cure_spell => {
                 (coverage(w, amount, self.journey.demand(need)) * self.journey.exposure() / UNIT)
                     .max(if amount > 0 { w * UNIT } else { 0 })
@@ -612,6 +622,32 @@ mod tests {
         assert_eq!(s.chosen, [0, 1]);
         assert_eq!(s.cost, 20);
         assert!(s.optimal);
+    }
+
+    /// #557: with `town_recall_reserve` 1, the shallow Recall that loses to
+    /// saving gold above is bought, and a carried one is kept in the pack.
+    #[test]
+    fn a_recall_reserve_buys_and_keeps_a_shallow_recall() {
+        let mut st = state(0, 1, 20);
+        st.core.cfg[BORG_TOWN_W_GOLD as usize] = 25;
+        let mut u = Utility::of(&st, &[], false);
+        u.recall_reserve = 1;
+        assert_eq!(u.gain(Need::Trip, UNIT), 50 * UNIT, "the first scroll is worth the full weight");
+        let groups = [
+            Group { key: GroupKey::Need(index(Need::Trip) as u8), options: vec![Choice::default(), Choice {
+                cost: 150, value: u.gain(Need::Trip, UNIT), ..Choice::default() }] },
+            Group { key: GroupKey::Need(index(Need::Healing) as u8), options: vec![Choice::default(), Choice {
+                cost: 20, value: u.gain(Need::Healing, 20 * UNIT), ..Choice::default() }] },
+        ];
+        let s = solve_cash(&groups, &Limits { gold: 300, pack_slots: 15, weight: 1000 }, u.gold_weight);
+        assert_eq!(s.chosen, [1, 1], "the Recall is bought with the potion");
+
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        let kit = [recall(Place::Pack)];
+        let mut u = Utility::of(&st, &kit, false);
+        u.recall_reserve = 1;
+        let (actions, _) = dispositions(&input(&kit), &mut u, &st);
+        assert_eq!(actions, [Disposition::Keep], "the reserve scroll stays in the pack");
     }
 
     #[test]

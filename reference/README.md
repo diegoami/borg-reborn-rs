@@ -54,3 +54,12 @@ relative link between files inside a copied registry resolves.
 
 Licences: the Angband material is under Angband's dual licence (GPLv2 /
 Angband licence), as the source projects state.
+
+
+## Relative link in the borg-rs correction copy
+
+The byte-exact `borg-rs/FORK-CORRECTIONS.md` copy links to `ENGINE-UPGRADE.md`,
+which is outside this repository's configured copy selection. Read
+[the donor's ENGINE-UPGRADE.md at the same source pin](https://github.com/diegoami/borg-rs/blob/8c5d000a58e9ddca1f1954ab9552e505856b313f/docs/ENGINE-UPGRADE.md).
+The copied document is intentionally unchanged; this note does not adopt an
+engine upgrade or change a source pin.

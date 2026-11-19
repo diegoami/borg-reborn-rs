@@ -241,8 +241,12 @@ track-p→main review. R4 consumes the exact accepted pin in its own carry
 
 ## P5: validation reproducibility and evidence receipts (2026-11-18)
 
-**In progress: #375; #374 is integrated.** Owner authorized #579, merged
-into track-p at `f357404e` after green CI; #374 is complete. Owner accepted
+**P5 task implementation complete; awaiting milestone review/acceptance in
+[#626](https://github.com/diegoami/borg-reborn-rs/pull/626).** Owner authorized
+#579 into track-p at `f357404e` and #608 at `7e3ea58f`, both after green CI;
+#374 and #375 are complete. Review follow-up #629 updates this status and
+handover discoverability; promotion remains unmerged pending owner acceptance.
+Owner accepted
 the kickoff re-review and
 merged source refresh #555 into track-p at `0336d44e`, then kickoff #537
 at `6aa38d2b`; issues #554 and #536 are complete. The

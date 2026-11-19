@@ -643,7 +643,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
      */
     if st.borg.tr(BI_CDEPTH) == 1 && st.borg.goal.fleeing_to_town {
         /* Try to grab a close item while I'm down here */
-        if borg_think_stair_scum(st) {
+        // borg-reborn-rs (#549): not while threatened
+        // (`caution_stair_scum_threat`): go straight back up instead.
+        if !crate::borg_caution::stair_scum_threatened(st) && borg_think_stair_scum(st) {
             return choice!("borg_think_stair_scum");
         }
 
@@ -1460,20 +1462,30 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         borg_note(st, "# Considering Phase (twitchy)");
 
         /* Phase */
+        /* borg-reborn-rs (#584): through the one Phase Door decision; no
+         * check, as before. */
         if borg_allow_teleport(st)
-            && (borg_spell(st, PHASE_DOOR)
-                || {
-                    let act = st.act.tele_phase;
-                    borg_activate_item(st, act)
-                }
-                || {
-                    let sv = st.item_val.sv_scroll_phase_door;
-                    borg_read_scroll(st, sv)
-                }
-                || borg_dimension_door(st, 90)
-                || borg_spell(st, TELEPORT_SELF)
-                || borg_spell(st, PORTAL)
-                || borg_shadow_shift(st, 90))
+            && crate::borg_escape::phase_door(
+                st,
+                crate::borg_escape::PhaseSite::TwitchyThink,
+                crate::borg_escape::PhaseCheck::None,
+                None,
+                |st| {
+                    borg_spell(st, PHASE_DOOR)
+                        || {
+                            let act = st.act.tele_phase;
+                            borg_activate_item(st, act)
+                        }
+                        || {
+                            let sv = st.item_val.sv_scroll_phase_door;
+                            borg_read_scroll(st, sv)
+                        }
+                        || borg_dimension_door(st, 90)
+                        || borg_spell(st, TELEPORT_SELF)
+                        || borg_spell(st, PORTAL)
+                        || borg_shadow_shift(st, 90)
+                },
+            )
         {
             /* Success */
             return choice!("twitch_phase");
@@ -1495,7 +1507,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
         && boost_bravery(st, 3, 30000, |st| {
             /* Reset multiple factors to jumpstart the borg */
             st.borg.mon.unique = 0;
-            st.borg.mon.scary = false;
+            crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
             /* reset our breeder flag */
             st.borg.near.breeder = false;
@@ -1512,10 +1524,10 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
             st.borg.goal.ignoring = false;
 
             /* No known stairs */
-            // borg-reborn-rs (#544, caution_flee_known_down_stairs): unless kept; forgetting them left the
+            // borg-reborn-rs (#544, caution_jumpstart_keep_stairs since #548): unless kept; forgetting them left the
             // Borg in a dead-end worm room with no way to the down staircase
             // it had arrived on (priest-1055640847).
-            if crate::params::value(crate::params::Param::caution_flee_known_down_stairs) == 0 {
+            if !crate::borg_caution::jumpstart_keeps_stairs() {
                 st.stairs.less.num = 0;
                 st.stairs.more.num = 0;
             }
@@ -1588,7 +1600,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
 
     /* Reset multiple factors to jumpstart the borg */
     st.borg.mon.unique = 0;
-    st.borg.mon.scary = false;
+    crate::borg_caution::forget_scary(&mut st.borg.mon); // borg-reborn-rs (#530)
 
     /* reset our breeder flag */
     st.borg.near.breeder = false;

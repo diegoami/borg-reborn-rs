@@ -1,6 +1,372 @@
 # Handover
 
-*Where the work stands, for the next session. Update it in every PR.*
+*The archive, up to 2026-11-18.* Handover notes are now one file per task in
+[`docs/handover/`](handover/README.md) (RULES 5b, #580): read the newest
+there first (`ls -r docs/handover/`). Don't add entries to this file.
+
+## 2026-11-18: CI skips the full test suite when it cannot matter (#577)
+
+Owner: make CI shorter. The engine job's `harness/suite.sh full` on the test
+build (8 of its 12 minutes) plays the reborn core only. A pull request whose
+changed files are all docs (`docs/`, `reference/`, top-level `*.md`), the
+vendored borg-rs core (`borg-core/`) or its settings (`harness/borg*.txt`,
+`harness/scary_monsters*.txt`, `harness/plans/`) now skips it and its diff;
+the perception and no-time checks then read smoke alone. Any other file, and
+every push to main or track-p, runs it as before. The list is an exclusion
+list on purpose: a new path runs the full suite.
+
+Scope (review of #578): the skip is of the reborn-core suite only. The
+settings files and `borg-core/` do change the borg-rs Borg's play, but that
+suite never plays it (`harness/run.sh` rewrites `borg_reborn_core` to
+`reborn` without `BORG_CORE`), so skipping it drops no check of the borg-rs
+arm. What CI checks of that arm (borg-core's release tests, the
+`BORG_CORE=borg-rs` runs with `BORG_CORE_OVERRIDES=off`, the parameter
+validation) runs on every PR. No CI step plays the shipped `harness/borg.txt`
+on the borg-rs core, before or after this change: the zoo measures that.
+
+## 2026-11-18: #544's down-staircase flight only when cornered (#548)
+
+Owner: as merged in #545, A+K fired on almost every flight (13 of 18
+classes-18 games, up to 721 notes) and added 3 deaths in a local preview.
+Narrowed, each condition a parameter; all off in `harness/borg.txt`.
+
+- `caution_flee_known_down_stairs` (A, 0) now needs
+  `caution_flee_known_down_cornered` (1): a moving monster adjacent, danger
+  here at or above the HP or surrounded, and no Phase Door, teleport,
+  Teleport Level or escape; and `caution_flee_known_down_max_cost` (40): the
+  staircase within that many steps of flow (the flow's depth from the
+  staircases, the walk around walls; 0 = any). Its own flow
+  (`flee_known_down_flow`) keeps every refusal of `borg_flow_stair_more`
+  (`more_refused`, shared since review 2) and #557's rising hold.
+- K is its own flag, `caution_jumpstart_keep_stairs` (0).
+- Flags off: smoke 3/3 identical.
+- **Local classes-18** (this tree, `BORG_CORE=borg-rs`, 100,000 turns,
+  the zoo's 18 starts; not a zoo run, and the shipped `borg.txt` of today, not
+  #240's ctl): ctl 0 deaths, 0 notes; *wide* (#545 as merged: cornered 0,
+  cap 0, K 1) 2 deaths (Priest 1569794094 a soldier, Druid 934061548 a
+  wild cat), 2,607 notes in 17 games; *narrow* (the defaults above, K 0) 1
+  death, 31 notes in 3 games, the other 15 games key-for-key the ctl. The
+  narrow death (Priest 1569794094, poison from worms at turn 42,320) comes
+  5,450 turns after a flight that did escape an adjacent soldier (danger 84,
+  HP 34, staircase 24 flow away); the game had diverged. #240's three newly
+  killed (Ranger 1739161339, Warrior 1019921749, Druid 102023799) live in
+  every arm here, but this tree is not #240's.
+- **Review of #566:** `status.desperate` is now set before the staircases
+  are enqueued (`borg_flow_enqueue_grid` rates an unknown staircase grid's
+  danger unless the flow ignores it), as `desperate_flow` did. Recall is no
+  escape for "cornered" here (as #504), though it is one for #503's easy
+  escape: the two disagree on purpose. `borg_surrounded` is checked only
+  with a monster adjacent, and prints its own "Possibility of being
+  surrounded" note.
+- **After syncing with main `4a482c58`** (the owner's new `borg.txt` values
+  and #539), ctl and narrow again: 1 death in both (Blackguard 1472012981,
+  a cave spider, as in #539's runs), the note 3 times in 1 game (Rogue
+  1381972077, alive), the other 17 games key-for-key the ctl. Main has
+  since taken #565 (DL1 flight Recall gate, shipped 2); not rerun with it.
+- **Grandfathered trailers (owner, 2026-11-18):** the first two commits of
+  #566 (`22ed701e`, `1310b46a`) carry a `Co-Authored-By` trailer against
+  RULES 4. The owner chose not to force-push the task branch, so they stay,
+  like the earlier pair; no later commit has one.
+- **The worm room** (`~/borg-play/priest-1055640847`, the arm's
+  `borg.txt` plus the four #548 keys, from birth on this tree: flags off
+  plays the zoo game's 8,008 keys and dies at 91,153). With a temporary
+  local turn gate (not committed), as #545:
+
+  | flags on from | narrow, K 0 | narrow + K | wide + K (#545) |
+  |---|---|---|---|
+  | 88,600 | dies 91,153 (0 notes) | alive at 120,000 (11 notes) | alive at 120,000 (62) |
+  | 89,000 | dies 91,153 | dies 91,153 | dies 91,153 |
+
+  The narrowed A still escapes, but only with K: without it the stuck
+  jumpstart at 88,607 forgets the staircases. A zoo arm for this case
+  should set both. Loading the turn-88,147 save does not test A (a loaded
+  game's Borg knows no down staircase); there, 6 seeds die or live the
+  same in every arm (seeds 11 and 22 die to the worm mass).
+
+- **Review 2 of #566:** (1) main merged (#561, #570), count 2143,
+  citations re-done. (2) With an up staircase known but occupied, the flight
+  skipped `borg_flow_stair_more`'s refusals (not prepared for the next
+  depth, hungry, a sale held, no light) that block "four" applies to the
+  same staircase; now both share `more_refused` in `borg_flow_stairs.rs`
+  (the review read `borg_prepared_c` the wrong way round: it refuses when
+  *not* prepared, but the disagreement was real). (3) The escape traits
+  count items, not spells; adjacency is distance 1, tighter than #504's
+  radius. (4) `flee_down_cornered` reads as `breeder_exit`'s shape. (5) The
+  stairs are enqueued with `enqueue_stairs`. (6) No borg-cemetery case
+  exists for priest-1055640847 or these trials yet; the inputs are
+  `~/borg-play` (the owner's local copy).
+- **Rerun at this head** (main `8da9be99`, shipped `borg.txt`): local
+  classes-18, 0 deaths in ctl, narrow and narrow + K; the note 15 times in
+  2 games (Ranger 226104090, Druid 934061548) in both flag arms; narrow
+  plays the ctl's keys in 17 games, narrow + K in 12 (K alone changes
+  stuck games). Worm room, gate at 88,600: narrow dies at 91,153, narrow +
+  K alive at 120,000 (11 notes), wide + K alive (121); from 89,000 narrow +
+  K dies. Smoke 3/3 identical.
+
+- **Re-review of #566:** accepted with two small items: main merged again
+  (`f660aecc`, with #571; count 2145, citations unchanged; smoke 3/3,
+  borg-core 418 tests) and the PR summary rewritten (the flight shares
+  `borg_flow_stair_more`'s refusals and differs only in the depth cap).
+
+Left: the zoo pilot, borg-zoo#286 (ctl, keep, narrow, narrow-keep on
+classes-18, specimen `b054287b`), requested, not dispatched.
+
+## 2026-11-18: when the Borg buys Word of Recall (#557)
+
+Owner: make the Recall rules adjustable, and value Recall more instead of a
+reserve. Two new settings, both neutral in `harness/borg.txt`:
+- `town_recall_value_percent` (100): the town planner values a scroll at
+  this percent of the walk it saves (capability and need models).
+- `prepared_recall_depth` (5 = C): a descent to this depth or deeper needs
+  one Recall carried. It only stops descents.
+- Already a setting, and found inert for purchases under the shipped
+  planner: `power_inventory_clevel_threshold_3` (7), the old power scorer's
+  "Recall only above CL7".
+
+The six borg-play games from birth with the shipped `borg.txt`, 100,000
+turns (Recall bought in how many games): value 100% 0/6, 300% 1/6, 1000%
+4/6 (up to 3 scrolls); threshold 0: 0/6; recall depth 2: 1/6, and with
+1000% the same as 1000% alone. Defaults: smoke 3/3 identical.
+
+## 2026-11-18: no class values for the breeder hunt count (#574)
+
+Owner, after #561: "I do not want those setting set in the main right now,
+warrior and priest, remove them". `harness/borg_warrior.txt` and
+`harness/borg_priest.txt` no longer set `caution_breeder_hunt_max_count`
+(6 and 3), so every class hunts with the common 4. borg-zoo#277, the pilot
+of the count (2/4/6, the same for every class) and of
+`recover_breeder_hunt_hp_percent` (0/50), is re-pinned to this commit. Its
+c4-h50 arm is this shipped configuration.
+
+## 2026-11-18: one worktree per task (RULES 5a)
+
+Owner: "do we not have a rule about that in this repository? If not add
+it!" #539's last part reached `main` without review (`fba1c6e0..4a482c58`,
+review after the fact in #569): another session (#548) switched the shared
+checkout to `main` while that work was uncommitted, and a bare `git push`
+sent it. RULES 5a now makes every task work in its own worktree, check
+the branch before committing and push with an explicit refspec. AGENTS.md's
+*Starting* section points to it.
+
+## 2026-11-18: breeders hunted by every class (#558)
+
+Owner, playing priest-1055640847 at turn 88,000: the CL6 Priest never killed
+a lone green worm mass. Three causes, all fixed behind switches. All of it is
+in the vendored core (`borg-core/`), so it plays only with the borg-rs core:
+`borg_reborn_core = borg-rs` (shipped since #479; the zoo and `~/borg-play`)
+or `BORG_CORE=borg-rs`. A harness run without `BORG_CORE` plays the original
+reborn core, which is unaffected.
+- **Resting:** it rested for 26 thinks at 55/70 HP while the worms multiplied
+  from 2 to 6 (`recover_breeder_hunt_hp_percent`, shipped 50).
+- **Class:** #503's hunt left Priests out. Every class hunts now, through
+  `caution_breeder_hunt_max_count` class values (Warrior 6, Priest 3; removed
+  by #574, all classes now use 4); the
+  count is the switch, with no flag of its own, so the control that plays as
+  main sets it to 0 for Mage, Druid, Priest, Necromancer and Ranger. For
+  Mages and Necromancers below CL35 the hunt walk targets breeders only, with
+  half their mana (`borg_flow_kill_direct`, after 3000 turns on a level, still
+  digs to any monster).
+- **Danger:** the worm's 1d3 acid bite read 630 (200 corrosion fear per acid
+  blow, then +150% for a breeder below CL20), above the hunt's limit of a
+  third of the HP (`danger_hunt_breeder_no_acid_fear`, shipped 1). The fear
+  stays for everything else: at 0 everywhere, 18 starts went from 2 to 5
+  deaths.
+- **Checks** (third review, against main `68cf9eb5` and its `borg.txt`):
+  - control (the class counts at 0 for Mage, Druid, Priest, Necromancer and
+    Ranger, Warrior 4, both switches 0): 18/18 classes-18 starts identical to
+    main;
+  - shipped: 8 of 18 games change; the same 3 deaths (wild dog, blue yeek,
+    lava), sum of CL 100 against 101; the rest gate's note appears 8 times;
+  - the owner's 88,147 save over 8 seeds: 4 worm deaths on main and 4 here.
+    The save is a breeder trap either way (cornered by 14–22 worms), so
+    #556 (no walking into colonies) is the follow-up;
+  - the six `borg-play` deaths: no new death (Priest 809881907 dies to a
+    soldier on main and survives here); Priest 1055640847 ends at CL3
+    against 6, Ranger 2107852048 on DL1 against DL3.
+- **Left:** more Bless and Heroism (#560). The return trip without Recall
+  (#557) went into main as #559, from another session.
+
+## 2026-11-18: no flight Recall on DL1 (#557)
+
+Owner: "definitely do 1 for DL1". With C's flight Recall shipped again
+(#564), `caution_flee_recall_gate_below_depth` (compiled 0; **2 in
+`harness/borg.txt`**; a ceiling, 2 = DL1 only) makes a flight at a depth
+shallower than that read Word of Recall only with #559's exceptions (5 known breeders, or 3 awake monsters that can
+move within 6 grids). Recall there is no easy escape in the stand tests
+either.
+
+- Local classes-18 on `d419072f`, 100,000 turns: 0 deaths in both arms;
+  flight Recalls 17 to 10 games; sum of CL 99 against 107, sum of max depth
+  41 against 43; 17 of 18 games change keys.
+- The six borg-play deaths from birth: with 2, four of six alive at 200,000
+  (as with the full gate); with 0 they replay their zoo keys.
+- Evaluated, not built (owner's items 2 and 4): in the 17 flight Recalls of
+  borg-zoo#255's local ctl cells, 13 were on DL1, 10 came after "unable to
+  flow to up stairs" (median 2,260 game turns on the level), and no
+  monster had fled before any of them. Several were set off by monsters
+  that never move (floating eye, grey mushroom patch): "excessive danger"
+  from a floating eye at 230 against 28 HP.
+
+## 2026-11-18: a hurt or afraid monster is not scary (#539, last part)
+
+Owner, from `priest-809881907` (Grip fled from one flask of oil): a hurt or
+afraid scary monster should stop being scary.
+
+- `caution_scary_hurt_percent` (compiled 0, shipped 50) and
+  `caution_scary_afraid` (compiled 0, shipped 1): a monster that has lost
+  that share of its HP, or is afraid, is no named-list or damage-rule
+  scare. Resist-based and door scares are unchanged.
+- **Found:** with stand mode, a calmed monster that stopped counting as a
+  pursuer turned a stand into a flight while other scary monsters slept.
+  The first version had 2 deaths on the 18 starts (a cave spider, a
+  poisoning). A calmed monster now still counts as a pursuer when it is
+  awake and fast. Then 0 deaths, and 17/18 games play the same keys as
+  off; the Ranger shoots a 4-HP Grip.
+- With the owner's `borg.txt` of `fba1c6e0` merged in, off and shipped
+  are identical (18/18). Both have 1 death: Blackguard 1472012981, a cave
+  spider, which no arm had before that `borg.txt`. It comes from
+  `borg_trip_unknown_stacks = 2`: with 5 the game lives to 100,000, and
+  with `caution_stair_scum_threat = 0` it still dies. At turn 42,023 it is
+  surrounded by a soldier, a salamander and a cave spider. A lead for
+  borg-zoo#248.
+- **A lead for borg-zoo#256:** the latch off alone gave sum of CL 100
+  against 107, and max depth 39 against 43, on the 18 starts. Both arms had
+  0 deaths. Details in docs/CALIBRATION.md.
+- **Not run:** the issue's own case (replay from the 1,721 save) and the
+  other `borg-play` deaths, because `~/borg-play` is not on this machine.
+
+Left: a zoo arm (hurt/afraid on against off). #539 closes with this PR. Its
+follow-ups are now issues: #567 (no rest for Recall with a monster near) and
+#568 (throws ranked fairly against melee). The third, Phase Door only with a
+monster adjacent, shipped in #543.
+
+## 2026-11-18: the scary flag stops latching, a flag for a zoo arm (#515)
+
+Owner, from priest-1055640847's walk home (#557): "maybe the issue is that
+scary should go away". With #530's stand mode (shipped), the level's scary
+flag is decided after each monster scan, but a scan that finds nothing scary
+returned without clearing it: a level stayed scary until a new level, and the
+Borg kept fleeing. #515's parked branch (`e5fddf0d`) changed the pre-#530
+path only, which the stand mode no longer uses.
+
+- `caution_scary_latch` (1 compiled and in `harness/borg.txt`, the latch): 0
+  clears the flag when the scan finds no scary monster and withdraws only the
+  goals the scare set. Door scares stay latched.
+- From the turn-88,147 save, 5 seeds to 120,000 turns: latch on, seeds 11
+  and 22 die to the worm mass (91,850 and 91,145), 1 of 5 in town; latch off,
+  5 of 5 alive, 2 in town (113,332 and 95,336). With #559's descent hold on
+  as well, 2 deaths (poison, a soldier): the hold hurts.
+- The six borg-play deaths from birth (their zoo arm has stand mode off, so
+  latch 0 alone plays identical keys): with `caution_scary_stand = 1`, latch
+  on and off give the same 3 deaths and 3 survivors at 200,000; the latch
+  clears 0-8 times per game; ranger-1355387156 ends CL7 against CL10.
+- Latch 1: smoke 3/3 identical; the six deaths replay their zoo keys.
+- Not run: the 18 classes-18 starts.
+- Review of #562: the unlatch now also ends the stand (`mon.scary_stand`),
+  so the next stand prints its note. It resets the stand even when the
+  last think stood and had already cleared the flag, a case the review's
+  suggested fix missed. Only the note changes, not the keys.
+
+Left: a zoo arm against the control. Seeds 44 and 55 still stay on DL2:
+exploring for the up staircase (#557).
+
+## 2026-11-18: Boldness capped, rests no longer arm Detect Invisible (#516)
+
+- **Boldness:** `town_fear_cure_count` (compiled 0, shipped 2). Not afraid,
+  fear cures are valued linearly up to 2 in the pack.
+- **Detect Invisible:** `recover_rest_arms_see_invis` (compiled 1 = C,
+  shipped 0). C's rest stamped the see-invisible clock as recent, so every
+  rest triggered a Detect Invisible read, 57 of them in town.
+- **18 starts:** reads 187 to 95 (0 in town), Detect Invisible gold 1,830 to
+  1,245, Boldness 35 to 8 bought (7 to 10 drunk), deaths 0 and 0, levels 95
+  to 107. Details in docs/CALIBRATION.md.
+## 2026-11-18: the walk home without Recall, three flags (#557, part)
+
+Owner, from the replayed priest-1055640847 (`--to 88000`): a CL<=7 Borg
+never buys Word of Recall (the planner prices it as the walk it saves, worth
+less than gold at DL1-3), and walking home bounces DL2<->DL3 with
+connected stairs (8 times from the owner's save on main).
+
+- `town_recall_reserve` (0): that many Recall scrolls are a requirement at
+  the full trip weight, at any depth (review: the walk is never worth the
+  full weight, so a depth condition never applied and was dropped). It is set in the live
+  capability model (`borg_town_capability.rs`), which values purchases when
+  present, and in `borg_town_utility.rs`'s need model. From birth with 1,
+  the Borg reads its starting Recall at 77,690 and buys and keeps a new one at
+  the next visit (87,436); off, it buys none.
+- `caution_rising_hold_flee_descent` (0): while rising in the dungeon, no
+  flight down a staircase unless the danger here is at or above the HP
+  (`choose_stairs`, `borg_flow_stair_both`, `borg_flow_stair_more(GOAL_FLEE)`),
+  and the held staircase is no easy escape in #530's stand. It cuts the
+  bounces, but from the owner's save over 3 surviving seeds it gets home no
+  more often (0/3 alone; 2/3 with `caution_rising_explore_ticks` 3000; 2/3
+  off). The blocker is exploring for the up staircase on a scary level,
+  left in #557.
+- `caution_rising_explore_ticks = 300` is now written out in
+  `harness/borg.txt` (its compiled default, owner) so a zoo arm can vary it.
+- `caution_flee_recall` (compiled 1 = C; shipped 0 at the merge of #559, then **back to 1** until borg-zoo#255 measures it, owner 2026-11-18): 0 stops a flight from reading Word of
+  Recall (`borg_caution.rs`, "Fleeing the level (recall)") unless the level
+  is swamped by breeders (`caution_flee_recall_breeders`, 5 known) or the
+  Borg is chased (`caution_flee_recall_chasers`, 3 awake within
+  `caution_flee_recall_chase_distance`, 6); Recall then also stops counting
+  as an easy escape in #503/#530's stand tests. Owner: Recall is used too
+  often as an escape and seldom helps. In 144 local classes-18 zoo games on
+  `eea1bf9c` (with #539), a flight read Recall in 134, 113 times of 142 on
+  DL1, spending the starting scroll. The six borg-play deaths from birth with
+  0: four now alive at 200,000 (mage-1594647951, priest-809881907,
+  priest-1055640847, ranger-1355387156, CL5-8); ranger-2107852048 (Grip,
+  stair scum, #549) and mage-2028599180 (floating eye) die as before. From
+  the owner's save (no Recall carried): no change.
+  Other Recall reads left as they are: the stuck jumpstart's "Recalling
+  (twitchy)" (`borg_think_dungeon.rs`), `borg_leave_level`'s trips (rising
+  from DL5+, restock, no stairs after 1000 turns, into the dungeon) and the
+  low-light exit (`borg_think_dungeon_light`).
+- The reserve and the hold off, the Recall gate on: smoke 3/3 identical (its games never flee with Recall). With the gate at 1, the six borg-play deaths replay their zoo keys.
+
+
+## 2026-11-18: no stair scum while threatened, a flag for a zoo arm (#549)
+
+Owner, from the replayed zoo death ranger-2107852048 (Grip, game turn 276):
+after fleeing town the Borg landed on DL1 on the up staircase home, and the
+C Borg's stair scum (`borg_think_stair_scum`, grab DL1 items near the stairs,
+then go back up) picked up items while Grip bit it from 14 to 6 HP. It runs
+before `borg_caution` and checks only light. The same bug killed
+mage-1594647951 (the soldier). #539's switches do not help: the scum returns
+first.
+
+- `caution_stair_scum_threat` (0 compiled and in `harness/borg.txt`): 1 skips
+  the stair scum while the level is scary, the danger here is above
+  `caution_stair_scum_danger` (0), or the HP is below the maximum.
+- Flag off: smoke 3/3 identical; the six borg-play deaths replay key for key.
+  Flag on: the Ranger returns to town at turn 201 (alive at 20,000), the Mage
+  lives (85,841); the other four play identical keys.
+
+Left: a zoo arm against the control.
+
+## 2026-11-18: harness/borg.txt's parameter block in the file's own format (#552)
+
+Owner: the flags added since #479 were hard to read. The block is now in the
+format of the older part of the file: `### Section ###` headings (Default
+parameters, Combat, Healing and town shopping, Fleeing, Cornered, Breeders,
+Scary monsters), and for each setting a short description, a blank line, the
+setting and a blank line. Issue numbers stay, as a pointer; the history moved
+out. Every setting and value is unchanged (140 keys, none duplicated), and
+three games play identical keys with the old and the new file. New settings
+should follow this format, in the section they belong to.
+
+## 2026-11-17: flee only while the escape is real (#530)
+
+Owner: flee scary monsters while there is a chance; once there isn't, stand
+and fight. `caution_scary_stand` (compiled 0, shipped 1): in the dungeon a
+never-moving monster is never scary, and a scary level is fled only with an
+easy escape (stairs within the breeder stand's steps, or an escape item) or
+when no scary monster awake and as fast as the character exists; otherwise
+the scare's leave and flee are withdrawn and the Borg fights (the cornered
+mode boosts). Remade at every scan. Local: 18 starts, 2 deaths against 3,
+45 stands; the setting at 0 plays main's keys.
+- **Left:** the town (unchanged), and the escape itself: the owner notes
+  the Borg is not always good at escaping (e.g. leave the room and close the
+  door) — #532.
 
 ## 2026-11-18: reference-receipt compatibility decision (#375 / P5)
 

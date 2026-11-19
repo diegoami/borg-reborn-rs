@@ -18,7 +18,9 @@ class CharacterBuildTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.base = Path(self.tmp.name)
         self.env = {key: os.environ[key] for key in ('PATH', 'PYTHONPATH', 'LD_LIBRARY_PATH') if key in os.environ}
-        self.env.update(BORG_DEATH_RECORDS_DIR=str(self.base / 'natural'), RUN_TIMEOUT_SECONDS='30')
+        # The capture expects the reborn core's character (#606: the harness
+        # default is the borg-rs core).
+        self.env.update(BORG_CORE='reborn', BORG_DEATH_RECORDS_DIR=str(self.base / 'natural'), RUN_TIMEOUT_SECONDS='30')
         if 'BORG_CEMETERY_DIR' in os.environ:
             self.env['BORG_CEMETERY_DIR'] = os.environ['BORG_CEMETERY_DIR']
 
