@@ -250,6 +250,23 @@ borg_param_town_gold_reserve_percent = 0
 
 borg_param_town_digger_min_gold = 500
 
+# Projectiles and devices by class (#666, owner). town_missiles_percent: the
+# reserve of shots for the class's launcher, in percent of
+# borg_town_w_ranger_missiles, for any class; -1 = only the Ranger's (C).
+# town_devices_percent: what a wand, rod or staff is worth, in percent of
+# what it supplies. The class files set both, from class.txt's shooting and
+# device skills; town_missiles_percent stays -1 until a zoo pilot (#676;
+owner: flasks, always in the General Store, come first).
+# town_missiles_other_ranged_percent: with 5 or more flasks
+# of oil and attack-wand charges in the pack the shots weigh this percent
+# (owner: buy projectiles mostly when there are no flasks; the General
+# Store always stocks them); 100 = no change.
+# Change together: the shots' weight is borg_town_w_ranger_missiles x these.
+
+borg_param_town_missiles_percent = -1
+borg_param_town_missiles_other_ranged_percent = 100
+borg_param_town_devices_percent = 100
+
 # Fear cures to keep while not afraid (#516): beyond this many Potions of
 # Boldness the planner buys no more (it bought 35 and drank 7 on 18 games).
 # Higher keeps more; 0 = value them on the diminishing curve.
@@ -370,6 +387,17 @@ borg_param_caution_recall_wait_as_usual = 0
 borg_param_caution_recall_rest_turns = 500
 borg_param_caution_recall_prep_turns = 2
 
+# No rest for Recall right after a monster was near (#567).
+# caution_recall_rest_monster_turns = N (game turns, 0 = off): while Recall is
+# active, if an awake monster was known within caution_recall_rest_monster_distance
+# grids in the last N game turns, stay still one turn at a time instead of
+# resting, so a monster that comes back is seen before it bites. A monster
+# that never moves does not count.
+# Impact (18 classes-18 starts, 100,000 turns, main 3ba17e2c): 200: 7 of 18
+# play differently (sum of CL 97 against 101, the same one death).
+borg_param_caution_recall_rest_monster_turns = 0
+borg_param_caution_recall_rest_monster_distance = 20
+
 # Waiting for Recall in danger above avoidance x danger_multiplier, buy time,
 # in this order: restore mana (max SP above mana_maxsp and SP below max /
 # mana_divisor); Phase Door, if the landing test passes (phase_tolerance
@@ -483,6 +511,17 @@ borg_param_attack_town_dangerous_on_sight = 0
 borg_param_attack_town_dangerous_min_damage = 6
 borg_param_attack_town_dangerous_bonus_percent = 300
 
+# Follow-ups to the switch above (#637), each 0 = as #619. caster_walk: a
+# Mage or Necromancer below CL25 walks to them too, with half its mana.
+# wand: a wand (not Wonder) may be aimed at them in town, only at them.
+# bonus_whole: the bonus multiplies the danger term of the attack's value
+# too, so they are the target for certain. Each needs on_sight at 1.
+# Impact: not on the file's 6-game measure; see CALIBRATION (#637).
+
+borg_param_attack_town_dangerous_caster_walk = 0
+borg_param_attack_town_dangerous_wand = 0
+borg_param_attack_town_dangerous_bonus_whole = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
@@ -576,6 +615,17 @@ borg_param_caution_stairs_leave_on_monster = 0
 borg_param_caution_stairs_leave_danger_percent = 10
 borg_param_caution_stairs_leave_down = 1
 
+# No rest with a monster near (#615 rule a). recover_rest_monster_turns = N
+# (game turns, 0 = off): no rod, HP/SP or mana rest while an awake monster
+# that can move was known within recover_rest_monster_distance grids in the
+# last N game turns on this level (a monster that comes into view breaks a
+# rest; one that left the screen may come back).
+# Kept when confused, blind, hallucinating, stunned or afraid; the clock
+# clears when the monster that set it dies. The walk to a recovery grid waits too.
+# Impact (18 classes-18 starts, 100,000 turns): 100: 16 of 18 play differently; 200: 16 of 18.
+borg_param_recover_rest_monster_turns = 0
+borg_param_recover_rest_monster_distance = 20
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.
@@ -642,6 +692,20 @@ borg_param_escape_fox_form_fail = 25
 borg_param_escape_fox_form_min_steps = 3
 borg_param_escape_fox_form_speed = 10
 borg_param_escape_fox_form_stand_speed = 10
+
+# Fox Form for a Druid's walks in town (#620). With the switch at 1, a Druid
+# at most max_level, about to take a step of a walk in town (a shop, home, a
+# staircase, a flight) at least min_steps from its goal, casts Fox Form
+# (escape_fox_form_fail above sets the highest fail rate) and keeps it while
+# the walk lasts: it crosses town at double speed, and the town monsters get
+# half the turns. It changes back at the shop door (the game shuts it on a
+# fox) and before a blow. Raising min_steps casts on longer walks only (each
+# cast is a turn and mana); raising max_level keeps it longer. 0 = never (C).
+# Impact: set to 1, 1 of 6 test games play differently (the Druid).
+
+borg_param_escape_fox_form_town = 0
+borg_param_escape_fox_form_town_max_level = 20
+borg_param_escape_fox_form_town_min_steps = 10
 
 # On a scary level with no reachable staircase, attack the monster with the
 # best ranged attack before reading Recall or Phase Door (#539). 0 = C.
@@ -976,43 +1040,52 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
+borg_param_town_devices_percent@warrior = 75
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
+borg_param_town_devices_percent@mage = 150
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
+borg_param_town_devices_percent@druid = 100
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
+borg_param_town_devices_percent@priest = 125
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
+borg_param_town_devices_percent@necromancer = 150
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
+borg_param_town_devices_percent@paladin = 100
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
+borg_param_town_devices_percent@rogue = 135
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
+borg_param_town_devices_percent@ranger = 115
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 75
 borg_param_town_heal_reserve_hp_percent_blackguard = 150
+borg_param_town_devices_percent@blackguard = 100
 # ---- END CLASS FILES ----

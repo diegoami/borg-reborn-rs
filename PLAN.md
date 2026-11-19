@@ -32,8 +32,11 @@ gh pr create --base reviewed --head main --title "Milestone N review: <what it d
 `reviewed` is a long-lived branch at the last reviewed state of `main`, so
 the review PR's diff is exactly the milestone's work. Its body lists the
 tasks, what each verified, what was not checked and the open questions,
-and carries the prompt a reviewer needs. A reviewer (the owner, or a model
-of another family than the one that wrote the code) posts findings. The
+and carries the review prompt, pinned to an exact commit, posted on the
+PR. The owner names the reviewer (RULES 6; a milestone review: the owner,
+or a model of another family from the one that wrote most of the
+milestone), the session may run that review and post it, and the findings
+are posted on the PR. The
 **owner merges** the review PR (or tells a session to), which advances
 `reviewed`, and an annotated tag `mN` is recorded on the merge. The findings
 become issues in the next milestone.

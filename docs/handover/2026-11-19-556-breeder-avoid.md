@@ -27,7 +27,7 @@ The case **no longer replays** on any current build: main's shipped values chang
   - **While stoppable:** `breeder_stand` and `breeder_hunt` are true at any count and level, escape or not. The four flees stand down, and #503/#558's supporting settings follow: stand radius, boosts, no rest while hunting, the acid fear. Danger at or above the HP stops the stand for that think.
   - **Once not stoppable:** the level is lost to the breeders until a new level (`breeders_lost`, noted `# Breeders cannot be stopped …`).
   - The engine's cap (100) counts **live** breeders (`num_repro` drops when one dies), so a capped colony is not a finished one.
-- **The flight** (`caution_breeder_avoid` and companions, from the first design) now blocks only while fleeing or the level is scary:
+- **The flight** (`caution_breeder_avoid` and companions, from the first design) now blocks only while fleeing or the level is scary. A mark is put on every grid a breeder is seen on, so a moving breeder leaves a trail:
   - the flows go around the remembered colony;
   - `caution_breeder_avoid_fight_through` takes the route through it when there is no other;
   - `caution_breeder_through_turns` stands back-away down while fighting through;
@@ -67,6 +67,30 @@ The case **no longer replays** on any current build: main's shipped values chang
   - the Half-Elf Ranger 1739161339: it shot a mouse where main fled, and Fang killed it 5,000 turns later in a diverged game;
   - in the stoppable arm only, the Human Necromancer 300036923: a wild cat, not a breeder, in a diverged game.
 - **Levels:** the CL sum falls because two control games were unusually good (CL12 and CL8); the median change is 0.
+
+
+**The 18 local starts** (`harness/run.sh … SEED RACE CLASS 100000 exact,menu`; the zoo's `classes-18` cycles races differently, so its numbers differ, e.g. a reviewer on all-Half-Elf starts counted 4 "levels lost" where this set has 3):
+
+| seed | race | class |
+|---|---|---|
+| 1085222502 | Human | Warrior |
+| 1548306106 | Human | Mage |
+| 102023799 | Human | Druid |
+| 1569794094 | Human | Priest |
+| 300036923 | Human | Necromancer |
+| 766958386 | Human | Paladin |
+| 1502695781 | Human | Rogue |
+| 226104090 | Human | Ranger |
+| 1472012981 | Human | Blackguard |
+| 1019921749 | Half-Elf | Warrior |
+| 801785300 | Half-Elf | Mage |
+| 934061548 | Half-Elf | Druid |
+| 592068863 | Half-Elf | Priest |
+| 1574344917 | Half-Elf | Necromancer |
+| 661409606 | Half-Elf | Paladin |
+| 1381972077 | Half-Elf | Rogue |
+| 1739161339 | Half-Elf | Ranger |
+| 888896726 | Half-Elf | Blackguard |
 
 **For the owner:**
 - the zoo pilot (borg-zoo#411, re-pinned to this head);
