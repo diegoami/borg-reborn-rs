@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## No detection prayer by panel at low level (#685)
 
-The registry now holds **2197** parameters (2196 after #682; one added).
+The registry now holds **2200** parameters (2199 after #625; one added).
 
 - **`light_detect_evil_spell_min_level`** (0 = C): below this character
   level, `borg_check_light`'s panel check casts no Detect Evil, Detect
@@ -28,6 +28,127 @@ The registry now holds **2197** parameters (2196 after #682; one added).
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:365` |
+
+## The Phase Door rule's fight counts mana and fail rates (#625)
+
+The registry now holds **2199** parameters (2198 before; one added).
+Owner, 2026-11-19: the "can I win" test should check that a caster still has
+the mana, and that its spells are likely enough to work.
+
+- `escape_phase_lost_mana` (compiled 1; the rule ships with
+  `escape_phase_lost_test` 0, the danger test, so this is not used in
+  shipped play, #661): with `escape_phase_lost_test` 1 or 2, the attack `borg_attack` would choose counts at its true damage
+  times its success chance: a spell's fail rate (`borg_spell_fail_rate`,
+  noted when it passes `borg_spell_okay_fail` in the ranking,
+  `spell_okay_fail_noted`), a wand's or rod's `borg_activate_failure` per
+  mille / 10. It is used only for the uses the Borg can pay for: casts =
+  current SP / the spell's mana, **all of it** (owner, 2026-11-19: "count
+  all the mana for fighting, at the beginning we have no choice, and later
+  on we will get potions to recover it": the class's escape reserve is not
+  set aside); the reserve cast's real mana, not the faked one; a wand's
+  charges; one zap for a rod (it recharges over many turns). After that, the
+  best true damage of another attack that needs no mana, never the winner
+  itself (`est_fallback`), or melee against that monster (`fight_turns`).
+  0 = #612's test (the chosen attack at full damage every turn). Staves and
+  activations are counted at full damage, with no limit. Melee damage is
+  expected (the Borg's hit estimate), a missile's nominal: compared as they
+  are (docs/PHASE-DOOR.md). Whirlwind Attack, Maim Foe and Vampire Strike
+  now report their true damage (`dmg_best`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `escape_phase_lost_mana` | 1 | flag | 0–1 | `borg_escape.rs:940` |
+
+
+## Throws on melee's footing (#568)
+
+The registry now holds **2198** parameters (2197 after #691; one added).
+From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
+Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
+one flask and Grip fled.
+
+- **`attack_throw_as_melee`** (flag, 0 = C). With 1, `borg_attack_aux_object`
+  rates a throw on melee's footing:
+  - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
+    and `:1296`): dice average plus to-dam, times `2 + weight / 12` for a
+    THROWING object, times 3 for EXPLODE. A flask of oil: 22, not 2.
+    `best_throw` ranks the objects by it; its gates (worth money, no damage)
+    keep the dice average, so `ranged_means` is unchanged;
+  - **hit chance**: the engine's (`throw_hit_percent`,
+    `player-attack.c:121-219`): the throwing skill (`BI_THT`, 3/2 of it for a
+    non-THROWING object), the object's to-hit (and the player's for a
+    THROWING one), less the distance; 12% always hit, 5% always miss. It is
+    the base chance: the engine halves it against a target that is not
+    obvious (`chance_of_missile_hit`), which this leaves out (review of #687).
+    The
+    damage is scaled by it, as melee scales by its own chance. C used the bow
+    skill, the launcher's to-hit and its multiplier, and zeroed the damage
+    below 80% of the armour;
+  - **danger term**: melee's (`melee_score`): `attack_melee_danger_horizon`
+    (2 turns) at full damage, divided by `attack_melee_partial_danger_divisor`
+    for a partial kill above `attack_melee_partial_min_level`. C gave a throw
+    the bolt's (`attack_bolt_danger_horizon`, 1 turn, partial damage). This is
+    where melee's bigger bonus came from.
+  - So "melee's footing" holds for the damage, the hit chance and the danger
+    term; the point-blank divisor and the kill multiplier below stay the
+    bolt's (review of #687).
+  - Unchanged: the point-blank divisor for an adjacent non-unique
+    (`attack_arrow_point_blank_divisor`, 5; Rogue 3, Ranger 2), the bolt's
+    kill multiplier, the missile conservation above CL20. No separate term for
+    a monster fleeing: monsters flee from damage, which the engine's damage
+    now carries.
+- **classes-18, 100,000 game turns, local, plus `809881907` Human Priest**
+  (19 games), base `e5cc5469`: switch off plays keys identical to main in
+  19 of 19. Switch on: 17 of 19 play differently; flasks thrown 456 to 630,
+  melee attacks 1,025 to 1,000; deaths 1 to 2 (the shared poison death, and
+  the Priest walking in the dark next to an unseen floating eye at CL2,
+  paralysed to death: no attack choice involved); sum of max CL 110 to 104;
+  sum of max DL 41 to 40. Not a measure of benefit (RULES 14).
+- **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
+  turn 1,881, main melees (44); with the switch on the Borg throws a flask
+  (80). Both arms survive the scene; with `keep-load-rng` too.
+## The hunt removed in steps (#691)
+
+The registry now holds **2197** parameters (2196 before; one added).
+Owner, 2026-11-19, on #691: "what if we got rid of it?" and "for me this
+flow kill is a candidate for rewrite".
+
+- **`kill_flow_mode`** (mode, 0 = C): what `borg_flow_kill` may walk to.
+  `borg_attack` (melee, throws, spells, shots at what is in reach) is not
+  affected at any value, nor `borg_flow_kill_aim`, `_corridor`, `_direct`.
+  - 0: as C.
+  - 1: only the targeted hunts: breeders while a hunt for them applies
+    (#503, #558), dangerous town monsters (#619, #637). Their own settings
+    are unchanged, but #503's melee hunt, which walks to any monster at C,
+    walks only to breeders at 1 (as #558's caster hunt already did): for
+    Warriors, Paladins, Rogues and Blackguards mode 1 narrows the targets,
+    not only the calls (review of #695).
+  - 2: no out-of-view call (the "chase old monsters" calls: `nearness` 250
+    and `max_range + 1`, `viewable` false).
+  - 3: never.
+- **The analysis behind it** is on #691: in 19 games below CL10 the hunt
+  walks 263 times against about 22,000 exploring steps; the out-of-view
+  call finds a target in 516 calls and walks in 27.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
+  base `a87b4c96`** (19 games):
+
+| mode | deaths | sum of max CL | sum of max DL | walks to a fight | kills | games that differ from 0 |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 | 0 | 108 | 40 | 305 | 1,427 | — |
+| 1 | 2 | 100 | 39 | 26 | 1,234 | 15 |
+| 2 | 0 | 111 | 41 | 302 | 1,475 | 11 |
+| 3 | 1 | 104 | 41 | 0 | 1,268 | 16 |
+
+  The deaths are not hunting decisions:
+  - `1502695781` (modes 1 and 3, same turn): the Borg rests again and again
+    while an invisible clear icky thing touches it ("# Invisible monster
+    nearby", "Resting to recover HP/SP"), #462's pattern on the borg-rs core;
+  - `1472012981` (mode 1): at HP 12/46, unable to flow to an up stair, it
+    searches for secret doors until a soldier arrives.
+  Below CL10 the hunt is worth about 10% of the kills and a few levels. Mode
+  2 loses nothing here. CL10 and above are not measured locally (no game gets
+  there); that is the zoo pilot's question. Not a measure of benefit (RULES
+  14).
 
 ## Phase Door and flasks of oil by class (#682)
 
@@ -2156,48 +2277,48 @@ the vendored mechanics model:
 | `escape_landing_samples` | 100 | count | 1–1000 | `borg_escape.rs:363` |
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
-| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1178` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1240` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1249` |
-| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1292` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1342` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1351` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1354` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1355` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1360` |
-| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1368` |
-| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1401` |
-| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1365` |
-| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1403` |
-| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1404` |
-| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1407` |
-| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:1408` |
-| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1411` |
-| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1412` |
-| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:1414` |
-| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1415` |
-| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1416` |
-| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1417` |
-| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1419` |
-| `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1423` |
-| `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1433` |
+| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1266` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1328` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1337` |
+| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1380` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1428` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1439` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1442` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1443` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1448` |
+| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1469` |
+| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1487` |
+| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1505` |
+| `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1513` |
+| `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1514` |
+| `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1517` |
+| `escape_sauron_danger_tenths` | 30 | tenths | 0–100 | `borg_escape.rs:1518` |
+| `escape_sauron_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1521` |
+| `escape_deep_unique_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1522` |
+| `escape_deep_unique_depth` | 95 | depth | 0–127 | `borg_escape.rs:1524` |
+| `escape_deep_unique_max_hp` | 550 | hp | 0–10000 | `borg_escape.rs:1525` |
+| `escape_unique_danger_tenths` | 17 | tenths | 0–100 | `borg_escape.rs:1526` |
+| `escape_ordinary_danger_tenths` | 15 | tenths | 0–100 | `borg_escape.rs:1527` |
+| `escape_emergency_fail` | 15 | percent | 0–100 | `borg_escape.rs:1529` |
+| `escape_initial_fail_discount` | 10 | percent | 0–100 | `borg_escape.rs:1533` |
+| `escape_emergency_fail_extra` | 9 | percent | 0–100 | `borg_escape.rs:1542` |
 | `escape_emergency_phase_tolerance` | 75 | count | 0–1000 | `borg_escape.rs:1464` |
 | `escape_emergency_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1464` |
-| `escape_last_ditch_max_level` | 10 | level | 1–51 | `borg_escape.rs:1354` |
-| `escape_last_ditch_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1355` |
-| `escape_last_ditch_dimension_fail` | 90 | percent | 0–100 | `borg_escape.rs:1357` |
-| `escape_critical_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1369` |
-| `escape_last_ditch_phase_max_level` | 10 | level | 1–51 | `borg_escape.rs:1383` |
-| `escape_last_ditch_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1384` |
-| `escape_last_ditch_phase_fail` | 15 | percent | 0–100 | `borg_escape.rs:1386` |
-| `escape_endgame_stay_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1401` |
-| `escape_endgame_stay_unique_count` | 3 | count | 1–9 | `borg_escape.rs:1403` |
-| `escape_endgame_stay_min_depth` | 97 | depth | 0–127 | `borg_escape.rs:1404` |
-| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1413` |
-| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:1415` |
-| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1416` |
-| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1417` |
-| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1418` |
+| `escape_last_ditch_max_level` | 10 | level | 1–51 | `borg_escape.rs:1571` |
+| `escape_last_ditch_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1572` |
+| `escape_last_ditch_dimension_fail` | 90 | percent | 0–100 | `borg_escape.rs:1574` |
+| `escape_critical_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1586` |
+| `escape_last_ditch_phase_max_level` | 10 | level | 1–51 | `borg_escape.rs:1600` |
+| `escape_last_ditch_phase_hp_divisor` | 10 | divisor | 1–1000 | `borg_escape.rs:1601` |
+| `escape_last_ditch_phase_fail` | 15 | percent | 0–100 | `borg_escape.rs:1603` |
+| `escape_endgame_stay_danger_tenths` | 25 | tenths | 0–100 | `borg_escape.rs:1618` |
+| `escape_endgame_stay_unique_count` | 3 | count | 1–9 | `borg_escape.rs:1620` |
+| `escape_endgame_stay_min_depth` | 97 | depth | 0–127 | `borg_escape.rs:1621` |
+| `escape_mage_danger_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1630` |
+| `escape_mage_max_sp` | 20 | sp | 0–10000 | `borg_escape.rs:1632` |
+| `escape_mage_min_level` | 45 | level | 1–51 | `borg_escape.rs:1633` |
+| `escape_teleport_unique_danger_tenths` | 13 | tenths | 0–100 | `borg_escape.rs:1634` |
+| `escape_teleport_ordinary_danger_tenths` | 11 | tenths | 0–100 | `borg_escape.rs:1635` |
 | `escape_teleport_phase_tolerance` | 50 | count | 0–1000 | `borg_escape.rs:1444` |
 | `escape_teleport_phase_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1444` |
 | `escape_phase_antisummon_delay` | 50 | turns | 0–100000 | `borg_escape.rs:1445` |
@@ -3650,4 +3771,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4823` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:5014` |
