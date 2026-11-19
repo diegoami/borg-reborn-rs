@@ -338,6 +338,17 @@ borg_param_caution_flee_recall_chase_distance = 6
 
 borg_param_caution_flee_recall_gate_below_depth = 1
 
+# Fleeing: where caution_flee_recall = 0 or the depth gate above holds a
+# flight's Recall back, the danger here at or above this percent of the
+# current HP allows it after all, beside the breeder and chaser exceptions
+# (#587). Only the flight's own read; the stand tests ignore it. 0 = off.
+# Change together: with caution_flee_recall and
+# caution_flee_recall_gate_below_depth; it does nothing unless one holds
+# Recall back.
+# Impact: off here; not measured yet (a zoo pilot is pending).
+
+borg_param_caution_flee_recall_danger_percent = 0
+
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
 # game turns x the game ratio of the jump, prepare the spells for arriving.
@@ -508,6 +519,7 @@ borg_param_town_heal_speed_percent = 66
 # Impact: set to 1, 5 of 6 test games play differently.
 
 borg_param_recover_rest_arms_see_invis = 0
+
 
 
 ### Fleeing ###

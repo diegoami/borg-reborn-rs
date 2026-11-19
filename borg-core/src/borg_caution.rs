@@ -2170,7 +2170,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_CDEPTH) >= 1
         && !stairs_before_recall(st)
         && !ranged_before_recall(st)
-        && recall_escape_allowed(st)
+        && recall_escape_allowed(st, Some(pos_danger))
         && borg_recall(st)
     {
         // Note
@@ -2303,7 +2303,9 @@ pub(crate) fn ranged_candidate(st: &BorgState, kill: &crate::borg_flow_kill::Bor
 /// move, within
 /// `caution_flee_recall_chase_distance`). Otherwise the scroll waits 15-35
 /// turns next to the monster it flees and is gone for the trip home.
-fn recall_escape_allowed(st: &BorgState) -> bool {
+/// `danger`: the danger here, when the caller has it (the flight's read);
+/// the stand tests pass `None` and get no danger exception.
+fn recall_escape_allowed(st: &BorgState, danger: Option<i32>) -> bool {
     // borg-reborn-rs (#557, owner): shallower than
     // `caution_flee_recall_gate_below_depth` (2: on DL1) the stairs are a
     // short walk, so the exception is needed whatever `caution_flee_recall`
@@ -2312,8 +2314,19 @@ fn recall_escape_allowed(st: &BorgState) -> bool {
         p(Param::caution_flee_recall) != 0,
         st.borg.tr(BI_CDEPTH),
         p(Param::caution_flee_recall_gate_below_depth),
-        || recall_exception(st),
+        || recall_exception(st) || danger.is_some_and(|d| recall_danger_reaches(d, st.borg.tr(BI_CURHP))),
     )
+}
+
+/// borg-reborn-rs (#587, owner): "Recall only from a certain danger". The
+/// danger here at or above `caution_flee_recall_danger_percent` of the
+/// current HP allows the flight's Recall where the gate holds it (0 = off).
+fn recall_danger_reaches(danger: i32, hp: i32) -> bool {
+    danger_reaches_percent(danger, hp, p(Param::caution_flee_recall_danger_percent))
+}
+
+fn danger_reaches_percent(danger: i32, hp: i32, percent: i32) -> bool {
+    percent > 0 && i64::from(danger) * 100 >= i64::from(hp.max(1)) * i64::from(percent)
 }
 
 /// The breeder or chaser exception (#559).
@@ -2433,7 +2446,7 @@ fn easy_escape_with(st: &BorgState, steps: i32, up: i32, down: i32) -> bool {
         || st.borg.tr(BI_ATELEPORT) > 0
         || st.borg.tr(BI_ATELEPORTLVL) > 0
         || st.borg.tr(BI_AESCAPE) > 0
-        || (st.borg.tr(BI_RECALL) > 0 && recall_escape_allowed(st))
+        || (st.borg.tr(BI_RECALL) > 0 && recall_escape_allowed(st, None))
 }
 
 /// borg-reborn-rs (#530): whether a scary level is fled (C) or stood.
@@ -3670,6 +3683,16 @@ mod scary_stand_tests {
         assert!(recall_escape_with(5, 0, 5, 3), "a level swamped by breeders");
         assert!(recall_escape_with(0, 3, 5, 3), "chased by several monsters");
         assert!(!recall_escape_with(100, 100, 0, 0), "both limits off");
+    }
+
+    #[test]
+    fn a_flight_recall_from_a_danger_share_of_the_hp() {
+        assert!(!danger_reaches_percent(1000, 10, 0), "0 = off");
+        assert!(danger_reaches_percent(50, 100, 50), "at the share");
+        assert!(!danger_reaches_percent(49, 100, 50));
+        assert!(danger_reaches_percent(200, 100, 150), "above the HP");
+        assert!(danger_reaches_percent(1, 0, 100), "no HP left");
+        assert!(!danger_reaches_percent(i32::MAX, i32::MAX, 101), "no overflow");
     }
 
     #[test]
