@@ -250,6 +250,23 @@ borg_param_town_gold_reserve_percent = 0
 
 borg_param_town_digger_min_gold = 500
 
+# Projectiles and devices by class (#666, owner). town_missiles_percent: the
+# reserve of shots for the class's launcher, in percent of
+# borg_town_w_ranger_missiles, for any class; -1 = only the Ranger's (C).
+# town_devices_percent: what a wand, rod or staff is worth, in percent of
+# what it supplies. The class files set both, from class.txt's shooting and
+# device skills; town_missiles_percent stays -1 until a zoo pilot (#676;
+owner: flasks, always in the General Store, come first).
+# town_missiles_other_ranged_percent: with 5 or more flasks
+# of oil and attack-wand charges in the pack the shots weigh this percent
+# (owner: buy projectiles mostly when there are no flasks; the General
+# Store always stocks them); 100 = no change.
+# Change together: the shots' weight is borg_town_w_ranger_missiles x these.
+
+borg_param_town_missiles_percent = -1
+borg_param_town_missiles_other_ranged_percent = 100
+borg_param_town_devices_percent = 100
+
 # Fear cures to keep while not afraid (#516): beyond this many Potions of
 # Boldness the planner buys no more (it bought 35 and drank 7 on 18 games).
 # Higher keeps more; 0 = value them on the diminishing curve.
@@ -631,6 +648,19 @@ borg_param_escape_phase_adjacent_rule = 0
 borg_param_escape_phase_lost_test = 1
 borg_param_escape_phase_lost_danger_percent = 100
 
+# Ranged first against immobile attackers (#646, owner: "always choose ranged
+# against immobile but annoying monsters"). 1 = next to a known monster that
+# never moves and attacks (mushroom patch, mold, floating eye), confused or
+# carrying something to throw or shoot (then once per monster and level;
+# confused up to three times),
+# the Borg steps out of its reach and
+# does not cure confusion next to it; not when the monsters that move are as
+# dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
+# times, borg-cemetery#75).
+# Change together: works with what the Borg carries to throw (#649, #652).
+
+borg_param_caution_ranged_vs_immobile = 0
+
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
 # - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,
@@ -919,6 +949,14 @@ borg_param_caution_town_never_scary = 0
 
 borg_param_caution_town_scary_levels_less = 3
 
+# In town, while scary or fleeing, a path step no more dangerous than the
+# Borg's own grid is never refused (#647). C refuses any grid above the
+# flow's fear: a thief next to a low-level Borg makes its grid and every
+# grid toward the stairs too dangerous, and it cannot leave. 0 = C.
+# Impact: see CALIBRATION (#647).
+
+borg_param_caution_town_flee_no_worse = 0
+
 
 ### The C Borg's own settings ###
 
@@ -994,43 +1032,52 @@ borg_param_attack_preference_warrior_projectile_permille = 1200
 borg_param_attack_preference_warrior_thrown_permille = 1200
 borg_param_town_heal_curve_scale_percent_warrior = 50
 borg_param_town_heal_reserve_hp_percent_warrior = 100
+borg_param_town_devices_percent@warrior = 75
 # mage (harness/borg_mage.txt)
 borg_param_attack_preference_mage_spell_permille = 2000
 borg_param_attack_preference_mage_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_mage = 150
 borg_param_town_heal_reserve_hp_percent_mage = 300
+borg_param_town_devices_percent@mage = 150
 # druid (harness/borg_druid.txt)
 borg_param_attack_preference_druid_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_druid = 125
 borg_param_town_heal_reserve_hp_percent_druid = 250
+borg_param_town_devices_percent@druid = 100
 # priest (harness/borg_priest.txt)
 borg_param_attack_preference_priest_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent_priest = 125
 borg_param_town_heal_reserve_hp_percent_priest = 250
+borg_param_town_devices_percent@priest = 125
 # necromancer (harness/borg_necromancer.txt)
 borg_param_attack_preference_necromancer_spell_permille = 1800
 borg_param_attack_preference_necromancer_device_permille = 1200
 borg_param_town_heal_curve_scale_percent_necromancer = 150
 borg_param_town_heal_reserve_hp_percent_necromancer = 300
+borg_param_town_devices_percent@necromancer = 150
 # paladin (harness/borg_paladin.txt)
 borg_param_attack_preference_paladin_melee_permille = 1800
 borg_param_attack_preference_paladin_spell_permille = 1200
 borg_param_town_heal_curve_scale_percent_paladin = 75
 borg_param_town_heal_reserve_hp_percent_paladin = 150
+borg_param_town_devices_percent@paladin = 100
 # rogue (harness/borg_rogue.txt)
 borg_param_attack_preference_rogue_projectile_permille = 1300
 borg_param_attack_preference_rogue_thrown_permille = 1600
 borg_param_attack_arrow_point_blank_divisor_rogue = 3
 borg_param_town_heal_curve_scale_percent_rogue = 100
 borg_param_town_heal_reserve_hp_percent_rogue = 200
+borg_param_town_devices_percent@rogue = 135
 # ranger (harness/borg_ranger.txt)
 borg_param_attack_preference_ranger_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor_ranger = 2
 borg_param_town_heal_curve_scale_percent_ranger = 100
 borg_param_town_heal_reserve_hp_percent_ranger = 200
+borg_param_town_devices_percent@ranger = 115
 # blackguard (harness/borg_blackguard.txt)
 borg_param_attack_preference_blackguard_melee_permille = 1600
 borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 75
 borg_param_town_heal_reserve_hp_percent_blackguard = 150
+borg_param_town_devices_percent@blackguard = 100
 # ---- END CLASS FILES ----
