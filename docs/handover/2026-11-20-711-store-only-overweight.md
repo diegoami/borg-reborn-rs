@@ -23,7 +23,7 @@ Phase Door 5.
 **Owner, 2026-11-20:** "only when it weighs too much they should stash the
 object with less value at home, untile they are not overcarrying again".
 
-**What was done:** `town_store_only_overweight`, compiled 0 and shipped 0.
+**What was done:** `town_store_only_overweight`, compiled 0. **Shipped 1** (owner, 2026-11-20: "it is a no brainer, turn the switch on"); `smoke-borg-rs` re-recorded.
 - With it on, a pack stack goes home only while the pack is over its weight
   allowance.
 - The pack is already visited lowest keep value per weight first, so the
@@ -54,6 +54,6 @@ the pack light. At 250 it stored 327. The owner chose the logic change over
 the value.
 
 **Left / for the owner:**
-- The zoo pilot, and whether to ship 1.
+- The zoo pilot (borg-zoo#457) measures it; it ships 1 already, by the owner's decision.
 - #712 (oil stashed at home) is very likely the same cause: oil stores fall
   from 34 to the overweight ones.

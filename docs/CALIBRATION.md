@@ -16,7 +16,8 @@ The registry now holds **2201** parameters (2200 before; one added).
 Owner, 2026-11-20: "only when it weighs too much they should stash the
 object with less value at home, untile they are not overcarrying again".
 
-- **`town_store_only_overweight`** (compiled 0, shipped 0). With it on, the
+- **`town_store_only_overweight`** (compiled 0, **shipped 1**: owner,
+  2026-11-20, "it is a no brainer, turn the switch on"). With it on, the
   live town planner (`dispositions`, `borg_town_utility.rs`) moves a pack
   stack to the Home only while the pack is over its weight allowance. The
   pack is visited lowest keep value per weight first, so the least valuable
