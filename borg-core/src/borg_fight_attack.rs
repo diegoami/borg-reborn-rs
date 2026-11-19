@@ -4736,6 +4736,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     let mut winning_raw = 0;
     let mut winning_damage = 0;
     let mut winning_kills = 0.0;
+    let mut whirlwind = (0, 0, 0.0);
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
@@ -4749,6 +4750,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
         if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; winning_kills = st.fight_attack.kill_best; }
+        if g == BF_SPELL_WHIRLWIND_ATTACK as i32 { whirlwind = (raw, st.fight_attack.dmg_best, st.fight_attack.kill_best); }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4760,6 +4762,16 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
         return false;
     };
     let b_n = ranking.utility;
+
+    // borg-reborn-rs (#684, owner): Whirlwind whenever it can hit enough
+    // adjacent monsters.
+    let (b_g, b_n) = if b_g != BF_SPELL_WHIRLWIND_ATTACK as i32 && whirlwind_first(st, whirlwind.0) {
+        (winning_raw, winning_damage, winning_kills) = whirlwind;
+        borg_note(st, "# Whirlwind Attack: monsters adjacent (#684)");
+        (BF_SPELL_WHIRLWIND_ATTACK as i32, whirlwind.0)
+    } else {
+        (b_g, b_n)
+    };
 
     // borg-reborn-rs (#584): an estimate only (`borg_attack_estimate`): the
     // winner's true damage, nothing done.
@@ -4819,6 +4831,28 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 
     /* Success */
     true
+}
+
+/// borg-reborn-rs (#684, owner): "use Whirlwind when he can". With
+/// `attack_whirlwind_min_adjacent` (0 = off) or more monsters adjacent and
+/// Whirlwind Attack castable (`whirlwind_raw`, its simulated utility, is
+/// positive only then), the Borg casts it instead of the ranked attack: a
+/// SWEEP of (CL + 10) / 15 blows to each adjacent monster (class.txt). Breeders
+/// that surround the Borg count like any other monster.
+fn whirlwind_first(st: &BorgState, whirlwind_raw: i32) -> bool {
+    let min = param(Param::attack_whirlwind_min_adjacent);
+    if min <= 0 || whirlwind_raw <= 0 {
+        return false;
+    }
+    let adjacent = (0..st.flow.temp_n.max(0) as usize)
+        .map(|i| st.flow.temp_at(i))
+        .filter(|&(y, x)| dist_to(st, x, y) <= 1 && grid(st, x, y).kill != 0)
+        .count();
+    whirlwind_adjacent_enough(adjacent, min)
+}
+
+fn whirlwind_adjacent_enough(adjacent: usize, min: i32) -> bool {
+    min > 0 && adjacent >= min as usize
 }
 
 /// borg-reborn-rs (#584): the true damage (no kill bonus, no danger bonus,
@@ -4893,6 +4927,21 @@ mod town_kill_tests {
         assert!(dangerous_blow(MONBLOW_HURT, 6, 6), "the rogue, 1d6");
         assert!(!dangerous_blow(MONBLOW_HURT, 3, 6), "the merchant, 1d3");
         assert!(!dangerous_blow(MONBLOW_HURT, 1, 6), "a cat or a dog");
+    }
+}
+
+#[cfg(test)]
+mod whirlwind_tests {
+    use super::whirlwind_adjacent_enough;
+
+    /// #684: Whirlwind first from `attack_whirlwind_min_adjacent` adjacent
+    /// monsters; 0 is off.
+    #[test]
+    fn whirlwind_needs_enough_adjacent() {
+        assert!(whirlwind_adjacent_enough(2, 2));
+        assert!(whirlwind_adjacent_enough(5, 2), "surrounded by breeders");
+        assert!(!whirlwind_adjacent_enough(1, 2));
+        assert!(!whirlwind_adjacent_enough(8, 0), "off");
     }
 }
 

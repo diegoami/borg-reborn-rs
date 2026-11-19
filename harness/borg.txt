@@ -529,6 +529,9 @@ borg_param_attack_town_dangerous_bonus_whole = 0
 # 0 = C. Impact: see CALIBRATION (#684).
 
 borg_param_attack_combat_regen_berserk = 0
+# #684 (owner): Whirlwind Attack whenever at least this many monsters are
+# adjacent (0 = off; the Blackguard 2, harness/borg_blackguard.txt).
+borg_param_attack_whirlwind_min_adjacent = 0
 
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
@@ -1003,6 +1006,10 @@ borg_param_caution_town_never_scary = 0
 # turns), 0: 0 deaths, sum of CL 99; 3: 0, 102; 6: 1, 99; 11: 2, 98.
 
 borg_param_caution_town_scary_levels_less = 3
+# #684 (owner): every monster on the scary list is scary for this many
+# fewer character levels, set per class (the Blackguard 3: "3 levels
+# harder than the warrior"; harness/borg_blackguard.txt). 0 here.
+borg_param_caution_scary_hardness = 0
 
 # In town, while scary or fleeing, a path step no more dangerous than the
 # Borg's own grid is never refused (#647). C refuses any grid above the
@@ -1135,4 +1142,6 @@ borg_param_attack_preference_blackguard_spell_permille = 1400
 borg_param_town_heal_curve_scale_percent_blackguard = 75
 borg_param_town_heal_reserve_hp_percent_blackguard = 150
 borg_param_town_devices_percent@blackguard = 100
+borg_param_caution_scary_hardness@blackguard = 3
+borg_param_attack_whirlwind_min_adjacent@blackguard = 2
 # ---- END CLASS FILES ----

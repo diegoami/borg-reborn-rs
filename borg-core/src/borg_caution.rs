@@ -3348,6 +3348,14 @@ pub(crate) fn town_scary_levels_less(r_idx: usize) -> i32 {
     if crate::engine::race(r_idx).level == 0 { p(Param::caution_town_scary_levels_less) } else { 0 }
 }
 
+/// borg-reborn-rs (#684, owner): how many character levels sooner any race
+/// on the named list stops being scary: the town lowering (#622) plus the
+/// class's `caution_scary_hardness` ("3 levels harder than the warrior", set
+/// per class in harness/borg_<class>.txt).
+pub(crate) fn scary_levels_less(r_idx: usize) -> i32 {
+    town_scary_levels_less(r_idx) + p(Param::caution_scary_hardness)
+}
+
 /// borg-reborn-rs (#503): whether the C Borg's hard-coded scary monsters by
 /// character level (`borg_near_monster_type`) and the low-level door scares
 /// (`borg_update`, `borg_messages`) mark the level scary.

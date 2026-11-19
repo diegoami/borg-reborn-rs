@@ -8,3 +8,8 @@ borg_param_town_heal_curve_scale_percent = 75
 borg_param_town_heal_reserve_hp_percent = 150
 # #666 (owner): devices by device skill (class.txt; 24 = 100).
 borg_param_town_devices_percent = 100
+# #684 (owner): Blackguards are 3 levels "harder" than the warrior on the
+# scary list and cast Whirlwind Attack whenever 2 or more monsters are
+# adjacent.
+borg_param_caution_scary_hardness = 3
+borg_param_attack_whirlwind_min_adjacent = 2

@@ -2853,8 +2853,9 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
                     breeder_count,
                     breeder_stand,
                     // borg-reborn-rs (#622): a town monster is scary for
-                    // caution_town_scary_levels_less fewer character levels.
-                    levels_less: crate::borg_caution::town_scary_levels_less(usize::from(r_idx)),
+                    // caution_town_scary_levels_less fewer character levels;
+                    // #684: every listed monster caution_scary_hardness fewer.
+                    levels_less: crate::borg_caution::scary_levels_less(usize::from(r_idx)),
                 };
                 if crate::scary_list::is_scary(list, usize::from(r_idx), engine::race_base_name(usize::from(r_idx)), who) {
                     named_scare = true;
