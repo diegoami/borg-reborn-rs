@@ -623,12 +623,11 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
     for cap in [TRAPS, MONSTERS, MAP, ILLUMINATE] { curve(cap, ordinary, journey.turns * UNIT); }
-    // borg-reborn-rs (#650, owner): seeing invisible monsters is low priority
-    // while shallow: above `town_invisible_min_depth` (max depth) it weighs
-    // `town_invisible_shallow_percent` of the ordinary weight. A Scroll of
-    // Detect Invisible tied with Phase Door at CL1 (borg-cemetery#75).
-    let invisible_weight = invisible_weight(ordinary, t(BI_MAXDEPTH), param(Param::town_invisible_min_depth), param(Param::town_invisible_shallow_percent));
-    curve(INVISIBLE, invisible_weight, journey.turns * UNIT);
+    // borg-reborn-rs (#650, owner): seeing invisible monsters is worth
+    // `town_invisible_value_percent` of the ordinary weight. A read of
+    // Detect Invisible counts as `borg_town_support_turns` of service, so one
+    // scroll tied with a Phase Door at CL1 (borg-cemetery#75).
+    curve(INVISIBLE, scale_percent(ordinary, param(Param::town_invisible_value_percent)), journey.turns * UNIT);
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -1191,21 +1190,12 @@ mod class_heal_tests {
     }
 
     #[test]
-    fn seeing_invisible_is_low_priority_while_shallow() {
-        // #650: off at the compiled values, a share of the weight above the depth.
-        assert_eq!(invisible_weight(55_000, 1, 0, 100), 55_000);
-        assert_eq!(invisible_weight(55_000, 1, 10, 10), 5_500);
-        assert_eq!(invisible_weight(55_000, 9, 10, 10), 5_500);
-        assert_eq!(invisible_weight(55_000, 10, 10, 10), 55_000, "at the depth: the ordinary weight");
-        assert_eq!(invisible_weight(55_000, 1, 10, 0), 0);
+    fn seeing_invisible_is_worth_a_share_of_the_ordinary_weight() {
+        // #650: the value multiplier, as town_recall_value_percent.
+        assert_eq!(scale_percent(55_000, 100), 55_000);
+        assert_eq!(scale_percent(55_000, 10), 5_500);
+        assert_eq!(scale_percent(55_000, 0), 0);
     }
-}
-
-/// borg-reborn-rs (#650): the INVISIBLE capability's weight: `percent` of the
-/// ordinary weight while the max depth is above `min_depth` (0 = always the
-/// ordinary weight).
-fn invisible_weight(ordinary: i64, max_depth: i64, min_depth: i32, percent: i32) -> i64 {
-    if max_depth < i64::from(min_depth) { ordinary * i64::from(percent.max(0)) / 100 } else { ordinary }
 }
 
 /// borg-reborn-rs (#557, owner): a Word of Recall's value (the walk it
