@@ -957,7 +957,9 @@ pub fn borg_leave_level(st: &mut BorgState, mut bored: bool) -> bool {
 
     /* Climb if deeper than I want to be */
     // borg-reborn-rs (#447): use the same overlay as preparedness.
-    let n = crate::errands_plan::effective_no_deeper(st.cfg(BORG_NO_DEEPER));
+    // #693: and the borg.txt depth cap.
+    let n = crate::errands_plan::effective_no_deeper(st.cfg(BORG_NO_DEEPER))
+        .min(crate::borg_prepared::depth_cap_limit(st).unwrap_or(i32::MAX));
     if g == 0 && st.borg.tr(BI_CDEPTH) > n {
         borg_note(st, &format!("# Going up a bit (No Deeper than {n})."));
         g = -1;
