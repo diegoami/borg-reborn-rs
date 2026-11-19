@@ -522,6 +522,14 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# Throws on melee's footing (#568): 1 = a thrown object is rated with the
+# engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
+# chance with the throwing skill, no launcher, and melee's danger term
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
+# Impact: see CALIBRATION (#568).
+
+borg_param_attack_throw_as_melee = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below

@@ -10,6 +10,48 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Throws on melee's footing (#568)
+
+The registry now holds **2195** parameters (2194 after #644; one added).
+From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
+Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
+one flask and Grip fled.
+
+- **`attack_throw_as_melee`** (flag, 0 = C). With 1, `borg_attack_aux_object`
+  rates a throw on melee's footing:
+  - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
+    and `:1296`): dice average plus to-dam, times `2 + weight / 12` for a
+    THROWING object, times 3 for EXPLODE. A flask of oil: 22, not 2.
+    `best_throw` ranks the objects by it; its gates (worth money, no damage)
+    keep the dice average, so `ranged_means` is unchanged;
+  - **hit chance**: the engine's (`throw_hit_percent`,
+    `player-attack.c:121-219`): the throwing skill (`BI_THT`, 3/2 of it for a
+    non-THROWING object), the object's to-hit (and the player's for a
+    THROWING one), less the distance; 12% always hit, 5% always miss. The
+    damage is scaled by it, as melee scales by its own chance. C used the bow
+    skill, the launcher's to-hit and its multiplier, and zeroed the damage
+    below 80% of the armour;
+  - **danger term**: melee's (`melee_score`): `attack_melee_danger_horizon`
+    (2 turns) at full damage, divided by `attack_melee_partial_danger_divisor`
+    for a partial kill above `attack_melee_partial_min_level`. C gave a throw
+    the bolt's (`attack_bolt_danger_horizon`, 1 turn, partial damage). This is
+    where melee's bigger bonus came from.
+  - Unchanged: the point-blank divisor for an adjacent non-unique
+    (`attack_arrow_point_blank_divisor`, 5; Rogue 3, Ranger 2), the bolt's
+    kill multiplier, the missile conservation above CL20. No separate term for
+    a monster fleeing: monsters flee from damage, which the engine's damage
+    now carries.
+- **classes-18, 100,000 game turns, local, plus `809881907` Human Priest**
+  (19 games), base `e5cc5469`: switch off plays keys identical to main in
+  19 of 19. Switch on: 17 of 19 play differently; flasks thrown 456 to 630,
+  melee attacks 1,025 to 1,000; deaths 1 to 2 (the shared poison death, and
+  the Priest walking in the dark next to an unseen floating eye at CL2,
+  paralysed to death: no attack choice involved); sum of max CL 110 to 104;
+  sum of max DL 41 to 40. Not a measure of benefit (RULES 14).
+- **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
+  turn 1,881, main melees (44); with the switch on the Borg throws a flask
+  (80). Both arms survive the scene; with `keep-load-rng` too.
+
 ## No rest while breeders are known (#644)
 
 The registry now holds **2194** parameters (2193 after #556; one added).
@@ -3596,4 +3638,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4823` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4907` |
