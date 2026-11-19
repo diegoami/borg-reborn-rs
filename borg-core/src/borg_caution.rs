@@ -2618,13 +2618,19 @@ fn only_parked(enqueued: usize, parked: usize) -> bool {
 /// buy-time escapes, fighting because recalling)? With
 /// `caution_recall_wait_as_usual` it plays by its ordinary rules instead:
 /// the countdown keeps running on a new level (`effect-handler-general.c`).
-/// Resting or waiting when safe is kept either way.
+/// Resting or waiting when safe is kept either way. Only on DL2 and deeper:
+/// in town and on DL1 a staircase crosses between town and dungeon, and the
+/// Recall would fire on the other side and take the Borg back (owner, #627).
 pub(crate) fn recall_restricts(st: &BorgState) -> bool {
-    recall_restricts_with(st.borg.goal.recalling != 0, p(Param::caution_recall_wait_as_usual) != 0)
+    recall_restricts_with(
+        st.borg.goal.recalling != 0,
+        p(Param::caution_recall_wait_as_usual) != 0,
+        st.borg.tr(BI_CDEPTH),
+    )
 }
 
-fn recall_restricts_with(recalling: bool, as_usual: bool) -> bool {
-    recalling && !as_usual
+fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
+    recalling && (!as_usual || depth <= 1)
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -3766,10 +3772,13 @@ mod scary_stand_tests {
 
     #[test]
     fn a_pending_recall_restricts_only_without_the_switch() {
-        assert!(recall_restricts_with(true, false), "C: Recall-only rules");
-        assert!(!recall_restricts_with(true, true), "the switch: the ordinary rules");
-        assert!(!recall_restricts_with(false, false), "no Recall pending");
-        assert!(!recall_restricts_with(false, true));
+        assert!(recall_restricts_with(true, false, 5), "C: Recall-only rules");
+        assert!(!recall_restricts_with(true, true, 5), "the switch: the ordinary rules on DL5");
+        assert!(!recall_restricts_with(true, true, 2), "and on DL2");
+        assert!(recall_restricts_with(true, true, 1), "not on DL1: the up staircase leads to town");
+        assert!(recall_restricts_with(true, true, 0), "not in town: the down staircase leads to the dungeon");
+        assert!(!recall_restricts_with(false, false, 5), "no Recall pending");
+        assert!(!recall_restricts_with(false, true, 0));
     }
 
     #[test]

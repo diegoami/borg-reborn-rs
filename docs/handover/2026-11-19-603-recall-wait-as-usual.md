@@ -10,6 +10,7 @@ Owner: "I do not want it to behave differently after Word of Recall." While `goa
   - fighting because recalling (`borg_fight_attack.rs`).
 
   `buy_time_for_recall` is skipped. Kept: resting or waiting in place when safe, the town buffs before the jump, and "not bored".
+- Only on DL2 and deeper (owner, after the first measurement): in town and on DL1 a staircase crosses between town and dungeon. In one game a Mage that had read Recall in town to go down walked to the down staircase instead of waiting; had it got there, the Recall would have fired on DL1 and taken it back to town. A Borg fleeing up from DL1 would be taken down to its deepest level.
 - The measurement is in the PR (classes-18, the switch at 0 against 1).
 
 Left: a zoo pilot. Related: #582 and #583 (what the Borg does during the wait), #567 (no rest with a monster near).

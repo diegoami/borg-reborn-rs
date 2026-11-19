@@ -353,8 +353,10 @@ borg_param_caution_flee_recall_danger_percent = 0
 # Waiting: 1 = while Word of Recall counts down, play by the ordinary rules:
 # flee by stairs or Teleport Level (the countdown keeps running on the new
 # level), use the ordinary escapes and attacks, treat a scary level as
-# usual; still rest or wait in place when safe (#603). 0 = C's Recall-only
-# rules (the buy-time escapes of caution_recall_*).
+# usual; still rest or wait in place when safe (#603). Only on DL2 and
+# deeper: in town and on DL1 a staircase crosses between town and dungeon,
+# and the Recall would take the Borg back. 0 = C's Recall-only rules (the
+# buy-time escapes of caution_recall_*).
 # Impact: off here; see the PR for classes-18.
 
 borg_param_caution_recall_wait_as_usual = 0
