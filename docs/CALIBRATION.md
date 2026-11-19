@@ -24,8 +24,8 @@ The registry now holds **2154** parameters (2153 after #592; one added). Owner, 
 "Could we try a setting where we always fight monsters in town, I have never
 got killed by monsters in town." All of it is in the vendored core, so it
 plays with the borg-rs core (`borg_reborn_core = borg-rs`, shipped since #479,
-or `BORG_CORE=borg-rs`); a harness run without `BORG_CORE` plays the reborn
-core, which has no scare and is not affected.
+or `BORG_CORE=borg-rs`; since #606 also a harness run without `BORG_CORE`);
+the reborn core (`BORG_CORE=reborn`) has no scare and is not affected.
 
 The measurement: 18 starts, the 9 classes x seeds 2001 and 2002, race 0,
 100,000 game turns (not borg-zoo's classes-18 starts). Each was run as
@@ -184,8 +184,8 @@ breeders only, and only while they have half their mana, so they cast rather
 than melee (`borg_flow_kill_direct`, the dig to the closest monster after
 3000 turns on a level, is unchanged and has no such filter). All of it is in
 the vendored core, so it plays with the borg-rs core (`borg_reborn_core =
-borg-rs`, shipped since #479, or `BORG_CORE=borg-rs`); a harness run without
-`BORG_CORE` plays the reborn core, which it does not change. Two new
+borg-rs`, shipped since #479, or `BORG_CORE=borg-rs`); the reborn core
+(`BORG_CORE=reborn`) is unchanged. Two new
 switches, compiled 0, shipped 1 and 50:
 
 | parameter | default | unit | range | source |
@@ -811,7 +811,7 @@ The core selector accepts exactly `reborn`/`0` and `borg-rs`/`1`.
 `BORG_CORE` takes precedence over `borg_reborn_core` in borg.txt; absent
 both, the compiled fallback is the original reborn core. Since #479 the shipped
 `harness/borg.txt` selects `borg-rs`, so a game reading it plays borg-rs's core;
-`harness/run.sh` still selects reborn when `BORG_CORE` is unset. Invalid selectors,
+since #606 `harness/run.sh` plays it too when `BORG_CORE` is unset (`BORG_CORE=reborn` selects the reborn core). Invalid selectors,
 including an empty environment value, fail with source/value diagnostics
 and exit status 2 instead of silently selecting another measured arm.
 
