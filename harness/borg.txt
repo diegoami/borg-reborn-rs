@@ -525,6 +525,28 @@ borg_param_recover_rest_arms_see_invis = 0
 
 ### Fleeing ###
 
+# Rest at the stairs (#614). recover_rest_reach_stairs = N: on a flight to a
+# staircase at most N flow steps away the Borg does not rest (rod, HP or
+# mana), nor walk to a recovery spot, until it stands on the staircase;
+# potions and cures still work. A farther staircase is a long walk: it rests
+# as before. Raising N holds rests on longer flights. _memory: how long the
+# commitment outlives a re-plan (a new monster) on the same level. caution_stairs_leave_on_monster =
+# 1: in the dungeon, standing on a staircase while it still needs to recover
+# (HP or SP below the maximum), it takes the stairs as soon as a monster
+# threatens it (danger at least _danger_percent of the current HP), instead
+# of fighting; _down = 1 takes a down staircase too, 0 only an up one. 0 = C (it could rest mid-flight, 11 steps short of the
+# stairs, and be caught there).
+# Change together: the two make one rule (reach the stairs, rest there,
+# leave when something comes).
+# Impact: recover_rest_reach_stairs 20: 3 of 6 test games play differently;
+# caution_stairs_leave_on_monster 1: 2 of 6 (up only: 2 of 6); both: 3 of 6.
+
+borg_param_recover_rest_reach_stairs = 0
+borg_param_recover_rest_reach_stairs_memory = 10
+borg_param_caution_stairs_leave_on_monster = 0
+borg_param_caution_stairs_leave_danger_percent = 10
+borg_param_caution_stairs_leave_down = 1
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.

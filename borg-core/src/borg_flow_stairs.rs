@@ -146,6 +146,8 @@ fn commit_and_step(st: &mut BorgState, who: &std::ffi::CStr, why: i32) -> bool {
     if !borg_flow::borg_flow_commit(st, who, why) {
         return false;
     }
+    // borg-reborn-rs (#614): a flight to a staircase (rests wait for it).
+    st.borg.flight_to_stairs = true;
 
     /* Take one step */
     if !borg_flow::borg_flow_old(st, why) {
