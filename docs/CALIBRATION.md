@@ -18,18 +18,21 @@ each now a switch (compiled and written 0 = #619's behaviour), each needing
 `attack_town_dangerous_on_sight = 1`:
 
 - `attack_town_dangerous_caster_walk`: a Mage or Necromancer below
-  `borg_flow_kill`'s caster level (CL25 in town) walks to a dangerous town
-  monster too, with at least half its mana (#558's condition); otherwise its
-  town hunt is breeders only, and no town race breeds.
+  `borg_flow_kill`'s caster level (CL25 in town; not only below the town
+  hunt's CL20 gate) walks to a dangerous town monster too, with at least
+  half its mana (#558's condition); otherwise its town hunt is breeders
+  only, and no town race breeds.
 - `attack_town_dangerous_wand`: in town a wand (not Wonder) may be aimed
-  when a dangerous town monster is known, and only those are worth its
-  charge (`town_wand` zeroes the others in `borg_launch_damage_one`). In
-  town the wand's presence is checked before C's paranoia roll, which draws
-  the game's RNG: a first version rolled it with no wand and changed 17 of
-  18 games without aiming one.
+  when a dangerous town monster was seen within `attack_max_target_age`,
+  and only those are worth its charge (`town_wand` zeroes the others in
+  `borg_launch_damage_one`). In town the wand's presence is checked before
+  C's paranoia roll, which draws the Borg's own RNG (carried across thinks):
+  a first version rolled it with no wand and changed 17 of 18 games without
+  aiming one.
 - `attack_town_dangerous_bonus_whole`: `attack_town_dangerous_bonus_percent`
   multiplies the danger term of the attack's value too (`melee_score`, the
-  bolt value in `borg_launch_bolt_aux_hack`), not only the damage.
+  bolt value in `borg_launch_bolt_aux_hack`), not only the damage; in melee
+  after the partial-kill division.
 
 On borg-zoo's 18 classes-18 starts (100,000 turns, main `3ba17e2c`, the zoo
 adapter's steps), with `attack_town_dangerous_on_sight = 1`: each switch alone
@@ -54,7 +57,11 @@ scary until a level), the same starts:
 
 At N = 6 the three still change nothing. At N = 11 (no list scare left in
 town) they change 5 games: 4 levels more, 5 more kills of the four, 2 thefts
-fewer, the same death. Direction only.
+fewer, the same death. Kill on sight alone kills fewer of the four than
+no kill on sight at N = 6 (13 against 17) and N = 11 (22 against 23):
+unexplained, 18 games. Direction only: a lead for a zoo arm, not a claim
+(RULES 14). These figures are from before the review's fixes (the caster
+walk now also reaches CL20-24).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -3237,4 +3244,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4786` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4793` |

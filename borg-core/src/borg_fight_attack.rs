@@ -390,11 +390,15 @@ pub(crate) fn town_caster_walk() -> bool {
 /// borg-reborn-rs (#637): with `attack_town_dangerous_wand`, a wand may be
 /// aimed in town when a dangerous town monster (killed on sight) is known;
 /// only those are worth a charge (`town_wand` in `borg_launch_damage_one`).
+/// Known means seen within `attack_max_target_age`, as `borg_attack`'s own
+/// targets (review of #653, finding 3: a record can outlive the monster).
 fn town_wand_allowed(st: &BorgState) -> bool {
     param(Param::attack_town_dangerous_wand) != 0
         && (1..usize::try_from(st.kills.nxt).unwrap_or(0)).any(|k| {
-            let r = st.kills.kills[k].r_idx;
-            r != 0 && town_kill_on_sight(st, usize::from(r))
+            let kill = &st.kills.kills[k];
+            kill.r_idx != 0
+                && borg_timer(st, kill.when) <= param(Param::attack_max_target_age)
+                && town_kill_on_sight(st, usize::from(kill.r_idx))
         })
 }
 
@@ -591,7 +595,8 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
         p /= param(Param::attack_melee_partial_danger_divisor);
     }
 
-    // borg-reborn-rs (#637): the town bonus on the danger term too.
+    // borg-reborn-rs (#637): the town bonus on the danger term too, after
+    // the partial-kill division above (the bonus multiplies what is added).
     p = town_danger_bonus(st, usize::from(st.kills.kills[k as usize].r_idx), p);
 
     /* Add the danger-bonus to the damage */
@@ -3094,8 +3099,10 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
         return 0;
     }
     // borg-reborn-rs (#637): in town, no wand of this kind means no
-    // paranoia roll either (the roll draws the game's RNG: without the wand
-    // the game must play as with the switch off).
+    // paranoia roll either. The roll draws the Borg's own RNG (`rand_local`,
+    // swapped in around every think and carried across thinks, borg.rs
+    // `generate_keypress`), so one extra roll shifts every later random Borg
+    // decision: without the wand the Borg must play as with the switch off.
     if town && borg_slot(st, TV_WAND as i32, sval) < 0 {
         return 0;
     }
