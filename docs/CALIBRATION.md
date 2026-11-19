@@ -38,7 +38,7 @@ breeders or leave the level asap".
 - **Not changed:** the Recall rests (a Borg waiting for Recall is leaving
   already); #558's own skip of the rest for the hunt, though with this rule
   on its note (`# Not resting: breeders to hunt.`) gives way to this one.
-  #556's avoidance of known colonies is a separate open PR (#632).
+  #556's avoidance of known colonies (#632) is its own switch.
 - **Kept when impaired:** confused, blind, hallucinating or stunned, the rest
   is kept (#615 rule a: a confused Borg that walked instead died in lava).
 
