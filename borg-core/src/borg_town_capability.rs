@@ -622,7 +622,12 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // borg-reborn-rs (#452): Speed is an escape-like reserve, per potion
     // (see effect_supply_linear), not a buff against the trip's turns.
     for id in [TELEPORT, LEVEL, OTHER, SPEED] { curve(id, risk(BORG_TOWN_W_ESCAPE), exposure); }
-    for cap in [TRAPS, MONSTERS, INVISIBLE, MAP, ILLUMINATE] { curve(cap, ordinary, journey.turns * UNIT); }
+    for cap in [TRAPS, MONSTERS] { curve(cap, ordinary, journey.turns * UNIT); }
+    // borg-reborn-rs (#663, owner): Magic Mapping, Detect Invisible and Light
+    // are "something you never buy": a read counted as borg_town_support_turns
+    // of service, so each was worth about a Phase Door and they took a quarter
+    // of the gold. A carried or found copy keeps a small value (kept, not sold).
+    for cap in [INVISIBLE, MAP, ILLUMINATE] { curve(cap, low_value(ordinary), journey.turns * UNIT); }
     curve(MANA, if t(BI_MAXSP) > 0 { risk(BORG_TOWN_W_MAGIC) } else { 0 }, t(BI_MAXSP).max(1) * exposure);
     curve(IDENTIFY, if t(BI_ALL_NEED_ID) > 0 { cfg(BORG_TOWN_W_KNOWLEDGE) * UNIT } else { 0 }, -UNIT);
     curve(GAIN_EXPERIENCE, cfg(BORG_TOWN_W_RESTORE) * UNIT, -UNIT);
@@ -650,7 +655,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     // are worth only up to town_fear_cure_count in the pack (0 = the curve).
     let fear_cap = i64::from(param(Param::town_fear_cure_count));
     for (cap, condition) in [(CONFUSION, BI_ISCONFUSED), (BLIND, BI_ISBLIND), (FEAR, BI_ISAFRAID)] {
-        curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { ordinary }, if t(condition) > 0 {
+        // borg-reborn-rs (#663, owner): a fear cure (Boldness) is worth very
+        // little while not afraid.
+        let calm = if cap == FEAR { low_value(ordinary) } else { ordinary };
+        curve(cap, if t(condition) > 0 { cfg(BORG_TOWN_W_RESTORE) * UNIT } else { calm }, if t(condition) > 0 {
             let timed = match cap { CONFUSION => TMD_CONFUSED, BLIND => TMD_BLIND, _ => TMD_AFRAID };
             -(i64::from(engine::player_timed(timed)).max(1) * UNIT)
         } else if cap == FEAR && fear_cap > 0 { -fear_cap * UNIT } else { exposure });
@@ -1183,6 +1191,23 @@ mod class_heal_tests {
         assert_eq!(heal_curve_scale_percent(99), param(Param::town_heal_curve_scale_percent));
         assert_eq!(heal_reserve_hp_percent(99), param(Param::town_heal_reserve_hp_percent));
     }
+
+    #[test]
+    fn what_the_borg_never_buys_keeps_a_small_value() {
+        // #663: one percent, above zero so a carried copy is kept.
+        assert_eq!(low_value(55_000), 550);
+        assert!(low_value(55_000) > 0);
+        let scroll = coverage(&[MAP as i64, low_value(55_000), 1_100_000, 0, 0], 1_000_000);
+        let phase = coverage(&[PHASE as i64, 55_000, 1_100, 0, 0], 1_000);
+        assert!(scroll * 50 < phase, "{scroll} against a Phase Door's {phase}");
+    }
+}
+
+/// borg-reborn-rs (#663, owner): the weight of what the Borg never buys
+/// (Magic Mapping, Detect Invisible, Light, a fear cure while not afraid): one
+/// percent of the ordinary weight, so a copy it carries still counts.
+fn low_value(ordinary: i64) -> i64 {
+    ordinary / 100
 }
 
 /// borg-reborn-rs (#557, owner): a Word of Recall's value (the walk it
