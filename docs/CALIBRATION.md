@@ -10,6 +10,42 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## An unseen attacker (#697)
+
+The registry now holds **2199** parameters (2196 before; three added).
+Owner, 2026-11-19: "it leaves if it senses an invisible thing and goes rest
+somewhere else, and use healing potions". The default core's version of
+#462.
+
+- **Why:** "Something touches you" makes no monster (`borg_locate_kill`
+  returns none), so the danger at the Borg's grid stays about 0: the rest is
+  "safe" and `borg_heal` never fires. The only trace was regional fear of 4
+  at DL1–4. In #691's measurement (`kill_flow_mode` 3) a CL3 Rogue rested
+  through 23 touches of a clear icky thing and died with 2 Cure Light Wounds.
+- **`recover_unseen_attack_turns`** (game turns, 0 = C): an unseen attack
+  ("Something/It" hits or misses, recorded in `borg_update`) counts this
+  long. No HP, rod or mana rest within **`recover_unseen_attack_distance`**
+  (10) grids of where it struck. Hurt or short of mana there, the Borg walks
+  with the ordinary flow to a known grid at least that far, a corridor or
+  doorway first (#544's test), and rests there. Struck again at least that
+  far from the last attack (it followed), or nowhere to walk: it leaves the
+  level.
+- **`recover_unseen_heal_hp_percent`** (0 = off): while the attack is
+  recent, below this share of maximum HP drink Cure Light, Cure Serious,
+  then Cure Critical Wounds.
+- **The case** (1502695781 Human Rogue, with #695's `kill_flow_mode` 3, on a
+  scratch merge): with 500 game turns and 50%, struck once at game turn
+  22,631, the Borg walks 10 steps away and is not touched there again; it
+  lives to the 100,000-turn cap at CL6 (off: dead at 23,285). With the heal
+  at 100% it drinks a Cure Light Wounds the next turn.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
+  base `a87b4c96`:** switches off: keys identical to main in 19 of 19, smoke
+  identical. On (500, 10, 50): 10 of 19 differ; deaths 0 and 0; sum of max
+  CL 108 to 111; sum of max DL 40 to 43; 199 steps away in 22 episodes in 10
+  games (at most 5 episodes in a game, no loop), 3 leaves; the heal never
+  fired (no game was below 50% HP with an unseen attack recent). Not a
+  measure of benefit (RULES 14).
+
 ## Phase Door and flasks of oil by class (#682)
 
 The registry now holds **2196** parameters (2194 before; two added). Owner,
