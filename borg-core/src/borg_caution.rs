@@ -1512,6 +1512,13 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
         )
 }
 
+/// borg-reborn-rs (#713): an immobile creature kept at range is next to the
+/// Borg.
+fn kept_at_range_next_to(st: &BorgState) -> bool {
+    immobile_attacker_next_to(st, st.borg.c.y, st.borg.c.x)
+        .is_some_and(|i| immobile_kept_at_range(st, usize::from(st.kills.kills[i].r_idx)))
+}
+
 /// The first known immobile attacker next to grid (`y`, `x`), by kill index.
 fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
@@ -1937,6 +1944,12 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
 
+    // borg-reborn-rs (#713): a creature kept at range is stepped away from
+    // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
+    // stairs it could reach).
+    if st.borg.goal.fleeing && kept_at_range_next_to(st) && immobile_step_away(st) {
+        return true;
+    }
     if !st.borg.goal.fleeing {
         // borg-reborn-rs (#646): away from an immobile attacker first.
         if immobile_step_away(st) {

@@ -425,6 +425,12 @@ fn spread_blocked(
 
     /* flowing into monsters */
     if ag.kill != 0 {
+        // borg-reborn-rs (#713): never through an immobile creature kept at
+        // range: a step into its grid is a blow.
+        if crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
+            return true;
+        }
+
         /* Avoid if Desperate */
         if b.status.desperate {
             return true;
@@ -1140,6 +1146,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
 
         /* can't attack someone if afraid! */
         if st.borg.tr(BI_ISAFRAID) != 0 || st.borg.tr(BI_CRSFEAR) != 0 {
+            return false;
+        }
+
+        // borg-reborn-rs (#713): no walking into an immobile creature kept
+        // at range (a flow made before it was known may still lead there).
+        if crate::borg_caution::immobile_kept_at_range(st, r_idx as usize) {
             return false;
         }
 
