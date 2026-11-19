@@ -718,6 +718,12 @@ pub(crate) fn phase_door(
     danger: Option<i32>,
     cast: impl FnOnce(&mut BorgState) -> bool,
 ) -> bool {
+    // borg-reborn-rs (#584, owner): the one rule, before the site's own check.
+    if param(Param::escape_phase_adjacent_rule) != 0 {
+        if let Some(acted) = adjacent_rule(st, site, danger) {
+            return acted;
+        }
+    }
     let checked = match check {
         PhaseCheck::Landing { tolerance, horizon } => caution_phase(st, site, tolerance, horizon),
         PhaseCheck::MonsterNear => {
@@ -741,6 +747,69 @@ pub(crate) fn phase_door(
         borg_note(st, &note);
     }
     done
+}
+
+/// borg-reborn-rs (#584, owner): what the rule decides at a Phase Door site.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum PhaseVerdict {
+    /// An enemy on an adjacent square and the fight looks lost: the site's
+    /// own check and Phase Door follow.
+    Phase,
+    /// An enemy on an adjacent square, the fight not lost: counter-attack.
+    Fight,
+    /// No enemy on an adjacent square: the best attack (necessarily at
+    /// range), else a boost.
+    Shoot,
+}
+
+/// The rule (`escape_phase_adjacent_rule`): Phase Door only with an awake
+/// enemy on an adjacent square and the fight judged lost, the danger here at
+/// or above `escape_phase_lost_danger_percent` of the current HP.
+fn phase_verdict(adjacent: bool, danger: i32, hp: i32, lost_percent: i32) -> PhaseVerdict {
+    if !adjacent {
+        PhaseVerdict::Shoot
+    } else if i64::from(danger) * 100 >= i64::from(hp) * i64::from(lost_percent) {
+        PhaseVerdict::Phase
+    } else {
+        PhaseVerdict::Fight
+    }
+}
+
+/// borg-reborn-rs (#584, owner): the rule at `site`. `None`: Phase Door is
+/// allowed, the site's own check follows. `Some(acted)`: no Phase Door; the
+/// Borg attacked (its best attack by its own estimate, `borg_attack`: with
+/// no enemy adjacent only a ranged one can be chosen) or, failing that and
+/// with an awake monster in view, boosted itself (`cornered_boost`: Speed
+/// first, then Heroism, Berserk Strength, Bless, ...).
+fn adjacent_rule(st: &mut BorgState, site: PhaseSite, danger: Option<i32>) -> Option<bool> {
+    let label = site.label();
+    let hp = st.borg.tr(BI_CURHP);
+    let here = danger.unwrap_or_else(|| borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false));
+    let percent = param(Param::escape_phase_lost_danger_percent);
+    let verdict = phase_verdict(adjacent_awake(st), here, hp, percent);
+    match verdict {
+        PhaseVerdict::Phase => {
+            borg_note(st, &format!("# Phase ({label}): enemy adjacent, the fight looks lost (danger {here}, HP {hp}): phase allowed"));
+            return None;
+        }
+        PhaseVerdict::Fight => borg_note(st, &format!("# Phase ({label}): no, enemy adjacent but the fight is not lost (danger {here}, HP {hp}): fight")),
+        PhaseVerdict::Shoot => borg_note(st, &format!("# Phase ({label}): no, no enemy on an adjacent square: attack at range or boost")),
+    }
+    if crate::borg_fight_attack::borg_attack(st, false) {
+        return Some(true);
+    }
+    if awake_in_view(st) && crate::borg_caution::cornered_boost(st, &format!("Phase ({label}) boost")) {
+        return Some(true);
+    }
+    Some(false)
+}
+
+/// An awake known monster in view (#584's boost waits for one).
+fn awake_in_view(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && st.cave.grid(kill.pos.x, kill.pos.y).info & BORG_VIEW != 0
+    })
 }
 
 /// The note of a Phase Door the Borg did (#584).
@@ -1639,6 +1708,17 @@ mod phase_decision_tests {
         for site in ALL {
             assert!(seen.insert(site.label()), "{:?}", site);
         }
+    }
+
+    /// #584 (owner): Phase Door only with an enemy adjacent and the fight
+    /// lost; adjacent and not lost: fight; nothing adjacent: shoot or boost.
+    #[test]
+    fn the_rule_phases_only_adjacent_and_lost() {
+        assert_eq!(phase_verdict(false, 999, 10, 100), PhaseVerdict::Shoot, "nothing adjacent, however dangerous");
+        assert_eq!(phase_verdict(true, 10, 10, 100), PhaseVerdict::Phase, "danger at the HP");
+        assert_eq!(phase_verdict(true, 9, 10, 100), PhaseVerdict::Fight, "danger below the HP");
+        assert_eq!(phase_verdict(true, 5, 10, 50), PhaseVerdict::Phase, "a lower percent phases sooner");
+        assert_eq!(phase_verdict(true, 0, 10, 0), PhaseVerdict::Phase, "0 percent: any adjacent enemy");
     }
 
     /// #584: the note of a Phase Door names the site, the HP, the danger

@@ -531,6 +531,17 @@ borg_param_recover_rest_arms_see_invis = 0
 
 borg_param_escape_phase_adjacent_only = 1
 
+# The owner's Phase Door rule (#584), at every Phase Door site
+# (docs/PHASE-DOOR.md), before the site's own check: Phase Door only with an
+# awake enemy on an adjacent square and the fight judged lost (danger at or
+# above lost_danger_percent of the current HP). With an enemy adjacent and
+# the fight not lost, counter-attack; with none adjacent, the best attack at
+# range, else a boost (Speed first) with an awake monster in view. 0 = each
+# site's own check. Off here until a zoo pilot measures it.
+
+borg_param_escape_phase_adjacent_rule = 0
+borg_param_escape_phase_lost_danger_percent = 100
+
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
 # - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,

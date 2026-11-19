@@ -106,10 +106,32 @@ own.
 - **Twitchy think has no check**, so #539's "a monster next to me" does not
   apply to it.
 
-## Next (#584, owner 2026-11-18)
+## The owner's rule (#584, `escape_phase_adjacent_rule`)
 
-Behind a switch, compiled off: Phase Door only with an enemy on an adjacent
-square, and only when the Borg judges it cannot win the fight there.
-Otherwise attack with magic or missiles (the best by the Borg's own
-estimate); if it can't, boost itself first (Speed, Heroism, Bless, …). Every
-site above then asks that rule instead of its threshold.
+Owner, 2026-11-18: "to use Phase Door, enemies must be on the square next to
+you"; otherwise attack with magic or missiles, and if that is not possible,
+boost yourself (Speed included); only in close quarters, when the Borg
+thinks it cannot win, Phase Door.
+
+With `escape_phase_adjacent_rule = 1` (compiled 0, shipped 0), `phase_door`
+applies one rule at every site above, before the site's own check:
+
+| situation | verdict | what the Borg does |
+|---|---|---|
+| no awake enemy on an adjacent square | **no Phase Door** | its best attack (`borg_attack`, the Borg's own ranking; with nothing adjacent only a ranged attack can win it: missiles, throws, wands, rods, spells, activations); if it has none and an awake monster is in view, a boost (`cornered_boost`: Speed first, then Heroism, Berserk Strength, Bless, Monster Confusion against a big monster); else nothing here |
+| an enemy adjacent, the fight not lost | **no Phase Door** | counter-attack (`borg_attack`), else the boost |
+| an enemy adjacent, the fight lost | **Phase Door allowed** | the site's own check (landing test, …) and cast follow as before |
+
+"Lost" is `danger ≥ escape_phase_lost_danger_percent` (100) % of the
+current HP: the Borg could die this turn. The danger is the one the site
+measured (in `borg_escape`, the least dangerous grid around the Borg;
+elsewhere the danger where it stands). Notes: `# Phase (<site>): no, no
+enemy on an adjacent square: attack at range or boost`, `…: no, enemy
+adjacent but the fight is not lost (danger d, HP h): fight`, `…: enemy
+adjacent, the fight looks lost (…): phase allowed`.
+
+The stuck (twitchy) phases follow the rule too: with no enemy adjacent the
+Borg no longer phases to get unstuck.
+
+Whether the rule saves or costs games is the zoo pilot's question
+(RULES 14): the threshold of 100 % is a hypothesis.

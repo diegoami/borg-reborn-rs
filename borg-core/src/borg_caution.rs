@@ -3174,7 +3174,7 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
-fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
