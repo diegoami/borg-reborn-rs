@@ -34,7 +34,7 @@ them if a monster appears. In any form, not only a fox.
   games stay identical. Its one death (a Priest among breeders) comes 23,000
   turns after its last leave.
 - **Re-reviews of #616 (head `8a427494`), fixed after merging main
-  `4acf071f` (registry 2164):**
+  `4acf071f`, then main `6e85440e` with #601 (registry 2165):**
   - N1: while rising, the leave rule takes no down staircase (the holds of
     #483 and #557), and when it decides, `choose_stairs` is skipped, so a
     noted departure is never cancelled;
@@ -44,7 +44,8 @@ them if a monster appears. In any form, not only a fox.
     stairs;
   - a held rest is noted once a think (the rod, HP and mana rests all ask);
   - N2 (citations): set with #601's `check-param-citations.py --fix` after
-    #610 is merged.
+    merging main with #610 (this branch's code moved the reads in
+    `borg_caution.rs`, `borg_recover.rs` and `borg_flow.rs`).
 - **Pilot:** borg-zoo#365, `reborn-rest-stairs-pilot`, run 44462654412, on
   `8a427494` (before these fixes; with the switches at their pilot values
   the fixes change only rising descents and breeder exits, which ship off).

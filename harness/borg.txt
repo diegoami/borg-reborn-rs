@@ -750,9 +750,10 @@ borg_param_caution_breeder_exit_distance = 6
 
 borg_param_caution_scary_named_monsters = 1
 
-# The named scary monsters, by class and character level (#518); none = the
-# C Borg's compiled list. harness/run.sh and the zoo copy the file next to
-# borg.txt and pin its hash.
+# The named scary monsters, by class and character level (#518), and the
+# monsters to ignore (#621, flag ignore; on whatever the switch above says);
+# none = the C Borg's compiled list, with no ignore lines. harness/run.sh
+# and the zoo copy the file next to borg.txt and pin its hash.
 
 borg_scary_list = scary_monsters.txt
 
@@ -787,6 +788,16 @@ borg_param_caution_scary_latch = 1
 # Impact: off here; set to 1, it fires in 3 of 6 test games.
 
 borg_param_caution_scary_unlatch_kill = 0
+
+# 1 = the level stops being scary once a named-list or damage-rule scary
+# monster is known hurt or afraid (the thresholds below), or is killed, with
+# the latch on or off; forgetting it is not enough (#593). 0 = off.
+# Change together: needs caution_scary_stand = 1, and reads the thresholds
+# caution_scary_hurt_percent and caution_scary_afraid.
+# Impact: set to 1, 14 of 18 classes-18 games play differently (it clears
+# the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
+
+borg_param_caution_scary_unlatch_calmed = 0
 
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, scares no more: Grip fled from one
