@@ -53,7 +53,11 @@ rise in 2. A first version without the mana condition doubled the town
 time: each cast sent the Druid to rest for its mana. With the review's
 fixes (no fox on a staircase: the first version took the stairs as a fox 42
 times in 13 games, now 0; no fox for a rest) the levels are 114 against
-117 and the town time +5%, with no stall. Direction only.
+117 and the town time +5%, with no stall. Direction only. On the 6-game
+measure of `harness/borg.txt` the switch changes the Druid's game (seed
+102023799) from its first cast at about turn 37,000, and none of the other
+five (re-review of #648). The change back on a staircase writes "# Fox
+Form: changing back on the staircase".
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
