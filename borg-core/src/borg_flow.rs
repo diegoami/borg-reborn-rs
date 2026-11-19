@@ -121,6 +121,9 @@ pub struct FlowState {
     pub flee_threats: Vec<(crate::headers::z_type_h::loc, i32)>,
     /// borg-reborn-rs (#689): the spread refuses grids next to `flee_threats`.
     pub flee_avoid: bool,
+    /// borg-reborn-rs (#689): the level (its arrival time) on which "no
+    /// staircase reached first" was last noted: once per level.
+    pub flee_none_noted: Option<crate::borg::BorgTime>,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -152,6 +155,7 @@ impl Default for FlowState {
             hunting: false,
             flee_threats: Vec::new(),
             flee_avoid: false,
+            flee_none_noted: None,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],

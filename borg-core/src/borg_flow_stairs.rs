@@ -522,8 +522,9 @@ fn flee_route(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState)
     }
     st.flow.flee_threats.clear();
     st.flow.flee_avoid = false;
-    if !ok {
-        borg_io::borg_note(st, "# No staircase reached before the scary monsters (#689)");
+    if !ok && st.flow.flee_none_noted != Some(st.borg.time.level) {
+        st.flow.flee_none_noted = Some(st.borg.time.level);
+        borg_io::borg_note(st, "# No staircase reached before the scary monsters (#689; once per level)");
     }
     ok
 }
