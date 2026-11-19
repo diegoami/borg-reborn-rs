@@ -135,7 +135,7 @@ line for the same monster and kind replaces the earlier one of that kind:
 line. A later `fragility:` value replaces the earlier one.
 
 A profile's
-`borg_param_<name>` integer sets any of the 2194 entries in
+`borg_param_<name>` integer sets any of the 2199 entries in
 [CALIBRATION.md](CALIBRATION.md). For example, a profile definition in
 the zoo's `catalogue/profiles.json` is:
 
