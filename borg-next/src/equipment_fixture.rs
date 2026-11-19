@@ -398,7 +398,9 @@ pub(crate) fn run(live: &BorgState, mode: Mode, provider: &impl Shadow) {
                     Some(serde_json::json!(wanted)),
                 );
             }
-            // This is a real Borg RNG draw in the test-only think context, not a game RNG draw.
+            // Rand_div uses engine RNG machinery with the Borg quick RNG installed here.
+            // generate_keypress restores the game RNG after borg_think/after_think returns.
+            assert!(borg_rs::decision_api::equipment_fixture::rng_is_quick());
             let before_rng = borg_rs::decision_api::equipment_fixture::rng_draws();
             let mut rng_state = base.clone();
             let draw = |_: &mut BorgState| borg_rs::decision_api::engine::randint0(64);

@@ -44,12 +44,13 @@
       "borg_item_note_needs_id": "borg-core/src/borg_item_id.rs"
     }
   },
-  "native_seams_sha256": "0cdb4e44ab64d83290f01c3c2f25b3ed33e4a2191b12ede1c7558c68168680cb",
+  "native_seams_sha256": "8cf7f6bb49887a8684b5b12a11eaad512205989608f2a12ed71ce9bbdb94bbc0",
   "receiving_original_sha256": {
     "borg-core/src/borg_item_wear.rs": "769b0eaad86f409a1d6b4618ecdefdde4b2a155d83157a52d876ceb5f1b72d12",
     "borg-core/src/borg_item_id.rs": "9c81b12dd403bad83ce728b6a031309acb062472f3c6bb4364a914adac79c9ac",
     "borg-core/src/borg_inventory.rs": "b9abfa06a1d400d4718c7c65b54b8a635268bb5ca53a28687870b44a1cbbb9f1",
-    "borg-core/src/borg_io.rs": "32e4d796487949eb459acf225410d44a5acdaa2493e1d858cfef9d68ca862108"
+    "borg-core/src/borg_io.rs": "32e4d796487949eb459acf225410d44a5acdaa2493e1d858cfef9d68ca862108",
+    "borg-core/src/borg_store.rs": "5f20a1c4f2cdf0cdd54fc5dae0a3665face34601e146602091f898fafde1ab60"
   },
   "shared_policy": [
     "decurse/enchant pending accepted P contract680",

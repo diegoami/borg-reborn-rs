@@ -1276,7 +1276,7 @@
     {
       "path": "borg-core/src/borg_store.rs",
       "role": "primary",
-      "sha256": "5f20a1c4f2cdf0cdd54fc5dae0a3665face34601e146602091f898fafde1ab60",
+      "sha256": "d87f18860e7fd5a3b177c89de1035637667dff675c638d499611fdd65b51bce8",
       "physical_lines_including_tests": 257,
       "function_definitions_including_tests": 9,
       "public_function_spellings_including_methods": [
@@ -2084,7 +2084,7 @@
     {
       "path": "borg-core/src/borg_inventory.rs",
       "role": "shared",
-      "sha256": "7a0539ed09204490ccdd53d7ced260f832aff21d3b9f01145e5e8ea211470898",
+      "sha256": "02e59c1b39fe9a3c3c66b15d9dbd0dd804aca9df6f7232f8df29436de0db6232",
       "physical_lines_including_tests": 229,
       "function_definitions_including_tests": 9,
       "public_function_spellings_including_methods": [

@@ -48,13 +48,34 @@ positive ring wear/removal, inscription and recharge; exact commands and note-st
 changes; empty/early returns; nonbinary resistance loss; tie ordering; live
 note origins; slot/quantity restoration; a real nested public wear callback,
 a direct real-Borg-RNG draw/replay-once check, and a rejecting return fault
-followed by repair. The RNG sample is confined to the test-only Borg think
-context and is not an independent natural game. Simulations and queued keys
+followed by repair. The RNG sample calls engine Rand_div while generate_keypress has installed
+the Borg quick RNG (borg.rs); the fixture runs from borg_think::after_think
+before generate_keypress restores the saved game RNG. A fixture assertion
+requires quick mode. It advances the Borg stream in this test-only context
+and is not an independent natural game. Simulations and queued keys
 are not engine consumption or independent natural games.
 
-Code checks and native/constructed builds are in progress. Full native/check/
-switch parity, strict entry/root coverage, an actual literal mutant/re-port,
-canonical reconciliation, exact-head CI and owner review still gate completion.
+At the original reviewed head, source/Rust checks, native builds, constructed
+controls and exact-head CI passed. An actual literal threshold mutant was
+rejected by both source audit and the native runtime control; restored-source
+controls passed in check and switch. All smoke modes and full native/off
+matched the accepted power baseline. The original full shadow campaign is
+still running; its results belong to that original source.
+
+Review corrections record first-empty-pack, home-full and inventory-full as
+read-only queries, with shared immutable signatures rather than unnecessary
+post-state copies. Fresh builds/controls and exact-head CI are required for
+these corrections; fresh full shadow parity, strict coverage and canonical
+reconciliation still gate completion. Owner review completion gates merge.
+
+Natural smoke did not reach borg_object_fully_id: it is a user-command entry,
+and constructed inscription cases supply its strict-entry coverage. Empty,
+hungry and outside-home cases exercise early returns only. Positive ring
+wear/removal, inscription, recharge and plan-clear controls do not establish
+positive at-home borg_best_stuff_aux/borg_one_step_wearing_best coverage;
+call counts alone cannot distinguish those branches. This remains an explicit
+coverage limit. With test-r4-equipment enabled, item-use controls also execute
+the real shared note anti-loop effects; only note UI callbacks are stubbed.
 Retain every failed attempt and original build identity. New gameplay evidence
 belongs in borg-cemetery; do not publish private runtime metadata to source PRs
 without specific authorization. Source code and concise status stay here.

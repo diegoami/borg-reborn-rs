@@ -1,7 +1,16 @@
 diff --git a/borg-core/src/borg_inventory.rs b/borg-core/src/borg_inventory.rs
-index 665569f3..029ddd58 100644
+index 665569f3..0356eceb 100644
 --- a/borg-core/src/borg_inventory.rs
 +++ b/borg-core/src/borg_inventory.rs
+@@ -199,7 +199,7 @@ pub fn borg_inventory(st: &mut BorgState) {
+ 
+ /// The first empty pack slot after the last used one, or -1
+ /// (`borg_first_empty_inventory_slot`). An empty pack gives slot 0.
+-pub fn borg_first_empty_inventory_slot(st: &mut BorgState) -> i32 {
++pub fn borg_first_empty_inventory_slot(st: &BorgState) -> i32 {
+     /* PACK_SLOTS */
+     let pack_slots = i32::from(engine::z_info().pack_size) - st.borg.tr(BI_QUIVER_SLOTS);
+ 
 @@ -225,5 +225,5 @@ pub fn borg_item_worth_id(st: &mut BorgState, item: &borg_item) -> bool {
      }
  
@@ -420,3 +429,24 @@ index 139b391e..943ac4db 100644
 +    pub fn critical(st:&BorgState,conf:i32,blind:i32,free:i32)->[bool;3] { super::lost_critical(st,conf,blind,free) }
 +    pub fn choice(armour:i32,weapon:i32,a:i32,b:i32)->(i32,i32) { super::backup_swap_choice(armour,weapon,a,b) }
 +}
+diff --git a/borg-core/src/borg_store.rs b/borg-core/src/borg_store.rs
+index 08b104b5..02d248bc 100644
+--- a/borg-core/src/borg_store.rs
++++ b/borg-core/src/borg_store.rs
+@@ -49,14 +49,14 @@ pub struct StoreState {
+ }
+ 
+ /// check for the a full home
+-pub fn borg_home_full(st: &mut BorgState) -> bool {
++pub fn borg_home_full(st: &BorgState) -> bool {
+     // must have a free inventory slot and a free home slot
+     let last = usize::from(engine::z_info().store_inven_max) - 1;
+     st.store.shops[BORG_HOME].ware[last].iqty != 0
+ }
+ 
+ /// check for the a full inventory
+-pub fn borg_inventory_full(st: &mut BorgState) -> bool {
++pub fn borg_inventory_full(st: &BorgState) -> bool {
+     crate::borg_inventory::borg_first_empty_inventory_slot(st) == -1
+ }
+ 

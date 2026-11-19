@@ -338,7 +338,7 @@
     },
     "src/borg_inventory.rs": {
       "donor_blob": "df8087169d095180cce1bd4301a3497f3a1edfc5",
-      "receiving_sha256": "7a0539ed09204490ccdd53d7ced260f832aff21d3b9f01145e5e8ea211470898"
+      "receiving_sha256": "02e59c1b39fe9a3c3c66b15d9dbd0dd804aca9df6f7232f8df29436de0db6232"
     },
     "src/borg_io.rs": {
       "donor_blob": "1a65ffbbf790dbaf98c8e6e584f3d1c26a17e953",
@@ -398,7 +398,7 @@
     },
     "src/borg_store.rs": {
       "donor_blob": "e3471b1eda9eebfa85f4794bf1a90b57d897762d",
-      "receiving_sha256": "5f20a1c4f2cdf0cdd54fc5dae0a3665face34601e146602091f898fafde1ab60"
+      "receiving_sha256": "d87f18860e7fd5a3b177c89de1035637667dff675c638d499611fdd65b51bce8"
     },
     "src/borg_store_buy.rs": {
       "donor_blob": "0df491ec29b3cf879987f48429b0d54cbbfaf886",

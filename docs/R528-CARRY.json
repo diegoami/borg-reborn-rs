@@ -1843,6 +1843,6 @@
   },
   "reviewed_equipment_seams": {
     "path": "docs/R436-NATIVE-SEAMS.patch",
-    "sha256": "0cdb4e44ab64d83290f01c3c2f25b3ed33e4a2191b12ede1c7558c68168680cb"
+    "sha256": "8cf7f6bb49887a8684b5b12a11eaad512205989608f2a12ed71ce9bbdb94bbc0"
   }
 }

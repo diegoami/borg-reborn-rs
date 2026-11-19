@@ -157,9 +157,9 @@ crate::decision_tape::effect(st,"borg_flow_stairs::borg_prep_leave_level_spells"
 }
 }
 pub mod borg_inventory {
-pub fn borg_first_empty_inventory_slot(st:&mut crate::state::BorgState) -> i32 {
+pub fn borg_first_empty_inventory_slot(st:&crate::state::BorgState) -> i32 {
 if !crate::decision_tape::active() { return crate::borg_inventory::borg_first_empty_inventory_slot(st); }
-crate::decision_tape::effect(st,"borg_inventory::borg_first_empty_inventory_slot",format!("{:?}",()),|st|crate::borg_inventory::borg_first_empty_inventory_slot(st))
+crate::decision_tape::query(st,"borg_inventory::borg_first_empty_inventory_slot",format!("{:?}",()),||crate::borg_inventory::borg_first_empty_inventory_slot(st))
 }
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
@@ -947,13 +947,13 @@ crate::decision_tape::effect(st,"borg_power::borg_power",format!("{:?}",()),|st|
 
 pub mod borg_store {
 pub use crate::borg_store::{BORG_HOME,SHOP_MENU_ITEMS};
-pub fn borg_home_full(st:&mut crate::state::BorgState) -> bool {
+pub fn borg_home_full(st:&crate::state::BorgState) -> bool {
 if !crate::decision_tape::active() { return crate::borg_store::borg_home_full(st); }
-crate::decision_tape::effect(st,"borg_store::borg_home_full",format!("{:?}",()),|st|crate::borg_store::borg_home_full(st))
+crate::decision_tape::query(st,"borg_store::borg_home_full",format!("{:?}",()),||crate::borg_store::borg_home_full(st))
 }
-pub fn borg_inventory_full(st:&mut crate::state::BorgState) -> bool {
+pub fn borg_inventory_full(st:&crate::state::BorgState) -> bool {
 if !crate::decision_tape::active() { return crate::borg_store::borg_inventory_full(st); }
-crate::decision_tape::effect(st,"borg_store::borg_inventory_full",format!("{:?}",()),|st|crate::borg_store::borg_inventory_full(st))
+crate::decision_tape::query(st,"borg_store::borg_inventory_full",format!("{:?}",()),||crate::borg_store::borg_inventory_full(st))
 }
 }
 
@@ -966,6 +966,7 @@ crate::decision_tape::effect(st,"borg_think::borg_oops",format!("{:?}",(what,)),
 
 #[cfg(feature="test-r4-equipment")]
 pub mod equipment_fixture {
+    pub fn rng_is_quick() -> bool { crate::engine::rand_state().0 }
     use std::cell::Cell;
     thread_local! { static RNG_DRAWS:Cell<u64>=const {Cell::new(0)}; }
     pub(super) fn observe_rng_draw() { RNG_DRAWS.with(|n|n.set(n.get()+1)); }

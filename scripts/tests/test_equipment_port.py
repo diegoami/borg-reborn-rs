@@ -14,7 +14,7 @@ class EquipmentAuditTest(unittest.TestCase):
     def test_restore_quantity_and_unowned_native_drift_rejected(self):
         names=['docs/R436-SOURCE.json','docs/R436-NATIVE-SEAMS.patch','borg-next/src/lib.rs',
                'borg-next/src/stateful/equipment_wear.rs','borg-next/src/stateful/equipment_identify.rs',
-               *['borg-core/src/'+m+'.rs' for m in ['borg_item_wear','borg_item_id','borg_inventory','borg_io']]]
+               *['borg-core/src/'+m+'.rs' for m in ['borg_item_wear','borg_item_id','borg_inventory','borg_io','borg_store']]]
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory)
             for name in names:
