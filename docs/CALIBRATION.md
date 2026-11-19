@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Dangerous town monsters killed on sight (#619)
 
-The registry now holds **2159** parameters (three added). Owner, 2026-11-19:
+The registry now holds **2158** parameters (three added). Owner, 2026-11-19:
 "I would also kill the dangerous ones on sight with the best attacks that we
 have, if possible", and "test it together when town is scary until a certain
 level, also dependent on the level of the monsters that are scary".
