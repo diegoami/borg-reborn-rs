@@ -1924,7 +1924,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Take stairs down
-    if st.borg.stair_more && st.borg.goal.recalling == 0 {
+    if st.borg.stair_more && !recall_restricts(st) {
         // borg-reborn-rs (#208): /shopping is town-only, even if caution
         // chooses a direct descent before the ordinary town-leave hook.
         if crate::shell::shopping_departure(st) {
@@ -2200,7 +2200,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall,and in danger, buy time with
     // phase and cure_anythings.
-    if st.borg.goal.recalling != 0
+    // borg-reborn-rs (#603): with caution_recall_wait_as_usual the ordinary
+    // escape and attack decisions apply instead.
+    if recall_restricts(st)
         && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
     {
@@ -2251,7 +2253,7 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
         // borg_flow_stair_both: light is its only gate on a fleeing Borg
         return true;
     }
-    if st.borg.goal.recalling != 0 {
+    if recall_restricts(st) {
         return false;
     }
     if st.stairs.less.num != 0 {
@@ -2657,6 +2659,26 @@ pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
 
 fn only_parked(enqueued: usize, parked: usize) -> bool {
     enqueued == 0 && parked > 0
+}
+
+/// borg-reborn-rs (#603, owner): does a pending Word of Recall switch the
+/// Borg to its Recall-only rules (no flight by stairs or Teleport Level, the
+/// buy-time escapes, fighting because recalling)? With
+/// `caution_recall_wait_as_usual` it plays by its ordinary rules instead:
+/// the countdown keeps running on a new level (`effect-handler-general.c`).
+/// Resting or waiting when safe is kept either way. Only on DL2 and deeper:
+/// in town and on DL1 a staircase crosses between town and dungeon, and the
+/// Recall would fire on the other side and take the Borg back (owner, #627).
+pub(crate) fn recall_restricts(st: &BorgState) -> bool {
+    recall_restricts_with(
+        st.borg.goal.recalling != 0,
+        p(Param::caution_recall_wait_as_usual) != 0,
+        st.borg.tr(BI_CDEPTH),
+    )
+}
+
+fn recall_restricts_with(recalling: bool, as_usual: bool, depth: i32) -> bool {
+    recalling && (!as_usual || depth <= 1)
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -3968,6 +3990,33 @@ mod scary_stand_tests {
         assert!(!unlatch_when(r(true, true, true), mon.scary_killed, mon.scary_calmed), "the flag stays");
         note_calmed(&mut mon, &[42]);
         assert!(unlatch_when(r(true, false, true), mon.scary_killed, mon.scary_calmed), "race 42 hurt: it clears");
+    }
+
+    #[test]
+    fn a_pending_recall_restricts_only_without_the_switch() {
+        assert!(recall_restricts_with(true, false, 5), "C: Recall-only rules");
+        assert!(!recall_restricts_with(true, true, 5), "the switch: the ordinary rules on DL5");
+        assert!(!recall_restricts_with(true, true, 2), "and on DL2");
+        assert!(recall_restricts_with(true, true, 1), "not on DL1: the up staircase leads to town");
+        assert!(recall_restricts_with(true, true, 0), "not in town: the down staircase leads to the dungeon");
+        assert!(!recall_restricts_with(false, false, 5), "no Recall pending");
+        assert!(!recall_restricts_with(false, true, 0));
+    }
+
+    #[test]
+    fn every_switched_site_asks_recall_restricts() {
+        // The seven sites of #603 (review of #627): a site put back to
+        // `goal.recalling != 0` would ignore the switch and still pass the
+        // helper's test, so count the calls in each file.
+        for (file, src, calls) in [
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 3),
+            ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
+            ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
+            ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
+            ("borg_think_dungeon.rs", include_str!("borg_think_dungeon.rs"), 2),
+        ] {
+            assert_eq!(src.matches(concat!("recall_", "restricts(st)")).count(), calls, "{file}");
+        }
     }
 
     #[test]
