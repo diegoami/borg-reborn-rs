@@ -96,20 +96,33 @@ not undo other-track work already authorized before the gate.
    **The owner chooses the reviewer** (owner, 2026-11-09; owner, 2026-11-19,
    #638). For every review (a milestone review, a re-review, a review of a
    spec or a plan) the session writes the review prompt, pinned to an exact
-   commit, and posts it on the PR it reviews. **The owner then names the
-   reviewer**: a session does not pick one, and it does not post a review
-   before the owner has named the reviewer. The session may then **run that
-   review and post it on the PR**: it launches the reviewer the owner named,
-   with the pinned prompt and nothing else from its own context, and posts
+   commit, and posts it on the PR it reviews — on its issue, when what is
+   reviewed has no PR. **The owner then names the reviewer**: a session
+   does not pick one, and it does not post a review before the owner has
+   named the reviewer. The session may then **run that review and post it
+   on the PR**: it launches the reviewer the owner named, with the prompt
+   as posted on the PR and nothing else from its own context, and posts
    the reviewer's findings unedited; a session never reviews its own work
-   in its own context. It may also give the prompt to the owner to run, and
-   the session posts the review on the PR if the owner has not. Either way
-   the review is posted on the PR it reviews, so the findings and the pin
-   travel with the code. A review the session runs is still the owner's
-   choice of reviewer: a milestone review is done by the owner or by a model
-   of a **different family** from the one that wrote most of the milestone,
-   and the review PR names both. When the review arrives, the session
-   processes its findings.
+   in its own context. If the prompt changes after the owner has named
+   the reviewer, it is posted again before the review runs. If the named
+   reviewer cannot run, the session says so and asks the owner; it does
+   not substitute another. It may also give the prompt to the owner to
+   run, and the session posts the review on the PR if the owner has not,
+   unedited in that case too. Either way the review is posted on the PR
+   it reviews, so the findings and the pin travel with the code. The
+   session posts a review as a **comment** (or a GitHub review of type
+   *comment* — never *approve* or *request changes*, which would read as
+   the owner's verdict and cannot be deleted), headed with the reviewer
+   the owner named, where the owner named it and the pinned commit;
+   posting it is not the owner's acceptance (rule 1a). A review posted
+   before the owner named the reviewer, or not by the named reviewer,
+   does not count: the session says so at once in a comment beside it,
+   posts the pinned prompt if it is missing, and tells the owner; the
+   owner-named review then runs as normal. A review the session runs is
+   still the owner's choice of reviewer: a milestone review is done by
+   the owner or by a model of a **different family** from the one that
+   wrote most of the milestone, and the review PR names both. When the
+   review arrives, the session processes its findings.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session

@@ -234,8 +234,12 @@ reviewer; the session may then run that review and post it: it launches
 the reviewer the owner named, with the pinned prompt and nothing else from
 its own context, and posts the reviewer's findings unedited; it never
 reviews its own work in its own context. It may also hand the prompt to
-the owner to run, and posts the review on the PR if the owner has not. A
-milestone review is done by the owner or by a model of a **different
+the owner to run, and posts the review on the PR if the owner has not.
+A review is posted as a **comment** — never a GitHub *approve* or *request
+changes*, which would read as the owner's verdict — headed with the
+reviewer the owner named and the pinned commit; posting it is not the
+owner's acceptance (RULES 1a). A milestone
+review is done by the owner or by a model of a **different
 family** from the one that wrote most of the milestone. Name both in the
 review PR.
 
