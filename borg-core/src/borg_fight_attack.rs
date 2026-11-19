@@ -316,17 +316,12 @@ pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
     MONBLOW_NONE as i32
 }
 
-/// Guess how much damage a physical attack will do to a monster
-/// (`borg_thrust_damage_one`).
-///
-/// The C consumer made this non-static for its improvement unit I-001
-/// (better-borg-c `4.2.6-impact-v10`): `borg_caution()`'s
-/// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
-/// round against a tracked kill.
 /// borg-reborn-rs (#618, #621, owner): a monster on the scary list's ignore
 /// entries (`harness/scary_monsters.txt`, flag `ignore`) up to its level for
 /// the class: no attack on it is worth anything, and the hunt skips it. One
-/// in the Borg's way is still attacked (the walk step is unchanged).
+/// in the Borg's way is still attacked (the walk step is unchanged). The
+/// race's base name is read only for a base entry (the race copy is not
+/// free, and this runs on every damage estimate).
 pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
     let Some(list) = crate::scary_list::selected() else { return false };
     let who = crate::scary_list::Situation {
@@ -336,9 +331,16 @@ pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
         breeder_stand: false,
         levels_less: 0,
     };
-    crate::scary_list::is_ignored(list, r_idx, engine::race_base_name(r_idx), who)
+    crate::scary_list::is_ignored(list, r_idx, || engine::race_base_name(r_idx), who)
 }
 
+/// Guess how much damage a physical attack will do to a monster
+/// (`borg_thrust_damage_one`).
+///
+/// The C consumer made this non-static for its improvement unit I-001
+/// (better-borg-c `4.2.6-impact-v10`): `borg_caution()`'s
+/// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
+/// round against a tracked kill.
 pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     /* Examine current weapon */
     let item = &st.items.items[inven_wield() as usize];
@@ -3527,6 +3529,13 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     let mut i = 0;
     while i < i32::from(st.flow.temp_n) {
         let (y, x) = st.flow.temp_at(i as usize);
+
+        // borg-reborn-rs (#621 review): never strike at an ignored monster.
+        let k = grid(st, x, y).kill;
+        if k != 0 && ignored(st, usize::from(st.kills.kills[usize::from(k)].r_idx)) {
+            i += 1;
+            continue;
+        }
 
         /* closest distance */
         let dist = dist_to(st, x, y);

@@ -206,8 +206,16 @@ pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool 
 
 /// #621: whether race `r_idx` is on the list's ignore entries for `who`: up
 /// to its level the Borg doesn't target or hunt it.
-pub fn is_ignored(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
-    list.entries.iter().any(|e| e.ignore && hits(e, r_idx, base) && who.clevel <= up_to(list, e, who.class))
+/// The base name is asked for only by a base entry.
+pub fn is_ignored<'a>(list: &List, r_idx: usize, base: impl Fn() -> &'a [u8], who: Situation) -> bool {
+    list.entries.iter().any(|e| {
+        e.ignore
+            && match &e.target {
+                Target::Race(r) => *r == r_idx,
+                Target::Base(_) => hits(e, r_idx, base()),
+            }
+            && who.clevel <= up_to(list, e, who.class)
+    })
 }
 
 fn hits(e: &Entry, r_idx: usize, base: &[u8]) -> bool {
@@ -285,13 +293,13 @@ mod tests {
         let race = |n: &str| (n == "Farmer Maggot").then_some(4);
         let who = |clevel| Situation { clevel, class: 0, breeder_count: 0, breeder_stand: false, levels_less: 0 };
         let both = parse("fragility: warrior 0\nFarmer Maggot | 8-11\nFarmer Maggot | 10-20 | | ignore\n", &race).unwrap();
-        assert!(is_scary(&both, 4, b"person", who(8)) && is_ignored(&both, 4, b"person", who(8)));
-        assert!(!is_scary(&both, 4, b"person", who(9)) && is_ignored(&both, 4, b"person", who(10)));
-        assert!(!is_ignored(&both, 4, b"person", who(11)), "warrior: ignored up to 10");
+        assert!(is_scary(&both, 4, b"person", who(8)) && is_ignored(&both, 4, || b"person", who(8)));
+        assert!(!is_scary(&both, 4, b"person", who(9)) && is_ignored(&both, 4, || b"person", who(10)));
+        assert!(!is_ignored(&both, 4, || b"person", who(11)), "warrior: ignored up to 10");
         let only = parse("Farmer Maggot | 10-20 | | ignore\n", &race).unwrap();
         assert!(!is_scary(&only, 4, b"person", who(1)), "an ignore entry scares nobody");
         let removed = parse("Farmer Maggot | 8-11\nFarmer Maggot | 10-20 | | ignore\nFarmer Maggot | none | | ignore\n", &race).unwrap();
-        assert!(is_scary(&removed, 4, b"person", who(8)) && !is_ignored(&removed, 4, b"person", who(8)));
+        assert!(is_scary(&removed, 4, b"person", who(8)) && !is_ignored(&removed, 4, || b"person", who(8)));
         assert!(parse("Farmer Maggot | none | | breeders\n", &race).is_err());
     }
 
