@@ -15,3 +15,4 @@ Owner: "it leaves if it senses an invisible thing and goes rest somewhere else, 
   - classes-18: off is identical to main 19/19 and on smoke; on: 0 deaths both, sum of max CL 108 to 111, max DL 40 to 43, no loops.
 - **For the owner:** values to ship, after a zoo pilot. The heal was not exercised at 50% on classes-18.
 - **Not covered:** an invisible monster that casts ("Something mumbles"); the record only reads blows (`HIT_BY`/`MISS_BY`).
+- **Review of #698** (fixed): "Someone" (an unseen male or female monster, 181 races) counts, "It" (never a blow's name) does not; the walk away comes before the heal; a held rest is noted; the walk stays off unknown grids; the last Cure Critical Wounds is drunk (plain quaff); "followed" is a tested state that stays set for the window. Re-measured on main `dbc92d18`: off identical 19/19; on, sum of max CL 111 to 116, deaths 1 and 1 (the same death). The Rogue case no longer dies on current main even with the switches off.

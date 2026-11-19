@@ -41,18 +41,23 @@ somewhere else, and use healing potions". The default core's version of
   then Cure Critical Wounds (the plain quaff: a last Cure Critical is drunk
   too). The walk away comes first; the Borg drinks once it is clear of the
   attack, or when it has nowhere to walk.
-- **The case** (1502695781 Human Rogue, with #695's `kill_flow_mode` 3, on a
-  scratch merge): with 500 game turns and 50%, struck once at game turn
-  22,631, the Borg walks 10 steps away and is not touched there again; it
-  lives to the 100,000-turn cap at CL6 (off: dead at 23,285). With the heal
-  at 100% it drinks a Cure Light Wounds the next turn.
+- **The case** (1502695781 Human Rogue, `kill_flow_mode` 3): on base
+  `a87b4c96` (before the review fixes), with 500 game turns and 50%, struck
+  once at game turn 22,631, the Borg walks 10 steps away and is not touched
+  there again; it lives to the 100,000-turn cap at CL6 (off: dead at
+  23,285). On main `dbc92d18` the game takes another path and lives with the
+  switches off too; on, it walks away 15 steps after an unseen touch. With
+  the distance at 1 and the heal at 100% it drinks a Cure Light Wounds after
+  each of two unseen touches (the heal path, after the review's reordering).
 - **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
-  base `a87b4c96`:** switches off: keys identical to main in 19 of 19, smoke
-  identical. On (500, 10, 50): 10 of 19 differ; deaths 0 and 0; sum of max
-  CL 108 to 111; sum of max DL 40 to 43; 199 steps away in 22 episodes in 10
-  games (at most 5 episodes in a game, no loop), 3 leaves; the heal never
-  fired (no game was below 50% HP with an unseen attack recent). Not a
-  measure of benefit (RULES 14).
+  base `dbc92d18`** (after the review of #698): switches off: keys identical
+  to main in 19 of 19, smoke identical. On (500, 10, 50): 9 of 19 differ;
+  deaths 1 and 1 (the same blue worm mass death in both); sum of max CL 111
+  to 116; sum of max DL 40 to 41; 308 steps away, 21 rests held, 9 leaves;
+  unseen blows 49 "Something" and 1 "Someone" off, 47 and 3 on, and the
+  rule acts on "Someone" too (a walk away, a leave with nowhere known to
+  walk). The heal never fired at 50% (once clear, no game was below it).
+  Not a measure of benefit (RULES 14).
 ## No detection prayer by panel at low level (#685)
 
 The registry now holds **2200** parameters (2199 after #625; one added).
