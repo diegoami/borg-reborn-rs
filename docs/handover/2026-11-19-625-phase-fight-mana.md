@@ -27,7 +27,8 @@ only inside the rule (`escape_phase_adjacent_rule`, shipped 0) with
 **Checked:**
 - CI's commands, `check-param-citations.py` (2195, after merging main `826cde4c`), and `borg-core-vendor.py check`.
 - New unit test `the_fight_counts_the_mana_and_the_fail_rate`.
-- Rule off: the 18 classes-18 starts play keys identical to main (`3ba17e2c`, `e381e6b9`, and again after the final merge). Recording the cost draws no random numbers, and the wand and rod failure is still computed once.
+- Rule off: the 18 classes-18 starts play keys identical to main (`3ba17e2c`, `e381e6b9`, `826cde4c`).
+- Shipped settings, after the merge of main `e5cc5469` (owner's review): main now ships the Phase Door rule (#661) with `escape_phase_lost_test = 0`, the danger test, which this change does not touch. The 18 starts on each side's own `harness/borg.txt` play keys identical to main (18/18), with the rule firing in the games. Recording the cost draws no random numbers, and the wand and rod failure is still computed once.
 - Rule on, test 1, 18 starts, mana 0 against 1:
   - Deaths 1 and 1, the same rock lizard; sum of max CL 93 and 94.
   - Only the two casters' games change (Mage 1548306106, Druid 934061548).
