@@ -5,7 +5,5 @@
 borg_param_attack_preference_spell_permille = 1700
 borg_param_town_heal_curve_scale_percent = 125
 borg_param_town_heal_reserve_hp_percent = 250
-# #666 (owner): shots by shooting skill (class.txt; the Ranger's 72 = 100),
-# devices by device skill (24 = 100).
-borg_param_town_missiles_percent = 55
+# #666 (owner): devices by device skill (class.txt; 24 = 100).
 borg_param_town_devices_percent = 100
