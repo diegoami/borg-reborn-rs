@@ -207,6 +207,10 @@ pub fn borg_think_dungeon_light(st: &mut BorgState) -> bool {
 
     /* I am recalling, sit here till it engages. */
     if st.borg.goal.recalling != 0 {
+        // borg-reborn-rs (#567, review of #640): the third Recall rest.
+        if crate::borg_caution::recall_rest_held(st) {
+            return true;
+        }
         /* just wait */
         borg_keypress(st, key(b'R'));
         borg_keypress(st, key(b'9'));
