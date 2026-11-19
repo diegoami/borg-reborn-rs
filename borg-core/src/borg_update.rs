@@ -1486,6 +1486,9 @@ pub fn borg_update(st: &mut BorgState) {
     // 'regional' fear from the accumulated group of monsters (one Orc won't
     // be too dangerous, but 20 of them can be deadly); count up breeders
     spread_monster_fear(st);
+    // borg-reborn-rs (#556): remember the breeders' grids (no RNG).
+    crate::borg_caution::note_breeders(st);
+    crate::borg_caution::note_breeders_stoppable(st);
 
     // *** Notice missing objects ***
     let mut i = 1;
@@ -1915,6 +1918,13 @@ fn new_level(st: &mut BorgState) {
 
     // reset our breeder flag
     b.near.breeder = false;
+    // borg-reborn-rs (#556): a new level's breeders are not this one's
+    b.breeder_marks.clear();
+    b.breeder_block.clear();
+    b.breeder_through = None;
+    b.breeder_stuck = None;
+    b.breeders_lost = false;
+    b.breeders_behind = 0;
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;
@@ -2012,6 +2022,7 @@ fn new_level(st: &mut BorgState) {
 
     // Assume not leaving the level
     b.goal.leaving = false;
+    b.breeder_leaving = false; // borg-reborn-rs (#644, re-review of #656)
 
     // Assume not fleeing the level
     b.goal.fleeing = false;

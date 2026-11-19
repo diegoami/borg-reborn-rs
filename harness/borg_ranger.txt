@@ -6,3 +6,5 @@ borg_param_attack_preference_projectile_permille = 2000
 borg_param_attack_arrow_point_blank_divisor = 2
 borg_param_town_heal_curve_scale_percent = 100
 borg_param_town_heal_reserve_hp_percent = 200
+# #666 (owner): devices by device skill (class.txt; 24 = 100).
+borg_param_town_devices_percent = 115
