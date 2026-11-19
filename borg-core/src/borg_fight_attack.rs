@@ -472,7 +472,7 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
 
     /* Damage */
     // borg-reborn-rs (#713): no blow at an immobile creature kept at range
-    // (`caution_immobile_ranged_only`): it is left, or attacked from afar.
+    // (`caution_ranged_vs_immobile` 2, 3): it is left, or attacked from afar.
     if crate::borg_caution::immobile_kept_at_range(st, usize::from(r)) {
         return 0;
     }

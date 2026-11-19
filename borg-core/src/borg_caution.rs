@@ -1489,11 +1489,12 @@ fn annoying_effect(name: &[u8]) -> bool {
     name != b"HURT" && name != b"NONE"
 }
 
-/// borg-reborn-rs (#713): `caution_immobile_ranged_only` covers race `r_idx`:
-/// an immobile attacker (`immobile_attacker`) with an annoying blow at 1
-/// (23 of the 25 in `monster.txt`: every one below DL10), any at 2.
+/// borg-reborn-rs (#713): `caution_ranged_vs_immobile` at 2 or 3 keeps race
+/// `r_idx` at range: an immobile attacker (`immobile_attacker`) with an
+/// annoying blow at 2 (23 of the 25 in `monster.txt`: every one below DL10),
+/// any at 3. At 1 (#646) none is.
 fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
-    mode > 0 && immobile && (mode >= 2 || annoying)
+    mode >= 2 && immobile && (mode >= 3 || annoying)
 }
 
 /// borg-reborn-rs (#713, owner: "step away from immobile creature with
@@ -1502,8 +1503,8 @@ fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
 /// (`borg_thrust_damage_one`), no walk to it (`borg_flow_kill`), and a step
 /// out of its reach when next to it (`immobile_step_away`).
 pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
-    let mode = p(Param::caution_immobile_ranged_only);
-    mode > 0
+    let mode = p(Param::caution_ranged_vs_immobile);
+    mode >= 2
         && st.borg.tr(BI_CDEPTH) > 0
         && immobile_annoying(
             mode,
@@ -1515,7 +1516,7 @@ pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
 /// borg-reborn-rs (#713): grid (`x`, `y`) is, or is next to, the grid of an
 /// immobile creature kept at range (its reach). Off: no scan.
 pub(crate) fn in_reach_of_kept(st: &BorgState, x: i32, y: i32) -> bool {
-    if p(Param::caution_immobile_ranged_only) == 0 {
+    if p(Param::caution_ranged_vs_immobile) < 2 || st.flow.to_stairs {
         return false;
     }
     (-1..=1).any(|dy| {
@@ -1629,16 +1630,15 @@ fn step_away_wanted(confused: bool, missiles: i32, mobile_danger: impl FnOnce() 
 /// again on the next turn.
 pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     let ranged_rule = p(Param::caution_ranged_vs_immobile) != 0;
-    if (!ranged_rule && p(Param::caution_immobile_ranged_only) == 0) || st.borg.tr(BI_CDEPTH) == 0 {
+    if !ranged_rule || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     let Some(who) = immobile_attacker_next_to(st, cy, cx) else { return false };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
     let (missiles, hp) = (st.borg.tr(BI_AMISSILES), st.borg.tr(BI_CURHP));
-    // borg-reborn-rs (#713): a creature kept at range is stepped away from
-    // whether or not the Borg has a ranged attack or is confused, with or
-    // without #646's switch.
+    // borg-reborn-rs (#713): a creature kept at range (2 and 3) is stepped
+    // away from whether or not the Borg has a ranged attack or is confused.
     let kept = immobile_kept_at_range(st, usize::from(st.kills.kills[who].r_idx));
     let wanted = if kept {
         mobile_danger(st) < hp
@@ -5288,10 +5288,11 @@ mod immobile_range_tests {
             assert!(annoying_effect(e), "{}", String::from_utf8_lossy(e));
         }
         assert!(!annoying_effect(b"HURT"), "plain damage");
-        assert!(immobile_annoying(1, true, true), "the yellow jelly at 1");
-        assert!(!immobile_annoying(1, true, false), "1: a plain-damage one is fought");
-        assert!(immobile_annoying(2, true, false), "2: any immobile attacker");
-        assert!(!immobile_annoying(2, false, true), "a monster that moves");
+        assert!(immobile_annoying(2, true, true), "the yellow jelly at 2");
+        assert!(!immobile_annoying(2, true, false), "2: a plain-damage one is fought");
+        assert!(immobile_annoying(3, true, false), "3: any immobile attacker");
+        assert!(!immobile_annoying(3, false, true), "a monster that moves");
+        assert!(!immobile_annoying(1, true, true), "1 is #646: none kept at range");
         assert!(!immobile_annoying(0, true, true), "0 is C");
     }
 }

@@ -115,6 +115,10 @@ pub struct FlowState {
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
+    /// borg-reborn-rs (#713): the spread running is a stair flow's
+    /// (`borg_flow_spread_stairs`), which may pass through the reach of an
+    /// immobile creature kept at range (never onto its grid).
+    pub to_stairs: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -144,6 +148,7 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             hunting: false,
+            to_stairs: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -431,6 +436,9 @@ fn spread_blocked(
     if (x, y) != (b.c.x, b.c.y) && crate::borg_caution::in_reach_of_kept(st, x, y) {
         return true;
     }
+    if ag.kill != 0 && crate::borg_caution::immobile_kept_at_range(st, usize::from(st.kills.kills[usize::from(ag.kill)].r_idx)) {
+        return true;
+    }
 
     /* flowing into monsters */
     if ag.kill != 0 {
@@ -562,6 +570,24 @@ fn breeder_blocks(near: bool, hunting: bool, borg: crate::headers::z_type_h::loc
 }
 
 /// borg-reborn-rs (#556): `borg_flow_spread` for a flow toward monsters
+/// borg-reborn-rs (#713): `borg_flow_spread` for a flow to stairs: it may
+/// pass through the reach of an immobile creature kept at range (owner: "do
+/// not block the path through their reach if they need to go to their
+/// stairs"); its own grid stays blocked.
+pub fn borg_flow_spread_stairs(
+    st: &mut BorgState,
+    depth: i32,
+    optimize: bool,
+    avoid: bool,
+    tunneling: bool,
+    stair_idx: i32,
+    sneak: bool,
+) {
+    let was = std::mem::replace(&mut st.flow.to_stairs, true);
+    borg_flow_spread(st, depth, optimize, avoid, tunneling, stair_idx, sneak);
+    st.flow.to_stairs = was;
+}
+
 /// (the kill flows, their digging): it may cross the grids near remembered
 /// breeders (#503's hunt goes to them).
 pub fn borg_flow_spread_hunting(
