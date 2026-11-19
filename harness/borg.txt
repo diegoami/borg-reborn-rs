@@ -376,7 +376,8 @@ borg_param_caution_recall_prep_turns = 2
 # grids in the last N game turns, stay still one turn at a time instead of
 # resting, so a monster that comes back is seen before it bites. A monster
 # that never moves does not count.
-# Impact (18 classes-18 starts, 100,000 turns): 200: 9 of 18 play differently.
+# Impact (18 classes-18 starts, 100,000 turns, main 3ba17e2c): 200: 7 of 18
+# play differently (sum of CL 97 against 101, the same one death).
 borg_param_caution_recall_rest_monster_turns = 0
 borg_param_caution_recall_rest_monster_distance = 20
 
@@ -474,6 +475,24 @@ borg_param_attack_arrow_point_blank_divisor = 5
 # Impact: set to 2, 0 of 5 test games play differently.
 
 borg_param_kill_live_min_power = 1
+
+# Kill the dangerous town monsters on sight (#619, owner): once the town is
+# not scary (the scary list's level per monster and class decides that), a
+# town monster that steals or hurts for at least min_damage (dice x sides; 6
+# takes the veteran, the mercenary, the squint-eyed rogue and the urchin, not
+# the cats, dogs and beggars) is the preferred target: its attack value is
+# multiplied by bonus_percent / 100, borg_attack picks the best attack on it
+# (no wands: C never aims one in town), and the hunt walks to it below CL20
+# (not a Mage or Necromancer below CL25: C's town hunt stays breeders only).
+# A lower min_damage takes more monsters; a higher bonus picks them sooner
+# over the others. Change together. 0 = C.
+# Impact: not on the file's 6-game measure; on 18 classes-18 games (100,000
+# turns) with the shipped list, 2 of 18 play differently (0 deaths, sum of
+# CL 99 as main); with caution_town_never_scary = 1, 3 deaths, CL 89.
+
+borg_param_attack_town_dangerous_on_sight = 0
+borg_param_attack_town_dangerous_min_damage = 6
+borg_param_attack_town_dangerous_bonus_percent = 300
 
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at

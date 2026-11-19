@@ -29,5 +29,17 @@ rested for Recall; Grip came back and bit.
 - **Related:** #615's analysis (borg-cemetery#74) ranks this rule, applied
   to every rest, as its first candidate: 1,609 dungeon rests start with an
   awake monster seen recently, and 24% of them are interrupted.
+- **Review of #640, fixed:** only a monster seen in this update refreshes
+  the watch (`kill.seen`); stale records had refreshed it every think (192 of
+  420 watches at "0 game turns ago" in the reviewer's run; now 6 of 111, the
+  longest run 3 thinks). The third Recall wait (no light,
+  `borg_think_dungeon_light`) is held too. A test of the scan
+  (`mover_seen_within`). Main `3ba17e2c` merged (2171).
+- **Re-measured** at the fixed head: off plays main's keys in 18 of 18; at
+  200, 7 of 18 play differently, sum of CL 97 against 101, the same one
+  death.
+- **Owner:** #567's "the case replayed from the 1,721 save" cannot be met
+  on today's core (main fights Grip instead of reading Recall); decide
+  whether the issue closes without it.
 - **Left:** a zoo pilot (off, 100, 200 game turns). The owner decides the
   shipped value.

@@ -3437,9 +3437,12 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
 /// away, read its only Word of Recall, forgot Grip a think later (out of
 /// view: danger 0) and rested for Recall; Grip came back and bit.
 fn watch_for_recall(st: &mut BorgState) {
-    if p(Param::caution_recall_rest_monster_turns) != 0
-        && awake_mover_within(st, p(Param::caution_recall_rest_monster_distance))
-    {
+    if p(Param::caution_recall_rest_monster_turns) == 0 {
+        return;
+    }
+    let range = p(Param::caution_recall_rest_monster_distance);
+    let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
+    if mover_seen_within(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE)) {
         st.borg.recall_watch_turn = engine::game_turn();
         st.borg.recall_watch_depth = engine::player_depth();
     }
@@ -3447,16 +3450,21 @@ fn watch_for_recall(st: &mut BorgState) {
     crate::borg_recover::watch_for_rest(st);
 }
 
-/// An awake monster that can move is known within `range` (the engine's
-/// distance). A monster that never moves (a floating eye, a mold) cannot
-/// come back (#567).
+/// An awake monster that can move, seen in this update, within `range` of
+/// the Borg (`mover_seen_within`; #615 rule a).
 pub(crate) fn awake_mover_within(st: &BorgState, range: i32) -> bool {
-    (1..st.kills.nxt.max(0) as usize).any(|i| {
-        let kill = &st.kills.kills[i];
-        kill.r_idx != 0
-            && kill.awake
-            && engine::distance(st.borg.c, kill.pos) <= range
-            && !engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE)
+    let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
+    mover_seen_within(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE))
+}
+
+/// An awake monster that can move, seen in this update (`kill.seen`; review
+/// of #640: a record keeps its last position for up to 2,000 ticks after the
+/// monster is lost, and refreshed the watch every think), within `range`
+/// (the engine's distance) of `c`. A monster that never moves (a floating
+/// eye, a mold) cannot come back.
+fn mover_seen_within(kills: &[crate::borg_flow_kill::BorgKill], c: loc, range: i32, never_moves: impl Fn(u16) -> bool) -> bool {
+    kills.iter().any(|kill| {
+        kill.r_idx != 0 && kill.seen && kill.awake && engine::distance(c, kill.pos) <= range && !never_moves(kill.r_idx)
     })
 }
 
@@ -3613,7 +3621,24 @@ fn flee_down_depth(max_cost: i32) -> i32 {
 
 #[cfg(test)]
 mod recall_watch_tests {
-    use super::recall_watch_holds;
+    use super::{mover_seen_within, recall_watch_holds};
+    use crate::borg_flow_kill::BorgKill;
+    use crate::headers::z_type_h::loc;
+
+    /// Review of #640: only a monster seen now refreshes the watch; a record
+    /// left at its last position does not.
+    #[test]
+    fn only_a_monster_seen_now_refreshes_the_watch() {
+        let borg = loc { x: 10, y: 10 };
+        let grip = BorgKill { r_idx: 54, awake: true, seen: true, pos: loc { x: 14, y: 10 }, ..BorgKill::BLANK };
+        let moves = |_: u16| false;
+        assert!(mover_seen_within(&[grip], borg, 20, moves), "Grip in view, 4 grids away");
+        assert!(!mover_seen_within(&[BorgKill { seen: false, ..grip }], borg, 20, moves), "a stale record");
+        assert!(!mover_seen_within(&[BorgKill { awake: false, ..grip }], borg, 20, moves), "asleep");
+        assert!(!mover_seen_within(&[grip], borg, 3, moves), "out of range");
+        assert!(!mover_seen_within(&[grip], borg, 20, |_| true), "never moves (a floating eye)");
+        assert!(!mover_seen_within(&[BorgKill { r_idx: 0, ..grip }], borg, 20, moves), "a wiped record");
+    }
 
     /// #567: priest-809881907 saw Grip at game turn 1,761 and rested for
     /// Recall at 1,771, 10 game turns later.

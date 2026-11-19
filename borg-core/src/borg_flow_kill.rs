@@ -1839,11 +1839,20 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     }
 
     // Don't chase down town monsters when you are just starting out
+    // borg-reborn-rs (#619): except a dangerous one, killed on sight: then
+    // the hunt goes for those only.
+    let mut town_dangerous_only = false;
     if st.borg.tr(BI_CDEPTH) == 0
         && st.borg.tr(BI_CLEVEL) < 20
         && st.cfg(BORG_MONEY_SCUM_AMOUNT) == 0
     {
-        return false;
+        if !(1..i32::from(st.kills.nxt)).any(|k| {
+            let r = st.kills.kills[k as usize].r_idx;
+            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+        }) {
+            return false;
+        }
+        town_dangerous_only = true;
     }
 
     // YOU ARE NOT A WARRIOR!! DON'T ACT LIKE ONE!!
@@ -1913,6 +1922,11 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     for i in 1..i32::from(st.kills.nxt) {
         let kill = st.kills.kills[i as usize];
         if breeders_only && !rf_has(kill.r_idx, RF_MULTIPLY) {
+            continue;
+        }
+        if town_dangerous_only
+            && (kill.r_idx == 0 || !crate::borg_fight_attack::town_kill_on_sight(st, usize::from(kill.r_idx)))
+        {
             continue;
         }
         let x9 = kill.pos.x;

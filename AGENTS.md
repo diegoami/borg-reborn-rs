@@ -116,6 +116,9 @@ says which core each check ran. A PR that changes how the borg-rs core plays
 at the shipped settings re-records `smoke-borg-rs` in the same PR, after
 merging main (`harness/make-reference.sh` from a clean build), as reborn-core
 changes do with `smoke-rust`: CI compares the PR merged with main.
+To change a shipped value in `harness/borg.txt`: edit it, commit, then run
+`scripts/rerecord-smoke-borg-rs.sh`, which builds, plays the smoke suite,
+re-records the reference and commits it; push both commits together.
 
 ## Retained evidence: all tracks
 
