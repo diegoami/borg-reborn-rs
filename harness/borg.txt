@@ -420,7 +420,7 @@ borg_param_caution_rising_hold_flee_descent = 0
 # (#483). Higher explores longer before giving up and going down.
 # Impact: set to 600, 1 of 6 test games play differently.
 
-borg_param_caution_rising_explore_ticks = 300
+borg_param_caution_rising_explore_ticks = 500
 
 # While rising, allow a descent again when the danger here is above
 # avoidance x this / 10 (#483). Lower lets danger push it down sooner.
@@ -531,6 +531,21 @@ borg_param_recover_rest_arms_see_invis = 0
 # Impact: set to 0, 2 of 6 test games play differently.
 
 borg_param_escape_phase_adjacent_only = 1
+
+# The owner's Phase Door rule (#584), at every Phase Door site
+# (docs/PHASE-DOOR.md), before the site's own check: Phase Door only with an
+# awake enemy on an adjacent square and the fight judged lost (lost_test). The rule
+# only refuses the Phase Door: the other escapes go on, and if none acts the
+# Borg attacks (its best attack; at range with nothing adjacent) or, with an
+# awake monster in view, boosts (Speed first; else borg_defend's defences and
+# staves). lost_test: 0 = the danger threshold below; 1 = the fight compared
+# (its best attack of any kind, true damage, needs more turns to kill the
+# adjacent monsters, their HP left, than the danger needs to kill it); 2 = as 1, and the expected landing
+# is safer than here. 0 = each site's own check. Off here until a zoo pilot measures it.
+
+borg_param_escape_phase_adjacent_rule = 0
+borg_param_escape_phase_lost_test = 1
+borg_param_escape_phase_lost_danger_percent = 100
 
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
@@ -725,7 +740,7 @@ borg_scary_list = scary_monsters.txt
 # not counted.
 # Impact: set to 120, 0 of 6 test games play differently.
 
-borg_param_caution_scary_damage_percent = 60
+borg_param_caution_scary_damage_percent = 50
 
 # Flee a scary level only while the escape is real: a free staircase within
 # the breeders' easy_escape_steps, an escape item, or no scary monster awake
@@ -783,6 +798,19 @@ borg_param_caution_scary_afraid = 1
 # classes x seeds 2001/2002, race 0, 100,000 turns) play differently.
 
 borg_param_caution_town_never_scary = 0
+
+# The scary list's level, lowered for town residents (#622, owner): a town
+# monster on the list stops being scary this many character levels sooner,
+# so the order stays (the veteran and the mercenary longest) and the town
+# scare ends earlier. Higher ends it sooner: 11 or more ends the list's town
+# scares at once (as caution_town_never_scary, but only for the list). Each
+# level less brings more thefts (the urchin, the squint-eyed rogue): on 18
+# games 1 at 3, 13 at 6, 16 at 11. 0 = the list as it is. Shipped 3
+# (owner, 2026-11-19).
+# Impact: not on the file's 6-game measure; on 18 classes-18 games (100,000
+# turns), 0: 0 deaths, sum of CL 99; 3: 0, 102; 6: 1, 99; 11: 2, 98.
+
+borg_param_caution_town_scary_levels_less = 3
 
 
 ### The C Borg's own settings ###

@@ -75,6 +75,11 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#584): the Phase Door rule's decision this think,
+    /// as (the think's `time.now`, the verdict, whether its attack or boost
+    /// was tried): decided once at the first site that asks, used by every
+    /// later site, acted on once by `borg_caution` after `borg_escape`.
+    pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,
