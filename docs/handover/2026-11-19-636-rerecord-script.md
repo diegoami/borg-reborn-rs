@@ -11,6 +11,9 @@ commit, run one script".
   never pushes. AGENTS.md names it under "Which core a run plays".
 - **Checked:** with `--no-commit` on main `4acf071f` (stale reference): 2/3
   before, 3/3 after, the same reference as #631 (#635) byte for byte.
-- **Left:** the commit mode and the "unchanged" exit have not run on a real
-  change. The owner's worktree `.worktrees/borgtxt-values` (branch
+- **Review of #633:** the script also refuses `BORG_CORE_OVERRIDES` (which
+  would play `borg-core/borg.txt` and record another game), and builds the
+  new reference beside the old one, swapping it in only when complete. The
+  review ran the commit mode and the "unchanged" exit.
+- **Left:** The owner's worktree `.worktrees/borgtxt-values` (branch
   `task/borgtxt-values`) starts from this branch.
