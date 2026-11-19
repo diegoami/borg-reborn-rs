@@ -11,8 +11,9 @@ whatever the model.
    them there after CI is green and the owner says the review is done
    (rule 1a). CI success is not review approval. At each
    milestone, stop and open the review/promotion PR **`track-p` → `main`**,
-   pinned to an exact commit. The owner chooses/runs the review; findings
-   are fixed through PRs into `track-p`. Only after the milestone review is
+   pinned to an exact commit. The owner chooses the reviewer; the session
+   may run that review and post it on the PR (rule 6). Findings are fixed
+   through PRs into `track-p`. Only after the milestone review is
    accepted and CI is green does the owner merge that promotion, or
    explicitly delegate that reviewed merge. A session never promotes P to
    `main` under the generic task-merge permission. Do not integrate the
@@ -98,10 +99,13 @@ not undo other-track work already authorized before the gate.
    commit, and posts it on the PR it reviews. **The owner then names the
    reviewer**: a session does not pick one, and it does not post a review
    before the owner has named the reviewer. The session may then **run that
-   review itself and post it on the PR** (the owner's choice of reviewer, run
-   by the session), and it may also give the prompt to the owner to run.
-   Either way the review is posted on the PR it reviews, so the findings and
-   the pin travel with the code. A review the session runs is the owner's
+   review and post it on the PR**: it launches the reviewer the owner named,
+   with the pinned prompt and nothing else from its own context, and posts
+   the reviewer's findings unedited; a session never reviews its own work
+   in its own context. It may also give the prompt to the owner to run, and
+   the session posts the review on the PR if the owner has not. Either way
+   the review is posted on the PR it reviews, so the findings and the pin
+   travel with the code. A review the session runs is still the owner's
    choice of reviewer: a milestone review is done by the owner or by a model
    of a **different family** from the one that wrote most of the milestone,
    and the review PR names both. When the review arrives, the session
