@@ -316,15 +316,20 @@ pub fn borg_mon_blow_effect(name: &[u8]) -> i32 {
 /// (better-borg-c `4.2.6-impact-v10`): `borg_caution()`'s
 /// `borg_adjacent_kill_in_one_blow()` needs the melee damage of a full
 /// round against a tracked kill.
-/// borg-reborn-rs (#618, owner): with `attack_town_leave_maggot`, Farmer
-/// Maggot is never a target (he never attacks and has 350 HP): no attack is
-/// worth anything against him, no walk ends in him.
-pub(crate) fn leave_maggot(st: &BorgState, r_idx: usize) -> bool {
-    leave_maggot_with(param(Param::attack_town_leave_maggot), engine::race(r_idx).ridx == st.borg.id.maggot)
-}
-
-fn leave_maggot_with(switch: i32, is_maggot: bool) -> bool {
-    switch != 0 && is_maggot
+/// borg-reborn-rs (#618, #621, owner): a monster on the scary list's ignore
+/// entries (`harness/scary_monsters.txt`, flag `ignore`) up to its level for
+/// the class: no attack on it is worth anything, and the hunt skips it. One
+/// in the Borg's way is still attacked (the walk step is unchanged).
+pub(crate) fn ignored(st: &BorgState, r_idx: usize) -> bool {
+    let Some(list) = crate::scary_list::selected() else { return false };
+    let who = crate::scary_list::Situation {
+        clevel: tr(st, BI_CLEVEL),
+        class: tr(st, BI_CLASS),
+        breeder_count: 0,
+        breeder_stand: false,
+        levels_less: 0,
+    };
+    crate::scary_list::is_ignored(list, r_idx, engine::race_base_name(r_idx), who)
 }
 
 pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
@@ -455,7 +460,7 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
             dam = 0;
         }
     }
-    if leave_maggot(st, usize::from(r)) {
+    if ignored(st, usize::from(r)) {
         dam = 0;
     }
 
@@ -1293,7 +1298,7 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
             dam = 0;
         }
     }
-    if leave_maggot(st, usize::from(r)) {
+    if ignored(st, usize::from(r)) {
         dam = 0;
     }
 
@@ -4657,19 +4662,6 @@ fn borg_fight_speed(st: &mut BorgState) -> bool {
         return true;
     }
     false
-}
-
-#[cfg(test)]
-mod maggot_tests {
-    use super::*;
-
-    /// #618: only Farmer Maggot, only with the switch on.
-    #[test]
-    fn maggot_is_left_alone_with_the_switch() {
-        assert!(leave_maggot_with(1, true));
-        assert!(!leave_maggot_with(0, true), "switch off");
-        assert!(!leave_maggot_with(1, false), "another monster");
-    }
 }
 
 #[cfg(test)]

@@ -454,17 +454,6 @@ borg_param_attack_arrow_point_blank_divisor = 5
 
 borg_param_kill_live_min_power = 1
 
-# 1 = Farmer Maggot is never a target, at any level (#618, owner): no attack
-# on him is worth anything, no step walks into him, the hunt skips him. He
-# never attacks and has 350 HP; with the town not scary the Borg attacked
-# him about 200 times per 18 games and killed him once in 54. 0 = C (left
-# alone only below CL5).
-# Impact: not on the file's 6-game measure; set to 1, 1 of 18 classes-18
-# games (100,000 turns) plays differently; with caution_town_never_scary = 1,
-# 18 of 18.
-
-borg_param_attack_town_leave_maggot = 0
-
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
