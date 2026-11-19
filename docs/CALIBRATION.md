@@ -10,6 +10,40 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Farmer Maggot left alone (#618)
+
+The registry now holds **2156** parameters (one added). Owner, 2026-11-19
+(#613): leave Farmer Maggot alone. He never attacks (`monster.txt`: MOAN,
+MOAN) and has 350 HP. The C Borg ignores town uniques only below
+`attack_town_unique_min_level` (5) for attacks and below CL5 for the walk
+and the hunt; above that, and whenever the town is not scary, the Borg
+attacks him.
+
+`attack_town_leave_maggot` (compiled 0, written out at 0): his attack value
+is 0 in melee and at range, no step walks into him, the hunt skips him. All
+in the vendored core, so it plays with the borg-rs core (`borg_reborn_core =
+borg-rs`, the default since #606).
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`, the
+zoo adapter's steps):
+
+| arm | keys as main | deaths | sum of CL | attacks on Maggot (notes / walk-ins / hits) | game turns in town |
+|---|---:|---:|---:|---|---:|
+| main | | 0 | 99 | 51 / 0 / 90 | 286,100 |
+| switch 0 | 18/18 | 0 | 99 | 51 / 0 / 90 | 286,100 |
+| switch 1 | 17/18 | 0 | 99 | 0 / 0 / 0 | 290,904 |
+| `caution_town_never_scary = 1` | 0/18 | 2 | 97 | 199 / 243 / 324 | 249,702 |
+| both | 0/18 | 2 | 96 | 0 / 0 / 0 | 239,796 |
+
+Game turns in town: the sum, over `state.log` rows in force at depth 0, of
+the turn gap to the next row. Attacks: `# Facing`/`# Targeting` notes,
+`# Walking into a 'Farmer Maggot'` notes and "You hit Farmer Maggot".
+Direction only: 18 games, no zoo run.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_town_leave_maggot` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`leave_maggot`, read in `borg_thrust_damage_one`, `borg_launch_damage_one`, `borg_flow.rs`'s step and `borg_flow_kill`) |
+
 ## Flight Recall from a danger share (#587)
 
 The registry now holds **2155** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.
