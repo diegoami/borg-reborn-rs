@@ -254,9 +254,11 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
     }
 
     // borg-reborn-rs (#697): a monster the Borg cannot see is attacking
-    // (no monster, so no danger): heal at low HP, and walk away from where
-    // it struck before resting.
-    if unseen_heal(st) || unseen_away(st) {
+    // (no monster, so no danger): walk away from where it struck, then, once
+    // clear (or with nowhere to walk), heal at low HP. The walk comes first
+    // so a low heal threshold cannot keep it drinking where it is struck
+    // (review of #698).
+    if unseen_away(st) || unseen_heal(st) {
         return true;
     }
 
@@ -744,11 +746,14 @@ fn hold_for_breeders(st: &mut BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#697): whether `who` (a "HIT_BY:"/"MISS_BY:" name) is a
-/// monster the Borg cannot see: "Something" or "It", as `borg_locate_kill`
-/// tests them.
+/// monster the Borg cannot see. The blow's name is
+/// `monster_desc(..., MDESC_STANDARD)` (`mon-attack.c:778`): for a monster
+/// that is not visible, "Something" if it is neuter and "Someone" if it is
+/// male or female (`mon-desc.c:123-152`, `tests/monster/desc.c:390-392`).
+/// "It" is `MDESC_DEFAULT`'s, never a blow's (review of #698).
 fn unseen_name(who: &[u8]) -> bool {
     let lower: Vec<u8> = who.iter().map(u8::to_ascii_lowercase).collect();
-    lower.starts_with(b"something") || lower == b"it" || lower.starts_with(b"it ")
+    lower.starts_with(b"something") || lower.starts_with(b"someone")
 }
 
 /// borg-reborn-rs (#697): remember an attack by a monster the Borg cannot
@@ -763,17 +768,21 @@ pub(crate) fn note_unseen_attack(st: &mut BorgState, who: &[u8]) {
     let now = engine::game_turn();
     let (x, y) = (st.borg.c.x, st.borg.c.y);
     let turns = param(Param::recover_unseen_attack_turns);
-    if unseen_recent(turns, now, st.borg.unseen_turn)
-        && engine::distance(loc { x, y }, loc { x: st.borg.unseen_x, y: st.borg.unseen_y })
-            >= param(Param::recover_unseen_attack_distance)
-    {
-        st.borg.unseen_followed = true;
-    } else if !unseen_recent(turns, now, st.borg.unseen_turn) {
-        st.borg.unseen_followed = false;
-    }
+    let recent = unseen_recent(turns, now, st.borg.unseen_turn);
+    let far = engine::distance(loc { x, y }, loc { x: st.borg.unseen_x, y: st.borg.unseen_y })
+        >= param(Param::recover_unseen_attack_distance);
+    st.borg.unseen_followed = unseen_followed_next(st.borg.unseen_followed, recent, far);
     st.borg.unseen_turn = now;
     st.borg.unseen_x = x;
     st.borg.unseen_y = y;
+}
+
+/// borg-reborn-rs (#697): "followed" after a new unseen attack: set when it
+/// struck far (at least the distance) from the last one within the window;
+/// kept while the attacks stay within the window (it stays set, so the Borg
+/// leaves); cleared when the window had lapsed (and on a new level).
+fn unseen_followed_next(followed: bool, recent: bool, far: bool) -> bool {
+    recent && (followed || far)
 }
 
 /// borg-reborn-rs (#697): an unseen attack at game turn `at` (0: none) is
@@ -797,9 +806,16 @@ fn unseen_near(st: &BorgState) -> bool {
 }
 
 /// borg-reborn-rs (#697): no rest while an unseen attack is recent and the
-/// Borg is near where it struck, or the attacker has followed it.
-fn unseen_rest_held(st: &BorgState) -> bool {
-    unseen_active(st) && (st.borg.unseen_followed || unseen_near(st))
+/// Borg is near where it struck, or the attacker has followed it. Noted once
+/// a think, as the other rest holds (review of #698).
+fn unseen_rest_held(st: &mut BorgState) -> bool {
+    let held = unseen_active(st) && (st.borg.unseen_followed || unseen_near(st));
+    if held && st.borg.unseen_rest_noted != Some(st.borg.time.now) {
+        st.borg.unseen_rest_noted = Some(st.borg.time.now);
+        let ago = engine::game_turn() - st.borg.unseen_turn;
+        borg_note(st, &format!("# No rest: an unseen attacker struck {ago} game turns ago."));
+    }
+    held
 }
 
 /// borg-reborn-rs (#697), `recover_unseen_heal_hp_percent`: while an unseen
@@ -812,7 +828,9 @@ fn unseen_heal(st: &mut BorgState) -> bool {
     }
     let healed = borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
         || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
-        || borg_quaff_crit(st, false);
+        // The raw quaff, as #457's `borg_heal_outmatched`: `borg_quaff_crit`
+        // keeps the last two and draws a number (review of #698).
+        || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical);
     if healed {
         borg_note(st, "# Healing: an unseen attacker, HP low.");
     }
@@ -981,16 +999,18 @@ mod tests {
 
 #[cfg(test)]
 mod unseen_tests {
-    use super::{unseen_name, unseen_recent};
+    use super::{unseen_followed_next, unseen_name, unseen_recent};
 
     /// #697: the names the game gives a monster the Borg cannot see.
     #[test]
     fn unseen_names() {
         assert!(unseen_name(b"Something"));
         assert!(unseen_name(b"something"));
-        assert!(unseen_name(b"It"));
-        assert!(!unseen_name(b"Itchy thing"), "a name that starts with it");
+        assert!(unseen_name(b"Someone"), "a male or female monster");
+        assert!(unseen_name(b"someone"));
+        assert!(!unseen_name(b"It"), "MDESC_DEFAULT's, never a blow's");
         assert!(!unseen_name(b"the clear icky thing"));
+        assert!(!unseen_name(b"Smeagol"));
     }
 
     /// #697: the window, in game turns; 0 is off, and no attack is none.
@@ -1000,5 +1020,16 @@ mod unseen_tests {
         assert!(!unseen_recent(300, 1_301, 1_000));
         assert!(!unseen_recent(0, 1_000, 1_000), "0 is off");
         assert!(!unseen_recent(300, 1_000, 0), "no attack on this level");
+    }
+
+    /// #697: "followed" is set by a far attack within the window, stays set
+    /// within it, and clears when the window has lapsed.
+    #[test]
+    fn followed_state() {
+        assert!(!unseen_followed_next(false, true, false), "near, within the window");
+        assert!(unseen_followed_next(false, true, true), "far, within the window");
+        assert!(unseen_followed_next(true, true, false), "stays set within the window");
+        assert!(!unseen_followed_next(true, false, true), "the window lapsed");
+        assert!(!unseen_followed_next(false, false, true), "a first attack");
     }
 }

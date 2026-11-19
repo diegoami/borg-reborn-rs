@@ -2979,10 +2979,12 @@ fn breeder_exit(st: &mut BorgState, pos_danger: i32) -> bool {
 }
 
 /// borg-reborn-rs (#697): walk to the nearest known grid at least `distance`
-/// grids from `from`, with the ordinary flow (danger counted): a corridor or
-/// doorway (#544's `breeder_exit_grid`) if one is known, else any known
-/// floor grid. Takes the first step; false when no grid is known or none can
-/// be reached.
+/// grids from `from`: a corridor or doorway (#544's `breeder_exit_grid`) if
+/// one is known, else any known floor grid. Unlike #544's exit the flow is
+/// not the desperate one: danger is counted, so a dangerous monster's grid
+/// is refused; `avoid` keeps the path off unknown grids, as the desperate
+/// flow does (review of #698). Takes the first step; false when no grid is
+/// known or none can be reached.
 pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: &std::ffi::CStr) -> bool {
     let passable = |x: i32, y: i32| {
         engine::square_in_bounds_fully(x, y) && {
@@ -3013,7 +3015,7 @@ pub(crate) fn walk_away_from(st: &mut BorgState, from: loc, distance: i32, why: 
     for e in &targets {
         crate::borg_flow::borg_flow_enqueue_grid(st, e.y, e.x);
     }
-    crate::borg_flow::borg_flow_spread(st, 250, true, false, false, -1, false);
+    crate::borg_flow::borg_flow_spread(st, 250, true, true, false, -1, false);
     crate::borg_flow::borg_flow_commit(st, why, GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 

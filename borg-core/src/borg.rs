@@ -89,6 +89,8 @@ pub struct Borg {
     pub unseen_x: i32,
     pub unseen_y: i32,
     pub unseen_followed: bool,
+    /// #697: the think that last noted a rest held for an unseen attacker.
+    pub unseen_rest_noted: Option<BorgTime>,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
