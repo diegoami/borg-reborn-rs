@@ -258,11 +258,14 @@ borg_param_town_digger_min_gold = 500
 # device skills. town_missiles_other_ranged_percent: with 5 or more flasks
 # of oil and attack-wand charges in the pack the shots weigh this percent
 # (owner: projectiles matter more without flasks or wands); 100 = no change.
+# town_launcher_power: the first launcher (a Sling, a bow) of a class with
+# none is worth this much more power, x the class's town_missiles_percent.
 # Change together: the shots' weight is borg_town_w_ranger_missiles x these.
 
 borg_param_town_missiles_percent = -1
 borg_param_town_missiles_other_ranged_percent = 50
 borg_param_town_devices_percent = 100
+borg_param_town_launcher_power = 0
 
 # Fear cures to keep while not afraid (#516): beyond this many Potions of
 # Boldness the planner buys no more (it bought 35 and drank 7 on 18 games).

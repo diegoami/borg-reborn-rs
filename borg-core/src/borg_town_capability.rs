@@ -372,7 +372,7 @@ fn launcher_worn(st: &BorgState) -> bool {
 /// launcher, in percent of `borg_town_w_ranger_missiles`:
 /// `town_missiles_percent` (per class, by shooting skill); -1 = C, the
 /// Ranger's reserve only (100 for a Ranger, 0 for the others).
-fn missiles_percent(class: i32, setting: i32) -> i64 {
+pub(crate) fn missiles_percent(class: i32, setting: i32) -> i64 {
     if setting < 0 { if class == CLASS_RANGER { 100 } else { 0 } } else { i64::from(setting) }
 }
 

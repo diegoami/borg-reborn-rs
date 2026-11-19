@@ -105,6 +105,12 @@ fn ware_role(st: &BorgState, item: &borg_item) -> (i8, i64) {
     }
 }
 
+/// borg-reborn-rs (#666): the power added to the first launcher of a class
+/// with none: `power` x the class's shots percent / 100.
+fn first_launcher_bonus(power: i32, percent: i64) -> i64 {
+    i64::from(power.max(0)) * percent.max(0) / 100
+}
+
 /// The try-on: for every wearable ware, the power gained by wearing it -
 /// the ware put on in its equipment slot, the worn item moved into a free
 /// pack slot, `borg_notice` and `borg_power` run, exactly as the live
@@ -171,7 +177,13 @@ fn try_on(st: &mut BorgState, stock: &Stock) -> (Vec<TryOn>, Vec<(usize, i32)>) 
         } else { (i64::from(crate::borg_power::borg_power(st)), base) };
         st.items.items[eq] = items[eq];
         st.items.items[hole] = items[hole];
-        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before });
+        // borg-reborn-rs (#666, owner): the first launcher of a class without
+        // one is worth `town_launcher_power` more, by the class's shooting
+        // skill (town_missiles_percent); 0 = as computed.
+        let first_launcher = if eq == wield + 1 && worn.iqty == 0 {
+            first_launcher_bonus(crate::params::value(crate::params::Param::town_launcher_power), crate::borg_town_capability::missiles_percent(st.borg.tr(crate::borg_headers::borg_trait_h::BI_CLASS), crate::params::value(crate::params::Param::town_missiles_percent)))
+        } else { 0 };
+        tryon.push(TryOn { shop: c.shop, slot: c.slot, eq_slot: (eq - wield) as u8, value: p - before + first_launcher });
         slots.push((i, i32::from(worn.iqty != 0)));
     }
 
