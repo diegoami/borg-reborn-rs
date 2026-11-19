@@ -1839,6 +1839,23 @@ fn fit_to_hunt(status: bool) -> bool {
     !status
 }
 
+/// borg-reborn-rs (#691): what `kill_flow_mode` lets `borg_flow_kill` hunt:
+/// `None` no hunt, `Some(true)` breeders only, `Some(false)` as before.
+/// 0: as C. 1: only this repository's targeted hunts: breeders when a hunt
+/// for them applies (#503, #558), dangerous town monsters (#619, #637).
+/// 2: no call for monsters out of view (the "chase old monsters" calls).
+/// 3: never.
+fn kill_flow_mode_hunt(mode: i32, viewable: bool, breeder_hunt: bool, town_dangerous_only: bool) -> Option<bool> {
+    match mode {
+        1 if town_dangerous_only => Some(false),
+        1 if breeder_hunt => Some(true),
+        1 => None,
+        2 if !viewable => None,
+        3 => None,
+        _ => Some(false),
+    }
+}
+
 pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let mut b_j: i32 = -1;
     let mut b_stair: i32 = -1;
@@ -1906,6 +1923,17 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // Not if sitting in a sea of runes
     if st.borg.morgoth_position {
         return false;
+    }
+
+    // borg-reborn-rs (#691): `kill_flow_mode`, the hunt removed in steps to
+    // measure what it is worth.
+    // Mode 1 sets `breeders_only`, which narrows the targets; the CL < 10
+    // breeder skip in the scan still reads `breeder_hunt` (review of #695).
+    let mode = crate::params::value(crate::params::Param::kill_flow_mode);
+    match kill_flow_mode_hunt(mode, viewable, breeder_hunt || breeders_only, town_dangerous_only) {
+        None => return false,
+        Some(true) => breeders_only = true,
+        Some(false) => {}
     }
 
     // Nothing found
@@ -3574,4 +3602,23 @@ mod tests {
         assert_eq!((WEST.dy[11], WEST.dx[11]), (0, -3));
     }
 
+}
+
+#[cfg(test)]
+mod kill_flow_mode_tests {
+    use super::kill_flow_mode_hunt;
+
+    /// #691: each mode of the hunt's removal.
+    #[test]
+    fn modes() {
+        for v in [false, true] {
+            assert_eq!(kill_flow_mode_hunt(0, v, false, false), Some(false), "0 is C");
+            assert_eq!(kill_flow_mode_hunt(3, v, true, true), None, "3 never hunts");
+        }
+        assert_eq!(kill_flow_mode_hunt(1, true, false, false), None, "1: no targeted hunt, none");
+        assert_eq!(kill_flow_mode_hunt(1, true, true, false), Some(true), "1: breeders only");
+        assert_eq!(kill_flow_mode_hunt(1, false, false, true), Some(false), "1: the town hunt as it is");
+        assert_eq!(kill_flow_mode_hunt(2, false, false, false), None, "2: no out-of-view call");
+        assert_eq!(kill_flow_mode_hunt(2, true, false, false), Some(false), "2: in view as before");
+    }
 }
