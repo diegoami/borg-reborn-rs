@@ -2486,14 +2486,22 @@ pub(crate) fn apply_scary_stand(st: &mut BorgState, scary: bool, pursuer: bool) 
         // borg-reborn-rs (#590, owner): with `caution_scary_unlatch_kill`,
         // only after a scary monster was killed, latch on or off: a
         // forgotten monster has not left the level.
+        // borg-reborn-rs (#593, owner): `caution_scary_unlatch_calmed` also
+        // clears it once a scary monster is known hurt or afraid.
         let killed = st.borg.mon.scary_killed;
-        if unlatch_when(p(Param::caution_scary_latch) != 0, p(Param::caution_scary_unlatch_kill) != 0, killed)
-            && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal)
-        {
+        let calmed = st.borg.mon.scary_calmed;
+        let rules = UnlatchRules {
+            latch: p(Param::caution_scary_latch) != 0,
+            kill: p(Param::caution_scary_unlatch_kill) != 0,
+            calmed: p(Param::caution_scary_unlatch_calmed) != 0,
+        };
+        if unlatch_when(rules, killed, calmed) && unlatch_scare(&mut st.borg.mon, &mut st.borg.goal) {
             borg_note(
                 st,
-                if killed {
+                if killed && (rules.kill || rules.calmed) {
                     "# Scary guy killed: the level is no longer scary."
+                } else if calmed && rules.calmed {
+                    "# Scary guy hurt or afraid: the level is no longer scary."
                 } else {
                     "# Scary guy gone: the level is no longer scary."
                 },
@@ -2547,15 +2555,36 @@ pub(crate) fn withdraw_scary_goals(mon: &mut crate::borg::BorgMonInfo, goal: &mu
 /// withdraw the goals the scare set. True when the level was scary.
 /// The stand ends too, even when the last think stood (a stand already
 /// cleared the flag), so the next stand prints its note (review of #562).
-/// borg-reborn-rs (#590): may the scare clear, now that no scary monster is
-/// known? With `kill` (`caution_scary_unlatch_kill`), only after a scary
-/// race was killed, whatever the latch; without it, only with the latch off.
-fn unlatch_when(latch: bool, kill: bool, killed: bool) -> bool {
-    if kill {
-        killed
+/// borg-reborn-rs (#590, #593): the settings that decide when the scare
+/// clears.
+#[derive(Clone, Copy)]
+struct UnlatchRules {
+    latch: bool,
+    kill: bool,
+    calmed: bool,
+}
+
+/// borg-reborn-rs (#590, #593): may the scare clear, now that no scary
+/// monster is known? With the kill rule (`caution_scary_unlatch_kill`), only
+/// after a scary race was killed; with the calmed rule
+/// (`caution_scary_unlatch_calmed`), after one is known hurt or afraid, or
+/// killed; whatever the latch. Without either, only with the latch off.
+fn unlatch_when(rules: UnlatchRules, killed: bool, calmed: bool) -> bool {
+    if rules.kill || rules.calmed {
+        // A kill is the stronger signal: the calmed rule clears on it too
+        // (review of #595).
+        (rules.kill && killed) || (rules.calmed && (calmed || killed))
     } else {
-        !latch
+        !rules.latch
     }
+}
+
+/// borg-reborn-rs (#593): this scan's hurt or afraid monsters (`races`):
+/// is one of a race that made the level scary?
+pub(crate) fn note_calmed(mon: &mut crate::borg::BorgMonInfo, races: &[u16]) {
+    mon.scary_calmed = races
+        .iter()
+        .any(|r| race_bit(*r).is_some_and(|(word, bit)| mon.scary_races[word] & bit != 0));
 }
 
 /// borg-reborn-rs (#590): remember a race that made the level scary.
@@ -2595,6 +2624,7 @@ fn unlatch_scare(mon: &mut crate::borg::BorgMonInfo, goal: &mut crate::borg::Bor
         return false;
     }
     mon.scary_killed = false;
+    mon.scary_calmed = false;
     mon.scary_races = [0; 16];
     withdraw_scary_goals(mon, goal);
     true
@@ -2628,6 +2658,7 @@ pub(crate) fn forget_scary(mon: &mut crate::borg::BorgMonInfo) {
     mon.scary_town = false;
     mon.scary_stand = false;
     mon.scary_killed = false;
+    mon.scary_calmed = false;
     mon.scary_races = [0; 16];
 }
 
@@ -3718,11 +3749,13 @@ mod scary_stand_tests {
 
     #[test]
     fn a_kill_clears_the_scare_whatever_the_latch() {
-        assert!(!unlatch_when(true, false, true), "C: the latch holds even after a kill");
-        assert!(unlatch_when(false, false, false), "latch off: whenever none is known");
-        assert!(!unlatch_when(false, true, false), "kill rule: forgotten is not enough");
-        assert!(unlatch_when(true, true, true), "kill rule: a kill clears with the latch on");
-        assert!(unlatch_when(false, true, true));
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        assert!(!unlatch_when(r(true, false, false), true, true), "C: the latch holds even after a kill");
+        assert!(unlatch_when(r(false, false, false), false, false), "latch off: whenever none is known");
+        assert!(!unlatch_when(r(false, true, false), false, false), "kill rule: forgotten is not enough");
+        assert!(unlatch_when(r(true, true, false), true, false), "kill rule: a kill clears with the latch on");
+        assert!(unlatch_when(r(false, true, false), true, false));
+        assert!(!unlatch_when(r(true, true, false), false, true), "kill rule alone: calmed is not enough");
         let mut mon = BorgMonInfo::default();
         note_scary_race(&mut mon, 42);
         note_kill(&mut mon, 7);
@@ -3755,10 +3788,52 @@ mod scary_stand_tests {
         note_scan(&mut mon, true); // a later one of race 42 is known: the kill is spent
         assert!(!mon.scary_killed);
         note_scan(&mut mon, false); // then forgotten: nothing scary known
-        assert!(!unlatch_when(true, true, mon.scary_killed), "forgotten, not killed: the flag stays");
+        assert!(
+            !unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "forgotten, not killed: the flag stays"
+        );
         note_kill(&mut mon, 42);
         note_scan(&mut mon, false); // killed and none left known
-        assert!(unlatch_when(true, true, mon.scary_killed), "the last one killed: the flag clears");
+        assert!(
+            unlatch_when(UnlatchRules { latch: true, kill: true, calmed: false }, mon.scary_killed, false),
+            "the last one killed: the flag clears"
+        );
+    }
+
+    #[test]
+    fn a_hurt_or_afraid_scary_monster_clears_the_scare() {
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        assert!(unlatch_when(r(true, false, true), false, true), "calmed rule, latch on");
+        assert!(unlatch_when(r(true, false, true), true, false), "calmed rule alone: a kill clears too");
+        assert!(unlatch_when(r(true, true, true), true, false), "both rules: a kill");
+        assert!(unlatch_when(r(true, true, true), false, true), "both rules: calmed");
+        assert!(!unlatch_when(r(false, false, true), false, false), "calmed rule, latch off: forgotten is not enough");
+        assert!(!unlatch_when(r(true, false, true), false, false), "calmed rule alone: forgotten is not enough");
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_calmed(&mut mon, &[7]);
+        assert!(!mon.scary_calmed, "another race calmed");
+        note_calmed(&mut mon, &[42]);
+        assert!(mon.scary_calmed, "the scary race is hurt or afraid");
+        note_calmed(&mut mon, &[]);
+        assert!(!mon.scary_calmed, "each scan decides afresh");
+    }
+
+    #[test]
+    fn only_races_that_made_the_level_scary_clear_it() {
+        // The second review of #595: race 42 made the level scary; race 7 was
+        // only ever seen hurt or afraid, so it is not in the record.
+        let r = |latch, kill, calmed| UnlatchRules { latch, kill, calmed };
+        let mut mon = BorgMonInfo::default();
+        note_scary_race(&mut mon, 42);
+        note_scan(&mut mon, true);
+        note_kill(&mut mon, 7); // a hurt race-7 monster is killed
+        assert!(!mon.scary_killed, "a race that never made the level scary is no kill");
+        note_calmed(&mut mon, &[7]); // race 42 forgotten, race 7 known hurt
+        assert!(!mon.scary_calmed, "nor is it calmed");
+        assert!(!unlatch_when(r(true, true, true), mon.scary_killed, mon.scary_calmed), "the flag stays");
+        note_calmed(&mut mon, &[42]);
+        assert!(unlatch_when(r(true, false, true), mon.scary_killed, mon.scary_calmed), "race 42 hurt: it clears");
     }
 
     #[test]
