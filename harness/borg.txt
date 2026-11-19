@@ -359,6 +359,14 @@ borg_param_caution_flee_recall_danger_percent = 0
 borg_param_caution_recall_rest_turns = 500
 borg_param_caution_recall_prep_turns = 2
 
+# No rest for Recall right after a monster was near (#567).
+# caution_recall_rest_monster_turns = N (game turns, 0 = off): while Recall is
+# active, if an awake monster was known within caution_recall_rest_monster_distance
+# grids in the last N game turns, stay still one turn at a time instead of
+# resting, so a monster that comes back is seen before it bites.
+borg_param_caution_recall_rest_monster_turns = 0
+borg_param_caution_recall_rest_monster_distance = 20
+
 # Waiting for Recall in danger above avoidance x danger_multiplier, buy time,
 # in this order: restore mana (max SP above mana_maxsp and SP below max /
 # mana_divisor); Phase Door, if the landing test passes (phase_tolerance
