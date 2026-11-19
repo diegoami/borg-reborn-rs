@@ -115,7 +115,7 @@ you"; otherwise, if the Borg cannot escape, attack with magic or missiles,
 and if that is not possible, boost (Speed included); only in close quarters,
 when the Borg thinks it cannot win, Phase Door.
 
-With `escape_phase_adjacent_rule = 1` (compiled 0, shipped 0), `phase_door`
+With `escape_phase_adjacent_rule = 1` (compiled 0, shipped 1 since #661), `phase_door`
 asks one rule at every site above, before the site's own check, if the Borg
 can Phase Door at all (`BI_APHASE`):
 
@@ -130,7 +130,7 @@ comparisons behind a setting):
 
 | value | the adjacent fight is lost when |
 |---|---|
-| 0 | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
+| 0 (shipped, #661) | the danger where the Borg stands is at or above `escape_phase_lost_danger_percent` (100) % of the current HP |
 | **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
 

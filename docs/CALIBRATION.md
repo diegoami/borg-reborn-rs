@@ -623,7 +623,7 @@ gap to the next row. Shipped play changes, so `harness/reference/smoke-borg-rs`
 is re-recorded (#606). Direction only: 18 games, no zoo run.
 ## The scary flag clears when the scary monster is hurt or afraid (#593)
 
-The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (0, off): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
+The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (compiled 0, shipped 1 since #671): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
 
 ## The owner's Phase Door rule (#584)
 
@@ -632,13 +632,13 @@ Owner, 2026-11-18: "to use Phase Door, enemies must be on the square next to
 you"; otherwise escape if possible, else attack with magic or missiles, else
 boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 
-- `escape_phase_adjacent_rule` (compiled 0, shipped 0): at every site, before
+- `escape_phase_adjacent_rule` (compiled 0, shipped 1 since #661): at every site, before
   its own check, Phase Door only with an awake enemy adjacent and the fight
   judged lost. The rule only refuses the Phase Door; the escape levels go on
   with their other escapes, and if none acts the Borg attacks (its best
   attack by its own ranking) or, with an awake monster in view, boosts
   (`phase_rule_act`, once per think). Decided and noted once per think.
-- `escape_phase_lost_test` (1, owner 2026-11-19: both comparisons behind a
+- `escape_phase_lost_test` (compiled 1, shipped 0 since #661; owner 2026-11-19: both comparisons behind a
   setting): how the adjacent fight is judged lost. 0 = the threshold below;
   1 = the fight compared: killing the adjacent awake monsters one after
   another (their HP left) takes more turns than the danger where it stands
