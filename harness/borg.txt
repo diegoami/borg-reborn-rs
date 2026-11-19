@@ -601,7 +601,8 @@ borg_param_escape_phase_lost_danger_percent = 100
 # Ranged first against immobile attackers (#646, owner: "always choose ranged
 # against immobile but annoying monsters"). 1 = next to a known monster that
 # never moves and attacks (mushroom patch, mold, floating eye), confused or
-# carrying something to throw or shoot (then once per monster and level),
+# carrying something to throw or shoot (then once per monster and level;
+# confused up to three times),
 # the Borg steps out of its reach and
 # does not cure confusion next to it; not when the monsters that move are as
 # dangerous as its HP. 0 = C (it cured next to a grey mushroom patch three
