@@ -420,7 +420,7 @@ borg_param_caution_rising_hold_flee_descent = 0
 # (#483). Higher explores longer before giving up and going down.
 # Impact: set to 600, 1 of 6 test games play differently.
 
-borg_param_caution_rising_explore_ticks = 300
+borg_param_caution_rising_explore_ticks = 500
 
 # While rising, allow a descent again when the danger here is above
 # avoidance x this / 10 (#483). Lower lets danger push it down sooner.
@@ -725,7 +725,7 @@ borg_scary_list = scary_monsters.txt
 # not counted.
 # Impact: set to 120, 0 of 6 test games play differently.
 
-borg_param_caution_scary_damage_percent = 60
+borg_param_caution_scary_damage_percent = 50
 
 # Flee a scary level only while the escape is real: a free staircase within
 # the breeders' easy_escape_steps, an escape item, or no scary monster awake
