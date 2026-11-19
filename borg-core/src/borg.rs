@@ -80,6 +80,13 @@ pub struct Borg {
     /// was tried): decided once at the first site that asks, used by every
     /// later site, acted on once by `borg_caution` after `borg_escape`.
     pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
+    /// borg-reborn-rs (#556): the grids where a breeder was last known on
+    /// this level, with when (the kill's `when`); cleared on a new level.
+    pub breeder_marks: Vec<(crate::headers::z_type_h::loc, BorgTime)>,
+    /// borg-reborn-rs (#556): per grid (`y * AUTO_MAX_X + x`), within
+    /// `caution_breeder_avoid_radius` of a fresh mark; rebuilt each think,
+    /// empty with `caution_breeder_avoid` 0.
+    pub breeder_block: Vec<bool>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

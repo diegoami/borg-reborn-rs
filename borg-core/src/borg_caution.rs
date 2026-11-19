@@ -2753,6 +2753,67 @@ fn breeder_exit_flow(st: &mut BorgState, exits: &[loc]) -> bool {
     crate::borg_flow::borg_flow_commit(st, c"breeder-exit", GOAL_FLEE) && crate::borg_flow::borg_flow_old(st, GOAL_FLEE)
 }
 
+/// borg-reborn-rs (#556): with `caution_breeder_avoid`, remember the grid of
+/// every known breeder (with the kill's `when`), forget marks older than
+/// `caution_breeder_avoid_turns`, and rebuild `breeder_block`: the grids
+/// within `caution_breeder_avoid_radius` of a mark. Called once per think
+/// after the monsters are updated; it draws no random numbers.
+pub(crate) fn note_breeders(st: &mut BorgState) {
+    if p(Param::caution_breeder_avoid) == 0 {
+        return;
+    }
+    let now = st.borg.time.now;
+    let turns = p(Param::caution_breeder_avoid_turns);
+    for i in 1..st.kills.nxt.max(0) as usize {
+        let kill = st.kills.kills[i];
+        if kill.r_idx == 0 || engine::r_max() == 0 || kill.r_idx as i32 >= engine::r_max() as i32 - 1 {
+            continue;
+        }
+        if !engine::race_flag_has(usize::from(kill.r_idx), RF_MULTIPLY) {
+            continue;
+        }
+        remember_breeder(&mut st.borg.breeder_marks, kill.pos, kill.when);
+    }
+    st.borg.breeder_marks.retain(|&(_, when)| now.wrapping_sub(when) <= turns);
+    st.borg.breeder_block = breeder_block_grid(&st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius));
+}
+
+/// Record a breeder seen at `at` at `when`, keeping the latest time per grid.
+fn remember_breeder(marks: &mut Vec<(loc, BorgTime)>, at: loc, when: BorgTime) {
+    match marks.iter_mut().find(|(g, _)| g.x == at.x && g.y == at.y) {
+        Some(m) => m.1 = m.1.max(when),
+        None => marks.push((at, when)),
+    }
+}
+
+/// The grids (`y * AUTO_MAX_X + x`) within `radius` (the engine's distance)
+/// of a mark; empty when there is no mark.
+fn breeder_block_grid(marks: &[(loc, BorgTime)], radius: i32) -> Vec<bool> {
+    if marks.is_empty() {
+        return Vec::new();
+    }
+    let mut block = vec![false; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+    for &(m, _) in marks {
+        for y in (m.y - radius).max(0)..=(m.y + radius).min(AUTO_MAX_Y - 1) {
+            for x in (m.x - radius).max(0)..=(m.x + radius).min(AUTO_MAX_X - 1) {
+                if engine::distance(m, loc { x, y }) <= radius {
+                    block[(y * AUTO_MAX_X + x) as usize] = true;
+                }
+            }
+        }
+    }
+    block
+}
+
+/// borg-reborn-rs (#556): `(x, y)` is near a remembered breeder
+/// (`breeder_block`; always false with `caution_breeder_avoid` 0).
+pub(crate) fn near_known_breeder(st: &BorgState, x: i32, y: i32) -> bool {
+    if x < 0 || y < 0 || x >= AUTO_MAX_X || y >= AUTO_MAX_Y {
+        return false;
+    }
+    st.borg.breeder_block.get((y * AUTO_MAX_X + x) as usize).copied().unwrap_or(false)
+}
+
 /// The 8 neighbours' offsets.
 const NEIGHBOURS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0)];
 
@@ -4279,5 +4340,41 @@ mod flee_known_down_tests {
         assert_eq!(flee_down_depth(-3), 250);
         assert_eq!(flee_down_depth(40), 40);
         assert_eq!(flee_down_depth(1000), 250);
+    }
+}
+
+#[cfg(test)]
+mod breeder_avoid_tests {
+    use super::*;
+
+    /// #556: one mark per grid, with the latest time it was seen there.
+    #[test]
+    fn a_breeder_grid_keeps_its_latest_sighting() {
+        let mut marks = Vec::new();
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 10);
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 30);
+        remember_breeder(&mut marks, loc { x: 5, y: 7 }, 20);
+        remember_breeder(&mut marks, loc { x: 6, y: 7 }, 25);
+        assert_eq!(marks.len(), 2);
+        assert_eq!(marks[0].1, 30, "the latest sighting wins");
+        assert_eq!(marks[1].1, 25);
+    }
+
+    /// #556: the blocked grids are those within the radius (the engine's
+    /// distance) of a mark, clipped to the map; none without a mark.
+    #[test]
+    fn grids_near_a_mark_are_blocked_within_the_radius() {
+        assert!(breeder_block_grid(&[], 1).is_empty());
+        let at = |b: &[bool], x: i32, y: i32| b[(y * AUTO_MAX_X + x) as usize];
+        let b = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 1);
+        assert!(at(&b, 10, 10) && at(&b, 11, 11) && at(&b, 9, 10));
+        assert!(!at(&b, 12, 10) && !at(&b, 10, 8));
+        let b0 = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 0);
+        assert!(at(&b0, 10, 10) && !at(&b0, 11, 10), "radius 0: only its own grid");
+        // distance((10,10), (12,11)) = 2 + 1/2 = 2: inside radius 2
+        let b2 = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 2);
+        assert!(at(&b2, 12, 11) && !at(&b2, 12, 12), "the engine's distance, not the square");
+        let corner = breeder_block_grid(&[(loc { x: 0, y: 0 }, 0)], 3);
+        assert!(at(&corner, 0, 0) && at(&corner, 2, 1));
     }
 }

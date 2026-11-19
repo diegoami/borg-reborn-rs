@@ -434,7 +434,9 @@ fn count_scary(
         let p = borg_danger(st, y, x, turns, true, false);
 
         // if *very* scary, do not allow jumps at all
-        if p > st.borg.tr(BI_CURHP) {
+        // borg-reborn-rs (#556): a landing near a remembered breeder is
+        // scary too (a Phase Door into the colony; no random numbers drawn).
+        if p > st.borg.tr(BI_CURHP) || crate::borg_caution::near_known_breeder(st, x, y) {
             n += 1;
         }
     }

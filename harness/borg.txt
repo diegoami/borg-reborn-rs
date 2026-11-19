@@ -718,6 +718,16 @@ borg_param_caution_breeder_boost_danger_tenths = 5
 borg_param_caution_breeder_exit = 0
 borg_param_caution_breeder_exit_distance = 6
 
+# Avoid breeder colonies (#556): remember where breeders were seen for
+# caution_breeder_avoid_turns Borg turns; every flow but a kill flow (stairs,
+# flight, exploration, items, the breeder exit) refuses the grids within
+# caution_breeder_avoid_radius of one (the Borg's first step excepted), and a
+# Phase Door landing there counts as scary. 0 = off.
+
+borg_param_caution_breeder_avoid = 0
+borg_param_caution_breeder_avoid_radius = 1
+borg_param_caution_breeder_avoid_turns = 50
+
 
 ### Scary monsters ###
 

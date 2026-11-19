@@ -2068,7 +2068,7 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // Spread the flow: if we are not flowing toward monsters that we can
     // see, make sure they are at least easily reachable.
-    borg_flow::borg_flow_spread(st, nearness, true, !viewable, false, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, nearness, true, !viewable, false, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, c"kill", i32::from(GOAL_KILL)) {
@@ -2200,7 +2200,7 @@ pub fn borg_flow_kill_aim(st: &mut BorgState, viewable: bool) -> bool {
                 st.borg.c.y = s_c_y;
 
                 // Spread the flow
-                borg_flow::borg_flow_spread(st, 5, true, !viewable, false, -1, false);
+                borg_flow::borg_flow_spread_hunting(st, 5, true, !viewable, false, -1, false);
 
                 // Attempt to Commit the flow
                 if !borg_flow::borg_flow_commit(st, c"targetable position", i32::from(GOAL_KILL)) {
@@ -2299,7 +2299,7 @@ fn dig_to(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr, twice: boo
     if twice {
         st.borg.status.digging = true;
     }
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {
@@ -2423,7 +2423,7 @@ pub fn borg_flow_kill_corridor(st: &mut BorgState) -> bool {
         borg_flow::borg_flow_clear(st);
         st.borg.status.digging = true;
         borg_flow::borg_flow_enqueue_grid(st, kill.pos.y, kill.pos.x);
-        borg_flow::borg_flow_spread(st, 10, true, !mapped, false, -1, false);
+        borg_flow::borg_flow_spread_hunting(st, 10, true, !mapped, false, -1, false);
         if !borg_flow::borg_flow_commit(st, c"Monster Path", i32::from(GOAL_KILL)) {
             return false;
         }
@@ -2642,7 +2642,7 @@ fn dig_to_direct(st: &mut BorgState, y: i32, x: i32, depth: i32, who: &CStr) -> 
     borg_flow::borg_flow_enqueue_grid(st, y, x);
 
     // Spread the flow
-    borg_flow::borg_flow_spread(st, depth, true, false, true, -1, false);
+    borg_flow::borg_flow_spread_hunting(st, depth, true, false, true, -1, false);
 
     // Attempt to Commit the flow
     if !borg_flow::borg_flow_commit(st, who, GOAL_DIGGING) {

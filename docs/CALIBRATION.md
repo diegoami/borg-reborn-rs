@@ -10,6 +10,35 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Avoid breeder colonies (#556)
+
+The registry now holds **2162** parameters (2159 after #584; three added).
+Owner, 2026-11-18: "maybe in that scenario one should not walk into a room
+with breeders then". The flows that move the Borg ignored known breeders, and
+a breeder out of view is forgotten, so the next think's flow walked back into
+the colony; a Phase Door could land in it (Half-Elf Priest 592068863,
+borg-cemetery#73).
+
+- `caution_breeder_avoid` (compiled 0, shipped 0): each think the grid of
+  every known breeder is remembered with the kill's `when`
+  (`note_breeders`, after the monster update; cleared on a new level; no
+  random numbers). Every flow spread except a kill flow's
+  (`borg_flow_spread_hunting`: the kill flows and their digging, so #503's
+  hunt still reaches the breeders) refuses a grid within the radius of a
+  remembered breeder, except the grids next to the Borg (its first step).
+  So the stair and flee flows, exploration, the item flows and the breeder
+  exit route around the colony, or find no route. A Phase Door or teleport
+  landing grid there counts as scary (`count_scary`).
+- `caution_breeder_avoid_radius` (1): the engine's distance from a mark.
+- `caution_breeder_avoid_turns` (50): a mark is kept this many Borg turns
+  (`time.now`, one per think) after the breeder was last known there.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_breeder_avoid` | 0 | flag | 0–1 | `borg_caution.rs:2762` |
+| `caution_breeder_avoid_radius` | 1 | grids | 0–10 | `borg_caution.rs:2778` |
+| `caution_breeder_avoid_turns` | 50 | Borg turns | 1–100000 | `borg_caution.rs:2766` |
+
 ## The owner's Phase Door rule (#584)
 
 The registry now holds **2159** parameters (2156 after #622; three added).
