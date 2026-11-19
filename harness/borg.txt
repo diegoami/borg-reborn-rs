@@ -255,8 +255,9 @@ borg_param_town_digger_min_gold = 500
 # borg_town_w_ranger_missiles, for any class; -1 = only the Ranger's (C).
 # town_devices_percent: what a wand, rod or staff is worth, in percent of
 # what it supplies. The class files set both, from class.txt's shooting and
-# device skills; town_missiles_percent stays -1 until a zoo pilot (owner:
-flasks, always in the General Store, come first). town_missiles_other_ranged_percent: with 5 or more flasks
+# device skills; town_missiles_percent stays -1 until a zoo pilot (#676;
+owner: flasks, always in the General Store, come first).
+# town_missiles_other_ranged_percent: with 5 or more flasks
 # of oil and attack-wand charges in the pack the shots weigh this percent
 # (owner: buy projectiles mostly when there are no flasks; the General
 # Store always stocks them); 100 = no change.

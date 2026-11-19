@@ -3,7 +3,6 @@
 Owner: "weighing buying projectile and magic by class"; by shooting and by device skill; "projectile buying is more important if they cannot get flasks of oil or wands"; "I would make them buy it mostly when they cannot find flasks of oil at all"; ship only the fix and the device weights.
 
 - **Shipped:**
-  - **Fix:** ammunition is worth nothing in the town plan without a launcher in the bow slot (`launcher_worn`). Before, ammunition counted whenever `BI_AMMO_TVAL` matched.
   - **`town_devices_percent`** (compiled 100): a wand, rod or staff is worth that percent of what it supplies. The class files set it by `class.txt`'s device skill, with 24 = 100: Mage and Necromancer 150, Rogue 135, Priest 125, Ranger 115, Druid, Paladin and Blackguard 100, Warrior 75.
 - **Compiled at today's play:**
   - **`town_missiles_percent`** (-1 = the Ranger's reserve only). Any class can have a reserve of shots for its launcher, in percent of `borg_town_w_ranger_missiles`.
@@ -16,9 +15,10 @@ Owner: "weighing buying projectile and magic by class"; by shooting and by devic
   - Flasks of oil are always stocked in the General Store (`store.txt`, `always:flask:Flask of Oil`).
   - A wand is bought when the purse allows: smoke's priest-3 buys a 330-gold Wand of Magic Missile.
   - Follow-up issue to investigate.
+- **Not a fix (review of #668):** the town plan already values ammunition only with a launcher worn. `BI_AMMO_TVAL` is set only from the bow slot and reset at every `borg_notice`. A `launcher_worn` guard added at first could never fire, so it was removed with its claim.
 - **Results:**
   - classes-18: 18 of 18 games are key-for-key main's.
   - Smoke: priest-3 buys a Wand of Magic Missile at turn 15,156 (device weight 125). `smoke-borg-rs` re-recorded.
 - **Left:**
-  - Why no launcher is bought (follow-up issue).
-  - Shots per class after a zoo pilot.
+  - Why no launcher is bought: #669.
+  - Shots per class, and `borg_power`'s missile reward that fights them: #676.
