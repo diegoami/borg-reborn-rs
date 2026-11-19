@@ -184,6 +184,8 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
 }
 
 /// Whether race `r_idx` (with base name `base`) is scary for `who`.
+/// #622: the listed level is lowered by `who.levels_less` (the caller sets it
+/// for town races, `caution_town_scary_levels_less`).
 pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
     let class = usize::try_from(who.class).ok().filter(|&c| c < CLASSES.len());
     list.entries.iter().any(|e| {
