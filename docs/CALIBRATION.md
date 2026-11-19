@@ -60,8 +60,8 @@ town) they change 5 games: 4 levels more, 5 more kills of the four, 2 thefts
 fewer, the same death. Kill on sight alone kills fewer of the four than
 no kill on sight at N = 6 (13 against 17) and N = 11 (22 against 23):
 unexplained, 18 games. Direction only: a lead for a zoo arm, not a claim
-(RULES 14). These figures are from before the review's fixes (the caster
-walk now also reaches CL20-24).
+(RULES 14). Rerun after the review's fixes (the caster walk also reaches
+CL20-24): the N = 11 row with the three is unchanged (13/18, CL 98, 1 death).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
