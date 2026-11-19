@@ -2847,11 +2847,13 @@ pub(crate) fn note_breeders(st: &mut BorgState) {
     // Only a flight avoids the colony (owner, 2026-11-19: "the flight should
     // be from places where the breeding cannot be stopped any more"); while
     // the Borg fights them, nothing is blocked.
-    st.borg.breeder_block = if st.borg.goal.fleeing || st.borg.mon.scary {
-        breeder_block_grid(&st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius))
+    let mut block = std::mem::take(&mut st.borg.breeder_block);
+    if st.borg.goal.fleeing || st.borg.mon.scary {
+        breeder_block_grid(&mut block, &st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius));
     } else {
-        Vec::new()
-    };
+        block.clear();
+    }
+    st.borg.breeder_block = block;
 }
 
 /// borg-reborn-rs (#556, owner 2026-11-19: "the first choice should be to
@@ -2889,13 +2891,20 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
         .map(|k| k.pos)
         .collect();
     let energy = |speed: i32| f64::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
+    // Besides melee: a missile from the bow, and the true damage of the
+    // attack the last ranking chose (a spell with its mana and fail checks)
+    // within caution_breeder_stoppable_attack_turns.
+    let recent = st.fight_attack.recent_best.filter(|&(t, _)| {
+        st.borg.time.now.wrapping_sub(t) <= p(Param::caution_breeder_stoppable_attack_turns)
+    });
+    let ranged = crate::borg_fight_attack::best_launch_damage(st).max(recent.map_or(0, |(_, d)| d));
     let mut births = 0.0;
     let mut kill_turns = 0.0;
     for &i in &breeders {
         let kill = st.kills.kills[i];
         let k = positions.iter().filter(|q| (q.x - kill.pos.x).abs() <= 1 && (q.y - kill.pos.y).abs() <= 1).count();
         births += breed_chance(k as i32) * energy(i32::from(kill.speed)) / energy(st.borg.tr(BI_SPEED)).max(1.0);
-        let dam = crate::borg_fight_attack::borg_thrust_damage_one(st, i as i32);
+        let dam = crate::borg_fight_attack::borg_thrust_damage_one(st, i as i32).max(ranged);
         kill_turns += turns_to_kill(i32::from(kill.power), dam);
     }
     // The danger where the Borg stands (one turn, averaged), against the HP:
@@ -3005,13 +3014,15 @@ fn remember_breeder(marks: &mut Vec<(loc, BorgTime)>, at: loc, when: BorgTime) {
     }
 }
 
-/// The grids (`y * AUTO_MAX_X + x`) within `radius` (the engine's distance)
-/// of a mark; empty when there is no mark.
-fn breeder_block_grid(marks: &[(loc, BorgTime)], radius: i32) -> Vec<bool> {
+/// Fill `block` with the grids (`y * AUTO_MAX_X + x`) within `radius` (the
+/// engine's distance) of a mark; empty when there is no mark. The buffer is
+/// reused from think to think.
+fn breeder_block_grid(block: &mut Vec<bool>, marks: &[(loc, BorgTime)], radius: i32) {
+    block.clear();
     if marks.is_empty() {
-        return Vec::new();
+        return;
     }
-    let mut block = vec![false; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+    block.resize((AUTO_MAX_X * AUTO_MAX_Y) as usize, false);
     for &(m, _) in marks {
         for y in (m.y - radius).max(0)..=(m.y + radius).min(AUTO_MAX_Y - 1) {
             for x in (m.x - radius).max(0)..=(m.x + radius).min(AUTO_MAX_X - 1) {
@@ -3021,7 +3032,6 @@ fn breeder_block_grid(marks: &[(loc, BorgTime)], radius: i32) -> Vec<bool> {
             }
         }
     }
-    block
 }
 
 /// borg-reborn-rs (#556): `(x, y)` is near a remembered breeder
@@ -4733,17 +4743,42 @@ mod breeder_avoid_tests {
     /// distance) of a mark, clipped to the map; none without a mark.
     #[test]
     fn grids_near_a_mark_are_blocked_within_the_radius() {
-        assert!(breeder_block_grid(&[], 1).is_empty());
+        let grid = |marks: &[(loc, BorgTime)], radius| {
+            let mut b = vec![true; 3];
+            breeder_block_grid(&mut b, marks, radius);
+            b
+        };
+        assert!(grid(&[], 1).is_empty(), "the buffer is cleared");
         let at = |b: &[bool], x: i32, y: i32| b[(y * AUTO_MAX_X + x) as usize];
-        let b = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 1);
+        let b = grid(&[(loc { x: 10, y: 10 }, 0)], 1);
         assert!(at(&b, 10, 10) && at(&b, 11, 11) && at(&b, 9, 10));
         assert!(!at(&b, 12, 10) && !at(&b, 10, 8));
-        let b0 = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 0);
+        let b0 = grid(&[(loc { x: 10, y: 10 }, 0)], 0);
         assert!(at(&b0, 10, 10) && !at(&b0, 11, 10), "radius 0: only its own grid");
         // distance((10,10), (12,11)) = 2 + 1/2 = 2: inside radius 2
-        let b2 = breeder_block_grid(&[(loc { x: 10, y: 10 }, 0)], 2);
+        let b2 = grid(&[(loc { x: 10, y: 10 }, 0)], 2);
         assert!(at(&b2, 12, 11) && !at(&b2, 12, 12), "the engine's distance, not the square");
-        let corner = breeder_block_grid(&[(loc { x: 0, y: 0 }, 0)], 3);
+        let corner = grid(&[(loc { x: 0, y: 0 }, 0)], 3);
         assert!(at(&corner, 0, 0) && at(&corner, 2, 1));
+        let far = grid(&[(loc { x: AUTO_MAX_X - 1, y: AUTO_MAX_Y - 1 }, 0)], 2);
+        assert!(at(&far, AUTO_MAX_X - 1, AUTO_MAX_Y - 1) && at(&far, AUTO_MAX_X - 3, AUTO_MAX_Y - 1));
+    }
+
+    /// #556: with the switches off (compiled 0) nothing is remembered,
+    /// nothing blocks, and the stand and hunt decisions are #503's and #558's.
+    #[test]
+    fn with_the_switches_off_nothing_changes() {
+        let mut st = BorgState::default();
+        note_breeders(&mut st);
+        note_breeders_stoppable(&mut st);
+        assert!(st.borg.breeder_marks.is_empty() && st.borg.breeder_block.is_empty());
+        assert!(!near_known_breeder(&st, 5, 5));
+        assert_eq!(breeders_stoppable(&st), None);
+        assert!(!st.borg.breeders_lost && !st.borg.breeders_in_danger);
+        // A block outside a flight is never built; a set one is honoured.
+        st.borg.breeder_block = vec![false; (AUTO_MAX_X * AUTO_MAX_Y) as usize];
+        st.borg.breeder_block[(5 * AUTO_MAX_X + 5) as usize] = true;
+        assert!(near_known_breeder(&st, 5, 5) && !near_known_breeder(&st, 6, 6));
+        assert!(!near_known_breeder(&st, -1, 5) && !near_known_breeder(&st, AUTO_MAX_X, 5), "off the map");
     }
 }

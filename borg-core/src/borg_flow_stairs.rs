@@ -503,15 +503,14 @@ fn fight_through(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgSta
         return true;
     }
     if why != GOAL_FLEE
-        || st.flow.hunting
         || st.borg.breeder_block.is_empty()
         || !crate::borg_caution::breeder_fight_through_on()
     {
         return false;
     }
-    st.flow.hunting = true;
+    let was = std::mem::replace(&mut st.flow.hunting, true);
     let ok = flow(st);
-    st.flow.hunting = false;
+    st.flow.hunting = was;
     if ok {
         st.borg.breeder_through = Some(st.borg.time.now);
         borg_io::borg_note(st, "# Fighting through the breeders to the stairs");
