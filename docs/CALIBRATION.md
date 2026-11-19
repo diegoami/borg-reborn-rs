@@ -10,6 +10,131 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Throws on melee's footing (#568)
+
+The registry now holds **2198** parameters (2197 after #691; one added).
+From #539 (`priest-809881907`): cornered by Grip with 19 Flasks of oil, the
+Borg chose melee (44) over oil (15); the owner, from the 1,721 save, threw
+one flask and Grip fled.
+
+- **`attack_throw_as_melee`** (flag, 0 = C). With 1, `borg_attack_aux_object`
+  rates a throw on melee's footing:
+  - **damage**: the engine's throw (`thrown_damage`, `player-attack.c:554-582`
+    and `:1296`): dice average plus to-dam, times `2 + weight / 12` for a
+    THROWING object, times 3 for EXPLODE. A flask of oil: 22, not 2.
+    `best_throw` ranks the objects by it; its gates (worth money, no damage)
+    keep the dice average, so `ranged_means` is unchanged;
+  - **hit chance**: the engine's (`throw_hit_percent`,
+    `player-attack.c:121-219`): the throwing skill (`BI_THT`, 3/2 of it for a
+    non-THROWING object), the object's to-hit (and the player's for a
+    THROWING one), less the distance; 12% always hit, 5% always miss. It is
+    the base chance: the engine halves it against a target that is not
+    obvious (`chance_of_missile_hit`), which this leaves out (review of #687).
+    The
+    damage is scaled by it, as melee scales by its own chance. C used the bow
+    skill, the launcher's to-hit and its multiplier, and zeroed the damage
+    below 80% of the armour;
+  - **danger term**: melee's (`melee_score`): `attack_melee_danger_horizon`
+    (2 turns) at full damage, divided by `attack_melee_partial_danger_divisor`
+    for a partial kill above `attack_melee_partial_min_level`. C gave a throw
+    the bolt's (`attack_bolt_danger_horizon`, 1 turn, partial damage). This is
+    where melee's bigger bonus came from.
+  - So "melee's footing" holds for the damage, the hit chance and the danger
+    term; the point-blank divisor and the kill multiplier below stay the
+    bolt's (review of #687).
+  - Unchanged: the point-blank divisor for an adjacent non-unique
+    (`attack_arrow_point_blank_divisor`, 5; Rogue 3, Ranger 2), the bolt's
+    kill multiplier, the missile conservation above CL20. No separate term for
+    a monster fleeing: monsters flee from damage, which the engine's damage
+    now carries.
+- **classes-18, 100,000 game turns, local, plus `809881907` Human Priest**
+  (19 games), base `e5cc5469`: switch off plays keys identical to main in
+  19 of 19. Switch on: 17 of 19 play differently; flasks thrown 456 to 630,
+  melee attacks 1,025 to 1,000; deaths 1 to 2 (the shared poison death, and
+  the Priest walking in the dark next to an unseen floating eye at CL2,
+  paralysed to death: no attack choice involved); sum of max CL 110 to 104;
+  sum of max DL 41 to 40. Not a measure of benefit (RULES 14).
+- **The scene** (the owner's 1,721 save, 6,000 turns): Grip adjacent at game
+  turn 1,881, main melees (44); with the switch on the Borg throws a flask
+  (80). Both arms survive the scene; with `keep-load-rng` too.
+## The hunt removed in steps (#691)
+
+The registry now holds **2197** parameters (2196 before; one added).
+Owner, 2026-11-19, on #691: "what if we got rid of it?" and "for me this
+flow kill is a candidate for rewrite".
+
+- **`kill_flow_mode`** (mode, 0 = C): what `borg_flow_kill` may walk to.
+  `borg_attack` (melee, throws, spells, shots at what is in reach) is not
+  affected at any value, nor `borg_flow_kill_aim`, `_corridor`, `_direct`.
+  - 0: as C.
+  - 1: only the targeted hunts: breeders while a hunt for them applies
+    (#503, #558), dangerous town monsters (#619, #637). Their own settings
+    are unchanged, but #503's melee hunt, which walks to any monster at C,
+    walks only to breeders at 1 (as #558's caster hunt already did): for
+    Warriors, Paladins, Rogues and Blackguards mode 1 narrows the targets,
+    not only the calls (review of #695).
+  - 2: no out-of-view call (the "chase old monsters" calls: `nearness` 250
+    and `max_range + 1`, `viewable` false).
+  - 3: never.
+- **The analysis behind it** is on #691: in 19 games below CL10 the hunt
+  walks 263 times against about 22,000 exploring steps; the out-of-view
+  call finds a target in 516 calls and walks in 27.
+- **classes-18 plus `809881907` Human Priest, 100,000 game turns, local,
+  base `a87b4c96`** (19 games):
+
+| mode | deaths | sum of max CL | sum of max DL | walks to a fight | kills | games that differ from 0 |
+|---|---:|---:|---:|---:|---:|---:|
+| 0 | 0 | 108 | 40 | 305 | 1,427 | — |
+| 1 | 2 | 100 | 39 | 26 | 1,234 | 15 |
+| 2 | 0 | 111 | 41 | 302 | 1,475 | 11 |
+| 3 | 1 | 104 | 41 | 0 | 1,268 | 16 |
+
+  The deaths are not hunting decisions:
+  - `1502695781` (modes 1 and 3, same turn): the Borg rests again and again
+    while an invisible clear icky thing touches it ("# Invisible monster
+    nearby", "Resting to recover HP/SP"), #462's pattern on the borg-rs core;
+  - `1472012981` (mode 1): at HP 12/46, unable to flow to an up stair, it
+    searches for secret doors until a soldier arrives.
+  Below CL10 the hunt is worth about 10% of the kills and a few levels. Mode
+  2 loses nothing here. CL10 and above are not measured locally (no game gets
+  there); that is the zoo pilot's question. Not a measure of benefit (RULES
+  14).
+
+## Phase Door and flasks of oil by class (#682)
+
+The registry now holds **2196** parameters (2194 before; two added). Owner,
+2026-11-19: a class-based curve for Phase Door and flasks of oil, "in the
+same way are healing objects"; no reserve, only the curve.
+
+- **`town_phase_curve_scale_percent`** (100 = before #682): stretches the
+  live town planner's Phase Door curve as `town_heal_curve_scale_percent`
+  does healing's: weight and demand scale together, so the first scroll is
+  worth the same and more scrolls stay worth buying.
+- **`town_oil_curve_scale_percent`** (100): weights each flask of oil's
+  thrown damage on the planner's attack curve. A flask's throw has no curve
+  of its own (it shares `ATTACK` with missiles, wands and spells; a curve of
+  its own would be a new capability and a plan-record schema change, and
+  would change the play of every class at 100). Flasks kept as lantern fuel
+  are not changed.
+- **Per class** (`<name>@<class>`, the class files, owner's values):
+
+| class | Phase Door % | oil % | healing curve % / reserve % (unchanged unless noted) |
+|---|---:|---:|---|
+| Warrior | 75 | 100 | 50 / 100 |
+| Mage | 175 | 100 | 150 / 300 |
+| Druid | 175 | 150 | 125 / 250 |
+| Priest | 125 | 150 | 125 / 250 |
+| Necromancer | 175 | 100 | 150 / 300 |
+| Paladin | 100 | 125 | 75 / 150 |
+| Rogue | 125 | 125 | 100 / 200 |
+| Ranger | 150 | 50 | 100 / 200 |
+| Blackguard | 50 | 100 | **100 / 200** (was 75 / 150; owner: as Rogue and Ranger) |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:639` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:484` |
+
 ## No rest while breeders are known (#644)
 
 The registry now holds **2194** parameters (2193 after #556; one added).
@@ -593,7 +718,7 @@ gap to the next row. Shipped play changes, so `harness/reference/smoke-borg-rs`
 is re-recorded (#606). Direction only: 18 games, no zoo run.
 ## The scary flag clears when the scary monster is hurt or afraid (#593)
 
-The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (0, off): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
+The registry now holds **2160** parameters (2159 after #612; one added). `caution_scary_unlatch_calmed` (compiled 0, shipped 1 since #671): with `caution_scary_stand`, the level's scary flag clears once no scary monster is known and a named-list or damage-rule scary monster is known hurt or afraid in this scan, or one was killed, with the latch on or off. Only a race that made the level scary counts (#590's record): a monster hurt or afraid from first sight never made it scary, so it clears nothing (second review of #595). A monster that recovers is scary again at the next scan.
 
 ## The owner's Phase Door rule (#584)
 
@@ -602,13 +727,13 @@ Owner, 2026-11-18: "to use Phase Door, enemies must be on the square next to
 you"; otherwise escape if possible, else attack with magic or missiles, else
 boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 
-- `escape_phase_adjacent_rule` (compiled 0, shipped 0): at every site, before
+- `escape_phase_adjacent_rule` (compiled 0, shipped 1 since #661): at every site, before
   its own check, Phase Door only with an awake enemy adjacent and the fight
   judged lost. The rule only refuses the Phase Door; the escape levels go on
   with their other escapes, and if none acts the Borg attacks (its best
   attack by its own ranking) or, with an awake monster in view, boosts
   (`phase_rule_act`, once per think). Decided and noted once per think.
-- `escape_phase_lost_test` (1, owner 2026-11-19: both comparisons behind a
+- `escape_phase_lost_test` (compiled 1, shipped 0 since #661; owner 2026-11-19: both comparisons behind a
   setting): how the adjacent fight is judged lost. 0 = the threshold below;
   1 = the fight compared: killing the adjacent awake monsters one after
   another (their HP left) takes more turns than the danger where it stands
@@ -1179,7 +1304,7 @@ digger 500 gold.
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1286` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1291` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
@@ -3596,4 +3721,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4823` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4907` |

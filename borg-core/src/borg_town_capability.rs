@@ -495,6 +495,8 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         let prior: i64 = st.items.items.iter().take(end).filter(|i| i.aware && u32::from(i.tval) == TV_FLASK)
             .map(|i| i64::from(i.iqty)).sum();
         let quantity = if origin.0 < PACK { 1 } else { qty };
+        // borg-reborn-rs (#682): a class's oil scale weights each throw.
+        let damage = damage * i64::from(param(Param::town_oil_curve_scale_percent)) / 100;
         return oil_supply(quantity, (needed - prior).clamp(0, quantity), damage, fuel);
     }
     if matches!(tval, TV_ARROW | TV_BOLT | TV_SHOT) {
@@ -647,7 +649,10 @@ pub fn observe(st: &BorgState, stock: &Stock, kit: &[KitItem], journey: Journey)
     curve(CONTROL, ordinary, exposure.max(UNIT));
     curve(POISON, if t(BI_ISPOISONED) > 0 { cfg(BORG_TOWN_W_POISON) * UNIT } else { 0 },
         -(i64::from(engine::player_timed(TMD_POISONED)).max(1) * UNIT));
-    curve(PHASE, risk(BORG_TOWN_W_ESCAPE), exposure);
+    // borg-reborn-rs (#682, owner): Phase Door's curve stretched per class, as
+    // healing's: weight and demand scale together (100 = today).
+    let phase_scale = i64::from(param(Param::town_phase_curve_scale_percent));
+    curve(PHASE, risk(BORG_TOWN_W_ESCAPE) * phase_scale / 100, exposure * phase_scale / 100);
     // borg-reborn-rs (#557): `town_recall_reserve` scrolls are a requirement
     // (worth the full trip weight each, nothing past them) at any depth: the
     // walk it saves is always worth less than the full weight (the journey
