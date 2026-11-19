@@ -38,7 +38,8 @@ Owner: "do 685". The values are the owner's: 10 for the casters.
   - Bless (10–70 casts) comes mostly from `borg_caution`. The cast before
     the stairs needs 60% SP. Bless and Call Light are most of the mana rest
     that is left.
-- **smoke-borg-rs re-recorded** (`scripts/rerecord-smoke-borg-rs.sh`).
+- **smoke-borg-rs re-recorded** (`scripts/rerecord-smoke-borg-rs.sh`): 2/3
+  games identical to the old reference.
 - **Checked:** fmt, clippy `-D warnings`, both test commands (core 472),
   the class files check, `borg-core-vendor.py check` (against
   `~/projects/angband/borg-rs`), citations (2200, 0 wrong).
