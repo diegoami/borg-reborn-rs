@@ -41,7 +41,7 @@ staircases. It found 6 exits, but never walked:
 That is why the open grids and the descending distance were added.
 
 **Checked:**
-- CI's commands; `check-param-citations.py` (2199).
+- CI's commands; `check-param-citations.py` (2202, after merging main `18d2094f`).
 - Switch off: the 18 classes-18 starts play keys identical to main
   `a87b4c96` (18/18).
 - Switch on: the same 18 are unchanged too. The rule never fires in them.

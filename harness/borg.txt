@@ -522,6 +522,22 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# Throws on melee's footing (#568): 1 = a thrown object is rated with the
+# engine's damage (a flask of oil 22, not its 1d4's 2), the engine's hit
+# chance with the throwing skill, no launcher, and melee's danger term
+# (2 turns, full damage) instead of the bolt's (1 turn). 0 = C.
+# Impact: see CALIBRATION (#568).
+
+borg_param_attack_throw_as_melee = 0
+
+# The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
+# steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
+# (breeders when a hunt for them applies, dangerous town monsters); 2 = no
+# out-of-view call ("chase old monsters"); 3 = never hunt (borg_attack still
+# fights what is in reach). Impact: see CALIBRATION (#691).
+
+borg_param_kill_flow_mode = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below
@@ -661,6 +677,14 @@ borg_param_escape_phase_adjacent_only = 1
 borg_param_escape_phase_adjacent_rule = 1
 borg_param_escape_phase_lost_test = 0
 borg_param_escape_phase_lost_danger_percent = 100
+
+# With lost_test 1 or 2 (#625): 1 = the chosen attack counts at its success
+# chance (spell fail rate, device failure), and only for the uses the Borg can
+# pay for: all its mana (owner: the escape reserve is not set aside), a
+# wand's charges, one zap for a rod; then another attack that needs no mana
+# (never the chosen one itself), or melee. 0 = full damage every turn (#612).
+
+borg_param_escape_phase_lost_mana = 1
 
 # Ranged first against immobile attackers (#646, owner: "always choose ranged
 # against immobile but annoying monsters"). 1 = next to a known monster that
