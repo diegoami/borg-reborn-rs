@@ -31,9 +31,22 @@ runs `engine/tests/test_zoo_contract.py`.*
 - `borg_stopped` (the Borg gave control back and the game waits for a
   real key: `engine/frontend/main-borgh.c`) is its own outcome for plan
   specimens, not a death or a turn-cap stop.
-- The zoo clears the ambient `BORG_RUN_DIR`, `BORG_CORE`, `BORG_ERRAND`,
-  `BORG_ERRAND_BUDGET`, `BORG_PROFILE`, `BORG_PLAN` and `BORG_PARAM_*`, so
-  a cell's arm comes from its `borg.txt` and plan file alone.
+- The zoo clears **every inherited `BORG_*` variable** for borg-rs cells
+  (borg-zoo PR #127), so a cell's arm comes from its `borg.txt` and plan
+  file alone. The plan variable the core reads is `BORG_ERRANDS_PLAN`
+  (`harness/run.sh`); `BORG_PLAN`, listed here before, is read by nothing
+  in this tree.
+- **The loaded-plan copy is guaranteed output** (#414, borg-zoo#123). When
+  the core loads a plan it writes the bytes it parsed, unchanged, to
+  `BORG_RUN_DIR/errands_plan.txt` before play (`errands_plan.rs`, plan
+  load); without `BORG_RUN_DIR` the frontend sets it to the parent of
+  `-summary` (`main-borgh.c`), so the copy is `OUT/errands_plan.txt` next
+  to `summary.json`. Its SHA-256 equals the requested plan's whenever a
+  summary is written, and in a no-plan arm the file is absent. The core
+  refuses a plan read from that same path (exit 2), and a failed write
+  exits 2 before play. The zoo treats a missing or different copy as
+  `config_error`, so renaming or moving it would turn every plan cell into
+  one: a change to it is a contract change.
 - The plans' bytes are not build inputs: `harness/identity.sh source-hash
   rust` does not change with them. A plan arm is told apart by the plan's
   SHA-256 and the `borg.txt` the zoo writes.
@@ -58,6 +71,16 @@ cannot pass unnoticed.
 | `summary.json` | `dead`, `stop_reason`, `race`, `class`, `death_cause`, `game_turns`, `depth`, `max_depth`, `clevel`, `keys` |
 | `keys.log` | one line per key: `<game turn> <event type> <key code hex> <mods hex>`; the zoo hashes it as the cell's play |
 | `state.log` (with `-statelog`) | one line per key, starting `<game turn> <x>,<y> d<depth>/<max depth>`; the zoo derives `first_turn_at_depth` and its milestones from it |
+
+**The frozen-turn loop flag** (borg-zoo#123, PR #127): a cell with 1,000
+or more keys at a single game turn is recorded as `stalled`, stall kind
+`frozen_turn_loop`, with its observed outcome kept. It was made for
+borg-rs#90's oil store/take loop (4,315–5,141 keys a burst, against at most
+383 in normal play). The core's guard against that loop is `home_moved`
+(`borg_town_live.rs`): a Home move is not offered again within a visit. No
+known legitimate behaviour spends 1,000 keys at one game turn; a change
+that could (a long shopping visit, a key-heavy menu) must say so on
+borg-zoo#123.
 
 **`stop_reason`** is one of `turns`, `death`, `clevel`, `depth`, `keys`,
 `stalled`, `borg_stopped` or `blocked`. The zoo maps `turns`, `death`,
