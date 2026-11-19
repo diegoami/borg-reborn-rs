@@ -1482,6 +1482,36 @@ fn immobile_attacker(r_idx: usize) -> bool {
         && engine::race_blow(r_idx, 0).is_some()
 }
 
+/// borg-reborn-rs (#713): a blow effect worse than plain damage: poison,
+/// confusion, paralysis, fear, blindness, hallucination, stat or experience
+/// drain, theft, disenchantment, elemental damage (`blow_effects.txt`).
+fn annoying_effect(name: &[u8]) -> bool {
+    name != b"HURT" && name != b"NONE"
+}
+
+/// borg-reborn-rs (#713): `caution_immobile_ranged_only` covers race `r_idx`:
+/// an immobile attacker (`immobile_attacker`) with an annoying blow at 1
+/// (23 of the 25 in `monster.txt`: every one below DL10), any at 2.
+fn immobile_annoying(mode: i32, immobile: bool, annoying: bool) -> bool {
+    mode > 0 && immobile && (mode >= 2 || annoying)
+}
+
+/// borg-reborn-rs (#713, owner: "step away from immobile creature with
+/// annoying effects and only attack them from a distance, if you have to"):
+/// in the dungeon, the Borg keeps race `r_idx` at range: no melee
+/// (`borg_thrust_damage_one`), no walk to it (`borg_flow_kill`), and a step
+/// out of its reach when next to it (`immobile_step_away`).
+pub(crate) fn immobile_kept_at_range(st: &BorgState, r_idx: usize) -> bool {
+    let mode = p(Param::caution_immobile_ranged_only);
+    mode > 0
+        && st.borg.tr(BI_CDEPTH) > 0
+        && immobile_annoying(
+            mode,
+            immobile_attacker(r_idx),
+            (0..4).any(|k| engine::race_blow_effect_name(r_idx, k).is_some_and(annoying_effect)),
+        )
+}
+
 /// The first known immobile attacker next to grid (`y`, `x`), by kill index.
 fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
     (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
@@ -1574,14 +1604,24 @@ fn step_away_wanted(confused: bool, missiles: i32, mobile_danger: impl FnOnce() 
 /// the time (`player_confuse_dir`, `player-util.c:1358`); it is tried
 /// again on the next turn.
 pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
-    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+    let ranged_rule = p(Param::caution_ranged_vs_immobile) != 0;
+    if (!ranged_rule && p(Param::caution_immobile_ranged_only) == 0) || st.borg.tr(BI_CDEPTH) == 0 {
         return false;
     }
     let (cy, cx) = (st.borg.c.y, st.borg.c.x);
     let Some(who) = immobile_attacker_next_to(st, cy, cx) else { return false };
     let confused = st.borg.tr(BI_ISCONFUSED) != 0;
     let (missiles, hp) = (st.borg.tr(BI_AMISSILES), st.borg.tr(BI_CURHP));
-    if !step_away_wanted(confused, missiles, || mobile_danger(st), hp) {
+    // borg-reborn-rs (#713): a creature kept at range is stepped away from
+    // whether or not the Borg has a ranged attack or is confused, with or
+    // without #646's switch.
+    let kept = immobile_kept_at_range(st, usize::from(st.kills.kills[who].r_idx));
+    let wanted = if kept {
+        mobile_danger(st) < hp
+    } else {
+        ranged_rule && step_away_wanted(confused, missiles, || mobile_danger(st), hp)
+    };
+    if !wanted {
         return false;
     }
     // Review of #659: only a grid less dangerous than this one, and not the
@@ -1612,7 +1652,8 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         return false;
     }
     let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
-    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), if confused { ", confused" } else { ", ranged first" }));
+    let why = if kept { ", kept at range (#713)" } else if confused { ", confused" } else { ", ranged first" };
+    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), why));
     borg_keypress(st, i2d(i32::from(engine::ddd(i))));
     st.borg.goal.type_0 = 0;
     true
@@ -5201,5 +5242,24 @@ mod immobile_tests {
         for k in 0..16u8 { assert!(step_allowed(&mut full, 100, (k, 1), false)); }
         assert!(!step_allowed(&mut full, 100, (20, 1), false), "the 17th fails closed");
         assert!(!step_allowed(&mut full, 100, (20, 1), false));
+    }
+}
+
+#[cfg(test)]
+mod immobile_range_tests {
+    use super::{annoying_effect, immobile_annoying};
+
+    /// #713: which blows are annoying, and the modes.
+    #[test]
+    fn kept_at_range() {
+        for e in [&b"POISON"[..], b"CONFUSE", b"PARALYZE", b"TERRIFY", b"EXP_10", b"EAT_LIGHT", b"ACID"] {
+            assert!(annoying_effect(e), "{}", String::from_utf8_lossy(e));
+        }
+        assert!(!annoying_effect(b"HURT"), "plain damage");
+        assert!(immobile_annoying(1, true, true), "the yellow jelly at 1");
+        assert!(!immobile_annoying(1, true, false), "1: a plain-damage one is fought");
+        assert!(immobile_annoying(2, true, false), "2: any immobile attacker");
+        assert!(!immobile_annoying(2, false, true), "a monster that moves");
+        assert!(!immobile_annoying(0, true, true), "0 is C");
     }
 }
