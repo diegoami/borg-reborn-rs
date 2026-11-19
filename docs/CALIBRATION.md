@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## Walk out of a slower crowd (#690)
 
-The registry now holds **2202** parameters (2199 before; three added).
+The registry now holds **2203** parameters (2200 before; three added).
 Owner, 2026-11-19, on #675: file the general case the breeder work does not
 cover. Surrounded by monsters slower than itself, with no escape item, the
 Borg stood on one grid and meleed at the danger cap until it died
@@ -48,6 +48,25 @@ breeder exit from applying).
 | `caution_slow_crowd_exit` | 0 | flag | 0–1 | `borg_caution.rs:2997` |
 | `caution_slow_crowd_exit_distance` | 6 | grids | 1–100 | `borg_caution.rs:3028` |
 | `caution_slow_crowd_exit_margin_percent` | 25 | percent | 0–1000 | `borg_caution.rs:3006` |
+
+## No detection prayer by panel at low level (#685)
+
+The registry now holds **2200** parameters (2199 after #625; one added).
+
+- **`light_detect_evil_spell_min_level`** (0 = C): below this character
+  level, `borg_check_light`'s panel check casts no Detect Evil, Detect
+  Monsters, Read Minds or Seek Battle. Items, rods and Sense Surroundings
+  still detect. C casts the prayer on every new panel, so a low-level
+  Priest or Paladin, with 2–6 SP, spends them there and then rests for
+  mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
+  Paladins. Detect Evil also misses the animals that kill these classes on
+  DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; 0 (C) for
+  Warrior, Rogue, Ranger and Blackguard.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `light_detect_evil_spell_min_level` | 0 | level | 0–51 | `borg_light.rs:365` |
 
 ## The Phase Door rule's fight counts mana and fail rates (#625)
 
@@ -1240,9 +1259,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:409` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:422` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:287` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:400` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:413` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -1370,11 +1389,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:362` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:375` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1272` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1291` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
