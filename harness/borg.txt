@@ -522,6 +522,14 @@ borg_param_attack_town_dangerous_caster_walk = 0
 borg_param_attack_town_dangerous_wand = 0
 borg_param_attack_town_dangerous_bonus_whole = 0
 
+# The hunt (#691): borg_flow_kill walks to a monster to fight it. Removed in
+# steps to measure what it is worth: 0 = C; 1 = only the targeted hunts
+# (breeders when a hunt for them applies, dangerous town monsters); 2 = no
+# out-of-view call ("chase old monsters"); 3 = never hunt (borg_attack still
+# fights what is in reach). Impact: see CALIBRATION (#691).
+
+borg_param_kill_flow_mode = 0
+
 # Bless (#560): cast it with a monster within near_distance grids when the
 # danger is above avoidance / danger_divisor, or the character level is at
 # most max_level, and below avoidance / max_danger_divisor; only at or below

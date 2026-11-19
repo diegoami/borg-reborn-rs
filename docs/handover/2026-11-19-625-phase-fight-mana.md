@@ -25,7 +25,7 @@ only inside the rule (`escape_phase_adjacent_rule`, shipped 0) with
 - 0 = #612's test (full damage every turn).
 
 **Checked:**
-- CI's commands, `check-param-citations.py` (2197, after merging main `a87b4c96`), and `borg-core-vendor.py check`.
+- CI's commands, `check-param-citations.py` (2198, after merging main `6445ced0`), and `borg-core-vendor.py check`.
 - New unit test `the_fight_counts_the_mana_and_the_fail_rate`.
 - Rule off: the 18 classes-18 starts play keys identical to main (`3ba17e2c`, `e381e6b9`, `826cde4c`).
 - Shipped settings, after the merges of main `e5cc5469` and `a87b4c96` (owner's review): main now ships the Phase Door rule (#661) with `escape_phase_lost_test = 0`, the danger test, which this change does not touch. The 18 starts on each side's own `harness/borg.txt` play keys identical to main (18/18), with the rule firing in the games. Recording the cost draws no random numbers, and the wand and rod failure is still computed once.

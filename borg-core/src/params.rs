@@ -831,6 +831,7 @@ parameters! {
     attack_ego_ammo_multiplier => (99, "multiplier", 0, 198, "borg_fight_attack.rs:2382", "Attack ego ammo multiplier: existing policy multiplier."),
     attack_throw_max_target_age => (10, "turns", 1, 10, "borg_fight_attack.rs:2544", "Attack throw max target age: existing policy turns."),
     attack_throw_fast_monster_margin => (5, "speed", 0, 100, "borg_fight_attack.rs:2554", "Attack throw fast monster margin: existing policy speed."),
+    kill_flow_mode => (0, "mode", 0, 3, "borg_flow_kill.rs:1925", "#691: the hunt (borg_flow_kill, walking to a monster to fight it) removed in steps. 0 = C. 1 = only the targeted hunts: breeders when a hunt for them applies (#503, #558), dangerous town monsters (#619, #637). 2 = no out-of-view call (\"chase old monsters\"). 3 = never hunt; borg_attack still fights what is in reach."),
     attack_throw_min_item_value => (100, "gold", 0, 100000, "borg_fight_attack.rs:2669", "Attack throw min item value: existing policy gold."),
     attack_throw_low_damage => (5, "damage", 0, 5000, "borg_fight_attack.rs:2669", "Attack throw low damage: existing policy damage."),
     attack_reserve_mage_sp => (6, "mana", 0, 1000, "borg_fight_attack.rs:2776", "Attack reserve mage sp: existing policy mana."),
