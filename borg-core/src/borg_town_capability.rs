@@ -347,6 +347,19 @@ fn effect_supply_linear(effects: &[(u16, i32, i64)], hp: i64, service_turns: i64
     out.into_iter().collect()
 }
 
+/// borg-reborn-rs (#649): the average damage of a thrown throwing object,
+/// in `UNIT`s, as the engine computes it (`ranged_damage`,
+/// `player-attack.c:554-582`): the dice's average times `2 + weight / 12`
+/// (integer division, weight in tenths of a pound), and three times that
+/// for an exploding object (`make_ranged_throw`, `player-attack.c:1296`).
+/// A flask of oil (1d4, weight 20, `EXPLODE | THROWING`) does 22.5; the
+/// planner counted 2.5, so a sling shot (5) looked twice as good.
+fn thrown_damage(dd: i64, ds: i64, weight: i64, explode: bool) -> i64 {
+    let dice = dd * (ds + 1) * UNIT / 2;
+    let throw = dice * (2 + weight.max(0) / 12);
+    (if explode { throw * 3 } else { throw }).max(UNIT)
+}
+
 fn oil_supply(quantity: i64, fuel_bottles: i64, damage: i64, fuel: i64) -> Vec<(usize, i64)> {
     let mut out = Vec::new();
     let n = quantity.max(1);
@@ -466,7 +479,9 @@ fn supplies(item: &borg_item, ctx: &Context, origin: (i64, usize)) -> Vec<(usize
         return vec![(PHASE, UNIT)]; // TELEPORT(10) is not full Teleportation.
     }
     if tval == TV_FLASK {
-        let damage = (i64::from(item.dd) * (i64::from(item.ds) + 1) * UNIT / 2).max(UNIT);
+        // borg-reborn-rs (#649): the engine's thrown damage, not the dice alone.
+        let damage = thrown_damage(i64::from(item.dd), i64::from(item.ds), i64::from(item.weight),
+            engine::flag_has(&item.flags, crate::headers::list_object_flags_h::OF_EXPLODE as i32));
         let fuel = i64::from(item.pval).max(0);
         let light = &st.items.items[(crate::borg_item::inven_wield() + 5) as usize];
         let needed = if ctx.lantern && fuel > 0 {
@@ -1034,6 +1049,10 @@ mod tests {
     #[test]
     fn oil_is_allocated_to_fuel_or_ammunition_without_counting_a_bottle_twice() {
         assert_eq!(oil_supply(1, 1, 2500, 7500), [(LIGHT, 7500 * UNIT)]);
+        // #649: a flask of oil (1d4, weight 20, exploding) does 22.5, as the engine.
+        assert_eq!(thrown_damage(1, 4, 20, true), 22_500);
+        assert_eq!(thrown_damage(1, 4, 5, false), 5_000, "an Iron Shot thrown by hand");
+        assert_eq!(thrown_damage(1, 2, 4, false), 3_000, "a Rounded Pebble thrown by hand");
         assert_eq!(oil_supply(1, 0, 2500, 7500), [(ATTACK, 2500)]);
         let held = oil_supply(5, 2, 2500, 7500);
         assert_eq!(held, [(LIGHT, 3000 * UNIT), (ATTACK, 1500)]);
