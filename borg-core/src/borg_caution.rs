@@ -1510,6 +1510,24 @@ fn mobile_danger(st: &mut BorgState) -> i32 {
     danger
 }
 
+/// borg-reborn-rs (#646): the first step away from immobile attacker `who`
+/// with a ranged attack on this level (records it); later ones are refused,
+/// so a flow that passes it again does not loop (512 steps from one grey
+/// mold in a Paladin's game). A confused step is not counted.
+fn first_step_from(mon: &mut crate::borg::BorgMonInfo, level: BorgTime, who: i16) -> bool {
+    if mon.immobile_stepped_level != level {
+        mon.immobile_stepped = [0; 8];
+        mon.immobile_stepped_level = level;
+    }
+    if mon.immobile_stepped.contains(&who) {
+        return false;
+    }
+    if let Some(slot) = mon.immobile_stepped.iter_mut().find(|k| **k == 0) {
+        *slot = who;
+    }
+    true
+}
+
 /// borg-reborn-rs (#646): whether to step away from an adjacent immobile
 /// attacker: confused, or with a ranged attack, and the monsters that move
 /// less dangerous than the HP left.
@@ -1554,6 +1572,9 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         }
     }
     let Some((i, _)) = best else { return false };
+    if !confused && !first_step_from(&mut st.borg.mon, st.borg.time.level, who as i16) {
+        return false;
+    }
     let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
     borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), if confused { ", confused" } else { ", ranged first" }));
     borg_keypress(st, i2d(i32::from(engine::ddd(i))));
@@ -4585,5 +4606,14 @@ mod immobile_tests {
         assert!(step_away_wanted(false, 3, || 0, 10), "flasks or ammunition");
         assert!(!step_away_wanted(false, 0, || 0, 10), "neither: melee it as before");
         assert!(!step_away_wanted(true, 3, || 10, 10), "the movers are as dangerous as the HP left");
+    }
+
+    #[test]
+    fn one_ranged_step_per_immobile_monster_per_level() {
+        let mut mon = crate::borg::BorgMonInfo::default();
+        assert!(first_step_from(&mut mon, 100, 7));
+        assert!(!first_step_from(&mut mon, 100, 7), "the same mold again: no loop");
+        assert!(first_step_from(&mut mon, 100, 9), "another monster");
+        assert!(first_step_from(&mut mon, 200, 7), "a new level");
     }
 }

@@ -238,6 +238,12 @@ pub struct BorgMonInfo {
     /// borg-reborn-rs (#593): this scan knows a monster of one of those
     /// races hurt or afraid.
     pub scary_calmed: bool,
+    /// borg-reborn-rs (#646): the immobile attackers (kill indices) the Borg
+    /// already stepped away from with a ranged attack this level, and the
+    /// level's arrival time they belong to: one step each, so an exploring
+    /// flow that passes them again does not loop.
+    pub immobile_stepped: [i16; 8],
+    pub immobile_stepped_level: BorgTime,
     pub morgoth_panel: loc,
     pub unique: u32,
 }
