@@ -1513,29 +1513,33 @@ fn mobile_danger(st: &mut BorgState) -> i32 {
     danger
 }
 
-/// borg-reborn-rs (#646, review of #659): whether another step away from the
+/// borg-reborn-rs (#646, reviews of #659): whether another step away from the
 /// immobile attacker at grid `pos` is allowed on this level, and if so record
 /// it. With a ranged attack one step per attacker; confused up to
-/// `CONFUSED_STEPS` (a confused step goes astray 75% of the time). Keyed on
-/// the grid, as kill indices are reused (six grey mushroom patches took
-/// index 18 on one level); a full memory refuses the step (fails closed).
+/// `CONFUSED_STEPS` (a confused step goes astray 75% of the time), counted
+/// apart, so the confused tries do not use up the ranged step ("move away,
+/// drink cure, throw flask"). Keyed on the grid, as kill indices are reused
+/// (six grey mushroom patches took index 18 on one level); a full memory
+/// refuses the step (fails closed).
 const CONFUSED_STEPS: u8 = 3;
 fn step_allowed(mon: &mut crate::borg::BorgMonInfo, level: BorgTime, pos: (u8, u8), confused: bool) -> bool {
     if mon.immobile_stepped_level != level {
-        mon.immobile_stepped = [[0; 3]; 16];
+        mon.immobile_stepped = [[0; 4]; 16];
         mon.immobile_stepped_level = level;
     }
-    let limit = if confused { CONFUSED_STEPS } else { 1 };
-    if let Some(e) = mon.immobile_stepped.iter_mut().find(|e| e[2] > 0 && (e[0], e[1]) == pos) {
-        if e[2] >= limit {
+    let (count, limit) = if confused { (2, CONFUSED_STEPS) } else { (3, 1) };
+    let used = |e: &[u8; 4]| e[2] > 0 || e[3] > 0;
+    if let Some(e) = mon.immobile_stepped.iter_mut().find(|e| used(e) && (e[0], e[1]) == pos) {
+        if e[count] >= limit {
             return false;
         }
-        e[2] += 1;
+        e[count] += 1;
         return true;
     }
-    match mon.immobile_stepped.iter_mut().find(|e| e[2] == 0) {
+    match mon.immobile_stepped.iter_mut().find(|e| !used(e)) {
         Some(e) => {
-            *e = [pos.0, pos.1, 1];
+            *e = [pos.0, pos.1, 0, 0];
+            e[count] = 1;
             true
         }
         None => false,
@@ -2241,7 +2245,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // cure confusion, second check, first (slightly different) in
     // borg_heal; borg-reborn-rs (#646): held there too.
-    if st.borg.tr(BI_ISCONFUSED) != 0 && !confusion_cure_held(st) {
+    let held = st.borg.tr(BI_ISCONFUSED) != 0 && confusion_cure_held(st);
+    if held {
+        borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646, cures)");
+    }
+    if st.borg.tr(BI_ISCONFUSED) != 0 && !held {
         if st.borg.tr(BI_MAXHP) - st.borg.tr(BI_CURHP) >= p(Param::caution_confused_emergency_loss)
             && (borg_quaff_potion(st, st.item_val.sv_potion_healing)
                 || borg_quaff_potion(st, st.item_val.sv_potion_star_healing)
@@ -4744,6 +4752,13 @@ mod immobile_tests {
         assert!(step_allowed(&mut mon, 100, (9, 9), true));
         assert!(!step_allowed(&mut mon, 100, (9, 9), true), "confused: three tries");
         assert!(step_allowed(&mut mon, 200, (5, 7), false), "a new level");
+        // Second review of #659: the confused tries do not use up the
+        // ranged step ("move away, drink cure, throw flask").
+        let mut mixed = crate::borg::BorgMonInfo::default();
+        for _ in 0..3 { assert!(step_allowed(&mut mixed, 100, (4, 4), true)); }
+        assert!(!step_allowed(&mut mixed, 100, (4, 4), true));
+        assert!(step_allowed(&mut mixed, 100, (4, 4), false), "the ranged step is still there");
+        assert!(!step_allowed(&mut mixed, 100, (4, 4), false));
         // Review of #659: a full memory refuses, it does not step unbounded.
         let mut full = crate::borg::BorgMonInfo::default();
         for k in 0..16u8 { assert!(step_allowed(&mut full, 100, (k, 1), false)); }
