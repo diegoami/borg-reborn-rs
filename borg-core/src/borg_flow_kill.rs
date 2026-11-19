@@ -2758,6 +2758,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
     // town scary.
     let town_calm = crate::borg_caution::town_never_scary(st.borg.tr(BI_CDEPTH));
     let mut scary_races: Vec<u16> = Vec::new();
+    let mut calmed_races: Vec<u16> = Vec::new();
 
     // reset the borg flags
     st.borg.near.summoner = false;
@@ -2873,6 +2874,12 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
             if makes_scary {
                 scary_races.push(r_idx); // borg-reborn-rs (#590)
             }
+            if scare.calmed_scare && !never_move {
+                // borg-reborn-rs (#593). Not recorded in scary_races: a monster
+                // hurt or afraid from first sight never made the level scary,
+                // so its race speaks for no scare (second review of #595).
+                calmed_races.push(r_idx);
+            }
             stand_pursuer |= pursues;
             scary = false;
         }
@@ -2953,6 +2960,7 @@ pub fn borg_near_monster_type(st: &mut BorgState, dist: i32) {
         for r in scary_races {
             crate::borg_caution::note_scary_race(&mut st.borg.mon, r);
         }
+        crate::borg_caution::note_calmed(&mut st.borg.mon, &calmed_races);
         crate::borg_caution::apply_scary_stand(st, stand_scary, stand_pursuer);
     }
 }
