@@ -300,7 +300,17 @@ fn borg_heal(st: &mut BorgState, danger: i32) -> bool {
     // This is checked twice, once, here, to see if he is in low danger
     // and again at the end of borg_caution, when all other avenues have
     // failed
-    if st.borg.tr(BI_ISCONFUSED) != 0 {
+    // borg-reborn-rs (#646): no cure next to an immobile confuser, which
+    // confuses again at once (borg-cemetery#75), unless the monsters that
+    // move are as dangerous as the HP left.
+    let hold_cure = p(Param::caution_ranged_vs_immobile) != 0
+        && st.borg.tr(BI_ISCONFUSED) != 0
+        && immobile_attacker_next_to(st, st.borg.c.y, st.borg.c.x).is_some()
+        && mobile_danger(st) < st.borg.tr(BI_CURHP);
+    if hold_cure {
+        borg_note(st, "# Not fixing Confusion next to an immobile attacker (#646)");
+    }
+    if st.borg.tr(BI_ISCONFUSED) != 0 && !hold_cure {
         if pct_down >= p(Param::caution_confused_heal_loss)
             && danger - heal_heal < st.borg.tr(BI_CURHP)
             && borg_quaff_potion(st, st.item_val.sv_potion_healing)
@@ -1464,6 +1474,93 @@ fn back_away(st: &mut BorgState, pos_danger: i32, borg_surround: bool) -> bool {
     false
 }
 
+/// borg-reborn-rs (#646, owner): a known monster that never moves and
+/// attacks with its blows (a mushroom patch, a mold, a floating eye;
+/// `monster.txt` `NEVER_MOVE` with a blow and without `NEVER_BLOW`).
+fn immobile_attacker(r_idx: usize) -> bool {
+    use crate::headers::list_mon_race_flags_h::{RF_NEVER_BLOW, RF_NEVER_MOVE};
+    r_idx != 0
+        && engine::race_flag_has(r_idx, RF_NEVER_MOVE)
+        && !engine::race_flag_has(r_idx, RF_NEVER_BLOW)
+        && engine::race_blow(r_idx, 0).is_some()
+}
+
+/// The first known immobile attacker next to grid (`y`, `x`), by kill index.
+fn immobile_attacker_next_to(st: &BorgState, y: i32, x: i32) -> Option<usize> {
+    (1..usize::try_from(st.kills.nxt).unwrap_or(0)).find(|&i| {
+        let kill = &st.kills.kills[i];
+        immobile_attacker(usize::from(kill.r_idx))
+            && (i32::from(kill.pos.y) - y).abs() <= 1
+            && (i32::from(kill.pos.x) - x).abs() <= 1
+    })
+}
+
+/// The danger at the Borg's grid from the monsters that can move: an
+/// immobile one is left by stepping away.
+fn mobile_danger(st: &mut BorgState) -> i32 {
+    let (y, x) = (st.borg.c.y, st.borg.c.x);
+    let mut danger = 0i32;
+    for i in 1..i32::from(st.kills.nxt) {
+        let r_idx = usize::from(st.kills.kills[i as usize].r_idx);
+        if r_idx == 0 || engine::race_flag_has(r_idx, crate::headers::list_mon_race_flags_h::RF_NEVER_MOVE) {
+            continue;
+        }
+        danger = danger.saturating_add(crate::borg_danger::borg_danger_one_kill(st, y, x, 1, i, true, true));
+    }
+    danger
+}
+
+/// borg-reborn-rs (#646): whether to step away from an adjacent immobile
+/// attacker: confused, or with a ranged attack, and the monsters that move
+/// less dangerous than the HP left.
+fn step_away_wanted(confused: bool, missiles: i32, mobile_danger: impl FnOnce() -> i32, hp: i32) -> bool {
+    (confused || missiles > 0) && mobile_danger() < hp
+}
+
+/// borg-reborn-rs (#646, owner): "always choose ranged against immobile but
+/// annoying monsters". With `caution_ranged_vs_immobile`, next to an
+/// immobile attacker while confused (it strikes again before a cure is
+/// worth anything) or while carrying a ranged attack (`BI_AMISSILES`:
+/// flasks below CL15, ammunition), step to a free grid out of its reach;
+/// the ranged attack follows from there. Not when the monsters that move
+/// are as dangerous as the HP left. A confused step goes astray 75% of
+/// the time (`player_confuse_dir`, `player-util.c:1358`); it is tried
+/// again on the next turn.
+pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
+    if p(Param::caution_ranged_vs_immobile) == 0 || st.borg.tr(BI_CDEPTH) == 0 {
+        return false;
+    }
+    let (cy, cx) = (st.borg.c.y, st.borg.c.x);
+    let Some(who) = immobile_attacker_next_to(st, cy, cx) else { return false };
+    let confused = st.borg.tr(BI_ISCONFUSED) != 0;
+    let (missiles, hp) = (st.borg.tr(BI_AMISSILES), st.borg.tr(BI_CURHP));
+    if !step_away_wanted(confused, missiles, || mobile_danger(st), hp) {
+        return false;
+    }
+    let mut best: Option<(usize, i32)> = None;
+    for i in 0..8 {
+        let x = cx + i32::from(engine::ddx_ddd(i));
+        let y = cy + i32::from(engine::ddy_ddd(i));
+        let ag = *st.cave.grid(x, y);
+        if !borg_cave_floor_grid(&ag) || lava_forbids_step(st, &ag) || ag.kill != 0 || (ag.trap && !ag.glyph) {
+            continue;
+        }
+        if engine::feat_is_shop(i32::from(ag.feat)) || immobile_attacker_next_to(st, y, x).is_some() {
+            continue;
+        }
+        let k = borg_danger(st, y, x, 1, true, false);
+        if best.is_none_or(|(_, b)| k < b) {
+            best = Some((i, k));
+        }
+    }
+    let Some((i, _)) = best else { return false };
+    let name = engine::race_name(usize::from(st.kills.kills[who].r_idx));
+    borg_note(st, &format!("# Stepping away from immobile {}{} (#646)", String::from_utf8_lossy(&name), if confused { ", confused" } else { ", ranged first" }));
+    borg_keypress(st, i2d(i32::from(engine::ddd(i))));
+    st.borg.goal.type_0 = 0;
+    true
+}
+
 /// The common start of the retreat and back-away tests: some danger and
 /// not "nasty", or surrounded; not in a Sea of Runes or an anti-summon
 /// corridor, not confused, not in a vault, and not too many HP.
@@ -1742,6 +1839,11 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     let (on_upstair, on_dnstair) = note_standing(st);
 
     if !st.borg.goal.fleeing {
+        // borg-reborn-rs (#646): away from an immobile attacker first.
+        if immobile_step_away(st) {
+            return true;
+        }
+
         // Start being cautious and trying to not die
         if st.borg.tr(BI_CLASS) == CLASS_MAGE
             && !st.borg.morgoth_position
@@ -4467,5 +4569,21 @@ mod flee_known_down_tests {
         assert_eq!(flee_down_depth(-3), 250);
         assert_eq!(flee_down_depth(40), 40);
         assert_eq!(flee_down_depth(1000), 250);
+    }
+}
+
+#[cfg(test)]
+mod immobile_tests {
+    use super::*;
+
+    #[test]
+    fn step_away_from_an_immobile_attacker_only_when_it_helps() {
+        // #646: confused (a cure next to it is wasted) or with a ranged
+        // attack (fire from out of reach); never when the monsters that
+        // move are as dangerous as the HP left.
+        assert!(step_away_wanted(true, 0, || 0, 10), "confused");
+        assert!(step_away_wanted(false, 3, || 0, 10), "flasks or ammunition");
+        assert!(!step_away_wanted(false, 0, || 0, 10), "neither: melee it as before");
+        assert!(!step_away_wanted(true, 3, || 10, 10), "the movers are as dangerous as the HP left");
     }
 }
