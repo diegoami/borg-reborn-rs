@@ -37,7 +37,24 @@ plays all 18 games as without it (the town scare still sends the Borg away
 from the four at low level, the Borg has no wand in town, and the damage term
 already won every choice). With `caution_town_never_scary = 1` as well, all
 three together change 2 of 18 games, both Necromancers (the caster walk), with
-the same levels; deaths 4 and 4, sum of CL 83 and 83. Nothing to ship.
+the same levels; deaths 4 and 4, sum of CL 83 and 83.
+
+With #622's `caution_town_scary_levels_less` raised from the shipped 3 (the
+town's list scares end sooner; owner: test kill on sight with the town
+scary until a level), the same starts:
+
+| N | arm | keys as the row above | deaths | sum of CL | game turns in town | kills of the four | thefts |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 6 | on_sight 0 | | 1 | 97 | 261,010 | 17 | 1 |
+| 6 | on_sight 1 | 14/18 | 1 | 97 | 256,359 | 13 | 0 |
+| 6 | + the three | 18/18 | 1 | 97 | 256,359 | 13 | 0 |
+| 11 | on_sight 0 | | 1 | 94 | 212,355 | 23 | 11 |
+| 11 | on_sight 1 | 8/18 | 1 | 94 | 209,471 | 22 | 15 |
+| 11 | + the three | 13/18 | 1 | 98 | 218,887 | 27 | 13 |
+
+At N = 6 the three still change nothing. At N = 11 (no list scare left in
+town) they change 5 games: 4 levels more, 5 more kills of the four, 2 thefts
+fewer, the same death. Direction only.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
