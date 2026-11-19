@@ -23,11 +23,18 @@ the mana, and that its spells are likely enough to work.
   noted when it passes `borg_spell_okay_fail` in the ranking,
   `spell_okay_fail_noted`), a wand's or rod's `borg_activate_failure` per
   mille / 10. It is used only for the uses the Borg can pay for: casts =
-  current SP / the spell's mana; a wand's charges; no limit for a rod. After
-  that, the best true damage of an attack that is not a spell (the ranking's
-  fallback, `est_fallback`), or melee against that monster (`fight_turns`).
+  current SP / the spell's mana, **all of it** (owner, 2026-11-19: "count
+  all the mana for fighting, at the beginning we have no choice, and later
+  on we will get potions to recover it": the class's escape reserve is not
+  set aside); the reserve cast's real mana, not the faked one; a wand's
+  charges; one zap for a rod (it recharges over many turns). After that, the
+  best true damage of another attack that needs no mana, never the winner
+  itself (`est_fallback`), or melee against that monster (`fight_turns`).
   0 = #612's test (the chosen attack at full damage every turn). Staves and
-  activations are counted at full damage, with no limit.
+  activations are counted at full damage, with no limit. Melee damage is
+  expected (the Borg's hit estimate), a missile's nominal: compared as they
+  are (docs/PHASE-DOOR.md). Whirlwind Attack, Maim Foe and Vampire Strike
+  now report their true damage (`dmg_best`).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
@@ -3418,4 +3425,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4859` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4889` |

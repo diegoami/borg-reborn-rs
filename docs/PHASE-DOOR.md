@@ -134,8 +134,32 @@ comparisons behind a setting):
 | **1** (compiled) | the fight compared: killing the adjacent awake monsters one after another (their HP left: `kill.power` less `kill.injury` %) takes more turns than the danger where it stands needs to kill the Borg. Its damage a turn is the larger of its melee against that monster (`borg_thrust_damage_one`: blows, slays, the chance to hit) and the true damage of the attack it would choose now, of any kind (`borg_attack_estimate`, a dry run of `borg_attack`: a Mage casts, an archer shoots, even next to an enemy). True damage: without the kill bonus, the target's danger and the unique targeting bonus that `borg_attack`'s ranking adds. |
 | 2 | as 1, and the expected landing is safer: the mean one-turn danger of the sampled landing grids (`landing_danger`, drawn as the landing test draws them) is below the danger here |
 
+**Mana and fail rates** (`escape_phase_lost_mana`, compiled 1; #625, owner).
+With tests 1 and 2, the chosen attack counts at its true damage times its
+success chance, and only for the uses the Borg can pay for:
+- **Success chance:** 1 − the fail chance. That is a spell's fail rate, or a
+  wand's or rod's `borg_activate_failure` / 10.
+- **Uses:** a spell gets current SP / its mana. **All** the mana counts:
+  owner, 2026-11-19, "at the beginning we have no choice, and later on we
+  will get potions to recover it". So the class's escape reserve is not set
+  aside. The reserve cast (`borg_attack_aux_spell_bolt_reserve`, which fakes
+  full mana) counts the real mana. A wand gets its charges. A rod gets one
+  use, since it recharges over many turns. Staves and activations have no
+  limit.
+- **After the uses run out:** the larger of melee against that monster and
+  the best true damage of another attack that needs no mana (never the
+  chosen attack itself) (`fight_turns`).
+
+Melee damage is an expected damage (`borg_thrust_damage_one` applies the
+Borg's hit estimate), while a missile's is nominal (`borg_launch_damage_one`
+only refuses an arrow below its minimum hit chance). The two are compared as
+they are; changing the missile figure would change the attack ranking
+itself. With 0, the chosen attack counts at full damage every turn (#612).
+
 Tests 1 and 2 note their numbers (`# Phase rule: the fight: <HP left> HP at
-<damage> a turn, …; danger d, HP h: lost / not lost`, `… the landing: …`).
+<damage> a turn, …; danger d, HP h: lost / not lost`, `… the landing: …`;
+with `escape_phase_lost_mana`: `<HP left> HP (melee m), …; attack a at f% fail
+(n uses), then b; danger d, HP h: lost / not lost`).
 Test 2 draws random numbers (the landing samples). The rule is decided and noted once per think, at the first site
 that asks (`# Phase rule (from <site>): …`); later sites reuse it. Its attack
 or boost (`phase_rule_act`) runs once, in `borg_caution` right after
