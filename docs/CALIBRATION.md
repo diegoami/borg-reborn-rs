@@ -12,7 +12,72 @@ right after that change, so older sections show older counts.
 
 ## Flight Recall from a danger share (#587)
 
-The registry now holds **2154** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.
+The registry now holds **2155** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.
+
+## Town never scary (#604)
+
+The registry now holds **2154** parameters (2153 after #592; one added). Owner, 2026-11-18:
+"Could we try a setting where we always fight monsters in town, I have never
+got killed by monsters in town." All of it is in the vendored core, so it
+plays with the borg-rs core (`borg_reborn_core = borg-rs`, shipped since #479,
+or `BORG_CORE=borg-rs`); a harness run without `BORG_CORE` plays the reborn
+core, which has no scare and is not affected.
+
+The measurement: 18 starts, the 9 classes x seeds 2001 and 2002, race 0,
+100,000 game turns (not borg-zoo's classes-18 starts). Each was run as
+`angband -mborgh -n -- -seed S -race 0 -class C -turns 100000 -keylog ...
+-summary ... -menu-letters -exact-turns -statelog ... -msglog ...`, with the
+shipped `harness/borg.txt` copied as the run's `user/borg.txt` (so the
+borg-rs core) and `scary_monsters.txt` beside it; `BORG_CORE` unset.
+Counted from the logs:
+- **town scares, attacks, thefts:** messages placed at depth 0 by the
+  `# Loc:... Dep:N` notes around them: counted when the previous and the
+  next position note both say town, and "at a level change" when they
+  disagree. The Borg can arrive on DL1 and leave again within one game turn
+  without a position note, so a DL1 message can sit between two town notes:
+  the remaining "town scares" with the switch on are of that kind (the ones
+  checked by hand were DL1 arrivals), and the code sets no scare in town;
+- **town <-> DL1 moves:** `state.log` depth changes between 0 and 1;
+- **game turns in town:** the sum, over `state.log` rows at depth 0, of the
+  turn-column gap to the next row;
+
+On main `ed3ffc04` the town was scary at least 697 times (up to 2,740 with
+the notes at a level change). The monsters known in town when a scare was
+noted are, most often first, five town residents on the scary list: the
+battle-scarred veteran, the mean-looking mercenary, the filthy street
+urchin, the squint-eyed rogue and Farmer Maggot (who never attacks). Each
+scare sends the Borg down to DL1, from where "finish shopping" brings it
+back up, so it shuttled between town and DL1 2,831 times.
+
+`caution_town_never_scary` (compiled 0, written out at 0): in town no
+monster makes the level scary; the danger rules still apply.
+
+| on the 18 starts | main | switch on |
+|---|---:|---:|
+| deaths | 3 | 2 |
+| sum of character levels | 93 | 105 |
+| sum of max depth | 35 | 39 |
+| town scares | 697 (+2,043 at a level change) | 0 by construction (4 + 398 at a level change; see below) |
+| town <-> DL1 moves | 2,831 | 1,286 |
+| game turns in town | 484,073 | 298,362 |
+| attacks from town monsters | 47 (+42 at a level change) | 73 (+30) |
+| thefts in town | 0 (+1 at a level change) | 0 (+2) |
+| deaths in town | 0 | 0 |
+
+With the switch at 0 the 18 games are identical to main. Direction only: 18
+games, no zoo run. The review of #605 reran borg-zoo's classes-18 starts with
+`BORG_CORE=borg-rs`: the same directions (town scares 3,215 to 0, town <->
+DL1 moves 3,012 to 1,151, no death in town), with 0 deaths on main and 2 with
+the switch, the sum of CL 99 against 97.
+
+The switch covers every scare decided in `borg_near_monster_type`. The door
+scare ("You hear a door burst open!", `borg_messages.rs`) is not gated by it;
+the town has no doors (its layout places only floor, walls and shop
+entrances), so it never fires there.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_town_never_scary` | 0 | flag | 0–1 | `borg_caution.rs` (`town_never_scary`, read in `borg_flow_kill.rs` `borg_near_monster_type`) |
 
 ## The scary flag clears after the kill (#590)
 
