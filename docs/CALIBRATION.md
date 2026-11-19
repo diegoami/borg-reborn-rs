@@ -37,9 +37,12 @@ branch with main `13e1187c`):
 
 | arm | deaths | sum of CL | rests started | held-rest notes |
 |---|---:|---:|---:|---:|
-| off (keys = #567's off, 18/18) | 1 (Priest, game turn 8,158) | 101 | 1,893 | |
-| 100 | 1 (the same Priest) | 99 | 921 | 5,175 |
-| 200 | 1 (the same Priest) | 101 | 797 | 7,673 |
+| off (keys = #640's off, 18/18) | 1 (Priest, game turn 8,158) | 101 | 1,893 | |
+| 100 | 1 (the same Priest) | 99 | 1,268 | 1,171 |
+| 200 | 1 (the same Priest) | 98 | 1,287 | 1,880 |
+
+Re-taken after #640's review (the scan counts only monsters seen in this
+update, `kill.seen`): before it, stale records held 5,175 and 7,673 rests.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
