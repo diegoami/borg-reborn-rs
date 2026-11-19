@@ -1913,7 +1913,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
 
     // Take stairs down
-    if st.borg.stair_more && st.borg.goal.recalling == 0 {
+    if st.borg.stair_more && !recall_restricts(st) {
         // borg-reborn-rs (#208): /shopping is town-only, even if caution
         // chooses a direct descent before the ordinary town-leave hook.
         if crate::shell::shopping_departure(st) {
@@ -2182,7 +2182,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
 
     // If I am waiting for recall,and in danger, buy time with
     // phase and cure_anythings.
-    if st.borg.goal.recalling != 0
+    // borg-reborn-rs (#603): with caution_recall_wait_as_usual the ordinary
+    // escape and attack decisions apply instead.
+    if recall_restricts(st)
         && pos_danger > i32::from(st.borg.avoidance) * p(Param::caution_recall_danger_multiplier)
         && buy_time_for_recall(st)
     {
@@ -2233,7 +2235,7 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
         // borg_flow_stair_both: light is its only gate on a fleeing Borg
         return true;
     }
-    if st.borg.goal.recalling != 0 {
+    if recall_restricts(st) {
         return false;
     }
     if st.stairs.less.num != 0 {
@@ -2609,6 +2611,20 @@ pub(crate) fn stair_parked_fallback(enqueued: usize, parked: usize) -> bool {
 
 fn only_parked(enqueued: usize, parked: usize) -> bool {
     enqueued == 0 && parked > 0
+}
+
+/// borg-reborn-rs (#603, owner): does a pending Word of Recall switch the
+/// Borg to its Recall-only rules (no flight by stairs or Teleport Level, the
+/// buy-time escapes, fighting because recalling)? With
+/// `caution_recall_wait_as_usual` it plays by its ordinary rules instead:
+/// the countdown keeps running on a new level (`effect-handler-general.c`).
+/// Resting or waiting when safe is kept either way.
+pub(crate) fn recall_restricts(st: &BorgState) -> bool {
+    recall_restricts_with(st.borg.goal.recalling != 0, p(Param::caution_recall_wait_as_usual) != 0)
+}
+
+fn recall_restricts_with(recalling: bool, as_usual: bool) -> bool {
+    recalling && !as_usual
 }
 
 /// borg-reborn-rs (#530): forget every scary fact: the flag, the door scare,
@@ -3746,6 +3762,14 @@ mod scary_stand_tests {
         note_kill(&mut mon, 42);
         note_scan(&mut mon, false); // killed and none left known
         assert!(unlatch_when(true, true, mon.scary_killed), "the last one killed: the flag clears");
+    }
+
+    #[test]
+    fn a_pending_recall_restricts_only_without_the_switch() {
+        assert!(recall_restricts_with(true, false), "C: Recall-only rules");
+        assert!(!recall_restricts_with(true, true), "the switch: the ordinary rules");
+        assert!(!recall_restricts_with(false, false), "no Recall pending");
+        assert!(!recall_restricts_with(false, true));
     }
 
     #[test]

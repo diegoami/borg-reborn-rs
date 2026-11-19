@@ -4459,7 +4459,7 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
                 /* Try to fight been there too long. */
             } else if boosted_bravery
                 || st.borg.no_retreat >= 1
-                || st.borg.goal.recalling != 0
+                || crate::borg_caution::recall_restricts(st)
                 || st.borg.goal.descending != 0
             {
                 /* Try to fight if being Boosted or recall engaged. */

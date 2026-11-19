@@ -1017,7 +1017,9 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     }
 
     /* Flee the level */
-    if st.borg.goal.fleeing && st.borg.goal.recalling == 0 {
+    // borg-reborn-rs (#603): flee as usual while Recall counts down with
+    // caution_recall_wait_as_usual.
+    if st.borg.goal.fleeing && !crate::borg_caution::recall_restricts(st) {
         /* Take the next stairs */
         st.borg.stair_more = true;
         st.borg.stair_less = true;
@@ -1182,7 +1184,7 @@ pub fn borg_think_dungeon(st: &mut BorgState) -> bool {
     /*** Leave the level XXX XXX XXX ***/
 
     /* Leave the level */
-    if (st.borg.goal.leaving && st.borg.goal.recalling == 0 && st.borg.mon.unique == 0)
+    if (st.borg.goal.leaving && !crate::borg_caution::recall_restricts(st) && st.borg.mon.unique == 0)
         || borg_trip::legacy_sale_hold(st)
     {
         if st.borg.ready_morgoth == 0 && !force_descend() {

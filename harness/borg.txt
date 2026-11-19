@@ -350,6 +350,15 @@ borg_param_caution_flee_recall_gate_below_depth = 1
 
 borg_param_caution_flee_recall_danger_percent = 0
 
+# Waiting: 1 = while Word of Recall counts down, play by the ordinary rules:
+# flee by stairs or Teleport Level (the countdown keeps running on the new
+# level), use the ordinary escapes and attacks, treat a scary level as
+# usual; still rest or wait in place when safe (#603). 0 = C's Recall-only
+# rules (the buy-time escapes of caution_recall_*).
+# Impact: off here; see the PR for classes-18.
+
+borg_param_caution_recall_wait_as_usual = 0
+
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
 # game turns x the game ratio of the jump, prepare the spells for arriving.
