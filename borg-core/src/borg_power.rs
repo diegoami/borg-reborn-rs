@@ -25,11 +25,11 @@
 
 // borg-reborn-rs (#243): named power policy; default operations unchanged.
 use crate::params::{value as param, Param};
-use crate::borg_formulas::borg_power_dynamic;
-use crate::borg_item::borg_item_weight;
-use crate::borg_item_activation::ActivationIds;
-use crate::borg_item_analyze::borg_ego_has_random_power;
-use crate::borg_magic::{borg_get_spell_entry, borg_spell_stat};
+use crate::decision_api::borg_formulas::borg_power_dynamic;
+use crate::decision_api::borg_item::borg_item_weight;
+use crate::decision_api::borg_item_activation::ActivationIds;
+use crate::decision_api::borg_item_analyze::borg_ego_has_random_power;
+use crate::decision_api::borg_magic::{borg_get_spell_entry, borg_spell_stat};
 use crate::borg_headers::borg_h::{
     BORG_USES_DYNAMIC_CALCS, BORG_WORSHIPS_AC,
     BORG_WORSHIPS_DAMAGE, BORG_WORSHIPS_HP, BORG_WORSHIPS_MANA, BORG_WORSHIPS_SPEED,
@@ -40,7 +40,7 @@ use crate::headers::list_stats_h::{STAT_CON, STAT_DEX, STAT_INT, STAT_STR, STAT_
 use crate::headers::list_tvals_h::{TV_ARROW, TV_DIGGING, TV_POTION, TV_SCROLL};
 use crate::headers::player_h::STAT_MAX;
 use crate::state::BorgState;
-use crate::engine;
+use crate::decision_api::engine;
 
 const CLASS_WARRIOR: i32 = 0;
 const CLASS_MAGE: i32 = 1;
@@ -300,7 +300,8 @@ fn activation_bonus(a: &ActivationIds, class: i32, clevel: i32, act: i32) -> i32
 }
 
 /// Helper function -- calculate "power" of equipment
-pub(crate) fn borg_power_equipment(st: &BorgState) -> i32 {
+pub(crate) fn borg_power_equipment_native(st: &BorgState) -> i32 {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::power.borg_power_equipment",format!("{:?}",())); }
     let tr = |i: u32| st.borg.tr(i);
     let cfg = |i: u32| st.cfg(i) != 0;
     let items = &st.items.items;
@@ -1822,14 +1823,15 @@ fn borg_power_inventory(st: &BorgState) -> i32 {
 }
 
 /// Calculate the "power" of the Borg
-pub fn borg_power(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_power_native(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() { crate::decision_tape::mark("policy::power.borg_power",format!("{:?}",())); }
     let mut value: i32 = 0;
 
     if st.cfg(BORG_USES_DYNAMIC_CALCS) != 0 {
         value = value.wrapping_add(borg_power_dynamic(st));
     } else {
         // Process the equipment
-        value = value.wrapping_add(borg_power_equipment(st));
+        value = value.wrapping_add(borg_power_equipment_native(st));
 
         // Process the inventory
         value = value.wrapping_add(borg_power_inventory(st));
@@ -1842,7 +1844,7 @@ pub fn borg_power(st: &mut BorgState) -> i32 {
     let mut i = 1;
     while i <= st.borg.tr(BI_MAXDEPTH) + param(Param::power_prepared_depth_lookahead) {
         // Dump fear code
-        if crate::borg_prepared::borg_prepared_c(st, i).is_some() {
+        if crate::decision_api::borg_prepared::borg_prepared_c(st, i).is_some() {
             break;
         }
         i += 1;
@@ -1897,4 +1899,14 @@ mod tests {
         a.dispel_evil = 8;
         assert_eq!(activation_bonus(&a, CLASS_WARRIOR, 21, 8), 500 + 10 + 52);
     }
+}
+
+// R434 facades retain the native public signatures and nested tape ownership.
+pub(crate) fn borg_power_equipment(st: &BorgState) -> i32 {
+if crate::decision_tape::active() { return borg_power_equipment_native(st); }
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::PowerEquipment) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
+}
+pub fn borg_power(st: &mut BorgState) -> i32 {
+if crate::decision_tape::active() { return borg_power_native(st); }
+match crate::shadow::decision(st,crate::decisions::Decision::Power) { crate::decisions::Value::Score(v)=>v,_=>unreachable!() }
 }

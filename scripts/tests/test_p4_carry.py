@@ -18,7 +18,7 @@ class P4CarryTest(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         for name in (*carry.MODULES, 'borg-core/src/params.rs',
-                     'docs/R528-CARRY.json', 'docs/R528-P4-SITES.patch',
+                     'docs/R528-CARRY.json', 'docs/R434-NATIVE-SEAMS.patch', 'docs/R528-P4-SITES.patch',
                      'docs/M13-INVENTORY-PARAMETERS.json'):
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)

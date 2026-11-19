@@ -2716,7 +2716,7 @@ mod grid_failure_tests {
                 let contents = std::fs::read_to_string(log).unwrap();
                 assert_eq!(contents.lines().count(), 1);
                 let row: serde_json::Value = serde_json::from_str(&contents).unwrap();
-                assert_eq!(row["schema"], "borg-reborn-rs/shadow@5");
+                assert_eq!(row["schema"], "borg-reborn-rs/shadow@6");
                 assert_eq!(row["mode"], mode);
                 assert_eq!(row["point"], "danger.grid");
                 assert_eq!(row["inputs"], serde_json::json!({"x":x,"y":y}));

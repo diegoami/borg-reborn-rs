@@ -67,6 +67,16 @@ def verify(root):
             destination = target / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
+        # R434 facades are reversed separately before verifying the immutable P4 delta.
+        seams = metadata.get('reviewed_native_seams')
+        if seams:
+            seam_path = root / seams['path']
+            if seams['path'] != 'docs/R434-NATIVE-SEAMS.patch' or digest(seam_path.read_bytes()) != seams['sha256']:
+                raise ValueError('reviewed native seam patch changed')
+            result = subprocess.run(['git', 'apply', '--reverse', str(seam_path.resolve())],
+                                    cwd=target, capture_output=True, text=True)
+            if result.returncode:
+                raise ValueError('source includes changes beyond accepted P4 delta: cannot reverse reviewed native seams')
         result = subprocess.run(['git', 'apply', '--reverse', str(patch.resolve())],
                                 cwd=target, capture_output=True, text=True)
         if result.returncode:

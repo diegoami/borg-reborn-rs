@@ -378,7 +378,7 @@
     },
     "src/borg_power.rs": {
       "donor_blob": "40cab96d4505ed14e8c854b72a93369500698d65",
-      "receiving_sha256": "8a3b42d7cc902b878e84fc8fd6fba5aa7d3982b0c2714cbc73531e7e45332e70"
+      "receiving_sha256": "c2732f682c2544bf1ea991aa917b6889b35d8c4f28d0d49f9948b5027015fd94"
     },
     "src/borg_prepared.rs": {
       "donor_blob": "71b530790683e1177e033c05d764aa25f902749f",

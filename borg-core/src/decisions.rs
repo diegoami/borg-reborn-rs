@@ -4,6 +4,7 @@ use serde::Serialize;
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
 pub enum Decision {
+Power,
 Caution,
 Recall,
 Surrounded,
@@ -52,6 +53,7 @@ ItemRecharging,
 pub enum Value { Acted(bool), Score(i32) }
 impl Decision {
 pub fn name(self)->&'static str { match self {
+Self::Power=>"power.borg_power",
 Self::Caution=>"caution.borg_caution",
 Self::Recall=>"escape.borg_recall",
 Self::Surrounded=>"escape.borg_surrounded",
@@ -97,6 +99,7 @@ Self::ItemRecharging=>"item_use.borg_recharging",
 
 } }
 pub fn native(self,st:&mut BorgState)->Value { match self {
+Self::Power=>Value::Score(crate::borg_power::borg_power_native(st)),
 Self::Caution=>Value::Acted(crate::borg_caution::borg_caution_native(st)),
 Self::Recall=>Value::Acted(crate::borg_escape::borg_recall_native(st)),
 Self::Surrounded=>Value::Acted(crate::borg_escape::borg_surrounded_native(st)),
@@ -146,10 +149,11 @@ Self::ItemRecharging=>Value::Acted(crate::borg_item_use::borg_recharging_native(
 /// Audited immutable policy requests; implementations cannot write caller memory.
 #[derive(Clone,Copy,Debug,PartialEq,Serialize)]
 #[serde(tag="kind")]
-pub enum ReadDecision { ItemEquipsItem {activation:i32,check_charge:bool} }
+pub enum ReadDecision { PowerEquipment, ItemEquipsItem {activation:i32,check_charge:bool} }
 impl ReadDecision {
-    pub fn name(self)->&'static str { match self { Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
+    pub fn name(self)->&'static str { match self { Self::PowerEquipment=>"power.borg_power_equipment", Self::ItemEquipsItem {..}=>"item_use.borg_equips_item" } }
     pub fn native(self,state:&BorgState)->Value { match self {
+        Self::PowerEquipment=>Value::Score(crate::borg_power::borg_power_equipment_native(state)),
         Self::ItemEquipsItem {activation,check_charge}=>Value::Acted(crate::borg_item_use::borg_equips_item_native(state,activation,check_charge)),
     } }
 }

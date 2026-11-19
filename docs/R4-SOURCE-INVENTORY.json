@@ -7,8 +7,8 @@
   "totals": {
     "primary": {
       "files": 9,
-      "physical_lines_including_tests": 9495,
-      "function_definitions_including_tests": 228
+      "physical_lines_including_tests": 9507,
+      "function_definitions_including_tests": 230
     },
     "adjacent": {
       "files": 5,
@@ -25,10 +25,12 @@
     {
       "path": "borg-core/src/borg_power.rs",
       "role": "primary",
-      "sha256": "8a3b42d7cc902b878e84fc8fd6fba5aa7d3982b0c2714cbc73531e7e45332e70",
-      "physical_lines_including_tests": 1900,
-      "function_definitions_including_tests": 14,
+      "sha256": "c2732f682c2544bf1ea991aa917b6889b35d8c4f28d0d49f9948b5027015fd94",
+      "physical_lines_including_tests": 1912,
+      "function_definitions_including_tests": 16,
       "public_function_spellings_including_methods": [
+        "borg_power_equipment_native",
+        "borg_power_native",
         "borg_power_equipment",
         "borg_power"
       ],
@@ -809,16 +811,13 @@
         "power_prepared_depth_weight"
       ],
       "direct_crate_namespaces": [
-        "borg_formulas",
         "borg_headers",
-        "borg_item",
-        "borg_item_activation",
-        "borg_item_analyze",
-        "borg_magic",
-        "borg_prepared",
-        "engine",
+        "decision_api",
+        "decision_tape",
+        "decisions",
         "headers",
         "params",
+        "shadow",
         "state"
       ],
       "direct_engine_symbol_spellings": [

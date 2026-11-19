@@ -360,6 +360,14 @@ crate::decision_tape::effect(st,"borg_light::borg_light_beam",format!("{:?}",(si
 }
 }
 pub mod borg_magic {
+pub fn borg_spell_stat() -> i32 {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_spell_stat(); }
+crate::decision_tape::engine("borg_magic::borg_spell_stat",format!("{:?}",()),crate::borg_magic::borg_spell_stat)
+}
+pub fn borg_get_spell_entry(st:&crate::state::BorgState,book:i32,entry:i32)->Option<usize> {
+if !crate::decision_tape::active() { return crate::borg_magic::borg_get_spell_entry(st,book,entry); }
+crate::decision_tape::query(st,"borg_magic::borg_get_spell_entry",format!("{:?}",(book,entry)),|| crate::borg_magic::borg_get_spell_entry(st,book,entry))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -498,6 +506,30 @@ crate::decision_tape::query(st,"borg_trait::borg_uses_swaps",format!("{:?}",()),
 }
 }
 pub mod engine {
+pub fn adj_str_hold(index:usize) -> i32 {
+if !crate::decision_tape::active() { return crate::engine::adj_str_hold(index); }
+crate::decision_tape::engine("engine::adj_str_hold",format!("{:?}",(index,)),|| crate::engine::adj_str_hold(index))
+}
+pub fn class_book_dungeon(book:i32) -> bool {
+if !crate::decision_tape::active() { return crate::engine::class_book_dungeon(book); }
+crate::decision_tape::engine("engine::class_book_dungeon",format!("{:?}",(book,)),|| crate::engine::class_book_dungeon(book))
+}
+pub fn class_spell_weight() -> i32 {
+if !crate::decision_tape::active() { return crate::engine::class_spell_weight(); }
+crate::decision_tape::engine("engine::class_spell_weight",format!("{:?}",()),|| crate::engine::class_spell_weight())
+}
+pub fn class_total_spells() -> i32 {
+if !crate::decision_tape::active() { return crate::engine::class_total_spells(); }
+crate::decision_tape::engine("engine::class_total_spells",format!("{:?}",()),|| crate::engine::class_total_spells())
+}
+pub fn player_has(flag:u32) -> bool {
+if !crate::decision_tape::active() { return crate::engine::player_has(flag); }
+crate::decision_tape::engine("engine::player_has",format!("{:?}",(flag,)),|| crate::engine::player_has(flag))
+}
+pub fn spell_chance(index:i32) -> i16 {
+if !crate::decision_tape::active() { return crate::engine::spell_chance(index); }
+crate::decision_tape::engine("engine::spell_chance",format!("{:?}",(index,)),|| crate::engine::spell_chance(index))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_magic_h::borg_spells;
 use crate::borg_update::Detect;
@@ -671,6 +703,8 @@ crate::decision_tape::effect(st,"shell::shopping_departure",format!("{:?}",()),|
 }
 }
 pub mod headers {
+pub mod list_player_flags_h { pub use crate::headers::list_player_flags_h::PF_ZERO_FAIL; }
+pub mod player_h { pub use crate::headers::player_h::STAT_MAX; }
 pub mod list_mon_race_flags_h { pub use crate::headers::list_mon_race_flags_h::{RF_KILL_WALL,RF_PASS_WALL}; pub use crate::headers::list_mon_race_flags_h::{RF_ANIMAL,RF_DEMON,RF_DRAGON,RF_EVIL,RF_GIANT,RF_HURT_COLD,RF_HURT_FIRE,RF_HURT_LIGHT,RF_HURT_ROCK,RF_IM_ACID,RF_IM_COLD,RF_IM_ELEC,RF_IM_FIRE,RF_IM_POIS,RF_MULTIPLY,RF_NEVER_MOVE,RF_NONLIVING,RF_NO_CONF,RF_NO_FEAR,RF_NO_SLEEP,RF_ORC,RF_QUESTOR,RF_SPIRIT,RF_TROLL,RF_UNDEAD,RF_UNIQUE};
 }
 pub mod list_options_h { pub use crate::headers::list_options_h::{OPT_birth_force_descend}; pub use crate::headers::list_options_h::{OPT_birth_randarts};
@@ -679,7 +713,7 @@ pub mod list_player_timed_h { pub use crate::headers::list_player_timed_h::{TMD_
 pub mod list_terrain_h { pub use crate::headers::list_terrain_h::{FEAT_LAVA,FEAT_LESS,FEAT_MORE,FEAT_NONE}; pub use crate::headers::list_terrain_h::{FEAT_BROKEN,FEAT_FLOOR,FEAT_MAGMA,FEAT_OPEN,FEAT_PASS_RUBBLE,FEAT_PERM};
 pub use crate::headers::list_terrain_h::{FEAT_CLOSED,FEAT_GRANITE,FEAT_RUBBLE};
 }
-pub mod list_tvals_h { pub use crate::headers::list_tvals_h::{TV_FOOD,TV_MUSHROOM,TV_POTION,TV_ROD,TV_STAFF}; pub use crate::headers::list_tvals_h::{TV_BOOTS,TV_FLASK,TV_LIGHT,TV_RING,TV_WAND};
+pub mod list_tvals_h {pub use crate::headers::list_tvals_h::{TV_ARROW,TV_DIGGING}; pub use crate::headers::list_tvals_h::{TV_FOOD,TV_MUSHROOM,TV_POTION,TV_ROD,TV_STAFF}; pub use crate::headers::list_tvals_h::{TV_BOOTS,TV_FLASK,TV_LIGHT,TV_RING,TV_WAND};
 pub use crate::headers::list_tvals_h::{TV_SCROLL};
 pub use crate::headers::list_tvals_h::{TV_DRAG_ARMOR};
 }
@@ -711,7 +745,7 @@ pub mod list_effects_h { pub use crate::headers::list_effects_h::{EF_NOURISH};
 }
 pub mod borg_headers {
 pub mod borg_item_h { pub use crate::borg_headers::borg_item_h::borg_item; }
-pub mod borg_h { pub use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY}; pub use crate::borg_headers::borg_h::{BORG_TOWN_PLAN};
+pub mod borg_h {pub use crate::borg_headers::borg_h::{BORG_NO_DEEPER,BORG_USES_DYNAMIC_CALCS,BORG_WORSHIPS_AC,BORG_WORSHIPS_DAMAGE,BORG_WORSHIPS_HP,BORG_WORSHIPS_MANA,BORG_WORSHIPS_SPEED}; pub use crate::borg_headers::borg_h::{BORG_PLAYS_RISKY}; pub use crate::borg_headers::borg_h::{BORG_TOWN_PLAN};
 pub use crate::borg_headers::borg_h::{BORG_MONEY_SCUM_AMOUNT};
 }
 pub mod borg_magic_h { pub use crate::borg_headers::borg_magic_h::{BERSERK_STRENGTH,CURE_POISON,DIMENSION_DOOR,HEALING,HERBAL_CURING,HEROISM,HOLY_WORD,MINOR_HEALING,PHASE_DOOR,PORTAL,RECHARGING,REMEMBRANCE,REMOVE_HUNGER,RESTORATION,REVITALIZE,SHADOW_SHIFT,TELEPORT_LEVEL,TELEPORT_SELF,UNHOLY_REPRIEVE,WORD_OF_RECALL}; pub use crate::borg_headers::borg_magic_h::{ACID_SPRAY,ANNIHILATE,BANISH_SPIRITS,CONFUSE_MONSTER,CRUSH,CURSE,DARK_SPEAR,DISENCHANT,DISPEL_EVIL,DISPEL_LIFE,DISPEL_UNDEAD,EARTH_RISING,ELECTRIC_ARC,EXPLOSION,FIRE_BALL,FRIGHTEN,FROST_BOLT,HOWL_OF_THE_DAMNED,ICE_STORM,LEAP_INTO_BATTLE,LIGHTNING_STRIKE,LIGHT_OF_VARDA,MAGIC_MISSILE,MAIM_FOE,MANA_BOLT,MANA_STORM,MASS_SLEEP,METEOR_SWARM,NETHER_BOLT,ORB_OF_DRAINING,RIFT,RIVER_OF_LIGHTNING,SHOCK_WAVE,SLEEP_EVIL,SLOW_MONSTER,SPEAR_OF_LIGHT,SPEAR_OF_OROME,STINKING_CLOUD,STORM_OF_DARKNESS,TAP_UNLIFE,THRUST_AWAY,TRANCE,TURN_STONE_TO_MUD,UNLEASH_CHAOS,VAMPIRE_STRIKE,VOLCANIC_ERUPTION,WHIRLWIND_ATTACK,borg_magic,borg_spells};
@@ -733,6 +767,10 @@ pub mod borg_update { pub use crate::borg_update::Detect;
 use crate::memory::BorgGrid; }
 
 pub mod borg_item {
+pub fn borg_item_weight(item:&crate::borg_headers::borg_item_h::borg_item)->i16 {
+if !crate::decision_tape::active() { return crate::borg_item::borg_item_weight(item); }
+crate::decision_tape::engine("borg_item::borg_item_weight",format!("{:?}",item),|| crate::borg_item::borg_item_weight(item))
+}
 use crate::{state::BorgState, borg::BorgTime, headers, headers::z_type_h::loc};
 use crate::borg_headers::borg_item_h::borg_item;
 use crate::borg_update::Detect;
@@ -826,6 +864,10 @@ crate::decision_tape::effect(st,"borg_escape::borg_surrounded",format!("{:?}",()
 }
 
 pub mod borg_item_analyze {
+pub fn borg_ego_has_random_power(index:usize)->bool {
+if !crate::decision_tape::active() { return crate::borg_item_analyze::borg_ego_has_random_power(index); }
+crate::decision_tape::engine("borg_item_analyze::borg_ego_has_random_power",format!("{:?}",(index,)),|| crate::borg_item_analyze::borg_ego_has_random_power(index))
+}
 use crate::state::BorgState;
 use crate::borg_headers::borg_item_h::borg_item;
 pub fn borg_obj_has_effect(kind: u32, index: i32, subtype: i32) -> bool {
@@ -855,4 +897,14 @@ pub mod item_use_fixture {
         let _reset=Reset(STUB_MESSAGES.with(|v|v.replace(true)));
         run()
     }
+}
+
+/// R434: engine-derived activation-name lookup; policy chain is owned by each implementation.
+pub mod borg_item_activation { pub use crate::borg_item_activation::ActivationIds; }
+/// R434: configured formula policy explicitly remains shared, with ordered full-state replay.
+pub mod borg_formulas {
+pub fn borg_power_dynamic(st:&mut crate::state::BorgState)->i32 {
+if !crate::decision_tape::active() { return crate::borg_formulas::borg_power_dynamic(st); }
+crate::decision_tape::effect(st,"borg_formulas::borg_power_dynamic",format!("{:?}",()),crate::borg_formulas::borg_power_dynamic)
+}
 }

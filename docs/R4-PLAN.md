@@ -6,6 +6,13 @@ ledger merge is 17992dfcfc74509b723c861b41056f45993dc37c. Reference refresh
 #429/#432 does not change runtime donor M13
 1443c2d1b97d110ffbf5ae420d6c6b97ac15f7ea or its accepted gameplay evidence.
 
+Current checkpoint: item use #435 is merged. P4 #477 is accepted/promoted;
+reviewed carry #528/#529 merged into feature/track-r at `99fa7cc5`.
+Power #434/#478 now implements the owned equipment/inventory/activation
+valuations and typed power entries; runtime validation remains pending.
+See [current handover](R434-HANDOVER.md). Historical dependency audit below
+records why the separate accepted contract carry was required.
+
 ## Counted scope and parameter gate
 
 Run `python3 scripts/r4-surface.py` to verify the receiving source inventory

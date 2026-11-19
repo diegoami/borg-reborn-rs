@@ -79,6 +79,61 @@ class ShadowCheckTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError,error):
                     module.check([root], r4_item_use=True)
 
+    def test_power_requires_v6_entries_and_immutable_equipment_root(self):
+        row = valid_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@6', surface='r4-power',
+                   ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use', 'power'])
+        c = row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS, 1))
+        c['stateful_points'].update({'power.borg_power':1, 'power.borg_power_equipment':1})
+        added = len(module.ITEM_USE_ENTRY_POINTS) + 2
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS), power_calls=2,
+                 readonly_comparisons=2, readonly_points={'item_use.borg_equips_item':1, 'power.borg_power_equipment':1},
+                 stateful_comparisons=2, comparisons=9)
+        c['root_points']['power.borg_power'] = 1
+        c['policy_markers'] += added
+        c['tape_events'] += added
+        with tempfile.TemporaryDirectory() as name:
+            root=Path(name);self.write(root,row)
+            module.check([root], r4_power=True, require_all_entries=True)
+            with self.assertRaisesRegex(ValueError, 'wrong schema'):
+                module.check([root], r4_item_use=True)
+            for key,value,error in [('readonly_points',{'item_use.borg_equips_item':2},'read-only roots'),
+                                    ('root_points',{'power.borg_power_equipment':2},'entry coverage'),
+                                    ('power_calls',1,'individual entry coverage')]:
+                changed=copy.deepcopy(row);changed['counts'][key]=value;self.write(root,changed)
+                with self.assertRaisesRegex(ValueError,error):
+                    module.check([root],r4_power=True,require_all_entries=True)
+
+    def test_nested_equipment_marker_cannot_replace_each_readonly_root(self):
+        row = valid_row()
+        row.update(schema='borg-reborn-rs/shadow-stats@6', surface='r4-power',
+                   ported_points=module.R2_PORTED + ['attack', 'defence', 'item_use', 'power'])
+        c=row['counts']
+        c['stateful_points'].update(dict.fromkeys(module.ITEM_USE_ENTRY_POINTS,1))
+        c['stateful_points'].update({'power.borg_power':1, 'power.borg_power_equipment':1})
+        c['root_points']['power.borg_power']=1
+        c.update(item_use_calls=len(module.ITEM_USE_ENTRY_POINTS),power_calls=2,
+                 stateful_comparisons=2,readonly_comparisons=1,comparisons=8)
+        added=len(module.ITEM_USE_ENTRY_POINTS)+2
+        c['policy_markers']+=added
+        c['tape_events']+=added
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory)
+            for missing,present in [('power.borg_power_equipment','item_use.borg_equips_item'),
+                                    ('item_use.borg_equips_item','power.borg_power_equipment')]:
+                for explicitly_zero in [False,True]:
+                    with self.subTest(missing=missing,explicitly_zero=explicitly_zero):
+                        changed=copy.deepcopy(row)
+                        changed['counts']['readonly_points']={present:1}
+                        if explicitly_zero:
+                            changed['counts']['readonly_points'][missing]=0
+                        self.write(root,changed)
+                        # All policy markers and arithmetic are otherwise valid.
+                        module.check([root],r4_power=True)
+                        with self.assertRaisesRegex(ValueError,'missing read-only root coverage'):
+                            module.check([root],r4_power=True,require_all_entries=True)
+
     def test_expected_arm_mode_rejects_the_other_valid_mode(self):
         with tempfile.TemporaryDirectory() as name:
             root = Path(name); row = valid_row(); self.write(root, row)

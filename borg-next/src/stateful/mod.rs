@@ -9,9 +9,11 @@ pub mod caution;
 pub mod defence;
 pub mod escape;
 pub mod item_use;
+pub mod power;
 pub mod recovery;
 pub fn decide(st: &mut BorgState, request: Decision) -> Value {
     match request {
+        Decision::Power => Value::Score(power::borg_power(st)),
         Decision::ItemQuaffCrit { no_check } => {
             Value::Acted(item_use::borg_quaff_crit(st, no_check))
         }
@@ -127,6 +129,7 @@ fn set_free_action(st: &mut BorgState, value: i32) {
 /// Compiler-enforced read-only entry dispatch, with no caller state clone.
 pub fn read_decide(st: &BorgState, request: ReadDecision) -> Value {
     match request {
+        ReadDecision::PowerEquipment => Value::Score(power::borg_power_equipment(st)),
         ReadDecision::ItemEquipsItem {
             activation,
             check_charge,
