@@ -111,6 +111,13 @@ fn enqueue_free_stairs(st: &mut BorgState, which: Which) -> (usize, Vec<(i32, i3
     while i < i32::from(track(st, which).num) {
         let (y, x) = track(st, which).at(i as usize);
 
+        // borg-reborn-rs (#689): a flight takes only the staircases it
+        // reaches before the monsters it flees.
+        if !st.flow.flee_threats.is_empty() && !crate::borg_caution::flee_stair_first(st, &st.flow.flee_threats, y, x) {
+            i += 1;
+            continue;
+        }
+
         /* Not if a monster is parked on the stair */
         if st.cave.grid(x, y).kill != 0 {
             parked.push((y, x));
@@ -477,19 +484,48 @@ mod tests {
 /// Prepare to flee the level via stairs (`stair_both`, with #556's
 /// fight-through fallback, `fight_through`).
 pub fn borg_flow_stair_both(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_both(st, why, sneak))
+    fight_through(st, why, |st| flee_route(st, why, |st| stair_both(st, why, sneak)))
 }
 
 /// Prepare to flow towards "up" stairs (`stair_less`, with #556's
 /// fight-through fallback).
 pub fn borg_flow_stair_less(st: &mut BorgState, why: i32, sneak: bool) -> bool {
-    fight_through(st, why, |st| stair_less(st, why, sneak))
+    fight_through(st, why, |st| flee_route(st, why, |st| stair_less(st, why, sneak)))
 }
 
 /// Prepare to flow towards "down" stairs (`stair_more`, with #556's
 /// fight-through fallback).
 pub fn borg_flow_stair_more(st: &mut BorgState, why: i32, sneak: bool, brave: bool) -> bool {
-    fight_through(st, why, |st| stair_more(st, why, sneak, brave))
+    fight_through(st, why, |st| flee_route(st, why, |st| stair_more(st, why, sneak, brave)))
+}
+
+/// borg-reborn-rs (#689, owner: "pick a better direction for fleeing"). With
+/// `caution_flee_route`, a flight (`GOAL_FLEE`) from known scary monsters
+/// (`borg_caution::flee_threats`) takes only a staircase it reaches before
+/// them, and its route keeps off the grids next to them; with no such route
+/// it takes the plain route to those staircases. No staircase reached first:
+/// no flow (an adjacent scary monster is then fought, `borg_attack`).
+fn flee_route(st: &mut BorgState, why: i32, mut flow: impl FnMut(&mut BorgState) -> bool) -> bool {
+    if why != GOAL_FLEE || !crate::borg_caution::flee_route_on() {
+        return flow(st);
+    }
+    let threats = crate::borg_caution::flee_threats(st);
+    if threats.is_empty() {
+        return flow(st);
+    }
+    st.flow.flee_threats = threats;
+    st.flow.flee_avoid = true;
+    let mut ok = flow(st);
+    if !ok {
+        st.flow.flee_avoid = false;
+        ok = flow(st);
+    }
+    st.flow.flee_threats.clear();
+    st.flow.flee_avoid = false;
+    if !ok {
+        borg_io::borg_note(st, "# No staircase reached before the scary monsters (#689)");
+    }
+    ok
 }
 
 /// borg-reborn-rs (#556, owner 2026-11-19: "fallback to fight our way

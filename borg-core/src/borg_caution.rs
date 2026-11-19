@@ -2440,10 +2440,15 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
 }
 
 /// Does the up (`up`) or down stair flow, spread as the flee flows spread
-/// it, reach the Borg?
+/// it, reach the Borg? With `caution_flee_route` (#689), only the staircases
+/// it reaches before the scary monsters count.
 fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
     let track = if up { &st.stairs.less } else { &st.stairs.more };
-    let stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
+    let mut stairs: Vec<(i32, i32)> = (0..track.num.max(0) as usize).map(|i| (track.y[i], track.x[i])).collect();
+    if flee_route_on() {
+        let threats = flee_threats(st);
+        stairs.retain(|&(y, x)| flee_stair_first(st, &threats, y, x));
+    }
     if stairs.is_empty() {
         return false;
     }
@@ -2456,6 +2461,52 @@ fn stair_flow_reaches(st: &mut BorgState, up: bool) -> bool {
     let avoid = up && !(st.borg.tr(BI_CLEVEL) > 35 || st.borg.tr(BI_LIGHT) == 0) && !st.borg.status.desperate;
     crate::borg_flow::borg_flow_spread(st, 250, false, avoid, false, -1, false);
     i32::from(st.flow.cost_at(st.borg.c.y, st.borg.c.x)) < 250
+}
+
+/// borg-reborn-rs (#689, owner): "pick a better direction for fleeing".
+pub(crate) fn flee_route_on() -> bool {
+    p(Param::caution_flee_route) != 0
+}
+
+/// borg-reborn-rs (#689): the monsters a flight runs from: on a scary level,
+/// the known monsters of a race that made it scary (`scary_races`, #590)
+/// that can move, with their positions and speeds.
+pub(crate) fn flee_threats(st: &BorgState) -> Vec<(loc, i32)> {
+    if !st.borg.mon.scary {
+        return Vec::new();
+    }
+    (1..st.kills.nxt.max(0) as usize)
+        .map(|i| st.kills.kills[i])
+        .filter(|k| {
+            k.r_idx != 0
+                && race_bit(k.r_idx).is_some_and(|(word, bit)| st.borg.mon.scary_races[word] & bit != 0)
+                && !engine::race_flag_has(usize::from(k.r_idx), RF_NEVER_MOVE)
+        })
+        .map(|k| (k.pos, i32::from(k.speed)))
+        .collect()
+}
+
+/// borg-reborn-rs (#689): does the Borg reach the staircase at (`y`, `x`)
+/// before every one of `threats`? Steps are the game's `distance`, scaled by
+/// each one's energy per game turn (`extract_energy` of its speed).
+pub(crate) fn flee_stair_first(st: &BorgState, threats: &[(loc, i32)], y: i32, x: i32) -> bool {
+    let energy = |speed: i32| i64::from(engine::extract_energy(speed.clamp(0, 199) as usize)).max(1);
+    let stair = loc { x, y };
+    let mine = i64::from(engine::distance(st.borg.c, stair));
+    let my_energy = energy(st.borg.tr(BI_SPEED));
+    threats
+        .iter()
+        .all(|&(pos, speed)| reached_first(mine, my_energy, i64::from(engine::distance(pos, stair)), energy(speed)))
+}
+
+/// Steps over energy: the Borg's time strictly below the monster's.
+fn reached_first(my_steps: i64, my_energy: i64, their_steps: i64, their_energy: i64) -> bool {
+    my_steps * their_energy < their_steps * my_energy
+}
+
+/// borg-reborn-rs (#689): is (`x`, `y`) next to (or on) one of `threats`?
+pub(crate) fn next_to_any(threats: &[(loc, i32)], x: i32, y: i32) -> bool {
+    threats.iter().any(|(pos, _)| (pos.x - x).abs() <= 1 && (pos.y - y).abs() <= 1)
 }
 
 /// borg-reborn-rs (#539, owner): "if it has no stairs, the second best
@@ -5004,6 +5055,31 @@ mod cornered_tests {
             st.borg.trait_[BI_CLASS as usize] = class;
             assert_eq!(melee_class(&st), melee, "class {class}");
         }
+    }
+}
+
+#[cfg(test)]
+mod flee_route_tests {
+    use super::{next_to_any, reached_first};
+    use crate::headers::z_type_h::loc;
+
+    /// #689: steps over energy, strictly first.
+    #[test]
+    fn reached_first_scales_by_speed() {
+        assert!(reached_first(3, 10, 4, 10), "a step ahead at the same speed");
+        assert!(!reached_first(4, 10, 4, 10), "a tie is not first");
+        assert!(!reached_first(3, 10, 4, 20), "a monster twice as fast");
+        assert!(reached_first(3, 20, 5, 10), "hasted");
+    }
+
+    /// #689: the grids next to (and on) a threat.
+    #[test]
+    fn next_to_a_threat() {
+        let t = [(loc { x: 10, y: 10 }, 110)];
+        assert!(next_to_any(&t, 11, 9));
+        assert!(next_to_any(&t, 10, 10));
+        assert!(!next_to_any(&t, 12, 10));
+        assert!(!next_to_any(&[], 10, 10));
     }
 }
 

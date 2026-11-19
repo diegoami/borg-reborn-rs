@@ -743,6 +743,9 @@ borg_param_caution_scary_ranged_no_stairs = 1
 borg_param_caution_flee_known_down_stairs = 0
 borg_param_caution_flee_known_down_cornered = 1
 borg_param_caution_flee_known_down_max_cost = 40
+# #689 (owner): a flight from the scary monsters takes only a staircase it
+# reaches first, by a route off the grids next to them (0 = the nearest).
+borg_param_caution_flee_route = 0
 
 # Keep the known staircases when bravery is boosted because the Borg is
 # stuck (#544, #548). 0 = C, which forgets them.

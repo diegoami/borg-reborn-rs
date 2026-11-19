@@ -115,6 +115,12 @@ pub struct FlowState {
     /// borg-reborn-rs (#556): the spread running is a kill flow's
     /// (`borg_flow_spread_hunting`), which crosses remembered breeders.
     pub hunting: bool,
+    /// borg-reborn-rs (#689): a flight's scary monsters (position, speed),
+    /// set around a flee flow by `borg_flow_stairs::flee_route`: the
+    /// staircases it may take are the ones the Borg reaches first.
+    pub flee_threats: Vec<(crate::headers::z_type_h::loc, i32)>,
+    /// borg-reborn-rs (#689): the spread refuses grids next to `flee_threats`.
+    pub flee_avoid: bool,
     /// `borg_temp_n`: entries in use in the temporary grid list
     pub temp_n: i16,
     /// `borg_temp_x` (`AUTO_TEMP_MAX` entries)
@@ -144,6 +150,8 @@ impl Default for FlowState {
             data_know: Vec::new(),
             data_icky: Vec::new(),
             hunting: false,
+            flee_threats: Vec::new(),
+            flee_avoid: false,
             temp_n: 0,
             temp_x: vec![0; AUTO_TEMP_MAX],
             temp_y: vec![0; AUTO_TEMP_MAX],
@@ -661,6 +669,12 @@ pub fn borg_flow_spread(
             // grids near a remembered breeder; the grids next to the Borg
             // stay open, so its first step can still leave the colony.
             if breeder_blocks(crate::borg_caution::near_known_breeder(st, x, y), st.flow.hunting, st.borg.c, x, y) {
+                continue;
+            }
+
+            // borg-reborn-rs (#689): a flight's route keeps out of reach of
+            // the monsters it flees.
+            if st.flow.flee_avoid && crate::borg_caution::next_to_any(&st.flow.flee_threats, x, y) {
                 continue;
             }
 
