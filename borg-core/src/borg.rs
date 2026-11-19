@@ -75,6 +75,11 @@ pub struct Borg {
     /// queued `v`: consumed by the prompt, cleared by `borg_flush` and when
     /// the player is no longer shapechanged.
     pub fox_revert: bool,
+    /// borg-reborn-rs (#614): the last flight step (`GOAL_FLEE`): the flow
+    /// steps it had to go, and when. A new monster wipes the flow goal for a
+    /// think; the commitment to the staircase outlives that.
+    pub flight_steps: i32,
+    pub flight_time: BorgTime,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

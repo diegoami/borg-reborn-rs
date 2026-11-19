@@ -44,6 +44,48 @@ use crate::state::BorgState;
 
 /// `GOAL_RECOVER` (borg-flow.h): the goal of flowing somewhere safe to rest.
 const GOAL_RECOVER: i16 = 9;
+/// `GOAL_FLEE` (borg-flow.h): the flight to a staircase (#614).
+const GOAL_FLEE: i16 = 7;
+
+/// borg-reborn-rs (#614, owner): "once committed to a stair, it must at
+/// least reach that stair before stopping to rest". A Borg on a flight
+/// flow (`GOAL_FLEE`) whose staircase is at most `recover_rest_reach_stairs`
+/// flow steps away does not rest until it stands on it: no rod, HP or mana
+/// rest. Potions and cures are not rests. A farther staircase is a long walk,
+/// not a commitment: a hurt Borg that held its rests for 138 steps walked into
+/// a crow and died (18 starts, first version). 0 = off (C). On the staircase
+/// it may rest; a monster then sends it up or down
+/// (`caution_stairs_leave_on_monster`). Noted when it holds a rest that
+/// would otherwise start.
+fn rest_held_for_stairs(st: &mut BorgState) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let on_stairs = feat == crate::headers::list_terrain_h::FEAT_LESS || feat == crate::headers::list_terrain_h::FEAT_MORE;
+    // On the flight flow, the steps left from here. Otherwise a flight that
+    // is still on (fleeing, leaving or a scary level) whose last step was
+    // within FLIGHT_MEMORY: a new monster wipes the flow goal for a think,
+    // and the rest must not slip in then (the Druid of #614 did, 11 steps
+    // from the stairs, in a first version).
+    let (flight, steps) = if st.borg.goal.type_0 == GOAL_FLEE {
+        (true, i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]))
+    } else {
+        let still_fleeing = st.borg.goal.fleeing || st.borg.goal.leaving || st.borg.mon.scary;
+        let recent = st.borg.time.now.saturating_sub(st.borg.flight_time) <= FLIGHT_MEMORY;
+        (still_fleeing && recent && st.borg.flight_time > 0, st.borg.flight_steps)
+    };
+    if !hold_rest_for_stairs(param(Param::recover_rest_reach_stairs), flight, on_stairs, steps) {
+        return false;
+    }
+    borg_note(st, &format!("# No rest: committed to the stairs, {steps} steps to go."));
+    true
+}
+
+/// borg-reborn-rs (#614): how long (Borg time) a flight step commits the Borg
+/// to its staircase after the flow goal is wiped.
+const FLIGHT_MEMORY: i32 = 10;
+
+fn hold_rest_for_stairs(max_steps: i32, flight: bool, on_stairs: bool, steps: i32) -> bool {
+    max_steps > 0 && flight && !on_stairs && steps <= max_steps
+}
 
 /// A literal key (`borg_keypress('R')` etc.).
 fn key(c: u8) -> keycode_t {
@@ -390,6 +432,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISPOISONED) == 0
         && borg_flow_misc::borg_check_rest(st, st.borg.c.y, st.borg.c.x)
         && !borg_spell_okay(st, RECHARGING)
+        && !rest_held_for_stairs(st)
     {
         borg_note(st, "# Resting to recharge a rod...");
 
@@ -430,7 +473,8 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && p <= i32::from(
             st.danger.fear_region[(st.borg.c.y / 11) as usize][(st.borg.c.x / 11) as usize],
         )
-        && st.borg.goal.type_0 != GOAL_RECOVER;
+        && st.borg.goal.type_0 != GOAL_RECOVER
+        && !rest_held_for_stairs(st);
     // borg-reborn-rs (#558): breeders multiply while the Borg rests; hunt
     // them first while it may and is not badly hurt. The breeder scan runs
     // only when a rest is due and the HP test passes.
@@ -480,6 +524,7 @@ pub fn borg_recover(st: &mut BorgState) -> bool {
         && st.borg.tr(BI_ISPOISONED) == 0
         && st.borg.tr(BI_FOOD) > param(Param::recover_mana_rest_min_food)
         && !hunt_now(st)
+        && !rest_held_for_stairs(st)
     {
         borg_note(st, &format!("# Resting to gain Mana. (danger {p})..."));
 
@@ -514,6 +559,21 @@ fn hunt_now(st: &mut BorgState) -> bool {
 /// 0 = off (C's rest).
 fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
     hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod rest_at_stairs_tests {
+    use super::hold_rest_for_stairs;
+
+    #[test]
+    fn a_rest_waits_for_the_stairs_only_on_a_flight_off_the_stairs() {
+        assert!(hold_rest_for_stairs(20, true, false, 11), "committed, not there yet");
+        assert!(hold_rest_for_stairs(20, true, false, 20), "at the limit");
+        assert!(!hold_rest_for_stairs(20, true, false, 21), "a long walk, not a commitment");
+        assert!(!hold_rest_for_stairs(20, true, true, 0), "on the staircase: rest");
+        assert!(!hold_rest_for_stairs(20, false, false, 11), "no flight");
+        assert!(!hold_rest_for_stairs(0, true, false, 11), "off (C)");
+    }
 }
 
 #[cfg(test)]

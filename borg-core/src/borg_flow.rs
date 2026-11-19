@@ -1317,6 +1317,9 @@ pub fn borg_flow_old(st: &mut BorgState, why: i32) -> bool {
     // borg-reborn-rs (#551): a Druid's flight step: Fox Form first.
     if b_i >= 0 && why == GOAL_FLEE {
         let steps_left = i32::from(st.flow.data_flow[st.borg.c.y as usize][st.borg.c.x as usize]);
+        // borg-reborn-rs (#614): remember the flight (rests wait for the stairs).
+        st.borg.flight_steps = steps_left;
+        st.borg.flight_time = st.borg.time.now;
         if crate::borg_escape::fox_form_before_flight_step(st, steps_left) {
             return true;
         }

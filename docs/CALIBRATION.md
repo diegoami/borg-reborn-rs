@@ -10,6 +10,59 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Rest at the stairs (#614)
+
+The registry now holds **2157** parameters (2155 before; two added). Owner,
+2026-11-19, from the death of Elf Druid 1678765969 in borg-zoo#312's small
+tier: "once committed to a stair, it must at least reach that stair before
+stopping to rest ... He can rest on the stairs, and if a mob appears he can
+climb up/down immediately." That Druid, fleeing as a fox to stairs 11 steps
+away, stopped for `borg_recover`'s low-level mana rest. A white harpy and an
+apprentice arrived during the rest, and it never reached the stairs.
+
+- `recover_rest_reach_stairs` (steps of flow, 0 = off): on a flight flow
+  (`GOAL_FLEE`) whose staircase is at most this many steps away, `borg_recover`
+  holds every rest (the rod, HP and mana rests) until the Borg stands on a
+  staircase. Potions and cures are not rests. The commitment outlives a
+  think without the flow goal: a new monster wipes the goal, and a flight
+  still on (fleeing, leaving or a scary level) whose last step was within 10
+  Borg-time units still holds the rest (`borg.flight_steps`/`flight_time`,
+  set at each flight step). Without that, the Druid rested anyway when a
+  white harpy appeared. Note: `# No rest: committed to
+  the stairs, N steps to go.` A first version held rests at any distance:
+  a hurt Druid then walked a 138-step flight without resting and died to a
+  crow, and 16 of 18 games changed (2 deaths). A farther staircase is a long
+  walk, not a commitment.
+- `caution_stairs_leave_on_monster` (flag): a Borg standing on a staircase
+  that still needs to recover (HP or SP below the maximum) takes the stairs
+  as soon as a monster threatens it (danger here above 0), through
+  `borg_caution`'s stair block and `choose_stairs`. Note: `# Leaving by the
+  stairs: a monster while recovering (danger N).`
+
+Compiled and shipped 0 (C). Evidence, a lead (the 18 classes-18 starts,
+100,000 turns, branch of main `9a423670`):
+
+| arm | deaths | sum of CL | sum of max depth | keys as off | held rests | stairs taken |
+|---|---:|---:|---:|---:|---:|---:|
+| off | 0 | 99 | 41 | | | |
+| reach 20 | 2 (Mage, an apprentice; Druid, a crow) | 92 | 39 | 5/18 | 228 | |
+| leave 1 | 0 | 102 | 39 | 6/18 | | 72 |
+| both | 2 (the same) | 93 | 35 | 3/18 | 135 | 53 |
+
+Both deaths come thousands of game turns after the games first differ (the
+Mage's last held rest at 23,595, death at 28,905; the Druid's at 4,663, death
+at 13,826), so they are leads, not effects. **The scene itself**, replayed
+from the zoo cell with this branch (off replays the zoo death byte for byte):
+with reach 20 the Druid holds the rest 11 steps out, keeps its flight when the
+harpy appears, kills it with Stinking Cloud, reaches the up staircase at game
+turn 67,268, rests on the stairs of the new level, and lives to 100,000 (CL7).
+A zoo pilot is the measurement.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:75` |
+| `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3257` |
+
 ## Flight Recall from a danger share (#587)
 
 The registry now holds **2155** parameters (one added). `caution_flee_recall_danger_percent` (0, off): where `caution_flee_recall = 0` or `caution_flee_recall_gate_below_depth` holds a flight's Word of Recall back, the danger here at or above this percent of the current HP allows it, beside the breeder and chaser exceptions. Only the flight's read uses it; the stand tests ask whether an escape from the level exists and keep the old exceptions. At the shipped values (gate 1, off; `caution_flee_recall = 1`) nothing is held back, so it acts only with the gate on or `caution_flee_recall = 0`.

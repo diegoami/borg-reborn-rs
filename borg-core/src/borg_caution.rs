@@ -1888,6 +1888,7 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     if st.borg.goal.leaving
         || st.borg.goal.fleeing
         || st.borg.mon.scary
+        || leave_stairs_on_monster(st, pos_danger)
         || ((pos_danger > avoidance
             || (st.borg.tr(BI_CLEVEL) < p(Param::caution_stair_low_level)
                 && pos_danger > avoidance / p(Param::caution_stair_danger_divisor)))
@@ -3244,6 +3245,26 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 /// Decide which stairs to take when leaving or fleeing (the body of the
 /// "Leaving or Fleeing, take stairs" test of `borg_caution`): sets
 /// `borg.stair_less` / `borg.stair_more`.
+/// borg-reborn-rs (#614, owner): "he can rest on the stairs, and if a mob
+/// appears he can climb up/down immediately". With
+/// `caution_stairs_leave_on_monster`, a Borg standing on a staircase that
+/// still needs to recover (HP or SP below the maximum) takes the stairs as
+/// soon as a monster threatens it (danger here above 0), instead of fighting
+/// or reading an escape. `choose_stairs` picks the direction as for a flight.
+fn leave_stairs_on_monster(st: &mut BorgState, pos_danger: i32) -> bool {
+    let feat = u32::from(st.cave.grid(st.borg.c.x, st.borg.c.y).feat);
+    let recovering = st.borg.tr(BI_CURHP) < st.borg.tr(BI_MAXHP) || st.borg.tr(BI_CURSP) < st.borg.tr(BI_MAXSP);
+    if !stairs_leave_when(p(Param::caution_stairs_leave_on_monster) != 0, feat == FEAT_LESS || feat == FEAT_MORE, recovering, pos_danger) {
+        return false;
+    }
+    borg_note(st, &format!("# Leaving by the stairs: a monster while recovering (danger {pos_danger})."));
+    true
+}
+
+fn stairs_leave_when(on: bool, on_stairs: bool, recovering: bool, pos_danger: i32) -> bool {
+    on && on_stairs && recovering && pos_danger > 0
+}
+
 fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
     let force_descend = engine::player_opt(OPT_birth_force_descend);
     if st.borg.ready_morgoth == 0 && st.borg.tr(BI_KING) == 0 && !force_descend {
@@ -3436,6 +3457,20 @@ pub(crate) fn jumpstart_keeps_stairs() -> bool {
 /// distance (250, `borg_flow_stair_more`'s depth).
 fn flee_down_depth(max_cost: i32) -> i32 {
     if max_cost <= 0 { 250 } else { max_cost.min(250) }
+}
+
+#[cfg(test)]
+mod stairs_leave_tests {
+    use super::stairs_leave_when;
+
+    #[test]
+    fn a_recovering_borg_on_the_stairs_leaves_when_a_monster_threatens() {
+        assert!(stairs_leave_when(true, true, true, 5));
+        assert!(!stairs_leave_when(true, true, true, 0), "nothing threatens");
+        assert!(!stairs_leave_when(true, true, false, 5), "nothing to recover: fight as before");
+        assert!(!stairs_leave_when(true, false, true, 5), "not on a staircase");
+        assert!(!stairs_leave_when(false, true, true, 5), "switch off (C)");
+    }
 }
 
 #[cfg(test)]
