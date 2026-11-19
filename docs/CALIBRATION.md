@@ -21,8 +21,9 @@ The registry now holds **2197** parameters (2196 after #682; one added).
   Priest or Paladin, with 2–6 SP, spends them there and then rests for
   mana (`recover_mana_rest_*`): 40% of game time for Priests and 46% for
   Paladins. Detect Evil also misses the animals that kill these classes on
-  DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped:
-  0 (C) for every class.
+  DL1. Per class with `light_detect_evil_spell_min_level@<class>`. Shipped
+  (owner): 10 for Priest, Paladin, Mage, Necromancer and Druid; 0 (C) for
+  Warrior, Rogue, Ranger and Blackguard.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
