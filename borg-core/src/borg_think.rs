@@ -207,7 +207,7 @@ fn borg_think_inner(st: &mut BorgState) -> bool {
     if engine::player_is_shapechanged() && !crate::borg_escape::keep_fox_form(st) {
         /* it looks like throw is a good command that checks */
         /* your form without a prerequisite check */
-        if crate::borg_escape::fox_form_on() {
+        if crate::borg_escape::any_fox_form_on() {
             crate::borg_escape::queue_fox_revert(st);
         } else {
             borg_keypress(st, 'v' as u32);

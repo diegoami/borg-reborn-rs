@@ -219,9 +219,9 @@ boost (Speed included). docs/PHASE-DOOR.md maps the 16 Phase Door sites.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:728` |
-| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:807` |
-| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:808` |
+| `escape_phase_adjacent_rule` | 0 | flag | 0–1 | `borg_escape.rs:803` |
+| `escape_phase_lost_test` | 1 | choice | 0–2 | `borg_escape.rs:882` |
+| `escape_phase_lost_danger_percent` | 100 | percent of HP | 0–1000 | `borg_escape.rs:883` |
 
 ## Town less scary (#622)
 
@@ -408,11 +408,11 @@ needs the zoo (Druid starts).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:486` |
-| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:517` |
-| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:518` |
-| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:574` |
-| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:576` |
+| `escape_fox_form` | 0 | flag | 0–1 | `borg_escape.rs:489` |
+| `escape_fox_form_fail` | 25 | percent | 0–100 | `borg_escape.rs:526` |
+| `escape_fox_form_min_steps` | 3 | steps of flow | 1–250 | `borg_escape.rs:583` |
+| `escape_fox_form_speed` | 10 | speed | 0–30 | `borg_escape.rs:639` |
+| `escape_fox_form_stand_speed` | 10 | speed | 0–30 | `borg_escape.rs:641` |
 
 ## Breeders hunted by every class (#558)
 
@@ -1672,7 +1672,7 @@ the vendored mechanics model:
 | `danger_rsf_s_demon_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1795` |
 | `danger_rsf_s_hi_undead_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1813` |
 | `danger_rsf_s_unique_protected_power_multiplier` | 1 | multiplier | 0–50 | `borg_danger.rs:1849` |
-| `escape_antisummon_reset_turns` | 50 | turns | 0–100000 | `borg_escape.rs:82` |
+| `escape_antisummon_reset_turns` | 50 | turns | 0–100000 | `borg_escape.rs:85` |
 | `escape_recall_fail` | 60 | percent | 0–100 | `borg_escape.rs:100` |
 | `escape_recall_depth_window` | 5 | depth | 0–127 | `borg_escape.rs:112` |
 | `escape_recall_reset_min_depth` | 80 | depth | 0–127 | `borg_escape.rs:116` |
@@ -1691,18 +1691,18 @@ the vendored mechanics model:
 | `escape_landing_samples` | 100 | count | 1–1000 | `borg_escape.rs:363` |
 | `escape_landing_trials` | 100 | count | 1–1000 | `borg_escape.rs:369` |
 | `escape_unknown_landing_max_hp` | 30 | hp | 0–10000 | `borg_escape.rs:419` |
-| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1051` |
-| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1113` |
-| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1122` |
-| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1165` |
-| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1213` |
-| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1222` |
-| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1225` |
-| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1226` |
-| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1231` |
-| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1252` |
-| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1270` |
-| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1288` |
+| `escape_unknown_teleport_level_turns` | 2000 | turns | 0–100000 | `borg_escape.rs:1126` |
+| `escape_shadow_shift_min_hp` | 12 | hp | 0–10000 | `borg_escape.rs:1188` |
+| `escape_dimension_door_range` | 50 | grids | 1–100 | `borg_escape.rs:1197` |
+| `escape_dimension_door_horizon` | 2 | turns | 1–10 | `borg_escape.rs:1240` |
+| `escape_near_unique_max_count` | 8 | count | 1–9 | `borg_escape.rs:1288` |
+| `escape_normal_fail` | 25 | percent | 0–100 | `borg_escape.rs:1299` |
+| `escape_healthy_hp_percent` | 70 | percent | 0–100 | `borg_escape.rs:1302` |
+| `escape_healthy_fail` | 10 | percent | 0–100 | `borg_escape.rs:1303` |
+| `escape_stunned_fail` | 35 | percent | 0–100 | `borg_escape.rs:1308` |
+| `escape_morgoth_hold_hp_tenths` | 5 | tenths | 0–100 | `borg_escape.rs:1329` |
+| `escape_morgoth_hold_glyph_count` | 3 | count | 0–1000 | `borg_escape.rs:1347` |
+| `escape_risky_danger_extra_tenths` | 3 | tenths | 0–100 | `borg_escape.rs:1365` |
 | `escape_emergency_danger_tenths` | 45 | tenths | 0–100 | `borg_escape.rs:1296` |
 | `escape_morgoth_danger_tenths` | 40 | tenths | 0–100 | `borg_escape.rs:1297` |
 | `escape_morgoth_max_hp` | 600 | hp | 0–10000 | `borg_escape.rs:1300` |
