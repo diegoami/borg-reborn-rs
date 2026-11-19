@@ -39,7 +39,7 @@ use crate::borg_item_use::{
 };
 use crate::borg_magic::{
     borg_get_spell_power, borg_spell, borg_spell_fail, borg_spell_legal, borg_spell_legal_fail,
-    borg_spell_okay, borg_spell_okay_fail,
+    borg_spell_okay, borg_spell_okay_fail, borg_spell_fail_rate,
 };
 use crate::borg_projection::{
     borg_distance, borg_inc_motion, borg_los, borg_offset_projectable, borg_projectable_pure,
@@ -81,12 +81,36 @@ pub struct FightAttackState {
     /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
     pub dmg_acc: i32,
     pub dmg_best: i32,
+    /// borg-reborn-rs (#625): what the attack being rated costs, set when a
+    /// spell or a device passes its fail check (`AttackCost`); `None` for an
+    /// attack with no fail chance or use limit (melee, missiles, throws).
+    pub cost: Option<AttackCost>,
+    /// borg-reborn-rs (#625): for `borg_attack_estimate`, the winner's cost
+    /// and the best true damage of an attack that is not a spell (the
+    /// fallback once the mana runs out).
+    pub est_cost: Option<AttackCost>,
+    pub est_fallback: i32,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
     pub tp_other_y: [u8; 255],
     /// `borg_tp_other_index`
     pub tp_other_index: [i32; 255],
+}
+
+/// borg-reborn-rs (#625): an attack's cost for the Phase Door rule's fight
+/// test: its fail chance and how many uses the Borg can pay for now.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct AttackCost {
+    /// The chance it fails, in percent (a spell's fail rate; a device's
+    /// `borg_activate_failure` per mille, divided by 10).
+    pub fail_pct: i32,
+    /// The uses left: casts the current mana pays for (a spell), charges (a
+    /// wand); `None`: no limit within a fight (a rod, a staff, an activation).
+    pub uses: Option<i32>,
+    /// A spell: after its last cast the Borg falls back to an attack that is
+    /// not a spell.
+    pub spell: bool,
 }
 
 impl Default for FightAttackState {
@@ -97,6 +121,9 @@ impl Default for FightAttackState {
             tp_other_n: 0,
             dmg_acc: 0,
             dmg_best: 0,
+            cost: None,
+            est_cost: None,
+            est_fallback: 0,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -567,6 +594,29 @@ fn melee_score(st: &mut BorgState, k: i32, x: i32, y: i32, mut d: i32) -> Option
 
 /// Simulate/Apply the optimal result of making a physical attack
 /// (`borg_attack_aux_thrust`).
+/// `borg_spell_okay_fail`; when it passes, the spell's cost is noted for the
+/// attack being rated (#625: its fail rate, and the casts the current mana
+/// pays for). Draws no random numbers.
+fn spell_okay_fail_noted(st: &mut BorgState, spell: borg_spells, allow_fail: i32) -> bool {
+    if !borg_spell_okay_fail(st, spell, allow_fail) {
+        return false;
+    }
+    let power = borg_get_spell_power(st, spell).max(1);
+    st.fight_attack.cost = Some(AttackCost {
+        fail_pct: borg_spell_fail_rate(st, spell).clamp(0, 100),
+        uses: Some(tr(st, BI_CURSP) / power),
+        spell: true,
+    });
+    true
+}
+
+/// A device's cost for the attack being rated (#625): `failure` is
+/// `borg_activate_failure`'s per mille; `uses` the charges (a wand) or
+/// `None` (no limit within a fight).
+fn note_device_cost(st: &mut BorgState, failure: i32, uses: Option<i32>) {
+    st.fight_attack.cost = Some(AttackCost { fail_pct: (failure / 10).clamp(0, 100), uses, spell: false });
+}
+
 fn borg_attack_aux_thrust(st: &mut BorgState) -> i32 {
     let mut b_i: i32 = -1;
     let mut b_d: i32 = -1;
@@ -2688,7 +2738,7 @@ pub fn borg_attack_aux_spell_bolt(
     }
 
     /* Require ability (right now) */
-    if !borg_spell_okay_fail(st, spell, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
+    if !spell_okay_fail_noted(st, spell, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -2788,7 +2838,7 @@ fn borg_attack_aux_spell_bolt_reserve(
     }
 
     /* Must not have enough mana right now */
-    if borg_spell_okay_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
+    if spell_okay_fail_noted(st, spell, param(Param::attack_reserve_spell_fail)) {
         return 0;
     }
 
@@ -2846,7 +2896,7 @@ fn borg_attack_aux_spell_bolt_reserve(
 
     /* Require ability (with faked mana) */
     st.borg.trait_[BI_CURSP as usize] = tr(st, BI_MAXSP);
-    if !borg_spell_okay_fail(st, spell, param(Param::attack_reserve_spell_fail)) {
+    if !spell_okay_fail_noted(st, spell, param(Param::attack_reserve_spell_fail)) {
         /* Restore Mana */
         st.borg.trait_[BI_CURSP as usize] = sv_mana;
         return 0;
@@ -2904,7 +2954,7 @@ fn borg_attack_aux_spell_dispel(st: &mut BorgState, spell: borg_spells, dam: i32
     }
 
     /* Require ability */
-    if !borg_spell_okay_fail(st, spell, param(Param::attack_dispel_fail)) {
+    if !spell_okay_fail_noted(st, spell, param(Param::attack_dispel_fail)) {
         return 0;
     }
 
@@ -3001,9 +3051,11 @@ fn borg_attack_aux_rod_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, t
     }
 
     /* Not likely to be successful in the activation */
-    if param(Param::attack_rod_max_failure) < borg_activate_failure(st, TV_ROD as i32, sval) {
+    let failure = borg_activate_failure(st, TV_ROD as i32, sval);
+    if param(Param::attack_rod_max_failure) < failure {
         return 0;
     }
+    note_device_cost(st, failure, None);
 
     /* Look for that rod */
     if !borg_equips_rod(st, sval) {
@@ -3071,9 +3123,11 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     }
 
     /* Not likely to be successful in the activation */
-    if param(Param::attack_unknown_wand_max_failure) < borg_activate_failure(st, TV_WAND as i32, sval) {
+    let failure = borg_activate_failure(st, TV_WAND as i32, sval);
+    if param(Param::attack_unknown_wand_max_failure) < failure {
         return 0;
     }
+    note_device_cost(st, failure, Some(i32::from(st.items.items[i as usize].pval)));
 
     /* Choose optimal location */
     let mut b_n = borg_launch_bolt(st, rad, dam, typ, max_range(), 0);
@@ -3275,7 +3329,7 @@ fn borg_attack_aux_whirlwind_attack(st: &mut BorgState) -> i32 {
     let mut total_d = 0;
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, WHIRLWIND_ATTACK, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
+    if !spell_okay_fail_noted(st, WHIRLWIND_ATTACK, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3336,7 +3390,7 @@ fn borg_attack_aux_leap_into_battle(st: &mut BorgState) -> i32 {
     let mut b_d: i32 = -1;
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, LEAP_INTO_BATTLE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
+    if !spell_okay_fail_noted(st, LEAP_INTO_BATTLE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3474,7 +3528,7 @@ fn borg_attack_aux_maim_foe(st: &mut BorgState) -> i32 {
     }
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, MAIM_FOE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
+    if !spell_okay_fail_noted(st, MAIM_FOE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -3558,7 +3612,7 @@ fn borg_attack_aux_vampire_strike(st: &mut BorgState) -> i32 {
     let mut best_dist = max_range();
 
     /* Can I do it */
-    if !borg_spell_okay_fail(st, VAMPIRE_STRIKE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
+    if !spell_okay_fail_noted(st, VAMPIRE_STRIKE, if st.borg.near.unique != 0 { param(Param::attack_spell_unique_fail) } else { param(Param::attack_spell_fail) }) {
         return 0;
     }
 
@@ -4631,18 +4685,26 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     let mut attack_trace = crate::core_trace::attack_ranking();
     let mut winning_raw = 0;
     let mut winning_damage = 0;
+    let mut winning_cost = None;
+    let mut fallback = 0;
     /* Analyze the possible attacks */
     for g in 0..max_attacks {
         /* Simulate */
         st.fight_attack.dmg_best = 0;
+        st.fight_attack.cost = None;
         let raw = borg_calculate_attack_effectiveness(st, g);
+        // borg-reborn-rs (#625): the best true damage of an attack that is not
+        // a spell, the fight test's fallback once the mana runs out.
+        if raw > 0 && !st.fight_attack.cost.is_some_and(|c| c.spell) {
+            fallback = fallback.max(st.fight_attack.dmg_best);
+        }
 
         // borg-reborn-rs (#403): apply preference once, only during ranking.
         // Helpers keep eligibility, RNG, costs and internal target selection.
         let class = tr(st, BI_CLASS);
         let candidate = crate::attack_preference::evaluate(class, g, raw);
         let changed = ranking.consider(g, &candidate);
-        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; }
+        if changed { winning_raw = raw; winning_damage = st.fight_attack.dmg_best; winning_cost = st.fight_attack.cost; }
         if let Some(trace) = attack_trace.as_mut() {
             trace.candidate(class, g, raw, &candidate, changed);
         }
@@ -4659,6 +4721,8 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     // winner's true damage, nothing done.
     if st.traits.estimate_only {
         st.traits.estimate = Some(winning_damage);
+        st.fight_attack.est_cost = winning_cost;
+        st.fight_attack.est_fallback = fallback;
         st.traits.simulate = false;
         st.traits.attacking = false;
         return false;
@@ -4713,6 +4777,8 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
 /// the random numbers `borg_attack` would.
 pub(crate) fn borg_attack_estimate(st: &mut BorgState) -> Option<i32> {
     st.traits.estimate = None;
+    st.fight_attack.est_cost = None;
+    st.fight_attack.est_fallback = 0;
     st.traits.estimate_only = true;
     let _ = borg_attack(st, false);
     st.traits.estimate_only = false;

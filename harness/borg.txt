@@ -598,6 +598,13 @@ borg_param_escape_phase_adjacent_rule = 0
 borg_param_escape_phase_lost_test = 1
 borg_param_escape_phase_lost_danger_percent = 100
 
+# With lost_test 1 or 2 (#625): 1 = the chosen attack counts at its success
+# chance (spell fail rate, device failure), and only for the casts the mana
+# (or a wand's charges) pays for; then the best attack that is not a spell,
+# or melee. 0 = full damage every turn (#612).
+
+borg_param_escape_phase_lost_mana = 1
+
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
 # - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,

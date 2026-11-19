@@ -810,11 +810,34 @@ fn fight_lost(st: &mut BorgState, here: i32, hp: i32) -> bool {
             // The attack the Borg would choose now, of any kind (a Mage casts
             // next to an enemy too; owner, 2026-11-19): its true damage.
             let best = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
-            let foes: Vec<(i32, i32)> = adjacent_foes(st).into_iter().map(|(left, melee)| (left, melee.max(best))).collect();
-            let lost = fight_lost_by(&foes, here, hp);
-            let list: Vec<String> = foes.iter().map(|(left, dam)| format!("{left} HP at {dam} a turn")).collect();
-            let note = format!("# Phase rule: the fight: {}; danger {here}, HP {hp}: {}", list.join(", "), if lost { "lost" } else { "not lost" });
-            borg_note(st, &note);
+            let lost = if param(Param::escape_phase_lost_mana) != 0 {
+                // borg-reborn-rs (#625, owner): the chosen attack's damage
+                // weighed by its success chance, for as many uses as the mana
+                // (or the charges) pay for; then the best attack that is not a
+                // spell, or melee.
+                let cost = st.fight_attack.est_cost;
+                let fallback = st.fight_attack.est_fallback;
+                let foes = adjacent_foes(st);
+                let primary = Primary::of(best, cost);
+                let lost = fight_turns(&foes, primary, fallback).is_none_or(|t| t * f64::from(here) > f64::from(hp));
+                let list: Vec<String> = foes.iter().map(|(left, melee)| format!("{left} HP (melee {melee})")).collect();
+                let uses = primary.uses.map_or("no limit".to_string(), |u| format!("{u} uses"));
+                let note = format!(
+                    "# Phase rule: the fight: {}; attack {best} at {}% fail ({uses}), then {fallback}; danger {here}, HP {hp}: {}",
+                    list.join(", "),
+                    cost.map_or(0, |c| c.fail_pct),
+                    if lost { "lost" } else { "not lost" }
+                );
+                borg_note(st, &note);
+                lost
+            } else {
+                let foes: Vec<(i32, i32)> = adjacent_foes(st).into_iter().map(|(left, melee)| (left, melee.max(best))).collect();
+                let lost = fight_lost_by(&foes, here, hp);
+                let list: Vec<String> = foes.iter().map(|(left, dam)| format!("{left} HP at {dam} a turn")).collect();
+                let note = format!("# Phase rule: the fight: {}; danger {here}, HP {hp}: {}", list.join(", "), if lost { "lost" } else { "not lost" });
+                borg_note(st, &note);
+                lost
+            };
             if !lost || test < 2 {
                 return lost;
             }
@@ -838,6 +861,69 @@ fn fight_lost_by(foes: &[(i32, i32)], danger: i32, hp: i32) -> bool {
     // product of the damages would overflow; compare in f64.
     let turns: f64 = foes.iter().map(|&(left, dam)| f64::from(left) / f64::from(dam)).sum();
     turns * f64::from(danger) > f64::from(hp)
+}
+
+/// borg-reborn-rs (#625): the attack the Borg would choose now, for the
+/// fight test: its expected damage a turn (true damage times the success
+/// chance) and the uses it can pay for (`None`: no limit).
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Primary {
+    dam: f64,
+    uses: Option<i32>,
+}
+
+impl Primary {
+    /// From `borg_attack_estimate`'s true damage and the winner's cost
+    /// (`None`: melee, missiles, throws: no fail chance, no limit).
+    fn of(best: i32, cost: Option<crate::borg_fight_attack::AttackCost>) -> Primary {
+        match cost {
+            None => Primary { dam: f64::from(best.max(0)), uses: None },
+            Some(c) => Primary {
+                dam: f64::from(best.max(0)) * f64::from(100 - c.fail_pct.clamp(0, 100)) / 100.0,
+                uses: c.uses.map(|u| u.max(0)),
+            },
+        }
+    }
+}
+
+/// borg-reborn-rs (#625): the turns to kill the adjacent foes one after
+/// another, each `(HP left, melee a turn)`. Each turn uses the chosen attack
+/// (`primary`) while it does more than the foe's other damage (the larger of
+/// melee and `fallback`, the best attack that is not a spell) and uses are
+/// left (fractions count: a 2-use spell spends 0.5 of a use on a foe it
+/// kills in half a cast); then the other damage. `None`: a foe the Borg
+/// cannot hurt.
+fn fight_turns(foes: &[(i32, i32)], primary: Primary, fallback: i32) -> Option<f64> {
+    let mut uses = primary.uses.map(f64::from);
+    let mut turns = 0.0;
+    for &(left, melee) in foes {
+        let mut left = f64::from(left);
+        let other = f64::from(melee.max(fallback).max(0));
+        if primary.dam > other {
+            let needed = left / primary.dam;
+            match uses {
+                None => {
+                    turns += needed;
+                    continue;
+                }
+                Some(u) if needed <= u => {
+                    turns += needed;
+                    uses = Some(u - needed);
+                    continue;
+                }
+                Some(u) => {
+                    turns += u;
+                    left -= u * primary.dam;
+                    uses = Some(0.0);
+                }
+            }
+        }
+        if other <= 0.0 {
+            return None;
+        }
+        turns += left / other;
+    }
+    Some(turns)
 }
 
 /// The awake known monsters next to the Borg, as (HP left, the Borg's melee
@@ -1911,6 +1997,36 @@ mod phase_decision_tests {
         assert!(fight_lost_by(&[(5, 0)], 1, 100), "no damage");
         assert!(!fight_lost_by(&[(20, 5)], 0, 40), "no danger");
         assert!(!fight_lost_by(&[], 50, 10), "no foe");
+    }
+
+    /// #625 (owner): the chosen attack counts at its success chance, for the
+    /// uses the mana pays for, and then the best attack that is not a spell.
+    #[test]
+    fn the_fight_counts_the_mana_and_the_fail_rate() {
+        use crate::borg_fight_attack::AttackCost;
+        let spell = |fail_pct, uses| Some(AttackCost { fail_pct, uses: Some(uses), spell: true });
+        // A bolt of 10 at 20% fail: 8 a turn expected.
+        assert_eq!(Primary::of(10, spell(20, 3)), Primary { dam: 8.0, uses: Some(3) });
+        // Melee, missiles, throws: full damage, no limit.
+        assert_eq!(Primary::of(6, None), Primary { dam: 6.0, uses: None });
+        // A rod: fail only.
+        let rod = Some(AttackCost { fail_pct: 50, uses: None, spell: false });
+        assert_eq!(Primary::of(10, rod), Primary { dam: 5.0, uses: None });
+        // 40 HP left, bolt 8 a turn for 5 casts: 5 turns.
+        let p = Primary { dam: 8.0, uses: Some(5) };
+        assert_eq!(fight_turns(&[(40, 2)], p, 0), Some(5.0));
+        // Mana for 1 cast: 8 damage, then 32 at melee 2: 1 + 16 turns.
+        let p1 = Primary { dam: 8.0, uses: Some(1) };
+        assert_eq!(fight_turns(&[(40, 2)], p1, 0), Some(17.0));
+        // The fallback (a sling, 4) beats melee after the mana: 1 + 8.
+        assert_eq!(fight_turns(&[(40, 2)], p1, 4), Some(9.0));
+        // The uses carry over foes: 0.5 cast on the first, 0.5 on the second.
+        assert_eq!(fight_turns(&[(4, 2), (8, 2)], p1, 0), Some(0.5 + 0.5 + 2.0));
+        // No mana and no other damage: the Borg cannot hurt it.
+        assert_eq!(fight_turns(&[(10, 0)], Primary { dam: 8.0, uses: Some(0) }, 0), None);
+        // Melee better than the expected spell: melee every turn, mana untouched.
+        assert_eq!(fight_turns(&[(12, 6)], Primary { dam: 4.0, uses: Some(9) }, 0), Some(2.0));
+        assert_eq!(fight_turns(&[], p1, 0), Some(0.0), "no foe");
     }
 
     /// #584: the note of a Phase Door names the site, the HP, the danger
