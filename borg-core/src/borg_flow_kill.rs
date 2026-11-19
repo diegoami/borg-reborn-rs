@@ -1774,6 +1774,12 @@ fn caster_hunts(hunt: bool, cur_sp: i32, max_sp: i32) -> bool {
     hunt && max_sp > 0 && cur_sp * 2 >= max_sp
 }
 
+/// borg-reborn-rs (#637): a low-level caster's town hunt goes for the
+/// dangerous town monsters (with the switch, one known in town).
+fn caster_walks_to_dangerous(switch: bool, dangerous_known_in_town: bool) -> bool {
+    switch && dangerous_known_in_town
+}
+
 /// borg-reborn-rs (#558): a Mage or Necromancer below the level at which
 /// `borg_flow_kill` lets it walk to a fight.
 fn low_level_caster(st: &BorgState) -> bool {
@@ -1860,7 +1866,22 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
     // the mana to fight them with spells (borg_attack casts before any walk
     // brings it next to them).
     let mut breeders_only = false;
-    if low_level_caster(st) {
+    // borg-reborn-rs (#637): with attack_town_dangerous_caster_walk, in
+    // town a hunt for the dangerous town monsters stands in for the
+    // breeders, at every level below the caster rule's (CL25 in town; the
+    // town gate above stops at CL20, review of #653), with the same mana
+    // condition.
+    let dangerous_known = st.borg.tr(BI_CDEPTH) == 0
+        && (1..i32::from(st.kills.nxt)).any(|k| {
+            let r = st.kills.kills[k as usize].r_idx;
+            r != 0 && crate::borg_fight_attack::town_kill_on_sight(st, usize::from(r))
+        });
+    if low_level_caster(st) && caster_walks_to_dangerous(crate::borg_fight_attack::town_caster_walk(), dangerous_known) {
+        if !caster_hunts(true, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
+            return false;
+        }
+        town_dangerous_only = true;
+    } else if low_level_caster(st) {
         if !caster_hunts(breeder_hunt, st.borg.tr(BI_CURSP), st.borg.tr(BI_MAXSP)) {
             return false;
         }
@@ -3430,6 +3451,15 @@ pub fn borg_free_flow_kill(st: &mut BorgState) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// #637 (review of #653): the caster walk needs the switch and a
+    /// dangerous town monster known in town, not the CL20 town gate.
+    #[test]
+    fn a_low_level_caster_walks_to_a_dangerous_town_monster_with_the_switch() {
+        assert!(caster_walks_to_dangerous(true, true));
+        assert!(!caster_walks_to_dangerous(false, true), "switch off: breeders only, as C");
+        assert!(!caster_walks_to_dangerous(true, false), "none known, or not in town");
+    }
 
     #[test]
     fn casters_hunt_breeders_with_mana() {
