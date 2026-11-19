@@ -10,6 +10,39 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## No rest while breeders are known (#644)
+
+The registry now holds **2170** parameters (2169 after #619; one added).
+Owner, 2026-11-19, on #615: "no rest if aware of any breeders, clear the
+breeders or leave the level asap".
+
+- **`recover_rest_breeders`** (flag, 0 = off): in the dungeon, while any
+  breeder (`RF_MULTIPLY`) is known on the level, no rod, HP/SP or mana rest
+  in `borg_recover`. If #558's hunt applies (`breeder_hunt_now`), the Borg
+  hunts; otherwise it starts leaving the level (`goal.leaving`, note
+  `# Leaving (breeders on the level, no rest)`). Note, once a think: `# No
+  rest: N breeders known on the level, hunting them|leaving.`
+- **Not changed:** the Recall rests (a Borg waiting for Recall is leaving
+  already); #558's own skip of the rest for the hunt
+  (`recover_breeder_hunt_hp_percent`); #556's avoidance of known colonies.
+- **Kept when impaired:** confused, blind, hallucinating or stunned, the rest
+  is kept (#615 rule a: a confused Borg that walked instead died in lava).
+
+Evidence, a lead (the 18 classes-18 starts, 100,000 turns, borg-rs core,
+main `3ba17e2c`):
+
+| arm | deaths | sum of CL | keys as main | held rests | leaves started |
+|---|---:|---:|---:|---:|---:|
+| off | 1 (Priest, game turn 8,158) | 101 | 18/18 | | |
+| 1 | 1 (the same Priest) | 96 | 7/18 | 781 | 20 |
+
+The loss is mostly one Warrior (CL 12 to 7 after 5 held rests and one
+leave), whose game diverges early. 11 games hold a rest at least once.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_rest_breeders` | 0 | flag | 0–1 | `borg_recover.rs:584` |
+
 ## Dangerous town monsters killed on sight (#619)
 
 The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
