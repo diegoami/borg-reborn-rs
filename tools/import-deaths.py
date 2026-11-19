@@ -21,6 +21,12 @@ sys.path.insert(0, str(ROOT / 'tools'))
 QUALIFIED = re.compile(r'D0000-q[0-9a-f]{64}')
 RECEIPT = 'import.json'
 ORIGINAL = '.source-record.json'
+# The Cemetery exporter's identity file (death-id.json, borg-cemetery
+# death-id@1) describes the original record and directory. A qualified
+# package rewrites record.json, so the file is kept byte for byte under this
+# reserved name, where the Cemetery's index does not verify it against the
+# rewritten record; the receipt's original_id is the same canonical ID.
+SOURCE_ID = '.source-death-id.json'
 SCHEMA = 'borg-reborn-rs/dossier-import@1'
 
 
@@ -60,7 +66,7 @@ def package(source):
         raw_record = (source / ORIGINAL).read_bytes()
         names = {p.name for p in entries} - {'record.json', ORIGINAL, RECEIPT}
     else:
-        if (source / RECEIPT).exists() or (source / ORIGINAL).exists():
+        if (source / RECEIPT).exists() or (source / ORIGINAL).exists() or (source / SOURCE_ID).exists():
             raise ValueError(f'{source}: reserved import metadata in unqualified package')
         raw_record = (source / 'record.json').read_bytes()
         names = {p.name for p in entries} - {'record.json'}
@@ -81,7 +87,10 @@ def package(source):
             or any(not isinstance(a, dict) or not {'outcome', 'result_sha256', 'source_commit'} <= set(a)
                    for a in original['attempts'])):
         raise ValueError(f'{source}: malformed native dossier record')
-    payload = {name: (source / name).read_bytes() for name in sorted(names)}
+    if qualified and 'death-id.json' in names:
+        raise ValueError(f'{source}: qualified package keeps its identity file as {SOURCE_ID}')
+    payload = {(SOURCE_ID if name == 'death-id.json' else name): (source / name).read_bytes()
+               for name in sorted(names)}
     for name, expected in original.get('files_sha256', {}).items():
         if name not in payload or digest(payload[name]) != expected:
             raise ValueError(f'{source}: source file hash mismatch: {name}')
@@ -141,7 +150,7 @@ def import_packages(sources, destination):
                 for name, data in files.items():
                     asset = stage / name
                     asset.write_bytes(data)
-                    original = source / name
+                    original = source / ('death-id.json' if name == SOURCE_ID else name)
                     if not original.exists():
                         original = source / 'record.json'  # generated receipt/original metadata
                     # A shared directory must not expose a private source file.
@@ -191,7 +200,7 @@ def check_registry(root, legacy):
         elif QUALIFIED.fullmatch(name):
             package(case)
         else:
-            raise ValueError(f'{case}: provisional numeric ID; import this dossier with tools/import-deaths.py')
+            raise ValueError(f'{case}: unqualified ID (provisional numeric or D-<hash>); import this dossier with tools/import-deaths.py')
     return len(cases)
 
 

@@ -44,10 +44,13 @@ class QualifiedImportTest(unittest.TestCase):
                 os.environ['BORG_DEATH_RECORDS_DIR'] = before
         return registry / case
 
-    def test_same_numeric_ids_from_two_branches_preserve_all_evidence(self):
+    def test_two_branch_registries_preserve_all_evidence(self):
         left = self.exported('left')
         right = self.exported('right', seed=102)
-        self.assertTrue(left.name.startswith('D0001-') and right.name.startswith('D0001-'))
+        # The Cemetery exporter names dossiers by canonical hash (death-id@1).
+        self.assertRegex(left.name, r'^D-[0-9a-f]{64}$')
+        self.assertRegex(right.name, r'^D-[0-9a-f]{64}$')
+        self.assertTrue((left / 'death-id.json').is_file())
         results = imp.import_packages([left, right], self.dest)
         self.assertNotEqual(results[0][0], results[1][0])
         for source, (identifier, _) in zip([left, right], results):
@@ -58,7 +61,12 @@ class QualifiedImportTest(unittest.TestCase):
             self.assertEqual((target / imp.ORIGINAL).read_bytes(), (source / 'record.json').read_bytes())
             for file in source.iterdir():
                 if file.name != 'record.json':
-                    self.assertEqual((target / file.name).read_bytes(), file.read_bytes())
+                    name = imp.SOURCE_ID if file.name == 'death-id.json' else file.name
+                    self.assertEqual((target / name).read_bytes(), file.read_bytes())
+            self.assertFalse((target / 'death-id.json').exists())
+            receipt = json.loads((target / imp.RECEIPT).read_text())
+            self.assertEqual(receipt['original_id'], source.name)
+            self.assertEqual(json.loads((target / imp.SOURCE_ID).read_text())['id'], source.name)
             self.assertEqual(imp.package(target)[0], identifier)
         self.assertEqual(json.loads((self.dest / 'index.json').read_text())['distinct_starting_conditions'], 2)
 
@@ -113,7 +121,7 @@ class QualifiedImportTest(unittest.TestCase):
                     self.assertEqual(source.stat().st_mode & 0o7777, source_mode)
                     for name, data in expected_files.items():
                         self.assertEqual((target / name).read_bytes(), data)
-                        original = source / name
+                        original = source / ('death-id.json' if name == imp.SOURCE_ID else name)
                         if not original.exists():
                             original = source / 'record.json'
                         self.assertEqual((target / name).stat().st_mode & 0o7777,
@@ -234,7 +242,7 @@ class QualifiedImportTest(unittest.TestCase):
         self.assertEqual(imp.check_registry(self.dest, legacy), 1)
         import shutil
         shutil.copytree(good, self.dest / good.name)
-        with self.assertRaisesRegex(ValueError, 'provisional numeric ID'):
+        with self.assertRaisesRegex(ValueError, 'unqualified ID'):
             imp.check_registry(self.dest, legacy)
 
     def test_existing_package_and_legacy_identities_cannot_be_overwritten(self):
