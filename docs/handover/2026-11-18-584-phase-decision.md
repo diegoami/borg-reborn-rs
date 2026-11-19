@@ -17,13 +17,17 @@ then the new rule. This is the refactor.
 - **docs/PHASE-DOOR.md:** every site, when it fires, its check and its
   settings, and what the terms mean (danger, avoidance, the landing test).
 - **`harness/borg.txt`:** the comment on the six `escape_phase_*` settings now
-  says they gate only escape level 3.1. Comment only; values unchanged.
+  says they are two kinds: five gate escape level 3.1 only, and
+  `escape_phase_antisummon_delay` is a shared timer read at seven sites (see
+  the review note below). Comment only; values unchanged.
 - **Citations:** every parameter citing one of the four touched files now
-  points at the first line that reads it (`Param::<name>`); 335 were moved,
-  many already stale on main.
+  points at the first line that reads it (`Param::<name>`), recomputed on the
+  merged tree (352/352 in `params.rs`, 351/351 in `docs/CALIBRATION.md`);
+  most were stale on main.
 
 Checked: 18/18 classes-18 starts (borg-rs core, 100,000 turns, shipped
-`borg.txt`) play the same keys as main `dbe99509`; smoke 3/3; CI commands.
+`borg.txt`) play the same keys as main, at each base this branch merged
+(`dbe99509`, `ed3ffc04`, `a3cfcdca`); smoke 3/3; CI commands.
 
 What the new notes show in those 18 games (Phase Doors done): escape 4.1
 compromised 40, escape 5.1 low level 31, escape 1 emergency 30, twitchy think
