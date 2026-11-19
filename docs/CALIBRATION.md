@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## No Recall rest right after a monster was near (#567)
 
-The registry now holds **2168** parameters (2166 after #603; two added). From
+The registry now holds **2171** parameters (2169 after #619; two added). From
 `priest-809881907` (borg-zoo#227, #539): at game turn 1,761 the Priest saw
 Grip 4 grids away and read its only Word of Recall. A think later, at 1,771,
 Grip was out of view and forgotten (its kill record deleted, danger 0), so
@@ -26,10 +26,23 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
   (`,`, the engine's "stay still"; a rest count of 1 repeats the previous
   count, `cmd-cave.c` `do_cmd_rest`), so every think sees a monster that
   comes back. Note: `# Watching for Recall: a monster was near N game turns
-  ago.`
+  ago.` The Borg thinks about once a player turn (about 10 game turns at
+  normal speed), so the threshold moves in steps of about 10: 200 is about 20
+  thinks.
+- **A wait, not a rest:** staying still does not heal the way resting does.
+  Where "Resting for Recall" would also have healed, the switch trades that
+  healing for a watch, for up to N game turns.
+- **Three Recall rests:** "Resting for Recall" (`borg_caution`), "Waiting
+  for Recall" (`borg_think_dungeon`) and the wait with no light
+  (`borg_think_dungeon_light`, review of #640), which runs before
+  `borg_caution`.
 - **The memory:** each dungeon think, `borg_caution` records the game turn
-  and depth while such a monster is known. It outlives the forgetting of a
-  monster out of view. A monster that never moves (a floating eye, a mold)
+  and depth while such a monster is **seen** in this update (`kill.seen`).
+  It outlives the forgetting of a monster out of view. Review of #640: a
+  kill record keeps its last position for up to 2,000 ticks after the
+  monster is lost, and without `kill.seen` it refreshed the watch every
+  think (192 of 420 watches at "0 game turns ago"; one Ranger stood still
+  for about 330 game turns for a kobold it could not see). A monster that never moves (a floating eye, a mold)
   does not count: in a first local run a floating eye held every Recall wait.
 - **With #603:** `caution_recall_wait_as_usual` keeps the rest in place when
   safe; this switch decides whether that rest is a long one.
@@ -38,6 +51,53 @@ the Borg rested for Recall. Grip came back at 1,791 and bit (13 to 10 HP).
 |---|---|---|---|---|
 | `caution_recall_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_caution.rs:3440` |
 | `caution_recall_rest_monster_distance` | 20 | grids | 1–100 | `borg_caution.rs:3443` |
+
+## Dangerous town monsters killed on sight (#619)
+
+The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
+"I would also kill the dangerous ones on sight with the best attacks that we
+have, if possible", and "test it together when town is scary until a certain
+level, also dependent on the level of the monsters that are scary".
+
+A town monster (race level 0) is dangerous when a blow steals (`EAT_GOLD`,
+`EAT_ITEM`) or hurts for at least `attack_town_dangerous_min_damage` (6,
+dice x sides): the battle-scarred veteran (2d6), the mean-looking mercenary
+(1d10), the squint-eyed rogue (1d6, steals) and the filthy street urchin
+(steals). With `attack_town_dangerous_on_sight = 1`, in town, its attack
+value is multiplied by `attack_town_dangerous_bonus_percent` / 100 (300), so
+`borg_attack` picks it first with its best attack (not a wand: C never aims
+one in town), and the hunt walks to it below CL20 (C never hunts in town
+then); a Mage or Necromancer below CL25 still doesn't walk to it, since its
+town hunt is breeders only and no town race breeds. The bonus multiplies
+the damage term only, not the danger term `melee_score` adds: that it makes
+the four the preferred target was measured through their kill counts, not
+checked per target choice. The scare is not touched: while the
+scary list makes the town scary the Borg flees as before.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `38858846`):
+
+| arm | keys as main | deaths | sum of CL |
+|---|---:|---:|---:|
+| main | | 0 | 99 |
+| switch 0 | 18/18 | 0 | 99 |
+| switch 1, shipped list | 16/18 | 0 | 99 |
+| town-calm list (borg-zoo#328) | 0/18 | 2 | 102 |
+| switch 1, town-calm list | 0/18 | 2 | 101 |
+| `caution_town_never_scary = 1` | 0/18 | 2 | 97 |
+| switch 1, town never scary | 0/18 | 3 | 89 |
+
+With #622's `caution_town_scary_levels_less` (a build of both): N = 3 gives
+0 deaths and 101 CL, N = 6 1 and 102, N = 11 3 and 90. Killing them on sight
+raises the kills of the four (20 to 53 at N = 3) but not the thefts. Without
+the scare it costs deaths. Direction only: 18 games, no zoo run, and all
+before #621's ignore list (none of the four is ignored: their blows are
+not MOAN, BEG or DROOL) and #595.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_town_dangerous_on_sight` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_kill_on_sight`; the bonus in `borg_thrust_damage_one`, `borg_launch_damage_one`; the hunt in `borg_flow_kill`) |
+| `attack_town_dangerous_min_damage` | 6 | damage | 1–1000 | `borg_fight_attack.rs` (`dangerous_town_race`) |
+| `attack_town_dangerous_bonus_percent` | 300 | percent | 100–10000 | `borg_fight_attack.rs` (`town_kill_bonus`) |
 
 ## Play by the ordinary rules while Recall counts down (#603)
 
@@ -796,7 +856,7 @@ death with the list, 4 without), 1.
 | `caution_flee_known_down_stairs` | 0 | flag | 0–1 | `borg_caution.rs:1043` (#544 A, narrowed in #548: 1 = fleeing with no up staircase known, a known down staircase, only cornered and within the cost cap below) |
 | `caution_flee_known_down_cornered` | 1 | flag | 0–1 | `borg_caution.rs:1048` (#548: 1 = only cornered: a moving monster adjacent (distance 1; #504 uses `caution_cornered_radius`), no Phase Door, teleport, Teleport Level or escape item in the pack (spells not counted), danger here >= HP or surrounded; 0 = any flight, #545 as merged) |
 | `caution_flee_known_down_max_cost` | 40 | steps of flow | 0–250 | `borg_caution.rs:1049` (#548: the staircase within this many steps of flow, the walk around walls, not the straight-line distance; 0 = any distance) |
-| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3600` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
+| `caution_jumpstart_keep_stairs` | 0 | flag | 0–1 | `borg_caution.rs:3604` (#548, #544's K: 1 = the stuck jumpstart in `borg_think_dungeon.rs` keeps the known stairs; usually wanted with `caution_flee_known_down_stairs`) |
 | `caution_twitch_avoid_lava` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2650` (#597: the twitch never steps into lava without fire immunity) |
 | `caution_stair_parked_fallback` | 0 (shipped 1) | flag | 0–1 | `borg_caution.rs:2657` (#597: a monster on every known staircase no longer hides them from the stair flows) |
 | `caution_stair_scum_threat` | 0 | flag | 0–1 | `borg_caution.rs:2877` (#549: 1 = after fleeing town, no DL1 stair scum while threatened: scary level, danger here, or hurt; the HP condition is the broad one: any injury stops the scum, and the danger limit only adds grids that are dangerous at full HP. A threat also cancels the scum's own `GOAL_TAKE` flow) |
@@ -3167,4 +3227,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4699` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4736` |
