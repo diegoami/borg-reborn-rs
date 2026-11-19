@@ -22,7 +22,10 @@ flow kill is a candidate for rewrite".
   - 0: as C.
   - 1: only the targeted hunts: breeders while a hunt for them applies
     (#503, #558), dangerous town monsters (#619, #637). Their own settings
-    are unchanged.
+    are unchanged, but #503's melee hunt, which walks to any monster at C,
+    walks only to breeders at 1 (as #558's caster hunt already did): for
+    Warriors, Paladins, Rogues and Blackguards mode 1 narrows the targets,
+    not only the calls (review of #695).
   - 2: no out-of-view call (the "chase old monsters" calls: `nearness` 250
     and `max_range + 1`, `viewable` false).
   - 3: never.

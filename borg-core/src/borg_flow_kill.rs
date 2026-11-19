@@ -1927,6 +1927,8 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 
     // borg-reborn-rs (#691): `kill_flow_mode`, the hunt removed in steps to
     // measure what it is worth.
+    // Mode 1 sets `breeders_only`, which narrows the targets; the CL < 10
+    // breeder skip in the scan still reads `breeder_hunt` (review of #695).
     let mode = crate::params::value(crate::params::Param::kill_flow_mode);
     match kill_flow_mode_hunt(mode, viewable, breeder_hunt || breeders_only, town_dangerous_only) {
         None => return false,
