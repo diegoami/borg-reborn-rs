@@ -81,6 +81,14 @@ pub struct Borg {
     /// #644: `goal.leaving` was set by the breeder rest rule (so the hunt
     /// may still clear it). Only read while `goal.leaving` is set.
     pub breeder_leaving: bool,
+    /// borg-reborn-rs (#697): the last attack by a monster the Borg cannot
+    /// see ("Something/It ... you"): its game turn (0: none on this level)
+    /// and the Borg's grid then; `unseen_followed`: a later one struck at
+    /// least `recover_unseen_attack_distance` grids from the one before.
+    pub unseen_turn: i32,
+    pub unseen_x: i32,
+    pub unseen_y: i32,
+    pub unseen_followed: bool,
     /// borg-reborn-rs (#567): the game turn and depth at which an awake
     /// monster was last known within `caution_recall_rest_monster_distance`
     /// (recorded each dungeon think while the switch is on). A monster out of
