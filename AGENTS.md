@@ -142,7 +142,8 @@ Close the task issue explicitly with its integration PR/commit. Never send
 or merge a P task PR directly into `main` because CI passed.
 
 At every milestone, stop and open a pinned **`track-p` → `main`** review
-PR. The owner selects/runs the review; fix findings through `track-p` task
+PR. The owner selects the review (RULES 6); the session may run it and
+post it on the PR. Fix findings through `track-p` task
 PRs. Keep promotion unmerged until the owner accepts the milestone review
 and CI passes. The owner merges the promotion or explicitly delegates that
 reviewed merge. Then the next milestone may start. Keep the reviewed head
@@ -222,11 +223,12 @@ move to the other track.
 This repository is **model agnostic**. Nothing in it depends on which model
 or tool writes the code, and the Borg itself uses no model when it plays.
 Which model works on a task is decided outside the repository by the
-owner's general rules. **The reviewer is always the owner's choice**
-(RULES 6). The session writes the review prompt and hands it over; it does
-not pick or launch a reviewer. A milestone review is done by the owner or by
-a model of a **different family** from the one that wrote most of the
-milestone. Name both in the review PR.
+owner's general rules. **The owner chooses the reviewer** (RULES 6): the
+session does not pick one. The session writes the review prompt and may
+run the review itself and post it on the PR (the owner's choice of
+reviewer); it may also hand the prompt to the owner to run. A milestone
+review is done by the owner or by a model of a **different family** from
+the one that wrote most of the milestone. Name both in the review PR.
 
 ## Where things are
 

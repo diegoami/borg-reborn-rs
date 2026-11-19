@@ -92,12 +92,18 @@ not undo other-track work already authorized before the gate.
    For P, the task merges into `track-p` and the review precedes promotion
    to `main` (RULES 1); the older `main` → `reviewed` flow does not authorize
    direct P task merges into `main`.
-   **The owner chooses the reviewer** (owner, 2026-11-09). For every review
-   (a milestone review, a re-review, a review of a spec or a plan) the
-   session writes the review prompt, pinned to an exact commit, and gives it
-   to the owner. The owner chooses the reviewer and runs it. A session never
-   picks a reviewer or launches one itself. When the review arrives, the
-   session processes its findings.
+   **The owner chooses the reviewer** (owner, 2026-11-09; owner, 2026-11-19,
+   #638). For every review (a milestone review, a re-review, a review of a
+   spec or a plan) the session writes the review prompt, pinned to an exact
+   commit. The owner names the reviewer: a session does not pick one. The
+   session may then **run the review itself and post it on the PR** (the
+   owner's choice of reviewer, run by the session), and it may also give the
+   prompt to the owner to run. Either way the review is posted on the PR it
+   reviews, so the findings and the pin travel with the code. A review the
+   session runs is the owner's choice of reviewer: a milestone review is done
+   by the owner or by a model of a **different family** from the one that
+   wrote most of the milestone, and the review PR names both. When the
+   review arrives, the session processes its findings.
 7. Other repositories (angband/angband, neo-angband-tracker, better-borg-c,
    borg-rs, borg-zoo) are **read only**, at pinned commits
    ([pins.json](pins.json)). Nothing is pushed or merged there. A session
