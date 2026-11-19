@@ -30,8 +30,9 @@
 
 # The decision core: "borg-rs" (borg-rs's core, vendored in borg-core/,
 # shipped since #479) or "reborn" (this repository's own Borg, not ready
-# yet). BORG_CORE in the environment overrides it. harness/run.sh runs the
-# reborn core when BORG_CORE is unset, for its references.
+# yet). BORG_CORE in the environment overrides it. harness/run.sh plays the
+# core named here when BORG_CORE is unset (#606); BORG_CORE=reborn selects
+# the reborn core, which reads its profile, not this file.
 
 borg_reborn_core = borg-rs
 
