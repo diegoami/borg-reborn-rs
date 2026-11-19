@@ -12,8 +12,15 @@ a new e: no rest while breeders are known (#644).
 - **Found:** held while confused, a Ranger walked into lava in town and
   died; the rule now keeps the rest when confused, blind, hallucinating or
   stunned.
-- **Checked:** off plays #567's keys in 18 of 18 classes-18 starts. At 100
-  and 200 game turns: the same one death as off, sum of CL 99 and 101
-  against 101, rests started 921 and 797 against 1,893.
+- **Checked** (after the review of #645): off plays #640's keys in 18 of 18
+  classes-18 starts. At 100: 2 deaths against 1 (the same Priest, and a
+  Druid 9,000 game turns after its last held rest), sum of CL 96 against
+  101, rests started 1,203 against 1,893. At 200: the same one death, sum of
+  CL 97. The reviewer's 66 games: 3 deaths at 100 and 200 against 6 off.
+- **Review of #645, fixed:** the clock clears when the monster that set it
+  dies (a forgotten monster still counts: #567's case); afraid is impaired;
+  the walk to a recovery grid waits too; a unit test
+  (`no_rest_soon_after_a_monster_was_near`); the docs say what
+  `borg_check_rest` and the game do.
 - **Left:** a zoo pilot (off, 100, 200); #642, #643, #644. The owner
   decides the shipped value.

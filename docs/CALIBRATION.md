@@ -50,11 +50,13 @@ branch with main `13e1187c`):
 | arm | deaths | sum of CL | rests started | held-rest notes |
 |---|---:|---:|---:|---:|
 | off (keys = #640's off, 18/18) | 1 (Priest, game turn 8,158) | 101 | 1,893 | |
-| 100 | 1 (the same Priest) | 99 | 1,268 | 1,171 |
-| 200 | 1 (the same Priest) | 98 | 1,287 | 1,880 |
+| 100 | 2 (the same Priest; a Druid at 90,700, 9,000 game turns after its last held rest, walking to the stairs at 2 HP) | 96 | 1,203 | 1,172 |
+| 200 | 1 (the same Priest) | 97 | 1,246 | 1,684 |
 
-Re-taken after #640's review (the scan counts only monsters seen in this
-update, `kill.seen`): before it, stale records held 5,175 and 7,673 rests.
+Re-taken after the review of #645 (the clock clears on the monster's death,
+afraid is impaired, the recovery-grid walk waits). The reviewer's own 66
+games (6 races x 11 classes) gave 3 deaths at 100 and at 200 against 6 off,
+and a higher mean minimum HP. Direction only: the zoo decides.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
