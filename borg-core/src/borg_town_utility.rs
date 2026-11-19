@@ -310,7 +310,10 @@ pub fn dispositions(input: &StepInput, u: &mut Utility, st: &BorgState) -> (Vec<
             }
         });
         let protected = it.unknown || it.just_bought || urgent_loss;
-        let store = !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (future - home_cost > loss - cost ||
+        // borg-reborn-rs (#651, plan schema 12): what this visit bought is
+        // carried, not stored: a Cure Light Wounds bought to carry went to
+        // the Home and was bought again (borg-cemetery#75).
+        let store = !(input.revision >= 12 && it.just_bought) && !urgent_loss && (input.revision < 6 || future > 0 || protected || loss > 0) && (home_free > 0 || spare.is_some()) && (future - home_cost > loss - cost ||
             input.limits.weight + freed.weight < 0 && (loss > 0 || future > 0 || protected));
         let action = if store { Disposition::Store }
             else if !protected && loss <= cost && future <= home_cost {
@@ -585,6 +588,23 @@ mod tests {
         inp.revision = 8;
         let mut u = Utility::of(&st, inp.kit, false);
         assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+    }
+
+    #[test]
+    fn what_this_visit_bought_is_not_stored() {
+        // #651: the shallow Recall below is stored; bought this visit, it
+        // stays in the pack from plan schema 12 on.
+        let mut st = state(0, 1, 20);
+        st.borg.trait_[BI_RECALL as usize] = 1;
+        let kit = [KitItem { just_bought: true, ..recall(Place::Pack) }];
+        let mut inp = input(&kit);
+        inp.revision = 12;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Keep]);
+        // Historical records keep their decision.
+        inp.revision = 11;
+        let mut u = Utility::of(&st, &kit, false);
+        assert_eq!(dispositions(&inp, &mut u, &st).0, [Disposition::Store]);
     }
 
     #[test]
