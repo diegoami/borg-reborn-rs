@@ -108,6 +108,12 @@ pub struct Borg {
     /// the breeder marks (`suspend_breeder_marks_when_stuck`); cleared on a
     /// new level.
     pub breeder_stuck: Option<BorgTime>,
+    /// borg-reborn-rs (#556): the known breeders could not be stopped on this
+    /// level (`note_breeders_stoppable`); cleared on a new level.
+    pub breeders_lost: bool,
+    /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
+    /// at or above its HP, so it does not stand against the breeders now.
+    pub breeders_in_danger: bool,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

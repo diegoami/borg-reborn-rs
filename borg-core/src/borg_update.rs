@@ -1488,6 +1488,7 @@ pub fn borg_update(st: &mut BorgState) {
     spread_monster_fear(st);
     // borg-reborn-rs (#556): remember the breeders' grids (no RNG).
     crate::borg_caution::note_breeders(st);
+    crate::borg_caution::note_breeders_stoppable(st);
 
     // *** Notice missing objects ***
     let mut i = 1;
@@ -1922,6 +1923,7 @@ fn new_level(st: &mut BorgState) {
     b.breeder_block.clear();
     b.breeder_through = None;
     b.breeder_stuck = None;
+    b.breeders_lost = false;
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;
