@@ -1109,6 +1109,10 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
         {
             return false;
         }
+        // borg-reborn-rs (#618): never walk into Farmer Maggot.
+        if crate::borg_fight_attack::leave_maggot(st, r_idx as usize) {
+            return false;
+        }
 
         /* Message */
         note_at(

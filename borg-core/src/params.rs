@@ -718,6 +718,7 @@ parameters! {
     attack_melee_town_unique_numerator => (2, "multiplier", 0, 10, "borg_fight_attack.rs:438", "Attack melee town unique numerator: existing policy multiplier."),
     attack_melee_town_unique_divisor => (3, "divisor", 1, 1000, "borg_fight_attack.rs:438", "Attack melee town unique divisor: existing policy divisor."),
     attack_town_unique_min_level => (5, "level", 0, 51, "borg_fight_attack.rs:441", "Attack town unique min level: existing policy level."),
+    attack_town_leave_maggot => (0, "flag", 0, 1, "borg_fight_attack.rs:322", "#618 (owner): 1 = Farmer Maggot is never a target at any level: no attack on him is worth anything (melee, missiles, spells), no step walks into him, the hunt skips him (he never attacks and has 350 HP); 0 = C (left alone only below attack_town_unique_min_level / CL5)."),
     attack_melee_breeder_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:448", "Attack melee breeder numerator: existing policy multiplier."),
     attack_melee_breeder_divisor => (2, "divisor", 1, 1000, "borg_fight_attack.rs:448", "Attack melee breeder divisor: existing policy divisor."),
     attack_melee_summoner_numerator => (3, "multiplier", 0, 10, "borg_fight_attack.rs:455", "Attack melee summoner numerator: existing policy multiplier."),

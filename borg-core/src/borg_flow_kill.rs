@@ -1969,6 +1969,10 @@ pub fn borg_flow_kill(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
         {
             continue;
         }
+        // borg-reborn-rs (#618): never hunt Farmer Maggot.
+        if crate::borg_fight_attack::leave_maggot(st, usize::from(kill.r_idx)) {
+            continue;
+        }
 
         // Access the location
         let x = kill.pos.x;
