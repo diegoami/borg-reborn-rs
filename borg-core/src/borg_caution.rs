@@ -2842,6 +2842,28 @@ pub(crate) fn note_breeders(st: &mut BorgState) {
     st.borg.breeder_block = breeder_block_grid(&st.borg.breeder_marks, p(Param::caution_breeder_avoid_radius));
 }
 
+/// borg-reborn-rs (#556): the Borg is stuck (the dungeon think's bravery
+/// boosts are next) and remembered breeders block its flows: with
+/// `caution_breeder_stuck_turns` above 0, the marks are suspended for that
+/// many Borg turns (`breeder_marks_suspended`), so the flows may cross the
+/// colony instead of leaving the Borg boxed in (human-druid-102023799: no
+/// staircase known, every exploration route marked, 1,200 turns stuck
+/// until the mice killed it). Draws no random numbers.
+pub(crate) fn suspend_breeder_marks_when_stuck(st: &mut BorgState) {
+    let turns = p(Param::caution_breeder_stuck_turns);
+    if turns == 0 || st.borg.breeder_block.is_empty() || breeder_marks_suspended(st) {
+        return;
+    }
+    st.borg.breeder_stuck = Some(st.borg.time.now);
+    borg_note(st, &format!("# Stuck behind remembered breeders: ignoring them for {turns} turns"));
+}
+
+/// borg-reborn-rs (#556): the marks are suspended
+/// (`suspend_breeder_marks_when_stuck`).
+fn breeder_marks_suspended(st: &BorgState) -> bool {
+    st.borg.breeder_stuck.is_some_and(|t| st.borg.time.now.wrapping_sub(t) < p(Param::caution_breeder_stuck_turns))
+}
+
 /// borg-reborn-rs (#556): `caution_breeder_avoid_fight_through` is on (the
 /// stair flows' fallback through the breeders, `fight_through`).
 pub(crate) fn breeder_fight_through_on() -> bool {
@@ -2888,7 +2910,7 @@ fn breeder_block_grid(marks: &[(loc, BorgTime)], radius: i32) -> Vec<bool> {
 /// borg-reborn-rs (#556): `(x, y)` is near a remembered breeder
 /// (`breeder_block`; always false with `caution_breeder_avoid` 0).
 pub(crate) fn near_known_breeder(st: &BorgState, x: i32, y: i32) -> bool {
-    if x < 0 || y < 0 || x >= AUTO_MAX_X || y >= AUTO_MAX_Y {
+    if x < 0 || y < 0 || x >= AUTO_MAX_X || y >= AUTO_MAX_Y || breeder_marks_suspended(st) {
         return false;
     }
     st.borg.breeder_block.get((y * AUTO_MAX_X + x) as usize).copied().unwrap_or(false)

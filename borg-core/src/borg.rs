@@ -104,6 +104,10 @@ pub struct Borg {
     /// route through remembered breeders (`fight_through`); cleared on a new
     /// level.
     pub breeder_through: Option<BorgTime>,
+    /// borg-reborn-rs (#556): when (`time.now`) the Borg, stuck, suspended
+    /// the breeder marks (`suspend_breeder_marks_when_stuck`); cleared on a
+    /// new level.
+    pub breeder_stuck: Option<BorgTime>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

@@ -787,6 +787,12 @@ borg_param_caution_breeder_avoid_turns = 50
 borg_param_caution_breeder_avoid_fight_through = 1
 borg_param_caution_breeder_through_turns = 5
 
+# Stuck behind breeders (#556): when the Borg is stuck (no flow finds a
+# route) while remembered breeders block it, the marks are ignored for this
+# many Borg turns. 0 = never.
+
+borg_param_caution_breeder_stuck_turns = 20
+
 
 ### Scary monsters ###
 
