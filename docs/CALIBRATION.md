@@ -10,6 +10,41 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## A flight in town takes a step no worse than standing (#647)
+
+The registry now holds **2170** parameters (2169 after #619; one added).
+
+#647: a CL4 Druid (start 738785, race 4, on #620's branch) twitched in town
+for 70,000 turns. The cause, from a replay with logging: the Borg knew the
+staircase, four steps away, and the stair flow queued it; but the flow
+refuses every grid whose danger is above its fear (`flow_fear`: 90, the
+avoidance 30 x 3 on a scary level). A filthy street urchin next to the Borg
+made its own grid 406 and the grid toward the stairs 203 (C's "avoid them
+stupid urchins": `danger_monblow_eat_gold_fear` below
+`danger_gold_theft_low_level`). No path left the Borg's grid, Phase Door
+was spent, and a scary level allows no attack, so only twitching was left.
+
+With `caution_town_flee_no_worse = 1`, in town while the level is scary or
+the Borg flees or leaves, the flow's fear is at least the danger at the
+Borg's own grid (`borg_caution::town_flee_fear_floor`, in
+`borg_flow_spread` and `borg_flow_enqueue_grid`): standing still is no
+safer. On the stalled game's build: 7,002 "Twitchy!" notes to 0, and the
+Borg leaves town.
+
+On main `3ba17e2c` (100,000 turns, the zoo adapter's steps) no game stalls
+with the switch off:
+
+| starts | arm | keys as off | deaths | sum of CL | game turns in town |
+|---|---|---:|---:|---:|---:|
+| classes-18 | off | | 1 | 101 | 347,559 |
+| classes-18 | on | 18/18 | 1 | 101 | 347,559 |
+| 16 more Druids | off | | 2 | 104 | 199,714 |
+| 16 more Druids | on | 14/16 | 2 | 103 | 200,867 |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `caution_town_flee_no_worse` | 0 | flag | 0–1 | `borg_caution.rs` (`town_flee_fear_floor`, read by `borg_flow_spread` and `borg_flow_enqueue_grid`) |
+
 ## Dangerous town monsters killed on sight (#619)
 
 The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
