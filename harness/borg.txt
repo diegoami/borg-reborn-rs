@@ -872,7 +872,8 @@ borg_param_caution_breeder_exit_distance = 6
 # danger here at or above the HP, and every awake monster within reach
 # slower than the Borg by the margin (energy per game turn) or never moving:
 # walk to the nearest known corridor, doorway or staircase at least this
-# distance from all of them. A faster awake monster near holds it. 0 = off.
+# distance from all of them, else to any open grid that far; with neither,
+# the distance comes down to 2. A faster awake monster near holds it. 0 = off.
 
 borg_param_caution_slow_crowd_exit = 0
 borg_param_caution_slow_crowd_exit_distance = 6

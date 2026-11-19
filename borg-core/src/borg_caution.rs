@@ -3026,39 +3026,68 @@ fn slow_crowd_exit(st: &mut BorgState, pos_danger: i32) -> bool {
         return false;
     }
     let distance = p(Param::caution_slow_crowd_exit_distance);
-    let passable = |x: i32, y: i32| {
-        engine::square_in_bounds_fully(x, y) && {
+    // The known map, read once: the flows below borrow `st` mutably.
+    let w = AUTO_MAX_X as usize;
+    let mut floor = vec![false; w * AUTO_MAX_Y as usize];
+    let mut stair = vec![false; floor.len()];
+    let mut taken = vec![false; floor.len()];
+    for y in 0..AUTO_MAX_Y {
+        for x in 0..AUTO_MAX_X {
+            let i = y as usize * w + x as usize;
             let ag = st.cave.grid(x, y);
-            borg_cave_floor_grid(ag) && u32::from(ag.feat) != FEAT_NONE
+            let feat = u32::from(ag.feat);
+            floor[i] = engine::square_in_bounds_fully(x, y) && borg_cave_floor_grid(ag) && feat != FEAT_NONE;
+            stair[i] = feat == FEAT_LESS || feat == FEAT_MORE;
+            taken[i] = ag.kill != 0;
         }
-    };
-    let stairs = |x: i32, y: i32| {
-        let feat = u32::from(st.cave.grid(x, y).feat);
-        feat == FEAT_LESS || feat == FEAT_MORE
-    };
-    let mut exits = Vec::new();
-    for y in 1..AUTO_MAX_Y - 1 {
-        for x in 1..AUTO_MAX_X - 1 {
-            let at = loc { x, y };
-            if st.cave.grid(x, y).kill == 0 && crowd_exit_grid(&passable, &stairs, at, &crowd, distance) {
-                exits.push(at);
+    }
+    let at_index = |x: i32, y: i32| (0..AUTO_MAX_X).contains(&x) && (0..AUTO_MAX_Y).contains(&y);
+    let passable = |x: i32, y: i32| at_index(x, y) && floor[y as usize * w + x as usize];
+    let stairs = |x: i32, y: i32| at_index(x, y) && stair[y as usize * w + x as usize];
+    // The preferred exits (a corridor, doorway or staircase), and every
+    // other open grid beyond the distance: a crowd in a room at the edge of
+    // the known map can leave no chokepoint the Borg can reach
+    // (borg-cemetery#78: the nearest, 115 grids away, behind the worms).
+    // A big crowd can leave no grid that far from all of it, so the
+    // distance comes down to 2 (two steps clear of every monster).
+    for d in (2..=distance.max(2)).rev() {
+        let mut exits = Vec::new();
+        let mut open = Vec::new();
+        for y in 1..AUTO_MAX_Y - 1 {
+            for x in 1..AUTO_MAX_X - 1 {
+                let at = loc { x, y };
+                if taken[y as usize * w + x as usize] {
+                    continue;
+                }
+                if crowd_exit_grid(&passable, &stairs, at, &crowd, d) {
+                    exits.push(at);
+                } else if passable(x, y) && crowd.iter().all(|&m| engine::distance(m, at) >= d) {
+                    open.push(at);
+                }
+            }
+        }
+        // As the breeder exit: the desperate flow for this flow only, restored.
+        for (grids, what) in [(&exits, "exit grids"), (&open, "open grids")] {
+            if grids.is_empty() {
+                continue;
+            }
+            st.borg.status.desperate = true;
+            let ok = breeder_exit_flow(st, grids);
+            st.borg.status.desperate = false;
+            if ok {
+                borg_note(
+                    st,
+                    &format!(
+                        "# Walking out of a slower crowd ({} monsters, danger {pos_danger}, {} {what} at distance {d})",
+                        known.len(),
+                        grids.len()
+                    ),
+                );
+                return true;
             }
         }
     }
-    if exits.is_empty() {
-        return false;
-    }
-    // As the breeder exit: the desperate flow for this flow only, restored.
-    st.borg.status.desperate = true;
-    let ok = breeder_exit_flow(st, &exits);
-    st.borg.status.desperate = false;
-    if ok {
-        borg_note(
-            st,
-            &format!("# Walking out of a slower crowd ({} monsters, danger {pos_danger}, {} exit grids)", known.len(), exits.len()),
-        );
-    }
-    ok
+    false
 }
 
 /// A monster within reach, for `slow_crowd` (#690).
