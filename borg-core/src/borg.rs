@@ -82,6 +82,11 @@ pub struct Borg {
     pub flight_time: BorgTime,
     /// The depth of that flight step (review of #616: a new level forgets it).
     pub flight_depth: i32,
+    /// borg-reborn-rs (#584): the Phase Door rule's decision this think,
+    /// as (the think's `time.now`, the verdict, whether its attack or boost
+    /// was tried): decided once at the first site that asks, used by every
+    /// later site, acted on once by `borg_caution` after `borg_escape`.
+    pub phase_rule: Option<(BorgTime, crate::borg_escape::PhaseVerdict, bool)>,
     pub targeting: bool,
     pub goal: BorgGoal,
     pub init_save: BorgInitSave,

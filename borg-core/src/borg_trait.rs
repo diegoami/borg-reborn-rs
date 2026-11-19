@@ -84,6 +84,10 @@ const BORG_DIG: i32 = 10;
 pub struct TraitState {
     /// `borg_simulate`: simulation flag (attacks are only rated)
     pub simulate: bool,
+    /// borg-reborn-rs (#584): `borg_attack` only rates the attacks and stores
+    /// the winner's true damage in `estimate` (`borg_attack_estimate`).
+    pub estimate_only: bool,
+    pub estimate: Option<i32>,
     /// `borg_attacking`: simulation flag
     pub attacking: bool,
     /// `borg_on_glyph`: the Borg is standing on a glyph of warding
