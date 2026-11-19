@@ -65,6 +65,9 @@ struct Entry {
     classes: [Option<i32>; 9],
     /// Only with enough breeders known, and not while standing against them.
     breeders: bool,
+    /// #621: an ignore entry, not a scare: the Borg doesn't target or hunt
+    /// the monster up to the level (it still attacks one in its way).
+    ignore: bool,
 }
 
 /// A parsed list: the class fragilities and the monsters.
@@ -153,12 +156,17 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
         } else {
             Target::Race(race(fields[0]).ok_or_else(|| at(format!("unknown monster '{}'", fields[0])))?)
         };
-        // A later line for the same monster replaces the earlier one, and
-        // `none` removes it: an experiment appends its changes (#228).
-        list.entries.retain(|e| e.target != target);
+        // A later line for the same monster and kind (a scare, or #621's
+        // ignore) replaces the earlier one, and `none` removes it: an
+        // experiment appends its changes (#228). `monster | none | | ignore`
+        // removes the ignore entry.
+        let ignore = fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() == "ignore"));
+        list.entries.retain(|e| e.target != target || e.ignore != ignore);
         if fields[1].eq_ignore_ascii_case("none") {
-            if fields.len() > 2 {
-                return Err(at("'none' takes no class exceptions or flags".into()));
+            if fields.get(2).is_some_and(|c| !c.is_empty())
+                || fields.get(3).is_some_and(|f| f.split(',').any(|x| x.trim() != "ignore"))
+            {
+                return Err(at("'none' takes no class exceptions, and no flag but 'ignore'".into()));
             }
             continue;
         }
@@ -174,11 +182,15 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
             for flag in flags.split(',').map(str::trim) {
                 match flag {
                     "breeders" => breeders = true,
+                    "ignore" => {}
                     _ => return Err(at(format!("unknown flag '{flag}'"))),
                 }
             }
         }
-        list.entries.push(Entry { target, tough, fragile, classes, breeders });
+        if ignore && breeders {
+            return Err(at("'ignore' takes no 'breeders' flag".into()));
+        }
+        list.entries.push(Entry { target, tough, fragile, classes, breeders, ignore });
     }
     Ok(list)
 }
@@ -187,23 +199,41 @@ pub fn parse(text: &str, race: &dyn Fn(&str) -> Option<usize>) -> Result<List, S
 /// #622: the listed level is lowered by `who.levels_less` (the caller sets it
 /// for town races, `caution_town_scary_levels_less`).
 pub fn is_scary(list: &List, r_idx: usize, base: &[u8], who: Situation) -> bool {
-    let class = usize::try_from(who.class).ok().filter(|&c| c < CLASSES.len());
     list.entries.iter().any(|e| {
-        let hit = match &e.target {
-            Target::Race(r) => *r == r_idx,
-            Target::Base(prefix) => {
-                base.len() >= prefix.len() && base[..prefix.len()].eq_ignore_ascii_case(prefix.as_bytes())
-            }
-        };
-        if !hit {
-            return false;
-        }
-        let up_to = match class {
-            Some(c) => e.classes[c].unwrap_or_else(|| scaled(e.tough, e.fragile, list.fragility[c])),
-            None => e.tough,
-        };
-        who.clevel <= up_to - who.levels_less && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
+        !e.ignore
+            && hits(e, r_idx, base)
+            && who.clevel <= up_to(list, e, who.class) - who.levels_less
+            && (!e.breeders || (who.breeder_count >= who.clevel && !who.breeder_stand))
     })
+}
+
+/// #621: whether race `r_idx` is on the list's ignore entries for `who`: up
+/// to its level the Borg doesn't target or hunt it.
+/// The base name is asked for only by a base entry.
+pub fn is_ignored<'a>(list: &List, r_idx: usize, base: impl Fn() -> &'a [u8], who: Situation) -> bool {
+    list.entries.iter().any(|e| {
+        e.ignore
+            && match &e.target {
+                Target::Race(r) => *r == r_idx,
+                Target::Base(_) => hits(e, r_idx, base()),
+            }
+            && who.clevel <= up_to(list, e, who.class)
+    })
+}
+
+fn hits(e: &Entry, r_idx: usize, base: &[u8]) -> bool {
+    match &e.target {
+        Target::Race(r) => *r == r_idx,
+        Target::Base(prefix) => base.len() >= prefix.len() && base[..prefix.len()].eq_ignore_ascii_case(prefix.as_bytes()),
+    }
+}
+
+/// The entry's level for the class: its exception, else the scaled range.
+fn up_to(list: &List, e: &Entry, class: i32) -> i32 {
+    match usize::try_from(class).ok().filter(|&c| c < CLASSES.len()) {
+        Some(c) => e.classes[c].unwrap_or_else(|| scaled(e.tough, e.fragile, list.fragility[c])),
+        None => e.tough,
+    }
 }
 
 /// `tough + (fragile - tough) x fragility / 100`, rounded half up.
@@ -257,6 +287,24 @@ mod tests {
     }
     fn who(clevel: i32, class: i32) -> Situation {
         Situation { clevel, class, breeder_count: 0, breeder_stand: false, levels_less: 0 }
+    }
+
+    /// #621: an ignore entry is no scare, a scare is no ignore entry, and
+    /// each kind replaces or removes only its own kind.
+    #[test]
+    fn ignore_entries_are_their_own_kind() {
+        let race = |n: &str| (n == "Farmer Maggot").then_some(4);
+        let who = |clevel| Situation { clevel, class: 0, breeder_count: 0, breeder_stand: false, levels_less: 0 };
+        let both = parse("fragility: warrior 0\nFarmer Maggot | 8-11\nFarmer Maggot | 10-20 | | ignore\n", &race).unwrap();
+        assert!(is_scary(&both, 4, b"person", who(8)) && is_ignored(&both, 4, || b"person", who(8)));
+        assert!(!is_scary(&both, 4, b"person", who(9)) && is_ignored(&both, 4, || b"person", who(10)));
+        assert!(!is_ignored(&both, 4, || b"person", who(11)), "warrior: ignored up to 10");
+        let only = parse("Farmer Maggot | 10-20 | | ignore\n", &race).unwrap();
+        assert!(!is_scary(&only, 4, b"person", who(1)), "an ignore entry scares nobody");
+        let removed = parse("Farmer Maggot | 8-11\nFarmer Maggot | 10-20 | | ignore\nFarmer Maggot | none | | ignore\n", &race).unwrap();
+        assert!(is_scary(&removed, 4, b"person", who(8)) && !is_ignored(&removed, 4, || b"person", who(8)));
+        assert!(parse("Farmer Maggot | none | | breeders\n", &race).is_err());
+        assert!(parse("Farmer Maggot | 10-20 | | ignore, breeders\n", &race).is_err(), "a flag that would do nothing");
     }
 
     /// #622: a monster's listed level, lowered by `levels_less`.

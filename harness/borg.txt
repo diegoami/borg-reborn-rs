@@ -525,6 +525,28 @@ borg_param_recover_rest_arms_see_invis = 0
 
 ### Fleeing ###
 
+# Rest at the stairs (#614). recover_rest_reach_stairs = N: on a flight to a
+# staircase at most N flow steps away the Borg does not rest (rod, HP or
+# mana), nor walk to a recovery spot, until it stands on the staircase;
+# potions and cures still work. A farther staircase is a long walk: it rests
+# as before. Raising N holds rests on longer flights. _memory: how long the
+# commitment outlives a re-plan (a new monster) on the same level. caution_stairs_leave_on_monster =
+# 1: in the dungeon, standing on a staircase while it still needs to recover
+# (HP or SP below the maximum), it takes the stairs as soon as a monster
+# threatens it (danger at least _danger_percent of the current HP), instead
+# of fighting; _down = 1 takes a down staircase too, 0 only an up one. 0 = C (it could rest mid-flight, 11 steps short of the
+# stairs, and be caught there).
+# Change together: the two make one rule (reach the stairs, rest there,
+# leave when something comes).
+# Impact: recover_rest_reach_stairs 20: 3 of 6 test games play differently;
+# caution_stairs_leave_on_monster 1: 2 of 6 (up only: 2 of 6); both: 3 of 6.
+
+borg_param_recover_rest_reach_stairs = 0
+borg_param_recover_rest_reach_stairs_memory = 10
+borg_param_caution_stairs_leave_on_monster = 0
+borg_param_caution_stairs_leave_danger_percent = 10
+borg_param_caution_stairs_leave_down = 1
+
 # Read Phase Door only with an awake monster next to the Borg, or one in view
 # with a ranged attack, not while the monster is still distant (#539).
 # 0 = C.
@@ -728,9 +750,10 @@ borg_param_caution_breeder_exit_distance = 6
 
 borg_param_caution_scary_named_monsters = 1
 
-# The named scary monsters, by class and character level (#518); none = the
-# C Borg's compiled list. harness/run.sh and the zoo copy the file next to
-# borg.txt and pin its hash.
+# The named scary monsters, by class and character level (#518), and the
+# monsters to ignore (#621, flag ignore; on whatever the switch above says);
+# none = the C Borg's compiled list, with no ignore lines. harness/run.sh
+# and the zoo copy the file next to borg.txt and pin its hash.
 
 borg_scary_list = scary_monsters.txt
 
@@ -765,6 +788,16 @@ borg_param_caution_scary_latch = 1
 # Impact: off here; set to 1, it fires in 3 of 6 test games.
 
 borg_param_caution_scary_unlatch_kill = 0
+
+# 1 = the level stops being scary once a named-list or damage-rule scary
+# monster is known hurt or afraid (the thresholds below), or is killed, with
+# the latch on or off; forgetting it is not enough (#593). 0 = off.
+# Change together: needs caution_scary_stand = 1, and reads the thresholds
+# caution_scary_hurt_percent and caution_scary_afraid.
+# Impact: set to 1, 14 of 18 classes-18 games play differently (it clears
+# the flag 51 times: 23 hurt or afraid, 28 killed); no deaths either way.
+
+borg_param_caution_scary_unlatch_calmed = 0
 
 # A named-list or damage-rule scary monster that has lost this percent of
 # its HP, or (with the flag) is afraid, scares no more: Grip fled from one

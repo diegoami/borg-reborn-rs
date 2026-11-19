@@ -22,9 +22,15 @@
 # - flags: "breeders" = only while at least as many breeders as the
 #   character's level are known, and not while the Borg stands and fights
 #   breeders (#503).
+#   "ignore" (#621) = not a scare: up to the level the Borg doesn't target or
+#   hunt the monster; it still attacks one standing in its way. A scare line
+#   and an ignore line for the same monster are separate entries. It takes
+#   no "breeders" flag. Ignore lines apply whenever this file is selected,
+#   whatever caution_scary_named_monsters says (that switch is for scares).
 #
-# A later line for the same monster replaces the earlier one, and
-# "monster | none" removes it; a later fragility value replaces an earlier
+# A later line for the same monster and kind (scare or ignore) replaces the
+# earlier one, and "monster | none" removes it ("monster | none | | ignore"
+# the ignore line); a later fragility value replaces an earlier
 # one. An experiment can append its own lines to this file instead of
 # editing it (borg-zoo#228).
 #
@@ -75,3 +81,14 @@ inertia hound | 44-47
 base:ancient dragon | 44-47
 Beorn, the Shape-Changer | 44-47
 dread | 44-47
+
+# Ignored (#621, owner 2026-11-19): town residents that do no damage (BEG,
+# DROOL, MOAN in monster.txt). Up to the level the Borg doesn't spend turns
+# on them; one in its way is still attacked. Farmer Maggot also has 350 HP.
+Farmer Maggot | 10-20 | | ignore
+pitiful-looking beggar | 10-20 | | ignore
+singing, happy drunk | 10-20 | | ignore
+blubbering idiot | 10-20 | | ignore
+village idiot | 10-20 | | ignore
+mangy-looking leper | 10-20 | | ignore
+boil-covered wretch | 10-20 | | ignore
