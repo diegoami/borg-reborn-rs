@@ -3782,6 +3782,22 @@ mod scary_stand_tests {
     }
 
     #[test]
+    fn every_switched_site_asks_recall_restricts() {
+        // The seven sites of #603 (review of #627): a site put back to
+        // `goal.recalling != 0` would ignore the switch and still pass the
+        // helper's test, so count the calls in each file.
+        for (file, src, calls) in [
+            ("borg_caution.rs", include_str!("borg_caution.rs"), 3),
+            ("borg_flow_stairs.rs", include_str!("borg_flow_stairs.rs"), 1),
+            ("borg_escape.rs", include_str!("borg_escape.rs"), 1),
+            ("borg_fight_attack.rs", include_str!("borg_fight_attack.rs"), 1),
+            ("borg_think_dungeon.rs", include_str!("borg_think_dungeon.rs"), 2),
+        ] {
+            assert_eq!(src.matches(concat!("recall_", "restricts(st)")).count(), calls, "{file}");
+        }
+    }
+
+    #[test]
     fn an_easy_escape_is_near_stairs_or_an_escape_item() {
         let mut s = st();
         assert!(!easy_escape_with(&s, 5, -1, -1), "nothing");
