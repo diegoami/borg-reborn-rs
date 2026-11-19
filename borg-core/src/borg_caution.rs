@@ -2047,6 +2047,13 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
         return true;
     }
 
+    // borg-reborn-rs (#584, owner): the Phase Door rule refused a Phase Door
+    // and no escape acted: attack, at range when nothing is adjacent, else
+    // boost (`phase_rule_act`, once per think).
+    if crate::borg_escape::phase_rule_act(st) {
+        return true;
+    }
+
     /*** Back away ***/
     // Do not back up if
     // 1) we are nasty (poisoned, blind, confused etc
@@ -3180,7 +3187,7 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// Spells (Haste Self, Heroism, Berserk Strength, Bless) are cast only at or
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
-fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
