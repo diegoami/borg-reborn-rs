@@ -53,11 +53,13 @@ const GOAL_FLEE: i16 = 7;
 /// every dungeon think (`borg_caution`) and before every rest, so a monster
 /// forgotten out of view still counts.
 pub(crate) fn watch_for_rest(st: &mut BorgState) {
-    if param(Param::recover_rest_monster_turns) != 0
-        && crate::borg_caution::awake_mover_within(st, param(Param::recover_rest_monster_distance))
-    {
+    if param(Param::recover_rest_monster_turns) == 0 {
+        return;
+    }
+    if let Some(k) = crate::borg_caution::nearest_mover_seen(st, param(Param::recover_rest_monster_distance)) {
         st.borg.rest_watch_turn = crate::engine::game_turn();
         st.borg.rest_watch_depth = crate::engine::player_depth();
+        st.borg.rest_watch_kill = k;
     }
 }
 
@@ -67,30 +69,45 @@ pub(crate) fn watch_for_rest(st: &mut BorgState) {
 /// rests and 13% of dungeon rests lasted one player turn, mostly with an
 /// awake monster in view, up to 32 in a row). The Borg does something else.
 fn rest_held_for_monster(st: &mut BorgState) -> bool {
-    let turns = param(Param::recover_rest_monster_turns);
-    if turns == 0 {
+    let Some(ago) = holding_for_monster_ago(st) else {
         return false;
-    }
-    // Confused, blind, hallucinating or stunned, walking is worse than a
-    // broken rest: a confused Ranger held its rest in town, walked into lava
-    // and died (first local run).
-    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN]
-        .iter()
-        .any(|&f| st.borg.tr(f) != 0)
-    {
-        return false;
-    }
-    watch_for_rest(st);
-    let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
-    let here = st.borg.rest_watch_depth == crate::engine::player_depth();
-    if !crate::borg_caution::recall_watch_holds(turns, st.borg.rest_watch_turn, ago, here) {
-        return false;
-    }
+    };
     if st.borg.rest_watch_noted != Some(st.borg.time.now) {
         st.borg.rest_watch_noted = Some(st.borg.time.now);
         borg_note(st, &format!("# No rest: a monster was near {ago} game turns ago."));
     }
     true
+}
+
+/// #615 rule a: the rest is held (`Some(game turns since the monster)`),
+/// without the note. `borg_think_dungeon` also holds the walk to a recovery
+/// grid with it (review of #645), as #614 does with `holding_for_stairs`.
+pub(crate) fn holding_for_monster(st: &mut BorgState) -> bool {
+    holding_for_monster_ago(st).is_some()
+}
+
+fn holding_for_monster_ago(st: &mut BorgState) -> Option<i32> {
+    let turns = param(Param::recover_rest_monster_turns);
+    if turns == 0 {
+        return None;
+    }
+    // Impaired (confused, blind, hallucinating, stunned, afraid), walking is
+    // worse than a broken rest: a confused Ranger held its rest in town,
+    // walked into lava and died (first local run); an afraid Borg twitches
+    // in a random direction (review of #645).
+    let impaired = [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN, BI_ISAFRAID]
+        .iter()
+        .any(|&f| st.borg.tr(f) != 0);
+    watch_for_rest(st);
+    let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
+    let here = st.borg.rest_watch_depth == crate::engine::player_depth();
+    rest_monster_hold(turns, st.borg.rest_watch_turn, ago, here, impaired).then_some(ago)
+}
+
+/// The test of `holding_for_monster`: on, not impaired, a clock set (and
+/// not cleared by the monster's death), on this level, within `turns`.
+fn rest_monster_hold(turns: i32, seen_turn: i32, ago: i32, same_level: bool, impaired: bool) -> bool {
+    !impaired && crate::borg_caution::recall_watch_holds(turns, seen_turn, ago, same_level)
 }
 
 /// borg-reborn-rs (#614, owner): "once committed to a stair, it must at
@@ -637,6 +654,24 @@ fn hunt_now(st: &mut BorgState) -> bool {
 /// 0 = off (C's rest).
 fn hunt_before_rest(hunt: bool, cur_hp: i32, max_hp: i32, hp_percent: i32) -> bool {
     hp_percent > 0 && hunt && i64::from(cur_hp) * 100 >= i64::from(max_hp) * i64::from(hp_percent)
+}
+
+#[cfg(test)]
+mod rest_monster_tests {
+    use super::rest_monster_hold;
+
+    /// #615 rule a (review of #645): the rest waits for a monster seen
+    /// recently, on this level, unless impaired or the monster died.
+    #[test]
+    fn no_rest_soon_after_a_monster_was_near() {
+        assert!(rest_monster_hold(100, 5000, 30, true, false), "a yeek 30 game turns ago");
+        assert!(rest_monster_hold(100, 5000, 100, true, false), "at the limit");
+        assert!(!rest_monster_hold(100, 5000, 101, true, false), "long enough ago");
+        assert!(!rest_monster_hold(100, 5000, 30, false, false), "another level");
+        assert!(!rest_monster_hold(100, 5000, 30, true, true), "impaired (afraid, confused...): rest");
+        assert!(!rest_monster_hold(100, 0, 30, true, false), "the clock cleared: the monster died");
+        assert!(!rest_monster_hold(0, 5000, 30, true, false), "off (C)");
+    }
 }
 
 #[cfg(test)]

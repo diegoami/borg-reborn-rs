@@ -3441,10 +3441,10 @@ fn watch_for_recall(st: &mut BorgState) {
         return;
     }
     let range = p(Param::caution_recall_rest_monster_distance);
-    let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
-    if mover_seen_within(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE)) {
+    if let Some(k) = nearest_mover_seen(st, range) {
         st.borg.recall_watch_turn = engine::game_turn();
         st.borg.recall_watch_depth = engine::player_depth();
+        st.borg.recall_watch_kill = k;
     }
     // #615 rule a: the same memory for every rest.
     crate::borg_recover::watch_for_rest(st);
@@ -3452,9 +3452,27 @@ fn watch_for_recall(st: &mut BorgState) {
 
 /// An awake monster that can move, seen in this update, within `range` of
 /// the Borg (`mover_seen_within`; #615 rule a).
-pub(crate) fn awake_mover_within(st: &BorgState, range: i32) -> bool {
+/// The kill index of the nearest one, if any (review of #645: a clock set by
+/// a monster is cleared when that monster dies, `monster_died`).
+pub(crate) fn nearest_mover_seen(st: &BorgState, range: i32) -> Option<i32> {
     let kills = &st.kills.kills[1..st.kills.nxt.max(1) as usize];
-    mover_seen_within(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE))
+    nearest_mover_seen_in(kills, st.borg.c, range, |r| engine::race_flag_has(usize::from(r), RF_NEVER_MOVE))
+        .map(|i| i as i32 + 1)
+}
+
+/// borg-reborn-rs (#567, review of #645): the monster that set a watch
+/// clock died, so the clock no longer stands for a monster that may come
+/// back; clear it. A monster forgotten out of view (not dead) keeps the
+/// clock: that is #567's case (Grip came back).
+pub(crate) fn monster_died(st: &mut BorgState, k: i32) {
+    if st.borg.recall_watch_kill == k {
+        st.borg.recall_watch_turn = 0;
+        st.borg.recall_watch_kill = 0;
+    }
+    if st.borg.rest_watch_kill == k {
+        st.borg.rest_watch_turn = 0;
+        st.borg.rest_watch_kill = 0;
+    }
 }
 
 /// An awake monster that can move, seen in this update (`kill.seen`; review
@@ -3462,10 +3480,26 @@ pub(crate) fn awake_mover_within(st: &BorgState, range: i32) -> bool {
 /// monster is lost, and refreshed the watch every think), within `range`
 /// (the engine's distance) of `c`. A monster that never moves (a floating
 /// eye, a mold) cannot come back.
+#[cfg(test)]
 fn mover_seen_within(kills: &[crate::borg_flow_kill::BorgKill], c: loc, range: i32, never_moves: impl Fn(u16) -> bool) -> bool {
-    kills.iter().any(|kill| {
-        kill.r_idx != 0 && kill.seen && kill.awake && engine::distance(c, kill.pos) <= range && !never_moves(kill.r_idx)
-    })
+    nearest_mover_seen_in(kills, c, range, never_moves).is_some()
+}
+
+/// The position in `kills` of the nearest such monster.
+fn nearest_mover_seen_in(
+    kills: &[crate::borg_flow_kill::BorgKill],
+    c: loc,
+    range: i32,
+    never_moves: impl Fn(u16) -> bool,
+) -> Option<usize> {
+    kills
+        .iter()
+        .enumerate()
+        .filter(|(_, kill)| {
+            kill.r_idx != 0 && kill.seen && kill.awake && engine::distance(c, kill.pos) <= range && !never_moves(kill.r_idx)
+        })
+        .min_by_key(|(_, kill)| engine::distance(c, kill.pos))
+        .map(|(i, _)| i)
 }
 
 /// borg-reborn-rs (#567): instead of a long rest for Recall, stay still one

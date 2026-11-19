@@ -590,8 +590,10 @@ borg_param_caution_stairs_leave_down = 1
 # No rest with a monster near (#615 rule a). recover_rest_monster_turns = N
 # (game turns, 0 = off): no rod, HP/SP or mana rest while an awake monster
 # that can move was known within recover_rest_monster_distance grids in the
-# last N game turns on this level; the game would break such a rest at once.
-# Kept when confused, blind, hallucinating or stunned.
+# last N game turns on this level (a monster that comes into view breaks a
+# rest; one that left the screen may come back).
+# Kept when confused, blind, hallucinating, stunned or afraid; the clock
+# clears when the monster that set it dies. The walk to a recovery grid waits too.
 # Impact (18 classes-18 starts, 100,000 turns): 100: 16 of 18 play differently; 200: 16 of 18.
 borg_param_recover_rest_monster_turns = 0
 borg_param_recover_rest_monster_distance = 20
