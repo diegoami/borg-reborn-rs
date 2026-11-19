@@ -20,4 +20,4 @@ Left: a zoo pilot. Related: #582 and #583 (what the Borg does during the wait), 
 - The PR now lists every kept read of `goal.recalling`. That includes the engine-counter sync (`borg_trait.rs`), which must stay. It also names the gap in restoring mana: restoring mana has no ordinary equivalent of `buy_time_for_recall`.
 - At 1 the Recall still fires and still lands the Borg in town.
 - **For the owner:** a Borg out of light (`borg_think_dungeon_util.rs:209`) waits for the Recall with no danger test, before `borg_caution`, so the switch does not reach it. Making it a wait only when safe changes play at 0 too.
-- Merged with main after #595 and #631: the registry holds 2161.
+- Merged with main after #595 and #631: the registry holds 2161; again after #601–#621: 2166, citations by `scripts/check-param-citations.py --fix`.
