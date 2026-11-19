@@ -7,8 +7,8 @@ rested for Recall; Grip came back and bit.
 - **Done:** `caution_recall_rest_monster_turns` (game turns, compiled and
   shipped 0) and `caution_recall_rest_monster_distance` (20 grids). While
   Recall is pending, an awake monster known within the distance in the last
-  N game turns, on this level, holds both Recall rests ("Resting for
-  Recall", "Waiting for Recall"). The Borg stays still one turn instead (`,`;
+  N game turns, on this level, holds the three Recall rests ("Resting for
+  Recall", "Waiting for Recall", the wait with no light). The Borg stays still one turn instead (`,`;
   a rest count of 1 would repeat the previous count). `borg_caution` records
   the game turn each think. Monsters that never move do not count. Details
   in docs/CALIBRATION.md.

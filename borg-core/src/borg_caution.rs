@@ -3474,6 +3474,9 @@ fn mover_seen_within(kills: &[crate::borg_flow_kill::BorgKill], c: loc, range: i
 /// `caution_recall_rest_monster_turns` game turns on this level. Each think
 /// then sees a monster that comes back before it bites.
 pub(crate) fn recall_rest_held(st: &mut BorgState) -> bool {
+    // Re-review of #640 (N2): the light path's wait runs before borg_caution,
+    // so refresh the watch here too.
+    watch_for_recall(st);
     let turns = p(Param::caution_recall_rest_monster_turns);
     let ago = engine::game_turn() - st.borg.recall_watch_turn;
     let here = st.borg.recall_watch_depth == engine::player_depth();
