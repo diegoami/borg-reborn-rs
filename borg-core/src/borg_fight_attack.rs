@@ -81,11 +81,6 @@ pub struct FightAttackState {
     /// hits (`dmg_acc`), of the best aim or target (`dmg_best`).
     pub dmg_acc: i32,
     pub dmg_best: i32,
-    /// borg-reborn-rs (#556): the true damage of the attack the last ranking
-    /// chose (`borg_attack`, a real one or an estimate) and when (`time.now`),
-    /// for the breeder kill rate: a spell it would cast now, its mana and fail
-    /// checks applied, with no simulation of its own.
-    pub recent_best: Option<(crate::borg::BorgTime, i32)>,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -102,7 +97,6 @@ impl Default for FightAttackState {
             tp_other_n: 0,
             dmg_acc: 0,
             dmg_best: 0,
-            recent_best: None,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -2269,25 +2263,6 @@ fn launch_damage(st: &BorgState, item: &borg_item, bow: &borg_item) -> Option<i3
 /// fires from the bow, or the object `borg_attack_aux_object` throws (a
 /// flask kept for lantern fuel or worth money for little damage is not one),
 /// and nothing that stops aiming.
-/// borg-reborn-rs (#556): the best average damage a turn of a quiver missile
-/// fired from the bow (`launch_damage`), 0 with no bow, no usable missile, or
-/// nothing that lets it aim.
-pub(crate) fn best_launch_damage(st: &BorgState) -> i32 {
-    if cant_aim(st) {
-        return 0;
-    }
-    let bow = st.items.items[(inven_wield() + 1) as usize];
-    if bow.iqty == 0 {
-        return 0;
-    }
-    (quiver_start()..quiver_end())
-        .map(|k| st.items.items[k as usize])
-        .take_while(|item| item.iqty != 0)
-        .filter_map(|item| launch_damage(st, &item, &bow))
-        .max()
-        .unwrap_or(0)
-}
-
 pub(crate) fn ranged_means(st: &BorgState) -> bool {
     if cant_aim(st) {
         return false;
@@ -4674,9 +4649,6 @@ pub fn borg_attack(st: &mut BorgState, boosted_bravery: bool) -> bool {
     }
 
     crate::core_trace::record_attack_ranking(attack_trace, ranking.winner);
-    if ranking.winner.is_some() && winning_damage > 0 {
-        st.fight_attack.recent_best = Some((st.borg.time.now, winning_damage));
-    }
     let Some(b_g) = ranking.winner else {
         st.traits.attacking = false;
         return false;

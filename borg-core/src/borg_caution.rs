@@ -2891,36 +2891,50 @@ pub(crate) fn note_breeders_stoppable(st: &mut BorgState) {
         .map(|k| k.pos)
         .collect();
     let energy = |speed: i32| f64::from(crate::engine::extract_energy(speed.clamp(0, 199) as usize));
-    // Besides melee: a missile from the bow, and the true damage of the
-    // attack the last ranking chose (a spell with its mana and fail checks)
-    // within caution_breeder_stoppable_attack_turns.
-    let recent = st.fight_attack.recent_best.filter(|&(t, _)| {
-        st.borg.time.now.wrapping_sub(t) <= p(Param::caution_breeder_stoppable_attack_turns)
-    });
-    let ranged = crate::borg_fight_attack::best_launch_damage(st).max(recent.map_or(0, |(_, d)| d));
     let mut births = 0.0;
-    let mut kill_turns = 0.0;
+    let mut melee_kills = 0.0;
+    let mut hp_sum = 0.0;
+    let mut in_view = false;
     for &i in &breeders {
         let kill = st.kills.kills[i];
         let k = positions.iter().filter(|q| (q.x - kill.pos.x).abs() <= 1 && (q.y - kill.pos.y).abs() <= 1).count();
         births += breed_chance(k as i32) * energy(i32::from(kill.speed)) / energy(st.borg.tr(BI_SPEED)).max(1.0);
-        let dam = crate::borg_fight_attack::borg_thrust_damage_one(st, i as i32).max(ranged);
-        kill_turns += turns_to_kill(i32::from(kill.power), dam);
+        let melee = crate::borg_fight_attack::borg_thrust_damage_one(st, i as i32);
+        melee_kills += 1.0 / turns_to_kill(i32::from(kill.power), melee);
+        hp_sum += f64::from(i32::from(kill.power).max(1));
+        in_view |= st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW != 0;
     }
+    let n = breeders.len() as f64;
+    // Every attack the Borg has (owner, 2026-11-19: "count all attacks"): the
+    // attack planner's own dry run (`borg_attack_estimate`: melee, missiles,
+    // throws, every spell with its mana and fail checks, wands, rods, staves,
+    // activations), whose true damage sums over every monster the attack
+    // hits, so a ball that kills three mice counts three kills. The dry run
+    // draws the Borg's random numbers; their state is restored after it (it
+    // also leaves an attack ranking in the decision trace and refills the
+    // temporary target list, as #584's estimate does).
+    let (quick, value) = crate::engine::rand_state();
+    let estimate = crate::borg_fight_attack::borg_attack_estimate(st);
+    crate::engine::set_rand_state(quick, value);
+    // Nothing to attack now and no breeder in view: no verdict this think.
+    if estimate.is_none() && !in_view {
+        return;
+    }
+    let kills = kills_a_turn(estimate.unwrap_or(0), hp_sum / n, melee_kills / n);
     // The danger where the Borg stands (one turn, averaged), against the HP:
     // too high stops the stand for this think only (`breeders_in_danger`);
     // only the breeding outpacing the kills loses the level.
     let here = borg_danger(st, st.borg.c.y, st.borg.c.x, 1, true, false);
     st.borg.breeders_in_danger = here >= st.borg.tr(BI_CURHP);
-    let ok = stoppable(births, kill_turns / breeders.len() as f64, p(Param::caution_breeder_stoppable_births_percent));
+    let ok = stoppable(births, kills, p(Param::caution_breeder_stoppable_births_percent));
     if !ok {
         st.borg.breeders_lost = true;
         borg_note(
             st,
             &format!(
-                "# Breeders cannot be stopped: {} known, {births:.2} births a turn, {:.1} turns a kill, danger {here}, HP {}",
+                "# Breeders cannot be stopped: {} known, {births:.2} births a turn, {kills:.2} kills a turn (best attack {}), danger {here}, HP {}",
                 breeders.len(),
-                kill_turns / breeders.len() as f64,
+                estimate.unwrap_or(0),
                 st.borg.tr(BI_CURHP)
             ),
         );
@@ -2950,12 +2964,26 @@ fn turns_to_kill(hp: i32, dam: i32) -> f64 {
     }
 }
 
-/// The colony can be stopped: the Borg kills one breeder every
-/// `turns_per_kill` turns, faster than the known breeders are expected to
-/// breed (`births` a turn, weighted by `births_percent` for the walk between
-/// them).
-fn stoppable(births: f64, turns_per_kill: f64, births_percent: i32) -> bool {
-    turns_per_kill.is_finite() && births * f64::from(births_percent) / 100.0 < 1.0 / turns_per_kill
+/// borg-reborn-rs (#556, owner): stand while the colony can be stopped; on a
+/// level lost to the breeders, still stand while no staircase is known (a
+/// flight with nowhere to go only wanders through the colony,
+/// borg-cemetery#77); never while the danger here is at or above the HP.
+fn stand_against_breeders(lost: bool, no_stairs_known: bool, in_danger: bool) -> bool {
+    !in_danger && (!lost || no_stairs_known)
+}
+
+/// The Borg's kills a turn: its best attack's true damage (summed over the
+/// monsters it hits) over the breeders' mean HP, or its melee's kills a turn
+/// (`melee_kills`, one target), whichever is more.
+fn kills_a_turn(best_damage: i32, mean_hp: f64, melee_kills: f64) -> f64 {
+    (f64::from(best_damage.max(0)) / mean_hp.max(1.0)).max(melee_kills)
+}
+
+/// The colony can be stopped: the Borg kills `kills` breeders a turn, more
+/// than the known breeders are expected to breed (`births` a turn, weighted
+/// by `births_percent` for the walk between them and the ones not seen).
+fn stoppable(births: f64, kills: f64, births_percent: i32) -> bool {
+    births * f64::from(births_percent) / 100.0 < kills
 }
 
 /// borg-reborn-rs (#556): with `caution_breeder_stoppable`, the decision to
@@ -2964,7 +2992,12 @@ fn stoppable(births: f64, turns_per_kill: f64, births_percent: i32) -> bool {
 fn breeders_stoppable(st: &BorgState) -> Option<bool> {
     (p(Param::caution_breeder_stoppable) != 0)
         .then(|| {
-            !st.borg.breeders_lost && !st.borg.breeders_in_danger && st.borg.mon.breeders > 0 && st.borg.tr(BI_CDEPTH) != 0
+            stand_against_breeders(
+                st.borg.breeders_lost,
+                st.stairs.less.num == 0 && st.stairs.more.num == 0,
+                st.borg.breeders_in_danger,
+            ) && st.borg.mon.breeders > 0
+                && st.borg.tr(BI_CDEPTH) != 0
         })
 }
 
@@ -4735,8 +4768,19 @@ mod breeder_avoid_tests {
         assert!(!stoppable(0.5, 1.0, 200), "doubled for the walk: 1.0, not below 1");
         assert!(stoppable(0.4, 1.0, 200));
         // Two turns a kill: 0.5 kills a turn.
-        assert!(!stoppable(0.3, 2.0, 200));
-        assert!(!stoppable(0.0, f64::INFINITY, 200), "cannot hurt them");
+        assert!(!stoppable(0.3, 0.5, 200));
+        assert!(!stoppable(0.0, 0.0, 200), "cannot hurt them");
+        // The Druid of borg-cemetery#77: a flask of oil (2d6, 7 on average)
+        // against 2 HP mice is a kill a turn, not its whip's 0.59.
+        assert_eq!(kills_a_turn(2, 2.0, 0.59), 1.0, "the true damage is the target's HP at most");
+        // A ball hitting three 2 HP mice: 6 true damage, 3 kills a turn.
+        assert_eq!(kills_a_turn(6, 2.0, 0.5), 3.0);
+        assert_eq!(kills_a_turn(0, 2.0, 0.5), 0.5, "no attack chosen: melee");
+        // Lost, but no staircase known: fight on; with one, flee.
+        assert!(stand_against_breeders(false, false, false));
+        assert!(stand_against_breeders(true, true, false), "nowhere to flee");
+        assert!(!stand_against_breeders(true, false, false));
+        assert!(!stand_against_breeders(false, true, true), "danger at or above the HP");
     }
 
     /// #556: the blocked grids are those within the radius (the engine's
