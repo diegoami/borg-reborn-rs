@@ -62,6 +62,7 @@ use crate::headers::list_terrain_h::{
 use crate::headers::list_tvals_h::{
     TV_BOOTS, TV_FLASK, TV_POTION, TV_RING, TV_ROD, TV_WAND,
 };
+use crate::headers::list_object_flags_h::{OF_EXPLODE, OF_THROWING};
 use crate::headers::ui_event_h::keycode_t;
 use crate::headers::z_type_h::loc;
 use crate::state::BorgState;
@@ -91,6 +92,11 @@ pub struct FightAttackState {
     /// borg-reborn-rs (#637): a wand is being rated in town: only a
     /// dangerous town monster is worth its charge.
     pub town_wand: bool,
+    /// borg-reborn-rs (#568): a throw is being rated with
+    /// `attack_throw_as_melee`: the engine's throw damage, hit chance and
+    /// melee's danger term (`borg_launch_damage_one`,
+    /// `borg_launch_bolt_aux_hack`).
+    pub throwing: bool,
     /// `borg_tp_other_x`
     pub tp_other_x: [u8; 255],
     /// `borg_tp_other_y`
@@ -111,6 +117,7 @@ impl Default for FightAttackState {
             kill_best: 0.0,
             est_kills: 0.0,
             town_wand: false,
+            throwing: false,
             tp_other_x: [0; 255],
             tp_other_y: [0; 255],
             tp_other_index: [0; 255],
@@ -889,6 +896,24 @@ fn borg_launch_damage_one(st: &mut BorgState, i: i32, mut dam: i32, typ: i32, am
         /* Magic Missile */
         BORG_ATTACK_MISSILE => {}
 
+        // borg-reborn-rs (#568): a throw, with `attack_throw_as_melee`: no
+        // launcher, the engine's brand multiplier for a throw (`1 + brand`,
+        // `ranged_damage`) and the expected damage over the engine's hit
+        // chance, as melee scales by its own (`borg_thrust_damage_one`).
+        BORG_ATTACK_ARROW if st.fight_attack.throwing => {
+            let mult = borg_best_mult(&ammo, r);
+            if mult > 1 {
+                dam *= 1 + mult;
+            }
+            /* don't point blank non-uniques */
+            if cur_dis == 1 && !rf(r, RF_UNIQUE) {
+                dam /= point_blank_divisor(tr(st, BI_CLASS));
+            }
+            let throwing = engine::flag_has(&ammo.flags, OF_THROWING as i32);
+            let bonus = i32::from(ammo.to_h) + if throwing { tr(st, BI_TOHIT) } else { 0 };
+            dam = dam * throw_hit_percent(tr(st, BI_THT), bonus, throwing, cur_dis, r_ptr.ac) / 100;
+        }
+
         BORG_ATTACK_ARROW => {
             let mut mult = borg_best_mult(&bow, r);
             mult = mult.max(borg_best_mult(&ammo, r));
@@ -1566,7 +1591,18 @@ fn borg_launch_bolt_aux_hack(st: &mut BorgState, i: i32, dam: i32, typ: i32, amm
     }
 
     /* Calculate "danger" to player */
-    let p1 = danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false);
+    let p1 = if st.fight_attack.throwing {
+        // borg-reborn-rs (#568): a throw takes melee's danger term
+        // (`melee_score`): melee's horizon, the full damage, and the
+        // partial-kill division.
+        let mut p = danger_one_here(st, param(Param::attack_melee_danger_horizon), i, true);
+        if d <= i32::from(kill.power) && tr(st, BI_MAXCLEVEL) > param(Param::attack_melee_partial_min_level) {
+            p /= param(Param::attack_melee_partial_danger_divisor);
+        }
+        p
+    } else {
+        danger_one_here(st, param(Param::attack_bolt_danger_horizon), i, false)
+    };
     // borg-reborn-rs (#637): the town bonus on the danger term too.
     let p1 = town_danger_bonus(st, usize::from(r), p1);
 
@@ -2643,6 +2679,22 @@ fn best_throw(st: &BorgState) -> (i32, i32) {
             continue;
         }
 
+        // borg-reborn-rs (#568): with `attack_throw_as_melee`, the engine's
+        // damage of the throw ranks the objects and is the attack's damage
+        // (the gates above keep the dice average).
+        let d = if param(Param::attack_throw_as_melee) != 0 {
+            thrown_damage(
+                i32::from(item.dd),
+                i32::from(item.ds),
+                i32::from(item.to_d),
+                i32::from(item.weight),
+                engine::flag_has(&item.flags, OF_THROWING as i32),
+                engine::flag_has(&item.flags, OF_EXPLODE as i32),
+            )
+        } else {
+            d
+        };
+
         /* Ignore worse damage */
         if b_k >= 0 && d <= b_d {
             continue;
@@ -2663,7 +2715,9 @@ fn best_throw(st: &BorgState) -> (i32, i32) {
 fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
     /* Choose optimal location */
     let power = 6 + 2 * tr(st, BI_AMMO_POWER);
+    st.fight_attack.throwing = param(Param::attack_throw_as_melee) != 0;
     let b_n = borg_launch_bolt(st, 0, b_d, BORG_ATTACK_ARROW as i32, power, b_k);
+    st.fight_attack.throwing = false;
 
     /* Simulation */
     if simulating(st) {
@@ -2690,6 +2744,36 @@ fn borg_attack_aux_object_fire(st: &mut BorgState, b_k: i32, b_d: i32) -> i32 {
 
     /* Value */
     b_n
+}
+
+/// borg-reborn-rs (#568): the engine's average damage of an object thrown
+/// by hand, before brands, criticals and the hit roll (`ranged_damage`,
+/// `player-attack.c:554-582`, and `make_ranged_throw`, `:1296`): the dice
+/// average plus to-dam, times `2 + weight / 12` for a THROWING object
+/// (weight in tenths of a pound), and three times that for EXPLODE. A flask
+/// of oil (1d4, weight 20, `EXPLODE | THROWING`) does 22.
+fn thrown_damage(dd: i32, ds: i32, to_d: i32, weight: i32, throwing: bool, explode: bool) -> i32 {
+    let mut dam10 = dd * (ds + 1) * 5 + to_d * 10;
+    if throwing {
+        dam10 *= 2 + weight.max(0) / 12;
+    }
+    if explode {
+        dam10 *= 3;
+    }
+    dam10 / 10
+}
+
+/// borg-reborn-rs (#568): the engine's chance, in percent, that an object
+/// thrown by hand hits a monster of armour `ac` at `dist` grids
+/// (`chance_of_missile_hit_base` without a launcher, `chance_of_missile_hit`
+/// and `hit_chance`, `player-attack.c:121-219`): the throwing skill plus
+/// `bonus` × `BTH_PLUS_ADJ` for a THROWING object, else 3/2 of the skill;
+/// less the distance, at least 9; 12% always hit, 5% always miss.
+fn throw_hit_percent(tht: i32, bonus: i32, throwing: bool, dist: i32, ac: i32) -> i32 {
+    let skill = if throwing { tht } else { 3 * tht / 2 };
+    let to_hit = (skill + bonus * BTH_PLUS_ADJ - dist).max(9);
+    let rate = 10_000 * (to_hit - ac * 2 / 3).max(0) / to_hit;
+    (rate * (10_000 - 500 - 1_200) / 10_000 + 1_200) / 100
 }
 
 /// The experimental supply model may stock oil for throwing with a torch.
@@ -4910,5 +4994,32 @@ mod point_blank_tests {
             assert_eq!(point_blank_divisor(class), 5, "class {class}");
         }
         assert_eq!(point_blank_divisor(42), 5);
+    }
+}
+
+#[cfg(test)]
+mod throw_tests {
+    use super::{throw_hit_percent, thrown_damage};
+
+    /// #568: the engine's throw damage (`player-attack.c:554-582`, `:1296`).
+    #[test]
+    fn thrown_damage_is_the_engines() {
+        assert_eq!(thrown_damage(1, 4, 0, 20, true, true), 22, "a flask of oil: 2.5 x 3 x 3");
+        assert_eq!(thrown_damage(1, 4, 0, 5, true, false), 5, "an Iron Shot: 2.5 x 2");
+        assert_eq!(thrown_damage(1, 4, 0, 12, true, false), 7, "a Dagger: 2.5 x 3");
+        assert_eq!(thrown_damage(1, 9, 0, 9, false, false), 5, "an Arrow, not THROWING: 5");
+        assert_eq!(thrown_damage(1, 4, 2, 5, true, false), 9, "to-dam before the multiplier");
+    }
+
+    /// #568: `hit_chance` (`player-attack.c:196-219`): 12% always hits, 5%
+    /// always misses, the rest scales with (to-hit - 2/3 AC) / to-hit.
+    #[test]
+    fn throw_hit_chance_is_the_engines() {
+        assert_eq!(throw_hit_percent(30, 0, true, 0, 0), 95, "no armour: all but the 5% miss");
+        assert_eq!(throw_hit_percent(30, 0, true, 0, 45), 12, "armour beyond reach: the 12% hit");
+        assert_eq!(throw_hit_percent(30, 0, true, 0, 30), 39, "(30 - 20) / 30 of 83, plus 12");
+        assert_eq!(throw_hit_percent(20, 0, false, 0, 30), 39, "not THROWING: 3/2 of the skill");
+        assert_eq!(throw_hit_percent(30, 0, true, 3, 30), 33, "the distance lowers it");
+        assert_eq!(throw_hit_percent(20, 2, true, 0, 30), 31, "bonus x BTH_PLUS_ADJ");
     }
 }
