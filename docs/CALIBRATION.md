@@ -12,7 +12,7 @@ right after that change, so older sections show older counts.
 
 ## A flight in town takes a step no worse than standing (#647)
 
-The registry now holds **2180** parameters (2179 on main; one added).
+The registry now holds **2183** parameters (2182 on main; one added).
 
 #647: a CL4 Druid (start 738785, race 4, on #620's branch) twitched in town
 for 70,000 turns. The cause, from a replay with logging: the Borg knew the
@@ -47,6 +47,13 @@ with the switch off:
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `caution_town_flee_no_worse` | 0 | flag | 0–1 | `borg_caution.rs` (`town_flee_fear_floor`, read by `borg_flow_spread` and `borg_flow_enqueue_grid`) |
+
+## Projectiles and devices by class (#666)
+
+The registry now holds **2182** parameters (2179 after #615; three added). Owner, 2026-11-19: "weighing buying projectile and magic by class. Not only rangers, but other classes should buy more projectiles"; by shooting skill and by device skill; "projectile buying is more important if they cannot get flasks of oil or wands".
+- `town_missiles_percent` (compiled -1 = C, the Ranger's reserve only): the town plan's reserve of shots for the class's launcher, in percent of `borg_town_w_ranger_missiles`, for any class. Shipped -1: measured with the shooting-skill values (Rogue 90, Warrior 75, Paladin 70, Druid 55, Priest and Blackguard 50, Mage and Necromancer 30; Ranger 72 = 100) over classes-18, the extra ammunition took gold from healing and Phase Door (sum of CL 97 → 95, max DL 37 → 34), and flasks, always in the General Store, come first (owner).
+- `town_missiles_other_ranged_percent` (compiled and shipped 100; for when the shots are set per class; owner: "I would make them buy it mostly when they cannot find flasks of oil at all", and the General Store always stocks flasks, `store.txt`): with 5 or more flasks of oil and attack-wand charges (Magic Missile, Stinking Cloud) in the pack, the shots weigh this percent.
+- `town_devices_percent` (compiled 100): a wand, rod or staff is worth this percent of what it supplies. The class files set it by device skill (24 = 100): Mage and Necromancer 150, Rogue 135, Priest 125, Ranger 115, Druid, Paladin and Blackguard 100, Warrior 75.
 
 ## No rest with a monster near (#615, rule a)
 
@@ -886,9 +893,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:380` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:409` |
 | `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:287` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:371` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:400` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -1016,8 +1023,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:362` |
+| `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
+| `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
 | `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1216` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1267` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
