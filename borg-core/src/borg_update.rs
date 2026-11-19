@@ -1924,6 +1924,7 @@ fn new_level(st: &mut BorgState) {
     b.breeder_through = None;
     b.breeder_stuck = None;
     b.breeders_lost = false;
+    b.breeders_behind = 0;
 
     // reset our need to see inviso clock
     b.need_see_invis = 0;

@@ -804,6 +804,7 @@ borg_param_caution_breeder_stuck_turns = 20
 
 borg_param_caution_breeder_stoppable = 0
 borg_param_caution_breeder_stoppable_births_percent = 200
+borg_param_caution_breeder_stoppable_confirm = 5
 
 
 ### Scary monsters ###

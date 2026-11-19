@@ -111,6 +111,9 @@ pub struct Borg {
     /// borg-reborn-rs (#556): the known breeders could not be stopped on this
     /// level (`note_breeders_stoppable`); cleared on a new level.
     pub breeders_lost: bool,
+    /// borg-reborn-rs (#556): the judged thinks in a row on which the breeding
+    /// outpaced the kills (`caution_breeder_stoppable_confirm` lose the level).
+    pub breeders_behind: i32,
     /// borg-reborn-rs (#556): this think, the danger where the Borg stands is
     /// at or above its HP, so it does not stand against the breeders now.
     pub breeders_in_danger: bool,
