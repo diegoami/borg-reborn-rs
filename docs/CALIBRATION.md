@@ -10,6 +10,42 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## No rest with a monster near (#615, rule a)
+
+The registry now holds **2170** parameters (2168 after #567; two added).
+Owner, 2026-11-19, on the rest analysis (borg-cemetery#74): "ok do a". In 108
+games on main, 63% of town rests and 13% of dungeon rests lasted one player
+turn, mostly with an awake monster in view: the game breaks the rest and the
+Borg starts another, up to 32 in a row. `borg_check_rest` does not look for
+awake monsters in view.
+
+- **`recover_rest_monster_turns`** (game turns, 0 = off): no rod, HP/SP or
+  mana rest in `borg_recover` while an awake monster that can move was known
+  within `recover_rest_monster_distance` (20 grids) in the last N game turns
+  on this level. The Borg does something else that think. Note: `# No rest:
+  a monster was near N game turns ago.` (once a think).
+- **The memory:** #567's scan (`awake_mover_within`), run each dungeon think
+  in `borg_caution` and before each rest, so a monster forgotten out of view
+  still counts and town monsters are seen.
+- **Not when impaired:** confused, blind, hallucinating or stunned, the rest
+  is kept. In a first local run a confused Ranger held its rest in town,
+  walked toward its home into lava and died.
+- The Recall rests keep their own switch (#567).
+
+Evidence, a lead (the 18 classes-18 starts, 100,000 turns, borg-rs core,
+branch with main `13e1187c`):
+
+| arm | deaths | sum of CL | rests started | held-rest notes |
+|---|---:|---:|---:|---:|
+| off (keys = #567's off, 18/18) | 1 (Priest, game turn 8,158) | 101 | 1,893 | |
+| 100 | 1 (the same Priest) | 99 | 921 | 5,175 |
+| 200 | 1 (the same Priest) | 101 | 797 | 7,673 |
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `recover_rest_monster_turns` | 0 | game turns | 0–100000 | `borg_recover.rs:56` |
+| `recover_rest_monster_distance` | 20 | grids | 1–100 | `borg_recover.rs:57` |
+
 ## No Recall rest right after a monster was near (#567)
 
 The registry now holds **2168** parameters (2166 after #603; two added). From
@@ -119,8 +155,8 @@ measurement.
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:117` |
-| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:138` |
+| `recover_rest_reach_stairs` | 0 | steps of flow | 0–250 | `borg_recover.rs:126` |
+| `recover_rest_reach_stairs_memory` | 10 | borg time | 0–1000 | `borg_recover.rs:147` |
 | `caution_stairs_leave_on_monster` | 0 | flag | 0–1 | `borg_caution.rs:3333` |
 | `caution_stairs_leave_danger_percent` | 10 | percent of current HP | 0–1000 | `borg_caution.rs:3332` |
 | `caution_stairs_leave_down` | 1 | flag | 0–1 | `borg_caution.rs:3339` |
@@ -1795,11 +1831,11 @@ item preference, random roll or effect was changed.
 | `recover_hurt_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:221` |
 | `recover_critical_hp_divisor` | 4 | divisor | 1–1000 | `borg_recover.rs:225` |
 | `recover_critical_chance_bonus` | 10 | percent | 0–100 | `borg_recover.rs:226` |
-| `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:196` |
+| `recover_cheap_stun_chance` | 75 | percent | 0–100 | `borg_recover.rs:242` |
 | `recover_cheap_cut_chance` | 75 | percent | 0–100 | `borg_recover.rs:269` |
 | `recover_cheap_poison_chance` | 75 | percent | 0–100 | `borg_recover.rs:282` |
 | `recover_cheap_fear_chance` | 75 | percent | 0–100 | `borg_recover.rs:295` |
-| `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:199` |
+| `recover_cheap_hunger_chance` | 75 | percent | 0–100 | `borg_recover.rs:317` |
 | `recover_cheap_image_chance` | 75 | percent | 0–100 | `borg_recover.rs:207` |
 | `recover_cheap_heal_hp_divisor` | 2 | divisor | 1–1000 | `borg_recover.rs:214` |
 | `recover_cheap_heal_chance` | 75 | percent | 0–100 | `borg_recover.rs:215` |

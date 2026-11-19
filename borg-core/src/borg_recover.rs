@@ -71,6 +71,15 @@ fn rest_held_for_monster(st: &mut BorgState) -> bool {
     if turns == 0 {
         return false;
     }
+    // Confused, blind, hallucinating or stunned, walking is worse than a
+    // broken rest: a confused Ranger held its rest in town, walked into lava
+    // and died (first local run).
+    if [BI_ISCONFUSED, BI_ISBLIND, BI_ISIMAGE, BI_ISSTUN, BI_ISHEAVYSTUN]
+        .iter()
+        .any(|&f| st.borg.tr(f) != 0)
+    {
+        return false;
+    }
     watch_for_rest(st);
     let ago = crate::engine::game_turn() - st.borg.rest_watch_turn;
     let here = st.borg.rest_watch_depth == crate::engine::player_depth();
