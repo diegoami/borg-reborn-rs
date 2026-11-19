@@ -3093,6 +3093,12 @@ fn borg_attack_aux_wand_bolt(st: &mut BorgState, sval: i32, rad: i32, dam: i32, 
     if town && (!town_wand_allowed(st) || sval == st.item_val.sv_wand_wonder) {
         return 0;
     }
+    // borg-reborn-rs (#637): in town, no wand of this kind means no
+    // paranoia roll either (the roll draws the game's RNG: without the wand
+    // the game must play as with the switch off).
+    if town && borg_slot(st, TV_WAND as i32, sval) < 0 {
+        return 0;
+    }
 
     /* Paranoia */
     if paranoia(st, param(Param::attack_unknown_device_paranoia_chance)) {

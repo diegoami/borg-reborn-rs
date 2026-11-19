@@ -755,7 +755,7 @@ parameters! {
     attack_status_danger_horizon => (1, "turns", 1, 10, "borg_fight_attack.rs:798", "Attack status danger horizon: existing policy turns."),
     attack_fear_bonus_max_level => (10, "level", 0, 51, "borg_fight_attack.rs:801", "Attack fear bonus max level: existing policy level."),
     attack_fear_danger_bonus => (20, "danger", 0, 5000, "borg_fight_attack.rs:802", "Attack fear danger bonus: existing policy danger."),
-    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:3176", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
+    attack_arrow_point_blank_divisor => (5, "divisor", 1, 1000, "borg_fight_attack.rs:3182", "The default divisor of a shot or throw at an adjacent non-unique (#485: overridden per class by attack_arrow_point_blank_divisor_<class>)."),
     attack_arrow_min_hit_tenths => (8, "tenths", 0, 16, "borg_fight_attack.rs:842", "Attack arrow min hit tenths: existing policy tenths."),
     attack_mana_unique_min_potions => (3, "count", 0, 255, "borg_fight_attack.rs:884", "Attack mana unique min potions: existing policy count."),
     attack_mana_unique_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:886", "Attack mana unique multiplier: existing policy multiplier."),
@@ -862,8 +862,8 @@ parameters! {
     attack_vampire_sleep_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3702", "Attack vampire sleep danger multiplier: existing policy multiplier."),
     attack_vampire_danger_horizon => (2, "turns", 1, 10, "borg_fight_attack.rs:3708", "Attack vampire danger horizon: existing policy turns."),
     attack_vampire_partial_min_level => (15, "level", 0, 51, "borg_fight_attack.rs:3711", "Attack vampire partial min level: existing policy level."),
-    attack_vampire_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:3600", "Attack vampire partial danger divisor: existing policy divisor."),
-    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:3741", "Attack flag danger horizon: existing policy turns."),
+    attack_vampire_partial_danger_divisor => (10, "divisor", 1, 1000, "borg_fight_attack.rs:3718", "Attack vampire partial danger divisor: existing policy divisor."),
+    attack_flag_danger_horizon => (4, "turns", 1, 10, "borg_fight_attack.rs:3747", "Attack flag danger horizon: existing policy turns."),
     attack_crush_hp_margin => (10, "hp", 0, 10000, "borg_fight_attack.rs:3759", "Attack crush hp margin: existing policy hp."),
     attack_crush_hp_level_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:3759", "Attack crush hp level multiplier: existing policy multiplier."),
     attack_crush_post_danger_multiplier => (2, "multiplier", 0, 10, "borg_fight_attack.rs:3771", "Attack crush post danger multiplier: existing policy multiplier."),
@@ -888,7 +888,7 @@ parameters! {
     attack_scary_max_town_time => (3000, "turns", 1, 3000, "borg_fight_attack.rs:4600", "Attack scary max town time: existing policy turns."),
     attack_scary_depth_multiplier => (4, "multiplier", 0, 10, "borg_fight_attack.rs:4609", "Attack scary depth multiplier: existing policy multiplier."),
     attack_scary_min_level => (10, "level", 0, 51, "borg_fight_attack.rs:4609", "Attack scary min level: existing policy level."),
-    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:4780", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
+    attack_speed_fight_danger_tenths => (0, "tenths", 0, 1000, "borg_fight_attack.rs:4786", "Danger from the monsters that can move, in tenths of avoidance, above which a carried Potion of Speed is drunk before a fight the Borg has committed to (#469); 0 = off."),
 
     // borg-reborn-rs (#241): defend source at 5d9abb8f.
     defend_bless_fail => (25, "percent", 0, 100, "borg_fight_defend.rs:293", "Defend bless fail: existing policy percent."),

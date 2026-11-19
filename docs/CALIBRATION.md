@@ -10,6 +10,41 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Kill on sight in town: caster walk, wands, a sure preference (#637)
+
+The registry now holds **2172** parameters (2169 after #619; three added).
+From the review of #624: three limits of `attack_town_dangerous_on_sight`,
+each now a switch (compiled and written 0 = #619's behaviour), each needing
+`attack_town_dangerous_on_sight = 1`:
+
+- `attack_town_dangerous_caster_walk`: a Mage or Necromancer below
+  `borg_flow_kill`'s caster level (CL25 in town) walks to a dangerous town
+  monster too, with at least half its mana (#558's condition); otherwise its
+  town hunt is breeders only, and no town race breeds.
+- `attack_town_dangerous_wand`: in town a wand (not Wonder) may be aimed
+  when a dangerous town monster is known, and only those are worth its
+  charge (`town_wand` zeroes the others in `borg_launch_damage_one`). In
+  town the wand's presence is checked before C's paranoia roll, which draws
+  the game's RNG: a first version rolled it with no wand and changed 17 of
+  18 games without aiming one.
+- `attack_town_dangerous_bonus_whole`: `attack_town_dangerous_bonus_percent`
+  multiplies the danger term of the attack's value too (`melee_score`, the
+  bolt value in `borg_launch_bolt_aux_hack`), not only the damage.
+
+On borg-zoo's 18 classes-18 starts (100,000 turns, main `3ba17e2c`, the zoo
+adapter's steps), with `attack_town_dangerous_on_sight = 1`: each switch alone
+plays all 18 games as without it (the town scare still sends the Borg away
+from the four at low level, the Borg has no wand in town, and the damage term
+already won every choice). With `caution_town_never_scary = 1` as well, all
+three together change 2 of 18 games, both Necromancers (the caster walk), with
+the same levels; deaths 4 and 4, sum of CL 83 and 83. Nothing to ship.
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `attack_town_dangerous_caster_walk` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_caster_walk`, read by `borg_flow_kill`) |
+| `attack_town_dangerous_wand` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_wand_allowed`, `borg_attack_aux_wand_bolt`) |
+| `attack_town_dangerous_bonus_whole` | 0 | flag | 0–1 | `borg_fight_attack.rs` (`town_danger_bonus`) |
+
 ## Dangerous town monsters killed on sight (#619)
 
 The registry now holds **2169** parameters (2166 after #603; three added). Owner, 2026-11-19:
@@ -3185,4 +3220,4 @@ avoidance Y)`; the attack follows next turn. The potion is `TIMED_INC:FAST`,
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4780` |
+| `attack_speed_fight_danger_tenths` | 0 (off) | tenths | 0–1000 | `borg_fight_attack.rs:4786` |
