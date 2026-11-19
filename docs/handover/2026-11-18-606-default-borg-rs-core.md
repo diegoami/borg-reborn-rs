@@ -15,6 +15,10 @@ After the review of #607:
 - CI's dossier check accepts either core's pair (`trace-tail.jsonl` and `params.json`, or `trace-core-tail.jsonl` and `params-core.json`). A borg-rs death needs a Cemetery package like any other: `reconcile-deaths.py`'s registry is the Cemetery's;
 - live docs say the new default: `harness/borg.txt`'s comment, `docs/ERRANDS.md`, `docs/CALIBRATION.md`, `docs/ENGINE.md` (References), and the CI scope comment. **`docs/HANDOVER.md` (the archive, 2026-11-17, #577) says no CI step plays the shipped `harness/borg.txt` on the borg-rs core, and that `harness/run.sh` rewrites the core to reborn: both are no longer true.** The default core's smoke against `smoke-borg-rs` now runs on every PR, and covers the borg-rs arm when the full-suite scope rule skips the reborn full suite.
 
+After the re-review of #607:
+- `BORG_CORE_OVERRIDES=off` with no `BORG_CORE` now sets `BORG_CORE=borg-rs`: `borg-core/borg.txt` names no core, so the game fell back to the reborn core and the record said `borg_core=` (empty, unreplayable). The record is never empty (no core named means the compiled fallback, reborn);
+- `harness/reference/smoke-borg-rs` is re-recorded at the merged head: the fix commit had edited `harness/borg.txt`'s comment, so the reference's recorded `run_config` hashes no longer matched (the play did not change). The reborn references' stale `run_config` hashes predate this PR (as on main) and are left as they are.
+
 Left:
 - replaying a record with no `borg_core` made before #606: diegoami/borg-cemetery#71;
 - a `full-borg-rs` reference: the full suite on the borg-rs core has 3 deaths (two Druids, a Ranger), #609;

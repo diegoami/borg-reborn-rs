@@ -20,8 +20,8 @@ The registry now holds **2154** parameters (2153 after #592; one added). Owner, 
 "Could we try a setting where we always fight monsters in town, I have never
 got killed by monsters in town." All of it is in the vendored core, so it
 plays with the borg-rs core (`borg_reborn_core = borg-rs`, shipped since #479,
-or `BORG_CORE=borg-rs`); a harness run without `BORG_CORE` plays the reborn
-core, which has no scare and is not affected.
+or `BORG_CORE=borg-rs`; since #606 also a harness run without `BORG_CORE`);
+the reborn core (`BORG_CORE=reborn`) has no scare and is not affected.
 
 The measurement: 18 starts, the 9 classes x seeds 2001 and 2002, race 0,
 100,000 game turns (not borg-zoo's classes-18 starts). Each was run as

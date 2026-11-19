@@ -212,6 +212,12 @@ fi
 # BORG_CORE_OVERRIDES=off gives borg-rs's core its pristine copy instead
 # (borg-core/borg.txt): the parity check against borg-rs's build at the pin.
 BORG_TXT="$ROOT/harness/borg.txt"
+# borg-core/borg.txt names no core, so with BORG_CORE unset the game would
+# fall back to the reborn core: the parity check selects borg-rs explicitly
+# (review of #607).
+if [ "${BORG_CORE_OVERRIDES:-on}" = off ] && [ -z "${BORG_CORE+set}" ]; then
+    export BORG_CORE=borg-rs
+fi
 [ "${BORG_CORE:-borg-rs}" = borg-rs ] && [ "${BORG_CORE_OVERRIDES:-on}" = off ] && BORG_TXT="$ROOT/borg-core/borg.txt"
 # The run's user/borg.txt, as before: the Rust Borg does not read it, but
 # the zoo's adapter copies harness/borg.txt (docs/ZOO-INTERFACE.md) and its
@@ -311,8 +317,11 @@ fi
     # #606 (review of #607): with no BORG_CORE the record still says which
     # core played (the run's borg.txt names it), so a death record and its
     # rerun know the core.
+    # Never empty: a borg.txt naming no core plays the game's compiled
+    # fallback, the reborn core (review of #607).
     if [ -z "${BORG_CORE+set}" ]; then
-        echo "borg_core=$(sed -n 's/^borg_reborn_core = //p' "$OUT/user/borg.txt" | head -1)"
+        core="$(sed -n 's/^borg_reborn_core = //p' "$OUT/user/borg.txt" | head -1)"
+        echo "borg_core=${core:-reborn}"
     fi
     if [ -n "${BORG_LADDERS:-}" ]; then echo "borg_ladders_sha256=$(sha256sum < "$BORG_LADDERS" | cut -d' ' -f1)"; fi
     # The plan named relative to the checkout (no machine paths in dossiers).
