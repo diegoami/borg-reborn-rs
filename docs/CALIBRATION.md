@@ -27,7 +27,8 @@ by level) is dropped; the zoo found it neutral (borg-zoo#475).
   item checks of `take_select` (below `take_near_max_level` near the stairs;
   below `take_max_level` past `take_nearness`).
 - Every default is C's literal, so play is unchanged; a zoo profile can move
-  any of them. Read once in `borg_flow.rs` (`c_leash`).
+  any of them. Read in one place, `c_leash` in `borg_flow.rs`, on each use
+  (not cached).
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|

@@ -497,6 +497,8 @@ pub fn borg_flow_take(st: &mut BorgState, viewable: bool, nearness: i32) -> bool
 /// there is nothing to take.
 fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
     let leash = borg_flow_misc::borg_get_leash(st, true);
+    // borg-reborn-rs (#732): C's take-leash numbers are parameters (`c_leash`).
+    let c = crate::borg_flow::c_leash();
 
     /* Missile carry limit */
     /* allow shooters to two quiver slots full */
@@ -550,8 +552,6 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         let y = i32::from(take.y);
 
         /* Skip ones that make me wander too far */
-        // borg-reborn-rs (#732): C's numbers are parameters (`c_leash`).
-        let c = crate::borg_flow::c_leash();
         if b_stair != -1 && st.borg.tr(BI_CLEVEL) < c.take_near_max_level {
             /* Check the distance of this 'take' to the stair */
             let (sy, sx) = st.stairs.less.at(b_stair as usize);
@@ -601,7 +601,6 @@ fn take_select(st: &mut BorgState, viewable: bool, nearness: i32) -> bool {
         borg_flow::borg_flow_clear(st);
 
         /* Check the distance to stair for this proposed grid and leash*/
-        let c = crate::borg_flow::c_leash(); // borg-reborn-rs (#732)
         if nearness > c.take_nearness
             && st.borg.tr(BI_CLEVEL) < c.take_max_level
             && crate::borg_flow_stairs::borg_flow_cost_stair(st, y, x, b_stair) > leash
