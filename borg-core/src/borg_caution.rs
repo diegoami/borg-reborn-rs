@@ -3096,7 +3096,7 @@ fn down_stair_allowed(st: &mut BorgState) -> bool {
     }
     if st.stairs.less.num != 0 {
         let depth = st.borg.tr(BI_CDEPTH) + 1;
-        if crate::borg_prepared::borg_prepared_c(st, depth).is_some()
+        if crate::borg_prepared::prepared_c_for_decision(st, depth).is_some()
             || (st.borg.tr(BI_CDEPTH) != 0
                 && (st.borg.tr(BI_ISWEAK) != 0 || st.borg.tr(BI_ISHUNGRY) != 0 || st.borg.tr(BI_FOOD) < 2))
             || crate::borg_trip::legacy_sale_hold(st)
@@ -4961,7 +4961,7 @@ fn choose_stairs(st: &mut BorgState, pos_danger: i32) {
         st.borg.stair_more = true;
     }
 
-    if crate::borg_prepared::borg_prepared_c(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
+    if crate::borg_prepared::prepared_c_for_decision(st, st.borg.tr(BI_CDEPTH) + 1).is_none() {
         st.borg.stair_more = true;
     }
 

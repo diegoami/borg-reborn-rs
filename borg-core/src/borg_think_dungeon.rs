@@ -156,6 +156,7 @@ fn force_descend() -> bool {
 /// `(char *)NULL == borg_prepared(depth)`. Goes through
 /// `borg_prepared::borg_prepared_buf`, so a formatted reason is written into
 /// `borg_prepared_buffer` as in C.
+#[track_caller]
 fn prepared_null(st: &mut BorgState, depth: i32) -> bool {
     crate::borg_prepared::borg_prepared_buf(st, depth).is_none()
 }
