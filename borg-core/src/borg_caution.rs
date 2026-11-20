@@ -950,6 +950,14 @@ pub(crate) fn stairs_clean_path_flee_on() -> bool {
     p(Param::caution_stairs_clean_path_flee) != 0
 }
 
+/// An awake known monster next to the Borg (#751's ranged-first test).
+fn awake_monster_adjacent(st: &BorgState) -> bool {
+    (1..st.kills.nxt.max(0) as usize).any(|i| {
+        let kill = &st.kills.kills[i];
+        kill.r_idx != 0 && kill.awake && engine::distance(st.borg.c, kill.pos) <= 1
+    })
+}
+
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
@@ -961,6 +969,21 @@ fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
         if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
             let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
             borg_note(st, &format!("# Stairs not reachable: {} in the way ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
+            return false;
+        }
+    }
+    // borg-reborn-rs (#751, owner on 247597266: "he starts moving towards the
+    // cutpurse even if it has much better options, such as flask of oil,
+    // magic missile"): with a ranged attack and nothing adjacent, the walk
+    // does not head toward a dangerous monster within
+    // caution_desperate_ranged_first_reach grids of its path; the attack at
+    // range decides (0 = C).
+    let reach = p(Param::caution_desperate_ranged_first_reach);
+    if reach > 0 && !awake_monster_adjacent(st) && crate::borg_fight_attack::ranged_means(st) {
+        let percent = p(Param::caution_stairs_block_danger_percent);
+        if let Some(k) = crate::borg_flow_stairs::stair_path_ahead(st, up, percent, reach) {
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            borg_note(st, &format!("# Stairs not reachable: {} ahead, fighting at range ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
             return false;
         }
     }
@@ -4099,7 +4122,9 @@ pub(crate) fn rising_holds_descent(st: &BorgState, pos_danger: i32) -> bool {
 
 /// borg-reborn-rs (#750): whether a stair flow for `why` skips the danger
 /// limit (`caution_stairs_flight_ignore_danger`): a flight (`GOAL_FLEE`), or
-/// a bored walk up (`GOAL_BORE`) while fleeing or leaving.
+/// any stair flow of `GOAL_BORE` while fleeing or leaving: the bored walk up
+/// (`borg_think_dungeon_util.rs:1047`), the bored walks down (`:1087`,
+/// `:1122`, `:1160`) and the powerdive (`borg_think_dungeon.rs:1264`).
 pub(crate) fn stairs_flight_ignores_danger(why: i32, fleeing: bool) -> bool {
     p(Param::caution_stairs_flight_ignore_danger) != 0 && flight_goal(why, fleeing)
 }

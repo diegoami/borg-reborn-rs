@@ -807,7 +807,12 @@ borg_param_caution_stairs_block_danger_percent = 50
 # #747: Desperate for Stairs (three) stays put for a faster adjacent monster
 # only when its danger is at least this percent of the HP (0 = C: any).
 borg_param_caution_desperate_fast_danger_percent = 0
-# #750: 1 = a flight's stair flow refuses no grid for its danger (a monster
+# #751 (owner on 247597266): with a ranged attack and nothing adjacent, the
+# desperate walk does not start toward a dangerous monster within this many
+# grids of its path and nearer the stairs (0 = C).
+borg_param_caution_desperate_ranged_first_reach = 0
+# #750: 1 = a flight's stair flow (fleeing, or any bored stair flow up or
+# down while fleeing or leaving) refuses no grid for its danger (a monster
 # near a clear corridor no longer closes it); the path test decides. 0 = C.
 borg_param_caution_stairs_flight_ignore_danger = 0
 
