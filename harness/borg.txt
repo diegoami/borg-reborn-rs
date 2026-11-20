@@ -778,6 +778,24 @@ borg_param_escape_teleport_landing_either = 0
 # #736: kill on sight at range, else do not get closer (a path cost).
 borg_param_caution_ranged_vs_immobile = 0
 
+# Immobile monsters and blocked stairs (#736, owner 2026-11-20, from the
+# replays of #717's Druid deaths): "the path to the stairs is not clean, so the
+# 'desperate for stairs' should see that the stairs are not reachable"; "it
+# stepped away in the wrong direction ... towards the exit"; "target the mobile
+# one". 0 = C for each.
+# - caution_stairs_clean_path: a desperate walk to the stairs needs a clean
+#   path: an awake monster on or next to it, as dangerous as
+#   caution_stairs_block_danger_percent of the HP, makes them not reachable.
+# - caution_immobile_step_to_exit: the step away from an immobile attacker
+#   goes toward the nearest staircase (only with caution_ranged_vs_immobile).
+# - attack_mobile_threat_first: while a mobile target is a threat
+#   (attack_mobile_threat_percent of the HP), immobile monsters are not targets.
+borg_param_caution_stairs_clean_path = 1
+borg_param_caution_stairs_block_danger_percent = 50
+borg_param_caution_immobile_step_to_exit = 1
+borg_param_attack_mobile_threat_first = 1
+borg_param_attack_mobile_threat_percent = 50
+
 # Phase Door settings of two kinds (#584; docs/PHASE-DOOR.md lists every
 # site and its settings):
 # - ordinary_danger_tenths, unique_danger_tenths, unique_min_count,
@@ -919,6 +937,12 @@ borg_param_caution_cornered_danger_tenths = 10
 borg_param_caution_cornered_radius = 2
 borg_param_caution_cornered_big_level_margin = 0
 borg_param_caution_cornered_spell_fail = 25
+# #719 (owner): cornered, throw or shoot first while no monster is adjacent
+# and a ranged attack does damage; buff once one is next to it. 1 = the
+# cornered boost, 2 = also the breeder fight's boost; 0 = buff first.
+# Shipped 1 (owner, 2026-11-20): measured neutral and rare (starts 1-90: it
+# acts 4 times in 3 games, deaths 4 and 4).
+borg_param_caution_cornered_throw_first = 1
 
 
 ### Breeders ###

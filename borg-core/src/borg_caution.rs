@@ -945,6 +945,17 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
 /// `borg_flow_stair_less/more(GOAL_FLEE, ...)` with `borg.status.desperate`
 /// set around the call; notes `why` when it worked.
 fn desperate_flow(st: &mut BorgState, up: bool, why: &str) -> bool {
+    // borg-reborn-rs (#736, owner): stairs whose path a dangerous monster is
+    // on, or next to, are not reachable: the escapes and the attack decide
+    // instead (`caution_stairs_clean_path`; 0 = C).
+    if p(Param::caution_stairs_clean_path) != 0 {
+        let percent = p(Param::caution_stairs_block_danger_percent);
+        if let Some(k) = crate::borg_flow_stairs::stair_path_blocker(st, up, percent) {
+            let name = engine::race_name(usize::from(st.kills.kills[k].r_idx));
+            borg_note(st, &format!("# Stairs not reachable: {} in the way ({})", String::from_utf8_lossy(&name), why.trim_start_matches("# ")));
+            return false;
+        }
+    }
     st.borg.status.desperate = true;
     let ok = if up {
         borg_flow_stair_less(st, GOAL_FLEE, false)
@@ -1675,7 +1686,14 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
     // Review of #659: only a grid less dangerous than this one, and not the
     // grid of a bounce (as the back-away).
     let here = borg_danger(st, cy, cx, 1, true, false);
+    // borg-reborn-rs (#736, owner): toward the exit. With
+    // `caution_immobile_step_to_exit`, among the grids the step may take, the
+    // one with the fewest steps to a staircase wins (then the least danger);
+    // 0 = the least danger only.
+    let to_exit = p(Param::caution_immobile_step_to_exit) != 0;
+    let steps = if to_exit { crate::borg_flow_stairs::stair_steps_around(st) } else { [255; 8] };
     let mut best: Option<(usize, i32)> = None;
+    let mut best_steps = i32::MAX;
     for i in 0..8 {
         let x = cx + i32::from(engine::ddx_ddd(i));
         let y = cy + i32::from(engine::ddy_ddd(i));
@@ -1690,8 +1708,10 @@ pub(crate) fn immobile_step_away(st: &mut BorgState) -> bool {
         if k >= here {
             continue;
         }
-        if best.is_none_or(|(_, b)| k < b) {
+        let n = steps[i];
+        if best.is_none_or(|(_, b)| (n, k) < (best_steps, b)) {
             best = Some((i, k));
+            best_steps = n;
         }
     }
     let Some((i, _)) = best else { return false };
@@ -3919,6 +3939,11 @@ fn boost_order(afraid: bool, fast: bool, hero: bool, berserk: bool, bless: bool,
 /// below `caution_cornered_spell_fail` percent failure,
 /// so a failing cast is not retried turn after turn under fire.
 pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
+    // borg-reborn-rs (#719, owner): "if I am cornered I should throw missile
+    // and then boost myself".
+    if throw_first(st, why) {
+        return true;
+    }
     let v = st.item_val;
     let fail = p(Param::caution_cornered_spell_fail);
     let order = boost_order(
@@ -3965,6 +3990,47 @@ pub(crate) fn cornered_boost(st: &mut BorgState, why: &str) -> bool {
         }
     }
     false
+}
+
+/// borg-reborn-rs (#719, owner): with `caution_cornered_throw_first`, a
+/// boost waits while no monster is adjacent yet and an attack from range
+/// would do damage (`borg_attack_estimate`: throws, shots, attack spells,
+/// wands; with nothing adjacent no melee blow is possible). The Borg attacks
+/// instead, and buffs once a monster is next to it or nothing reaches. Mode 1
+/// is the "Cornered" boost only; mode 2 also the hard breeder fight's (the
+/// Phase Door rule's boost is reached only after its own attack found nothing,
+/// so mode 2 changes nothing there).
+fn throw_first(st: &mut BorgState, why: &str) -> bool {
+    let mode = p(Param::caution_cornered_throw_first);
+    if mode == 0 {
+        return false;
+    }
+    let adjacent = (1..st.kills.nxt.max(0) as usize)
+        .any(|i| st.kills.kills[i].r_idx != 0 && engine::distance(st.borg.c, st.kills.kills[i].pos) <= 1);
+    // The dry run draws the Borg's random numbers and may clear the waiting
+    // flag: both are restored, so a check that does not act changes nothing
+    // (as the breeder estimate does).
+    if !throw_first_applies(mode, why == "Cornered", adjacent, || {
+        let (quick, value) = engine::rand_state();
+        let waiting = st.borg.goal.waiting;
+        let damage = crate::borg_fight_attack::borg_attack_estimate(st).unwrap_or(0);
+        engine::set_rand_state(quick, value);
+        st.borg.goal.waiting = waiting;
+        damage
+    }) {
+        return false;
+    }
+    if crate::borg_fight_attack::borg_attack(st, false) {
+        borg_note(st, &format!("# {why}: attacking at range before the boost (#719)"));
+        return true;
+    }
+    false
+}
+
+/// The test of `throw_first`: on for this caller, nothing adjacent, and a
+/// ranged attack that does damage (asked last: the estimate runs a dry run).
+fn throw_first_applies(mode: i32, cornered_caller: bool, adjacent: bool, ranged_damage: impl FnOnce() -> i32) -> bool {
+    (mode >= 2 || (mode == 1 && cornered_caller)) && !adjacent && ranged_damage() > 0
 }
 
 /// borg-reborn-rs (#483): while rising to town (a trip or town return),
@@ -5201,6 +5267,23 @@ mod cornered_tests {
             st.borg.trait_[BI_CLASS as usize] = class;
             assert_eq!(melee_class(&st), melee, "class {class}");
         }
+    }
+}
+
+#[cfg(test)]
+mod throw_first_tests {
+    use super::throw_first_applies;
+
+    /// #719: the order decision.
+    #[test]
+    fn throw_before_the_boost() {
+        assert!(!throw_first_applies(0, true, false, || 10), "off");
+        assert!(throw_first_applies(1, true, false, || 10), "cornered, closing in, a throw");
+        assert!(!throw_first_applies(1, false, false, || 10), "mode 1: not the breeder or Phase rule boost");
+        assert!(throw_first_applies(2, false, false, || 10), "mode 2: every boost");
+        assert!(!throw_first_applies(1, true, true, || 10), "adjacent: buff");
+        assert!(!throw_first_applies(1, true, false, || 0), "nothing reaches: buff");
+        assert!(!throw_first_applies(1, true, true, || panic!("no dry run when adjacent")));
     }
 }
 
