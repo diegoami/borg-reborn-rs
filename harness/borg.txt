@@ -405,6 +405,17 @@ borg_param_caution_flee_recall_danger_percent = 0
 # 2026-11-20, #694: "I would adopt it"), as the better way to play.
 
 borg_param_caution_recall_wait_as_usual = 1
+# caution_recall_pending_escape = 0/1 (#754): a Recall already counting down
+# counts as an escape on a scary level (no "standing and fighting"). An up
+# staircase reached on foot is still taken (on DL1: town, where the Recall
+# fires and returns the Borg to its maximum depth). 0 = #530.
+borg_param_caution_recall_pending_escape = 0
+# caution_recall_wait_no_explore = 0/1 (#754): while Recall counts down in the
+# dungeon, wait in place (rest when safe and borg_check_rest allows it, else
+# stay still) instead of exploring; the think ends there. With
+# caution_recall_wait_as_usual = 1 the flight and leave above it still run,
+# but the generic borg_leave_level after exploration is replaced by the wait.
+borg_param_caution_recall_wait_no_explore = 0
 
 # Waiting for Recall to fire (it fires 15-34 turns after the read). In the
 # dungeon and safe, rest this many turns at a time; in town, within this many
