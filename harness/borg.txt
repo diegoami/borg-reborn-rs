@@ -845,7 +845,9 @@ borg_param_caution_cornered_spell_fail = 25
 # #719 (owner): cornered, throw or shoot first while no monster is adjacent
 # and a ranged attack does damage; buff once one is next to it. 1 = the
 # cornered boost, 2 = also the breeder fight and Phase rule boosts; 0 = buff first.
-borg_param_caution_cornered_throw_first = 0
+# Shipped 1 (owner, 2026-11-20): measured neutral and rare (starts 1-90: it
+# acts 4 times in 3 games, deaths 4 and 4).
+borg_param_caution_cornered_throw_first = 1
 
 
 ### Breeders ###
