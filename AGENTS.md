@@ -266,7 +266,9 @@ review PR.
 ## Local machine notes
 
 Heavy runs take `flock /tmp/angband-validation.lock`, like the owner's other
-Angband work (RULES 17). The C Borg repositories and borg-rs may have
+Angband work (RULES 17). That lock is for builds, smoke and replays of named
+cases; comparisons over many starts go to borg-zoo as a request issue, not
+to local batches (RULES 20, owner 2026-11-20). The C Borg repositories and borg-rs may have
 checkouts in sibling directories. Read them, never write to them.
 
 ## Optional recorder (owner #210, 2026-11-14)
