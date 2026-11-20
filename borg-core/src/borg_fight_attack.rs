@@ -5213,9 +5213,9 @@ fn focused_priority(kind: i32) -> i32 {
     }
 }
 
-fn focused_score(a: FocusedAttack, ranged_first: bool) -> (i32, i64, i32) {
+fn focused_score(a: FocusedAttack) -> (i64, i32) {
     let expected = i64::from(a.damage) * i64::from(100 - a.cost.map_or(0, |c| c.fail_pct));
-    (if ranged_first { focused_priority(a.kind) } else { 0 }, expected, focused_priority(a.kind))
+    (expected, focused_priority(a.kind))
 }
 
 #[cfg(test)]
@@ -5223,14 +5223,17 @@ mod focused_tests {
     use super::*;
 
     #[test]
-    fn category_order_and_damage_race_are_distinct_decisions() {
+    fn expected_damage_precedes_family_tiebreak() {
         let missile = FocusedAttack { kind: BF_LAUNCH as i32, damage: 2000, cost: None, fallback: 0, duration: 1.0 };
         let melee = FocusedAttack { kind: BF_THRUST as i32, damage: 9000, cost: None, fallback: 0, duration: 1.0 };
-        assert!(focused_score(missile, true) > focused_score(melee, true), "category: missile first");
-        assert!(focused_score(melee, false) > focused_score(missile, false), "general race: best expected damage");
+        assert!(focused_score(melee) > focused_score(missile), "best damage first, including attack-on-sight");
+        let equal_missile = FocusedAttack { damage: 9000, ..missile };
+        assert!(focused_score(equal_missile) > focused_score(melee), "missile wins only a damage tie");
+        let oil = FocusedAttack { kind: BF_OBJECT as i32, damage: 8000, ..missile };
+        assert!(focused_score(oil) > focused_score(missile), "pilot crow regression: oil must beat weak pebbles");
         let spell = FocusedAttack { kind: BF_SPELL_MAGIC_MISSILE as i32, damage: 10_000,
             cost: Some(AttackCost { fail_pct: 90, uses: Some(1), spell: true }), fallback: 0, duration: 1.0 };
-        assert!(focused_score(missile, false) > focused_score(spell, false), "spell failure counts");
+        assert!(focused_score(missile) > focused_score(spell), "spell failure counts");
         assert_eq!(hit_permyriad(100, 0), 9500);
         assert_eq!(hit_permyriad(9, 99), 1200);
         assert_eq!(hit_permyriad(100, 60), 6180);
@@ -5254,7 +5257,7 @@ mod focused_tests {
 /// #760/#759: rate every available attack against one observed monster.
 /// Restore RNG, simulation flags, targets and goals after the dry run.
 /// Native eligibility and aim checks remain in force; no attack is issued.
-pub(crate) fn focused_attack(st: &mut BorgState, target: usize, ranged_first: bool) -> Option<FocusedAttack> {
+pub(crate) fn focused_attack(st: &mut BorgState, target: usize) -> Option<FocusedAttack> {
     let kill = st.kills.kills[target];
     if kill.r_idx == 0 || is_ghost(kill.r_idx) || borg_timer(st, kill.when) > param(Param::attack_max_target_age) {
         return None;
@@ -5303,7 +5306,7 @@ pub(crate) fn focused_attack(st: &mut BorgState, target: usize, ranged_first: bo
         if cost.is_none() { fallback = fallback.max(damage); }
         let duration = if kind == BF_LAUNCH as i32 { 10.0 / f64::from(engine::player_attack_rates().1.max(1)) } else { 1.0 };
         let candidate = FocusedAttack { kind, damage, cost, fallback: 0, duration };
-        if best.is_none_or(|b| focused_score(candidate, ranged_first) > focused_score(b, ranged_first)) {
+        if best.is_none_or(|b| focused_score(candidate) > focused_score(b)) {
             best = Some(candidate);
         }
     }
@@ -5348,7 +5351,7 @@ pub(crate) fn attack_on_sight(st: &mut BorgState) -> bool {
         let kill = st.kills.kills[i];
         if kill.r_idx == 0 { continue; }
         let Some(reason) = attack_on_sight_reason(st, usize::from(kill.r_idx)) else { continue };
-        let Some(attack) = focused_attack(st, i, true) else { continue };
+        let Some(attack) = focused_attack(st, i) else { continue };
         borg_note(st, &format!("# Attack on sight: {} ({reason}), {} HP, attack {} (#760)",
             String::from_utf8_lossy(engine::race_name(usize::from(kill.r_idx))), kill.power, attack.kind));
         if perform_focused_attack(st, i, attack) { return true; }
