@@ -27,7 +27,8 @@ published mode 3 arm. Two initial wall timeouts, Rogue 23482467 and
 Blackguard 149213750, reached the cap on retry under the same 300-second
 limit. All three issue seeds reached the cap with weight 5. The comparison
 uses the published control totals and local replays of the reported seeds.
-The local cohort preceded the current Zoo-only rule for cohorts.
+The local cohort started before the current Zoo-only rule merged and
+finished after that merge.
 [PR #769](https://github.com/diegoami/borg-reborn-rs/pull/769)
 
 Cemetery retains the ten dossiers, original death streams, outcome
