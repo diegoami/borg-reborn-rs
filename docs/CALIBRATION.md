@@ -10,6 +10,59 @@ identifies its pre-extraction source and retained mechanics/interface data.
 Each section below is a snapshot: its "registry now holds N" is the count
 right after that change, so older sections show older counts.
 
+## Ranger arrows: a soft cap, then a diminishing curve (#716)
+
+The registry now holds **2216** parameters (2214 after #712; two added).
+Owner, 2026-11-20: "they do not need that many arrows"; "a soft cap at 50
+and then a curve for additional arrows utility"; "a curve coefficient like
+we defined for healing ... can take infinite arrows, but the more he carries
+the less value they have".
+
+- **`town_ranger_arrows_max`** (0 = C): the town planner's shot reserve
+  ("Ranger usable shots") becomes a requirement. Each shot up to this many
+  is worth the same, the reserve's weight divided by the cap. C's curve
+  grows with the trip and never stops paying, and arrows cost 1 gold, so
+  Rangers bought about 300 a game and carried 150–200. Their weight sent
+  Phase Door to the Home.
+- **`town_ranger_arrows_curve_scale_percent`** (0): shots past the cap count
+  on a capability of their own, "extra shots". It is C's shot curve (the
+  reserve's weight, the trip's demand) with weight and demand scaled by this
+  percent, as `town_heal_curve_scale_percent` does healing. Every shot is
+  worth something, each less than the last. 0 means nothing past the cap.
+- **Shipped** (owner): the Ranger, 50 and 50; every other class 0 (only the
+  Ranger has a shot reserve, `town_missiles_percent` -1). A zoo experiment
+  calibrates the scale.
+- **Not changed:** pack power still keeps up to 180 shots that the Ranger
+  picks up in the dungeon (`power_inventory_amissiles_limit_3`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_ranger_arrows_max` | 0 | count | 0–1000 | `borg_town_capability.rs:684` |
+| `town_ranger_arrows_curve_scale_percent` | 0 | percent | 0–10000 | `borg_town_capability.rs:722` |
+
+## Thrown oil, a town-planner curve of its own (#712)
+
+The registry now holds **2214** parameters (2212 on main before it; two added).
+
+- **`town_oil_apart`** (flag, 0 = C): the town planner values each flask of
+  oil kept to throw on a capability of its own, "thrown oil", beside its
+  damage on the shared `ATTACK` curve (as an arrow counts in "Ranger usable
+  shots"). With C's planner only, a stack of sling shots saturates `ATTACK`,
+  so a flask's marginal damage is worth almost nothing, and the weight
+  repair stores the flasks at the Home, one at a time. The curve is weighted
+  as `ATTACK` and by the class's `town_oil_curve_scale_percent` (#682).
+- **`town_oil_flasks`** (10): the thrown-oil curve is at half its value with
+  this many flasks kept to throw.
+- **Shipped** (owner, 2026-11-20): on for every class except the Ranger,
+  which has arrows (`town_oil_apart__ranger = 0`).
+
+| parameter | default | unit | range | source |
+|---|---|---|---|---|
+| `town_oil_apart` | 0 | flag | 0–1 | `borg_town_capability.rs:392` |
+| `town_oil_flasks` | 10 | count | 1–255 | `borg_town_capability.rs:698` |
+
+
+
 ## Step-away from immobile creatures turned off (#736)
 
 The registry still holds **2211** parameters. Owner, 2026-11-20: "stepaway
@@ -455,7 +508,7 @@ same way are healing objects"; no reserve, only the curve.
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
 | `town_phase_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:639` |
-| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:484` |
+| `town_oil_curve_scale_percent` | 100 | percent | 1–10000 | `borg_town_capability.rs:529` |
 
 ## No rest while breeders are known (#644)
 
@@ -1492,9 +1545,9 @@ The registry now holds **1786** parameters (1783 after #483; three added). Owner
 
 | parameter | default | unit | range | source |
 |---|---|---|---|---|
-| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:422` |
-| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:287` |
-| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:413` |
+| `town_heal_reserve_hp_percent` | 0 (off) | percent of max HP | 0–10000 | `borg_town_capability.rs:454` |
+| `town_heal_speed_percent` | 0 (HP alone) | percent of max HP | 0–100 | `borg_town_capability.rs:309` |
+| `town_heal_curve_scale_percent` | 100 (historical) | percent | 1–10000 | `borg_town_capability.rs:445` |
 
 - **Reserve:** a new capability row, "healing reserve" (id 58), fed by the
   same HP as healing (`EF_HEAL_HP`, capped at max HP). Up to the reserve,
@@ -1622,11 +1675,11 @@ digger 500 gold.
 | `town_heal_reserve_hp_percent_<class>` (nine) | -1 (= `town_heal_reserve_hp_percent`) | percent_override | -1–10000 | `borg_town_capability.rs:387` |
 | `town_heal_reserve_real_hp` | 0 | flag | 0–1 | `borg_town_capability.rs:345` |
 | `town_digger_min_gold` | 0 | gold | 0–10000000 | `borg_town_capability.rs:635` |
-| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:375` |
+| `town_missiles_percent` | -1 | percent_override | -1–1000 | `borg_town_capability.rs:407` |
 | `town_missiles_other_ranged_percent` | 100 | percent | 0–100 | `borg_town_capability.rs:657` |
 | `town_devices_percent` | 100 | percent | 0–1000 | `borg_town_capability.rs:562` |
-| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:610` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
-| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1291` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
+| `town_recall_reserve` | 0 | count | 0–5 | `borg_town_capability.rs:694` (#557: this many Word of Recall are a requirement at the full trip weight each, at any depth; also in `borg_town_utility.rs`'s need model) |
+| `town_recall_value_percent` | 100 | percent | 0–10000 | `borg_town_capability.rs:1371` (#557: a Word of Recall's value in percent of the walk it saves, in the capability and need models) |
 | `prepared_recall_depth` | 5 | depth | 0–127 | `borg_prepared.rs:202` (#557: C's "1 recall" for a descent from this depth; 0 = never; gates descents only) |
 
 ## Breeders and named scary monsters (#503)
