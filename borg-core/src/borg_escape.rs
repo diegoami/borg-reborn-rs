@@ -761,6 +761,8 @@ mod fox_form_tests {
 /// docs/PHASE-DOOR.md lists each site's trigger and settings.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub(crate) enum PhaseSite {
+    /// #781: confirmed unseen bump, after bounded oil attempts.
+    UnseenBump,
     /// `borg_escape` 1: danger far above the HP, after every teleport failed.
     Emergency,
     /// `borg_escape` 1.2: HP critical or danger extreme; no landing check.
@@ -799,6 +801,7 @@ impl PhaseSite {
     /// The site's name in the notes (and in docs/PHASE-DOOR.md).
     pub(crate) fn label(self) -> &'static str {
         match self {
+            PhaseSite::UnseenBump => "unseen bump",
             PhaseSite::Emergency => "escape 1 emergency",
             PhaseSite::Critical => "escape 1.2 critical",
             PhaseSite::LastDitch => "escape 1.3 last ditch",
@@ -854,7 +857,7 @@ pub(crate) fn phase_door(
     // Shoot N Scoot's own check answers first (re-review of #612): it only
     // passes with a monster next to the Borg, so asking the rule before it
     // made two thirds of the rule's notes on turns with nothing adjacent.
-    let rule = param(Param::escape_phase_adjacent_rule) != 0 && st.borg.tr(BI_APHASE) > 0;
+    let rule = site != PhaseSite::UnseenBump && param(Param::escape_phase_adjacent_rule) != 0 && st.borg.tr(BI_APHASE) > 0;
     let site_first = matches!(check, PhaseCheck::ShootScoot { .. });
     if rule && !site_first && phase_rule_verdict(st, site, danger) != PhaseVerdict::Phase {
         return false;
@@ -2086,7 +2089,8 @@ mod phase_tests {
 mod phase_decision_tests {
     use super::*;
 
-    const ALL: [PhaseSite; 16] = [
+    const ALL: [PhaseSite; 17] = [
+        PhaseSite::UnseenBump,
         PhaseSite::Emergency,
         PhaseSite::Critical,
         PhaseSite::LastDitch,

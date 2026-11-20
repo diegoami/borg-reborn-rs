@@ -1461,3 +1461,9 @@ borg_param_prepared_deep_clevel_offset__blackguard = 5
 borg_param_prepared_deep_min_clevel__blackguard = 0
 borg_param_prepared_deep_max_clevel__blackguard = 38
 # ---- END CLASS FILES ----
+
+# #781: unseen bump experiment; compiled and shipped off pending measurement.
+borg_param_caution_unseen_bump_turns = 0
+borg_param_caution_unseen_bump_response = 0
+borg_param_caution_unseen_bump_heal_hp_percent = 0
+borg_param_caution_unseen_bump_throw_tries = 3

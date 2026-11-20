@@ -188,3 +188,11 @@ With no enemy adjacent the Borg no longer phases to get unstuck.
 
 Whether the rule saves or costs games is the zoo pilot's question
 (borg-zoo#334, RULES 14): the 100 % threshold is a hypothesis.
+
+
+#781 adds the off-by-default `unseen bump` site: after a confirmed failed
+step into an unseen monster, one detection attempt and the configured oil
+budget, try Phase Door. Its evidence is the bump grid, not a known monster's
+race or estimated danger, so it bypasses the known-race adjacent fight rule
+and the known-monster landing tests. `caution_unseen_bump_turns` and
+`caution_unseen_bump_response` must both be enabled. See CALIBRATION.md.

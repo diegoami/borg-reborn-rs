@@ -928,7 +928,7 @@ fn nearest_free_stair(st: &BorgState, up: bool) -> i32 {
         let j = engine::distance(st.borg.c, loc { x, y });
 
         // Skip stairs if a monster is on the stair
-        if st.cave.grid(x, y).kill != 0 {
+        if st.cave.grid(x, y).kill != 0 || unseen_bump_blocked(st, x, y) {
             continue;
         }
 
@@ -2042,6 +2042,9 @@ pub fn borg_caution(st: &mut BorgState) -> bool {
     }
     // Comment on glyph and stairs
     let (on_upstair, on_dnstair) = note_standing(st);
+
+    // borg-reborn-rs (#781): the unseen blocker outranks the stair walk.
+    if unseen_bump_response(st) { return true; }
 
     // borg-reborn-rs (#713): a creature kept at range is stepped away from
     // while fleeing too (the jelly's Paladin was "fleeing" all along, with no
@@ -5781,5 +5784,219 @@ mod breeder_pause_tests {
         assert!(!stand_paused(true, false, false, true), "no danger: standing");
         assert!(!stand_paused(false, false, true, true), "stoppable off: C");
         assert!(!stand_paused(true, false, true, false), "no breeders");
+    }
+}
+
+// borg-reborn-rs (#781): an unseen occupant is an observation, not a race
+// guessed from the engine. Only a queued movement plus melee feedback plus
+// an unchanged position establishes its grid. See player-attack.c:738-743,
+// :767, :840-860 (574b618c), mon-desc.h:45 and mon-desc.c:143-165.
+#[derive(Clone, Default)]
+pub struct UnseenBumps {
+    step: Option<(loc, loc, bool)>,
+    shot: Option<(loc, bool)>,
+    grids: Vec<UnseenBump>,
+}
+
+#[derive(Clone)]
+struct UnseenBump {
+    grid: loc,
+    at: i32,
+    throws: i32,
+    detected: bool,
+}
+
+fn same_grid(a: loc, b: loc) -> bool { a.x == b.x && a.y == b.y }
+
+fn bump_recent(now: i32, at: i32, turns: i32) -> bool {
+    turns > 0 && now >= at && now - at < turns
+}
+
+pub(crate) fn unseen_bump_step(st: &mut BorgState, x: i32, y: i32) {
+    let usable = p(Param::caution_unseen_bump_turns) > 0 && st.borg.tr(BI_CDEPTH) > 0
+        && st.borg.tr(BI_ISCONFUSED) == 0 && st.borg.tr(BI_ISIMAGE) == 0
+        && st.borg.tr(BI_ISBLIND) == 0;
+    st.borg.unseen_bumps.step = usable.then_some((st.borg.c, loc { x, y }, false));
+}
+
+fn unseen_melee_message(msg: &[u8]) -> bool {
+    [b"You fail to harm ".as_slice(), b"You miss ", b"You hit ", b"You punch ", b"You bite ", b"You claw "]
+        .iter().any(|prefix| msg.strip_prefix(*prefix).is_some_and(|who| {
+            [b"something".as_slice(), b"someone"].iter().any(|name| {
+                who.strip_prefix(*name).is_some_and(|rest| rest.starts_with(b".") || rest.starts_with(b" ("))
+            })
+        }))
+}
+
+pub(crate) fn unseen_bump_message(st: &mut BorgState, msg: &[u8]) {
+    if unseen_melee_message(msg) {
+        if let Some((_, _, hit)) = &mut st.borg.unseen_bumps.step { *hit = true; }
+    }
+    // Oil is a single-target throw into the adjacent square (not an area
+    // spell). Its unseen victim's death identifies the now-cleared grid.
+    if [b"It dies.".as_slice(), b"Something dies.", b"Someone dies."].contains(&msg) {
+        if let Some((_, dead)) = &mut st.borg.unseen_bumps.shot { *dead = true; }
+    }
+}
+
+/// Consume the command's evidence once, after the observed position changed.
+/// A successful (possibly confused) move cannot mark its intended grid.
+fn finish_bump(bumps: &mut UnseenBumps, pos: loc, now: i32, turns: i32) -> Option<loc> {
+    if let Some((grid, true)) = bumps.shot.take() {
+        bumps.grids.retain(|b| !same_grid(b.grid, grid));
+    }
+    bumps.grids.retain(|b| bump_recent(now, b.at, turns) && !same_grid(b.grid, pos));
+    let (from, grid, hit) = bumps.step.take()?;
+    if turns == 0 || !hit || !same_grid(from, pos) { return None; }
+    if let Some(b) = bumps.grids.iter_mut().find(|b| same_grid(b.grid, grid)) {
+        b.at = now;
+    } else {
+        bumps.grids.push(UnseenBump { grid, at: now, throws: 0, detected: false });
+    }
+    Some(grid)
+}
+
+pub(crate) fn unseen_bump_update(st: &mut BorgState) {
+    let turns = p(Param::caution_unseen_bump_turns);
+    if let Some(g) = finish_bump(&mut st.borg.unseen_bumps, st.borg.c, engine::game_turn(), turns) {
+        st.borg.goal.type_0 = 0;
+        borg_note(st, &format!("# Unseen bump: ({},{}) occupied for {turns} game turns", g.y, g.x));
+    }
+}
+
+pub(crate) fn unseen_bump_blocked(st: &BorgState, x: i32, y: i32) -> bool {
+    let turns = p(Param::caution_unseen_bump_turns);
+    turns > 0 && (x, y) != (st.borg.c.x, st.borg.c.y)
+        && st.borg.unseen_bumps.grids.iter().any(|b| b.grid.x == x && b.grid.y == y
+            && bump_recent(engine::game_turn(), b.at, turns))
+}
+
+fn bump_heal_due(hp: i32, max: i32, percent: i32) -> bool {
+    percent > 0 && hp * 100 < max * percent
+}
+
+/// Before a desperate stair walk: cures do not require the unknown monster
+/// to have a race (and therefore an estimated danger). Detection is tried
+/// once per observation; oil is bounded per grid; then a Phase Door. None
+/// of these invents a monster index, HP, armour or a clear target.
+fn unseen_bump_response(st: &mut BorgState) -> bool {
+    let turns = p(Param::caution_unseen_bump_turns);
+    if turns == 0 || st.borg.tr(BI_CDEPTH) == 0 { return false; }
+    let now = engine::game_turn();
+    let Some(i) = st.borg.unseen_bumps.grids.iter().position(|b| {
+        bump_recent(now, b.at, turns) && engine::distance(st.borg.c, b.grid) == 1
+            && st.cave.grid(b.grid.x, b.grid.y).kill == 0
+    }) else { return false };
+    if bump_heal_due(st.borg.tr(BI_CURHP), st.borg.tr(BI_MAXHP), p(Param::caution_unseen_bump_heal_hp_percent))
+        && (borg_quaff_potion(st, st.item_val.sv_potion_cure_light)
+            || borg_quaff_potion(st, st.item_val.sv_potion_cure_serious)
+            || borg_quaff_potion(st, st.item_val.sv_potion_cure_critical))
+    {
+        borg_note(st, "# Healing before stairs: an unseen monster blocks the step");
+        return true;
+    }
+    if p(Param::caution_unseen_bump_response) == 0 { return false; }
+    if !st.borg.unseen_bumps.grids[i].detected
+        && borg_read_scroll(st, st.item_val.sv_scroll_detect_invis)
+    {
+        st.borg.unseen_bumps.grids[i].detected = true;
+        borg_note(st, "# Detect Invisible: an unseen monster blocks the step");
+        return true;
+    }
+    let g = st.borg.unseen_bumps.grids[i].grid;
+    if st.borg.tr(BI_ISCONFUSED) == 0 && st.borg.tr(BI_ISBLIND) == 0 && st.borg.tr(BI_ISIMAGE) == 0
+        && st.borg.unseen_bumps.grids[i].throws < p(Param::caution_unseen_bump_throw_tries)
+        && crate::borg_fight_attack::throw_at_unseen_bump(st, g)
+    {
+        st.borg.unseen_bumps.grids[i].throws += 1;
+        st.borg.unseen_bumps.shot = Some((g, false));
+        return true;
+    }
+    // The ordinary adjacent-monster rule cannot rate a monster with no
+    // known race. This site's explicit, bounded bump evidence is its gate.
+    crate::borg_escape::phase_door(st, crate::borg_escape::PhaseSite::UnseenBump,
+        crate::borg_escape::PhaseCheck::None, None, |st| {
+            borg_read_scroll(st, st.item_val.sv_scroll_phase_door)
+                || borg_activate_item(st, st.act.tele_phase) || borg_spell(st, PHASE_DOOR)
+        })
+}
+
+#[cfg(test)]
+mod unseen_bump_tests {
+    use super::*;
+    fn pos(x: i32, y: i32) -> loc { loc { x, y } }
+    #[test]
+    fn only_unseen_player_melee_is_evidence() {
+        for msg in [b"You fail to harm something.".as_slice(), b"You miss someone.", b"You hit something (3)."] {
+            assert!(unseen_melee_message(msg));
+        }
+        for msg in [b"Something touches you.".as_slice(), b"You hit the kobold.", b"You feel something give way!", b"You hit someone's sword."] {
+            assert!(!unseen_melee_message(msg));
+        }
+    }
+    #[test]
+    fn failed_step_is_consumed_and_expires_without_renewing_itself() {
+        let mut bumps = UnseenBumps::default();
+        bumps.step = Some((pos(40,35), pos(40,34), true));
+        assert!(finish_bump(&mut bumps, pos(40,35), 36669, 100).is_some());
+        assert_eq!(bumps.grids.len(), 1);
+        assert!(finish_bump(&mut bumps, pos(40,35), 36768, 100).is_none());
+        assert_eq!(bumps.grids.len(), 1);
+        finish_bump(&mut bumps, pos(40,35), 36769, 100);
+        assert!(bumps.grids.is_empty());
+    }
+    #[test]
+    fn successful_movement_no_feedback_and_switch_off_never_mark_a_grid() {
+        for (pos, hit, turns) in [(pos(40,34), true, 100), (pos(40,35), false, 100), (pos(40,35), true, 0)] {
+            let mut bumps = UnseenBumps::default();
+            bumps.step = Some((self::pos(40,35), self::pos(40,34), hit));
+            assert!(finish_bump(&mut bumps, pos, 36669, turns).is_none());
+            assert!(bumps.grids.is_empty());
+            assert!(bumps.step.is_none());
+        }
+    }
+    #[test]
+    fn revisiting_a_grid_clears_it_and_repeated_bumps_keep_the_response_budget() {
+        let mut bumps = UnseenBumps::default();
+        bumps.step = Some((pos(40,35), pos(40,34), true));
+        finish_bump(&mut bumps, pos(40,35), 100, 100);
+        bumps.grids[0].throws = 3;
+        bumps.grids[0].detected = true;
+        bumps.step = Some((pos(40,35), pos(40,34), true));
+        finish_bump(&mut bumps, pos(40,35), 110, 100);
+        assert_eq!(bumps.grids[0].throws, 3);
+        assert!(bumps.grids[0].detected);
+        finish_bump(&mut bumps, pos(40,34), 120, 100);
+        assert!(bumps.grids.is_empty());
+    }
+    #[test]
+    fn emergency_cure_has_a_strict_configured_hp_boundary() {
+        assert!(bump_heal_due(21, 44, 50));
+        assert!(!bump_heal_due(22, 44, 50));
+        assert!(!bump_heal_due(1, 44, 0));
+        assert!(!bump_recent(99, 100, 100));
+    }
+}
+
+#[cfg(test)]
+mod unseen_bump_kill_tests {
+    use super::*;
+    #[test]
+    fn a_directional_oil_kill_clears_only_its_grid() {
+        let mut st = BorgState::default();
+        st.borg.unseen_bumps.grids = vec![
+            UnseenBump { grid: loc { x: 40, y: 34 }, at: 100, throws: 1, detected: false },
+            UnseenBump { grid: loc { x: 41, y: 35 }, at: 100, throws: 0, detected: false },
+        ];
+        // An unassociated death cannot clear an inferred occupant.
+        unseen_bump_message(&mut st, b"It dies.");
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 110, 100);
+        assert_eq!(st.borg.unseen_bumps.grids.len(), 2);
+        st.borg.unseen_bumps.shot = Some((loc { x: 40, y: 34 }, false));
+        unseen_bump_message(&mut st, b"It dies.");
+        finish_bump(&mut st.borg.unseen_bumps, loc { x: 40, y: 35 }, 120, 100);
+        assert_eq!(st.borg.unseen_bumps.grids.len(), 1);
+        assert_eq!(st.borg.unseen_bumps.grids[0].grid.x, 41);
+        assert!(st.borg.unseen_bumps.shot.is_none());
     }
 }

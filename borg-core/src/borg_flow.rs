@@ -410,6 +410,11 @@ fn spread_blocked(
     let b = &st.borg;
     let feat = u32::from(ag.feat);
 
+    // borg-reborn-rs (#781): observed unseen occupancy blocks every spread.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        return true;
+    }
+
     /* Avoid "wall" grids (not doors) unless tunneling*/
     /* HACK depends on FEAT order, kinda evil */
     if !tunneling && (feat >= FEAT_SECRET && feat != FEAT_PASS_RUBBLE && feat != FEAT_LAVA) {
@@ -757,6 +762,10 @@ fn borg_flow_ignores_danger(st: &BorgState) -> bool {
 
 /// Enqueue a fresh (legal) starting grid, if it is safe.
 pub fn borg_flow_enqueue_grid(st: &mut BorgState, y: i32, x: i32) {
+    // borg-reborn-rs (#781): a blocked staircase must not seed a flow.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        return;
+    }
     /* Avoid icky grids */
     if st.flow.data_icky[y as usize][x as usize] != 0 {
         return;
@@ -1164,6 +1173,12 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     /* Access the grid we are stepping on */
     let ag = *st.cave.grid(x, y);
 
+    // borg-reborn-rs (#781): also refuse an old flow made before the bump.
+    if crate::borg_caution::unseen_bump_blocked(st, x, y) {
+        st.borg.goal.type_0 = 0;
+        return false;
+    }
+
     /* Set goal */
     st.borg.goal.g.x = x;
     st.borg.goal.g.y = y;
@@ -1233,6 +1248,7 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
         borg_note(st, "# Walking onto a glyph of warding.");
 
         /* Walk onto it */
+        crate::borg_caution::unseen_bump_step(st, x, y); // borg-reborn-rs (#781)
         borg_keypress(st, i2d(dir));
         return true;
     }
@@ -1365,6 +1381,8 @@ fn borg_play_step(st: &mut BorgState, y2: i32, x2: i32) -> bool {
     }
 
     /* Actually enter the direction */
+    // borg-reborn-rs (#781): only a real movement command supplies a grid.
+    crate::borg_caution::unseen_bump_step(st, x, y);
     borg_keypress(st, i2d(dir));
 
     /* I'm not in a store */
