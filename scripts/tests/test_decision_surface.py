@@ -10,7 +10,7 @@ import decision_surface as surface
 
 class DecisionSurfaceTest(unittest.TestCase):
     def test_actual_policy_surface_is_closed(self):
-        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 19)
+        self.assertEqual(surface.check(Path(__file__).resolve().parents[2]), 27)
 
     def test_defence_mutation_adapters_are_exact_and_policy_cannot_delegate(self):
         for adapter in surface.DEFENCE_ADAPTERS:
@@ -106,7 +106,7 @@ class DecisionSurfaceTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'nested.rs'):
                 surface.check(fixture)
             extra.write_text('fn local_helper() {}')
-            self.assertEqual(surface.check(fixture), 20)
+            self.assertEqual(surface.check(fixture), 28)
             dispatch = fixture / 'borg-next/src/stateful/mod.rs'
             dispatch.write_text(dispatch.read_text() + 'crate::shadow::register();')
             with self.assertRaisesRegex(ValueError, 'mod.rs'):

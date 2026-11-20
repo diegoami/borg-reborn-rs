@@ -28,7 +28,7 @@ use crate::borg_headers::borg_trait_h::{
 use crate::headers::list_stats_h::{STAT_CON, STAT_DEX, STAT_STR};
 use crate::headers::list_tvals_h::{TV_FOOD, TV_POTION, TV_SCROLL, TV_STAFF};
 use crate::state::BorgState;
-use crate::engine;
+use crate::decision_api::engine;
 
 /// `CLASS_WARRIOR` (borg-trait.h).
 const CLASS_WARRIOR: i32 = 0;
@@ -100,11 +100,11 @@ fn stat_tiers(
 
 /// `kb_info[tval].max_stack`
 fn max_stack(tval: u32) -> i32 {
-    engine::kb_info()[tval as usize].max_stack
+    engine::base_max_stack(tval)
 }
 
 /// Helper function -- calculate power of equipment in the home
-fn borg_power_home_aux1(st: &mut BorgState) -> i32 {
+fn borg_power_home_aux1(st: &BorgState) -> i32 {
     let mut value: i32 = 0;
 
     // This would be better separated by item type (so 1 bonus for resist
@@ -157,7 +157,7 @@ fn borg_power_home_aux1(st: &mut BorgState) -> i32 {
     value = stat_tiers(value, s, param(Param::home_stat_con_low_limit), param(Param::home_stat_con_high_limit), i64::from(param(Param::home_stat_con_first_weight)), i64::from(param(Param::home_stat_con_middle_base)), i64::from(param(Param::home_stat_con_middle_weight)), i64::from(param(Param::home_stat_con_last_base)), i64::from(param(Param::home_stat_con_last_weight)));
 
     // spell stat is only bonused for spell casters.
-    let spell_stat = crate::borg_magic::borg_spell_stat();
+    let spell_stat = crate::decision_api::borg_magic::borg_spell_stat();
     if spell_stat >= 0 {
         let s = i32::from(st.home.home_stat_add[spell_stat as usize]);
         // C bug 8: the last tier starts from 20 * 100, not 20 * 400.
@@ -227,7 +227,7 @@ fn stack(value: i32, lim: i32, n: i32, base: i64, step: i64) -> i32 {
 /// Helper function -- calculate power of items in the home
 ///
 /// The weird calculations help spread out the purchase order
-fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
+fn borg_power_home_aux2(st: &BorgState) -> i32 {
     let mut value: i32 = 0;
 
     // *** Basic abilities ***
@@ -463,7 +463,9 @@ fn borg_power_home_aux2(st: &mut BorgState) -> i32 {
 }
 
 /// Calculate the "power" of the home
-pub fn borg_power_home(st: &mut BorgState) -> i32 {
+pub(crate) fn borg_power_home_native(st: &BorgState) -> i32 {
+if crate::decision_tape::active() {crate::decision_tape::mark("policy::store.borg_power_home",format!("{:?}",()));}
+
     let mut value: i32 = 0;
 
     // Process the home equipment
@@ -473,6 +475,13 @@ pub fn borg_power_home(st: &mut BorgState) -> i32 {
     value = value.wrapping_add(borg_power_home_aux2(st));
 
     value
+}
+
+
+
+pub fn borg_power_home(st: &BorgState) -> i32 {
+if crate::decision_tape::active() {return borg_power_home_native(st);}
+match crate::shadow::read_decision(st,crate::decisions::ReadDecision::HomePower) {crate::decisions::Value::Score(v)=>v,_=>unreachable!("typed store result")}
 }
 
 #[cfg(test)]

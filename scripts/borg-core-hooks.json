@@ -250,7 +250,7 @@
   "files": {
     "Cargo.toml": {
       "donor_blob": "f09222f2f0d69ce9f0089bf40f177ddde6a07139",
-      "receiving_sha256": "429be54b3d7143e098fcb496ac860b25b4462671123b158c41e2f04d93e93f0e"
+      "receiving_sha256": "d6bfec3dccda685842ea442c437fe9cae04134f4d5173df7882eff3e3a0239f0"
     },
     "build.rs": {
       "donor_blob": "9d24439107a218ec33578cabbf1215f38e986805",
@@ -330,7 +330,7 @@
     },
     "src/borg_home_power.rs": {
       "donor_blob": "6f1f10f2de06864e9ad827ddbb0cea354503b515",
-      "receiving_sha256": "6dd98e54bf536129e1c0a204be6051ce55de305c290a99449789e9dd7c164614"
+      "receiving_sha256": "c7e5ad0934c2de6a2158b69ad7202c553b4ed9775c339c4cd660b8c4a1c8b019"
     },
     "src/borg_init.rs": {
       "donor_blob": "bb0582afb95341ed85f576913ebf63b01e5d1bed",
@@ -402,11 +402,11 @@
     },
     "src/borg_store_buy.rs": {
       "donor_blob": "0df491ec29b3cf879987f48429b0d54cbbfaf886",
-      "receiving_sha256": "0628f142f12ffab082a29f8f14c5fd297015745a412eb4477de3d7d404ffa02a"
+      "receiving_sha256": "d8976c40f100046044cfb748d944f62fd6e3e139543fb5390485cc1c1e43ba1c"
     },
     "src/borg_store_sell.rs": {
       "donor_blob": "59bff90f2eed53f6cbceae3343898932d643e179",
-      "receiving_sha256": "78042fc5d2d4967c4f2e7a1f25d06e41d9446306488d1f01950bcaf5cd999802"
+      "receiving_sha256": "34af08fdff8da864bae954e9571f580e5bc6aa5eebf126f1715ed524bde34c2e"
     },
     "src/borg_think.rs": {
       "donor_blob": "845f33700f2946f30ec01aef5a081b8850865a36",
@@ -422,7 +422,7 @@
     },
     "src/borg_think_store.rs": {
       "donor_blob": "ba749516609811aa3519f5bd1c64246f2d945cbc",
-      "receiving_sha256": "4a3ebd5108ad9d86837883919d283bc3a8658f71ff51e8c4d5311c792be1a970"
+      "receiving_sha256": "38f91bfb3d7c7f9b4c2e6513bf5364848535af812f51f094548f7a27f11e27db"
     },
     "src/borg_town_live.rs": {
       "donor_blob": "20a1ac8125baebcaa32c8986cfac529c13bcd528",

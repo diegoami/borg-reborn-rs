@@ -1844,5 +1844,9 @@
   "reviewed_equipment_seams": {
     "path": "docs/R436-NATIVE-SEAMS.patch",
     "sha256": "8cf7f6bb49887a8684b5b12a11eaad512205989608f2a12ed71ce9bbdb94bbc0"
+  },
+  "reviewed_store_seams": {
+    "path": "docs/R437-NATIVE-SEAMS.patch",
+    "sha256": "f46e75833e783f24cbaf1ad435fac472dcd7a06a72fdaa922eb2b41f66304ef2"
   }
 }

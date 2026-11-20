@@ -83,3 +83,10 @@ pub mod equipment_fixture {
         crate::borg_item_id::borg_item_note_needs_id(st,item)
     }
 }
+
+#[cfg(feature="test-r4-store")]
+pub mod store_fixture {
+    pub fn similar(st:&crate::state::BorgState,a:&crate::borg_headers::borg_item_h::borg_item,b:&crate::borg_headers::borg_item_h::borg_item)->bool {
+        crate::borg_store_sell::borg_object_similar(st,a,b)
+    }
+}

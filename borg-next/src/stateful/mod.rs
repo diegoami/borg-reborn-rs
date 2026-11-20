@@ -10,11 +10,48 @@ pub mod defence;
 pub mod equipment_identify;
 pub mod equipment_wear;
 pub mod escape;
+pub mod home_power;
 pub mod item_use;
 pub mod power;
 pub mod recovery;
+pub mod store_buy;
+pub mod store_sell;
+pub mod think_store;
 pub fn decide(st: &mut BorgState, request: Decision) -> Value {
     match request {
+        Decision::HomePower => Value::Score(home_power::borg_power_home(st)),
+        Decision::StoreBuyUseful => Value::Acted(store_buy::borg_think_shop_buy_useful(st)),
+        Decision::HomeBuyUseful => Value::Acted(store_buy::borg_think_home_buy_useful(st)),
+        Decision::StoreGrabInteresting => {
+            Value::Acted(store_buy::borg_think_shop_grab_interesting(st))
+        }
+        Decision::HomeGrabUseless => Value::Acted(store_buy::borg_think_home_grab_useless(st)),
+        Decision::HomeBuySwapWeapon => Value::Acted(store_buy::borg_think_home_buy_swap_weapon(st)),
+        Decision::HomeBuySwapArmour => Value::Acted(store_buy::borg_think_home_buy_swap_armour(st)),
+        Decision::StoreBuy => Value::Acted(store_buy::borg_think_shop_buy(st)),
+        Decision::StoreTakeForSale => Value::Acted(store_buy::take_selected_for_sale(st)),
+        Decision::StoreConfirmPurchase { item, shop, keep } => {
+            store_buy::confirm_purchase(st, &item.0, shop, keep);
+            Value::Unit
+        }
+        Decision::StoreMinimumQuantity { item } => {
+            Value::Score(store_sell::borg_min_item_quantity(st, &item.0))
+        }
+        Decision::HomeSellUseful {
+            mut best_home_power,
+        } => {
+            let acted = store_sell::borg_think_home_sell_useful(st, &mut best_home_power);
+            Value::HomeSale {
+                acted,
+                best_home_power,
+            }
+        }
+        Decision::StoreSellUseless => Value::Acted(store_sell::borg_think_shop_sell_useless(st)),
+        Decision::StoreSell => Value::Acted(store_sell::borg_think_shop_sell(st)),
+        Decision::StoreSellOne => Value::Acted(store_sell::sell_one_selected(st)),
+        Decision::StoreCountSell => Value::Score(store_sell::borg_count_sell(st)),
+        Decision::StoreChooseShop => Value::Acted(think_store::borg_choose_shop(st)),
+        Decision::StoreThink => Value::Acted(think_store::borg_think_store(st)),
         Decision::WearTestStuff => Value::Acted(equipment_wear::borg_test_stuff(st)),
         Decision::WearSwapRings => Value::Acted(equipment_wear::borg_swap_rings(st)),
         Decision::WearRings => Value::Acted(equipment_wear::borg_wear_rings(st)),
@@ -143,6 +180,11 @@ fn set_free_action(st: &mut BorgState, value: i32) {
 /// Compiler-enforced read-only entry dispatch, with no caller state clone.
 pub fn read_decide(st: &BorgState, request: ReadDecision) -> Value {
     match request {
+        ReadDecision::HomePower => Value::Score(home_power::borg_power_home(st)),
+        ReadDecision::StoreMinimumQuantity { item } => {
+            Value::Score(store_sell::borg_min_item_quantity(st, &item.0))
+        }
+        ReadDecision::StoreDisabled => Value::Acted(think_store::town_strategy_disabled(st)),
         ReadDecision::PowerEquipment => Value::Score(power::borg_power_equipment(st)),
         ReadDecision::ItemEquipsItem {
             activation,
