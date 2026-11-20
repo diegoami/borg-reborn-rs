@@ -530,7 +530,8 @@ pub fn borg_thrust_damage_one(st: &BorgState, i: i32) -> i32 {
     if focused {
         // player-attack.c:99-109,196-219: real hit chance, no targeting
         // or class preference bonuses. Millihitpoints preserve fractions.
-        return (i64::from(dam.max(0)) * i64::from(hit_permyriad(chance, r_ptr.ac)) / 10_000) as i32;
+        let capped = dam.max(0).min(focused_power(st, kill.power));
+        return (i64::from(capped) * i64::from(hit_permyriad(chance, r_ptr.ac)) / 10_000) as i32;
     }
 
     /* Chance of hitting the monsters AC */
@@ -2429,6 +2430,15 @@ fn launch_damage(st: &BorgState, item: &borg_item, bow: &borg_item) -> Option<i3
     /* Skip worthless missiles */
     if item.value <= 0 {
         return None;
+    }
+
+    if st.fight_attack.focused_target.is_some() {
+        // Keep the half point in 1d4 ammunition until after the launcher
+        // multiplier. Integer truncation before x2 understates it by 20%.
+        let d = (i32::from(item.dd) * (i32::from(item.ds) + 1) * 500
+            + 1000 * (i32::from(item.to_d) + i32::from(bow.to_d)))
+            * tr(st, BI_AMMO_POWER) * tr(st, BI_SHOTS);
+        return (d > 0).then_some(d);
     }
 
     /* Determine average damage */
@@ -5049,7 +5059,16 @@ pub(crate) fn hit_permyriad(chance: i32, ac: i32) -> i32 {
 }
 
 fn focused_power(st: &BorgState, power: i16) -> i32 {
-    i32::from(power).max(0) * if st.fight_attack.focused_target.is_some() { 1000 } else { 1 }
+    match st.fight_attack.focused_target {
+        None => i32::from(power).max(0),
+        Some(i) => observed_kill_hp(&st.kills.kills[i]).unwrap_or(i32::from(power).max(1)) * 1000,
+    }
+}
+
+/// mon-util.c:1300 at 574b618c: a monster dies below zero HP, so one at
+/// zero still needs a point of damage. Unknown health cannot certify a win.
+pub(crate) fn observed_kill_hp(kill: &crate::borg_flow_kill::BorgKill) -> Option<i32> {
+    kill.observed_health.filter(|&(hp, max)| hp >= 0 && max > 0).map(|(hp, _)| i32::from(hp) + 1)
 }
 
 /// #759: real damage for the focused planner, in millihitpoints. The
@@ -5059,7 +5078,7 @@ fn focused_launch_damage(st: &BorgState, i: usize, damage: i32, typ: i32, slot: 
     let kill = st.kills.kills[i];
     let r = kill.r_idx;
     let race = engine::race(usize::from(r));
-    let mut damage = i64::from(damage.max(0)) * 1000;
+    let mut damage = i64::from(damage.max(0)) * if typ as u32 == BORG_ATTACK_ARROW && !st.fight_attack.throwing { 1 } else { 1000 };
     match typ as u32 {
         BORG_ATTACK_ARROW => {
             let item = st.items.items[slot as usize];
@@ -5080,6 +5099,9 @@ fn focused_launch_damage(st: &BorgState, i: usize, damage: i32, typ: i32, slot: 
                 let power = tr(st, BI_AMMO_POWER).max(1);
                 if mult > 1 { damage = damage * i64::from(power + mult) / i64::from(power); }
             }
+            // Cap damage per hit BEFORE hit chance: overkill never buys
+            // probability of killing, especially on a finishing shot.
+            damage = damage.min(i64::from(focused_power(st, kill.power)));
             damage = damage * i64::from(hit_permyriad(chance, race.ac)) / 10_000;
         }
         BORG_ATTACK_ACID if rf(r, RF_IM_ACID) => damage = 0,
@@ -5186,6 +5208,20 @@ mod focused_tests {
         assert_eq!(hit_permyriad(100, 0), 9500);
         assert_eq!(hit_permyriad(9, 99), 1200);
         assert_eq!(hit_permyriad(100, 60), 6180);
+    }
+
+    #[test]
+    fn observed_hp_is_not_the_rounded_health_bar() {
+        let mut kill = crate::borg_flow_kill::BorgKill::default();
+        assert_eq!(observed_kill_hp(&kill), None);
+        kill.power = 3;
+        kill.injury = 60;
+        kill.observed_health = Some((4, 11));
+        assert_eq!(observed_kill_hp(&kill), Some(5), "engine dies below zero, not at zero");
+        kill.observed_health = Some((0, 11));
+        assert_eq!(observed_kill_hp(&kill), Some(1), "zero-HP monsters are still alive");
+        kill.observed_health = Some((-1, 11));
+        assert_eq!(observed_kill_hp(&kill), None);
     }
 }
 

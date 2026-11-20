@@ -1939,10 +1939,13 @@ fn winning_fight(st: &mut BorgState) -> bool {
         if kill.r_idx == 0 || !kill.awake || kill.r_idx as usize >= engine::r_max().saturating_sub(1) {
             continue;
         }
+        let d = engine::distance(st.borg.c, kill.pos);
         if st.cave.grid(kill.pos.x, kill.pos.y).info & crate::borg_cave_view::BORG_VIEW == 0 {
+            if d <= 1 || crate::borg_danger::borg_danger_one_kill(st, st.borg.c.y, st.borg.c.x, 1, i as i32, true, true) > 0 {
+                return false; // an attacker without a current observable target
+            }
             continue;
         }
-        let d = engine::distance(st.borg.c, kill.pos);
         if d > 1 && engine::race_flag_has(usize::from(kill.r_idx), RF_NEVER_MOVE) && kill.ranged_attack == 0 {
             continue;
         }
@@ -1951,29 +1954,38 @@ fn winning_fight(st: &mut BorgState) -> bool {
         in_contact |= d <= 1 || kill.ranged_attack != 0;
         incoming += danger;
         let Some(attack) = crate::borg_fight_attack::focused_attack(st, i, false) else { return false };
-        if kill.power <= 0 { return false; }
-        plans.push((i, kill.power, attack));
+        let Some(hp) = crate::borg_fight_attack::observed_kill_hp(&kill) else { return false };
+        plans.push((i, hp, attack));
     }
     if plans.is_empty() || !in_contact { return false; }
     // Remove the fastest-to-kill attacker first. Incoming remains the full
     // sum for the entire fight, a conservative bound as attackers die.
     plans.sort_by(|a, b| {
-        let turns = |p: &(usize, i16, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.damage.max(1));
+        let turns = |p: &(usize, i32, crate::borg_fight_attack::FocusedAttack)| f64::from(p.1) / f64::from(p.2.damage.max(1));
         turns(a).total_cmp(&turns(b)).then(a.0.cmp(&b.0))
     });
     let mana = st.borg.tr(BI_CURSP);
     let mut mana_left = mana;
     let mut spent = std::collections::BTreeMap::<i32, i32>::new();
     let mut turns = 0.0;
-    for &(_, hp, attack) in &plans {
+    for &(i, hp, attack) in &plans {
         let cost = attack.cost;
         let uses = cost.and_then(|c| c.uses).map(|u| {
             if cost.is_some_and(|c| c.spell) {
                 if mana <= 0 { 0 } else { u * mana_left / mana }
             } else { (u - spent.get(&attack.kind).copied().unwrap_or(0)).max(0) }
         });
-        let damage = f64::from(attack.damage) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0;
-        let Some((t, used)) = race_turns(i32::from(hp), damage, uses, f64::from(attack.fallback) / 1000.0) else { return false };
+        // mon-move.c:regen_monster: at least 1 HP each 100 game turns,
+        // doubled for REGENERATE. Charge its continuous mean immediately,
+        // conservatively, rather than assuming a long fight has no healing.
+        let kill = st.kills.kills[i];
+        let max_hp = kill.observed_health.unwrap().1;
+        let regen = f64::from((i32::from(max_hp) / 100).max(1))
+            * if engine::race_flag_has(usize::from(kill.r_idx), crate::headers::list_mon_race_flags_h::RF_REGENERATE) { 2.0 } else { 1.0 }
+            / f64::from(engine::extract_energy(st.borg.tr(BI_SPEED).clamp(0, 199) as usize)).max(1.0);
+        let damage = f64::from(attack.damage) / 1000.0 * f64::from(100 - cost.map_or(0, |c| c.fail_pct)) / 100.0 - regen;
+        let fallback = (f64::from(attack.fallback) / 1000.0 - regen).max(0.0);
+        let Some((t, used)) = race_turns(hp, damage, uses, fallback) else { return false };
         turns += t;
         if let Some(c) = cost {
             if c.spell {
@@ -1984,21 +1996,24 @@ fn winning_fight(st: &mut BorgState) -> bool {
     }
     let hp = st.borg.tr(BI_CURHP);
     let won = wins_race(turns, incoming, hp);
+    let foes: Vec<String> = plans.iter().map(|&(i, needed, a)| format!("{}:needs {needed} HP, attack {} {:.3} HP/turn",
+        String::from_utf8_lossy(engine::race_name(usize::from(st.kills.kills[i].r_idx))), a.kind, f64::from(a.damage) / 1000.0)).collect();
     borg_note(st, &format!("# Fight race: {} attackers, {turns:.3} turns to kill, {incoming:.3} damage/turn, HP {hp}: {} (#759)",
         plans.len(), if won { "winning" } else { "not winning" }));
+    borg_note(st, &format!("# Fight race targets: {}", foes.join("; ")));
     if !won { return false; }
     let (i, _, attack) = plans[0];
     crate::borg_fight_attack::perform_focused_attack(st, i, attack)
 }
 
+/// #760/#759: before any dungeon flight, including the light/countdown
+/// and depth-return rungs which otherwise precede borg_caution.
+pub(crate) fn fight_before_flight(st: &mut BorgState) -> bool {
+    crate::borg_fight_attack::attack_on_sight(st) || winning_fight(st)
+}
+
 pub fn borg_caution(st: &mut BorgState) -> bool {
     watch_for_recall(st);
-    if crate::borg_fight_attack::attack_on_sight(st) {
-        return true;
-    }
-    if winning_fight(st) {
-        return true;
-    }
     let mut nasty = false;
 
     /*** Notice "nasty" situations ***/

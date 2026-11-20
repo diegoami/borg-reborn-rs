@@ -8,10 +8,17 @@ main `08f94e1f`. #757 and #761 belong to another session and are untouched.
   reason, class/level limits and independent replacement/removal. The
   initial fast/fragile and breeder entries cite engine data; breeder
   entries preserve the existing stoppable/lost-colony policy.
+- Synchronized accepted main `ec0f3b28` (#755); preserved its leash changes
+  and resolved only the registry/citation overlap.
 - A focused attack planner separates damage from the native utility score.
   The general fight race uses remaining HP once, hit/failure chances,
   finite resources, shared mana and speed-scaled incoming damage. Ties do
-  not win. Unknown estimates fall through to ordinary caution.
+  not win. Exact observed HP/max HP is retained at the existing perception
+  read; health-bar rounding is not used to certify a win. Zero-HP monsters
+  still need one damage point. Finishing damage is capped before hit chance,
+  fractional arrow averages are retained, and regeneration is charged. The
+  fight rung precedes depth-return/light/countdown flight rungs. Unknown
+  estimates fall through to ordinary caution.
 - The category proposal was presented before building. The six specified
   baseline deaths reproduced on clean `08f94e1f`, with exactly the supplied
   control key streams, before implementation.

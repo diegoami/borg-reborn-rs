@@ -125,6 +125,10 @@ pub struct BorgKill {
     pub spell: [u8; RSF_MAX as usize],
     /// Estimated hit-points
     pub power: i16,
+    /// #759: the HP/max HP from the same permitted observation that feeds
+    /// set_health. Retain the observation without rounding it twice; None
+    /// means no observed health, not a zero-HP living monster.
+    pub observed_health: Option<(i16, i16)>,
     /// Percent wounded
     pub injury: i16,
     /// Estimated something
@@ -160,6 +164,7 @@ impl BorgKill {
         ranged_attack: 0,
         spell: [0; RSF_MAX as usize],
         power: 0,
+        observed_health: None,
         injury: 0,
         other: 0,
         level: 0,
@@ -363,6 +368,7 @@ fn set_timed_flags(kill: &mut BorgKill, m: &MonsterView) {
 
 /// Cheat the health (`pct`, `power`, `injury`) from the game monster.
 fn set_health(kill: &mut BorgKill, m: &MonsterView) {
+    kill.observed_health = Some((m.hp, m.maxhp));
     let pct: i32 = if m.maxhp != 0 {
         // Cheat the "percent" of health (a C `long` division)
         let max = if m.maxhp > 1 { i64::from(m.maxhp) } else { 1 };
